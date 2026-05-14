@@ -234,7 +234,7 @@ Return JSON:
   "general_search_phrases": ["broad query1", "broad query2", "broad query3", "broad query4"]
 }`
     }
-  ], { max_tokens: 6000 });
+  ], { max_tokens: 10000 });
 
   const text = response.content?.[0]?.text || '';
   const json = text.match(/\{[\s\S]*\}/)?.[0];

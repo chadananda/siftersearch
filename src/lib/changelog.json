@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T14:50:50.187Z",
+  "generated": "2026-05-14T14:59:42.931Z",
   "entries": [
+    {
+      "hash": "8b8f7839",
+      "date": "2026-05-14",
+      "type": "Performance",
+      "description": "Use Haiku for rerank scoring, cut token budgets — ~60% cost reduction",
+      "scope": null
+    },
     {
       "hash": "9a8691e2",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Expose authority field in quick search API response",
       "scope": null
-    },
-    {
-      "hash": "1bcdffe4",
-      "date": "2026-01-18",
-      "type": "Performance",
-      "description": "Increase search cache size and TTL for better hit rates",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "8b8f7839",
+        "date": "2026-05-14",
+        "type": "Performance",
+        "description": "Use Haiku for rerank scoring, cut token budgets — ~60% cost reduction",
+        "scope": null
+      },
       {
         "hash": "9a8691e2",
         "date": "2026-05-14",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-18",
         "type": "Fixed",
         "description": "Expose authority field in quick search API response",
-        "scope": null
-      },
-      {
-        "hash": "1bcdffe4",
-        "date": "2026-01-18",
-        "type": "Performance",
-        "description": "Increase search cache size and TTL for better hit rates",
         "scope": null
       }
     ]
