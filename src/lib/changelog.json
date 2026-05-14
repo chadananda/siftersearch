@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T16:08:19.802Z",
+  "generated": "2026-05-14T16:11:34.839Z",
   "entries": [
+    {
+      "hash": "cf6df354",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Storage.js CF REST API fallback + gpt-image-1 for research heroes",
+      "scope": null
+    },
     {
       "hash": "7f8be4ae",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Only show modified files within cooldown window as pending",
       "scope": null
-    },
-    {
-      "hash": "4fc6dc8b",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Fallback to computed relativePath if metadata is missing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "cf6df354",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Storage.js CF REST API fallback + gpt-image-1 for research heroes",
+        "scope": null
+      },
       {
         "hash": "7f8be4ae",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Only show modified files within cooldown window as pending",
-        "scope": null
-      },
-      {
-        "hash": "4fc6dc8b",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Fallback to computed relativePath if metadata is missing",
         "scope": null
       }
     ]

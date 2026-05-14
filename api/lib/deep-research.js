@@ -1352,7 +1352,7 @@ export async function getDeepResearchBySlug(slug) {
   try {
     // Exclude question_embedding blob — it's large and not needed by the frontend.
     const record = await queryOne(
-      'SELECT id, slug, canonical_question, question_hash, status, topic_tags, question_type, traditions_covered, angles_json, sections_json, summary_json, convergence_json, qa_json, assessment_json, total_candidates, total_selected, llm_input_tokens, llm_output_tokens, llm_cost_usd, started_at, research_model, ask_count, last_asked_at, created_at, completed_at FROM deep_research WHERE slug = ?',
+      'SELECT id, slug, canonical_question, question_hash, status, topic_tags, question_type, traditions_covered, angles_json, sections_json, summary_json, convergence_json, qa_json, assessment_json, total_candidates, total_selected, llm_input_tokens, llm_output_tokens, llm_cost_usd, started_at, research_model, ask_count, last_asked_at, created_at, completed_at, hero_image FROM deep_research WHERE slug = ?',
       [slug]
     );
     if (!record) return null;
