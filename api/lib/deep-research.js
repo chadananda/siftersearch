@@ -189,7 +189,7 @@ export async function recordQuestionHit(question, embedding = null) {
  */
 export async function getDeepResearchQuotes(researchId) {
   try {
-    return await queryAll(
+    const quotes = await queryAll(
       `SELECT drq.*, c.text, c.heading, c.doc_id, c.external_para_id,
               d.title, d.author, d.religion, d.source_site, d.source_url
        FROM deep_research_quotes drq
@@ -199,6 +199,58 @@ export async function getDeepResearchQuotes(researchId) {
        ORDER BY drq.rank ASC`,
       [researchId]
     );
+
+    if (quotes.length >= 3) return quotes;
+
+    // Quote table is sparse (supplement passages from assessAndSupplement were not persisted).
+    // Fall back to sections_json to recover all curated quotes from structured output.
+    const record = await queryOne('SELECT sections_json FROM deep_research WHERE id = ?', [researchId]);
+    if (!record?.sections_json) return quotes;
+
+    let sections;
+    try { sections = JSON.parse(record.sections_json); } catch { return quotes; }
+
+    const existingIds = new Set(quotes.map(q => q.para_id));
+    const supplementIds = [];
+    const supplementMeta = {};
+    for (const section of (sections || [])) {
+      for (const q of (section.quotes || [])) {
+        if (!q.para_id || existingIds.has(q.para_id)) continue;
+        existingIds.add(q.para_id);
+        supplementIds.push(q.para_id);
+        supplementMeta[q.para_id] = { ...q, section_label: section.label };
+      }
+    }
+    if (!supplementIds.length) return quotes;
+
+    const placeholders = supplementIds.map(() => '?').join(',');
+    const supplementRows = await queryAll(
+      `SELECT c.id AS para_id, c.text, c.heading, c.doc_id, c.external_para_id,
+              d.title, d.author, d.religion, d.source_site, d.source_url
+       FROM content c
+       JOIN docs d ON c.doc_id = d.id
+       WHERE c.id IN (${placeholders})`,
+      supplementIds
+    );
+
+    const rowMap = new Map(supplementRows.map(r => [r.para_id, r]));
+    let rank = quotes.length;
+    for (const id of supplementIds) {
+      const row = rowMap.get(id);
+      if (!row) continue;
+      const meta = supplementMeta[id] || {};
+      quotes.push({
+        ...row,
+        research_id: researchId,
+        tradition: meta.tradition || row.religion,
+        authority: meta.authority || 0,
+        relevance_score: meta.relevance_score || 7,
+        contextual_note: meta.contextual_note || meta.section_label || '',
+        rank: rank++,
+      });
+    }
+
+    return quotes;
   } catch (err) {
     logger.warn({ err: err.message, researchId }, 'getDeepResearchQuotes error');
     return [];
@@ -1370,6 +1422,22 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
 
     // 7b2. Section diversity balancer — cap any tradition at 3 quotes per section
     sections = balanceSectionDiversity(sections);
+
+    // 7b3. Persist supplemented quotes — assessAndSupplement adds to sections in memory only;
+    // re-sync so deep_research_quotes matches the full curated set Jafar will read.
+    const savedParaIds = new Set(validSelected.map(q => q.para_id));
+    let supplementRank = validSelected.length;
+    for (const section of sections) {
+      for (const q of (section.quotes || [])) {
+        if (!q.para_id || savedParaIds.has(q.para_id)) continue;
+        savedParaIds.add(q.para_id);
+        await query(
+          `INSERT OR IGNORE INTO deep_research_quotes (research_id, para_id, tradition, authority, relevance_score, contextual_note, rank, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [researchId, q.para_id, q.tradition || null, q.authority || 0, q.relevance_score || 7, q.contextual_note || section.label || '', ++supplementRank, new Date().toISOString()]
+        );
+      }
+    }
 
     // 7c. Quality assessment — score the research objectively
     const assessment = await runQualityAssessment(record.canonical_question, sections, validSelected, taggedChat('assessment'));

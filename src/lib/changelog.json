@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T16:03:32.379Z",
+  "generated": "2026-05-15T17:03:03.759Z",
   "entries": [
+    {
+      "hash": "b8c09d77",
+      "date": "2026-05-15",
+      "type": "Other",
+      "description": "CITE commitment device (caused regression 89→83)",
+      "scope": null
+    },
     {
       "hash": "ed2687a0",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Properly render markdown headings and improve h3/h4 visibility",
       "scope": null
-    },
-    {
-      "hash": "ff8b6b31",
-      "date": "2026-01-24",
-      "type": "Chore",
-      "description": "Deploy version 0.1.920 with proper build",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "b8c09d77",
+        "date": "2026-05-15",
+        "type": "Other",
+        "description": "CITE commitment device (caused regression 89→83)",
+        "scope": null
+      },
       {
         "hash": "ed2687a0",
         "date": "2026-05-15",
@@ -7053,15 +7060,6 @@
         "date": "2026-01-25",
         "type": "Fixed",
         "description": "Properly render markdown headings and improve h3/h4 visibility",
-        "scope": null
-      }
-    ],
-    "2026-01-24": [
-      {
-        "hash": "ff8b6b31",
-        "date": "2026-01-24",
-        "type": "Chore",
-        "description": "Deploy version 0.1.920 with proper build",
         "scope": null
       }
     ]
