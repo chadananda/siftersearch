@@ -1847,7 +1847,7 @@ retrieved_quotes (${retrieved_quotes.length} entries — use these as the substr
 
 ${quotesPayload || '(no quotes retrieved — reply must say so)'}${synthesisBlock}
 
-⚠️ BEFORE WRITING: Pick 2-3 passages above. For each, identify a 3-15 word fragment you will embed inline as ["fragment"](url). Your FIRST sentence must contain or directly reference a retrieved fragment — never open with a general-knowledge summary. If you have no inline fragment from a retrieved_quote to anchor your first claim, rewrite until you do.
+⚠️ BEFORE WRITING: Pick 2-3 Q-entries above. For each chosen Q-entry, copy 3-15 words VERBATIM from that entry's text field and embed them inline as ["exact words"](citation_url_from_that_Q_entry). Use the EXACT words as written in the Q-entry — do NOT substitute a similar passage from memory. Do NOT write any [text](url) unless you can point to the exact Q-entry number and the exact words you are copying. Your FIRST sentence must contain such a verbatim fragment — never open with a general-knowledge summary. If you cannot find an inline fragment from a retrieved_quote to anchor your first claim, state that the search returned limited results rather than inventing one.
 
 Compose the reply now.`;
 }
