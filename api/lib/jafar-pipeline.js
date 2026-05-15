@@ -650,6 +650,25 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: 3, semanticRatio: 0.7 };
             const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
             if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
+
+            // For compound queries with a topic component, also check deep research cache
+            // — the catalog path short-circuits before the normal deep research check.
+            if (hasTopicComponent) {
+              try {
+                const dr = await checkDeepResearch(userMessage);
+                if (dr?.quotes?.length >= 3) {
+                  logger.info({ researchId: dr.id, quotes: dr.quotes.length }, 'catalog compound: deep research supplementation');
+                  for (const q of dr.quotes.slice(0, 10)) {
+                    retrieved.push({
+                      text: q.text, source_title: q.title, source_author: q.author,
+                      citation_url: q.source_url ? `${q.source_url}?paraId=${q.external_para_id}` : null,
+                      doc_id: q.doc_id, religion: q.religion, authority: q.authority,
+                      via: 'deep_research', relevance_score: q.relevance_score,
+                    });
+                  }
+                }
+              } catch { /* non-fatal */ }
+            }
           } catch (ce) {
             logger.warn({ err: ce.message }, 'author catalog companion search failed (non-fatal)');
           }

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T18:35:23.364Z",
+  "generated": "2026-05-15T18:38:29.509Z",
   "entries": [
+    {
+      "hash": "f0eefbf9",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Revert library_overview label regression; clarify CATALOG two-form distinction",
+      "scope": null
+    },
     {
       "hash": "530a3a3b",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add embedder config verification on startup",
       "scope": null
-    },
-    {
-      "hash": "34904418",
-      "date": "2026-03-31",
-      "type": "Fixed",
-      "description": "Skip auth for health endpoint (Fastify hook applies to all routes)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "f0eefbf9",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Revert library_overview label regression; clarify CATALOG two-form distinction",
+        "scope": null
+      },
       {
         "hash": "530a3a3b",
         "date": "2026-05-15",
@@ -7045,13 +7052,6 @@
         "date": "2026-03-31",
         "type": "Other",
         "description": "Add embedder config verification on startup",
-        "scope": null
-      },
-      {
-        "hash": "34904418",
-        "date": "2026-03-31",
-        "type": "Fixed",
-        "description": "Skip auth for health endpoint (Fastify hook applies to all routes)",
         "scope": null
       }
     ]
