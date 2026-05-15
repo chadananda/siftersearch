@@ -850,7 +850,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // Early return when: (a) no tradition filter + not comparative, OR (b) tradition-specific
       // question with enough curated quotes from that tradition — skip live search to avoid
       // contaminating with unrelated sources (e.g. Atharva Veda when asking about the Bhagavad Gita).
-      const shouldEarlyReturn = !isComparativeQuestion && (!requiredTradition || quotesToInject.length >= 5);
+      // Exception: if the question names a specific WORK (e.g. "What does the Bhagavad Gita say about duty?"),
+      // don't early-return — the document subagent path finds work-specific passages better than
+      // a generic tradition deep-research set (which may cite the Bhagavata Purana instead of the BG).
+      const shouldEarlyReturn = !isComparativeQuestion && !entities.work_name && (!requiredTradition || quotesToInject.length >= 5);
       logger.info({ researchId: dr.id, quotes: dr.quotes.length, injecting: quotesToInject.length, shouldEarlyReturn }, 'Deep research pre-fetch hit');
       for (const q of quotesToInject) {
         retrieved.push({
