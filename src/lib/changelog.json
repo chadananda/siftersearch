@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T01:36:53.397Z",
+  "generated": "2026-05-15T01:46:39.780Z",
   "entries": [
+    {
+      "hash": "d8f958c0",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Print CSS — hide all buttons/tags, fix padding, clean layout",
+      "scope": null
+    },
     {
       "hash": "8e88edca",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add script to generate missing document slugs",
       "scope": null
-    },
-    {
-      "hash": "18bb2037",
-      "date": "2026-01-22",
-      "type": "Fixed",
-      "description": "Add empty JSON body to refresh request",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "d8f958c0",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Print CSS — hide all buttons/tags, fix padding, clean layout",
+        "scope": null
+      },
       {
         "hash": "8e88edca",
         "date": "2026-05-14",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-22",
         "type": "New",
         "description": "Add script to generate missing document slugs",
-        "scope": null
-      },
-      {
-        "hash": "18bb2037",
-        "date": "2026-01-22",
-        "type": "Fixed",
-        "description": "Add empty JSON body to refresh request",
         "scope": null
       }
     ]

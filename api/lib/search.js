@@ -152,6 +152,11 @@ function rerankByAuthority(hits) {
     if (!hit.source_url && hit.doc_id) {
       hit.source_url = `https://siftersearch.com/document/${hit.doc_id}`;
     }
+    // Construct paragraph-level deeplink when external_para_id is available.
+    // OL book URLs are doc-level; appending ?paraId= scrolls to the exact passage.
+    if (hit.external_para_id && hit.source_url && !hit.source_url.includes('paraId=')) {
+      hit.source_url = `${hit.source_url}?paraId=${hit.external_para_id}`;
+    }
   }
   return [...hits].sort((a, b) => (b._authorityScore || 0) - (a._authorityScore || 0));
 }
@@ -343,8 +348,26 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
       if (Math.abs(sb - sa) > 0.005) return sb - sa;
       return (b._rankingScore || 0) - (a._rankingScore || 0);
     });
+    // Two-pass title dedup: prefer one hit per unique title per religion.
+    // If only same-title hits exist, fill remaining slots from them (passTwo).
+    const seenTitles = new Set();
+    const passTwo = [];
     let count = 0;
     for (const hit of sorted) {
+      if (seen.has(hit.id)) continue;
+      const titleKey = hit.title || String(hit.doc_id);
+      if (slotLimit > 1 && seenTitles.has(titleKey)) {
+        passTwo.push(hit);
+        continue;
+      }
+      seen.add(hit.id);
+      seenTitles.add(titleKey);
+      allHits.push(hit);
+      count++;
+      if (count >= slotLimit) break;
+    }
+    // Fill leftover slots with same-title duplicates if no unique titles remain
+    for (const hit of passTwo) {
       if (count >= slotLimit) break;
       if (!seen.has(hit.id)) {
         seen.add(hit.id);
