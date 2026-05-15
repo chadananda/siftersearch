@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:13:41.713Z",
+  "generated": "2026-05-15T12:15:01.874Z",
   "entries": [
+    {
+      "hash": "5b53380c",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Bahá'í single-tradition routing + Zoroastrian query expansion",
+      "scope": null
+    },
     {
       "hash": "a69409fa",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Prevent document duplication by using client:only for LibraryBrowser",
       "scope": null
-    },
-    {
-      "hash": "815f2133",
-      "date": "2026-01-23",
-      "type": "New",
-      "description": "Add ARIA labels to library stats and fix ingestion progress visibility",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "5b53380c",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Bahá'í single-tradition routing + Zoroastrian query expansion",
+        "scope": null
+      },
       {
         "hash": "a69409fa",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Prevent document duplication by using client:only for LibraryBrowser",
-        "scope": null
-      },
-      {
-        "hash": "815f2133",
-        "date": "2026-01-23",
-        "type": "New",
-        "description": "Add ARIA labels to library stats and fix ingestion progress visibility",
         "scope": null
       }
     ]

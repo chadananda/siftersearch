@@ -680,7 +680,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   ];
   const MAJOR_TRAD_PATTERNS_EARLY = [
     { pattern: /\bislam(?:ic)?\b|\bquran\b|\bqu['']ran\b|\bsunni\b|\bshia\b|\bmuslim\b/i, religion: 'Islam' },
-    { pattern: /\bchrist(?:ian)?\b|\bgospel\b|\bbible\b|\bjesus\b/i, religion: 'Christian' },
+    { pattern: /\bchrist(?:ian(?:ity)?)?\b|\bgospel\b|\bbible\b|\bjesus\b/i, religion: 'Christian' },
     { pattern: /\bbuddh(?:ist|ism)?\b|\bpali\b|\bdhamma\b|\bnirvana\b|\beightfold\b/i, religion: 'Buddhist' },
     { pattern: /\b(?:jewish|judaism|torah|talmud|hebrew|rabbinic)\b/i, religion: 'Judaism' },
     // Bahá'í-specific questions must route to Bahá'í-only search (not 5-tradition loop)
