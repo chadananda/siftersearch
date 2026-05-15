@@ -122,23 +122,25 @@ function isCatalogQuery(messages) {
 // Returns an object with any combination of: author, religion, site, language, scope.
 // Empty object means no specific filters detected → use library_overview instead.
 function extractCatalogFilters(message) {
+  // Normalize Unicode curly quotes to ASCII so names like 'Abdu'l-Bahá match correctly
+  const msg = message.replace(/[\u2018\u2019\u02BC]/g, "'").replace(/[\u201C\u201D]/g, '"');
   const filters = {};
   // Site domain (e.g. "bahai-library.com", "oceanlibrary.com")
-  const siteMatch = message.match(/\b([\w-]+\.(?:com|org|net|edu))\b/i);
+  const siteMatch = msg.match(/\b([\w-]+\.(?:com|org|net|edu))\b/i);
   if (siteMatch) filters.site = siteMatch[1];
-  // Author: "by [the] First Last [of Entity]" — allows leading "the" article and
-  // lowercase "of/al/ibn" connectors within institutional/historical names
-  const authorMatch = message.match(/\bby\s+(?:the\s+)?([A-Z][a-záéíóúāīū'-]+(?:\s+(?:of\s+|al-|ibn\s+)?[A-Z][a-záéíóúāīū'-]+){0,3})/);
+  // Author: "by [the] First Last [of Entity]" — allows leading apostrophe for names
+  // like 'Abdu'l-Bahá, and lowercase "of/al/ibn" connectors within institutional names
+  const authorMatch = msg.match(/\bby\s+(?:the\s+)?('?[A-Z][a-záéíóúāīū'-]+(?:\s+(?:of\s+|al-|ibn\s+)?'?[A-Z][a-záéíóúāīū'-]+){0,3})/);
   if (authorMatch) filters.author = authorMatch[1];
   // Language: "in Arabic", "in Persian", etc.
-  const langMatch = message.match(/\bin\s+(Arabic|Persian|Farsi|French|German|English|Spanish|Turkish|Russian|Chinese|Japanese|Korean)\b/i);
+  const langMatch = msg.match(/\bin\s+(Arabic|Persian|Farsi|French|German|English|Spanish|Turkish|Russian|Chinese|Japanese|Korean)\b/i);
   if (langMatch) filters.language = langMatch[1];
   // Scope
-  if (/\bprimary\b/i.test(message)) filters.scope = 'primary';
-  else if (/\bsupplemental\b|\bexternal\b/i.test(message)) filters.scope = 'supplemental';
+  if (/\bprimary\b/i.test(msg)) filters.scope = 'primary';
+  else if (/\bsupplemental\b|\bexternal\b/i.test(msg)) filters.scope = 'supplemental';
   // Tradition — only when combined with another filter (tradition alone goes to library_overview)
   for (const { pattern, religion } of TRADITION_SEARCH_MAP) {
-    if (pattern.test(message)) { filters.religion = religion; break; }
+    if (pattern.test(msg)) { filters.religion = religion; break; }
   }
   return filters;
 }
