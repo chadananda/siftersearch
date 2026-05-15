@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T17:32:18.793Z",
+  "generated": "2026-05-15T17:47:58.656Z",
   "entries": [
+    {
+      "hash": "2fb64e57",
+      "date": "2026-05-15",
+      "type": "Test",
+      "description": "85% pass rate (93/110) — new high after deep research fixes",
+      "scope": null
+    },
     {
       "hash": "3fa459c5",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "API key creation returned object instead of key string",
       "scope": null
-    },
-    {
-      "hash": "b218d93d",
-      "date": "2026-03-30",
-      "type": "Fixed",
-      "description": "Pass MEILI_MASTER_KEY to API and worker via PM2 env",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "2fb64e57",
+        "date": "2026-05-15",
+        "type": "Test",
+        "description": "85% pass rate (93/110) — new high after deep research fixes",
+        "scope": null
+      },
       {
         "hash": "3fa459c5",
         "date": "2026-05-15",
@@ -7047,13 +7054,6 @@
         "date": "2026-03-30",
         "type": "Fixed",
         "description": "API key creation returned object instead of key string",
-        "scope": null
-      },
-      {
-        "hash": "b218d93d",
-        "date": "2026-03-30",
-        "type": "Fixed",
-        "description": "Pass MEILI_MASTER_KEY to API and worker via PM2 env",
         "scope": null
       }
     ]
