@@ -200,6 +200,11 @@ export async function getDeepResearchQuotes(researchId) {
       [researchId]
     );
 
+    // Ensure source_url is always populated — internal library docs use doc_id-based URL
+    for (const q of quotes) {
+      if (!q.source_url && q.doc_id) q.source_url = `https://siftersearch.com/document/${q.doc_id}`;
+    }
+
     if (quotes.length >= 3) return quotes;
 
     // Quote table is sparse (supplement passages from assessAndSupplement were not persisted).
@@ -239,8 +244,10 @@ export async function getDeepResearchQuotes(researchId) {
       const row = rowMap.get(id);
       if (!row) continue;
       const meta = supplementMeta[id] || {};
+      const source_url = row.source_url || (row.doc_id ? `https://siftersearch.com/document/${row.doc_id}` : null);
       quotes.push({
         ...row,
+        source_url,
         research_id: researchId,
         tradition: meta.tradition || row.religion,
         authority: meta.authority || 0,
