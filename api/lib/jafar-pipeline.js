@@ -716,18 +716,19 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         const religionLines = (overview.religions || []).filter(r => r.name).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
         const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.religion ? ' [' + c.religion + ']' : ''}${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
         const languageLines = (overview.languages || []).map(l => `  - ${l.name}`).join('\n');
+        const tradition = extractTraditionSearch(userMessage);
+        // Skip companion for pure count queries and pure listing queries — adding
+        // thematic passages causes the crafter to confabulate which texts quotes come from.
+        const isPureCountQuery = /\bhow many\b.{0,30}\b(total|altogether|in all|in the library)\b|\bhow many documents\b/i.test(userMessage) && !tradition;
         retrieved.push({
           text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}${languageLines ? '\n\nLanguages available:\n' + languageLines : ''}`,
           source_title: 'Library Catalog',
           source_author: 'Ocean Library',
           citation_url: null,
           via: 'library_overview',
-          is_catalog: true
+          is_catalog: true,
+          pure_count: isPureCountQuery,
         });
-        const tradition = extractTraditionSearch(userMessage);
-        // Skip companion for pure count queries and pure listing queries — adding
-        // thematic passages causes the crafter to confabulate which texts quotes come from.
-        const isPureCountQuery = /\bhow many\b.{0,30}\b(total|altogether|in all|in the library)\b|\bhow many documents\b/i.test(userMessage) && !tradition;
         if (!isPureCountQuery) {
           const companionArgs = tradition
             ? { query: 'scripture wisdom', religion: tradition.religion, limit: 5 }
@@ -1768,7 +1769,9 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     if (q.is_catalog || q.via === 'library_overview' || q.via === 'library_count') {
       const label = q.via === 'library_count'
         ? `[Q${i + 1} CATALOG-DATA — state the count as plain text ONLY. NEVER write [N documents](url). Sample titles may have URLs — list them using [title](url) in a separate listing. NEVER use a sample title URL as the source URL for a prose quote. For prose quotes use CATALOG-COMPANION only.]`
-        : `[Q${i + 1} CATALOG-DATA — plain text catalog only. This block contains NO quotable URLs. Render ALL text from this block as plain text only — NO hyperlinks of any kind. WRONG: ["Pali Canon"](url) or [44,937](url). RIGHT: Pali Canon ... 44,937 documents. Only CATALOG-COMPANION passages have citation URLs — use those for [fragment](url) quotes.]`;
+        : q.pure_count
+          ? `[Q${i + 1} CATALOG-DATA — PURE COUNT QUERY. Respond with plain text statistics ONLY. NO quotes. NO markdown links of any kind. NO [text](url) format anywhere. Just state the total and breakdown as plain sentences.]`
+          : `[Q${i + 1} CATALOG-DATA — plain text catalog only. This block contains NO quotable URLs. Render ALL text from this block as plain text only — NO hyperlinks of any kind. WRONG: ["Pali Canon"](url) or [44,937](url). RIGHT: Pali Canon ... 44,937 documents. Only CATALOG-COMPANION passages have citation URLs — use those for [fragment](url) quotes.]`;
       return `${label}\n${q.text}\n  Source: Library Catalog`;
     }
     // For non-English passages, present BOTH original and JAFAR-grounded
