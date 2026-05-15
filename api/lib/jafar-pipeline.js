@@ -637,21 +637,17 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // retrieves representative, citable passages from that author's actual works.
         if (countResult.count > 0) {
           try {
-            // Pure listing queries ("list the collections", "what scriptures do you carry") —
-            // user wants inventory, not what the texts say. Skip companion entirely.
-            const isPureListQuery = /\b(list (the|all|your)?|what .*(scriptures?|collections?|texts?|books?|works?) do you|what do you carry|show me (all|your|the) (collections?|scriptures?|texts?))\b/i.test(userMessage);
-            // Compound queries ("how many by X and which discuss Y") — extract the topic
-            // component and use it as companion query rather than a generic fallback.
-            const topicMatch = userMessage.match(/\b(?:and |which ones? )(?:discuss|about|cover|on|related to|dealing with)\s+(.{3,50})(?:\?|$)/i);
+            // Compound queries ("how many by X and which discuss Y") — use full user
+            // message as companion query so the topic search has proper context.
+            // Generic fallback for pure meta queries ("do you have X?").
+            const hasTopicComponent = /\b(?:and |which ones? )(?:discuss|about|cover|on|related to|dealing with)\s+(.{3,50})(?:\?|$)/i.test(userMessage);
             const isMetaQuery = /\b(do you have|what books|any books|show me|list|how many|what works|do you carry|what collections|list the|list all)\b/i.test(userMessage);
-            if (!isPureListQuery) {
-              const companionQuery = topicMatch
-                ? topicMatch[1].trim()
-                : isMetaQuery ? 'spiritual teachings revelation faith God' : userMessage.slice(0, 200);
-              const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: 2, semanticRatio: 0.7 };
-              const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
-              if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
-            }
+            const companionQuery = hasTopicComponent
+              ? userMessage.slice(0, 200)
+              : isMetaQuery ? 'spiritual teachings revelation faith God' : userMessage.slice(0, 200);
+            const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: 2, semanticRatio: 0.7 };
+            const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
+            if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
           } catch (ce) {
             logger.warn({ err: ce.message }, 'author catalog companion search failed (non-fatal)');
           }
@@ -692,8 +688,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // Skip companion for pure count queries and pure listing queries — adding
         // thematic passages causes the crafter to confabulate which texts quotes come from.
         const isPureCountQuery = /\bhow many\b.{0,30}\b(total|altogether|in all|in the library)\b|\bhow many documents\b/i.test(userMessage) && !tradition;
-        const isPureListQueryOv = /\b(list (the|all|your)?|what .*(scriptures?|collections?|texts?) do you|what do you carry)\b/i.test(userMessage);
-        if (!isPureCountQuery && !isPureListQueryOv) {
+        if (!isPureCountQuery) {
           const companionArgs = tradition
             ? { query: 'scripture wisdom', religion: tradition.religion, limit: 5 }
             : { query: 'sacred scripture wisdom', limit: 5 };
@@ -1539,10 +1534,11 @@ CATALOG MANDATORY RULE OVERRIDE: For catalog responses, the normal "cite every r
 
 SAMPLE TITLES AND COLLECTIONS: The CATALOG DATA may include "Sample titles:" and "Collections (from samples):" listing document titles and collection names. Use these to directly answer "list the collections" or "what works do you have" queries — name the actual collections shown in the data. Do NOT hyperlink sample titles or collection names — they are metadata. Reserve the [fragment text](url) inline format exclusively for catalog_companion prose passages.
 
-LISTING QUERIES SPECIAL FORMAT — When the question is "list the X", "what scriptures/collections do you carry", "show me your collections":
-- Response = 1 brief intro sentence (count + tradition) + plain-text list of collection names from CATALOG DATA
-- No scripture quotes, no companion passages, no thematic commentary
-- Example: "The library holds 127 Hindu texts across several collections: Bhakti and Devotional Works, Epics (Mahābhārata, Rāmāyaṇa), Upanishads, Bhagavad Gita commentaries, and Vedic hymns."
+LISTING QUERIES FORMAT — When the question is "list the X", "what scriptures/collections do you carry", "show me your collections":
+- Response = 1 brief intro sentence (count + tradition) + collection/title names from CATALOG DATA + optionally ONE companion inline citation
+- Collection names: list them in plain text (no hyperlinks on collection names)
+- Companion citation: if used, the prose title MUST exactly match the "source_title" in that quote's Citation field — NEVER substitute a more-famous title (e.g. if the citation says "Hymns of the Atharva Veda", don't attribute it to "Bhagavad Gita")
+- Example: "The library holds 127 Hindu texts across collections including Bhakti and Devotional Works, Epics, and Vedic Hymns. As one of the Atharva Veda hymns puts it, ['seek truth and wisdom'](url)."
 
 NEVER hyperlink catalog statistics, counts, or numeric data (e.g., "44,937 documents", "127 Hindu texts", "480 UHJ documents"). These are catalog facts — not prose fragments. WRONG: "[127 Hindu texts](url-to-random-verse)" — this is linking a number to an unrelated passage. Only use the [fragment](url) format for actual prose phrases quoted verbatim from catalog_companion passages.
 

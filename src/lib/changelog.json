@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T17:47:58.656Z",
+  "generated": "2026-05-15T17:52:50.067Z",
   "entries": [
+    {
+      "hash": "675d2d3d",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Catalog listing queries — suppress companion + compound topic extraction",
+      "scope": null
+    },
     {
       "hash": "2fb64e57",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Consolidate ai_usage queries to prevent 42s blocking",
       "scope": null
-    },
-    {
-      "hash": "e9a5f938",
-      "date": "2026-03-30",
-      "type": "Fixed",
-      "description": "API key creation returned object instead of key string",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "675d2d3d",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Catalog listing queries — suppress companion + compound topic extraction",
+        "scope": null
+      },
       {
         "hash": "2fb64e57",
         "date": "2026-05-15",
@@ -7047,13 +7054,6 @@
         "date": "2026-03-30",
         "type": "Fixed",
         "description": "Consolidate ai_usage queries to prevent 42s blocking",
-        "scope": null
-      },
-      {
-        "hash": "e9a5f938",
-        "date": "2026-03-30",
-        "type": "Fixed",
-        "description": "API key creation returned object instead of key string",
         "scope": null
       }
     ]
