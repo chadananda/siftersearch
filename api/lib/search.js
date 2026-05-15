@@ -352,6 +352,7 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
     // Strips trailing volume numbers ("The Mahabharata 3" → "The Mahabharata")
     // so different numbered volumes of the same work count as one title slot.
     const seenTitles = new Set();
+    const seenDocIds = new Set();
     const passTwo = [];
     let count = 0;
     for (const hit of sorted) {
@@ -364,15 +365,17 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
       }
       seen.add(hit.id);
       seenTitles.add(titleKey);
+      seenDocIds.add(hit.doc_id);
       allHits.push(hit);
       count++;
       if (count >= slotLimit) break;
     }
-    // Fill leftover slots with same-title duplicates if no unique titles remain
+    // Fill leftover slots with different-doc hits only — never two paras from same doc
     for (const hit of passTwo) {
       if (count >= slotLimit) break;
-      if (!seen.has(hit.id)) {
+      if (!seen.has(hit.id) && !seenDocIds.has(hit.doc_id)) {
         seen.add(hit.id);
+        seenDocIds.add(hit.doc_id);
         allHits.push(hit);
         count++;
       }

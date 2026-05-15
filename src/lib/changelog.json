@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T02:44:34.033Z",
+  "generated": "2026-05-15T02:49:41.581Z",
   "entries": [
+    {
+      "hash": "773659c2",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "Flatten hero — override flex layout expanding intro to full page",
+      "scope": null
+    },
     {
       "hash": "4e2d70ce",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add comprehensive document viewing tests",
       "scope": null
-    },
-    {
-      "hash": "902b15b5",
-      "date": "2026-01-22",
-      "type": "New",
-      "description": "Auto-segment paragraphs during translation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "773659c2",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "Flatten hero — override flex layout expanding intro to full page",
+        "scope": null
+      },
       {
         "hash": "4e2d70ce",
         "date": "2026-05-14",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-22",
         "type": "New",
         "description": "Add comprehensive document viewing tests",
-        "scope": null
-      },
-      {
-        "hash": "902b15b5",
-        "date": "2026-01-22",
-        "type": "New",
-        "description": "Auto-segment paragraphs during translation",
         "scope": null
       }
     ]
