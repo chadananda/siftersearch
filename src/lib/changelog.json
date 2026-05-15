@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T22:56:36.977Z",
+  "generated": "2026-05-15T23:00:27.618Z",
   "entries": [
+    {
+      "hash": "9153d62b",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Deep_research quotes reserved first in trimmer — not dropped by round-robin when per-tradition searches run",
+      "scope": null
+    },
     {
       "hash": "fe5b91ff",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Style",
       "description": "Differentiated speaker rendering — italicized indented user turns + Jafar with circular avatar (jīm)",
       "scope": null
-    },
-    {
-      "hash": "8eaa88ba",
-      "date": "2026-04-28",
-      "type": "Refactor",
-      "description": "Batch runner uses HTTP /api/chat/stream — runs from anywhere, no SSH or local DB",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "9153d62b",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Deep_research quotes reserved first in trimmer — not dropped by round-robin when per-tradition searches run",
+        "scope": null
+      },
       {
         "hash": "fe5b91ff",
         "date": "2026-05-15",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-28",
         "type": "Style",
         "description": "Differentiated speaker rendering — italicized indented user turns + Jafar with circular avatar (jīm)",
-        "scope": null
-      },
-      {
-        "hash": "8eaa88ba",
-        "date": "2026-04-28",
-        "type": "Refactor",
-        "description": "Batch runner uses HTTP /api/chat/stream — runs from anywhere, no SSH or local DB",
         "scope": null
       }
     ]

@@ -797,16 +797,21 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     // Bahá'í-specific questions must route to Bahá'í-only search (not 5-tradition loop)
     { pattern: /\bbah[aá]['']?[ií]\b|\bbah[aá]u'?ll[aá]h\b|\b'?abdu'l-bah[aá]\b|\bshoghi\s+effendi\b|\baqdas\b|\biq[aá]n\b|\bhidden\s+words\b|\bbayan\b|\ball-merciful\b|\bseven\s+valleys\b|\b七つの谷\b/i, religion: "Baha'i" },
   ];
+  // Which named major traditions appear in the question?
+  // Used for: single-tradition routing (requiredTradition) + 2-tradition comparative restriction.
+  const _majorMatches = MAJOR_TRAD_PATTERNS_EARLY.filter(({ pattern }) => pattern.test(userMessage));
   const requiredTradition = (() => {
     for (const { pattern, religion } of MINOR_TRAD_PATTERNS_EARLY) {
       if (pattern.test(userMessage)) return religion;
     }
     // Only flag major traditions when the question is EXPLICITLY about them
     // (not just mentioning them in passing in a multi-tradition question)
-    const majorMatches = MAJOR_TRAD_PATTERNS_EARLY.filter(({ pattern }) => pattern.test(userMessage));
-    if (majorMatches.length === 1) return majorMatches[0].religion; // single-tradition question
+    if (_majorMatches.length === 1) return _majorMatches[0].religion; // single-tradition question
     return null; // multi-tradition or generic — deep research articles are fine
   })();
+  // When exactly 2 traditions are named (e.g. "Bahá'í and Judaism"), restrict live search
+  // to those 2 — not all 5 INTERFAITH_TRADITIONS — so the crafter doesn't cite Islam/Buddhism.
+  const _namedTraditions = _majorMatches.length === 2 ? _majorMatches.map(m => m.religion) : null;
 
   // Deep Research pre-fetch: if we have curated passage sets for this question,
   // inject them directly — they were hand-selected for cross-tradition diversity
@@ -1162,7 +1167,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           harvestPassages(broad, `traditions-${requiredTradition.toLowerCase()}-broad`);
         })());
       } else {
-      const INTERFAITH_TRADITIONS = ["Christian", "Islam", "Judaism", "Buddhist", "Baha'i"];
+      // For 2-tradition comparatives ("Bahá'í and Judaism"), restrict to those 2 traditions
+      // so the crafter isn't forced to cite 3 unasked traditions by the traditionsWarning.
+      const INTERFAITH_TRADITIONS = _namedTraditions || ["Christian", "Islam", "Judaism", "Buddhist", "Baha'i"];
       for (const religion of INTERFAITH_TRADITIONS) {
         const primaryOpts = PRIMARY_SEARCHES[religion];
         tasks.push((async () => {
