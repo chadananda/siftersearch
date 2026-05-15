@@ -697,10 +697,19 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           }
         } else {
           // count=0: author not in library — search for tradition-adjacent alternatives
-          // so the crafter can cite related content instead of responding with nothing
+          // so the crafter can cite related content instead of responding with nothing.
+          // Use the author's likely tradition as a filter for targeted results.
           try {
-            const altQuery = userMessage.replace(/\b(do you have|what|any|books|works|show me|by|list|all|in the library)\b/gi, ' ').trim() || 'spiritual teachings';
-            const altSearchArgs = { query: altQuery, mode: 'passages', limit: 3, semanticRatio: 0.8 };
+            const authorName = catalogFilters.author || '';
+            // Detect tradition from author name keywords
+            const isBuddhist = /\b(thich|nhat hanh|dalai|lama|rinpoche|roshi|bhikkhu|ajahn|geshe|tulku)\b/i.test(authorName);
+            const isChristian = /\b(thomas|merton|father|brother|pope|john paul|benedict|francis)\b/i.test(authorName);
+            const isMuslim = /\b(rumi|hafiz|ibn|al-|sheikh|maulana|mulla)\b/i.test(authorName);
+            const isHindu = /\b(swami|sri|ramana|vivekananda|prabhupada|aurobindo)\b/i.test(authorName);
+            const altReligion = isBuddhist ? 'Buddhism' : isChristian ? 'Christianity' : isMuslim ? 'Islam' : isHindu ? 'Hinduism' : null;
+            const altQuery = 'spiritual wisdom teachings meditation prayer';
+            const altSearchArgs = { query: altQuery, mode: 'passages', limit: 4, semanticRatio: 0.8 };
+            if (altReligion) altSearchArgs.religion = altReligion;
             const altPassages = await executeTool('search', altSearchArgs, { scope_config });
             if (altPassages?.passages?.length) harvestPassages(altPassages, 'catalog_companion');
           } catch (ae) {
@@ -1777,7 +1786,7 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     if (q.is_catalog || q.via === 'library_overview' || q.via === 'library_count') {
       const label = q.via === 'library_count'
         ? q.catalog_count === 0
-          ? `[Q${i + 1} CATALOG-DATA — COUNT IS ZERO. This author/filter was NOT found in the library. Begin your response by clearly stating we do not have this author's works in the library. Then offer 1-2 alternative authors or traditions from CATALOG-COMPANION passages. Do NOT state "0 documents" — say "we don't have X's works" or similar natural phrasing.]`
+          ? `[Q${i + 1} CATALOG-DATA — COUNT IS ZERO. This author/filter was NOT found in the library. Your response MUST: (1) Open with a clear statement that we don't have this author's works. (2) Then pivot to CATALOG-COMPANION passages: weave actual PROSE FRAGMENTS from those passages inline (not just title links) — the reader should hear the words of the related tradition. Format: "We don't carry [author]'s works, but our [tradition] collection includes passages like [\\"actual quote fragment\\"](url) from *Source Title*." Do NOT link bare titles. Do NOT say "0 documents".]`
           : `[Q${i + 1} CATALOG-DATA — state the count as plain text ONLY. NEVER write [N documents](url). Sample titles may have URLs — list them using [title](url) in a separate listing. NEVER use a sample title URL as the source URL for a prose quote. For prose quotes use CATALOG-COMPANION only.]`
         : q.pure_count
           ? `[Q${i + 1} CATALOG-DATA — PURE COUNT QUERY. Respond with plain text statistics ONLY. NO quotes. NO markdown links of any kind. NO [text](url) format anywhere. Just state the total and breakdown as plain sentences.]`
