@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T21:53:53.323Z",
+  "generated": "2026-05-15T21:57:11.753Z",
   "entries": [
+    {
+      "hash": "d145becf",
+      "date": "2026-05-15",
+      "type": "Other",
+      "description": "Lower browsing topicCoverage and toolUsage thresholds to 3",
+      "scope": null
+    },
     {
       "hash": "918318e2",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Scrub tech-stack/website references from dialog bodies; add darkened backdrop panel for legibility",
       "scope": null
-    },
-    {
-      "hash": "32b3a72b",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Dialogs 001-004 (manual runs contaminated with technology critique inside conversation)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "d145becf",
+        "date": "2026-05-15",
+        "type": "Other",
+        "description": "Lower browsing topicCoverage and toolUsage thresholds to 3",
+        "scope": null
+      },
       {
         "hash": "918318e2",
         "date": "2026-05-15",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-28",
         "type": "Fixed",
         "description": "Scrub tech-stack/website references from dialog bodies; add darkened backdrop panel for legibility",
-        "scope": null
-      },
-      {
-        "hash": "32b3a72b",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Dialogs 001-004 (manual runs contaminated with technology critique inside conversation)",
         "scope": null
       }
     ]

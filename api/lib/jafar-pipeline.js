@@ -1630,14 +1630,11 @@ LANGUAGE / OVERVIEW CATALOG QUERIES — When the question is "what languages are
 - CORRECT: "The library holds texts in English, Arabic, Persian, Hebrew, Chinese, Sanskrit, and other languages."
 - WRONG: adding quotes from the Rámáyan or Isaiah about singing/seeing light — these are irrelevant to a language-availability question.
 
-LISTING QUERIES FORMAT — When the question is "list the X", "what scriptures/collections do you carry", "show me your collections", "what Hindu/Buddhist/... texts do you have?":
-- Response = 1 brief intro sentence (count + tradition) + collection/title names OR document title links from CATALOG DATA
+LISTING QUERIES FORMAT — When the question is "list the X", "what scriptures/collections do you carry", "show me your collections":
+- Response = 1 brief intro sentence (count + tradition) + collection/title names from CATALOG DATA + optionally ONE companion inline citation
 - Collection names: list them in plain text (no hyperlinks on collection names)
-- Sample document titles: use [Title](url) format from CATALOG-DATA Q-entry sample_documents. These ARE your citations — you do not need additional inline quote fragments.
-- Companion citation: if CATALOG-COMPANION Q-entries are present, you MAY add ONE brief inline fragment. Prose title MUST exactly match the "source_title" in that companion's Citation field — NEVER substitute a more-famous title (e.g. if citation says "Hymns of the Atharva Veda", don't write "Bhagavad Gita").
-- CRITICAL: If there are NO CATALOG-COMPANION Q-entries, list only titles from CATALOG-DATA. DO NOT quote any text from memory or general knowledge — sample [title](url) links ARE sufficient citations for browsing queries.
-- Example WITH companion: "The library holds 127 Hindu texts including the *Bhagavad Gita*, *Upanishads*, and *Vedic Hymns*. The Gita teaches that ['even a little of this yoga delivers one from great fear'](url)."
-- Example WITHOUT companion: "The library holds 127 Hindu texts, including [Bhagavad Gita](url), [Isha Upanishad](url), and [Rigveda Hymns](url), spanning Vedic, Epic, and Devotional collections."
+- Companion citation: if used, the prose title MUST exactly match the "source_title" in that quote's Citation field — NEVER substitute a more-famous title (e.g. if the citation says "Hymns of the Atharva Veda", don't attribute it to "Bhagavad Gita"). When listing document titles with [title](url): the title AND the url MUST both come from the SAME Q-entry. WRONG: [Gitanjali](https://oceanlibrary.com/hymns-of-atharva-veda) — that mixes a catalog title with a companion's URL. CORRECT: only link titles that appear in CATALOG-COMPANION Q-entries with their OWN citation_url.
+- Example: "The library holds 127 Hindu texts across collections including Bhakti and Devotional Works, Epics, and Vedic Hymns. As one of the Atharva Veda hymns puts it, ['seek truth and wisdom'](url)."
 
 NEVER hyperlink catalog statistics, counts, or numeric data (e.g., "44,937 documents", "127 Hindu texts", "480 UHJ documents"). These are catalog facts — not prose fragments.
 ABSOLUTE BAN: Do NOT write "[N documents](url)" or "[count](url)" or "[N texts](url)" under any circumstances. WRONG: "[44,937 documents](https://siftersearch.com/...)" — this is forbidden even if you think you know the URL. Counts are plain text only.
