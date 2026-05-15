@@ -1572,7 +1572,9 @@ TWO-PART catalog response (REQUIRED):
 2. COMPANION CITATIONS — catalog_companion passages are actual prose from library documents. Pick 1-2 and weave in inline "[fragment](url)" quotes. These are your ONLY source for quoted prose.
    - For compound queries ("how many by X and which discuss Y"), focus on COMPANION passages that address the topic Y.
 
-Format: one or two factual sentences from catalog data, then weave in one inline prose citation from CATALOG-COMPANION.
+Format:
+- For simple counts ("how many do you have?"): one factual count sentence, then weave in one inline prose citation.
+- For compound queries ("how many ... and which ones discuss Y?"): state the count, then name the specific COMPANION passage source titles that address the topic Y, then weave in 1-2 inline quotes from those passages. The user wants to know WHICH DOCUMENTS, so name them.
 
 CATALOG MANDATORY RULE OVERRIDE: For catalog responses, the normal "cite every religion in retrieved_quotes" rule does NOT apply. Only cite companion passages that match the catalog subject (author or tradition). Ignore retrieved passages from unrelated traditions — they are search noise added by the search algorithm, not required citations.
 
