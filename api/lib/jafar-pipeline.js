@@ -984,6 +984,21 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           });
           harvestPassages(broad, `traditions-${detectedMinorTradition.toLowerCase()}-broad`);
         })());
+      // For Hindu dharma/duty/yoga queries, also search the Bhagavad Gita specifically —
+      // general religion:Hindu search often surfaces Atharva Veda instead of BG.
+      if (detectedMinorTradition === 'Hindu' && /\bdharma\b|\bduty\b|\bkarma\b|\bseva\b|\byoga\b|\barjuna\b|\bkrishna\b/i.test(userMessage)) {
+        tasks.push((async () => {
+          const bgResult = await runTool('search', {
+            query: passageQuery,
+            mode: 'passages',
+            religion: 'Hindu',
+            author: 'Bhagavad Gita',
+            limit: 5,
+            semanticRatio: 0.5
+          });
+          harvestPassages(bgResult, 'traditions-hindu-bhagavad-gita');
+        })());
+      }
       } else if (requiredTradition && PRIMARY_SEARCHES[requiredTradition]) {
         // Major tradition single-search: question is explicitly about ONE tradition
         // (e.g. "What are the Five Pillars of Islam?"). Only search that tradition —

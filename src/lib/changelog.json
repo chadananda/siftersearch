@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:17:10.762Z",
+  "generated": "2026-05-15T12:21:41.205Z",
   "entries": [
+    {
+      "hash": "c9a2ff08",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Bible/Quran/Torah as broad references — null work_name + Sikh seva vocab expansion",
+      "scope": null
+    },
     {
       "hash": "a58805e3",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Auto-generated changelog and version bump to 0.1.906",
       "scope": null
-    },
-    {
-      "hash": "75ad0ff3",
-      "date": "2026-01-23",
-      "type": "Fixed",
-      "description": "Use SSR for dynamic pages, remove unnecessary prerender",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "c9a2ff08",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Bible/Quran/Torah as broad references — null work_name + Sikh seva vocab expansion",
+        "scope": null
+      },
       {
         "hash": "a58805e3",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Chore",
         "description": "Auto-generated changelog and version bump to 0.1.906",
-        "scope": null
-      },
-      {
-        "hash": "75ad0ff3",
-        "date": "2026-01-23",
-        "type": "Fixed",
-        "description": "Use SSR for dynamic pages, remove unnecessary prerender",
         "scope": null
       }
     ]
