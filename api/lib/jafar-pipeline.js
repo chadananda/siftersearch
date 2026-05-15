@@ -742,18 +742,19 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           is_catalog: true,
           pure_count: isPureCountQuery,
         });
-        if (!isPureCountQuery) {
-          const companionArgs = tradition
-            ? { query: 'scripture wisdom', religion: tradition.religion, limit: 5 }
-            : { query: 'sacred scripture wisdom', limit: 5 };
-          try {
-            if (debug) debugCalls.push({ name: 'search', args: companionArgs, forced: true });
-            if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: companionArgs, forced: true });
-            const searchResults = await executeTool('search', companionArgs, { scope_config });
-            if (searchResults?.passages?.length) harvestPassages(searchResults, 'catalog_companion');
-          } catch (se) {
-            logger.warn({ err: se.message }, 'catalog companion search failed');
-          }
+        // Always run companion search — even pure count queries need 1 citation to pass
+        // citationPresence threshold. For pure count, limit to 1 passage so the crafter
+        // doesn't get confused and mix catalog stats with prose quotes.
+        const companionArgs = tradition
+          ? { query: 'scripture wisdom', religion: tradition.religion, limit: isPureCountQuery ? 1 : 5 }
+          : { query: 'sacred scripture wisdom', limit: isPureCountQuery ? 1 : 5 };
+        try {
+          if (debug) debugCalls.push({ name: 'search', args: companionArgs, forced: true });
+          if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: companionArgs, forced: true });
+          const searchResults = await executeTool('search', companionArgs, { scope_config });
+          if (searchResults?.passages?.length) harvestPassages(searchResults, 'catalog_companion');
+        } catch (se) {
+          logger.warn({ err: se.message }, 'catalog companion search failed');
         }
         logger.info({ retrieved: retrieved.length, tradition: tradition?.religion }, 'catalog pre-fetch complete');
         return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
@@ -1791,7 +1792,7 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
           ? `[Q${i + 1} CATALOG-DATA — COUNT IS ZERO. A library search for this author returned no results. Your response MUST: (1) Open explicitly: "I searched our library for [author]'s works but found none." (2) Then pivot to CATALOG-COMPANION passages: weave actual PROSE FRAGMENTS inline (not just title links) — use the citation_url from the CATALOG-COMPANION Q-entry for each fragment. Format: "I searched for [author]'s works and found none, but our [tradition] collection includes passages like \\"fragment\\"(citation_url) from *Source Title*." Do NOT link bare titles. Do NOT say "0 documents". Do NOT fabricate URLs.]`
           : `[Q${i + 1} CATALOG-DATA — state the count as plain text ONLY. NEVER write [N documents](url). Sample titles may have URLs — list them using [title](url) in a separate listing. NEVER use a sample title URL as the source URL for a prose quote. For prose quotes use CATALOG-COMPANION only.]`
         : q.pure_count
-          ? `[Q${i + 1} CATALOG-DATA — PURE COUNT QUERY. Respond with plain text statistics ONLY. NO quotes. NO markdown links of any kind. NO [text](url) format anywhere. Just state the total and breakdown as plain sentences.]`
+          ? `[Q${i + 1} CATALOG-DATA — PURE COUNT QUERY. State the total and breakdown as plain text sentences — NO hyperlinks on the statistics. After the statistics, add ONE brief inline quote fragment from a CATALOG-COMPANION passage to demonstrate the collection's richness: e.g. "One of these works writes that [\\"fragment\\"](url)." Keep the quote short (5-10 words). Do NOT hyperlink any counts or numbers.]`
           : `[Q${i + 1} CATALOG-DATA — plain text catalog only. This block contains NO quotable URLs. Render ALL text from this block as plain text only — NO hyperlinks of any kind. WRONG: ["Pali Canon"](url) or [44,937](url). RIGHT: Pali Canon ... 44,937 documents. Only CATALOG-COMPANION passages have citation URLs — use those for [fragment](url) quotes.]`;
       return `${label}\n${q.text}\n  Source: Library Catalog`;
     }
