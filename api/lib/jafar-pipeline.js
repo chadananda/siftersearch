@@ -1566,12 +1566,13 @@ Two types:
 
 TWO-PART catalog response (REQUIRED):
 1. CATALOG DATA — state the count or data DIRECTLY. Never say "I don't have the exact number" when the catalog provides it.
-   - Sample titles in CATALOG-DATA include real URLs — you MAY list them as [title](url) in a listing or mention them by name.
+   - Sample titles in CATALOG-DATA may have their own URLs. You MAY list them by name (with their URL if present), but ONLY in a separate listing — NEVER use a sample title as the source of an inline prose quote.
+   - NEVER attach a CATALOG-COMPANION passage URL to a CATALOG-DATA sample title. Each URL belongs with its own source only.
    - NEVER quote prose from a CATALOG-DATA sample title entry (it contains metadata, not text).
-   - NEVER substitute a different title; only name/link titles actually listed.
 2. COMPANION CITATIONS — catalog_companion passages are actual prose from library documents. Pick 1-2 and weave in inline "[fragment](url)" quotes. These are your ONLY source for quoted prose.
+   - For compound queries ("how many by X and which discuss Y"), focus on COMPANION passages that address the topic Y.
 
-Format: one or two factual sentences from catalog data, then weave in one inline prose citation.
+Format: one or two factual sentences from catalog data, then weave in one inline prose citation from CATALOG-COMPANION.
 
 CATALOG MANDATORY RULE OVERRIDE: For catalog responses, the normal "cite every religion in retrieved_quotes" rule does NOT apply. Only cite companion passages that match the catalog subject (author or tradition). Ignore retrieved passages from unrelated traditions — they are search noise added by the search algorithm, not required citations.
 
