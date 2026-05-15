@@ -148,6 +148,7 @@ Return ONLY a JSON object:
   "citationPresence": <1-5>,
   "citationAccuracy": <1-5>,
   "sourceAuthority": <1-5>,
+  "criticalEngagement": <1-5>,
   "inlineQuoteIntegration": <1-5>,
   "topicCoverage": <1-5>,
   "logicalCoherence": <1-5>,

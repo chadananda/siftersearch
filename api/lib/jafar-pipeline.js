@@ -881,6 +881,50 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // (Psalms, Torah, Talmud, JPS Tanakh) via semantic similarity.
         "Judaism":  { primarySemanticRatio: 0.5 },
       };
+      // Minor traditions: detect when the question is specifically about a tradition
+      // not in INTERFAITH_TRADITIONS (Hindu, Sikh, Zoroastrian, Tao, Jain).
+      // Without this, "What are the Zoroastrian teachings on good and evil?" returns
+      // Bahá'í texts that mention Zoroaster instead of actual Avesta passages.
+      const MINOR_TRADITION_PATTERNS = [
+        { pattern: /\bhind(?:u|uism)\b|\bdharma\b|\bveda[ns]?\b|\bupanishad\b|\bgita\b|\bmahabharata\b|\bbhagavad\b/i, religion: 'Hindu' },
+        { pattern: /\bsikh(?:ism)?\b|\bguru granth\b|\bseva\b|\bwaheguru\b|\bnanakshahi\b/i, religion: 'Sikh' },
+        { pattern: /\bzoroastr(?:ian|ianism)?\b|\bavesta\b|\bahura mazda\b|\bgathas?\b|\bmazdayasna\b/i, religion: 'Zoroastrian' },
+        { pattern: /\btao(?:ism|ist)?\b|\bconfuci(?:us|anism)?\b|\banalects\b/i, religion: 'Tao' },
+        { pattern: /\bjain(?:ism)?\b|\bahimsa\b|\bmahavira\b/i, religion: 'Jain' },
+      ];
+      const detectedMinorTradition = (() => {
+        for (const { pattern, religion } of MINOR_TRADITION_PATTERNS) {
+          if (pattern.test(userMessage)) return religion;
+        }
+        return null;
+      })();
+      if (detectedMinorTradition) {
+        // Replace the standard 5-tradition parallel searches with a targeted search
+        // for the detected minor tradition, plus a general search for context.
+        // Don't run INTERFAITH_TRADITIONS — those 5 don't apply when the question
+        // is explicitly about Zoroaster/Sikh/Hindu/etc.
+        tasks.push((async () => {
+          const primary = await runTool('search', {
+            query: passageQuery,
+            mode: 'passages',
+            religion: detectedMinorTradition,
+            limit: 6,
+            semanticRatio: 0.4
+          });
+          harvestPassages(primary, `traditions-${detectedMinorTradition.toLowerCase()}`);
+          // Second pass: broader query in case exact terms don't match
+          if ((primary?.passages?.length ?? 0) < 3) {
+            const broad = await runTool('search', {
+              query: userMessage.slice(0, 200),
+              mode: 'passages',
+              religion: detectedMinorTradition,
+              limit: 4,
+              semanticRatio: 0.6
+            });
+            harvestPassages(broad, `traditions-${detectedMinorTradition.toLowerCase()}-broad`);
+          }
+        })());
+      } else {
       const INTERFAITH_TRADITIONS = ["Christian", "Islam", "Judaism", "Buddhist", "Baha'i"];
       for (const religion of INTERFAITH_TRADITIONS) {
         const primaryOpts = PRIMARY_SEARCHES[religion];
@@ -917,6 +961,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           harvestPassages(broad, `traditions-${religion.toLowerCase()}`);
         })());
       }
+      } // close else (not a minor tradition — run full interfaith searches)
     }
     // Note: when effectiveWorkName is set, the companion search runs inside
     // Branch 1 (filtered to the named work's religion) — no separate task here.

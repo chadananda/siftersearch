@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T04:03:39.042Z",
+  "generated": "2026-05-15T04:24:06.179Z",
   "entries": [
+    {
+      "hash": "27f9515e",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Add Meilisearch keyword fallback to checkDeepResearch — catches paraphrased questions that miss embedding threshold",
+      "scope": null
+    },
     {
       "hash": "55cdd12f",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Update navigation labels and remove auth requirements",
       "scope": null
-    },
-    {
-      "hash": "54c88604",
-      "date": "2026-01-23",
-      "type": "Fixed",
-      "description": "Disambiguate sign in button ARIA labels",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "27f9515e",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Add Meilisearch keyword fallback to checkDeepResearch — catches paraphrased questions that miss embedding threshold",
+        "scope": null
+      },
       {
         "hash": "55cdd12f",
         "date": "2026-05-14",
@@ -7055,13 +7062,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Update navigation labels and remove auth requirements",
-        "scope": null
-      },
-      {
-        "hash": "54c88604",
-        "date": "2026-01-23",
-        "type": "Fixed",
-        "description": "Disambiguate sign in button ARIA labels",
         "scope": null
       }
     ]
