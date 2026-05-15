@@ -7,6 +7,13 @@ import NavBar from '../../components/common/NavBar.svelte';
 import { smartQuotes as sq } from '../../lib/smart-quotes.js';
 import { cardUrl } from '../../lib/imagekit.js';
 
+// Strip inline markdown (bold, italic, code) for plain-text card display
+const stripMd = (s: string) => sq(
+  (s || '').replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1').replace(/_([^_]+)_/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+);
+
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const res = await fetch(`${API_BASE}/api/v1/dialogs`);
 const { dialogs = [] } = res.ok ? await res.json() : {};
@@ -147,7 +154,7 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
               <div class="card-body">
                 <a class="card-topic" href={`/dialogue/category/${d.topic}/`}>{TOPIC_LABELS[d.topic] ?? d.topic}</a>
                 <h3><a class="card-title-link" href={`/dialogue/${d.slug}/`}>{sq(d.title)}</a></h3>
-                <p class="card-summary">{sq(d.description)}</p>
+                <p class="card-summary">{stripMd(d.description)}</p>
                 <div class="card-meta">
                   {d.score > 0 && (
                     <span class="score" data-score={d.score}>{d.score}%</span>

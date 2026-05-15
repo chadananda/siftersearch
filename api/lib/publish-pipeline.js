@@ -94,7 +94,7 @@ Sentence case. Concrete and specific. BOTH fields required for every round.
 
 Output ONLY JSON: {"rounds":[{"question":"...","answer":"..."},...]} with EXACTLY ${rounds.length} entries.`;
 
-  const user = rounds.map((r, i) => `Round ${i + 1}:\nUSER: ${(r.user || '').slice(0, 600)}\nJAFAR: ${(r.jafar || '').slice(0, 600)}`).join('\n\n');
+  const user = rounds.map((r, i) => `Round ${i + 1}:\nUSER: ${(r.user || '').slice(0, 800)}\nJAFAR: ${(r.jafar || '').slice(0, 1000)}`).join('\n\n');
 
   const resp = await openai.chat.completions.create({
     model: 'gpt-4o',
@@ -133,11 +133,14 @@ export async function anonymizeUserTurns(messages) {
     content: typeof m.content === 'string' ? regexScrub(m.content) : m.content
   }));
 
-  // LLM pass on ALL turns (both user and assistant) — gpt-4o-mini is enough
-  // for name-neutralisation and is ~20× cheaper than gpt-4o.
-  const allTexts = preScrubbedMessages.map(m => ({ role: m.role, text: m.content }));
+  // LLM pass on USER turns only — assistant (Jafar) turns never contain PII,
+  // and running them through the LLM destroys markdown citation links [text](url).
+  const userMessages = preScrubbedMessages.filter(m => m.role === 'user');
+  if (userMessages.length === 0) return preScrubbedMessages;
 
-  const sys = `Sanitize each message for public publication. For EACH message:
+  const userTexts = userMessages.map(m => ({ role: m.role, text: m.content }));
+
+  const sys = `Sanitize user messages for public publication. For EACH message:
 - Remove or replace personal names (first or last) with neutral terms ("a seeker", "someone", "they")
 - Remove specific locations (cities, neighborhoods, workplaces, schools) unless they are publicly known religious sites
 - Remove identifying biographical details (specific age, profession + employer, family member names)
@@ -145,12 +148,12 @@ export async function anonymizeUserTurns(messages) {
 - Keep: the substance of the question, references to publicly-known figures (Bahá'u'lláh, the Buddha, etc.), book titles, doctrinal terms
 - If a message has no PII, return it unchanged
 
-Output JSON: {"messages":[{"role":"...","text":"..."},...]} with EXACTLY ${allTexts.length} entries in order.`;
+Output JSON: {"messages":[{"role":"...","text":"..."},...]} with EXACTLY ${userTexts.length} entries in order.`;
 
   try {
     const resp = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
-      messages: [{ role: 'system', content: sys }, { role: 'user', content: JSON.stringify(allTexts) }],
+      messages: [{ role: 'system', content: sys }, { role: 'user', content: JSON.stringify(userTexts) }],
       temperature: 0.1,
       max_tokens: 4000,
       response_format: { type: 'json_object' }
@@ -158,11 +161,16 @@ Output JSON: {"messages":[{"role":"...","text":"..."},...]} with EXACTLY ${allTe
     const parsed = JSON.parse(resp.choices[0].message.content);
     const sanitized = parsed.messages;
 
-    if (Array.isArray(sanitized) && sanitized.length === allTexts.length) {
-      return preScrubbedMessages.map((m, i) => ({
-        ...m,
-        content: sanitized[i]?.text ?? m.content
-      }));
+    if (Array.isArray(sanitized) && sanitized.length === userTexts.length) {
+      let userIdx = 0;
+      return preScrubbedMessages.map(m => {
+        if (m.role === 'user') {
+          const sanitizedText = sanitized[userIdx++]?.text ?? m.content;
+          return { ...m, content: sanitizedText };
+        }
+        // Assistant turns: return regex-scrubbed only (no LLM pass — preserves citation links)
+        return m;
+      });
     }
   } catch (err) {
     // LLM pass failed — return regex-scrubbed version as fallback

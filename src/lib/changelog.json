@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T23:09:50.049Z",
+  "generated": "2026-05-15T23:54:22.257Z",
   "entries": [
+    {
+      "hash": "e462deef",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Language-listing catalog queries get companion passages — enables cite≥2 for browsing rubric",
+      "scope": null
+    },
     {
       "hash": "e873bd06",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Round-summary h3 headers in dialog body — TOC auto-builds from them; tiny styling so they don't fight the prose",
       "scope": null
-    },
-    {
-      "hash": "e544f46e",
-      "date": "2026-04-28",
-      "type": "Fixed",
-      "description": "Dark bg before JS load (no white flash); About mentions Jafar; redirects /dialog/ → /dialogue/",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "e462deef",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Language-listing catalog queries get companion passages — enables cite≥2 for browsing rubric",
+        "scope": null
+      },
       {
         "hash": "e873bd06",
         "date": "2026-05-15",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Round-summary h3 headers in dialog body — TOC auto-builds from them; tiny styling so they don't fight the prose",
-        "scope": null
-      },
-      {
-        "hash": "e544f46e",
-        "date": "2026-04-28",
-        "type": "Fixed",
-        "description": "Dark bg before JS load (no white flash); About mentions Jafar; redirects /dialog/ → /dialogue/",
         "scope": null
       }
     ]
