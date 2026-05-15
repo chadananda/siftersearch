@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:15:01.874Z",
+  "generated": "2026-05-15T12:17:10.762Z",
   "entries": [
+    {
+      "hash": "a58805e3",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Christianity pattern bug — \\bchrist(?:ian)?\\b misses 'Christianity'",
+      "scope": null
+    },
     {
       "hash": "5b53380c",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use SSR for dynamic pages, remove unnecessary prerender",
       "scope": null
-    },
-    {
-      "hash": "8035289f",
-      "date": "2026-01-23",
-      "type": "Fixed",
-      "description": "Prevent document duplication by using client:only for LibraryBrowser",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "a58805e3",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Christianity pattern bug — \\bchrist(?:ian)?\\b misses 'Christianity'",
+        "scope": null
+      },
       {
         "hash": "5b53380c",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Use SSR for dynamic pages, remove unnecessary prerender",
-        "scope": null
-      },
-      {
-        "hash": "8035289f",
-        "date": "2026-01-23",
-        "type": "Fixed",
-        "description": "Prevent document duplication by using client:only for LibraryBrowser",
         "scope": null
       }
     ]

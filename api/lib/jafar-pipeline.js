@@ -369,7 +369,7 @@ intent: ONE of
 - "explain": user asks how something works, why a teaching exists, or what a tradition says about a topic.
 - "discuss": general conversation, follow-up commentary, opinion, open exploration.
 
-work_name: Set when the user's question targets a SINGLE scriptural work or single-author canonical text. Translate author names to their canonical work: "Lao Tzu" → "Tao Te Ching", "Confucius" → "Analects", "Isaiah" → "Isaiah", "Moses"/"Torah" → "Genesis", "Zoroaster"/"Zarathustra" → "Gathas". Examples: "What does the Iqán say about X?" → "Kitab-i-Iqan"; "What does Lao Tzu say about X?" → "Tao Te Ching"; "What does Confucius say about virtue?" → "Analects"; "Find the passage in the Hidden Words about Y" → "Hidden Words". Else null. Return null when: (a) the user mentions TWO OR MORE works, (b) the user is asking what multiple traditions say, (c) the work is mentioned only in passing.
+work_name: Set when the user's question targets a SINGLE scriptural work or single-author canonical text. Translate author names to their canonical work: "Lao Tzu" → "Tao Te Ching", "Confucius" → "Analects", "Isaiah" → "Isaiah", "Moses"/"Torah" → "Genesis", "Zoroaster"/"Zarathustra" → "Gathas". Examples: "What does the Iqán say about X?" → "Kitab-i-Iqan"; "What does Lao Tzu say about X?" → "Tao Te Ching"; "What does Confucius say about virtue?" → "Analects"; "Find the passage in the Hidden Words about Y" → "Hidden Words". Else null. Return null when: (a) the user mentions TWO OR MORE works, (b) the user is asking what multiple traditions say, (c) the work is mentioned only in passing, (d) the user refers to a broad scriptural collection as a tradition indicator — "the Bible", "the Quran", "the Torah" in "what does the Bible say about X?" means the Christian scriptures broadly, not a single book; return null in that case (the tradition is handled by routing, not work_name).
 
 topics: 1-3 lowercase topical keywords for passage search that capture what the user actually wants to find, combining this turn AND prior context. Period vocabulary preferred. Empty array if work_name covers it.
 
@@ -953,13 +953,18 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // Don't run INTERFAITH_TRADITIONS — those 5 don't apply when the question
         // is explicitly about Zoroaster/Sikh/Hindu/etc.
         tasks.push((async () => {
-          // Zoroastrian vocabulary expansion: "good/evil" → Ahura Mazda / Angra Mainyu
-          // BM25 won't find Avestan concepts via English good/evil keywords.
+          // Tradition-specific vocabulary bridges for BM25 (no stemmer):
+          // Zoroastrian: English good/evil → Avestan theological terms
+          // Sikh: "seva" may appear as "sewa" or "service" in Gurmukhi transliterations
           let minorQuery = passageQuery;
           if (detectedMinorTradition === 'Zoroastrian') {
             minorQuery = minorQuery
               .replace(/\bgood\b/gi, 'Ahura Mazda righteous')
               .replace(/\bevil\b/gi, 'Angra Mainyu druj');
+          } else if (detectedMinorTradition === 'Sikh') {
+            minorQuery = minorQuery
+              .replace(/\bseva\b/gi, 'seva sewa service')
+              .replace(/\bwaheguru\b/gi, 'Waheguru God Almighty');
           }
           const primary = await runTool('search', {
             query: minorQuery,
