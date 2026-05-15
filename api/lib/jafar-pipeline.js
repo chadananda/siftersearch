@@ -228,7 +228,9 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
             text: q.text,
             source_title: q.title,
             source_author: q.author,
-            citation_url: q.source_url ? `${q.source_url}?paraId=${q.external_para_id}` : null,
+            citation_url: q.source_url
+              ? `${q.source_url}?paraId=${q.external_para_id}`
+              : (q.doc_id ? `https://siftersearch.com/document/${q.doc_id}` : null),
             doc_id: q.doc_id,
             religion: q.religion,
             authority: q.authority,
@@ -680,7 +682,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
                   for (const q of quotesToInject) {
                     retrieved.push({
                       text: q.text, source_title: q.title, source_author: q.author,
-                      citation_url: q.source_url ? `${q.source_url}?paraId=${q.external_para_id}` : null,
+                      citation_url: q.source_url
+                        ? `${q.source_url}?paraId=${q.external_para_id}`
+                        : (q.doc_id ? `https://siftersearch.com/document/${q.doc_id}` : null),
                       doc_id: q.doc_id, religion: q.religion, authority: q.authority,
                       via: 'deep_research', relevance_score: q.relevance_score,
                     });
@@ -812,7 +816,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           text: q.text,
           source_title: q.title,
           source_author: q.author,
-          citation_url: q.source_url ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url,
+          citation_url: q.source_url
+            ? `${q.source_url}?paraId=${q.external_para_id}`
+            : (q.doc_id ? `https://siftersearch.com/document/${q.doc_id}` : null),
           doc_id: q.doc_id,
           religion: q.religion,
           authority: q.authority,
