@@ -641,13 +641,14 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // retrieves representative, citable passages from that author's actual works.
         if (countResult.count > 0) {
           try {
-            // Compound queries ("how many by X and which discuss Y") — use full user
-            // message as companion query so the topic search has proper context.
-            // Generic fallback for pure meta queries ("do you have X?").
-            const hasTopicComponent = /\b(?:and |which ones? )(?:discuss|about|cover|on|related to|dealing with)\s+(.{3,50})(?:\?|$)/i.test(userMessage);
+            // Compound queries ("how many by X and which discuss Y") — extract the
+            // topic component so the companion search targets the subject, not the
+            // catalog question framing (which has poor semantic overlap with passages).
+            const topicMatch = userMessage.match(/\b(?:and |which ones? )(?:discuss|about|cover|on|related to|dealing with)\s+(.{3,50})(?:\?|$)/i);
+            const hasTopicComponent = !!topicMatch;
             const isMetaQuery = /\b(do you have|what books|any books|show me|list|how many|what works|do you carry|what collections|list the|list all)\b/i.test(userMessage);
-            const companionQuery = hasTopicComponent
-              ? userMessage.slice(0, 200)
+            const companionQuery = topicMatch
+              ? topicMatch[1].trim()
               : isMetaQuery ? 'spiritual teachings revelation faith God' : userMessage.slice(0, 200);
             const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: 3, semanticRatio: 0.7 };
             const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
