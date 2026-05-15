@@ -681,16 +681,22 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           is_catalog: true
         });
         const tradition = extractTraditionSearch(userMessage);
-        const companionArgs = tradition
-          ? { query: 'scripture wisdom', religion: tradition.religion, limit: 5 }
-          : { query: 'sacred scripture wisdom', limit: 5 };
-        try {
-          if (debug) debugCalls.push({ name: 'search', args: companionArgs, forced: true });
-          if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: companionArgs, forced: true });
-          const searchResults = await executeTool('search', companionArgs, { scope_config });
-          if (searchResults?.passages?.length) harvestPassages(searchResults, 'catalog_companion');
-        } catch (se) {
-          logger.warn({ err: se.message }, 'catalog companion search failed');
+        // Skip companion for pure count queries ("how many documents total?") — adding
+        // thematic passages to a count question causes logicalCoherence failures (the
+        // crafter mixes quote content with catalog stats, confusing the count).
+        const isPureCountQuery = /\bhow many\b.{0,30}\b(total|altogether|in all|in the library)\b|\bhow many documents\b/i.test(userMessage) && !tradition;
+        if (!isPureCountQuery) {
+          const companionArgs = tradition
+            ? { query: 'scripture wisdom', religion: tradition.religion, limit: 5 }
+            : { query: 'sacred scripture wisdom', limit: 5 };
+          try {
+            if (debug) debugCalls.push({ name: 'search', args: companionArgs, forced: true });
+            if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: companionArgs, forced: true });
+            const searchResults = await executeTool('search', companionArgs, { scope_config });
+            if (searchResults?.passages?.length) harvestPassages(searchResults, 'catalog_companion');
+          } catch (se) {
+            logger.warn({ err: se.message }, 'catalog companion search failed');
+          }
         }
         logger.info({ retrieved: retrieved.length, tradition: tradition?.religion }, 'catalog pre-fetch complete');
         return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
@@ -1286,6 +1292,19 @@ export async function deterministicResearch({ entities, userMessage, messages, s
 const CRAFTER_SYSTEM = `You are Jafar — a wise, curious friend deeply read in the primary texts of the world's religious traditions. The texts are open in front of you (provided as retrieved_quotes). Your job is to ANSWER THE QUESTION the person actually asked, weaving the tradition's own words into your prose like a thoughtful friend would — not dumping block quotes and asking follow-up questions.
 
 ╔══════════════════════════════════════════════════════════╗
+║  STEP 0 — PICK YOUR FRAGMENTS FIRST (stripped from output)║
+╚══════════════════════════════════════════════════════════╝
+
+Before writing prose, output ONE line (it will be stripped before showing the user):
+CITE: "[5-12 word fragment]" Q[N] | "[5-12 word fragment]" Q[N]
+
+This commits you to specific retrieved_quotes BEFORE composing. It prevents general-knowledge drift. After this line, write the prose reply.
+
+Example: CITE: "love your enemies" Q3 | "no compulsion in religion" Q7
+
+If catalog: CITE: CATALOG Q1
+
+╔══════════════════════════════════════════════════════════╗
 ║  THE FUNDAMENTAL PATTERN: EMBEDDED QUOTE FRAGMENTS        ║
 ╚══════════════════════════════════════════════════════════╝
 
@@ -1581,13 +1600,32 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, subag
     stream: true
   });
   let full = '';
+  // Buffer the first line to strip the CITE: commitment device (not for user display)
+  let firstLineSeen = false;
+  let lineBuffer = '';
   for await (const chunk of stream) {
     const text = chunk.choices?.[0]?.delta?.content || '';
-    if (text) {
-      full += text;
+    if (!text) continue;
+    full += text;
+    if (firstLineSeen) {
       if (onChunk) onChunk(text);
+    } else {
+      lineBuffer += text;
+      const nlIdx = lineBuffer.indexOf('\n');
+      if (nlIdx !== -1) {
+        firstLineSeen = true;
+        const firstLine = lineBuffer.slice(0, nlIdx);
+        const rest = lineBuffer.slice(nlIdx + 1);
+        // Suppress first line if it's the CITE: commitment device
+        if (!firstLine.trim().startsWith('CITE:') && onChunk) onChunk(firstLine + '\n');
+        if (rest && onChunk) onChunk(rest);
+        lineBuffer = '';
+      }
+      // Still buffering first line — don't stream yet
     }
   }
+  // Strip CITE: line from full accumulated text before post-processing
+  full = full.replace(/^CITE:[^\n]*\n?/, '');
   // Post-process: strip the most-flagged restating opener patterns. The mini
   // model partially obeys the prompt — these regexes catch the residual cases
   // (R1, R6, R7, R9 in our 051 test still slipped through). We delete the

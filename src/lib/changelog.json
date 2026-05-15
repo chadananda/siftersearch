@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T14:11:23.321Z",
+  "generated": "2026-05-15T15:19:14.960Z",
   "entries": [
+    {
+      "hash": "437f9af7",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Catalog collection listing — include collection names in sample output",
+      "scope": null
+    },
     {
       "hash": "5fb487d0",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Hide duplicate metadata headings and improve document styling",
       "scope": null
-    },
-    {
-      "hash": "66a21e17",
-      "date": "2026-01-23",
-      "type": "Chore",
-      "description": "Auto-generated changelog and version bump to 0.1.916",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "437f9af7",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Catalog collection listing — include collection names in sample output",
+        "scope": null
+      },
       {
         "hash": "5fb487d0",
         "date": "2026-05-15",
@@ -7055,15 +7062,6 @@
         "date": "2026-01-24",
         "type": "Fixed",
         "description": "Hide duplicate metadata headings and improve document styling",
-        "scope": null
-      }
-    ],
-    "2026-01-23": [
-      {
-        "hash": "66a21e17",
-        "date": "2026-01-23",
-        "type": "Chore",
-        "description": "Auto-generated changelog and version bump to 0.1.916",
         "scope": null
       }
     ]
