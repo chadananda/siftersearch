@@ -626,6 +626,17 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           catalog_filters: catalogFilters
         });
         logger.info({ filters: catalogFilters, count: countResult.count }, 'filtered catalog query complete');
+        // Companion search: get 1-2 citable passages from the filtered author/scope
+        // so the crafter can include inline citations in addition to the count.
+        if (countResult.count > 0) {
+          try {
+            const companionSearchArgs = { ...catalogFilters, mode: 'passages', limit: 2, semanticRatio: 0.5 };
+            const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
+            if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
+          } catch (ce) {
+            logger.warn({ err: ce.message }, 'author catalog companion search failed (non-fatal)');
+          }
+        }
         return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
       } catch (e) {
         logger.warn({ err: e.message }, 'library_count failed, falling through to normal research');

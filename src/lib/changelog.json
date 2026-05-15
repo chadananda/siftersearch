@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:21:41.205Z",
+  "generated": "2026-05-15T12:27:12.317Z",
   "entries": [
+    {
+      "hash": "86325ed8",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Targeted Bhagavad Gita search for Hindu dharma/duty/karma queries",
+      "scope": null
+    },
     {
       "hash": "c9a2ff08",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use client:only for components with client state to prevent hydration mismatch",
       "scope": null
-    },
-    {
-      "hash": "4e16a1c2",
-      "date": "2026-01-23",
-      "type": "Chore",
-      "description": "Auto-generated changelog and version bump to 0.1.906",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "86325ed8",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Targeted Bhagavad Gita search for Hindu dharma/duty/karma queries",
+        "scope": null
+      },
       {
         "hash": "c9a2ff08",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Use client:only for components with client state to prevent hydration mismatch",
-        "scope": null
-      },
-      {
-        "hash": "4e16a1c2",
-        "date": "2026-01-23",
-        "type": "Chore",
-        "description": "Auto-generated changelog and version bump to 0.1.906",
         "scope": null
       }
     ]
