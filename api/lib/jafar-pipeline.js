@@ -1768,7 +1768,9 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     // Catalog entries (library_overview or library_count) are structured data, not quotable text
     if (q.is_catalog || q.via === 'library_overview' || q.via === 'library_count') {
       const label = q.via === 'library_count'
-        ? `[Q${i + 1} CATALOG-DATA — state the count as plain text ONLY. NEVER write [N documents](url). Sample titles may have URLs — list them using [title](url) in a separate listing. NEVER use a sample title URL as the source URL for a prose quote. For prose quotes use CATALOG-COMPANION only.]`
+        ? q.catalog_count === 0
+          ? `[Q${i + 1} CATALOG-DATA — COUNT IS ZERO. This author/filter was NOT found in the library. Begin your response by clearly stating we do not have this author's works in the library. Then offer 1-2 alternative authors or traditions from CATALOG-COMPANION passages. Do NOT state "0 documents" — say "we don't have X's works" or similar natural phrasing.]`
+          : `[Q${i + 1} CATALOG-DATA — state the count as plain text ONLY. NEVER write [N documents](url). Sample titles may have URLs — list them using [title](url) in a separate listing. NEVER use a sample title URL as the source URL for a prose quote. For prose quotes use CATALOG-COMPANION only.]`
         : q.pure_count
           ? `[Q${i + 1} CATALOG-DATA — PURE COUNT QUERY. Respond with plain text statistics ONLY. NO quotes. NO markdown links of any kind. NO [text](url) format anywhere. Just state the total and breakdown as plain sentences.]`
           : `[Q${i + 1} CATALOG-DATA — plain text catalog only. This block contains NO quotable URLs. Render ALL text from this block as plain text only — NO hyperlinks of any kind. WRONG: ["Pali Canon"](url) or [44,937](url). RIGHT: Pali Canon ... 44,937 documents. Only CATALOG-COMPANION passages have citation URLs — use those for [fragment](url) quotes.]`;
