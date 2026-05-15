@@ -1134,7 +1134,7 @@ export async function executeLibraryCount({ author, religion, site, language, co
   const where = conditions.join(' AND ');
   const [countRow, samples] = await Promise.all([
     queryOne(`SELECT COUNT(*) as count FROM docs WHERE ${where}`, params),
-    queryAll(`SELECT title, author, religion, collection, source_site, year FROM docs WHERE ${where} ORDER BY year DESC LIMIT 5`, params)
+    queryAll(`SELECT title, author, religion, collection, source_site, source_url, year FROM docs WHERE ${where} ORDER BY year DESC LIMIT 5`, params)
   ]);
 
   return {
@@ -1142,7 +1142,7 @@ export async function executeLibraryCount({ author, religion, site, language, co
     filters: Object.fromEntries(Object.entries({ author, religion, site, language, collection, scope }).filter(([, v]) => v)),
     sample_documents: samples.map(d => ({
       title: d.title, author: d.author, religion: d.religion,
-      collection: d.collection, site: d.source_site, year: d.year
+      collection: d.collection, site: d.source_site, year: d.year, source_url: d.source_url
     }))
   };
 }

@@ -614,13 +614,15 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         const countResult = await executeTool('library_count', catalogFilters, { scope_config });
         const filterDesc = Object.entries(catalogFilters).map(([k, v]) => `${k}="${v}"`).join(', ');
         const samples = countResult.sample_documents || [];
-        const sampleLines = samples.map(d =>
-          `  - ${d.title}${d.author ? ' by ' + d.author : ''}${d.collection ? ' [' + d.collection + ']' : ''}${d.year ? ' (' + d.year + ')' : ''}`
-        ).join('\n');
+        const sampleLines = samples.map(d => {
+          const url = d.source_url || d.citation_url;
+          const titlePart = url ? `[${d.title}](${url})` : d.title;
+          return `  - ${titlePart}${d.author ? ' by ' + d.author : ''}${d.collection ? ' [' + d.collection + ']' : ''}${d.year ? ' (' + d.year + ')' : ''}`;
+        }).join('\n');
         const distinctCollections = [...new Set(samples.map(d => d.collection).filter(Boolean))];
         const collectionNote = distinctCollections.length > 0 ? `\n\nCollections (from samples): ${distinctCollections.join(', ')}` : '';
         retrieved.push({
-          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles:\n${sampleLines}`,
+          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles (with URLs — cite these directly using [title](url) format):\n${sampleLines}`,
           source_title: 'Library Catalog',
           source_author: 'Ocean Library',
           citation_url: null,
@@ -1526,7 +1528,8 @@ Two types:
 
 TWO-PART catalog response (REQUIRED):
 1. CATALOG DATA — state the count or data DIRECTLY. Never say "I don't have the exact number" when the catalog provides it.
-2. COMPANION CITATIONS — if other retrieved_quotes exist (catalog_companion), pick 1-2 and cite with inline "[fragment](url)" links. The companion passages are actual prose from those works — quote fragment text from the passage, NOT from the sample_documents title list.
+   - Sample titles in CATALOG-DATA include real URLs — you MAY hyperlink them as [title](url). NEVER substitute a different title; only hyperlink titles actually listed.
+2. COMPANION CITATIONS — if other retrieved_quotes exist (catalog_companion), pick 1-2 and cite with inline "[fragment](url)" links. The companion passages are actual prose from those works — quote fragment text from the passage.
 
 Format: one or two factual sentences from catalog data, then weave in one inline prose citation.
 
@@ -1715,9 +1718,9 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     // Catalog entries (library_overview or library_count) are structured data, not quotable text
     if (q.is_catalog || q.via === 'library_overview' || q.via === 'library_count') {
       const label = q.via === 'library_count'
-        ? `[Q${i + 1} CATALOG-DATA — state the count directly; sample titles below are METADATA, not quotable text, never hyperlink them]`
-        : `[Q${i + 1} CATALOG-DATA — library overview; never hyperlink any title or collection name from this entry]`;
-      return `${label}\n${q.text}\n  Source: Library Catalog (no inline citations from this entry)`;
+        ? `[Q${i + 1} CATALOG-DATA — state the count directly; sample titles include URLs — you MAY hyperlink them as [title](url) but do NOT fabricate titles not listed here]`
+        : `[Q${i + 1} CATALOG-DATA — library overview; collection names have no URLs so do NOT hyperlink collection names, only hyperlink individual document titles if they have a URL]`;
+      return `${label}\n${q.text}\n  Source: Library Catalog`;
     }
     // For non-English passages, present BOTH original and JAFAR-grounded
     // translation so the crafter can quote whichever fits the user's request

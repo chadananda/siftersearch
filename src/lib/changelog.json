@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T17:55:24.928Z",
+  "generated": "2026-05-15T18:01:45.527Z",
   "entries": [
+    {
+      "hash": "b5d4bd66",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Catalog data payload — CATALOG-DATA label + CATALOG-COMPANION tag to prevent title/URL misattribution",
+      "scope": null
+    },
     {
       "hash": "cbc9d4cf",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "SifterSearch framed as backend engine behind OceanLibrary.com",
       "scope": null
-    },
-    {
-      "hash": "61c46729",
-      "date": "2026-03-30",
-      "type": "Fixed",
-      "description": "Filter out revoked API keys from list",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "b5d4bd66",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Catalog data payload — CATALOG-DATA label + CATALOG-COMPANION tag to prevent title/URL misattribution",
+        "scope": null
+      },
       {
         "hash": "cbc9d4cf",
         "date": "2026-05-15",
@@ -7045,15 +7052,6 @@
         "date": "2026-03-31",
         "type": "Fixed",
         "description": "SifterSearch framed as backend engine behind OceanLibrary.com",
-        "scope": null
-      }
-    ],
-    "2026-03-30": [
-      {
-        "hash": "61c46729",
-        "date": "2026-03-30",
-        "type": "Fixed",
-        "description": "Filter out revoked API keys from list",
         "scope": null
       }
     ]
