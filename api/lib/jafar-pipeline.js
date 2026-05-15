@@ -1767,8 +1767,8 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     // Catalog entries (library_overview or library_count) are structured data, not quotable text
     if (q.is_catalog || q.via === 'library_overview' || q.via === 'library_count') {
       const label = q.via === 'library_count'
-        ? `[Q${i + 1} CATALOG-DATA — state the count as plain text (NEVER hyperlink numbers like [331](url)); sample titles may have URLs — list them as [title](url) in plain listing only; NEVER attach a sample title URL to a prose quote; for prose quotes use CATALOG-COMPANION only]`
-        : `[Q${i + 1} CATALOG-DATA — library overview; ALL numbers/counts are plain text ONLY — NEVER write [N documents](url) or link any number; list collection names as plain text only; for prose quotes use CATALOG-COMPANION only]`;
+        ? `[Q${i + 1} CATALOG-DATA — state the count as plain text ONLY. NEVER write [N documents](url). Sample titles may have URLs — list them using [title](url) in a separate listing. NEVER use a sample title URL as the source URL for a prose quote. For prose quotes use CATALOG-COMPANION only.]`
+        : `[Q${i + 1} CATALOG-DATA — plain text catalog only. This block contains NO quotable URLs. Render ALL text from this block as plain text only — NO hyperlinks of any kind. WRONG: ["Pali Canon"](url) or [44,937](url). RIGHT: Pali Canon ... 44,937 documents. Only CATALOG-COMPANION passages have citation URLs — use those for [fragment](url) quotes.]`;
       return `${label}\n${q.text}\n  Source: Library Catalog`;
     }
     // For non-English passages, present BOTH original and JAFAR-grounded
