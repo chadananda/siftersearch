@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T17:03:03.759Z",
+  "generated": "2026-05-15T17:04:39.540Z",
   "entries": [
+    {
+      "hash": "4ac2b57c",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Deep_research_quotes gap — supplement from sections_json + persist going forward",
+      "scope": null
+    },
     {
       "hash": "b8c09d77",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Bump version to 0.1.922",
       "scope": null
-    },
-    {
-      "hash": "1f1d5283",
-      "date": "2026-01-25",
-      "type": "Fixed",
-      "description": "Properly render markdown headings and improve h3/h4 visibility",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "4ac2b57c",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Deep_research_quotes gap — supplement from sections_json + persist going forward",
+        "scope": null
+      },
       {
         "hash": "b8c09d77",
         "date": "2026-05-15",
@@ -7051,15 +7058,6 @@
         "date": "2026-02-04",
         "type": "Chore",
         "description": "Bump version to 0.1.922",
-        "scope": null
-      }
-    ],
-    "2026-01-25": [
-      {
-        "hash": "1f1d5283",
-        "date": "2026-01-25",
-        "type": "Fixed",
-        "description": "Properly render markdown headings and improve h3/h4 visibility",
         "scope": null
       }
     ]

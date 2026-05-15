@@ -116,9 +116,9 @@ async function main() {
       console.log(`+ NEW: ${topic.question}`);
       if (!isDryRun) {
         const res = db.prepare(
-          `INSERT INTO deep_research (canonical_question, question_hash, status, ask_count, priority, created_at, updated_at)
-           VALUES (?, ?, 'queued', ?, ?, ?, ?)`
-        ).run(topic.question, hash, topic.priority, topic.priority, now, now);
+          `INSERT INTO deep_research (canonical_question, question_hash, status, ask_count, priority, created_at)
+           VALUES (?, ?, 'queued', ?, ?, ?)`
+        ).run(topic.question, hash, topic.priority, topic.priority, now);
         db.prepare('INSERT INTO deep_research_queue (research_id, job_type, status, priority) VALUES (?, ?, ?, ?)')
           .run(res.lastInsertRowid, 'research', 'pending', topic.priority);
       }
