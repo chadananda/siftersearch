@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:47:34.238Z",
+  "generated": "2026-05-15T12:54:04.404Z",
   "entries": [
+    {
+      "hash": "6e56b0be",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Revert Bab/person-name from Bahai pattern - worsened biographical queries",
+      "scope": null
+    },
     {
       "hash": "5d9914c2",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add document ID and file_path to metadata display for debugging duplicates",
       "scope": null
-    },
-    {
-      "hash": "efbd9091",
-      "date": "2026-01-23",
-      "type": "Chore",
-      "description": "Auto-generated changelog and version bump to 0.1.909",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "6e56b0be",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Revert Bab/person-name from Bahai pattern - worsened biographical queries",
+        "scope": null
+      },
       {
         "hash": "5d9914c2",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "New",
         "description": "Add document ID and file_path to metadata display for debugging duplicates",
-        "scope": null
-      },
-      {
-        "hash": "efbd9091",
-        "date": "2026-01-23",
-        "type": "Chore",
-        "description": "Auto-generated changelog and version bump to 0.1.909",
         "scope": null
       }
     ]

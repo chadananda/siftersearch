@@ -626,15 +626,33 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           catalog_filters: catalogFilters
         });
         logger.info({ filters: catalogFilters, count: countResult.count }, 'filtered catalog query complete');
-        // Companion search: get 1-2 citable passages from the filtered author/scope
-        // so the crafter can include inline citations in addition to the count.
+        // Companion search: get 1-2 citable prose passages from the filtered author/scope.
+        // Use a generic theological query when user message is a meta/catalog question
+        // ("Do you have books by X?") — the user message itself has poor semantic overlap
+        // with prose passage content. A generic theological query with the author filter
+        // retrieves representative, citable passages from that author's actual works.
         if (countResult.count > 0) {
           try {
-            const companionSearchArgs = { query: userMessage.slice(0, 200), ...catalogFilters, mode: 'passages', limit: 2, semanticRatio: 0.5 };
+            const isMetaQuery = /\b(do you have|what books|any books|show me|list|how many|what works|do you carry)\b/i.test(userMessage);
+            const companionQuery = isMetaQuery
+              ? 'spiritual teachings revelation faith God'
+              : userMessage.slice(0, 200);
+            const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: 2, semanticRatio: 0.7 };
             const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
             if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
           } catch (ce) {
             logger.warn({ err: ce.message }, 'author catalog companion search failed (non-fatal)');
+          }
+        } else {
+          // count=0: author not in library — search for tradition-adjacent alternatives
+          // so the crafter can cite related content instead of responding with nothing
+          try {
+            const altQuery = userMessage.replace(/\b(do you have|what|any|books|works|show me|by|list|all|in the library)\b/gi, ' ').trim() || 'spiritual teachings';
+            const altSearchArgs = { query: altQuery, mode: 'passages', limit: 3, semanticRatio: 0.8 };
+            const altPassages = await executeTool('search', altSearchArgs, { scope_config });
+            if (altPassages?.passages?.length) harvestPassages(altPassages, 'catalog_companion');
+          } catch (ae) {
+            logger.warn({ err: ae.message }, 'catalog zero-count alternative search failed');
           }
         }
         return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
@@ -1472,9 +1490,13 @@ Two types:
 
 TWO-PART catalog response (REQUIRED):
 1. CATALOG DATA — state the count or data DIRECTLY. Never say "I don't have the exact number" when the catalog provides it.
-2. COMPANION CITATIONS — if other retrieved_quotes exist (catalog_companion), pick 1-2 and cite with inline "[fragment](url)" links. For CATALOG COUNT with no companion passages, just give the count and a brief note about what those documents contain.
+2. COMPANION CITATIONS — if other retrieved_quotes exist (catalog_companion), pick 1-2 and cite with inline "[fragment](url)" links. The companion passages are actual prose from those works — quote fragment text from the passage, NOT from the sample_documents title list.
 
-Format: one or two factual sentences from catalog data, then optionally weave in one inline citation.
+Format: one or two factual sentences from catalog data, then weave in one inline prose citation.
+
+CATALOG MANDATORY RULE OVERRIDE: For catalog responses, the normal "cite every religion in retrieved_quotes" rule does NOT apply. Only cite companion passages that match the catalog subject (author or tradition). Ignore retrieved passages from unrelated traditions — they are search noise added by the search algorithm, not required citations.
+
+ZERO-COUNT response: If the catalog count is 0, state this honestly, then offer the best alternative from catalog_companion: "We don't have [Author]'s works, but here are some related [tradition] texts..." with one inline citation.
 
 EXAMPLE — "How many Buddhist texts do you have?"
 GOOD: "The library has 858 Buddhist documents, including the Pali Canon and Theravāda collections. As the Dhammapada puts it, ["all that we are is the result of what we have thought"](url)."
