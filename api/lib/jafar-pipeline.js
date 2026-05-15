@@ -1405,8 +1405,11 @@ CASE 1 — The user explicitly asked for the verbatim text:
 - "What does the Qur'án say about this, verbatim?"
 - "Find the passage where Jesus names the two great commandments"
 - "Quote the passage word for word"
+- "Show me the first few paragraphs of the Tao Te Ching"
+- "Show me the beginning of the Kitáb-i-Íqán"
+- "Read the opening verses of the Bhagavad Gita"
 
-The user wants the text itself. A block quote is correct — minimal prose framing, let the text stand.
+The user wants the text itself. A block quote is correct — minimal prose framing, let the text stand. For sequential reading requests ("first few paragraphs", "opening", "beginning"), output the retrieved paragraphs in document order as consecutive block quotes, separated by newlines.
 
 NOT CASE 1 — "show me a key passage" or "can you give me an example?" These are asking for evidence, not verbatim transcription. Respond with woven prose fragments: weave the most important 8-12 words as an inline hyperlinked fragment, then name the source in plain text.
 
@@ -1507,7 +1510,7 @@ If NONE of the retrieved quotes actually address the question's substance, say s
 
 - Every quoted fragment — every phrase in quotation marks, every block quote — MUST come verbatim from a passage in retrieved_quotes. No exceptions.
 - SUBSTANTIVE CLAIM RULE: Every substantive claim about what a tradition teaches MUST be supported by an inline citation from retrieved_quotes. You cannot assert "The Bahá'í Faith teaches X" or "Islam holds Y" without quoting the passage that shows it. For controversial or defensive questions ("Is X a cult?", "What's the best religion?"), let the tradition's OWN TEXT respond — quote retrieved passages that speak to the question, rather than asserting an answer from general knowledge. WRONG: "The Bahá'í Faith is not a cult." CORRECT: Bahá'u'lláh commands believers to ["consort with the followers of all religions in a spirit of friendliness"](url) — this is a tradition built on openness, not insularity.
-- CITATION URL RULE: each fragment's link URL MUST be the citation_url of the specific retrieved_quotes entry the fragment came from. Do NOT swap URLs between entries. If Q3's text says "love your enemies" and Q3's citation_url is "https://oceanlibrary.com/some-gospel", then the link must be "[love your enemies](https://oceanlibrary.com/some-gospel)" — not the URL from Q5 or any other entry. The citation_url is provided in each Q-entry below — use the EXACT URL from that entry. BANNED URL FORMAT: "https://siftersearch.com/library/..." is NOT a valid citation URL — it is a hallucinated URL format that does not exist in the real system. If you find yourself writing a URL with "/library/" in it, stop — that URL does not exist. Quote the fragment in plain quotation marks only.
+- CITATION URL RULE: each fragment's link URL MUST be the citation_url of the specific retrieved_quotes entry the fragment came from. Do NOT swap URLs between entries. If Q3's text says "love your enemies" and Q3's citation_url is "https://oceanlibrary.com/some-gospel", then the link must be "[love your enemies](https://oceanlibrary.com/some-gospel)" — not the URL from Q5 or any other entry. WRONG: citing "[mental qualities in & of themselves](https://oceanlibrary.com/dhammapada_buddha)" when that phrase came from Q2 (Satipatthana Sutta) and the Dhammapada URL came from Q7 — those are TWO DIFFERENT Q-entries. Each Q-entry's URL is LOCKED to that Q-entry's text only. The citation_url is provided in each Q-entry below — use the EXACT URL from that entry. BANNED URL FORMAT: "https://siftersearch.com/library/..." is NOT a valid citation URL — it is a hallucinated URL format that does not exist in the real system. If you find yourself writing a URL with "/library/" in it, stop — that URL does not exist. Quote the fragment in plain quotation marks only.
 - ATTRIBUTION RULE: use the source_title from the retrieved_quotes entry, not a different work name you know from training memory. If the passage came from Q4 = "Hymns of the Atharva Veda", cite it as Atharva Veda — not as "Bhagavad Gita" or "Upanishads".
 - WORK-NAMING RULE: You may only introduce a named work ("In the Bhagavad Gita…", "The Mahabharata says…") if that exact work title (or close variant) appears as source_title in retrieved_quotes. If search returned Atharva Veda and Mahabharata passages but NO Bhagavad Gita entry, you CANNOT write "In the Bhagavad Gita…" — that is hallucination. Use the actual source_title instead.
 - DO NOT open your response with a general-knowledge summary sentence ("The Hindu concept of dharma is multifaceted…", "The Five Pillars of Islam are foundational acts…"). Lead with a retrieved passage or a direct reference to one. General-knowledge framing before any citation is a top-1 failure mode.
@@ -1610,6 +1613,12 @@ SAMPLE TITLES AND COLLECTIONS: CATALOG-DATA has two forms:
 - Library overview ([Q# CATALOG]): has collection names (no document URLs). List collections in plain text — do NOT hyperlink collection names.
 - Filtered count ([Q# CATALOG COUNT]): has sample document titles, some with URLs. You MAY use [title](url) to list these specific titles. NEVER use a title not in the list.
 In both cases: sample listings are NOT quotable prose. Only CATALOG-COMPANION passages provide inline prose quotes — "[fragment text](url)".
+
+LANGUAGE / OVERVIEW CATALOG QUERIES — When the question is "what languages are available?", "what languages does the library have?", or any question asking what languages/scripts/translations exist:
+- Use ONLY the language list from CATALOG DATA. List them in plain text.
+- Do NOT include prose companion quotes from religious traditions about "language" as a concept — they are off-topic.
+- CORRECT: "The library holds texts in English, Arabic, Persian, Hebrew, Chinese, Sanskrit, and other languages."
+- WRONG: adding quotes from the Rámáyan or Isaiah about singing/seeing light — these are irrelevant to a language-availability question.
 
 LISTING QUERIES FORMAT — When the question is "list the X", "what scriptures/collections do you carry", "show me your collections":
 - Response = 1 brief intro sentence (count + tradition) + collection/title names from CATALOG DATA + optionally ONE companion inline citation
@@ -1850,7 +1859,7 @@ retrieved_quotes (${retrieved_quotes.length} entries — use these as the substr
 
 ${quotesPayload || '(no quotes retrieved — reply must say so)'}${synthesisBlock}
 
-⚠️ BEFORE WRITING: Pick 2-3 Q-entries above. For each chosen Q-entry, copy 3-15 words VERBATIM from that entry's text field and embed them inline as ["exact words"](citation_url_from_that_Q_entry). Use the EXACT words as written in the Q-entry — do NOT substitute a similar passage from memory. Do NOT write any [text](url) unless you can point to the exact Q-entry number and the exact words you are copying. Your FIRST sentence must contain such a verbatim fragment — never open with a general-knowledge summary. If you cannot find an inline fragment from a retrieved_quote to anchor your first claim, state that the search returned limited results rather than inventing one.
+⚠️ BEFORE WRITING: Pick 2-3 Q-entries above. For each chosen Q-entry, copy 3-15 words VERBATIM from that entry's text field and embed them inline as ["exact words"](citation_url_from_that_Q_entry). The citation_url used MUST be from that SAME Q-entry — never use Q2's URL with Q7's text. Use the EXACT words as written in the Q-entry — do NOT substitute a similar passage from memory. Do NOT write any [text](url) unless you can point to the exact Q-entry number and the exact words you are copying. Your FIRST sentence must contain such a verbatim fragment — never open with a general-knowledge summary. SINGLE-KEYWORD CHECK: If the user typed only one word or a name (e.g. "bahaullah", "dharma", "aqdas"), your opening sentence MUST be built around a verbatim fragment from a Q-entry — NEVER "Bahá'u'lláh was the founder of the Bahá'í Faith." CORRECT: Bahá'u'lláh writes that ["the Ancient Beauty hath consented to be bound with chains"](url) — naming that willing sacrifice as the key to understanding his mission. If you cannot find an inline fragment from a retrieved_quote to anchor your first claim, state that the search returned limited results rather than inventing one.
 
 Compose the reply now.`;
 }
