@@ -656,9 +656,14 @@ export async function deterministicResearch({ entities, userMessage, messages, s
 
             // For compound queries with a topic component, also check deep research cache
             // — the catalog path short-circuits before the normal deep research check.
+            // Use the extracted topic (not the full catalog question) for embedding
+            // similarity — catalog questions have poor similarity to content questions.
             if (hasTopicComponent) {
               try {
-                const dr = await checkDeepResearch(userMessage);
+                const drQuery = catalogFilters.author
+                  ? `What does ${catalogFilters.author} say about ${companionQuery}?`
+                  : `What do the sacred writings say about ${companionQuery}?`;
+                const dr = await checkDeepResearch(drQuery);
                 if (dr?.quotes?.length >= 3) {
                   logger.info({ researchId: dr.id, quotes: dr.quotes.length }, 'catalog compound: deep research supplementation');
                   for (const q of dr.quotes.slice(0, 10)) {
