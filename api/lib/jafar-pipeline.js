@@ -1767,8 +1767,8 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     // Catalog entries (library_overview or library_count) are structured data, not quotable text
     if (q.is_catalog || q.via === 'library_overview' || q.via === 'library_count') {
       const label = q.via === 'library_count'
-        ? `[Q${i + 1} CATALOG-DATA — state the count directly; sample titles include URLs — you MAY list them as [title](url) but do NOT fabricate titles not listed here; for prose quotes use CATALOG-COMPANION only]`
-        : `[Q${i + 1} CATALOG-DATA — library overview; list collections by name from this data; do NOT hyperlink collection names; for prose quotes use CATALOG-COMPANION only]`;
+        ? `[Q${i + 1} CATALOG-DATA — state the count as plain text (NEVER hyperlink numbers like [331](url)); sample titles may have URLs — list them as [title](url) in plain listing only; NEVER attach a sample title URL to a prose quote; for prose quotes use CATALOG-COMPANION only]`
+        : `[Q${i + 1} CATALOG-DATA — library overview; ALL numbers/counts are plain text ONLY — NEVER write [N documents](url) or link any number; list collection names as plain text only; for prose quotes use CATALOG-COMPANION only]`;
       return `${label}\n${q.text}\n  Source: Library Catalog`;
     }
     // For non-English passages, present BOTH original and JAFAR-grounded
