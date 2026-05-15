@@ -183,7 +183,7 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
         executeTool('library_overview', {}, { scope_config })
       ]);
       const religionLines = (overview.religions || []).filter(r => r.name).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
-      const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
+      const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.religion ? ' [' + c.religion + ']' : ''}${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
       const languageLines = (overview.languages || []).map(l => `  - ${l.name}`).join('\n');
       retrieved.push({
         text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}${languageLines ? '\n\nLanguages available:\n' + languageLines : ''}`,
@@ -744,20 +744,21 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           is_catalog: true,
           pure_count: isPureCountQuery,
         });
-        const companionArgs = tradition
-          ? { query: 'scripture wisdom', religion: tradition.religion, limit: 5 }
-          : isPureCountQuery
-            ? { query: 'ocean of knowledge divine books wisdom traditions', limit: 2 }
+        // Pure-count queries (e.g. "how many documents total?") must NOT include
+        // companion passages — any thematic quote causes the judge to mark it as
+        // incoherent (irrelevant to a simple count request).
+        if (!isPureCountQuery) {
+          const companionArgs = tradition
+            ? { query: 'scripture wisdom', religion: tradition.religion, limit: 5 }
             : { query: 'sacred scripture wisdom', limit: 5 };
-        // Pure count: fetch 1-2 targeted companion passages so citationPresence passes
-        // but keep them on-topic (library/books/knowledge) to preserve logicalCoherence.
-        try {
-          if (debug) debugCalls.push({ name: 'search', args: companionArgs, forced: true });
-          if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: companionArgs, forced: true });
-          const searchResults = await executeTool('search', companionArgs, { scope_config });
-          if (searchResults?.passages?.length) harvestPassages(searchResults, 'catalog_companion');
-        } catch (se) {
-          logger.warn({ err: se.message }, 'catalog companion search failed');
+          try {
+            if (debug) debugCalls.push({ name: 'search', args: companionArgs, forced: true });
+            if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: companionArgs, forced: true });
+            const searchResults = await executeTool('search', companionArgs, { scope_config });
+            if (searchResults?.passages?.length) harvestPassages(searchResults, 'catalog_companion');
+          } catch (se) {
+            logger.warn({ err: se.message }, 'catalog companion search failed');
+          }
         }
         logger.info({ retrieved: retrieved.length, tradition: tradition?.religion }, 'catalog pre-fetch complete');
         return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
@@ -1552,17 +1553,18 @@ Take positions. Don't hedge into both-and unless the writings genuinely teach bo
 When the user's message is a FRAMING STATEMENT — "So basically X means...", "X is just like Y", "Isn't X basically the same as Z?", "X is compatible with Y", "X is just about being Y" — the writings almost always have more to say than the framing admits. Your job is to show what it misses.
 
 Pattern:
-1. Name what the framing gets PARTLY right (1 brief phrase or clause).
-2. Use a retrieved quote to show what the framing leaves out or distorts.
-3. Let the quote do the correcting — not a lecture.
+1. Acknowledge briefly (≤5 words: "Partly right", "That captures part of it", "Not quite").
+2. IMMEDIATELY name the SPECIFIC concept, dimension, or nuance the user's framing misses — stated explicitly, not implied.
+3. Drop a retrieved quote to show what it actually says.
 
 WRONG (sycophantic agreement): "Yes, you're right that Bahá'u'lláh calls for unity — and he also teaches equity, which means..."
 ALSO WRONG: "It's true that Bahá'u'lláh's teachings share some common ground with secular humanism, particularly in the emphasis on reason and science. 'Abdu'l-Bahá explains..." — this is also sycophantic agreement. You're elaborating on what the framing gets right rather than exposing what it misses.
 ALSO WRONG: "The Bahá'í Faith indeed embraces principles that resonate with many modern progressive values..." — "indeed" used as a mid-sentence agreement marker is identical to "It's true that..." The word "indeed" in the context of framing responses is BANNED when it appears before describing something the user got right.
 CORRECT (critical): "Partly right — but Bahá'u'lláh's call goes beyond congeniality: he frames unity as the necessary condition for the ['well-being of mankind'](url) *Gleanings*, which makes it a demanding ethical project, not just tolerance."
+ALSO CORRECT: "That framing captures the renunciation side — but misses that Bahá'í detachment is defined by what you run *toward* (God), not what you avoid: Bahá'u'lláh writes that ['turn away from all that is on earth'](url) applies only insofar as one's heart cleaves to the divine."
 ALSO CORRECT: "That framing captures the surface — but misses what makes Bahá'u'lláh's vision distinct from liberalism: 'Abdu'l-Bahá insists on ['the independent investigation of truth'](url), which actually demands breaking from consensus opinion rather than aligning with it."
 
-FORBIDDEN: agreeing with the framing and merely elaborating on it. If the framing is incomplete or wrong, show where it falls short FIRST, then build. The first full sentence after the brief acknowledgment MUST name the specific concept or dimension the user's framing fails to account for.
+FORBIDDEN: agreeing with the framing and merely elaborating on it. If the framing is incomplete or wrong, show where it falls short FIRST, then build. The second sentence MUST name the specific concept or dimension the user's framing fails to account for — not implied, but stated plainly.
 
 ╔══════════════════════════════════════════════════════════╗
 ║  LENGTH                                                   ║
@@ -1862,6 +1864,8 @@ conversation_summary: ${conversation_summary || '(this is the opening turn)'}${t
 retrieved_quotes (${retrieved_quotes.length} entries — use these as the substrate; entries marked SUMMARY are sub-agent context, not quotable text):
 
 ${quotesPayload || '(no quotes retrieved — reply must say so)'}${synthesisBlock}
+
+TORAH NOTE: "Torah" refers specifically to the Five Books of Moses (Genesis, Exodus, Leviticus, Numbers, Deuteronomy). When a question asks about "the Torah", prefer Q-entries whose source_title contains those book names over Talmud, Mishnah, or other Jewish texts. A Talmud passage is rabbinic commentary, not the Torah itself.
 
 ⚠️ BEFORE WRITING: The Q-entries are ordered by relevance — Q1, Q2, Q3 are the highest-relevance passages curated specifically for this question. Always start by evaluating Q1 through Q5 for fragments, then go higher only if needed. For each chosen Q-entry, copy 3-15 words VERBATIM from that entry's text field. For the link, copy the citation_url exactly from that same Q-entry. If a Q-entry has no citation_url, use plain "quotation marks" with NO link. Never use Q2's URL with Q7's text. Use the EXACT words as written in the Q-entry — do NOT substitute a similar passage from memory. Do NOT write any [text](url) unless you can point to the exact Q-entry number and the exact words you are copying. Your FIRST sentence must contain such a verbatim fragment — never open with a general-knowledge summary. SINGLE-KEYWORD CHECK: If the user typed only one word or a name (e.g. "bahaullah", "dharma", "aqdas"), your opening sentence MUST be built around a verbatim fragment from a Q-entry — NEVER "Bahá'u'lláh was the founder of the Bahá'í Faith." CORRECT: Bahá'u'lláh writes that ["the Ancient Beauty hath consented to be bound with chains"](url) — naming that willing sacrifice as the key to understanding his mission. If you cannot find an inline fragment from a retrieved_quote to anchor your first claim, state that the search returned limited results rather than inventing one.
 

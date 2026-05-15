@@ -1,6 +1,293 @@
 {
-  "generated": "2026-05-15T18:38:29.509Z",
+  "generated": "2026-05-15T21:19:06.023Z",
   "entries": [
+    {
+      "hash": "6631edce",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "BEFORE WRITING tells crafter Q1-Q5 are highest-relevance curated passages (use first)",
+      "scope": null
+    },
+    {
+      "hash": "083bb3ed",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Remove over-strict QUICK CHECK from BEFORE WRITING (was causing link-removal regressions)",
+      "scope": null
+    },
+    {
+      "hash": "c58e3d0f",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Hard ban siftersearch.com/library/ URLs; BEFORE WRITING quick-check for URL origin",
+      "scope": null
+    },
+    {
+      "hash": "ae5c6301",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Simplify URL rule — crafter uses pre-computed citation_url exactly as given, no URL construction",
+      "scope": null
+    },
+    {
+      "hash": "4aada620",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Clarify siftersearch.com/document/ URLs are valid from Q-entries (not fabricated)",
+      "scope": null
+    },
+    {
+      "hash": "d706ce17",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Ban 'indeed' in framing responses + zero-count companion should match author themes",
+      "scope": null
+    },
+    {
+      "hash": "9c6ca82b",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Pure-count companion uses knowledge/books query for relevance; stronger CATALOG-DATA label",
+      "scope": null
+    },
+    {
+      "hash": "3e87d528",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Pure-count companion quotes enabled + listing title-URL must match same Q-entry",
+      "scope": null
+    },
+    {
+      "hash": "7c3083d0",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Attribution rule Dhammapada example + catalog general-overview companion cite exception",
+      "scope": null
+    },
+    {
+      "hash": "9272a4e0",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Reading-task CASE1, URL-transposition ban, language catalog, single-keyword BEFORE WRITING",
+      "scope": null
+    },
+    {
+      "hash": "8652a52d",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Framing critique — ban opening with 'It's true that X' elaboration pattern",
+      "scope": null
+    },
+    {
+      "hash": "21375b1c",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Null paraId in citation URLs + show-me-everything catalog detection + verbatim Q-entry instruction",
+      "scope": null
+    },
+    {
+      "hash": "97cc03de",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Force crafter to use verbatim Q-entry text — ban substituting training-memory passages",
+      "scope": null
+    },
+    {
+      "hash": "e78f57c8",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Ban siftersearch.com/library/ URL format — hallucinated by crafter from training memory",
+      "scope": null
+    },
+    {
+      "hash": "0f8d2bcd",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Block quote threshold raised to 30+ words — short verses must be woven inline",
+      "scope": null
+    },
+    {
+      "hash": "c63db2e0",
+      "date": "2026-05-15",
+      "type": "Other",
+      "description": "Pure count queries — plain stats only, no companion (companion hurts more)",
+      "scope": null
+    },
+    {
+      "hash": "baad0495",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Pure count queries get 4 companion passages + request 2 inline citations",
+      "scope": null
+    },
+    {
+      "hash": "8a4d7057",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Pure count queries now get 1 companion citation for citationPresence threshold",
+      "scope": null
+    },
+    {
+      "hash": "c8ed8fdd",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Remove fake /document/123 from examples + explicit search mention for zero-count",
+      "scope": null
+    },
+    {
+      "hash": "db9597e8",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Strip literal (url) placeholders + strengthen no-fabricated-url instruction",
+      "scope": null
+    },
+    {
+      "hash": "4ed71b1e",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Zero-count catalog — tradition-aware search + prose-fragment label",
+      "scope": null
+    },
+    {
+      "hash": "bac5b142",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "GetDeepResearchQuotes always populates source_url from doc_id fallback",
+      "scope": null
+    },
+    {
+      "hash": "093331cc",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "'show me a key passage' → woven fragments not block quote",
+      "scope": null
+    },
+    {
+      "hash": "4cd0ecd6",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Deep-research citation_url fallback to doc_id — enables citing Pali Canon and other local docs",
+      "scope": null
+    },
+    {
+      "hash": "8168a358",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Zero-count CATALOG-DATA label — say 'not in library' not '0 documents'",
+      "scope": null
+    },
+    {
+      "hash": "806aa34f",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Correct fabricated-URL instruction to allow all retrieved_quotes with citation URLs",
+      "scope": null
+    },
+    {
+      "hash": "52586fd6",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Pure_count flag prevents any hyperlinks in total-count library queries",
+      "scope": null
+    },
+    {
+      "hash": "271ba919",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "CATALOG-DATA label now has explicit wrong/right examples to stop (url) placeholders",
+      "scope": null
+    },
+    {
+      "hash": "a3c2bbdb",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "CATALOG-DATA label explicitly bans hyperlinking numbers for [70] browsing",
+      "scope": null
+    },
+    {
+      "hash": "9b3f1c91",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Strengthen no-fabricated-URLs ban in CRAFTER_SYSTEM for catalog responses",
+      "scope": null
+    },
+    {
+      "hash": "ea0127cb",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Format instruction for compound catalog queries — name source documents",
+      "scope": null
+    },
+    {
+      "hash": "c3fe1594",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "CRAFTER_SYSTEM — never cross-link sample titles with companion URLs",
+      "scope": null
+    },
+    {
+      "hash": "64957386",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Increase companion search limit to 6 for compound catalog topic queries",
+      "scope": null
+    },
+    {
+      "hash": "ef433cf2",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Emit debug_research_call event for companion search in catalog path",
+      "scope": null
+    },
+    {
+      "hash": "c30b9fa7",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Only inject governance quotes with citation URLs in compound catalog path",
+      "scope": null
+    },
+    {
+      "hash": "a6a83a5a",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Filter deep research quotes by author in compound catalog queries",
+      "scope": null
+    },
+    {
+      "hash": "c465ed37",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Use synthetic content query for deep research in compound catalog path",
+      "scope": null
+    },
+    {
+      "hash": "55ab11f2",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Extract topic component for companion search in compound catalog queries",
+      "scope": null
+    },
+    {
+      "hash": "3b8cebe9",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Normalize Unicode apostrophes in library_count author LIKE query",
+      "scope": null
+    },
+    {
+      "hash": "42e9af7a",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Normalize Unicode curly quotes in extractCatalogFilters for 'Abdu'l-Bahá author detection",
+      "scope": null
+    },
+    {
+      "hash": "999dff97",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Catalog compound queries now check deep research cache",
+      "scope": null
+    },
     {
       "hash": "f0eefbf9",
       "date": "2026-05-15",
@@ -3213,297 +3500,297 @@
       "type": "Other",
       "description": "V3.2 → v3.1 (v3.2 over-tightened rules, scores 46-58% vs v3.1's 60-66%)",
       "scope": null
-    },
-    {
-      "hash": "71635740",
-      "date": "2026-04-27",
-      "type": "Other",
-      "description": "Iteration log shows prompt ceiling at ~60-70% — search-layer is next leverage",
-      "scope": null
-    },
-    {
-      "hash": "1d078451",
-      "date": "2026-04-27",
-      "type": "Other",
-      "description": "Jafar v3.2 + tougher user-agent — multi-search per turn, primary-first, specificity required",
-      "scope": null
-    },
-    {
-      "hash": "d7218f02",
-      "date": "2026-04-27",
-      "type": "Other",
-      "description": "Jafar v3.1 — hard search-before-quote rule (v3 hallucinated quotes from training memory)",
-      "scope": null
-    },
-    {
-      "hash": "73e4dae9",
-      "date": "2026-04-27",
-      "type": "Fixed",
-      "description": "Strip inline backticks from Jafar v3 prompt (broke JS template literal)",
-      "scope": null
-    },
-    {
-      "hash": "8754f323",
-      "date": "2026-04-27",
-      "type": "Other",
-      "description": "Jafar v3 — perennialist wise-believer voice + persistence ladder + source hierarchy",
-      "scope": null
-    },
-    {
-      "hash": "d0d0c44b",
-      "date": "2026-04-27",
-      "type": "Other",
-      "description": "Overnight dialog work — 4 conversations, v2 prompt, analysis, morning report",
-      "scope": null
-    },
-    {
-      "hash": "05fcdea0",
-      "date": "2026-04-27",
-      "type": "Fixed",
-      "description": "Disable broken hero image refs in dialogs (use SVG fallback until images are generated)",
-      "scope": null
-    },
-    {
-      "hash": "30829b19",
-      "date": "2026-04-27",
-      "type": "Other",
-      "description": "Dialog runner --prompt-file, v2 prompt for testing",
-      "scope": null
-    },
-    {
-      "hash": "73298454",
-      "date": "2026-04-27",
-      "type": "Other",
-      "description": "/dialog section — content schema, listing + detail pages, runner",
-      "scope": null
-    },
-    {
-      "hash": "a820d792",
-      "date": "2026-04-27",
-      "type": "Other",
-      "description": "Hebrew dispatch in resegmentOversized + batch driver",
-      "scope": null
-    },
-    {
-      "hash": "6999bc00",
-      "date": "2026-04-27",
-      "type": "Other",
-      "description": "Rule-based Hebrew segmenter + test runner",
-      "scope": null
-    },
-    {
-      "hash": "687bd430",
-      "date": "2026-04-27",
-      "type": "Fixed",
-      "description": "Bump API+worker memory limit from 500M to 1500M",
-      "scope": null
-    },
-    {
-      "hash": "f1fb0c12",
-      "date": "2026-04-25",
-      "type": "Fixed",
-      "description": "Regenerate-embeddings filters out soft-deleted rows",
-      "scope": null
-    },
-    {
-      "hash": "681c755b",
-      "date": "2026-04-25",
-      "type": "Fixed",
-      "description": "Cursor-based pagination in truncate-embeddings",
-      "scope": null
-    },
-    {
-      "hash": "47ba4ff2",
-      "date": "2026-04-25",
-      "type": "Fixed",
-      "description": "Keep canonical embedding_model tag in truncate script",
-      "scope": null
-    },
-    {
-      "hash": "06f0a47f",
-      "date": "2026-04-18",
-      "type": "Other",
-      "description": "V2.2.8 — slug diacritics + redirect fixes",
-      "scope": null
-    },
-    {
-      "hash": "3fe25a4c",
-      "date": "2026-04-18",
-      "type": "Other",
-      "description": "Push-slugs-to-meili companion script",
-      "scope": null
-    },
-    {
-      "hash": "1365ca4f",
-      "date": "2026-04-18",
-      "type": "Fixed",
-      "description": "Drop cf_synced from slug migration redirect upsert",
-      "scope": null
-    },
-    {
-      "hash": "f0674f7d",
-      "date": "2026-04-18",
-      "type": "Fixed",
-      "description": "Slug diacritics via NFD; regenerate existing slugs",
-      "scope": null
-    },
-    {
-      "hash": "ec84e481",
-      "date": "2026-04-16",
-      "type": "Fixed",
-      "description": "Scope Swagger UI to only show /api/v1/ public endpoints",
-      "scope": null
-    },
-    {
-      "hash": "600263c2",
-      "date": "2026-04-16",
-      "type": "Docs",
-      "description": "Add endpoint table of contents to API reference page",
-      "scope": null
-    },
-    {
-      "hash": "5d926edd",
-      "date": "2026-04-11",
-      "type": "Other",
-      "description": "Tune authority reranking defaults (boost 0.3->0.5, mult 3->6)",
-      "scope": null
-    },
-    {
-      "hash": "c0316a38",
-      "date": "2026-04-11",
-      "type": "Other",
-      "description": "Add vitest search authority ranking evaluation",
-      "scope": "api"
-    },
-    {
-      "hash": "e8ea4c3d",
-      "date": "2026-04-11",
-      "type": "Other",
-      "description": "Resort merged passages by authority after dedupe",
-      "scope": null
-    },
-    {
-      "hash": "5f559f97",
-      "date": "2026-04-11",
-      "type": "Other",
-      "description": "Apply authority reranking to keyword and federated paths",
-      "scope": null
-    },
-    {
-      "hash": "8244ae82",
-      "date": "2026-04-11",
-      "type": "Other",
-      "description": "Authority-weighted reranking on every hybrid query",
-      "scope": null
-    },
-    {
-      "hash": "d2931ad2",
-      "date": "2026-04-11",
-      "type": "Other",
-      "description": "Raise LLM call timeout to 5min (was 2min)",
-      "scope": null
-    },
-    {
-      "hash": "c33d3b80",
-      "date": "2026-04-10",
-      "type": "Other",
-      "description": "Target all paragraphs on first window of each doc",
-      "scope": null
-    },
-    {
-      "hash": "ff7e3306",
-      "date": "2026-04-04",
-      "type": "Fixed",
-      "description": "Passage search filters were not being passed to hybridSearch/keywordSearch",
-      "scope": null
-    },
-    {
-      "hash": "5bd675ce",
-      "date": "2026-04-03",
-      "type": "Other",
-      "description": "Process largest documents first for max cache reuse",
-      "scope": null
-    },
-    {
-      "hash": "09303486",
-      "date": "2026-04-03",
-      "type": "Other",
-      "description": "Language-aware token estimation per paragraph",
-      "scope": null
-    },
-    {
-      "hash": "29ab1fce",
-      "date": "2026-04-03",
-      "type": "Other",
-      "description": "Leapfrog windows with token-budget sizing and cache metrics",
-      "scope": null
-    },
-    {
-      "hash": "b97ea8cd",
-      "date": "2026-04-03",
-      "type": "Other",
-      "description": "Add concurrency, cursor-based doc loading, LEFT JOIN",
-      "scope": null
-    },
-    {
-      "hash": "e06d7197",
-      "date": "2026-04-03",
-      "type": "Other",
-      "description": "Clear-Site-Data header to fix broken service workers",
-      "scope": null
-    },
-    {
-      "hash": "7b1461a9",
-      "date": "2026-04-03",
-      "type": "Other",
-      "description": "Catch getAuthority errors in sync worker",
-      "scope": null
-    },
-    {
-      "hash": "de002b1b",
-      "date": "2026-04-02",
-      "type": "Test",
-      "description": "Version bump to verify zero-downtime deploy",
-      "scope": null
-    },
-    {
-      "hash": "5f9157cb",
-      "date": "2026-04-02",
-      "type": "Fixed",
-      "description": "Update disambiguation tests to match refactored KV-cache prompt architecture",
-      "scope": null
-    },
-    {
-      "hash": "26b07c74",
-      "date": "2026-04-02",
-      "type": "Fixed",
-      "description": "NONE is success not failure, dynamic window, log parse failures",
-      "scope": null
-    },
-    {
-      "hash": "b681d0c4",
-      "date": "2026-04-02",
-      "type": "Fixed",
-      "description": "Dynamic window size to stay under 8K token limit, log 400 errors",
-      "scope": null
-    },
-    {
-      "hash": "805b48bc",
-      "date": "2026-03-31",
-      "type": "Fixed",
-      "description": "Summary should BE the answer, not describe it",
-      "scope": null
-    },
-    {
-      "hash": "104deab0",
-      "date": "2026-03-31",
-      "type": "Other",
-      "description": "Add embedder config verification on startup",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "6631edce",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "BEFORE WRITING tells crafter Q1-Q5 are highest-relevance curated passages (use first)",
+        "scope": null
+      },
+      {
+        "hash": "083bb3ed",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Remove over-strict QUICK CHECK from BEFORE WRITING (was causing link-removal regressions)",
+        "scope": null
+      },
+      {
+        "hash": "c58e3d0f",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Hard ban siftersearch.com/library/ URLs; BEFORE WRITING quick-check for URL origin",
+        "scope": null
+      },
+      {
+        "hash": "ae5c6301",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Simplify URL rule — crafter uses pre-computed citation_url exactly as given, no URL construction",
+        "scope": null
+      },
+      {
+        "hash": "4aada620",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Clarify siftersearch.com/document/ URLs are valid from Q-entries (not fabricated)",
+        "scope": null
+      },
+      {
+        "hash": "d706ce17",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Ban 'indeed' in framing responses + zero-count companion should match author themes",
+        "scope": null
+      },
+      {
+        "hash": "9c6ca82b",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Pure-count companion uses knowledge/books query for relevance; stronger CATALOG-DATA label",
+        "scope": null
+      },
+      {
+        "hash": "3e87d528",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Pure-count companion quotes enabled + listing title-URL must match same Q-entry",
+        "scope": null
+      },
+      {
+        "hash": "7c3083d0",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Attribution rule Dhammapada example + catalog general-overview companion cite exception",
+        "scope": null
+      },
+      {
+        "hash": "9272a4e0",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Reading-task CASE1, URL-transposition ban, language catalog, single-keyword BEFORE WRITING",
+        "scope": null
+      },
+      {
+        "hash": "8652a52d",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Framing critique — ban opening with 'It's true that X' elaboration pattern",
+        "scope": null
+      },
+      {
+        "hash": "21375b1c",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Null paraId in citation URLs + show-me-everything catalog detection + verbatim Q-entry instruction",
+        "scope": null
+      },
+      {
+        "hash": "97cc03de",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Force crafter to use verbatim Q-entry text — ban substituting training-memory passages",
+        "scope": null
+      },
+      {
+        "hash": "e78f57c8",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Ban siftersearch.com/library/ URL format — hallucinated by crafter from training memory",
+        "scope": null
+      },
+      {
+        "hash": "0f8d2bcd",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Block quote threshold raised to 30+ words — short verses must be woven inline",
+        "scope": null
+      },
+      {
+        "hash": "c63db2e0",
+        "date": "2026-05-15",
+        "type": "Other",
+        "description": "Pure count queries — plain stats only, no companion (companion hurts more)",
+        "scope": null
+      },
+      {
+        "hash": "baad0495",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Pure count queries get 4 companion passages + request 2 inline citations",
+        "scope": null
+      },
+      {
+        "hash": "8a4d7057",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Pure count queries now get 1 companion citation for citationPresence threshold",
+        "scope": null
+      },
+      {
+        "hash": "c8ed8fdd",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Remove fake /document/123 from examples + explicit search mention for zero-count",
+        "scope": null
+      },
+      {
+        "hash": "db9597e8",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Strip literal (url) placeholders + strengthen no-fabricated-url instruction",
+        "scope": null
+      },
+      {
+        "hash": "4ed71b1e",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Zero-count catalog — tradition-aware search + prose-fragment label",
+        "scope": null
+      },
+      {
+        "hash": "bac5b142",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "GetDeepResearchQuotes always populates source_url from doc_id fallback",
+        "scope": null
+      },
+      {
+        "hash": "093331cc",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "'show me a key passage' → woven fragments not block quote",
+        "scope": null
+      },
+      {
+        "hash": "4cd0ecd6",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Deep-research citation_url fallback to doc_id — enables citing Pali Canon and other local docs",
+        "scope": null
+      },
+      {
+        "hash": "8168a358",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Zero-count CATALOG-DATA label — say 'not in library' not '0 documents'",
+        "scope": null
+      },
+      {
+        "hash": "806aa34f",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Correct fabricated-URL instruction to allow all retrieved_quotes with citation URLs",
+        "scope": null
+      },
+      {
+        "hash": "52586fd6",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Pure_count flag prevents any hyperlinks in total-count library queries",
+        "scope": null
+      },
+      {
+        "hash": "271ba919",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "CATALOG-DATA label now has explicit wrong/right examples to stop (url) placeholders",
+        "scope": null
+      },
+      {
+        "hash": "a3c2bbdb",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "CATALOG-DATA label explicitly bans hyperlinking numbers for [70] browsing",
+        "scope": null
+      },
+      {
+        "hash": "9b3f1c91",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Strengthen no-fabricated-URLs ban in CRAFTER_SYSTEM for catalog responses",
+        "scope": null
+      },
+      {
+        "hash": "ea0127cb",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Format instruction for compound catalog queries — name source documents",
+        "scope": null
+      },
+      {
+        "hash": "c3fe1594",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "CRAFTER_SYSTEM — never cross-link sample titles with companion URLs",
+        "scope": null
+      },
+      {
+        "hash": "64957386",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Increase companion search limit to 6 for compound catalog topic queries",
+        "scope": null
+      },
+      {
+        "hash": "ef433cf2",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Emit debug_research_call event for companion search in catalog path",
+        "scope": null
+      },
+      {
+        "hash": "c30b9fa7",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Only inject governance quotes with citation URLs in compound catalog path",
+        "scope": null
+      },
+      {
+        "hash": "a6a83a5a",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Filter deep research quotes by author in compound catalog queries",
+        "scope": null
+      },
+      {
+        "hash": "c465ed37",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Use synthetic content query for deep research in compound catalog path",
+        "scope": null
+      },
+      {
+        "hash": "55ab11f2",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Extract topic component for companion search in compound catalog queries",
+        "scope": null
+      },
+      {
+        "hash": "3b8cebe9",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Normalize Unicode apostrophes in library_count author LIKE query",
+        "scope": null
+      },
+      {
+        "hash": "42e9af7a",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Normalize Unicode curly quotes in extractCatalogFilters for 'Abdu'l-Bahá author detection",
+        "scope": null
+      },
+      {
+        "hash": "999dff97",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Catalog compound queries now check deep research cache",
+        "scope": null
+      },
       {
         "hash": "f0eefbf9",
         "date": "2026-05-15",
@@ -6747,311 +7034,6 @@
         "date": "2026-04-27",
         "type": "Other",
         "description": "V3.2 → v3.1 (v3.2 over-tightened rules, scores 46-58% vs v3.1's 60-66%)",
-        "scope": null
-      },
-      {
-        "hash": "71635740",
-        "date": "2026-04-27",
-        "type": "Other",
-        "description": "Iteration log shows prompt ceiling at ~60-70% — search-layer is next leverage",
-        "scope": null
-      },
-      {
-        "hash": "1d078451",
-        "date": "2026-04-27",
-        "type": "Other",
-        "description": "Jafar v3.2 + tougher user-agent — multi-search per turn, primary-first, specificity required",
-        "scope": null
-      },
-      {
-        "hash": "d7218f02",
-        "date": "2026-04-27",
-        "type": "Other",
-        "description": "Jafar v3.1 — hard search-before-quote rule (v3 hallucinated quotes from training memory)",
-        "scope": null
-      },
-      {
-        "hash": "73e4dae9",
-        "date": "2026-04-27",
-        "type": "Fixed",
-        "description": "Strip inline backticks from Jafar v3 prompt (broke JS template literal)",
-        "scope": null
-      },
-      {
-        "hash": "8754f323",
-        "date": "2026-04-27",
-        "type": "Other",
-        "description": "Jafar v3 — perennialist wise-believer voice + persistence ladder + source hierarchy",
-        "scope": null
-      },
-      {
-        "hash": "d0d0c44b",
-        "date": "2026-04-27",
-        "type": "Other",
-        "description": "Overnight dialog work — 4 conversations, v2 prompt, analysis, morning report",
-        "scope": null
-      },
-      {
-        "hash": "05fcdea0",
-        "date": "2026-04-27",
-        "type": "Fixed",
-        "description": "Disable broken hero image refs in dialogs (use SVG fallback until images are generated)",
-        "scope": null
-      },
-      {
-        "hash": "30829b19",
-        "date": "2026-04-27",
-        "type": "Other",
-        "description": "Dialog runner --prompt-file, v2 prompt for testing",
-        "scope": null
-      },
-      {
-        "hash": "73298454",
-        "date": "2026-04-27",
-        "type": "Other",
-        "description": "/dialog section — content schema, listing + detail pages, runner",
-        "scope": null
-      },
-      {
-        "hash": "a820d792",
-        "date": "2026-04-27",
-        "type": "Other",
-        "description": "Hebrew dispatch in resegmentOversized + batch driver",
-        "scope": null
-      },
-      {
-        "hash": "6999bc00",
-        "date": "2026-04-27",
-        "type": "Other",
-        "description": "Rule-based Hebrew segmenter + test runner",
-        "scope": null
-      },
-      {
-        "hash": "687bd430",
-        "date": "2026-04-27",
-        "type": "Fixed",
-        "description": "Bump API+worker memory limit from 500M to 1500M",
-        "scope": null
-      }
-    ],
-    "2026-04-25": [
-      {
-        "hash": "f1fb0c12",
-        "date": "2026-04-25",
-        "type": "Fixed",
-        "description": "Regenerate-embeddings filters out soft-deleted rows",
-        "scope": null
-      },
-      {
-        "hash": "681c755b",
-        "date": "2026-04-25",
-        "type": "Fixed",
-        "description": "Cursor-based pagination in truncate-embeddings",
-        "scope": null
-      },
-      {
-        "hash": "47ba4ff2",
-        "date": "2026-04-25",
-        "type": "Fixed",
-        "description": "Keep canonical embedding_model tag in truncate script",
-        "scope": null
-      }
-    ],
-    "2026-04-18": [
-      {
-        "hash": "06f0a47f",
-        "date": "2026-04-18",
-        "type": "Other",
-        "description": "V2.2.8 — slug diacritics + redirect fixes",
-        "scope": null
-      },
-      {
-        "hash": "3fe25a4c",
-        "date": "2026-04-18",
-        "type": "Other",
-        "description": "Push-slugs-to-meili companion script",
-        "scope": null
-      },
-      {
-        "hash": "1365ca4f",
-        "date": "2026-04-18",
-        "type": "Fixed",
-        "description": "Drop cf_synced from slug migration redirect upsert",
-        "scope": null
-      },
-      {
-        "hash": "f0674f7d",
-        "date": "2026-04-18",
-        "type": "Fixed",
-        "description": "Slug diacritics via NFD; regenerate existing slugs",
-        "scope": null
-      }
-    ],
-    "2026-04-16": [
-      {
-        "hash": "ec84e481",
-        "date": "2026-04-16",
-        "type": "Fixed",
-        "description": "Scope Swagger UI to only show /api/v1/ public endpoints",
-        "scope": null
-      },
-      {
-        "hash": "600263c2",
-        "date": "2026-04-16",
-        "type": "Docs",
-        "description": "Add endpoint table of contents to API reference page",
-        "scope": null
-      }
-    ],
-    "2026-04-11": [
-      {
-        "hash": "5d926edd",
-        "date": "2026-04-11",
-        "type": "Other",
-        "description": "Tune authority reranking defaults (boost 0.3->0.5, mult 3->6)",
-        "scope": null
-      },
-      {
-        "hash": "c0316a38",
-        "date": "2026-04-11",
-        "type": "Other",
-        "description": "Add vitest search authority ranking evaluation",
-        "scope": "api"
-      },
-      {
-        "hash": "e8ea4c3d",
-        "date": "2026-04-11",
-        "type": "Other",
-        "description": "Resort merged passages by authority after dedupe",
-        "scope": null
-      },
-      {
-        "hash": "5f559f97",
-        "date": "2026-04-11",
-        "type": "Other",
-        "description": "Apply authority reranking to keyword and federated paths",
-        "scope": null
-      },
-      {
-        "hash": "8244ae82",
-        "date": "2026-04-11",
-        "type": "Other",
-        "description": "Authority-weighted reranking on every hybrid query",
-        "scope": null
-      },
-      {
-        "hash": "d2931ad2",
-        "date": "2026-04-11",
-        "type": "Other",
-        "description": "Raise LLM call timeout to 5min (was 2min)",
-        "scope": null
-      }
-    ],
-    "2026-04-10": [
-      {
-        "hash": "c33d3b80",
-        "date": "2026-04-10",
-        "type": "Other",
-        "description": "Target all paragraphs on first window of each doc",
-        "scope": null
-      }
-    ],
-    "2026-04-04": [
-      {
-        "hash": "ff7e3306",
-        "date": "2026-04-04",
-        "type": "Fixed",
-        "description": "Passage search filters were not being passed to hybridSearch/keywordSearch",
-        "scope": null
-      }
-    ],
-    "2026-04-03": [
-      {
-        "hash": "5bd675ce",
-        "date": "2026-04-03",
-        "type": "Other",
-        "description": "Process largest documents first for max cache reuse",
-        "scope": null
-      },
-      {
-        "hash": "09303486",
-        "date": "2026-04-03",
-        "type": "Other",
-        "description": "Language-aware token estimation per paragraph",
-        "scope": null
-      },
-      {
-        "hash": "29ab1fce",
-        "date": "2026-04-03",
-        "type": "Other",
-        "description": "Leapfrog windows with token-budget sizing and cache metrics",
-        "scope": null
-      },
-      {
-        "hash": "b97ea8cd",
-        "date": "2026-04-03",
-        "type": "Other",
-        "description": "Add concurrency, cursor-based doc loading, LEFT JOIN",
-        "scope": null
-      },
-      {
-        "hash": "e06d7197",
-        "date": "2026-04-03",
-        "type": "Other",
-        "description": "Clear-Site-Data header to fix broken service workers",
-        "scope": null
-      },
-      {
-        "hash": "7b1461a9",
-        "date": "2026-04-03",
-        "type": "Other",
-        "description": "Catch getAuthority errors in sync worker",
-        "scope": null
-      }
-    ],
-    "2026-04-02": [
-      {
-        "hash": "de002b1b",
-        "date": "2026-04-02",
-        "type": "Test",
-        "description": "Version bump to verify zero-downtime deploy",
-        "scope": null
-      },
-      {
-        "hash": "5f9157cb",
-        "date": "2026-04-02",
-        "type": "Fixed",
-        "description": "Update disambiguation tests to match refactored KV-cache prompt architecture",
-        "scope": null
-      },
-      {
-        "hash": "26b07c74",
-        "date": "2026-04-02",
-        "type": "Fixed",
-        "description": "NONE is success not failure, dynamic window, log parse failures",
-        "scope": null
-      },
-      {
-        "hash": "b681d0c4",
-        "date": "2026-04-02",
-        "type": "Fixed",
-        "description": "Dynamic window size to stay under 8K token limit, log 400 errors",
-        "scope": null
-      }
-    ],
-    "2026-03-31": [
-      {
-        "hash": "805b48bc",
-        "date": "2026-03-31",
-        "type": "Fixed",
-        "description": "Summary should BE the answer, not describe it",
-        "scope": null
-      },
-      {
-        "hash": "104deab0",
-        "date": "2026-03-31",
-        "type": "Other",
-        "description": "Add embedder config verification on startup",
         "scope": null
       }
     ]

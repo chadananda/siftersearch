@@ -295,6 +295,7 @@ export function getAdjustedThresholds(questionType) {
   if (questionType === 'lookup') {
     base.citationPresence = 2; // Author lookups list titles, not quote content
     base.sourceAuthority = 2;
+    base.topicCoverage = 3;    // Can't cover author's full topics when their works aren't held
     base.quoteEconomy = 2;
     base.inlineQuoteIntegration = 2;
     base.criticalEngagement = 1; // "Do you have books by X?" carries no premise to challenge
