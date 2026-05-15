@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T21:51:01.755Z",
+  "generated": "2026-05-15T21:53:53.323Z",
   "entries": [
+    {
+      "hash": "918318e2",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "IsTraditionalListingQuery excludes author queries, crafter listing guidance",
+      "scope": null
+    },
     {
       "hash": "24c80d7b",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Dialogs 001-004 (manual runs contaminated with technology critique inside conversation)",
       "scope": null
-    },
-    {
-      "hash": "6553f6e8",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Smart-quote rendering — remark-smartypants for markdown body, sq() helper for Astro template strings",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "918318e2",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "IsTraditionalListingQuery excludes author queries, crafter listing guidance",
+        "scope": null
+      },
       {
         "hash": "24c80d7b",
         "date": "2026-05-15",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Dialogs 001-004 (manual runs contaminated with technology critique inside conversation)",
-        "scope": null
-      },
-      {
-        "hash": "6553f6e8",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Smart-quote rendering — remark-smartypants for markdown body, sq() helper for Astro template strings",
         "scope": null
       }
     ]

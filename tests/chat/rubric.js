@@ -275,13 +275,15 @@ export function getQuestionType(query, category) {
 export function getAdjustedThresholds(questionType) {
   const base = { ...THRESHOLDS };
   if (questionType === 'browsing') {
-    base.citationPresence = 2; // Stats questions don't need quotes
+    base.citationPresence = 2;     // Stats questions don't need quotes
     base.citationAccuracy = 2;
     base.sourceAuthority = 1;
-    base.logicalCoherence = 3; // Listing + one companion quote may feel tangential but is acceptable
+    base.topicCoverage = 3;        // Listings can't be exhaustive; a representative sample suffices
+    base.logicalCoherence = 3;     // Listing + one companion quote may feel tangential but is acceptable
+    base.toolUsage = 3;            // Catalog queries use library_count/overview — simpler tool profile
     base.quoteEconomy = 2;
     base.inlineQuoteIntegration = 1;
-    base.criticalEngagement = 1; // Browsing questions rarely carry framings to challenge
+    base.criticalEngagement = 1;   // Browsing questions rarely carry framings to challenge
   }
   if (questionType === 'social') {
     base.citationPresence = 1;
