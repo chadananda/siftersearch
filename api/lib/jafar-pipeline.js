@@ -828,7 +828,6 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // For comparative/multi-religion questions ("compare X", "how do different religions
       // view Y"), always run the full 5-tradition search to get inline-citable URLs.
       const isComparativeQuestion = /\b(compare|contrast|how do.{0,30}differ|across.{0,20}religion|different.{0,20}religion|multiple.{0,20}tradition|both.*faith|both.*religion|two.*tradition)\b/i.test(userMessage);
-      const shouldEarlyReturn = !requiredTradition && !isComparativeQuestion;
 
       // Always inject cached deep research quotes into retrieved — they are curated
       // and diversity-balanced. For simple questions, return early (skip live search).
@@ -837,10 +836,14 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // filter to that tradition only — a multi-religion pre-cached article would give
       // the crafter cross-tradition material it then uses despite the single-tradition ask.
       if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'deep_research', args: { researchId: dr.id, quotes: dr.quotes.length } });
-      logger.info({ researchId: dr.id, quotes: dr.quotes.length, shouldEarlyReturn }, 'Deep research pre-fetch hit');
       const quotesToInject = requiredTradition
         ? dr.quotes.filter(q => !q.religion || q.religion === requiredTradition)
         : dr.quotes;
+      // Early return when: (a) no tradition filter + not comparative, OR (b) tradition-specific
+      // question with enough curated quotes from that tradition — skip live search to avoid
+      // contaminating with unrelated sources (e.g. Atharva Veda when asking about the Bhagavad Gita).
+      const shouldEarlyReturn = !isComparativeQuestion && (!requiredTradition || quotesToInject.length >= 5);
+      logger.info({ researchId: dr.id, quotes: dr.quotes.length, injecting: quotesToInject.length, shouldEarlyReturn }, 'Deep research pre-fetch hit');
       for (const q of quotesToInject) {
         retrieved.push({
           text: q.text,

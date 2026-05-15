@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T22:37:47.507Z",
+  "generated": "2026-05-15T22:50:51.474Z",
   "entries": [
+    {
+      "hash": "cf42040e",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "BG author filter 'Bhagavad Gita'→'Vyāsa' — doc 21038 is authored by Vyāsa not title",
+      "scope": null
+    },
     {
       "hash": "28b36193",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "HeroImage path uses full slug; rebuild runner output",
       "scope": null
-    },
-    {
-      "hash": "51403e84",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "V4 prompt + assessment infrastructure (schema, methodology page, per-article assessment box)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "cf42040e",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "BG author filter 'Bhagavad Gita'→'Vyāsa' — doc 21038 is authored by Vyāsa not title",
+        "scope": null
+      },
       {
         "hash": "28b36193",
         "date": "2026-05-15",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-28",
         "type": "Fixed",
         "description": "HeroImage path uses full slug; rebuild runner output",
-        "scope": null
-      },
-      {
-        "hash": "51403e84",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "V4 prompt + assessment infrastructure (schema, methodology page, per-article assessment box)",
         "scope": null
       }
     ]
