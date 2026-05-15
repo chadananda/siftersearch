@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T02:41:50.950Z",
+  "generated": "2026-05-15T02:44:34.033Z",
   "entries": [
+    {
+      "hash": "4e2d70ce",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "No page breaks, add vertical margins",
+      "scope": null
+    },
     {
       "hash": "6fd5dabb",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Auto-segment paragraphs during translation",
       "scope": null
-    },
-    {
-      "hash": "28d92952",
-      "date": "2026-01-22",
-      "type": "New",
-      "description": "Improve document abstract styling and QR code",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "4e2d70ce",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "No page breaks, add vertical margins",
+        "scope": null
+      },
       {
         "hash": "6fd5dabb",
         "date": "2026-05-14",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-22",
         "type": "New",
         "description": "Auto-segment paragraphs during translation",
-        "scope": null
-      },
-      {
-        "hash": "28d92952",
-        "date": "2026-01-22",
-        "type": "New",
-        "description": "Improve document abstract styling and QR code",
         "scope": null
       }
     ]

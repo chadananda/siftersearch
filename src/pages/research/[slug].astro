@@ -902,21 +902,22 @@ function buildOLSourceUrl(q: any): string | null {
     .article-body { max-width: 100% !important; display: block !important; padding: 0 !important; margin: 0 !important; }
     .article-main { gap: 1.5rem; }
 
-    /* ---- Hero / title block ---- */
+    /* ---- Hero / title block: flatten completely ---- */
     .article-hero {
+      display: block !important;
       min-height: 0 !important;
+      height: auto !important;
       background: none !important;
-      margin-bottom: 1.5rem;
-      padding-bottom: 0.875rem;
+      padding: 0 !important;
+      margin: 0 0 1.25rem !important;
       border-bottom: 2pt double #555;
     }
     .hero-inner {
       position: static !important;
-      padding: 0 !important;
+      display: block !important;
+      padding: 0 0 0.75rem !important;
       max-width: 100% !important;
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
+      margin: 0 !important;
     }
     h1 {
       text-shadow: none !important;
@@ -924,7 +925,7 @@ function buildOLSourceUrl(q: any): string | null {
       font-weight: 700;
       color: #111 !important;
       line-height: 1.2;
-      margin: 0 0 0.25rem !important;
+      margin: 0 0 0.5rem !important;
       border: none !important;
     }
 
