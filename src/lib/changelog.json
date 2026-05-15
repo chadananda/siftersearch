@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T21:57:11.753Z",
+  "generated": "2026-05-15T22:18:40.128Z",
   "entries": [
+    {
+      "hash": "494db721",
+      "date": "2026-05-15",
+      "type": "Other",
+      "description": "Restore original LISTING QUERIES FORMAT (new version broke author queries)",
+      "scope": null
+    },
     {
       "hash": "d145becf",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "BACKUP_DIR is configurable via env (was hardcoded to data/backups, filled OS root partition)",
       "scope": null
-    },
-    {
-      "hash": "5cd0614c",
-      "date": "2026-04-28",
-      "type": "Fixed",
-      "description": "Scrub tech-stack/website references from dialog bodies; add darkened backdrop panel for legibility",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "494db721",
+        "date": "2026-05-15",
+        "type": "Other",
+        "description": "Restore original LISTING QUERIES FORMAT (new version broke author queries)",
+        "scope": null
+      },
       {
         "hash": "d145becf",
         "date": "2026-05-15",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-28",
         "type": "Fixed",
         "description": "BACKUP_DIR is configurable via env (was hardcoded to data/backups, filled OS root partition)",
-        "scope": null
-      },
-      {
-        "hash": "5cd0614c",
-        "date": "2026-04-28",
-        "type": "Fixed",
-        "description": "Scrub tech-stack/website references from dialog bodies; add darkened backdrop panel for legibility",
         "scope": null
       }
     ]

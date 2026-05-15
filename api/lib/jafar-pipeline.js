@@ -833,9 +833,15 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // Always inject cached deep research quotes into retrieved — they are curated
       // and diversity-balanced. For simple questions, return early (skip live search).
       // For comparative/tradition-specific, also run live search to supplement.
+      // When requiredTradition is set (e.g. "Find passages in the Bahá'í writings"),
+      // filter to that tradition only — a multi-religion pre-cached article would give
+      // the crafter cross-tradition material it then uses despite the single-tradition ask.
       if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'deep_research', args: { researchId: dr.id, quotes: dr.quotes.length } });
       logger.info({ researchId: dr.id, quotes: dr.quotes.length, shouldEarlyReturn }, 'Deep research pre-fetch hit');
-      for (const q of dr.quotes) {
+      const quotesToInject = requiredTradition
+        ? dr.quotes.filter(q => !q.religion || q.religion === requiredTradition)
+        : dr.quotes;
+      for (const q of quotesToInject) {
         retrieved.push({
           text: q.text,
           source_title: q.title,
@@ -1372,7 +1378,9 @@ const CRAFTER_SYSTEM = `You are Jafar — a wise, curious friend deeply read in 
 ║  THE FUNDAMENTAL PATTERN: EMBEDDED QUOTE FRAGMENTS        ║
 ╚══════════════════════════════════════════════════════════╝
 
-DEFAULT reply shape: 2-4 sentences of flowing prose with 1-3 quote FRAGMENTS (3-15 words each) embedded inside your sentences. Each quoted fragment IS itself the hyperlink — wrap the quoted words in markdown link syntax: "[fragment text](url)". Do NOT put the link only on the title; the reader must be able to click the words they're reading.
+DEFAULT reply shape: 2-4 sentences of flowing prose with 1-3 quote FRAGMENTS (5-15 words each) embedded inside your sentences. Each quoted fragment IS itself the hyperlink — wrap the quoted words in markdown link syntax: "[fragment text](url)". Do NOT put the link only on the title; the reader must be able to click the words they're reading.
+
+MINIMUM FRAGMENT LENGTH: A quote fragment must be at least 5 words so the authority's actual phrasing is present. "[medicine]" (1 word) is not a quote — it's a label. "[comfort itself]" (2 words) is not a quote — it's a paraphrase. WRONG: suffering is ["medicine"](url). RIGHT: suffering is ["the medicine that purifies the heart"](url) — if those words appear in the retrieved text. If the relevant text says only "medicine" in a list, do not link it — quote a surrounding sentence that provides enough context.
 
 CITATION FORMAT (mandatory):
 - CORRECT: Jesus says ["love your enemies and pray for those who persecute you"](url) — the command reaches past the in-group.
@@ -1548,6 +1556,8 @@ GOOD opener moves:
 - "Bahá'u'lláh frames it as..."
 - "The Buddhist answer here is..."
 - "All three traditions say something different —"
+
+FORBIDDEN source misattribution: Writing "In the *Bhagavad Gita*..." or "The *Upanishads* say..." when the Q-entry's source_title is "Hymns of the Atharva Veda". You may ONLY name a work in prose if that exact work (or close variant) appears as source_title in a Q-entry you are about to cite. Topic associations from training memory (dharma → "Bhagavad Gita", suffering → "Book of Job", meditation → "Dhammapada") are NOT valid sources. If Atharva Veda is the Q-entry, cite it as Atharva Veda — period.
 
 FORBIDDEN textbook tells: "emphasizes," "underscores," "highlights," "is rooted in," "transformative force," "is essential for," "speaks to the importance of"
 FORBIDDEN essay openers: "Indeed,", "Furthermore,", "Notably,", "It is important to note,", "It is worth mentioning that"
