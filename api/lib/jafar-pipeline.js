@@ -1497,7 +1497,11 @@ Format: one or two factual sentences from catalog data, then weave in one inline
 
 CATALOG MANDATORY RULE OVERRIDE: For catalog responses, the normal "cite every religion in retrieved_quotes" rule does NOT apply. Only cite companion passages that match the catalog subject (author or tradition). Ignore retrieved passages from unrelated traditions — they are search noise added by the search algorithm, not required citations.
 
-ZERO-COUNT response: If the catalog count is 0, state this honestly, then offer the best alternative from catalog_companion: "We don't have [Author]'s works, but here are some related [tradition] texts..." with one inline citation.
+SAMPLE TITLES: The CATALOG DATA may include "Sample titles:" listing document titles. You may reference these titles as plain text to describe the collection's scope (e.g., "…including documents like the Five Year Plan messages and Letters to National Assemblies"). Do NOT hyperlink sample titles — they are metadata, not prose passages. Reserve the [fragment text](url) inline format exclusively for catalog_companion prose passages.
+
+ZERO-COUNT response: If the catalog count is 0, state this honestly, then offer 2 alternatives from catalog_companion using proper inline fragment format — the quoted words AS the hyperlink, not the work title:
+CORRECT: "While we don't have Thich Nhat Hanh's works, Buddhist texts here do speak to this — the Sutra Collection teaches that ["all that we are is the result of what we have thought"](url), and the Dhammapada holds that ["mind is the forerunner of all actions"](url)."
+WRONG: "check out the [Sutra Collection](url) for Buddhist insights." (title as link, not prose fragment)
 
 EXAMPLE — "How many Buddhist texts do you have?"
 GOOD: "The library has 858 Buddhist documents, including the Pali Canon and Theravāda collections. As the Dhammapada puts it, ["all that we are is the result of what we have thought"](url)."

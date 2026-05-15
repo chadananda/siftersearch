@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:57:22.006Z",
+  "generated": "2026-05-15T12:59:33.512Z",
   "entries": [
+    {
+      "hash": "07723097",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Author extraction regex allows 'the' article and 'of' connectors",
+      "scope": null
+    },
     {
       "hash": "0d37fb20",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add title and description to metadata display",
       "scope": null
-    },
-    {
-      "hash": "3ea3c567",
-      "date": "2026-01-23",
-      "type": "Chore",
-      "description": "Auto-generated changelog and version bump to 0.1.911",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "07723097",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Author extraction regex allows 'the' article and 'of' connectors",
+        "scope": null
+      },
       {
         "hash": "0d37fb20",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Add title and description to metadata display",
-        "scope": null
-      },
-      {
-        "hash": "3ea3c567",
-        "date": "2026-01-23",
-        "type": "Chore",
-        "description": "Auto-generated changelog and version bump to 0.1.911",
         "scope": null
       }
     ]
