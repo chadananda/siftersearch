@@ -106,6 +106,28 @@ export async function checkDeepResearch(question, embedding = null) {
       return { ...full, quotes, similarity: bestScore };
     }
 
+    // Meilisearch keyword fallback: catches paraphrases and synonyms that
+    // embedding similarity misses when threshold isn't met.
+    try {
+      const meili = getMeili();
+      if (meili) {
+        const res = await meili.index(INDEXES.DEEP_RESEARCH).search(question, {
+          limit: 1,
+          attributesToRetrieve: ['id', 'canonical_question', 'slug'],
+        });
+        const hit = res?.hits?.[0];
+        if (hit?.id) {
+          const full = await queryOne('SELECT * FROM deep_research WHERE id = ? AND status = ?', [hit.id, 'complete']);
+          if (full) {
+            const quotes = await getDeepResearchQuotes(full.id);
+            if (quotes.length >= 3) return { ...full, quotes, via: 'meili_keyword' };
+          }
+        }
+      }
+    } catch (meiliErr) {
+      logger.warn({ err: meiliErr.message }, 'checkDeepResearch meili fallback error');
+    }
+
     return null;
   } catch (err) {
     logger.warn({ err: err.message }, 'checkDeepResearch error');

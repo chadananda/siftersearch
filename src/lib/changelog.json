@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T04:00:09.270Z",
+  "generated": "2026-05-15T04:03:39.042Z",
   "entries": [
+    {
+      "hash": "55cdd12f",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "Similarity threshold 0.82→0.78 for broader paraphrase matching",
+      "scope": null
+    },
     {
       "hash": "d256dc1b",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Disambiguate sign in button ARIA labels",
       "scope": null
-    },
-    {
-      "hash": "3667632f",
-      "date": "2026-01-23",
-      "type": "Fixed",
-      "description": "Add missing auth steps and handle quick search mode",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "55cdd12f",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "Similarity threshold 0.82→0.78 for broader paraphrase matching",
+        "scope": null
+      },
       {
         "hash": "d256dc1b",
         "date": "2026-05-14",
@@ -7055,13 +7062,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Disambiguate sign in button ARIA labels",
-        "scope": null
-      },
-      {
-        "hash": "3667632f",
-        "date": "2026-01-23",
-        "type": "Fixed",
-        "description": "Add missing auth steps and handle quick search mode",
         "scope": null
       }
     ]
