@@ -667,6 +667,34 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     }
   }
 
+  // Detect tradition-specific questions early so deep research pre-fetch can
+  // verify relevance. A comparative article about "evil across traditions" should
+  // NOT short-circuit "What are the Zoroastrian teachings on good and evil?" —
+  // it has no Zoroastrian quotes and causes a general-knowledge fallback.
+  const MINOR_TRAD_PATTERNS_EARLY = [
+    { pattern: /\bhind(?:u|uism)\b|\bdharma\b|\bveda[ns]?\b|\bupanishad\b|\bgita\b|\bmahabharata\b|\bbhagavad\b/i, religion: 'Hindu' },
+    { pattern: /\bsikh(?:ism)?\b|\bguru granth\b|\bseva\b|\bwaheguru\b|\bnanakshahi\b/i, religion: 'Sikh' },
+    { pattern: /\bzoroastr(?:ian|ianism)?\b|\bavesta\b|\bahura mazda\b|\bgathas?\b|\bmazdayasna\b/i, religion: 'Zoroastrian' },
+    { pattern: /\btao(?:ism|ist)?\b|\bconfuci(?:us|anism)?\b|\banalects\b/i, religion: 'Tao' },
+    { pattern: /\bjain(?:ism)?\b|\bahimsa\b|\bmahavira\b/i, religion: 'Jain' },
+  ];
+  const MAJOR_TRAD_PATTERNS_EARLY = [
+    { pattern: /\bislam(?:ic)?\b|\bquran\b|\bqu['']ran\b|\bsunni\b|\bshia\b|\bmuslim\b/i, religion: 'Islam' },
+    { pattern: /\bchrist(?:ian)?\b|\bgospel\b|\bbible\b|\bjesus\b/i, religion: 'Christian' },
+    { pattern: /\bbuddh(?:ist|ism)?\b|\bpali\b|\bdhamma\b|\bnirvana\b|\beightfold\b/i, religion: 'Buddhist' },
+    { pattern: /\b(?:jewish|judaism|torah|talmud|hebrew|rabbinic)\b/i, religion: 'Judaism' },
+  ];
+  const requiredTradition = (() => {
+    for (const { pattern, religion } of MINOR_TRAD_PATTERNS_EARLY) {
+      if (pattern.test(userMessage)) return religion;
+    }
+    // Only flag major traditions when the question is EXPLICITLY about them
+    // (not just mentioning them in passing in a multi-tradition question)
+    const majorMatches = MAJOR_TRAD_PATTERNS_EARLY.filter(({ pattern }) => pattern.test(userMessage));
+    if (majorMatches.length === 1) return majorMatches[0].religion; // single-tradition question
+    return null; // multi-tradition or generic — deep research articles are fine
+  })();
+
   // Deep Research pre-fetch: if we have curated passage sets for this question,
   // inject them directly — they were hand-selected for cross-tradition diversity
   // and relevance, so they make better research context than live search alone.
@@ -675,25 +703,36 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   try {
     const dr = await checkDeepResearch(userMessage);
     if (dr?.quotes?.length >= 3) {
-      if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'deep_research', args: { researchId: dr.id, quotes: dr.quotes.length } });
-      logger.info({ researchId: dr.id, quotes: dr.quotes.length }, 'Deep research pre-fetch hit');
-      for (const q of dr.quotes) {
-        retrieved.push({
-          text: q.text,
-          source_title: q.title,
-          source_author: q.author,
-          citation_url: q.source_url ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url,
-          doc_id: q.doc_id,
-          religion: q.religion,
-          authority: q.authority,
-          via: 'deep_research',
-          relevance_score: q.relevance_score,
-          contextual_note: q.contextual_note,
-        });
+      // For tradition-specific questions, verify the article has quotes from that
+      // tradition before returning early. If a comparative evil/suffering article
+      // matched "Zoroastrian teachings on good and evil" but has no Zoroastrian
+      // quotes, skip the early return — targeted search will do better.
+      const hasRequiredTradition = !requiredTradition
+        || dr.quotes.some(q => q.religion?.toLowerCase() === requiredTradition.toLowerCase());
+
+      if (hasRequiredTradition) {
+        if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'deep_research', args: { researchId: dr.id, quotes: dr.quotes.length } });
+        logger.info({ researchId: dr.id, quotes: dr.quotes.length }, 'Deep research pre-fetch hit');
+        for (const q of dr.quotes) {
+          retrieved.push({
+            text: q.text,
+            source_title: q.title,
+            source_author: q.author,
+            citation_url: q.source_url ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url,
+            doc_id: q.doc_id,
+            religion: q.religion,
+            authority: q.authority,
+            via: 'deep_research',
+            relevance_score: q.relevance_score,
+            contextual_note: q.contextual_note,
+          });
+        }
+        // Return immediately — curated set is sufficient, skip live search loop.
+        logger.info({ researchId: dr.id, retrieved: retrieved.length }, 'deterministic research complete (deep_research pre-fetch)');
+        return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls, deep_research_id: dr.id };
+      } else {
+        logger.info({ researchId: dr.id, requiredTradition, quotes: dr.quotes.length }, 'Deep research pre-fetch skipped — no quotes for required tradition, falling through to targeted search');
       }
-      // Return immediately — curated set is sufficient, skip live search loop.
-      logger.info({ researchId: dr.id, retrieved: retrieved.length }, 'deterministic research complete (deep_research pre-fetch)');
-      return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls, deep_research_id: dr.id };
     }
   } catch (drErr) {
     logger.warn({ err: drErr.message }, 'deep research pre-fetch error (non-fatal)');

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T11:44:37.765Z",
+  "generated": "2026-05-15T11:48:01.155Z",
   "entries": [
+    {
+      "hash": "291effe7",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Crafter attribution + false-analogy guard + Anthropic judge fallback",
+      "scope": null
+    },
     {
       "hash": "7994ae01",
       "date": "2026-05-14",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Add specific aria-label to auth modal submit button",
       "scope": null
-    },
-    {
-      "hash": "48db9c32",
-      "date": "2026-01-23",
-      "type": "Fixed",
-      "description": "Change unauthenticated user button aria-label to avoid regex collision",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-15": [
+      {
+        "hash": "291effe7",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Crafter attribution + false-analogy guard + Anthropic judge fallback",
+        "scope": null
+      }
+    ],
     "2026-05-14": [
       {
         "hash": "7994ae01",
@@ -7055,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Add specific aria-label to auth modal submit button",
-        "scope": null
-      },
-      {
-        "hash": "48db9c32",
-        "date": "2026-01-23",
-        "type": "Fixed",
-        "description": "Change unauthenticated user button aria-label to avoid regex collision",
         "scope": null
       }
     ]
