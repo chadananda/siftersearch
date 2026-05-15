@@ -622,7 +622,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         const distinctCollections = [...new Set(samples.map(d => d.collection).filter(Boolean))];
         const collectionNote = distinctCollections.length > 0 ? `\n\nCollections (from samples): ${distinctCollections.join(', ')}` : '';
         retrieved.push({
-          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles (with URLs — cite these directly using [title](url) format):\n${sampleLines}`,
+          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles (with URLs — you may list these works using [title](url) format; for inline prose quotes use CATALOG-COMPANION passages only):\n${sampleLines}`,
           source_title: 'Library Catalog',
           source_author: 'Ocean Library',
           citation_url: null,
@@ -647,7 +647,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             const companionQuery = hasTopicComponent
               ? userMessage.slice(0, 200)
               : isMetaQuery ? 'spiritual teachings revelation faith God' : userMessage.slice(0, 200);
-            const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: 2, semanticRatio: 0.7 };
+            const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: 3, semanticRatio: 0.7 };
             const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
             if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
           } catch (ce) {
@@ -1528,8 +1528,10 @@ Two types:
 
 TWO-PART catalog response (REQUIRED):
 1. CATALOG DATA — state the count or data DIRECTLY. Never say "I don't have the exact number" when the catalog provides it.
-   - Sample titles in CATALOG-DATA include real URLs — you MAY hyperlink them as [title](url). NEVER substitute a different title; only hyperlink titles actually listed.
-2. COMPANION CITATIONS — if other retrieved_quotes exist (catalog_companion), pick 1-2 and cite with inline "[fragment](url)" links. The companion passages are actual prose from those works — quote fragment text from the passage.
+   - Sample titles in CATALOG-DATA include real URLs — you MAY list them as [title](url) in a listing or mention them by name.
+   - NEVER quote prose from a CATALOG-DATA sample title entry (it contains metadata, not text).
+   - NEVER substitute a different title; only name/link titles actually listed.
+2. COMPANION CITATIONS — catalog_companion passages are actual prose from library documents. Pick 1-2 and weave in inline "[fragment](url)" quotes. These are your ONLY source for quoted prose.
 
 Format: one or two factual sentences from catalog data, then weave in one inline prose citation.
 

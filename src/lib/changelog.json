@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T18:04:31.277Z",
+  "generated": "2026-05-15T18:10:52.339Z",
   "entries": [
+    {
+      "hash": "8545de61",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Library_overview now includes dominant religion per collection",
+      "scope": null
+    },
     {
       "hash": "b04d5032",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add definitional + philosophical implication question types",
       "scope": null
-    },
-    {
-      "hash": "5f6f53b5",
-      "date": "2026-03-31",
-      "type": "Fixed",
-      "description": "Adl is justice not equity, add insaf for equity",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "8545de61",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Library_overview now includes dominant religion per collection",
+        "scope": null
+      },
       {
         "hash": "b04d5032",
         "date": "2026-05-15",
@@ -7045,13 +7052,6 @@
         "date": "2026-03-31",
         "type": "Other",
         "description": "Add definitional + philosophical implication question types",
-        "scope": null
-      },
-      {
-        "hash": "5f6f53b5",
-        "date": "2026-03-31",
-        "type": "Fixed",
-        "description": "Adl is justice not equity, add insaf for equity",
         "scope": null
       }
     ]
