@@ -25,7 +25,7 @@ import { generateSlug } from './slug.js';
 import { initStorage, hasCloudStorage, uploadFile, uploadImageFromUrl, generateAssetKey } from './storage.js';
 
 // Cosine similarity threshold for considering two questions "the same"
-const SIMILARITY_THRESHOLD = 0.82;
+const SIMILARITY_THRESHOLD = 0.78;
 
 // Number of times a question must be asked before auto-queueing deep research
 const AUTO_QUEUE_THRESHOLD = 2;
