@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T01:25:49.202Z",
+  "generated": "2026-05-15T01:36:53.397Z",
   "entries": [
+    {
+      "hash": "8e88edca",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "Comprehensive print CSS for research articles with QR codes",
+      "scope": null
+    },
     {
       "hash": "d20cb64e",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add empty JSON body to refresh request",
       "scope": null
-    },
-    {
-      "hash": "f7f12ed9",
-      "date": "2026-01-22",
-      "type": "Chore",
-      "description": "Bump version to 0.1.880",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "8e88edca",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "Comprehensive print CSS for research articles with QR codes",
+        "scope": null
+      },
       {
         "hash": "d20cb64e",
         "date": "2026-05-14",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-22",
         "type": "Fixed",
         "description": "Add empty JSON body to refresh request",
-        "scope": null
-      },
-      {
-        "hash": "f7f12ed9",
-        "date": "2026-01-22",
-        "type": "Chore",
-        "description": "Bump version to 0.1.880",
         "scope": null
       }
     ]
