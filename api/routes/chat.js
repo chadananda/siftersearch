@@ -1134,7 +1134,15 @@ async function executeReadDocumentForQuestion({ document_id, question, max_parag
 export async function executeLibraryCount({ author, religion, site, language, collection, scope } = {}) {
   const conditions = ['deleted_at IS NULL'];
   const params = [];
-  if (author)     { conditions.push('author LIKE ?');      params.push(`%${author}%`); }
+  if (author) {
+    // Normalize Unicode curly quotes to ASCII in both the filter and DB column
+    // so 'Abdu'l-Bahá (curly) matches 'Abdu'l-Bahá (ASCII) and vice versa.
+    // SQLite REPLACE is applied both to the stored author and the filter param.
+    const normalizedAuthor = author.replace(/[\u2018\u2019\u02BC]/g, "'");
+    const stripped = normalizedAuthor.replace(/^'+/, '').replace(/'+$/, '');
+    conditions.push("REPLACE(REPLACE(REPLACE(author, char(8216), char(39)), char(8217), char(39)), char(700), char(39)) LIKE ?");
+    params.push(`%${stripped}%`);
+  }
   if (religion)   { conditions.push('religion LIKE ?');    params.push(`%${religion}%`); }
   if (site)       { conditions.push('source_site LIKE ?'); params.push(`%${site}%`); }
   if (language)   { conditions.push('language LIKE ?');    params.push(`%${language}%`); }
