@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T17:52:50.067Z",
+  "generated": "2026-05-15T17:55:24.928Z",
   "entries": [
+    {
+      "hash": "cbc9d4cf",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Catalog companion — compound topic uses full query; revert listing suppression; fix misattribution instruction",
+      "scope": null
+    },
     {
       "hash": "675d2d3d",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Filter out revoked API keys from list",
       "scope": null
-    },
-    {
-      "hash": "2f97d035",
-      "date": "2026-03-30",
-      "type": "Fixed",
-      "description": "Consolidate ai_usage queries to prevent 42s blocking",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "cbc9d4cf",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Catalog companion — compound topic uses full query; revert listing suppression; fix misattribution instruction",
+        "scope": null
+      },
       {
         "hash": "675d2d3d",
         "date": "2026-05-15",
@@ -7047,13 +7054,6 @@
         "date": "2026-03-30",
         "type": "Fixed",
         "description": "Filter out revoked API keys from list",
-        "scope": null
-      },
-      {
-        "hash": "2f97d035",
-        "date": "2026-03-30",
-        "type": "Fixed",
-        "description": "Consolidate ai_usage queries to prevent 42s blocking",
         "scope": null
       }
     ]

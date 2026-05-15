@@ -1715,9 +1715,9 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     // Catalog entries (library_overview or library_count) are structured data, not quotable text
     if (q.is_catalog || q.via === 'library_overview' || q.via === 'library_count') {
       const label = q.via === 'library_count'
-        ? `[Q${i + 1} CATALOG COUNT — exact filtered count, state the number directly]`
-        : `[Q${i + 1} CATALOG — authoritative library data, present facts directly, no quoting needed]`;
-      return `${label}\n${q.text}\n  Source: ${q.source_title || 'Library Catalog'}`;
+        ? `[Q${i + 1} CATALOG-DATA — state the count directly; sample titles below are METADATA, not quotable text, never hyperlink them]`
+        : `[Q${i + 1} CATALOG-DATA — library overview; never hyperlink any title or collection name from this entry]`;
+      return `${label}\n${q.text}\n  Source: Library Catalog (no inline citations from this entry)`;
     }
     // For non-English passages, present BOTH original and JAFAR-grounded
     // translation so the crafter can quote whichever fits the user's request
@@ -1727,7 +1727,8 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     const bodyBlock = q.translation
       ? `original: ${q.text}\n  translation (en): ${q.translation}`
       : q.text;
-    return `[Q${i + 1}${q.is_summary ? ' SUMMARY' : ''}${tierTag}${religionTag}${langTag}] ${bodyBlock}\n  Citation: ${cite}\n  doc=${q.doc_id || '?'} para=${q.paragraph_index ?? '?'}`;
+    const catalogCompanionTag = q.via === 'catalog_companion' ? ' CATALOG-COMPANION-cite-this-source-title-exactly-as-shown' : '';
+    return `[Q${i + 1}${q.is_summary ? ' SUMMARY' : ''}${catalogCompanionTag}${tierTag}${religionTag}${langTag}] ${bodyBlock}\n  Citation: ${cite}\n  doc=${q.doc_id || '?'} para=${q.paragraph_index ?? '?'}`;
   }).join('\n\n');
 
   // Subagent synthesis: when a document subagent ran on a specific work, its
