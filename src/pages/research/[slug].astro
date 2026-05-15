@@ -854,16 +854,19 @@ function buildOLSourceUrl(q: any): string | null {
      PRINT STYLES — designed for beautiful paper output
      ====================================================== */
   @media print {
-    @page { margin: 1.8cm 2cm; size: letter portrait; }
+    @page { margin: 2cm 2.8cm; size: letter portrait; }
 
     /* ---- Global ---- */
     *, *::before, *::after { box-sizing: border-box; }
-    body {
+    /* Override html dark background (#0a162a) that bleeds into print */
+    html, body {
       background: #fff !important;
       color: #111 !important;
+    }
+    body {
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: 10.5pt;
-      line-height: 1.65;
+      font-size: 11pt;
+      line-height: 1.7;
       padding: 0 !important;
       margin: 0 !important;
     }
@@ -878,7 +881,7 @@ function buildOLSourceUrl(q: any): string | null {
     :global(.menu-item), :global(.menu-divider), :global(.menu-section-label),
     :global(.reddit-wrapper), :global(.reddit-popover) { display: none !important; }
 
-    /* Page furniture */
+    /* Page furniture + admin panel */
     .article-sidebar,
     .article-footer-cta,
     .notify-form, .notify-inline, .pending-notice .notify-inline,
@@ -888,12 +891,14 @@ function buildOLSourceUrl(q: any): string | null {
     .hero-image-banner, .hero-image-overlay,
     .btn-jafar, .btn-primary,
     .faq-q::after,
+    .print-article-footer,
     .stars { display: none !important; }
+    :global(.admin-footer) { display: none !important; }
 
     /* ---- Page layout ---- */
     .research-article { min-height: 0; padding-bottom: 0; }
-    .article-body { max-width: 100% !important; display: block !important; padding: 0 !important; margin: 0 !important; }
-    .article-main { gap: 1.25rem; }
+    .article-body { max-width: 100% !important; display: block !important; padding: 0 !important; margin: 0 auto !important; }
+    .article-main { gap: 1.5rem; }
 
     /* ---- Hero / title block ---- */
     .article-hero {
@@ -944,7 +949,7 @@ function buildOLSourceUrl(q: any): string | null {
     .summary-meta { font-size: 8pt; color: #777; border-top: 0.5pt solid #ddd; padding-top: 0.5rem; margin-top: 0.5rem; }
 
     /* ---- Aspect sections ---- */
-    .aspect-section { break-before: auto; break-inside: auto; margin-bottom: 1rem; }
+    .aspect-section { break-before: auto; break-inside: auto; margin-bottom: 1.75rem; }
     h2, .aspect-heading {
       font-size: 12.5pt !important;
       font-weight: 700;
@@ -967,7 +972,7 @@ function buildOLSourceUrl(q: any): string | null {
     }
 
     /* ---- Quote cards ---- */
-    .quotes-list { gap: 0.5rem !important; display: flex; flex-direction: column; }
+    .quotes-list { gap: 1.5rem !important; display: flex; flex-direction: column; }
     .quote-card {
       break-inside: avoid;
       border: 0.75pt solid #ccc !important;
@@ -977,7 +982,7 @@ function buildOLSourceUrl(q: any): string | null {
     }
     .quote-header {
       background: #f3f3f3 !important;
-      padding: 0.3rem 0.625rem !important;
+      padding: 0.35rem 0.75rem !important;
       display: flex !important;
       align-items: flex-start;
       gap: 0.5rem;
@@ -985,46 +990,50 @@ function buildOLSourceUrl(q: any): string | null {
       /* tradition color left border preserved via inline style */
     }
     .quote-trad-tag {
-      font-size: 6.5pt !important;
+      font-size: 7pt !important;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      padding: 0.1rem 0.3rem !important;
+      padding: 0.1rem 0.35rem !important;
       flex-shrink: 0;
       border-radius: 2px;
     }
-    .quote-answer { font-size: 8pt !important; color: #444 !important; line-height: 1.4; margin: 0 !important; }
-    .quote-body { padding: 0.5rem 0.625rem !important; border-top: 0.75pt solid #e0e0e0 !important; }
-    .quote-link { text-decoration: none !important; color: inherit !important; display: block; margin-bottom: 0.35rem; }
-    .quote-text, .bilingual-original { font-size: 9.5pt !important; color: #111 !important; line-height: 1.7; font-style: italic; margin: 0 0 0.3rem !important; }
-    .bilingual { gap: 0.5rem 1rem !important; }
-    .bilingual-translation { font-size: 9pt !important; color: #333 !important; line-height: 1.65; font-style: italic; border-left: 1.5pt solid #ccc !important; padding-left: 0.75rem !important; }
+    .quote-answer { font-size: 8.5pt !important; color: #444 !important; line-height: 1.5; margin: 0 !important; }
+    /* QR floats to top-right of quote body; padding-right makes room for it */
+    .quote-body { position: relative; padding: 0.75rem 4rem 0.625rem 0.75rem !important; border-top: 0.75pt solid #e0e0e0 !important; }
+    .quote-link { text-decoration: none !important; color: inherit !important; display: block; margin-bottom: 0.4rem; }
+    .quote-text, .bilingual-original { font-size: 10.5pt !important; color: #111 !important; line-height: 1.8; font-style: italic; margin: 0 0 0.4rem !important; }
+    .bilingual { gap: 0.625rem 1rem !important; }
+    .bilingual-translation { font-size: 10pt !important; color: #333 !important; line-height: 1.75; font-style: italic; border-left: 1.5pt solid #ccc !important; padding-left: 0.75rem !important; }
 
-    /* ---- Quote footer: source left, QR right ---- */
+    /* ---- Quote footer: source citation only (QR is now positioned in card) ---- */
     .quote-footer {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      margin-top: 0.3rem !important;
-      padding-top: 0.25rem !important;
+      display: block !important;
+      margin-top: 0.4rem !important;
+      padding-top: 0.3rem !important;
       border-top: 0.5pt solid #e8e8e8 !important;
-      gap: 0.5rem;
     }
     .quote-source {
-      font-size: 7.5pt !important;
+      font-size: 8pt !important;
       color: #555 !important;
-      flex: 1;
       display: flex !important;
       align-items: baseline;
       flex-wrap: wrap;
       gap: 0.2rem;
-      text-align: left !important;
-      justify-content: flex-start !important;
     }
     .source-link { color: #333 !important; text-decoration: none !important; font-style: italic; }
     .source-link::after { content: " (" attr(href) ")"; font-size: 6.5pt; color: #888; font-style: normal; }
     .source-author { color: #777 !important; }
-    .print-quote-qr { display: block !important; width: 44px !important; height: 44px !important; flex-shrink: 0; opacity: 0.8; }
+    /* QR positioned at top-right of quote body, floats beside full text */
+    .print-quote-qr {
+      display: block !important;
+      position: absolute !important;
+      top: 0.625rem !important;
+      right: 0.625rem !important;
+      width: 48px !important;
+      height: 48px !important;
+      opacity: 0.75;
+    }
 
     /* ---- Convergence ---- */
     .convergence-section { break-before: page; }
@@ -1049,17 +1058,6 @@ function buildOLSourceUrl(q: any): string | null {
     .pending-notice h3 { font-size: 10pt !important; color: #555 !important; margin: 0 0 0.25rem !important; }
     .pending-notice p { font-size: 9pt !important; color: #777 !important; margin: 0 !important; }
 
-    /* ---- Print-only article footer ---- */
-    .print-article-footer {
-      display: block !important;
-      margin-top: 2rem;
-      padding-top: 0.5rem;
-      border-top: 1.5pt solid #555;
-      font-size: 8pt;
-      color: #888;
-      text-align: center;
-      font-family: Georgia, serif;
-      letter-spacing: 0.03em;
-    }
+    /* print-article-footer is hidden via the hide list above */
   }
 </style>

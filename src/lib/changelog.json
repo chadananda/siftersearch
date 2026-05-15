@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T01:59:02.529Z",
+  "generated": "2026-05-15T02:09:25.410Z",
   "entries": [
+    {
+      "hash": "6fd5dabb",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Cross-tradition slot limit and volume dedup in hybridSearch",
+      "scope": null
+    },
     {
       "hash": "1b04da2f",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Improve document abstract styling and QR code",
       "scope": null
-    },
-    {
-      "hash": "fd83ecea",
-      "date": "2026-01-22",
-      "type": "New",
-      "description": "Improve document presentation display",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "6fd5dabb",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Cross-tradition slot limit and volume dedup in hybridSearch",
+        "scope": null
+      },
       {
         "hash": "1b04da2f",
         "date": "2026-05-14",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-22",
         "type": "New",
         "description": "Improve document abstract styling and QR code",
-        "scope": null
-      },
-      {
-        "hash": "fd83ecea",
-        "date": "2026-01-22",
-        "type": "New",
-        "description": "Improve document presentation display",
         "scope": null
       }
     ]
