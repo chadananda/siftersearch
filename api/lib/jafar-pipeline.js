@@ -96,6 +96,8 @@ const CATALOG_PATTERNS = [
   /\bwhat (collections?)\b/i,
   /\bwhat (?:kinds?|types?|forms?|sort)?(?:\s+of)?\s*scriptures? (?:do you|are|can|exist|is)\b/i,
   /\bdo you (have|carry|include)\b/i,
+  /\bshow me (everything|all works?|all writings?)\b/i,
+  /\blist (all|every|the) works?\b/i,
 ];
 
 // Extract a tradition name from a catalog query so we can also do a targeted search
@@ -229,7 +231,7 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
             source_title: q.title,
             source_author: q.author,
             citation_url: q.source_url
-              ? `${q.source_url}?paraId=${q.external_para_id}`
+              ? (q.external_para_id ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url)
               : (q.doc_id ? `https://siftersearch.com/document/${q.doc_id}` : null),
             doc_id: q.doc_id,
             religion: q.religion,
@@ -683,7 +685,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
                     retrieved.push({
                       text: q.text, source_title: q.title, source_author: q.author,
                       citation_url: q.source_url
-                        ? `${q.source_url}?paraId=${q.external_para_id}`
+                        ? (q.external_para_id ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url)
                         : (q.doc_id ? `https://siftersearch.com/document/${q.doc_id}` : null),
                       doc_id: q.doc_id, religion: q.religion, authority: q.authority,
                       via: 'deep_research', relevance_score: q.relevance_score,
@@ -832,7 +834,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           source_title: q.title,
           source_author: q.author,
           citation_url: q.source_url
-            ? `${q.source_url}?paraId=${q.external_para_id}`
+            ? (q.external_para_id ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url)
             : (q.doc_id ? `https://siftersearch.com/document/${q.doc_id}` : null),
           doc_id: q.doc_id,
           religion: q.religion,
