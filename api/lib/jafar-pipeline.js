@@ -667,6 +667,38 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     }
   }
 
+  // Deep Research pre-fetch: if we have curated passage sets for this question,
+  // inject them directly — they were hand-selected for cross-tradition diversity
+  // and relevance, so they make better research context than live search alone.
+  // We still run the normal search below to supplement with fresher/adjacent passages.
+  recordQuestionHit(userMessage).catch(() => {});
+  try {
+    const dr = await checkDeepResearch(userMessage);
+    if (dr?.quotes?.length >= 3) {
+      if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'deep_research', args: { researchId: dr.id, quotes: dr.quotes.length } });
+      logger.info({ researchId: dr.id, quotes: dr.quotes.length }, 'Deep research pre-fetch hit');
+      for (const q of dr.quotes) {
+        retrieved.push({
+          text: q.text,
+          source_title: q.title,
+          source_author: q.author,
+          citation_url: q.source_url ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url,
+          doc_id: q.doc_id,
+          religion: q.religion,
+          authority: q.authority,
+          via: 'deep_research',
+          relevance_score: q.relevance_score,
+          contextual_note: q.contextual_note,
+        });
+      }
+      // Return immediately — curated set is sufficient, skip live search loop.
+      logger.info({ researchId: dr.id, retrieved: retrieved.length }, 'deterministic research complete (deep_research pre-fetch)');
+      return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls, deep_research_id: dr.id };
+    }
+  } catch (drErr) {
+    logger.warn({ err: drErr.message }, 'deep research pre-fetch error (non-fatal)');
+  }
+
   const tasks = [];
 
   // Carry forward a work_name from earlier in the conversation when the
