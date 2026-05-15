@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T17:04:39.540Z",
+  "generated": "2026-05-15T17:09:22.291Z",
   "entries": [
+    {
+      "hash": "e84472b3",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Queue-research-topics script — remove non-existent updated_at column",
+      "scope": null
+    },
     {
       "hash": "4ac2b57c",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Check meilisearchIndexing (not indexing) from search/stats endpoint",
       "scope": null
-    },
-    {
-      "hash": "cdf2788c",
-      "date": "2026-02-04",
-      "type": "Chore",
-      "description": "Bump version to 0.1.922",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "e84472b3",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Queue-research-topics script — remove non-existent updated_at column",
+        "scope": null
+      },
       {
         "hash": "4ac2b57c",
         "date": "2026-05-15",
@@ -7049,15 +7056,6 @@
         "date": "2026-03-26",
         "type": "Fixed",
         "description": "Check meilisearchIndexing (not indexing) from search/stats endpoint",
-        "scope": null
-      }
-    ],
-    "2026-02-04": [
-      {
-        "hash": "cdf2788c",
-        "date": "2026-02-04",
-        "type": "Chore",
-        "description": "Bump version to 0.1.922",
         "scope": null
       }
     ]

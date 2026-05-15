@@ -758,29 +758,32 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       const isComparativeQuestion = /\b(compare|contrast|how do.{0,30}differ|across.{0,20}religion|different.{0,20}religion|multiple.{0,20}tradition|both.*faith|both.*religion|two.*tradition)\b/i.test(userMessage);
       const shouldEarlyReturn = !requiredTradition && !isComparativeQuestion;
 
+      // Always inject cached deep research quotes into retrieved — they are curated
+      // and diversity-balanced. For simple questions, return early (skip live search).
+      // For comparative/tradition-specific, also run live search to supplement.
+      if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'deep_research', args: { researchId: dr.id, quotes: dr.quotes.length } });
+      logger.info({ researchId: dr.id, quotes: dr.quotes.length, shouldEarlyReturn }, 'Deep research pre-fetch hit');
+      for (const q of dr.quotes) {
+        retrieved.push({
+          text: q.text,
+          source_title: q.title,
+          source_author: q.author,
+          citation_url: q.source_url ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url,
+          doc_id: q.doc_id,
+          religion: q.religion,
+          authority: q.authority,
+          via: 'deep_research',
+          relevance_score: q.relevance_score,
+          contextual_note: q.contextual_note,
+        });
+      }
       if (shouldEarlyReturn) {
-        if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'deep_research', args: { researchId: dr.id, quotes: dr.quotes.length } });
-        logger.info({ researchId: dr.id, quotes: dr.quotes.length }, 'Deep research pre-fetch hit');
-        for (const q of dr.quotes) {
-          retrieved.push({
-            text: q.text,
-            source_title: q.title,
-            source_author: q.author,
-            citation_url: q.source_url ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url,
-            doc_id: q.doc_id,
-            religion: q.religion,
-            authority: q.authority,
-            via: 'deep_research',
-            relevance_score: q.relevance_score,
-            contextual_note: q.contextual_note,
-          });
-        }
-        // Return immediately — curated set is sufficient, skip live search loop.
+        // Curated set sufficient — skip live search loop.
         logger.info({ researchId: dr.id, retrieved: retrieved.length }, 'deterministic research complete (deep_research pre-fetch)');
         return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls, deep_research_id: dr.id };
-      } else {
-        logger.info({ researchId: dr.id, requiredTradition, quotes: dr.quotes.length }, 'Deep research pre-fetch skipped — no quotes for required tradition, falling through to targeted search');
       }
+      // Fall through to targeted search — live results will supplement cached quotes.
+      logger.info({ researchId: dr.id, requiredTradition }, 'Deep research injected; continuing to targeted search for supplemental passages');
     }
   } catch (drErr) {
     logger.warn({ err: drErr.message }, 'deep research pre-fetch error (non-fatal)');
