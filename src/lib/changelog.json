@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:07:05.965Z",
+  "generated": "2026-05-15T12:13:41.713Z",
   "entries": [
+    {
+      "hash": "a69409fa",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Explicit wrong-attribution example in citation format — prevent Bhagavad Gita/Atharva Veda swap",
+      "scope": null
+    },
     {
       "hash": "1e9423ef",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add ARIA labels to library stats and fix ingestion progress visibility",
       "scope": null
-    },
-    {
-      "hash": "6563ae72",
-      "date": "2026-01-23",
-      "type": "New",
-      "description": "Add 404 page with clear ARIA label for home link",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "a69409fa",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Explicit wrong-attribution example in citation format — prevent Bhagavad Gita/Atharva Veda swap",
+        "scope": null
+      },
       {
         "hash": "1e9423ef",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "New",
         "description": "Add ARIA labels to library stats and fix ingestion progress visibility",
-        "scope": null
-      },
-      {
-        "hash": "6563ae72",
-        "date": "2026-01-23",
-        "type": "New",
-        "description": "Add 404 page with clear ARIA label for home link",
         "scope": null
       }
     ]

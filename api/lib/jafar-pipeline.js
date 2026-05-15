@@ -683,6 +683,8 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     { pattern: /\bchrist(?:ian)?\b|\bgospel\b|\bbible\b|\bjesus\b/i, religion: 'Christian' },
     { pattern: /\bbuddh(?:ist|ism)?\b|\bpali\b|\bdhamma\b|\bnirvana\b|\beightfold\b/i, religion: 'Buddhist' },
     { pattern: /\b(?:jewish|judaism|torah|talmud|hebrew|rabbinic)\b/i, religion: 'Judaism' },
+    // Bahá'í-specific questions must route to Bahá'í-only search (not 5-tradition loop)
+    { pattern: /\bbah[aá]['']?[ií]\b|\bbah[aá]u'?ll[aá]h\b|\b'?abdu'l-bah[aá]\b|\bshoghi\s+effendi\b|\baqdas\b|\biq[aá]n\b|\bhidden\s+words\b|\bbayan\b|\ball-merciful\b/i, religion: "Baha'i" },
   ];
   const requiredTradition = (() => {
     for (const { pattern, religion } of MINOR_TRAD_PATTERNS_EARLY) {
@@ -924,6 +926,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // lets the engine find the best thematic match across all Jewish texts
         // (Psalms, Torah, Talmud, JPS Tanakh) via semantic similarity.
         "Judaism":  { primarySemanticRatio: 0.5 },
+        // Bahá'í: no author filter (all Bahá'í corpus is authentic)
+        // Higher semantic ratio to bridge varied Bahá'í vocabulary styles
+        "Baha'i":   { primarySemanticRatio: 0.4 },
       };
       // Minor traditions: detect when the question is specifically about a tradition
       // not in INTERFAITH_TRADITIONS (Hindu, Sikh, Zoroastrian, Tao, Jain).
@@ -948,25 +953,31 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // Don't run INTERFAITH_TRADITIONS — those 5 don't apply when the question
         // is explicitly about Zoroaster/Sikh/Hindu/etc.
         tasks.push((async () => {
+          // Zoroastrian vocabulary expansion: "good/evil" → Ahura Mazda / Angra Mainyu
+          // BM25 won't find Avestan concepts via English good/evil keywords.
+          let minorQuery = passageQuery;
+          if (detectedMinorTradition === 'Zoroastrian') {
+            minorQuery = minorQuery
+              .replace(/\bgood\b/gi, 'Ahura Mazda righteous')
+              .replace(/\bevil\b/gi, 'Angra Mainyu druj');
+          }
           const primary = await runTool('search', {
-            query: passageQuery,
+            query: minorQuery,
             mode: 'passages',
             religion: detectedMinorTradition,
             limit: 6,
-            semanticRatio: 0.4
+            semanticRatio: 0.5
           });
           harvestPassages(primary, `traditions-${detectedMinorTradition.toLowerCase()}`);
-          // Second pass: broader query in case exact terms don't match
-          if ((primary?.passages?.length ?? 0) < 3) {
-            const broad = await runTool('search', {
-              query: userMessage.slice(0, 200),
-              mode: 'passages',
-              religion: detectedMinorTradition,
-              limit: 4,
-              semanticRatio: 0.6
-            });
-            harvestPassages(broad, `traditions-${detectedMinorTradition.toLowerCase()}-broad`);
-          }
+          // Second pass: always run a broader semantic search to supplement BM25 hits
+          const broad = await runTool('search', {
+            query: userMessage.slice(0, 200),
+            mode: 'passages',
+            religion: detectedMinorTradition,
+            limit: 4,
+            semanticRatio: 0.7
+          });
+          harvestPassages(broad, `traditions-${detectedMinorTradition.toLowerCase()}-broad`);
         })());
       } else if (requiredTradition && PRIMARY_SEARCHES[requiredTradition]) {
         // Major tradition single-search: question is explicitly about ONE tradition
