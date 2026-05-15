@@ -333,6 +333,22 @@ function buildOLSourceUrl(q: any): string | null {
 
         <h1 itemprop="headline">{record.canonical_question}</h1>
 
+        <!-- Print-only: doc URL + QR code -->
+        <div class="print-doc-header" aria-hidden="true">
+          <img
+            class="print-doc-qr"
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&color=111111&bgcolor=ffffff&data=${encodeURIComponent(pageUrl)}`}
+            alt="Scan to view online"
+            width="80" height="80"
+            loading="lazy"
+          />
+          <div class="print-doc-meta">
+            <strong class="print-site-name">SifterSearch Deep Research</strong>
+            <span class="print-url">{pageUrl}</span>
+            <span class="print-passage-count">{record.total_selected || quotes.length} passages · {traditions.length} traditions</span>
+          </div>
+        </div>
+
         <div class="research-badges">
           <span class="badge" title="Traditions covered">
             <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v14M1 8h14M3 3.5c1 1.5 3 2.5 5 2.5s4-1 5-2.5M3 12.5c1-1.5 3-2.5 5-2.5s4 1 5 2.5"/></svg>
@@ -524,6 +540,15 @@ function buildOLSourceUrl(q: any): string | null {
                             subreddits={quoteSubreddits(q.tradition || '')}
                             dropdown={true}
                           />
+                          <!-- Print-only QR code for this quote's anchor URL -->
+                          <img
+                            class="print-quote-qr"
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=50x50&color=333333&bgcolor=ffffff&data=${encodeURIComponent(quoteUrl)}`}
+                            alt=""
+                            width="50" height="50"
+                            loading="lazy"
+                            aria-hidden="true"
+                          />
                         </div>
                       </div>
                     </div>
@@ -611,6 +636,21 @@ function buildOLSourceUrl(q: any): string | null {
     </div>
   </article>
 </Layout>
+
+<!-- Print-only article footer -->
+<div class="print-article-footer" aria-hidden="true">
+  SifterSearch · siftersearch.com · Interfaith primary source research
+</div>
+
+<script>
+  // Open all FAQ <details> when printing so content is visible on paper
+  window.addEventListener('beforeprint', () => {
+    document.querySelectorAll('details.faq-item').forEach(d => d.setAttribute('open', ''));
+  });
+  window.addEventListener('afterprint', () => {
+    document.querySelectorAll('details.faq-item').forEach(d => d.removeAttribute('open'));
+  });
+</script>
 
 <script define:vars={{ researchId: record.id }}>
   async function submitNotify(id) {
@@ -807,46 +847,140 @@ function buildOLSourceUrl(q: any): string | null {
   .sidebar-share-grid :global(.reddit-wrapper) { position: static; }
   .sidebar-share-grid :global(.reddit-popover) { position: fixed; }
 
-  /* Print */
+  /* Screen-only: hide print-only elements */
+  .print-doc-header, .print-article-footer, .print-quote-qr { display: none; }
+
+  /* ======================================================
+     PRINT STYLES — designed for beautiful paper output
+     ====================================================== */
   @media print {
-    :global(nav), :global(.navbar), :global(.liquid-bg) { display: none !important; }
-    .article-sidebar, .article-footer-cta, .sidebar-share, .sidebar-cta { display: none !important; }
-    /* Hero: hide image entirely — show question as plain heading */
-    .article-hero { min-height: 0 !important; background: none !important; overflow: visible; }
-    .hero-image-banner { display: none !important; }
-    .hero-image-overlay { display: none !important; }
-    .hero-inner { padding: 1rem 0 0.5rem; }
-    .breadcrumb { display: none; }
-    .topic-chip { border: 1px solid #888; color: #333; }
-    h1 { font-size: 1.6rem; color: #000; border-bottom: 2px solid #333; padding-bottom: 0.4rem; margin-bottom: 0.75rem; }
+    @page { margin: 2cm 2.2cm 2.4cm; size: letter portrait; }
 
-    .article-body { grid-template-columns: 1fr; padding: 0; gap: 0; }
-    .article-main { gap: 1.5rem; }
+    /* ---- Global ---- */
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      background: #fff !important;
+      color: #111 !important;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 10.5pt;
+      line-height: 1.65;
+    }
 
-    h2 { font-size: 1.1rem; color: #000; border-bottom: 1px solid #ccc; padding-bottom: 0.2rem; }
-    .overview-card { border: 1px solid #ccc; background: #f9f9f9; padding: 0.75rem; }
-    .overview-text { color: #000; }
+    /* ---- Hide screen-only UI ---- */
+    :global(nav), :global(.navbar), :global(.liquid-bg),
+    :global(.share-row), :global(.share-btn), :global(.share-label),
+    :global(.share-container), :global(.reddit-wrapper), :global(.reddit-popover) { display: none !important; }
 
-    .aspect-section { break-before: avoid; }
-    .aspect-summary { border-left: 2px solid #999; background: #f5f5f5; color: #333; }
-    .quotes-list { gap: 0.5rem; }
-    .quote-card { break-inside: avoid; border: 1px solid #ccc; background: #fff; margin-bottom: 0.5rem; }
-    .quote-header { background: #f0f0f0 !important; }
-    .quote-trad-tag { color: #333 !important; border-color: #999 !important; }
-    .quote-answer, .quote-text, .bilingual-original, .bilingual-translation { color: #000 !important; }
-    .quote-footer { border-top: 1px solid #eee; }
-    .source-link { color: #000; }
-    .source-link::after { content: " (" attr(href) ")"; font-size: 0.65em; color: #555; }
-    .stars { color: #888; }
+    .article-sidebar,
+    .article-footer-cta,
+    .notify-form, .notify-inline,
+    .pending-notice .notify-inline,
+    .breadcrumb,
+    .hero-image-banner, .hero-image-overlay,
+    .btn-jafar, .btn-primary,
+    .faq-q::after,
+    .stars,
+    .research-badges .badge svg { display: none !important; }
 
-    .convergence-card { border: 1px solid #ccc; background: #f9f9f9; }
-    .conv-agree { color: #2a7a2a; }
-    .conv-differ { color: #555; }
-    .conv-list li { color: #000; }
-    .faq-item { border: 1px solid #ccc; }
-    .faq-q, .faq-a p { color: #000; }
+    /* ---- Layout ---- */
+    .research-article { min-height: 0; padding-bottom: 0; }
+    .article-body { max-width: 100% !important; display: block !important; padding: 0 !important; margin: 0 !important; }
+    .article-main { gap: 1.25rem; }
 
-    body { background: white; color: #000; }
-    @page { margin: 1.5cm; }
+    /* ---- Hero / title block ---- */
+    .article-hero {
+      min-height: 0 !important;
+      background: none !important;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2.5pt double #444;
+    }
+    .hero-inner {
+      position: static !important;
+      padding: 0 !important;
+      max-width: 100% !important;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    h1 {
+      text-shadow: none !important;
+      font-size: 22pt !important;
+      font-weight: 700;
+      color: #111 !important;
+      line-height: 1.2;
+      margin: 0.5rem 0 0.25rem !important;
+      border: none !important;
+    }
+    .topic-tags-row { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.25rem; }
+    .topic-chip { font-size: 7pt !important; color: #555 !important; border: 0.75pt solid #aaa !important; padding: 0.1rem 0.35rem !important; border-radius: 3px; text-decoration: none; }
+    .research-badges { display: flex; gap: 0.75rem; font-size: 8pt; color: #666; }
+    .badge { background: none !important; border: none !important; padding: 0 !important; font-size: 8pt; color: #666; }
+
+    /* Print-only header: QR code + URL */
+    .print-doc-header { display: flex !important; align-items: center; gap: 1rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 0.75pt solid #ccc; }
+    .print-doc-qr { display: block !important; width: 80px !important; height: 80px !important; flex-shrink: 0; }
+    .print-doc-meta { display: flex; flex-direction: column; gap: 0.2rem; }
+    .print-site-name { font-size: 8.5pt; font-weight: 700; color: #333; letter-spacing: 0.04em; }
+    .print-url { font-size: 8pt; color: #555; font-family: 'Courier New', monospace; }
+    .print-passage-count { font-size: 8pt; color: #777; }
+
+    /* ---- Overview ---- */
+    .overview-section h2 { display: none !important; }
+    .overview-card { border: 1pt solid #bbb !important; border-radius: 4px !important; background: #f7f7f7 !important; padding: 0.75rem 1rem !important; }
+    .overview-text { font-size: 10.5pt; color: #111 !important; line-height: 1.75; margin: 0 !important; }
+    .key-points li { font-size: 10pt; color: #111 !important; line-height: 1.65; }
+    .summary-meta { font-size: 8pt; color: #666; border-top: 0.75pt solid #ddd; padding-top: 0.5rem; margin-top: 0.5rem; }
+
+    /* ---- Aspect sections ---- */
+    .aspect-section { break-before: auto; break-inside: auto; margin-bottom: 0.75rem; }
+    h2, .aspect-heading { font-size: 13pt !important; font-weight: 700; color: #111 !important; border-bottom: 1.5pt solid #444 !important; padding-bottom: 0.2rem !important; margin: 0 0 0.5rem !important; text-shadow: none !important; }
+    .aspect-summary { font-size: 9pt; color: #333 !important; background: #f5f5f5 !important; border-left: 3pt solid #999 !important; padding: 0.4rem 0.75rem !important; border-radius: 0 3px 3px 0 !important; margin-bottom: 0.5rem !important; font-style: italic; line-height: 1.6; }
+
+    /* ---- Quote cards ---- */
+    .quotes-list { gap: 0.5rem !important; display: flex; flex-direction: column; }
+    .quote-card { break-inside: avoid; border: 0.75pt solid #ccc !important; border-radius: 4px !important; background: #fff !important; margin-bottom: 0; }
+    /* Tradition color left border preserved via inline style on .quote-header */
+    .quote-header { background: #f2f2f2 !important; padding: 0.3rem 0.6rem !important; display: flex !important; align-items: flex-start; gap: 0.5rem; border-radius: 3px 3px 0 0 !important; }
+    .quote-trad-tag { font-size: 7pt !important; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.1rem 0.35rem !important; flex-shrink: 0; border-radius: 3px; }
+    .quote-answer { font-size: 8.5pt !important; color: #333 !important; line-height: 1.45; margin: 0 !important; }
+    .quote-body { padding: 0.5rem 0.75rem 0.5rem !important; border-top: 0.75pt solid #e0e0e0 !important; }
+    .quote-link { text-decoration: none !important; color: inherit !important; margin-bottom: 0.35rem !important; }
+    .quote-text, .bilingual-original { font-size: 9.5pt !important; color: #111 !important; line-height: 1.7; font-style: italic; margin: 0 0 0.35rem !important; }
+    .bilingual { gap: 0.5rem 1rem !important; }
+    .bilingual-translation { font-size: 9pt !important; color: #333 !important; line-height: 1.65; font-style: italic; border-left: 1.5pt solid #ccc !important; padding-left: 0.75rem !important; }
+
+    /* ---- Quote footer ---- */
+    .quote-footer { display: flex !important; align-items: center !important; justify-content: space-between !important; margin-top: 0.35rem !important; padding-top: 0.3rem !important; border-top: 0.75pt solid #e8e8e8 !important; gap: 0.5rem; }
+    .quote-source { font-size: 8pt !important; color: #555 !important; flex: 1; text-align: left !important; justify-content: flex-start !important; flex-wrap: wrap; gap: 0.25rem; }
+    .source-link { color: #333 !important; text-decoration: none !important; font-style: italic; }
+    .source-link::after { content: " (" attr(href) ")"; font-size: 7pt; color: #777; font-style: normal; }
+    .source-author { color: #666 !important; }
+    .print-quote-qr { display: block !important; width: 48px !important; height: 48px !important; flex-shrink: 0; opacity: 0.85; }
+
+    /* ---- Convergence ---- */
+    .convergence-section { break-before: page; }
+    .convergence-card { border: 1pt solid #bbb !important; border-radius: 4px !important; background: #f7f7f7 !important; padding: 0.75rem 1rem !important; gap: 1rem !important; }
+    .conv-label { font-size: 9pt !important; font-weight: 700; }
+    .conv-agree { color: #2a6a2a !important; }
+    .conv-differ { color: #555 !important; }
+    .conv-list li { font-size: 9pt !important; color: #222 !important; line-height: 1.6; }
+    .conv-note { font-size: 8pt !important; color: #666 !important; }
+
+    /* ---- FAQ (all open via beforeprint JS) ---- */
+    .faq-section { break-before: auto; }
+    details.faq-item { border: 0.75pt solid #ccc !important; border-radius: 4px !important; background: #fff !important; overflow: visible !important; }
+    details.faq-item .faq-a { display: block !important; }
+    .faq-q { font-size: 9.5pt !important; font-weight: 600; color: #111 !important; padding: 0.5rem 0.75rem !important; cursor: default !important; list-style: none !important; }
+    .faq-a p { font-size: 9pt !important; color: #333 !important; line-height: 1.65; }
+    .faq-traditions { font-size: 8pt !important; color: #777 !important; }
+
+    /* ---- Pending notice ---- */
+    .pending-notice { border: 0.75pt solid #ccc !important; background: #f9f9f9 !important; padding: 0.75rem !important; }
+    .pending-notice h3 { font-size: 10pt !important; color: #555 !important; }
+    .pending-notice p { font-size: 9pt !important; color: #666 !important; margin: 0 !important; }
+
+    /* ---- Print-only footer ---- */
+    .print-article-footer { display: block !important; margin-top: 2rem; padding-top: 0.6rem; border-top: 1.5pt solid #444; font-size: 8pt; color: #777; text-align: center; font-family: Georgia, serif; }
   }
 </style>
