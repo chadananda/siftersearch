@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T21:23:55.653Z",
+  "generated": "2026-05-15T21:27:30.622Z",
   "entries": [
+    {
+      "hash": "76d86cad",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Broaden isPureListQuery regex to match 'What Hindu scriptures do you carry?'",
+      "scope": null
+    },
     {
       "hash": "865f18ea",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "98 auto-generated dialogs from overnight batch (v3.1, avg 64.3%, range 55-76%)",
       "scope": null
-    },
-    {
-      "hash": "d146afcc",
-      "date": "2026-04-27",
-      "type": "Other",
-      "description": "Morning report shows full iteration journey, final config v3.1 + original user-agent",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "76d86cad",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Broaden isPureListQuery regex to match 'What Hindu scriptures do you carry?'",
+        "scope": null
+      },
       {
         "hash": "865f18ea",
         "date": "2026-05-15",
@@ -7025,15 +7032,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "98 auto-generated dialogs from overnight batch (v3.1, avg 64.3%, range 55-76%)",
-        "scope": null
-      }
-    ],
-    "2026-04-27": [
-      {
-        "hash": "d146afcc",
-        "date": "2026-04-27",
-        "type": "Other",
-        "description": "Morning report shows full iteration journey, final config v3.1 + original user-agent",
         "scope": null
       }
     ]
