@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:54:04.404Z",
+  "generated": "2026-05-15T12:57:22.006Z",
   "entries": [
+    {
+      "hash": "0d37fb20",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Catalog companion search + CRAFTER overrides for author lookups",
+      "scope": null
+    },
     {
       "hash": "6e56b0be",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Auto-generated changelog and version bump to 0.1.911",
       "scope": null
-    },
-    {
-      "hash": "b1ffd5cb",
-      "date": "2026-01-23",
-      "type": "New",
-      "description": "Add document ID and file_path to metadata display for debugging duplicates",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "0d37fb20",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Catalog companion search + CRAFTER overrides for author lookups",
+        "scope": null
+      },
       {
         "hash": "6e56b0be",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Chore",
         "description": "Auto-generated changelog and version bump to 0.1.911",
-        "scope": null
-      },
-      {
-        "hash": "b1ffd5cb",
-        "date": "2026-01-23",
-        "type": "New",
-        "description": "Add document ID and file_path to metadata display for debugging duplicates",
         "scope": null
       }
     ]

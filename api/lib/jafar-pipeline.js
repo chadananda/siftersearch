@@ -126,8 +126,9 @@ function extractCatalogFilters(message) {
   // Site domain (e.g. "bahai-library.com", "oceanlibrary.com")
   const siteMatch = message.match(/\b([\w-]+\.(?:com|org|net|edu))\b/i);
   if (siteMatch) filters.site = siteMatch[1];
-  // Author: "by First Last" — capitalised 1–4 word name
-  const authorMatch = message.match(/\bby\s+([A-Z][a-záéíóúāīū]+(?:\s+[A-Z][a-záéíóúāīū]+){0,3})/);
+  // Author: "by [the] First Last [of Entity]" — allows leading "the" article and
+  // lowercase "of/al/ibn" connectors within institutional/historical names
+  const authorMatch = message.match(/\bby\s+(?:the\s+)?([A-Z][a-záéíóúāīū'-]+(?:\s+(?:of\s+|al-|ibn\s+)?[A-Z][a-záéíóúāīū'-]+){0,3})/);
   if (authorMatch) filters.author = authorMatch[1];
   // Language: "in Arabic", "in Persian", etc.
   const langMatch = message.match(/\bin\s+(Arabic|Persian|Farsi|French|German|English|Spanish|Turkish|Russian|Chinese|Japanese|Korean)\b/i);
