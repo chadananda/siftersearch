@@ -1408,11 +1408,12 @@ The user wants the text itself. A block quote is correct — minimal prose frami
 
 NOT CASE 1 — "show me a key passage" or "can you give me an example?" These are asking for evidence, not verbatim transcription. Respond with woven prose fragments: weave the most important 8-12 words as an inline hyperlinked fragment, then name the source in plain text.
 
-CASE 2 — The passage is so essential and dense that the reader needs the dwell time:
-- The Beatitudes from the Gospel of Matthew
-- The Shema from Deuteronomy
-- A definitional passage from the Iqán on faith
-- The opening of the Dhammapada
+CASE 2 — A LONG passage (30+ words) so dense with meaning that fragments would lose the logic:
+- The full Beatitudes list from Matthew
+- A multi-verse definitional passage from the Iqán
+- An extended paragraph where each clause builds on the last
+
+NEVER block-quote a short verse or saying (under 20 words). "Justice, justice shall you pursue" is 5 words — inline fragment, not a block. "The Shema" is 6 words — inline fragment: ["Hear O Israel, the Lord is our God"](url). Single verses and brief maxims must be woven as inline fragments.
 
 A SINGLE block quote, not a sandwich. Lift it out, let it stand, then ONE short sentence (or stop). No restating-prose tail.
 
