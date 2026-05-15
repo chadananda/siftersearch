@@ -1110,13 +1110,15 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         })());
       // For Hindu dharma/duty/yoga queries, also search the Bhagavad Gita specifically —
       // general religion:Hindu search often surfaces Atharva Veda instead of BG.
+      // OceanLibrary BG is authored by "Vyāsa" (doc 21038, oceanlibrary.com/bhagavad-gita).
+      // "Bhagavad Gita" is a title not an author — that filter returns 0 results.
       if (detectedMinorTradition === 'Hindu' && /\bdharma\b|\bduty\b|\bkarma\b|\bseva\b|\byoga\b|\barjuna\b|\bkrishna\b/i.test(userMessage)) {
         tasks.push((async () => {
           const bgResult = await runTool('search', {
             query: passageQuery,
             mode: 'passages',
             religion: 'Hindu',
-            author: 'Bhagavad Gita',
+            author: 'Vyāsa',
             limit: 5,
             semanticRatio: 0.5
           });
