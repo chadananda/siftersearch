@@ -278,6 +278,7 @@ export function getAdjustedThresholds(questionType) {
     base.citationPresence = 2; // Stats questions don't need quotes
     base.citationAccuracy = 2;
     base.sourceAuthority = 1;
+    base.logicalCoherence = 3; // Listing + one companion quote may feel tangential but is acceptable
     base.quoteEconomy = 2;
     base.inlineQuoteIntegration = 1;
     base.criticalEngagement = 1; // Browsing questions rarely carry framings to challenge

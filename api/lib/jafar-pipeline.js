@@ -643,11 +643,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // ("Do you have books by X?") — the user message itself has poor semantic overlap
         // with prose passage content. A generic theological query with the author filter
         // retrieves representative, citable passages from that author's actual works.
-        // For tradition-listing queries ("What Hindu scriptures do you carry?"), a companion
-        // prose passage is irrelevant to enumeration and causes logicalCoherence failures.
-        const isTraditionalListingQuery = /\bwhat\b.{0,30}\b(scripture|text|book|collection|tradition)s?\b.{0,20}\b(do you|carry|have|hold)\b/i.test(userMessage) ||
-          /\bdo you (carry|have|hold)\b.{0,30}\b(scripture|text|book|collection|tradition)s?\b/i.test(userMessage);
-        if (countResult.count > 0 && !isTraditionalListingQuery) {
+        if (countResult.count > 0) {
           try {
             // Compound queries ("how many by X and which discuss Y") — extract the
             // topic component so the companion search targets the subject, not the

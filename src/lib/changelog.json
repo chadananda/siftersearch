@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T21:27:30.622Z",
+  "generated": "2026-05-15T21:47:26.456Z",
   "entries": [
+    {
+      "hash": "accfd623",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Suppress companion for tradition-listing queries in filtered catalog path",
+      "scope": null
+    },
     {
       "hash": "76d86cad",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "101 hand-drawn-watercolor hero images for all dialogs (gpt-image-1, ~$10)",
       "scope": null
-    },
-    {
-      "hash": "e15c1ef2",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "98 auto-generated dialogs from overnight batch (v3.1, avg 64.3%, range 55-76%)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "accfd623",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Suppress companion for tradition-listing queries in filtered catalog path",
+        "scope": null
+      },
       {
         "hash": "76d86cad",
         "date": "2026-05-15",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "101 hand-drawn-watercolor hero images for all dialogs (gpt-image-1, ~$10)",
-        "scope": null
-      },
-      {
-        "hash": "e15c1ef2",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "98 auto-generated dialogs from overnight batch (v3.1, avg 64.3%, range 55-76%)",
         "scope": null
       }
     ]
