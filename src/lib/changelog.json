@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T02:49:41.581Z",
+  "generated": "2026-05-15T03:27:30.751Z",
   "entries": [
+    {
+      "hash": "f1f0896e",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Cross-tradition passTwo fill skips same-doc paragraphs — prevents duplicate passages from one volume",
+      "scope": null
+    },
     {
       "hash": "773659c2",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add comprehensive ARIA attributes for accessibility",
       "scope": null
-    },
-    {
-      "hash": "025ca8bf",
-      "date": "2026-01-22",
-      "type": "New",
-      "description": "Add comprehensive document viewing tests",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "f1f0896e",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Cross-tradition passTwo fill skips same-doc paragraphs — prevents duplicate passages from one volume",
+        "scope": null
+      },
       {
         "hash": "773659c2",
         "date": "2026-05-14",
@@ -7055,15 +7062,6 @@
         "date": "2026-01-23",
         "type": "New",
         "description": "Add comprehensive ARIA attributes for accessibility",
-        "scope": null
-      }
-    ],
-    "2026-01-22": [
-      {
-        "hash": "025ca8bf",
-        "date": "2026-01-22",
-        "type": "New",
-        "description": "Add comprehensive document viewing tests",
         "scope": null
       }
     ]

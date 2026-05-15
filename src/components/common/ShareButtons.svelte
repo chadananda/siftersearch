@@ -40,22 +40,22 @@
   const enc = encodeURIComponent;
   // When sharing a quote, link to the primary source document if available.
   const shareUrl = (quote && sourceHref) ? sourceHref : url;
-  // Quote shares: include text + attribution + source URL for full context.
   const attribution = sourceTitle ? ` — ${sourceTitle}` : '';
-  const shareText = quote
-    ? `"${quote.slice(0, 200)}"${attribution}\n${shareUrl}`
-    : (description ? description.slice(0, 200) : title);
+
+  // Platform-specific quote limits: Twitter 280 chars total; others can be generous
+  const twitterQuote = quote ? `"${quote.slice(0, 180)}"${attribution}` : (description ? description.slice(0, 200) : title);
+  const longQuote = quote ? `"${quote}"${attribution}` : (description ? description.slice(0, 500) : title);
 
   const links = {
-    twitter: `https://twitter.com/intent/tweet?text=${enc(shareText)}&url=${enc(shareUrl)}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}&quote=${enc(shareText)}`,
-    whatsapp: `https://wa.me/?text=${enc(shareText + ' ' + shareUrl)}`,
-    email: `mailto:?subject=${enc(title)}&body=${enc(shareText + '\n\n' + shareUrl)}`,
+    twitter: `https://twitter.com/intent/tweet?text=${enc(twitterQuote)}&url=${enc(shareUrl)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}&quote=${enc(longQuote)}`,
+    whatsapp: `https://wa.me/?text=${enc(longQuote + '\n' + shareUrl)}`,
+    email: `mailto:?subject=${enc(title)}&body=${enc(longQuote + '\n\n' + shareUrl)}`,
   };
 
   function redditUrl(sub) {
     const redditTitle = quote
-      ? `"${quote.slice(0, 150)}" — ${sourceTitle || title}`
+      ? `"${quote.slice(0, 200)}" — ${sourceTitle || title}`
       : title;
     return `https://reddit.com/r/${sub.replace(/^r\//, '')}/submit?url=${enc(shareUrl)}&title=${enc(redditTitle)}`;
   }
