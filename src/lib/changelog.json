@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T01:04:03.396Z",
+  "generated": "2026-05-15T01:14:03.989Z",
   "entries": [
+    {
+      "hash": "56d4d274",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "LLM-generated unique hero prompts using article overview + section labels",
+      "scope": null
+    },
     {
       "hash": "1ef5e46d",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Updater dependency check - skip better-sqlite3 ESM issue",
       "scope": null
-    },
-    {
-      "hash": "b5f15e33",
-      "date": "2026-01-22",
-      "type": "Chore",
-      "description": "Auto-generated changelog and code changes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "56d4d274",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "LLM-generated unique hero prompts using article overview + section labels",
+        "scope": null
+      },
       {
         "hash": "1ef5e46d",
         "date": "2026-05-14",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-22",
         "type": "Fixed",
         "description": "Updater dependency check - skip better-sqlite3 ESM issue",
-        "scope": null
-      },
-      {
-        "hash": "b5f15e33",
-        "date": "2026-01-22",
-        "type": "Chore",
-        "description": "Auto-generated changelog and code changes",
         "scope": null
       }
     ]

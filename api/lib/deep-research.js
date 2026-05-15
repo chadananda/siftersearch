@@ -640,14 +640,18 @@ Return: [{"idx": N, "score": 0-10, "answer": "..."}]`;
     }
   };
 
-  // Build batches and run all in parallel — Haiku is fast, 80-core machine, no reason to throttle
+  const RERANK_CONCURRENCY = 5; // 5 concurrent Haiku calls; 3 workers × 5 = 15 peak concurrent
   const batches = [];
   for (let start = 0; start < passages.length; start += BATCH_SIZE) {
     batches.push({ batch: passages.slice(start, start + BATCH_SIZE), idx: batches.length });
   }
 
-  const batchResults = await Promise.all(batches.map(({ batch, idx }) => scoreBatch(batch, idx)));
-  const allScores = batchResults.flat();
+  const allScores = [];
+  for (let i = 0; i < batches.length; i += RERANK_CONCURRENCY) {
+    const group = batches.slice(i, i + RERANK_CONCURRENCY);
+    const results = await Promise.all(group.map(({ batch, idx }) => scoreBatch(batch, idx)));
+    allScores.push(...results.flat());
+  }
 
   logger.info({ candidates: passages.length, scored: allScores.length, above6: allScores.filter(s => s.score >= 6).length }, 'Rerank complete');
 

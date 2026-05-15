@@ -53,12 +53,29 @@ export function makeChatFn(acc, researchId) {
     const model = opts.model || DEFAULT_MODEL;
     const systemMsg = messages.find(m => m.role === 'system');
     const userMsgs = messages.filter(m => m.role !== 'system');
-    const response = await anthropic.messages.create({
-      model,
-      max_tokens: opts.max_tokens || 4096,
-      ...(systemMsg ? { system: systemMsg.content } : {}),
-      messages: userMsgs,
-    });
+
+    // Retry on overloaded_error with exponential backoff (up to 4 attempts)
+    let response;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        response = await anthropic.messages.create({
+          model,
+          max_tokens: opts.max_tokens || 4096,
+          ...(systemMsg ? { system: systemMsg.content } : {}),
+          messages: userMsgs,
+        });
+        break;
+      } catch (err) {
+        const isOverloaded = err?.status === 529 || err?.message?.includes('overloaded');
+        if (isOverloaded && attempt < 3) {
+          const delay = (attempt + 1) * 15000; // 15s, 30s, 45s
+          logger.warn({ attempt, delay, caller }, 'API overloaded — retrying after delay');
+          await new Promise(r => setTimeout(r, delay));
+        } else {
+          throw err;
+        }
+      }
+    }
     const inputTok = response.usage?.input_tokens || 0;
     const outputTok = response.usage?.output_tokens || 0;
     const pricing = MODEL_PRICING[model] || MODEL_PRICING[DEFAULT_MODEL];
