@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T00:51:09.692Z",
+  "generated": "2026-05-15T01:04:03.396Z",
   "entries": [
+    {
+      "hash": "1ef5e46d",
+      "date": "2026-05-14",
+      "type": "Performance",
+      "description": "Parallelize gap-check+diversity-sweep; all rerank batches concurrent",
+      "scope": null
+    },
     {
       "hash": "1fb6f18e",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Auto-generated changelog and code changes",
       "scope": null
-    },
-    {
-      "hash": "6335a25a",
-      "date": "2026-01-22",
-      "type": "Fixed",
-      "description": "Add Content-Type header to auth refresh request",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "1ef5e46d",
+        "date": "2026-05-14",
+        "type": "Performance",
+        "description": "Parallelize gap-check+diversity-sweep; all rerank batches concurrent",
+        "scope": null
+      },
       {
         "hash": "1fb6f18e",
         "date": "2026-05-14",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-22",
         "type": "Chore",
         "description": "Auto-generated changelog and code changes",
-        "scope": null
-      },
-      {
-        "hash": "6335a25a",
-        "date": "2026-01-22",
-        "type": "Fixed",
-        "description": "Add Content-Type header to auth refresh request",
         "scope": null
       }
     ]

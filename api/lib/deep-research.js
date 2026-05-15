@@ -1123,18 +1123,67 @@ async function loadUsedSubjects(excludeId = null) {
   return used;
 }
 
-// Build a topic-differentiated image prompt.
-// Same artistic medium every time; subject and palette vary by topic.
-// usedSubjects prevents picking a theme already used by another record.
-function buildResearchHeroPrompt({ question, traditions, tags, usedSubjects = new Set() }) {
-  const tradList = (traditions || []).slice(0, 3).join(', ') || 'world religions';
-  const theme = pickVisualTheme(tags, question, usedSubjects);
-  return `${theme.subject}. Evoking the spiritual question: "${question}" across ${tradList}. Color palette: ${theme.palette}. ${HERO_MEDIUM}`;
+// Use the LLM to generate a unique visual metaphor for this specific article.
+// Passes the actual overview + section headings so the image reflects the article's insight.
+// usedPalettes: list of dominant color words already in use — forces visual variety.
+async function generateUniqueHeroPrompt(question, overview, sectionLabels, chat, usedPalettes = []) {
+  const avoidColors = ['amber', 'golden', 'orange', 'fire', 'flame', 'candle', ...usedPalettes]
+    .filter((v, i, a) => a.indexOf(v) === i).slice(0, 8);
+
+  const userPrompt = `Design a unique hero image concept for a spiritual research article.
+
+Article question: "${question}"
+Core insight: "${overview}"
+Key themes explored: ${sectionLabels.slice(0, 4).map(l => `"${l}"`).join('; ')}
+
+Requirements:
+- Create a SPECIFIC visual metaphor tied to THIS article's unique insight, not a generic "light in darkness"
+- Must be purely abstract — no figures, faces, symbols, text, or religious icons
+- Wide 16:9 cinematic composition, oil painting texture
+- Avoid these overused colors as dominant tones: ${avoidColors.join(', ')}
+- Think beyond golden/amber light — consider water, stone, geometric forms, botanical, crystalline, aerial, oceanic, geological, architectural-light themes
+
+Return ONLY valid JSON:
+{"subject": "2-3 sentence specific abstract scene", "palette": "5-6 specific colors, no amber/gold/orange"}`;
+
+  try {
+    const response = await chat(
+      [{ role: 'user', content: userPrompt }],
+      { model: 'claude-haiku-4-5-20251001', max_tokens: 400, caller: 'deep-research/hero-prompt' }
+    );
+    const text = response.content?.[0]?.text || '';
+    const json = text.match(/\{[\s\S]*\}/)?.[0];
+    if (json) {
+      const { subject, palette } = JSON.parse(json);
+      if (subject && palette) return { subject, palette };
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Hero prompt LLM call failed — using theme fallback');
+  }
+  // Fallback to keyword theme if LLM fails
+  return pickVisualTheme([], question, new Set());
+}
+
+// Load dominant color words already used in existing hero prompts.
+async function loadUsedPalettes(excludeId = null) {
+  const rows = await queryAll(
+    'SELECT hero_prompt FROM deep_research WHERE hero_prompt IS NOT NULL AND id != ?',
+    [excludeId || 0]
+  );
+  const colorWords = [];
+  for (const { hero_prompt } of rows) {
+    const match = hero_prompt.match(/Color palette: ([^.]+)/i);
+    if (match) colorWords.push(...match[1].toLowerCase().split(/[,\s]+/).filter(w => w.length > 3));
+  }
+  // Return most-used colors to steer away from
+  const freq = {};
+  for (const w of colorWords) freq[w] = (freq[w] || 0) + 1;
+  return Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([w]) => w);
 }
 
 // Generate and store hero image for a deep research record.
 // Exported so the admin route can trigger regeneration on demand.
-export async function generateResearchHeroImage(researchId, { question, traditions, tags }) {
+export async function generateResearchHeroImage(researchId, { question, traditions, tags, overview, sectionLabels, chat }) {
   try {
     initStorage();
     if (!hasCloudStorage()) {
@@ -1142,9 +1191,11 @@ export async function generateResearchHeroImage(researchId, { question, traditio
       return null;
     }
 
-    const usedSubjects = await loadUsedSubjects(researchId);
-    const prompt = buildResearchHeroPrompt({ question, traditions, tags, usedSubjects });
-    logger.info({ researchId, prompt: prompt.slice(0, 80) }, 'Generating research hero image');
+    const usedPalettes = await loadUsedPalettes(researchId);
+    const theme = await generateUniqueHeroPrompt(question, overview || '', sectionLabels || [], chat || (() => {}), usedPalettes);
+    const tradList = (traditions || []).slice(0, 3).join(', ') || 'world religions';
+    const prompt = `${theme.subject}. Evoking the spiritual question: "${question}" across ${tradList}. Color palette: ${theme.palette}. ${HERO_MEDIUM}`;
+    logger.info({ researchId, prompt: prompt.slice(0, 100) }, 'Generating research hero image');
 
     const { default: OpenAI } = await import('openai');
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -1331,7 +1382,15 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
     // 9. Hero image (non-blocking — failure doesn't fail the research)
     const traditions = traditionsCovered.split(',').filter(Boolean);
     const tags = record.topic_tags ? JSON.parse(record.topic_tags) : [];
-    await generateResearchHeroImage(researchId, { question: record.canonical_question, traditions, tags });
+    const heroSectionLabels = sections.map(s => s.label).filter(Boolean);
+    await generateResearchHeroImage(researchId, {
+      question: record.canonical_question,
+      traditions,
+      tags,
+      overview: summary?.overview || '',
+      sectionLabels: heroSectionLabels,
+      chat: taggedChat('hero-prompt'),
+    });
 
     logger.info({ researchId, selected: validSelected.length, traditions: traditionsCovered }, 'Deep research complete');
   } catch (err) {
