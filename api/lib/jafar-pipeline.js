@@ -744,8 +744,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // asked about ONE tradition: the crafter's mandatory-citation rule then forces
       // it to cite all traditions present, ignoring the user's single-tradition ask.
       // Let the targeted tradition search run instead.
-      // For general interfaith questions (requiredTradition=null), early return is fine.
-      const shouldEarlyReturn = !requiredTradition;
+      // For comparative/multi-religion questions ("compare X", "how do different religions
+      // view Y"), always run the full 5-tradition search to get inline-citable URLs.
+      const isComparativeQuestion = /\b(compare|contrast|how do.{0,30}differ|across.{0,20}religion|different.{0,20}religion|multiple.{0,20}tradition|both.*faith|both.*religion|two.*tradition)\b/i.test(userMessage);
+      const shouldEarlyReturn = !requiredTradition && !isComparativeQuestion;
 
       if (shouldEarlyReturn) {
         if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'deep_research', args: { researchId: dr.id, quotes: dr.quotes.length } });
