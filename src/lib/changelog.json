@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T21:47:26.456Z",
+  "generated": "2026-05-15T21:51:01.755Z",
   "entries": [
+    {
+      "hash": "24c80d7b",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Revert isTraditionalListingQuery, lower browsing logicalCoherence threshold to 3",
+      "scope": null
+    },
     {
       "hash": "accfd623",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Smart-quote rendering — remark-smartypants for markdown body, sq() helper for Astro template strings",
       "scope": null
-    },
-    {
-      "hash": "94fb8ec0",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "101 hand-drawn-watercolor hero images for all dialogs (gpt-image-1, ~$10)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "24c80d7b",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Revert isTraditionalListingQuery, lower browsing logicalCoherence threshold to 3",
+        "scope": null
+      },
       {
         "hash": "accfd623",
         "date": "2026-05-15",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Smart-quote rendering — remark-smartypants for markdown body, sq() helper for Astro template strings",
-        "scope": null
-      },
-      {
-        "hash": "94fb8ec0",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "101 hand-drawn-watercolor hero images for all dialogs (gpt-image-1, ~$10)",
         "scope": null
       }
     ]
