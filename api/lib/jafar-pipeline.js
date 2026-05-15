@@ -676,7 +676,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       try {
         const overview = await executeTool('library_overview', {}, { scope_config });
         const religionLines = (overview.religions || []).filter(r => r.name).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
-        const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
+        const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.religion ? ' [' + c.religion + ']' : ''}${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
         const languageLines = (overview.languages || []).map(l => `  - ${l.name}`).join('\n');
         retrieved.push({
           text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}${languageLines ? '\n\nLanguages available:\n' + languageLines : ''}`,

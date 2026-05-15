@@ -1023,7 +1023,7 @@ export async function executeLibraryOverview() {
   if (_overviewCache && now - _overviewCacheTime < OVERVIEW_CACHE_TTL_MS) {
     return _overviewCache;
   }
-  const [docCount, paraCount, religions, collections, languages] = await Promise.all([
+  const [docCount, paraCount, religions, collections, collectionReligions, languages] = await Promise.all([
     queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
     queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
     queryAll('SELECT religion, COUNT(*) as count FROM docs WHERE deleted_at IS NULL GROUP BY religion ORDER BY count DESC'),
@@ -1031,8 +1031,17 @@ export async function executeLibraryOverview() {
               (SELECT COUNT(*) FROM docs d WHERE d.collection = ln.name AND d.deleted_at IS NULL) as doc_count
               FROM library_nodes ln WHERE ln.node_type = 'collection' AND ln.parent_id IS NOT NULL
               ORDER BY ln.authority_default DESC, ln.name`),
+    queryAll(`SELECT d.collection, d.religion, COUNT(*) as cnt
+              FROM docs d WHERE d.deleted_at IS NULL AND d.collection IS NOT NULL
+              GROUP BY d.collection, d.religion ORDER BY d.collection, cnt DESC`),
     queryAll("SELECT language, COUNT(*) as count FROM docs WHERE deleted_at IS NULL AND language IS NOT NULL GROUP BY language ORDER BY count DESC LIMIT 15")
   ]);
+
+  // Build dominant-religion map per collection
+  const dominantReligion = {};
+  for (const r of collectionReligions) {
+    if (!dominantReligion[r.collection]) dominantReligion[r.collection] = r.religion;
+  }
 
   _overviewCache = {
     totalDocuments: docCount.count,
@@ -1040,7 +1049,8 @@ export async function executeLibraryOverview() {
     religions: religions.map(r => ({ name: r.religion, documents: r.count })),
     totalCollections: collections.length,
     collections: collections.filter(c => c.doc_count > 0).map(c => ({
-      name: c.name, documents: c.doc_count, description: c.description
+      name: c.name, documents: c.doc_count, description: c.description,
+      religion: dominantReligion[c.name] || null
     })),
     languages: languages.map(l => ({ name: l.language, documents: l.count }))
   };

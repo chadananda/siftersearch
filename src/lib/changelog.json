@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T18:01:45.527Z",
+  "generated": "2026-05-15T18:04:31.277Z",
   "entries": [
+    {
+      "hash": "b04d5032",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Catalog sample_documents include source_url for real hyperlinks",
+      "scope": null
+    },
     {
       "hash": "b5d4bd66",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Adl is justice not equity, add insaf for equity",
       "scope": null
-    },
-    {
-      "hash": "114ae277",
-      "date": "2026-03-31",
-      "type": "Fixed",
-      "description": "SifterSearch framed as backend engine behind OceanLibrary.com",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "b04d5032",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Catalog sample_documents include source_url for real hyperlinks",
+        "scope": null
+      },
       {
         "hash": "b5d4bd66",
         "date": "2026-05-15",
@@ -7045,13 +7052,6 @@
         "date": "2026-03-31",
         "type": "Fixed",
         "description": "Adl is justice not equity, add insaf for equity",
-        "scope": null
-      },
-      {
-        "hash": "114ae277",
-        "date": "2026-03-31",
-        "type": "Fixed",
-        "description": "SifterSearch framed as backend engine behind OceanLibrary.com",
         "scope": null
       }
     ]
