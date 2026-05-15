@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:00:12.109Z",
+  "generated": "2026-05-15T12:02:00.664Z",
   "entries": [
+    {
+      "hash": "d2185fb3",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Single-tradition search for major-tradition questions (Islam/Christian/Buddhist/Judaism)",
+      "scope": null
+    },
     {
       "hash": "7977de12",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use ARIA labels for chat/quick-search toggle instead of class",
       "scope": null
-    },
-    {
-      "hash": "fb4f551a",
-      "date": "2026-01-23",
-      "type": "Fixed",
-      "description": "Properly authenticate test user and use specific ARIA label for user menu",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "d2185fb3",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Single-tradition search for major-tradition questions (Islam/Christian/Buddhist/Judaism)",
+        "scope": null
+      },
       {
         "hash": "7977de12",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Use ARIA labels for chat/quick-search toggle instead of class",
-        "scope": null
-      },
-      {
-        "hash": "fb4f551a",
-        "date": "2026-01-23",
-        "type": "Fixed",
-        "description": "Properly authenticate test user and use specific ARIA label for user menu",
         "scope": null
       }
     ]
