@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T11:49:52.987Z",
+  "generated": "2026-05-15T12:00:12.109Z",
   "entries": [
+    {
+      "hash": "7977de12",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Skip deep_research for single-tradition questions — use targeted search instead",
+      "scope": null
+    },
     {
       "hash": "1f0d767a",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Properly authenticate test user and use specific ARIA label for user menu",
       "scope": null
-    },
-    {
-      "hash": "9eeb652d",
-      "date": "2026-01-23",
-      "type": "New",
-      "description": "Add theme toggle to navbar with clear ARIA labels",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "7977de12",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Skip deep_research for single-tradition questions — use targeted search instead",
+        "scope": null
+      },
       {
         "hash": "1f0d767a",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Properly authenticate test user and use specific ARIA label for user menu",
-        "scope": null
-      },
-      {
-        "hash": "9eeb652d",
-        "date": "2026-01-23",
-        "type": "New",
-        "description": "Add theme toggle to navbar with clear ARIA labels",
         "scope": null
       }
     ]

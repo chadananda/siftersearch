@@ -968,6 +968,36 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             harvestPassages(broad, `traditions-${detectedMinorTradition.toLowerCase()}-broad`);
           }
         })());
+      } else if (requiredTradition && PRIMARY_SEARCHES[requiredTradition]) {
+        // Major tradition single-search: question is explicitly about ONE tradition
+        // (e.g. "What are the Five Pillars of Islam?"). Only search that tradition —
+        // don't pull in 4 other religions, which forces the crafter to cite them all.
+        const primaryOpts = PRIMARY_SEARCHES[requiredTradition];
+        tasks.push((async () => {
+          const primaryQuery = primaryOpts.queryTransform
+            ? primaryOpts.queryTransform(passageQuery)
+            : passageQuery;
+          const { queryTransform: _qt, ...primarySearchOpts } = primaryOpts;
+          const primary = await runTool('search', {
+            query: primaryQuery,
+            mode: 'passages',
+            religion: requiredTradition,
+            ...primarySearchOpts,
+            limit: 6,
+            semanticRatio: primarySearchOpts.primarySemanticRatio ?? 0.3
+          });
+          if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { religion: requiredTradition, limit: 6, query: primaryQuery.slice(0, 80) } });
+          harvestPassages(primary, `traditions-${requiredTradition.toLowerCase()}`);
+          // Broad fallback within same tradition
+          const broad = await runTool('search', {
+            query: passageQuery,
+            mode: 'passages',
+            religion: requiredTradition,
+            limit: 4,
+            semanticRatio: 0.5
+          });
+          harvestPassages(broad, `traditions-${requiredTradition.toLowerCase()}-broad`);
+        })());
       } else {
       const INTERFAITH_TRADITIONS = ["Christian", "Islam", "Judaism", "Buddhist", "Baha'i"];
       for (const religion of INTERFAITH_TRADITIONS) {
