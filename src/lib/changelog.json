@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T15:19:14.960Z",
+  "generated": "2026-05-15T16:03:32.379Z",
   "entries": [
+    {
+      "hash": "ed2687a0",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "CITE commitment device + pure-count companion suppression",
+      "scope": null
+    },
     {
       "hash": "437f9af7",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Deploy version 0.1.920 with proper build",
       "scope": null
-    },
-    {
-      "hash": "43f1e4e5",
-      "date": "2026-01-24",
-      "type": "Fixed",
-      "description": "Hide duplicate metadata headings and improve document styling",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "ed2687a0",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "CITE commitment device + pure-count companion suppression",
+        "scope": null
+      },
       {
         "hash": "437f9af7",
         "date": "2026-05-15",
@@ -7055,13 +7062,6 @@
         "date": "2026-01-24",
         "type": "Chore",
         "description": "Deploy version 0.1.920 with proper build",
-        "scope": null
-      },
-      {
-        "hash": "43f1e4e5",
-        "date": "2026-01-24",
-        "type": "Fixed",
-        "description": "Hide duplicate metadata headings and improve document styling",
         "scope": null
       }
     ]
