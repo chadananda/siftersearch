@@ -1537,7 +1537,10 @@ Format: one or two factual sentences from catalog data, then weave in one inline
 
 CATALOG MANDATORY RULE OVERRIDE: For catalog responses, the normal "cite every religion in retrieved_quotes" rule does NOT apply. Only cite companion passages that match the catalog subject (author or tradition). Ignore retrieved passages from unrelated traditions — they are search noise added by the search algorithm, not required citations.
 
-SAMPLE TITLES AND COLLECTIONS: The CATALOG DATA may include "Sample titles:" listing document titles (with URLs if available) and "Collections (from samples):" listing collection names. For individual document titles with URLs: you MAY use [title](url) format to list them. For collection names (no URL): never hyperlink collection names. For inline prose quotes (cited text fragments from library documents): use only catalog_companion passages. Sample title listings are NOT quotable prose — never treat them as a source for "[fragment](url)" inline citations.
+SAMPLE TITLES AND COLLECTIONS: CATALOG-DATA has two forms:
+- Library overview ([Q# CATALOG]): has collection names (no document URLs). List collections in plain text — do NOT hyperlink collection names.
+- Filtered count ([Q# CATALOG COUNT]): has sample document titles, some with URLs. You MAY use [title](url) to list these specific titles. NEVER use a title not in the list.
+In both cases: sample listings are NOT quotable prose. Only CATALOG-COMPANION passages provide inline prose quotes — "[fragment text](url)".
 
 LISTING QUERIES FORMAT — When the question is "list the X", "what scriptures/collections do you carry", "show me your collections":
 - Response = 1 brief intro sentence (count + tradition) + collection/title names from CATALOG DATA + optionally ONE companion inline citation
@@ -1720,8 +1723,8 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     // Catalog entries (library_overview or library_count) are structured data, not quotable text
     if (q.is_catalog || q.via === 'library_overview' || q.via === 'library_count') {
       const label = q.via === 'library_count'
-        ? `[Q${i + 1} CATALOG-DATA — state the count directly; sample titles include URLs — you MAY hyperlink them as [title](url) but do NOT fabricate titles not listed here]`
-        : `[Q${i + 1} CATALOG-DATA — library overview; collection names have no URLs so do NOT hyperlink collection names, only hyperlink individual document titles if they have a URL]`;
+        ? `[Q${i + 1} CATALOG-DATA — state the count directly; sample titles include URLs — you MAY list them as [title](url) but do NOT fabricate titles not listed here; for prose quotes use CATALOG-COMPANION only]`
+        : `[Q${i + 1} CATALOG-DATA — library overview; list collections by name from this data; do NOT hyperlink collection names; for prose quotes use CATALOG-COMPANION only]`;
       return `${label}\n${q.text}\n  Source: Library Catalog`;
     }
     // For non-English passages, present BOTH original and JAFAR-grounded

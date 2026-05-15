@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T18:28:45.439Z",
+  "generated": "2026-05-15T18:35:23.364Z",
   "entries": [
+    {
+      "hash": "530a3a3b",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Traditions warning fires for 2-tradition comparative questions",
+      "scope": null
+    },
     {
       "hash": "823b7b11",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Skip auth for health endpoint (Fastify hook applies to all routes)",
       "scope": null
-    },
-    {
-      "hash": "e979eea2",
-      "date": "2026-03-31",
-      "type": "Fixed",
-      "description": "Aggressive <think> tag stripping for Qwen3 responses",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "530a3a3b",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Traditions warning fires for 2-tradition comparative questions",
+        "scope": null
+      },
       {
         "hash": "823b7b11",
         "date": "2026-05-15",
@@ -7045,13 +7052,6 @@
         "date": "2026-03-31",
         "type": "Fixed",
         "description": "Skip auth for health endpoint (Fastify hook applies to all routes)",
-        "scope": null
-      },
-      {
-        "hash": "e979eea2",
-        "date": "2026-03-31",
-        "type": "Fixed",
-        "description": "Aggressive <think> tag stripping for Qwen3 responses",
         "scope": null
       }
     ]
