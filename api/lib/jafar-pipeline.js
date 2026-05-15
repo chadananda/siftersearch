@@ -666,7 +666,16 @@ export async function deterministicResearch({ entities, userMessage, messages, s
                 const dr = await checkDeepResearch(drQuery);
                 if (dr?.quotes?.length >= 3) {
                   logger.info({ researchId: dr.id, quotes: dr.quotes.length }, 'catalog compound: deep research supplementation');
-                  for (const q of dr.quotes.slice(0, 10)) {
+                  // When catalog is author-filtered, only inject quotes from that author
+                  // to prevent the crafter from adding cross-tradition hallucinations.
+                  const authorKey = catalogFilters.author?.toLowerCase().replace(/['\u2018\u2019\u02BC]/g, '').replace(/\s+/g, '');
+                  const quotesToInject = (authorKey
+                    ? dr.quotes.filter(q => {
+                        const qAuthor = (q.author || '').toLowerCase().replace(/['\u2018\u2019\u02BC]/g, '').replace(/\s+/g, '');
+                        return qAuthor.includes(authorKey.slice(0, 5)) || authorKey.includes(qAuthor.slice(0, 5));
+                      })
+                    : dr.quotes).slice(0, 10);
+                  for (const q of quotesToInject) {
                     retrieved.push({
                       text: q.text, source_title: q.title, source_author: q.author,
                       citation_url: q.source_url ? `${q.source_url}?paraId=${q.external_para_id}` : null,
