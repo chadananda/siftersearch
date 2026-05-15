@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T03:27:30.751Z",
+  "generated": "2026-05-15T03:46:36.641Z",
   "entries": [
+    {
+      "hash": "cde6d219",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Share links use full quote text — platform-appropriate limits (Twitter 180, others unlimited)",
+      "scope": null
+    },
     {
       "hash": "f1f0896e",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Consolidate duplicate step definitions with ARIA selectors",
       "scope": null
-    },
-    {
-      "hash": "d76bbe05",
-      "date": "2026-01-23",
-      "type": "New",
-      "description": "Add comprehensive ARIA attributes for accessibility",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "cde6d219",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Share links use full quote text — platform-appropriate limits (Twitter 180, others unlimited)",
+        "scope": null
+      },
       {
         "hash": "f1f0896e",
         "date": "2026-05-14",
@@ -7055,13 +7062,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Consolidate duplicate step definitions with ARIA selectors",
-        "scope": null
-      },
-      {
-        "hash": "d76bbe05",
-        "date": "2026-01-23",
-        "type": "New",
-        "description": "Add comprehensive ARIA attributes for accessibility",
         "scope": null
       }
     ]

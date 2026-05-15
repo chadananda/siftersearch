@@ -91,7 +91,7 @@ export async function checkDeepResearch(question, embedding = null) {
     );
     if (!candidates.length) return null;
 
-    const qEmbed = embedding || await createEmbedding(question);
+    const qEmbed = embedding || (await createEmbedding(question)).embedding;
     let best = null;
     let bestScore = 0;
     for (const row of candidates) {
@@ -142,7 +142,7 @@ export async function recordQuestionHit(question, embedding = null) {
       }
     } else {
       // Create new pending record
-      const qEmbed = embedding || await createEmbedding(question);
+      const qEmbed = embedding || (await createEmbedding(question)).embedding;
       const embedBuf = embeddingToBuffer(qEmbed);
       const slug = generateSlug(question.trim()).slice(0, 120);
       const result = await query(
