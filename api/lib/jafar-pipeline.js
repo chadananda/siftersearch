@@ -1292,13 +1292,22 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   const MAX_QUOTES = 12;
   let trimmed = filteredForCrafter;
   if (filteredForCrafter.length > MAX_QUOTES) {
+    // Partition: deep research quotes (curated, high-value) vs live search results.
+    // Deep research quotes are always reserved the first N slots — they were hand-selected
+    // for this question and must not be silently dropped by round-robin logic.
+    const drQuotes = filteredForCrafter.filter(q => q.via === 'deep_research')
+      .sort((a, b) => (b.relevance_score || 0) - (a.relevance_score || 0));
+    const liveQuotes = filteredForCrafter.filter(q => q.via !== 'deep_research');
+    const DR_SLOTS = Math.min(drQuotes.length, 6);
+    const LIVE_SLOTS = MAX_QUOTES - DR_SLOTS;
+
     // When per-tradition searches ran, interleave round-robin so every tradition
     // gets at least 1 slot. Simple slice would drop the last-resolved tradition
     // (Promise.all resolve order) entirely when trimming 15→12.
     const tradGroups = {};
     const SEARCH_VIAS = new Set(['search', 'search-fallback', 'topic-mapped-passage']);
     const otherPassages = [];
-    for (const q of filteredForCrafter) {
+    for (const q of liveQuotes) {
       if (q.via?.startsWith('traditions-')) {
         if (!tradGroups[q.via]) tradGroups[q.via] = [];
         tradGroups[q.via].push(q);
@@ -1308,19 +1317,19 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     }
     const tradKeys = Object.keys(tradGroups);
     if (tradKeys.length > 0) {
-      // Round-robin: 1 from each tradition per round until MAX_QUOTES filled
-      const selected = [];
+      // Round-robin: 1 from each tradition per round until LIVE_SLOTS filled
+      const liveSelected = [];
       let round = 0;
-      while (selected.length < MAX_QUOTES) {
+      while (liveSelected.length < LIVE_SLOTS) {
         let added = 0;
         for (const key of tradKeys) {
-          if (selected.length >= MAX_QUOTES) break;
-          if (tradGroups[key].length > round) { selected.push(tradGroups[key][round]); added++; }
+          if (liveSelected.length >= LIVE_SLOTS) break;
+          if (tradGroups[key].length > round) { liveSelected.push(tradGroups[key][round]); added++; }
         }
         if (added === 0) break;
         round++;
       }
-      trimmed = selected;
+      trimmed = [...drQuotes.slice(0, DR_SLOTS), ...liveSelected];
     } else {
       const keywords = (entities.topics || [])
         .map(t => (t || '').toLowerCase())
@@ -1330,9 +1339,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         const text = (q.text || '').toLowerCase();
         return keywords.some(k => text.includes(k));
       };
-      const readMatched = filteredForCrafter.filter(q => !SEARCH_VIAS.has(q.via) && matchesKeyword(q));
-      const readRest = filteredForCrafter.filter(q => !SEARCH_VIAS.has(q.via) && !matchesKeyword(q));
-      trimmed = [...otherPassages, ...readMatched, ...readRest].slice(0, MAX_QUOTES);
+      const readMatched = liveQuotes.filter(q => !SEARCH_VIAS.has(q.via) && matchesKeyword(q));
+      const readRest = liveQuotes.filter(q => !SEARCH_VIAS.has(q.via) && !matchesKeyword(q));
+      trimmed = [...drQuotes.slice(0, DR_SLOTS), ...otherPassages, ...readMatched, ...readRest].slice(0, MAX_QUOTES);
     }
   }
 
