@@ -26,7 +26,10 @@ if (!existsSync(RUNS_DIR)) mkdirSync(RUNS_DIR, { recursive: true });
 
 const API_URL = process.env.JAFAR_API_URL || 'http://tower-nas:7839/api/chat/stream';
 const JUDGE_API_KEY = process.env.OPENAI_API_KEY;
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const JUDGE_MODEL = process.env.JUDGE_MODEL || 'gpt-4o-mini';
+// Prefer Anthropic Claude for judging if OpenAI key is absent/invalid
+const USE_ANTHROPIC_JUDGE = !!ANTHROPIC_API_KEY && !JUDGE_API_KEY;
 
 // Parse args
 const args = process.argv.slice(2);
@@ -165,8 +168,8 @@ Return ONLY a JSON object:
 const JUDGE_PROMPT = buildJudgePrompt();
 
 async function judgeResponse(query, response, toolsUsed, questionType) {
-  if (!JUDGE_API_KEY) {
-    console.error('OPENAI_API_KEY required for LLM judge');
+  if (!JUDGE_API_KEY && !ANTHROPIC_API_KEY) {
+    console.error('OPENAI_API_KEY or ANTHROPIC_API_KEY required for LLM judge');
     process.exit(1);
   }
 
@@ -178,6 +181,29 @@ TOOL CALL COUNT: ${toolsUsed.length}
 
 ## Assistant Response
 ${response || '(empty response)'}`;
+
+  if (USE_ANTHROPIC_JUDGE) {
+    // Use Anthropic Claude as judge
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 600,
+        system: JUDGE_PROMPT,
+        messages: [{ role: 'user', content: judgeInput }]
+      })
+    });
+    const data = await res.json();
+    const content = data.content?.[0]?.text || '{}';
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Anthropic judge returned no JSON: ' + content.substring(0, 200));
+    return JSON.parse(jsonMatch[0]);
+  }
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',

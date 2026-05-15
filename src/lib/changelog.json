@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T04:24:06.179Z",
+  "generated": "2026-05-15T11:44:37.765Z",
   "entries": [
+    {
+      "hash": "7994ae01",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Minor tradition search + judge criticalEngagement field",
+      "scope": null
+    },
     {
       "hash": "27f9515e",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Change unauthenticated user button aria-label to avoid regex collision",
       "scope": null
-    },
-    {
-      "hash": "cdf10371",
-      "date": "2026-01-23",
-      "type": "Fixed",
-      "description": "Update navigation labels and remove auth requirements",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "7994ae01",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Minor tradition search + judge criticalEngagement field",
+        "scope": null
+      },
       {
         "hash": "27f9515e",
         "date": "2026-05-14",
@@ -7055,13 +7062,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Change unauthenticated user button aria-label to avoid regex collision",
-        "scope": null
-      },
-      {
-        "hash": "cdf10371",
-        "date": "2026-01-23",
-        "type": "Fixed",
-        "description": "Update navigation labels and remove auth requirements",
         "scope": null
       }
     ]
