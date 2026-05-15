@@ -7,10 +7,12 @@
  *
  * Priority order:
  * 1. Document's explicit `authority` field (frontmatter override)
- * 2. Collection's meta.yaml authority (primary source)
- * 3. Religion's meta.yaml authority
- * 4. Author-based authority (Central Figures fallback)
- * 5. Global default (5)
+ * 2. Author-based authority (Central Figures, scripture authors — exact match)
+ * 3. Title-pattern authority (primary scriptures with Unknown/compound authors)
+ * 4. Collection's meta.yaml authority (librarian override)
+ * 5. Religion's meta.yaml authority
+ * 6. External-site authority_default
+ * 7. Global default (5)
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
@@ -252,34 +254,33 @@ export function getAuthority(doc) {
   const libAuth = loadLibraryAuthority();
   const { religion, collection, source_site } = doc;
 
-  // 2. Check collection-specific authority from meta.yaml (primary source)
-  if (religion && collection && libAuth.collections[religion]?.[collection] !== undefined) {
-    return libAuth.collections[religion][collection];
-  }
-
-  // 3. Author-based authority for primary scripture authors (Central Figures, prophets).
-  // Checked BEFORE religion default so e.g. OceanLibrary Quran surahs (author="Muhammad",
-  // no collection authority) get 10 rather than the Islam religion default of 6.
+  // 2. Author-based authority for primary scripture authors (Central Figures, prophets).
+  // Checked first so exact author matches (e.g. "Muhammad", "Matthew") always win.
   // Uses exact string equality to avoid false positives like "Muhammad Husayn Tabatabai".
   if (doc.author && AUTHOR_AUTHORITY[doc.author] !== undefined) {
     return AUTHOR_AUTHORITY[doc.author];
   }
 
-  // 3b. Title-pattern authority for primary scripture translations stored under "Unknown"
-  // author. OceanLibrary complete Quran/Bible volumes lack a canonical author; the
-  // title is the only reliable signal.
+  // 3. Title-pattern authority for primary scriptures. Checked BEFORE collection meta.yaml
+  // because collection defaults (e.g. "Foundational Classics" = 5) would otherwise suppress
+  // canonical texts like "Tao Te Ching (tr. Chou-Wing Chohan)" or "Guru Granth Sahib - X".
   if (doc.title) {
     for (const { pattern, authority } of TITLE_AUTHORITY) {
       if (pattern.test(doc.title)) return authority;
     }
   }
 
-  // 4. Check religion default from meta.yaml
+  // 4. Check collection-specific authority from meta.yaml (librarian override)
+  if (religion && collection && libAuth.collections[religion]?.[collection] !== undefined) {
+    return libAuth.collections[religion][collection];
+  }
+
+  // 5. Check religion default from meta.yaml
   if (religion && libAuth.religions[religion] !== undefined) {
     return libAuth.religions[religion];
   }
 
-  // 5. External-site authority floor from sites.yaml. Lazy-load to avoid
+  // 6. External-site authority floor from sites.yaml. Lazy-load to avoid
   // circular import (scope.js doesn't import from authority.js).
   // Supplementals like bahai-library.com (authority_default 3) get a low
   // ranking floor here; primary docs at the SAME relevance score outrank
@@ -292,7 +293,7 @@ export function getAuthority(doc) {
     }
   }
 
-  // 6. Return global default
+  // 7. Return global default
   return DEFAULT_AUTHORITY;
 }
 
