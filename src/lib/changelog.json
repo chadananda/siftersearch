@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T03:49:57.872Z",
+  "generated": "2026-05-15T03:57:15.921Z",
   "entries": [
+    {
+      "hash": "4e5d3863",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Wire deep research pre-fetch into deterministicResearch — was only in dead code path (runResearchPhaseInner)",
+      "scope": null
+    },
     {
       "hash": "a6d95e03",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Browser lifecycle and missing step definitions",
       "scope": null
-    },
-    {
-      "hash": "a1c17408",
-      "date": "2026-01-23",
-      "type": "Fixed",
-      "description": "Use 'load' instead of 'networkidle' to prevent test hangs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "4e5d3863",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Wire deep research pre-fetch into deterministicResearch — was only in dead code path (runResearchPhaseInner)",
+        "scope": null
+      },
       {
         "hash": "a6d95e03",
         "date": "2026-05-14",
@@ -7055,13 +7062,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Browser lifecycle and missing step definitions",
-        "scope": null
-      },
-      {
-        "hash": "a1c17408",
-        "date": "2026-01-23",
-        "type": "Fixed",
-        "description": "Use 'load' instead of 'networkidle' to prevent test hangs",
         "scope": null
       }
     ]
