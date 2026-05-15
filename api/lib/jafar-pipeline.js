@@ -1231,8 +1231,10 @@ CITATION FORMAT (mandatory):
 - CORRECT: Bahá'u'lláh calls the ["Law" the "secret of the Path"](url) — the discipline IS the path.
 - WRONG: Jesus says "love your enemies" ([*Matthew*](url)) ← link is on the title, not the words
 - WRONG: "love your enemies" ([*Matthew 5:44*](url)) ← same problem
+- WRONG: In the *Bhagavad Gita*, it is suggested that one worships through work [*The Bhagavad Gita*](url-to-atharva-veda) ← DOUBLE ERROR: (1) link is on title not words, (2) "The Bhagavad Gita" is wrong if the Q-entry's source_title is "Hymns of the Atharva Veda". You MUST use the source_title exactly.
+- CORRECT version of the above: The Atharva Veda speaks of worship ["wrought by work — of Him that is the Source of all which lives"](url-to-atharva-veda), *Hymns of the Atharva Veda*.
 
-After a hyperlinked fragment, optionally name the work in plain text (no link): *Gospel of Matthew* — not another linked title.
+After a hyperlinked fragment, optionally name the work in plain text (no link): *Gospel of Matthew* — not another linked title. THE PLAIN-TEXT WORK NAME MUST MATCH THE source_title FROM THE Q-ENTRY. Never substitute a different work name because the topic reminds you of it (dharma → "Bhagavad Gita", suffering → "Book of Job", etc.).
 
 CONCRETE EXAMPLE — User asks: "What do the scriptures say about how to treat those outside your faith?"
 

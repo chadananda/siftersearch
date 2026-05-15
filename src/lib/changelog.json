@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:02:00.664Z",
+  "generated": "2026-05-15T12:07:05.965Z",
   "entries": [
+    {
+      "hash": "1e9423ef",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Stronger grounding rules — WORK-NAMING and no-general-knowledge-opening",
+      "scope": null
+    },
     {
       "hash": "d2185fb3",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add 404 page with clear ARIA label for home link",
       "scope": null
-    },
-    {
-      "hash": "c7875501",
-      "date": "2026-01-23",
-      "type": "Fixed",
-      "description": "Use ARIA labels for chat/quick-search toggle instead of class",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "1e9423ef",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Stronger grounding rules — WORK-NAMING and no-general-knowledge-opening",
+        "scope": null
+      },
       {
         "hash": "d2185fb3",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "New",
         "description": "Add 404 page with clear ARIA label for home link",
-        "scope": null
-      },
-      {
-        "hash": "c7875501",
-        "date": "2026-01-23",
-        "type": "Fixed",
-        "description": "Use ARIA labels for chat/quick-search toggle instead of class",
         "scope": null
       }
     ]
