@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T21:22:06.707Z",
+  "generated": "2026-05-15T21:23:55.653Z",
   "entries": [
+    {
+      "hash": "865f18ea",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Suppress companion quotes for pure listing queries (List Bahá'í collections)",
+      "scope": null
+    },
     {
       "hash": "3fb7f901",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Morning report shows full iteration journey, final config v3.1 + original user-agent",
       "scope": null
-    },
-    {
-      "hash": "f0ccb04b",
-      "date": "2026-04-27",
-      "type": "Other",
-      "description": "Morning report shows v3.2 → v3.1 revert decision",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "865f18ea",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Suppress companion quotes for pure listing queries (List Bahá'í collections)",
+        "scope": null
+      },
       {
         "hash": "3fb7f901",
         "date": "2026-05-15",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-27",
         "type": "Other",
         "description": "Morning report shows full iteration journey, final config v3.1 + original user-agent",
-        "scope": null
-      },
-      {
-        "hash": "f0ccb04b",
-        "date": "2026-04-27",
-        "type": "Other",
-        "description": "Morning report shows v3.2 → v3.1 revert decision",
         "scope": null
       }
     ]

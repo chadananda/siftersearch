@@ -737,8 +737,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // logically incoherent (the quote is irrelevant to enumeration).
         const isPureCountQuery = /\bhow many\b.{0,30}\b(total|altogether|in all|in the library)\b|\bhow many documents\b/i.test(userMessage) && !tradition;
         const isPureListQuery = /\blist\b|\bshow me\b.*\b(collection|tradition|language|scripture|text)s?\b/i.test(userMessage) ||
-          /\bwhat (collection|language|scripture|tradition)s?\b/i.test(userMessage) ||
-          /\bwhat (do you have|languages|collections|scriptures)\b/i.test(userMessage);
+          /\bwhat\b.{0,30}\b(collection|language|scripture|tradition)s?\b/i.test(userMessage) ||
+          /\bwhat (do you have|languages|collections|scriptures)\b/i.test(userMessage) ||
+          /\bdo you (carry|have|hold)\b.{0,30}\b(scripture|tradition|text|collection)s?\b/i.test(userMessage);
         const skipCompanion = isPureCountQuery || isPureListQuery;
         retrieved.push({
           text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}${languageLines ? '\n\nLanguages available:\n' + languageLines : ''}`,
