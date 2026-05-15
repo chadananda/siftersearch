@@ -613,11 +613,14 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'library_count', args: catalogFilters, forced: true });
         const countResult = await executeTool('library_count', catalogFilters, { scope_config });
         const filterDesc = Object.entries(catalogFilters).map(([k, v]) => `${k}="${v}"`).join(', ');
-        const sampleLines = (countResult.sample_documents || []).map(d =>
-          `  - ${d.title}${d.author ? ' by ' + d.author : ''}${d.year ? ' (' + d.year + ')' : ''}`
+        const samples = countResult.sample_documents || [];
+        const sampleLines = samples.map(d =>
+          `  - ${d.title}${d.author ? ' by ' + d.author : ''}${d.collection ? ' [' + d.collection + ']' : ''}${d.year ? ' (' + d.year + ')' : ''}`
         ).join('\n');
+        const distinctCollections = [...new Set(samples.map(d => d.collection).filter(Boolean))];
+        const collectionNote = distinctCollections.length > 0 ? `\n\nCollections (from samples): ${distinctCollections.join(', ')}` : '';
         retrieved.push({
-          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}\n\nSample titles:\n${sampleLines}`,
+          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles:\n${sampleLines}`,
           source_title: 'Library Catalog',
           source_author: 'Ocean Library',
           citation_url: null,
@@ -1517,7 +1520,7 @@ Format: one or two factual sentences from catalog data, then weave in one inline
 
 CATALOG MANDATORY RULE OVERRIDE: For catalog responses, the normal "cite every religion in retrieved_quotes" rule does NOT apply. Only cite companion passages that match the catalog subject (author or tradition). Ignore retrieved passages from unrelated traditions — they are search noise added by the search algorithm, not required citations.
 
-SAMPLE TITLES: The CATALOG DATA may include "Sample titles:" listing document titles. You may reference these titles as plain text to describe the collection's scope (e.g., "…including documents like the Five Year Plan messages and Letters to National Assemblies"). Do NOT hyperlink sample titles — they are metadata, not prose passages. Reserve the [fragment text](url) inline format exclusively for catalog_companion prose passages.
+SAMPLE TITLES AND COLLECTIONS: The CATALOG DATA may include "Sample titles:" and "Collections (from samples):" listing document titles and collection names. Use these to directly answer "list the collections" or "what works do you have" queries — name the actual collections shown in the data. Do NOT hyperlink sample titles or collection names — they are metadata. Reserve the [fragment text](url) inline format exclusively for catalog_companion prose passages.
 
 NEVER hyperlink catalog statistics, counts, or numeric data (e.g., "44,937 documents", "127 Hindu texts", "480 UHJ documents"). These are catalog facts — not prose fragments. WRONG: "[127 Hindu texts](url-to-random-verse)" — this is linking a number to an unrelated passage. Only use the [fragment](url) format for actual prose phrases quoted verbatim from catalog_companion passages.
 
