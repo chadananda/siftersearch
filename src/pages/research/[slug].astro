@@ -896,8 +896,10 @@ function buildOLSourceUrl(q: any): string | null {
     :global(.admin-footer) { display: none !important; }
 
     /* ---- Page layout ---- */
-    .research-article { min-height: 0; padding-bottom: 0; }
-    .article-body { max-width: 100% !important; display: block !important; padding: 0 !important; margin: 0 auto !important; }
+    /* @page margin handles physical page gutters; padding here constrains content
+       inside Cloudflare Workers' print rendering which may ignore @page margins. */
+    .research-article { min-height: 0; padding: 0 1.5cm !important; }
+    .article-body { max-width: 100% !important; display: block !important; padding: 0 !important; margin: 0 !important; }
     .article-main { gap: 1.5rem; }
 
     /* ---- Hero / title block ---- */
