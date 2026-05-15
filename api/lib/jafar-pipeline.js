@@ -836,7 +836,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // filter to that tradition only — a multi-religion pre-cached article would give
       // the crafter cross-tradition material it then uses despite the single-tradition ask.
       if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'deep_research', args: { researchId: dr.id, quotes: dr.quotes.length } });
-      const quotesToInject = requiredTradition
+      // For single-tradition questions, filter deep research quotes to that tradition —
+      // multi-religion articles would give the crafter off-topic material to cite.
+      // For comparative questions ("in both X and Y"), keep all traditions from deep research.
+      const quotesToInject = (requiredTradition && !isComparativeQuestion)
         ? dr.quotes.filter(q => !q.religion || q.religion === requiredTradition)
         : dr.quotes;
       // Early return when: (a) no tradition filter + not comparative, OR (b) tradition-specific
