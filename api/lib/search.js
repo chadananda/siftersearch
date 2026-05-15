@@ -348,14 +348,16 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
       if (Math.abs(sb - sa) > 0.005) return sb - sa;
       return (b._rankingScore || 0) - (a._rankingScore || 0);
     });
-    // Two-pass title dedup: prefer one hit per unique title per religion.
-    // If only same-title hits exist, fill remaining slots from them (passTwo).
+    // Two-pass title dedup: prefer one hit per unique base-title per religion.
+    // Strips trailing volume numbers ("The Mahabharata 3" → "The Mahabharata")
+    // so different numbered volumes of the same work count as one title slot.
     const seenTitles = new Set();
     const passTwo = [];
     let count = 0;
     for (const hit of sorted) {
       if (seen.has(hit.id)) continue;
-      const titleKey = hit.title || String(hit.doc_id);
+      const rawTitle = hit.title || String(hit.doc_id);
+      const titleKey = rawTitle.replace(/\s+\d+\s*$/, '').trim() || rawTitle;
       if (slotLimit > 1 && seenTitles.has(titleKey)) {
         passTwo.push(hit);
         continue;
@@ -650,8 +652,11 @@ export async function hybridSearch(query, options = {}) {
   if (filters.yearTo) extraFilterParts.push(`year <= ${filters.yearTo}`);
   if (filters.documentId) extraFilterParts.push(`doc_id = ${filters.documentId}`);
   const extraFilter = extraFilterParts.length > 0 ? extraFilterParts.join(' AND ') : null;
+  // Slots per tradition = ceil(requested limit / tradition count), floor at 2.
+  // No +1 buffer: over-fetching caused same-work volumes (e.g. Mahabharata 3/5/12)
+  // to monopolize the candidate pool before authority reranking could diversify.
   const perReligionLimit = isCrossTradition
-    ? Math.max(2, Math.ceil((offset + limit) / CROSS_TRADITION_RELIGIONS.length) + 1)
+    ? Math.max(2, Math.ceil((offset + limit) / CROSS_TRADITION_RELIGIONS.length))
     : 0;
 
   let allHits;
