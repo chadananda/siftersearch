@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T23:54:26.611Z",
+  "generated": "2026-05-15T00:34:47.317Z",
   "entries": [
+    {
+      "hash": "619b02b3",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Cap clusterAndStructure input at 60 passages; raise max_tokens to 16k",
+      "scope": null
+    },
     {
       "hash": "9855d2f1",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Sync script now updates Meilisearch documents directly",
       "scope": null
-    },
-    {
-      "hash": "4b33144a",
-      "date": "2026-01-20",
-      "type": "New",
-      "description": "Add script to sync frontmatter metadata without re-ingestion",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "619b02b3",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Cap clusterAndStructure input at 60 passages; raise max_tokens to 16k",
+        "scope": null
+      },
       {
         "hash": "9855d2f1",
         "date": "2026-05-14",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-20",
         "type": "Fixed",
         "description": "Sync script now updates Meilisearch documents directly",
-        "scope": null
-      },
-      {
-        "hash": "4b33144a",
-        "date": "2026-01-20",
-        "type": "New",
-        "description": "Add script to sync frontmatter metadata without re-ingestion",
         "scope": null
       }
     ]

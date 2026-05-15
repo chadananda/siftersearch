@@ -105,7 +105,11 @@ function stopHeartbeat() {
 
 async function processOne(task) {
   logger.info({ taskId: task.id, researchId: task.research_id, question: task.canonical_question }, 'Processing deep research task');
-  await claimQueueTask(task.id);
+  const claimed = await claimQueueTask(task.id);
+  if (!claimed) {
+    logger.info({ taskId: task.id }, 'Task already claimed by another worker — skipping');
+    return;
+  }
   startHeartbeat(task.research_id);
   const costAcc = { inputTokens: 0, outputTokens: 0, costUsd: 0, breakdown: {} };
   try {

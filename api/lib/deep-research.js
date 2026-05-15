@@ -1653,10 +1653,11 @@ export async function getPendingResearchTasks(limit = 5) {
  * Mark a queue task as started.
  */
 export async function claimQueueTask(taskId) {
-  await query(
-    'UPDATE deep_research_queue SET status = ?, started_at = ?, attempts = attempts + 1 WHERE id = ?',
-    ['in_progress', new Date().toISOString(), taskId]
+  const result = await query(
+    'UPDATE deep_research_queue SET status = ?, started_at = ?, attempts = attempts + 1 WHERE id = ? AND status = ?',
+    ['in_progress', new Date().toISOString(), taskId, 'pending']
   );
+  return result.rows[0]?.changes > 0;
 }
 
 /**
