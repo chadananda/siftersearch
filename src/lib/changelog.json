@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T13:23:22.465Z",
+  "generated": "2026-05-15T13:43:28.936Z",
   "entries": [
+    {
+      "hash": "80ee236e",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Comparative questions skip shouldEarlyReturn to get inline-citable passages",
+      "scope": null
+    },
     {
       "hash": "cd68226f",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Improve heading and italic text readability",
       "scope": null
-    },
-    {
-      "hash": "fa30e5ac",
-      "date": "2026-01-23",
-      "type": "Chore",
-      "description": "Auto-generated changelog and version bump to 0.1.914",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "80ee236e",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Comparative questions skip shouldEarlyReturn to get inline-citable passages",
+        "scope": null
+      },
       {
         "hash": "cd68226f",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Improve heading and italic text readability",
-        "scope": null
-      },
-      {
-        "hash": "fa30e5ac",
-        "date": "2026-01-23",
-        "type": "Chore",
-        "description": "Auto-generated changelog and version bump to 0.1.914",
         "scope": null
       }
     ]

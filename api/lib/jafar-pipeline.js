@@ -601,10 +601,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // Both paths add a companion search for citable passages.
   if (isCatalogQuery(messages)) {
     const catalogFilters = extractCatalogFilters(userMessage);
-    // A filter is "specific" if it includes anything beyond religion alone —
-    // religion alone is covered by library_overview + tradition companion search.
-    const nonReligionFilters = Object.keys(catalogFilters).filter(k => k !== 'religion');
-    const isFiltered = nonReligionFilters.length > 0;
+    // Any filter (including religion-only) routes to library_count for focused data.
+    // Religion-only was previously falling through to library_overview (all 44k+ docs),
+    // which confused the crafter into using general knowledge for tradition-specific queries.
+    const isFiltered = Object.keys(catalogFilters).length > 0;
 
     if (isFiltered) {
       // Filtered catalog query: call library_count with extracted params
@@ -634,7 +634,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // retrieves representative, citable passages from that author's actual works.
         if (countResult.count > 0) {
           try {
-            const isMetaQuery = /\b(do you have|what books|any books|show me|list|how many|what works|do you carry)\b/i.test(userMessage);
+            const isMetaQuery = /\b(do you have|what books|any books|show me|list|how many|what works|do you carry|what collections|list the|list all)\b/i.test(userMessage);
             const companionQuery = isMetaQuery
               ? 'spiritual teachings revelation faith God'
               : userMessage.slice(0, 200);
@@ -1345,6 +1345,8 @@ In ALL OTHER CASES, weave fragments into prose. Default = embedded.
 
 Sentence 1: Take a position on the user's actual question. If they asked an either/or, pick a side (or explain why both-and is genuinely the writings' answer). Don't hedge into both-and as a reflex. Engage the substance.
 
+SINGLE-KEYWORD QUERIES (a name, work title, or bare concept alone — "bahaullah", "dharma", "books"): treat as an implicit "tell me about X" request. Open by letting a retrieved fragment introduce X — don't open with a general biography or definition from training memory. WRONG: "Bahá'u'lláh (1817–1892) was the founder of the Bahá'í Faith." CORRECT: Bahá'u'lláh writes that God has ["released a flood of grace so plenteous that it hath filled all things visible and invisible"](url) — that claim of universal renewal is the key to understanding his mission.
+
 Sentences 2-4: Develop the position with embedded quote fragments — the authority's words inside your prose, cited inline at the end of each sentence.
 
 Optional final sentence: a brief synthesis that ties back to the question. NOT a restatement of what the quotes already said.
@@ -1732,6 +1734,8 @@ conversation_summary: ${conversation_summary || '(this is the opening turn)'}${t
 retrieved_quotes (${retrieved_quotes.length} entries — use these as the substrate; entries marked SUMMARY are sub-agent context, not quotable text):
 
 ${quotesPayload || '(no quotes retrieved — reply must say so)'}${synthesisBlock}
+
+⚠️ BEFORE WRITING: Pick 2-3 passages above. For each, identify a 3-15 word fragment you will embed inline as ["fragment"](url). Your FIRST sentence must contain or directly reference a retrieved fragment — never open with a general-knowledge summary. If you have no inline fragment from a retrieved_quote to anchor your first claim, rewrite until you do.
 
 Compose the reply now.`;
 }
