@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T21:19:06.023Z",
+  "generated": "2026-05-15T21:22:06.707Z",
   "entries": [
+    {
+      "hash": "3fb7f901",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Disable pure-count companion quotes, Torah note, stronger framing, lookup topicCoverage",
+      "scope": null
+    },
     {
       "hash": "6631edce",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Morning report shows v3.2 → v3.1 revert decision",
       "scope": null
-    },
-    {
-      "hash": "157b6978",
-      "date": "2026-04-27",
-      "type": "Other",
-      "description": "V3.2 → v3.1 (v3.2 over-tightened rules, scores 46-58% vs v3.1's 60-66%)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "3fb7f901",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Disable pure-count companion quotes, Torah note, stronger framing, lookup topicCoverage",
+        "scope": null
+      },
       {
         "hash": "6631edce",
         "date": "2026-05-15",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-27",
         "type": "Other",
         "description": "Morning report shows v3.2 → v3.1 revert decision",
-        "scope": null
-      },
-      {
-        "hash": "157b6978",
-        "date": "2026-04-27",
-        "type": "Other",
-        "description": "V3.2 → v3.1 (v3.2 over-tightened rules, scores 46-58% vs v3.1's 60-66%)",
         "scope": null
       }
     ]

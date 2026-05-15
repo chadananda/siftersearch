@@ -732,9 +732,14 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.religion ? ' [' + c.religion + ']' : ''}${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
         const languageLines = (overview.languages || []).map(l => `  - ${l.name}`).join('\n');
         const tradition = extractTraditionSearch(userMessage);
-        // Skip companion for pure count queries and pure listing queries — adding
-        // thematic passages causes the crafter to confabulate which texts quotes come from.
+        // Skip companion for pure count and pure listing queries — adding thematic
+        // passages to "how many?" or "list the collections" responses is always
+        // logically incoherent (the quote is irrelevant to enumeration).
         const isPureCountQuery = /\bhow many\b.{0,30}\b(total|altogether|in all|in the library)\b|\bhow many documents\b/i.test(userMessage) && !tradition;
+        const isPureListQuery = /\blist\b|\bshow me\b.*\b(collection|tradition|language|scripture|text)s?\b/i.test(userMessage) ||
+          /\bwhat (collection|language|scripture|tradition)s?\b/i.test(userMessage) ||
+          /\bwhat (do you have|languages|collections|scriptures)\b/i.test(userMessage);
+        const skipCompanion = isPureCountQuery || isPureListQuery;
         retrieved.push({
           text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}${languageLines ? '\n\nLanguages available:\n' + languageLines : ''}`,
           source_title: 'Library Catalog',
@@ -744,10 +749,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           is_catalog: true,
           pure_count: isPureCountQuery,
         });
-        // Pure-count queries (e.g. "how many documents total?") must NOT include
-        // companion passages — any thematic quote causes the judge to mark it as
-        // incoherent (irrelevant to a simple count request).
-        if (!isPureCountQuery) {
+        if (!skipCompanion) {
           const companionArgs = tradition
             ? { query: 'scripture wisdom', religion: tradition.religion, limit: 5 }
             : { query: 'sacred scripture wisdom', limit: 5 };
