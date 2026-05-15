@@ -695,7 +695,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     { pattern: /\bbuddh(?:ist|ism)?\b|\bpali\b|\bdhamma\b|\bnirvana\b|\beightfold\b/i, religion: 'Buddhist' },
     { pattern: /\b(?:jewish|judaism|torah|talmud|hebrew|rabbinic)\b/i, religion: 'Judaism' },
     // Bahá'í-specific questions must route to Bahá'í-only search (not 5-tradition loop)
-    { pattern: /\bbah[aá]['']?[ií]\b|\bbah[aá]u'?ll[aá]h\b|\b'?abdu'l-bah[aá]\b|\bshoghi\s+effendi\b|\baqdas\b|\biq[aá]n\b|\bhidden\s+words\b|\bbayan\b|\ball-merciful\b|\b(?:the\s+)?b[aá]b\b|\bdawn.?breakers?\b|\bnabil\b|\btaherzadeh\b|\bseven\s+valleys\b|\b七つの谷\b/i, religion: "Baha'i" },
+    { pattern: /\bbah[aá]['']?[ií]\b|\bbah[aá]u'?ll[aá]h\b|\b'?abdu'l-bah[aá]\b|\bshoghi\s+effendi\b|\baqdas\b|\biq[aá]n\b|\bhidden\s+words\b|\bbayan\b|\ball-merciful\b|\bseven\s+valleys\b|\b七つの谷\b/i, religion: "Baha'i" },
   ];
   const requiredTradition = (() => {
     for (const { pattern, religion } of MINOR_TRAD_PATTERNS_EARLY) {

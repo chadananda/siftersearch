@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:42:42.299Z",
+  "generated": "2026-05-15T12:47:34.238Z",
   "entries": [
+    {
+      "hash": "5d9914c2",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Bab pattern, companion search query, crafter substantive-claim rule",
+      "scope": null
+    },
     {
       "hash": "ed81a7eb",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Auto-generated changelog and version bump to 0.1.909",
       "scope": null
-    },
-    {
-      "hash": "590fa97a",
-      "date": "2026-01-23",
-      "type": "Fixed",
-      "description": "More aggressive PWA update checking to force version updates",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "5d9914c2",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Bab pattern, companion search query, crafter substantive-claim rule",
+        "scope": null
+      },
       {
         "hash": "ed81a7eb",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Chore",
         "description": "Auto-generated changelog and version bump to 0.1.909",
-        "scope": null
-      },
-      {
-        "hash": "590fa97a",
-        "date": "2026-01-23",
-        "type": "Fixed",
-        "description": "More aggressive PWA update checking to force version updates",
         "scope": null
       }
     ]
