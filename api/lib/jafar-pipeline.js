@@ -630,7 +630,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // so the crafter can include inline citations in addition to the count.
         if (countResult.count > 0) {
           try {
-            const companionSearchArgs = { ...catalogFilters, mode: 'passages', limit: 2, semanticRatio: 0.5 };
+            const companionSearchArgs = { query: userMessage.slice(0, 200), ...catalogFilters, mode: 'passages', limit: 2, semanticRatio: 0.5 };
             const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
             if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
           } catch (ce) {
@@ -695,7 +695,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     { pattern: /\bbuddh(?:ist|ism)?\b|\bpali\b|\bdhamma\b|\bnirvana\b|\beightfold\b/i, religion: 'Buddhist' },
     { pattern: /\b(?:jewish|judaism|torah|talmud|hebrew|rabbinic)\b/i, religion: 'Judaism' },
     // Bahá'í-specific questions must route to Bahá'í-only search (not 5-tradition loop)
-    { pattern: /\bbah[aá]['']?[ií]\b|\bbah[aá]u'?ll[aá]h\b|\b'?abdu'l-bah[aá]\b|\bshoghi\s+effendi\b|\baqdas\b|\biq[aá]n\b|\bhidden\s+words\b|\bbayan\b|\ball-merciful\b/i, religion: "Baha'i" },
+    { pattern: /\bbah[aá]['']?[ií]\b|\bbah[aá]u'?ll[aá]h\b|\b'?abdu'l-bah[aá]\b|\bshoghi\s+effendi\b|\baqdas\b|\biq[aá]n\b|\bhidden\s+words\b|\bbayan\b|\ball-merciful\b|\b(?:the\s+)?b[aá]b\b|\bdawn.?breakers?\b|\bnabil\b|\btaherzadeh\b|\bseven\s+valleys\b|\b七つの谷\b/i, religion: "Baha'i" },
   ];
   const requiredTradition = (() => {
     for (const { pattern, religion } of MINOR_TRAD_PATTERNS_EARLY) {
@@ -1340,6 +1340,8 @@ From a retrieved quote like "It is incumbent on these servants that they cleanse
 
 You can use 1-3 fragments from the same quote, OR pull fragments from 2-3 different quotes to build a richer engagement. Never quote the entire passage when a fragment carries the meaning.
 
+FORBIDDEN as a quote fragment: section titles, valley names, chapter labels, or heading text. "Valley of Search", "Hidden Words No. 3", "Book of Certitude" are NOT text fragments — they are labels. The fragment must be actual prose from the body of the text. WRONG: Bahá'u'lláh describes the ["Valley of Search"](url). CORRECT: In the Seven Valleys, the seeker is told to ["fly on the wings of longing in the air of love"](url).
+
 The quotation marks make the fragment the AUTHORITY's words. The surrounding prose is YOUR engagement with those words. The reader hears both voices interleaved.
 
 ╔══════════════════════════════════════════════════════════╗
@@ -1399,6 +1401,7 @@ If NONE of the retrieved quotes actually address the question's substance, say s
 ╚══════════════════════════════════════════════════════════╝
 
 - Every quoted fragment — every phrase in quotation marks, every block quote — MUST come verbatim from a passage in retrieved_quotes. No exceptions.
+- SUBSTANTIVE CLAIM RULE: Every substantive claim about what a tradition teaches MUST be supported by an inline citation from retrieved_quotes. You cannot assert "The Bahá'í Faith teaches X" or "Islam holds Y" without quoting the passage that shows it. For controversial or defensive questions ("Is X a cult?", "What's the best religion?"), let the tradition's OWN TEXT respond — quote retrieved passages that speak to the question, rather than asserting an answer from general knowledge. WRONG: "The Bahá'í Faith is not a cult." CORRECT: Bahá'u'lláh commands believers to ["consort with the followers of all religions in a spirit of friendliness"](url) — this is a tradition built on openness, not insularity.
 - CITATION URL RULE: each fragment's link URL MUST be the citation_url of the specific retrieved_quotes entry the fragment came from. Do NOT swap URLs between entries. If Q3's text says "love your enemies" and Q3's citation_url is "https://siftersearch.com/document/123", then the link must be "[love your enemies](https://siftersearch.com/document/123)" — not the URL from Q5 or any other entry.
 - ATTRIBUTION RULE: use the source_title from the retrieved_quotes entry, not a different work name you know from training memory. If the passage came from Q4 = "Hymns of the Atharva Veda", cite it as Atharva Veda — not as "Bhagavad Gita" or "Upanishads".
 - WORK-NAMING RULE: You may only introduce a named work ("In the Bhagavad Gita…", "The Mahabharata says…") if that exact work title (or close variant) appears as source_title in retrieved_quotes. If search returned Atharva Veda and Mahabharata passages but NO Bhagavad Gita entry, you CANNOT write "In the Bhagavad Gita…" — that is hallucination. Use the actual source_title instead.

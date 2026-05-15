@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:27:12.317Z",
+  "generated": "2026-05-15T12:42:42.299Z",
   "entries": [
+    {
+      "hash": "ed81a7eb",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Author catalog companion search — add citable passages to author lookups",
+      "scope": null
+    },
     {
       "hash": "86325ed8",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "More aggressive PWA update checking to force version updates",
       "scope": null
-    },
-    {
-      "hash": "b7fff8ea",
-      "date": "2026-01-23",
-      "type": "Fixed",
-      "description": "Use client:only for components with client state to prevent hydration mismatch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "ed81a7eb",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Author catalog companion search — add citable passages to author lookups",
+        "scope": null
+      },
       {
         "hash": "86325ed8",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "More aggressive PWA update checking to force version updates",
-        "scope": null
-      },
-      {
-        "hash": "b7fff8ea",
-        "date": "2026-01-23",
-        "type": "Fixed",
-        "description": "Use client:only for components with client state to prevent hydration mismatch",
         "scope": null
       }
     ]
