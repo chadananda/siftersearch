@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T18:10:52.339Z",
+  "generated": "2026-05-15T18:28:45.439Z",
   "entries": [
+    {
+      "hash": "823b7b11",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Clarify CATALOG-DATA vs CATALOG-COMPANION citation roles",
+      "scope": null
+    },
     {
       "hash": "8545de61",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Aggressive <think> tag stripping for Qwen3 responses",
       "scope": null
-    },
-    {
-      "hash": "dd8e3685",
-      "date": "2026-03-31",
-      "type": "Other",
-      "description": "Add definitional + philosophical implication question types",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "823b7b11",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Clarify CATALOG-DATA vs CATALOG-COMPANION citation roles",
+        "scope": null
+      },
       {
         "hash": "8545de61",
         "date": "2026-05-15",
@@ -7045,13 +7052,6 @@
         "date": "2026-03-31",
         "type": "Fixed",
         "description": "Aggressive <think> tag stripping for Qwen3 responses",
-        "scope": null
-      },
-      {
-        "hash": "dd8e3685",
-        "date": "2026-03-31",
-        "type": "Other",
-        "description": "Add definitional + philosophical implication question types",
         "scope": null
       }
     ]

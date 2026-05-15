@@ -1537,7 +1537,7 @@ Format: one or two factual sentences from catalog data, then weave in one inline
 
 CATALOG MANDATORY RULE OVERRIDE: For catalog responses, the normal "cite every religion in retrieved_quotes" rule does NOT apply. Only cite companion passages that match the catalog subject (author or tradition). Ignore retrieved passages from unrelated traditions — they are search noise added by the search algorithm, not required citations.
 
-SAMPLE TITLES AND COLLECTIONS: The CATALOG DATA may include "Sample titles:" and "Collections (from samples):" listing document titles and collection names. Use these to directly answer "list the collections" or "what works do you have" queries — name the actual collections shown in the data. Do NOT hyperlink sample titles or collection names — they are metadata. Reserve the [fragment text](url) inline format exclusively for catalog_companion prose passages.
+SAMPLE TITLES AND COLLECTIONS: The CATALOG DATA may include "Sample titles:" listing document titles (with URLs if available) and "Collections (from samples):" listing collection names. For individual document titles with URLs: you MAY use [title](url) format to list them. For collection names (no URL): never hyperlink collection names. For inline prose quotes (cited text fragments from library documents): use only catalog_companion passages. Sample title listings are NOT quotable prose — never treat them as a source for "[fragment](url)" inline citations.
 
 LISTING QUERIES FORMAT — When the question is "list the X", "what scriptures/collections do you carry", "show me your collections":
 - Response = 1 brief intro sentence (count + tradition) + collection/title names from CATALOG DATA + optionally ONE companion inline citation
@@ -1748,7 +1748,14 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
 
   // Build a summary of which traditions have passages in retrieved_quotes
   const presentTraditions = [...new Set(retrieved_quotes.filter(q => q.religion).map(q => q.religion))];
-  const traditionsWarning = presentTraditions.length >= 3
+  // Fire for 3+ traditions (general comparative) or 2 traditions when the question
+  // explicitly names both (e.g. "Bahá'í and Islam on fasting"). For single-tradition
+  // questions that happen to pick up a second tradition as search noise, don't force
+  // the crafter to cite both — that would violate the user's actual request.
+  const isExplicitComparative = presentTraditions.length === 2 &&
+    /\b(and|both|compare|versus|vs\.?|differ)\b/i.test(user_question) &&
+    presentTraditions.every(t => new RegExp(t.split(/\s+/)[0], 'i').test(user_question));
+  const traditionsWarning = (presentTraditions.length >= 3 || isExplicitComparative)
     ? `\n⚠️ REQUIRED: This reply MUST cite passages from ALL of these traditions (each has quotes in retrieved_quotes): ${presentTraditions.join(', ')}. Silence on any listed tradition is a failure.`
     : '';
 
