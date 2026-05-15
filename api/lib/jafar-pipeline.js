@@ -1389,7 +1389,10 @@ CITATION FORMAT (mandatory):
 - WRONG: Jesus says "love your enemies" ([*Matthew*](url)) ← link is on the title, not the words
 - WRONG: "love your enemies" ([*Matthew 5:44*](url)) ← same problem
 - WRONG: In the *Bhagavad Gita*, it is suggested that one worships through work [*The Bhagavad Gita*](url-to-atharva-veda) ← DOUBLE ERROR: (1) link is on title not words, (2) "The Bhagavad Gita" is wrong if the Q-entry's source_title is "Hymns of the Atharva Veda". You MUST use the source_title exactly.
-- CORRECT version of the above: The Atharva Veda speaks of worship ["wrought by work — of Him that is the Source of all which lives"](url-to-atharva-veda), *Hymns of the Atharva Veda*.
+- WRONG: In the *Bhagavad Gita*, one finds perfection through ["worship—wrought by work"](url-to-atharva-veda) ← STILL WRONG: "In the *Bhagavad Gita*" is false when the URL says atharva-veda. Putting the wrong title BEFORE the fragment doesn't help — it just misattributes more visibly.
+- CORRECT version: The Atharva Veda teaches that one finds perfection through ["worship—wrought by work — of Him that is the Source of all which lives"](url-to-atharva-veda), *Hymns of the Atharva Veda*.
+
+WORK-TITLE PLACEMENT RULE: The italic work title ALWAYS comes AFTER the hyperlinked fragment, never before it. Structure: prose lead-in → ["fragment"](url) → *, Work Title*. Reason: when you write the work title AFTER the URL you're literally looking at the Q-entry source_title and copying it, which prevents misattribution. When you write it BEFORE, you rely on memory — which assigns "dharma" → "Bhagavad Gita" even when the URL says "Atharva Veda."
 
 After a hyperlinked fragment, optionally name the work in plain text (no link): *Gospel of Matthew* — not another linked title. THE PLAIN-TEXT WORK NAME MUST MATCH THE source_title FROM THE Q-ENTRY. Never substitute a different work name because the topic reminds you of it (dharma → "Bhagavad Gita", suffering → "Book of Job", etc.).
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T22:18:40.128Z",
+  "generated": "2026-05-15T22:23:08.101Z",
   "entries": [
+    {
+      "hash": "e8fdf73a",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Tradition-specific search isolation — filter deep research by requiredTradition; strengthen inline quote minimum fragment length (5w); forbid source misattribution in crafter",
+      "scope": null
+    },
     {
       "hash": "494db721",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "PUBLIC_API_URL resolved in astro.config from API_URL/API_URL_DEV based on DEV_MODE",
       "scope": null
-    },
-    {
-      "hash": "2e7b43dc",
-      "date": "2026-04-28",
-      "type": "Fixed",
-      "description": "BACKUP_DIR is configurable via env (was hardcoded to data/backups, filled OS root partition)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "e8fdf73a",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Tradition-specific search isolation — filter deep research by requiredTradition; strengthen inline quote minimum fragment length (5w); forbid source misattribution in crafter",
+        "scope": null
+      },
       {
         "hash": "494db721",
         "date": "2026-05-15",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-28",
         "type": "Fixed",
         "description": "PUBLIC_API_URL resolved in astro.config from API_URL/API_URL_DEV based on DEV_MODE",
-        "scope": null
-      },
-      {
-        "hash": "2e7b43dc",
-        "date": "2026-04-28",
-        "type": "Fixed",
-        "description": "BACKUP_DIR is configurable via env (was hardcoded to data/backups, filled OS root partition)",
         "scope": null
       }
     ]
