@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T12:59:33.512Z",
+  "generated": "2026-05-15T13:18:11.164Z",
   "entries": [
+    {
+      "hash": "ee308d04",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "CRAFTER zero-count inline fragment format + sample title handling",
+      "scope": null
+    },
     {
       "hash": "07723097",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Include file_path in library documents API response",
       "scope": null
-    },
-    {
-      "hash": "a00b3138",
-      "date": "2026-01-23",
-      "type": "Fixed",
-      "description": "Add title and description to metadata display",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "ee308d04",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "CRAFTER zero-count inline fragment format + sample title handling",
+        "scope": null
+      },
       {
         "hash": "07723097",
         "date": "2026-05-15",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-23",
         "type": "Fixed",
         "description": "Include file_path in library documents API response",
-        "scope": null
-      },
-      {
-        "hash": "a00b3138",
-        "date": "2026-01-23",
-        "type": "Fixed",
-        "description": "Add title and description to metadata display",
         "scope": null
       }
     ]
