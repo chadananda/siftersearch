@@ -898,7 +898,7 @@ function buildOLSourceUrl(q: any): string | null {
     /* ---- Page layout ---- */
     /* @page margin handles physical page gutters; padding here constrains content
        inside Cloudflare Workers' print rendering which may ignore @page margins. */
-    .research-article { min-height: 0; padding: 0 1.5cm !important; }
+    .research-article { min-height: 0; padding: 1.5cm 1.5cm !important; }
     .article-body { max-width: 100% !important; display: block !important; padding: 0 !important; margin: 0 !important; }
     .article-main { gap: 1.5rem; }
 
@@ -951,7 +951,7 @@ function buildOLSourceUrl(q: any): string | null {
     .summary-meta { font-size: 8pt; color: #777; border-top: 0.5pt solid #ddd; padding-top: 0.5rem; margin-top: 0.5rem; }
 
     /* ---- Aspect sections ---- */
-    .aspect-section { break-before: auto; break-inside: auto; margin-bottom: 1.75rem; }
+    .aspect-section { break-before: avoid; break-inside: avoid; margin-bottom: 1.75rem; }
     h2, .aspect-heading {
       font-size: 12.5pt !important;
       font-weight: 700;
@@ -976,7 +976,7 @@ function buildOLSourceUrl(q: any): string | null {
     /* ---- Quote cards ---- */
     .quotes-list { gap: 1.5rem !important; display: flex; flex-direction: column; }
     .quote-card {
-      break-inside: avoid;
+      break-inside: avoid-page;
       border: 0.75pt solid #ccc !important;
       border-radius: 3px !important;
       background: #fff !important;
@@ -1038,7 +1038,7 @@ function buildOLSourceUrl(q: any): string | null {
     }
 
     /* ---- Convergence ---- */
-    .convergence-section { break-before: page; }
+    .convergence-section { break-before: avoid; }
     .convergence-card { border: 1pt solid #bbb !important; border-radius: 3px !important; background: #f8f8f8 !important; padding: 0.75rem 0.875rem !important; }
     .conv-label { font-size: 9pt !important; font-weight: 700; }
     .conv-agree { color: #2a6a2a !important; }
@@ -1047,7 +1047,7 @@ function buildOLSourceUrl(q: any): string | null {
     .conv-note { font-size: 8pt !important; color: #777 !important; }
 
     /* ---- FAQ (all open via beforeprint JS) ---- */
-    .faq-section { break-before: auto; }
+    .faq-section { break-before: avoid; }
     details.faq-item { border: 0.75pt solid #ddd !important; border-radius: 3px !important; background: #fff !important; overflow: visible !important; }
     details.faq-item .faq-a { display: block !important; }
     .faq-q { font-size: 9.5pt !important; font-weight: 600; color: #111 !important; padding: 0.45rem 0.625rem !important; cursor: default !important; list-style: none !important; }
