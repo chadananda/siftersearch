@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T23:02:56.345Z",
+  "generated": "2026-05-15T23:09:50.049Z",
   "entries": [
+    {
+      "hash": "e873bd06",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Suppress DR early-return when specific work named — document subagent finds better work-specific passages than generic tradition set",
+      "scope": null
+    },
     {
       "hash": "a109851f",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Dark bg before JS load (no white flash); About mentions Jafar; redirects /dialog/ → /dialogue/",
       "scope": null
-    },
-    {
-      "hash": "7b6b0e80",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "/dialog/ → /dialogue/ ('Dialogue with the Ocean'); chat-bubble user turns; TOC + Related sidebars; footer; tag/category pages; Jafar avatar candidates",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "e873bd06",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Suppress DR early-return when specific work named — document subagent finds better work-specific passages than generic tradition set",
+        "scope": null
+      },
       {
         "hash": "a109851f",
         "date": "2026-05-15",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-28",
         "type": "Fixed",
         "description": "Dark bg before JS load (no white flash); About mentions Jafar; redirects /dialog/ → /dialogue/",
-        "scope": null
-      },
-      {
-        "hash": "7b6b0e80",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "/dialog/ → /dialogue/ ('Dialogue with the Ocean'); chat-bubble user turns; TOC + Related sidebars; footer; tag/category pages; Jafar avatar candidates",
         "scope": null
       }
     ]

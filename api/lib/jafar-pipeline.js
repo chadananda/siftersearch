@@ -743,9 +743,13 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // passages to "how many?" or "list the collections" responses is always
         // logically incoherent (the quote is irrelevant to enumeration).
         const isPureCountQuery = /\bhow many\b.{0,30}\b(total|altogether|in all|in the library)\b|\bhow many documents\b/i.test(userMessage) && !tradition;
-        const isPureListQuery = /\blist\b|\bshow me\b.*\b(collection|tradition|language|scripture|text)s?\b/i.test(userMessage) ||
-          /\bwhat\b.{0,30}\b(collection|language|scripture|tradition)s?\b/i.test(userMessage) ||
-          /\bwhat (do you have|languages|collections|scriptures)\b/i.test(userMessage) ||
+        // Language/tradition questions get companion passages — the response can ground the
+        // language list by citing a representative text in each language (cite≥2 threshold).
+        // Only pure collection/listing queries skip companion (a quote about "Pali Canon documents"
+        // is logically incoherent when the user asked to list all collections).
+        const isPureListQuery = /\blist\b|\bshow me\b.*\b(collection|tradition|scripture|text)s?\b/i.test(userMessage) ||
+          /\bwhat\b.{0,30}\b(collection|scripture|tradition)s?\b/i.test(userMessage) ||
+          /\bwhat (do you have|collections|scriptures)\b/i.test(userMessage) ||
           /\bdo you (carry|have|hold)\b.{0,30}\b(scripture|tradition|text|collection)s?\b/i.test(userMessage);
         const skipCompanion = isPureCountQuery || isPureListQuery;
         retrieved.push({
