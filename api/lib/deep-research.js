@@ -582,7 +582,6 @@ export async function rerankPassages(question, candidates, chat, topN = 50) {
   if (!candidates.length) return [];
 
   const BATCH_SIZE = 30; // ~30 passages at 200 chars each ≈ 6K chars, comfortable prompt
-  const RERANK_CONCURRENCY = 3; // parallel LLM calls
   const passages = candidates.slice(0, 270).map((c, i) => ({
     idx: i,
     id: c.id,
@@ -641,18 +640,14 @@ Return: [{"idx": N, "score": 0-10, "answer": "..."}]`;
     }
   };
 
-  // Build batch list then run RERANK_CONCURRENCY at a time
+  // Build batches and run all in parallel — Haiku is fast, 80-core machine, no reason to throttle
   const batches = [];
   for (let start = 0; start < passages.length; start += BATCH_SIZE) {
     batches.push({ batch: passages.slice(start, start + BATCH_SIZE), idx: batches.length });
   }
 
-  const allScores = [];
-  for (let i = 0; i < batches.length; i += RERANK_CONCURRENCY) {
-    const group = batches.slice(i, i + RERANK_CONCURRENCY);
-    const groupResults = await Promise.all(group.map(({ batch, idx }) => scoreBatch(batch, idx)));
-    for (const scores of groupResults) allScores.push(...scores);
-  }
+  const batchResults = await Promise.all(batches.map(({ batch, idx }) => scoreBatch(batch, idx)));
+  const allScores = batchResults.flat();
 
   logger.info({ candidates: passages.length, scored: allScores.length, above6: allScores.filter(s => s.score >= 6).length }, 'Rerank complete');
 
@@ -1237,15 +1232,12 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
     }
     logger.info({ targeted: targeted.length, discovered: discovered.length, general: general.length, total: allCandidates.length }, 'Initial retrieval complete');
 
-    // 4. Gap check — retry known passages not yet found in the library
-    const gapExtra = await gapCheckLoop(brief, allCandidates, search, 3);
-    for (const c of gapExtra) {
-      if (!seen.has(c.id)) { seen.add(c.id); allCandidates.push(c); }
-    }
-
-    // 4b. Diversity sweep — fill any traditions missing from candidacy due to brief gaps
-    const sweepExtra = await diversitySweep(record.canonical_question, allCandidates, brief, search);
-    for (const c of sweepExtra) {
+    // 4 + 4b. Gap check and diversity sweep — run in parallel (both depend only on allCandidates snapshot)
+    const [gapExtra, sweepExtra] = await Promise.all([
+      gapCheckLoop(brief, allCandidates, search, 3),
+      diversitySweep(record.canonical_question, allCandidates, brief, search),
+    ]);
+    for (const c of [...gapExtra, ...sweepExtra]) {
       if (!seen.has(c.id)) { seen.add(c.id); allCandidates.push(c); }
     }
 

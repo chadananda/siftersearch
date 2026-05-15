@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-15T00:34:47.317Z",
+  "generated": "2026-05-15T00:51:09.692Z",
   "entries": [
+    {
+      "hash": "1fb6f18e",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Atomic queue claim prevents multiple workers racing on same task",
+      "scope": null
+    },
     {
       "hash": "619b02b3",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add Content-Type header to auth refresh request",
       "scope": null
-    },
-    {
-      "hash": "40ec3928",
-      "date": "2026-01-20",
-      "type": "Fixed",
-      "description": "Sync script now updates Meilisearch documents directly",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "1fb6f18e",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Atomic queue claim prevents multiple workers racing on same task",
+        "scope": null
+      },
       {
         "hash": "619b02b3",
         "date": "2026-05-14",
@@ -7057,15 +7064,6 @@
         "date": "2026-01-22",
         "type": "Fixed",
         "description": "Add Content-Type header to auth refresh request",
-        "scope": null
-      }
-    ],
-    "2026-01-20": [
-      {
-        "hash": "40ec3928",
-        "date": "2026-01-20",
-        "type": "Fixed",
-        "description": "Sync script now updates Meilisearch documents directly",
         "scope": null
       }
     ]
