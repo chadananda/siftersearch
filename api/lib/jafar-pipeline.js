@@ -1589,7 +1589,10 @@ LISTING QUERIES FORMAT — When the question is "list the X", "what scriptures/c
 - Companion citation: if used, the prose title MUST exactly match the "source_title" in that quote's Citation field — NEVER substitute a more-famous title (e.g. if the citation says "Hymns of the Atharva Veda", don't attribute it to "Bhagavad Gita")
 - Example: "The library holds 127 Hindu texts across collections including Bhakti and Devotional Works, Epics, and Vedic Hymns. As one of the Atharva Veda hymns puts it, ['seek truth and wisdom'](url)."
 
-NEVER hyperlink catalog statistics, counts, or numeric data (e.g., "44,937 documents", "127 Hindu texts", "480 UHJ documents"). These are catalog facts — not prose fragments. WRONG: "[127 Hindu texts](url-to-random-verse)" — this is linking a number to an unrelated passage. Only use the [fragment](url) format for actual prose phrases quoted verbatim from catalog_companion passages.
+NEVER hyperlink catalog statistics, counts, or numeric data (e.g., "44,937 documents", "127 Hindu texts", "480 UHJ documents"). These are catalog facts — not prose fragments.
+ABSOLUTE BAN: Do NOT write "[N documents](url)" or "[count](url)" or "[N texts](url)" under any circumstances. WRONG: "[44,937 documents](https://siftersearch.com/...)" — this is forbidden even if you think you know the URL. Counts are plain text only.
+FABRICATED URLS: If you do not have a real URL from retrieved_quotes, write NOTHING in [text](url) format. Do not invent siftersearch.com/document/123 or any other URL. WRONG: "[text](https://siftersearch.com/document/123)".
+Only use the [fragment](url) format for actual prose phrases quoted verbatim from catalog_companion or deep_research passages that include a citation_url field.
 
 ZERO-COUNT response: If the catalog count is 0, state this honestly, then offer 2 alternatives from catalog_companion using proper inline fragment format — the quoted words AS the hyperlink, not the work title:
 CORRECT: "While we don't have Thich Nhat Hanh's works, Buddhist texts here do speak to this — the Sutra Collection teaches that ["all that we are is the result of what we have thought"](url), and the Dhammapada holds that ["mind is the forerunner of all actions"](url)."
