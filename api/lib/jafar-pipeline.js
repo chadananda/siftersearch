@@ -707,10 +707,15 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // tradition before returning early. If a comparative evil/suffering article
       // matched "Zoroastrian teachings on good and evil" but has no Zoroastrian
       // quotes, skip the early return — targeted search will do better.
-      const hasRequiredTradition = !requiredTradition
-        || dr.quotes.some(q => q.religion?.toLowerCase() === requiredTradition.toLowerCase());
+      // For tradition-specific questions, skip deep research early return entirely.
+      // Cross-tradition comparative articles provide wrong framing when the user
+      // asked about ONE tradition: the crafter's mandatory-citation rule then forces
+      // it to cite all traditions present, ignoring the user's single-tradition ask.
+      // Let the targeted tradition search run instead.
+      // For general interfaith questions (requiredTradition=null), early return is fine.
+      const shouldEarlyReturn = !requiredTradition;
 
-      if (hasRequiredTradition) {
+      if (shouldEarlyReturn) {
         if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'deep_research', args: { researchId: dr.id, quotes: dr.quotes.length } });
         logger.info({ researchId: dr.id, quotes: dr.quotes.length }, 'Deep research pre-fetch hit');
         for (const q of dr.quotes) {
