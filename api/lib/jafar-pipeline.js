@@ -1609,7 +1609,7 @@ LISTING QUERIES FORMAT — When the question is "list the X", "what scriptures/c
 
 NEVER hyperlink catalog statistics, counts, or numeric data (e.g., "44,937 documents", "127 Hindu texts", "480 UHJ documents"). These are catalog facts — not prose fragments.
 ABSOLUTE BAN: Do NOT write "[N documents](url)" or "[count](url)" or "[N texts](url)" under any circumstances. WRONG: "[44,937 documents](https://siftersearch.com/...)" — this is forbidden even if you think you know the URL. Counts are plain text only.
-FABRICATED URLS: If you do not have a real URL from retrieved_quotes for a passage, write NOTHING in [text](url) format. Do not invent siftersearch.com/document/123 or any other URL. WRONG: "[text](https://siftersearch.com/document/123)".
+FABRICATED URLS: If you do not have a real URL from retrieved_quotes for a passage, write the fragment in plain quotation marks — NEVER in [text](anything) format. Do not invent URLs. Do NOT write the literal word "url" in parentheses. WRONG: "[text](url)" or "[text](https://siftersearch.com/document/123)". RIGHT: "text" (plain, unlinked). The URL stripping step will catch fabricated links — but placeholder (url) text ruins the response for the user.
 Only use the [fragment](url) format for actual prose phrases quoted verbatim from retrieved_quotes passages that include a citation_url field (not just catalog statistics).
 
 ZERO-COUNT response: If the catalog count is 0, state this honestly, then offer 2 alternatives from catalog_companion using proper inline fragment format — the quoted words AS the hyperlink, not the work title:
@@ -1697,7 +1697,9 @@ export function stripUngroundedLinks(text, retrievedQuotes) {
   // either the full paragraph-level URL or the document-level URL and still pass.
   const validBaseUrls = new Set([...validUrls].map(u => u.split('#')[0]));
   // Allow one level of balanced parens in URLs (e.g., "/path (en)#p10")
-  return text.replace(/\[([^\]]+)\]\((https?:\/\/(?:[^()]+|\([^()]*\))*)\)/g, (match, fragment, url) => {
+  // First: remove literal template placeholders like [text](url) where url is not an https link
+  let cleaned = text.replace(/\[([^\]]+)\]\((?!https?:\/\/)([^)]*)\)/g, '$1');
+  return cleaned.replace(/\[([^\]]+)\]\((https?:\/\/(?:[^()]+|\([^()]*\))*)\)/g, (match, fragment, url) => {
     return validUrls.has(url) || validBaseUrls.has(url.split('#')[0]) ? match : fragment;
   });
 }
