@@ -651,6 +651,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
               ? topicMatch[1].trim()
               : isMetaQuery ? 'spiritual teachings revelation faith God' : userMessage.slice(0, 200);
             const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: 3, semanticRatio: 0.7 };
+            if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
             const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
             if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
 
