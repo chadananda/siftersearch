@@ -672,9 +672,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
                   const quotesToInject = (authorKey
                     ? dr.quotes.filter(q => {
                         const qAuthor = (q.author || '').toLowerCase().replace(/['\u2018\u2019\u02BC]/g, '').replace(/\s+/g, '');
-                        return qAuthor.includes(authorKey.slice(0, 5)) || authorKey.includes(qAuthor.slice(0, 5));
+                        return (qAuthor.includes(authorKey.slice(0, 5)) || authorKey.includes(qAuthor.slice(0, 5)))
+                          && q.source_url; // only inject quotes with URLs to prevent uncited hallucinations
                       })
-                    : dr.quotes).slice(0, 10);
+                    : dr.quotes.filter(q => q.source_url)).slice(0, 10);
                   for (const q of quotesToInject) {
                     retrieved.push({
                       text: q.text, source_title: q.title, source_author: q.author,
