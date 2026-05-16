@@ -799,7 +799,8 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     { pattern: /\bbuddh(?:ist|ism)?\b|\bpali\b|\bdhamma\b|\bnirvana\b|\beightfold\b/i, religion: 'Buddhist' },
     { pattern: /\b(?:jewish|judaism|torah|talmud|hebrew|rabbinic)\b/i, religion: 'Judaism' },
     // Bahá'í-specific questions must route to Bahá'í-only search (not 5-tradition loop)
-    { pattern: /\bbah[aá]['']?[ií]\b|\bbah[aá]u'?ll[aá]h\b|\b'?abdu'l-bah[aá]\b|\bshoghi\s+effendi\b|\baqdas\b|\biq[aá]n\b|\bhidden\s+words\b|\bbayan\b|\ball-merciful\b|\bseven\s+valleys\b|\b七つの谷\b/i, religion: "Baha'i" },
+    // Trailing \b after 'í' (U+00ED) doesn't fire because í is not \w — use lookahead instead.
+    { pattern: /\bbah[aá]['']?[ií](?=[^a-zA-Z]|$)|\bbah[aá]u'?ll[aá]h\b|\b'?abdu'l-bah[aá]\b|\bshoghi\s+effendi\b|\baqdas\b|\biq[aá]n\b|\bhidden\s+words\b|\bbayan\b|\ball-merciful\b|\bseven\s+valleys\b|\b七つの谷\b/i, religion: "Baha'i" },
   ];
   // Which named major traditions appear in the question?
   // Used for: single-tradition routing (requiredTradition) + 2-tradition comparative restriction.
