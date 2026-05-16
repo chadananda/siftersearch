@@ -46,11 +46,12 @@ Score each dimension 1-5:
 3. interfaith_scope: Does Jafar draw meaningful comparisons across traditions? 5=substantive cross-tradition analysis, 1=single-tradition only
 4. educational_value: Would a thoughtful reader learn something specific? 5=highly informative with specific insight, 1=generic or obvious
 5. conversation_authenticity: Does the user ask follow-ups that probe Jafar's actual answers? 5=tight reactive questioning, 1=unrelated follow-ups
+6. big_picture_coverage: Does the conversation address the most historically/theologically significant aspects of the topic — facts and perspectives that any knowledgeable person familiar with the subject would expect to find? Use your own knowledge of the topic to judge. 5=covers the major significance and surprising/non-obvious dimensions, 3=covers the surface but misses important context, 1=fails entirely on core significance (e.g. a conversation about Táhirih at Badasht that never mentions the reactions, the prophetic dimension, or the shock to deeply religious people). This is the most important dimension: a technically correct but shallow conversation that misses what matters most should score low overall.
 
 Output ONLY JSON:
-{"citation_quality":N,"intellectual_depth":N,"interfaith_scope":N,"educational_value":N,"conversation_authenticity":N,"overall":N,"summary":"one sentence verdict","strengths":"two specific strengths","weaknesses":"one specific weakness"}
+{"citation_quality":N,"intellectual_depth":N,"interfaith_scope":N,"educational_value":N,"conversation_authenticity":N,"big_picture_coverage":N,"overall":N,"summary":"one sentence verdict","strengths":"two specific strengths","weaknesses":"one or two specific weaknesses, explicitly naming what important context was missed if big_picture_coverage < 4"}
 
-"overall" is holistic (not average). Be strict — 4+ means genuinely excellent.`;
+"overall" is holistic (not average). Weight big_picture_coverage heavily — a 1 on this dimension should pull overall below 2 regardless of other scores. Be strict — 4+ means genuinely excellent.`;
 
   const resp = await openai.chat.completions.create({
     model: 'gpt-4o',
