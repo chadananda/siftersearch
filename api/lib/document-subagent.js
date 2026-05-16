@@ -391,8 +391,8 @@ export async function answerFromDocument({
     const extParaId = paraExtIds.get(paragraphIndex);
     if (meta.source_site && meta.source_url) {
       return extParaId
-        ? `${meta.source_url}/?paraId=${extParaId}`
-        : `${meta.source_url}#p${paragraphIndex}`;
+        ? `${meta.source_url}?paraId=${extParaId}`
+        : meta.source_url;
     }
     const rawSlug = meta.slug || (meta.filename ? meta.filename.replace(/\.[^.]+$/, '') : null);
     const docSlug = rawSlug ? encodeURIComponent(rawSlug).replace(/%2F/g, '/') : null;

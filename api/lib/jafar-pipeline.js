@@ -547,7 +547,6 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // fall back to document-level link. This ensures harvestExcerpts produces
       // paragraph deeplinks, not just /document/{id} fallbacks.
       const citation_url = e.source_url
-        || (doc.base_url && e.paragraph_index != null ? `${doc.base_url}#p${e.paragraph_index}` : null)
         || (doc.id ? `https://siftersearch.com/document/${doc.id}` : null);
       retrieved.push({
         text: e.text || '',
