@@ -49,7 +49,7 @@ Score each dimension 1-5:
 6. big_picture_coverage: Does the conversation address the most historically/theologically significant aspects of the topic — facts and perspectives that any knowledgeable person familiar with the subject would expect to find? Use your own knowledge of the topic to judge. 5=covers the major significance and surprising/non-obvious dimensions, 3=covers the surface but misses important context, 1=fails entirely on core significance (e.g. a conversation about Táhirih at Badasht that never mentions the reactions, the prophetic dimension, or the shock to deeply religious people). This is the most important dimension: a technically correct but shallow conversation that misses what matters most should score low overall.
 
 Output ONLY JSON:
-{"citation_quality":N,"intellectual_depth":N,"interfaith_scope":N,"educational_value":N,"conversation_authenticity":N,"big_picture_coverage":N,"overall":N,"summary":"one sentence verdict","strengths":"two specific strengths","weaknesses":"one or two specific weaknesses, explicitly naming what important context was missed if big_picture_coverage < 4"}
+{"citation_quality":N,"intellectual_depth":N,"interfaith_scope":N,"educational_value":N,"conversation_authenticity":N,"big_picture_coverage":N,"overall":N,"summary":"2-3 sentence verdict — what the conversation gets right and what it misses, specifically","strengths":"2-3 sentences on the strongest specific moments: name the actual passages cited, the specific insights that landed, the moments where depth was achieved","weaknesses":"2-3 sentences explicitly naming what important historical, doctrinal, or prophetic context was missed, and why it matters — be specific about the gap, not just that there is one"}
 
 "overall" is holistic (not average). Weight big_picture_coverage heavily — a 1 on this dimension should pull overall below 2 regardless of other scores. Be strict — 4+ means genuinely excellent.`;
 
@@ -57,7 +57,7 @@ Output ONLY JSON:
     model: 'gpt-4o',
     messages: [{ role: 'system', content: sys }, { role: 'user', content: transcript }],
     temperature: 0.2,
-    max_tokens: 400,
+    max_tokens: 700,
     response_format: { type: 'json_object' }
   });
   return JSON.parse(resp.choices[0].message.content);

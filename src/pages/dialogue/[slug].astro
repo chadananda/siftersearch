@@ -256,12 +256,19 @@ const TOPIC_LABELS: Record<string, string> = {
             )}
             {a.summary && (
               <div class="assess-narrative">
+                <h3>Verdict</h3>
                 <p>{a.summary}</p>
+              </div>
+            )}
+            {a.strengths && (
+              <div class="assess-narrative">
+                <h3>What Works</h3>
+                <p>{a.strengths}</p>
               </div>
             )}
             {a.weaknesses && (
               <div class="assess-plan">
-                <h3>Improvement Notes</h3>
+                <h3>What's Missing</h3>
                 <p>{a.weaknesses}</p>
               </div>
             )}

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-16T05:23:41.384Z",
+  "generated": "2026-05-16T15:29:36.439Z",
   "entries": [
+    {
+      "hash": "d80db67d",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Stop generating fake #p{index} anchors for external document deeplinks",
+      "scope": null
+    },
     {
       "hash": "906a27a9",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Normalize apostrophes/diacritics + force two-step pipeline in prompt",
       "scope": null
-    },
-    {
-      "hash": "5b477478",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Post-filter religion (apostrophe-safe), penalize commentary titles",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "d80db67d",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Stop generating fake #p{index} anchors for external document deeplinks",
+        "scope": null
+      },
       {
         "hash": "906a27a9",
         "date": "2026-05-15",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Normalize apostrophes/diacritics + force two-step pipeline in prompt",
-        "scope": null
-      },
-      {
-        "hash": "5b477478",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Post-filter religion (apostrophe-safe), penalize commentary titles",
         "scope": null
       }
     ]
