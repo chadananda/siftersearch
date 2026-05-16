@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-16T16:08:53.187Z",
+  "generated": "2026-05-16T16:25:55.466Z",
   "entries": [
+    {
+      "hash": "178cee4b",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Suppress deep research early-return on follow-up turns; add dawn-breakers to carry-forward",
+      "scope": null
+    },
     {
       "hash": "2b5b9efe",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Deterministic search routing — replace LLM orchestrator",
       "scope": null
-    },
-    {
-      "hash": "18fdb448",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Detect named-works inside compilations via heading column",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "178cee4b",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Suppress deep research early-return on follow-up turns; add dawn-breakers to carry-forward",
+        "scope": null
+      },
       {
         "hash": "2b5b9efe",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Deterministic search routing — replace LLM orchestrator",
-        "scope": null
-      },
-      {
-        "hash": "18fdb448",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Detect named-works inside compilations via heading column",
         "scope": null
       }
     ]

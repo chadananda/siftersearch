@@ -894,6 +894,24 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     logger.warn({ err: drErr.message }, 'deep research pre-fetch error (non-fatal)');
   }
 
+  // HyPE helper — fetches paragraph text + metadata for a batch of hype_questions hits
+  async function fetchHypePassages(hits) {
+    if (!hits?.length) return [];
+    const ids = hits.map(h => h.paragraph_id).filter(Boolean);
+    if (!ids.length) return [];
+    const placeholders = ids.map(() => '?').join(',');
+    return queryAll(
+      `SELECT c.id, c.text, c.doc_id, c.paragraph_index, c.external_para_id,
+              d.source_url, d.title, d.author, d.religion, d.collection, d.language
+       FROM content c
+       JOIN docs d ON d.id = c.doc_id
+       WHERE c.id IN (${placeholders})
+         AND c.deleted_at IS NULL
+         AND d.deleted_at IS NULL`,
+      ids
+    );
+  }
+
   const tasks = [];
 
   // Carry forward a work_name from earlier in the conversation when the
@@ -967,6 +985,53 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           limit: religion ? 5 : 3
         });
         harvestPassages(companion, `named-work-companion`);
+      }
+    })());
+  }
+
+  // Branch HyPE: passage-level retrieval via hypothetical question similarity.
+  // Finds paragraphs whose HyPE-generated questions semantically match the user's query.
+  // Runs in parallel with Branch 2; skipped when a named work is in scope (document
+  // subagent handles that more precisely) — effectiveWorkName guard covers that.
+  if (!effectiveWorkName) {
+    tasks.push((async () => {
+      try {
+        const { searchHypeQuestions } = await import('./search.js');
+        const hypeFilters = { encumbered: false, ...(requiredTradition ? { religion: requiredTradition } : {}) };
+        const hypeResult = await searchHypeQuestions(userMessage, { limit: 12, filters: hypeFilters });
+        const hypeHits = (hypeResult?.hits || []).filter(h => (h._semanticScore ?? 1) >= 0.5);
+        if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'hype_search', args: { hits: hypeHits.length, filters: hypeFilters } });
+        const rows = await fetchHypePassages(hypeHits);
+        // Build a quick lookup from content.id → hype hit for score + question
+        const hitByParaId = Object.fromEntries(hypeHits.map(h => [h.paragraph_id, h]));
+        let added = 0;
+        for (const c of rows) {
+          if (added >= 6) break;
+          const key = `${c.doc_id}_${c.paragraph_index}`;
+          if (seenParagraphs.has(key)) continue;
+          if (BISMILLAH_RE.test((c.text || '').trim())) continue;
+          seenParagraphs.add(key);
+          const hit = hitByParaId[c.id] || {};
+          const citation_url = (c.source_url && c.external_para_id)
+            ? `${c.source_url}?paraId=${c.external_para_id}`
+            : (c.source_url || (c.doc_id ? `https://siftersearch.com/document/${c.doc_id}` : null));
+          retrieved.push({
+            text: c.text || '',
+            source_title: c.title || '',
+            source_author: c.author || '',
+            citation_url,
+            doc_id: c.doc_id,
+            paragraph_index: c.paragraph_index,
+            religion: c.religion || hit.religion || null,
+            collection: c.collection || hit.collection || null,
+            source_lang: c.language || null,
+            via: 'hype'
+          });
+          added++;
+        }
+        logger.info({ added, hypeHits: hypeHits.length }, 'hype passage retrieval complete');
+      } catch (hypeErr) {
+        logger.warn({ err: hypeErr.message }, 'hype search error (non-fatal)');
       }
     })());
   }
