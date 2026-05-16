@@ -317,7 +317,7 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
   if (missingSiteDids.length > 0) {
     try {
       const placeholders = missingSiteDids.map(() => '?').join(',');
-      const docRows = await queryAll(`SELECT id, source_site, source_url FROM docs WHERE id IN (${placeholders}) AND source_site IS NOT NULL`, missingSiteDids);
+      const docRows = await queryAll(`SELECT id, source_site, source_url FROM docs WHERE id IN (${placeholders}) AND (source_site IS NOT NULL OR source_url IS NOT NULL)`, missingSiteDids);
       const docMap = new Map(docRows.map(r => [r.id, r]));
       for (const hit of allResponseHits) {
         if (!hit.source_site && hit.doc_id) {
@@ -729,11 +729,14 @@ export async function hybridSearch(query, options = {}) {
   // Paragraphs synced before source_site was added to the worker have null in
   // Meilisearch. Without source_site the OL 1.4x authority multiplier never fires.
   // Batch lookup by doc_id (docs table is tiny — <50K rows, cached by SQLite).
+  // Note: fetch ALL docs (not just those with source_site set) so that backfilled
+  // source_url values (from backfill-doc-source-urls.mjs) are applied even when
+  // source_site is still null.
   const missingSiteDids = [...new Set(allHits.filter(h => !h.source_site && h.doc_id).map(h => h.doc_id))];
   if (missingSiteDids.length > 0) {
     try {
       const placeholders = missingSiteDids.map(() => '?').join(',');
-      const docRows = await queryAll(`SELECT id, source_site, source_url FROM docs WHERE id IN (${placeholders}) AND source_site IS NOT NULL`, missingSiteDids);
+      const docRows = await queryAll(`SELECT id, source_site, source_url FROM docs WHERE id IN (${placeholders}) AND (source_site IS NOT NULL OR source_url IS NOT NULL)`, missingSiteDids);
       const docMap = new Map(docRows.map(r => [r.id, r]));
       for (const hit of allHits) {
         if (!hit.source_site && hit.doc_id) {
