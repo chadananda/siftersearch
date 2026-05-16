@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-16T15:29:36.439Z",
+  "generated": "2026-05-16T16:02:05.795Z",
   "entries": [
+    {
+      "hash": "ada8c9ba",
+      "date": "2026-05-16",
+      "type": "Other",
+      "description": "Show strengths, deeper narrative (2-3 sentence fields), better section labels",
+      "scope": null
+    },
     {
       "hash": "d80db67d",
       "date": "2026-05-15",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Hard-resolve canonical Bahá'í works to known doc_ids",
       "scope": null
-    },
-    {
-      "hash": "fd78c07b",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Normalize apostrophes/diacritics + force two-step pipeline in prompt",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-16": [
+      {
+        "hash": "ada8c9ba",
+        "date": "2026-05-16",
+        "type": "Other",
+        "description": "Show strengths, deeper narrative (2-3 sentence fields), better section labels",
+        "scope": null
+      }
+    ],
     "2026-05-15": [
       {
         "hash": "d80db67d",
@@ -7025,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Hard-resolve canonical Bahá'í works to known doc_ids",
-        "scope": null
-      },
-      {
-        "hash": "fd78c07b",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Normalize apostrophes/diacritics + force two-step pipeline in prompt",
         "scope": null
       }
     ]
