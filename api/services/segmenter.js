@@ -43,7 +43,8 @@ import {
   detectLanguageFeatures,
   hasPunctuation,
   getSegmentationStatus,
-  detectVerseMarkers
+  detectVerseMarkers,
+  splitAtSentenceBoundaries
 } from './segmenter/detect.js';
 export { detectLanguageFeatures, hasPunctuation, getSegmentationStatus, detectVerseMarkers };
 

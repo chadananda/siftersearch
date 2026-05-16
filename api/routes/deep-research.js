@@ -173,7 +173,7 @@ export default async function deepResearchRoutes(fastify) {
     if (!record) return reply.code(404).send({ error: 'Not found' });
     const traditions = (record.traditions_covered || '').split(',').filter(Boolean);
     let tags = [];
-    try { tags = JSON.parse(record.topic_tags || '[]'); } catch {}
+    try { tags = JSON.parse(record.topic_tags || '[]'); } catch { /* ignore malformed JSON */ }
     const url = await generateResearchHeroImage(record.id, { question: record.canonical_question, traditions, tags });
     if (!url) return reply.code(500).send({ error: 'Image generation failed — check server logs' });
     return { success: true, hero_image: url };

@@ -1,3 +1,8 @@
+import { query, queryOne, queryAll } from '../../lib/db.js';
+import { logger } from '../../lib/logger.js';
+import { content } from '../../lib/content.js';
+import { deleteDocument as deleteFromMeilisearch } from '../../lib/search.js';
+
 /**
  * Soft-delete a document and all its content
  * Preserves embeddings for 30 days to avoid regenerating when re-importing similar content.

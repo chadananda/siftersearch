@@ -8,6 +8,7 @@
 //   detectVerseMarkers(text)     — find Arabic verse-end markers + numeric verse refs
 
 import { isAiSegmentedLanguage } from '../../lib/constants/languages.js';
+import { hasMarkers } from '../../lib/markers.js';
 
 const verseMarkersRe = /[\u06DD\u06DE]|[۱۲۳۴۵۶۷۸۹۰\d]+\s*[.:\u061B]/g;
 
@@ -139,7 +140,7 @@ export function getSegmentationStatus(body, meta = {}) {
  * @param {number} minChunkSize - Minimum chars per chunk
  * @returns {string[]} Array of segments
  */
-function splitAtSentenceBoundaries(text, maxChunkSize, minChunkSize) {
+export function splitAtSentenceBoundaries(text, maxChunkSize, minChunkSize) {
   // Split on sentence endings followed by space
   const sentences = text.split(/(?<=[.!?؟۔。！？])\s+/);
 

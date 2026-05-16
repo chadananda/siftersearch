@@ -39,6 +39,14 @@ const meiliMock = {
     },
     getDocuments: async () => ({ results: [] }),
   }),
+  // crossTraditionSearch uses multiSearch (one sub-query per religion)
+  multiSearch: async ({ queries }) => ({
+    results: queries.map(q => {
+      searchCalls.push({ name: q.indexUid, query: q.q, params: q });
+      const hits = meiliResponses.get(q.indexUid) ?? [];
+      return { hits, processingTimeMs: 1, estimatedTotalHits: hits.length };
+    }),
+  }),
 };
 
 vi.mock('meilisearch', () => ({
@@ -165,7 +173,7 @@ describe('Scenario 2 — Site-scoped chatbot at bahaiteachings.org', () => {
     expect(scope_config).toEqual({ primary: false, sites: ['bt'] });
 
     await multiIndexSearch('opinion essay topic', { scope_config });
-    const queried = searchCalls.map(c => c.name);
+    const queried = [...new Set(searchCalls.map(c => c.name))];
     expect(queried).toEqual(['siftersearch_bt_paragraphs']);
     expect(queried).not.toContain('paragraphs');
     expect(queried).not.toContain('hype_questions');
@@ -273,20 +281,18 @@ describe('Scenario 5 — Resilience: per-index Meili failure', () => {
   });
 
   it('one index throws — the others still return their hits', async () => {
-    // Override the mock for this scenario only — balib throws, primary works.
-    const origIndex = meiliMock.index;
-    meiliMock.index = (name) => ({
-      search: async (q) => {
-        if (name === 'siftersearch_balib_paragraphs') {
-          throw new Error('Connection reset by peer');
-        }
-        searchCalls.push({ name, query: q });
-        return name === 'paragraphs'
-          ? { hits: [makeHit(1, 'primary', 0.9)], processingTimeMs: 1, estimatedTotalHits: 1, query: q }
-          : { hits: [], processingTimeMs: 1, estimatedTotalHits: 0, query: q };
-      },
-      getDocuments: async () => ({ results: [] }),
-    });
+    // Cross-tradition path uses meili.multiSearch (one call per index).
+    // Override multiSearch: balib throws, primary returns one hit.
+    const origMultiSearch = meiliMock.multiSearch;
+    meiliMock.multiSearch = async ({ queries }) => {
+      const indexUid = queries[0]?.indexUid;
+      if (indexUid === 'siftersearch_balib_paragraphs') {
+        throw new Error('Connection reset by peer');
+      }
+      searchCalls.push({ name: indexUid, query: queries[0]?.q });
+      const hit = indexUid === 'paragraphs' ? [makeHit(1, 'primary', 0.9)] : [];
+      return { results: queries.map(() => ({ hits: hit, processingTimeMs: 1, estimatedTotalHits: hit.length })) };
+    };
 
     try {
       const result = await hybridSearch('resilience', {
@@ -295,7 +301,7 @@ describe('Scenario 5 — Resilience: per-index Meili failure', () => {
       expect(result.hits.length).toBe(1);
       expect(result.hits[0].id).toBe('primary_1');
     } finally {
-      meiliMock.index = origIndex;
+      meiliMock.multiSearch = origMultiSearch;
     }
   });
 });

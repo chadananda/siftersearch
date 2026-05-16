@@ -18,8 +18,6 @@
  *   node tests/quality/score-search.mjs --top-k=5  # different K cutoff
  */
 
-/* global AbortSignal */
-
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';

@@ -28,7 +28,9 @@ const ROOT = join(__dirname, '..', '..');
 const DIALOGS_DIR = join(ROOT, 'src/content/dialogs');
 const PUBLIC_DIR = join(ROOT, 'public');
 
-const dialogFiles = readdirSync(DIALOGS_DIR).filter(f => f.endsWith('.md'));
+const dialogFiles = existsSync(DIALOGS_DIR)
+  ? readdirSync(DIALOGS_DIR).filter(f => f.endsWith('.md'))
+  : [];
 
 function loadDialog(file) {
   const path = join(DIALOGS_DIR, file);

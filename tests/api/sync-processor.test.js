@@ -103,7 +103,8 @@ const SCHEMA = `
     encumbered INTEGER DEFAULT 0,
     duplicate_of INTEGER,
     deleted_at TEXT,
-    source_site TEXT
+    source_site TEXT,
+    source_url TEXT
   );
   CREATE TABLE IF NOT EXISTS content (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

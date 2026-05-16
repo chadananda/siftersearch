@@ -73,7 +73,7 @@ function applySmartQuotes(html) {
     // Double quotes
     part = part.replace(/"/g, (m, offset, str) => {
       const prev = str[offset - 1] ?? '';
-      return /[\s(\[{"\u201C\u2018\u2014\u2013\-]/.test(prev) || offset === 0
+      return /[\s([{"\u201C\u2018\u2014\u2013-]/.test(prev) || offset === 0
         ? '\u201C' : '\u201D';
     });
     // Apostrophes / single quotes
@@ -83,7 +83,7 @@ function applySmartQuotes(html) {
       // Contraction / possessive: letter on left AND right
       if (/\w/.test(prev) && /\w/.test(next)) return '\u2019';
       // Opening: after space/bracket/start
-      if (/[\s(\[{"\u201C\u2014\u2013\-]/.test(prev) || offset === 0) return '\u2018';
+      if (/[\s([{"\u201C\u2014\u2013-]/.test(prev) || offset === 0) return '\u2018';
       // Closing (default)
       return '\u2019';
     });
@@ -591,7 +591,7 @@ export default async function contentRoutes(fastify) {
     child.stdout.on('data', d => res.write(`data: ${String(d).replace(/\n/g, '\ndata: ')}\n\n`));
     child.stderr.on('data', d => res.write(`data: [err] ${String(d).trim()}\n\n`));
     child.on('close', () => {
-      try { unlinkSync(tmpFile); } catch {}
+      try { unlinkSync(tmpFile); } catch { /* best-effort cleanup */ }
       res.write('event: done\ndata: {}\n\n');
       res.end();
     });
@@ -636,7 +636,7 @@ export default async function contentRoutes(fastify) {
     child.stdout.on('data', d => res.write(`data: ${String(d).replace(/\n/g, '\ndata: ')}\n\n`));
     child.stderr.on('data', d => res.write(`data: [err] ${String(d).trim()}\n\n`));
     child.on('close', () => {
-      try { unlinkSync(tmpFile); } catch {}
+      try { unlinkSync(tmpFile); } catch { /* best-effort cleanup */ }
       res.write(`event: done\ndata: {"slug":"${slug}","url":"https://siftersearch.com/dialogue/${slug}/"}\n\n`);
       res.end();
     });

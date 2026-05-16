@@ -90,7 +90,7 @@ describe('HyPE enqueue gate (Phase F)', () => {
     rawDb.prepare(`INSERT INTO docs (id, title, author, religion, source_site) VALUES (?, ?, ?, ?, ?)`)
       .run(1, 'Primary Doc', 'Shoghi Effendi', "Baha'i", null);
     rawDb.prepare(`INSERT INTO content (id, doc_id, paragraph_index, text) VALUES (?, ?, ?, ?)`)
-      .run(100, 1, 0, 'Primary paragraph one.');
+      .run(100, 1, 0, 'Primary paragraph one. This text is long enough to pass the minimum length filter of one hundred characters.');
 
     const { enqueueParagraphsForBatch } = await import('../../api/lib/sonnet-enrichment.js');
     const queued = await enqueueParagraphsForBatch();
@@ -105,7 +105,7 @@ describe('HyPE enqueue gate (Phase F)', () => {
     rawDb.prepare(`INSERT INTO docs (id, title, author, religion, source_site) VALUES (?, ?, ?, ?, ?)`)
       .run(2, 'Supplemental Doc', 'Shoghi Effendi', "Baha'i", 'bahai-library.com');
     rawDb.prepare(`INSERT INTO content (id, doc_id, paragraph_index, text) VALUES (?, ?, ?, ?)`)
-      .run(200, 2, 0, 'Supplemental paragraph one.');
+      .run(200, 2, 0, 'Supplemental paragraph one. This text is long enough to pass the minimum length filter of one hundred characters.');
 
     const { enqueueParagraphsForBatch } = await import('../../api/lib/sonnet-enrichment.js');
     const queued = await enqueueParagraphsForBatch();
@@ -123,9 +123,9 @@ describe('HyPE enqueue gate (Phase F)', () => {
       .run(2, 'Supplemental', 'Shoghi Effendi', "Baha'i", 'bahai-library.com');
 
     rawDb.prepare(`INSERT INTO content (id, doc_id, paragraph_index, text) VALUES (?, ?, ?, ?)`)
-      .run(10, 1, 0, 'Primary text.');
+      .run(10, 1, 0, 'Primary text. This text is long enough to pass the minimum length filter of one hundred characters total.');
     rawDb.prepare(`INSERT INTO content (id, doc_id, paragraph_index, text) VALUES (?, ?, ?, ?)`)
-      .run(20, 2, 0, 'Supplemental text.');
+      .run(20, 2, 0, 'Supplemental text. This text is long enough to pass the minimum length filter of one hundred characters.');
 
     const { enqueueParagraphsForBatch } = await import('../../api/lib/sonnet-enrichment.js');
     const queued = await enqueueParagraphsForBatch();

@@ -23,6 +23,17 @@ const meiliMock = {
     }),
     getDocuments: vi.fn(async () => ({ results: [] })),
   })),
+  // multiSearch is used by crossTraditionSearch (unfiltered queries)
+  multiSearch: vi.fn(async ({ queries }) => ({
+    results: queries.map(q => {
+      searchCalls.push({ name: q.indexUid, query: q.q, params: q });
+      return {
+        hits: [{ id: `${q.indexUid}_hit_1`, _rankingScore: 0.5, doc_id: 1, religion: q.filter?.match(/religion = "([^"]+)"/)?.[1] || 'test' }],
+        processingTimeMs: 1,
+        estimatedTotalHits: 1,
+      };
+    }),
+  })),
 };
 
 vi.mock('../../api/lib/config.js', () => ({
@@ -78,23 +89,27 @@ describe('hybridSearch fan-out (Phase E2)', () => {
 
   it('default scope (no scope_config) → only `paragraphs` index queried', async () => {
     await hybridSearch('test query');
-    expect(searchCalls.map(c => c.name)).toEqual(['paragraphs']);
+    // cross-tradition queries paragraphs multiple times (once per religion), check unique set
+    const uniqueNames = [...new Set(searchCalls.map(c => c.name))];
+    expect(uniqueNames).toEqual(['paragraphs']);
   });
 
   it('scope with primary + site → fans out to both indexes', async () => {
     await hybridSearch('test query', {
       scope_config: { primary: true, sites: ['balib'] },
     });
-    expect(searchCalls.map(c => c.name).sort()).toEqual(['paragraphs', 'siftersearch_balib_paragraphs']);
+    const uniqueNames = [...new Set(searchCalls.map(c => c.name))].sort();
+    expect(uniqueNames).toEqual(['paragraphs', 'siftersearch_balib_paragraphs']);
   });
 
   it('site-only scope → ONLY the site index queried, primary NEVER touched', async () => {
     await hybridSearch('test query', {
       scope_config: { primary: false, sites: ['bt'] },
     });
-    expect(searchCalls.map(c => c.name)).toEqual(['siftersearch_bt_paragraphs']);
+    const uniqueNames = [...new Set(searchCalls.map(c => c.name))];
+    expect(uniqueNames).toEqual(['siftersearch_bt_paragraphs']);
     // CRITICAL: primary must NOT have been queried
-    expect(searchCalls.map(c => c.name)).not.toContain('paragraphs');
+    expect(uniqueNames).not.toContain('paragraphs');
   });
 
   it('empty scope (no primary, no sites) → no Meili calls, empty result', async () => {
@@ -109,8 +124,8 @@ describe('hybridSearch fan-out (Phase E2)', () => {
     await hybridSearch('test query', {
       scope_config: { primary: true, sites: ['balib', 'ool'] },
     });
-    const names = searchCalls.map(c => c.name).sort();
-    expect(names).toEqual([
+    const uniqueNames = [...new Set(searchCalls.map(c => c.name))].sort();
+    expect(uniqueNames).toEqual([
       'paragraphs',
       'siftersearch_balib_paragraphs',
       'siftersearch_ool_paragraphs',

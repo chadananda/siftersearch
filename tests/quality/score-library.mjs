@@ -13,8 +13,6 @@
  *   node tests/quality/score-library.mjs --json
  */
 
-/* global AbortSignal */
-
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';

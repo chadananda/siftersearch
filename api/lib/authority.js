@@ -138,6 +138,8 @@ const TITLE_AUTHORITY = [
   { pattern: /^(the\s+)?gathas?(\s*$|\s*[-—(])/i, authority: 10 },
   // Guru Granth Sahib
   { pattern: /^(the\s+)?guru\s+granth\s+sahib(\s*$|\s*[-—(])/i, authority: 10 },
+  // Bahá'í primary scriptures stored under book-title author fields
+  { pattern: /bah[aá][''\u2019]u[''\u2019]ll[aá]h/i, authority: 10 },
   // Lights of Guidance — authenticated Bahá'í Q&A compiled by Helen Hornby.
   // Each entry directly answers a doctrinal question; treat as high-authority reference.
   { pattern: /^lights\s+of\s+guidance/i, authority: 8 },
@@ -254,30 +256,29 @@ export function getAuthority(doc) {
   const libAuth = loadLibraryAuthority();
   const { religion, collection, source_site } = doc;
 
-  // 2. Author-based authority for primary scripture authors (Central Figures, prophets).
-  // Checked first so exact author matches (e.g. "Muhammad", "Matthew") always win.
+  // 2. Collection-specific authority from meta.yaml takes priority over author/title
+  // so that curated overrides (e.g. Pilgrim Notes = 1) always apply.
+  if (religion && collection && libAuth.collections[religion]?.[collection] !== undefined) {
+    return libAuth.collections[religion][collection];
+  }
+
+  // 3. Religion default from meta.yaml — applies when collection is unknown.
+  if (religion && libAuth.religions[religion] !== undefined) {
+    return libAuth.religions[religion];
+  }
+
+  // 4. Author-based authority for primary scripture authors (Central Figures, prophets).
+  // Falls back here only when no collection/religion match.
   // Uses exact string equality to avoid false positives like "Muhammad Husayn Tabatabai".
   if (doc.author && AUTHOR_AUTHORITY[doc.author] !== undefined) {
     return AUTHOR_AUTHORITY[doc.author];
   }
 
-  // 3. Title-pattern authority for primary scriptures. Checked BEFORE collection meta.yaml
-  // because collection defaults (e.g. "Foundational Classics" = 5) would otherwise suppress
-  // canonical texts like "Tao Te Ching (tr. Chou-Wing Chohan)" or "Guru Granth Sahib - X".
-  if (doc.title) {
-    for (const { pattern, authority } of TITLE_AUTHORITY) {
-      if (pattern.test(doc.title)) return authority;
-    }
-  }
-
-  // 4. Check collection-specific authority from meta.yaml (librarian override)
-  if (religion && collection && libAuth.collections[religion]?.[collection] !== undefined) {
-    return libAuth.collections[religion][collection];
-  }
-
-  // 5. Check religion default from meta.yaml
-  if (religion && libAuth.religions[religion] !== undefined) {
-    return libAuth.religions[religion];
+  // 5. Title-pattern authority for primary scriptures where author/religion metadata is absent.
+  // Also checks author field — some docs store the book title in the author field.
+  for (const { pattern, authority: titleAuth } of TITLE_AUTHORITY) {
+    if (doc.title && pattern.test(doc.title)) return titleAuth;
+    if (doc.author && pattern.test(doc.author)) return titleAuth;
   }
 
   // 6. External-site authority floor from sites.yaml. Lazy-load to avoid

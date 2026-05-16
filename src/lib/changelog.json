@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-16T00:26:49.026Z",
+  "generated": "2026-05-16T01:13:00.537Z",
   "entries": [
+    {
+      "hash": "9bc1b020",
+      "date": "2026-05-15",
+      "type": "Fixed",
+      "description": "Bahá'í tradition regex — trailing \\b fails on Unicode í, use lookahead",
+      "scope": null
+    },
     {
       "hash": "501a9cdb",
       "date": "2026-05-15",
@@ -3493,17 +3500,17 @@
       "type": "Style",
       "description": "Further de-emphasize round h3/h4 — tiny italic muted greys, no borders, minimal margins",
       "scope": null
-    },
-    {
-      "hash": "e479e5ca",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Question-form h3 + answer-form h4 round headers; nested TOC; left-aligned user bubble",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-15": [
+      {
+        "hash": "9bc1b020",
+        "date": "2026-05-15",
+        "type": "Fixed",
+        "description": "Bahá'í tradition regex — trailing \\b fails on Unicode í, use lookahead",
+        "scope": null
+      },
       {
         "hash": "501a9cdb",
         "date": "2026-05-15",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-28",
         "type": "Style",
         "description": "Further de-emphasize round h3/h4 — tiny italic muted greys, no borders, minimal margins",
-        "scope": null
-      },
-      {
-        "hash": "e479e5ca",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Question-form h3 + answer-form h4 round headers; nested TOC; left-aligned user bubble",
         "scope": null
       }
     ]

@@ -224,17 +224,13 @@ const TOPIC_LABELS: Record<string, string> = {
 
       {data.assessment && (() => {
         const a = data.assessment;
-        const s = a.scores || {};
         const dims = [
-          ['depth', 'Depth'],
-          ['evidence_quality', 'Evidence'],
-          ['citation_integrity', 'Citations'],
-          ['doctrinal_fidelity', 'Doctrine'],
-          ['conversational_realism', 'Tone'],
-          ['brevity_discipline', 'Brevity'],
-          ['correction_courage', 'Honesty'],
-          ['period_word_discipline', 'Period Vocab'],
-          ['archive_worthy', 'Archive-Worthy'],
+          ['citation_quality', 'Citations'],
+          ['intellectual_depth', 'Depth'],
+          ['interfaith_scope', 'Interfaith'],
+          ['educational_value', 'Educational'],
+          ['conversation_authenticity', 'Authenticity'],
+          ['overall', 'Overall'],
         ];
         return (
           <section class="assessment-box" id="assessment" aria-label="Conversation assessment">
@@ -243,9 +239,9 @@ const TOPIC_LABELS: Record<string, string> = {
               <a href="/dialogue/assessment" class="assess-link">How we assess →</a>
             </div>
             <div class="assess-scores">
-              {dims.map(([key, label]) => s[key] != null && (
+              {dims.map(([key, label]) => a[key] != null && (
                 <div class="score-cell">
-                  <span class="score-val" data-score={String(s[key])}>{s[key]}</span>
+                  <span class="score-val" data-score={String(a[key])}>{a[key]}</span>
                   <span class="score-dim">{label}</span>
                 </div>
               ))}
@@ -257,16 +253,15 @@ const TOPIC_LABELS: Record<string, string> = {
                 ))}
               </div>
             )}
-            {a.narrative && (
+            {a.summary && (
               <div class="assess-narrative">
-                <h3>Narrative</h3>
-                <p>{a.narrative}</p>
+                <p>{a.summary}</p>
               </div>
             )}
-            {a.improvement_plan && (
+            {a.weaknesses && (
               <div class="assess-plan">
                 <h3>Improvement Notes</h3>
-                <p>{a.improvement_plan}</p>
+                <p>{a.weaknesses}</p>
               </div>
             )}
           </section>
