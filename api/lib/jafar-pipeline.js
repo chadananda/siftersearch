@@ -859,7 +859,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // Exception: if the question names a specific WORK (e.g. "What does the Bhagavad Gita say about duty?"),
       // don't early-return — the document subagent path finds work-specific passages better than
       // a generic tradition deep-research set (which may cite the Bhagavata Purana instead of the BG).
-      const shouldEarlyReturn = !isComparativeQuestion && !entities.work_name && (!requiredTradition || quotesToInject.length >= 5);
+      // Exception: multi-turn conversations — for follow-up questions the user is probing
+      // deeper than a cached article covers (e.g. "what happened to X later?"). After the
+      // first exchange, always fall through so document subagents can supplement with
+      // specific passage-level answers the cached article may not have.
+      const isFollowUp = Array.isArray(messages) && messages.filter(m => m.role === 'assistant').length >= 1;
+      const shouldEarlyReturn = !isComparativeQuestion && !entities.work_name && !isFollowUp && (!requiredTradition || quotesToInject.length >= 5);
       logger.info({ researchId: dr.id, quotes: dr.quotes.length, injecting: quotesToInject.length, shouldEarlyReturn }, 'Deep research pre-fetch hit');
       for (const q of quotesToInject) {
         retrieved.push({
@@ -966,50 +971,6 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     })());
   }
 
-  // Branch 1b: Bahá'í historical event routing.
-  // When no specific work is named but the conversation is about a Bahá'í
-  // historical event (Badasht, Tabarsi, martyrdom, etc.), route to both
-  // primary narrative works — Dawn-Breakers AND God Passes By — via document
-  // subagents. This mirrors the (now-dead) RESEARCH_SYSTEM LLM routing rule.
-  // Runs in parallel with Branch 1 when a work_name is also present.
-  const BAHAI_HISTORICAL_EVENT_RE = /\b(badasht|tabarsi|ṭabarsí|t[aá]barsi|fort of (shaykh\s+)?tabarsi|seven martyrs|martyrdom of the b[aá]b|nidgiran|bábí siege|fort of)\b/i;
-  const isHistoricalEventConversation = !effectiveWorkName && (() => {
-    if (!Array.isArray(messages) || messages.length < 2) return false;
-    // Check recent conversation context (not just current turn) for event keywords
-    const recentText = messages.slice(-6).map(m => m.content || '').join(' ');
-    return BAHAI_HISTORICAL_EVENT_RE.test(recentText);
-  })();
-
-  if (isHistoricalEventConversation) {
-    if (sendEvent && debug) sendEvent({ type: 'debug_bahai_historical_routing', query: userMessage.slice(0, 80) });
-    for (const workTitle of ['Dawn-Breakers', 'God Passes By']) {
-      tasks.push((async () => {
-        const find = await runTool('find_document_for_citation', { title: workTitle, limit: 3 });
-        const primary = (find?.candidates || []).find(c => c.is_primary) || find?.candidates?.[0];
-        if (!primary?.document_id) return;
-        const { answerFromDocument } = await import('./document-subagent.js');
-        if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'document_subagent', args: { document_id: primary.document_id, work_name: workTitle } });
-        const sub = await answerFromDocument({
-          document_id: primary.document_id,
-          question: userMessage,
-          conversation_messages: messages,
-          sendEvent,
-          debug
-        });
-        harvestExcerpts(sub, 'document_subagent');
-        if (sub?.subagent_answer) {
-          subagentSyntheses.push({
-            via: 'document_subagent',
-            doc_id: primary.document_id,
-            source_title: sub.document?.title || workTitle,
-            source_author: sub.document?.author || null,
-            answer: sub.subagent_answer
-          });
-        }
-      })());
-    }
-  }
-
   // Branch 2: passages search.
   // When NO work is named, run parallel per-tradition searches so that
   // corpus imbalance (Bahá'í has 5× more docs) doesn't crowd out other
@@ -1070,22 +1031,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     passageQuery = passageQuery.replace(/\bsuffer(ing)?\b/gi, 'trials').trim() + ' tests purpose ordained';
   }
   if (passageQuery && passageQuery.trim()) {
-    if (!effectiveWorkName && isHistoricalEventConversation) {
-      // Bahá'í historical event follow-up — document subagents already handle
-      // the primary research above (Branch 1b). Add only a targeted Bahá'í
-      // keyword search to catch passages the subagents may miss, and skip the
-      // full interfaith parallel search (irrelevant for Bahá'í history questions).
-      tasks.push((async () => {
-        const hist = await runTool('search', {
-          query: passageQuery,
-          mode: 'passages',
-          religion: "Baha'i",
-          limit: 5,
-          semanticRatio: 0.4
-        });
-        harvestPassages(hist, 'bahai-historical-supplement');
-      })());
-    } else if (!effectiveWorkName) {
+    if (!effectiveWorkName) {
       // General interfaith question — parallel per-tradition searches with
       // collection filter to prefer primary texts. Without collection filter,
       // Bahá'í-authored commentary filed under Islam/Christian gets ranked ahead
