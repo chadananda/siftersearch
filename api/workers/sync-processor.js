@@ -64,7 +64,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 async function getDocumentMeta(docId) {
   return queryOne(`
     SELECT id, title, author, religion, collection, language, year, description, filename,
-           duplicate_of, deleted_at, source_site
+           duplicate_of, deleted_at, source_site, source_url
     FROM docs WHERE id = ?
   `, [docId]);
 }
@@ -200,6 +200,8 @@ async function syncDocument(docId) {
       encumbered: doc.encumbered ? 1 : 0,
       heading: p.heading || '',
       blocktype: p.blocktype || 'paragraph',
+      source_site: doc.source_site || null,
+      source_url: doc.source_url || null,
       created_at: new Date().toISOString()
     };
     // Only include _vectors when embedding exists — Meilisearch rejects
@@ -553,13 +555,33 @@ async function processJob(job) {
         });
       }
 
+      // Delete duplicate paragraphs from Meili (is_duplicate=1 rows belong to
+      // docs superseded by an OceanLibrary.com version — must not appear in search).
+      const toDelete = batch.filter(p => p.is_duplicate);
+      const toUpsert = batch.filter(p => !p.is_duplicate);
+
+      if (toDelete.length > 0) {
+        const deleteIds = toDelete.map(p => p.id);
+        // Duplicates can span multiple indexes — delete from all.
+        const deleteIndexes = new Set(toDelete.map(p => indexNameForSourceSite(p.source_site)));
+        for (const indexName of deleteIndexes) {
+          try {
+            const task = await meili.index(indexName).deleteDocuments(deleteIds);
+            await waitForMeiliTask(meili, task.taskUid);
+          } catch (err) {
+            logger.error({ err: err.message, indexName, count: deleteIds.length }, 'Failed to delete duplicate paragraphs from Meili');
+          }
+        }
+        logger.info({ count: toDelete.length }, 'Deleted duplicate paragraphs from Meili');
+      }
+
       // Build Meilisearch paragraph objects, grouped by destination index.
       // Primary docs (source_site IS NULL) → 'paragraphs'. Supplementals
       // route to siftersearch_<prefix>_paragraphs based on sites.yaml.
       let wrongDimCount = 0;
       const groups = new Map(); // indexName → meiliDoc[]
 
-      for (const p of batch) {
+      for (const p of toUpsert) {
         let embedding = blobToFloatArray(p.embedding);
         if (embedding && embedding.length !== content.EXPECTED_EMBEDDING_DIMS) {
           embedding = null;
@@ -612,13 +634,13 @@ async function processJob(job) {
       if (groupErrors > 0) {
         failedItems += groupErrors;
       }
-      if (groupErrors === batch.length) {
-        // All groups failed — back off and try again later.
+      if (toUpsert.length > 0 && groupErrors === toUpsert.length) {
+        // All upsert groups failed — back off and try again later.
         await delay(1000);
         continue;
       }
 
-      // Mark synced
+      // Mark synced — includes both deleted duplicates and upserted paragraphs
       const paraIds = batch.map(p => p.id);
       await content.markSynced(paraIds);
       completedItems += paraIds.length;

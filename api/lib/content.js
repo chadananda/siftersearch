@@ -790,7 +790,7 @@ async function getDirtyParagraphsBatch(limit = 50) {
     SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype,
            CASE WHEN c.embedding_model = 'text-embedding-3-large' THEN c.embedding ELSE NULL END as embedding,
            c.embedding_model, c.content_hash, c.normalized_hash, c.external_para_id, c.pdf_page,
-           c.translation, c.translation_segments, c.context,
+           c.translation, c.translation_segments, c.context, c.is_duplicate,
            d.title, d.author, d.filename, d.religion, d.collection,
            d.language, d.year, d.description, d.source_site, d.source_url
     FROM content c

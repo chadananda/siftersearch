@@ -436,7 +436,7 @@ export async function initializeIndexes() {
     filterableAttributes: [
       'doc_id', 'religion', 'collection', 'language', 'year',
       'paragraph_index', 'blocktype', 'author', 'title', 'authority', 'encumbered',
-      'topic_tags', 'question_types', 'source_site'
+      'topic_tags', 'question_types', 'source_site', 'source_url'
     ],
     sortableAttributes: ['year', 'created_at', 'paragraph_index', 'authority'],
     rankingRules: buildRankingRules(),
