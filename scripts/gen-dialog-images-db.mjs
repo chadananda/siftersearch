@@ -30,19 +30,67 @@ const WRANGLER = existsSync(LOCAL_WRANGLER) ? LOCAL_WRANGLER : null;
 const R2_BUCKET = 'cdn-assets';
 const R2_PREFIX = 'siftersearch.com/dialog';
 
-const STYLE_SUFFIX = ' Style: blue-shaded hand-drawn watercolor, indigo and cobalt washes with hints of warm gold, loose brushwork, paper texture visible, soft bleeding edges, contemplative classical illustration. Avoid photorealism. No text, no labels. Strictly no human figures, no faces, no portraits. Do NOT depict any prophet, messenger, saint, or named religious or historical person — this includes Muhammad, Jesus, Moses, Bahá\'u\'lláh, the Báb, Táhirih, \'Abdu\'l-Bahá, or any other central religious figure. Buddha statues or classical Buddha imagery are acceptable and encouraged for Buddhist topics. Use only abstract, symbolic, or landscape imagery.';
+// Objects/symbols used by tradition — steers the model toward things, not people.
+// Never describe human figures or portraits; let the tradition's visual language do the work.
+const TRADITION_SYMBOLS = {
+  bahai:         'nine-pointed star, illuminated Persian calligraphy scroll, terraced garden with cypress trees, dawn light over the sea',
+  islam:         'arabesque geometric tile pattern, mosque lamp, Arabic calligraphy arch, crescent moon over minaret silhouette',
+  christianity:  'stone cathedral window with golden light, illuminated Gospel manuscript page, beeswax candles, carved stone cross',
+  buddhism:      'serene Buddha statue in lotus position, incense smoke rising, lotus flowers on water, stone lantern in misty garden',
+  judaism:       'ancient Torah scroll and silver pointer, seven-branched menorah, stone Western Wall, Star of David in stained glass',
+  hinduism:      'oil-lamp flame (diya) reflected on water, stone mandala carving, lotus blossom, temple gopuram at dusk',
+  zoroastrian:   'sacred eternal flame in marble fire temple, ancient Faravahar relief carving, Persian garden at night',
+  sikhism:       'golden Harmandir Sahib reflected in the Amrit Sarovar pool, Khanda symbol, saffron Nishan Sahib flag',
+  taoism:        'misty mountain gorge with pine trees, flowing river over smooth stones, yin-yang in ink wash',
+  confucianism:  'ancient Chinese scroll with ink-brush calligraphy, plum blossoms, jade bi disc, scholar\'s garden pavilion',
+  indigenous:    'night sky over open plains, sacred medicine-wheel stones, eagle feathers, glowing fire circle',
+  sufism:        'whirling dervish cloak swirling into geometric pattern, oil lamp, calligraphy in arabesque border',
+  kabbalah:      'Tree of Life diagram in golden ink, Hebrew letters, rays of light through ancient stone window',
+  interfaith:    'many religious symbols arranged as a mandala — crescent, cross, Star of David, Dharma wheel, nine-pointed star — around a central flame',
+};
+
+// Pick a symbol set: check tags first, then topic, then fall back to interfaith
+function detectTraditionSymbols(tags, topic) {
+  const lower = [...tags, topic || ''].map(t => t.toLowerCase());
+  const order = ['bahai', 'islam', 'christianity', 'judaism', 'buddhism', 'hinduism',
+    'zoroastrian', 'sikhism', 'taoism', 'confucianism', 'indigenous', 'sufism', 'kabbalah'];
+  for (const trad of order) {
+    if (lower.some(t => t.includes(trad) || (trad === 'bahai' && t.includes('baha'))
+      || (trad === 'islam' && (t.includes('quran') || t.includes('muslim') || t.includes('sufi')))
+      || (trad === 'christianity' && (t.includes('christ') || t.includes('trinity') || t.includes('gospel')))
+      || (trad === 'judaism' && (t.includes('jewish') || t.includes('torah') || t.includes('sinai') || t.includes('kabbal')))
+      || (trad === 'buddhism' && (t.includes('buddh') || t.includes('dharma') || t.includes('anatta')))
+      || (trad === 'hinduism' && (t.includes('hindu') || t.includes('vedanta') || t.includes('karma') || t.includes('gita')))
+      || (trad === 'zoroastrian' && (t.includes('zoroas') || t.includes('avesta')))
+      || (trad === 'sikhism' && (t.includes('sikh') || t.includes('granth')))
+      || (trad === 'taoism' && (t.includes('tao') || t.includes('taoist')))
+      || (trad === 'confucianism' && (t.includes('confuc') || t.includes('analects')))
+      || (trad === 'sufism' && t.includes('sufi'))
+      || (trad === 'kabbalah' && t.includes('kabbalist'))
+    )) return TRADITION_SYMBOLS[trad];
+  }
+  return TRADITION_SYMBOLS.interfaith;
+}
+
+// Build a prompt focused on symbolic objects rather than "a scene about [title]",
+// so the model renders things not people.
+function buildHeroPrompt(dialog) {
+  const tags = JSON.parse(dialog.tags_json || '[]');
+  const symbols = detectTraditionSymbols(tags, dialog.topic);
+  const themeTags = tags.filter(t => !['bahaullah','abdul-baha','shoghi-effendi','bab','tahirih',
+    'muhammad','jesus','moses','buddha','confucius'].includes(t)).slice(0, 3).join(', ');
+  return `Contemplative watercolor illustration: ${symbols}. Thematic context: ${themeTags || dialog.topic}. No human figures of any kind.`;
+}
+
+const STYLE_SUFFIX = ' Hand-painted watercolor, indigo and cobalt washes with warm gold accents, loose brushwork, paper texture, soft bleeding edges, wide cinematic 16:9. No text, no labels, no human figures, no faces, no portraits whatsoever.';
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
+const forceAll = args.includes('--force');
 const slugFilter = args.find(a => a.startsWith('--slug='))?.split('=')[1]
   || (args.indexOf('--slug') >= 0 ? args[args.indexOf('--slug') + 1] : null);
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-function buildHeroPrompt(dialog) {
-  const tags = JSON.parse(dialog.tags_json || '[]').slice(0, 4).join(', ');
-  return `An evocative scene representing the central question: "${dialog.title}". Topic: ${dialog.topic}. Themes: ${tags}.`;
-}
 
 async function generateImage(prompt, slug) {
   const fullPrompt = prompt + STYLE_SUFFIX;
@@ -103,9 +151,10 @@ const res = await fetch(`${API_BASE}/api/v1/dialogs`);
 if (!res.ok) { console.error('Failed to fetch dialogs'); process.exit(1); }
 const { dialogs } = await res.json();
 
-// Filter to those needing images
+// Filter to those needing images (--force regenerates all)
 const targets = dialogs.filter(d => {
   if (slugFilter) return d.slug === slugFilter;
+  if (forceAll) return true;
   return !d.hero_image;
 });
 

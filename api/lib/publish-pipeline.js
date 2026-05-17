@@ -189,12 +189,47 @@ Output JSON: {"messages":[{"role":"...","text":"..."},...]} with EXACTLY ${userT
   return preScrubbedMessages;
 }
 
-// Build a hero image prompt tailored to the conversation. Returns the prompt
-// string only; caller invokes DALL-E and uploads to R2 separately so this
-// stays testable without side-effects.
+const TRADITION_SYMBOLS = {
+  bahai:        'nine-pointed star, illuminated Persian calligraphy scroll, terraced garden with cypress trees, dawn light over the sea',
+  islam:        'arabesque geometric tile pattern, mosque lamp, Arabic calligraphy arch, crescent moon over minaret silhouette',
+  christianity: 'stone cathedral window with golden light, illuminated Gospel manuscript page, beeswax candles, carved stone cross',
+  buddhism:     'serene Buddha statue in lotus position, incense smoke rising, lotus flowers on water, stone lantern in misty garden',
+  judaism:      'ancient Torah scroll and silver pointer, seven-branched menorah, stone Western Wall, Star of David in stained glass',
+  hinduism:     'oil-lamp flame (diya) reflected on water, stone mandala carving, lotus blossom, temple gopuram at dusk',
+  zoroastrian:  'sacred eternal flame in marble fire temple, ancient Faravahar relief carving, Persian garden at night',
+  sikhism:      'golden Harmandir Sahib reflected in the Amrit Sarovar pool, Khanda symbol, saffron Nishan Sahib flag',
+  taoism:       'misty mountain gorge with pine trees, flowing river over smooth stones, yin-yang in ink wash',
+  confucianism: "ancient Chinese scroll with ink-brush calligraphy, plum blossoms, jade bi disc, scholar's garden pavilion",
+  interfaith:   'many religious symbols arranged as a mandala — crescent, cross, Star of David, Dharma wheel, nine-pointed star — around a central flame',
+};
+
+function pickTraditionSymbols(tags, topic) {
+  const lower = [...(tags || []), topic || ''].map(t => t.toLowerCase());
+  const checks = [
+    ['bahai',        t => t.includes('baha')],
+    ['islam',        t => t.includes('islam') || t.includes('quran') || t.includes('muslim')],
+    ['christianity', t => t.includes('christ') || t.includes('trinity') || t.includes('gospel')],
+    ['judaism',      t => t.includes('jewish') || t.includes('torah') || t.includes('sinai') || t.includes('kabbal')],
+    ['buddhism',     t => t.includes('buddh') || t.includes('dharma') || t.includes('anatta')],
+    ['hinduism',     t => t.includes('hindu') || t.includes('vedanta') || t.includes('karma') || t.includes('gita')],
+    ['zoroastrian',  t => t.includes('zoroas') || t.includes('avesta')],
+    ['sikhism',      t => t.includes('sikh') || t.includes('granth')],
+    ['taoism',       t => t.includes('tao')],
+    ['confucianism', t => t.includes('confuc') || t.includes('analects')],
+  ];
+  for (const [trad, test] of checks) {
+    if (lower.some(test)) return TRADITION_SYMBOLS[trad];
+  }
+  return TRADITION_SYMBOLS.interfaith;
+}
+
+// Build a hero image prompt focused on symbolic objects, not people or portraits.
 export function buildHeroImagePrompt({ title, topic, tags }) {
-  const STYLE = ' Watercolor — indigo and cobalt washes with warm gold accents, loose brushwork, paper texture visible, soft bleeding edges. Wide cinematic 16:9 composition, atmospheric and contemplative. No text, no labels. Strictly no human figures, no faces, no portraits. Do NOT depict any prophet, messenger, saint, or named religious or historical person — this includes Muhammad, Jesus, Moses, Bahá\'u\'lláh, the Báb, Táhirih, \'Abdu\'l-Bahá, or any other central religious figure. Buddha statues or classical Buddha imagery are acceptable and encouraged for Buddhist topics. Use only abstract, symbolic, or landscape imagery.';
-  const subject = `An evocative scene representing the central question: "${title}". Topic: ${topic}. Themes: ${(tags || []).slice(0, 4).join(', ')}.`;
+  const symbols = pickTraditionSymbols(tags, topic);
+  const themeTags = (tags || []).filter(t => !['bahaullah','abdul-baha','shoghi-effendi','bab','tahirih',
+    'muhammad','jesus','moses','buddha','confucius'].includes(t)).slice(0, 3).join(', ');
+  const subject = `Contemplative watercolor illustration: ${symbols}. Thematic context: ${themeTags || topic}. No human figures of any kind.`;
+  const STYLE = ' Hand-painted watercolor, indigo and cobalt washes with warm gold accents, loose brushwork, paper texture, soft bleeding edges, wide cinematic 16:9. No text, no labels, no human figures, no faces, no portraits whatsoever.';
   return subject + STYLE;
 }
 
