@@ -231,6 +231,16 @@ async function workerLoop() {
 
 const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMain) {
+  process.on('uncaughtException', (err) => {
+    process.stderr.write(`UNCAUGHT: ${err.stack}\n`);
+    process.exit(1);
+  });
+  process.on('unhandledRejection', (reason) => {
+    process.stderr.write(`UNHANDLED: ${reason?.stack || reason}\n`);
+    process.exit(1);
+  });
+  process.stderr.write(`graph-extractor starting pid=${process.pid}\n`);
   await runMigrations();
+  process.stderr.write('migrations done\n');
   await workerLoop();
 }

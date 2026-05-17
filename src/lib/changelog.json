@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T04:27:08.466Z",
+  "generated": "2026-05-17T04:28:30.697Z",
   "entries": [
+    {
+      "hash": "7804ad87",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Graph-extractor fetchBatch — drop slow correlated-subquery ORDER BY",
+      "scope": null
+    },
     {
       "hash": "71bea98a",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Best-of (rerun, calibrated rejudge) for all 20 articles",
       "scope": null
-    },
-    {
-      "hash": "b7226f92",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Explicit calibration anchors + flag-trigger definitions",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "7804ad87",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Graph-extractor fetchBatch — drop slow correlated-subquery ORDER BY",
+        "scope": null
+      },
       {
         "hash": "71bea98a",
         "date": "2026-05-16",
@@ -7025,15 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Best-of (rerun, calibrated rejudge) for all 20 articles",
-        "scope": null
-      }
-    ],
-    "2026-04-28": [
-      {
-        "hash": "b7226f92",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Explicit calibration anchors + flag-trigger definitions",
         "scope": null
       }
     ]
