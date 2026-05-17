@@ -162,9 +162,13 @@ async function extractParagraph(row) {
 
   let parsed;
   try {
-    parsed = JSON.parse(result.content);
+    // deepseek-reasoner may wrap output in <think>...</think> or markdown fences
+    let raw = result.content;
+    raw = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    parsed = JSON.parse(raw);
   } catch {
-    logger.warn({ contentId: row.id }, 'Failed to parse extraction JSON');
+    logger.warn({ contentId: row.id, raw: result.content?.slice(0, 200) }, 'Failed to parse extraction JSON');
     return null;
   }
 
@@ -174,11 +178,11 @@ async function extractParagraph(row) {
       (content_id, model, prompt_version, output_json,
        input_tokens, output_tokens, cached_tokens, cost_usd, resolved)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-  `, [row.id, MODEL, PROMPT_VERSION, JSON.stringify(parsed),
+  `, [row.id, activeModel, PROMPT_VERSION, JSON.stringify(parsed),
       inputTokens, outputTokens, cachedTokens, costUsd]);
 
   await trackCost({
-    model: MODEL,
+    model: activeModel,
     taskType: 'extraction',
     paragraphId: row.id,
     inputTokens, outputTokens, cachedTokens, costUsd,
@@ -198,10 +202,8 @@ async function extractParagraph(row) {
   return lastInsertRowid;
 }
 
-// GPB doc ID — Shoghi Effendi's "God Passes By" (1944), the authoritative seed
-// for canonical entity names, relationships, periods, and episodes across the
-// Bahá'í corpus. Extract it completely before all other documents.
-const GPB_DOC_ID = '8635';
+// GPB doc ID — compare as number (SQLite returns integers for numeric columns)
+const GPB_DOC_ID = 8635;
 
 // Fetch next batch — GPB paragraphs first, then everything else.
 async function fetchBatch() {

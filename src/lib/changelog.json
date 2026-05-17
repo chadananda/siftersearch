@@ -1,6 +1,62 @@
 {
-  "generated": "2026-05-17T12:12:01.403Z",
+  "generated": "2026-05-17T13:30:28.998Z",
   "entries": [
+    {
+      "hash": "1c5496c0",
+      "date": "2026-05-17",
+      "type": "Performance",
+      "description": "Skip alias dictionary scan when no aliases exist yet (saves 400ms/para)",
+      "scope": null
+    },
+    {
+      "hash": "b648fbcd",
+      "date": "2026-05-17",
+      "type": "New",
+      "description": "GPB-first extraction with deepseek-reasoner and thorough seed prompt",
+      "scope": null
+    },
+    {
+      "hash": "b46b5fae",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Drop title/tags from image prompt entirely — symbols only prevents figure generation",
+      "scope": null
+    },
+    {
+      "hash": "344a1dc3",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Redesign hero image prompts — symbol-based not scene-based to prevent figure depictions",
+      "scope": null
+    },
+    {
+      "hash": "20a5d13c",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Allow Buddha statues in image prompts — Buddhism permits and encourages them",
+      "scope": null
+    },
+    {
+      "hash": "39095807",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Prohibit depictions of prophets and central religious figures in hero images",
+      "scope": null
+    },
+    {
+      "hash": "0b18c541",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Gen-dialog-images-db.mjs falls back to npx wrangler when local binary missing",
+      "scope": null
+    },
+    {
+      "hash": "42083046",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Auto-trigger hero image generation on every conversation save",
+      "scope": null
+    },
     {
       "hash": "e765bded",
       "date": "2026-05-17",
@@ -3444,66 +3500,66 @@
       "type": "Other",
       "description": "List/extract questions read instead of search; wire synthesis to crafter",
       "scope": null
-    },
-    {
-      "hash": "3526880b",
-      "date": "2026-04-30",
-      "type": "Fixed",
-      "description": "SSR doc route — direct fetch instead of getLiveEntry",
-      "scope": null
-    },
-    {
-      "hash": "32ef1bda",
-      "date": "2026-04-30",
-      "type": "Docs",
-      "description": "Rename chatbot-personality -> research-assistant + architecture in CLAUDE.md",
-      "scope": null
-    },
-    {
-      "hash": "1eec9cc7",
-      "date": "2026-04-30",
-      "type": "Fixed",
-      "description": "Rename content routes from /docs to /pages (Swagger UI conflict)",
-      "scope": null
-    },
-    {
-      "hash": "2b54712b",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Verify-hype-progress.mjs status + quality sampler",
-      "scope": null
-    },
-    {
-      "hash": "ca843675",
-      "date": "2026-04-29",
-      "type": "Fixed",
-      "description": "Bump CURRENT_VERSION 51->52 + indexing-layers docs page",
-      "scope": null
-    },
-    {
-      "hash": "8b33954c",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Tier-aware HyPE pipeline (Sonnet for Bahá'í primary)",
-      "scope": null
-    },
-    {
-      "hash": "dbe86309",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Temporarily zero HyPE merge weight (poisoned questions)",
-      "scope": null
-    },
-    {
-      "hash": "4c45e9a7",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Align HyPE doc_id filter key with executeSearch (camelCase)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "1c5496c0",
+        "date": "2026-05-17",
+        "type": "Performance",
+        "description": "Skip alias dictionary scan when no aliases exist yet (saves 400ms/para)",
+        "scope": null
+      },
+      {
+        "hash": "b648fbcd",
+        "date": "2026-05-17",
+        "type": "New",
+        "description": "GPB-first extraction with deepseek-reasoner and thorough seed prompt",
+        "scope": null
+      },
+      {
+        "hash": "b46b5fae",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Drop title/tags from image prompt entirely — symbols only prevents figure generation",
+        "scope": null
+      },
+      {
+        "hash": "344a1dc3",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Redesign hero image prompts — symbol-based not scene-based to prevent figure depictions",
+        "scope": null
+      },
+      {
+        "hash": "20a5d13c",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Allow Buddha statues in image prompts — Buddhism permits and encourages them",
+        "scope": null
+      },
+      {
+        "hash": "39095807",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Prohibit depictions of prophets and central religious figures in hero images",
+        "scope": null
+      },
+      {
+        "hash": "0b18c541",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Gen-dialog-images-db.mjs falls back to npx wrangler when local binary missing",
+        "scope": null
+      },
+      {
+        "hash": "42083046",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Auto-trigger hero image generation on every conversation save",
+        "scope": null
+      },
       {
         "hash": "e765bded",
         "date": "2026-05-17",
@@ -6976,64 +7032,6 @@
         "date": "2026-04-30",
         "type": "Other",
         "description": "List/extract questions read instead of search; wire synthesis to crafter",
-        "scope": null
-      },
-      {
-        "hash": "3526880b",
-        "date": "2026-04-30",
-        "type": "Fixed",
-        "description": "SSR doc route — direct fetch instead of getLiveEntry",
-        "scope": null
-      },
-      {
-        "hash": "32ef1bda",
-        "date": "2026-04-30",
-        "type": "Docs",
-        "description": "Rename chatbot-personality -> research-assistant + architecture in CLAUDE.md",
-        "scope": null
-      },
-      {
-        "hash": "1eec9cc7",
-        "date": "2026-04-30",
-        "type": "Fixed",
-        "description": "Rename content routes from /docs to /pages (Swagger UI conflict)",
-        "scope": null
-      }
-    ],
-    "2026-04-29": [
-      {
-        "hash": "2b54712b",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Verify-hype-progress.mjs status + quality sampler",
-        "scope": null
-      },
-      {
-        "hash": "ca843675",
-        "date": "2026-04-29",
-        "type": "Fixed",
-        "description": "Bump CURRENT_VERSION 51->52 + indexing-layers docs page",
-        "scope": null
-      },
-      {
-        "hash": "8b33954c",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Tier-aware HyPE pipeline (Sonnet for Bahá'í primary)",
-        "scope": null
-      },
-      {
-        "hash": "dbe86309",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Temporarily zero HyPE merge weight (poisoned questions)",
-        "scope": null
-      },
-      {
-        "hash": "4c45e9a7",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Align HyPE doc_id filter key with executeSearch (camelCase)",
         "scope": null
       }
     ]
