@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T07:30:46.815Z",
+  "generated": "2026-05-17T08:08:26.840Z",
   "entries": [
+    {
+      "hash": "631c938e",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Supplementary tradition search guarantees tradition hits reach LLM analysis",
+      "scope": null
+    },
     {
       "hash": "9fcf83c2",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Fix HyPE stub-paragraph rehydrate (id filter -> getDocuments)",
       "scope": null
-    },
-    {
-      "hash": "1df3e699",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Switch from paragraph-count to token-count for short-doc threshold",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "631c938e",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Supplementary tradition search guarantees tradition hits reach LLM analysis",
+        "scope": null
+      },
       {
         "hash": "9fcf83c2",
         "date": "2026-05-17",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Fix HyPE stub-paragraph rehydrate (id filter -> getDocuments)",
-        "scope": null
-      },
-      {
-        "hash": "1df3e699",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Switch from paragraph-count to token-count for short-doc threshold",
         "scope": null
       }
     ]

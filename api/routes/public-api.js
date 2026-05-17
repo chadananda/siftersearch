@@ -378,9 +378,12 @@ export default async function publicApiRoutes(fastify) {
       filters: searchFilters
     }).catch(() => ({ hits: [] }));
 
+    // Always fetch at least 3 tradition hits so the LLM has enough candidates even
+    // when limit=1. One passage (e.g. "before the Ten Commandments") may score < 40
+    // and get filtered — a pool of 3 ensures at least one survives.
     const traditionSearchPromise = (detectedTradition && !searchFilters.religion)
       ? hybridSearch(query, {
-          limit: Math.min(limit, 5),
+          limit: Math.max(3, Math.min(limit, 5)),
           filters: { ...searchFilters, religion: detectedTradition }
         }).catch(() => ({ hits: [] }))
       : Promise.resolve({ hits: [] });
