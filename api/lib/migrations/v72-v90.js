@@ -56,6 +56,7 @@ export const migrations = {
       role TEXT,
       resolution_confidence REAL,
       status TEXT DEFAULT 'resolved',
+      em_synced INTEGER DEFAULT 0,
       extractor_version TEXT,
       created_at INTEGER DEFAULT (unixepoch())
     )`);
@@ -256,6 +257,8 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_content_graph_unsync ON content(graph_enriched) WHERE graph_enriched = 0`);
     await query(`CREATE INDEX IF NOT EXISTS idx_em_entity ON entity_mentions(entity_id)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_em_content ON entity_mentions(content_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_em_unsynced ON entity_mentions(em_synced) WHERE em_synced = 0`);
+    await addCol('entity_mentions', 'em_synced', 'INTEGER DEFAULT 0');
     await query(`CREATE INDEX IF NOT EXISTS idx_alias_surface ON entity_aliases(surface_norm)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_alias_entity ON entity_aliases(entity_id)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_quote_cluster ON quote_instances(cluster_id)`);

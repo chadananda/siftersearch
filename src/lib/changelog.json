@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T03:31:24.627Z",
+  "generated": "2026-05-17T03:35:42.246Z",
   "entries": [
+    {
+      "hash": "48dc8f29",
+      "date": "2026-05-16",
+      "type": "New",
+      "description": "Entity pipeline workers — extractor, validator, resolver, promoter",
+      "scope": null
+    },
     {
       "hash": "ef0915d8",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Primary-source filter + brevity hammer (article 001 was 54%)",
       "scope": null
-    },
-    {
-      "hash": "7cb3a900",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Wider-search fallback + final-attempt no-throw",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "48dc8f29",
+        "date": "2026-05-16",
+        "type": "New",
+        "description": "Entity pipeline workers — extractor, validator, resolver, promoter",
+        "scope": null
+      },
       {
         "hash": "ef0915d8",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Primary-source filter + brevity hammer (article 001 was 54%)",
-        "scope": null
-      },
-      {
-        "hash": "7cb3a900",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Wider-search fallback + final-attempt no-throw",
         "scope": null
       }
     ]

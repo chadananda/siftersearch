@@ -9,7 +9,7 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { createEmbedding, createEmbeddings } from './ai.js';
 import { getAuthority } from './authority.js';
-import { queryOne, queryAll } from './db.js';
+import { queryOne, queryAll, query } from './db.js';
 import { getImportProgress, getIngestionProgress, getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
 
 let client = null;
@@ -469,6 +469,15 @@ export async function initializeIndexes() {
     }
   };
 
+  // Entity-mentions sidecar — one row per resolved entity mention
+  const entityMentionsSettings = {
+    searchableAttributes: ['entity_canonical_name'],
+    filterableAttributes: ['entity_id', 'paragraph_id', 'doc_id', 'religion', 'collection', 'role', 'authority', 'encumbered'],
+    sortableAttributes: ['authority'],
+    rankingRules: buildRankingRules(),
+    pagination: { maxTotalHits: 10000 },
+  };
+
   // Deep Research index — canonical questions + curated passage metadata
   const deepResearchSettings = {
     searchableAttributes: ['canonical_question', 'key_points', 'summary_text', 'convergence_text', 'section_text'],
@@ -486,7 +495,7 @@ export async function initializeIndexes() {
     return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
   };
 
-  for (const [indexUid, pk] of [[INDEXES.PARAGRAPHS, 'id'], [INDEXES.DOCUMENTS, 'id'], [INDEXES.HYPE_QUESTIONS, 'id'], [INDEXES.DEEP_RESEARCH, 'id']]) {
+  for (const [indexUid, pk] of [[INDEXES.PARAGRAPHS, 'id'], [INDEXES.DOCUMENTS, 'id'], [INDEXES.HYPE_QUESTIONS, 'id'], [INDEXES.DEEP_RESEARCH, 'id'], [INDEXES.ENTITY_MENTIONS, 'id']]) {
     try {
       await fetchWithTimeout(`${meiliUrl}/indexes`, {
         method: 'POST', headers, body: JSON.stringify({ uid: indexUid, primaryKey: pk })
@@ -495,7 +504,7 @@ export async function initializeIndexes() {
   }
 
   // Enqueue settings (5s timeout — just needs to accept the task, not process it)
-  for (const [indexName, settings] of [[INDEXES.PARAGRAPHS, paragraphSettings], [INDEXES.DOCUMENTS, documentSettings], [INDEXES.HYPE_QUESTIONS, hypeSettings], [INDEXES.DEEP_RESEARCH, deepResearchSettings]]) {
+  for (const [indexName, settings] of [[INDEXES.PARAGRAPHS, paragraphSettings], [INDEXES.DOCUMENTS, documentSettings], [INDEXES.HYPE_QUESTIONS, hypeSettings], [INDEXES.DEEP_RESEARCH, deepResearchSettings], [INDEXES.ENTITY_MENTIONS, entityMentionsSettings]]) {
     try {
       const res = await fetchWithTimeout(`${meiliUrl}/indexes/${indexName}/settings`, {
         method: 'PATCH', headers, body: JSON.stringify(settings)
@@ -942,6 +951,20 @@ export async function searchHypeQuestions(query, options = {}) {
   return _searchHypeQuestions({ getMeili, INDEXES }, query, options);
 }
 
+// Entity-mention sidecar delegated to api/lib/search/entity.js.
+import {
+  searchByEntity as _searchByEntity,
+  syncEntityMentionsBatch as _syncEntityMentionsBatch
+} from './search/entity.js';
+
+export async function searchByEntity(entityIds, options = {}) {
+  return _searchByEntity({ getMeili, INDEXES }, entityIds, options);
+}
+
+export async function syncEntityMentionsBatch(options = {}) {
+  return _syncEntityMentionsBatch({ getMeili, INDEXES }, { queryAll, query, getAuthority: (await import('./authority.js')).getAuthority, ...options });
+}
+
 // ─── Multi-index merged search (RRF) ──────────────────────────────────────
 //
 // Queries the main `paragraphs` index AND every configured sidecar index
@@ -957,7 +980,8 @@ export async function searchHypeQuestions(query, options = {}) {
 const RRF_K = 60;
 const DEFAULT_WEIGHTS = {
   main: 1.0,    // paragraphs hybrid (text + context + paragraph embedding)
-  hype: 1.5     // HyPE question + thesis match (highest signal — designed to answer)
+  hype: 1.5,    // HyPE question + thesis match (highest signal — designed to answer)
+  entity: 1.0   // entity-mentions sidecar (resolved named entity filter)
 };
 
 /**
@@ -991,7 +1015,9 @@ export async function multiIndexSearch(query, options = {}) {
   const mainSemanticRatio = options.semanticRatio != null
     ? options.semanticRatio
     : (filters.religion && !filters.collection) ? 0.3 : 0.5;
-  const [mainResult, hypeResult] = await Promise.all([
+  const entityIds = options.entityIds || [];
+
+  const [mainResult, hypeResult, entityResult] = await Promise.all([
     hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio }).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
       return { hits: [] };
@@ -1004,18 +1030,40 @@ export async function multiIndexSearch(query, options = {}) {
           logger.warn({ err: err.message }, 'multiIndexSearch: hype failed');
           return { hits: [] };
         })
-      : Promise.resolve({ hits: [] })
+      : Promise.resolve({ hits: [] }),
+    // Entity-mentions: only when resolved entity IDs are provided.
+    entityIds.length > 0
+      ? searchByEntity(entityIds, { limit: overFetch, filters }).catch(err => {
+          logger.warn({ err: err.message }, 'multiIndexSearch: entity failed');
+          return { hits: [] };
+        })
+      : Promise.resolve({ hits: [] }),
   ]);
 
   // RRF aggregation by paragraph_id
-  const aggregate = new Map(); // paragraph_id → { paragraph, score, matchedHype, mainRank, hypeRank }
+  const aggregate = new Map(); // paragraph_id → { paragraph, score, matchedHype, entityRank, mainRank, hypeRank }
 
   (mainResult.hits || []).forEach((hit, rank) => {
     const pid = hit.id;
-    const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, mainRank: null, hypeRank: null };
+    const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, entityRank: null, mainRank: null, hypeRank: null };
     cur.score += weights.main / (RRF_K + rank);
-    cur.paragraph = hit; // full paragraph data
+    cur.paragraph = hit;
     cur.mainRank = rank;
+    aggregate.set(pid, cur);
+  });
+
+  // Entity mentions: best mention per paragraph (same de-dup pattern as HyPE).
+  const entitySeenParagraphs = new Set();
+  (entityResult.hits || []).forEach((hit, rank) => {
+    const pid = hit.paragraph_id;
+    if (entitySeenParagraphs.has(pid)) return;
+    entitySeenParagraphs.add(pid);
+    const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, entityRank: null, mainRank: null, hypeRank: null };
+    cur.score += (weights.entity || 1.0) / (RRF_K + rank);
+    cur.entityRank = rank;
+    if (!cur.paragraph) {
+      cur.paragraph = { id: pid, doc_id: hit.doc_id, religion: hit.religion, collection: hit.collection, authority: hit.authority, _stub: true };
+    }
     aggregate.set(pid, cur);
   });
 
@@ -1026,7 +1074,7 @@ export async function multiIndexSearch(query, options = {}) {
     const pid = hit.paragraph_id;
     if (hypeSeenParagraphs.has(pid)) return;
     hypeSeenParagraphs.add(pid);
-    const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, mainRank: null, hypeRank: null };
+    const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, entityRank: null, mainRank: null, hypeRank: null };
     cur.score += weights.hype / (RRF_K + rank);
     cur.matchedHype = hit.question_text;
     cur.hypeRank = rank;
@@ -1146,6 +1194,7 @@ export async function multiIndexSearch(query, options = {}) {
     query: query.slice(0, 80),
     main_hits: (mainResult.hits || []).length,
     hype_hits: (hypeResult.hits || []).length,
+    entity_hits: (entityResult.hits || []).length,
     merged: aggregate.size,
     returned: hits.length
   }, 'multi-index search complete');
@@ -1155,7 +1204,8 @@ export async function multiIndexSearch(query, options = {}) {
     estimatedTotalHits: aggregate.size,
     _layers: {
       main: (mainResult.hits || []).length,
-      hype: (hypeResult.hits || []).length
+      hype: (hypeResult.hits || []).length,
+      entity_mentions: (entityResult.hits || []).length,
     }
   };
 }
