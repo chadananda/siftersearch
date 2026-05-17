@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T13:30:28.998Z",
+  "generated": "2026-05-17T13:35:06.662Z",
   "entries": [
+    {
+      "hash": "5ec66806",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "GPB doc ID as integer + strip think/markdown from deepseek-reasoner output",
+      "scope": null
+    },
     {
       "hash": "1c5496c0",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Watcher whitelists files via .religion/meta.yaml roots",
       "scope": null
-    },
-    {
-      "hash": "ef89ba78",
-      "date": "2026-04-30",
-      "type": "Other",
-      "description": "List/extract questions read instead of search; wire synthesis to crafter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "5ec66806",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "GPB doc ID as integer + strip think/markdown from deepseek-reasoner output",
+        "scope": null
+      },
       {
         "hash": "1c5496c0",
         "date": "2026-05-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-30",
         "type": "Other",
         "description": "Watcher whitelists files via .religion/meta.yaml roots",
-        "scope": null
-      },
-      {
-        "hash": "ef89ba78",
-        "date": "2026-04-30",
-        "type": "Other",
-        "description": "List/extract questions read instead of search; wire synthesis to crafter",
         "scope": null
       }
     ]

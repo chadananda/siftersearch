@@ -133,16 +133,17 @@ async function extractParagraph(row) {
 
   let result;
   try {
-    // DeepSeek supports json_object but not json_schema structured output.
-    // The system prompt already contains the full schema instruction.
+    // deepseek-reasoner does NOT support response_format (json_object or json_schema).
+    // Rely on the system prompt "Return ONLY valid JSON" instruction for reasoner.
+    // deepseek-chat supports json_object and must use it for reliable JSON output.
     result = await chatCompletion(
       [{ role: 'system', content: systemPrompt }, { role: 'user', content: row.text }],
       {
         model: activeModel,
         provider: 'deepseek',
-        temperature: 0,
-        maxTokens: isGpb ? 8192 : 4096,  // GPB gets more tokens — entity-dense
-        responseFormat: { type: 'json_object' },
+        temperature: isGpb ? 0.5 : 0,  // reasoner requires non-zero temp for JSON
+        maxTokens: isGpb ? 16384 : 4096,
+        ...(isGpb ? {} : { responseFormat: { type: 'json_object' } }),
       }
     );
   } catch (err) {
@@ -168,7 +169,12 @@ async function extractParagraph(row) {
     raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
     parsed = JSON.parse(raw);
   } catch {
-    logger.warn({ contentId: row.id, raw: result.content?.slice(0, 200) }, 'Failed to parse extraction JSON');
+    logger.warn({
+      contentId: row.id,
+      finishReason: result.finishReason,
+      contentLen: result.content?.length,
+      raw: result.content?.slice(0, 300)
+    }, 'Failed to parse extraction JSON');
     return null;
   }
 

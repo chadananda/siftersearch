@@ -152,6 +152,7 @@ async function chatDeepSeek(messages, { model, temperature, maxTokens, stream, r
   if (stream) return response;
   return {
     content: response.choices[0].message.content,
+    finishReason: response.choices[0].finish_reason,
     usage: {
       promptTokens: response.usage?.prompt_tokens,
       completionTokens: response.usage?.completion_tokens,
