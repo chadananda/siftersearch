@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T06:33:10.270Z",
+  "generated": "2026-05-17T06:40:59.138Z",
   "entries": [
+    {
+      "hash": "bc0aded8",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Relevance floor (0.35) in crossTraditionSearch prevents low-scoring tradition hits from gaming authority formula",
+      "scope": null
+    },
     {
       "hash": "d57dc672",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Tune for 80-core / 197GB box + repo-manage systemd unit",
       "scope": null
-    },
-    {
-      "hash": "d95b160a",
-      "date": "2026-04-29",
-      "type": "Test",
-      "description": "Search + library quality batteries (Layer 2 — primitive scoring)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "bc0aded8",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Relevance floor (0.35) in crossTraditionSearch prevents low-scoring tradition hits from gaming authority formula",
+        "scope": null
+      },
       {
         "hash": "d57dc672",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Tune for 80-core / 197GB box + repo-manage systemd unit",
-        "scope": null
-      },
-      {
-        "hash": "d95b160a",
-        "date": "2026-04-29",
-        "type": "Test",
-        "description": "Search + library quality batteries (Layer 2 — primitive scoring)",
         "scope": null
       }
     ]

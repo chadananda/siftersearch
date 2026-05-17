@@ -361,7 +361,7 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
     // multiplier overcomes 4x lower relevance). Floor at 0.35 prevents this — a
     // tradition with no genuinely relevant hits gets zero slots rather than one
     // low-quality hit that authority-reranking then lifts to #1.
-    const MIN_CROSS_TRADITION_RELEVANCE = 0.35;
+    const MIN_CROSS_TRADITION_RELEVANCE = 0.45;
     const seenTitles = new Set();
     const seenDocIds = new Set();
     const passTwo = [];
