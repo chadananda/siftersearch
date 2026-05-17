@@ -24,12 +24,14 @@ import { findEntity } from '../lib/graph-db.js';
 
 const PROMPT_VERSION = 'extract-v1';
 const MODEL = process.env.EXTRACTION_MODEL || 'deepseek-chat';
-// GPB gets deepseek-reasoner for higher-quality seed extraction — it's worth the cost
-// deepseek-reasoner burns its token budget on reasoning, leaving nothing for JSON output.
-// Use deepseek-chat for all extractions — the GPB prompt thoroughness is what matters.
-const GPB_MODEL = process.env.GPB_EXTRACTION_MODEL || 'deepseek-chat';
+const MODEL_PROVIDER = process.env.EXTRACTION_PROVIDER || 'deepseek';
+// GPB is the canonical entity seed — use Sonnet for highest quality extraction.
+// Sonnet handles Bahá'í transliteration, pronoun resolution, and doctrinal nuance
+// far better than deepseek-chat. Cost is secondary for the seed document.
+const GPB_MODEL = process.env.GPB_EXTRACTION_MODEL || 'claude-sonnet-4-6';
+const GPB_MODEL_PROVIDER = process.env.GPB_EXTRACTION_PROVIDER || 'anthropic';
 const BATCH_SIZE = 16;
-const GPB_BATCH_SIZE = 8;  // smaller batch for the heavier reasoner model
+const GPB_BATCH_SIZE = 4;  // smaller batch — Sonnet calls are slower
 const IDLE_SLEEP_MS = 30_000;
 
 const SYSTEM_PROMPT_TEMPLATE = readFileSync(
@@ -132,24 +134,26 @@ async function extractParagraph(row) {
 
   const isGpb = row.doc_id === GPB_DOC_ID;
   const activeModel = isGpb ? GPB_MODEL : MODEL;
+  const activeProvider = isGpb ? GPB_MODEL_PROVIDER : MODEL_PROVIDER;
 
   let result;
   try {
-    // deepseek-reasoner does NOT support response_format (json_object or json_schema).
-    // Rely on the system prompt "Return ONLY valid JSON" instruction for reasoner.
-    // deepseek-chat supports json_object and must use it for reliable JSON output.
     result = await chatCompletion(
       [{ role: 'system', content: systemPrompt }, { role: 'user', content: row.text }],
       {
         model: activeModel,
-        provider: 'deepseek',
+        provider: activeProvider,
         temperature: 0,
-        maxTokens: isGpb ? 16384 : 4096,
-        responseFormat: { type: 'json_object' },
+        maxTokens: isGpb ? 8192 : 4096,
+        // Anthropic: system prompt instructs JSON; enable caching for the large extraction prompt.
+        // deepseek-chat: json_object required for reliable structured output.
+        ...(activeProvider === 'anthropic'
+          ? { usePromptCache: true }
+          : { responseFormat: { type: 'json_object' } }),
       }
     );
   } catch (err) {
-    logger.error({ contentId: row.id, err: err.message }, 'DeepSeek call failed');
+    logger.error({ contentId: row.id, model: activeModel, err: err.message }, 'Extraction API call failed');
     return null;
   }
 
@@ -158,10 +162,16 @@ async function extractParagraph(row) {
   const outputTokens = usage.completionTokens || 0;
   const cachedTokens = usage.cachedTokens     || 0;
 
-  // Approximate cost (deepseek-chat rates)
-  const costUsd = (inputTokens - cachedTokens) * 0.00027 / 1000
-    + cachedTokens * 0.000014 / 1000
-    + outputTokens * 0.0011 / 1000;
+  // Cost varies by provider/model
+  const costUsd = activeProvider === 'anthropic'
+    // Sonnet 4.6: $3/1M input, $15/1M output, $0.30/1M cache read
+    ? (inputTokens - cachedTokens) * 3 / 1_000_000
+      + cachedTokens * 0.30 / 1_000_000
+      + outputTokens * 15 / 1_000_000
+    // deepseek-chat: $0.27/1M input, $0.014/1M cache, $1.10/1M output
+    : (inputTokens - cachedTokens) * 0.00027 / 1000
+      + cachedTokens * 0.000014 / 1000
+      + outputTokens * 0.0011 / 1000;
 
   let parsed;
   try {

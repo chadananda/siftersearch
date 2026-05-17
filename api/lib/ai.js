@@ -74,7 +74,7 @@ export async function chatCompletion(messages, options = {}) {
     case 'openai':
       return chatOpenAI(messages, { model, temperature, maxTokens, stream });
     case 'anthropic':
-      return chatAnthropic(messages, { model, temperature, maxTokens, stream });
+      return chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache: options.usePromptCache });
     case 'ollama':
       return chatOllama(messages, { model, temperature, maxTokens, stream });
     case 'deepseek':
@@ -110,18 +110,27 @@ async function chatOpenAI(messages, { model, temperature, maxTokens, stream }) {
   };
 }
 
-async function chatAnthropic(messages, { model, temperature, maxTokens, stream }) {
+async function chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache = false }) {
   const anthropic = getAnthropic();
 
   // Convert OpenAI message format to Anthropic format
   const systemMsg = messages.find(m => m.role === 'system');
   const otherMsgs = messages.filter(m => m.role !== 'system');
 
+  // Prompt caching: mark the system prompt for caching when the caller opts in.
+  // The large extraction prompt (>1K tokens) is identical across all paragraphs in a batch
+  // so caching saves ~$0.005/call and reduces latency on the 2nd–Nth calls.
+  const systemParam = systemMsg
+    ? (usePromptCache
+        ? [{ type: 'text', text: systemMsg.content, cache_control: { type: 'ephemeral' } }]
+        : systemMsg.content)
+    : undefined;
+
   const response = await anthropic.messages.create({
     model,
     max_tokens: maxTokens,
     temperature,
-    ...(systemMsg && { system: systemMsg.content }),
+    ...(systemParam !== undefined && { system: systemParam }),
     messages: otherMsgs.map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',
       content: m.content
@@ -135,9 +144,11 @@ async function chatAnthropic(messages, { model, temperature, maxTokens, stream }
 
   return {
     content: response.content[0].text,
+    finishReason: response.stop_reason,
     usage: {
       promptTokens: response.usage?.input_tokens,
       completionTokens: response.usage?.output_tokens,
+      cachedTokens: response.usage?.cache_read_input_tokens || 0,
       totalTokens: (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0)
     },
     model: response.model
