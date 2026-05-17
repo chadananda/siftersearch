@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T03:53:45.379Z",
+  "generated": "2026-05-17T03:56:14.157Z",
   "entries": [
+    {
+      "hash": "fe97f999",
+      "date": "2026-05-16",
+      "type": "New",
+      "description": "Add entity pipeline workers to PM2 ecosystem + update CLAUDE.md",
+      "scope": null
+    },
     {
       "hash": "0dcb2bd3",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "20 common-question dialogs (200-219) — all draft, avg 54%",
       "scope": null
-    },
-    {
-      "hash": "ae6beaf5",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Topic-filtered passage search inside primary works + correction-courage",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "fe97f999",
+        "date": "2026-05-16",
+        "type": "New",
+        "description": "Add entity pipeline workers to PM2 ecosystem + update CLAUDE.md",
+        "scope": null
+      },
       {
         "hash": "0dcb2bd3",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "20 common-question dialogs (200-219) — all draft, avg 54%",
-        "scope": null
-      },
-      {
-        "hash": "ae6beaf5",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Topic-filtered passage search inside primary works + correction-courage",
         "scope": null
       }
     ]
