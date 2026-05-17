@@ -13,7 +13,8 @@ import { writeFileSync, unlinkSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
-import { execFileSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
+import { existsSync } from 'fs';
 import OpenAI from 'openai';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -23,7 +24,9 @@ dotenv.config({ path: join(ROOT, '.env-public') });
 
 const API_BASE = 'https://api.siftersearch.com';
 const ADMIN_KEY = process.env.INTERNAL_API_KEY;
-const WRANGLER = join(ROOT, 'node_modules/.bin/wrangler');
+const LOCAL_WRANGLER = join(ROOT, 'node_modules/.bin/wrangler');
+// Fall back to npx wrangler when local binary isn't installed (e.g. tower-nas)
+const WRANGLER = existsSync(LOCAL_WRANGLER) ? LOCAL_WRANGLER : null;
 const R2_BUCKET = 'cdn-assets';
 const R2_PREFIX = 'siftersearch.com/dialog';
 
@@ -62,13 +65,19 @@ async function uploadToR2(slug, imageBuffer) {
   const tmpFile = join(tmpdir(), `dialog-hero-${slug}-${Date.now()}.jpg`);
   writeFileSync(tmpFile, imageBuffer);
   try {
-    execFileSync(WRANGLER, [
+    const wranglerArgs = [
       'r2', 'object', 'put',
       `${R2_BUCKET}/${R2_PREFIX}/${slug}-hero.jpg`,
       '--file', tmpFile,
       '--content-type', 'image/jpeg',
       '--remote'
-    ], { env: process.env, stdio: 'inherit' });
+    ];
+    if (WRANGLER) {
+      execFileSync(WRANGLER, wranglerArgs, { env: process.env, stdio: 'inherit' });
+    } else {
+      // npx path for environments where wrangler is not locally installed
+      execSync(`npx wrangler ${wranglerArgs.map(a => JSON.stringify(a)).join(' ')}`, { env: process.env, stdio: 'inherit' });
+    }
     console.log(`  Uploaded to R2: ${R2_PREFIX}/${slug}-hero.jpg`);
     return `/images/dialog/${slug}-hero.jpg`;
   } finally {
