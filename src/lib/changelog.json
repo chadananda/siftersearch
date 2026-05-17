@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T04:59:51.997Z",
+  "generated": "2026-05-17T05:05:55.382Z",
   "entries": [
+    {
+      "hash": "911d1294",
+      "date": "2026-05-16",
+      "type": "Other",
+      "description": "Add stderr traces to diagnose crash before log init",
+      "scope": null
+    },
     {
       "hash": "b7c13d37",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Embedded-quote crafter — 4 articles ≥80% (was 3)",
       "scope": null
-    },
-    {
-      "hash": "ef8be878",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Embedded-quote default + spare block quote (rare cases only)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "911d1294",
+        "date": "2026-05-16",
+        "type": "Other",
+        "description": "Add stderr traces to diagnose crash before log init",
+        "scope": null
+      },
       {
         "hash": "b7c13d37",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Embedded-quote crafter — 4 articles ≥80% (was 3)",
-        "scope": null
-      },
-      {
-        "hash": "ef8be878",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Embedded-quote default + spare block quote (rare cases only)",
         "scope": null
       }
     ]

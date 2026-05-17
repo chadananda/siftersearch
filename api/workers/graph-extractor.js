@@ -235,6 +235,7 @@ async function workerLoop() {
 }
 
 const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+process.stderr.write(`[graph-extractor] argv1=${process.argv[1]} url=${fileURLToPath(import.meta.url)} isMain=${isMain}\n`);
 if (isMain) {
   process.stderr.write('[graph-extractor] isMain=true, starting\n');
   try {
