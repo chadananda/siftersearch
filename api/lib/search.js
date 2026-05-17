@@ -279,7 +279,10 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
         indexUid: indexName,
         q: query,
         filter,
-        limit: 10,
+        // 30 instead of 10: typo-tolerance penalty (e.g. "neighbour" vs "neighbor")
+        // drops primary scripture below secondary works in Meilisearch relevance.
+        // Authority reranking in crossTraditionSearch needs them in the candidate pool.
+        limit: 30,
         offset: 0,
         showRankingScore: true,
         matchingStrategy: 'last',

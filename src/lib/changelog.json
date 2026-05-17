@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T06:10:12.890Z",
+  "generated": "2026-05-17T06:18:50.662Z",
   "entries": [
+    {
+      "hash": "ea98e0c7",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Normalize smart quotes in author strings for AUTHOR_AUTHORITY lookup",
+      "scope": null
+    },
     {
       "hash": "58c4fb79",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Scripts/health-check.mjs — single-pass operational probe",
       "scope": null
-    },
-    {
-      "hash": "6ccfb2ca",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Fix api/worker SIGINT loop + graceful shutdown for 100-parallel chat",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "ea98e0c7",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Normalize smart quotes in author strings for AUTHOR_AUTHORITY lookup",
+        "scope": null
+      },
       {
         "hash": "58c4fb79",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Scripts/health-check.mjs — single-pass operational probe",
-        "scope": null
-      },
-      {
-        "hash": "6ccfb2ca",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Fix api/worker SIGINT loop + graceful shutdown for 100-parallel chat",
         "scope": null
       }
     ]
