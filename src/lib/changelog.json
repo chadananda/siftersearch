@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T04:28:30.697Z",
+  "generated": "2026-05-17T04:33:11.575Z",
   "entries": [
+    {
+      "hash": "92be23f2",
+      "date": "2026-05-16",
+      "type": "Other",
+      "description": "Add stderr diagnostics to graph-extractor startup",
+      "scope": null
+    },
     {
       "hash": "7804ad87",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Collapse >>+ to > + add round Q/A headers + drop broken hero refs",
       "scope": null
-    },
-    {
-      "hash": "f783fd0c",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Best-of (rerun, calibrated rejudge) for all 20 articles",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "92be23f2",
+        "date": "2026-05-16",
+        "type": "Other",
+        "description": "Add stderr diagnostics to graph-extractor startup",
+        "scope": null
+      },
       {
         "hash": "7804ad87",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Fixed",
         "description": "Collapse >>+ to > + add round Q/A headers + drop broken hero refs",
-        "scope": null
-      },
-      {
-        "hash": "f783fd0c",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Best-of (rerun, calibrated rejudge) for all 20 articles",
         "scope": null
       }
     ]
