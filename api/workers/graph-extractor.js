@@ -234,8 +234,9 @@ async function extractParagraph(row) {
   return lastInsertRowid;
 }
 
-// GPB doc ID — compare as number (SQLite returns integers for numeric columns)
-const GPB_DOC_ID = 8635;
+// GPB doc ID — the CANONICAL copy (doc 21310, no duplicate_of) is what Meilisearch indexes.
+// Doc 8635 is a duplicate of 21310 and is excluded from search — do not extract it.
+const GPB_DOC_ID = 21310;
 
 // Fetch next batch — GPB paragraphs first, then everything else.
 async function fetchBatch() {
