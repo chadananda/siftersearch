@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T04:45:40.224Z",
+  "generated": "2026-05-17T04:50:32.224Z",
   "entries": [
+    {
+      "hash": "54f24d0c",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Graph-extractor crashes on missing docs.period_id column",
+      "scope": null
+    },
     {
       "hash": "a6bbced1",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Bahá'í authority hierarchy + clarifying principle",
       "scope": null
-    },
-    {
-      "hash": "fac2dde8",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Answer-first structure + semantic quote selection",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "54f24d0c",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Graph-extractor crashes on missing docs.period_id column",
+        "scope": null
+      },
       {
         "hash": "a6bbced1",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Bahá'í authority hierarchy + clarifying principle",
-        "scope": null
-      },
-      {
-        "hash": "fac2dde8",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Answer-first structure + semantic quote selection",
         "scope": null
       }
     ]

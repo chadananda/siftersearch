@@ -57,11 +57,11 @@ Rules:
 async function getCandidates(surfaceNorm, type) {
   // Find potential matches by fuzzy surface overlap
   return queryAll(`
-    SELECT ge.id, ge.canonical_name, ge.type, ge.religion
+    SELECT ge.id, ge.canonical_name, ge.entity_type AS type, ge.religion
     FROM graph_entities ge
     JOIN entity_aliases ea ON ea.entity_id = ge.id
     WHERE ea.surface_norm LIKE ?
-      ${type ? `AND ge.type = '${type}'` : ''}
+      ${type ? `AND ge.entity_type = '${type}'` : ''}
     LIMIT 10
   `, [`%${surfaceNorm.slice(0, 10)}%`]);
 }

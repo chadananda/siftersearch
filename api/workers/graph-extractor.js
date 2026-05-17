@@ -47,7 +47,7 @@ async function buildCandidateDictionary(text) {
   // Simple approach: scan for known entity names in text using alias surface_norm
   const textNorm = text.toLowerCase();
   const rows = await queryAll(`
-    SELECT DISTINCT ge.id, ge.canonical_name, ge.type, ge.religion
+    SELECT DISTINCT ge.id, ge.canonical_name, ge.entity_type AS type, ge.religion
     FROM entity_aliases ea
     JOIN graph_entities ge ON ge.id = ea.entity_id
     WHERE ea.confidence >= 0.8
