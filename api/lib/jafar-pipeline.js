@@ -26,6 +26,10 @@ import { executeTool, TOOLS } from '../routes/chat.js';
 import { getScopeForLocation } from './search/scope.js';
 import { checkDeepResearch, recordQuestionHit } from './deep-research.js';
 import { queryAll } from './db.js';
+import { findEntity } from './graph-db.js';
+
+// Set ENABLE_ENTITY_AWARE_JAFAR=true once entity_mentions index has content.
+const ENTITY_JAFAR = process.env.ENABLE_ENTITY_AWARE_JAFAR === 'true';
 
 const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
 
@@ -381,7 +385,9 @@ work_name: Set when the user's question targets a SINGLE scriptural work or sing
 
 topics: 1-3 lowercase topical keywords for passage search that capture what the user actually wants to find, combining this turn AND prior context. Period vocabulary preferred. Empty array if work_name covers it.
 
-Output: {"intent": "...", "work_name": "..."|null, "topics": [...]}`;
+named_persons: Array of specific named historical or religious persons mentioned in the query (not generic terms). Include full canonical names with diacritics when known. Empty array if none. Examples: ["Mullá Husayn", "ʻAbdu'l-Bahá"], ["Plato"], ["the Buddha"]. Max 3.
+
+Output: {"intent": "...", "work_name": "..."|null, "topics": [...], "named_persons": [...]}`;
 
 export async function classifyIntentAndEntities(userMessage, recentMessages = []) {
   // Build a short context snippet from the last 2 turns (user + assistant pairs)
@@ -412,11 +418,12 @@ export async function classifyIntentAndEntities(userMessage, recentMessages = []
     return {
       intent: validIntents.includes(parsed.intent) ? parsed.intent : 'discuss',
       work_name: parsed.work_name || null,
-      topics: Array.isArray(parsed.topics) ? parsed.topics.slice(0, 3) : []
+      topics: Array.isArray(parsed.topics) ? parsed.topics.slice(0, 3) : [],
+      named_persons: Array.isArray(parsed.named_persons) ? parsed.named_persons.slice(0, 3) : [],
     };
   } catch (err) {
     logger.warn({ err: err.message }, 'intent+entity classification failed; defaulting');
-    return { intent: 'discuss', work_name: null, topics: [] };
+    return { intent: 'discuss', work_name: null, topics: [], named_persons: [] };
   }
 }
 
@@ -490,7 +497,7 @@ function inferWorkFromHistory(messages, currentEntitiesWorkName) {
   return null;
 }
 
-export async function deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config }) {
+export async function deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds = [] }) {
   const retrieved = [];
   const debugCalls = [];
   // Subagent syntheses — when a document subagent runs, its `answer` field
@@ -573,7 +580,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     if (sendEvent) sendEvent({ type: 'debug_research_call', name, args });
     let result;
     try {
-      result = await executeTool(name, args, { scope_config });
+      // Thread entityIds into search calls when entity-aware mode is active.
+      const ctx = { scope_config };
+      if (name === 'search' && entityIds.length > 0) ctx.entityIds = entityIds;
+      result = await executeTool(name, args, ctx);
     } catch (toolErr) {
       logger.error({ err: toolErr.message, tool: name, args }, 'deterministic tool execution threw');
       result = { error: toolErr.message };
@@ -2217,7 +2227,24 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   const entities = await classifyIntentAndEntities(userMessage, messages.slice(0, -1));
   const userIntent = entities.intent;
   if (sendEvent && debug) sendEvent({ type: 'debug_intent', intent: userIntent, entities });
-  const research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config });
+
+  // Response register: research mode when the query asks for a compiled list
+  // of references to a specific person/event (vs. a conversational answer).
+  const isResearchRegister = /\bcompile|all\s+references?|every\s+mention|list\s+(all|every)|full\s+list/i.test(userMessage);
+
+  // Resolve named persons → entity IDs for entity-aware search.
+  let entityIds = [];
+  if (ENTITY_JAFAR && entities.named_persons?.length > 0) {
+    const resolved = await Promise.all(
+      entities.named_persons.map(name => findEntity({ surface: name, type: 'person' }).catch(() => null))
+    );
+    entityIds = resolved.filter(r => r?.entity_id).map(r => r.entity_id);
+    if (sendEvent && debug && entityIds.length > 0) {
+      sendEvent({ type: 'debug_entities', named_persons: entities.named_persons, entityIds });
+    }
+  }
+
+  const research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds });
 
   // Conversation summary
   const conversationSummary = summarizeConversation(messages);
@@ -2265,6 +2292,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   return {
     reply: draft,
     user_intent: userIntent,
+    response_register: isResearchRegister ? 'research' : 'conversational',
     retrieved_count: research.retrieved_quotes.length,
     retrieval_quotes: research.retrieved_quotes,
     gate,

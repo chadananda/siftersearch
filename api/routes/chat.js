@@ -430,7 +430,7 @@ For an unfiltered total of the whole library, use library_overview instead.`,
 
 // ─── Tool implementations ─────────────────────────────────────────────────
 
-export async function executeSearch({ query, mode = 'passages', religion, collection, author, language, document_id, start = 0, limit = 10, scope_config, semanticRatio }) {
+export async function executeSearch({ query, mode = 'passages', religion, collection, author, language, document_id, start = 0, limit = 10, scope_config, semanticRatio, entityIds }) {
   const safeLimit = Math.min(limit || 10, 100);
 
   // MODE: read — fetch paragraphs from a specific document
@@ -467,7 +467,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
 
     let merged;
     try {
-      const result = await multiIndexSearch(query, { limit: safeLimit, filters, scope_config, ...(semanticRatio != null ? { semanticRatio } : {}) });
+      const result = await multiIndexSearch(query, { limit: safeLimit, filters, scope_config, ...(semanticRatio != null ? { semanticRatio } : {}), ...(entityIds?.length ? { entityIds } : {}) });
       merged = (result.hits || []).map(hit => ({
         ...hit,
         _matched_via_hype: !!hit.matched_hype
@@ -1170,7 +1170,7 @@ export async function executeLibraryCount({ author, religion, site, language, co
 // Tools that don't need scope just ignore ctx.
 export async function executeTool(name, args, ctx = {}) {
   switch (name) {
-    case 'search': return executeSearch({ ...args, scope_config: ctx.scope_config });
+    case 'search': return executeSearch({ ...args, scope_config: ctx.scope_config, entityIds: ctx.entityIds });
     case 'library_overview': return executeLibraryOverview();
     case 'library_count': return executeLibraryCount(args);
     case 'find_document_for_citation': return executeFindDocumentForCitation(args);

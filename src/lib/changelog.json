@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T03:35:42.246Z",
+  "generated": "2026-05-17T03:39:10.487Z",
   "entries": [
+    {
+      "hash": "3358dac2",
+      "date": "2026-05-16",
+      "type": "New",
+      "description": "Entity-mentions Meilisearch sidecar + RRF integration (Step 16)",
+      "scope": null
+    },
     {
       "hash": "48dc8f29",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Dialog 051 (Tablet of Wisdom) on v2.15.x deterministic-routing",
       "scope": null
-    },
-    {
-      "hash": "d8de0be3",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Primary-source filter + brevity hammer (article 001 was 54%)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "3358dac2",
+        "date": "2026-05-16",
+        "type": "New",
+        "description": "Entity-mentions Meilisearch sidecar + RRF integration (Step 16)",
+        "scope": null
+      },
       {
         "hash": "48dc8f29",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Dialog 051 (Tablet of Wisdom) on v2.15.x deterministic-routing",
-        "scope": null
-      },
-      {
-        "hash": "d8de0be3",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Primary-source filter + brevity hammer (article 001 was 54%)",
         "scope": null
       }
     ]
