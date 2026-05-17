@@ -356,12 +356,19 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
     // Two-pass title dedup: prefer one hit per unique base-title per religion.
     // Strips trailing volume numbers ("The Mahabharata 3" → "The Mahabharata")
     // so different numbered volumes of the same work count as one title slot.
+    // Relevance floor: tradition-specific searches produce low-scoring hits from
+    // unrelated traditions that then win via authority formula (auth=10 OL × 2.0
+    // multiplier overcomes 4x lower relevance). Floor at 0.35 prevents this — a
+    // tradition with no genuinely relevant hits gets zero slots rather than one
+    // low-quality hit that authority-reranking then lifts to #1.
+    const MIN_CROSS_TRADITION_RELEVANCE = 0.35;
     const seenTitles = new Set();
     const seenDocIds = new Set();
     const passTwo = [];
     let count = 0;
     for (const hit of sorted) {
       if (seen.has(hit.id)) continue;
+      if ((hit._rankingScore || 0) < MIN_CROSS_TRADITION_RELEVANCE) continue;
       const rawTitle = hit.title || String(hit.doc_id);
       const titleKey = rawTitle.replace(/\s+\d+\s*$/, '').trim() || rawTitle;
       if (slotLimit > 1 && seenTitles.has(titleKey)) {

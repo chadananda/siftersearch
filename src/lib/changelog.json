@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T06:23:57.560Z",
+  "generated": "2026-05-17T06:33:10.270Z",
   "entries": [
+    {
+      "hash": "d57dc672",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "HasAllTermMatches checks title+text so scripture book names match",
+      "scope": null
+    },
     {
       "hash": "abea5279",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Test",
       "description": "Search + library quality batteries (Layer 2 — primitive scoring)",
       "scope": null
-    },
-    {
-      "hash": "bb8faf42",
-      "date": "2026-04-29",
-      "type": "Test",
-      "description": "Behavioral dialogue suite + fix doubled-prefix stream bug",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "d57dc672",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "HasAllTermMatches checks title+text so scripture book names match",
+        "scope": null
+      },
       {
         "hash": "abea5279",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Test",
         "description": "Search + library quality batteries (Layer 2 — primitive scoring)",
-        "scope": null
-      },
-      {
-        "hash": "bb8faf42",
-        "date": "2026-04-29",
-        "type": "Test",
-        "description": "Behavioral dialogue suite + fix doubled-prefix stream bug",
         "scope": null
       }
     ]
