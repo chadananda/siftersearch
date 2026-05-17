@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T06:18:50.662Z",
+  "generated": "2026-05-17T06:23:57.560Z",
   "entries": [
+    {
+      "hash": "abea5279",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Increase OL supplementary query limit 10→30 for better scripture recall",
+      "scope": null
+    },
     {
       "hash": "ea98e0c7",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Test",
       "description": "Behavioral dialogue suite + fix doubled-prefix stream bug",
       "scope": null
-    },
-    {
-      "hash": "9f95cf60",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Scripts/health-check.mjs — single-pass operational probe",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "abea5279",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Increase OL supplementary query limit 10→30 for better scripture recall",
+        "scope": null
+      },
       {
         "hash": "ea98e0c7",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Test",
         "description": "Behavioral dialogue suite + fix doubled-prefix stream bug",
-        "scope": null
-      },
-      {
-        "hash": "9f95cf60",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Scripts/health-check.mjs — single-pass operational probe",
         "scope": null
       }
     ]

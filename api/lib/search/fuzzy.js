@@ -51,10 +51,14 @@ export function textContainsFuzzy(text, term) {
   });
 }
 
-/** Check if every term has a fuzzy match somewhere in `hit.text`. */
+/**
+ * Check if every term has a fuzzy match in hit.text or hit.title.
+ * Combining text+title means "Bhagavad Gita dharma" finds Gita verses where
+ * "bhagavad gita" appears in the title and "dharma" appears in the verse text.
+ */
 export function hasAllTermMatches(hit, terms) {
-  const text = hit.text || '';
-  return terms.every(term => textContainsFuzzy(text, term));
+  const combined = ((hit.title || '') + ' ' + (hit.text || '')).trim();
+  return terms.every(term => textContainsFuzzy(combined, term));
 }
 
 // Normalize British→American spellings so KJV "neighbour" matches "neighbor"
