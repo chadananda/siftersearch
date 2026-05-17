@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T06:48:12.628Z",
+  "generated": "2026-05-17T06:50:24.098Z",
   "entries": [
+    {
+      "hash": "f7ede021",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Raise relevance floor to 0.55; add tradition context to LLM scoring prompt",
+      "scope": null
+    },
     {
       "hash": "052384e2",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Scripts/run-backup-once.mjs — manual backup trigger",
       "scope": null
-    },
-    {
-      "hash": "1e1419ee",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Add Meilisearch index + embedding cache to daily backup cycle",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "f7ede021",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Raise relevance floor to 0.55; add tradition context to LLM scoring prompt",
+        "scope": null
+      },
       {
         "hash": "052384e2",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Scripts/run-backup-once.mjs — manual backup trigger",
-        "scope": null
-      },
-      {
-        "hash": "1e1419ee",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Add Meilisearch index + embedding cache to daily backup cycle",
         "scope": null
       }
     ]

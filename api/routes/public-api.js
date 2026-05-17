@@ -396,7 +396,39 @@ export default async function publicApiRoutes(fastify) {
       maxConcurrent: 10
     });
 
-    const results = analysis.results.slice(0, limit).map(result => ({
+    // Detect tradition indicator in query and boost matching tradition results.
+    // LLM scoring treats "karma" in Matthew as equally relevant to Hindu karma —
+    // correct by boosting exact-tradition hits by 15% post-analysis.
+    const TRADITION_KEYWORDS = {
+      "baha'i": "Baha'i", "bahai": "Baha'i",
+      "buddhist": "Buddhist", "buddhism": "Buddhist", "buddha": "Buddhist",
+      "christian": "Christian", "bible": "Christian", "gospel": "Christian",
+      "islam": "Islam", "islamic": "Islam", "quran": "Islam", "qur'an": "Islam", "koran": "Islam",
+      "jewish": "Judaism", "judaism": "Judaism", "torah": "Judaism", "hebrew": "Judaism",
+      "hindu": "Hindu", "hinduism": "Hindu", "vedic": "Hindu",
+      "sikh": "Sikh", "sikhism": "Sikh",
+      "zoroastrian": "Zoroastrian",
+      "taoist": "Tao", "taoism": "Tao",
+      "confucian": "Confucian", "confucius": "Confucian",
+      "jain": "Jain", "jainism": "Jain",
+    };
+    const lowerQuery = query.toLowerCase();
+    const detectedTradition = Object.entries(TRADITION_KEYWORDS).find(([kw]) => {
+      const idx = lowerQuery.indexOf(kw);
+      if (idx < 0) return false;
+      const before = idx === 0 ? ' ' : lowerQuery[idx - 1];
+      const after = idx + kw.length >= lowerQuery.length ? ' ' : lowerQuery[idx + kw.length];
+      return !/[a-z]/.test(before) && !/[a-z]/.test(after);
+    })?.[1];
+
+    const rankedResults = detectedTradition
+      ? [...analysis.results].map(r => ({
+          ...r,
+          score: r.religion === detectedTradition ? Math.min(100, Math.round((r.score || 0) * 1.15)) : (r.score || 0)
+        })).sort((a, b) => (b.score || 0) - (a.score || 0))
+      : analysis.results;
+
+    const results = rankedResults.slice(0, limit).map(result => ({
       id: result.id,
       documentId: result.document_id,
       paragraphIndex: result.paragraph_index,
