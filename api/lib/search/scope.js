@@ -14,6 +14,7 @@ export const INDEXES = {
   PARAGRAPHS: 'paragraphs',
   HYPE_QUESTIONS: 'hype_questions',
   DEEP_RESEARCH: 'deep_research',
+  ENTITY_MENTIONS: 'entity_mentions_idx',
 };
 
 let siteRegistry = null;

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T03:24:42.377Z",
+  "generated": "2026-05-17T03:28:35.917Z",
   "entries": [
+    {
+      "hash": "8bc4788c",
+      "date": "2026-05-16",
+      "type": "New",
+      "description": "Entity pipeline calibration, orthography policy, doc-priority config",
+      "scope": null
+    },
     {
       "hash": "07be393e",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "20 common-question seeds (mystical / prayer / afterlife / prophecy)",
       "scope": null
-    },
-    {
-      "hash": "9cf393c9",
-      "date": "2026-04-28",
-      "type": "Fixed",
-      "description": "Crafter no longer refuses when retrieved_quotes is partial",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "8bc4788c",
+        "date": "2026-05-16",
+        "type": "New",
+        "description": "Entity pipeline calibration, orthography policy, doc-priority config",
+        "scope": null
+      },
       {
         "hash": "07be393e",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "20 common-question seeds (mystical / prayer / afterlife / prophecy)",
-        "scope": null
-      },
-      {
-        "hash": "9cf393c9",
-        "date": "2026-04-28",
-        "type": "Fixed",
-        "description": "Crafter no longer refuses when retrieved_quotes is partial",
         "scope": null
       }
     ]

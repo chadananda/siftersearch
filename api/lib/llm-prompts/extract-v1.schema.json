@@ -1,0 +1,92 @@
+{
+  "name": "extraction_result",
+  "strict": true,
+  "schema": {
+    "type": "object",
+    "required": ["mentions", "referring_expressions", "roles", "quotations", "relations", "text_grounded", "grounding_confidence", "grounding_notes", "uncertainties"],
+    "additionalProperties": false,
+    "properties": {
+      "mentions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["surface", "span", "type", "local_role", "proposed_entity_id"],
+          "additionalProperties": false,
+          "properties": {
+            "surface": { "type": "string" },
+            "span": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+            "type": { "type": "string", "enum": ["person", "place", "organization", "concept", "work", "event"] },
+            "local_role": { "type": "string", "enum": ["subject", "object", "possessive", "appositive", "other"] },
+            "proposed_entity_id": { "type": ["integer", "null"] }
+          }
+        }
+      },
+      "referring_expressions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["surface", "span", "class", "proposed_referent", "method", "confidence"],
+          "additionalProperties": false,
+          "properties": {
+            "surface": { "type": "string" },
+            "span": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+            "class": { "type": "string", "enum": ["pronoun", "epithet", "relational", "demonstrative"] },
+            "proposed_referent": { "type": ["string", "null"] },
+            "method": { "type": "string", "enum": ["proximity", "context", "explicit", "unknown"] },
+            "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+          }
+        }
+      },
+      "roles": {
+        "type": "object",
+        "required": ["speaker", "narrator", "addressee", "setting_place", "setting_time"],
+        "additionalProperties": false,
+        "properties": {
+          "speaker": { "type": ["string", "null"] },
+          "narrator": { "type": ["string", "null"] },
+          "addressee": { "type": ["string", "null"] },
+          "setting_place": { "type": ["string", "null"] },
+          "setting_time": { "type": ["string", "null"] }
+        }
+      },
+      "quotations": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["span", "speaker_surface", "speaker_candidate", "attribution_pattern", "nesting_depth"],
+          "additionalProperties": false,
+          "properties": {
+            "span": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+            "speaker_surface": { "type": "string" },
+            "speaker_candidate": { "type": ["string", "null"] },
+            "attribution_pattern": { "type": "string", "enum": ["direct", "reported", "implied"] },
+            "nesting_depth": { "type": "integer", "minimum": 0 }
+          }
+        }
+      },
+      "relations": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["subject", "predicate", "object", "evidence_span", "modality", "confidence"],
+          "additionalProperties": false,
+          "properties": {
+            "subject": { "type": "string" },
+            "predicate": { "type": "string" },
+            "object": { "type": "string" },
+            "evidence_span": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+            "modality": { "type": "string", "enum": ["asserted", "reported", "conditional", "negated"] },
+            "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+          }
+        }
+      },
+      "text_grounded": { "type": "string" },
+      "grounding_confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+      "grounding_notes": { "type": "string" },
+      "uncertainties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    }
+  }
+}
