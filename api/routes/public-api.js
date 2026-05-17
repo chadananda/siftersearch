@@ -433,11 +433,17 @@ export default async function publicApiRoutes(fastify) {
       return !/[a-z]/.test(before) && !/[a-z]/.test(after);
     })?.[1];
 
+    // When the query names a tradition (e.g. "Quran", "Buddhist"), results from that
+    // tradition sort before all others regardless of LLM score. Within each group,
+    // order by score. A 15% multiplicative boost is insufficient when a high-authority
+    // text from another tradition scores 15+ points higher for general content overlap.
     const rankedResults = detectedTradition
-      ? [...analysis.results].map(r => ({
-          ...r,
-          score: r.religion === detectedTradition ? Math.min(100, Math.round((r.score || 0) * 1.15)) : (r.score || 0)
-        })).sort((a, b) => (b.score || 0) - (a.score || 0))
+      ? [...analysis.results].sort((a, b) => {
+          const aMatch = a.religion === detectedTradition ? 1 : 0;
+          const bMatch = b.religion === detectedTradition ? 1 : 0;
+          if (bMatch !== aMatch) return bMatch - aMatch;
+          return (b.score || 0) - (a.score || 0);
+        })
       : analysis.results;
 
     const results = rankedResults.slice(0, limit).map(result => ({

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T06:59:49.549Z",
+  "generated": "2026-05-17T07:02:30.343Z",
   "entries": [
+    {
+      "hash": "9c7cc37f",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Deeplinks #pundefined — pass paragraph_index + doc_id through analyzer",
+      "scope": null
+    },
     {
       "hash": "f325c41a",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Document-QA subagent for named-work questions",
       "scope": null
-    },
-    {
-      "hash": "f9c3a81f",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Treat rsync exit 24 as non-fatal (Meili transient files)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "9c7cc37f",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Deeplinks #pundefined — pass paragraph_index + doc_id through analyzer",
+        "scope": null
+      },
       {
         "hash": "f325c41a",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Document-QA subagent for named-work questions",
-        "scope": null
-      },
-      {
-        "hash": "f9c3a81f",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Treat rsync exit 24 as non-fatal (Meili transient files)",
         "scope": null
       }
     ]
