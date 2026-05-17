@@ -44,10 +44,22 @@ process.on('SIGINT', () => {});
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
+// Cache alias count — skip the expensive join when no aliases exist yet
+let _hasAliases = null;
+async function hasAliases() {
+  if (_hasAliases === null) {
+    const row = await queryOne(`SELECT COUNT(*) as n FROM entity_aliases WHERE confidence >= 0.8`);
+    _hasAliases = (row?.n || 0) > 0;
+  }
+  return _hasAliases;
+}
+// Invalidate after each batch so new aliases are picked up progressively
+function invalidateAliasCache() { _hasAliases = null; }
+
 // Build candidate dictionary for a paragraph — entities already known in the DB
 // whose canonical names appear (case-insensitive) in the text.
 async function buildCandidateDictionary(text) {
-  // Simple approach: scan for known entity names in text using alias surface_norm
+  if (!(await hasAliases())) return '(none pre-retrieved)';
   const textNorm = text.toLowerCase();
   const rows = await queryAll(`
     SELECT DISTINCT ge.id, ge.canonical_name, ge.entity_type AS type, ge.religion
@@ -227,6 +239,7 @@ async function processOnce() {
   const failed    = results.filter(r => r.status === 'rejected' || r.value === null).length;
 
   if (failed > 0) logger.warn({ succeeded, failed }, 'Batch partial failures');
+  invalidateAliasCache();
   return succeeded;
 }
 
