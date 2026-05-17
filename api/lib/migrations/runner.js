@@ -10,11 +10,12 @@ import { logger } from '../logger.js';
 import { migrations as v1to25 } from './v1-v25.js';
 import { migrations as v26to45, getMigration44SQL } from './v26-v45.js';
 import { migrations as v46to58 } from './v46-v58.js';
+import { migrations as v72to90 } from './v72-v90.js';
 import { userMigrations, USER_DB_CURRENT_VERSION } from './user.js';
 
 // Combined dispatch table — version => async () => void
-export const migrations = { ...v1to25, ...v26to45, ...v46to58 };
-export const CURRENT_VERSION = 71;
+export const migrations = { ...v1to25, ...v26to45, ...v46to58, ...v72to90 };
+export const CURRENT_VERSION = 72;
 export { USER_DB_CURRENT_VERSION, userMigrations, getMigration44SQL };
 
 /** Get current schema version (content DB) */

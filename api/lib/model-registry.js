@@ -161,7 +161,49 @@ export const MODEL_REGISTRY = {
     quality: 'fast',
     speed: 'very_fast',
     recommended: ['quick_tasks', 'classification', 'simple_generation'],
-    notes: 'Fastest Claude. Great for high-volume, simpler tasks.'
+    notes: 'Fastest Claude 3. Great for high-volume, simpler tasks.'
+  },
+
+  'claude-haiku-4-5-20251001': {
+    provider: 'anthropic',
+    name: 'Claude Haiku 4.5',
+    type: 'chat',
+    pricing: { input: 0.00025, output: 0.00125 },
+    contextWindow: 200000,
+    maxOutput: 8192,
+    capabilities: ['validation', 'classification', 'extraction', 'batch'],
+    quality: 'balanced',
+    speed: 'very_fast',
+    recommended: ['entity_validation', 'qa_sampling', 'high_volume_classification'],
+    notes: 'Use via Anthropic batch API for 50% discount on validation passes.'
+  },
+
+  'claude-sonnet-4-6': {
+    provider: 'anthropic',
+    name: 'Claude Sonnet 4.6',
+    type: 'chat',
+    pricing: { input: 0.003, output: 0.015 },
+    contextWindow: 200000,
+    maxOutput: 8192,
+    capabilities: ['reasoning', 'coding', 'analysis', 'vision', 'extraction'],
+    quality: 'quality',
+    speed: 'medium',
+    recommended: ['complex_extraction', 'adjudication', 'period_extraction', 'bridge_mining'],
+    notes: 'Arbiter model for entity pipeline. Use for significance markers, period/episode extraction.'
+  },
+
+  'claude-opus-4-7': {
+    provider: 'anthropic',
+    name: 'Claude Opus 4.7',
+    type: 'chat',
+    pricing: { input: 0.015, output: 0.075 },
+    contextWindow: 200000,
+    maxOutput: 8192,
+    capabilities: ['reasoning', 'analysis', 'coding', 'vision'],
+    quality: 'premium',
+    speed: 'slow',
+    recommended: ['apex_tasks', 'rare_high_stakes'],
+    notes: 'Apex model. Reserve for highest-stakes adjudication only.'
   },
 
   // =========================================================================
@@ -235,7 +277,38 @@ export const MODEL_REGISTRY = {
     notes: 'Fastest Qwen. Great for simple tasks and query routing.'
   },
 
-  // --- DeepSeek Series (Strong coding and reasoning) ---
+  // --- DeepSeek API (cloud, OpenAI-compatible) ---
+  // IMPORTANT: Verify model IDs at https://api.deepseek.com/models before first use.
+  // If IDs differ, update these two keys — they are the single source of truth.
+  'deepseek-chat': {
+    provider: 'deepseek',
+    name: 'DeepSeek V3',
+    type: 'chat',
+    pricing: { input: 0.00027, output: 0.0011 },
+    contextWindow: 64000,
+    maxOutput: 8192,
+    capabilities: ['extraction', 'classification', 'json_schema'],
+    quality: 'quality',
+    speed: 'fast',
+    recommended: ['entity_extraction', 'classification', 'resolution'],
+    notes: 'Primary bulk extraction model. Supports response_format json_schema. Cache hits ~98% discount.'
+  },
+
+  'deepseek-reasoner': {
+    provider: 'deepseek',
+    name: 'DeepSeek R1',
+    type: 'chat',
+    pricing: { input: 0.00055, output: 0.0022 },
+    contextWindow: 64000,
+    maxOutput: 8192,
+    capabilities: ['reasoning', 'adjudication', 'analysis'],
+    quality: 'premium',
+    speed: 'medium',
+    recommended: ['promotion_adjudication', 'high_stakes_resolution'],
+    notes: 'Use for promotion adjudication. Promo pricing until 2026-05-31.'
+  },
+
+  // --- DeepSeek Series (local Ollama) ---
   'deepseek-r1:32b': {
     provider: 'ollama',
     name: 'DeepSeek R1 32B',

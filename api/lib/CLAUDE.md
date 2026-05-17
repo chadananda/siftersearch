@@ -49,7 +49,8 @@ One-line index for AI navigation. Open the file for full documentation.
 - `publish-pipeline.js` — chat → published-conversation flow.
 - `entity-resolution.js` — entity name dedup across docs.
 - `object-extraction.js` — content_objects extraction prompts.
-- `graph-db.js` — graph-DB (people/places/documents) helpers.
+- `graph-db.js` — graph-DB helpers. Top-level exports (findEntity, resolveAlias, addAlias, mergeEntities, splitEntity, getMentions, getRelations, recordExtraction) use main sifter.db. Legacy `initGraphDb` opens a separate SQLite file (backward-compat).
+- `entity-cost-tracker.js` — `trackCost`, `getMonthlySpend`, `checkBudget` for entity extraction pipeline spend tracking against `EXTRACTION_BUDGET_USD`.
 
 ## Domain-specific
 - `authority.js` — `getAuthority({author, religion, collection})`. Used by search ranking.

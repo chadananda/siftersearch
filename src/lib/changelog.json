@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-16T16:25:55.466Z",
+  "generated": "2026-05-17T03:22:23.347Z",
   "entries": [
+    {
+      "hash": "c2483716",
+      "date": "2026-05-16",
+      "type": "New",
+      "description": "HyPE question search as parallel research track + retrieval architecture doc",
+      "scope": null
+    },
     {
       "hash": "178cee4b",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Cap crafter excerpts at 12 with topic-keyword preference",
       "scope": null
-    },
-    {
-      "hash": "e1683699",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Deterministic search routing — replace LLM orchestrator",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "c2483716",
+        "date": "2026-05-16",
+        "type": "New",
+        "description": "HyPE question search as parallel research track + retrieval architecture doc",
+        "scope": null
+      },
       {
         "hash": "178cee4b",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Cap crafter excerpts at 12 with topic-keyword preference",
-        "scope": null
-      },
-      {
-        "hash": "e1683699",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Deterministic search routing — replace LLM orchestrator",
         "scope": null
       }
     ]

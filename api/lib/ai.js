@@ -16,6 +16,7 @@ import { logAIUsage } from './ai-services.js';
 let openaiClient = null;
 let anthropicClient = null;
 let ollamaClient = null;
+let deepseekClient = null;
 
 function getOpenAI() {
   if (!openaiClient) {
@@ -46,6 +47,15 @@ function getOllama() {
   return ollamaClient;
 }
 
+export function getDeepSeek() {
+  if (!deepseekClient) {
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    if (!apiKey) throw new Error('DEEPSEEK_API_KEY is required for DeepSeek provider');
+    deepseekClient = new OpenAI({ apiKey, baseURL: 'https://api.deepseek.com/v1' });
+  }
+  return deepseekClient;
+}
+
 /**
  * Chat completion with any provider
  */
@@ -67,6 +77,8 @@ export async function chatCompletion(messages, options = {}) {
       return chatAnthropic(messages, { model, temperature, maxTokens, stream });
     case 'ollama':
       return chatOllama(messages, { model, temperature, maxTokens, stream });
+    case 'deepseek':
+      return chatDeepSeek(messages, { model, temperature, maxTokens, stream, responseFormat: options.responseFormat });
     default:
       throw new Error(`Unknown AI provider: ${provider}`);
   }
@@ -127,6 +139,24 @@ async function chatAnthropic(messages, { model, temperature, maxTokens, stream }
       promptTokens: response.usage?.input_tokens,
       completionTokens: response.usage?.output_tokens,
       totalTokens: (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0)
+    },
+    model: response.model
+  };
+}
+
+async function chatDeepSeek(messages, { model, temperature, maxTokens, stream, responseFormat }) {
+  const client = getDeepSeek();
+  const params = { model, messages, temperature, max_tokens: maxTokens, stream };
+  if (responseFormat) params.response_format = responseFormat;
+  const response = await client.chat.completions.create(params);
+  if (stream) return response;
+  return {
+    content: response.choices[0].message.content,
+    usage: {
+      promptTokens: response.usage?.prompt_tokens,
+      completionTokens: response.usage?.completion_tokens,
+      cachedTokens: response.usage?.prompt_cache_hit_tokens || 0,
+      totalTokens: response.usage?.total_tokens
     },
     model: response.model
   };
@@ -278,6 +308,8 @@ export const ai = {
         return !!process.env.OPENAI_API_KEY;
       case 'anthropic':
         return !!process.env.ANTHROPIC_API_KEY;
+      case 'deepseek':
+        return !!process.env.DEEPSEEK_API_KEY;
       case 'ollama':
         return true; // Assume local Ollama is available
       default:
