@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T06:50:24.098Z",
+  "generated": "2026-05-17T06:59:49.549Z",
   "entries": [
+    {
+      "hash": "f325c41a",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Programmatic tradition boost (15%) post-LLM analysis for tradition-indicator queries",
+      "scope": null
+    },
     {
       "hash": "f7ede021",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Treat rsync exit 24 as non-fatal (Meili transient files)",
       "scope": null
-    },
-    {
-      "hash": "23d0e6eb",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Scripts/run-backup-once.mjs — manual backup trigger",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "f325c41a",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Programmatic tradition boost (15%) post-LLM analysis for tradition-indicator queries",
+        "scope": null
+      },
       {
         "hash": "f7ede021",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Treat rsync exit 24 as non-fatal (Meili transient files)",
-        "scope": null
-      },
-      {
-        "hash": "23d0e6eb",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Scripts/run-backup-once.mjs — manual backup trigger",
         "scope": null
       }
     ]

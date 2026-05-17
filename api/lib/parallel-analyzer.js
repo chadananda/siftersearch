@@ -409,7 +409,8 @@ export async function analyzePassagesParallel(query, passages, options = {}) {
     }
 
     return {
-      ...result,
+      ...original,   // pass through all original fields (document_id, paragraph_index, slug, source_url, authority, etc.)
+      ...result,     // override with analysis fields (score, summary, keyPhrase, coreTerms, globalIndex)
       id: original.id,
       text: stripMeiliHighlights(original.text),
       title: original.title,

@@ -64,7 +64,9 @@ function summarizeToolResult(r) {
 function getDocumentUrl(doc) {
   const docSlug = doc.slug || generateDocSlug(doc);
   if (!docSlug || !doc.religion || !doc.collection) {
-    return `${SITE_URL}/library/view?doc=${doc.id}`;
+    // Use document ID (doc_id/document_id), NOT paragraph ID (id)
+    const docId = doc.doc_id || doc.document_id || doc.id;
+    return `${SITE_URL}/library/view?doc=${docId}`;
   }
   return `${SITE_URL}/library/${slugifyPath(doc.religion)}/${slugifyPath(doc.collection)}/${docSlug}`;
 }
@@ -377,17 +379,27 @@ export default async function publicApiRoutes(fastify) {
       } catch { /* fallback to original order */ }
     }
 
-    // Prepare passages for analysis
+    // Prepare passages for analysis — include all fields needed for URL building and authority scoring.
+    // Meilisearch stores "doc_id" (not "document_id") so we map both names for compat.
     const passages = searchResults.hits.map(hit => ({
       id: hit.id,
-      document_id: hit.document_id,
+      doc_id: hit.doc_id,
+      document_id: hit.doc_id,  // alias so callers can use either name
       paragraph_index: hit.paragraph_index,
       text: hit.text,
       title: hit.title,
       author: hit.author,
       religion: hit.religion,
       collection: hit.collection,
-      year: hit.year
+      year: hit.year,
+      slug: hit.slug,
+      source_url: hit.source_url,
+      authority: hit.authority,
+      encumbered: hit.encumbered,
+      language: hit.language,
+      _matchesPosition: hit._matchesPosition,
+      _formatted: hit._formatted,
+      rerank_score: hit.rerank_score,
     }));
 
     // Run AI analysis
