@@ -57,14 +57,32 @@ export function hasAllTermMatches(hit, terms) {
   return terms.every(term => textContainsFuzzy(text, term));
 }
 
+// Normalize British→American spellings so KJV "neighbour" matches "neighbor"
+// and similar canonical texts don't score below secondary sources that happen
+// to use the searched spelling.
+const BRITISH_TO_AMERICAN = [
+  [/neighbour/g, 'neighbor'], [/colour/g, 'color'], [/honour/g, 'honor'],
+  [/saviour/g, 'savior'], [/behaviour/g, 'behavior'], [/labour/g, 'labor'],
+  [/centre/g, 'center'], [/theatre/g, 'theater'], [/defence/g, 'defense'],
+  [/licence/g, 'license'], [/practise/g, 'practice'], [/favour/g, 'favor'],
+  [/endeavour/g, 'endeavor'], [/marvellous/g, 'marvelous'],
+];
+function normalizeSpelling(text) {
+  let result = text;
+  for (const [pattern, replacement] of BRITISH_TO_AMERICAN) {
+    result = result.replace(pattern, replacement);
+  }
+  return result;
+}
+
 /**
  * Phrase-match score for ranking. 100 = exact phrase; 50–80 close proximity;
  * 30–50 medium proximity; 10 scattered. Used post-filter to bring tighter
  * matches to the top.
  */
 export function calculatePhraseScore(text, query, terms) {
-  const lowerText = stripTashkeel(text.toLowerCase());
-  const lowerQuery = stripTashkeel(query.toLowerCase());
+  const lowerText = normalizeSpelling(stripTashkeel(text.toLowerCase()));
+  const lowerQuery = normalizeSpelling(stripTashkeel(query.toLowerCase()));
 
   if (lowerText.includes(lowerQuery)) return 100;
 

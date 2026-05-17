@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T05:09:07.691Z",
+  "generated": "2026-05-17T05:51:49.244Z",
   "entries": [
+    {
+      "hash": "982c0e1e",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "IsMain check broken under PM2 ESM fork mode",
+      "scope": null
+    },
     {
       "hash": "da7c5083",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "HyPE sync vector format — Meili expects flat array, not {embeddings,...}",
       "scope": null
-    },
-    {
-      "hash": "de377282",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "HyPE sidecar index + multi-index RRF merge + auto-sync",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "982c0e1e",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "IsMain check broken under PM2 ESM fork mode",
+        "scope": null
+      },
       {
         "hash": "da7c5083",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Fixed",
         "description": "HyPE sync vector format — Meili expects flat array, not {embeddings,...}",
-        "scope": null
-      },
-      {
-        "hash": "de377282",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "HyPE sidecar index + multi-index RRF merge + auto-sync",
         "scope": null
       }
     ]
