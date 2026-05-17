@@ -144,7 +144,7 @@ async function extractParagraph(row) {
         model: activeModel,
         provider: activeProvider,
         temperature: 0,
-        maxTokens: isGpb ? 8192 : 4096,
+        maxTokens: 8192,
         // Anthropic: system prompt instructs JSON; enable caching for the large extraction prompt.
         // deepseek-chat: json_object required for reliable structured output.
         ...(activeProvider === 'anthropic'
