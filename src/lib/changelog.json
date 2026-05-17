@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T03:28:35.917Z",
+  "generated": "2026-05-17T03:31:24.627Z",
   "entries": [
+    {
+      "hash": "ef0915d8",
+      "date": "2026-05-16",
+      "type": "New",
+      "description": "Meilisearch synonym sync + extraction prompt v1",
+      "scope": null
+    },
     {
       "hash": "8bc4788c",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Wider-search fallback + final-attempt no-throw",
       "scope": null
-    },
-    {
-      "hash": "75c7a4dc",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "20 common-question seeds (mystical / prayer / afterlife / prophecy)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "ef0915d8",
+        "date": "2026-05-16",
+        "type": "New",
+        "description": "Meilisearch synonym sync + extraction prompt v1",
+        "scope": null
+      },
       {
         "hash": "8bc4788c",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Wider-search fallback + final-attempt no-throw",
-        "scope": null
-      },
-      {
-        "hash": "75c7a4dc",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "20 common-question seeds (mystical / prayer / afterlife / prophecy)",
         "scope": null
       }
     ]
