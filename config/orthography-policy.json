@@ -1,0 +1,56 @@
+{
+  "_comment": "Canonical orthography policy for entity surface normalization. Source of truth: God Passes By (GPB) spelling.",
+  "canonical_source": "God Passes By by Shoghi Effendi",
+  "canonical_lookup_sql": "SELECT id FROM docs WHERE title = 'God Passes By' AND deleted_at IS NULL LIMIT 1",
+
+  "preserve_characters": [
+    { "char": "ʻ", "unicode": "U+02BB", "name": "modifier letter turned comma (ayn)", "example": "ʻAbdu'l-Bahá" },
+    { "char": "ʼ", "unicode": "U+02BC", "name": "modifier letter apostrophe (hamza)", "example": "Bahá'í" },
+    { "char": "ā", "unicode": "U+0101", "name": "a with macron", "example": "Bahá'u'lláh" },
+    { "char": "ē", "unicode": "U+0113", "name": "e with macron" },
+    { "char": "ī", "unicode": "U+012B", "name": "i with macron", "example": "Nabíl" },
+    { "char": "ō", "unicode": "U+014D", "name": "o with macron" },
+    { "char": "ū", "unicode": "U+016B", "name": "u with macron" },
+    { "char": "ḥ", "unicode": "U+1E25", "name": "h with dot below", "example": "Ḥusayn" },
+    { "char": "ṭ", "unicode": "U+1E6D", "name": "t with dot below", "example": "Ṭáhirih" },
+    { "char": "ṣ", "unicode": "U+1E63", "name": "s with dot below" },
+    { "char": "ẓ", "unicode": "U+1E93", "name": "z with dot below" },
+    { "char": "ḍ", "unicode": "U+1E0D", "name": "d with dot below" },
+    { "char": "á", "unicode": "U+00E1", "name": "a with acute", "example": "Bahá" },
+    { "char": "é", "unicode": "U+00E9", "name": "e with acute" },
+    { "char": "í", "unicode": "U+00ED", "name": "i with acute", "example": "Amír" },
+    { "char": "ó", "unicode": "U+00F3", "name": "o with acute" },
+    { "char": "ú", "unicode": "U+00FA", "name": "u with acute" }
+  ],
+
+  "never_substitute": [
+    { "wrong": "'", "correct": "ʻ", "note": "ASCII apostrophe must NOT replace ayn (U+02BB)" },
+    { "wrong": "'", "correct": "ʼ", "note": "ASCII apostrophe must NOT replace hamza (U+02BC)" }
+  ],
+
+  "canonical_rule": "Canonical form = spelling as it appears in GPB. All other variants are aliases.",
+
+  "surface_norm_algorithm": {
+    "description": "For fuzzy matching only. Storage always uses canonical form.",
+    "steps": [
+      "1. Unicode NFC normalize",
+      "2. NFD decompose",
+      "3. Strip combining marks (U+0300–U+036F)",
+      "4. Lowercase"
+    ],
+    "example": {
+      "canonical": "Bahá'u'lláh",
+      "surface_norm": "bahaʼuʼllah",
+      "note": "ʻ (U+02BB) and ʼ (U+02BC) survive because they are not combining marks"
+    }
+  },
+
+  "known_canonical_forms": {
+    "Bahá'u'lláh": ["Baha'u'llah", "Bahaullah", "Bahá'u'lláh"],
+    "ʻAbdu'l-Bahá": ["Abdu'l-Baha", "Abdul-Baha", "'Abdu'l-Bahá"],
+    "the Báb": ["the Bab", "Báb"],
+    "Shoghi Effendi": ["Shoghi Effendi Rabbani"],
+    "Nabíl-i-Zarandí": ["Nabil-i-Zarandi", "Nabil"],
+    "Ṭáhirih": ["Tahirih", "Fatimih Baraghani", "Qurratu'l-'Ayn"]
+  }
+}
