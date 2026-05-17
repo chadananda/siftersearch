@@ -256,29 +256,31 @@ export function getAuthority(doc) {
   const libAuth = loadLibraryAuthority();
   const { religion, collection, source_site } = doc;
 
-  // 2. Collection-specific authority from meta.yaml takes priority over author/title
-  // so that curated overrides (e.g. Pilgrim Notes = 1) always apply.
+  // 2. Collection-specific authority from meta.yaml takes highest priority so that
+  // curated overrides (e.g. Pilgrim Notes = 1) always apply, even for Central Figure authors.
   if (religion && collection && libAuth.collections[religion]?.[collection] !== undefined) {
     return libAuth.collections[religion][collection];
   }
 
-  // 3. Religion default from meta.yaml — applies when collection is unknown.
-  if (religion && libAuth.religions[religion] !== undefined) {
-    return libAuth.religions[religion];
-  }
-
-  // 4. Author-based authority for primary scripture authors (Central Figures, prophets).
-  // Falls back here only when no collection/religion match.
+  // 3. Author-based authority for primary scripture authors (Central Figures, prophets).
+  // Evaluated BEFORE religion meta.yaml so Bahá'u'lláh (10) isn't overridden by
+  // the Bahá'í religion default (6 — correct for general scholarly Bahá'í works).
   // Uses exact string equality to avoid false positives like "Muhammad Husayn Tabatabai".
   if (doc.author && AUTHOR_AUTHORITY[doc.author] !== undefined) {
     return AUTHOR_AUTHORITY[doc.author];
   }
 
-  // 5. Title-pattern authority for primary scriptures where author/religion metadata is absent.
-  // Also checks author field — some docs store the book title in the author field.
+  // 4. Title-pattern authority for primary scriptures where author/religion metadata
+  // doesn't uniquely identify them (e.g. Quran stored under "Unknown" author).
+  // Also before religion default for same reason as step 3.
   for (const { pattern, authority: titleAuth } of TITLE_AUTHORITY) {
     if (doc.title && pattern.test(doc.title)) return titleAuth;
     if (doc.author && pattern.test(doc.author)) return titleAuth;
+  }
+
+  // 5. Religion default from meta.yaml — applies to general content without recognized author.
+  if (religion && libAuth.religions[religion] !== undefined) {
+    return libAuth.religions[religion];
   }
 
   // 6. External-site authority floor from sites.yaml. Lazy-load to avoid
