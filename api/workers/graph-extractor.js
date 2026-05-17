@@ -46,6 +46,11 @@ let isShuttingDown = false;
 process.on('SIGTERM', () => { isShuttingDown = true; });
 process.on('SIGINT', () => {});
 
+// Per-paragraph failure counter. After MAX_FAILURES consecutive parse failures,
+// mark graph_enriched=-1 so the worker stops retrying the same paragraph.
+const MAX_FAILURES = 3;
+const _failCount = new Map();
+
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
 // Cache alias count — skip the expensive join when no aliases exist yet
@@ -181,12 +186,21 @@ async function extractParagraph(row) {
     raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
     parsed = JSON.parse(raw);
   } catch {
+    const fails = (_failCount.get(row.id) || 0) + 1;
+    _failCount.set(row.id, fails);
     logger.warn({
       contentId: row.id,
       finishReason: result.finishReason,
       contentLen: result.content?.length,
+      failCount: fails,
       raw: result.content?.slice(0, 300)
     }, 'Failed to parse extraction JSON');
+    if (fails >= MAX_FAILURES) {
+      logger.warn({ contentId: row.id }, 'Marking paragraph unprocessable after repeated failures');
+      await query(`UPDATE content SET graph_enriched = -1, graph_enriched_at = datetime('now'),
+        extractor_version = 'skip:parse-failures' WHERE id = ?`, [row.id]);
+      _failCount.delete(row.id);
+    }
     return null;
   }
 
