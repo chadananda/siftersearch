@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T04:35:56.690Z",
+  "generated": "2026-05-17T04:45:40.224Z",
   "entries": [
+    {
+      "hash": "a6bbced1",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Explicitly ignore SIGINT in graph workers — Node.js default kills on SIGINT",
+      "scope": null
+    },
     {
       "hash": "2a390737",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Answer-first structure + semantic quote selection",
       "scope": null
-    },
-    {
-      "hash": "e00faab3",
-      "date": "2026-04-29",
-      "type": "Fixed",
-      "description": "Doubled blockquote borders — only tag direct-child p's",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "a6bbced1",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Explicitly ignore SIGINT in graph workers — Node.js default kills on SIGINT",
+        "scope": null
+      },
       {
         "hash": "2a390737",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Answer-first structure + semantic quote selection",
-        "scope": null
-      },
-      {
-        "hash": "e00faab3",
-        "date": "2026-04-29",
-        "type": "Fixed",
-        "description": "Doubled blockquote borders — only tag direct-child p's",
         "scope": null
       }
     ]

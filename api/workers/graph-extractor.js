@@ -63,18 +63,15 @@ async function buildCandidateDictionary(text) {
 // Resolve structural envelope for a paragraph's doc
 async function getEnvelope(docId) {
   const doc = await queryOne(`
-    SELECT d.title, d.author, d.religion, d.period_id,
-           p.name AS period_name, p.date_start, p.date_end
-    FROM docs d
-    LEFT JOIN periods p ON p.id = d.period_id
-    WHERE d.id = ?
+    SELECT title, author, religion
+    FROM docs WHERE id = ?
   `, [docId]);
   if (!doc) return {};
   return {
     workTitle: doc.title || 'Unknown',
     author: doc.author || 'Unknown',
-    periodName: doc.period_name || 'Unknown',
-    periodDateRange: doc.date_start ? `${doc.date_start}–${doc.date_end || '?'}` : 'Unknown',
+    periodName: 'Unknown',
+    periodDateRange: 'Unknown',
     religion: doc.religion || 'Unknown',
   };
 }
@@ -108,7 +105,13 @@ async function extractParagraph(row) {
     return null;
   }
 
-  const systemPrompt = await buildPrompt(row);
+  let systemPrompt;
+  try {
+    systemPrompt = await buildPrompt(row);
+  } catch (err) {
+    logger.error({ contentId: row.id, err: err.message }, 'buildPrompt failed');
+    return null;
+  }
 
   let result;
   try {
