@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T22:30:35.475Z",
+  "generated": "2026-05-17T22:49:28.988Z",
   "entries": [
+    {
+      "hash": "b21255b6",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "GPB_DOC_ID 8635 to 21310 — target canonical not duplicate",
+      "scope": null
+    },
     {
       "hash": "e01d2602",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Embedding Buffer conversion in sites-ingester",
       "scope": null
-    },
-    {
-      "hash": "3a8e3a67",
-      "date": "2026-04-30",
-      "type": "Fixed",
-      "description": "Content import + supersession covering index",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "b21255b6",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "GPB_DOC_ID 8635 to 21310 — target canonical not duplicate",
+        "scope": null
+      },
       {
         "hash": "e01d2602",
         "date": "2026-05-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-30",
         "type": "Fixed",
         "description": "Embedding Buffer conversion in sites-ingester",
-        "scope": null
-      },
-      {
-        "hash": "3a8e3a67",
-        "date": "2026-04-30",
-        "type": "Fixed",
-        "description": "Content import + supersession covering index",
         "scope": null
       }
     ]

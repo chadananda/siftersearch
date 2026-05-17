@@ -239,19 +239,24 @@ async function extractParagraph(row) {
 const GPB_DOC_ID = 21310;
 
 // Fetch next batch — GPB paragraphs first, then everything else.
+// INVARIANT: never extract duplicate docs (duplicate_of IS NOT NULL) — they are
+// excluded from Meilisearch search and extracting them wastes budget.
 async function fetchBatch() {
-  // Phase 1: drain GPB completely (smaller batch — heavier reasoner model)
+  // Phase 1: drain GPB completely (smaller batch — Sonnet model)
   const gpbRows = await queryAll(`
     SELECT c.id, c.text, c.doc_id
     FROM content c
+    JOIN docs d ON d.id = c.doc_id
     WHERE c.doc_id = ? AND c.graph_enriched = 0
-      AND c.deleted_at IS NULL AND length(c.text) > 50
+      AND c.deleted_at IS NULL AND d.deleted_at IS NULL
+      AND d.duplicate_of IS NULL
+      AND length(c.text) > 50
     ORDER BY c.paragraph_index ASC
     LIMIT ?
   `, [GPB_DOC_ID, GPB_BATCH_SIZE]);
   if (gpbRows.length > 0) return gpbRows;
 
-  // Phase 2: all other docs — no ORDER BY to avoid scanning 4.7M rows
+  // Phase 2: all other non-duplicate docs
   return queryAll(`
     SELECT c.id, c.text, c.doc_id
     FROM content c
@@ -259,6 +264,7 @@ async function fetchBatch() {
     WHERE c.graph_enriched = 0
       AND c.deleted_at IS NULL
       AND d.deleted_at IS NULL
+      AND d.duplicate_of IS NULL
       AND length(c.text) > 50
     LIMIT ?
   `, [BATCH_SIZE]);
