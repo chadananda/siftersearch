@@ -223,12 +223,11 @@ function pickTraditionSymbols(tags, topic) {
   return TRADITION_SYMBOLS.interfaith;
 }
 
-// Build a hero image prompt focused on symbolic objects, not people or portraits.
-export function buildHeroImagePrompt({ title, topic, tags }) {
+// Build a hero image prompt focused on symbolic objects only. No title, no person
+// names, no theological terms — all of which lead image models to depict figures.
+export function buildHeroImagePrompt({ topic, tags }) {
   const symbols = pickTraditionSymbols(tags, topic);
-  const themeTags = (tags || []).filter(t => !['bahaullah','abdul-baha','shoghi-effendi','bab','tahirih',
-    'muhammad','jesus','moses','buddha','confucius'].includes(t)).slice(0, 3).join(', ');
-  const subject = `Contemplative watercolor illustration: ${symbols}. Thematic context: ${themeTags || topic}. No human figures of any kind.`;
+  const subject = `Contemplative watercolor illustration featuring only: ${symbols}. No human figures, no faces, no people of any kind.`;
   const STYLE = ' Hand-painted watercolor, indigo and cobalt washes with warm gold accents, loose brushwork, paper texture, soft bleeding edges, wide cinematic 16:9. No text, no labels, no human figures, no faces, no portraits whatsoever.';
   return subject + STYLE;
 }

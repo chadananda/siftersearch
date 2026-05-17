@@ -72,14 +72,12 @@ function detectTraditionSymbols(tags, topic) {
   return TRADITION_SYMBOLS.interfaith;
 }
 
-// Build a prompt focused on symbolic objects rather than "a scene about [title]",
-// so the model renders things not people.
+// Build a prompt focused on symbolic objects — no titles, no person names, no
+// theological terms that imply human figures. Tradition symbols do the work.
 function buildHeroPrompt(dialog) {
   const tags = JSON.parse(dialog.tags_json || '[]');
   const symbols = detectTraditionSymbols(tags, dialog.topic);
-  const themeTags = tags.filter(t => !['bahaullah','abdul-baha','shoghi-effendi','bab','tahirih',
-    'muhammad','jesus','moses','buddha','confucius'].includes(t)).slice(0, 3).join(', ');
-  return `Contemplative watercolor illustration: ${symbols}. Thematic context: ${themeTags || dialog.topic}. No human figures of any kind.`;
+  return `Contemplative watercolor illustration featuring only: ${symbols}. No human figures, no faces, no people of any kind.`;
 }
 
 const STYLE_SUFFIX = ' Hand-painted watercolor, indigo and cobalt washes with warm gold accents, loose brushwork, paper texture, soft bleeding edges, wide cinematic 16:9. No text, no labels, no human figures, no faces, no portraits whatsoever.';
