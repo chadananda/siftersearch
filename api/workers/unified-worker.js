@@ -18,7 +18,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { query, queryOne, queryAll, getSiteDb } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
-import { getMeili, syncHypeBatch } from '../lib/search.js';
+import { getMeili, syncHypeBatch, syncEntityMentionsBatch } from '../lib/search.js';
 import { content } from '../lib/content.js';
 import { getAuthority } from '../lib/authority.js';
 import { runMigrations } from '../lib/migrations.js';
@@ -51,6 +51,8 @@ const HEARTBEAT_INTERVAL_MS = 30000;
 const USAGE_REPORT_INTERVAL_MS = 5 * 60 * 1000;
 const HYPE_SYNC_INTERVAL_MS = 60 * 1000;  // 60s — keep new HyPE indexed promptly
 const HYPE_SYNC_BATCH = 100;              // paragraphs per batch (~500 questions = 1 OpenAI batch call)
+const ENTITY_SYNC_INTERVAL_MS = 120 * 1000; // 2 min — entity mentions index
+const ENTITY_SYNC_BATCH = 200;
 
 // ============================================================
 // State
@@ -62,6 +64,7 @@ let lastFullSyncTime = 0;
 let lastJobCleanupTime = 0;
 let lastUsageReportTime = 0;
 let lastHypeSyncTime = 0;
+let lastEntitySyncTime = 0;
 let activeHeartbeatInterval = null;
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -509,6 +512,19 @@ async function runHypeSyncCycle() {
   lastHypeSyncTime = Date.now();
 }
 
+// Drain entity_mentions where em_synced=0 into the entity_mentions_idx sidecar.
+async function runEntitySyncCycle() {
+  try {
+    const result = await syncEntityMentionsBatch({ queryAll, query, getAuthority, limit: ENTITY_SYNC_BATCH });
+    if (result.indexed > 0) {
+      logger.info({ ...result }, 'Entity mentions sidecar batch synced');
+    }
+  } catch (err) {
+    logger.error({ err: err.message }, 'Entity sync cycle failed');
+  }
+  lastEntitySyncTime = Date.now();
+}
+
 // Sync site-only DB content to per-site Meili indexes. Site-only sites live
 // in their own SQLite at data/sites/<prefix>.db (separate from main sifter.db);
 // the main sync_jobs table doesn't cover them, so we pump them from the
@@ -615,6 +631,7 @@ async function runPeriodicTasks() {
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await runCleanupCycle();
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await runFullSyncCheck();
   if (now - lastHypeSyncTime >= HYPE_SYNC_INTERVAL_MS) await runHypeSyncCycle();
+  if (now - lastEntitySyncTime >= ENTITY_SYNC_INTERVAL_MS) await runEntitySyncCycle();
   // Site-only DBs live outside main DB; periodic pump every cycle (cheap
   // when the queue is empty).
   await runSiteOnlySyncCycle();

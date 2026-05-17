@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T03:46:42.968Z",
+  "generated": "2026-05-17T03:48:39.208Z",
   "entries": [
+    {
+      "hash": "33af2691",
+      "date": "2026-05-16",
+      "type": "New",
+      "description": "Grounded embedding generation in resolver worker",
+      "scope": null
+    },
     {
       "hash": "660f8d4e",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Switch to gpt-4o + expand restating-strip patterns",
       "scope": null
-    },
-    {
-      "hash": "0e8a910c",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Post-process strip restating sentences + final_reply event",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "33af2691",
+        "date": "2026-05-16",
+        "type": "New",
+        "description": "Grounded embedding generation in resolver worker",
+        "scope": null
+      },
       {
         "hash": "660f8d4e",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Switch to gpt-4o + expand restating-strip patterns",
-        "scope": null
-      },
-      {
-        "hash": "0e8a910c",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Post-process strip restating sentences + final_reply event",
         "scope": null
       }
     ]
