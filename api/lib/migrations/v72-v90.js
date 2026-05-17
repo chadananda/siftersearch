@@ -273,4 +273,18 @@ export const migrations = {
 
     logger.info('Migration 72 complete: entity layer schema');
   },
+
+  73: async () => {
+    // Grounded-text embedding storage for entity-aware semantic search.
+    // embedding_grounded holds a 512-dim MRL-compressed text-embedding-3-large
+    // vector of content.text_grounded — the dereference-resolved paragraph text.
+    // Used by the grounded-text search path in hybridSearch when useGroundedText=true.
+    const addCol = async (tbl, col, def) => {
+      try { await query(`ALTER TABLE ${tbl} ADD COLUMN ${col} ${def}`); }
+      catch { /* duplicate column — already applied */ }
+    };
+    await addCol('content', 'embedding_grounded', 'BLOB');
+    await query(`CREATE INDEX IF NOT EXISTS idx_content_grounded_unsync ON content(grounded_synced) WHERE grounded_synced = 0 AND text_grounded IS NOT NULL`);
+    logger.info('Migration 73 complete: embedding_grounded column');
+  },
 };

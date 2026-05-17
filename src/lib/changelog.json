@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T03:40:13.511Z",
+  "generated": "2026-05-17T03:44:57.326Z",
   "entries": [
+    {
+      "hash": "645cc3f6",
+      "date": "2026-05-16",
+      "type": "New",
+      "description": "Authority-tier ranking utilities (Step 17B)",
+      "scope": null
+    },
     {
       "hash": "cfd7862c",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Concrete BAD/GOOD examples + forbidden opener list",
       "scope": null
-    },
-    {
-      "hash": "18eb58e5",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Topic→primary-work mapping + conversation-aware work_name carry",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "645cc3f6",
+        "date": "2026-05-16",
+        "type": "New",
+        "description": "Authority-tier ranking utilities (Step 17B)",
+        "scope": null
+      },
       {
         "hash": "cfd7862c",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Concrete BAD/GOOD examples + forbidden opener list",
-        "scope": null
-      },
-      {
-        "hash": "18eb58e5",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Topic→primary-work mapping + conversation-aware work_name carry",
         "scope": null
       }
     ]

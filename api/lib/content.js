@@ -816,6 +816,7 @@ async function getDirtyParagraphsForDoc(docId, limit = 500) {
            embedding_model, content_hash, normalized_hash,
            translation, translation_segments, context,
            external_para_id, pdf_page,
+           text_grounded, embedding_grounded, grounded_synced,
            is_duplicate, deleted_at
     FROM content
     WHERE doc_id = ? AND synced = 0
@@ -836,7 +837,8 @@ async function markSynced(ids) {
   for (let i = 0; i < ids.length; i += BATCH) {
     const batch = ids.slice(i, i + BATCH);
     await query(`
-      UPDATE content SET synced = 1, updated_at = ?
+      UPDATE content SET synced = 1, updated_at = ?,
+        grounded_synced = CASE WHEN grounded_synced = 0 AND embedding_grounded IS NOT NULL THEN 1 ELSE grounded_synced END
       WHERE id IN (${batch.map(() => '?').join(',')})
     `, [ts, ...batch]);
   }

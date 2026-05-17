@@ -209,6 +209,15 @@ async function syncDocument(docId) {
     if (embedding) {
       record._vectors = { default: embedding };
     }
+    // Include grounded embedding as a named vector when available.
+    // Enables hybridSearch(useGroundedText=true) to use the resolved-name vector.
+    const groundedEmbedding = p.grounded_synced === 0 && p.embedding_grounded
+      ? blobToFloatArray(p.embedding_grounded)
+      : null;
+    if (groundedEmbedding && groundedEmbedding.length === content.EXPECTED_EMBEDDING_DIMS) {
+      if (!record._vectors) record._vectors = {};
+      record._vectors.grounded = groundedEmbedding;
+    }
     return record;
   });
 

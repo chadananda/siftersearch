@@ -251,7 +251,7 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
       highlightPostTag: params.highlightPostTag,
     };
     if (vector) {
-      q.hybrid = { semanticRatio: params.semanticRatio, embedder: 'default' };
+      q.hybrid = { semanticRatio: params.semanticRatio, embedder: params.useGroundedText ? 'grounded' : 'default' };
       q.vector = vector;
     }
     return q;
@@ -289,7 +289,7 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
         highlightPostTag: params.highlightPostTag,
       };
       if (vector) {
-        q.hybrid = { semanticRatio: params.semanticRatio, embedder: 'default' };
+        q.hybrid = { semanticRatio: params.semanticRatio, embedder: params.useGroundedText ? 'grounded' : 'default' };
         q.vector = vector;
       }
       olSubQueries.push(q);
@@ -564,6 +564,7 @@ export async function hybridSearch(query, options = {}) {
     filters = {},
     filterTerms = [], // Array of terms to match against author/collection/title (case insensitive)
     semanticRatio = 0.5, // 0 = keyword only, 1 = semantic only
+    useGroundedText = false, // use embedding_grounded vector when available (entity-resolved text)
     attributesToRetrieve = ['*'],
     attributesToHighlight = ['text', 'heading'],
     highlightPreTag = '<mark>',
@@ -644,7 +645,7 @@ export async function hybridSearch(query, options = {}) {
     searchParams.matchingStrategy = 'last';
     searchParams.hybrid = {
       semanticRatio,
-      embedder: 'default'
+      embedder: useGroundedText ? 'grounded' : 'default'
     };
     searchParams.vector = vector;
   }
@@ -680,7 +681,7 @@ export async function hybridSearch(query, options = {}) {
     allHits = [];
     for (const indexName of targetIndexNames) {
       const hits = await crossTraditionSearch(meili, indexName, query, vector, {
-        semanticRatio, attributesToRetrieve, attributesToHighlight, highlightPreTag, highlightPostTag, extraFilter
+        semanticRatio, useGroundedText, attributesToRetrieve, attributesToHighlight, highlightPreTag, highlightPostTag, extraFilter
       }, perReligionLimit).catch(err => {
         logger.warn({ err: err.message, index: indexName }, 'hybridSearch: cross-tradition search failed (continuing)');
         return [];
