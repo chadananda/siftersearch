@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T03:48:39.208Z",
+  "generated": "2026-05-17T03:49:56.167Z",
   "entries": [
+    {
+      "hash": "f3e9567f",
+      "date": "2026-05-16",
+      "type": "New",
+      "description": "Auto-sync entity mentions sidecar in unified worker (Step 22)",
+      "scope": null
+    },
     {
       "hash": "33af2691",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Revert to mini + don't strip inline-citation lines",
       "scope": null
-    },
-    {
-      "hash": "c1a853ec",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Switch to gpt-4o + expand restating-strip patterns",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "f3e9567f",
+        "date": "2026-05-16",
+        "type": "New",
+        "description": "Auto-sync entity mentions sidecar in unified worker (Step 22)",
+        "scope": null
+      },
       {
         "hash": "33af2691",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Revert to mini + don't strip inline-citation lines",
-        "scope": null
-      },
-      {
-        "hash": "c1a853ec",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Switch to gpt-4o + expand restating-strip patterns",
         "scope": null
       }
     ]

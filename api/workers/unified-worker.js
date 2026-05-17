@@ -19,6 +19,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 import { query, queryOne, queryAll, getSiteDb } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { getMeili, syncHypeBatch, syncEntityMentionsBatch } from '../lib/search.js';
+import { syncAliasesToMeili } from '../lib/graph-meili-sync.js';
 import { content } from '../lib/content.js';
 import { getAuthority } from '../lib/authority.js';
 import { runMigrations } from '../lib/migrations.js';
@@ -51,8 +52,9 @@ const HEARTBEAT_INTERVAL_MS = 30000;
 const USAGE_REPORT_INTERVAL_MS = 5 * 60 * 1000;
 const HYPE_SYNC_INTERVAL_MS = 60 * 1000;  // 60s — keep new HyPE indexed promptly
 const HYPE_SYNC_BATCH = 100;              // paragraphs per batch (~500 questions = 1 OpenAI batch call)
-const ENTITY_SYNC_INTERVAL_MS = 120 * 1000; // 2 min — entity mentions index
+const ENTITY_SYNC_INTERVAL_MS = 120 * 1000;  // 2 min — entity mentions index
 const ENTITY_SYNC_BATCH = 200;
+const ALIAS_SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 min — synonym refresh
 
 // ============================================================
 // State
@@ -65,6 +67,7 @@ let lastJobCleanupTime = 0;
 let lastUsageReportTime = 0;
 let lastHypeSyncTime = 0;
 let lastEntitySyncTime = 0;
+let lastAliasSyncTime = 0;
 let activeHeartbeatInterval = null;
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -525,6 +528,19 @@ async function runEntitySyncCycle() {
   lastEntitySyncTime = Date.now();
 }
 
+// Sync entity aliases as Meilisearch synonyms (paragraphs index).
+async function runAliasSyncCycle() {
+  try {
+    const result = await syncAliasesToMeili();
+    if (result.synonymCount > 0) {
+      logger.info({ synonymCount: result.synonymCount }, 'Entity alias synonyms synced to Meilisearch');
+    }
+  } catch (err) {
+    logger.error({ err: err.message }, 'Alias sync cycle failed');
+  }
+  lastAliasSyncTime = Date.now();
+}
+
 // Sync site-only DB content to per-site Meili indexes. Site-only sites live
 // in their own SQLite at data/sites/<prefix>.db (separate from main sifter.db);
 // the main sync_jobs table doesn't cover them, so we pump them from the
@@ -632,6 +648,7 @@ async function runPeriodicTasks() {
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await runFullSyncCheck();
   if (now - lastHypeSyncTime >= HYPE_SYNC_INTERVAL_MS) await runHypeSyncCycle();
   if (now - lastEntitySyncTime >= ENTITY_SYNC_INTERVAL_MS) await runEntitySyncCycle();
+  if (now - lastAliasSyncTime >= ALIAS_SYNC_INTERVAL_MS) await runAliasSyncCycle();
   // Site-only DBs live outside main DB; periodic pump every cycle (cheap
   // when the queue is empty).
   await runSiteOnlySyncCycle();
