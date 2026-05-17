@@ -24,7 +24,10 @@ import { findEntity } from '../lib/graph-db.js';
 
 const PROMPT_VERSION = 'extract-v1';
 const MODEL = process.env.EXTRACTION_MODEL || 'deepseek-chat';
+// GPB gets deepseek-reasoner for higher-quality seed extraction — it's worth the cost
+const GPB_MODEL = process.env.GPB_EXTRACTION_MODEL || 'deepseek-reasoner';
 const BATCH_SIZE = 16;
+const GPB_BATCH_SIZE = 8;  // smaller batch for the heavier reasoner model
 const IDLE_SLEEP_MS = 30_000;
 
 const SYSTEM_PROMPT_TEMPLATE = readFileSync(
@@ -113,16 +116,21 @@ async function extractParagraph(row) {
     return null;
   }
 
+  const isGpb = row.doc_id === GPB_DOC_ID;
+  const activeModel = isGpb ? GPB_MODEL : MODEL;
+
   let result;
   try {
+    // DeepSeek supports json_object but not json_schema structured output.
+    // The system prompt already contains the full schema instruction.
     result = await chatCompletion(
       [{ role: 'system', content: systemPrompt }, { role: 'user', content: row.text }],
       {
-        model: MODEL,
+        model: activeModel,
         provider: 'deepseek',
         temperature: 0,
-        maxTokens: 4096,
-        responseFormat: { type: 'json_schema', json_schema: OUTPUT_SCHEMA },
+        maxTokens: isGpb ? 8192 : 4096,  // GPB gets more tokens — entity-dense
+        responseFormat: { type: 'json_object' },
       }
     );
   } catch (err) {
@@ -178,10 +186,25 @@ async function extractParagraph(row) {
   return lastInsertRowid;
 }
 
-// Fetch next batch using the partial index on graph_enriched=0.
-// No ORDER BY — avoid sorting 4.7M rows. Priority ordering is best-effort;
-// add idx_content_doc_graph composite index (migration 74) for priority.
+// GPB doc ID — Shoghi Effendi's "God Passes By" (1944), the authoritative seed
+// for canonical entity names, relationships, periods, and episodes across the
+// Bahá'í corpus. Extract it completely before all other documents.
+const GPB_DOC_ID = '8635';
+
+// Fetch next batch — GPB paragraphs first, then everything else.
 async function fetchBatch() {
+  // Phase 1: drain GPB completely (smaller batch — heavier reasoner model)
+  const gpbRows = await queryAll(`
+    SELECT c.id, c.text, c.doc_id
+    FROM content c
+    WHERE c.doc_id = ? AND c.graph_enriched = 0
+      AND c.deleted_at IS NULL AND length(c.text) > 50
+    ORDER BY c.paragraph_index ASC
+    LIMIT ?
+  `, [GPB_DOC_ID, GPB_BATCH_SIZE]);
+  if (gpbRows.length > 0) return gpbRows;
+
+  // Phase 2: all other docs — no ORDER BY to avoid scanning 4.7M rows
   return queryAll(`
     SELECT c.id, c.text, c.doc_id
     FROM content c
