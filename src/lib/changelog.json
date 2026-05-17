@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T03:39:10.487Z",
+  "generated": "2026-05-17T03:40:13.511Z",
   "entries": [
+    {
+      "hash": "cfd7862c",
+      "date": "2026-05-16",
+      "type": "New",
+      "description": "Jafar entity awareness + response register (Step 17)",
+      "scope": null
+    },
     {
       "hash": "3358dac2",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Topic→primary-work mapping + conversation-aware work_name carry",
       "scope": null
-    },
-    {
-      "hash": "364062b4",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Dialog 051 (Tablet of Wisdom) on v2.15.x deterministic-routing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "cfd7862c",
+        "date": "2026-05-16",
+        "type": "New",
+        "description": "Jafar entity awareness + response register (Step 17)",
+        "scope": null
+      },
       {
         "hash": "3358dac2",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Topic→primary-work mapping + conversation-aware work_name carry",
-        "scope": null
-      },
-      {
-        "hash": "364062b4",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Dialog 051 (Tablet of Wisdom) on v2.15.x deterministic-routing",
         "scope": null
       }
     ]

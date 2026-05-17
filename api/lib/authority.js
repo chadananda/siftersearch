@@ -406,6 +406,52 @@ export function invalidateCache() {
   lastLoadTime = 0;
 }
 
+// Authority tier rank map for entity-layer conflict resolution.
+// When two graph_relations make conflicting claims about the same entity,
+// the claim from the higher-rank source wins; lower-rank claims get status='superseded_by'.
+const TIER_RANKS = {
+  revealed: 100,
+  central_figure: 90,
+  authorized_interpretation: 80,
+  institutional: 70,
+  approved_history: 60,
+  primary_scripture_other: 90,
+  tradition_doctrinal: 75,
+  tradition_authoritative: 65,
+  scholarly: 40,
+  secondary: 30,
+  reference: 20,
+  unknown: 10,
+};
+
+/**
+ * Rank of a source_authority_tier string (higher = more authoritative).
+ * @param {string|null} tier
+ * @returns {number}
+ */
+export function getTierRank(tier) {
+  return TIER_RANKS[tier] ?? 10;
+}
+
+/**
+ * Re-rank a list of search hits by blending RRF score with source_authority_tier.
+ * Hits from higher-tier sources get a lift so primary texts beat secondary books
+ * at equal relevance. Only modifies score — does not filter.
+ *
+ * @param {Array<{_rrfScore?: number, source_authority_tier?: string, authority?: number}>} hits
+ * @param {number} [tierLiftFactor=0.05] - per-tier-rank-point score boost
+ * @returns {Array} same hits, sorted by blended score descending
+ */
+export function rerankByAuthorityTier(hits, tierLiftFactor = 0.05) {
+  return hits
+    .map(hit => {
+      const tierRank = getTierRank(hit.source_authority_tier || null);
+      const baseScore = hit._rrfScore ?? hit._rankingScore ?? 0;
+      return { ...hit, _blendedScore: baseScore + tierLiftFactor * (tierRank / 100) };
+    })
+    .sort((a, b) => b._blendedScore - a._blendedScore);
+}
+
 /**
  * Get human-readable authority label
  *
