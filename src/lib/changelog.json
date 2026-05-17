@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T07:02:30.343Z",
+  "generated": "2026-05-17T07:30:46.815Z",
   "entries": [
+    {
+      "hash": "9fcf83c2",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Tradition-specific queries now sort tradition matches first",
+      "scope": null
+    },
     {
       "hash": "9c7cc37f",
       "date": "2026-05-16",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Switch from paragraph-count to token-count for short-doc threshold",
       "scope": null
-    },
-    {
-      "hash": "f81cb091",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Document-QA subagent for named-work questions",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-17": [
+      {
+        "hash": "9fcf83c2",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Tradition-specific queries now sort tradition matches first",
+        "scope": null
+      }
+    ],
     "2026-05-16": [
       {
         "hash": "9c7cc37f",
@@ -7025,13 +7034,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Switch from paragraph-count to token-count for short-doc threshold",
-        "scope": null
-      },
-      {
-        "hash": "f81cb091",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Document-QA subagent for named-work questions",
         "scope": null
       }
     ]

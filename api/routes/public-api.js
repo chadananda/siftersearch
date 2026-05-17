@@ -341,11 +341,62 @@ export default async function publicApiRoutes(fastify) {
     if (filters.yearFrom) searchFilters.yearFrom = filters.yearFrom;
     if (filters.yearTo) searchFilters.yearTo = filters.yearTo;
 
-    // Execute hybrid search, fall back to keyword if hybrid returns empty
-    let searchResults = await hybridSearch(query, {
+    // Detect tradition indicator early — used for both supplementary search and result sorting.
+    // Expanded to include book-name indicators (bhagavad, gita, leviticus, tao, etc.) not
+    // just tradition-name adjectives.
+    const TRADITION_KEYWORDS = {
+      "baha'i": "Baha'i", "bahai": "Baha'i",
+      "buddhist": "Buddhist", "buddhism": "Buddhist", "buddha": "Buddhist",
+      "christian": "Christian", "bible": "Christian", "gospel": "Christian",
+      "islam": "Islam", "islamic": "Islam", "quran": "Islam", "qur'an": "Islam", "koran": "Islam",
+      "hadith": "Islam", "sunnah": "Islam",
+      "jewish": "Judaism", "judaism": "Judaism", "torah": "Judaism", "hebrew": "Judaism",
+      "leviticus": "Judaism", "exodus": "Judaism", "deuteronomy": "Judaism",
+      "psalms": "Judaism", "proverbs": "Judaism",
+      "hindu": "Hindu", "hinduism": "Hindu", "vedic": "Hindu",
+      "bhagavad": "Hindu", "gita": "Hindu", "upanishad": "Hindu",
+      "sikh": "Sikh", "sikhism": "Sikh", "granth": "Sikh",
+      "zoroastrian": "Zoroastrian", "avesta": "Zoroastrian",
+      "taoist": "Tao", "taoism": "Tao", "tao": "Tao",
+      "confucian": "Confucian", "confucius": "Confucian", "analects": "Confucian",
+      "jain": "Jain", "jainism": "Jain",
+    };
+    const lowerQuery = query.toLowerCase();
+    const detectedTradition = Object.entries(TRADITION_KEYWORDS).find(([kw]) => {
+      const idx = lowerQuery.indexOf(kw);
+      if (idx < 0) return false;
+      const before = idx === 0 ? ' ' : lowerQuery[idx - 1];
+      const after = idx + kw.length >= lowerQuery.length ? ' ' : lowerQuery[idx + kw.length];
+      return !/[a-z]/.test(before) && !/[a-z]/.test(after);
+    })?.[1];
+
+    // Run main search + optional supplementary tradition search in parallel.
+    // The supplementary search guarantees hits from the detected tradition enter the LLM
+    // analysis pool even if authority reranking pushes them below the main limit.
+    const mainSearchPromise = hybridSearch(query, {
       limit: Math.min(limit * 2, 30),
       filters: searchFilters
     }).catch(() => ({ hits: [] }));
+
+    const traditionSearchPromise = (detectedTradition && !searchFilters.religion)
+      ? hybridSearch(query, {
+          limit: Math.min(limit, 5),
+          filters: { ...searchFilters, religion: detectedTradition }
+        }).catch(() => ({ hits: [] }))
+      : Promise.resolve({ hits: [] });
+
+    let [searchResults, traditionResults] = await Promise.all([mainSearchPromise, traditionSearchPromise]);
+
+    // Merge tradition hits not already in main results (dedup by paragraph id)
+    if (traditionResults.hits && traditionResults.hits.length > 0) {
+      const seenIds = new Set(searchResults.hits.map(h => h.id));
+      for (const hit of traditionResults.hits) {
+        if (!seenIds.has(hit.id)) {
+          seenIds.add(hit.id);
+          searchResults.hits.push(hit);
+        }
+      }
+    }
 
     // Fallback: if hybrid search fails (no embeddings configured), use keyword search
     if (!searchResults.hits || searchResults.hits.length === 0) {
@@ -407,31 +458,6 @@ export default async function publicApiRoutes(fastify) {
       batchSize: 2,
       maxConcurrent: 10
     });
-
-    // Detect tradition indicator in query and boost matching tradition results.
-    // LLM scoring treats "karma" in Matthew as equally relevant to Hindu karma —
-    // correct by boosting exact-tradition hits by 15% post-analysis.
-    const TRADITION_KEYWORDS = {
-      "baha'i": "Baha'i", "bahai": "Baha'i",
-      "buddhist": "Buddhist", "buddhism": "Buddhist", "buddha": "Buddhist",
-      "christian": "Christian", "bible": "Christian", "gospel": "Christian",
-      "islam": "Islam", "islamic": "Islam", "quran": "Islam", "qur'an": "Islam", "koran": "Islam",
-      "jewish": "Judaism", "judaism": "Judaism", "torah": "Judaism", "hebrew": "Judaism",
-      "hindu": "Hindu", "hinduism": "Hindu", "vedic": "Hindu",
-      "sikh": "Sikh", "sikhism": "Sikh",
-      "zoroastrian": "Zoroastrian",
-      "taoist": "Tao", "taoism": "Tao",
-      "confucian": "Confucian", "confucius": "Confucian",
-      "jain": "Jain", "jainism": "Jain",
-    };
-    const lowerQuery = query.toLowerCase();
-    const detectedTradition = Object.entries(TRADITION_KEYWORDS).find(([kw]) => {
-      const idx = lowerQuery.indexOf(kw);
-      if (idx < 0) return false;
-      const before = idx === 0 ? ' ' : lowerQuery[idx - 1];
-      const after = idx + kw.length >= lowerQuery.length ? ' ' : lowerQuery[idx + kw.length];
-      return !/[a-z]/.test(before) && !/[a-z]/.test(after);
-    })?.[1];
 
     // When the query names a tradition (e.g. "Quran", "Buddhist"), results from that
     // tradition sort before all others regardless of LLM score. Within each group,
