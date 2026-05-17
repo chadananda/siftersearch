@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T16:33:39.091Z",
+  "generated": "2026-05-17T16:56:53.893Z",
   "entries": [
+    {
+      "hash": "e558daf6",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Raise non-GPB maxTokens 4096->8192 — extraction JSON consistently >4K tokens",
+      "scope": null
+    },
     {
       "hash": "9fbb943a",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Docs.external_id column + supersession query plan",
       "scope": null
-    },
-    {
-      "hash": "8a63d246",
-      "date": "2026-04-30",
-      "type": "Other",
-      "description": "Sites-ingester orchestrator + CLI",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "e558daf6",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Raise non-GPB maxTokens 4096->8192 — extraction JSON consistently >4K tokens",
+        "scope": null
+      },
       {
         "hash": "9fbb943a",
         "date": "2026-05-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-30",
         "type": "Fixed",
         "description": "Docs.external_id column + supersession query plan",
-        "scope": null
-      },
-      {
-        "hash": "8a63d246",
-        "date": "2026-04-30",
-        "type": "Other",
-        "description": "Sites-ingester orchestrator + CLI",
         "scope": null
       }
     ]
