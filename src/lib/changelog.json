@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T16:59:31.258Z",
+  "generated": "2026-05-17T22:19:31.767Z",
   "entries": [
+    {
+      "hash": "e01d2602",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Mark paragraphs unprocessable after 3 consecutive parse failures",
+      "scope": null
+    },
     {
       "hash": "e558daf6",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Content import + supersession covering index",
       "scope": null
-    },
-    {
-      "hash": "9a79d3da",
-      "date": "2026-04-30",
-      "type": "Fixed",
-      "description": "Docs.external_id column + supersession query plan",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "e01d2602",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Mark paragraphs unprocessable after 3 consecutive parse failures",
+        "scope": null
+      },
       {
         "hash": "e558daf6",
         "date": "2026-05-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-30",
         "type": "Fixed",
         "description": "Content import + supersession covering index",
-        "scope": null
-      },
-      {
-        "hash": "9a79d3da",
-        "date": "2026-04-30",
-        "type": "Fixed",
-        "description": "Docs.external_id column + supersession query plan",
         "scope": null
       }
     ]

@@ -444,7 +444,7 @@ export async function initializeIndexes() {
   if (meiliKey) headers['Authorization'] = `Bearer ${meiliKey}`;
 
   const paragraphSettings = {
-    searchableAttributes: ['text', 'context', 'heading', 'title', 'author'],
+    searchableAttributes: ['text', 'text_grounded', 'context', 'heading', 'title', 'author'],
     filterableAttributes: [
       'doc_id', 'religion', 'collection', 'language', 'year',
       'paragraph_index', 'blocktype', 'author', 'title', 'authority', 'encumbered',

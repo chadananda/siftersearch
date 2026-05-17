@@ -186,6 +186,7 @@ async function syncDocument(docId) {
       doc_id: p.doc_id,
       paragraph_index: p.paragraph_index,
       text: p.text,
+      text_grounded: p.text_grounded || null,
       context: p.context || null,
       translation: p.translation || null,
       translation_segments: p.translation_segments || null,
