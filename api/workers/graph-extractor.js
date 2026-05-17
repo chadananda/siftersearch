@@ -37,7 +37,10 @@ const OUTPUT_SCHEMA = JSON.parse(
 let isShuttingDown = false;
 
 process.on('SIGTERM', () => { isShuttingDown = true; });
-process.on('SIGINT', () => {}); // Ignore — PM2 uses SIGTERM; terminal SIGINT must not stop the worker
+process.on('SIGINT', () => { logger.warn('SIGINT received — ignoring (PM2 uses SIGTERM)'); });
+process.on('exit', (code) => { logger.warn({ code }, 'Process exiting'); });
+process.on('uncaughtException', (err) => { logger.error({ err: err.message, stack: err.stack }, 'Uncaught exception'); process.exit(1); });
+process.on('unhandledRejection', (reason) => { logger.error({ reason: String(reason) }, 'Unhandled rejection'); });
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
@@ -116,14 +119,13 @@ async function extractParagraph(row) {
   let result;
   try {
     result = await chatCompletion(
-      [{ role: 'user', content: row.text }],
+      [{ role: 'system', content: systemPrompt }, { role: 'user', content: row.text }],
       {
         model: MODEL,
         provider: 'deepseek',
         temperature: 0,
         maxTokens: 4096,
         responseFormat: { type: 'json_schema', json_schema: OUTPUT_SCHEMA },
-        systemPrompt,
       }
     );
   } catch (err) {

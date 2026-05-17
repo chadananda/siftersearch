@@ -228,9 +228,9 @@ module.exports = {
       watch: false,
       max_memory_restart: '2G',
       env: {
-        NODE_ENV: 'production',
-        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',
-        DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY || ''
+        NODE_ENV: 'production'
+        // API keys loaded from .env-secrets by dotenv — do NOT pass here or
+        // PM2 would set them to '' (empty) and dotenv wouldn't override
       },
       exp_backoff_restart_delay: 15000,  // DeepSeek API errors benefit from longer backoff
       max_restarts: 999999,
