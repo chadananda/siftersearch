@@ -30,7 +30,7 @@ const WRANGLER = existsSync(LOCAL_WRANGLER) ? LOCAL_WRANGLER : null;
 const R2_BUCKET = 'cdn-assets';
 const R2_PREFIX = 'siftersearch.com/dialog';
 
-const STYLE_SUFFIX = ' Style: blue-shaded hand-drawn watercolor, indigo and cobalt washes with hints of warm gold, loose brushwork, paper texture visible, soft bleeding edges, contemplative classical illustration. Avoid photorealism. No text, no labels. Strictly no human figures, no faces, no portraits. Do NOT depict any prophet, messenger, saint, or named religious or historical person — this includes Muhammad, Jesus, Moses, Buddha, Bahá\'u\'lláh, the Báb, Táhirih, \'Abdu\'l-Bahá, or any other central religious figure. Use only abstract, symbolic, or landscape imagery.';
+const STYLE_SUFFIX = ' Style: blue-shaded hand-drawn watercolor, indigo and cobalt washes with hints of warm gold, loose brushwork, paper texture visible, soft bleeding edges, contemplative classical illustration. Avoid photorealism. No text, no labels. Strictly no human figures, no faces, no portraits. Do NOT depict any prophet, messenger, saint, or named religious or historical person — this includes Muhammad, Jesus, Moses, Bahá\'u\'lláh, the Báb, Táhirih, \'Abdu\'l-Bahá, or any other central religious figure. Buddha statues or classical Buddha imagery are acceptable and encouraged for Buddhist topics. Use only abstract, symbolic, or landscape imagery.';
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
