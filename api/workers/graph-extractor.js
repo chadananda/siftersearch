@@ -37,6 +37,7 @@ const OUTPUT_SCHEMA = JSON.parse(
 let isShuttingDown = false;
 
 process.on('SIGTERM', () => { isShuttingDown = true; });
+process.on('SIGINT', () => {}); // Ignore — PM2 uses SIGTERM; terminal SIGINT must not stop the worker
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 

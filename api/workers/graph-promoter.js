@@ -180,6 +180,7 @@ async function fetchBatch() {
 
 let isShuttingDown = false;
 process.on('SIGTERM', () => { isShuttingDown = true; });
+process.on('SIGINT', () => {});
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 

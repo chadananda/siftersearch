@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T04:33:11.575Z",
+  "generated": "2026-05-17T04:35:56.690Z",
   "entries": [
+    {
+      "hash": "2a390737",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Remove SIGINT handlers from graph workers — causes instant PM2 exit",
+      "scope": null
+    },
     {
       "hash": "92be23f2",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Doubled blockquote borders — only tag direct-child p's",
       "scope": null
-    },
-    {
-      "hash": "dd1a68b4",
-      "date": "2026-04-29",
-      "type": "Fixed",
-      "description": "Collapse >>+ to > + add round Q/A headers + drop broken hero refs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "2a390737",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Remove SIGINT handlers from graph workers — causes instant PM2 exit",
+        "scope": null
+      },
       {
         "hash": "92be23f2",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Fixed",
         "description": "Doubled blockquote borders — only tag direct-child p's",
-        "scope": null
-      },
-      {
-        "hash": "dd1a68b4",
-        "date": "2026-04-29",
-        "type": "Fixed",
-        "description": "Collapse >>+ to > + add round Q/A headers + drop broken hero refs",
         "scope": null
       }
     ]
