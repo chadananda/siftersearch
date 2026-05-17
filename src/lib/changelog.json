@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T13:35:06.662Z",
+  "generated": "2026-05-17T13:39:16.727Z",
   "entries": [
+    {
+      "hash": "fc9b0895",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Deepseek-reasoner omit responseFormat, raise maxTokens, non-zero temp",
+      "scope": null
+    },
     {
       "hash": "5ec66806",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Index-library.js upfront scan honors religion-root whitelist",
       "scope": null
-    },
-    {
-      "hash": "04c7ebe9",
-      "date": "2026-04-30",
-      "type": "Other",
-      "description": "Watcher whitelists files via .religion/meta.yaml roots",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "fc9b0895",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Deepseek-reasoner omit responseFormat, raise maxTokens, non-zero temp",
+        "scope": null
+      },
       {
         "hash": "5ec66806",
         "date": "2026-05-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-30",
         "type": "Fixed",
         "description": "Index-library.js upfront scan honors religion-root whitelist",
-        "scope": null
-      },
-      {
-        "hash": "04c7ebe9",
-        "date": "2026-04-30",
-        "type": "Other",
-        "description": "Watcher whitelists files via .religion/meta.yaml roots",
         "scope": null
       }
     ]

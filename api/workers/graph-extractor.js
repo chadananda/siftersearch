@@ -25,7 +25,9 @@ import { findEntity } from '../lib/graph-db.js';
 const PROMPT_VERSION = 'extract-v1';
 const MODEL = process.env.EXTRACTION_MODEL || 'deepseek-chat';
 // GPB gets deepseek-reasoner for higher-quality seed extraction — it's worth the cost
-const GPB_MODEL = process.env.GPB_EXTRACTION_MODEL || 'deepseek-reasoner';
+// deepseek-reasoner burns its token budget on reasoning, leaving nothing for JSON output.
+// Use deepseek-chat for all extractions — the GPB prompt thoroughness is what matters.
+const GPB_MODEL = process.env.GPB_EXTRACTION_MODEL || 'deepseek-chat';
 const BATCH_SIZE = 16;
 const GPB_BATCH_SIZE = 8;  // smaller batch for the heavier reasoner model
 const IDLE_SLEEP_MS = 30_000;
@@ -141,9 +143,9 @@ async function extractParagraph(row) {
       {
         model: activeModel,
         provider: 'deepseek',
-        temperature: isGpb ? 0.5 : 0,  // reasoner requires non-zero temp for JSON
-        maxTokens: isGpb ? 16384 : 4096,
-        ...(isGpb ? {} : { responseFormat: { type: 'json_object' } }),
+        temperature: 0,
+        maxTokens: isGpb ? 8192 : 4096,
+        responseFormat: { type: 'json_object' },
       }
     );
   } catch (err) {
