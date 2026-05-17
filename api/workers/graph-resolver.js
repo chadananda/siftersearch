@@ -18,6 +18,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 import { query, queryAll, queryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { runMigrations } from '../lib/migrations.js';
+import { createEmbedding } from '../lib/ai.js';
 import { findEntity, createEntity, addAlias, normalizeSurface } from '../lib/graph-db.js';
 
 const BATCH_SIZE = 50;
@@ -122,14 +123,24 @@ async function resolveOne(extraction) {
         q.attribution_pattern || 'direct', q.nesting_depth || 0, EXTRACTOR_VERSION]);
   }
 
-  // 4. Store grounded text on content row
+  // 4. Store grounded text on content row + generate grounded embedding
   if (parsed.text_grounded) {
+    let embeddingBlob = null;
+    try {
+      const { embedding } = await createEmbedding(parsed.text_grounded, { caller: 'graph-resolver' });
+      if (embedding?.length) {
+        embeddingBlob = Buffer.from(new Float32Array(embedding).buffer);
+      }
+    } catch (err) {
+      logger.warn({ contentId: extraction.content_id, err: err.message }, 'Failed to embed grounded text');
+    }
     await query(`
       UPDATE content SET
         text_grounded = ?, grounding_confidence = ?, grounding_notes = ?,
-        grounded_synced = 0
+        embedding_grounded = ?, grounded_synced = 0
       WHERE id = ?
-    `, [parsed.text_grounded, parsed.grounding_confidence, parsed.grounding_notes, extraction.content_id]);
+    `, [parsed.text_grounded, parsed.grounding_confidence, parsed.grounding_notes,
+        embeddingBlob, extraction.content_id]);
   }
 
   // 5. Mark extraction resolved

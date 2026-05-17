@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T03:44:57.326Z",
+  "generated": "2026-05-17T03:46:42.968Z",
   "entries": [
+    {
+      "hash": "660f8d4e",
+      "date": "2026-05-16",
+      "type": "New",
+      "description": "Grounded-text indexing pipeline (Step 15 + migration 73)",
+      "scope": null
+    },
     {
       "hash": "645cc3f6",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Post-process strip restating sentences + final_reply event",
       "scope": null
-    },
-    {
-      "hash": "907baa5d",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "Concrete BAD/GOOD examples + forbidden opener list",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "660f8d4e",
+        "date": "2026-05-16",
+        "type": "New",
+        "description": "Grounded-text indexing pipeline (Step 15 + migration 73)",
+        "scope": null
+      },
       {
         "hash": "645cc3f6",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Post-process strip restating sentences + final_reply event",
-        "scope": null
-      },
-      {
-        "hash": "907baa5d",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "Concrete BAD/GOOD examples + forbidden opener list",
         "scope": null
       }
     ]
