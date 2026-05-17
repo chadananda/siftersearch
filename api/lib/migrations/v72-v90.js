@@ -255,6 +255,7 @@ export const migrations = {
 
     // Indexes
     await query(`CREATE INDEX IF NOT EXISTS idx_content_graph_unsync ON content(graph_enriched) WHERE graph_enriched = 0`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_content_doc_graph ON content(doc_id, graph_enriched) WHERE graph_enriched = 0`);
     await query(`CREATE INDEX IF NOT EXISTS idx_em_entity ON entity_mentions(entity_id)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_em_content ON entity_mentions(content_id)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_em_unsynced ON entity_mentions(em_synced) WHERE em_synced = 0`);

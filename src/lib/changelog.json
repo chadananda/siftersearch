@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T13:43:39.809Z",
+  "generated": "2026-05-17T13:49:41.957Z",
   "entries": [
+    {
+      "hash": "9fbb943a",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "GPB maxTokens 8192->16384 — Bahai transliteration inflates token count",
+      "scope": null
+    },
     {
       "hash": "cc9def92",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Sites-ingester orchestrator + CLI",
       "scope": null
-    },
-    {
-      "hash": "f5eb050e",
-      "date": "2026-04-30",
-      "type": "Other",
-      "description": "OceanLibrary site adapter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "9fbb943a",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "GPB maxTokens 8192->16384 — Bahai transliteration inflates token count",
+        "scope": null
+      },
       {
         "hash": "cc9def92",
         "date": "2026-05-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-30",
         "type": "Other",
         "description": "Sites-ingester orchestrator + CLI",
-        "scope": null
-      },
-      {
-        "hash": "f5eb050e",
-        "date": "2026-04-30",
-        "type": "Other",
-        "description": "OceanLibrary site adapter",
         "scope": null
       }
     ]
