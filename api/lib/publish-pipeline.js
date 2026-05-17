@@ -193,7 +193,7 @@ Output JSON: {"messages":[{"role":"...","text":"..."},...]} with EXACTLY ${userT
 // string only; caller invokes DALL-E and uploads to R2 separately so this
 // stays testable without side-effects.
 export function buildHeroImagePrompt({ title, topic, tags }) {
-  const STYLE = ' Watercolor — indigo and cobalt washes with warm gold accents, loose brushwork, paper texture visible, soft bleeding edges. Wide cinematic 16:9 composition, atmospheric and contemplative. No text, no labels, no symbols other than what is described.';
+  const STYLE = ' Watercolor — indigo and cobalt washes with warm gold accents, loose brushwork, paper texture visible, soft bleeding edges. Wide cinematic 16:9 composition, atmospheric and contemplative. No text, no labels. Strictly no human figures, no faces, no portraits. Do NOT depict any prophet, messenger, saint, or named religious or historical person — this includes Muhammad, Jesus, Moses, Buddha, Bahá\'u\'lláh, the Báb, Táhirih, \'Abdu\'l-Bahá, or any other central religious figure. Use only abstract, symbolic, or landscape imagery.';
   const subject = `An evocative scene representing the central question: "${title}". Topic: ${topic}. Themes: ${(tags || []).slice(0, 4).join(', ')}.`;
   return subject + STYLE;
 }
