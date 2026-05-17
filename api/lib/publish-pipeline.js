@@ -12,7 +12,16 @@
 //   each round → {question, answer} for FAQPage JSON-LD on the rendered page
 
 import OpenAI from 'openai';
+import { execFile } from 'child_process';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { config } from './config.js';
+import { logger } from './logger.js';
+import { query as dbQuery } from './db.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SCRIPTS_DIR = join(__dirname, '../../scripts');
 
 const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
 
@@ -187,6 +196,22 @@ export function buildHeroImagePrompt({ title, topic, tags }) {
   const STYLE = ' Watercolor — indigo and cobalt washes with warm gold accents, loose brushwork, paper texture visible, soft bleeding edges. Wide cinematic 16:9 composition, atmospheric and contemplative. No text, no labels, no symbols other than what is described.';
   const subject = `An evocative scene representing the central question: "${title}". Topic: ${topic}. Themes: ${(tags || []).slice(0, 4).join(', ')}.`;
   return subject + STYLE;
+}
+
+// Generate a hero image for a published conversation and save it to the DB.
+// Fire-and-forget: call without await from the save endpoint. Uses the
+// gen-dialog-images-db.mjs script so the upload path (wrangler → cdn-assets R2)
+// stays consistent and doesn't need to be duplicated here.
+export function triggerHeroImageGeneration(slug) {
+  const script = join(SCRIPTS_DIR, 'gen-dialog-images-db.mjs');
+  const env = { ...process.env };
+  execFile(process.execPath, [script, '--slug', slug], { env, timeout: 120000 }, (err, stdout, stderr) => {
+    if (err) {
+      logger.warn({ slug, err: err.message, stderr: stderr?.slice(0, 200) }, 'Hero image generation failed');
+    } else {
+      logger.info({ slug }, 'Hero image generated and saved');
+    }
+  });
 }
 
 // Slugify helper — same approach SifterSearch uses elsewhere.

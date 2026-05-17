@@ -1225,7 +1225,7 @@ export default async function publicApiRoutes(fastify) {
     const isRemote = !!(domain && base_path);
 
     try {
-      const { generatePublishMetadata, generateRoundSummaries, anonymizeUserTurns, pairRounds } = await import('../lib/publish-pipeline.js');
+      const { generatePublishMetadata, generateRoundSummaries, anonymizeUserTurns, pairRounds, buildHeroImagePrompt, triggerHeroImageGeneration } = await import('../lib/publish-pipeline.js');
 
       // Anonymize user turns first; sub-agent calls work on the cleaned text
       const cleaned = await anonymizeUserTurns(messages).catch(err => {
@@ -1268,11 +1268,14 @@ export default async function publicApiRoutes(fastify) {
            domain, base_path, shareUrl, conversation_id || null]
         );
 
+        // Fire-and-forget hero image generation — doesn't block the save response
+        triggerHeroImageGeneration(slug);
+
         return {
           slug, share_url: shareUrl, fetch_url: fetchUrl,
           title: meta.title, description: meta.description,
           topic: meta.topic, tags: meta.tags, keywords: meta.keywords,
-          hero_image: null, // hero generation deferred — caller can request via separate endpoint
+          hero_image: null, // populated asynchronously by triggerHeroImageGeneration
           rounds_count: rounds.length
         };
       }
