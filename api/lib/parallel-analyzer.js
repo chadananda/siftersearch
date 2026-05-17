@@ -80,14 +80,15 @@ async function analyzeBatch(query, passages, batchIndex, researchContext = '') {
 
 ${passages.map((p, i) => {
   const text = normalizeForAI(p.excerpt || truncateAtWord(p.text, 400));
-  return `[${p.globalIndex}] ${p.title} by ${p.author}:
+  const tradition = p.religion ? ` [${p.religion}]` : '';
+  return `[${p.globalIndex}] ${p.title}${tradition} by ${p.author}:
 "${text}"`;
 }).join('\n\n')}
 
 TASK: For each passage, extract a faithful summary and key phrase.${!hasVoyageReranking ? ' Also score relevance 0-100.' : ''}
 
 Return JSON with:${!hasVoyageReranking ? `
-- score: 0-100 (90-100: direct answer, 70-89: relevant insight, 50-69: related, <50: off-topic keyword match)` : ''}
+- score: 0-100 (90-100: direct answer from the queried tradition, 70-89: relevant insight, 50-69: related theme but different tradition, <50: off-topic keyword match). When the query names a tradition (e.g. "Buddhist", "Quran", "Torah"), passages from that tradition should score 10-20 points higher for equivalent content quality.` : ''}
 - summary: 8-15 word DIRECT ANSWER to the user's question from this passage. Be the answer, don't describe it.
   GOOD: "Justice is the foundation upon which society must be built"
   GOOD: "Meditation is a form of communion between the soul and God"

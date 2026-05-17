@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T06:40:59.138Z",
+  "generated": "2026-05-17T06:48:12.628Z",
   "entries": [
+    {
+      "hash": "052384e2",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Raise cross-tradition relevance floor to 0.45 to filter semantic noise",
+      "scope": null
+    },
     {
       "hash": "bc0aded8",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add Meilisearch index + embedding cache to daily backup cycle",
       "scope": null
-    },
-    {
-      "hash": "8bd9aebc",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Tune for 80-core / 197GB box + repo-manage systemd unit",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "052384e2",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Raise cross-tradition relevance floor to 0.45 to filter semantic noise",
+        "scope": null
+      },
       {
         "hash": "bc0aded8",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Add Meilisearch index + embedding cache to daily backup cycle",
-        "scope": null
-      },
-      {
-        "hash": "8bd9aebc",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Tune for 80-core / 197GB box + repo-manage systemd unit",
         "scope": null
       }
     ]
