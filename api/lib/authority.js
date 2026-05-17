@@ -247,6 +247,13 @@ function loadLibraryAuthority() {
  * @param {number} [doc.authority] - Explicit authority override
  * @returns {number} Authority value (1-10)
  */
+// Normalize typographic apostrophes/quotation marks to ASCII ' so author strings
+// from the DB (which use U+2019 RIGHT SINGLE QUOTATION MARK) match the ASCII-keyed
+// AUTHOR_AUTHORITY map. Also covers U+2018, U+02BC, U+0060, U+00B4.
+function normalizeApostrophes(str) {
+  return str.replace(/[\u2018\u2019\u02bc\u0060\u00b4]/g, "'");
+}
+
 export function getAuthority(doc) {
   // 1. If document has explicit authority set, use it
   if (doc.authority !== null && doc.authority !== undefined) {
@@ -255,6 +262,9 @@ export function getAuthority(doc) {
 
   const libAuth = loadLibraryAuthority();
   const { religion, collection, source_site } = doc;
+  // Normalize author for AUTHOR_AUTHORITY lookup — DB stores smart quotes (U+2019)
+  // but map keys use ASCII apostrophes (U+0027).
+  const authorNorm = doc.author ? normalizeApostrophes(doc.author) : null;
 
   // 2. Collection-specific authority from meta.yaml takes highest priority so that
   // curated overrides (e.g. Pilgrim Notes = 1) always apply, even for Central Figure authors.
@@ -266,8 +276,8 @@ export function getAuthority(doc) {
   // Evaluated BEFORE religion meta.yaml so Bahá'u'lláh (10) isn't overridden by
   // the Bahá'í religion default (6 — correct for general scholarly Bahá'í works).
   // Uses exact string equality to avoid false positives like "Muhammad Husayn Tabatabai".
-  if (doc.author && AUTHOR_AUTHORITY[doc.author] !== undefined) {
-    return AUTHOR_AUTHORITY[doc.author];
+  if (authorNorm && AUTHOR_AUTHORITY[authorNorm] !== undefined) {
+    return AUTHOR_AUTHORITY[authorNorm];
   }
 
   // 4. Title-pattern authority for primary scriptures where author/religion metadata
@@ -275,7 +285,7 @@ export function getAuthority(doc) {
   // Also before religion default for same reason as step 3.
   for (const { pattern, authority: titleAuth } of TITLE_AUTHORITY) {
     if (doc.title && pattern.test(doc.title)) return titleAuth;
-    if (doc.author && pattern.test(doc.author)) return titleAuth;
+    if (authorNorm && pattern.test(authorNorm)) return titleAuth;
   }
 
   // 5. Religion default from meta.yaml — applies to general content without recognized author.

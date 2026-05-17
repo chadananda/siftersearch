@@ -246,16 +246,15 @@ describe('Authority System', () => {
         expect(authority).toBe(10);
       });
 
-      it('should use author-based only as fallback when no collection match', () => {
-        // Religion default (6) should beat author (10) because collection check happens first
-        // But when collection doesn't exist, religion default applies, then author fallback
+      it('should use author-based authority before religion default when collection does not match', () => {
+        // Author authority fires before religion default — Bahá'u'lláh is auth=10
+        // even when the collection doesn't exist in the authority map.
         const authority = getAuthority({
           author: 'Bahá\'u\'lláh',
           religion: 'Bahai Faith',
           collection: 'Some Unknown Collection'
         });
-        // Religion default (6) takes precedence over author fallback
-        expect(authority).toBe(6);
+        expect(authority).toBe(10);
       });
     });
   });

@@ -1,6 +1,20 @@
 {
-  "generated": "2026-05-17T05:51:49.244Z",
+  "generated": "2026-05-17T06:10:12.890Z",
   "entries": [
+    {
+      "hash": "58c4fb79",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Author authority precedes religion meta.yaml default",
+      "scope": null
+    },
+    {
+      "hash": "895b426d",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Cross-tradition search quality — Bahá'í slot cap + spelling normalization",
+      "scope": null
+    },
     {
       "hash": "982c0e1e",
       "date": "2026-05-16",
@@ -3486,24 +3500,24 @@
       "type": "Other",
       "description": "Fix api/worker SIGINT loop + graceful shutdown for 100-parallel chat",
       "scope": null
-    },
-    {
-      "hash": "ba914b49",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Add library-watcher + enrichment to ecosystem.config.cjs",
-      "scope": null
-    },
-    {
-      "hash": "0a1d23e3",
-      "date": "2026-04-29",
-      "type": "Fixed",
-      "description": "HyPE sync vector format — Meili expects flat array, not {embeddings,...}",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "58c4fb79",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Author authority precedes religion meta.yaml default",
+        "scope": null
+      },
+      {
+        "hash": "895b426d",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Cross-tradition search quality — Bahá'í slot cap + spelling normalization",
+        "scope": null
+      },
       {
         "hash": "982c0e1e",
         "date": "2026-05-16",
@@ -7018,20 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Fix api/worker SIGINT loop + graceful shutdown for 100-parallel chat",
-        "scope": null
-      },
-      {
-        "hash": "ba914b49",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Add library-watcher + enrichment to ecosystem.config.cjs",
-        "scope": null
-      },
-      {
-        "hash": "0a1d23e3",
-        "date": "2026-04-29",
-        "type": "Fixed",
-        "description": "HyPE sync vector format — Meili expects flat array, not {embeddings,...}",
         "scope": null
       }
     ]
