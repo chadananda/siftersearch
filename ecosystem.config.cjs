@@ -235,9 +235,6 @@ module.exports = {
       exp_backoff_restart_delay: 15000,  // DeepSeek API errors benefit from longer backoff
       max_restarts: 999999,
       min_uptime: '30s',
-      error_file: './logs/graph-extractor-error.log',
-      out_file: './logs/graph-extractor-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
     // Entity validation worker — reads unvalidated paragraph_extractions, runs
@@ -258,9 +255,6 @@ module.exports = {
       exp_backoff_restart_delay: 10000,
       max_restarts: 999999,
       min_uptime: '30s',
-      error_file: './logs/graph-validator-error.log',
-      out_file: './logs/graph-validator-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
     // Entity resolution worker — reads accepted extractions, writes
@@ -277,15 +271,11 @@ module.exports = {
       watch: false,
       max_memory_restart: '2G',
       env: {
-        NODE_ENV: 'production',
-        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
+        NODE_ENV: 'production'
       },
       exp_backoff_restart_delay: 5000,
       max_restarts: 999999,
       min_uptime: '30s',
-      error_file: './logs/graph-resolver-error.log',
-      out_file: './logs/graph-resolver-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
     // Entity promotion adjudicator — resolves surfaces in promotion_queue via
@@ -301,15 +291,11 @@ module.exports = {
       watch: false,
       max_memory_restart: '1G',
       env: {
-        NODE_ENV: 'production',
-        DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY || ''
+        NODE_ENV: 'production'
       },
       exp_backoff_restart_delay: 10000,
       max_restarts: 999999,
       min_uptime: '30s',
-      error_file: './logs/graph-promoter-error.log',
-      out_file: './logs/graph-promoter-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
     // Sonnet API enrichment for tier 1-7 (Bahá'í primary doctrinal works).

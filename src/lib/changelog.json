@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T05:05:55.382Z",
+  "generated": "2026-05-17T05:09:07.691Z",
   "entries": [
+    {
+      "hash": "da7c5083",
+      "date": "2026-05-16",
+      "type": "Other",
+      "description": "Log argv[1] vs import.meta.url to diagnose isMain=false",
+      "scope": null
+    },
     {
       "hash": "911d1294",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "HyPE sidecar index + multi-index RRF merge + auto-sync",
       "scope": null
-    },
-    {
-      "hash": "4d38ee83",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Embedded-quote crafter — 4 articles ≥80% (was 3)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "da7c5083",
+        "date": "2026-05-16",
+        "type": "Other",
+        "description": "Log argv[1] vs import.meta.url to diagnose isMain=false",
+        "scope": null
+      },
       {
         "hash": "911d1294",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "HyPE sidecar index + multi-index RRF merge + auto-sync",
-        "scope": null
-      },
-      {
-        "hash": "4d38ee83",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Embedded-quote crafter — 4 articles ≥80% (was 3)",
         "scope": null
       }
     ]

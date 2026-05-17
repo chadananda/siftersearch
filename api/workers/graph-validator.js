@@ -130,7 +130,8 @@ async function workerLoop() {
   logger.info('Graph validator shutting down');
 }
 
-const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+const scriptPath = fileURLToPath(import.meta.url);
+const isMain = process.argv[1] === scriptPath || process.env.pm_exec_path === scriptPath;
 if (isMain) {
   await runMigrations();
   await workerLoop();

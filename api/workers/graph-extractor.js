@@ -37,10 +37,7 @@ const OUTPUT_SCHEMA = JSON.parse(
 let isShuttingDown = false;
 
 process.on('SIGTERM', () => { isShuttingDown = true; });
-process.on('SIGINT', () => { logger.warn('SIGINT received — ignoring (PM2 uses SIGTERM)'); });
-process.on('exit', (code) => { logger.warn({ code }, 'Process exiting'); });
-process.on('uncaughtException', (err) => { logger.error({ err: err.message, stack: err.stack }, 'Uncaught exception'); process.exit(1); });
-process.on('unhandledRejection', (reason) => { logger.error({ reason: String(reason) }, 'Unhandled rejection'); });
+process.on('SIGINT', () => {});
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
@@ -234,16 +231,10 @@ async function workerLoop() {
   logger.info({ totalExtracted }, 'Graph extractor shutting down');
 }
 
-const isMain = process.argv[1] === fileURLToPath(import.meta.url);
-process.stderr.write(`[graph-extractor] argv1=${process.argv[1]} url=${fileURLToPath(import.meta.url)} isMain=${isMain}\n`);
+const scriptPath = fileURLToPath(import.meta.url);
+// PM2 uses ProcessContainerFork.js as argv[1]; use pm_exec_path as fallback
+const isMain = process.argv[1] === scriptPath || process.env.pm_exec_path === scriptPath;
 if (isMain) {
-  process.stderr.write('[graph-extractor] isMain=true, starting\n');
-  try {
-    await runMigrations();
-    process.stderr.write('[graph-extractor] migrations done\n');
-    await workerLoop();
-  } catch (err) {
-    process.stderr.write(`[graph-extractor] FATAL: ${err.message}\n${err.stack}\n`);
-    process.exit(1);
-  }
+  await runMigrations();
+  await workerLoop();
 }
