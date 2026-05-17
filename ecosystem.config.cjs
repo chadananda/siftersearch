@@ -214,6 +214,104 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
+    // Entity extraction worker — reads content WHERE graph_enriched=0, calls
+    // DeepSeek to extract mentions/roles/quotes, writes to paragraph_extractions.
+    // Disabled by default: requires DEEPSEEK_API_KEY + migration 72 + calibration
+    // pass. Start manually: `pm2 start ecosystem.config.cjs --only siftersearch-graph-extractor`
+    {
+      name: 'siftersearch-graph-extractor',
+      script: 'api/workers/graph-extractor.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '2G',
+      env: {
+        NODE_ENV: 'production',
+        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',
+        DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY || ''
+      },
+      exp_backoff_restart_delay: 15000,  // DeepSeek API errors benefit from longer backoff
+      max_restarts: 999999,
+      min_uptime: '30s',
+      error_file: './logs/graph-extractor-error.log',
+      out_file: './logs/graph-extractor-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
+    // Entity validation worker — reads unvalidated paragraph_extractions, runs
+    // Haiku QA pass, writes to extraction_validations.
+    // Disabled by default: start after graph-extractor has processed a batch.
+    {
+      name: 'siftersearch-graph-validator',
+      script: 'api/workers/graph-validator.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
+        NODE_ENV: 'production'
+      },
+      exp_backoff_restart_delay: 10000,
+      max_restarts: 999999,
+      min_uptime: '30s',
+      error_file: './logs/graph-validator-error.log',
+      out_file: './logs/graph-validator-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
+    // Entity resolution worker — reads accepted extractions, writes
+    // entity_mentions / paragraph_roles / quote_instances, generates
+    // grounded text embeddings.
+    // Disabled by default: start after graph-validator is running.
+    {
+      name: 'siftersearch-graph-resolver',
+      script: 'api/workers/graph-resolver.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '2G',
+      env: {
+        NODE_ENV: 'production',
+        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
+      },
+      exp_backoff_restart_delay: 5000,
+      max_restarts: 999999,
+      min_uptime: '30s',
+      error_file: './logs/graph-resolver-error.log',
+      out_file: './logs/graph-resolver-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
+    // Entity promotion adjudicator — resolves surfaces in promotion_queue via
+    // multi-model voting, creates/merges graph_entities, writes er_audit_log.
+    // Disabled by default: start after resolver has processed some extractions.
+    {
+      name: 'siftersearch-graph-promoter',
+      script: 'api/workers/graph-promoter.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
+        NODE_ENV: 'production',
+        DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY || ''
+      },
+      exp_backoff_restart_delay: 10000,
+      max_restarts: 999999,
+      min_uptime: '30s',
+      error_file: './logs/graph-promoter-error.log',
+      out_file: './logs/graph-promoter-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
     // Sonnet API enrichment for tier 1-7 (Bahá'í primary doctrinal works).
     // Uses Anthropic Messages Batches API to generate per-paragraph
     // doctrinal thesis + 5 hypothetical questions. Runs in parallel with
