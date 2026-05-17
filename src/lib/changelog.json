@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T03:56:14.157Z",
+  "generated": "2026-05-17T04:27:08.466Z",
   "entries": [
+    {
+      "hash": "71bea98a",
+      "date": "2026-05-16",
+      "type": "New",
+      "description": "Add alias sync trigger script + default model-routing config",
+      "scope": null
+    },
     {
       "hash": "fe97f999",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Explicit calibration anchors + flag-trigger definitions",
       "scope": null
-    },
-    {
-      "hash": "b480baa5",
-      "date": "2026-04-28",
-      "type": "Other",
-      "description": "20 common-question dialogs (200-219) — all draft, avg 54%",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "71bea98a",
+        "date": "2026-05-16",
+        "type": "New",
+        "description": "Add alias sync trigger script + default model-routing config",
+        "scope": null
+      },
       {
         "hash": "fe97f999",
         "date": "2026-05-16",
@@ -7027,13 +7034,6 @@
         "date": "2026-04-28",
         "type": "Other",
         "description": "Explicit calibration anchors + flag-trigger definitions",
-        "scope": null
-      },
-      {
-        "hash": "b480baa5",
-        "date": "2026-04-28",
-        "type": "Other",
-        "description": "20 common-question dialogs (200-219) — all draft, avg 54%",
         "scope": null
       }
     ]

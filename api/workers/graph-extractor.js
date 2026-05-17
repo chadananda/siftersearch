@@ -176,7 +176,9 @@ async function extractParagraph(row) {
   return lastInsertRowid;
 }
 
-// Fetch next batch ordered by doc priority (highest priority first)
+// Fetch next batch using the partial index on graph_enriched=0.
+// No ORDER BY — avoid sorting 4.7M rows. Priority ordering is best-effort;
+// add idx_content_doc_graph composite index (migration 74) for priority.
 async function fetchBatch() {
   return queryAll(`
     SELECT c.id, c.text, c.doc_id
@@ -186,8 +188,6 @@ async function fetchBatch() {
       AND c.deleted_at IS NULL
       AND d.deleted_at IS NULL
       AND length(c.text) > 50
-    ORDER BY (SELECT COALESCE(doc_priority, 100) FROM docs WHERE id = c.doc_id) DESC,
-             c.id ASC
     LIMIT ?
   `, [BATCH_SIZE]);
 }
@@ -207,13 +207,6 @@ async function processOnce() {
 
 async function workerLoop() {
   logger.info({ model: MODEL, batchSize: BATCH_SIZE }, 'Graph extractor starting');
-
-  // Quick count so we know how much work is ahead
-  const pending = await queryOne(`
-    SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL
-  `);
-  logger.info({ pending: pending?.n }, 'Paragraphs pending extraction');
-
   let totalExtracted = 0;
 
   while (!isShuttingDown) {
