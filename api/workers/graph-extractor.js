@@ -236,6 +236,13 @@ async function workerLoop() {
 
 const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMain) {
-  await runMigrations();
-  await workerLoop();
+  process.stderr.write('[graph-extractor] isMain=true, starting\n');
+  try {
+    await runMigrations();
+    process.stderr.write('[graph-extractor] migrations done\n');
+    await workerLoop();
+  } catch (err) {
+    process.stderr.write(`[graph-extractor] FATAL: ${err.message}\n${err.stack}\n`);
+    process.exit(1);
+  }
 }

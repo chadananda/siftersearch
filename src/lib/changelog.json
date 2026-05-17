@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T04:57:46.716Z",
+  "generated": "2026-05-17T04:59:51.997Z",
   "entries": [
+    {
+      "hash": "b7c13d37",
+      "date": "2026-05-16",
+      "type": "Fixed",
+      "description": "Graph-extractor signal handling, API key loading, systemPrompt",
+      "scope": null
+    },
     {
       "hash": "8d8e7d72",
       "date": "2026-05-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Embedded-quote default + spare block quote (rare cases only)",
       "scope": null
-    },
-    {
-      "hash": "2bc1bf7c",
-      "date": "2026-04-29",
-      "type": "Other",
-      "description": "Answer-first crafter + clarifying-principle authority hierarchy",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-16": [
+      {
+        "hash": "b7c13d37",
+        "date": "2026-05-16",
+        "type": "Fixed",
+        "description": "Graph-extractor signal handling, API key loading, systemPrompt",
+        "scope": null
+      },
       {
         "hash": "8d8e7d72",
         "date": "2026-05-16",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-29",
         "type": "Other",
         "description": "Embedded-quote default + spare block quote (rare cases only)",
-        "scope": null
-      },
-      {
-        "hash": "2bc1bf7c",
-        "date": "2026-04-29",
-        "type": "Other",
-        "description": "Answer-first crafter + clarifying-principle authority hierarchy",
         "scope": null
       }
     ]
