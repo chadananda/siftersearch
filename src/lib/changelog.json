@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-17T13:39:16.727Z",
+  "generated": "2026-05-17T13:43:39.809Z",
   "entries": [
+    {
+      "hash": "cc9def92",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Deepseek-chat for all extractions — reasoner exhausts token budget on reasoning",
+      "scope": null
+    },
     {
       "hash": "fc9b0895",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "OceanLibrary site adapter",
       "scope": null
-    },
-    {
-      "hash": "7bbb9f1b",
-      "date": "2026-04-30",
-      "type": "Fixed",
-      "description": "Index-library.js upfront scan honors religion-root whitelist",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "cc9def92",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Deepseek-chat for all extractions — reasoner exhausts token budget on reasoning",
+        "scope": null
+      },
       {
         "hash": "fc9b0895",
         "date": "2026-05-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-04-30",
         "type": "Other",
         "description": "OceanLibrary site adapter",
-        "scope": null
-      },
-      {
-        "hash": "7bbb9f1b",
-        "date": "2026-04-30",
-        "type": "Fixed",
-        "description": "Index-library.js upfront scan honors religion-root whitelist",
         "scope": null
       }
     ]

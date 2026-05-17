@@ -144,7 +144,7 @@ async function extractParagraph(row) {
         model: activeModel,
         provider: 'deepseek',
         temperature: 0,
-        maxTokens: isGpb ? 8192 : 4096,
+        maxTokens: isGpb ? 16384 : 4096,
         responseFormat: { type: 'json_object' },
       }
     );
