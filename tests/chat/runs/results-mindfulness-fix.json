@@ -1,0 +1,41 @@
+[
+  {
+    "id": 97,
+    "category": "multi",
+    "query": "What Buddhist texts discuss mindfulness, and can you show me a key passage?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Buddhist text that most directly addresses mindfulness is the [\"Satipatthana Sutta\"](https://oceanlibrary.com/dhammapada_buddha), which explores how a monk remains focused on mental qualities. This foundational teaching is part of the Majjhima Nikaya and is central to understanding mindfulness practice. Additionally, the *Dhammapada* advises that if a person holds themselves dear, they should [\"watch themselves carefully\"](https://oceanlibrary.com/dhammapada_buddha), emphasizing the importance of self-awareness and vigilance. These texts collectively highlight mindfulness as a key aspect of spiritual practice in Buddhism.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 4261,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively identifies key Buddhist texts on mindfulness and provides relevant passages, but it could improve by integrating quotes more seamlessly into the narrative. Additionally, it could engage more critically with the user's question by exploring the implications of mindfulness in Buddhist practice rather than just listing texts."
+    },
+    "overall": 3.9,
+    "failures": [
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response effectively identifies key Buddhist texts on mindfulness and provides relevant passages, but it could improve by integrating quotes more seamlessly into the narrative. Additionally, it could engage more critically with the user's question by exploring the implications of mindfulness in Buddhist practice rather than just listing texts."
+  }
+]

@@ -1,0 +1,549 @@
+{
+  "timestamp": "2026-05-12T06:56:41.343Z",
+  "results": [
+    {
+      "label": "Love/Forgiveness (cross-tradition)",
+      "query": "love your enemies forgiveness",
+      "hitCount": 8,
+      "topReligions": [
+        "Baha'i",
+        "Christian",
+        "Islam",
+        "Christian",
+        "Judaism"
+      ],
+      "olCount": 1,
+      "linkChecks": [
+        {
+          "url": "https://siftersearch.com/library/Baha'i/Tablet%20Translations/abdul-baha_mysterious-forces-of-civilization-secret-of-divine-civilization#p568",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Mysterious Forces of Civilization (Secret of Divine Civ",
+          "author": "’Abdu’l-Bahá",
+          "religion": "Baha'i",
+          "collection": "Tablet Translations"
+        },
+        {
+          "url": "https://siftersearch.com/library/Christian/Bible%20and%20Translations/various_world-english-bible-web#p1555",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "World English Bible (WEB)",
+          "author": "Various",
+          "religion": "Christian",
+          "collection": "Bible and Translations"
+        },
+        {
+          "url": "https://siftersearch.com/library/Islam/Foundational%20Texts/abdullah-yusuf-ali_the-holy-quran-text-translation-and-commentary#p669",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "The Holy Qur'an: Text, Translation and Commentary",
+          "author": "Abdullah Yusuf Ali",
+          "religion": "Islam",
+          "collection": "Foundational Texts"
+        }
+      ]
+    },
+    {
+      "label": "Prayer/Meditation (cross-tradition)",
+      "query": "pray without ceasing meditation contemplation",
+      "hitCount": 8,
+      "topReligions": [
+        "Baha'i",
+        "Christian",
+        "Christian",
+        "Hindu",
+        "Buddhist"
+      ],
+      "olCount": 2,
+      "linkChecks": [
+        {
+          "url": "https://siftersearch.com/library/Baha'i/Core%20Tablets/the-bab_bayan-i-farsi_fa#p798",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Bayán-i-Fársí",
+          "author": "The Báb",
+          "religion": "Baha'i",
+          "collection": "Core Tablets"
+        },
+        {
+          "url": "https://oceanlibrary.com/kjv-gospel-of-matthew/?paraId=para_323",
+          "status": 200,
+          "isOL": true,
+          "hasParaId": true,
+          "title": "The Gospel of Matthew",
+          "author": "Matthew",
+          "religion": "Christian",
+          "collection": "4dbc02ab4fcf3c8608115bdf96ca6a11"
+        },
+        {
+          "url": "https://oceanlibrary.com/gospel-of-matthew-eyaggelio-toy-matthaioy_2/?paraId=para_323",
+          "status": 200,
+          "isOL": true,
+          "hasParaId": true,
+          "title": "The Gospel of Matthew - ευαγγέλιο του Ματθαίου",
+          "author": "Matthew",
+          "religion": "Christian",
+          "collection": "49c0b5d9fa3d118a79036db7d557914b"
+        }
+      ]
+    },
+    {
+      "label": "Righteousness/Virtue (cross-tradition)",
+      "query": "the straight path righteousness virtue",
+      "hitCount": 8,
+      "topReligions": [
+        "Baha'i",
+        "Islam",
+        "Islam",
+        "Christian",
+        "Buddhist"
+      ],
+      "olCount": 0,
+      "linkChecks": [
+        {
+          "url": "https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_tablet-to-manikchi-sahib#p187",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Tablet to Mánikchí Sáhib",
+          "author": "Bahá’u’lláh",
+          "religion": "Baha'i",
+          "collection": "Tablet Translations"
+        },
+        {
+          "url": "https://siftersearch.com/library/Islam/Foundational%20Texts/arthur-j-arberry_the-koran-interpreted#p355",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "The Koran Interpreted",
+          "author": "Arthur J. Arberry",
+          "religion": "Islam",
+          "collection": "Foundational Texts"
+        },
+        {
+          "url": "https://siftersearch.com/library/Islam/Foundational%20Texts/abdullah-yusuf-ali_the-holy-quran-text-translation-and-commentary#p172",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "The Holy Qur'an: Text, Translation and Commentary",
+          "author": "Abdullah Yusuf Ali",
+          "religion": "Islam",
+          "collection": "Foundational Texts"
+        }
+      ]
+    },
+    {
+      "label": "Mercy of God — Quran terms",
+      "query": "God is merciful compassionate Rahman Rahim",
+      "hitCount": 8,
+      "topReligions": [
+        "Baha'i",
+        "Hindu",
+        "Christian",
+        "Judaism",
+        "Sikh"
+      ],
+      "olCount": 0,
+      "linkChecks": [
+        {
+          "url": "https://siftersearch.com/library/Baha'i/Core%20Tablets/the-bab_lawh-i-hurufat_fa#p1104",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Lawḥ-i-Ḥurúfát",
+          "author": "The Báb",
+          "religion": "Baha'i",
+          "collection": "Core Tablets"
+        },
+        {
+          "url": "https://siftersearch.com/library/Hindu/Vedas%20and%20Upanishads/ed-charles-f-horne_the-sacred-books-and-early-literature-of-the-east-vol-6-india-and-buddhism#p448",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "The Sacred Books and Early Literature of the East Vol. ",
+          "author": "ed. Charles F. Horne",
+          "religion": "Hindu",
+          "collection": "Vedas and Upanishads"
+        },
+        {
+          "url": "https://siftersearch.com/library/Christian/Bible%20and%20Translations/various_douay-rheims-bible#p20689",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Douay-Rheims Bible",
+          "author": "Various",
+          "religion": "Christian",
+          "collection": "Bible and Translations"
+        }
+      ]
+    },
+    {
+      "label": "Afterlife/Paradise (cross-tradition)",
+      "query": "paradise heaven reward afterlife",
+      "hitCount": 8,
+      "topReligions": [
+        "Baha'i",
+        "Islam",
+        "Islam",
+        "Christian",
+        "Christian"
+      ],
+      "olCount": 2,
+      "linkChecks": [
+        {
+          "url": "https://siftersearch.com/library/Baha'i/Core%20Tablets/the-bab_compilation-from-point-of-bayan_ar#p271",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Compilation from Point of Bayán",
+          "author": "The Báb",
+          "religion": "Baha'i",
+          "collection": "Core Tablets"
+        },
+        {
+          "url": "https://siftersearch.com/library/Islam/Foundational%20Texts/arthur-j-arberry_the-koran-interpreted#p216",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "The Koran Interpreted",
+          "author": "Arthur J. Arberry",
+          "religion": "Islam",
+          "collection": "Foundational Texts"
+        },
+        {
+          "url": "https://siftersearch.com/library/Islam/Foundational%20Texts/george-sale_the-koran-commonly-called-the-alcoran-of-mohammed#p2719",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "The Koran, commonly called the Alcoran of Mohammed",
+          "author": "George Sale",
+          "religion": "Islam",
+          "collection": "Foundational Texts"
+        }
+      ]
+    },
+    {
+      "label": "Sura Al-Fatihah content (Quran)",
+      "query": "Praise be to God Lord of the worlds the compassionate merciful guide us straight path",
+      "religion": "Islam",
+      "hitCount": 3,
+      "topReligions": [
+        "Islam",
+        "Islam",
+        "Islam"
+      ],
+      "olCount": 2,
+      "linkChecks": [
+        {
+          "url": "https://siftersearch.com/library/Islam/Foundational%20Texts/mohammed-marmaduke_the-meaning-of-the-glorious-quran#p63",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "The Meaning of the Glorious Qur'an",
+          "author": "Mohammed Marmaduke Pickthall",
+          "religion": "Islam",
+          "collection": "Foundational Texts"
+        },
+        {
+          "url": "https://oceanlibrary.com/commentary-on-surah-of-sun_bahaullah/?paraId=para_17",
+          "status": 200,
+          "isOL": true,
+          "hasParaId": true,
+          "title": "Commentary on the Surah of the Sun",
+          "author": "Bahá’u’lláh",
+          "religion": "Islam",
+          "collection": ""
+        },
+        {
+          "url": "https://oceanlibrary.com/quran_palmer-tr/?paraId=para_4",
+          "status": 200,
+          "isOL": true,
+          "hasParaId": true,
+          "title": "The Qur’ân (Palmer)",
+          "author": "Unknown",
+          "religion": "Islam",
+          "collection": ""
+        }
+      ]
+    },
+    {
+      "label": "Sura Al-Ikhlas (Quran)",
+      "query": "Say He is God alone God the Eternal He begetteth not and He is not begotten",
+      "religion": "Islam",
+      "hitCount": 8,
+      "topReligions": [
+        "Islam",
+        "Islam",
+        "Islam",
+        "Islam",
+        "Islam"
+      ],
+      "olCount": 3,
+      "linkChecks": [
+        {
+          "url": "https://siftersearch.com/library/Islam/Foundational%20Texts/mohammed-marmaduke_the-meaning-of-the-glorious-quran#p53",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "The Meaning of the Glorious Qur'an",
+          "author": "Mohammed Marmaduke Pickthall",
+          "religion": "Islam",
+          "collection": "Foundational Texts"
+        },
+        {
+          "url": "https://siftersearch.com/library/Islam/Foundational%20Texts/j-m-rodwell_the-koran#p0",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "The Koran",
+          "author": "J. M. Rodwell",
+          "religion": "Islam",
+          "collection": "Foundational Texts"
+        },
+        {
+          "url": "https://oceanlibrary.com/sura-c-the-chargers_muhammad/?paraId=para_2",
+          "status": 200,
+          "isOL": true,
+          "hasParaId": true,
+          "title": "Sura C. The Chargers",
+          "author": "Muhammad",
+          "religion": "Islam",
+          "collection": "f113b356e0100619b4261dfd6d9d9116"
+        }
+      ]
+    },
+    {
+      "label": "Genesis opening (Bible)",
+      "query": "In the beginning God created the heavens and the earth",
+      "religion": "Christian",
+      "hitCount": 8,
+      "topReligions": [
+        "Christian",
+        "Christian",
+        "Christian",
+        "Christian",
+        "Christian"
+      ],
+      "olCount": 4,
+      "linkChecks": [
+        {
+          "url": "https://siftersearch.com/library/Christian/Bible%20and%20Translations/various_world-english-bible-web#p1",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "World English Bible (WEB)",
+          "author": "Various",
+          "religion": "Christian",
+          "collection": "Bible and Translations"
+        },
+        {
+          "url": "https://oceanlibrary.com/kjv-gospel-of-john/?paraId=para_8",
+          "status": 200,
+          "isOL": true,
+          "hasParaId": true,
+          "title": "The Gospel of John",
+          "author": "John",
+          "religion": "Christian",
+          "collection": "4dbc02ab4fcf3c8608115bdf96ca6a11"
+        },
+        {
+          "url": "https://oceanlibrary.com/gospel-of-john-eyaggelio-toy-ioanni/?paraId=para_8",
+          "status": 200,
+          "isOL": true,
+          "hasParaId": true,
+          "title": "The Gospel of John - ευαγγέλιο του ιωάννη",
+          "author": "John",
+          "religion": "Christian",
+          "collection": "49c0b5d9fa3d118a79036db7d557914b"
+        }
+      ]
+    },
+    {
+      "label": "Beatitudes (Christian)",
+      "query": "beatitudes sermon on the mount blessed poor in spirit",
+      "religion": "Christian",
+      "hitCount": 7,
+      "topReligions": [
+        "Christian",
+        "Christian",
+        "Christian",
+        "Christian",
+        "Christian"
+      ],
+      "olCount": 5,
+      "linkChecks": [
+        {
+          "url": "https://oceanlibrary.com/kjv-gospel-of-matthew/?paraId=para_76",
+          "status": 200,
+          "isOL": true,
+          "hasParaId": true,
+          "title": "The Gospel of Matthew",
+          "author": "Matthew",
+          "religion": "Christian",
+          "collection": "4dbc02ab4fcf3c8608115bdf96ca6a11"
+        },
+        {
+          "url": "https://oceanlibrary.com/gospel-of-matthew-eyaggelio-toy-matthaioy_2/?paraId=para_76",
+          "status": 200,
+          "isOL": true,
+          "hasParaId": true,
+          "title": "The Gospel of Matthew - ευαγγέλιο του Ματθαίου",
+          "author": "Matthew",
+          "religion": "Christian",
+          "collection": "49c0b5d9fa3d118a79036db7d557914b"
+        },
+        {
+          "url": "https://oceanlibrary.com/kjv-gospel-of-luke/?paraId=para_846",
+          "status": 200,
+          "isOL": true,
+          "hasParaId": true,
+          "title": "The Gospel of Luke",
+          "author": "Luke",
+          "religion": "Christian",
+          "collection": "4dbc02ab4fcf3c8608115bdf96ca6a11"
+        }
+      ]
+    },
+    {
+      "label": "Hidden Words Arabic #4 (Bahá'í actual text)",
+      "query": "O Son of Man I loved thy creation hence I created thee",
+      "hitCount": 8,
+      "topReligions": [
+        "Baha'i",
+        "Christian",
+        "Hindu",
+        "Islam",
+        "Christian"
+      ],
+      "olCount": 2,
+      "linkChecks": [
+        {
+          "url": "https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_parallel-hidden-words-in-english-early-and-authorised#p28",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Parallel Hidden Words in English (Early and Authorised)",
+          "author": "Bahá’u’lláh",
+          "religion": "Baha'i",
+          "collection": "Tablet Translations"
+        },
+        {
+          "url": "https://oceanlibrary.com/kjv-gospel-of-luke/?paraId=para_819",
+          "status": 200,
+          "isOL": true,
+          "hasParaId": true,
+          "title": "The Gospel of Luke",
+          "author": "Luke",
+          "religion": "Christian",
+          "collection": "4dbc02ab4fcf3c8608115bdf96ca6a11"
+        },
+        {
+          "url": "https://siftersearch.com/library/Hindu/Vedas%20and%20Upanishads/ed-charles-f-horne_the-sacred-books-and-early-literature-of-the-east-vol-6-india-and-buddhism#p448",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "The Sacred Books and Early Literature of the East Vol. ",
+          "author": "ed. Charles F. Horne",
+          "religion": "Hindu",
+          "collection": "Vedas and Upanishads"
+        }
+      ]
+    },
+    {
+      "label": "Eightfold Path (Buddhist)",
+      "query": "Noble Eightfold Path right view intention speech",
+      "religion": "Buddhist",
+      "hitCount": 8,
+      "topReligions": [
+        "Buddhist",
+        "Buddhist",
+        "Buddhist",
+        "Buddhist",
+        "Buddhist"
+      ],
+      "olCount": 0,
+      "linkChecks": [
+        {
+          "url": "https://siftersearch.com/library/Buddhist/Pali%20Canon/tr-nanamoli-thera_majjhima-nikaya-9-sammaditthi-sutta-the-discourse-on-right-view#p14",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Majjhima Nikaya 9 - Sammaditthi Sutta: The Discourse on",
+          "author": "tr. Ñanamoli Thera & Bhikkhu Bodhi",
+          "religion": "Buddhist",
+          "collection": "Pali Canon"
+        },
+        {
+          "url": "https://siftersearch.com/library/Buddhist/Pali%20Canon/tr-sister-vajira_digha-nikaya-16-mahaparinibbana-sutta-last-days-of-the-buddha#p113",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Digha Nikaya 16 - Mahaparinibbana Sutta (Last Days of t",
+          "author": "tr. Sister Vajira and Francis Story",
+          "religion": "Buddhist",
+          "collection": "Pali Canon"
+        },
+        {
+          "url": "https://siftersearch.com/library/Buddhist/Pali%20Canon/tr-thanissaro_digha-nikaya-15-mahanidana-sutta-the-great-causes-discourse#p3",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Digha Nikaya 15 - Mahanidana Sutta (The Great Causes Di",
+          "author": "tr. Thanissaro Bhikkhu",
+          "religion": "Buddhist",
+          "collection": "Pali Canon"
+        }
+      ]
+    },
+    {
+      "label": "Four Noble Truths (Buddhist)",
+      "query": "four noble truths dukkha suffering cessation nirvana",
+      "religion": "Buddhist",
+      "hitCount": 8,
+      "topReligions": [
+        "Buddhist",
+        "Buddhist",
+        "Buddhist",
+        "Buddhist",
+        "Buddhist"
+      ],
+      "olCount": 0,
+      "linkChecks": [
+        {
+          "url": "https://siftersearch.com/library/Buddhist/Pali%20Canon/tr-sister-vajira_digha-nikaya-16-mahaparinibbana-sutta-last-days-of-the-buddha#p113",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Digha Nikaya 16 - Mahaparinibbana Sutta (Last Days of t",
+          "author": "tr. Sister Vajira and Francis Story",
+          "religion": "Buddhist",
+          "collection": "Pali Canon"
+        },
+        {
+          "url": "https://siftersearch.com/library/Buddhist/Pali%20Canon/tr-nanamoli-thera_majjhima-nikaya-9-sammaditthi-sutta-the-discourse-on-right-view#p16",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Majjhima Nikaya 9 - Sammaditthi Sutta: The Discourse on",
+          "author": "tr. Ñanamoli Thera & Bhikkhu Bodhi",
+          "religion": "Buddhist",
+          "collection": "Pali Canon"
+        },
+        {
+          "url": "https://siftersearch.com/library/Buddhist/Pali%20Canon/tr-thanissaro_digha-nikaya-15-mahanidana-sutta-the-great-causes-discourse#p3",
+          "status": 200,
+          "isOL": false,
+          "hasParaId": true,
+          "title": "Digha Nikaya 15 - Mahanidana Sutta (The Great Causes Di",
+          "author": "tr. Thanissaro Bhikkhu",
+          "religion": "Buddhist",
+          "collection": "Pali Canon"
+        }
+      ]
+    }
+  ]
+}

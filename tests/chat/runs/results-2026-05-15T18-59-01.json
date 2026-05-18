@@ -1,0 +1,142 @@
+[
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds a total of [44,937 documents](https://siftersearch.com/document/123), spanning a wide array of religious traditions. Among these, the Bahá'í collection is the largest with [41,590 documents](https://siftersearch.com/document/123), while other traditions like Judaism and Buddhism have [1,418](https://siftersearch.com/document/123) and [858 documents](https://siftersearch.com/document/123) respectively. Each tradition is represented through various collections, such as the [Pali Canon](https://siftersearch.com/document/123) for Buddhism and the [Torah and Tanakh](https://siftersearch.com/document/123) for Judaism.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 4941,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 5,
+      "citationAccuracy": 1,
+      "sourceAuthority": 5,
+      "criticalEngagement": 5,
+      "inlineQuoteIntegration": 5,
+      "topicCoverage": 1,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 2,
+      "warmth": 3,
+      "noHallucination": 1,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "Critical hallucination: the numbers cited (44,937 total, 41,590 Bahá'í, 1,418 Judaism, 858 Buddhism) are fabricated and do not match the library's actual metadata. The preamble states 7,900+ documents and 3.5M+ paragraphs. All citations point to a fake URL. For a browsing question, the assistant should have returned the actual library statistics from the tool result without embellishment or invention."
+    },
+    "overall": 3.29,
+    "failures": [
+      "toolUsage",
+      "citationAccuracy",
+      "topicCoverage",
+      "instructionFollowing",
+      "noHallucination"
+    ],
+    "diagnosis": "Critical hallucination: the numbers cited (44,937 total, 41,590 Bahá'í, 1,418 Judaism, 858 Buddhism) are fabricated and do not match the library's actual metadata. The preamble states 7,900+ documents and 3.5M+ paragraphs. All citations point to a fake URL. For a browsing question, the assistant should have returned the actual library statistics from the tool result without embellishment or invention."
+  },
+  {
+    "id": 97,
+    "category": "multi",
+    "query": "What Buddhist texts discuss mindfulness, and can you show me a key passage?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Buddhist text known as the *Satipatthana Sutta* from the *Majjhima Nikaya* explores mindfulness deeply. It describes how a monk remains focused on mental qualities, emphasizing the importance of being [\"focused on mental qualities in & of themselves\"](https://oceanlibrary.com/dhammapada_buddha), which is central to the practice of mindfulness. Additionally, the *Girimananda Sutta* from the *Anguttara Nikaya* highlights mindfulness in breathing, where one is trained to be aware of [\"experiencing the mental formations\"](https://oceanlibrary.com/dhammapada_buddha) as they breathe in and out. These passages underscore the integral role mindfulness plays in Buddhist practice.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 8411,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 2,
+      "citationAccuracy": 1,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 2,
+      "logicalCoherence": 2,
+      "brevity": 4,
+      "quoteEconomy": 2,
+      "instructionFollowing": 2,
+      "warmth": 2,
+      "noHallucination": 1,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "Critical hallucination: both quoted passages are fabricated — they do not appear in the search results and the URLs (both pointing to Dhammapada) are implausible. The response names correct texts (*Satipatthana Sutta*, *Girimananda Sutta*) but invents supporting quotes rather than retrieving and citing actual passage text. Tool usage was attempted (4 calls) but the assistant then abandoned the search results entirely to construct a plausible-sounding answer from training data."
+    },
+    "overall": 2.05,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "Critical hallucination: both quoted passages are fabricated — they do not appear in the search results and the URLs (both pointing to Dhammapada) are implausible. The response names correct texts (*Satipatthana Sutta*, *Girimananda Sutta*) but invents supporting quotes rather than retrieving and citing actual passage text. Tool usage was attempted (4 calls) but the assistant then abandoned the search results entirely to construct a plausible-sounding answer from training data."
+  },
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "In the Jewish tradition, the concept of covenant is deeply intertwined with God's promise and relationship with His people. For instance, in the Book of Isaiah, God reassures His people with the words [\"comfort ye, comfort ye My people\"](https://oceanlibrary.com/jps-book-of-isaiah/?paraId=para_741), highlighting a covenantal relationship of care and guidance. In the Bahá'í Faith, the covenant is seen as a binding agreement between God and humanity, renewed through the teachings of Bahá'u'lláh. This covenant emphasizes unity and the spiritual progress of humanity, aligning with the broader theme of divine promise found in both traditions.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 4850,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 2,
+      "citationAccuracy": 2,
+      "sourceAuthority": 2,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 1,
+      "logicalCoherence": 2,
+      "brevity": 4,
+      "quoteEconomy": 2,
+      "instructionFollowing": 2,
+      "warmth": 2,
+      "noHallucination": 2,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "The response makes 4 tool calls but provides almost no substantive library content — just one Isaiah quote (misidentified as a 'covenantal relationship of care' when it's a comfort passage) and generic summary about Bahá'í covenant without any actual Bahá'í primary-source quotes. For a comparative research question, this should present multiple passages from authoritative sources in both traditions, woven into a coherent analysis of how each understands covenant. The response reads like general knowledge padded with a single search result."
+    },
+    "overall": 2.12,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response makes 4 tool calls but provides almost no substantive library content — just one Isaiah quote (misidentified as a 'covenantal relationship of care' when it's a comfort passage) and generic summary about Bahá'í covenant without any actual Bahá'í primary-source quotes. For a comparative research question, this should present multiple passages from authoritative sources in both traditions, woven into a coherent analysis of how each understands covenant. The response reads like general knowledge padded with a single search result."
+  }
+]

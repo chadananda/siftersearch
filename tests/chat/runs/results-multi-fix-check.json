@@ -1,0 +1,84 @@
+[
+  {
+    "id": 97,
+    "category": "multi",
+    "query": "What Buddhist texts discuss mindfulness, and can you show me a key passage?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Majjhima Nikaya, specifically the Satipatthana Sutta, offers a profound exploration of mindfulness. It describes how a monk remains focused on [\"mental qualities in & of themselves\"](https://oceanlibrary.com/dhammapada_buddha), emphasizing a deep awareness of one's mental state. Additionally, the Anguttara Nikaya highlights mindfulness in breathing, where one trains by [\"experiencing the mental formations\"](https://oceanlibrary.com/dhammapada_buddha) during each breath. These texts collectively underscore mindfulness as a practice of attentive presence and self-awareness.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 3953,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks accurate citations and does not provide a key passage from the texts mentioned. To improve, it should include direct quotes from the Majjhima Nikaya and Anguttara Nikaya that specifically discuss mindfulness, ensuring they are accurately attributed and relevant to the user's request."
+    },
+    "overall": 3.2,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "noHallucination"
+    ],
+    "diagnosis": "The response lacks accurate citations and does not provide a key passage from the texts mentioned. To improve, it should include direct quotes from the Majjhima Nikaya and Anguttara Nikaya that specifically discuss mindfulness, ensuring they are accurately attributed and relevant to the user's request."
+  },
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "In the Jewish tradition, the covenant is deeply intertwined with the relationship between God and His people, as reflected in the words of Isaiah, where God promises that [\"Sharon shall be a fold of flocks\"](https://oceanlibrary.com/kjv-book-of-isaiah/?paraId=para_1151), symbolizing peace and prosperity for those who seek Him. This covenantal relationship is about divine promise and human response, a theme echoed in the Psalms, which remind us that God [\"knoweth the secrets of the heart\"](https://oceanlibrary.com/book-of-psalms-tehilim_david/?paraId=para_746), emphasizing the intimate and personal nature of this bond. In the Bahá'í Faith, the concept of the covenant is also central, focusing on the continuity of divine guidance through successive Manifestations of God, ensuring that humanity remains connected to the divine will across ages.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 6341,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively covers the topic of covenants in both the Bahá'í Faith and Judaism, but it could improve by providing more specific Bahá'í passages to match the depth of the Jewish citations. Additionally, the response could be more concise by reducing some of the explanatory phrases that add length without substantial value."
+    },
+    "overall": 4.02,
+    "failures": [],
+    "diagnosis": "The response effectively covers the topic of covenants in both the Bahá'í Faith and Judaism, but it could improve by providing more specific Bahá'í passages to match the depth of the Jewish citations. Additionally, the response could be more concise by reducing some of the explanatory phrases that add length without substantial value."
+  }
+]

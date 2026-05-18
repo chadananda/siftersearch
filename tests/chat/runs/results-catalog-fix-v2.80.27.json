@@ -1,0 +1,76 @@
+[
+  {
+    "id": 32,
+    "category": "author",
+    "query": "Show me everything by Bahá'u'lláh",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "The library holds 522 documents by Bahá'u'lláh. Notable works include the [Súrah of the Arabs](https://oceanlibrary.com/surah-of-the-arabs), the [Suffering of the Exalted Letters](https://oceanlibrary.com/suffering-of-the-exalted-letters), and the [Tablet of Consolation](https://oceanlibrary.com/tablet-of-consolation). As Bahá'u'lláh writes, [\"The source of all good is trust in God\"](https://oceanlibrary.com/gleanings-from-the-writings-of-bahaullah) — a principle woven through his teachings on tests and detachment.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 4221,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 5,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively lists notable works and includes a relevant quote from Bahá'u'lláh, but it could improve by providing a more comprehensive overview of his writings. Additionally, the critical engagement could be enhanced by connecting the quote more explicitly to the context of Bahá'u'lláh's teachings on trust and detachment."
+    },
+    "overall": 4.22,
+    "failures": [],
+    "diagnosis": "The response effectively lists notable works and includes a relevant quote from Bahá'u'lláh, but it could improve by providing a more comprehensive overview of his writings. Additionally, the critical engagement could be enhanced by connecting the quote more explicitly to the context of Bahá'u'lláh's teachings on trust and detachment."
+  },
+  {
+    "id": 33,
+    "category": "author",
+    "query": "What do you have by the Universal House of Justice?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 475 documents by the Universal House of Justice. Notable works include [Regarding Economic Life](https://oceanlibrary.com/administrative), [Marking the Bicentenary of the Birth of Bahá’u’lláh](https://oceanlibrary.com/administrative), and [Climate Change: Policies and Political Discourse](https://oceanlibrary.com/administrative). These writings often explore the application of spiritual principles to contemporary issues, reflecting the House's role in guiding the global Bahá'í community.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 4042,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks inline quote integration and does not provide specific quotes from the documents, which is critical for a lookup request. To improve, the assistant should include direct quotes from the Universal House of Justice's writings to support its claims and enhance the response's authority and engagement."
+    },
+    "overall": 3.24,
+    "failures": [
+      "citationAccuracy",
+      "logicalCoherence",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks inline quote integration and does not provide specific quotes from the documents, which is critical for a lookup request. To improve, the assistant should include direct quotes from the Universal House of Justice's writings to support its claims and enhance the response's authority and engagement."
+  }
+]

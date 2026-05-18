@@ -1,0 +1,34 @@
+[
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 623 documents by 'Abdu'l-Bahá, found within collections such as Core Tablets and Baha'i Books. Among these, some texts discuss governance, particularly in the context of the Bahá'í administrative order. For instance, 'Abdu'l-Bahá's writings often emphasize the importance of [\"justice and consultation\"](https://siftersearch.com/document/123) as foundational principles for governance. If you're interested in exploring specific works, I can help guide you to relevant documents.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 2230,
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "brevity",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ]
+  }
+]

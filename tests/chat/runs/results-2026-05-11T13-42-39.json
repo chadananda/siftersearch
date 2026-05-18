@@ -1,0 +1,232 @@
+[
+  {
+    "id": 61,
+    "category": "browsing",
+    "query": "What's in the library?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 62,
+    "category": "browsing",
+    "query": "How many Buddhist texts do you have?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library holds 858 Buddhist documents, with the majority being part of the Pali Canon, which comprises the oldest surviving Buddhist scriptures. Among these texts is the *Diamond Sutra*, known for its teachings on [\"transcendent wisdom\"](https://siftersearch.com/library/Buddhist/Mahayana%20Sutras/tr-william-gemmell_the-diamond-sutra-vajracchedika-prajnaparamita#p272) that guide one to \"The Other Shore.\" This collection offers a rich tapestry of Buddhist thought and practice.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 3775,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 5,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively answers the user's query and provides relevant details about the Buddhist texts in the library. However, the integration of quotes could be improved by weaving them more seamlessly into the narrative rather than presenting them as standalone phrases. Additionally, while the warmth is adequate, a more engaging tone could enhance the overall response."
+    },
+    "overall": 4.21,
+    "failures": [],
+    "diagnosis": "The response effectively answers the user's query and provides relevant details about the Buddhist texts in the library. However, the integration of quotes could be improved by weaving them more seamlessly into the narrative rather than presenting them as standalone phrases. Additionally, while the warmth is adequate, a more engaging tone could enhance the overall response."
+  },
+  {
+    "id": 63,
+    "category": "browsing",
+    "query": "Show me the Islamic collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 64,
+    "category": "browsing",
+    "query": "What languages are available?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 66,
+    "category": "browsing",
+    "query": "What's the largest collection?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 67,
+    "category": "browsing",
+    "query": "Do you have any Jain texts?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "Yes, the library includes Jain texts. Specifically, there are [22 documents](https://siftersearch.com/library/Jain/Philosophy/tr-hermann-jacobi_jaina-sutras-part-i-sbe-vol-22#p19) and an additional 5 documents under Jainism. These include the [Akaranga Sutra](https://siftersearch.com/library/Jain/Agamas/tr-hermann-jacobi_akaranga-sutra-book-1#p0), which is part of the Agamas collection, the canonical scriptures of Jainism. This collection reflects the teachings of the Tirthankaras, who are revered as enlightened teachers in the Jain tradition.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 209211,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library tools and provides relevant citations, but it could improve by integrating quotes more seamlessly into the text rather than listing them as separate links. Additionally, a bit more warmth in the tone would enhance the overall engagement with the user."
+    },
+    "overall": 4.21,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library tools and provides relevant citations, but it could improve by integrating quotes more seamlessly into the text rather than listing them as separate links. Additionally, a bit more warmth in the tone would enhance the overall engagement with the user."
+  },
+  {
+    "id": 68,
+    "category": "browsing",
+    "query": "Show me documents about the Pali Canon",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "I couldn't find specific documents about the Pali Canon in the retrieved texts. However, the Pali Canon is a significant collection in Theravada Buddhism, including works like \"The Dhammapada,\" which contains verses attributed to the Buddha, focusing on ethical conduct and wisdom. If you have a specific section or text in mind, feel free to ask, and I can try to find more detailed information.",
+    "toolsUsed": [
+      "find_document_for_citation",
+      "search",
+      "document_subagent"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 0,
+    "durationMs": 219226,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 2,
+      "logicalCoherence": 2,
+      "brevity": 3,
+      "quoteEconomy": 1,
+      "instructionFollowing": 2,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "The response lacks specific citations from the library, relying instead on general knowledge about the Pali Canon. To improve, the assistant should have provided actual document titles or quotes from the library related to the Pali Canon, ensuring that all claims are supported by retrieved texts."
+    },
+    "overall": 1.95,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "quoteEconomy",
+      "instructionFollowing",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response lacks specific citations from the library, relying instead on general knowledge about the Pali Canon. To improve, the assistant should have provided actual document titles or quotes from the library related to the Pali Canon, ensuring that all claims are supported by retrieved texts."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "terminated",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds a total of [44,943 documents](url), encompassing a wide range of religious traditions and teachings. Among these, the Bahá'í collection alone includes [5,659 documents](url), reflecting the depth and diversity of the texts available. This extensive library serves as a rich resource for exploring the sacred scriptures and philosophical writings from various faiths.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 10431,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 1,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response contains fabricated document counts and lacks any real citations from the library, which is a critical failure. To fix it, the assistant should provide accurate figures directly from the library's overview and include proper citations to support its claims."
+    },
+    "overall": 2.79,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "quoteEconomy"
+    ],
+    "diagnosis": "The response contains fabricated document counts and lacks any real citations from the library, which is a critical failure. To fix it, the assistant should provide accurate figures directly from the library's overview and include proper citations to support its claims."
+  }
+]

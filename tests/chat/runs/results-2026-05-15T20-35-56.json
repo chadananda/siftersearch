@@ -1,0 +1,193 @@
+[
+  {
+    "id": 64,
+    "category": "browsing",
+    "query": "What languages are available?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library offers texts in a variety of languages, including English, Hebrew, Arabic, Chinese, Persian, Spanish, Sanskrit, French, Portuguese, German, Russian, and Italian. In exploring these texts, one might find the Hindu epic, the *Rámáyan of Válmíki*, where auspicious voices [\"raise with loud accord the note of praise\"](https://oceanlibrary.com/ramayan-of-valmiki/?paraId=para_2471). Similarly, the Jewish tradition speaks of a transformative moment in *Isaiah*: [\"The people that walked in darkness have seen a great light\"](https://oceanlibrary.com/kjv-book-of-isaiah/?paraId=para_150). In the Buddhist context, the *Sutra Collection* provides a space for deep inquiry and reflection through [\"Questions and Answers\"](https://oceanlibrary.com/sutra-collection-tu/?paraId=para_1501). Each tradition brings its own unique voice to the rich tapestry of spiritual literature available.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 6,
+    "durationMs": 5055,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively lists the languages available and integrates quotes from various texts, but it could improve by providing a more focused connection between the languages and the specific texts mentioned. Additionally, the response could be more concise by reducing some of the elaboration on the texts, which would enhance clarity and brevity."
+    },
+    "overall": 4.12,
+    "failures": [],
+    "diagnosis": "The response effectively lists the languages available and integrates quotes from various texts, but it could improve by providing a more focused connection between the languages and the specific texts mentioned. Additionally, the response could be more concise by reducing some of the elaboration on the texts, which would enhance clarity and brevity."
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library contains a total of 44,937 documents, with 4,698,566 paragraphs. The majority are Bahá'í texts, numbering 41,590. Other traditions include Judaism with 1,418 documents, Buddhism with 858, Islam with 404, Christianity with 208, and Hinduism with 127 documents. Smaller collections cover Zoroastrian, Taoist, Confucian, Sikh, and Jain texts.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 1753,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 1,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response contains fabricated numbers and lacks citations, which is a critical issue. To fix it, the assistant should provide accurate figures directly from the library overview tool and include citations to support those claims."
+    },
+    "overall": 2.95,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "quoteEconomy"
+    ],
+    "diagnosis": "The response contains fabricated numbers and lacks citations, which is a critical issue. To fix it, the assistant should provide accurate figures directly from the library overview tool and include citations to support those claims."
+  },
+  {
+    "id": 75,
+    "category": "reading",
+    "query": "Show me the first few paragraphs of the Tao Te Ching",
+    "questionType": "reading",
+    "status": "PASS",
+    "response": "Here are the opening lines of the \"Tao Te Ching\": The text begins by stating that [\"the Tao that can be trodden is not the enduring and unchanging Tao\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_7), emphasizing the elusive and ineffable nature of the Tao. It continues to explain that the [\"name that can be named is not the enduring and unchanging name\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_7), suggesting that true understanding transcends language and labels. This foundational idea sets the stage for exploring the deep mysteries and subtle wonders that the Tao encompasses.",
+    "toolsUsed": [
+      "deep_research",
+      "find_document_for_citation",
+      "document_subagent",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 8,
+    "durationMs": 15853,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 5,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library to provide accurate quotes from the Tao Te Ching, but it could improve in critical engagement by not just summarizing the text but also addressing the user's potential assumptions about the Tao. Additionally, while the quotes are well-integrated, the response could benefit from a slightly warmer tone to enhance the overall engagement."
+    },
+    "overall": 4.29,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library to provide accurate quotes from the Tao Te Ching, but it could improve in critical engagement by not just summarizing the text but also addressing the user's potential assumptions about the Tao. Additionally, while the quotes are well-integrated, the response could benefit from a slightly warmer tone to enhance the overall engagement."
+  },
+  {
+    "id": 76,
+    "category": "edge",
+    "query": "bahaullah",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Bahá'u'lláh's writings emphasize profound spiritual truths and guidance for humanity. In the *Book of Certitude*, he speaks of the importance of recognizing the divine message, urging believers to [\"cleanse the heart\"](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_the-book-of-certitude-kitab-i-iqan-2#p4) to receive divine wisdom. Additionally, Bahá'u'lláh's *Tablet of Visitation for Imám Husayn* reflects on themes of sacrifice and devotion, highlighting the deep spiritual connection between the believer and the divine. These writings form a cornerstone of Bahá'í teachings, offering insights into the path of spiritual enlightenment and unity.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 4007,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the user's potential assumptions about Bahá'u'lláh's teachings. Additionally, while the quotes are well-integrated, the assistant could have provided a more direct connection between the quotes and the claims made about Bahá'u'lláh's teachings."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the user's potential assumptions about Bahá'u'lláh's teachings. Additionally, while the quotes are well-integrated, the assistant could have provided a more direct connection between the quotes and the claims made about Bahá'u'lláh's teachings."
+  },
+  {
+    "id": 97,
+    "category": "multi",
+    "query": "What Buddhist texts discuss mindfulness, and can you show me a key passage?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Buddhist text known as the *Satipatthana Sutta* discusses mindfulness in depth. It describes how a monk remains focused on [\"mental qualities in & of themselves\"](https://oceanlibrary.com/dhammapada_buddha), which is a core aspect of mindfulness practice. Additionally, the *Girimananda Sutta* offers practical guidance, where one trains by [\"experiencing the mental formations\"](https://oceanlibrary.com/dhammapada_buddha) through mindful breathing. These passages highlight the emphasis on awareness and presence in Buddhist teachings.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 3662,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks accurate citations, as the quotes provided do not seem to be from the correct texts. Additionally, the assistant should have included more authoritative sources on mindfulness in Buddhism, such as the *Dhammapada*. To improve, the assistant should ensure quotes are accurately attributed and select the most relevant passages from primary texts."
+    },
+    "overall": 3.27,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "noHallucination"
+    ],
+    "diagnosis": "The response lacks accurate citations, as the quotes provided do not seem to be from the correct texts. Additionally, the assistant should have included more authoritative sources on mindfulness in Buddhism, such as the *Dhammapada*. To improve, the assistant should ensure quotes are accurately attributed and select the most relevant passages from primary texts."
+  }
+]

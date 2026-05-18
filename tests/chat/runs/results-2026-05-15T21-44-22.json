@@ -1,0 +1,76 @@
+[
+  {
+    "id": 30,
+    "category": "author",
+    "query": "What books by Moojan Momen do you have?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library includes 146 works by Moojan Momen, such as Mazhar-i Ilahi (Manifestation of God) and Memorials of the Faithful: The Democratization of Sainthood. Beyond these, the *Qur’ân* begins with the invocation [\"In the name of the merciful and compassionate God\"](https://oceanlibrary.com/quran_palmer-tr/?paraId=para_4), emphasizing divine compassion. In the *Gospel of Matthew*, Jesus invites reflection: [\"Who hath ears to hear, let him hear\"](https://oceanlibrary.com/kjv-gospel-of-matthew/?paraId=para_323). Meanwhile, the book of *Isaiah* offers hope: [\"The people that walked in darkness have seen a great light\"](https://oceanlibrary.com/kjv-book-of-isaiah/?paraId=para_150), illustrating the transformative power of divine guidance.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 4,
+    "durationMs": 5446,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response includes irrelevant quotes from the Quran and the Bible that do not pertain to the user's request for books by Moojan Momen. To improve, the assistant should focus solely on listing the works of Moojan Momen without introducing unrelated texts, ensuring a more concise and relevant answer."
+    },
+    "overall": 3.2,
+    "failures": [
+      "citationAccuracy",
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response includes irrelevant quotes from the Quran and the Bible that do not pertain to the user's request for books by Moojan Momen. To improve, the assistant should focus solely on listing the works of Moojan Momen without introducing unrelated texts, ensuring a more concise and relevant answer."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 127 Hindu texts, including collections like Bhakti and Devotional Works and Epics. Some notable titles are Gitanjali (Song Offerings) and Hindu Literature - Ramayana, Nala, Sakuntala. In the broader spiritual context, the Qur'án begins with [\"In the name of the merciful and compassionate God\"](https://oceanlibrary.com/quran_palmer-tr/?paraId=para_4), *The Qur’ân (Palmer)*, while the Gospel of Matthew invites reflection with [\"Who hath ears to hear, let him hear\"](https://oceanlibrary.com/kjv-gospel-of-matthew/?paraId=para_323). Similarly, Isaiah speaks of hope and revelation: [\"The people that walked in darkness have seen a great light\"](https://oceanlibrary.com/kjv-book-of-isaiah/?paraId=para_150).",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 4,
+    "durationMs": 5224,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 2,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 2,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response fails to focus on the user's specific query about Hindu scriptures, instead introducing unrelated quotes from other religious texts, which detracts from the main topic. To improve, the assistant should concentrate solely on the Hindu texts available in the library and provide more detailed information about them."
+    },
+    "overall": 2.95,
+    "failures": [
+      "topicCoverage",
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response fails to focus on the user's specific query about Hindu scriptures, instead introducing unrelated quotes from other religious texts, which detracts from the main topic. To improve, the assistant should concentrate solely on the Hindu texts available in the library and provide more detailed information about them."
+  }
+]

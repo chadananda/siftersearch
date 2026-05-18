@@ -1,0 +1,206 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Hindu concept of dharma is deeply intertwined with the idea of fulfilling one's duties and responsibilities. The *Bhagavad Gita* suggests that a person can find perfection through [\"worship—wrought by work—of Him that is the Source of all which lives\"](https://oceanlibrary.com/hymns-of-atharva-veda). This implies that dharma involves performing one's duties diligently and with contentment, as a form of worship. Additionally, the *Mahabharata* raises questions about the value of actions, or karma, in relation to knowledge, asking about [\"the value of Karma or acts, i.e. prayers and sacrifices as ordained in the Vedas\"](https://oceanlibrary.com/mahabharata-5_vyasa). This highlights the importance of actions in fulfilling one's dharma.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 7,
+    "durationMs": 4264,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a solid overview of dharma but suffers from citation accuracy issues, as the quotes do not directly support the claims made about dharma. To improve, the assistant should ensure that the quotes are more relevant and directly tied to the concept of dharma, ideally using passages that explicitly define or elaborate on it."
+    },
+    "overall": 3.83,
+    "failures": [
+      "citationAccuracy",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response provides a solid overview of dharma but suffers from citation accuracy issues, as the quotes do not directly support the claims made about dharma. To improve, the assistant should ensure that the quotes are more relevant and directly tied to the concept of dharma, ideally using passages that explicitly define or elaborate on it."
+  },
+  {
+    "id": 9,
+    "category": "factual",
+    "query": "What does the Torah say about justice?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Torah emphasizes justice as a fundamental principle, with passages like \"you shall not bring an abomination into your house\" highlighting the importance of maintaining purity and integrity in one's actions (*Chullin*). This reflects a broader commitment to righteousness, as seen in the story of Abraham, who \"fulfilled the entire Torah\" and was blessed in all things (*Kiddushin*).",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 6,
+    "durationMs": 3702,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient direct quotes from the Torah itself, relying instead on interpretations from secondary sources. To improve, it should include more direct citations from the Torah that specifically address justice, ensuring that the claims made are well-supported by authoritative texts."
+    },
+    "overall": 3.29,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "noHallucination"
+    ],
+    "diagnosis": "The response lacks sufficient direct quotes from the Torah itself, relying instead on interpretations from secondary sources. To improve, it should include more direct citations from the Torah that specifically address justice, ensuring that the claims made are well-supported by authoritative texts."
+  },
+  {
+    "id": 19,
+    "category": "comparative",
+    "query": "How do Buddhism and Hinduism differ on the concept of self?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "In Hinduism, the concept of self is deeply connected to the idea of the [\"Atman\"](https://oceanlibrary.com/hymns-of-atharva-veda), which is considered the true essence or soul that exists beyond the physical body, as described in the Vedanta-Sutras. This Atman is seen as eternal and identical with Brahman, the ultimate reality. In contrast, Buddhism challenges the notion of a permanent self, emphasizing instead the concept of [\"Anatta\"](https://oceanlibrary.com/hymns-of-atharva-veda), or \"non-self,\" which suggests that what we consider the self is just a collection of changing phenomena. This fundamental difference shapes how each tradition approaches the path to liberation, with Hinduism focusing on realizing the Atman and Buddhism on understanding the impermanence of all things.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 7,
+    "durationMs": 4269,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient citations to support key claims, particularly regarding the Atman and Anatta concepts. To improve, it should include direct quotes from authoritative texts that clearly illustrate these concepts, enhancing both citation presence and accuracy."
+    },
+    "overall": 3.73,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks sufficient citations to support key claims, particularly regarding the Atman and Anatta concepts. To improve, it should include direct quotes from authoritative texts that clearly illustrate these concepts, enhancing both citation presence and accuracy."
+  },
+  {
+    "id": 20,
+    "category": "comparative",
+    "query": "What do the Bahá'í Faith and Islam say about fasting?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "In Islam, fasting is a practice that has been [\"prescribed for you, even as it was prescribed for those before you\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad/?paraId=para_197), emphasizing its continuity and spiritual significance. The Qur'án highlights fasting as a means to [\"ward off evil\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad/?paraId=para_197), suggesting its role in cultivating self-discipline and mindfulness. \n\nIn the Bahá'í Faith, fasting is similarly seen as a time for spiritual reflection and renewal. Bahá'u'lláh describes it as a period of [\"abstinence from food and drink\"](https://oceanlibrary.com/sura-ii-the-cow_muhammad/?paraId=para_114) from sunrise to sunset, intended to foster a deeper connection with the divine. Both traditions view fasting as a means to enhance spiritual awareness and self-control.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 7000,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library for citations and covers the topic well, but it could improve in critical engagement by addressing any differences in the understanding of fasting between the two faiths. Additionally, while the warmth is present, it could be enhanced to create a more inviting tone."
+    },
+    "overall": 4.22,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library for citations and covers the topic well, but it could improve in critical engagement by addressing any differences in the understanding of fasting between the two faiths. Additionally, while the warmth is present, it could be enhanced to create a more inviting tone."
+  },
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "In Judaism, the covenant is often seen as a deep, enduring relationship between God and His people, as reflected in Isaiah's words: [\"Comfort ye, comfort ye My people, saith your God\"](https://oceanlibrary.com/jps-book-of-isaiah/?paraId=para_741). This suggests a promise of divine care and reassurance. Meanwhile, in the Bahá'í Faith, the concept of the covenant is central to its teachings, emphasizing the continuity and renewal of divine guidance through successive Manifestations. Although the retrieved quotes don't directly address the Bahá'í perspective, the covenant in both traditions underscores a profound connection between the divine and humanity, marked by guidance and assurance.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 4981,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient quotes from the Bahá'í Faith, which is a significant gap given the user's request for passages from both traditions. To improve, the assistant should ensure it retrieves and includes relevant Bahá'í quotes to provide a balanced comparison of the covenant in both faiths."
+    },
+    "overall": 3.54,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "topicCoverage",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks sufficient quotes from the Bahá'í Faith, which is a significant gap given the user's request for passages from both traditions. To improve, the assistant should ensure it retrieves and includes relevant Bahá'í quotes to provide a balanced comparison of the covenant in both faiths."
+  }
+]

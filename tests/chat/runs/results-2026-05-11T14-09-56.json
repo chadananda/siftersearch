@@ -1,0 +1,132 @@
+[
+  {
+    "id": 61,
+    "category": "browsing",
+    "query": "What's in the library?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 62,
+    "category": "browsing",
+    "query": "How many Buddhist texts do you have?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 63,
+    "category": "browsing",
+    "query": "Show me the Islamic collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 64,
+    "category": "browsing",
+    "query": "What languages are available?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 66,
+    "category": "browsing",
+    "query": "What's the largest collection?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 67,
+    "category": "browsing",
+    "query": "Do you have any Jain texts?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 68,
+    "category": "browsing",
+    "query": "Show me documents about the Pali Canon",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  }
+]

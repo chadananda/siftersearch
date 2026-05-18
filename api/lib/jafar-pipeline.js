@@ -712,7 +712,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
                      FROM content c JOIN docs d ON c.doc_id = d.id
                      WHERE d.author LIKE ? AND d.deleted_at IS NULL AND c.deleted_at IS NULL
                        AND length(c.text) > 120 AND c.paragraph_index > 2
-                     ORDER BY d.id, c.paragraph_index LIMIT 4`,
+                     ORDER BY (d.source_url IS NOT NULL AND d.source_url != '') DESC, d.id, c.paragraph_index LIMIT 4`,
                     [`%${catalogFilters.author}%`]
                   );
                   for (const row of contentRows) {

@@ -1,0 +1,264 @@
+[
+  {
+    "id": 9,
+    "category": "factual",
+    "query": "What does the Torah say about justice?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Torah emphasizes the importance of justice through various teachings and principles. One such principle is found in the commandment: [\"you shall not bring an abomination into your house\"](https://siftersearch.com/library/Judaism/Talmud%20and%20Mishnah/william-davidson_chullin#p4297), which underscores the need to avoid anything that corrupts or defiles, as seen in *Chullin*. This reflects a broader commitment to maintaining purity and righteousness in one's actions. Additionally, the Torah is seen as a source of guidance that [\"guards him from all evil\"](https://oceanlibrary.com/jps-book-of-genesis), providing a moral framework that protects and sustains individuals throughout their lives, as noted in the *Jerusalem Talmud Kiddushin*. These teachings collectively highlight the Torah's role in promoting a just and ethical society.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 6,
+    "durationMs": 5188,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient direct quotes from the Torah itself, relying instead on secondary sources, which diminishes its authority. To improve, the assistant should directly quote relevant passages from the Torah that explicitly discuss justice, ensuring a stronger foundation for the claims made."
+    },
+    "overall": 3.54,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "criticalEngagement",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks sufficient direct quotes from the Torah itself, relying instead on secondary sources, which diminishes its authority. To improve, the assistant should directly quote relevant passages from the Torah that explicitly discuss justice, ensuring a stronger foundation for the claims made."
+  },
+  {
+    "id": 29,
+    "category": "author",
+    "query": "Do you have anything by Rumi?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "Yes, the library includes three works by Rumi, such as the Masnavi. In this work, Rumi explores profound spiritual themes, like how the [\"spiritual man cries in his sleep\"](https://oceanlibrary.com/masnavi_rumi/?paraId=para_1043), offering comfort that the carnal man cannot hear. He also speaks of the [\"inner voice\" as its own evidence](https://oceanlibrary.com/masnavi_rumi/?paraId=para_305), emphasizing the intuitive understanding of spiritual truths. These passages reflect Rumi's deep engagement with the mystical dimensions of Islam.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 4140,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is generally strong, but it could improve by providing a more critical engagement with Rumi's themes rather than simply summarizing them. Additionally, it could mention the titles of all three works for completeness."
+    },
+    "overall": 4.17,
+    "failures": [],
+    "diagnosis": "The response is generally strong, but it could improve by providing a more critical engagement with Rumi's themes rather than simply summarizing them. Additionally, it could mention the titles of all three works for completeness."
+  },
+  {
+    "id": 31,
+    "category": "author",
+    "query": "Do you have works by Thich Nhat Hanh?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "I searched our library for Thich Nhat Hanh's works but found none. However, our Buddhist collection includes meaningful passages like the Dhammapada's teaching that [\"all that we are is the result of what we have thought\"](https://oceanlibrary.com/dhammapada_buddha). This reflects the deep connection between thought and reality, a theme often explored in Thich Nhat Hanh's teachings. Additionally, the Sutra Collection emphasizes that [\"mind is the forerunner of all actions\"](https://oceanlibrary.com/sutra_collection), highlighting the importance of mindfulness and intention.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 2950,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively uses library tools and provides relevant quotes, but it could improve by directly addressing the user's request for works by Thich Nhat Hanh instead of general Buddhist teachings. Additionally, the critical engagement could be stronger by acknowledging the absence of Thich Nhat Hanh's works more explicitly."
+    },
+    "overall": 4,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response effectively uses library tools and provides relevant quotes, but it could improve by directly addressing the user's request for works by Thich Nhat Hanh instead of general Buddhist teachings. Additionally, the critical engagement could be stronger by acknowledging the absence of Thich Nhat Hanh's works more explicitly."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 127 Hindu texts across collections such as Bhakti and Devotional Works and Epics. Among these, the *Bhagavad Gita* reveals divine insight, as it says, [\"I give thee sense divine. Have other eyes, new light!\"](https://oceanlibrary.com/hymns-of-atharva-veda). The *Upanishads* encourage us to [\"make our hearts free from prejudice, doubt and intolerance\"](https://oceanlibrary.com/hymns-of-atharva-veda), drawing inspiration and wisdom from these sacred writings.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 4216,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks accurate citations, as the quotes provided do not correspond to the correct texts. Additionally, the assistant should have included more authoritative sources and integrated quotes more effectively into the narrative. To improve, it should ensure that quotes are accurately attributed and relevant to the claims made."
+    },
+    "overall": 3.34,
+    "failures": [
+      "logicalCoherence",
+      "noHallucination"
+    ],
+    "diagnosis": "The response lacks accurate citations, as the quotes provided do not correspond to the correct texts. Additionally, the assistant should have included more authoritative sources and integrated quotes more effectively into the narrative. To improve, it should ensure that quotes are accurately attributed and relevant to the claims made."
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library contains a total of 44,937 documents, encompassing a wide range of traditions. Among these, there are 41,590 Bahá'í documents, 1,418 Jewish texts, and 858 Buddhist works. The collection also includes 404 Islamic documents and 208 Christian texts. This vast repository reflects a commitment to preserving diverse spiritual insights. As the *Genesis* account beautifully illustrates, [\"Let there be light: and there was light\"](https://oceanlibrary.com/kjv-first-book-of-moses/?paraId=para_10), symbolizing the illumination and wisdom these texts offer.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 3,
+    "durationMs": 6036,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 2,
+      "citationAccuracy": 2,
+      "sourceAuthority": 2,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "The primary issue with this response is the inaccurate document count, which does not align with the actual library data. Additionally, the use of a biblical quote is irrelevant to the user's query about document totals and detracts from the focus. To improve, the assistant should ensure accurate data retrieval and avoid unrelated quotes."
+    },
+    "overall": 2.51,
+    "failures": [
+      "toolUsage",
+      "topicCoverage",
+      "logicalCoherence",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The primary issue with this response is the inaccurate document count, which does not align with the actual library data. Additionally, the use of a biblical quote is irrelevant to the user's query about document totals and detracts from the focus. To improve, the assistant should ensure accurate data retrieval and avoid unrelated quotes."
+  },
+  {
+    "id": 87,
+    "category": "edge",
+    "query": "Is the Bahá'í Faith a cult?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The Bahá'í Faith is structured to prevent the formation of sects or factions, which is a common characteristic of cults. Bahá’u’lláh established a clear framework by appointing a [\"Center of the Covenant\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_2085), ensuring unity and agreement within the community, as described by ‘Abdu’l-Bahá in *The Promulgation of Universal Peace*. This covenant acts like a constitution, with authority vested in institutions such as the Universal House of Justice, which is [\"guided by God to decide on whatever is not explicitly revealed\"](https://oceanlibrary.com/universal-house-of-justice_bahaullah?paraId=para_307), as noted in the writings of Bahá’u’lláh. This structure, with no priesthood and a clear line of authority, distinguishes the Faith from cult-like organizations.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 5,
+    "durationMs": 4957,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a solid foundation but could improve in critical engagement by addressing the loaded term 'cult' more directly. Acknowledging the nuances of the term and how it contrasts with the Bahá'í Faith's principles would enhance the depth of the answer."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response provides a solid foundation but could improve in critical engagement by addressing the loaded term 'cult' more directly. Acknowledging the nuances of the term and how it contrasts with the Bahá'í Faith's principles would enhance the depth of the answer."
+  },
+  {
+    "id": 107,
+    "category": "framing",
+    "query": "The Bahá'í Faith is basically a liberal religion that supports modern progressive values?",
+    "questionType": "framing",
+    "status": "FAIL",
+    "response": "The Bahá'í Faith indeed embraces principles that resonate with many modern progressive values, such as the [\"equality of men and women\"](https://siftersearch.com/document/15199), as expressed by ‘Abdu’l-Bahá in *Star of the West*. However, it also transcends typical political labels by emphasizing the [\"independent investigation of truth\"](https://siftersearch.com/document/8680), which encourages individuals to seek truth beyond inherited traditions. Bahá'u'lláh's vision of unity is profound, declaring that [\"the earth is but one country, and mankind its citizens\"](https://siftersearch.com/document/9997), which frames global unity as a spiritual imperative rather than a political stance. Thus, while it aligns with certain progressive ideals, the Faith's teachings are rooted in a broader spiritual and ethical framework.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 3821,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response generally engages with the user's framing but does not critically address the term 'liberal religion' or the implications of 'modern progressive values.' To improve, it should clarify how the Bahá'í Faith's principles differ from or align with these terms, using specific quotes to anchor the discussion more firmly in the tradition's vocabulary."
+    },
+    "overall": 4.1,
+    "failures": [
+      "criticalEngagement"
+    ],
+    "diagnosis": "The response generally engages with the user's framing but does not critically address the term 'liberal religion' or the implications of 'modern progressive values.' To improve, it should clarify how the Bahá'í Faith's principles differ from or align with these terms, using specific quotes to anchor the discussion more firmly in the tradition's vocabulary."
+  }
+]

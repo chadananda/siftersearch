@@ -1,0 +1,197 @@
+[
+  {
+    "id": 20,
+    "category": "comparative",
+    "query": "What do the Bahá'í Faith and Islam say about fasting?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "In Islam, fasting is a practice that was [\"prescribed for you as it was prescribed to those before you\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad/?paraId=para_197), highlighting its continuity and importance across time. The Qur'án emphasizes that fasting is meant to help believers [\"ward off evil\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad/?paraId=para_197), suggesting a spiritual purification and discipline. In the Bahá'í Faith, fasting is similarly seen as a time for spiritual reflection and renewal, though specific texts from Bahá'u'lláh on fasting weren't retrieved here. Both traditions view fasting as a means to deepen one's spiritual connection and discipline.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 5825,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively uses quotes and integrates them well, but it lacks specific Bahá'í texts on fasting, which weakens the comparative aspect. To improve, the assistant should ensure that it retrieves and includes relevant Bahá'í passages to provide a more balanced view of both traditions' teachings on fasting."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response effectively uses quotes and integrates them well, but it lacks specific Bahá'í texts on fasting, which weakens the comparative aspect. To improve, the assistant should ensure that it retrieves and includes relevant Bahá'í passages to provide a more balanced view of both traditions' teachings on fasting."
+  },
+  {
+    "id": 47,
+    "category": "topical",
+    "query": "Search for teachings about meditation",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "Meditation is a profound practice explored across various traditions. In Buddhism, the practice of jhana, or mental absorption, is emphasized, where one enters states of \"rapture & pleasure born from withdrawal\", *Majjhima Nikaya*. The Tao Te Ching speaks to meditation as a return to one's root, describing it as [\"stillness\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_79), a state of tranquility and fulfillment. In Sikhism, the practice of Simran, or meditation on the Naam, is seen as a \"planetary march of our life\", a continuous journey towards divine connection. Each tradition offers a unique perspective, yet all highlight meditation as a path to deeper understanding and spiritual growth.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 5881,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient citations from the Ocean Library, relying instead on general knowledge and only partially integrating quotes. To improve, it should include more direct quotes from the library's documents to support its claims and ensure that all assertions are backed by specific references."
+    },
+    "overall": 3.39,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "criticalEngagement",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks sufficient citations from the Ocean Library, relying instead on general knowledge and only partially integrating quotes. To improve, it should include more direct quotes from the library's documents to support its claims and ensure that all assertions are backed by specific references."
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 41,590 Bahá'í documents across various collections, including Baha'i Books, Reference, Papers, and News. Among these, works like [Hájí Mírzá Áqásí: A Portrait of a Tyrannical and Ignorant Prime Minister](https://oceanlibrary.com/selections-from-the-writings-of-the-bab) and [Creation and Evolution in Bahá’í Thought](https://siftersearch.com/library/Baha'i/Core%20Publications/selections-from-the-writings-of-abdul-baha#p504) are notable examples. As 'Abdu'l-Bahá explains, the [\"Teachings which come from God are heavenly outpourings of grace\"](https://siftersearch.com/library/Baha'i/Core%20Publications/selections-from-the-writings-of-abdul-baha#p504), cleansing the human heart.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 4,
+    "durationMs": 9011,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks depth in listing the Bahá'í collections and does not provide a comprehensive overview of the types of documents available. To improve, it should include more specific collections and their significance, while ensuring that quotes are more directly relevant to the topic at hand."
+    },
+    "overall": 3.1,
+    "failures": [
+      "toolUsage",
+      "topicCoverage",
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response lacks depth in listing the Bahá'í collections and does not provide a comprehensive overview of the types of documents available. To improve, it should include more specific collections and their significance, while ensuring that quotes are more directly relevant to the topic at hand."
+  },
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 623 documents by 'Abdu'l-Bahá, which are part of the \"Baha'i Books\" collection. Among these, some texts discuss governance, particularly within the \"Administrative\" collection, which includes [\"Baha'i administrative texts\"](url) detailing constitutional documents and institutional guidance. If you're interested in exploring specific works, I can help identify those that delve into governance topics more deeply.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 4487,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of the number of documents and mentions a collection related to governance, but it lacks specific titles or quotes from the documents, which would enhance citation presence and accuracy. To improve, the assistant should include specific works by 'Abdu'l-Bahá that discuss governance and integrate them into the response."
+    },
+    "overall": 3.2,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response provides a good overview of the number of documents and mentions a collection related to governance, but it lacks specific titles or quotes from the documents, which would enhance citation presence and accuracy. To improve, the assistant should include specific works by 'Abdu'l-Bahá that discuss governance and integrate them into the response."
+  },
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "In the Bahá'í Faith, the covenant is seen as a divine promise and guidance that ensures the unity and continuity of the faith. Although the retrieved texts don't directly address the Bahá'í covenant, the concept is central to Bahá'í teachings. In Judaism, the covenant is a foundational theme, often depicted as God's promise to His people. The Book of Isaiah reflects this relationship, where God calls to [\"comfort ye My people\"](https://oceanlibrary.com/jps-book-of-isaiah/?paraId=para_741), emphasizing a bond of care and reassurance. Similarly, the Psalms remind us that God [\"knoweth the secrets of the heart\"](https://oceanlibrary.com/book-of-psalms-tehilim_david/?paraId=para_746), suggesting a deep, personal covenant with each believer. Both traditions highlight a profound connection between the divine and humanity, rooted in promises and spiritual guidance.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 4500,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks direct quotes from Bahá'í texts, which weakens the coverage of the Bahá'í perspective on the covenant. To improve, the assistant should include specific passages from the Bahá'í Faith that discuss the covenant, ensuring a more balanced and authoritative representation of both traditions."
+    },
+    "overall": 3.85,
+    "failures": [
+      "toolUsage"
+    ],
+    "diagnosis": "The response lacks direct quotes from Bahá'í texts, which weakens the coverage of the Bahá'í perspective on the covenant. To improve, the assistant should include specific passages from the Bahá'í Faith that discuss the covenant, ensuring a more balanced and authoritative representation of both traditions."
+  }
+]

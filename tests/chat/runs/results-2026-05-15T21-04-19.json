@@ -1,0 +1,192 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Hindu concept of dharma is deeply intertwined with the idea of fulfilling one's duties and responsibilities. In the *Bhagavad Gita*, it is suggested that one achieves perfection through [\"worship—wrought by work—of Him that is the Source of all which lives\"](https://oceanlibrary.com/hymns-of-atharva-veda). This implies that dharma involves performing one's assigned duties with diligence and contentment, as a form of devotion to the divine. Dharma is not just about personal duty but is also seen as a cosmic order that sustains the universe.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 7,
+    "durationMs": 4885,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The primary issue with this response is the citation accuracy; the quote attributed to the *Bhagavad Gita* is actually from the *Atharva Veda*, which misrepresents the source. To improve, the assistant should ensure that quotes are correctly attributed to their respective texts, ideally using a direct quote from the *Bhagavad Gita* to illustrate the concept of dharma."
+    },
+    "overall": 3.56,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The primary issue with this response is the citation accuracy; the quote attributed to the *Bhagavad Gita* is actually from the *Atharva Veda*, which misrepresents the source. To improve, the assistant should ensure that quotes are correctly attributed to their respective texts, ideally using a direct quote from the *Bhagavad Gita* to illustrate the concept of dharma."
+  },
+  {
+    "id": 9,
+    "category": "factual",
+    "query": "What does the Torah say about justice?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Torah places a strong emphasis on justice, which is seen as a divine attribute and a guiding principle for human conduct. The text in Deuteronomy warns against bringing [\"an abomination into your house\"](https://siftersearch.com/library/Judaism/Talmud%20and%20Mishnah/william-davidson_chullin#p4297), highlighting the importance of maintaining purity and righteousness in one's actions. This notion is further supported by the idea that the Torah itself is a source of protection and hope, as it [\"guards him from all evil\"](https://oceanlibrary.com/jps-book-of-genesis), *Jerusalem Talmud Kiddushin*. Justice in the Torah is not merely a legalistic concept but is deeply intertwined with the moral and spiritual fabric of life.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 6,
+    "durationMs": 5836,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient direct quotes from the Torah itself, relying instead on secondary sources, which diminishes its authority. To improve, the assistant should include more direct citations from the Torah that explicitly discuss justice, ensuring that the claims made are well-supported by primary texts."
+    },
+    "overall": 3.66,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks sufficient direct quotes from the Torah itself, relying instead on secondary sources, which diminishes its authority. To improve, the assistant should include more direct citations from the Torah that explicitly discuss justice, ensuring that the claims made are well-supported by primary texts."
+  },
+  {
+    "id": 29,
+    "category": "author",
+    "query": "Do you have anything by Rumi?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "Yes, the library includes three works by Rumi, such as the Divan-e Shams and the Masnavi. In *The Masnavi*, Rumi explores profound spiritual themes, suggesting that [\"the spiritual man, as it were, cries in his sleep\"](https://oceanlibrary.com/masnavi_rumi/?paraId=para_1043), offering comfort even when others remain unaware. This reflects his deep engagement with the mystical dimensions of the soul.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 3787,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is generally strong, but it could improve by providing more specific titles or works by Rumi beyond just two examples. Additionally, while the quote is well-integrated, a more critical engagement with Rumi's themes could enhance the depth of the response."
+    },
+    "overall": 4.17,
+    "failures": [],
+    "diagnosis": "The response is generally strong, but it could improve by providing more specific titles or works by Rumi beyond just two examples. Additionally, while the quote is well-integrated, a more critical engagement with Rumi's themes could enhance the depth of the response."
+  },
+  {
+    "id": 76,
+    "category": "edge",
+    "query": "bahaullah",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Bahá'u'lláh, the central figure of the Bahá'í Faith, speaks profoundly about the nature of divine revelation. In the *Kitáb-i-Íqán*, he elucidates that the [\"purpose of God in revealing Himself is to lay bare those gems that lie hidden within the mine of His most excellent words\"](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_the-book-of-certitude-kitab-i-iqan-2#p4). This suggests that divine teachings are meant to uncover the spiritual potential within each individual. Additionally, Bahá'u'lláh's writings emphasize the importance of steadfastness and loyalty to the covenant, as seen in Shoghi Effendi's guidance to the Bahá'í community to [\"safeguard the Faith and confirm believers in the covenants\"](https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi/?paraId=para_1121). These elements highlight the transformative power of Bahá'u'lláh's message.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 5845,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library and provides relevant quotes, but it could improve in critical engagement by addressing the user's potential assumptions about Bahá'u'lláh's teachings. Additionally, while the warmth is present, it could be enhanced to create a more inviting tone."
+    },
+    "overall": 4.22,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library and provides relevant quotes, but it could improve in critical engagement by addressing the user's potential assumptions about Bahá'u'lláh's teachings. Additionally, while the warmth is present, it could be enhanced to create a more inviting tone."
+  },
+  {
+    "id": 87,
+    "category": "edge",
+    "query": "Is the Bahá'í Faith a cult?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Bahá'í Faith is structured in a way that actively prevents the formation of sects or factions, which is a key distinction from what is typically considered a cult. Bahá’u’lláh established a [Covenant and Testament](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_1791) that clearly outlines the line of authority within the Faith, ensuring unity and preventing disunion. This Covenant includes the appointment of a [Center of the Covenant](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_2085), which safeguards the teachings from personal interpretation that could lead to division. Furthermore, the Faith lacks a priesthood and emphasizes that [authority is vested in institutions](https://oceanlibrary.com/bahaullah-and-the-new-era_john-esslemont?paraId=para_1539) rather than individuals, which contrasts sharply with the centralized control often seen in cults.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 5,
+    "durationMs": 3519,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses library sources and provides a coherent argument against the label of 'cult' for the Bahá'í Faith. However, it could improve critical engagement by addressing the loaded nature of the term 'cult' and clarifying its implications. Additionally, integrating quotes more seamlessly into the text would enhance the overall flow."
+    },
+    "overall": 4.05,
+    "failures": [
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response effectively uses library sources and provides a coherent argument against the label of 'cult' for the Bahá'í Faith. However, it could improve critical engagement by addressing the loaded nature of the term 'cult' and clarifying its implications. Additionally, integrating quotes more seamlessly into the text would enhance the overall flow."
+  }
+]

@@ -1,0 +1,181 @@
+[
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library includes 41,590 Bahá'í documents, showcasing a wide range of works. Among these, the teachings are described as [\"heavenly outpourings of grace\"](https://siftersearch.com/library/Baha'i/Core%20Publications/selections-from-the-writings-of-abdul-baha#p504), *Selections from the Writings of ’Abdu’l-Bahá*, emphasizing their transformative power. Additionally, the writings of the Báb highlight that those who fail to embrace the Cause may become [\"the personification of the nethermost fire\"](https://oceanlibrary.com/selections-from-the-writings-of-the-bab), *Selections from the Writings of the Báb*, underscoring the spiritual stakes involved.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 3,
+    "durationMs": 7142,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 2,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 3,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The primary issue with this response is that it does not directly list the Bahá'í collections as requested by the user. Instead, it provides a general overview of the documents and includes quotes that, while relevant, do not fulfill the user's specific request. To improve, the assistant should have listed the collections explicitly, perhaps with brief descriptions or categorizations."
+    },
+    "overall": 3.54,
+    "failures": [
+      "toolUsage",
+      "topicCoverage",
+      "logicalCoherence",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The primary issue with this response is that it does not directly list the Bahá'í collections as requested by the user. Instead, it provides a general overview of the documents and includes quotes that, while relevant, do not fulfill the user's specific request. To improve, the assistant should have listed the collections explicitly, perhaps with brief descriptions or categorizations."
+  },
+  {
+    "id": 76,
+    "category": "edge",
+    "query": "bahaullah",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Bahá'u'lláh's writings emphasize the transformative power of divine revelation. In the *Book of Certitude*, he explains that the [\"Law\" is the \"secret of the Path\"](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_the-book-of-certitude-kitab-i-iqan-2#p4), suggesting that spiritual discipline is essential for progress. Additionally, Bahá'u'lláh's *Tablet of Visitation for Imám Husayn* reflects on the deep connection between the believer and the divine, underscoring the importance of devotion and remembrance. These teachings highlight a path of inner transformation and steadfastness in faith.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 5,
+    "durationMs": 5203,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response is generally strong, but it could improve in critical engagement by addressing any potential assumptions in the user's query about Bahá'u'lláh. Additionally, while the quotes are well-integrated, a more authoritative source could have been prioritized for the main claim about divine revelation."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response is generally strong, but it could improve in critical engagement by addressing any potential assumptions in the user's query about Bahá'u'lláh. Additionally, while the quotes are well-integrated, a more authoritative source could have been prioritized for the main claim about divine revelation."
+  },
+  {
+    "id": 78,
+    "category": "edge",
+    "query": "books",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Books and scriptures hold a central place in many religious traditions, each offering unique insights and guidance. In Judaism, the Torah is revered for its depth, acquired through \"study, attentive listening, and proper speech\", as noted in *Pirkei Avot*. The Qur'án is described as a [\"guidance unto those who ward off (evil)\"](https://oceanlibrary.com/quran_rodwell-tr?paraId=para_1672), emphasizing its role in leading believers on a righteous path. Christianity speaks of a spiritual understanding that is [\"peculiar to the saints\"](https://oceanlibrary.com/religious-affections_jonathan-edwards?paraId=para_361), highlighting the transformative power of divine knowledge. In Sikhism, the Guru Granth Sahib is seen as a \"jewel, studded with diamonds\", reflecting its profound spiritual value. The Tao Te Ching describes the Tao as [\"the emptiness of a vessel\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_25), suggesting a boundless source of wisdom. Hindu scriptures, like the Bhagavad Gita, explore themes of duty and knowledge, while Bahá'u'lláh's writings offer solutions to modern challenges, as seen in the \"Hidden Words\". Each tradition treasures its texts as a means to connect with the divine and navigate life's complexities.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 4785,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively uses the library to provide relevant quotes, but it could improve in critical engagement by addressing the user's broad query more directly. Additionally, while the response is informative, it could be more concise and focused, avoiding some filler phrases to enhance brevity."
+    },
+    "overall": 4.02,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library to provide relevant quotes, but it could improve in critical engagement by addressing the user's broad query more directly. Additionally, while the response is informative, it could be more concise and focused, avoiding some filler phrases to enhance brevity."
+  },
+  {
+    "id": 87,
+    "category": "edge",
+    "query": "Is the Bahá'í Faith a cult?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Bahá'í Faith is structured to prevent the formation of sects or factions, which is a key characteristic distinguishing it from what might be considered a cult. Bahá’u’lláh established a [Covenant and Testament](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_1791) to ensure unity and prevent disunion, appointing 'Abdu'l-Bahá as the Center of the Covenant. This covenant acts like a [constitution for the Bahá’í community](https://oceanlibrary.com/bahaullah-and-the-new-era_john-esslemont?paraId=para_1539), providing a clear line of authority and interpretation. The Faith emphasizes that no individual can claim special station or guidance, as authority is vested in institutions like the [Universal House of Justice](https://oceanlibrary.com/universal-house-of-justice_bahaullah?paraId=para_307), which guides the community in matters not explicitly revealed in the scriptures.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 5,
+    "durationMs": 3679,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the loaded term 'cult' more directly and exploring its implications. Additionally, while the citations are relevant, integrating them more seamlessly into the text would enhance the flow and coherence of the argument."
+    },
+    "overall": 4.05,
+    "failures": [
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the loaded term 'cult' more directly and exploring its implications. Additionally, while the citations are relevant, integrating them more seamlessly into the text would enhance the flow and coherence of the argument."
+  },
+  {
+    "id": 107,
+    "category": "framing",
+    "query": "The Bahá'í Faith is basically a liberal religion that supports modern progressive values?",
+    "questionType": "framing",
+    "status": "PASS",
+    "response": "It's a bit more nuanced than that. The Bahá'í Faith emphasizes unity and the prevention of schism through the [\"ordination and appointment of the Center of the Covenant\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_2085), as described by ‘Abdu’l-Bahá in *The Promulgation of Universal Peace*. This structure is unique, aiming to maintain the integrity of the teachings and prevent personal interpretations from causing division. Furthermore, Bahá’u’lláh's writings establish a dual authority: the Book and its Interpreter, alongside the [\"Universal House of Justice guided by God\"](https://oceanlibrary.com/universal-house-of-justice_bahaullah?paraId=para_307), which addresses matters not explicitly covered in the scriptures. These elements suggest a focus on unity and continuity rather than aligning strictly with any contemporary political ideology.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 5,
+    "durationMs": 5160,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively engages with the user's framing and provides relevant citations, but it could be more concise. The assistant could improve brevity by tightening the prose and reducing redundancy in explaining the Bahá'í structure. Additionally, a warmer tone would enhance the overall engagement."
+    },
+    "overall": 4.17,
+    "failures": [],
+    "diagnosis": "The response effectively engages with the user's framing and provides relevant citations, but it could be more concise. The assistant could improve brevity by tightening the prose and reducing redundancy in explaining the Bahá'í structure. Additionally, a warmer tone would enhance the overall engagement."
+  }
+]

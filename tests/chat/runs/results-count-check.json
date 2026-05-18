@@ -1,0 +1,40 @@
+[
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds a total of 44,937 documents, spanning a wide array of traditions. Among these, the Bahá'í collection is the largest with 41,590 documents, followed by Judaism with 1,418 and Buddhism with 858. Other traditions represented include Islam with 404 documents, Christianity with 208, and Hinduism with 127. This diverse collection is available in multiple languages, including English, Hebrew, Arabic, and others.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 2299,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 1,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response contains fabricated information about the number of documents in the library, which is a critical error. To fix this, the assistant should ensure that the data retrieved from the tool is accurate and directly reflects the library's actual statistics."
+    },
+    "overall": 2.95,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "quoteEconomy"
+    ],
+    "diagnosis": "The response contains fabricated information about the number of documents in the library, which is a critical error. To fix this, the assistant should ensure that the data retrieved from the tool is accurate and directly reflects the library's actual statistics."
+  }
+]

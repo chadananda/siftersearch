@@ -1,0 +1,118 @@
+[
+  {
+    "id": 30,
+    "category": "author",
+    "query": "What books by Moojan Momen do you have?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 146 works by Moojan Momen. Notable titles include [Mazhar-i Ilahi (Manifestation of God)](url), [Memorials of the Faithful: The Democratization of Sainthood](url), and [Shoghi Effendi's Translation of Terms Related to Law in Bahá’í Scripture](url). In his writings, Momen explores themes such as the historical development of the Bahá'í Faith, emphasizing the importance of understanding its roots and evolution.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 3737,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 3,
+      "diagnosis": "The response lacks sufficient citations from the library to support the claims about Momen's themes and works. To improve, it should include direct quotes or more specific references from the library's documents, particularly regarding the themes explored in Momen's writings."
+    },
+    "overall": 3,
+    "failures": [
+      "citationAccuracy",
+      "logicalCoherence",
+      "inlineQuoteIntegration",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response lacks sufficient citations from the library to support the claims about Momen's themes and works. To improve, it should include direct quotes or more specific references from the library's documents, particularly regarding the themes explored in Momen's writings."
+  },
+  {
+    "id": 33,
+    "category": "author",
+    "query": "What do you have by the Universal House of Justice?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "The library holds 475 documents by the Universal House of Justice. Notable titles include [Regarding Economic Life](url), [Marking the Bicentenary of the Birth of Bahá’u’lláh](url), and [Climate Change: Policies and Political Discourse](url). These works often address contemporary issues with a spiritual perspective, emphasizing the importance of [\"consultation and unity in addressing global challenges\"](https://oceanlibrary.com/some-text?paraId=abc).",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 4200,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of the documents by the Universal House of Justice but lacks sufficient inline quotes to support the claims made about the nature of these works. To improve, the assistant should integrate more specific quotes from the documents to substantiate its statements about their content and themes."
+    },
+    "overall": 3.8,
+    "failures": [],
+    "diagnosis": "The response provides a good overview of the documents by the Universal House of Justice but lacks sufficient inline quotes to support the claims made about the nature of these works. To improve, the assistant should integrate more specific quotes from the documents to substantiate its statements about their content and themes."
+  },
+  {
+    "id": 75,
+    "category": "reading",
+    "query": "Show me the first few paragraphs of the Tao Te Ching",
+    "questionType": "reading",
+    "status": "FAIL",
+    "response": "The *Tao Te Ching* opens with a profound statement on the nature of the Tao: [\"The Tao that can be trodden is not the enduring and unchanging Tao. The name that can be named is not the enduring and unchanging name.\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_7), *Tao Te Ching*. This suggests that the true essence of the Tao transcends any fixed form or label, inviting readers to explore beyond the surface of words and concepts.",
+    "toolsUsed": [
+      "deep_research",
+      "find_document_for_citation",
+      "search_read",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 5,
+    "citationCount": 8,
+    "durationMs": 2923,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 3,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response does not fully comply with the user's request for the first few paragraphs of the *Tao Te Ching*, as it only provides a single quote rather than multiple paragraphs. To improve, the assistant should retrieve and present the actual text of the first few paragraphs directly from the document."
+    },
+    "overall": 3.85,
+    "failures": [
+      "topicCoverage",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The response does not fully comply with the user's request for the first few paragraphs of the *Tao Te Ching*, as it only provides a single quote rather than multiple paragraphs. To improve, the assistant should retrieve and present the actual text of the first few paragraphs directly from the document."
+  }
+]

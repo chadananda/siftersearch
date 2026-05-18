@@ -1,0 +1,192 @@
+[
+  {
+    "id": 28,
+    "category": "author",
+    "query": "Show me books by Shoghi Effendi",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "Shoghi Effendi, as the Guardian of the Bahá'í Faith, has written extensively to guide the community. His works, such as the [\"Tablet of the Centennial\"](https://siftersearch.com/library/Baha'i/Tablet%20Translations/shoghi-effendi_tablet-of-the-centennial#p1), offer profound insights into the spiritual and administrative aspects of the Faith. Additionally, his letters, compiled in collections like the [\"Uncompiled Published Letters\"](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_7147), provide guidance on various issues faced by the Bahá'í community. These writings are essential for understanding the development and direction of the Bahá'í Faith under his stewardship.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 4,
+    "durationMs": 4379,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of Shoghi Effendi's works but lacks direct quotes from the library, which would strengthen the claims made. To improve, the assistant should integrate specific quotes from the retrieved documents to enhance citation presence and accuracy."
+    },
+    "overall": 3.93,
+    "failures": [],
+    "diagnosis": "The response provides a good overview of Shoghi Effendi's works but lacks direct quotes from the library, which would strengthen the claims made. To improve, the assistant should integrate specific quotes from the retrieved documents to enhance citation presence and accuracy."
+  },
+  {
+    "id": 30,
+    "category": "author",
+    "query": "What books by Moojan Momen do you have?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 146 works by Moojan Momen, including titles like Mazhar-i Ilahi (Manifestation of God) and Memorials of the Faithful: The Democratization of Sainthood. In his work, Momen explores themes such as [\"seeking the world and leadership\"](https://siftersearch.com/library/Baha'i/Baha'i%20Books/moojan-momen_an-introduction-to-shii-islam-the-history-and-doctrines-of-twelver-shiism#p1260), which offers insight into the historical and doctrinal aspects of Twelver Shi'ism.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 3958,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of Moojan Momen's works but lacks sufficient inline integration of quotes and relies on a single external link for thematic exploration, which detracts from the authority of the response. To improve, the assistant should include more direct quotes from the library and better integrate them into the narrative."
+    },
+    "overall": 3.54,
+    "failures": [
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response provides a good overview of Moojan Momen's works but lacks sufficient inline integration of quotes and relies on a single external link for thematic exploration, which detracts from the authority of the response. To improve, the assistant should include more direct quotes from the library and better integrate them into the narrative."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 127 Hindu texts across various collections, including Bhakti and Devotional Works and Epics. Among these, you can find works like [Gitanjali (Song Offerings)](https://oceanlibrary.com/hymns-of-atharva-veda) by Rabindranath Tagore and [Hindu Literature - Ramayana, Nala, Sakuntala](https://oceanlibrary.com/hymns-of-atharva-veda). The *Bhagavad Gita* offers a glimpse into divine vision, where Krishna tells Arjuna, [\"I give thee sense divine. Have other eyes, new light!\"](https://oceanlibrary.com/hymns-of-atharva-veda). Similarly, the *Upanishads* encourage us to make our hearts free from prejudice so that we may draw [\"inspiration, love and wisdom\"](https://oceanlibrary.com/hymns-of-atharva-veda).",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 3783,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 4,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks optimal tool usage, as it does not specify the mode or filters used during the search. Additionally, while it provides some quotes, they are not all accurately attributed or relevant to the claims made. To improve, the assistant should ensure that quotes are directly tied to the context of the scriptures mentioned and provide clearer citations."
+    },
+    "overall": 3.51,
+    "failures": [
+      "toolUsage",
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response lacks optimal tool usage, as it does not specify the mode or filters used during the search. Additionally, while it provides some quotes, they are not all accurately attributed or relevant to the claims made. To improve, the assistant should ensure that quotes are directly tied to the context of the scriptures mentioned and provide clearer citations."
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library contains a total of 44,937 documents. These are distributed across various traditions, with the largest collection being Bahá'í texts, numbering 41,590 documents. Other traditions include Judaism with 1,418 documents, Buddhism with 858, Islam with 404, and Christianity with 208 documents. Smaller collections include Hindu, Zoroastrian, Tao, Confucian, Sikh, and Jain texts.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 4458,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 1,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The primary issue with this response is that it contains fabricated information regarding the total number of documents in the library, which is a significant error. To fix it, the assistant should ensure that the data retrieved from the library is accurate and properly cited."
+    },
+    "overall": 2.95,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "quoteEconomy"
+    ],
+    "diagnosis": "The primary issue with this response is that it contains fabricated information regarding the total number of documents in the library, which is a significant error. To fix it, the assistant should ensure that the data retrieved from the library is accurate and properly cited."
+  },
+  {
+    "id": 97,
+    "category": "multi",
+    "query": "What Buddhist texts discuss mindfulness, and can you show me a key passage?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Buddhist text known as the *Satipatthana Sutta* discusses mindfulness extensively. It asks, [\"how does a monk remain focused on mental qualities in & of themselves?\"](https://oceanlibrary.com/dhammapada_buddha), emphasizing the importance of direct awareness. Additionally, the *Dhammapada* advises that if one holds oneself dear, one should [\"watch himself carefully\"](https://oceanlibrary.com/dhammapada_buddha), highlighting the necessity of mindfulness in daily life. These teachings underscore mindfulness as a cornerstone of Buddhist practice.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 3610,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively identifies key Buddhist texts on mindfulness and provides relevant passages, but the quotes lack proper integration and one quote is misattributed. To improve, ensure that quotes are accurately attributed to their respective texts and integrate them more fluidly into the narrative."
+    },
+    "overall": 3.83,
+    "failures": [
+      "citationAccuracy",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response effectively identifies key Buddhist texts on mindfulness and provides relevant passages, but the quotes lack proper integration and one quote is misattributed. To improve, ensure that quotes are accurately attributed to their respective texts and integrate them more fluidly into the narrative."
+  }
+]

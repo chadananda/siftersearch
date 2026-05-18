@@ -1,0 +1,199 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Hindu concept of dharma is multifaceted, encompassing duty, righteousness, and the moral order of the universe. In the *Bhagavad Gita*, it is suggested that one finds perfection through [\"worship — wrought by work\"](https://oceanlibrary.com/hymns-of-atharva-veda), indicating that fulfilling one's duties is a form of spiritual practice. This aligns with the idea that dharma involves performing the work allotted to an individual, which leads to spiritual growth and harmony with the divine.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 7,
+    "durationMs": 3986,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient direct quotes from the library to support its claims about dharma, particularly from authoritative texts. To improve, it should include more specific citations from the *Bhagavad Gita* or other relevant scriptures, ensuring that each claim is backed by a precise quote that illustrates the concept of dharma."
+    },
+    "overall": 3.66,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks sufficient direct quotes from the library to support its claims about dharma, particularly from authoritative texts. To improve, it should include more specific citations from the *Bhagavad Gita* or other relevant scriptures, ensuring that each claim is backed by a precise quote that illustrates the concept of dharma."
+  },
+  {
+    "id": 9,
+    "category": "factual",
+    "query": "What does the Torah say about justice?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Torah places a strong emphasis on justice, often intertwining it with righteousness and divine law. In the *Jerusalem Talmud Kiddushin*, it is noted that the Torah \"guards him from all evil\" and provides hope, suggesting that adherence to its teachings is a path to justice and protection. Moreover, the Torah's laws are designed to ensure fairness and equity, as seen in the prohibition against bringing \"an abomination into your house\" from idol worship, which underscores the importance of maintaining purity and justice in one's dealings (*Chullin*).",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 6,
+    "durationMs": 4519,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient direct quotes from the Torah itself, relying instead on Talmudic references that may not fully represent the Torah's teachings on justice. To improve, the assistant should include specific verses from the Torah that directly address justice, ensuring a stronger foundation for the claims made."
+    },
+    "overall": 3.29,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "noHallucination"
+    ],
+    "diagnosis": "The response lacks sufficient direct quotes from the Torah itself, relying instead on Talmudic references that may not fully represent the Torah's teachings on justice. To improve, the assistant should include specific verses from the Torah that directly address justice, ensuring a stronger foundation for the claims made."
+  },
+  {
+    "id": 29,
+    "category": "author",
+    "query": "Do you have anything by Rumi?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "Yes, the library has three works by Rumi, including the Divan-e Shams, and the Masnavi. In *The Masnavi*, Rumi explores profound spiritual themes, such as how the [\"spiritual man cries in his sleep\"](https://oceanlibrary.com/masnavi_rumi/?paraId=para_1043), offering comfort that the carnal man cannot hear. He also speaks of the \"inner voice\" as its own evidence, suggesting that for those with clear insight, this voice is recognized as truth without needing further proof.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 3791,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the user's potential assumptions about Rumi's work. Additionally, while the quotes are well-integrated, the explanation could be more concise to enhance brevity."
+    },
+    "overall": 4.12,
+    "failures": [],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the user's potential assumptions about Rumi's work. Additionally, while the quotes are well-integrated, the explanation could be more concise to enhance brevity."
+  },
+  {
+    "id": 87,
+    "category": "edge",
+    "query": "Is the Bahá'í Faith a cult?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Bahá'í Faith is structured in a way that actively prevents the formation of factions or cult-like behavior. Bahá’u’lláh established a [Covenant and Testament](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_1791) to ensure unity, making it clear that the appointed Center of the Covenant must be obeyed by all. This structure is unique because it includes a [central authority](https://siftersearch.com/document/1550) that has been maintained through a line of succession, starting with ‘Abdu’l-Bahá and continuing with the Universal House of Justice. This covenant acts like a [constitution for the Bahá’í community](https://siftersearch.com/document/1550), safeguarding it against schisms and ensuring that no individual can claim special authority or create a sect based on personal interpretation.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 5,
+    "durationMs": 3812,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient direct quotes from the library to substantiate its claims, which weakens its overall authority. To improve, the assistant should integrate more specific quotes from Bahá'í texts that directly address the question of cult-like behavior and the structure of the Faith."
+    },
+    "overall": 3.37,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "criticalEngagement",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks sufficient direct quotes from the library to substantiate its claims, which weakens its overall authority. To improve, the assistant should integrate more specific quotes from Bahá'í texts that directly address the question of cult-like behavior and the structure of the Faith."
+  },
+  {
+    "id": 107,
+    "category": "framing",
+    "query": "The Bahá'í Faith is basically a liberal religion that supports modern progressive values?",
+    "questionType": "framing",
+    "status": "FAIL",
+    "response": "Partly right — the Bahá'í Faith does indeed embrace principles that resonate with modern progressive values, such as the [\"equality of men and women\"](https://siftersearch.com/document/11434), *Tablet to the Central Organization for a Durable Peace, The Hague*, and the [\"independent investigation of truth\"](https://siftersearch.com/document/8680), *Lights of Guidance*. However, it goes beyond this by framing unity as the central purpose of its teachings, with Bahá'u'lláh declaring that [\"the world is but one country, and mankind its citizens\"](https://siftersearch.com/document/8635), *God Passes By*. This vision of unity is not just a liberal ideal but a profound spiritual mandate that seeks to transform the very fabric of society.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 8668,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response partially engages critically with the user's framing but does not sufficiently challenge the assumption that the Bahá'í Faith is merely a liberal religion. To improve, it should explicitly address the limitations of the term 'liberal' in this context and clarify the unique spiritual aspects of the Bahá'í teachings that transcend modern progressive values."
+    },
+    "overall": 4.1,
+    "failures": [
+      "criticalEngagement"
+    ],
+    "diagnosis": "The response partially engages critically with the user's framing but does not sufficiently challenge the assumption that the Bahá'í Faith is merely a liberal religion. To improve, it should explicitly address the limitations of the term 'liberal' in this context and clarify the unique spiritual aspects of the Bahá'í teachings that transcend modern progressive values."
+  }
+]

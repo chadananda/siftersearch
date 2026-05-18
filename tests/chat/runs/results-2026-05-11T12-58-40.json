@@ -1,0 +1,326 @@
+[
+  {
+    "id": 61,
+    "category": "browsing",
+    "query": "What's in the library?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library is quite extensive, holding a total of 44,943 documents. Among these, there are 5,659 Bahá'í texts, 1,418 Jewish texts, and 858 Buddhist texts, among others. The collections include foundational scriptures such as the Pali Canon for Buddhism and the Torah and Tanakh for Judaism. As Bahá'u'lláh expresses in the [Ode of the Dove](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_ode-of-the-dove-qasidiy-i-varqaiyyih-2#p229), the sacred texts are a \"revelation's gleam,\" illuminating the path for seekers across all traditions.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 6743,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of the library's contents and includes a relevant quote from Bahá'u'lláh. However, it could improve by integrating the quote more seamlessly into the narrative and providing a bit more warmth in the tone. Additionally, the assistant should ensure that the document count is accurate, as the total mentioned seems inconsistent with the context of the library's known size."
+    },
+    "overall": 4.16,
+    "failures": [],
+    "diagnosis": "The response provides a good overview of the library's contents and includes a relevant quote from Bahá'u'lláh. However, it could improve by integrating the quote more seamlessly into the narrative and providing a bit more warmth in the tone. Additionally, the assistant should ensure that the document count is accurate, as the total mentioned seems inconsistent with the context of the library's known size."
+  },
+  {
+    "id": 62,
+    "category": "browsing",
+    "query": "How many Buddhist texts do you have?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library holds 858 Buddhist documents, with the majority being part of the Pali Canon, which is the oldest surviving collection of Buddhist scriptures. Among these, the Mahayana Sutras are also represented, including *The Diamond Sutra*, which is known as [\"The Transcendent Wisdom\"](https://siftersearch.com/library/Buddhist/Mahayana%20Sutras/tr-william-gemmell_the-diamond-sutra-vajracchedika-prajnaparamita#p272) — a text that guides practitioners to \"reach the Other Shore.\" This diverse collection offers a rich tapestry of teachings and insights from the Buddhist tradition.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 5705,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong overall, but it could improve by integrating the quote from *The Diamond Sutra* more seamlessly into the narrative. Additionally, while the citation is accurate, it could be more authoritative by emphasizing the Pali Canon as the primary source before mentioning the Mahayana Sutras."
+    },
+    "overall": 4.42,
+    "failures": [],
+    "diagnosis": "The response is strong overall, but it could improve by integrating the quote from *The Diamond Sutra* more seamlessly into the narrative. Additionally, while the citation is accurate, it could be more authoritative by emphasizing the Pali Canon as the primary source before mentioning the Mahayana Sutras."
+  },
+  {
+    "id": 63,
+    "category": "browsing",
+    "query": "Show me the Islamic collections",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 404 documents related to Islam. These are part of collections such as the \"Foundational Texts,\" which include core Islamic scriptures like the Qur'an and hadith collections, and \"Mysticism,\" which explores the inner spiritual dimensions of faith. Additionally, the \"Doctrine and Theology\" collection examines core beliefs, while the \"Jurisprudence\" section covers legal treatises across major schools of Islamic law.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 12299,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 1,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response lacks citations from the library, which is critical for supporting claims about the collections. Additionally, it does not provide specific titles or quotes from the documents, which would enhance authority and relevance. To improve, the assistant should include direct quotes or references from the library's documents to substantiate its claims."
+    },
+    "overall": 2.76,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "quoteEconomy"
+    ],
+    "diagnosis": "The response lacks citations from the library, which is critical for supporting claims about the collections. Additionally, it does not provide specific titles or quotes from the documents, which would enhance authority and relevance. To improve, the assistant should include direct quotes or references from the library's documents to substantiate its claims."
+  },
+  {
+    "id": 64,
+    "category": "browsing",
+    "query": "What languages are available?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library offers a vast collection of 44,943 documents across various religious traditions. Among these, the Bahá'í texts are particularly extensive, with 5,659 documents. The collection also includes significant works from Judaism, Buddhism, Islam, Christianity, Hinduism, and other traditions. For example, the Pali Canon, a core Buddhist scripture, is available in 821 documents, while the Torah and Tanakh are represented in 80 documents. This diversity ensures a rich exploration of religious wisdom across different cultures and languages.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 13215,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 1,
+      "instructionFollowing": 3,
+      "warmth": 2,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks citations from the library, which is critical for a browsing question. While it provides some relevant information about the number of documents and languages, it does not specify which languages are available, leaving a significant gap in coverage. To improve, the assistant should include specific language information and cite relevant documents from the library."
+    },
+    "overall": 2.45,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth"
+    ],
+    "diagnosis": "The response lacks citations from the library, which is critical for a browsing question. While it provides some relevant information about the number of documents and languages, it does not specify which languages are available, leaving a significant gap in coverage. To improve, the assistant should include specific language information and cite relevant documents from the library."
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds a substantial collection of Bahá'í texts, totaling [5,659 documents](url) across various collections. Key collections include the \"Core Tablets,\" which feature foundational scriptures by Bahá'u'lláh and 'Abdu'l-Bahá, and the \"Tablet Translations,\" comprising translations of the Báb's and Bahá'u'lláh's writings. Additionally, there are \"Baha'i Books,\" which encompass the works of Bahá'u'lláh and other central figures, and \"Administrative\" texts that include constitutional documents and institutional guidance. These collections reflect the breadth and depth of Bahá'í teachings available in the library.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 7618,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 4,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 1,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks any direct quotes from the library, which is a significant issue given the browsing nature of the query. To improve, the assistant should include specific citations from the library's collections to substantiate its claims about the Bahá'í texts."
+    },
+    "overall": 3,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "logicalCoherence",
+      "quoteEconomy"
+    ],
+    "diagnosis": "The response lacks any direct quotes from the library, which is a significant issue given the browsing nature of the query. To improve, the assistant should include specific citations from the library's collections to substantiate its claims about the Bahá'í texts."
+  },
+  {
+    "id": 66,
+    "category": "browsing",
+    "query": "What's the largest collection?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The largest collection in the library is the \"null\" category, which holds 35,931 documents. Among specific traditions, the Bahá'í collection is the most extensive with [5,659 documents](https://siftersearch.com/library/Baha'i/Baha'i%20Books/adib-taherzadeh_the-revelation-of-bahaullah-vol-2#p1251), including foundational works by Bahá'u'lláh and 'Abdu'l-Bahá. This reflects the depth and breadth of Bahá'í literature available for study.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 6966,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response provides a good overview of the largest collections but lacks direct quotes from the library to support the claims made. To improve, it should include specific quotes from the search results to substantiate the information about the collections and their significance."
+    },
+    "overall": 4.03,
+    "failures": [],
+    "diagnosis": "The response provides a good overview of the largest collections but lacks direct quotes from the library to support the claims made. To improve, it should include specific quotes from the search results to substantiate the information about the collections and their significance."
+  },
+  {
+    "id": 67,
+    "category": "browsing",
+    "query": "Do you have any Jain texts?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library includes 27 Jain texts, with collections such as the Agamas, which are the canonical scriptures of Jainism. Among these, the [Akaranga Sutra](https://siftersearch.com/library/Jain/Agamas/tr-hermann-jacobi_akaranga-sutra-book-1#p0) is a significant text, offering insights into the teachings of the Tirthankaras. If you're interested in exploring Jain philosophy further, the [Jaina Sutras Part I](https://siftersearch.com/library/Jain/Philosophy/tr-hermann-jacobi_jaina-sutras-part-i-sbe-vol-22#p19) translated by Hermann Jacobi is also available.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 3716,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is well-structured and informative, providing accurate citations and a clear overview of Jain texts. The only minor improvement could be to integrate the quotes more seamlessly into the prose for even better inline quote integration."
+    },
+    "overall": 4.82,
+    "failures": [],
+    "diagnosis": "The response is well-structured and informative, providing accurate citations and a clear overview of Jain texts. The only minor improvement could be to integrate the quotes more seamlessly into the prose for even better inline quote integration."
+  },
+  {
+    "id": 68,
+    "category": "browsing",
+    "query": "Show me documents about the Pali Canon",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library includes a range of documents from the Pali Canon, which is a foundational text in Buddhism. Among these, you'll find the [*Digha Nikaya 16 - Mahaparinibbana Sutta*](https://siftersearch.com/library/Buddhist/Pali%20Canon/tr-sister-vajira_digha-nikaya-16-mahaparinibbana-sutta-last-days-of-the-buddha#p113), detailing the last days of the Buddha, and the [*Majjhima Nikaya 9 - Sammaditthi Sutta*](https://siftersearch.com/library/Buddhist/Pali%20Canon/tr-nanamoli-thera_majjhima-nikaya-9-sammaditthi-sutta-the-discourse-on-right-view#p16), which discusses the Four Noble Truths. These texts are central to understanding the teachings and practices within the Buddhist tradition.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 9,
+    "citationCount": 0,
+    "durationMs": 5433,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library's resources to provide accurate citations and relevant documents about the Pali Canon. However, it could improve warmth by adding a more engaging tone or personal touch to the response, making it feel less transactional."
+    },
+    "overall": 4.71,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library's resources to provide accurate citations and relevant documents about the Pali Canon. However, it could improve warmth by adding a more engaging tone or personal touch to the response, making it feel less transactional."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  }
+]

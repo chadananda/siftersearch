@@ -1,0 +1,92 @@
+[
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds a total of 44,937 documents, spanning a wide range of religious traditions. Among these, the Bahá'í collection is particularly extensive with 41,590 documents, reflecting the depth of its scriptural and historical writings. The Buddhist texts include the Pali Canon, which comprises [\"the oldest surviving Buddhist scriptures\"](url), providing foundational teachings of the Theravāda tradition. Each tradition's collection offers a unique window into its spiritual and philosophical heritage.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 4663,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 2,
+      "citationAccuracy": 1,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 1,
+      "logicalCoherence": 2,
+      "brevity": 2,
+      "quoteEconomy": 1,
+      "instructionFollowing": 2,
+      "warmth": 3,
+      "noHallucination": 1,
+      "noGeneralKnowledge": 1,
+      "diagnosis": "The response hallucinates the core statistic: the prompt states the library contains 7,900+ documents and 3.5M+ paragraphs, not 44,937 documents or 41,590 Bahá'í documents. The assistant also fabricates a quote about the Pali Canon with a fake URL, introduces unsupported general knowledge about Buddhist traditions, and diverges from the user's simple factual question into topical commentary that wasn't requested. For a basic browsing question, the answer should state the actual library size (7,900+ documents) and stop."
+    },
+    "overall": 1.83,
+    "failures": [
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "brevity",
+      "quoteEconomy",
+      "instructionFollowing",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response hallucinates the core statistic: the prompt states the library contains 7,900+ documents and 3.5M+ paragraphs, not 44,937 documents or 41,590 Bahá'í documents. The assistant also fabricates a quote about the Pali Canon with a fake URL, introduces unsupported general knowledge about Buddhist traditions, and diverges from the user's simple factual question into topical commentary that wasn't requested. For a basic browsing question, the answer should state the actual library size (7,900+ documents) and stop."
+  },
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 331 documents by 'Abdu'l-Bahá. Among these, some discuss governance, such as the emphasis on consultation. 'Abdu'l-Bahá describes consultation as [\"of vital importance\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388), highlighting that it should aim for the \"attainment of the light of truth\" rather than being a \"battleground for opposition and self-opinion.\" This approach underscores the need for unity and truth-seeking in decision-making processes.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 2,
+    "durationMs": 5826,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 1,
+      "logicalCoherence": 2,
+      "brevity": 4,
+      "quoteEconomy": 2,
+      "instructionFollowing": 1,
+      "warmth": 3,
+      "noHallucination": 3,
+      "noGeneralKnowledge": 3,
+      "diagnosis": "The assistant answered the first part ('How many documents') but almost entirely failed on the second part ('which ones discuss governance'). The user asked for a list of documents; instead, they got a summary of a single topic with vague language ('some discuss governance, such as'). The response needed to search specifically for governance-related works by 'Abdu'l-Bahá, then LIST them by title — not generalize about consultation. The quote itself appears real but is used to illustrate a concept rather than to answer the actual question asked."
+    },
+    "overall": 2.56,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The assistant answered the first part ('How many documents') but almost entirely failed on the second part ('which ones discuss governance'). The user asked for a list of documents; instead, they got a summary of a single topic with vague language ('some discuss governance, such as'). The response needed to search specifically for governance-related works by 'Abdu'l-Bahá, then LIST them by title — not generalize about consultation. The quote itself appears real but is used to illustrate a concept rather than to answer the actual question asked."
+  }
+]

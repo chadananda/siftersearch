@@ -1,0 +1,42 @@
+[
+  {
+    "id": 30,
+    "category": "author",
+    "query": "What books by Moojan Momen do you have?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 146 documents by Moojan Momen. Some notable titles include [Mazhar-i Ilahi (Manifestation of God)](https://example.com), [Memorials of the Faithful: The Democratization of Sainthood](https://example.com), and [Shoghi Effendi's Translation of Terms Related to Law in Bahá’í Scripture](https://example.com). Momen's works often explore the historical and theological dimensions of the Bahá'í Faith, providing insights into its development and interpretation.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 3012,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 3,
+      "diagnosis": "The response lacks direct quotes from the library, relying instead on general knowledge about Momen's works. To improve, it should include specific quotes or excerpts from the documents to substantiate the claims made about his writings and their themes."
+    },
+    "overall": 2.83,
+    "failures": [
+      "citationAccuracy",
+      "logicalCoherence",
+      "inlineQuoteIntegration",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response lacks direct quotes from the library, relying instead on general knowledge about Momen's works. To improve, it should include specific quotes or excerpts from the documents to substantiate the claims made about his writings and their themes."
+  }
+]

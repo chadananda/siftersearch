@@ -1,0 +1,209 @@
+[
+  {
+    "id": 71,
+    "category": "reading",
+    "query": "Read me the opening of the Hidden Words",
+    "questionType": "reading",
+    "status": "FAIL",
+    "response": "Certainly! The opening of \"The Hidden Words\" begins with Bahá'u'lláh's declaration: [\"This is that which hath descended from the realm of glory\"](https://siftersearch.com/document/8230), setting a divine tone. He then offers his first counsel: [\"Possess a pure, kindly and radiant heart\"](https://siftersearch.com/document/8230), suggesting that such a heart leads to an \"ancient, imperishable and everlasting\" sovereignty. This introduction invites the reader into a journey of spiritual refinement and connection with the divine.",
+    "toolsUsed": [
+      "find_document_for_citation",
+      "search",
+      "document_subagent"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 0,
+    "durationMs": 10916,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "inlineQuoteIntegration": 5,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library to provide accurate quotes from 'The Hidden Words' and integrates them well into the narrative. However, it could be slightly more concise by reducing some of the explanatory phrases without losing meaning."
+    },
+    "overall": 4.92,
+    "failures": [
+      "criticalEngagement"
+    ],
+    "diagnosis": "The response effectively uses the library to provide accurate quotes from 'The Hidden Words' and integrates them well into the narrative. However, it could be slightly more concise by reducing some of the explanatory phrases without losing meaning."
+  },
+  {
+    "id": 72,
+    "category": "reading",
+    "query": "Show me the beginning of the Kitáb-i-Íqán",
+    "questionType": "reading",
+    "status": "FAIL",
+    "response": "Certainly! The beginning of the *Kitáb-i-Íqán* opens with a profound call to detachment: [\"No man shall attain the shores of the ocean of true understanding except he be detached from all that is in heaven and on earth\"](https://siftersearch.com/document/8300). Bahá’u’lláh invites the reader to \"sanctify your souls\" to reach the station God has destined, framing this journey as entering a divine \"tabernacle\" raised in the firmament of the Bayán.",
+    "toolsUsed": [
+      "find_document_for_citation",
+      "search",
+      "document_subagent"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 0,
+    "durationMs": 12918,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "inlineQuoteIntegration": 5,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong overall, effectively integrating quotes and providing a coherent summary of the text. The only minor issue is a slight verbosity in the last sentence, which could be tightened for greater conciseness."
+    },
+    "overall": 4.92,
+    "failures": [
+      "criticalEngagement"
+    ],
+    "diagnosis": "The response is strong overall, effectively integrating quotes and providing a coherent summary of the text. The only minor issue is a slight verbosity in the last sentence, which could be tightened for greater conciseness."
+  },
+  {
+    "id": 73,
+    "category": "reading",
+    "query": "What does the first chapter of the Quran say?",
+    "questionType": "reading",
+    "status": "FAIL",
+    "response": "The first chapter of the Qur'án, known as Al-Fatiha, begins with the words [\"In the Name of God, the Compassionate, the Merciful\"](https://siftersearch.com/library/Baha'i/Core%20Publications/tablets-of-bahaullah-revealed-after-the-kitab-i-aqdas#p232), as noted by Bahá'u'lláh. It continues with praise for God, described as the [\"Cherisher and Sustainer of the world\"](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_tablet-to-shah-muhammad-amin-aminul-bayan-excerpt#p28). This chapter is significant as it was revealed twice, once in Mecca and once in Medina, underscoring its foundational role in Islamic worship and prayer.",
+    "toolsUsed": [
+      "find_document_for_citation",
+      "search",
+      "document_subagent"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 0,
+    "durationMs": 7261,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a decent overview of Al-Fatiha but lacks direct quotes from the Quran itself, relying instead on Bahá'u'lláh's commentary. To improve, the assistant should directly quote the text of Al-Fatiha and ensure that the citations are from the Quran rather than secondary sources."
+    },
+    "overall": 3.71,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "criticalEngagement",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response provides a decent overview of Al-Fatiha but lacks direct quotes from the Quran itself, relying instead on Bahá'u'lláh's commentary. To improve, the assistant should directly quote the text of Al-Fatiha and ensure that the citations are from the Quran rather than secondary sources."
+  },
+  {
+    "id": 74,
+    "category": "reading",
+    "query": "Read the opening verses of the Bhagavad Gita",
+    "questionType": "reading",
+    "status": "FAIL",
+    "response": "I couldn't find the exact opening verses of the Bhagavad Gita in the retrieved text, but I can share that it begins with Arjuna facing a profound moral dilemma. As he prepares for battle, he is filled with emotional turmoil at the thought of fighting his own relatives and teachers. This sets the stage for the deep philosophical dialogue with Krishna that follows. If you want to explore a specific section or theme, feel free to ask!",
+    "toolsUsed": [
+      "find_document_for_citation",
+      "search",
+      "document_subagent"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 0,
+    "durationMs": 14516,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 2,
+      "logicalCoherence": 2,
+      "brevity": 3,
+      "quoteEconomy": 1,
+      "instructionFollowing": 1,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The assistant failed to provide the actual text of the opening verses of the Bhagavad Gita, which was the user's explicit request. Instead, it offered a summary based on general knowledge, which is not acceptable for a reading request. To improve, the assistant should ensure it retrieves and presents the specific text requested by the user."
+    },
+    "overall": 2.03,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The assistant failed to provide the actual text of the opening verses of the Bhagavad Gita, which was the user's explicit request. Instead, it offered a summary based on general knowledge, which is not acceptable for a reading request. To improve, the assistant should ensure it retrieves and presents the specific text requested by the user."
+  },
+  {
+    "id": 75,
+    "category": "reading",
+    "query": "Show me the first few paragraphs of the Tao Te Ching",
+    "questionType": "reading",
+    "status": "FAIL",
+    "response": "I couldn't find the specific text from the *Tao Te Ching* in the corpus I have access to right now. The closest material I have is about philosophical journeys and mysteries, but it doesn't directly address your request. If you'd like, I can try looking at a specific translation or chapter range.",
+    "toolsUsed": [
+      "find_document_for_citation",
+      "search",
+      "document_subagent"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 0,
+    "durationMs": 8632,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 1,
+      "logicalCoherence": 2,
+      "brevity": 3,
+      "quoteEconomy": 1,
+      "instructionFollowing": 2,
+      "warmth": 2,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The primary issue with this response is the failure to provide any actual text from the *Tao Te Ching*, which is what the user specifically requested. To improve, the assistant should have attempted to locate the text directly and provide it, or clearly state the limitations of the corpus while offering alternative suggestions for finding the text."
+    },
+    "overall": 2.08,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth"
+    ],
+    "diagnosis": "The primary issue with this response is the failure to provide any actual text from the *Tao Te Ching*, which is what the user specifically requested. To improve, the assistant should have attempted to locate the text directly and provide it, or clearly state the limitations of the corpus while offering alternative suggestions for finding the text."
+  }
+]

@@ -1,0 +1,203 @@
+[
+  {
+    "id": 61,
+    "category": "browsing",
+    "query": "What's in the library?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 62,
+    "category": "browsing",
+    "query": "How many Buddhist texts do you have?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 63,
+    "category": "browsing",
+    "query": "Show me the Islamic collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 64,
+    "category": "browsing",
+    "query": "What languages are available?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 5,659 Bahá'í documents, which are spread across several collections. These include the *Core Tablets*, which feature foundational scriptures by Bahá'u'lláh and 'Abdu'l-Bahá, and the *Tablet Translations*, with 738 documents translating the Báb's and Bahá'u'lláh's writings. Additionally, there are *Baha'i Books* with 623 documents, and *Administrative* texts covering constitutional documents and institutional guidance. These collections provide a comprehensive view of Bahá'í teachings and history.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 105769,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 5,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 1,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response lacks citations from the library, which is critical for supporting the claims made about the collections. To improve, the assistant should include specific quotes or references from the library to substantiate the information provided about the Bahá'í collections."
+    },
+    "overall": 3.24,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "logicalCoherence",
+      "quoteEconomy"
+    ],
+    "diagnosis": "The response lacks citations from the library, which is critical for supporting the claims made about the collections. To improve, the assistant should include specific quotes or references from the library to substantiate the information provided about the Bahá'í collections."
+  },
+  {
+    "id": 66,
+    "category": "browsing",
+    "query": "What's the largest collection?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The largest collection in the library is the \"null\" category, with 35,931 documents. Among specific traditions, the Bahá'í collection is the most extensive, holding [5,659 documents](https://siftersearch.com/library/Baha'i/Baha'i%20Books/adib-taherzadeh_the-revelation-of-bahaullah-vol-2#p1251). This includes foundational texts like the [Core Tablets](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_ode-of-the-dove-qasidiy-i-varqaiyyih-2#p229) and [Tablet Translations](https://siftersearch.com/library/Baha'i/Baha'i%20Books/udo-schaefer_bahai-ethics-in-light-of-scripture-vol-2#p1800), which are central to Bahá'í teachings.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 107587,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response provides useful information but lacks effective integration of quotes into the narrative, making it feel somewhat disjointed. Improving inline quote integration and ensuring that all claims are directly supported by quotes would enhance the overall quality of the response."
+    },
+    "overall": 3.74,
+    "failures": [
+      "topicCoverage",
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response provides useful information but lacks effective integration of quotes into the narrative, making it feel somewhat disjointed. Improving inline quote integration and ensuring that all claims are directly supported by quotes would enhance the overall quality of the response."
+  },
+  {
+    "id": 67,
+    "category": "browsing",
+    "query": "Do you have any Jain texts?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "Yes, the library includes Jain texts, with a total of [27 documents](https://siftersearch.com/library/Jain/Philosophy/tr-hermann-jacobi_jaina-sutras-part-i-sbe-vol-22#p19) available. These include canonical scriptures like the [Akaranga Sutra](https://siftersearch.com/library/Jain/Agamas/tr-hermann-jacobi_akaranga-sutra-book-1#p0), which are foundational to Jain teachings. If you're interested in exploring Jain philosophy or ethics, these texts are a great resource.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 11745,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library tools and provides relevant citations, but it could improve by integrating quotes more seamlessly into the text rather than listing them as links. Additionally, while the warmth is adequate, a more engaging tone could enhance the overall response."
+    },
+    "overall": 4.21,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library tools and provides relevant citations, but it could improve by integrating quotes more seamlessly into the text rather than listing them as links. Additionally, while the warmth is adequate, a more engaging tone could enhance the overall response."
+  },
+  {
+    "id": 68,
+    "category": "browsing",
+    "query": "Show me documents about the Pali Canon",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "terminated",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  }
+]

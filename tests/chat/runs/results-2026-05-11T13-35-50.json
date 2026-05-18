@@ -1,0 +1,174 @@
+[
+  {
+    "id": 61,
+    "category": "browsing",
+    "query": "What's in the library?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 62,
+    "category": "browsing",
+    "query": "How many Buddhist texts do you have?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library holds 858 Buddhist documents, with a significant portion coming from the Pali Canon, which is the oldest surviving collection of Buddhist scriptures. Among these texts, the *Diamond Sutra* is highlighted for its teaching on [\"transcendent wisdom\"](https://siftersearch.com/library/Buddhist/Mahayana%20Sutras/tr-william-gemmell_the-diamond-sutra-vajracchedika-prajnaparamita#p272), guiding practitioners to reach \"The Other Shore.\" This collection provides a rich resource for exploring the depth of Buddhist thought and practice.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 45580,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses library tools and provides a clear answer to the user's query. However, it could improve by integrating the quoted text more seamlessly into the narrative and ensuring that all claims are directly supported by quotes from the library. Additionally, while the response is informative, it could be slightly more concise."
+    },
+    "overall": 4.34,
+    "failures": [],
+    "diagnosis": "The response effectively uses library tools and provides a clear answer to the user's query. However, it could improve by integrating the quoted text more seamlessly into the narrative and ensuring that all claims are directly supported by quotes from the library. Additionally, while the response is informative, it could be slightly more concise."
+  },
+  {
+    "id": 63,
+    "category": "browsing",
+    "query": "Show me the Islamic collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 64,
+    "category": "browsing",
+    "query": "What languages are available?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 66,
+    "category": "browsing",
+    "query": "What's the largest collection?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 67,
+    "category": "browsing",
+    "query": "Do you have any Jain texts?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "Yes, the library contains Jain texts, with a total of [22 documents](https://siftersearch.com/library/Jain/Agamas/tr-hermann-jacobi_akaranga-sutra-book-1#p0) specifically dedicated to Jainism. Among these, the [Akaranga Sutra](https://siftersearch.com/library/Jain/Agamas/tr-hermann-jacobi_akaranga-sutra-book-1#p0) is a key text, offering insights into the teachings and practices of the Jain tradition. Additionally, the [Jaina Sutras Part I](https://siftersearch.com/library/Jain/Philosophy/tr-hermann-jacobi_jaina-sutras-part-i-sbe-vol-22#p19) translated by Hermann Jacobi, is part of the collection, providing foundational philosophical perspectives.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 25693,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "inlineQuoteIntegration": 5,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is well-structured and provides accurate citations for Jain texts, demonstrating excellent tool usage and authority in sources. The only minor improvement could be to tighten the prose slightly for brevity, but overall, it effectively addresses the user's query."
+    },
+    "overall": 4.92,
+    "failures": [],
+    "diagnosis": "The response is well-structured and provides accurate citations for Jain texts, demonstrating excellent tool usage and authority in sources. The only minor improvement could be to tighten the prose slightly for brevity, but overall, it effectively addresses the user's query."
+  },
+  {
+    "id": 68,
+    "category": "browsing",
+    "query": "Show me documents about the Pali Canon",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "terminated",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  }
+]

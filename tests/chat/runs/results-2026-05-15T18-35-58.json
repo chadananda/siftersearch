@@ -1,0 +1,115 @@
+[
+  {
+    "id": 20,
+    "category": "comparative",
+    "query": "What do the Bahá'í Faith and Islam say about fasting?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "In Islam, fasting is a practice prescribed to believers [\"as it was prescribed to those before you\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad/?paraId=para_197), emphasizing its historical continuity and spiritual purpose. The Qur'án highlights that fasting is meant to help believers [\"ward off evil\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad/?paraId=para_197), suggesting a focus on spiritual purification and self-discipline. Additionally, during the fast, Muslims are instructed to [\"eat and drink until ye can discern a white thread from a black thread by the daybreak\"](https://oceanlibrary.com/sura-ii-the-cow_muhammad/?paraId=para_114), marking the beginning and end of the daily fast.\n\nIn the Bahá'í Faith, fasting is observed as a period of spiritual reflection and renewal, although the specific texts from Bahá'í sources weren't retrieved here. Generally, Bahá'í fasting involves abstaining from food and drink from sunrise to sunset for 19 days, symbolizing detachment from material desires and a focus on spiritual growth. Both traditions view fasting as a means to deepen one's spiritual connection and discipline.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 6083,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively covers fasting in both Islam and the Bahá'í Faith, but it lacks specific quotes from Bahá'í texts, which weakens the authority of that section. To improve, the assistant should ensure it retrieves and cites relevant Bahá'í sources to support its claims about fasting in that tradition."
+    },
+    "overall": 3.93,
+    "failures": [],
+    "diagnosis": "The response effectively covers fasting in both Islam and the Bahá'í Faith, but it lacks specific quotes from Bahá'í texts, which weakens the authority of that section. To improve, the assistant should ensure it retrieves and cites relevant Bahá'í sources to support its claims about fasting in that tradition."
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library holds 41,590 Bahá'í documents across several collections, including Baha'i Books, Reference, Papers, and News. Among these, you can find works like [\"Selections from the Writings of the Báb\"](https://oceanlibrary.com/selections-from-the-writings-of-the-bab), which discuss the profound transformation that occurs when individuals embrace the divine cause. Additionally, the [\"Selections from the Writings of ’Abdu’l-Bahá\"](https://siftersearch.com/library/Baha'i/Core%20Publications/selections-from-the-writings-of-abdul-baha#p504) describe the teachings as \"heavenly outpourings of grace,\" likening them to rain-showers that cleanse the human heart.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 4,
+    "durationMs": 4348,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively lists the Bahá'í collections and includes relevant quotes, but it could improve by providing a more critical engagement with the significance of these collections. Additionally, while the warmth is present, it could be enhanced to create a more inviting tone."
+    },
+    "overall": 4.22,
+    "failures": [],
+    "diagnosis": "The response effectively lists the Bahá'í collections and includes relevant quotes, but it could improve by providing a more critical engagement with the significance of these collections. Additionally, while the warmth is present, it could be enhanced to create a more inviting tone."
+  },
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 623 documents by 'Abdu'l-Bahá, found within collections like Core Tablets and Baha'i Books. Among these, some texts delve into themes of governance, such as those in the Core Publications collection.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 4610,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 2,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks specific citations from the library, which is crucial for a research query. To improve, it should include direct references to the documents discussing governance and integrate quotes or specific titles to support the claims made about 'Abdu'l-Bahá's works."
+    },
+    "overall": 3.05,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "quoteEconomy"
+    ],
+    "diagnosis": "The response lacks specific citations from the library, which is crucial for a research query. To improve, it should include direct references to the documents discussing governance and integrate quotes or specific titles to support the claims made about 'Abdu'l-Bahá's works."
+  }
+]

@@ -1,0 +1,202 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Hindu concept of dharma is a fundamental principle that refers to the moral and ethical duties that sustain the order of the universe. In the *Bhagavad Gita*, it is suggested that by performing [\"the work allotted him, whate'er it be\"](https://oceanlibrary.com/hymns-of-atharva-veda), one can achieve perfection. This idea emphasizes that each individual has a specific role or duty in life, and fulfilling it with diligence and contentment leads to spiritual growth. Dharma is not just about personal duty but also involves the broader cosmic order, aligning one's actions with the universal laws that govern life.",
+    "toolsUsed": [
+      "search"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 6,
+    "durationMs": 4523,
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "brevity",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ]
+  },
+  {
+    "id": 6,
+    "category": "factual",
+    "query": "What are the Five Pillars of Islam?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Five Pillars of Islam form the foundation of a Muslim's faith and practice. They include the declaration of faith, prayer, almsgiving, fasting, and pilgrimage. The Qur'án emphasizes the importance of these practices, noting that believers should [\"humble them in their prayer\"](https://oceanlibrary.com/sura-xxiii-the-believers_muhammad/?paraId=para_3) and be \"doers of alms deeds\" (*Sura XXIII. The Believers*). While the Five Pillars are specific to Islam, other traditions also emphasize foundational practices. For instance, in Christianity, Jesus' act of blessing and sharing the [\"five loaves and the two fishes\"](https://oceanlibrary.com/kjv-gospel-of-luke/?paraId=para_333), *Gospel of Luke*, symbolizes the importance of community and sharing. In the Bahá'í Faith, Shoghi Effendi speaks of the Báb as the [\"Essence of Essences\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_138), highlighting the central role of divine revelation. Judaism, through the Torah, describes the construction of sacred spaces with [\"five pillars\"](https://oceanlibrary.com/jps-book-of-exodus/?paraId=para_1144), *Exodus*, symbolizing strength and support. Buddhism, while not having a concept of pillars, emphasizes the importance of mindfulness and ethical conduct, as seen in the teachings of the Blessed One. Each tradition, in its way, underscores the importance of foundational practices in spiritual life.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 9,
+    "citationCount": 8,
+    "durationMs": 11143,
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "brevity",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ]
+  },
+  {
+    "id": 8,
+    "category": "factual",
+    "query": "What is the Eightfold Path in Buddhism?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Eightfold Path in Buddhism is a guide to end suffering and achieve enlightenment, described as the \"middle way realized by the Tathagata\" in the *Samyutta Nikaya*. It includes right view, right resolve, right speech, right action, right livelihood, right effort, right mindfulness, and right concentration. In Sikhism, the path to spiritual fulfillment is through the Guru, as \"bliss is known only through the Guru\", according to the *Guru Granth Sahib*. Taoism suggests that the \"perfect man ignores self\", aligning with the Tao through simplicity and harmony. Hindu philosophy, as seen in the *Mahabharata*, speaks of the divine presence in all, urging unity with the Supreme. Bahá'u'lláh describes a spiritual journey through valleys, culminating in [\"dying from self and living in God\"](https://oceanlibrary.com/seven-valleys-and-the-four-valleys?paraId=para_119). Christianity emphasizes following Christ, who is [\"the way, the truth, and the life\"](https://oceanlibrary.com/gospel-of-john-eyaggelio-toy-ioanni?paraId=para_532), while Islam focuses on sincere devotion and unity with God. Judaism, in the Psalms, values inner truth, as God desires [\"truth in the inward parts\"](https://oceanlibrary.com/book-of-psalms-tehilim_david?paraId=para_865). Each tradition offers a unique path to spiritual realization, emphasizing inner transformation and alignment with a higher truth.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 5385,
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "brevity",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ]
+  },
+  {
+    "id": 9,
+    "category": "factual",
+    "query": "What does the Torah say about justice?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Torah emphasizes justice as a fundamental principle, urging the faithful to [\"leave the corners of their fields for the poor and the stranger\"](https://oceanlibrary.com/kjv-book-of-leviticus?paraId=para_550), *Leviticus*. This reflects a broader commitment to social equity and compassion. In Christianity, Jesus extends this idea by teaching that \"blessed are the merciful\", emphasizing mercy as a form of justice. The Bahá'í writings echo this by condemning religious intolerance, stating that \"religion must be a source of unity and concord\". Sikh teachings encourage humility and endurance, suggesting that one should \"have endurance like the earth\", reflecting a just and patient spirit. Hindu scriptures, like the *Taittriyaka Upanishad*, suggest that justice is inherent in the natural order, as [\"food is Brahman\"](https://oceanlibrary.com/taittriyaka-upanishad?paraId=para_86), sustaining all life. Lastly, Buddhism teaches detachment and balance, as seen in the principle that [\"purification involves putting food to the best possible use\"](https://oceanlibrary.com/sutra-collection-efg?paraId=para_84), aligning with a just and mindful life. Each tradition highlights justice as integral to spiritual and communal well-being.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 5334,
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "brevity",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ]
+  },
+  {
+    "id": 10,
+    "category": "factual",
+    "query": "What are the Zoroastrian teachings on good and evil?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "Zoroastrian teachings on good and evil emphasize a dualistic worldview where individuals are encouraged to actively choose good over evil. The teachings enjoin followers to be [\"active in destroying evil\"](https://oceanlibrary.com/the-teachings-of-zoroaster_kapadia/?paraId=para_132) and to cultivate virtues such as truthfulness, wisdom, and justice. The Avesta, a central Zoroastrian text, highlights the importance of aligning oneself with the divine order, or *asha*, which represents truth and righteousness. This alignment is seen as a way to combat the forces of evil and chaos, promoting a life of moral and spiritual integrity.",
+    "toolsUsed": [
+      "search"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 6,
+    "durationMs": 7906,
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "brevity",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ]
+  },
+  {
+    "id": 11,
+    "category": "factual",
+    "query": "What is the Sikh concept of seva?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Sikh concept of seva, or selfless service, is deeply rooted in the idea of living the Word of the Guru's Shabad, which leads to attaining a \"supreme status\", *Guru Granth Sahib*. This practice of seva is not just about physical acts but involves a spiritual dimension where one is imbued with the teachings and essence of the Guru. In Hinduism, selfless service aligns with the pursuit of truth and knowledge, as the Mundaka Upanishad suggests that through [\"truthfulness and right knowledge\"](https://oceanlibrary.com/mundaka-upanishad?paraId=para_61), one gains the Self.\n\nIn the Bahá'í Faith, 'Abdu'l-Bahá emphasizes that \"work done in the spirit of service is worship\", highlighting the sacred nature of service. Islam also values service, as the Qur'an mentions that Allah has made the sea and earth \"of service unto you\", encouraging gratitude and service to others. Christianity, through the teachings of Jesus, emphasizes serving others as a form of love and devotion, reflecting the commandment to [\"love your neighbor as yourself\"](https://oceanlibrary.com/kjv-gospel-of-john?paraId=para_118).\n\nIn Buddhism, the practice of selfless service is akin to the development of insight and compassion, as seen in the teachings of the Kalama Sutta, which encourages a life of moral integrity and service to others. The Tao Te Ching describes the Tao's way as being like water, which benefits all things without striving, embodying a form of service that is humble and natural. Lastly, in Judaism, the concept of service is intertwined with the covenant and the idea of being part of God's inner circle, as seen in the teachings of the Bereshit Rabbah, where service is a form of devotion and connection to the divine.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 5891,
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "brevity",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ]
+  }
+]

@@ -1,0 +1,15 @@
+[
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\n\"REDACTED\"\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  }
+]

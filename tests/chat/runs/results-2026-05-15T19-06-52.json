@@ -1,0 +1,78 @@
+[
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library contains a total of 44,937 documents, spanning a wide range of traditions. Among these, the Bahá'í collection is the largest with 41,590 documents, followed by Judaism with 1,418 documents and Buddhism with 858 documents. Other traditions represented include Islam with 404 documents, Christianity with 208, and Hinduism with 127. Each tradition offers a rich tapestry of texts, from foundational scriptures to philosophical treatises and devotional works.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 4777,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 1,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "criticalEngagement": 5,
+      "inlineQuoteIntegration": 5,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "Near-perfect execution on a browsing/stats query. The assistant used the right tool, provided accurate numbers directly from library_overview, and answered the exact question asked. Only minor deductions: (1) For a stats query, citations aren't expected, but citationPresence scores low by definition since none are provided — this is appropriate for the question type; (2) the tone is professional but slightly generic ('rich tapestry') rather than warm. The response is tight and factual."
+    },
+    "overall": 4.51,
+    "failures": [
+      "citationPresence"
+    ],
+    "diagnosis": "Near-perfect execution on a browsing/stats query. The assistant used the right tool, provided accurate numbers directly from library_overview, and answered the exact question asked. Only minor deductions: (1) For a stats query, citations aren't expected, but citationPresence scores low by definition since none are provided — this is appropriate for the question type; (2) the tone is professional but slightly generic ('rich tapestry') rather than warm. The response is tight and factual."
+  },
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 331 documents by 'Abdu'l-Bahá. Among these, works like [*The Promulgation of Universal Peace*](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388) discuss governance, emphasizing that [\"consultation is of vital importance\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388). 'Abdu'l-Bahá critiques parliamentary procedures that become a [\"battleground for opposition and self-opinion\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388), suggesting that true consultation should aim for the \"attainment of the light of truth.\"",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 2,
+    "durationMs": 7350,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 3,
+      "warmth": 3,
+      "noHallucination": 2,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response answers the quantitative part well (331 documents) and provides relevant governance citations, but critically fails to name other documents on governance beyond *Promulgation*, leaving the user's second question substantially incomplete. The repeated para_388 link across three different quotes raises hallucination concerns — either all three quotes are from that single paragraph (unlikely given their semantic distinctness) or the citations are inaccurate. The response also doesn't distinguish between books, letters, talks, and other document types, which matters for a full inventory answer."
+    },
+    "overall": 3.41,
+    "failures": [
+      "citationAccuracy",
+      "topicCoverage",
+      "instructionFollowing",
+      "noHallucination"
+    ],
+    "diagnosis": "The response answers the quantitative part well (331 documents) and provides relevant governance citations, but critically fails to name other documents on governance beyond *Promulgation*, leaving the user's second question substantially incomplete. The repeated para_388 link across three different quotes raises hallucination concerns — either all three quotes are from that single paragraph (unlikely given their semantic distinctness) or the citations are inaccurate. The response also doesn't distinguish between books, letters, talks, and other document types, which matters for a full inventory answer."
+  }
+]

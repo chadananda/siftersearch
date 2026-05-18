@@ -1,0 +1,144 @@
+[
+  {
+    "id": 30,
+    "category": "author",
+    "query": "What books by Moojan Momen do you have?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "The library holds 146 works by Moojan Momen, showcasing his extensive contributions to Bahá'í scholarship. Some notable titles include *Mazhar-i Ilahi (Manifestation of God)* and *Memorials of the Faithful: The Democratization of Sainthood*. His work, [*An Introduction to Shi'i Islam: The History and Doctrines of Twelver Shi'ism*](https://siftersearch.com/library/Baha'i/Baha'i%20Books/moojan-momen_an-introduction-to-shii-islam-the-history-and-doctrines-of-twelver-shiism#p1260), delves into the complexities of Shi'i beliefs, exploring how followers [\"seek salvation from God\"](https://siftersearch.com/library/Baha'i/Baha'i%20Books/moojan-momen_an-introduction-to-shii-islam-the-history-and-doctrines-of-twelver-shiism#p1267).",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 4018,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of Moojan Momen's works but lacks direct quotes from the library to substantiate claims about his contributions. To improve, it should include specific quotes from the library that highlight his scholarship and ensure that the most authoritative works are prioritized in the list."
+    },
+    "overall": 3.61,
+    "failures": [],
+    "diagnosis": "The response provides a good overview of Moojan Momen's works but lacks direct quotes from the library to substantiate claims about his contributions. To improve, it should include specific quotes from the library that highlight his scholarship and ensure that the most authoritative works are prioritized in the list."
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library holds 41,590 Bahá'í documents, organized into collections such as Bahá'í Books, Reference, Papers, and News. Among these, you can explore works like Hájí Mírzá Áqásí: A Portrait of a Tyrannical and Ignorant Prime Minister and Creation and Evolution in Bahá’í Thought. In the writings, 'Abdu'l-Bahá likens divine teachings to [\"rain-showers of divine mercy\"](https://siftersearch.com/library/Baha'i/Core%20Publications/selections-from-the-writings-of-abdul-baha#p504), emphasizing their role in cleansing the human heart.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 4153,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of the Bahá'í collections but lacks specific titles and quotes that would enhance the authority and depth of the answer. To improve, it should include more precise citations from the library that directly relate to the collections mentioned."
+    },
+    "overall": 3.63,
+    "failures": [],
+    "diagnosis": "The response provides a good overview of the Bahá'í collections but lacks specific titles and quotes that would enhance the authority and depth of the answer. To improve, it should include more precise citations from the library that directly relate to the collections mentioned."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 127 Hindu texts, featuring collections such as Bhakti and Devotional, and Epics. Among these, you can find works like [Gitanjali (Song Offerings)](https://oceanlibrary.com/hymns-of-atharva-veda) by Rabindranath Tagore and [Hindu Literature - Ramayana, Nala, Sakuntala](https://oceanlibrary.com/hymns-of-atharva-veda) by various authors. The *Bhagavad Gita* offers a profound vision, where Krishna grants Arjuna [\"sense divine\"](https://oceanlibrary.com/hymns-of-atharva-veda) to perceive divine glory. Similarly, the *Upanishads* encourage us to free our hearts from prejudice to draw [\"inspiration, love and wisdom\"](https://oceanlibrary.com/hymns-of-atharva-veda).",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 5030,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 3,
+      "diagnosis": "The response lacks accurate citations, as some quotes are misattributed or do not support the claims made. Additionally, the assistant should have provided a more authoritative selection of texts, prioritizing primary scriptures over secondary works. To improve, it should ensure that all quotes are correctly sourced and relevant to the claims being made."
+    },
+    "overall": 3.17,
+    "failures": [
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response lacks accurate citations, as some quotes are misattributed or do not support the claims made. Additionally, the assistant should have provided a more authoritative selection of texts, prioritizing primary scriptures over secondary works. To improve, it should ensure that all quotes are correctly sourced and relevant to the claims being made."
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library houses a total of 44,937 documents, spanning various religious traditions. Among these, there are 41,590 Bahá'í documents, 1,418 from Judaism, 858 Buddhist texts, 404 Islamic writings, and 208 Christian documents. The Hindu collection includes 127 texts, while Zoroastrian, Tao, Confucian, Sikh, and Jain traditions are also represented. Reflecting on the breadth of this collection, the *Dhammapada* reminds us that [\"all that we are is the result of what we have thought\"](https://oceanlibrary.com/dhammapada_buddha).",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 3930,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 2,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The primary issue with this response is the lack of relevant citations to support the specific claims about the number of documents in the library. Additionally, the quote from the *Dhammapada* feels disconnected from the main query and does not directly relate to the library's document count. To improve, the assistant should focus on providing a more relevant quote or omit it entirely."
+    },
+    "overall": 3.2,
+    "failures": [],
+    "diagnosis": "The primary issue with this response is the lack of relevant citations to support the specific claims about the number of documents in the library. Additionally, the quote from the *Dhammapada* feels disconnected from the main query and does not directly relate to the library's document count. To improve, the assistant should focus on providing a more relevant quote or omit it entirely."
+  }
+]

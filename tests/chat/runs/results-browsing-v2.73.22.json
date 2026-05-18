@@ -1,0 +1,144 @@
+[
+  {
+    "id": 64,
+    "category": "browsing",
+    "query": "What languages are available?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library offers texts in a variety of languages, including English, Hebrew, Arabic, Chinese, Persian, Spanish, Sanskrit, French, Portuguese, German, Russian, and Italian. In exploring these texts, we find rich traditions. For instance, the *Rámáyan of Válmíki* describes how sages [\"deep in Scripture, sing each glorious triumph of the king\"](https://oceanlibrary.com/ramayan-of-valmiki/?paraId=para_2471), *The Rámáyan of Válmíki*. In the Jewish tradition, Isaiah speaks of a transformative vision: [\"The people that walked in darkness have seen a great light\"](https://oceanlibrary.com/kjv-book-of-isaiah/?paraId=para_150), *Isaiah*. Meanwhile, Buddhist teachings, as seen in the *Sutra Collection*, offer insights through [\"Questions and Answers\"](https://oceanlibrary.com/sutra-collection-tu/?paraId=para_1501), *Sutra Collection (TU)*. These diverse languages and texts reflect the depth and breadth of spiritual wisdom available.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 6,
+    "durationMs": 6722,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of the languages available and includes relevant quotes, but it could improve by focusing more on the user's specific query about languages rather than elaborating on the texts. Streamlining the response to emphasize the languages without excessive detail about the texts would enhance clarity and brevity."
+    },
+    "overall": 4.05,
+    "failures": [],
+    "diagnosis": "The response provides a good overview of the languages available and includes relevant quotes, but it could improve by focusing more on the user's specific query about languages rather than elaborating on the texts. Streamlining the response to emphasize the languages without excessive detail about the texts would enhance clarity and brevity."
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library holds 41,590 Bahá'í documents across various collections such as Baha'i Books, Reference, Papers, and News. Among these, you can find works like Hájí Mírzá Áqásí: A Portrait of a Tyrannical and Ignorant Prime Minister by Mohammad Norozi and Creation and Evolution in Bahá’í Thought by Behrooz Sabet. The teachings within these collections are often described as [\"heavenly outpourings of grace\"](https://siftersearch.com/library/Baha'i/Core%20Publications/selections-from-the-writings-of-abdul-baha#p504), *Selections from the Writings of ’Abdu’l-Bahá*, highlighting their spiritual significance.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 5256,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of the Bahá'í collections but lacks critical engagement with the user's request. It could improve by directly addressing the user's interest in the collections rather than providing a general description. Additionally, the assistant could have prioritized quoting more authoritative sources or scriptures over secondary works."
+    },
+    "overall": 3.78,
+    "failures": [],
+    "diagnosis": "The response provides a good overview of the Bahá'í collections but lacks critical engagement with the user's request. It could improve by directly addressing the user's interest in the collections rather than providing a general description. Additionally, the assistant could have prioritized quoting more authoritative sources or scriptures over secondary works."
+  },
+  {
+    "id": 66,
+    "category": "browsing",
+    "query": "What's the largest collection?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The largest collection in the library is the Bahá'í collection, with a total of 41,590 documents. This includes a variety of texts such as the \"Core Tablets\" and \"Tablet Translations,\" which are foundational scriptures written by Bahá'u'lláh and 'Abdu'l-Bahá. The library also holds significant collections from other traditions, like the \"Pali Canon\" with 821 documents for Buddhism and the \"Torah and Tanakh\" with 80 documents for Judaism. Each collection offers a rich tapestry of spiritual and philosophical insights.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 2200,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 1,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response lacks citations from the library, which is critical for supporting the claims made about the collections. Additionally, it does not provide specific quotes or references to the documents mentioned, which undermines the authority and accuracy of the information presented. To improve, the assistant should include direct quotes or references from the library to substantiate its claims."
+    },
+    "overall": 2.71,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "quoteEconomy"
+    ],
+    "diagnosis": "The response lacks citations from the library, which is critical for supporting the claims made about the collections. Additionally, it does not provide specific quotes or references to the documents mentioned, which undermines the authority and accuracy of the information presented. To improve, the assistant should include direct quotes or references from the library to substantiate its claims."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library carries 127 Hindu texts, including collections like Bhakti and Devotional Works and Epics. Some notable titles are Gitanjali (Song Offerings) by Rabindranath Tagore and Hindu Literature - Ramayana, Nala, Sakuntala by Various authors. In the context of other traditions, the Qur'án opens with [\"In the name of the merciful and compassionate God\"](https://oceanlibrary.com/quran_palmer-tr/?paraId=para_4), *The Qur’ân (Palmer)*, emphasizing divine mercy. The Gospel of Matthew invites reflection with [\"Who hath ears to hear, let him hear\"](https://oceanlibrary.com/kjv-gospel-of-matthew/?paraId=para_323), and Isaiah speaks of hope: [\"The people that walked in darkness have seen a great light\"](https://oceanlibrary.com/kjv-book-of-isaiah/?paraId=para_150), *Isaiah*.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 4,
+    "durationMs": 6275,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of the Hindu texts available but lacks sufficient direct quotes from the library to support its claims about the texts. Additionally, the inclusion of quotes from other traditions, while interesting, detracts from the focus on the user's specific query about Hindu scriptures. To improve, the assistant should prioritize quoting relevant Hindu texts and avoid unrelated content."
+    },
+    "overall": 3.59,
+    "failures": [],
+    "diagnosis": "The response provides a good overview of the Hindu texts available but lacks sufficient direct quotes from the library to support its claims about the texts. Additionally, the inclusion of quotes from other traditions, while interesting, detracts from the focus on the user's specific query about Hindu scriptures. To improve, the assistant should prioritize quoting relevant Hindu texts and avoid unrelated content."
+  }
+]

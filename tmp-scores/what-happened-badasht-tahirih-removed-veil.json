@@ -1,0 +1,43 @@
+{
+  "slug": "what-happened-badasht-tahirih-removed-veil",
+  "scores": {
+    "depth": 70,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 80,
+    "evidence_quality": 70,
+    "brevity_discipline": 70,
+    "correction_courage": 75,
+    "archive_worthy": 70,
+    "citation_integrity": 60
+  },
+  "overall": 71,
+  "narrative": "The conversation provides a decent exploration of the events at Badasht and their significance, with Jafar offering insights into the reactions and interpretations of Táhirih's unveiling. However, the depth is somewhat limited, as the discussion doesn't fully explore the broader implications or provide comprehensive primary citations. The conversational tone is mostly maintained, though there are moments of formality. Citation integrity is weak, with most links being fallback formats and not deeply anchored. The conversation is archive-worthy but could benefit from more direct primary text engagement.",
+  "flags": [
+    "fallback-link-only"
+  ],
+  "improvement_plan": "Enhance citation integrity by using deep paragraph-level links and ensuring all inline quotes are hyperlinked. Encourage more in-depth exploration of topics by prompting Jafar to build on each round with additional context and primary sources.",
+  "roundSummaries": [
+    {
+      "q": "Táhirih's unveiling at Badasht",
+      "a": "Reactions and prophecy fulfillment"
+    },
+    {
+      "q": "Islamic prophecy of Fáṭimih",
+      "a": "Indirect references in commentaries"
+    },
+    {
+      "q": "Qur'án on Day of Judgment",
+      "a": "General themes, no specific figures"
+    },
+    {
+      "q": "Justification for Táhirih's action",
+      "a": "Aligned with transformative vision"
+    },
+    {
+      "q": "Texts justifying Táhirih's unveiling",
+      "a": "Spirit of teachings, not explicit"
+    }
+  ],
+  "elapsedSec": "102.0"
+}

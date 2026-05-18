@@ -1,0 +1,46 @@
+[
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 331 documents by 'Abdu'l-Bahá, including works like Tablet regarding the Twelfth Imám and What is there to grieve about?. When it comes to governance, 'Abdu'l-Bahá emphasizes that [\"consultation is of vital importance\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388), as noted in *The Promulgation of Universal Peace*. He critiques parliamentary procedures that become \"a battleground for opposition and self-opinion,\" highlighting the need for spiritual conference over mere debate.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 2,
+    "durationMs": 4477,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 2,
+      "logicalCoherence": 2,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 2,
+      "noHallucination": 3,
+      "noGeneralKnowledge": 4,
+      "warmth": 3,
+      "diagnosis": "The response answers only the first part of the two-part question (document count) and addresses governance only tangentially with one quoted fragment. The user asked *which documents* discuss governance — a list was implicitly requested — but received instead a single anecdotal example. The quote is real but introduces unsupported claims (the parliamentary critique) that aren't backed by citation, and the overall coverage leaves the core research need unmet."
+    },
+    "overall": 2.83,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "instructionFollowing",
+      "noHallucination"
+    ],
+    "diagnosis": "The response answers only the first part of the two-part question (document count) and addresses governance only tangentially with one quoted fragment. The user asked *which documents* discuss governance — a list was implicitly requested — but received instead a single anecdotal example. The quote is real but introduces unsupported claims (the parliamentary critique) that aren't backed by citation, and the overall coverage leaves the core research need unmet."
+  }
+]

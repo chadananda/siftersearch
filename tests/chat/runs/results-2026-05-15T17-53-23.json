@@ -1,0 +1,154 @@
+[
+  {
+    "id": 33,
+    "category": "author",
+    "query": "What do you have by the Universal House of Justice?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 475 documents by the Universal House of Justice, focusing on various aspects of Bahá'í administration and guidance. Among these, the collection includes works like [\"Regarding Economic Life\"](https://siftersearch.com/library/Baha'i/Administrative/the-five-year-plan-2006-2011-messages-of-the-universal-house-of-justice#p1670) and discussions on [\"Climate Change: Policies and Political Discourse\"](https://siftersearch.com/library/Baha'i/Administrative/the-five-year-plan-2006-2011-messages-of-the-universal-house-of-justice#p1670). These writings often explore the implications of the Revelation on both [\"individual growth\"](https://siftersearch.com/library/Baha'i/Administrative/the-five-year-plan-2006-2011-messages-of-the-universal-house-of-justice#p1670) and community development.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 2,
+    "durationMs": 5437,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 2,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks depth and fails to provide specific quotes from the documents, relying instead on general descriptions. To improve, the assistant should include direct quotes from the Universal House of Justice's writings to substantiate its claims and enhance the authority of the response."
+    },
+    "overall": 2.76,
+    "failures": [
+      "toolUsage",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks depth and fails to provide specific quotes from the documents, relying instead on general descriptions. To improve, the assistant should include direct quotes from the Universal House of Justice's writings to substantiate its claims and enhance the authority of the response."
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 41,590 Bahá'í documents across various collections, including Baha'i Books, Reference, Papers, and News. For example, one of the works in the collection is a reflective essay on creation and evolution in Bahá'í thought. As 'Abdu'l-Bahá explains, the teachings from God are [\"heavenly outpourings of grace\"](https://siftersearch.com/library/Baha'i/Core%20Publications/selections-from-the-writings-of-abdul-baha#p504), likened to rain-showers that cleanse the human heart.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 3,
+    "durationMs": 3863,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks a comprehensive list of Bahá'í collections, which was the user's request. To improve, the assistant should provide a clearer enumeration of the collections instead of a general statement about the number of documents and a single example. Additionally, the integration of the quote could be more seamless to enhance coherence."
+    },
+    "overall": 3.37,
+    "failures": [
+      "toolUsage",
+      "topicCoverage",
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response lacks a comprehensive list of Bahá'í collections, which was the user's request. To improve, the assistant should provide a clearer enumeration of the collections instead of a general statement about the number of documents and a single example. Additionally, the integration of the quote could be more seamless to enhance coherence."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 127 Hindu texts, including collections like Bhakti and Devotional Works and Epics. Among these, the Bhagavad Gita offers a profound vision where Krishna grants Arjuna [\"sense divine\"](https://oceanlibrary.com/hymns-of-atharva-veda) to perceive divine glory. The Upanishads encourage us to [\"make our hearts free from prejudice\"](https://oceanlibrary.com/hymns-of-atharva-veda), drawing inspiration, love, and wisdom from these sacred writings.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 3,
+    "durationMs": 5101,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks accurate citations, as the quotes provided do not seem to be from the mentioned Hindu scriptures. Additionally, the integration of quotes is weak, with phrases not clearly tied to the context of the response. To improve, the assistant should ensure that quotes are accurately attributed and better integrated into the narrative."
+    },
+    "overall": 3.27,
+    "failures": [
+      "logicalCoherence",
+      "noHallucination"
+    ],
+    "diagnosis": "The response lacks accurate citations, as the quotes provided do not seem to be from the mentioned Hindu scriptures. Additionally, the integration of quotes is weak, with phrases not clearly tied to the context of the response. To improve, the assistant should ensure that quotes are accurately attributed and better integrated into the narrative."
+  },
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 623 documents by 'Abdu'l-Bahá, which include foundational writings that shape the Bahá'í Faith. Among these, the \"Core Tablets\" collection contains key texts, some of which address governance principles. 'Abdu'l-Bahá's writings often explore themes of justice and administration, emphasizing the importance of [\"unity and cooperation\"](https://siftersearch.com/document/123) in governance to promote peace and prosperity. If you're interested in specific works discussing governance, I can help point you to relevant texts within this collection.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 4736,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response provides a good overview of the number of documents and mentions governance themes, but it lacks specific titles of documents that discuss governance, which would enhance citation presence and topic coverage. Including a few specific titles or passages would improve the response significantly."
+    },
+    "overall": 3.9,
+    "failures": [
+      "citationPresence",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response provides a good overview of the number of documents and mentions governance themes, but it lacks specific titles of documents that discuss governance, which would enhance citation presence and topic coverage. Including a few specific titles or passages would improve the response significantly."
+  }
+]

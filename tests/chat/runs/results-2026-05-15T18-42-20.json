@@ -1,0 +1,48 @@
+[
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 623 documents by 'Abdu'l-Bahá, found within the Baha'i Books collection. Among these, some texts delve into governance, particularly those in the Core Tablets and Administrative collections. 'Abdu'l-Bahá's writings often explore the principles of governance, emphasizing the importance of justice and consultation. For instance, he discusses how governance should be guided by [\"principles of justice and equity\"](https://siftersearch.com/document/123), ensuring that leadership serves the well-being of all.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 3157,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 2,
+      "citationAccuracy": 1,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 2,
+      "logicalCoherence": 2,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 2,
+      "warmth": 2,
+      "noHallucination": 1,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "Critical failure: the citation is a hallucinated URL (siftersearch.com/document/123) with no actual quote text provided, and the user asked for a list of specific documents by title, not a generic summary. The assistant used library_overview (appropriate mode) but did not follow up with a document-level search to answer the actual question: which governance-focused texts exist? The response reads like filler on a question requiring a concrete list."
+    },
+    "overall": 2,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "Critical failure: the citation is a hallucinated URL (siftersearch.com/document/123) with no actual quote text provided, and the user asked for a list of specific documents by title, not a generic summary. The assistant used library_overview (appropriate mode) but did not follow up with a document-level search to answer the actual question: which governance-focused texts exist? The response reads like filler on a question requiring a concrete list."
+  }
+]

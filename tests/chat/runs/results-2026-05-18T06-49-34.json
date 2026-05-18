@@ -1,0 +1,189 @@
+[
+  {
+    "id": 67,
+    "category": "browsing",
+    "query": "Do you have any Jain texts?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library contains 27 Jain texts, primarily from the Agamas collection. Notable works include the [Akaranga Sutra (Book 1)](https://siftersearch.com/library/Jain/Agamas/tr-hermann-jacobi_akaranga-sutra-book-1#p117), Kalpa Sutra (Lives of the Jinas), and [Sutrakritanga Sutra (Book 1)](https://siftersearch.com/library/Jain/Agamas/tr-hermann-jacobi_sutrakritanga-sutra-book-1#p560). These texts explore profound spiritual themes, such as the pursuit of a virtuous life. The Sutrakritanga Sutra describes the path of the faithful as [\"the great road, the right and certain path to perfection\"](https://siftersearch.com/library/Jain/Agamas/tr-hermann-jacobi_sutrakritanga-sutra-book-1#p560).",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 3796,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively provides the number of Jain texts and highlights notable works, but it could improve by offering a more engaging explanation of their significance. Additionally, while the quotes are relevant, integrating them more fluidly into the narrative would enhance the overall coherence and warmth of the response."
+    },
+    "overall": 4.22,
+    "failures": [],
+    "diagnosis": "The response effectively provides the number of Jain texts and highlights notable works, but it could improve by offering a more engaging explanation of their significance. Additionally, while the quotes are relevant, integrating them more fluidly into the narrative would enhance the overall coherence and warmth of the response."
+  },
+  {
+    "id": 75,
+    "category": "reading",
+    "query": "Show me the first few paragraphs of the Tao Te Ching",
+    "questionType": "reading",
+    "status": "FAIL",
+    "response": "The *Tao Te Ching* opens with a profound statement about the nature of reality: [\"The Tao that can be trodden is not the enduring and unchanging Tao. The name that can be named is not the enduring and unchanging name.\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_7) This sets the stage for understanding the Tao as something beyond human categorization, emphasizing its mysterious and ineffable nature. The text continues to explore the Tao's role as the source of all things, describing it as [\"the emptiness of a vessel\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_25), highlighting its boundless potential and the importance of humility and simplicity in engaging with it.",
+    "toolsUsed": [
+      "deep_research",
+      "find_document_for_citation",
+      "search_read",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 5,
+    "citationCount": 8,
+    "durationMs": 4160,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides relevant quotes from the *Tao Te Ching*, but it does not fully adhere to the user's request for the first few paragraphs, instead summarizing the content. To improve, the assistant should directly quote the initial paragraphs without additional interpretation or commentary."
+    },
+    "overall": 3.93,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response provides relevant quotes from the *Tao Te Ching*, but it does not fully adhere to the user's request for the first few paragraphs, instead summarizing the content. To improve, the assistant should directly quote the initial paragraphs without additional interpretation or commentary."
+  },
+  {
+    "id": 77,
+    "category": "edge",
+    "query": "Udo Schafer",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "Udo Schaefer is a prominent Bahá'í scholar known for his in-depth exploration of Bahá'í ethics and law. His works, such as \"Bahá’í Ethics in Light of Scripture,\" delve into complex topics like justice, which he argues is not merely a matter of [\"empirical experience or pragmatism\"](https://siftersearch.com/library/Baha'i/Baha'i%20Books/udo-schaefer_bahai-ethics-in-light-of-scripture-vol-2#p2123), but is deeply embedded in metaphysics. Schaefer's writings often reflect on the profound spiritual and ethical dimensions of Bahá'í teachings, emphasizing virtues like [\"trustworthiness and godliness, truthfulness and sincerity\"](https://siftersearch.com/library/Baha'i/Baha'i%20Books/udo-schaefer_bahai-ethics-in-light-of-scripture-vol-2#p1144), which are seen as the fruits that best befit the tree of human life.",
+    "toolsUsed": [
+      "search",
+      "hype_search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 8,
+    "durationMs": 3540,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the user's potential assumptions about Schaefer's work. Additionally, while the quotes are well-integrated, the coverage of his contributions could be expanded to provide a more comprehensive view of his scholarship."
+    },
+    "overall": 4.07,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the user's potential assumptions about Schaefer's work. Additionally, while the quotes are well-integrated, the coverage of his contributions could be expanded to provide a more comprehensive view of his scholarship."
+  },
+  {
+    "id": 80,
+    "category": "edge",
+    "query": "What about the thing with the stuff?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "It seems like you're asking about a broad topic, but let's explore what the Buddhist texts say about the nature of suffering and its cessation. The Buddha taught that the [\"origin of suffering is craving\"](https://siftersearch.com/document/19285), which leads to rebirth and is accompanied by delight and lust, *Majjhima Nikaya 9 - Sammaditthi Sutta*. To overcome this suffering, one must achieve the [\"complete cessation of that very craving\"](https://siftersearch.com/document/19239), which involves relinquishing and liberating oneself from it, *Majjhima Nikaya 141 - Saccavibhanga Sutta*. This path to liberation is central to Buddhist practice, emphasizing the importance of understanding and eradicating craving to end the cycle of suffering.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 2477,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively addresses the topic of suffering in Buddhism but lacks clarity on the user's vague query. To improve, the assistant should ask clarifying questions to better understand the user's intent before providing information."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response effectively addresses the topic of suffering in Buddhism but lacks clarity on the user's vague query. To improve, the assistant should ask clarifying questions to better understand the user's intent before providing information."
+  },
+  {
+    "id": 98,
+    "category": "multi",
+    "query": "I'm a Christian interested in what other religions say about the return of Christ",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "In Christianity, the return of Christ is often associated with significant signs, such as when [\"the sun shall be darkened, and the moon shall not give her light\"](https://oceanlibrary.com/some-answered-questions_abdul-baha), *Some Answered Questions*. This imagery is echoed in the Bahá'í Faith, where Bahá'u'lláh describes His own advent as fulfilling the prophecies of past religions, stating that [\"the Kingdom is God’s, the Sovereign, the Almighty\"](https://siftersearch.com/document/16690), *Tablet to Ḥasan-i-Sháhábadí*. In Islam, the return of Jesus is also anticipated, where he is expected to descend and defeat the Antichrist, as described in the *Sahih Muslim*. Each tradition offers a unique perspective on this profound event, highlighting its spiritual and transformative significance.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search",
+      "hype_search"
+    ],
+    "toolCallCount": 5,
+    "citationCount": 8,
+    "durationMs": 4963,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks precise citations from the Ocean Library for the Islamic perspective, relying instead on a general reference to *Sahih Muslim* without a specific quote. Additionally, the quotes provided could be better integrated into the narrative to enhance coherence. To improve, the assistant should ensure all claims are backed by specific quotes from the library and integrate them more fluidly into the text."
+    },
+    "overall": 3.78,
+    "failures": [
+      "citationAccuracy",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks precise citations from the Ocean Library for the Islamic perspective, relying instead on a general reference to *Sahih Muslim* without a specific quote. Additionally, the quotes provided could be better integrated into the narrative to enhance coherence. To improve, the assistant should ensure all claims are backed by specific quotes from the library and integrate them more fluidly into the text."
+  }
+]

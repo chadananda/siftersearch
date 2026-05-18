@@ -1,0 +1,76 @@
+[
+  {
+    "id": 20,
+    "category": "comparative",
+    "query": "What do the Bahá'í Faith and Islam say about fasting?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "In Islam, fasting is a significant practice prescribed for believers. The Qur'an states, [\"Fasting is prescribed for you, even as it was prescribed for those before you\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad/?paraId=para_197), highlighting its continuity and importance in spiritual discipline. It is intended to help believers [\"ward off (evil)\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad/?paraId=para_197), serving as a means of cultivating self-restraint and piety.\n\nIn the Bahá'í Faith, fasting is also a vital practice, observed annually from March 2 to March 20. Both traditions view fasting as a means to deepen one's faith and spiritual understanding.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 5501,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively uses quotes and covers both traditions, but it could improve by providing a more detailed explanation of the Bahá'í perspective on fasting. Additionally, it should engage more critically with the user's framing of the question to clarify any potential misconceptions about the practices in both religions."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response effectively uses quotes and covers both traditions, but it could improve by providing a more detailed explanation of the Bahá'í perspective on fasting. Additionally, it should engage more critically with the user's framing of the question to clarify any potential misconceptions about the practices in both religions."
+  },
+  {
+    "id": 32,
+    "category": "author",
+    "query": "Show me everything by Bahá'u'lláh",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 522 documents by Bahá'u'lláh, including works like the Súrah of the Arabs and the Tablet of Consolation. In the *Tablet of the Mist of the Unknown*, Bahá'u'lláh speaks of the [\"emergence of Revelation\"](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_tablet-of-the-mist-of-the-unknown-rashh-i-ama-2#p46) as a profound event. Similarly, in the *Ode of the Dove*, he refers to the [\"secret of revelation\"](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_ode-of-the-dove-qasidiy-i-varqaiyyih-2#p41), highlighting the mystical nature of divine communication.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 5050,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response provides a good overview of documents by Bahá'u'lláh, but it could improve by integrating quotes more seamlessly into the narrative. Additionally, while it engages with the user's request, it could better address the significance of the works mentioned to enhance critical engagement."
+    },
+    "overall": 3.98,
+    "failures": [
+      "toolUsage"
+    ],
+    "diagnosis": "The response provides a good overview of documents by Bahá'u'lláh, but it could improve by integrating quotes more seamlessly into the narrative. Additionally, while it engages with the user's request, it could better address the significance of the works mentioned to enhance critical engagement."
+  }
+]

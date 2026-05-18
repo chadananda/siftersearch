@@ -1,0 +1,119 @@
+[
+  {
+    "id": 74,
+    "category": "reading",
+    "query": "Read the opening verses of the Bhagavad Gita",
+    "questionType": "reading",
+    "status": "PASS",
+    "response": "Certainly! The opening verses of the Bhagavad Gita present a poignant scene where Arjuna, a warrior prince, is overwhelmed by the moral conflict of fighting against his own kin. He expresses his turmoil to Krishna, saying, [\"My members fail, my tongue dries in my mouth, a shudder thrills my body\"](https://siftersearch.com/document/17365), capturing his deep distress at the prospect of battle. This sets the stage for the profound philosophical dialogue that follows between Arjuna and Krishna.",
+    "toolsUsed": [
+      "deep_research",
+      "find_document_for_citation",
+      "document_subagent",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 8,
+    "durationMs": 25468,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively reads the opening verses and integrates a relevant quote, but it could improve by providing more context about the significance of the verses and the characters involved. Adding a brief explanation of Krishna's role or the themes introduced would enhance the depth of engagement."
+    },
+    "overall": 4.17,
+    "failures": [],
+    "diagnosis": "The response effectively reads the opening verses and integrates a relevant quote, but it could improve by providing more context about the significance of the verses and the characters involved. Adding a brief explanation of Krishna's role or the themes introduced would enhance the depth of engagement."
+  },
+  {
+    "id": 80,
+    "category": "edge",
+    "query": "What about the thing with the stuff?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "I'd love to help — could you tell me which tradition, text, or theme you have in mind?",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 1721,
+    "scores": {
+      "toolUsage": 1,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 1,
+      "logicalCoherence": 1,
+      "brevity": 2,
+      "quoteEconomy": 1,
+      "instructionFollowing": 1,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response fails to address the user's query and does not utilize the library's resources. Instead of asking for clarification, it should have attempted to provide information based on the search results. To improve, the assistant should have made an effort to interpret the vague question and provide relevant information from the library."
+    },
+    "overall": 1.78,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "brevity",
+      "quoteEconomy",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The response fails to address the user's query and does not utilize the library's resources. Instead of asking for clarification, it should have attempted to provide information based on the search results. To improve, the assistant should have made an effort to interpret the vague question and provide relevant information from the library."
+  },
+  {
+    "id": 81,
+    "category": "edge",
+    "query": "Tell me everything about Buddhism",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Buddhism is a rich tradition centered on the pursuit of enlightenment and the alleviation of suffering. At its core are the Four Noble Truths, which begin with the recognition that [\"birth is suffering; aging is suffering; illness is suffering\"](https://oceanlibrary.com/sutra-collection-efg?paraId=para_1185), *Sutra Collection (EFG)*. This understanding leads to the path of liberation through the Noble Eightfold Path, which includes practices like Right Mindfulness. The practice of mindfulness is emphasized in texts such as the *Digha Nikaya*, where it is taught that one should focus on the [\"body in and of itself; feelings in and of themselves; mind in and of itself\"](https://siftersearch.com/document/17251), cultivating a direct experience of reality. Additionally, the *Dhammapada* teaches that [\"hatred ceases by love\"](https://siftersearch.com/document/17245), highlighting the importance of compassion and loving-kindness in the Buddhist path. Through these teachings, Buddhism offers a comprehensive approach to understanding and transcending the challenges of life.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 6937,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a solid overview of Buddhism with relevant quotes, but it could improve in critical engagement by addressing the user's request for 'everything' more comprehensively. Including more aspects of Buddhism, such as its historical development, key figures, and various schools, would enhance the depth of the answer."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response provides a solid overview of Buddhism with relevant quotes, but it could improve in critical engagement by addressing the user's request for 'everything' more comprehensively. Including more aspects of Buddhism, such as its historical development, key figures, and various schools, would enhance the depth of the answer."
+  }
+]

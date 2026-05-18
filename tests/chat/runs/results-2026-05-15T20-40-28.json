@@ -1,0 +1,231 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The Hindu concept of dharma is deeply intertwined with one's duties and actions in life. The *Bhagavad Gita* suggests that a person achieves perfection through [\"worship—wrought by work—of Him that is the Source of all which lives\"](https://oceanlibrary.com/hymns-of-atharva-veda). This implies that dharma involves fulfilling one's responsibilities with dedication and devotion. In the *Mahabharata*, there's a discussion about the value of actions, or karma, in relation to knowledge, questioning [\"what then is the value of Karma or acts\"](https://oceanlibrary.com/mahabharata-5_vyasa) when knowledge is so highly praised. This highlights the balance between understanding and action within the framework of dharma.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 7,
+    "durationMs": 4512,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the complexity of dharma beyond just duties and actions. It would benefit from a more nuanced exploration of how dharma varies across different contexts and individuals in Hindu thought."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the complexity of dharma beyond just duties and actions. It would benefit from a more nuanced exploration of how dharma varies across different contexts and individuals in Hindu thought."
+  },
+  {
+    "id": 9,
+    "category": "factual",
+    "query": "What does the Torah say about justice?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Torah's perspective on justice is deeply intertwined with the idea of divine law and moral obligation. Although the retrieved passages don't directly address justice, they provide insight into the broader context of Torah teachings. For instance, the *Jerusalem Talmud* highlights the importance of Torah study, suggesting that it \"guards him from all evil\" and offers hope for the future, implying a framework where justice is part of a divine order that protects and sustains life ([source](https://oceanlibrary.com/jps-book-of-genesis)). Additionally, the *Chullin* discusses prohibitions against using objects associated with idol worship, reflecting a commitment to maintaining purity and righteousness, which are foundational to the concept of justice ([source](https://siftersearch.com/library/Judaism/Talmud%20and%20Mishnah/william-davidson_chullin#p4297)). These teachings suggest that justice in the Torah is about aligning human actions with divine will and maintaining moral integrity.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 6,
+    "durationMs": 4753,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks direct quotes from the Torah itself, which is crucial for a research question about what the Torah says. Instead, it relies on secondary sources, which diminishes the authority of the claims made. To improve, the assistant should directly quote relevant passages from the Torah that explicitly discuss justice."
+    },
+    "overall": 3.46,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks direct quotes from the Torah itself, which is crucial for a research question about what the Torah says. Instead, it relies on secondary sources, which diminishes the authority of the claims made. To improve, the assistant should directly quote relevant passages from the Torah that explicitly discuss justice."
+  },
+  {
+    "id": 28,
+    "category": "author",
+    "query": "Show me books by Shoghi Effendi",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "Shoghi Effendi, as the Guardian of the Bahá'í Faith, has left a significant body of work. One of his notable contributions is the [\"Tablet of the Centennial\"](https://siftersearch.com/library/Baha'i/Tablet%20Translations/shoghi-effendi_tablet-of-the-centennial#p1), which reflects his role as a supreme interpreter. Additionally, his letters, such as those found in the [\"Uncompiled Published Letters\"](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_7147), offer deep insights into the development and guidance of the Bahá'í community. These works are essential for understanding his impact and vision for the Faith.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 4,
+    "durationMs": 5699,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response provides relevant titles by Shoghi Effendi but lacks direct quotes from the texts themselves, which would enhance the authority and depth of the answer. To improve, the assistant should include specific excerpts from the works mentioned to better support the claims made about their significance."
+    },
+    "overall": 4.05,
+    "failures": [],
+    "diagnosis": "The response provides relevant titles by Shoghi Effendi but lacks direct quotes from the texts themselves, which would enhance the authority and depth of the answer. To improve, the assistant should include specific excerpts from the works mentioned to better support the claims made about their significance."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 127 Hindu texts, including collections like Bhakti and Devotional Works, and Epics. Among these, the *Bhagavad Gita* offers a profound vision, where Krishna grants Arjuna [\"sense divine\"](https://oceanlibrary.com/hymns-of-atharva-veda) to perceive divine glory. The *Upanishads* encourage us to [\"make our hearts free from prejudice\"](https://oceanlibrary.com/hymns-of-atharva-veda), drawing inspiration and wisdom from their sacred writings. Additionally, the *Vedanta-Sutras* with Ramanuja's commentary explore the concept of the [\"unmanifested\"](https://oceanlibrary.com/hymns-of-atharva-veda), providing deep philosophical insights.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 4774,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 3,
+      "diagnosis": "The response lacks accurate citations and contains misattributed quotes, which undermines its credibility. To improve, the assistant should ensure that all quotes are correctly sourced from the library and directly support the claims made about the Hindu scriptures."
+    },
+    "overall": 3.17,
+    "failures": [
+      "logicalCoherence",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response lacks accurate citations and contains misattributed quotes, which undermines its credibility. To improve, the assistant should ensure that all quotes are correctly sourced from the library and directly support the claims made about the Hindu scriptures."
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds a total of 44,937 documents, spanning various religious traditions. Among these, there are 41,590 Bahá'í documents, 1,418 from Judaism, and 858 Buddhist texts, to name a few. As the *Rámáyan of Válmíki* beautifully illustrates, auspicious voices [\"raise with loud accord the note of praise\"](https://oceanlibrary.com/ramayan-of-valmiki/?paraId=para_2471), capturing the spirit of devotion found across these works.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 7831,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The primary issue with this response is the lack of direct relevance of the quote from the *Rámáyan of Válmíki* to the user's query about the number of documents. To improve, the assistant should focus on providing a more relevant quote or omit the quote entirely, ensuring that the response remains concise and directly related to the question asked."
+    },
+    "overall": 3.63,
+    "failures": [
+      "logicalCoherence"
+    ],
+    "diagnosis": "The primary issue with this response is the lack of direct relevance of the quote from the *Rámáyan of Válmíki* to the user's query about the number of documents. To improve, the assistant should focus on providing a more relevant quote or omit the quote entirely, ensuring that the response remains concise and directly related to the question asked."
+  },
+  {
+    "id": 97,
+    "category": "multi",
+    "query": "What Buddhist texts discuss mindfulness, and can you show me a key passage?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The *Satipatthana Sutta* is a key Buddhist text that discusses mindfulness, focusing on how a monk remains attentive to [\"mental qualities in & of themselves\"](https://oceanlibrary.com/dhammapada_buddha). This foundational teaching emphasizes the importance of observing one's own mental processes as a path to enlightenment. Additionally, the *Dhammapada* advises that if one values themselves, they should [\"watch themselves carefully\"](https://oceanlibrary.com/dhammapada_buddha), highlighting the necessity of mindfulness in daily life. These texts together illustrate the central role mindfulness plays in Buddhist practice.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 7734,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is generally strong, but it could improve by providing a more critical engagement with the user's question about mindfulness, perhaps by discussing the implications or interpretations of mindfulness in the texts rather than just stating what they say. Additionally, the assistant could enhance warmth by including a more personal touch in the response."
+    },
+    "overall": 4.15,
+    "failures": [],
+    "diagnosis": "The response is generally strong, but it could improve by providing a more critical engagement with the user's question about mindfulness, perhaps by discussing the implications or interpretations of mindfulness in the texts rather than just stating what they say. Additionally, the assistant could enhance warmth by including a more personal touch in the response."
+  }
+]

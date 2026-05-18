@@ -1,0 +1,286 @@
+[
+  {
+    "id": 1,
+    "category": "factual",
+    "query": "What does the Quran say about mercy?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The Qur'án frequently speaks of God's mercy as a fundamental aspect of His nature. It is said that the [\"God of Mercy hath taught the Koran\"](https://oceanlibrary.com/sura-lv-the-merciful_muhammad/?paraId=para_3), highlighting that the revelation itself is an act of divine compassion. Moreover, God's mercy is described as something that [\"no one can keep back\"](https://oceanlibrary.com/quran_rodwell-tr/?paraId=para_1842), emphasizing its boundless and unstoppable nature. For those who believe and do good works, the Qur'án promises [\"mercy, and a great reward\"](https://oceanlibrary.com/sura-xxxv-the-creator-or-the-angels_muhammad/?paraId=para_8), showing that mercy is both a present reality and a future hope for the faithful.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 8,
+    "durationMs": 4954,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong in tool usage and citation presence, but it could improve in critical engagement by addressing the user's framing of mercy more directly. Additionally, while the quotes are well-integrated, a more nuanced discussion of mercy's implications in the Quran could enhance the depth of the answer."
+    },
+    "overall": 4.15,
+    "failures": [],
+    "diagnosis": "The response is strong in tool usage and citation presence, but it could improve in critical engagement by addressing the user's framing of mercy more directly. Additionally, while the quotes are well-integrated, a more nuanced discussion of mercy's implications in the Quran could enhance the depth of the answer."
+  },
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The Hindu concept of dharma is deeply intertwined with the idea of fulfilling one's duties and roles in life. The Bhagavad Gita suggests that one finds perfection [\"through worship—wrought by work—of Him that is the Source of all which lives\"](https://oceanlibrary.com/hymns-of-atharva-veda), emphasizing that dharma involves action aligned with divine will. Additionally, the Mahabharata raises the question of the value of karma or acts, such as [\"prayers and sacrifices as ordained in the Vedas\"](https://oceanlibrary.com/mahabharata-5_vyasa), highlighting the importance of ritual and duty. Dharma, therefore, is about living in accordance with one's responsibilities and the cosmic order.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 7,
+    "durationMs": 11564,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the complexity of dharma beyond just duties and roles. It would benefit from a more nuanced discussion of how dharma varies across different contexts and texts within Hinduism."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the complexity of dharma beyond just duties and roles. It would benefit from a more nuanced discussion of how dharma varies across different contexts and texts within Hinduism."
+  },
+  {
+    "id": 29,
+    "category": "author",
+    "query": "Do you have anything by Rumi?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds three works by Rumi, including the famous *Masnavi* and *Divan-e Shams*. In the *Masnavi*, Rumi explores the depth of spiritual experience, illustrating how the [\"spiritual man cries in his sleep\"](https://oceanlibrary.com/masnavi_rumi/?paraId=para_1043) while the carnal man remains oblivious. He also uses the metaphor of wine to describe divine inspiration, noting that while [\"both of these have one and the same name in speech\"](https://oceanlibrary.com/masnavi_rumi/?paraId=para_873), their spiritual worth differs greatly.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 3,
+    "durationMs": 3683,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by providing a deeper analysis of Rumi's themes rather than just summarizing them. Additionally, while the warmth is acceptable, it could be enhanced to create a more inviting tone."
+    },
+    "overall": 4.07,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by providing a deeper analysis of Rumi's themes rather than just summarizing them. Additionally, while the warmth is acceptable, it could be enhanced to create a more inviting tone."
+  },
+  {
+    "id": 31,
+    "category": "author",
+    "query": "Do you have works by Thich Nhat Hanh?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "While we don't have any works by Thich Nhat Hanh in the library, Buddhist teachings are well represented here. For instance, the Sutra Collection emphasizes that [\"all that we are is the result of what we have thought\"](https://oceanlibrary.com/sutra-collection-efg/?paraId=para_65), highlighting the power of the mind in shaping our reality. This aligns with Thich Nhat Hanh's teachings on mindfulness and the transformative power of thought.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 4,
+    "durationMs": 10396,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 3,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The primary issue with this response is that it does not fully address the user's request for works by Thich Nhat Hanh, instead providing a general statement about Buddhist teachings. To improve, the assistant should focus on confirming the absence of Thich Nhat Hanh's works and then provide relevant Buddhist teachings without implying a direct connection to him."
+    },
+    "overall": 3.41,
+    "failures": [
+      "toolUsage",
+      "topicCoverage",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The primary issue with this response is that it does not fully address the user's request for works by Thich Nhat Hanh, instead providing a general statement about Buddhist teachings. To improve, the assistant should focus on confirming the absence of Thich Nhat Hanh's works and then provide relevant Buddhist teachings without implying a direct connection to him."
+  },
+  {
+    "id": 32,
+    "category": "author",
+    "query": "Show me everything by Bahá'u'lláh",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "Bahá’u’lláh's writings are vast and encompass profound teachings on unity and spirituality. He emphasizes that [\"the world is but one country, and mankind its citizens\"](https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi?paraId=para_501), highlighting the oneness of humanity as a cornerstone of his revelation. In the *Kitáb-i-Aqdas*, he lays down laws and principles, stating that [\"the essence of faith is fewness of words and abundance of deeds\"](https://oceanlibrary.com/hidden-words-of-bahaullah?paraId=para_452), urging followers to live by their actions. Moreover, Bahá’u’lláh calls for a transformation of society through spiritual means, asserting that [\"so potent is the light of unity that it can illuminate the whole earth\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi?paraId=para_508). These teachings collectively aim to foster a global community built on love, justice, and peace.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 9841,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response does a good job of integrating quotes and providing relevant teachings from Bahá'u'lláh, but it lacks a comprehensive list of all his writings as requested. To improve, it should include a more extensive overview or list of his major works, ensuring it fully addresses the user's request for 'everything' by Bahá'u'lláh."
+    },
+    "overall": 3.98,
+    "failures": [],
+    "diagnosis": "The response does a good job of integrating quotes and providing relevant teachings from Bahá'u'lláh, but it lacks a comprehensive list of all his writings as requested. To improve, it should include a more extensive overview or list of his major works, ensuring it fully addresses the user's request for 'everything' by Bahá'u'lláh."
+  },
+  {
+    "id": 33,
+    "category": "author",
+    "query": "What do you have by the Universal House of Justice?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "The library holds 475 documents by the Universal House of Justice, covering a range of topics. Among these, the work [\"Regarding Economic Life\"](https://siftersearch.com/library/Baha'i/Administrative/the-five-year-plan-2006-2011-messages-of-the-universal-house-of-justice#p1670) addresses contemporary challenges and the spiritual dimensions of economic issues. Another document, [\"Marking the Bicentenary of the Birth of Bahá’u’lláh\"](https://siftersearch.com/library/Baha'i/Administrative/the-five-year-plan-2006-2011-messages-of-the-universal-house-of-justice#p1670), reflects on the significance of this milestone in the Bahá'í Faith. These writings provide insights into both administrative and spiritual aspects of the Bahá'í community.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 2,
+    "durationMs": 5183,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively provides a count of documents and highlights two specific works, but it could improve by integrating quotes from the documents to support the claims made about their content. Additionally, a more critical engagement with the significance of these documents would enhance the depth of the response."
+    },
+    "overall": 4.05,
+    "failures": [],
+    "diagnosis": "The response effectively provides a count of documents and highlights two specific works, but it could improve by integrating quotes from the documents to support the claims made about their content. Additionally, a more critical engagement with the significance of these documents would enhance the depth of the response."
+  },
+  {
+    "id": 34,
+    "category": "author",
+    "query": "Do you have any books by Adib Taherzadeh?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "The library holds 9 works by Adib Taherzadeh, including notable titles such as [\"The Covenant of Bahá’u’lláh\"](https://siftersearch.com/library/Baha'i/Baha'i%20Books/adib-taherzadeh_the-covenant-of-bahaullah#p1306), where he explores the profound impact of Bahá’u’lláh's teachings. In this work, Taherzadeh describes the revelation as [\"a veritable ocean of Revelation\"](https://siftersearch.com/library/Baha'i/Baha'i%20Books/adib-taherzadeh_the-covenant-of-bahaullah#p1306), highlighting the abundance and depth of Bahá’u’lláh's words. Another significant work is [\"The Revelation of Bahá’u’lláh vol. 1\"](https://siftersearch.com/library/Baha'i/Baha'i%20Books/adib-taherzadeh_the-revelation-of-bahaullah-vol-1#p2663), which delves into the transformative power of the Bahá'í Faith.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 3,
+    "durationMs": 5099,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 5,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response primarily lists works by Adib Taherzadeh but fails to critically engage with the user's query or provide deeper insights into the significance of the works mentioned. To improve, the assistant could include a brief explanation of why these works are important within the Bahá'í context, enhancing the response's depth and relevance."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response primarily lists works by Adib Taherzadeh but fails to critically engage with the user's query or provide deeper insights into the significance of the works mentioned. To improve, the assistant could include a brief explanation of why these works are important within the Bahá'í context, enhancing the response's depth and relevance."
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library includes a substantial collection of Bahá'í documents, totaling [41,590](https://oceanlibrary.com/selections-from-the-writings-of-the-bab) works. These are organized into collections such as Bahá'í Books, Reference, Papers, and News. Among the teachings, 'Abdu'l-Bahá describes them as [\"heavenly outpourings of grace\"](https://siftersearch.com/library/Baha'i/Core%20Publications/selections-from-the-writings-of-abdul-baha#p504), likening them to divine mercy that cleanses the heart.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 3,
+    "durationMs": 3898,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of the Bahá'í collections but lacks specific titles or a more detailed list of the collections themselves. To improve, the assistant should include more specific examples of the collections and ensure that all claims are backed by direct quotes from the library."
+    },
+    "overall": 3.68,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response provides a good overview of the Bahá'í collections but lacks specific titles or a more detailed list of the collections themselves. To improve, the assistant should include more specific examples of the collections and ensure that all claims are backed by direct quotes from the library."
+  }
+]

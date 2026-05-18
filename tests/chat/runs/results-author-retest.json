@@ -1,0 +1,152 @@
+[
+  {
+    "id": 29,
+    "category": "author",
+    "query": "Do you have anything by Rumi?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 3 works by Rumi, including the [Divan-e Shams](https://oceanlibrary.com/masnavi_rumi) and the [Masnavi](https://oceanlibrary.com/masnavi_rumi). These collections are part of the Mysticism category, capturing the depth of Rumi's spiritual insights. If you're interested in exploring his poetic wisdom, these texts are a great place to start.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 4226,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks direct quotes from Rumi's works, which would enhance citation presence and accuracy. To improve, the assistant should include specific excerpts or key themes from the texts to provide a richer context and demonstrate engagement with Rumi's poetry."
+    },
+    "overall": 3.29,
+    "failures": [
+      "citationAccuracy",
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response lacks direct quotes from Rumi's works, which would enhance citation presence and accuracy. To improve, the assistant should include specific excerpts or key themes from the texts to provide a richer context and demonstrate engagement with Rumi's poetry."
+  },
+  {
+    "id": 31,
+    "category": "author",
+    "query": "Do you have works by Thich Nhat Hanh?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "I searched our library for works by Thich Nhat Hanh but found none. However, our Buddhist collection includes passages that resonate with his teachings on mindfulness and interbeing. For example, the Majjhima Nikaya emphasizes mindfulness, noting that [\"a monk remains focused on mental qualities in & of themselves\"](https://oceanlibrary.com/majjhima-nikaya), while the Dhammapada highlights the importance of thought, stating that [\"mind is the forerunner of all actions\"](https://oceanlibrary.com/dhammapada_buddha). These texts echo the themes Thich Nhat Hanh often explored.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 4344,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses library tools and provides relevant quotes, but it could improve by more explicitly connecting the quotes to Thich Nhat Hanh's teachings. Additionally, it could address the user's request for works by Thich Nhat Hanh more directly by mentioning the absence of his works in a more engaging way."
+    },
+    "overall": 4.1,
+    "failures": [],
+    "diagnosis": "The response effectively uses library tools and provides relevant quotes, but it could improve by more explicitly connecting the quotes to Thich Nhat Hanh's teachings. Additionally, it could address the user's request for works by Thich Nhat Hanh more directly by mentioning the absence of his works in a more engaging way."
+  },
+  {
+    "id": 32,
+    "category": "author",
+    "query": "Show me everything by Bahá'u'lláh",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 522 documents by Bahá'u'lláh. Among these are notable works such as the [Súrah of the Arabs](https://oceanlibrary.com/surah-of-the-arabs), the [Tablet of Consolation](https://oceanlibrary.com/tablet-of-consolation), and the [Tablet of Holiness](https://oceanlibrary.com/tablet-of-holiness). These writings encompass a wide range of themes, from spiritual guidance to social principles, reflecting Bahá'u'lláh's profound influence on the Bahá'í Faith.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 2700,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 5,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks direct quotes from the documents by Bahá'u'lláh, which is essential for a lookup request. To improve, the assistant should include specific excerpts or key phrases from the documents to support its claims about their themes and significance."
+    },
+    "overall": 3.32,
+    "failures": [
+      "citationAccuracy",
+      "logicalCoherence",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks direct quotes from the documents by Bahá'u'lláh, which is essential for a lookup request. To improve, the assistant should include specific excerpts or key phrases from the documents to support its claims about their themes and significance."
+  },
+  {
+    "id": 33,
+    "category": "author",
+    "query": "What do you have by the Universal House of Justice?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 475 documents by the Universal House of Justice. Some notable works include [Regarding Economic Life](url), [Marking the Bicentenary of the Birth of Bahá’u’lláh](url), and [Climate Change: Policies and Political Discourse](url). These documents cover a range of topics from administrative guidance to social issues, reflecting the House's role in providing direction and insight on both spiritual and practical matters. If you're interested in exploring specific themes, let me know!",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 2432,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks direct quotes from the documents, which diminishes its authority and support for claims made. To improve, the assistant should include specific excerpts or quotes from the Universal House of Justice's documents to substantiate its claims and enhance the response's credibility."
+    },
+    "overall": 3.34,
+    "failures": [
+      "citationAccuracy",
+      "logicalCoherence",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks direct quotes from the documents, which diminishes its authority and support for claims made. To improve, the assistant should include specific excerpts or quotes from the Universal House of Justice's documents to substantiate its claims and enhance the response's credibility."
+  }
+]

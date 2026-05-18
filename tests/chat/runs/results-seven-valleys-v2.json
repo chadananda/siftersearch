@@ -1,0 +1,38 @@
+[
+  {
+    "id": 84,
+    "category": "edge",
+    "query": "七つの谷",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The \"Seven Valleys\" described by Bahá’u’lláh represent stages in the spiritual journey of a seeker. These stages guide the wayfarer from the material world to a deeper understanding and union with the divine. The journey begins with the [\"Valley of Love\"](https://siftersearch.com/library/Baha'i/Core%20Publications/bahaullah_the-seven-valleys-and-the-four-valleys#p15), where the seeker is \"dissolved in the fire of love,\" and progresses through stages like the [\"Valley of Knowledge\"](https://siftersearch.com/library/Baha'i/Core%20Publications/bahaullah_the-seven-valleys-and-the-four-valleys#p26), where one moves \"from the darkness of illusion to the guiding light.\" Ultimately, the seeker reaches the [\"Valley of Unity\"](https://siftersearch.com/library/Baha'i/Core%20Publications/bahaullah_the-seven-valleys-and-the-four-valleys#p41), recognizing the \"oneness of all existence and the unity of God.\" Each valley emphasizes different spiritual qualities essential for the journey.",
+    "toolsUsed": [
+      "find_document_for_citation",
+      "document_subagent",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 8,
+    "durationMs": 20731,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library and provides relevant quotes, but it could improve in critical engagement by addressing the user's framing more directly. Additionally, while the warmth is present, it could be enhanced to create a more inviting tone."
+    },
+    "overall": 4.15,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library and provides relevant quotes, but it could improve in critical engagement by addressing the user's framing more directly. Additionally, while the warmth is present, it could be enhanced to create a more inviting tone."
+  }
+]

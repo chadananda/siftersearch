@@ -1,0 +1,142 @@
+[
+  {
+    "id": 105,
+    "category": "framing",
+    "query": "So detachment in the Bahá'í writings just means not being materialistic — like minimalism?",
+    "questionType": "framing",
+    "status": "FAIL",
+    "response": "Detachment in the Bahá'í writings indeed involves more than just avoiding materialism. Bahá'u'lláh describes it as being \"separated from those things which occasion loss\", suggesting a broader release from anything that diminishes one's spiritual grandeur. In Sikhism, true detachment is achieved \"through the Word of the Guru's Shabad\", indicating a spiritual practice rather than mere minimalism. The Tao Te Ching advises that being [\"free from desire\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_175) allows one to grasp deeper mysteries, hinting at an inner stillness beyond material concerns. In Buddhism, detachment is about not being \"infatuated with pleasing forms\", which leads to the cessation of suffering. Each tradition points to detachment as a path to spiritual elevation, not just a lifestyle choice.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 4944,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of detachment across multiple traditions, but it could improve in critical engagement by directly addressing the user's framing of detachment as merely minimalism. Strengthening this aspect would enhance the response's depth and relevance to the user's question."
+    },
+    "overall": 3.95,
+    "failures": [
+      "criticalEngagement"
+    ],
+    "diagnosis": "The response provides a good overview of detachment across multiple traditions, but it could improve in critical engagement by directly addressing the user's framing of detachment as merely minimalism. Strengthening this aspect would enhance the response's depth and relevance to the user's question."
+  },
+  {
+    "id": 107,
+    "category": "framing",
+    "query": "The Bahá'í Faith is basically a liberal religion that supports modern progressive values?",
+    "questionType": "framing",
+    "status": "FAIL",
+    "response": "The Bahá'í Faith certainly embraces principles that resonate with modern values, such as the [\"equality of men and women\"](https://oceanlibrary.com/bahai-world-faith-abdul-baha-section_2?paraId=para_202), *Bahá’í World Faith (‘Abdu’l-Bahá section)*, and the [\"independent investigation of truth\"](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi?paraId=para_4639), *Uncompiled Published Letters*. However, it is not simply a reflection of contemporary liberalism. Bahá'u'lláh emphasizes that [\"the earth is but one country, and mankind its citizens\"](https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi?paraId=para_501), *The World Order of Bahá’u’lláh*, which transcends political categories by focusing on unity and spiritual principles. The Faith's teachings aim to address the needs of humanity as a whole, beyond any single ideological framework.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 4679,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response does a good job of integrating quotes and addressing the user's framing, but it could improve by more explicitly naming the imprecise term 'liberal religion' and clarifying how the Bahá'í Faith's principles differ from contemporary liberalism. This would enhance critical engagement and provide a sharper distinction between the user's framing and the tradition's teachings."
+    },
+    "overall": 4.1,
+    "failures": [
+      "criticalEngagement"
+    ],
+    "diagnosis": "The response does a good job of integrating quotes and addressing the user's framing, but it could improve by more explicitly naming the imprecise term 'liberal religion' and clarifying how the Bahá'í Faith's principles differ from contemporary liberalism. This would enhance critical engagement and provide a sharper distinction between the user's framing and the tradition's teachings."
+  },
+  {
+    "id": 109,
+    "category": "framing",
+    "query": "So the Bahá'í concept of justice is the same as social justice in modern usage?",
+    "questionType": "framing",
+    "status": "PASS",
+    "response": "The Bahá'í concept of justice extends beyond modern notions of social justice, emphasizing a spiritual and moral foundation. Bahá'u'lláh describes justice as [\"the best beloved of all things\"](https://oceanlibrary.com/hidden-words-of-bahaullah?paraId=para_14), highlighting its divine significance. This justice is not merely about societal equity but involves seeing with one's own eyes and knowing with one's own knowledge, rather than relying on others' perspectives. Furthermore, Bahá'u'lláh calls for believers to [\"be fair to yourselves and to others\"](https://oceanlibrary.com/advent-of-divine-justice_shoghi-effendi?paraId=para_62), ensuring that justice is reflected through deeds and interactions, thus integrating personal integrity with social responsibility.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 2910,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively distinguishes the Bahá'í concept of justice from modern social justice, but it could improve by more explicitly naming the imprecise framing of 'social justice' and anchoring the discussion in Bahá'í terminology. This would enhance critical engagement and clarity."
+    },
+    "overall": 4.63,
+    "failures": [],
+    "diagnosis": "The response effectively distinguishes the Bahá'í concept of justice from modern social justice, but it could improve by more explicitly naming the imprecise framing of 'social justice' and anchoring the discussion in Bahá'í terminology. This would enhance critical engagement and clarity."
+  },
+  {
+    "id": 110,
+    "category": "framing",
+    "query": "Isn't the Bahá'í teaching on the soul basically the same as what most people mean by spirituality?",
+    "questionType": "framing",
+    "status": "PASS",
+    "response": "The Bahá'í teaching on the soul emphasizes its unique nature and potential, distinct from general notions of spirituality. 'Abdu'l-Bahá describes the human spirit as the [\"rational soul\"](https://oceanlibrary.com/some-answered-questions_abdul-baha?paraId=para_728), which encompasses all things and discovers their realities, yet requires the spirit of faith to access divine mysteries. In Islam, the soul is seen as the [\"essence of human understanding\"](https://oceanlibrary.com/quran-commentary-of-sayyid-muhammad-the-bab_todd-lawson?paraId=para_758), a reflection of divine reality. Meanwhile, the Bhagavad-Gita speaks of the soul as transcending the [\"Three Qualities\"](https://oceanlibrary.com/bhagavad-gita?paraId=para_207), leading to liberation from the cycle of birth and death. Each tradition offers a unique perspective on the soul's role and potential, suggesting a deeper, more structured understanding than the broad term \"spirituality\" might imply.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 5262,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively engages with the user's framing by distinguishing Bahá'í teachings from general spirituality. However, it could improve by integrating quotes more fluidly into the narrative and ensuring that each quote directly supports the claims made. Additionally, a more explicit acknowledgment of the user's assumptions about spirituality would enhance critical engagement."
+    },
+    "overall": 4.32,
+    "failures": [],
+    "diagnosis": "The response effectively engages with the user's framing by distinguishing Bahá'í teachings from general spirituality. However, it could improve by integrating quotes more fluidly into the narrative and ensuring that each quote directly supports the claims made. Additionally, a more explicit acknowledgment of the user's assumptions about spirituality would enhance critical engagement."
+  }
+]

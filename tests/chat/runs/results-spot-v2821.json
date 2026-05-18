@@ -1,0 +1,117 @@
+[
+  {
+    "id": 30,
+    "category": "author",
+    "query": "What books by Moojan Momen do you have?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 146 works by Moojan Momen. Notable titles include [Mazhar-i Ilahi (Manifestation of God)](url), [Memorials of the Faithful: The Democratization of Sainthood](url), and [Shoghi Effendi's Translation of Terms Related to Law in Bahá’í Scripture](url). Momen's scholarship often explores the historical and theological dimensions of the Bahá'í Faith, providing insights into its development and interpretation.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 4369,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks direct quotes from the library, which diminishes its credibility and support for the claims made about Momen's work. To improve, the assistant should include specific quotes or excerpts from the titles mentioned to substantiate the claims about Momen's scholarship."
+    },
+    "overall": 3.32,
+    "failures": [
+      "citationAccuracy",
+      "logicalCoherence",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks direct quotes from the library, which diminishes its credibility and support for the claims made about Momen's work. To improve, the assistant should include specific quotes or excerpts from the titles mentioned to substantiate the claims about Momen's scholarship."
+  },
+  {
+    "id": 33,
+    "category": "author",
+    "query": "What do you have by the Universal House of Justice?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 475 documents by the Universal House of Justice. Notable titles include [Regarding Economic Life](https://oceanlibrary.com/administrative_2017), [Marking the Bicentenary of the Birth of Bahá’u’lláh](https://oceanlibrary.com/administrative_2017), and [Climate Change: Policies and Political Discourse](https://oceanlibrary.com/administrative_2017). These documents often address contemporary issues through a spiritual lens, emphasizing the importance of unity and justice in addressing global challenges.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 3455,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks direct quotes from the documents, which diminishes its authority and support for claims made about the content. To improve, the assistant should include specific excerpts or key points from the documents to substantiate its claims and enhance citation presence and accuracy."
+    },
+    "overall": 3.34,
+    "failures": [
+      "citationAccuracy",
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response lacks direct quotes from the documents, which diminishes its authority and support for claims made about the content. To improve, the assistant should include specific excerpts or key points from the documents to substantiate its claims and enhance citation presence and accuracy."
+  },
+  {
+    "id": 75,
+    "category": "reading",
+    "query": "Show me the first few paragraphs of the Tao Te Ching",
+    "questionType": "reading",
+    "status": "FAIL",
+    "response": "The *Tao Te Ching* opens with a profound statement on the nature of the Tao: [\"The Tao that can be trodden is not the enduring and unchanging Tao. The name that can be named is not the enduring and unchanging name.\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_7) This suggests that the true essence of the Tao transcends any fixed form or label. It continues to describe the Tao as [\"the emptiness of a vessel\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_25), emphasizing its boundless and unfathomable nature. This opening sets the tone for the entire work, inviting readers to explore the mysterious and profound qualities of the Tao.",
+    "toolsUsed": [
+      "deep_research",
+      "find_document_for_citation",
+      "search_read",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 5,
+    "citationCount": 8,
+    "durationMs": 4708,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response does a good job of quoting relevant passages from the *Tao Te Ching*, but it lacks a direct reading of the first few paragraphs as requested. Instead, it summarizes the content, which deviates from the user's instruction. To improve, the assistant should provide the actual text of the first few paragraphs directly from the document."
+    },
+    "overall": 3.93,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response does a good job of quoting relevant passages from the *Tao Te Ching*, but it lacks a direct reading of the first few paragraphs as requested. Instead, it summarizes the content, which deviates from the user's instruction. To improve, the assistant should provide the actual text of the first few paragraphs directly from the document."
+  }
+]

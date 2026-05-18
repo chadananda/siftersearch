@@ -1,0 +1,40 @@
+[
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds a total of 44,937 documents across various traditions. Among these, the Bahá'í collection is the largest, with 41,590 documents, while the Jewish texts number 1,418. The library also includes significant collections from Buddhism, Islam, Christianity, Hinduism, and other traditions. For example, the Buddhist section features the [\"Pali Canon\"](url), which comprises the oldest surviving Buddhist scriptures.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 7264,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 2,
+      "citationAccuracy": 1,
+      "sourceAuthority": 5,
+      "criticalEngagement": 5,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 5,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 1,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "Critical error: The response claims the library holds 44,937 total documents and 41,590 Bahá'í documents, but the system prompt explicitly states the library contains 7,900+ documents total. These figures are fabricated — they do not match the actual library scope and appear to be hallucinated. Additionally, the example reference to the 'Pali Canon' is unsupported by the tool results shown. For a browsing question, the user asked a simple factual query and deserved accurate numbers from the overview tool."
+    },
+    "overall": 3.29,
+    "failures": [
+      "citationAccuracy",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "Critical error: The response claims the library holds 44,937 total documents and 41,590 Bahá'í documents, but the system prompt explicitly states the library contains 7,900+ documents total. These figures are fabricated — they do not match the actual library scope and appear to be hallucinated. Additionally, the example reference to the 'Pali Canon' is unsupported by the tool results shown. For a browsing question, the user asked a simple factual query and deserved accurate numbers from the overview tool."
+  }
+]

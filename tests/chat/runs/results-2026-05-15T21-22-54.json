@@ -1,0 +1,108 @@
+[
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library holds 41,590 Bahá'í documents across various collections, including Baha'i Books, Reference, Papers, and News. Among the works, you can find insightful titles like [*Hájí Mírzá Áqásí: A Portrait of a Tyrannical and Ignorant Prime Minister*](https://oceanlibrary.com/selections-from-the-writings-of-the-bab) by Mohammad Norozi and [*Creation and Evolution in Bahá’í Thought*](https://oceanlibrary.com/selections-from-the-writings-of-the-bab) by Behrooz Sabet. In the writings, 'Abdu’l-Bahá describes the teachings as [\"heavenly outpourings of grace\"](https://siftersearch.com/library/Baha'i/Core%20Publications/selections-from-the-writings-of-abdul-baha#p504), likening them to rain-showers that cleanse the human heart.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 4092,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of the Bahá'í collections but lacks specific quotes from the library to substantiate claims about the collections. Additionally, it could better engage with the user's request by focusing more on the collections themselves rather than individual titles. To improve, the assistant should include direct quotes from the library that describe the collections more thoroughly."
+    },
+    "overall": 3.63,
+    "failures": [],
+    "diagnosis": "The response provides a good overview of the Bahá'í collections but lacks specific quotes from the library to substantiate claims about the collections. Additionally, it could better engage with the user's request by focusing more on the collections themselves rather than individual titles. To improve, the assistant should include direct quotes from the library that describe the collections more thoroughly."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 127 Hindu texts across various collections, including Bhakti and Devotional Works and Epics. Among these, you can find [Gitanjali (Song Offerings)](https://oceanlibrary.com/hymns-of-atharva-veda) by Rabindranath Tagore and [Hindu Literature - Ramayana, Nala, Sakuntala](https://oceanlibrary.com/hymns-of-atharva-veda) by various authors. The *Bhagavad Gita* offers a glimpse into divine vision, where Krishna tells Arjuna, [\"I give thee sense divine. Have other eyes, new light!\"](https://oceanlibrary.com/hymns-of-atharva-veda). Additionally, the *Upanishads* encourage us to free our hearts from prejudice, drawing [\"inspiration, love and wisdom\"](https://oceanlibrary.com/hymns-of-atharva-veda) from these sacred writings.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 3754,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of the Hindu texts available but lacks depth in citations and authority. The quotes used are not well-integrated into the narrative, and some claims are not fully supported by direct quotes from the texts. Improving the integration of quotes and ensuring that all claims are backed by specific passages would enhance the response significantly."
+    },
+    "overall": 3.49,
+    "failures": [
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response provides a good overview of the Hindu texts available but lacks depth in citations and authority. The quotes used are not well-integrated into the narrative, and some claims are not fully supported by direct quotes from the texts. Improving the integration of quotes and ensuring that all claims are backed by specific passages would enhance the response significantly."
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library holds a total of 44,937 documents, spanning various religious traditions. Among these, there are 41,590 Bahá'í documents, 1,418 from Judaism, 858 Buddhist texts, 404 Islamic writings, and 208 Christian works. Hindu, Zoroastrian, Taoist, Confucian, Sikh, and Jain traditions are also represented. Reflecting on the breadth of this collection, Bahá'u'lláh describes the divine word as [\"the lamp of My loving providence\"](https://siftersearch.com/document/12345?paraId=67890), illuminating the path of knowledge and understanding.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 5097,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 5,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The primary issue with this response is the citation accuracy; the quote provided does not seem to directly support the claim about the library's breadth. To improve, the assistant should ensure that quotes are directly relevant to the context of the documents in the library rather than general reflections on knowledge."
+    },
+    "overall": 3.98,
+    "failures": [],
+    "diagnosis": "The primary issue with this response is the citation accuracy; the quote provided does not seem to directly support the claim about the library's breadth. To improve, the assistant should ensure that quotes are directly relevant to the context of the documents in the library rather than general reflections on knowledge."
+  }
+]

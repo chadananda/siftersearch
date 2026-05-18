@@ -1,0 +1,114 @@
+[
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "When exploring the concept of the covenant in Judaism, the Book of Isaiah offers reassurance with the words [\"comfort ye, comfort ye My people\"](https://oceanlibrary.com/jps-book-of-isaiah/?paraId=para_741), highlighting God's enduring promise to His people. In the Bahá'í Faith, the covenant is similarly central, emphasizing the continuity of divine guidance and the unity of humankind. While the retrieved quotes don't directly address the Bahá'í perspective, the covenant in both traditions underscores a commitment to divine guidance and the relationship between God and humanity.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 5801,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 3,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient depth in addressing the Bahá'í perspective on the covenant, as it does not provide any direct quotes from Bahá'í texts. Additionally, the integration of the quote from Isaiah could be improved to better connect it to the overall argument. To enhance the response, it should include specific Bahá'í passages that discuss the covenant and clarify how they relate to the Jewish perspective."
+    },
+    "overall": 3.37,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "topicCoverage",
+      "logicalCoherence",
+      "inlineQuoteIntegration",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The response lacks sufficient depth in addressing the Bahá'í perspective on the covenant, as it does not provide any direct quotes from Bahá'í texts. Additionally, the integration of the quote from Isaiah could be improved to better connect it to the overall argument. To enhance the response, it should include specific Bahá'í passages that discuss the covenant and clarify how they relate to the Jewish perspective."
+  },
+  {
+    "id": 105,
+    "category": "framing",
+    "query": "So detachment in the Bahá'í writings just means not being materialistic — like minimalism?",
+    "questionType": "framing",
+    "status": "PASS",
+    "response": "Detachment in the Bahá'í writings involves more than just avoiding materialism; it is about being \"severed from attachment\" to things that \"occasion loss and lessen the grandeur of man\" [*Tablets of Bahá’u’lláh and ’Abdu’l-Bahá from Star of the West*](https://siftersearch.com/document/16714). In Sikhism, true detachment is achieved [\"through the Word of the Guru's Shabad\"](https://siftersearch.com/document/20186), emphasizing a spiritual focus rather than mere minimalism. The Tao Te Ching suggests that being \"free from desire\" allows one to understand the deeper mysteries of life, contrasting with the superficiality of material pursuits [*Tao Te Ching (tr. David Bullen)*](https://siftersearch.com/document/18776). Each tradition highlights that detachment is more about spiritual liberation and inner peace than simply reducing possessions.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 5740,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively addresses the user's framing by clarifying that detachment in the Bahá'í context is broader than materialism. However, it could improve by more explicitly naming the user's imprecise framing of detachment as merely minimalism, anchoring the response more firmly in Bahá'í terminology. Overall, it is well-structured and informative."
+    },
+    "overall": 4.32,
+    "failures": [],
+    "diagnosis": "The response effectively addresses the user's framing by clarifying that detachment in the Bahá'í context is broader than materialism. However, it could improve by more explicitly naming the user's imprecise framing of detachment as merely minimalism, anchoring the response more firmly in Bahá'í terminology. Overall, it is well-structured and informative."
+  },
+  {
+    "id": 106,
+    "category": "framing",
+    "query": "Bahá'u'lláh's teachings are pretty compatible with secular humanism, aren't they?",
+    "questionType": "framing",
+    "status": "PASS",
+    "response": "It's true that Bahá'u'lláh's teachings emphasize the harmony between religion and science, suggesting that religion must be in [\"conformity with science and reason\"](https://siftersearch.com/document/8638), *The Promulgation of Universal Peace*. This principle aligns with secular humanism's reliance on reason and empirical evidence. However, Bahá'u'lláh's vision extends beyond secular humanism by emphasizing the spiritual unity of humanity, declaring that [\"the earth is but one country, and mankind its citizens\"](https://siftersearch.com/document/7149), *Questions from Christians*. This spiritual dimension adds a layer of purpose and interconnectedness that goes beyond the secular focus on human welfare alone.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 4372,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively engages with the user's framing while providing relevant quotes from Bahá'u'lláh's teachings. However, it could enhance critical engagement by explicitly addressing the limitations of secular humanism in relation to Bahá'í teachings, rather than just contrasting them. This would deepen the analysis and provide a more nuanced understanding of the differences."
+    },
+    "overall": 4.24,
+    "failures": [],
+    "diagnosis": "The response effectively engages with the user's framing while providing relevant quotes from Bahá'u'lláh's teachings. However, it could enhance critical engagement by explicitly addressing the limitations of secular humanism in relation to Bahá'í teachings, rather than just contrasting them. This would deepen the analysis and provide a more nuanced understanding of the differences."
+  }
+]

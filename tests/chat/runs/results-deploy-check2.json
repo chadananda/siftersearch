@@ -1,0 +1,93 @@
+[
+  {
+    "id": 6,
+    "category": "factual",
+    "query": "What are the Five Pillars of Islam?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Five Pillars of Islam are foundational acts of worship and practice that define a Muslim's faith and actions. They include [\"prayer, under which are comprehended those washings or purifications\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad) necessary before prayer, the giving of [\"alms\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad), [\"fasting\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad) during the month of Ramadan, and the [\"pilgrimage to Mecca\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad). These practices are complemented by the declaration of faith, which is the testimony that there is no god but Allah, and Muhammad is His messenger. Together, these pillars form the core of a Muslim's religious life.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 5,
+    "durationMs": 5981,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 2,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 2,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 2,
+      "instructionFollowing": 3,
+      "warmth": 2,
+      "noHallucination": 2,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "The response conflates fragmentary commentary (washings, alms, fasting, pilgrimage) with the Five Pillars themselves, creating a misleading structure. It omits *shahādah* (testimony of faith) from the inline citations, relegating it to unsourced prose, and the quoted fragments don't actually articulate the Five Pillars as a coherent Islamic doctrine — they're scattered observations. The assistant needed to search for primary Islamic sources (Qur'an, Hadith) that explicitly enumerate the Five Pillars, not scraps from a Qur'anic commentary that happen to mention related practices. The result reads like general knowledge wrapped in false citations rather than library-grounded scholarship."
+    },
+    "overall": 2.39,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response conflates fragmentary commentary (washings, alms, fasting, pilgrimage) with the Five Pillars themselves, creating a misleading structure. It omits *shahādah* (testimony of faith) from the inline citations, relegating it to unsourced prose, and the quoted fragments don't actually articulate the Five Pillars as a coherent Islamic doctrine — they're scattered observations. The assistant needed to search for primary Islamic sources (Qur'an, Hadith) that explicitly enumerate the Five Pillars, not scraps from a Qur'anic commentary that happen to mention related practices. The result reads like general knowledge wrapped in false citations rather than library-grounded scholarship."
+  },
+  {
+    "id": 8,
+    "category": "factual",
+    "query": "What is the Eightfold Path in Buddhism?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Eightfold Path in Buddhism is a fundamental guide to ethical and mental development with the goal of freeing individuals from attachments and delusions. It is described as the [\"noble truth of the way of practice leading to the cessation of stress\"](https://oceanlibrary.com/dhammapada_buddha), *Samyutta Nikaya*. This path consists of eight interconnected practices: [\"right view, right resolve, right speech, right action, right livelihood, right effort, right mindfulness, and right concentration\"](https://oceanlibrary.com/dhammapada_buddha), each contributing to the cultivation of wisdom, ethical conduct, and mental discipline. This path is central to achieving enlightenment and is part of the broader framework of the Four Noble Truths.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 6,
+    "durationMs": 5905,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 5,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 5,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 2,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "The response integrates quotes smoothly and demonstrates appropriate tool usage, but contains a critical accuracy problem: both citations point to the same URL (dhammapada_buddha), yet the first quote about 'noble truth of the way of practice' does not appear in standard Dhammapada texts—it's a paraphrase of Samyutta Nikaya language that wasn't actually retrieved. Additionally, the opening claim about 'freeing from attachments and delusions' and the closing reference to the Four Noble Truths framework are unsupported by the search results shown, suggesting general-knowledge supplementation. A rigorous response would either retrieve and quote the actual source directly, or acknowledge when the phrasing is a paraphrase rather than a direct quote."
+    },
+    "overall": 3.46,
+    "failures": [
+      "citationAccuracy",
+      "topicCoverage",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response integrates quotes smoothly and demonstrates appropriate tool usage, but contains a critical accuracy problem: both citations point to the same URL (dhammapada_buddha), yet the first quote about 'noble truth of the way of practice' does not appear in standard Dhammapada texts—it's a paraphrase of Samyutta Nikaya language that wasn't actually retrieved. Additionally, the opening claim about 'freeing from attachments and delusions' and the closing reference to the Four Noble Truths framework are unsupported by the search results shown, suggesting general-knowledge supplementation. A rigorous response would either retrieve and quote the actual source directly, or acknowledge when the phrasing is a paraphrase rather than a direct quote."
+  }
+]

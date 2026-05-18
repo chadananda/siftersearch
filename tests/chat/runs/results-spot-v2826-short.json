@@ -1,0 +1,79 @@
+[
+  {
+    "id": 30,
+    "category": "author",
+    "query": "What books by Moojan Momen do you have?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 146 works by Moojan Momen. Notable titles include [Mazhar-i Ilahi (Manifestation of God)](https://oceanlibrary.com), [Memorials of the Faithful: The Democratization of Sainthood](https://oceanlibrary.com), and [Shoghi Effendi's Translation of Terms Related to Law in Bahá’í Scripture](https://oceanlibrary.com). Momen's work explores the historical context of the Bahá'í Faith, such as the influence of Bahá'í leaders on 19th-century reform movements. He notes that [\"the Bahá'í leaders could have had a significant impact\"](https://oceanlibrary.com) on these debates, particularly through `Abdu'l-Bahá's writings, which were widely read among Iranian intellectuals.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 5,
+    "durationMs": 215138,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient integration of quotes and does not fully support its claims with specific citations from the library. To improve, it should include more direct quotes from Momen's works to substantiate the claims made about his contributions and the context of his writings."
+    },
+    "overall": 3.54,
+    "failures": [
+      "citationAccuracy",
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response lacks sufficient integration of quotes and does not fully support its claims with specific citations from the library. To improve, it should include more direct quotes from Momen's works to substantiate the claims made about his contributions and the context of his writings."
+  },
+  {
+    "id": 32,
+    "category": "author",
+    "query": "Show me everything by Bahá'u'lláh",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 522 documents by Bahá'u'lláh. Among these are notable works like the [Súrah of the Arabs](https://bahai-library.com/pdf/uhj/uhj_mariner_1996.pdf), [Suffering of the Exalted Letters](https://bahai-library.com/pdf/uhj/uhj_mariner_1996.pdf), and the [Tablet of Consolation](https://bahai-library.com/pdf/uhj/uhj_mariner_1996.pdf). In his writings, Bahá'u'lláh conveys profound spiritual truths, such as in the Tablet of the Holy Mariner, where he speaks of [\"the Ancient Beauty hath consented to be bound with chains\"](https://bahai-library.com/pdf/uhj/uhj_mariner_1996.pdf), illustrating his sacrifice and dedication.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 5,
+    "durationMs": 217008,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient integration of quotes and relies too heavily on a single document for multiple citations, which diminishes the overall authority and variety of sources. To improve, the assistant should include a broader range of Bahá'u'lláh's works and better integrate quotes into the narrative to enhance coherence and engagement."
+    },
+    "overall": 3.2,
+    "failures": [
+      "toolUsage",
+      "citationAccuracy",
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response lacks sufficient integration of quotes and relies too heavily on a single document for multiple citations, which diminishes the overall authority and variety of sources. To improve, the assistant should include a broader range of Bahá'u'lláh's works and better integrate quotes into the narrative to enhance coherence and engagement."
+  }
+]

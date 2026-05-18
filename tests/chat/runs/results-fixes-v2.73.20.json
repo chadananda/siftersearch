@@ -1,0 +1,110 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The Hindu concept of dharma is multifaceted, encompassing duties and moral laws that guide individuals according to their roles in society. In the *Mahabharata*, Bhishma outlines that dharma involves the [\"suppression of wrath, truthfulness of speech, justice, forgiveness\"](https://oceanlibrary.com/mahabharata-12_vyasa?paraId=para_273) and other virtues, which apply to all societal orders. Additionally, the *Bhagavad Gita* emphasizes that one finds perfection through [\"worship—wrought by work—of Him that is the Source of all which lives\"](https://oceanlibrary.com/bhagavad-gita?paraId=para_275), highlighting the importance of fulfilling one's duties with devotion. Dharma, therefore, is not just about personal conduct but also about maintaining cosmic order through one's actions and responsibilities.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 3266,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong overall, with excellent tool usage and citation practices. However, it could improve in critical engagement by more explicitly addressing the complexity of dharma and its interpretations across different contexts within Hinduism, rather than presenting it as a singular concept. This would enhance the depth of the explanation."
+    },
+    "overall": 4.76,
+    "failures": [],
+    "diagnosis": "The response is strong overall, with excellent tool usage and citation practices. However, it could improve in critical engagement by more explicitly addressing the complexity of dharma and its interpretations across different contexts within Hinduism, rather than presenting it as a singular concept. This would enhance the depth of the explanation."
+  },
+  {
+    "id": 12,
+    "category": "factual",
+    "query": "What does the Bhagavad Gita say about duty?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The Bhagavad Gita emphasizes the importance of performing one's duty, or dharma, without attachment to the outcomes. It teaches that actions should be undertaken [\"without attachment, passionlessly, for duty\"](https://siftersearch.com/library/Hindu/Epics/the-bhagavad-gita-song-celestial-tr-edwin-arnold#p250), focusing on the act itself rather than personal gain or emotional motivations. This idea is further illustrated by the concept of the \"rightful\" doer, who acts [\"free from self-seeking, humble, resolute\"](https://siftersearch.com/library/Hindu/Epics/the-bhagavad-gita-song-celestial-tr-edwin-arnold#p251), maintaining equanimity in both success and failure. By fulfilling one's responsibilities in this manner, the Gita suggests that one can achieve a higher state of spiritual fulfillment.",
+    "toolsUsed": [
+      "deep_research",
+      "find_document_for_citation",
+      "document_subagent",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 8,
+    "durationMs": 14504,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong overall, but it could improve in critical engagement by addressing the user's framing of duty more explicitly. Additionally, while the quotes are well-integrated, a more authoritative source could enhance the response's credibility."
+    },
+    "overall": 4.15,
+    "failures": [],
+    "diagnosis": "The response is strong overall, but it could improve in critical engagement by addressing the user's framing of duty more explicitly. Additionally, while the quotes are well-integrated, a more authoritative source could enhance the response's credibility."
+  },
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "In the Bahá'í Faith, the covenant is central to maintaining unity and guidance. Bahá'u'lláh established a clear covenant by appointing ['Abdu'l-Bahá as the Centre of the Covenant](https://siftersearch.com/document/15200), ensuring that his followers would not be left in perplexity, *Star of the West*. This covenant is further emphasized in the [Kitáb-i-‘Ahd](https://siftersearch.com/document/15207), which was revealed to preserve Bahá'í unity and prevent the establishment of new centers of authority, *Star of the West*.\n\nIn Judaism, the concept of covenant is deeply rooted in the relationship between God and the people of Israel. The Book of Hebrews reflects on this by mentioning a [new covenant with the house of Israel](https://oceanlibrary.com/kjv-epistle-to-hebrews?paraId=para_109), suggesting a renewal of the divine promise, *Hebrews*. Additionally, the Psalms remind us that God knows the [\"secrets of the heart\"](https://oceanlibrary.com/book-of-psalms-tehilim_david/?paraId=para_746), emphasizing the intimate and enduring nature of this covenantal relationship, *Psalms*.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 8,
+    "durationMs": 4705,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively covers the topic and integrates quotes well, but it could improve in critical engagement by addressing the nuances of the covenant concept in both traditions more deeply. Additionally, while the warmth is present, it could be enhanced to create a more engaging tone."
+    },
+    "overall": 4.15,
+    "failures": [],
+    "diagnosis": "The response effectively covers the topic and integrates quotes well, but it could improve in critical engagement by addressing the nuances of the covenant concept in both traditions more deeply. Additionally, while the warmth is present, it could be enhanced to create a more engaging tone."
+  }
+]

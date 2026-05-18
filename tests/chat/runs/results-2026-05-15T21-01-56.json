@@ -1,0 +1,198 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The concept of dharma in Hinduism is deeply intertwined with the idea of fulfilling one's duties and responsibilities. In the *Bhagavad Gita*, it is suggested that one finds perfection through [\"worship—wrought by work—of Him that is the Source of all which lives\"](https://oceanlibrary.com/hymns-of-atharva-veda). This highlights the importance of performing one's duties as a form of worship. Additionally, the *Mahabharata* raises questions about the value of actions, or karma, in relation to knowledge, asking what the value of karma is if knowledge is so efficacious in procuring emancipation, reflecting the ongoing dialogue about the balance between action and understanding in the pursuit of dharma.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 7,
+    "durationMs": 4545,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient direct quotes from the library to support key claims about dharma, which weakens citation presence and accuracy. To improve, the assistant should include more precise quotes from authoritative texts like the *Bhagavad Gita* and *Mahabharata* that directly define or elaborate on dharma."
+    },
+    "overall": 3.61,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks sufficient direct quotes from the library to support key claims about dharma, which weakens citation presence and accuracy. To improve, the assistant should include more precise quotes from authoritative texts like the *Bhagavad Gita* and *Mahabharata* that directly define or elaborate on dharma."
+  },
+  {
+    "id": 9,
+    "category": "factual",
+    "query": "What does the Torah say about justice?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Torah emphasizes justice as a fundamental principle. In Deuteronomy, it is written, [\"And you shall not bring an abomination into your house\"](https://siftersearch.com/library/Judaism/Talmud%20and%20Mishnah/william-davidson_chullin#p4297), highlighting the importance of maintaining purity and righteousness in one's actions. This principle extends to the broader community, where justice is not only about legal fairness but also about ethical living and moral integrity. The Torah's teachings encourage individuals to pursue justice as a way to align themselves with divine will and to ensure the well-being of society.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 6,
+    "durationMs": 5640,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 3,
+      "diagnosis": "The response lacks sufficient direct quotes from the Torah, relying instead on a single quote that is misattributed and does not directly support the claim about justice. To improve, the assistant should provide more relevant quotes from the Torah that explicitly discuss justice, ensuring accurate attribution and a stronger connection to the user's query."
+    },
+    "overall": 3.12,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response lacks sufficient direct quotes from the Torah, relying instead on a single quote that is misattributed and does not directly support the claim about justice. To improve, the assistant should provide more relevant quotes from the Torah that explicitly discuss justice, ensuring accurate attribution and a stronger connection to the user's query."
+  },
+  {
+    "id": 76,
+    "category": "edge",
+    "query": "bahaullah",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Bahá'u'lláh, the founder of the Bahá'í Faith, emphasizes the importance of understanding and safeguarding the spiritual teachings. He writes in the *Kitáb-i-Íqán* that the [\"Ancient Beauty hath consented to be bound with chains\"](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_the-book-of-certitude-kitab-i-iqan-2#p4), highlighting his willingness to endure suffering for the sake of humanity's spiritual progress. This self-sacrifice is a profound element of his mission, aiming to guide humanity towards unity and understanding. Additionally, Bahá'u'lláh's writings often call for believers to [\"safeguard the Faith and confirm believers in covenants\"](https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi/?paraId=para_1121), as noted by Shoghi Effendi, emphasizing the importance of loyalty and vigilance in spiritual matters.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 5381,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the user's potential assumptions about Bahá'u'lláh's teachings. Additionally, while the quotes are well-integrated, the response could be more concise by reducing some explanatory phrases that add length without significant value."
+    },
+    "overall": 4.02,
+    "failures": [],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the user's potential assumptions about Bahá'u'lláh's teachings. Additionally, while the quotes are well-integrated, the response could be more concise by reducing some explanatory phrases that add length without significant value."
+  },
+  {
+    "id": 87,
+    "category": "edge",
+    "query": "Is the Bahá'í Faith a cult?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Bahá'í Faith is structured in a way that prevents the formation of sects or factions, which is a common characteristic of cults. Bahá’u’lláh established a [Covenant and Testament](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_1791) to ensure unity and prevent disunion, appointing a Center of the Covenant to guide the community. This structure is unique, as it provides a clear line of authority, from Bahá’u’lláh to ‘Abdu’l-Bahá, and then to Shoghi Effendi, and finally the Universal House of Justice, which acts like a [constitution for the Bahá’í community](https://siftersearch.com/document/1550). Unlike cults, which often revolve around a single charismatic leader, the Bahá'í Faith emphasizes institutional authority and the collective decision-making of the Universal House of Justice, ensuring that no individual can claim special guidance or station.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 5,
+    "durationMs": 3157,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a solid foundation but lacks direct quotes from the library to substantiate its claims, which would enhance citation presence and accuracy. To improve, the assistant should integrate specific quotes from Bahá'í texts that directly address the question of cult characteristics."
+    },
+    "overall": 3.93,
+    "failures": [
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response provides a solid foundation but lacks direct quotes from the library to substantiate its claims, which would enhance citation presence and accuracy. To improve, the assistant should integrate specific quotes from Bahá'í texts that directly address the question of cult characteristics."
+  },
+  {
+    "id": 107,
+    "category": "framing",
+    "query": "The Bahá'í Faith is basically a liberal religion that supports modern progressive values?",
+    "questionType": "framing",
+    "status": "FAIL",
+    "response": "The Bahá'í Faith does share some values with modern progressive ideals, such as the emphasis on [\"the equality of men and women\"](https://siftersearch.com/document/11434), *Tablet to the Central Organization for a Durable Peace, The Hague*. However, it goes beyond a simple alignment with contemporary liberalism. Bahá'u'lláh emphasizes the [\"independent investigation of truth\"](https://siftersearch.com/document/15203), urging individuals to seek reality beyond inherited traditions. Moreover, the Faith's vision of unity is profound, as it seeks to [\"unite and weld together all that dwell on earth\"](https://siftersearch.com/document/8635), *God Passes By*, which transcends political or cultural boundaries. This holistic approach to unity and truth-seeking offers a distinct perspective that is not confined to any single political ideology.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 3504,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response does a good job of addressing the user's framing but could improve by explicitly naming the imprecise term 'liberal religion' and clarifying how the Bahá'í Faith's teachings differ from or expand upon modern progressive values. This would enhance critical engagement and provide a sharper distinction between the user's assumptions and the tradition's actual teachings."
+    },
+    "overall": 4.1,
+    "failures": [
+      "criticalEngagement"
+    ],
+    "diagnosis": "The response does a good job of addressing the user's framing but could improve by explicitly naming the imprecise term 'liberal religion' and clarifying how the Bahá'í Faith's teachings differ from or expand upon modern progressive values. This would enhance critical engagement and provide a sharper distinction between the user's assumptions and the tradition's actual teachings."
+  }
+]

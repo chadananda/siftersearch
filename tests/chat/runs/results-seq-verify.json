@@ -1,0 +1,124 @@
+[
+  {
+    "id": 84,
+    "category": "edge",
+    "query": "七つの谷",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The \"Seven Valleys\" is a profound spiritual journey outlined by Bahá’u’lláh, where each valley represents a stage in the seeker's path to divine union. The journey begins with [\"The Valley of Search\"](https://siftersearch.com/library/Baha'i/Core%20Publications/bahaullah_the-seven-valleys-and-the-four-valleys#p6), where the seeker embarks on a quest for truth. As the journey progresses, the seeker enters [\"The Valley of Love\"](https://siftersearch.com/library/Baha'i/Core%20Publications/bahaullah_the-seven-valleys-and-the-four-valleys#p15), becoming \"dissolved in the fire of love.\" Further along, in [\"The Valley of Knowledge\"](https://siftersearch.com/library/Baha'i/Core%20Publications/bahaullah_the-seven-valleys-and-the-four-valleys#p26), the seeker moves from \"doubt into certitude.\" This path ultimately leads to [\"The Valley of True Poverty and Absolute Nothingness\"](https://siftersearch.com/library/Baha'i/Core%20Publications/bahaullah_the-seven-valleys-and-the-four-valleys#p118), where the seeker attains a state of selflessness and unity with the divine. Each valley represents a transformative stage in the spiritual ascent.",
+    "toolsUsed": [
+      "find_document_for_citation",
+      "document_subagent",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 8,
+    "durationMs": 16180,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively outlines the stages of the 'Seven Valleys' but lacks deeper critical engagement with the user's query. It could improve by addressing the significance of each valley in a more nuanced way and integrating quotes more fluidly into the narrative rather than relying on links. Additionally, the response could be more concise by reducing some repetitive phrases."
+    },
+    "overall": 3.95,
+    "failures": [
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response effectively outlines the stages of the 'Seven Valleys' but lacks deeper critical engagement with the user's query. It could improve by addressing the significance of each valley in a more nuanced way and integrating quotes more fluidly into the narrative rather than relying on links. Additionally, the response could be more concise by reducing some repetitive phrases."
+  },
+  {
+    "id": 86,
+    "category": "edge",
+    "query": "Who was the Bab?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Báb, whose given name was Siyyid 'Ali Muhammad, was the [Founder of the Bábí Faith](https://siftersearch.com/library/Baha'i/Tablet%20Translations/the-bab-a-l-m_the-seven-proofs#p156). He assumed the title \"Báb,\" meaning \"Gate,\" after declaring His mission in Shiraz in May 1844. The Báb is recognized as the [Herald of Bahá'u'lláh](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_kitab-i-aqdas-multilinear-translation-project#p20), preparing the way for Bahá'u'lláh's revelation. His life was marked by significant opposition, and he was executed in 1850 in Tabriz, Iran.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 6,
+    "durationMs": 4028,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 2,
+      "citationAccuracy": 2,
+      "sourceAuthority": 2,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 3,
+      "warmth": 2,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks proper citations from the library, relying instead on external links and general knowledge. To improve, it should include direct quotes from the Ocean Library to substantiate claims about the Báb's identity and significance, ensuring that all information is grounded in authoritative sources."
+    },
+    "overall": 2.51,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth"
+    ],
+    "diagnosis": "The response lacks proper citations from the library, relying instead on external links and general knowledge. To improve, it should include direct quotes from the Ocean Library to substantiate claims about the Báb's identity and significance, ensuring that all information is grounded in authoritative sources."
+  },
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "In the Bahá'í Faith, the covenant is central to the relationship between God and humanity, emphasizing the importance of unity and guidance through the appointed successors. Bahá'u'lláh speaks of the covenant as a [\"mighty stronghold\"](https://oceanlibrary.com/book-of-psalms-tehilim_david/?paraId=para_746) that protects the community and ensures its progress. In Judaism, the covenant is foundational, often depicted as a binding agreement between God and the people of Israel, as seen in the Book of Isaiah where God comforts His people, saying [\"Comfort ye, comfort ye My people\"](https://oceanlibrary.com/jps-book-of-isaiah/?paraId=para_741), reminding them of His enduring promise. Both traditions view the covenant as a divine assurance of guidance and protection.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 5,
+    "durationMs": 4801,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a solid overview of the concept of the covenant in both the Bahá'í Faith and Judaism, but it could improve in critical engagement by addressing the nuances of the term 'covenant' in each tradition more explicitly. Additionally, while the quotes are relevant, they could be more tightly integrated into the argument to enhance the flow and connection between claims."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response provides a solid overview of the concept of the covenant in both the Bahá'í Faith and Judaism, but it could improve in critical engagement by addressing the nuances of the term 'covenant' in each tradition more explicitly. Additionally, while the quotes are relevant, they could be more tightly integrated into the argument to enhance the flow and connection between claims."
+  }
+]

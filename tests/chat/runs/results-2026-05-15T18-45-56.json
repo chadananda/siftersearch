@@ -1,0 +1,50 @@
+[
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 90 documents by 'Abdu'l-Bahá, including works like Selections from the Writings of 'Abdu'l-Bahá. While these writings cover a range of topics, governance is often discussed in the context of spiritual principles. For example, 'Abdu'l-Bahá emphasizes that true leadership involves \"accepting upon himself the yoke of Heaven\", as seen in the story of Rabbi Akiva from Jewish tradition. This reflects a broader spiritual approach to governance, where leaders are guided by higher moral and ethical standards.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 7023,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 2,
+      "citationAccuracy": 2,
+      "sourceAuthority": 2,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 2,
+      "logicalCoherence": 2,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 2,
+      "warmth": 2,
+      "noHallucination": 2,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "The response uses library_count (correct tool) but stops there, then supplements with unsupported claims and likely hallucinated quotes. The user asked for specific document titles discussing governance—the assistant should have followed up with a targeted search like search(query='governance', author='Abdu'l-Baha', mode='documents') to actually answer the second part of the question. The quote about 'accepting upon himself the yoke of Heaven' is not verified as coming from search results, and the pivot to Rabbi Akiva introduces external knowledge. A proper answer requires: (1) use library_count for the count (done), (2) search for governance documents by 'Abdu'l-Bahá (not done), and (3) cite actual titles and passages from the results."
+    },
+    "overall": 1.98,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response uses library_count (correct tool) but stops there, then supplements with unsupported claims and likely hallucinated quotes. The user asked for specific document titles discussing governance—the assistant should have followed up with a targeted search like search(query='governance', author='Abdu'l-Baha', mode='documents') to actually answer the second part of the question. The quote about 'accepting upon himself the yoke of Heaven' is not verified as coming from search results, and the pivot to Rabbi Akiva introduces external knowledge. A proper answer requires: (1) use library_count for the count (done), (2) search for governance documents by 'Abdu'l-Bahá (not done), and (3) cite actual titles and passages from the results."
+  }
+]

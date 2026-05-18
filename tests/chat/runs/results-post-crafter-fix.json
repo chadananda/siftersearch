@@ -1,0 +1,262 @@
+[
+  {
+    "id": 74,
+    "category": "reading",
+    "query": "Read the opening verses of the Bhagavad Gita",
+    "questionType": "reading",
+    "status": "FAIL",
+    "response": "The opening verses of the Bhagavad Gita set the stage for a profound dialogue between Arjuna and Krishna. On the battlefield of Kurukshetra, Arjuna is overcome with doubt and moral confusion, questioning the righteousness of fighting against his own kin. He expresses his turmoil, saying, [\"My members fail, my tongue dries in my mouth, a shudder thrills my body\"](https://siftersearch.com/document/17365) as he contemplates the impending battle. This moment captures the essence of the Gita's exploration of duty and the nature of life and death.",
+    "toolsUsed": [
+      "deep_research",
+      "find_document_for_citation",
+      "document_subagent",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 8,
+    "durationMs": 15872,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses quotes and integrates them well, but it lacks a direct reading of the verses as requested. To improve, the assistant should provide the actual text of the opening verses instead of summarizing them, ensuring it adheres strictly to the user's request."
+    },
+    "overall": 4.07,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response effectively uses quotes and integrates them well, but it lacks a direct reading of the verses as requested. To improve, the assistant should provide the actual text of the opening verses instead of summarizing them, ensuring it adheres strictly to the user's request."
+  },
+  {
+    "id": 77,
+    "category": "edge",
+    "query": "Udo Schafer",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Udo Schaefer's work often explores the intersection of faith and reason, a theme that resonates across many religious traditions. In Islam, the Qur'án emphasizes that a [\"clear Book come to you from God\"](https://oceanlibrary.com/sura-v-the-table_muhammad/?paraId=para_15) guides believers to paths of peace, highlighting the role of divine revelation in understanding. In Christianity, the Gospel of John begins with the profound assertion that [\"the Word was with God, and the Word was God\"](https://oceanlibrary.com/kjv-gospel-of-john/?paraId=para_8), underscoring the unity of divine wisdom and expression. Similarly, the Jewish tradition offers comfort and guidance, as seen in Isaiah's call to [\"comfort ye My people\"](https://oceanlibrary.com/jps-book-of-isaiah/?paraId=para_741). Buddhism, while not centered on a divine being, emphasizes the importance of understanding through texts like the Jataka Tales, where stories illustrate moral and ethical lessons. In the Bahá'í Faith, Shoghi Effendi's writings on the [\"Plan of Unified Action\"](https://oceanlibrary.com/bahai-administration_shoghi-effendi) reflect a commitment to collective progress and understanding. Each tradition, in its way, invites followers to seek deeper understanding and harmony.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "hype_search",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 11,
+    "citationCount": 8,
+    "durationMs": 5916,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the user's potential assumptions about Udo Schaefer's work more directly. Additionally, while the coverage of various traditions is good, it could be more concise to enhance clarity and impact."
+    },
+    "overall": 4.05,
+    "failures": [],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the user's potential assumptions about Udo Schaefer's work more directly. Additionally, while the coverage of various traditions is good, it could be more concise to enhance clarity and impact."
+  },
+  {
+    "id": 80,
+    "category": "edge",
+    "query": "What about the thing with the stuff?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "It seems like you're asking about a broad topic, but if we focus on the Buddhist perspective, the teachings often center on the concept of craving as the root of suffering. The Majjhima Nikaya explains that the [\"Noble Truth of the arising of suffering\"](https://siftersearch.com/document/19239) is linked to craving, which leads to rebirth and continued existence, *Majjhima Nikaya 141 - Saccavibhanga Sutta*. To overcome this, the cessation of suffering involves the [\"complete cessation of that very craving\"](https://siftersearch.com/document/19239), which is a path toward liberation. If you have a more specific aspect in mind, feel free to share!",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 3498,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 3,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a solid overview of the Buddhist perspective on craving and suffering, but it lacks a clear connection to the user's vague query. To improve, the assistant should clarify the user's intent and possibly ask for more specifics before diving into the explanation."
+    },
+    "overall": 3.88,
+    "failures": [
+      "topicCoverage",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The response provides a solid overview of the Buddhist perspective on craving and suffering, but it lacks a clear connection to the user's vague query. To improve, the assistant should clarify the user's intent and possibly ask for more specifics before diving into the explanation."
+  },
+  {
+    "id": 81,
+    "category": "edge",
+    "query": "Tell me everything about Buddhism",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "Buddhism offers a profound path centered on mindfulness and compassion. The *Dhammapada* teaches that [\"hatred ceases by love, this is an old rule\"](https://siftersearch.com/document/17245), emphasizing the transformative power of love over animosity. Mindfulness is a cornerstone of Buddhist practice, as the *Digha Nikaya* describes the [\"four frames of reference\"](https://siftersearch.com/document/17251) that guide meditation: body, feelings, mind, and mental qualities. This practice helps peel away layers of distraction, leading to greater clarity and release. Moreover, the *Sutta Nipata* encourages a life of loving-kindness, wishing that [\"all beings be at ease\"](https://siftersearch.com/document/17271), reflecting the universal compassion that Buddhism seeks to cultivate. Through these teachings, Buddhism provides a path to inner peace and enlightenment.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 3655,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a solid overview of Buddhism with relevant quotes, but it lacks comprehensive coverage of key aspects such as the Four Noble Truths and the Eightfold Path. To improve, it should include these foundational teachings and engage more critically with the user's request for 'everything about Buddhism.'"
+    },
+    "overall": 3.93,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response provides a solid overview of Buddhism with relevant quotes, but it lacks comprehensive coverage of key aspects such as the Four Noble Truths and the Eightfold Path. To improve, it should include these foundational teachings and engage more critically with the user's request for 'everything about Buddhism.'"
+  },
+  {
+    "id": 84,
+    "category": "edge",
+    "query": "七つの谷",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The \"Seven Valleys\" in Bahá’u’lláh's writings describe a profound spiritual journey. As the seeker progresses, they enter stages such as [\"The Valley of Contentment\"](https://oceanlibrary.com/seven-valleys-and-the-four-valleys) where they feel the \"winds of divine contentment\" blowing from the spirit, *The Seven Valleys and the Four Valleys*. This journey continues into [\"The Valley of Wonderment\"](https://oceanlibrary.com/seven-valleys-and-the-four-valleys), where the traveler is \"tossed in the oceans of grandeur,\" illustrating the depth and expansiveness of spiritual awakening, *The Seven Valleys and the Four Valleys*. These valleys symbolize different aspects of the path to divine truth and unity with God.",
+    "toolsUsed": [
+      "find_document_for_citation",
+      "document_subagent",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 8,
+    "durationMs": 16296,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses quotes from the source material and integrates them well, but it could improve in critical engagement by addressing the user's potential assumptions about the 'Seven Valleys' more directly. Additionally, while the warmth is present, it could be enhanced to create a more inviting tone."
+    },
+    "overall": 4.15,
+    "failures": [],
+    "diagnosis": "The response effectively uses quotes from the source material and integrates them well, but it could improve in critical engagement by addressing the user's potential assumptions about the 'Seven Valleys' more directly. Additionally, while the warmth is present, it could be enhanced to create a more inviting tone."
+  },
+  {
+    "id": 97,
+    "category": "multi",
+    "query": "What Buddhist texts discuss mindfulness, and can you show me a key passage?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The *Majjhima Nikaya* offers a profound exploration of mindfulness, particularly in the *Anapanasati Sutta* (Mindfulness of Breathing). This text emphasizes the practice of being [\"sensitive to the entire body\"](https://siftersearch.com/document/17257) while breathing in and out, cultivating a deep awareness of bodily sensations. It further instructs practitioners to focus on [\"calming bodily fabrication\"](https://siftersearch.com/document/17257), which aids in reducing mental distractions and fostering a state of clarity and tranquility. This approach is part of a broader framework that ultimately leads to the development of the seven factors for awakening, culminating in clear knowing and release.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 2449,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong overall, but it could improve in critical engagement by addressing the user's framing of mindfulness more directly. Additionally, while the quotes are well-integrated, they could be more explicitly tied to the broader context of mindfulness in Buddhism to enhance clarity."
+    },
+    "overall": 4.15,
+    "failures": [],
+    "diagnosis": "The response is strong overall, but it could improve in critical engagement by addressing the user's framing of mindfulness more directly. Additionally, while the quotes are well-integrated, they could be more explicitly tied to the broader context of mindfulness in Buddhism to enhance clarity."
+  },
+  {
+    "id": 110,
+    "category": "framing",
+    "query": "Isn't the Bahá'í teaching on the soul basically the same as what most people mean by spirituality?",
+    "questionType": "framing",
+    "status": "PASS",
+    "response": "Not quite — the Bahá'í teaching on the soul goes beyond what many people mean by spirituality. While spirituality often focuses on personal growth and inner peace, the Bahá'í writings describe the soul as a [\"rational soul\"](https://oceanlibrary.com/some-answered-questions_abdul-baha) that \"encompasses all things\" and is capable of discovering divine mysteries, *Some Answered Questions*. This soul is distinct from the physical body and continues to progress after death, ultimately aiming to [\"attain the presence of God\"](https://siftersearch.com/document/7136), *The Fallacy of Ancestor Worship*. This perspective frames the soul's journey as one of eternal growth and connection with the divine, rather than merely a personal or emotional experience.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 2788,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively engages with the user's framing and provides relevant quotes, but it could improve in warmth and personal engagement. Adding a more conversational tone would enhance the overall response without sacrificing clarity or authority."
+    },
+    "overall": 4.22,
+    "failures": [],
+    "diagnosis": "The response effectively engages with the user's framing and provides relevant quotes, but it could improve in warmth and personal engagement. Adding a more conversational tone would enhance the overall response without sacrificing clarity or authority."
+  }
+]

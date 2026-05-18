@@ -1,0 +1,40 @@
+[
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 41,590 Bahá'í documents across various collections, including Baha'i Books, Reference, Papers, and News. Among these, works like [\"Selections from the Writings of the Báb\"](https://oceanlibrary.com/selections-from-the-writings-of-the-bab) highlight the transformative power of faith, while the [\"Selections from the Writings of ’Abdu’l-Bahá\"](https://siftersearch.com/library/Baha'i/Core%20Publications/selections-from-the-writings-of-abdul-baha#p504) describe divine teachings as [\"rain-showers of divine mercy\"](https://siftersearch.com/library/Baha'i/Core%20Publications/selections-from-the-writings-of-abdul-baha#p504) that cleanse the heart. These collections offer a rich tapestry of insights into the Bahá'í Faith.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 4,
+    "durationMs": 4254,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks depth in listing the Bahá'í collections, as it primarily focuses on a few specific works rather than providing a comprehensive list. To improve, the assistant should include a more extensive enumeration of the collections available in the library, ensuring that it adheres to the user's request for a list format."
+    },
+    "overall": 3.37,
+    "failures": [
+      "toolUsage",
+      "topicCoverage",
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response lacks depth in listing the Bahá'í collections, as it primarily focuses on a few specific works rather than providing a comprehensive list. To improve, the assistant should include a more extensive enumeration of the collections available in the library, ensuring that it adheres to the user's request for a list format."
+  }
+]

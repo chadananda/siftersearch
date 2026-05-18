@@ -1,0 +1,1432 @@
+[
+  {
+    "id": 1,
+    "category": "factual",
+    "query": "What does the Quran say about mercy?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 2,
+    "category": "factual",
+    "query": "What are the Bahá'í teachings on education?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 3,
+    "category": "factual",
+    "query": "What is the Buddhist concept of nirvana?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 4,
+    "category": "factual",
+    "query": "What does the Bible say about forgiveness?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 6,
+    "category": "factual",
+    "query": "What are the Five Pillars of Islam?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 7,
+    "category": "factual",
+    "query": "What did Bahá'u'lláh teach about the oneness of humanity?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 8,
+    "category": "factual",
+    "query": "What is the Eightfold Path in Buddhism?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 9,
+    "category": "factual",
+    "query": "What does the Torah say about justice?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 10,
+    "category": "factual",
+    "query": "What are the Zoroastrian teachings on good and evil?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 11,
+    "category": "factual",
+    "query": "What is the Sikh concept of seva?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 12,
+    "category": "factual",
+    "query": "What does the Bhagavad Gita say about duty?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 13,
+    "category": "factual",
+    "query": "What is the Bahá'í view on consultation?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 14,
+    "category": "factual",
+    "query": "What does the Quran say about patience?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 15,
+    "category": "factual",
+    "query": "What is the concept of grace in Christianity?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 16,
+    "category": "comparative",
+    "query": "How do different religions view the afterlife?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 17,
+    "category": "comparative",
+    "query": "Compare the Golden Rule across religions",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 18,
+    "category": "comparative",
+    "query": "What do Islam and Christianity share in common?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 19,
+    "category": "comparative",
+    "query": "How do Buddhism and Hinduism differ on the concept of self?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 20,
+    "category": "comparative",
+    "query": "What do the Bahá'í Faith and Islam say about fasting?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 21,
+    "category": "comparative",
+    "query": "How is prayer described in different traditions?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 22,
+    "category": "comparative",
+    "query": "Compare the creation stories across religions in the library",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 23,
+    "category": "comparative",
+    "query": "What do various religions teach about wealth and poverty?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 24,
+    "category": "comparative",
+    "query": "How do different faiths approach the concept of sin?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 25,
+    "category": "comparative",
+    "query": "Compare how Judaism and the Bahá'í Faith view prophecy",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 26,
+    "category": "author",
+    "query": "Do you have any books by Udo Schaefer?",
+    "questionType": "lookup",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 27,
+    "category": "author",
+    "query": "What works by 'Abdu'l-Bahá are in the library?",
+    "questionType": "lookup",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 28,
+    "category": "author",
+    "query": "Show me books by Shoghi Effendi",
+    "questionType": "lookup",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 29,
+    "category": "author",
+    "query": "Do you have anything by Rumi?",
+    "questionType": "lookup",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 30,
+    "category": "author",
+    "query": "What books by Moojan Momen do you have?",
+    "questionType": "lookup",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 31,
+    "category": "author",
+    "query": "Do you have works by Thich Nhat Hanh?",
+    "questionType": "lookup",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 32,
+    "category": "author",
+    "query": "Show me everything by Bahá'u'lláh",
+    "questionType": "lookup",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 33,
+    "category": "author",
+    "query": "What do you have by the Universal House of Justice?",
+    "questionType": "lookup",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 34,
+    "category": "author",
+    "query": "Do you have any books by Adib Taherzadeh?",
+    "questionType": "lookup",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 35,
+    "category": "author",
+    "query": "Who wrote the most books in the library?",
+    "questionType": "lookup",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 36,
+    "category": "topical",
+    "query": "What do the scriptures say about women's equality?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 37,
+    "category": "topical",
+    "query": "Find passages about environmental stewardship",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 38,
+    "category": "topical",
+    "query": "What do religious texts say about science and religion?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 39,
+    "category": "topical",
+    "query": "Search for teachings about peace between nations",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 40,
+    "category": "topical",
+    "query": "What do the texts say about life after death?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 41,
+    "category": "topical",
+    "query": "Find passages about the purpose of suffering",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 42,
+    "category": "topical",
+    "query": "What do scriptures teach about marriage?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 43,
+    "category": "topical",
+    "query": "Search for teachings about truthfulness and honesty",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 44,
+    "category": "topical",
+    "query": "What do the texts say about the soul?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 45,
+    "category": "topical",
+    "query": "Find passages about love in the Bahá'í writings",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 46,
+    "category": "topical",
+    "query": "What do religious texts say about unity?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 47,
+    "category": "topical",
+    "query": "Search for teachings about meditation",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 48,
+    "category": "topical",
+    "query": "What do the scriptures say about humility?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 49,
+    "category": "topical",
+    "query": "Find passages about service to others",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 50,
+    "category": "topical",
+    "query": "What do the texts teach about detachment from material things?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 51,
+    "category": "philosophical",
+    "query": "Why does God allow suffering?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 52,
+    "category": "philosophical",
+    "query": "Is there free will in religious thought?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 53,
+    "category": "philosophical",
+    "query": "What is the meaning of life according to different traditions?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 54,
+    "category": "philosophical",
+    "query": "Can science and religion coexist?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 55,
+    "category": "philosophical",
+    "query": "What happens after death?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 56,
+    "category": "philosophical",
+    "query": "How do religions explain evil?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 57,
+    "category": "philosophical",
+    "query": "What is the nature of God?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 58,
+    "category": "philosophical",
+    "query": "Do all religions lead to the same truth?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 59,
+    "category": "philosophical",
+    "query": "What is the relationship between faith and reason?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 60,
+    "category": "philosophical",
+    "query": "How do the mystics describe union with God?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 61,
+    "category": "browsing",
+    "query": "What's in the library?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 62,
+    "category": "browsing",
+    "query": "How many Buddhist texts do you have?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 63,
+    "category": "browsing",
+    "query": "Show me the Islamic collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 64,
+    "category": "browsing",
+    "query": "What languages are available?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 66,
+    "category": "browsing",
+    "query": "What's the largest collection?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 67,
+    "category": "browsing",
+    "query": "Do you have any Jain texts?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 68,
+    "category": "browsing",
+    "query": "Show me documents about the Pali Canon",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 71,
+    "category": "reading",
+    "query": "Read me the opening of the Hidden Words",
+    "questionType": "reading",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 72,
+    "category": "reading",
+    "query": "Show me the beginning of the Kitáb-i-Íqán",
+    "questionType": "reading",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 73,
+    "category": "reading",
+    "query": "What does the first chapter of the Quran say?",
+    "questionType": "reading",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 74,
+    "category": "reading",
+    "query": "Read the opening verses of the Bhagavad Gita",
+    "questionType": "reading",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 75,
+    "category": "reading",
+    "query": "Show me the first few paragraphs of the Tao Te Ching",
+    "questionType": "reading",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 76,
+    "category": "edge",
+    "query": "bahaullah",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 77,
+    "category": "edge",
+    "query": "Udo Schafer",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 78,
+    "category": "edge",
+    "query": "books",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 79,
+    "category": "edge",
+    "query": "?",
+    "questionType": "social",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 80,
+    "category": "edge",
+    "query": "What about the thing with the stuff?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 81,
+    "category": "edge",
+    "query": "Tell me everything about Buddhism",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 82,
+    "category": "edge",
+    "query": "Kitab-i-Iqan",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 83,
+    "category": "edge",
+    "query": "aqdas",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 84,
+    "category": "edge",
+    "query": "七つの谷",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 85,
+    "category": "edge",
+    "query": "hidden words arabic",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 86,
+    "category": "edge",
+    "query": "Who was the Bab?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 87,
+    "category": "edge",
+    "query": "Is the Bahá'í Faith a cult?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 88,
+    "category": "edge",
+    "query": "What's the best religion?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 89,
+    "category": "edge",
+    "query": "Thank you!",
+    "questionType": "social",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 90,
+    "category": "edge",
+    "query": "I'm feeling lost and don't know what to believe",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 91,
+    "category": "multi",
+    "query": "What does the Quran say about Jesus, and how does that compare to the Bible?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 92,
+    "category": "multi",
+    "query": "List all Bahá'í books by 'Abdu'l-Bahá and tell me which one discusses education",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 93,
+    "category": "multi",
+    "query": "Find teachings on prayer from three different religions and compare them",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 94,
+    "category": "multi",
+    "query": "I'm writing a paper on interfaith dialogue. What sources do you recommend?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 95,
+    "category": "multi",
+    "query": "What does Bahá'u'lláh say about justice, and where can I read more?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 97,
+    "category": "multi",
+    "query": "What Buddhist texts discuss mindfulness, and can you show me a key passage?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 98,
+    "category": "multi",
+    "query": "I'm a Christian interested in what other religions say about the return of Christ",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 100,
+    "category": "multi",
+    "query": "What is progressive revelation, and which texts in the library discuss it?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 101,
+    "category": "framing",
+    "query": "So Bahá'u'lláh is basically saying we should all just get along, right? Like universal tolerance?",
+    "questionType": "framing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 102,
+    "category": "framing",
+    "query": "True spirituality is really just about being a good person, isn't it?",
+    "questionType": "framing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 103,
+    "category": "framing",
+    "query": "The Bahá'í principle of equality means men and women should have identical roles, right?",
+    "questionType": "framing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 104,
+    "category": "framing",
+    "query": "Progressive revelation is just Bahá'u'lláh saying all religions are basically the same?",
+    "questionType": "framing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 105,
+    "category": "framing",
+    "query": "So detachment in the Bahá'í writings just means not being materialistic — like minimalism?",
+    "questionType": "framing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 106,
+    "category": "framing",
+    "query": "Bahá'u'lláh's teachings are pretty compatible with secular humanism, aren't they?",
+    "questionType": "framing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 107,
+    "category": "framing",
+    "query": "The Bahá'í Faith is basically a liberal religion that supports modern progressive values?",
+    "questionType": "framing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 108,
+    "category": "framing",
+    "query": "When Bahá'u'lláh talks about unity, he just means tolerance and respecting differences?",
+    "questionType": "framing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 109,
+    "category": "framing",
+    "query": "So the Bahá'í concept of justice is the same as social justice in modern usage?",
+    "questionType": "framing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 110,
+    "category": "framing",
+    "query": "Isn't the Bahá'í teaching on the soul basically the same as what most people mean by spirituality?",
+    "questionType": "framing",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\nREDACTED\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  }
+]

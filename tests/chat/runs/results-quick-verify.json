@@ -1,0 +1,111 @@
+[
+  {
+    "id": 1,
+    "category": "factual",
+    "query": "What does the Quran say about mercy?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The Qur'án emphasizes that God's mercy is vast and encompassing. It states that [\"the mercy which God layeth open for man, no one can keep back\"](https://oceanlibrary.com/quran_rodwell-tr/?paraId=para_1842), highlighting its boundless nature. Additionally, the scripture is described as a source of mercy, serving as [\"a reminder for folk who believe\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad/?paraId=para_3478). This suggests that divine mercy is both a protective force and a guiding light for believers.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "hype_search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 5,
+    "citationCount": 8,
+    "durationMs": 3124,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong overall, with excellent tool usage and citation accuracy. However, it could improve in critical engagement by more explicitly addressing the implications of mercy in the Quran and how it relates to the human experience, rather than just stating what the text says. This would deepen the user's understanding of the concept."
+    },
+    "overall": 4.63,
+    "failures": [],
+    "diagnosis": "The response is strong overall, with excellent tool usage and citation accuracy. However, it could improve in critical engagement by more explicitly addressing the implications of mercy in the Quran and how it relates to the human experience, rather than just stating what the text says. This would deepen the user's understanding of the concept."
+  },
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The Hindu concept of dharma is multifaceted, encompassing duties, moral laws, and the path of righteousness. In the *Mahabharata*, Bhishma outlines that dharma involves [\"the suppression of wrath, truthfulness of speech, justice, forgiveness\"](https://oceanlibrary.com/mahabharata-12_vyasa?paraId=para_273), among other virtues. It is closely tied to one's role in society, as seen in the duties prescribed for different castes, such as the Brahmanas, Kshatriyas, Vaisyas, and Sudras. Each group has specific responsibilities, but all are expected to uphold dharma through their actions and conduct. This concept is not just about personal duty but also about maintaining the order and harmony of the universe.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 2552,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the complexity of dharma beyond just duties and societal roles. It should also clarify how dharma varies in different contexts, such as personal versus societal dharma, to provide a more nuanced understanding."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the complexity of dharma beyond just duties and societal roles. It should also clarify how dharma varies in different contexts, such as personal versus societal dharma, to provide a more nuanced understanding."
+  },
+  {
+    "id": 10,
+    "category": "factual",
+    "query": "What are the Zoroastrian teachings on good and evil?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Zoroastrian teachings on good and evil center around the dualistic struggle between Ahura Mazda, the embodiment of good, and Angra Mainyu, the spirit of evil. The Avesta, a central Zoroastrian text, emphasizes the importance of choosing good thoughts, words, and deeds, as seen in the Yasna, where it is proclaimed that [\"we worship the good, strong, beneficent Fravashis of the Amesha-Spentas\"](https://siftersearch.com/library/Zoroastrian/Avesta%20-%20Yashts/farvardin-yasht-yasht-13#p9), highlighting the divine support for righteousness. This dualism is not just a cosmic battle but a personal one, where individuals are called to align themselves with truth and righteousness to combat evil in their own lives.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "hype_search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 8,
+    "durationMs": 3560,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response is strong in tool usage and citation presence, but it could improve in critical engagement by addressing the dualistic nature of good and evil more explicitly and discussing the implications of these teachings. Additionally, a more nuanced exploration of how these concepts manifest in Zoroastrian practice would enhance the depth of the answer."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response is strong in tool usage and citation presence, but it could improve in critical engagement by addressing the dualistic nature of good and evil more explicitly and discussing the implications of these teachings. Additionally, a more nuanced exploration of how these concepts manifest in Zoroastrian practice would enhance the depth of the answer."
+  }
+]

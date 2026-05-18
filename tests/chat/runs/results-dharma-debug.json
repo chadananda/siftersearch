@@ -1,0 +1,44 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Hindu concept of dharma is deeply intertwined with duty and righteousness. In the *Bhagavad Gita*, it is suggested that one finds perfection through [\"worship—wrought by work—of Him that is the Source of all which lives\"](https://oceanlibrary.com/hymns-of-atharva-veda). This implies that fulfilling one's duties, whatever they may be, is a form of worship and a path to spiritual fulfillment. Dharma encompasses the idea of living in accordance with one's role in society and the universe, aligning personal actions with the greater cosmic order.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 7,
+    "durationMs": 5559,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks accurate citations, as the quote provided is misattributed to the *Bhagavad Gita* but actually comes from a different source. Additionally, while the concept of dharma is addressed, the explanation could benefit from more direct quotes from authoritative texts to support the claims made. To improve, the assistant should ensure quotes are correctly attributed and provide a more comprehensive exploration of dharma using relevant passages."
+    },
+    "overall": 3.46,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "inlineQuoteIntegration",
+      "noHallucination"
+    ],
+    "diagnosis": "The response lacks accurate citations, as the quote provided is misattributed to the *Bhagavad Gita* but actually comes from a different source. Additionally, while the concept of dharma is addressed, the explanation could benefit from more direct quotes from authoritative texts to support the claims made. To improve, the assistant should ensure quotes are correctly attributed and provide a more comprehensive exploration of dharma using relevant passages."
+  }
+]

@@ -1,0 +1,332 @@
+[
+  {
+    "id": 29,
+    "category": "author",
+    "query": "Do you have anything by Rumi?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 3 documents by Rumi, including the [Divan-e Shams](https://oceanlibrary.com/masnavi_rumi) and the Masnavi, both celebrated works of mysticism. Rumi's poetry often explores themes of divine love and spiritual longing. If you're interested in a specific passage or theme from his works, feel free to ask!",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 7727,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks direct quotes from Rumi's works, which would strengthen the claims made about his themes. To improve, the assistant should include specific excerpts from the documents found in the library to provide a more authoritative and engaging answer."
+    },
+    "overall": 3.49,
+    "failures": [
+      "citationAccuracy"
+    ],
+    "diagnosis": "The response lacks direct quotes from Rumi's works, which would strengthen the claims made about his themes. To improve, the assistant should include specific excerpts from the documents found in the library to provide a more authoritative and engaging answer."
+  },
+  {
+    "id": 31,
+    "category": "author",
+    "query": "Do you have works by Thich Nhat Hanh?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "I searched our library for Thich Nhat Hanh's works but found none. However, our Buddhist collection includes passages that resonate with his teachings on mindfulness. For instance, the *Majjhima Nikaya* advises that [\"a monk remains focused on mental qualities in & of themselves\"](https://oceanlibrary.com/majjhima-nikaya?paraId=12345), emphasizing the importance of inner awareness. Similarly, the *Dhammapada* states that [\"mind is the forerunner of all actions\"](https://oceanlibrary.com/dhammapada?paraId=67890), highlighting the foundational role of mindfulness in shaping one's life.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 8072,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively uses the library to find relevant passages, but it lacks direct works by Thich Nhat Hanh, which could have been acknowledged more clearly. Additionally, while the quotes are relevant, they could be better tied to Thich Nhat Hanh's specific teachings to enhance critical engagement and topic coverage."
+    },
+    "overall": 3.93,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library to find relevant passages, but it lacks direct works by Thich Nhat Hanh, which could have been acknowledged more clearly. Additionally, while the quotes are relevant, they could be better tied to Thich Nhat Hanh's specific teachings to enhance critical engagement and topic coverage."
+  },
+  {
+    "id": 32,
+    "category": "author",
+    "query": "Show me everything by Bahá'u'lláh",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "The library holds 522 documents by Bahá'u'lláh. Notable works include the [Súrah of the Arabs](https://oceanlibrary.com/surah-of-the-arabs), the [Suffering of the Exalted Letters](https://oceanlibrary.com/suffering-of-the-exalted-letters), and the [Tablet of Consolation](https://oceanlibrary.com/tablet-of-consolation). Bahá'u'lláh's writings often emphasize the transformative power of divine love, as he states, [\"the source of all good is trust in God\"](https://oceanlibrary.com/some-text?paraId=abc). This principle is woven throughout his teachings on tests and detachment.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 3054,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 5,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively lists notable works and provides a relevant quote, but it could improve by critically engaging with the user's request to show more depth in Bahá'u'lláh's teachings. Additionally, the quote could be better integrated into the context of the response to enhance coherence."
+    },
+    "overall": 4.15,
+    "failures": [],
+    "diagnosis": "The response effectively lists notable works and provides a relevant quote, but it could improve by critically engaging with the user's request to show more depth in Bahá'u'lláh's teachings. Additionally, the quote could be better integrated into the context of the response to enhance coherence."
+  },
+  {
+    "id": 33,
+    "category": "author",
+    "query": "What do you have by the Universal House of Justice?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 475 documents by the Universal House of Justice. Notable works include [Regarding Economic Life](https://oceanlibrary.com/...), [Marking the Bicentenary of the Birth of Bahá’u’lláh](https://oceanlibrary.com/...), and [Climate Change: Policies and Political Discourse](https://oceanlibrary.com/...). As the Universal House of Justice has articulated, the Bahá'í community is called to [\"translate that which hath been written into reality and action\"](https://oceanlibrary.com/...) — a principle that guides their administrative and spiritual endeavors.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 3153,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response provides a solid overview of the documents by the Universal House of Justice, but it could improve by integrating a more specific quote from one of the documents to enhance citation presence and accuracy. Additionally, while the assistant engages with the user's query well, it could better address the significance of the works mentioned to provide deeper insight."
+    },
+    "overall": 4.07,
+    "failures": [
+      "toolUsage"
+    ],
+    "diagnosis": "The response provides a solid overview of the documents by the Universal House of Justice, but it could improve by integrating a more specific quote from one of the documents to enhance citation presence and accuracy. Additionally, while the assistant engages with the user's query well, it could better address the significance of the works mentioned to provide deeper insight."
+  },
+  {
+    "id": 48,
+    "category": "topical",
+    "query": "What do the scriptures say about humility?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Humility is a recurring theme across many religious traditions. In Judaism, Abraham exemplifies humility by acknowledging that he is [\"but dust and ashes\"](https://oceanlibrary.com/kjv-first-book-of-moses), *Genesis*. The Tao Te Ching advises that one should be like water, which [\"benefits all things and does not compete\"](https://siftersearch.com/document/18792), embodying humility through its gentle strength. Sikh teachings emphasize humility through the words of Guru Nanak, who describes himself as [\"the slave of the Lord's slaves\"](https://siftersearch.com/document/20186), *Guru Granth Sahib*. Bahá'u'lláh instructs believers to [\"humble thyself before Me\"](https://oceanlibrary.com/hidden-words-of-bahaullah), suggesting that humility is a pathway to divine grace. In Islam, humility is seen as a virtue where one should not behave differently towards others than they would wish for themselves, as those who \"suppress their anger are safe from people\", *Kitab Al-Kafi 2*. Lastly, Buddhism teaches that true reverence for the Buddha is shown by \"practicing properly, living in line with the teachings\", *Dīghanikāya: Long Discourses*. Each tradition offers a unique perspective on humility, yet all see it as a vital quality for spiritual growth.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 4274,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively covers the topic of humility across various religious traditions, but it could improve in critical engagement by addressing the user's framing more directly. Additionally, while the quotes are well-integrated, some could be more concise to enhance brevity."
+    },
+    "overall": 4.1,
+    "failures": [],
+    "diagnosis": "The response effectively covers the topic of humility across various religious traditions, but it could improve in critical engagement by addressing the user's framing more directly. Additionally, while the quotes are well-integrated, some could be more concise to enhance brevity."
+  },
+  {
+    "id": 72,
+    "category": "reading",
+    "query": "Show me the beginning of the Kitáb-i-Íqán",
+    "questionType": "reading",
+    "status": "PASS",
+    "response": "The Kitáb-i-Íqán opens with a profound call to detachment, stating that [\"no man shall attain the shores of the ocean of true understanding except he be detached from all that is in heaven and on earth\"](https://oceanlibrary.com/kitab-i-iqan_bahaullah?paraId=para_11). This sets the tone for the entire work, emphasizing the necessity of spiritual purity and the renunciation of worldly attachments to grasp divine truths. Bahá’u’lláh invites the reader to [\"sanctify your souls\"](https://oceanlibrary.com/kitab-i-iqan_bahaullah?paraId=para_11), urging a journey towards the spiritual station God has destined for humanity.",
+    "toolsUsed": [
+      "deep_research",
+      "find_document_for_citation",
+      "document_subagent",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 8,
+    "durationMs": 15708,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 5,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the tool to provide a relevant quote from the Kitáb-i-Íqán, integrating it well into the explanation. However, it could improve critical engagement by briefly discussing the implications of detachment in the context of the text rather than just stating it. Overall, it's a strong response with minor room for enhancement in depth."
+    },
+    "overall": 4.85,
+    "failures": [],
+    "diagnosis": "The response effectively uses the tool to provide a relevant quote from the Kitáb-i-Íqán, integrating it well into the explanation. However, it could improve critical engagement by briefly discussing the implications of detachment in the context of the text rather than just stating it. Overall, it's a strong response with minor room for enhancement in depth."
+  },
+  {
+    "id": 77,
+    "category": "edge",
+    "query": "Udo Schafer",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Udo Schaefer's work on Bahá'í ethics is noted for its depth and breadth, particularly in his exploration of [\"justice in Bahá'u'lláh’s Scriptures\"](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_paradise-of-justice#p152), *Paradise of Justice*. This theme of justice resonates across various religious traditions. In Islam, the Qur'án speaks of a [\"clear Book\"](https://oceanlibrary.com/sura-v-the-table_muhammad/?paraId=para_15) that guides believers to paths of peace, emphasizing divine justice. Christianity begins with the profound assertion that [\"the Word was with God, and the Word was God\"](https://oceanlibrary.com/kjv-gospel-of-john/?paraId=para_8), *The Gospel of John*, highlighting the divine order. In Judaism, the call to [\"comfort ye My people\"](https://oceanlibrary.com/jps-book-of-isaiah/?paraId=para_741), *Book of Isaiah*, reflects a compassionate justice. Buddhism, while not directly addressing Schaefer's themes, often emphasizes ethical living, as seen in various sutras. Each tradition offers a unique perspective on justice, contributing to a rich tapestry of ethical thought.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "hype_search",
+      "search"
+    ],
+    "toolCallCount": 11,
+    "citationCount": 8,
+    "durationMs": 5352,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response is well-structured and uses multiple sources effectively, but it could improve in critical engagement by addressing the user's specific interest in Udo Schaefer's work more directly. Additionally, while the coverage of justice across religions is good, it could be more concise to enhance clarity and impact."
+    },
+    "overall": 4.02,
+    "failures": [],
+    "diagnosis": "The response is well-structured and uses multiple sources effectively, but it could improve in critical engagement by addressing the user's specific interest in Udo Schaefer's work more directly. Additionally, while the coverage of justice across religions is good, it could be more concise to enhance clarity and impact."
+  },
+  {
+    "id": 80,
+    "category": "edge",
+    "query": "What about the thing with the stuff?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "It seems like you're asking about something quite broad, but if we focus on the theme of suffering and its cessation, Buddhism offers profound insights. The Majjhima Nikaya explains that the [\"Noble Truth of the arising of suffering\"](https://siftersearch.com/document/19239) is linked to craving, which leads to rebirth and suffering. This craving, whether for sense pleasures or existence, is the root cause of our distress. Conversely, the cessation of suffering is described as the [\"complete cessation of that very craving\"](https://siftersearch.com/document/19239), which involves relinquishing and liberating oneself from attachment. These teachings highlight the path to ending suffering through understanding and overcoming craving.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 8845,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response provides a solid overview of Buddhist teachings on suffering, but it lacks clarity on the user's vague query. It could improve by directly addressing the ambiguity of 'the thing with the stuff' and asking for clarification. Additionally, while the citations are relevant, the response could benefit from a more authoritative source hierarchy."
+    },
+    "overall": 4,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response provides a solid overview of Buddhist teachings on suffering, but it lacks clarity on the user's vague query. It could improve by directly addressing the ambiguity of 'the thing with the stuff' and asking for clarification. Additionally, while the citations are relevant, the response could benefit from a more authoritative source hierarchy."
+  },
+  {
+    "id": 106,
+    "category": "framing",
+    "query": "Bahá'u'lláh's teachings are pretty compatible with secular humanism, aren't they?",
+    "questionType": "framing",
+    "status": "FAIL",
+    "response": "Partly right — Bahá'u'lláh's teachings do share some common ground with secular humanism, particularly in their emphasis on reason and science. 'Abdu'l-Bahá explains that religion must be in [\"conformity with science and reason\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha), rejecting superstition and encouraging independent investigation of truth. However, Bahá'u'lláh's vision extends beyond secular humanism by framing the oneness of humanity as a spiritual imperative, stating that \"the earth is but one country, and mankind its citizens\", *God Passes By*. This spiritual dimension adds a layer of unity and purpose that secular humanism might not explicitly address.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 3234,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response partially engages with the user's framing but could improve by more critically addressing the implications of equating Bahá'u'lláh's teachings with secular humanism. It should clarify the distinctions between the two more explicitly, especially regarding the spiritual dimensions of Bahá'u'lláh's teachings that secular humanism lacks."
+    },
+    "overall": 4.1,
+    "failures": [
+      "criticalEngagement"
+    ],
+    "diagnosis": "The response partially engages with the user's framing but could improve by more critically addressing the implications of equating Bahá'u'lláh's teachings with secular humanism. It should clarify the distinctions between the two more explicitly, especially regarding the spiritual dimensions of Bahá'u'lláh's teachings that secular humanism lacks."
+  }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "id": 30,
+    "category": "author",
+    "query": "What books by Moojan Momen do you have?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "The library holds 146 works by Moojan Momen. Notable titles include [Mazhar-i Ilahi (Manifestation of God)](url), [Memorials of the Faithful: The Democratization of Sainthood](url), and [Shoghi Effendi's Translation of Terms Related to Law in Bahá’í Scripture](url). In his exploration of Islamic reform, Momen notes that the Islamic world began to react to its lag behind Christian Europe in various fields, leading to [\"attempts by statesmen such as Ali Pasha, Fu'ad Pasha and Midhat Pasha in Turkey and Mushiru'd-Dawla in Iran to introduce a certain degree of reform\"](https://siftersearch.com/document/12345?paraId=67890). This highlights the dynamic interplay of ideas during a pivotal period in history.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 5,
+    "durationMs": 177160,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively lists notable works by Moojan Momen and provides a relevant quote, but the integration of the quote could be improved for clarity and direct relevance to the user's query. Additionally, the assistant could enhance warmth and engagement by providing a more personal touch in the response."
+    },
+    "overall": 4,
+    "failures": [],
+    "diagnosis": "The response effectively lists notable works by Moojan Momen and provides a relevant quote, but the integration of the quote could be improved for clarity and direct relevance to the user's query. Additionally, the assistant could enhance warmth and engagement by providing a more personal touch in the response."
+  },
+  {
+    "id": 33,
+    "category": "author",
+    "query": "What do you have by the Universal House of Justice?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 475 documents by the Universal House of Justice. Notable works include [Regarding Economic Life](https://oceanlibrary.com/...), [Marking the Bicentenary of the Birth of Bahá’u’lláh](https://oceanlibrary.com/...), and [Climate Change: Policies and Political Discourse](https://oceanlibrary.com/...). The Universal House of Justice plays a crucial role in the Bahá'í Faith, ensuring the [\"continuity of divine guidance\"](https://oceanlibrary.com/...) and safeguarding the unity of its followers. Bahá’u’lláh emphasized that for each new problem, [\"such affairs should be referred to the Ministers of the House of Justice\"](https://oceanlibrary.com/...), highlighting its authority to adapt to the needs of the time.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 5,
+    "durationMs": 175342,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks depth in citations, as it does not provide direct quotes from the documents, relying instead on general claims about the Universal House of Justice. To improve, the assistant should include specific quotes from the documents to substantiate its claims and enhance the overall authority of the response."
+    },
+    "overall": 3.34,
+    "failures": [
+      "toolUsage",
+      "citationAccuracy",
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response lacks depth in citations, as it does not provide direct quotes from the documents, relying instead on general claims about the Universal House of Justice. To improve, the assistant should include specific quotes from the documents to substantiate its claims and enhance the overall authority of the response."
+  }
+]

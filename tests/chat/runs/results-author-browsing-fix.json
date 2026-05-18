@@ -1,0 +1,227 @@
+[
+  {
+    "id": 29,
+    "category": "author",
+    "query": "Do you have anything by Rumi?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library includes three works by Rumi, showcasing his profound mystical poetry. Among these are the [Divan-e Shams](https://oceanlibrary.com/masnavi_rumi) and the [Masnavi](https://oceanlibrary.com/masnavi_rumi), both of which are central to understanding his spiritual insights. If you're interested in exploring themes of love and divine union, these texts are a great place to start.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 4638,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks direct quotes from Rumi's works, which would enhance citation presence and accuracy. To improve, the assistant should include specific excerpts or lines from the texts to provide a richer context and support its claims about Rumi's themes."
+    },
+    "overall": 3.61,
+    "failures": [
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response lacks direct quotes from Rumi's works, which would enhance citation presence and accuracy. To improve, the assistant should include specific excerpts or lines from the texts to provide a richer context and support its claims about Rumi's themes."
+  },
+  {
+    "id": 30,
+    "category": "author",
+    "query": "What books by Moojan Momen do you have?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "The library holds 146 documents by Moojan Momen, spanning collections such as Papers and Bahá'í Books. Some notable works include [Mazhar-i Ilahi (Manifestation of God)](https://siftersearch.com/document/12345?paraId=67890), [Memorials of the Faithful: The Democratization of Sainthood](https://siftersearch.com/document/12345?paraId=67891), and [Shoghi Effendi's Translation of Terms Related to Law in Bahá’í Scripture](https://siftersearch.com/document/12345?paraId=67892). If you're interested in exploring any specific themes or topics within these works, feel free to ask!",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 4686,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively lists notable works by Moojan Momen and provides links, but it could improve by integrating the titles more fluidly into the text rather than presenting them as a list. Additionally, while the assistant invites further questions, it could have engaged more critically with the user's request by suggesting specific themes or topics related to Momen's works."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response effectively lists notable works by Moojan Momen and provides links, but it could improve by integrating the titles more fluidly into the text rather than presenting them as a list. Additionally, while the assistant invites further questions, it could have engaged more critically with the user's request by suggesting specific themes or topics related to Momen's works."
+  },
+  {
+    "id": 32,
+    "category": "author",
+    "query": "Show me everything by Bahá'u'lláh",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "The library holds 522 documents by Bahá'u'lláh. Some notable works include the [Súrah of the Arabs](https://oceanlibrary.com/surah-of-the-arabs), [Suffering of the Exalted Letters](https://oceanlibrary.com/suffering-of-the-exalted-letters), and the [Tablet of Consolation](https://oceanlibrary.com/tablet-of-consolation). These texts are part of the Tablet Translations collection, offering a rich insight into Bahá'u'lláh's teachings and spiritual guidance.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 4295,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively lists notable works by Bahá'u'lláh and provides accurate citations. However, it lacks inline quote integration, as it primarily presents links without weaving them into a cohesive narrative. Improving the integration of quotes or summaries of the works would enhance the response's engagement and coherence."
+    },
+    "overall": 4.24,
+    "failures": [],
+    "diagnosis": "The response effectively lists notable works by Bahá'u'lláh and provides accurate citations. However, it lacks inline quote integration, as it primarily presents links without weaving them into a cohesive narrative. Improving the integration of quotes or summaries of the works would enhance the response's engagement and coherence."
+  },
+  {
+    "id": 66,
+    "category": "browsing",
+    "query": "What's the largest collection?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The largest collection in the library is the Bahá'í collection, which includes 41,590 documents. This extensive collection covers a wide range of topics, from foundational scriptures to administrative texts and scholarly papers. For instance, the Bahá'í writings emphasize the importance of unity, as Bahá'u'lláh calls believers to [\"consort with the followers of all religions in a spirit of friendliness\"](https://siftersearch.com/document/12345?paraId=67890).",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 3866,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 5,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library tool and provides a relevant quote, but it could improve by integrating the quote more seamlessly into the narrative. Additionally, while it addresses the user's query well, it could engage more critically with the implications of the collection's size and content."
+    },
+    "overall": 4.29,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library tool and provides a relevant quote, but it could improve by integrating the quote more seamlessly into the narrative. Additionally, while it addresses the user's query well, it could engage more critically with the implications of the collection's size and content."
+  },
+  {
+    "id": 67,
+    "category": "browsing",
+    "query": "Do you have any Jain texts?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 27 Jain texts, including notable works like the Akaranga Sutra (Book 1) and the Kalpa Sutra (Lives of the Jinas). In the Bahá'í tradition, Bahá’u’lláh encourages daily supplication, as seen in the [*Bahá’í Prayers*](https://oceanlibrary.com/bahai-prayers/?paraId=para_668). The Qur'án begins with the invocation [\"In the name of the merciful and compassionate God\"](https://oceanlibrary.com/quran_palmer-tr/?paraId=para_4), highlighting the centrality of mercy in Islam. Similarly, the Christian Gospel of Matthew urges attentiveness with the phrase [\"Who hath ears to hear, let him hear\"](https://oceanlibrary.com/kjv-gospel-of-matthew/?paraId=para_323). These texts reflect the diverse spiritual insights across different religious traditions.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 4,
+    "durationMs": 4943,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 2,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 2,
+      "logicalCoherence": 2,
+      "brevity": 3,
+      "quoteEconomy": 2,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 3,
+      "diagnosis": "The response fails to focus on the user's specific inquiry about Jain texts, instead introducing unrelated content from other religions. This distracts from the main question and demonstrates a lack of critical engagement with the user's request. To improve, the assistant should have provided a concise list of Jain texts without extraneous information from other traditions."
+    },
+    "overall": 2.83,
+    "failures": [
+      "topicCoverage",
+      "logicalCoherence",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response fails to focus on the user's specific inquiry about Jain texts, instead introducing unrelated content from other religions. This distracts from the main question and demonstrates a lack of critical engagement with the user's request. To improve, the assistant should have provided a concise list of Jain texts without extraneous information from other traditions."
+  },
+  {
+    "id": 77,
+    "category": "edge",
+    "query": "Udo Schafer",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "Udo Schaefer is known for his scholarly work on the Bahá'í Faith, but let's explore how different religious traditions address themes of guidance and enlightenment. In Islam, the Qur'án speaks of a divine light, stating that [\"a light and a clear Book come to you from God\"](https://oceanlibrary.com/sura-v-the-table_muhammad/?paraId=para_15), guiding believers to paths of peace. Buddhism emphasizes mindfulness and the mental qualities, as seen in the *Sutra Collection*, which encourages focus on the mind's role in shaping our actions. In Judaism, the call to [\"comfort ye, comfort ye My people\"](https://oceanlibrary.com/jps-book-of-isaiah/?paraId=para_741) reflects a compassionate approach to divine guidance. Christianity begins with the profound assertion that [\"In the beginning was the Word\"](https://oceanlibrary.com/kjv-gospel-of-john/?paraId=para_8), highlighting the foundational role of divine wisdom. Meanwhile, Shoghi Effendi, a central figure in the Bahá'í Faith, outlines a [\"Plan of Unified Action\"](https://oceanlibrary.com/bahai-administration_shoghi-effendi) to guide the community's spiritual and administrative development. Each tradition offers a unique perspective on the pursuit of truth and enlightenment.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "hype_search",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 11,
+    "citationCount": 8,
+    "durationMs": 5712,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 3,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of how different religious traditions address themes of guidance and enlightenment, but it lacks a direct focus on Udo Schaefer himself, which was the user's initial query. To improve, the assistant should include specific information about Schaefer's contributions or works related to the Bahá'í Faith before expanding into broader themes."
+    },
+    "overall": 3.88,
+    "failures": [
+      "instructionFollowing"
+    ],
+    "diagnosis": "The response provides a good overview of how different religious traditions address themes of guidance and enlightenment, but it lacks a direct focus on Udo Schaefer himself, which was the user's initial query. To improve, the assistant should include specific information about Schaefer's contributions or works related to the Bahá'í Faith before expanding into broader themes."
+  }
+]

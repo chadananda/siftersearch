@@ -1,0 +1,112 @@
+[
+  {
+    "id": 74,
+    "category": "reading",
+    "query": "Read the opening verses of the Bhagavad Gita",
+    "questionType": "reading",
+    "status": "PASS",
+    "response": "The opening verses of the *Bhagavad Gita* set the stage for a profound dialogue between Arjuna and Krishna. Arjuna, overwhelmed by the prospect of battle, expresses his deep distress, saying, [\"My members fail, my tongue dries in my mouth, a shudder thrills my body\"](https://siftersearch.com/document/17365) as he contemplates the impending conflict with his kin. This moment of vulnerability and moral crisis leads to the teachings that follow, where Krishna guides Arjuna through his doubts and fears.",
+    "toolsUsed": [
+      "deep_research",
+      "find_document_for_citation",
+      "search_read",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 5,
+    "citationCount": 8,
+    "durationMs": 12948,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively summarizes the opening verses and integrates a quote, but it lacks a direct reading of the text as requested. To improve, the assistant should provide the actual text of the opening verses instead of summarizing them."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response effectively summarizes the opening verses and integrates a quote, but it lacks a direct reading of the text as requested. To improve, the assistant should provide the actual text of the opening verses instead of summarizing them."
+  },
+  {
+    "id": 75,
+    "category": "reading",
+    "query": "Show me the first few paragraphs of the Tao Te Ching",
+    "questionType": "reading",
+    "status": "PASS",
+    "response": "The *Tao Te Ching* opens with a profound statement on the nature of the Tao: [\"The Tao that can be trodden is not the enduring and unchanging Tao. The name that can be named is not the enduring and unchanging name.\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_7) This sets the stage for understanding the Tao as something beyond fixed definitions and names. It continues to explore the concept, noting that [\"the Nameless is the origin of Heaven and Earth; the Named is the mother of all things\"](https://siftersearch.com/document/18799), suggesting a duality between the unmanifest and manifest aspects of existence. These opening lines invite readers to contemplate the ineffable and the tangible as interconnected parts of the same reality.",
+    "toolsUsed": [
+      "deep_research",
+      "find_document_for_citation",
+      "search_read",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 5,
+    "citationCount": 8,
+    "durationMs": 5053,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response is strong overall, but it could improve in critical engagement by addressing the philosophical implications of the quotes more deeply rather than just summarizing them. Additionally, the second quote's source is less authoritative than the first, which could be adjusted for better source hierarchy."
+    },
+    "overall": 4.1,
+    "failures": [],
+    "diagnosis": "The response is strong overall, but it could improve in critical engagement by addressing the philosophical implications of the quotes more deeply rather than just summarizing them. Additionally, the second quote's source is less authoritative than the first, which could be adjusted for better source hierarchy."
+  },
+  {
+    "id": 76,
+    "category": "edge",
+    "query": "bahaullah",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Bahá'u'lláh's writings emphasize the unity of all prophets, stating that they [\"abide in the same tabernacle, soar in the same heaven, are seated upon the same throne\"](https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi) — a profound assertion of spiritual unity across religious traditions, *The World Order of Bahá’u’lláh*. He also speaks of the necessity for believers to engage in a \"search after truth\", which is a foundational principle of the Bahá'í Faith, *Uncompiled Published Letters*. Moreover, Bahá'u'lláh's teachings call for the \"unification of mankind\", asserting that this is essential for the progress of human society, *Uncompiled Published Letters*. His mission is deeply intertwined with these themes of unity and truth-seeking, offering a vision for a harmonious global community.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 3156,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong overall but could improve in source authority by prioritizing direct quotes from Bahá'u'lláh's writings over secondary sources. Additionally, while the assistant engages with the topic well, it could benefit from a more critical examination of the user's framing, particularly regarding the implications of Bahá'u'lláh's teachings on unity."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response is strong overall but could improve in source authority by prioritizing direct quotes from Bahá'u'lláh's writings over secondary sources. Additionally, while the assistant engages with the topic well, it could benefit from a more critical examination of the user's framing, particularly regarding the implications of Bahá'u'lláh's teachings on unity."
+  }
+]

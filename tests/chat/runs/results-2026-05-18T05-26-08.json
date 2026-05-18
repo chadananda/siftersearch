@@ -1,0 +1,148 @@
+[
+  {
+    "id": 48,
+    "category": "topical",
+    "query": "What do the scriptures say about humility?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Humility is a profound theme across many religious traditions. In Judaism, Abraham exemplifies humility by acknowledging himself as [\"dust and ashes\"](https://oceanlibrary.com/kjv-first-book-of-moses), *Genesis*, when speaking to God. The Tao Te Ching teaches that the sage achieves greatness by being [\"free from self-display\"](https://siftersearch.com/document/18792), *Tao Te Ching*, embracing humility as a path to true distinction. Sikh teachings echo this sentiment, with Guru Nanak describing himself as the [\"slave of the Lord's slaves\"](https://siftersearch.com/document/20186), *Guru Granth Sahib*, emphasizing servitude as a form of humility. In the Bahá'í Faith, Bahá’u’lláh instructs believers to [\"humble thyself before Me\"](https://oceanlibrary.com/hidden-words-of-bahaullah), *The Hidden Words of Bahá’u’lláh*, as a means to receive divine grace. Islam also values humility, as seen in the Hadith that encourages believers to \"suppress their anger\", fostering a humble and peaceful heart. Buddhism, through the teachings of the Buddha, suggests that true reverence is shown by \"practicing in line with the teachings\", *Dīghanikāya: Long Discourses*, rather than through outward displays. Each tradition offers a unique perspective on humility, yet they all recognize it as a vital spiritual quality.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 8064,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively covers multiple religious perspectives on humility, but it could improve by integrating quotes more seamlessly into the narrative. Additionally, while it engages with the topic well, it could benefit from a more critical examination of the concept of humility across traditions, rather than just presenting them as affirmations of the theme."
+    },
+    "overall": 4.1,
+    "failures": [],
+    "diagnosis": "The response effectively covers multiple religious perspectives on humility, but it could improve by integrating quotes more seamlessly into the narrative. Additionally, while it engages with the topic well, it could benefit from a more critical examination of the concept of humility across traditions, rather than just presenting them as affirmations of the theme."
+  },
+  {
+    "id": 80,
+    "category": "edge",
+    "query": "What about the thing with the stuff?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "It seems like you're asking about a rather broad topic, but if we consider the Buddhist perspective on suffering, a key insight is that suffering arises from [\"craving which produces re-becoming\"](https://siftersearch.com/document/19239), *Majjhima Nikaya 141 - Saccavibhanga Sutta*. This craving, whether for sense pleasures or existence itself, is seen as the origin of suffering. The path to overcoming this suffering involves the [\"complete cessation of that very craving\"](https://siftersearch.com/document/19239), which leads to liberation and detachment. In essence, the Buddhist teachings emphasize understanding and eradicating craving to end the cycle of suffering.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 3755,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 3,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks clarity and specificity regarding the user's vague question, which could lead to confusion. To improve, the assistant should ask for clarification on the user's query while providing relevant information about suffering in Buddhism, ensuring a more tailored response."
+    },
+    "overall": 3.85,
+    "failures": [
+      "topicCoverage",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The response lacks clarity and specificity regarding the user's vague question, which could lead to confusion. To improve, the assistant should ask for clarification on the user's query while providing relevant information about suffering in Buddhism, ensuring a more tailored response."
+  },
+  {
+    "id": 87,
+    "category": "edge",
+    "query": "Is the Bahá'í Faith a cult?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Bahá'í Faith is not a cult, as it emphasizes unity and a clear line of authority to prevent schisms. Bahá’u’lláh established a Covenant, appointing a [\"Center of the Covenant\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_2085) to maintain unity and prevent the rise of sects. This Covenant functions like a constitution, ensuring that no individual can claim special authority or create divisions within the Faith. Additionally, the Bahá'í Faith lacks a priesthood, with authority vested in institutions like the [\"Universal House of Justice\"](https://oceanlibrary.com/universal-house-of-justice_bahaullah?paraId=para_307), which guides the community according to the teachings of Bahá’u’lláh.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 5,
+    "durationMs": 3110,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a solid foundation but could improve in critical engagement by addressing the loaded term 'cult' more directly and exploring the implications of that label. Additionally, while the citations are relevant, integrating them more fluidly into the text would enhance the overall coherence and argumentative strength."
+    },
+    "overall": 3.98,
+    "failures": [
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response provides a solid foundation but could improve in critical engagement by addressing the loaded term 'cult' more directly and exploring the implications of that label. Additionally, while the citations are relevant, integrating them more fluidly into the text would enhance the overall coherence and argumentative strength."
+  },
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "In the Bahá'í Faith, the covenant is a central theme, with Bahá'u'lláh establishing a clear succession through the [\"Kitáb-i-‘Ahd\"](https://siftersearch.com/document/15200), which appoints 'Abdu'l-Bahá as the interpreter of his teachings. This covenant is intended to preserve unity and prevent dissension within the community. In Judaism, the concept of covenant is foundational, as seen in the Hebrew Bible where God promises to make a [\"new covenant with the house of Israel\"](https://oceanlibrary.com/kjv-epistle-to-hebrews?paraId=para_109), distinct from the one made during the Exodus. This idea of covenant as a divine promise is deeply embedded in both traditions, serving as a guiding principle for their followers.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search",
+      "hype_search",
+      "search"
+    ],
+    "toolCallCount": 6,
+    "citationCount": 8,
+    "durationMs": 6317,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the nuances of the covenant in both traditions more explicitly. Additionally, while the citations are accurate, integrating them more fluidly into the narrative would enhance the overall coherence and depth of the response."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the nuances of the covenant in both traditions more explicitly. Additionally, while the citations are accurate, integrating them more fluidly into the narrative would enhance the overall coherence and depth of the response."
+  }
+]

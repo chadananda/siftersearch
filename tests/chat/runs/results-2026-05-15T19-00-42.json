@@ -1,0 +1,81 @@
+[
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds a total of 44,937 documents, spanning a wide array of traditions. Among these, the Bahá'í collection is the largest with [\"41,590 documents\"](url), while the Jewish tradition includes [\"1,418 documents\"](url). The Buddhist texts number [\"858 documents\"](url), offering a rich tapestry of spiritual insights across various traditions.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 5807,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 1,
+      "sourceAuthority": 5,
+      "criticalEngagement": 5,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 5,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 1,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response used the correct tool and directly answers the user's straightforward query with appropriate brevity. However, it contains hallucinated figures: the library description states 7,900+ documents total, not 44,937. The Bahá'í collection size of 41,590 is fabricated (not derivable from the stated total). These are fabricated statistics not supported by the library_overview tool result, which is an automatic critical failure on noHallucination regardless of other strengths."
+    },
+    "overall": 4.07,
+    "failures": [
+      "citationAccuracy",
+      "noHallucination"
+    ],
+    "diagnosis": "The response used the correct tool and directly answers the user's straightforward query with appropriate brevity. However, it contains hallucinated figures: the library description states 7,900+ documents total, not 44,937. The Bahá'í collection size of 41,590 is fabricated (not derivable from the stated total). These are fabricated statistics not supported by the library_overview tool result, which is an automatic critical failure on noHallucination regardless of other strengths."
+  },
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 331 documents by 'Abdu'l-Bahá. Among these, some address governance, such as his reflections on parliamentary procedure. 'Abdu'l-Bahá emphasizes that [\"consultation is of vital importance\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388), but he critiques sessions where the focus is on opposition rather than seeking truth. He describes a parliamentary meeting as more of a [\"comedy\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388) due to its altercations and lack of productive dialogue. This highlights his vision for governance as a process rooted in spiritual conference rather than mere debate.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 2,
+    "durationMs": 7593,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 2,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 2,
+      "warmth": 3,
+      "noHallucination": 3,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response answers the count question cleanly but badly under-delivers on the core ask: 'which ones discuss governance?' The user asked for a LISTING of documents on governance, not a thematic analysis of one. Additionally, citationAccuracy is downgraded because the quotes, while real, are introduced in a way that obscures what we're actually learning: the assistant cites the same paragraph twice (paraId=para_388) to support two different claims ('consultation is vital' AND 'parliament is a comedy'), which raises questions about whether the full context of that paragraph was consulted. The response reads more like a topical essay on governance philosophy than a document inventory—which was what the user requested."
+    },
+    "overall": 3.24,
+    "failures": [
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "instructionFollowing",
+      "noHallucination"
+    ],
+    "diagnosis": "The response answers the count question cleanly but badly under-delivers on the core ask: 'which ones discuss governance?' The user asked for a LISTING of documents on governance, not a thematic analysis of one. Additionally, citationAccuracy is downgraded because the quotes, while real, are introduced in a way that obscures what we're actually learning: the assistant cites the same paragraph twice (paraId=para_388) to support two different claims ('consultation is vital' AND 'parliament is a comedy'), which raises questions about whether the full context of that paragraph was consulted. The response reads more like a topical essay on governance philosophy than a document inventory—which was what the user requested."
+  }
+]

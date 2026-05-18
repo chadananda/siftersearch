@@ -1,0 +1,144 @@
+[
+  {
+    "id": 30,
+    "category": "author",
+    "query": "What books by Moojan Momen do you have?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "The library holds 146 works by Moojan Momen, covering a range of topics within Bahá'í studies. Some notable titles include Mazhar-i Ilahi (Manifestation of God), Memorials of the Faithful: The Democratization of Sainthood, and Shoghi Effendi's Translation of Terms Related to Law in Bahá’í Scripture. In *An Introduction to Shi'i Islam*, Momen explores the historical and doctrinal aspects of Twelver Shi'ism, noting that the religion is seen as [\"the religion of God\"](https://siftersearch.com/library/Baha'i/Baha'i%20Books/moojan-momen_an-introduction-to-shii-islam-the-history-and-doctrines-of-twelver-shiism#p1159).",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 6821,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by providing more context about Moojan Momen's contributions to Bahá'í studies. Additionally, while the inline quote is present, it could be better integrated into the flow of the response to enhance coherence."
+    },
+    "overall": 4.05,
+    "failures": [],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by providing more context about Moojan Momen's contributions to Bahá'í studies. Additionally, while the inline quote is present, it could be better integrated into the flow of the response to enhance coherence."
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 41,590 Bahá'í documents across various collections, including Baha'i Books, Reference, Papers, and News. Some notable works include Hájí Mírzá Áqásí: A Portrait of a Tyrannical and Ignorant Prime Minister by Mohammad Norozi, and Creation and Evolution in Bahá’í Thought by Behrooz Sabet. In the *Selections from the Writings of the Báb*, it is noted that those who fail to embrace the Cause may become [\"the personification of the nethermost fire\"](https://oceanlibrary.com/selections-from-the-writings-of-the-bab), highlighting the transformative power of faith.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 6456,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of the Bahá'í collections but lacks depth in the citation of specific documents. While it includes a quote, it does not clearly connect this quote to the main topic of collections. To improve, the assistant should focus on listing more collections and their significance without straying into unrelated quotes."
+    },
+    "overall": 3.56,
+    "failures": [
+      "toolUsage"
+    ],
+    "diagnosis": "The response provides a good overview of the Bahá'í collections but lacks depth in the citation of specific documents. While it includes a quote, it does not clearly connect this quote to the main topic of collections. To improve, the assistant should focus on listing more collections and their significance without straying into unrelated quotes."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 127 Hindu texts, including works like Gitanjali (Song Offerings) by Rabindranath Tagore, Sadhana - The Realisation of Life, and Songs of Kabir. These collections span Bhakti and Devotional literature as well as Epics. In the broader spiritual context, the Qur'án opens with [\"In the name of the merciful and compassionate God\"](https://oceanlibrary.com/quran_palmer-tr/?paraId=para_4), *The Qur’ân (Palmer)*, emphasizing divine compassion. The *Gospel of Matthew* invites reflection with [\"Who hath ears to hear, let him hear\"](https://oceanlibrary.com/kjv-gospel-of-matthew/?paraId=para_323). Meanwhile, *Isaiah* offers hope, noting that [\"The people that walked in darkness have seen a great light\"](https://oceanlibrary.com/kjv-book-of-isaiah/?paraId=para_150). These passages highlight the universal themes of light, compassion, and understanding across different traditions.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 4,
+    "durationMs": 8408,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good count of Hindu texts but fails to focus on the user's specific request about Hindu scriptures, instead introducing unrelated quotes from other religious texts. To improve, the assistant should concentrate on listing Hindu scriptures and their significance without diverging into other traditions."
+    },
+    "overall": 3.51,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response provides a good count of Hindu texts but fails to focus on the user's specific request about Hindu scriptures, instead introducing unrelated quotes from other religious texts. To improve, the assistant should concentrate on listing Hindu scriptures and their significance without diverging into other traditions."
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "The library holds a total of 44,937 documents, encompassing a wide range of traditions. Among these, there are 41,590 Bahá'í documents, 1,418 Jewish texts, 858 Buddhist works, 404 Islamic writings, and 208 Christian scriptures, among others. This vast collection reflects the diversity of human thought and spiritual exploration. As Bahá'u'lláh notes, the [\"wellspring of divine knowledge\"](https://siftersearch.com/document/12345?paraId=67890) is vast and ever-flowing, inviting seekers to explore its depths.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 5377,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 3,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 5,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The primary issue with this response is the citation accuracy; the quote attributed to Bahá'u'lláh is not properly sourced from the library's documents, which affects the overall credibility. To improve, the assistant should ensure that all quotes are accurately sourced from the library's content."
+    },
+    "overall": 3.98,
+    "failures": [],
+    "diagnosis": "The primary issue with this response is the citation accuracy; the quote attributed to Bahá'u'lláh is not properly sourced from the library's documents, which affects the overall credibility. To improve, the assistant should ensure that all quotes are accurately sourced from the library's content."
+  }
+]

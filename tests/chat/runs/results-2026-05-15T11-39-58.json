@@ -1,0 +1,80 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\n\"REDACTED\"\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 6,
+    "category": "factual",
+    "query": "What are the Five Pillars of Islam?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\n\"REDACTED\"\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 8,
+    "category": "factual",
+    "query": "What is the Eightfold Path in Buddhism?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\n\"REDACTED\"\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 9,
+    "category": "factual",
+    "query": "What does the Torah say about justice?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\n\"REDACTED\"\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 10,
+    "category": "factual",
+    "query": "What are the Zoroastrian teachings on good and evil?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\n\"REDACTED\"\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 11,
+    "category": "factual",
+    "query": "What is the Sikh concept of seva?",
+    "questionType": "research",
+    "status": "ERROR",
+    "error": "Headers.append: \"Bearer REDACTED\n\"REDACTED\"\" is an invalid header value.",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  }
+]

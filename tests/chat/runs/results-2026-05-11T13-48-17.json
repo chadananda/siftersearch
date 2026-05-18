@@ -1,0 +1,216 @@
+[
+  {
+    "id": 61,
+    "category": "browsing",
+    "query": "What's in the library?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 62,
+    "category": "browsing",
+    "query": "How many Buddhist texts do you have?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 63,
+    "category": "browsing",
+    "query": "Show me the Islamic collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 64,
+    "category": "browsing",
+    "query": "What languages are available?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 66,
+    "category": "browsing",
+    "query": "What's the largest collection?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 67,
+    "category": "browsing",
+    "query": "Do you have any Jain texts?",
+    "questionType": "browsing",
+    "status": "PASS",
+    "response": "Yes, the library includes Jain texts. Specifically, there are 22 documents under Jainism and an additional 5 documents specifically labeled as Jain. Among these, the [Akaranga Sutra](https://siftersearch.com/library/Jain/Agamas/tr-hermann-jacobi_akaranga-sutra-book-1#p0) is a notable text, which is part of the Agamas collection. These texts explore the teachings of the Tirthankaras and cover aspects of Jain philosophy and ethics.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 63874,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is generally solid but could improve in citation presence and inline quote integration. While it mentions the Akaranga Sutra, it lacks a direct quote from the text or a more detailed exploration of its content, which would enhance the authority and depth of the answer."
+    },
+    "overall": 4.03,
+    "failures": [],
+    "diagnosis": "The response is generally solid but could improve in citation presence and inline quote integration. While it mentions the Akaranga Sutra, it lacks a direct quote from the text or a more detailed exploration of its content, which would enhance the authority and depth of the answer."
+  },
+  {
+    "id": 68,
+    "category": "browsing",
+    "query": "Show me documents about the Pali Canon",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "I couldn't find specific documents about the Pali Canon in the retrieved texts. However, I can share that the Pali Canon is a foundational collection of scriptures in the Theravada Buddhist tradition, which includes works like \"The Dhammapada.\" This text contains verses attributed to the Buddha, focusing on themes such as ethical conduct, mental training, and wisdom. If you have a specific section or text in mind, I can try to look for it.",
+    "toolsUsed": [
+      "find_document_for_citation",
+      "search",
+      "document_subagent"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 0,
+    "durationMs": 70839,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 2,
+      "logicalCoherence": 2,
+      "brevity": 3,
+      "quoteEconomy": 1,
+      "instructionFollowing": 2,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "The response relies heavily on general knowledge about the Pali Canon rather than providing specific documents or quotes from the library. To improve, the assistant should focus on retrieving and citing relevant documents directly related to the user's query, ensuring that all claims are supported by actual text from the library."
+    },
+    "overall": 1.95,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "quoteEconomy",
+      "instructionFollowing",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response relies heavily on general knowledge about the Pali Canon rather than providing specific documents or quotes from the library. To improve, the assistant should focus on retrieving and citing relevant documents directly related to the user's query, ensuring that all claims are supported by actual text from the library."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds a total of 44,943 documents, encompassing a vast array of religious and philosophical traditions. Among these, the Bahá'í collection is notably extensive with 5,659 documents, while the Jewish tradition is represented by 1,418 documents, and Buddhism by 858. Each tradition offers a rich tapestry of texts, such as the Pali Canon in Buddhism, which includes teachings like [\"all that we are is the result of what we have thought\"](https://siftersearch.com/library/Baha'i/Baha'i%20Books/udo-schaefer_bahai-ethics-in-light-of-scripture-vol-2#p1800), reflecting the diversity and depth of the library's holdings.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 6298,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 2,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 2,
+      "brevity": 2,
+      "quoteEconomy": 1,
+      "instructionFollowing": 3,
+      "warmth": 2,
+      "noHallucination": 2,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "The response contains a significant factual error regarding the total number of documents in the library, which undermines its credibility. Additionally, the assistant includes a quote that is not relevant to the user's query about the total document count, leading to confusion. To improve, the assistant should ensure accurate data retrieval and focus solely on the user's question without unnecessary elaboration."
+    },
+    "overall": 1.82,
+    "failures": [
+      "toolUsage",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "brevity",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response contains a significant factual error regarding the total number of documents in the library, which undermines its credibility. Additionally, the assistant includes a quote that is not relevant to the user's query about the total document count, leading to confusion. To improve, the assistant should ensure accurate data retrieval and focus solely on the user's question without unnecessary elaboration."
+  }
+]

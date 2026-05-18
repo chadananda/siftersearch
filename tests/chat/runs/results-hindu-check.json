@@ -1,0 +1,39 @@
+[
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 127 Hindu texts, spanning collections like Bhakti and Devotional Works and Epics. Among these, *The Bhagavad Gita* offers a profound vision, where Krishna grants Arjuna [\"sense divine\"](https://oceanlibrary.com/hymns-of-atharva-veda) to perceive his glory. The *Upanishads* encourage us to free our hearts from [\"prejudice, doubt and intolerance\"](https://oceanlibrary.com/hymns-of-atharva-veda), drawing inspiration and wisdom from their sacred writings. Additionally, the *Vedanta-Sutras* are included, which speak to the [\"unmanifested\"](https://oceanlibrary.com/hymns-of-atharva-veda) nature of ultimate reality.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 4257,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient citations to support key claims about the Hindu scriptures mentioned. Additionally, the quotes provided are not well-integrated into the text, and some appear to be misattributed or irrelevant to the claims made. Improving the integration of quotes and ensuring they directly support the claims would enhance the response significantly."
+    },
+    "overall": 3.54,
+    "failures": [
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response lacks sufficient citations to support key claims about the Hindu scriptures mentioned. Additionally, the quotes provided are not well-integrated into the text, and some appear to be misattributed or irrelevant to the claims made. Improving the integration of quotes and ensuring they directly support the claims would enhance the response significantly."
+  }
+]

@@ -1,0 +1,93 @@
+[
+  {
+    "id": 6,
+    "category": "factual",
+    "query": "What are the Five Pillars of Islam?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Five Pillars of Islam are foundational acts of worship and practice that define a Muslim's faith and actions. They include: [\"Prayer\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad), which involves specific rituals and purifications; [\"Alms\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad), emphasizing charity and support for the needy; [\"Fasting\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad), particularly during the month of Ramadan; and [\"The pilgrimage to Mecca\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad), which is a once-in-a-lifetime obligation for those who are able. These pillars are central to the practice of Islam, guiding believers in their spiritual and communal lives.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 5,
+    "durationMs": 5024,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 2,
+      "sourceAuthority": 2,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 2,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 1,
+      "instructionFollowing": 2,
+      "warmth": 3,
+      "noHallucination": 2,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "The assistant used the right tool (search) and identified four pillars correctly, but committed two critical failures: (1) It provided NO actual quoted text from the library—only hyperlinked topic labels without evidence that search results were read or integrated, and (2) It omitted the Fifth Pillar (Shahada—the declaration of faith), which is a glaring factual gap for a research question. The hyperlinks suggest results were retrieved but not actually quoted or fully processed."
+    },
+    "overall": 2.24,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The assistant used the right tool (search) and identified four pillars correctly, but committed two critical failures: (1) It provided NO actual quoted text from the library—only hyperlinked topic labels without evidence that search results were read or integrated, and (2) It omitted the Fifth Pillar (Shahada—the declaration of faith), which is a glaring factual gap for a research question. The hyperlinks suggest results were retrieved but not actually quoted or fully processed."
+  },
+  {
+    "id": 8,
+    "category": "factual",
+    "query": "What is the Eightfold Path in Buddhism?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Eightfold Path in Buddhism is a fundamental guide to ethical and mental development with the goal of freeing individuals from attachments and delusions. It consists of eight interconnected practices: [\"right view, right resolve, right speech, right action, right livelihood, right effort, right mindfulness, and right concentration\"](https://oceanlibrary.com/dhammapada_buddha), as outlined in the *Samyutta Nikaya*. This path is part of the broader framework known as the Middle Way, which avoids extremes and leads to the cessation of suffering through the realization of the Four Noble Truths.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 6,
+    "durationMs": 4110,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 2,
+      "sourceAuthority": 2,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 2,
+      "noGeneralKnowledge": 2,
+      "diagnosis": "The response cites a single quoted list without substantive support for surrounding claims. The attribution is suspect (dhammapada_buddha as a source for Samyutta Nikaya material is questionable), and key assertions—the 'goal of freeing individuals from attachments,' the 'Middle Way' connection, the 'Four Noble Truths' framing—rest entirely on general knowledge, not on retrieved text. For a research question, this needs either (a) direct quotes anchoring each major claim, or (b) acknowledgment that the library's coverage of this topic is limited."
+    },
+    "overall": 2.85,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "inlineQuoteIntegration",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response cites a single quoted list without substantive support for surrounding claims. The attribution is suspect (dhammapada_buddha as a source for Samyutta Nikaya material is questionable), and key assertions—the 'goal of freeing individuals from attachments,' the 'Middle Way' connection, the 'Four Noble Truths' framing—rest entirely on general knowledge, not on retrieved text. For a research question, this needs either (a) direct quotes anchoring each major claim, or (b) acknowledgment that the library's coverage of this topic is limited."
+  }
+]

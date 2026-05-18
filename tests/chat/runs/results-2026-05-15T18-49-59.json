@@ -1,0 +1,49 @@
+[
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 331 documents by 'Abdu'l-Bahá, including works like Tablet regarding the Twelfth Imám and What is there to grieve about?. While these texts cover a range of topics, 'Abdu'l-Bahá often discusses governance in the context of spiritual principles, emphasizing that the \"spirit is like the bird\" — free and expansive beyond material constraints. This metaphor highlights the importance of governing with a focus on spiritual and moral development rather than mere material concerns.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 4746,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 5,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 2,
+      "logicalCoherence": 1,
+      "brevity": 3,
+      "quoteEconomy": 1,
+      "instructionFollowing": 2,
+      "warmth": 2,
+      "noHallucination": 1,
+      "noGeneralKnowledge": 1,
+      "diagnosis": "Critical failure: The assistant used library_count to answer the first part (document count) but then abandoned the library entirely, fabricating a quote ('spirit is like the bird') and inventing governance claims with zero citation from search results. The user asked a two-part research question requiring both a count AND a filtered list of governance-focused documents; the assistant provided the count but then supplied unsupported generalizations instead of actually searching for and naming documents that discuss governance."
+    },
+    "overall": 1.71,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "Critical failure: The assistant used library_count to answer the first part (document count) but then abandoned the library entirely, fabricating a quote ('spirit is like the bird') and inventing governance claims with zero citation from search results. The user asked a two-part research question requiring both a count AND a filtered list of governance-focused documents; the assistant provided the count but then supplied unsupported generalizations instead of actually searching for and naming documents that discuss governance."
+  }
+]

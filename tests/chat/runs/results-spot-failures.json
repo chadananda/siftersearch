@@ -1,0 +1,373 @@
+[
+  {
+    "id": 11,
+    "category": "factual",
+    "query": "What is the Sikh concept of seva?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The Sikh concept of seva, or selfless service, is deeply rooted in the teachings of the Guru Granth Sahib. It emphasizes the importance of serving others without any desire for personal gain. This principle is reflected in the idea that a true Sikh [\"abstains from evil deeds\"](https://siftersearch.com/library/Sikh/Guru%20Granth%20Sahib/guru-arjan-dev-ji_guru-granth-sahib-sukhmani-sahib#p1435) and focuses on living a life of virtue, *Guru Granth Sahib - Sukhmani Sahib*. Seva is not just about physical acts of service but also involves a sincere commitment to the well-being of others, aligning one's actions with the divine will.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "hype_search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 8,
+    "durationMs": 4311,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses library content and integrates quotes well, but it could improve in critical engagement by addressing the user's framing more directly. Additionally, while the warmth is present, it could be enhanced to create a more engaging tone."
+    },
+    "overall": 4.15,
+    "failures": [],
+    "diagnosis": "The response effectively uses library content and integrates quotes well, but it could improve in critical engagement by addressing the user's framing more directly. Additionally, while the warmth is present, it could be enhanced to create a more engaging tone."
+  },
+  {
+    "id": 14,
+    "category": "factual",
+    "query": "What does the Quran say about patience?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The Qur'an emphasizes the importance of patience, linking it closely with divine support and reward. It states that [\"God is with those who restrain themselves and those who do good\"](https://oceanlibrary.com/sura-xvi-the-bee_muhammad/?paraId=para_56), highlighting patience as a virtue that attracts divine presence. Additionally, the Qur'an encourages believers to [\"be patient, and vie in patience, and be firm\"](https://oceanlibrary.com/sura-iii-the-family-of-imran_muhammad/?paraId=para_98), suggesting that patience is not just a passive state but an active pursuit. It also assures that those who endure patiently will find that [\"best will it be for the patiently enduring\"](https://oceanlibrary.com/sura-xvi-the-bee_muhammad/?paraId=para_56), underscoring the ultimate benefit of patience in one's spiritual journey.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "hype_search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 5,
+    "citationCount": 8,
+    "durationMs": 5329,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong overall, with excellent tool usage and citation practices. However, it could improve critical engagement by addressing the active nature of patience in more depth, perhaps by discussing the implications of patience in the context of trials or challenges faced by believers, rather than just stating it as a virtue."
+    },
+    "overall": 4.76,
+    "failures": [],
+    "diagnosis": "The response is strong overall, with excellent tool usage and citation practices. However, it could improve critical engagement by addressing the active nature of patience in more depth, perhaps by discussing the implications of patience in the context of trials or challenges faced by believers, rather than just stating it as a virtue."
+  },
+  {
+    "id": 30,
+    "category": "author",
+    "query": "What books by Moojan Momen do you have?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "The library holds 146 works by Moojan Momen. Notable titles include [Mazhar-i Ilahi (Manifestation of God)](https://oceanlibrary.com), [Memorials of the Faithful: The Democratization of Sainthood](https://oceanlibrary.com), and [Shoghi Effendi's Translation of Terms Related to Law in Bahá’í Scripture](https://oceanlibrary.com). Momen's writings often explore the depth of Bahá'í history and theology, offering insights into the [development of Bahá'í thought](https://oceanlibrary.com).",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 1,
+    "durationMs": 4215,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 3,
+      "diagnosis": "The response lacks sufficient citations from the library, as it only mentions titles without quoting or providing specific details about them. To improve, the assistant should include direct quotes or summaries from the works to enhance citation presence and accuracy."
+    },
+    "overall": 3.2,
+    "failures": [
+      "citationAccuracy",
+      "logicalCoherence",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response lacks sufficient citations from the library, as it only mentions titles without quoting or providing specific details about them. To improve, the assistant should include direct quotes or summaries from the works to enhance citation presence and accuracy."
+  },
+  {
+    "id": 39,
+    "category": "topical",
+    "query": "Search for teachings about peace between nations",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The teachings on peace between nations across various traditions emphasize unity and understanding. In Judaism, the Psalms urge us to [\"seek peace and pursue it\"](https://siftersearch.com/document/18278), highlighting the active effort required to foster peace, *Avodah Zarah*. The Bahá'í Faith, through Bahá'u'lláh, calls for the unification of mankind, stating that [\"the world is but one country, and mankind its citizens\"](https://oceanlibrary.com/promised-day-is-come_shoghi-effendi), *The Promised Day is Come*. Islam, in the Qur'an, encourages diversity as a means to foster understanding, teaching that Allah created nations and tribes \"that you may know one another\", *Stories of the Prophets*. Buddhism emphasizes the cultivation of loving-kindness, suggesting that thoughts of metta (loving-kindness) are a vehicle for peace, as seen in the Sutra Collection. Finally, the Tao Te Ching likens the highest excellence to water, which benefits all things without striving, reflecting a peaceful and harmonious existence with others.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 3596,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively covers teachings on peace from multiple traditions, but it could improve in critical engagement by addressing the user's framing more directly. Additionally, while the citations are mostly accurate, some quotes could be better integrated into the narrative for a smoother reading experience."
+    },
+    "overall": 4.15,
+    "failures": [],
+    "diagnosis": "The response effectively covers teachings on peace from multiple traditions, but it could improve in critical engagement by addressing the user's framing more directly. Additionally, while the citations are mostly accurate, some quotes could be better integrated into the narrative for a smoother reading experience."
+  },
+  {
+    "id": 75,
+    "category": "reading",
+    "query": "Show me the first few paragraphs of the Tao Te Ching",
+    "questionType": "reading",
+    "status": "FAIL",
+    "response": "The *Tao Te Ching* opens with a profound statement about the nature of the Tao: [\"The Tao that can be trodden is not the enduring and unchanging Tao. The name that can be named is not the enduring and unchanging name\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_7). This suggests that the true essence of the Tao transcends any fixed form or label. It continues to describe the Tao as [\"the emptiness of a vessel\"](https://oceanlibrary.com/tao-te-ching_lao-tzu?paraId=para_25), emphasizing its boundless and unfathomable nature, akin to the \"Honoured Ancestor of all things.\" These opening lines set the tone for the text, inviting readers to explore the mysterious and ineffable quality of the Tao.",
+    "toolsUsed": [
+      "deep_research",
+      "find_document_for_citation",
+      "search_read",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 5,
+    "citationCount": 8,
+    "durationMs": 3449,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively provides quotes from the *Tao Te Ching*, but it lacks a complete reading of the first few paragraphs as requested. To improve, the assistant should include more text from the beginning of the document to fully satisfy the user's request."
+    },
+    "overall": 4.07,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response effectively provides quotes from the *Tao Te Ching*, but it lacks a complete reading of the first few paragraphs as requested. To improve, the assistant should include more text from the beginning of the document to fully satisfy the user's request."
+  },
+  {
+    "id": 80,
+    "category": "edge",
+    "query": "What about the thing with the stuff?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "It seems like you're asking about a rather broad topic, but if we consider the Buddhist perspective on suffering, it is deeply connected to craving. The Majjhima Nikaya describes the [\"Noble Truth of the arising of suffering\"](https://siftersearch.com/document/19239) as stemming from craving, which leads to rebirth and is accompanied by greed and delight. This craving, whether for sensual pleasures or existence itself, is seen as the root of suffering. The path to liberation involves the [\"complete cessation of that very craving\"](https://siftersearch.com/document/19239), which is a central teaching in Buddhism. If you have more specific aspects in mind, feel free to elaborate!",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 3302,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks clarity due to the vague nature of the user's question, which could have been addressed more directly. To improve, the assistant should have asked for clarification on the specific topic of interest while still providing relevant information about craving in Buddhism."
+    },
+    "overall": 3.95,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response lacks clarity due to the vague nature of the user's question, which could have been addressed more directly. To improve, the assistant should have asked for clarification on the specific topic of interest while still providing relevant information about craving in Buddhism."
+  },
+  {
+    "id": 84,
+    "category": "edge",
+    "query": "七つの谷",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The \"Seven Valleys\" in Bahá’u’lláh's work represents a profound spiritual journey, where the seeker traverses various stages of understanding and enlightenment. One of these stages is [\"The Valley of Contentment\"](https://oceanlibrary.com/seven-valleys-and-the-four-valleys), where the wayfarer feels the \"winds of divine contentment\" and transitions from \"sorrow to bliss, from anguish to joy\" *The Seven Valleys and the Four Valleys*. This journey continues into [\"The Valley of Wonderment\"](https://oceanlibrary.com/seven-valleys-and-the-four-valleys), where the traveler is \"tossed in the oceans of grandeur,\" experiencing an ever-growing sense of wonder. These valleys symbolize the deepening of spiritual insight and the unfolding of divine mysteries that words often fail to capture.",
+    "toolsUsed": [
+      "find_document_for_citation",
+      "document_subagent",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 8,
+    "durationMs": 18856,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses quotes and integrates them well, but it could improve by providing a more critical engagement with the concept of the 'Seven Valleys,' perhaps by addressing common interpretations or misconceptions. Additionally, while the prose is generally concise, it could be tightened further to enhance clarity and impact."
+    },
+    "overall": 4.12,
+    "failures": [],
+    "diagnosis": "The response effectively uses quotes and integrates them well, but it could improve by providing a more critical engagement with the concept of the 'Seven Valleys,' perhaps by addressing common interpretations or misconceptions. Additionally, while the prose is generally concise, it could be tightened further to enhance clarity and impact."
+  },
+  {
+    "id": 87,
+    "category": "edge",
+    "query": "Is the Bahá'í Faith a cult?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Bahá'í Faith is not a cult; rather, it is structured to prevent the very fragmentation and authoritarianism often associated with cults. Bahá’u’lláh established a unique Covenant, appointing a [\"Center of the Covenant\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_2085) to safeguard unity and prevent schisms, which is unlike any previous religious dispensation. This Covenant ensures that no individual can claim authority outside the established institutions, such as the Universal House of Justice, which is [\"guided by God to decide on whatever is not explicitly revealed in the Book\"](https://oceanlibrary.com/universal-house-of-justice_bahaullah?paraId=para_307). This framework functions much like a constitution, providing stability and continuity within the Bahá'í community.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 5,
+    "durationMs": 2686,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a solid defense against the cult label but lacks a critical engagement with the user's framing of the question. It could improve by addressing the term 'cult' more directly and exploring the nuances of the Bahá'í Faith's structure in relation to common cult characteristics. Additionally, while the citations are relevant, a more authoritative source could enhance the argument."
+    },
+    "overall": 4,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response provides a solid defense against the cult label but lacks a critical engagement with the user's framing of the question. It could improve by addressing the term 'cult' more directly and exploring the nuances of the Bahá'í Faith's structure in relation to common cult characteristics. Additionally, while the citations are relevant, a more authoritative source could enhance the argument."
+  },
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "In the Bahá'í Faith, the concept of the covenant is central, as Bahá'u'lláh established a clear [\"Covenant and Testament with the people\"](https://siftersearch.com/document/15200) by appointing 'Abdu'l-Bahá as the Centre of the Covenant, ensuring unity and guidance, *Star of the West*. This covenant is seen as a means to preserve the unity of the Bahá'í community, preventing division and maintaining the integrity of the faith. In Judaism, the covenant is deeply rooted in the Torah, where God promises to make a [\"new covenant with the house of Israel\"](https://oceanlibrary.com/kjv-epistle-to-hebrews?paraId=para_109), emphasizing a relationship based on faithfulness and divine guidance, *Hebrews*. Both traditions highlight the covenant as a foundation for spiritual and communal life, underscoring its enduring significance.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "hype_search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 6,
+    "citationCount": 8,
+    "durationMs": 4854,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively covers the concept of the covenant in both the Bahá'í Faith and Judaism, but it could improve by critically engaging with the user's framing of the question. Specifically, it should clarify the differences in how each tradition understands the covenant rather than simply stating similarities. This would enhance the depth of the analysis."
+    },
+    "overall": 4.07,
+    "failures": [],
+    "diagnosis": "The response effectively covers the concept of the covenant in both the Bahá'í Faith and Judaism, but it could improve by critically engaging with the user's framing of the question. Specifically, it should clarify the differences in how each tradition understands the covenant rather than simply stating similarities. This would enhance the depth of the analysis."
+  },
+  {
+    "id": 107,
+    "category": "framing",
+    "query": "The Bahá'í Faith is basically a liberal religion that supports modern progressive values?",
+    "questionType": "framing",
+    "status": "FAIL",
+    "response": "Partly right — the Bahá'í Faith indeed embraces principles that resonate with modern values, such as [\"the equality of men and women\"](https://siftersearch.com/document/15206) and the [\"independent investigation of truth\"](https://siftersearch.com/document/8680), *Star of the West*. However, it goes beyond merely aligning with progressive ideals. Bahá'u'lláh's teachings emphasize the [\"oneness of mankind\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi?paraId=para_508) and the transformative power of unity, which is seen as the central purpose of his Faith, *God Passes By*. This vision calls for a profound reimagining of societal structures, aiming not just for reform but for a new world order grounded in spiritual principles.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 3368,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response partially engages critically with the user's framing but could do better by explicitly addressing the limitations of labeling the Bahá'í Faith as merely 'liberal' or 'progressive.' Strengthening the critical engagement by clarifying the unique aspects of the Faith would enhance the response."
+    },
+    "overall": 4.1,
+    "failures": [
+      "criticalEngagement"
+    ],
+    "diagnosis": "The response partially engages critically with the user's framing but could do better by explicitly addressing the limitations of labeling the Bahá'í Faith as merely 'liberal' or 'progressive.' Strengthening the critical engagement by clarifying the unique aspects of the Faith would enhance the response."
+  }
+]

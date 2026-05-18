@@ -1,0 +1,72 @@
+[
+  {
+    "id": 19,
+    "category": "comparative",
+    "query": "How do Buddhism and Hinduism differ on the concept of self?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Buddhism and Hinduism offer distinct perspectives on the concept of self. In Buddhism, the notion of self is fundamentally challenged; the Buddha taught that [\"form is not-self, feeling is not-self, perception is not-self\"](https://siftersearch.com/document/17256), *Majjhima Nikaya 109 - Mahapunnama Sutta*. This reflects the Buddhist doctrine of anatta, or non-self, which suggests that what we consider the self is merely a collection of changing aggregates. In contrast, Hinduism often embraces the idea of a true self or Atman, as seen in the phrase [\"Thou art That\"](https://siftersearch.com/document/19898), *The Tattva-Muktavali*, which implies a unity between the individual soul and the universal. This highlights a key difference: Buddhism denies a permanent self, while Hinduism often seeks to realize the self's divine nature.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 8,
+    "durationMs": 8791,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong overall, with excellent tool usage and citation practices. However, it could improve critical engagement by more explicitly addressing the implications of the differing views on self, rather than just stating the differences. This would enhance the depth of the analysis."
+    },
+    "overall": 4.76,
+    "failures": [],
+    "diagnosis": "The response is strong overall, with excellent tool usage and citation practices. However, it could improve critical engagement by more explicitly addressing the implications of the differing views on self, rather than just stating the differences. This would enhance the depth of the analysis."
+  },
+  {
+    "id": 49,
+    "category": "topical",
+    "query": "Find passages about service to others",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Service to others is a profound theme across many religious traditions. In Christianity, Jesus teaches that serving others is akin to serving Him directly: [\"Inasmuch as ye have done it unto one of the least of these my brethren, ye have done it unto me\"](https://oceanlibrary.com/kjv-gospel-of-matthew?paraId=para_711), *Gospel of Matthew*. Judaism emphasizes the importance of charity, urging believers to [\"open your hand to the poor and needy\"](https://siftersearch.com/document/18667), *Deuteronomy*. The Tao Te Ching suggests that the more one gives to others, [\"the more does he possess of his own\"](https://siftersearch.com/document/18783), highlighting a reciprocal nature of generosity.\n\nIn Buddhism, the Metta Sutta encourages radiating kindness [\"over the entire world\"](https://siftersearch.com/document/17271), promoting a boundless heart. Sikh teachings reflect a similar sentiment, asking who truly provides and sustains, prompting reflection on divine service. Bahá'í writings frame work done in the spirit of service as [\"a form of worship\"](https://siftersearch.com/document/8274), elevating daily labor to a spiritual act. Islam likens the community of believers to a single body, where the pain of one part is felt by all, emphasizing mutual support. Lastly, Hindu texts encourage seeing the same Self in all beings, fostering a sense of unity and service to others. Each tradition, in its own way, underscores the transformative power of serving others.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 8090,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response effectively uses the library to provide relevant passages, but it could improve by integrating quotes more seamlessly into the narrative. Additionally, while it covers multiple religious perspectives, it lacks a critical engagement with the user's framing of 'service to others,' which could deepen the analysis."
+    },
+    "overall": 4.05,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library to provide relevant passages, but it could improve by integrating quotes more seamlessly into the narrative. Additionally, while it covers multiple religious perspectives, it lacks a critical engagement with the user's framing of 'service to others,' which could deepen the analysis."
+  }
+]

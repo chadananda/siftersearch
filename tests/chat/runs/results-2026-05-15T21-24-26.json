@@ -1,0 +1,204 @@
+[
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 127 Hindu texts across various collections, including Bhakti and Devotional Works and Epics. Among these, you can explore works like [Gitanjali (Song Offerings)](https://oceanlibrary.com/hymns-of-atharva-veda) by Rabindranath Tagore and [Hindu Literature - Ramayana, Nala, Sakuntala](https://oceanlibrary.com/hymns-of-atharva-veda) by various authors. The *Bhagavad Gita* offers a divine perspective where Krishna tells Arjuna, [\"I give thee sense divine. Have other eyes, new light!\"](https://oceanlibrary.com/hymns-of-atharva-veda), inviting a deeper understanding of spiritual vision.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 4,
+    "durationMs": 5582,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a good overview of the Hindu texts available but lacks precise citations for the mentioned works, which affects citation presence and accuracy. To improve, the assistant should ensure that all claims are backed by specific quotes from the library and provide clearer attributions for the texts mentioned."
+    },
+    "overall": 3.54,
+    "failures": [
+      "logicalCoherence"
+    ],
+    "diagnosis": "The response provides a good overview of the Hindu texts available but lacks precise citations for the mentioned works, which affects citation presence and accuracy. To improve, the assistant should ensure that all claims are backed by specific quotes from the library and provide clearer attributions for the texts mentioned."
+  },
+  {
+    "id": 77,
+    "category": "edge",
+    "query": "Udo Schafer",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "Udo Schaefer's work on Bahá'í ethics is noted for its depth, particularly in his discussion of [\"justice in Bahá'u'lláh’s Scriptures\"](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_paradise-of-justice#p152). This exploration of justice is a foundation for further study of Bahá'í virtues. In the Christian tradition, the Gospel of John begins with a profound statement on the divine nature of Christ: [\"In the beginning was the Word, and the Word was with God, and the Word was God\"](https://oceanlibrary.com/kjv-gospel-of-john/?paraId=para_8). The Qur'án, meanwhile, emphasizes guidance and enlightenment, stating that [\"a light and a clear Book come to you from God\"](https://oceanlibrary.com/sura-v-the-table_muhammad/?paraId=para_15). Judaism offers comfort through the words of Isaiah: [\"Comfort ye, comfort ye My people\"](https://oceanlibrary.com/jps-book-of-isaiah/?paraId=para_741). In Buddhism, the teachings often reflect on the nature of suffering and the path to liberation, as seen in the *Sutta Nipata*. Each tradition, through its unique lens, contributes to a broader understanding of ethics and spirituality.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 10,
+    "citationCount": 8,
+    "durationMs": 8979,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks critical engagement with the user's query about Udo Schaefer, as it does not delve into his specific contributions or clarify his significance in Bahá'í ethics. To improve, the assistant should focus more on Schaefer's work and its implications, rather than broadly discussing ethics across multiple religions without a clear connection to the query."
+    },
+    "overall": 3.88,
+    "failures": [
+      "criticalEngagement"
+    ],
+    "diagnosis": "The response lacks critical engagement with the user's query about Udo Schaefer, as it does not delve into his specific contributions or clarify his significance in Bahá'í ethics. To improve, the assistant should focus more on Schaefer's work and its implications, rather than broadly discussing ethics across multiple religions without a clear connection to the query."
+  },
+  {
+    "id": 80,
+    "category": "edge",
+    "query": "What about the thing with the stuff?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "It seems like you're asking about something specific, but the details are a bit unclear. If you're referring to the nature of suffering and its cessation, the Buddhist texts offer profound insights. The Majjhima Nikaya describes the [\"Noble Truth of the arising of suffering\"](https://siftersearch.com/document/19239) as stemming from craving, which leads to rebirth and suffering. Conversely, the cessation of suffering is achieved through the [\"complete cessation of that very craving\"](https://siftersearch.com/document/19239), suggesting a path of letting go and liberation. If you have a more specific topic in mind, feel free to clarify!",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 2439,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 3,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks clarity and specificity in addressing the user's vague query. While it provides relevant information about suffering in Buddhism, it could improve by directly engaging with the ambiguity of the user's question and asking for clarification before providing an answer. This would enhance both critical engagement and instruction following."
+    },
+    "overall": 3.78,
+    "failures": [
+      "topicCoverage",
+      "inlineQuoteIntegration",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The response lacks clarity and specificity in addressing the user's vague query. While it provides relevant information about suffering in Buddhism, it could improve by directly engaging with the ambiguity of the user's question and asking for clarification before providing an answer. This would enhance both critical engagement and instruction following."
+  },
+  {
+    "id": 84,
+    "category": "edge",
+    "query": "七つの谷",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The \"Seven Valleys\" described by Bahá’u’lláh in *The Seven Valleys and the Four Valleys* is a profound spiritual journey that guides the seeker through various stages of enlightenment. One of these stages, the [\"Valley of Contentment\"](https://siftersearch.com/library/Baha'i/Core%20Publications/bahaullah_the-seven-valleys-and-the-four-valleys#p73), is where the traveler finds peace and satisfaction, feeling the \"winds of divine contentment\" and turning \"from sorrow... to bliss\" (*The Seven Valleys and the Four Valleys*). As the journey progresses, the seeker enters the [\"Valley of Wonderment\"](https://siftersearch.com/library/Baha'i/Core%20Publications/bahaullah_the-seven-valleys-and-the-four-valleys#p82), where they are \"tossed in the oceans of grandeur,\" experiencing a growing sense of awe and wonder. This journey ultimately leads to a state where the \"vestiges of all things are destroyed,\" revealing the Divine Face in its full glory.",
+    "toolsUsed": [
+      "find_document_for_citation",
+      "document_subagent",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 8,
+    "durationMs": 16270,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 5,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses quotes from the primary text and integrates them well, but it could improve in critical engagement by addressing the user's potential assumptions about the 'Seven Valleys.' Additionally, while the response is informative, it could be more concise to enhance clarity and impact."
+    },
+    "overall": 4.17,
+    "failures": [],
+    "diagnosis": "The response effectively uses quotes from the primary text and integrates them well, but it could improve in critical engagement by addressing the user's potential assumptions about the 'Seven Valleys.' Additionally, while the response is informative, it could be more concise to enhance clarity and impact."
+  },
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "In the Bahá'í Faith, the concept of covenant is central, with Bahá'u'lláh emphasizing that [\"the Ancient Beauty hath consented to be bound with chains\"](https://oceanlibrary.com/kjv-book-of-isaiah/?paraId=para_1151), highlighting the sacrificial nature of His mission. This covenant is seen as a binding agreement between God and humanity, ensuring guidance through successive revelations. In Judaism, the covenant is foundational, as seen in the Torah where God establishes a pact with the Israelites, symbolized by moments like [\"Let there be light\"](https://oceanlibrary.com/kjv-first-book-of-moses/?paraId=para_10), which signifies divine creation and promise. Both traditions view the covenant as a divine promise that guides and sustains the faithful.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 4031,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 3,
+      "diagnosis": "The response lacks accurate citations, as the quotes provided do not directly relate to the concept of the covenant in either tradition. To improve, the assistant should ensure that the quotes are relevant to the topic of the covenant and provide more authoritative sources from the library that specifically address this concept in both the Bahá'í Faith and Judaism."
+    },
+    "overall": 3.2,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response lacks accurate citations, as the quotes provided do not directly relate to the concept of the covenant in either tradition. To improve, the assistant should ensure that the quotes are relevant to the topic of the covenant and provide more authoritative sources from the library that specifically address this concept in both the Bahá'í Faith and Judaism."
+  }
+]

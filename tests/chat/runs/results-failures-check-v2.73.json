@@ -1,0 +1,155 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The concept of dharma in Hinduism is multifaceted, often seen as the duty or moral order that sustains the universe. In the *Bhagavad Gita*, it is suggested that one finds perfection through [\"worship—wrought by work\"](https://oceanlibrary.com/hymns-of-atharva-veda), emphasizing action as a form of devotion. Additionally, the *Vedanta-Sutras* explore the idea of dharma as a means to an end, where it is described as [\"different from adharma\"](https://oceanlibrary.com/hymns-of-atharva-veda), indicating a path distinct from ordinary results. This highlights dharma's role as a guiding principle that transcends mere ritual, aiming for a higher spiritual realization.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 7,
+    "durationMs": 10254,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks accurate citations, as the quotes provided do not seem to come from the correct texts. Additionally, the assistant should have included more authoritative sources on dharma, such as the *Manusmriti* or *Upanishads*, to strengthen the response. Improving citation accuracy and authority would significantly enhance the quality of the answer."
+    },
+    "overall": 3.46,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "inlineQuoteIntegration",
+      "noHallucination"
+    ],
+    "diagnosis": "The response lacks accurate citations, as the quotes provided do not seem to come from the correct texts. Additionally, the assistant should have included more authoritative sources on dharma, such as the *Manusmriti* or *Upanishads*, to strengthen the response. Improving citation accuracy and authority would significantly enhance the quality of the answer."
+  },
+  {
+    "id": 20,
+    "category": "comparative",
+    "query": "What do the Bahá'í Faith and Islam say about fasting?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "In Islam, fasting is a practice prescribed to believers [\"as it was prescribed to those before you\"](https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad/?paraId=para_197), with the aim of fostering mindfulness and warding off evil. The Qur'án outlines specific guidelines, allowing believers to eat and drink [\"until ye can discern a white thread from a black thread by the daybreak\"](https://oceanlibrary.com/sura-ii-the-cow_muhammad/?paraId=para_114), after which the fast continues until night. While the retrieved quotes don't directly address the Bahá'í perspective, it's worth noting that the Bahá'í Faith also emphasizes fasting as a spiritual discipline, focusing on self-restraint and reflection.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 5545,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides a solid overview of fasting in Islam with relevant quotes, but it lacks direct citations from Bahá'í texts, which weakens the comparative aspect of the answer. To improve, the assistant should include specific Bahá'í teachings on fasting to fully address the user's query."
+    },
+    "overall": 3.93,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response provides a solid overview of fasting in Islam with relevant quotes, but it lacks direct citations from Bahá'í texts, which weakens the comparative aspect of the answer. To improve, the assistant should include specific Bahá'í teachings on fasting to fully address the user's query."
+  },
+  {
+    "id": 32,
+    "category": "author",
+    "query": "Show me everything by Bahá'u'lláh",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "Bahá'u'lláh's writings encompass a vast range of themes and teachings. One of his central proclamations is the oneness of humanity, as he states that [\"the world is but one country, and mankind its citizens\"](https://siftersearch.com/document/16277?paraId=null), *The World Order of Bahá’u’lláh*. This vision of unity is further emphasized in his teachings that all people are [\"the leaves of one tree and the fruits of one branch\"](https://siftersearch.com/document/15203?paraId=null), *Star of the West*. Additionally, Bahá'u'lláh emphasizes the importance of deeds over words, urging that [\"everyone must show forth deeds that are pure and holy\"](https://oceanlibrary.com/hidden-words-of-bahaullah?paraId=para_452), *The Hidden Words of Bahá’u’lláh*. These teachings collectively aim to foster unity, peace, and spiritual growth among all people.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 4964,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 3,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response provides relevant quotes from Bahá'u'lláh's writings but does not fully address the user's request for 'everything' by Bahá'u'lláh, which implies a more comprehensive listing or overview of his works. To improve, the assistant should include a broader selection of his writings or a list of key texts rather than just thematic summaries."
+    },
+    "overall": 3.85,
+    "failures": [
+      "topicCoverage",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The response provides relevant quotes from Bahá'u'lláh's writings but does not fully address the user's request for 'everything' by Bahá'u'lláh, which implies a more comprehensive listing or overview of his works. To improve, the assistant should include a broader selection of his writings or a list of key texts rather than just thematic summaries."
+  },
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The library holds 331 documents by 'Abdu'l-Bahá. Among these, some discuss governance, emphasizing the importance of [\"consultation\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388) as a spiritual conference rather than a battleground for personal views, as noted in *The Promulgation of Universal Peace*. Additionally, 'Abdu'l-Bahá highlights the role of [\"just laws, freedom of conscience, and uniform dealing\"](https://siftersearch.com/document/16276?paraId=null) in maintaining a just and equitable society, as discussed in *A Traveler’s Narrative*. These principles are seen as essential for the progress and stability of governance.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 3,
+    "durationMs": 4087,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong in tool usage and citation presence, but it could improve in critical engagement by addressing the user's framing of governance more directly. Additionally, while the quotes are relevant, a more explicit connection to the concept of governance in the context of 'Abdu'l-Bahá's teachings would enhance clarity."
+    },
+    "overall": 4.22,
+    "failures": [],
+    "diagnosis": "The response is strong in tool usage and citation presence, but it could improve in critical engagement by addressing the user's framing of governance more directly. Additionally, while the quotes are relevant, a more explicit connection to the concept of governance in the context of 'Abdu'l-Bahá's teachings would enhance clarity."
+  }
+]

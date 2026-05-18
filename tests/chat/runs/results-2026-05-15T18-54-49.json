@@ -1,0 +1,44 @@
+[
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 331 documents by 'Abdu'l-Bahá, including works like Tablet regarding the Twelfth Imám and What is there to grieve about?. When it comes to governance, 'Abdu'l-Bahá emphasizes that [\"consultation is of vital importance\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388), as seen in *The Promulgation of Universal Peace*. He critiques parliamentary procedures that become battlegrounds for opposition, suggesting instead that the goal should be the [\"attainment of the light of truth\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388).",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 2,
+    "durationMs": 4374,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 5,
+      "topicCoverage": 2,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 3,
+      "warmth": 3,
+      "noHallucination": 4,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response answers the first part of the question well (document count, examples) but severely underdevelops the second part. The user asked 'which ones discuss governance' — expecting a list or survey of governance-focused documents — yet receives only two quotes from a single text. A research query deserves comprehensive coverage: at minimum, a list of 'Abdu'l-Bahá documents tagged or identified as addressing governance, with brief indicators of their scope. The assistant should have used search filters or iterated the search to surface the full range of governance-related works, not stopped after two quotes from one source."
+    },
+    "overall": 3.51,
+    "failures": [
+      "citationPresence",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "instructionFollowing",
+      "noHallucination"
+    ],
+    "diagnosis": "The response answers the first part of the question well (document count, examples) but severely underdevelops the second part. The user asked 'which ones discuss governance' — expecting a list or survey of governance-focused documents — yet receives only two quotes from a single text. A research query deserves comprehensive coverage: at minimum, a list of 'Abdu'l-Bahá documents tagged or identified as addressing governance, with brief indicators of their scope. The assistant should have used search filters or iterated the search to surface the full range of governance-related works, not stopped after two quotes from one source."
+  }
+]

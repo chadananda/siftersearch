@@ -1,0 +1,163 @@
+[
+  {
+    "id": 61,
+    "category": "browsing",
+    "query": "What's in the library?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 62,
+    "category": "browsing",
+    "query": "How many Buddhist texts do you have?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 63,
+    "category": "browsing",
+    "query": "Show me the Islamic collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 64,
+    "category": "browsing",
+    "query": "What languages are available?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 66,
+    "category": "browsing",
+    "query": "What's the largest collection?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 67,
+    "category": "browsing",
+    "query": "Do you have any Jain texts?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "fetch failed",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 68,
+    "category": "browsing",
+    "query": "Show me documents about the Pali Canon",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "fetch failed",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "ERROR",
+    "error": "This operation was aborted",
+    "scores": {},
+    "overall": 0,
+    "failures": [
+      "error"
+    ]
+  },
+  {
+    "id": 70,
+    "category": "browsing",
+    "query": "How many documents are in the library total?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds a total of [44,943 documents](https://siftersearch.com/library/Baha'i/Baha'i%20Books/adib-taherzadeh_the-revelation-of-bahaullah-vol-2#p1251), spanning a wide range of traditions and collections. This includes 5,659 Bahá'í documents, 1,418 Jewish texts, and 858 Buddhist writings, among others. The diversity of the library is reflected in its collections, such as the [Pali Canon](https://siftersearch.com/library/Baha'i/Baha'i%20Books/adib-taherzadeh_the-revelation-of-bahaullah-vol-1#p381), which comprises the oldest surviving Buddhist scriptures.",
+    "toolsUsed": [
+      "library_overview",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 0,
+    "durationMs": 9963,
+    "scores": {
+      "toolUsage": 1,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 1,
+      "logicalCoherence": 1,
+      "brevity": 1,
+      "quoteEconomy": 1,
+      "instructionFollowing": 1,
+      "warmth": 1,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is entirely based on general knowledge and does not utilize the library tools effectively, resulting in a complete lack of citations or relevant quotes. To improve, the assistant should have used the library tools to retrieve the current number of documents and provide that information with proper citations."
+    },
+    "overall": 1.74,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "brevity",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth"
+    ],
+    "diagnosis": "The response is entirely based on general knowledge and does not utilize the library tools effectively, resulting in a complete lack of citations or relevant quotes. To improve, the assistant should have used the library tools to retrieve the current number of documents and provide that information with proper citations."
+  }
+]

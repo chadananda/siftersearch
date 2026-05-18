@@ -1,0 +1,44 @@
+[
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 331 documents by 'Abdu'l-Bahá, including works like Tablet regarding the Twelfth Imám and What is there to grieve about?. When it comes to governance, 'Abdu'l-Bahá emphasizes that [\"consultation is of vital importance\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388), as seen in *The Promulgation of Universal Peace*. He critiques parliamentary procedures that become a \"battleground for opposition and self-opinion,\" advocating instead for meetings aimed at discovering truth rather than fostering conflict.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 2,
+    "durationMs": 6609,
+    "scores": {
+      "toolUsage": 2,
+      "citationPresence": 2,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 2,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 2,
+      "warmth": 3,
+      "noHallucination": 3,
+      "noGeneralKnowledge": 3,
+      "diagnosis": "The assistant used a general count tool but failed to search for the specific governance documents the user asked about. The response names two random titles and provides one quote on consultation, but doesn't actually answer which documents *discuss governance* — the core of the user's two-part question. A second search using passages or documents mode with governance filters would have been essential."
+    },
+    "overall": 2.93,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "topicCoverage",
+      "logicalCoherence",
+      "instructionFollowing",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The assistant used a general count tool but failed to search for the specific governance documents the user asked about. The response names two random titles and provides one quote on consultation, but doesn't actually answer which documents *discuss governance* — the core of the user's two-part question. A second search using passages or documents mode with governance filters would have been essential."
+  }
+]

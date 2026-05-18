@@ -1,0 +1,40 @@
+[
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 331 documents by 'Abdu'l-Bahá, including works like Tablet regarding the Twelfth Imám and A Tablet of ‘Abdu’l-Bahá Explaining Three Verses in the Lawh-i-Hikmat. When it comes to governance, 'Abdu'l-Bahá emphasizes that [\"consultation is of vital importance\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388), highlighting the need for spiritual conference rather than mere debate. He critiques parliamentary procedures that become [\"a battleground for opposition and self-opinion\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_388), advocating instead for dialogue aimed at uncovering truth.",
+    "toolsUsed": [
+      "library_count",
+      "search"
+    ],
+    "toolCallCount": 2,
+    "citationCount": 2,
+    "durationMs": 5879,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 5,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 5,
+      "topicCoverage": 2,
+      "logicalCoherence": 4,
+      "brevity": 5,
+      "quoteEconomy": 4,
+      "instructionFollowing": 2,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response answers half the question well (governance philosophy via strong inline quotes) but largely ignores the core ask: naming which specific documents discuss governance. The user asked 'which ones' — they wanted a curated list of titles, not a conceptual summary. Tool usage was correct, but the assistant should have either (a) listed the governance-relevant titles from search results, or (b) acknowledged that the search found governance *passages* across documents without retrieving a complete filtered list of titles."
+    },
+    "overall": 4.05,
+    "failures": [
+      "topicCoverage",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The response answers half the question well (governance philosophy via strong inline quotes) but largely ignores the core ask: naming which specific documents discuss governance. The user asked 'which ones' — they wanted a curated list of titles, not a conceptual summary. Tool usage was correct, but the assistant should have either (a) listed the governance-relevant titles from search results, or (b) acknowledged that the search found governance *passages* across documents without retrieving a complete filtered list of titles."
+  }
+]

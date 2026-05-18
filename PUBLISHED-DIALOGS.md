@@ -266,3 +266,5 @@
 019-how-the-bah-faith-reads-christian-symbols - How the Bahá'í Faith Reads Christian Symbols - score=72% - https://siftersearch.com/dialogue/019-how-the-bah-faith-reads-christian-symbols/ - 2026-05-12T05:43:33.948Z
 008-why-does-god-allow-suffering - Why Does God Allow Suffering? - score=72% - https://siftersearch.com/dialogue/008-why-does-god-allow-suffering/ - 2026-05-13T13:57:13.379Z
 008-why-does-god-allow-suffering - Why Does God Allow Suffering? - score=79% - https://siftersearch.com/dialogue/008-why-does-god-allow-suffering/ - 2026-05-13T14:12:10.062Z
+what-happened-badasht-tahirih-removed-veil - What Happened at Badasht When Táhirih Removed Her Veil? - score=71% - https://siftersearch.com/dialogue/what-happened-badasht-tahirih-removed-veil/ - 2026-05-16T01:22:14.737Z
+what-happened-badasht-tahirih-removed-veil - What Happened at Badasht When Táhirih Removed Her Veil? - score=71% - https://siftersearch.com/dialogue/what-happened-badasht-tahirih-removed-veil/ - 2026-05-16T01:35:52.418Z

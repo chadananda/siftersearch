@@ -1,6 +1,132 @@
 {
-  "generated": "2026-05-18T06:27:53.821Z",
+  "generated": "2026-05-18T09:55:38.292Z",
   "entries": [
+    {
+      "hash": "93e39b54",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "SQL author fallback prefers docs with source_url to prevent hallucination",
+      "scope": null
+    },
+    {
+      "hash": "05e986df",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Crafter label — NEVER use sample title TEXT as quotable excerpt",
+      "scope": null
+    },
+    {
+      "hash": "00bbbc8e",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Normalize Unicode in author-matching check (Bahá'u'lláh apostrophe mismatch)",
+      "scope": null
+    },
+    {
+      "hash": "2ba8c730",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Author-catalog companion — verify Meilisearch returned author-matched results before SQL fallback",
+      "scope": null
+    },
+    {
+      "hash": "31b67411",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Cross-doc SQL query for author catalog — first doc may have 0 content rows",
+      "scope": null
+    },
+    {
+      "hash": "e8a1d4fe",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Correct column names external_para_id + paragraph_index in SQL fallbacks",
+      "scope": null
+    },
+    {
+      "hash": "6a2ee3ae",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Author-catalog always uses SQLite (bypass unreliable Meilisearch CONTAINS filter)",
+      "scope": null
+    },
+    {
+      "hash": "13f03f12",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Catalog_companion_sql + sequential_read_sql crafter tags — quotes now instructed for author-catalog SQL fallback and sequential reading",
+      "scope": null
+    },
+    {
+      "hash": "c15053d7",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "SQL fallback for sequential read + better catalog companion passages (v2.81.1)",
+      "scope": null
+    },
+    {
+      "hash": "e969eb09",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "UHJ catalog companion SQL fallback + bare-author-name explicit count (v2.81.0)",
+      "scope": null
+    },
+    {
+      "hash": "edb860e3",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Skip tradition parallel searches for bare author queries — v2.80.55",
+      "scope": null
+    },
+    {
+      "hash": "11783bda",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Title-case heuristic for unknown author names in Branch 0 — v2.80.54",
+      "scope": null
+    },
+    {
+      "hash": "74bdc373",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Use document_id-scoped search in Branch 0 for guaranteed author content — v2.80.53",
+      "scope": null
+    },
+    {
+      "hash": "9d13bb0e",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Restore Branch 2 for author queries, relax isAuthorOnlyQuery, better search query — v2.80.52",
+      "scope": null
+    },
+    {
+      "hash": "9a490520",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Skip parallel tradition searches when author-only query active — v2.80.51",
+      "scope": null
+    },
+    {
+      "hash": "02dec65c",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Fuzzy author name match in Branch 0 — handle Schafer/Schaefer spelling variants — v2.80.50",
+      "scope": null
+    },
+    {
+      "hash": "6ccdf215",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Jain companion, bare author routing, comparative detection — v2.80.49",
+      "scope": null
+    },
+    {
+      "hash": "9259bc00",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Sequential reading requests use mode='read' instead of document subagent QA",
+      "scope": null
+    },
     {
       "hash": "5b860f2b",
       "date": "2026-05-17",
@@ -3374,136 +3500,138 @@
       "type": "Fixed",
       "description": "Citation_integrity in judge + quote-text-as-link in crafter + delete hallucinated dialog 012",
       "scope": null
-    },
-    {
-      "hash": "546345be",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Remove heroImage from new dialogs — use SVG placeholder instead of broken img tags",
-      "scope": null
-    },
-    {
-      "hash": "f3dc3e5d",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Add published: true to all new dialogs so they appear on index",
-      "scope": null
-    },
-    {
-      "hash": "1f739244",
-      "date": "2026-05-10",
-      "type": "Other",
-      "description": "Improve dialogs 019 (83%) after further run",
-      "scope": null
-    },
-    {
-      "hash": "4c949fb6",
-      "date": "2026-05-10",
-      "type": "Other",
-      "description": "Add 12 world-religion Q&A dialogs (008-019) + fix /document redirect",
-      "scope": null
-    },
-    {
-      "hash": "b1fe7978",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "/document/{id} redirect page + proper paragraph-level citation URLs",
-      "scope": null
-    },
-    {
-      "hash": "e87caa01",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Jafar-pipeline uses source_url (OceanLibrary para deep-link) for citation_url",
-      "scope": null
-    },
-    {
-      "hash": "66ab98cd",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Jafar citation URLs — use source_url (OceanLibrary para deep-link) when available",
-      "scope": null
-    },
-    {
-      "hash": "168f73cf",
-      "date": "2026-05-10",
-      "type": "Other",
-      "description": "Add criticalEngagement dimension + framing scenarios",
-      "scope": null
-    },
-    {
-      "hash": "2daa4360",
-      "date": "2026-05-10",
-      "type": "Other",
-      "description": "Add question-behind-question stance + fix iterate loop for v7+",
-      "scope": null
-    },
-    {
-      "hash": "1d60e909",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Cloudflared now uses siftersearch-v2 tunnel (escaped stale connector)",
-      "scope": null
-    },
-    {
-      "hash": "634e42ba",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Cloudflared uses http2 protocol to avoid QUIC stale-connector 502s",
-      "scope": null
-    },
-    {
-      "hash": "8539a2a1",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Cloudflared wrapper cleans stale connectors before restart",
-      "scope": null
-    },
-    {
-      "hash": "f5fd67ce",
-      "date": "2026-05-10",
-      "type": "Performance",
-      "description": "Time-based throttle for library-watcher + sites-ingester",
-      "scope": null
-    },
-    {
-      "hash": "fef00d73",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Polite ingestion throttling — 150ms between batches, 50ms per write",
-      "scope": null
-    },
-    {
-      "hash": "d874ec7b",
-      "date": "2026-05-10",
-      "type": "New",
-      "description": "Parse and persist hugo-style block attributes from markdown",
-      "scope": null
-    },
-    {
-      "hash": "2f313602",
-      "date": "2026-05-10",
-      "type": "New",
-      "description": "Auto-chunk oversized English paragraphs + admin auto-chunked tab",
-      "scope": null
-    },
-    {
-      "hash": "02cea685",
-      "date": "2026-05-09",
-      "type": "Fixed",
-      "description": "Outer sync loop tracks inFlightDocIds — break per-doc retry storm",
-      "scope": null
-    },
-    {
-      "hash": "2811f364",
-      "date": "2026-05-09",
-      "type": "Fixed",
-      "description": "Sync-loop pendingIds + bump Meili timeout 60s→300s — break retry storm",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-18": [
+      {
+        "hash": "93e39b54",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "SQL author fallback prefers docs with source_url to prevent hallucination",
+        "scope": null
+      },
+      {
+        "hash": "05e986df",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Crafter label — NEVER use sample title TEXT as quotable excerpt",
+        "scope": null
+      },
+      {
+        "hash": "00bbbc8e",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Normalize Unicode in author-matching check (Bahá'u'lláh apostrophe mismatch)",
+        "scope": null
+      },
+      {
+        "hash": "2ba8c730",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Author-catalog companion — verify Meilisearch returned author-matched results before SQL fallback",
+        "scope": null
+      },
+      {
+        "hash": "31b67411",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Cross-doc SQL query for author catalog — first doc may have 0 content rows",
+        "scope": null
+      },
+      {
+        "hash": "e8a1d4fe",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Correct column names external_para_id + paragraph_index in SQL fallbacks",
+        "scope": null
+      },
+      {
+        "hash": "6a2ee3ae",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Author-catalog always uses SQLite (bypass unreliable Meilisearch CONTAINS filter)",
+        "scope": null
+      },
+      {
+        "hash": "13f03f12",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Catalog_companion_sql + sequential_read_sql crafter tags — quotes now instructed for author-catalog SQL fallback and sequential reading",
+        "scope": null
+      },
+      {
+        "hash": "c15053d7",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "SQL fallback for sequential read + better catalog companion passages (v2.81.1)",
+        "scope": null
+      },
+      {
+        "hash": "e969eb09",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "UHJ catalog companion SQL fallback + bare-author-name explicit count (v2.81.0)",
+        "scope": null
+      }
+    ],
     "2026-05-17": [
+      {
+        "hash": "edb860e3",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Skip tradition parallel searches for bare author queries — v2.80.55",
+        "scope": null
+      },
+      {
+        "hash": "11783bda",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Title-case heuristic for unknown author names in Branch 0 — v2.80.54",
+        "scope": null
+      },
+      {
+        "hash": "74bdc373",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Use document_id-scoped search in Branch 0 for guaranteed author content — v2.80.53",
+        "scope": null
+      },
+      {
+        "hash": "9d13bb0e",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Restore Branch 2 for author queries, relax isAuthorOnlyQuery, better search query — v2.80.52",
+        "scope": null
+      },
+      {
+        "hash": "9a490520",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Skip parallel tradition searches when author-only query active — v2.80.51",
+        "scope": null
+      },
+      {
+        "hash": "02dec65c",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Fuzzy author name match in Branch 0 — handle Schafer/Schaefer spelling variants — v2.80.50",
+        "scope": null
+      },
+      {
+        "hash": "6ccdf215",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Jain companion, bare author routing, comparative detection — v2.80.49",
+        "scope": null
+      },
+      {
+        "hash": "9259bc00",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Sequential reading requests use mode='read' instead of document subagent QA",
+        "scope": null
+      },
       {
         "hash": "5b860f2b",
         "date": "2026-05-17",
@@ -6890,134 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Citation_integrity in judge + quote-text-as-link in crafter + delete hallucinated dialog 012",
-        "scope": null
-      },
-      {
-        "hash": "546345be",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Remove heroImage from new dialogs — use SVG placeholder instead of broken img tags",
-        "scope": null
-      },
-      {
-        "hash": "f3dc3e5d",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Add published: true to all new dialogs so they appear on index",
-        "scope": null
-      },
-      {
-        "hash": "1f739244",
-        "date": "2026-05-10",
-        "type": "Other",
-        "description": "Improve dialogs 019 (83%) after further run",
-        "scope": null
-      },
-      {
-        "hash": "4c949fb6",
-        "date": "2026-05-10",
-        "type": "Other",
-        "description": "Add 12 world-religion Q&A dialogs (008-019) + fix /document redirect",
-        "scope": null
-      },
-      {
-        "hash": "b1fe7978",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "/document/{id} redirect page + proper paragraph-level citation URLs",
-        "scope": null
-      },
-      {
-        "hash": "e87caa01",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Jafar-pipeline uses source_url (OceanLibrary para deep-link) for citation_url",
-        "scope": null
-      },
-      {
-        "hash": "66ab98cd",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Jafar citation URLs — use source_url (OceanLibrary para deep-link) when available",
-        "scope": null
-      },
-      {
-        "hash": "168f73cf",
-        "date": "2026-05-10",
-        "type": "Other",
-        "description": "Add criticalEngagement dimension + framing scenarios",
-        "scope": null
-      },
-      {
-        "hash": "2daa4360",
-        "date": "2026-05-10",
-        "type": "Other",
-        "description": "Add question-behind-question stance + fix iterate loop for v7+",
-        "scope": null
-      },
-      {
-        "hash": "1d60e909",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Cloudflared now uses siftersearch-v2 tunnel (escaped stale connector)",
-        "scope": null
-      },
-      {
-        "hash": "634e42ba",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Cloudflared uses http2 protocol to avoid QUIC stale-connector 502s",
-        "scope": null
-      },
-      {
-        "hash": "8539a2a1",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Cloudflared wrapper cleans stale connectors before restart",
-        "scope": null
-      },
-      {
-        "hash": "f5fd67ce",
-        "date": "2026-05-10",
-        "type": "Performance",
-        "description": "Time-based throttle for library-watcher + sites-ingester",
-        "scope": null
-      },
-      {
-        "hash": "fef00d73",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Polite ingestion throttling — 150ms between batches, 50ms per write",
-        "scope": null
-      },
-      {
-        "hash": "d874ec7b",
-        "date": "2026-05-10",
-        "type": "New",
-        "description": "Parse and persist hugo-style block attributes from markdown",
-        "scope": null
-      },
-      {
-        "hash": "2f313602",
-        "date": "2026-05-10",
-        "type": "New",
-        "description": "Auto-chunk oversized English paragraphs + admin auto-chunked tab",
-        "scope": null
-      }
-    ],
-    "2026-05-09": [
-      {
-        "hash": "02cea685",
-        "date": "2026-05-09",
-        "type": "Fixed",
-        "description": "Outer sync loop tracks inFlightDocIds — break per-doc retry storm",
-        "scope": null
-      },
-      {
-        "hash": "2811f364",
-        "date": "2026-05-09",
-        "type": "Fixed",
-        "description": "Sync-loop pendingIds + bump Meili timeout 60s→300s — break retry storm",
         "scope": null
       }
     ]

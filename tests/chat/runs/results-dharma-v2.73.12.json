@@ -1,0 +1,36 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The Hindu concept of dharma is multifaceted, encompassing duties and moral responsibilities that vary according to one's position in life. In the *Mahabharata*, Bhishma outlines that dharma includes the [\"suppression of wrath, truthfulness of speech, justice, forgiveness\"](https://oceanlibrary.com/mahabharata-12_vyasa?paraId=para_273) and other virtues applicable to all. Additionally, the *Bhagavad Gita* emphasizes that one finds perfection through [\"worship—wrought by work\"](https://oceanlibrary.com/bhagavad-gita?paraId=para_275) — suggesting that fulfilling one's duties with devotion leads to spiritual growth. Dharma is thus a guiding principle for living a life aligned with cosmic order and personal duty.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 2461,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively utilizes the library's resources and provides accurate citations, demonstrating a strong understanding of the concept of dharma. However, it could improve critical engagement by addressing the complexity of dharma in different contexts or interpretations within Hinduism, which would deepen the user's understanding."
+    },
+    "overall": 4.76,
+    "failures": [],
+    "diagnosis": "The response effectively utilizes the library's resources and provides accurate citations, demonstrating a strong understanding of the concept of dharma. However, it could improve critical engagement by addressing the complexity of dharma in different contexts or interpretations within Hinduism, which would deepen the user's understanding."
+  }
+]

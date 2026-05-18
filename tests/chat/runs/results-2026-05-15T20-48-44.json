@@ -1,0 +1,200 @@
+[
+  {
+    "id": 9,
+    "category": "factual",
+    "query": "What does the Torah say about justice?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Torah emphasizes justice as a fundamental principle. While the retrieved excerpts don't directly address justice, the broader Jewish tradition often highlights the importance of righteousness and ethical conduct. For instance, the Talmud discusses how the Torah [\"guards him from all evil\"](https://oceanlibrary.com/jps-book-of-genesis), suggesting that adherence to its teachings leads to a just and moral life. Additionally, the Torah's laws and commandments aim to create a society where fairness and equity prevail, reflecting the divine attribute of justice.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 6,
+    "durationMs": 4864,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 3,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks direct quotes from the Torah itself, relying instead on broader interpretations and Talmudic references. To improve, the assistant should provide specific passages from the Torah that explicitly discuss justice, ensuring that the claims are directly supported by the text."
+    },
+    "overall": 3.1,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The response lacks direct quotes from the Torah itself, relying instead on broader interpretations and Talmudic references. To improve, the assistant should provide specific passages from the Torah that explicitly discuss justice, ensuring that the claims are directly supported by the text."
+  },
+  {
+    "id": 19,
+    "category": "comparative",
+    "query": "How do Buddhism and Hinduism differ on the concept of self?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Buddhism and Hinduism offer distinct perspectives on the concept of self. In Hinduism, the idea of the self is often linked to the [Atman](https://oceanlibrary.com/hymns-of-atharva-veda), which is considered the eternal soul or essence that exists beyond the physical body. This Atman is seen as part of the universal Brahman, suggesting a divine connection that transcends individual identity. The Upanishads describe the Atman as [\"united with body, senses and mind\"](https://oceanlibrary.com/hymns-of-atharva-veda), indicating its integral role in human experience.\n\nIn contrast, Buddhism challenges the notion of a permanent self. It teaches the concept of Anatta, or \"non-self,\" which suggests that what we consider the self is merely a collection of changing elements and not a fixed entity. Thus, while Hinduism emphasizes an eternal self that connects with the divine, Buddhism focuses on the impermanence and interdependence of all phenomena.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 7,
+    "durationMs": 5387,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library to differentiate between Buddhism and Hinduism regarding the concept of self, with good citations and logical coherence. However, it could improve warmth by incorporating a more engaging tone, making it feel less transactional."
+    },
+    "overall": 4.41,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library to differentiate between Buddhism and Hinduism regarding the concept of self, with good citations and logical coherence. However, it could improve warmth by incorporating a more engaging tone, making it feel less transactional."
+  },
+  {
+    "id": 31,
+    "category": "author",
+    "query": "Do you have works by Thich Nhat Hanh?",
+    "questionType": "lookup",
+    "status": "FAIL",
+    "response": "I searched our library for Thich Nhat Hanh's works but found none. However, our Buddhist collection includes teachings on mindfulness and awareness. For example, the Majjhima Nikaya advises that [\"a monk remains focused on mental qualities in & of themselves\"](https://oceanlibrary.com/majjhima_nikaya), emphasizing the practice of mindfulness. Additionally, the Dhammapada highlights that [\"mind is the forerunner of all actions\"](https://oceanlibrary.com/dhammapada_buddha), underscoring the importance of mental discipline in shaping our lives.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 2986,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 4,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks critical engagement with the user's request, as it does not address the absence of Thich Nhat Hanh's works in a meaningful way. To improve, the assistant should acknowledge the user's interest in Thich Nhat Hanh specifically and provide context on his significance in Buddhism, rather than just pivoting to general Buddhist teachings."
+    },
+    "overall": 3.63,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response lacks critical engagement with the user's request, as it does not address the absence of Thich Nhat Hanh's works in a meaningful way. To improve, the assistant should acknowledge the user's interest in Thich Nhat Hanh specifically and provide context on his significance in Buddhism, rather than just pivoting to general Buddhist teachings."
+  },
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "It seems the retrieved passages don't directly address the covenant in either the Bahá'í Faith or Judaism. However, in the Jewish tradition, the concept of covenant is often associated with God's promises and guidance, as seen in Isaiah's comforting words: [\"Comfort ye, comfort ye My people, saith your God\"](https://oceanlibrary.com/jps-book-of-isaiah/?paraId=para_741). This reflects the ongoing relationship between God and His people. If you have a specific aspect of the covenant in mind, feel free to share, and I can try to find more relevant passages.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 3864,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 3,
+      "citationAccuracy": 4,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 2,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 3,
+      "instructionFollowing": 3,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 3,
+      "diagnosis": "The response lacks comprehensive coverage of the topic, as it only provides a single quote from the Jewish tradition without addressing the Bahá'í perspective on the covenant. To improve, the assistant should have included relevant passages from both traditions and engaged more critically with the user's request."
+    },
+    "overall": 3.15,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "instructionFollowing",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response lacks comprehensive coverage of the topic, as it only provides a single quote from the Jewish tradition without addressing the Bahá'í perspective on the covenant. To improve, the assistant should have included relevant passages from both traditions and engaged more critically with the user's request."
+  },
+  {
+    "id": 107,
+    "category": "framing",
+    "query": "The Bahá'í Faith is basically a liberal religion that supports modern progressive values?",
+    "questionType": "framing",
+    "status": "PASS",
+    "response": "Partly right — but the Bahá'í Faith's vision extends beyond what might be labeled as modern progressive values. Bahá'u'lláh emphasizes the [\"independent investigation of truth\"](https://siftersearch.com/document/8680), which encourages individuals to seek understanding beyond inherited beliefs. The Faith's principles include the [\"oneness of mankind\"](https://siftersearch.com/document/8635) and the equality of men and women, yet these are framed as spiritual imperatives rather than political ones. Additionally, the Bahá'í teachings insist that [\"religion must conform to science and reason\"](https://siftersearch.com/document/10062), suggesting a harmony between faith and empirical inquiry that transcends typical political categories.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 3042,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively engages with the user's framing and provides relevant quotes, but it could improve by more explicitly addressing the limitations of the term 'liberal' in the context of the Bahá'í Faith. A more nuanced discussion of how Bahá'í principles differ from typical modern progressive values would enhance critical engagement."
+    },
+    "overall": 4.24,
+    "failures": [],
+    "diagnosis": "The response effectively engages with the user's framing and provides relevant quotes, but it could improve by more explicitly addressing the limitations of the term 'liberal' in the context of the Bahá'í Faith. A more nuanced discussion of how Bahá'í principles differ from typical modern progressive values would enhance critical engagement."
+  }
+]

@@ -1,0 +1,47 @@
+[
+  {
+    "id": 80,
+    "category": "edge",
+    "query": "What about the thing with the stuff?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "I'd love to explore that with you — could you say a bit more about what's on your mind?",
+    "toolsUsed": [],
+    "toolCallCount": 0,
+    "citationCount": 0,
+    "durationMs": 904,
+    "scores": {
+      "toolUsage": 1,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 1,
+      "logicalCoherence": 1,
+      "brevity": 1,
+      "quoteEconomy": 1,
+      "instructionFollowing": 1,
+      "warmth": 2,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response fails to utilize any tools or provide relevant information, as it does not attempt to answer the user's vague query. To improve, the assistant should have searched the library for relevant content before responding, even if the query was unclear."
+    },
+    "overall": 1.71,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "brevity",
+      "quoteEconomy",
+      "instructionFollowing",
+      "warmth"
+    ],
+    "diagnosis": "The response fails to utilize any tools or provide relevant information, as it does not attempt to answer the user's vague query. To improve, the assistant should have searched the library for relevant content before responding, even if the query was unclear."
+  }
+]

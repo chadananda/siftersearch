@@ -1,0 +1,148 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The Hindu concept of dharma is deeply intertwined with duty and righteousness. In the *Bhagavad Gita*, it is suggested that one finds perfection through [\"worship — wrought by work — of Him that is the Source of all which lives\"](https://oceanlibrary.com/hymns-of-atharva-veda), emphasizing that fulfilling one's duties is a form of worship. This aligns with the broader understanding of dharma as the moral law that sustains the universe, guiding individuals to act in harmony with their roles and responsibilities.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 7,
+    "durationMs": 9549,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 2,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The primary issue with this response is the citation accuracy; the quote provided is misattributed to the *Bhagavad Gita* but links to the *Atharva Veda*. To improve, the assistant should ensure that quotes are accurately attributed to their correct sources and provide more direct quotes from the *Bhagavad Gita* to support the explanation of dharma."
+    },
+    "overall": 3.56,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The primary issue with this response is the citation accuracy; the quote provided is misattributed to the *Bhagavad Gita* but links to the *Atharva Veda*. To improve, the assistant should ensure that quotes are accurately attributed to their correct sources and provide more direct quotes from the *Bhagavad Gita* to support the explanation of dharma."
+  },
+  {
+    "id": 45,
+    "category": "topical",
+    "query": "Find passages about love in the Bahá'í writings",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "In the Bahá'í writings, love is portrayed as a profound and transformative force. Bahá’u’lláh emphasizes that [\"love Me, that I may love thee\"](https://oceanlibrary.com/hidden-words-of-bahaullah?paraId=para_23), highlighting the reciprocal nature of divine love. He also describes love as a [\"stronghold; he that entereth therein is safe and secure\"](https://oceanlibrary.com/hidden-words-of-bahaullah?paraId=para_35), suggesting that love provides protection and security. Furthermore, 'Abdu’l-Bahá speaks of love as the [\"cause of the Manifestation of the Truth\"](https://siftersearch.com/document/11408), underscoring its essential role in the revelation of divine truths. These passages collectively illustrate the centrality of love in the Bahá'í faith, both as a personal experience and as a universal principle.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 8,
+    "durationMs": 6610,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong overall, but it could improve in critical engagement by addressing the user's framing of love more deeply, perhaps by discussing different dimensions of love in the Bahá'í context. Additionally, while the quotes are well-integrated, a more explicit connection between the quotes and the overarching theme of love would enhance clarity."
+    },
+    "overall": 4.17,
+    "failures": [],
+    "diagnosis": "The response is strong overall, but it could improve in critical engagement by addressing the user's framing of love more deeply, perhaps by discussing different dimensions of love in the Bahá'í context. Additionally, while the quotes are well-integrated, a more explicit connection between the quotes and the overarching theme of love would enhance clarity."
+  },
+  {
+    "id": 76,
+    "category": "edge",
+    "query": "bahaullah",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Bahá'u'lláh, the founder of the Bahá'í Faith, writes profoundly about the nature of divine revelation and human understanding. In *The Book of Certitude (Kitáb-i-Íqán)*, he emphasizes the importance of recognizing the divine messengers, stating that [\"the Ancient Beauty hath consented to be bound with chains\"](https://siftersearch.com/library/Baha'i/Tablet%20Translations/bahaullah_the-book-of-certitude-kitab-i-iqan-2#p4), highlighting his willingness to endure suffering for the sake of humanity. This act of sacrifice is central to his mission, reflecting a deep commitment to the spiritual upliftment of all people. Additionally, Bahá'u'lláh's writings often call for unity and the safeguarding of faith, as seen in Shoghi Effendi's guidance to the Bahá'í community to [\"safeguard the Faith and confirm believers in covenants\"](https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi/?paraId=para_1121), ensuring the integrity and continuity of Bahá'u'lláh's teachings.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 8584,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively utilizes the library and provides relevant quotes, but it could improve in critical engagement by addressing the user's potential assumptions about Bahá'u'lláh's role and teachings. Additionally, while the warmth is present, it could be enhanced to create a more engaging tone."
+    },
+    "overall": 4.22,
+    "failures": [],
+    "diagnosis": "The response effectively utilizes the library and provides relevant quotes, but it could improve in critical engagement by addressing the user's potential assumptions about Bahá'u'lláh's role and teachings. Additionally, while the warmth is present, it could be enhanced to create a more engaging tone."
+  },
+  {
+    "id": 87,
+    "category": "edge",
+    "query": "Is the Bahá'í Faith a cult?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "The Bahá'í Faith is structured in a way that prevents the formation of sects or factions, which is a key characteristic distinguishing it from what might be considered a cult. Bahá’u’lláh established a Covenant, appointing a [\"Center of the Covenant\"](https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha?paraId=para_2085) to safeguard the unity of the Faith, ensuring that no individual can interpret the teachings based on personal views. This structure is further reinforced by the appointment of authoritative figures like ‘Abdu’l-Bahá and Shoghi Effendi, and the establishment of the Universal House of Justice, which serves as the [\"central authority of the Faith\"](https://siftersearch.com/document/1550), guiding the community and maintaining its integrity. This system of governance and interpretation is designed to protect against the schisms and personal power dynamics often associated with cults.",
+    "toolsUsed": [
+      "deep_research"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 5,
+    "durationMs": 8535,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the loaded term 'cult' more directly and exploring its implications. Additionally, while the citations are relevant, integrating them more fluidly into the argument would enhance the overall coherence and depth of the response."
+    },
+    "overall": 4.15,
+    "failures": [],
+    "diagnosis": "The response is generally strong but could improve in critical engagement by addressing the loaded term 'cult' more directly and exploring its implications. Additionally, while the citations are relevant, integrating them more fluidly into the argument would enhance the overall coherence and depth of the response."
+  }
+]

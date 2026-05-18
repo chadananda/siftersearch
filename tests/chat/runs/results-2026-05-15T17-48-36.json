@@ -1,0 +1,198 @@
+[
+  {
+    "id": 33,
+    "category": "author",
+    "query": "What do you have by the Universal House of Justice?",
+    "questionType": "lookup",
+    "status": "PASS",
+    "response": "The library holds 475 documents by the Universal House of Justice, primarily within the Administrative collection. One of their works, [\"The Five Year Plan: 2006-2011\"](https://siftersearch.com/library/Baha'i/Administrative/the-five-year-plan-2006-2011-messages-of-the-universal-house-of-justice#p1670), discusses the importance of individual growth within the framework of the Revelation. Other notable titles include \"Regarding Economic Life\" and \"Climate Change: Policies and Political Discourse,\" reflecting the House's engagement with contemporary issues.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 2,
+    "durationMs": 4285,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library tool and provides a solid overview of documents by the Universal House of Justice. However, it could improve by integrating quotes more seamlessly into the text and offering a more critical engagement with the significance of the documents mentioned. Additionally, a bit more warmth in the tone would enhance the overall response."
+    },
+    "overall": 4.12,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library tool and provides a solid overview of documents by the Universal House of Justice. However, it could improve by integrating quotes more seamlessly into the text and offering a more critical engagement with the significance of the documents mentioned. Additionally, a bit more warmth in the tone would enhance the overall response."
+  },
+  {
+    "id": 65,
+    "category": "browsing",
+    "query": "List the Bahá'í collections",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 41,590 Bahá'í documents across several collections. These include \"Bahá'í Books,\" \"Reference,\" \"Papers,\" and \"News.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 2463,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "criticalEngagement": 1,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 2,
+      "logicalCoherence": 3,
+      "brevity": 4,
+      "quoteEconomy": 1,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response lacks any citations or quotes from the library, which is critical for supporting the claims made. Additionally, the assistant should have provided a more comprehensive list of collections rather than just naming a few. To improve, it should include specific titles or descriptions from the library's collections."
+    },
+    "overall": 2.63,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "quoteEconomy"
+    ],
+    "diagnosis": "The response lacks any citations or quotes from the library, which is critical for supporting the claims made. Additionally, the assistant should have provided a more comprehensive list of collections rather than just naming a few. To improve, it should include specific titles or descriptions from the library's collections."
+  },
+  {
+    "id": 69,
+    "category": "browsing",
+    "query": "What Hindu scriptures do you carry?",
+    "questionType": "browsing",
+    "status": "FAIL",
+    "response": "The library holds 127 Hindu texts across several collections. These include the \"Bhakti and Devotional\" works, featuring titles like [\"Gitanjali (Song Offerings)\"](url) by Rabindranath Tagore, and the \"Epics\" collection, which includes classics such as the [\"Ramayana\"](url) and other significant works.",
+    "toolsUsed": [
+      "library_count"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 3583,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 2,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient direct quotes from the library, which would strengthen the claims made about the texts. To improve, the assistant should include specific passages or quotes from the Hindu scriptures mentioned, ensuring they are accurately attributed and relevant to the user's query."
+    },
+    "overall": 3.39,
+    "failures": [
+      "topicCoverage"
+    ],
+    "diagnosis": "The response lacks sufficient direct quotes from the library, which would strengthen the claims made about the texts. To improve, the assistant should include specific passages or quotes from the Hindu scriptures mentioned, ensuring they are accurately attributed and relevant to the user's query."
+  },
+  {
+    "id": 96,
+    "category": "multi",
+    "query": "How many documents by 'Abdu'l-Bahá do you have, and which ones discuss governance?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The library holds 623 documents by 'Abdu'l-Bahá, which are part of the foundational writings of the Bahá'í Faith. Among these, the \"Core Tablets\" collection includes works that discuss various aspects of governance. While specific titles aren't listed here, 'Abdu'l-Bahá's writings often explore themes of justice and leadership, which are integral to governance. If you have a particular aspect of governance in mind, I can help you find more specific references.",
+    "toolsUsed": [
+      "library_overview"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 1,
+    "durationMs": 4270,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 1,
+      "citationAccuracy": 1,
+      "sourceAuthority": 4,
+      "criticalEngagement": 2,
+      "inlineQuoteIntegration": 1,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 1,
+      "instructionFollowing": 3,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 3,
+      "diagnosis": "The response lacks specific citations from the library, which is critical for a research query. Additionally, while it mentions the 'Core Tablets' collection, it fails to provide any specific titles or quotes that would substantiate the claims about governance. To improve, the assistant should include direct references to specific documents discussing governance and integrate quotes where relevant."
+    },
+    "overall": 2.59,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "topicCoverage",
+      "logicalCoherence",
+      "criticalEngagement",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The response lacks specific citations from the library, which is critical for a research query. Additionally, while it mentions the 'Core Tablets' collection, it fails to provide any specific titles or quotes that would substantiate the claims about governance. To improve, the assistant should include direct references to specific documents discussing governance and integrate quotes where relevant."
+  },
+  {
+    "id": 99,
+    "category": "multi",
+    "query": "Search for passages about the covenant in both the Bahá'í Faith and Judaism",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "In the Jewish tradition, the covenant is deeply connected with God's promises and the people's relationship with Him. For instance, the Book of Isaiah speaks of a future where [\"my people that have sought me\"](https://oceanlibrary.com/kjv-book-of-isaiah/?paraId=para_1151) will find peace and prosperity, symbolizing the fulfillment of the covenant. In the Bahá'í Faith, the concept of the covenant is central to its teachings, emphasizing the continuity of divine guidance through successive Manifestations of God. While the retrieved quotes didn't directly address the Bahá'í perspective, the covenant in this faith is often seen as a binding agreement between God and humanity, ensuring guidance and unity. If you'd like to explore specific Bahá'í texts on this topic, I can help with that too.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 5,
+    "durationMs": 8394,
+    "scores": {
+      "toolUsage": 3,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 4,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks sufficient direct quotes from the Bahá'í texts, which weakens the overall argument about the covenant in that faith. To improve, the assistant should ensure it retrieves and integrates specific Bahá'í passages that directly address the covenant, enhancing both citation presence and accuracy."
+    },
+    "overall": 3.54,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks sufficient direct quotes from the Bahá'í texts, which weakens the overall argument about the covenant in that faith. To improve, the assistant should ensure it retrieves and integrates specific Bahá'í passages that directly address the covenant, enhancing both citation presence and accuracy."
+  }
+]

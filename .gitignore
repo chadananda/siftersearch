@@ -64,3 +64,4 @@ public/workbox-*.js
 data/meilisearch-dev/
 
 .claude/
+tests/chat/runs/results-*.json

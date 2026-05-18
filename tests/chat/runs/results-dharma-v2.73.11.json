@@ -1,0 +1,43 @@
+[
+  {
+    "id": 5,
+    "category": "factual",
+    "query": "What is the Hindu concept of dharma?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "The concept of dharma in Hinduism is multifaceted, encompassing duty, righteousness, and the moral law that sustains the universe. The *Bhagavad Gita* suggests that one finds perfection through [\"worship—wrought by work—of Him that is the Source of all which lives\"](https://oceanlibrary.com/hymns-of-atharva-veda), indicating that dharma involves fulfilling one's duties in alignment with the divine order. Additionally, the *Vedanta-Sutras* discuss the idea of dharma as a means to an end, distinguishing it from adharma, which is not a means but a result to be reached, highlighting the importance of righteous action in the spiritual journey.",
+    "toolsUsed": [
+      "deep_research",
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 4,
+    "citationCount": 8,
+    "durationMs": 4337,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 3,
+      "citationAccuracy": 3,
+      "sourceAuthority": 3,
+      "criticalEngagement": 3,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 3,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 4,
+      "diagnosis": "The response lacks precise citations from the Ocean Library, as the quotes provided do not appear to be accurately attributed to the correct texts. To improve, the assistant should ensure that all quotes are directly sourced from the library and clearly support the claims made about dharma."
+    },
+    "overall": 3.66,
+    "failures": [
+      "citationPresence",
+      "citationAccuracy",
+      "inlineQuoteIntegration"
+    ],
+    "diagnosis": "The response lacks precise citations from the Ocean Library, as the quotes provided do not appear to be accurately attributed to the correct texts. To improve, the assistant should ensure that all quotes are directly sourced from the library and clearly support the claims made about dharma."
+  }
+]
