@@ -2174,7 +2174,7 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     const bodyBlock = q.translation
       ? `original: ${q.text}\n  translation (en): ${q.translation}`
       : q.text;
-    const catalogCompanionTag = (q.via === 'catalog_companion' || q.via === 'catalog_companion_sql')
+    const catalogCompanionTag = (q.via === 'catalog_companion' || q.via === 'catalog_companion_sql') && q.citation_url
       ? ' CATALOG-COMPANION ← QUOTE THIS PASSAGE IN YOUR RESPONSE using [fragment](citation_url)'
       : q.via === 'sequential_read_sql'
         ? ' SEQUENTIAL-READ ← present these paragraphs in document order as consecutive block quotes (CASE 1 reading rule applies)'

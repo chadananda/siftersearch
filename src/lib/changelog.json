@@ -1,8 +1,8 @@
 {
-  "generated": "2026-05-18T09:55:38.292Z",
+  "generated": "2026-05-18T10:08:57.312Z",
   "entries": [
     {
-      "hash": "93e39b54",
+      "hash": "0e055b11",
       "date": "2026-05-18",
       "type": "Fixed",
       "description": "SQL author fallback prefers docs with source_url to prevent hallucination",
@@ -3505,7 +3505,7 @@
   "grouped": {
     "2026-05-18": [
       {
-        "hash": "93e39b54",
+        "hash": "0e055b11",
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "SQL author fallback prefers docs with source_url to prevent hallucination",
