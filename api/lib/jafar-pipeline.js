@@ -650,7 +650,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         const distinctCollections = [...new Set(samples.map(d => d.collection).filter(Boolean))];
         const collectionNote = distinctCollections.length > 0 ? `\n\nCollections (from samples): ${distinctCollections.join(', ')}` : '';
         retrieved.push({
-          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles (you MAY list up to 3 of these using [title](url); for ALL prose quotes you MUST use CATALOG-COMPANION passages — NOT these title entries):\n${sampleLines}`,
+          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles${sampleUrls.length > 0 ? ' (linked titles already have URLs embedded — use them as-is)' : ' (no URLs available — list as plain text only, no hyperlinks)'}:\n${sampleLines}`,
           source_title: 'Library Catalog',
           source_author: 'Ocean Library',
           citation_url: null,
