@@ -697,12 +697,8 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             const isMetaQuery = /\b(do you have|what books|any books|show me|list|how many|what works|do you carry|what collections|list the|list all)\b/i.test(userMessage);
 
             // Pure meta-queries with no linkable sample docs — skip companion entirely.
-            // Also skip companion for large collections (>20 docs): title listing is sufficient,
-            // and companion quotes for large institutional collections (UHJ, etc.) tend to hallucinate.
-            // Small collections (Rumi, 3 docs) DO need companion to show actual content.
             const hasSampleUrls = sampleUrls.length > 0 && !allSameUrl;
-            const isLargeCollection = countResult.count > 20;
-            if (isMetaQuery && !hasTopicComponent && (!hasSampleUrls || isLargeCollection)) {
+            if (isMetaQuery && !hasTopicComponent && !hasSampleUrls) {
               return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
             }
 
@@ -1972,6 +1968,7 @@ TWO-PART catalog response (REQUIRED — both parts mandatory):
 Format:
 - For simple counts ("how many do you have?"): one factual count sentence, then weave in one inline prose citation from catalog_companion.
 - For author catalog ("show me everything by X", "what do you have by Y"): state the count, optionally name 1-3 notable titles, then ALWAYS end with a prose quote from a catalog_companion passage: As [Author] wrote, ["actual words from the text"](url). This quote is non-negotiable.
+  CATALOG-ONLY EXCEPTION: If there are NO CATALOG-COMPANION Q-entries at all (only CATALOG-DATA entries), the prose quote requirement is WAIVED — state count and titles only. Do NOT invent or hallucinate a quote to satisfy this requirement. A title list without a prose quote is fully correct when no CATALOG-COMPANION passages are provided.
 - For compound queries ("how many ... and which ones discuss Y?"): state the count, then name the specific COMPANION passage source titles that address the topic Y, then weave in 1-2 inline quotes from those passages. The user wants to know WHICH DOCUMENTS, so name them.
 
 CATALOG MANDATORY RULE OVERRIDE: For catalog responses, the normal "cite every religion in retrieved_quotes" rule does NOT apply. Only cite companion passages that match the catalog subject (author or tradition). Ignore retrieved passages from unrelated traditions — they are search noise added by the search algorithm, not required citations. EXCEPTION: For general overview queries ("how many total?", "what's in the library?") with no specific tradition, pick ONE companion passage from any tradition to demonstrate the breadth of the library — weave it as one inline prose citation after the statistics.

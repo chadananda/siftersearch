@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T12:07:32.297Z",
+  "generated": "2026-05-18T12:13:59.264Z",
   "entries": [
+    {
+      "hash": "24a1089c",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Skip companion for large collections (>20 docs) — prevents UHJ hallucination",
+      "scope": null
+    },
     {
       "hash": "81967428",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "More spacing between Q/A rounds (1.2rem → 1.75rem)",
       "scope": null
-    },
-    {
-      "hash": "7c7b0259",
-      "date": "2026-05-10",
-      "type": "Other",
-      "description": "Use h3/h4 heading summaries, not full Q&A text",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "24a1089c",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Skip companion for large collections (>20 docs) — prevents UHJ hallucination",
+        "scope": null
+      },
       {
         "hash": "81967428",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Other",
         "description": "More spacing between Q/A rounds (1.2rem → 1.75rem)",
-        "scope": null
-      },
-      {
-        "hash": "7c7b0259",
-        "date": "2026-05-10",
-        "type": "Other",
-        "description": "Use h3/h4 heading summaries, not full Q&A text",
         "scope": null
       }
     ]
