@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T17:26:57.712Z",
+  "generated": "2026-05-18T17:53:34.327Z",
   "entries": [
+    {
+      "hash": "95de047b",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Curl fallback for node HTTPS failures in health-check — reliable from dev machine",
+      "scope": null
+    },
     {
       "hash": "0324de7a",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "PrimaryOpts reference bug in interfaith search",
       "scope": null
-    },
-    {
-      "hash": "c5478a39",
-      "date": "2026-05-10",
-      "type": "New",
-      "description": "Multilingual passage retrieval with inline translation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "95de047b",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Curl fallback for node HTTPS failures in health-check — reliable from dev machine",
+        "scope": null
+      },
       {
         "hash": "0324de7a",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "PrimaryOpts reference bug in interfaith search",
-        "scope": null
-      },
-      {
-        "hash": "c5478a39",
-        "date": "2026-05-10",
-        "type": "New",
-        "description": "Multilingual passage retrieval with inline translation",
         "scope": null
       }
     ]

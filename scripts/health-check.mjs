@@ -95,7 +95,7 @@ async function checkApi() {
 async function meiliIndex(uid) {
   const headers = MEILI_KEY ? { Authorization: `Bearer ${MEILI_KEY}` } : {};
   const [res, ms] = await timed(() =>
-    fetch(`${MEILI_URL}/indexes/${uid}/stats`, { headers, signal: AbortSignal.timeout(15000) })
+    fetch(`${MEILI_URL}/indexes/${uid}/stats`, { headers, signal: AbortSignal.timeout(8000) })
   );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const stats = await res.json();
@@ -103,46 +103,41 @@ async function meiliIndex(uid) {
 }
 
 async function checkMeili() {
-  // paragraphs (main)
-  try {
-    const { stats, latency_ms } = await meiliIndex('paragraphs');
-    if (!stats.numberOfDocuments) return warn('meili_paragraphs', 'empty');
-    const embedRatio = stats.numberOfEmbeddedDocuments / stats.numberOfDocuments;
-    if (embedRatio < 0.5) {
-      return warn('meili_paragraphs', `only ${Math.round(embedRatio * 100)}% embedded`,
-        { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments, latency_ms });
-    }
-    ok('meili_paragraphs', latency_ms,
-      { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments });
-  } catch (err) {
-    fail('meili_paragraphs', err.message);
-  }
+  // Run both index checks in parallel — previously sequential 15s×2 = 30s worst case
+  await Promise.all([
+    // paragraphs (main)
+    meiliIndex('paragraphs').then(({ stats, latency_ms }) => {
+      if (!stats.numberOfDocuments) return warn('meili_paragraphs', 'empty');
+      const embedRatio = stats.numberOfEmbeddedDocuments / stats.numberOfDocuments;
+      if (embedRatio < 0.5) {
+        return warn('meili_paragraphs', `only ${Math.round(embedRatio * 100)}% embedded`,
+          { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments, latency_ms });
+      }
+      ok('meili_paragraphs', latency_ms,
+        { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments });
+    }).catch(err => fail('meili_paragraphs', err.message)),
 
-  // hype_questions (sidecar)
-  try {
-    const { stats, latency_ms } = await meiliIndex('hype_questions');
-    if (!stats.numberOfDocuments) {
-      // Empty is ok during initial bring-up — just flag it
-      return warn('meili_hype', 'empty (sidecar not yet populated)',
-        { docs: 0, latency_ms });
-    }
-    const embedRatio = stats.numberOfEmbeddedDocuments / stats.numberOfDocuments;
-    if (embedRatio < 0.95) {
-      return warn('meili_hype', `${Math.round(embedRatio * 100)}% embedded`,
-        { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments, latency_ms });
-    }
-    ok('meili_hype', latency_ms,
-      { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments });
-  } catch (err) {
-    fail('meili_hype', err.message);
-  }
+    // hype_questions (sidecar)
+    meiliIndex('hype_questions').then(({ stats, latency_ms }) => {
+      if (!stats.numberOfDocuments) {
+        return warn('meili_hype', 'empty (sidecar not yet populated)', { docs: 0, latency_ms });
+      }
+      const embedRatio = stats.numberOfEmbeddedDocuments / stats.numberOfDocuments;
+      if (embedRatio < 0.95) {
+        return warn('meili_hype', `${Math.round(embedRatio * 100)}% embedded`,
+          { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments, latency_ms });
+      }
+      ok('meili_hype', latency_ms,
+        { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments });
+    }).catch(err => fail('meili_hype', err.message)),
+  ]);
 }
 
 // ─── boss vLLM endpoint ───────────────────────────────────────────────────
 async function checkVllm() {
   try {
     const [res, ms] = await timed(() =>
-      fetch(`${VLLM_URL}/models`, { signal: AbortSignal.timeout(15000) })
+      fetch(`${VLLM_URL}/models`, { signal: AbortSignal.timeout(8000) })
     );
     if (!res.ok) return fail('boss_vllm', `HTTP ${res.status}`, { latency_ms: ms });
     const data = await res.json();
@@ -482,27 +477,38 @@ async function checkEntityMentionsIndex() {
 }
 
 // ─── Run all ──────────────────────────────────────────────────────────────
+
+// Run api + pipeline-health fetch in parallel first.
+// If the API is down, Meilisearch and boss are also unreachable from this
+// machine — skip their 8s timeouts and mark them api_down immediately.
+await Promise.all([checkApi(), fetchPipelineHealth()]);
+
+const apiDown = checks.api?.severity === 'fail';
+if (apiDown) {
+  // When tower-nas is unreachable, skip all remote-service checks to avoid
+  // burning 8s timeouts per check. Mark as warn so they appear in output.
+  for (const c of ['meili_paragraphs', 'meili_hype', 'boss_vllm', 'entity_mentions_idx', 'meili_vs_db', 'enrichment'])
+    warn(c, 'skipped: api_down (tower-nas unreachable)');
+}
+
 const probes = [
-  ['api', checkApi],
-  ['meili', checkMeili],
-  ['boss_vllm', checkVllm],
+  ...(!apiDown ? [
+    ['meili', checkMeili],
+    ['boss_vllm', checkVllm],
+    ['entity_mentions_idx', checkEntityMentionsIndex],
+    ['meili_vs_db', checkMeiliVsDb],              // catches silent Meili/DB divergence
+  ] : []),
   ['pm2', checkPm2],
   ['db_activity', checkDbActivity],
   ['sync_staleness', checkSyncStaleness],         // catches "527K unsynced for 11 days"
-  ['meili_vs_db', checkMeiliVsDb],                // catches silent Meili/DB divergence
   ['entity_pipeline', checkEntityPipeline],       // catches lock-storm pattern
   ['schema_version', checkSchemaVersion],         // catches pending migrations
   ['deep_research', checkDeepResearch],           // deep_research_queue stuck/failing
-  ['entity_mentions_idx', checkEntityMentionsIndex], // sidecar Meili index populated
-  ['enrichment', checkEnrichment]
+  // enrichment uses better-sqlite3 (synchronous) — blocks event loop on Dropbox-synced DB.
+  // Only meaningful on tower-nas where the DB is local NVMe; skip when api is down.
+  ...(!apiDown ? [['enrichment', checkEnrichment]] : []),
 ];
 if (!QUICK) probes.push(['chat_smoke', checkChatSmoke]);
-
-// Pre-fetch the pipeline health endpoint eagerly so all pipeline-based checks
-// share a single warm request. Without this, the concurrent boss/Meili TCP
-// hangs in Promise.all can exhaust the libuv thread pool and delay the
-// pipeline fetch past its 20s timeout even though the API responds in <1s.
-await fetchPipelineHealth();
 
 await Promise.all(probes.map(([_, fn]) => fn().catch(err => fail(_, err.message))));
 
