@@ -10,7 +10,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence } from '../lib/search.js';
-import { queryOne, userQuery } from '../lib/db.js';
+import { queryOne, userQuery, getDb } from '../lib/db.js';
 import { getCachedContentCounts } from '../services/progress.js';
 import { CURRENT_VERSION } from '../lib/migrations/runner.js';
 import { optionalAuthenticate } from '../lib/auth.js';
@@ -440,11 +440,32 @@ export default async function searchRoutes(fastify) {
   // Pipeline health — exposes sync staleness, entity health, schema version.
   // Public read-only (no sensitive data). Used by health-check.mjs remotely.
   fastify.get('/health/pipeline', async () => {
+    // Guard: better-sqlite3 blocks the event loop synchronously. If the WAL is large
+    // (e.g. after a mass UPDATE), COUNT(*) on 4M+ unsynced rows can take minutes and
+    // freeze all requests. Check WAL size first (async fs.stat) and skip the query if
+    // WAL > 200MB — return sentinel -1 so callers know the value is unavailable.
+    const syncStalePromise = (async () => {
+      try {
+        const db = await getDb();
+        const dbFile = db.pragma('database_list')[0]?.file;
+        if (dbFile) {
+          const { stat } = await import('node:fs/promises');
+          const walStat = await stat(dbFile + '-wal').catch(() => null);
+          if (walStat && walStat.size > 200 * 1024 * 1024) {
+            return { unsynced: -1, oldest: null };  // WAL too large — skip to avoid blocking
+          }
+        }
+        return queryOne(`SELECT COUNT(*) AS unsynced, MIN(created_at) AS oldest
+                         FROM content WHERE synced = 0 AND deleted_at IS NULL`);
+      } catch {
+        return { unsynced: -1, oldest: null };
+      }
+    })();
+
     const [counts, schemaRow, syncStale, recentlySynced, entityDup, promotionQ, recentExtractions, deepResearch] = await Promise.all([
       getCachedContentCounts(),
       queryOne(`SELECT version FROM _schema_version ORDER BY version DESC LIMIT 1`).catch(() => null),
-      queryOne(`SELECT COUNT(*) AS unsynced, MIN(created_at) AS oldest
-                FROM content WHERE synced = 0 AND deleted_at IS NULL`),
+      syncStalePromise,
       // Fast with idx_content_recently_synced (migration 77) — partial index on synced=1 rows
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 1 AND updated_at > datetime('now', '-2 hours')`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS total,
@@ -467,7 +488,7 @@ export default async function searchRoutes(fastify) {
     return {
       schema: { db_version: schemaRow?.version ?? 0, expected_version: CURRENT_VERSION },
       sync: {
-        unsynced_count: syncStale?.unsynced ?? 0,
+        unsynced_count: syncStale?.unsynced ?? 0,  // -1 = count timed out (WAL too large)
         oldest_unsynced_hours: oldestHours,
         total_paragraphs: counts.totalParagraphs,
         cooldown_doc_count: counts.cooldownDocCount ?? 0
@@ -487,7 +508,7 @@ export default async function searchRoutes(fastify) {
       status: {
         // sync_stuck: backlog > 1000 AND oldest rows are stale AND no recent sync activity.
         // All three must be true — a large old backlog is normal when worker is catching up.
-        sync_stuck: oldestHours > 4 && (syncStale?.unsynced ?? 0) > 1000 && (recentlySynced?.n ?? 0) === 0,
+        sync_stuck: syncStale?.unsynced !== -1 && oldestHours > 4 && (syncStale?.unsynced ?? 0) > 1000 && (recentlySynced?.n ?? 0) === 0,
         synced_last_2h: recentlySynced?.n ?? 0,
         lock_storm: dupRatio > 1.5,
         migration_pending: (schemaRow?.version ?? 0) < CURRENT_VERSION

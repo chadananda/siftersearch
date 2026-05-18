@@ -89,13 +89,16 @@ async function timed(fn) {
 async function checkApi() {
   // Try node fetch; fall back to curl if node HTTPS is broken in this environment
   const url = `${API_BASE}/api/search/health`;
+  // Cloudflare tunnel adds ~4-6s; localhost access should be <500ms
+  const isTunnel = !API_BASE.includes('localhost') && !API_BASE.includes('127.0.0.1');
+  const slowThreshold = isTunnel ? 10000 : 2000;
   try {
     const [res, ms] = await timed(() =>
-      fetch(url, { signal: AbortSignal.timeout(8000) })
+      fetch(url, { signal: AbortSignal.timeout(12000) })
     );
     if (!res.ok) return fail('api', `HTTP ${res.status}`, { latency_ms: ms });
-    if (ms > 2000) return warn('api', `slow (${ms}ms)`, { latency_ms: ms });
-    return ok('api', ms);
+    if (ms > slowThreshold) return warn('api', `slow (${ms}ms)${isTunnel ? ' via tunnel' : ''}`, { latency_ms: ms });
+    return ok('api', ms, isTunnel ? { via: 'tunnel' } : {});
   } catch {
     // Curl fallback
     try {
@@ -264,14 +267,16 @@ let _pipelineHealthPromise = null;
 async function fetchPipelineHealth() {
   if (!_pipelineHealthPromise) {
     const url = `${API_BASE}/api/search/health/pipeline`;
-    _pipelineHealthPromise = fetch(url, { signal: AbortSignal.timeout(8000) })
+    // 60s timeout: the pipeline endpoint runs COUNT(*) on content which can be
+    // slow when the SQLite WAL is large (e.g., after a mass synced=0 reset).
+    _pipelineHealthPromise = fetch(url, { signal: AbortSignal.timeout(60000) })
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .catch(async () => {
         try {
-          const { stdout } = await exec(`curl -s --max-time 10 "${url}"`, { timeout: 12000 });
+          const { stdout } = await exec(`curl -s --max-time 60 "${url}"`, { timeout: 65000 });
           return JSON.parse(stdout.trim());
         } catch (curlErr) {
           return { _error: curlErr.message };

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T19:33:47.673Z",
+  "generated": "2026-05-18T21:12:17.256Z",
   "entries": [
+    {
+      "hash": "7a20dfb2",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Sync worker falls back to content.embedding when cache empty; increase PIPELINE_LIMIT 2→5, FLUSH_PARAS 100→500 for vector re-sync",
+      "scope": null
+    },
     {
       "hash": "06dc7f2f",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Make HyPE propagation non-fatal in enrichment-api tick — db lock during heavy watcher activity",
       "scope": null
-    },
-    {
-      "hash": "7ea8ac1d",
-      "date": "2026-05-10",
-      "type": "New",
-      "description": "Route primary doctrinal texts (Pali Canon, KJV, Tanakh, GGS, Vedas, Qur'an) to Anthropic batch API",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "7a20dfb2",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Sync worker falls back to content.embedding when cache empty; increase PIPELINE_LIMIT 2→5, FLUSH_PARAS 100→500 for vector re-sync",
+        "scope": null
+      },
       {
         "hash": "06dc7f2f",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Make HyPE propagation non-fatal in enrichment-api tick — db lock during heavy watcher activity",
-        "scope": null
-      },
-      {
-        "hash": "7ea8ac1d",
-        "date": "2026-05-10",
-        "type": "New",
-        "description": "Route primary doctrinal texts (Pali Canon, KJV, Tanakh, GGS, Vedas, Qur'an) to Anthropic batch API",
         "scope": null
       }
     ]
