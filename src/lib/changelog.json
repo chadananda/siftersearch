@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T03:18:07.345Z",
+  "generated": "2026-05-18T03:26:26.937Z",
   "entries": [
+    {
+      "hash": "41217641",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Revert vague-query crafter rule — ruins citation scores; keep Buddhism fix",
+      "scope": null
+    },
     {
       "hash": "f9162bea",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Site2rag adapter — generic crawler-MD parser for supplemental sites",
       "scope": null
-    },
-    {
-      "hash": "eee36afc",
-      "date": "2026-05-04",
-      "type": "Other",
-      "description": "Supplemental sites foundation — migration 60 + getSiteDb infra",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "41217641",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Revert vague-query crafter rule — ruins citation scores; keep Buddhism fix",
+        "scope": null
+      },
       {
         "hash": "f9162bea",
         "date": "2026-05-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-04",
         "type": "Other",
         "description": "Site2rag adapter — generic crawler-MD parser for supplemental sites",
-        "scope": null
-      },
-      {
-        "hash": "eee36afc",
-        "date": "2026-05-04",
-        "type": "Other",
-        "description": "Supplemental sites foundation — migration 60 + getSiteDb infra",
         "scope": null
       }
     ]
