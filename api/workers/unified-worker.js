@@ -217,9 +217,10 @@ async function processSyncJob(job) {
     // worker would re-process the same doc dozens of times before drain.
     const inFlightDocIds = new Set();
     while (!isShuttingDown) {
-      // Fetch enough docs to keep the 5-slot pipeline full. With FLUSH_PARAS=500
-      // and ~9 paras/doc, each pipeline slot needs ~56 docs. 500 gives headroom
-      // for the inFlightDocIds filter without prematurely breaking the loop.
+      // One fetch per batch — not per doc. With LIMIT=500 and a 600ms WAL-heavy
+      // query, re-fetching on every doc would cost 500×600ms=5min of overhead
+      // per batch. Fetch once, iterate all fresh docs, re-fetch only when batch
+      // exhausted or pipeline backed up.
       const docs = await content.getDocsWithDirtyParagraphs(500);
       const fresh = docs.filter(d => !inFlightDocIds.has(d.id));
       if (fresh.length === 0) {
@@ -233,113 +234,117 @@ async function processSyncJob(job) {
         inFlightDocIds.clear();
         continue;
       }
-      const doc = fresh[0];
-      inFlightDocIds.add(doc.id);
+      // Process all fresh docs before re-fetching to avoid paying the slow
+      // getDocsWithDirtyParagraphs query cost on every single document.
+      for (const doc of fresh) {
+        if (isShuttingDown) break;
+        inFlightDocIds.add(doc.id);
 
-      try {
-        let authority;
-        try { authority = getAuthority(doc); } catch { authority = 0; }
-
-        // Submit doc metadata
         try {
-          const totalDirty = await queryOne(`SELECT COUNT(*) as cnt FROM content WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL`, [doc.id]);
-          await documentsIndex.addDocuments([{
-            id: doc.id, title: doc.title, author: doc.author, religion: doc.religion,
-            collection: doc.collection, language: doc.language,
-            year: doc.year ? parseInt(doc.year, 10) : null,
-            description: doc.description, filename: doc.filename, authority,
-            chunk_count: totalDirty?.cnt || 0, created_at: new Date().toISOString()
-          }]);
-        } catch (err) {
-          logger.error({ err: err.message, docId: doc.id }, 'Failed to submit document metadata');
-        }
+          let authority;
+          try { authority = getAuthority(doc); } catch { authority = 0; }
 
-        // Process paragraphs in batches.
-        //
-        // pendingIds prevents re-buffering the same rows. Without this, the
-        // inner loop re-fetches `synced=0` rows on every iteration — which
-        // INCLUDES rows we've already buffered or sent in-flight, because
-        // markSynced doesn't flip until drainOldest runs (later).
-        // Effect of the bug: a 1-paragraph doc would be buffered hundreds
-        // of times until the pipeline drained, generating massive Meili
-        // duplicate-update tasks and 95% timeout-failure rate (observed).
-        const pendingIds = new Set();
-        let docParasProcessed = 0;
-        while (!isShuttingDown) {
-          const fetched = await content.getDirtyParagraphsForDoc(doc.id, PARA_BATCH_SIZE);
-          // Skip rows already buffered/in-flight in this doc loop iteration.
-          const paragraphs = fetched.filter(p => !pendingIds.has(p.id));
-          if (paragraphs.length === 0) break;
-          const normalizedHashes = paragraphs.map(p => p.normalized_hash).filter(Boolean);
-          const cachedVectors = await content.getEmbeddingsFromCache(normalizedHashes);
-          const meiliParas = [];
-          const paraIds = [];
-          let cacheHits = 0, cacheMisses = 0, dbFallbacks = 0;
-          for (const p of paragraphs) {
-            pendingIds.add(p.id);
-            let embedding = null;
-            if (p.normalized_hash && cachedVectors.has(p.normalized_hash)) {
-              embedding = cachedVectors.get(p.normalized_hash);
-              cacheHits++;
-            } else if (p.embedding) {
-              // Cache miss but embedding exists in content DB — use it directly.
-              // This handles empty/wiped embedding cache without losing vectors.
-              // Must convert SQLite Buffer → Float32Array → Array for Meilisearch.
-              embedding = blobToFloatArray(p.embedding);
-              dbFallbacks++;
-            } else {
-              cacheMisses++;
+          // Submit doc metadata
+          try {
+            const totalDirty = await queryOne(`SELECT COUNT(*) as cnt FROM content WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL`, [doc.id]);
+            await documentsIndex.addDocuments([{
+              id: doc.id, title: doc.title, author: doc.author, religion: doc.religion,
+              collection: doc.collection, language: doc.language,
+              year: doc.year ? parseInt(doc.year, 10) : null,
+              description: doc.description, filename: doc.filename, authority,
+              chunk_count: totalDirty?.cnt || 0, created_at: new Date().toISOString()
+            }]);
+          } catch (err) {
+            logger.error({ err: err.message, docId: doc.id }, 'Failed to submit document metadata');
+          }
+
+          // Process paragraphs in batches.
+          //
+          // pendingIds prevents re-buffering the same rows. Without this, the
+          // inner loop re-fetches `synced=0` rows on every iteration — which
+          // INCLUDES rows we've already buffered or sent in-flight, because
+          // markSynced doesn't flip until drainOldest runs (later).
+          // Effect of the bug: a 1-paragraph doc would be buffered hundreds
+          // of times until the pipeline drained, generating massive Meili
+          // duplicate-update tasks and 95% timeout-failure rate (observed).
+          const pendingIds = new Set();
+          let docParasProcessed = 0;
+          while (!isShuttingDown) {
+            const fetched = await content.getDirtyParagraphsForDoc(doc.id, PARA_BATCH_SIZE);
+            // Skip rows already buffered/in-flight in this doc loop iteration.
+            const paragraphs = fetched.filter(p => !pendingIds.has(p.id));
+            if (paragraphs.length === 0) break;
+            const normalizedHashes = paragraphs.map(p => p.normalized_hash).filter(Boolean);
+            const cachedVectors = await content.getEmbeddingsFromCache(normalizedHashes);
+            const meiliParas = [];
+            const paraIds = [];
+            let cacheHits = 0, cacheMisses = 0, dbFallbacks = 0;
+            for (const p of paragraphs) {
+              pendingIds.add(p.id);
+              let embedding = null;
+              if (p.normalized_hash && cachedVectors.has(p.normalized_hash)) {
+                embedding = cachedVectors.get(p.normalized_hash);
+                cacheHits++;
+              } else if (p.embedding) {
+                // Cache miss but embedding exists in content DB — use it directly.
+                // This handles empty/wiped embedding cache without losing vectors.
+                // Must convert SQLite Buffer → Float32Array → Array for Meilisearch.
+                embedding = blobToFloatArray(p.embedding);
+                dbFallbacks++;
+              } else {
+                cacheMisses++;
+              }
+              meiliParas.push({
+                id: p.id, doc_id: p.doc_id, paragraph_index: p.paragraph_index,
+                text: p.text, context: p.context || null,
+                text_grounded: p.text_grounded || null,
+                translation: p.translation || null, translation_segments: p.translation_segments || null,
+                title: doc.title, author: doc.author, filename: doc.filename,
+                religion: doc.religion, collection: doc.collection, language: doc.language,
+                year: doc.year ? parseInt(doc.year, 10) : null, authority,
+                heading: p.heading || '', blocktype: p.blocktype || 'paragraph',
+                source_site: doc.source_site || null,
+                source_url: doc.source_url || null,
+                external_para_id: p.external_para_id || null,
+                pdf_page: typeof p.pdf_page === 'number' ? p.pdf_page : null,
+                created_at: new Date().toISOString(),
+                _vectors: { default: embedding }
+              });
+              paraIds.push(p.id);
             }
-            meiliParas.push({
-              id: p.id, doc_id: p.doc_id, paragraph_index: p.paragraph_index,
-              text: p.text, context: p.context || null,
-              text_grounded: p.text_grounded || null,
-              translation: p.translation || null, translation_segments: p.translation_segments || null,
-              title: doc.title, author: doc.author, filename: doc.filename,
-              religion: doc.religion, collection: doc.collection, language: doc.language,
-              year: doc.year ? parseInt(doc.year, 10) : null, authority,
-              heading: p.heading || '', blocktype: p.blocktype || 'paragraph',
-              source_site: doc.source_site || null,
-              source_url: doc.source_url || null,
-              external_para_id: p.external_para_id || null,
-              pdf_page: typeof p.pdf_page === 'number' ? p.pdf_page : null,
-              created_at: new Date().toISOString(),
-              _vectors: { default: embedding }
-            });
-            paraIds.push(p.id);
+            if (cacheMisses > 0 || dbFallbacks > 0) {
+              logger.debug({ cacheHits, cacheMisses, dbFallbacks, batchSize: meiliParas.length }, 'Sync batch: cache stats');
+            }
+            // Append to per-index buffer; flush asynchronously when full.
+            // markSynced + completedItems both happen later in drainOldest()
+            // when the corresponding pipelined task confirms — preserves the
+            // verified-sync invariant.
+            const indexName = indexNameForDoc(doc);
+            const buf = buffer.get(indexName) || { paras: [], paraIds: [] };
+            buf.paras.push(...meiliParas);
+            buf.paraIds.push(...paraIds);
+            buffer.set(indexName, buf);
+            docParasProcessed += paraIds.length;
+            await flushBuffer(indexName);
+            await delay(YIELD_DELAY_MS);
           }
-          if (cacheMisses > 0 || dbFallbacks > 0) {
-            logger.debug({ cacheHits, cacheMisses, dbFallbacks, batchSize: meiliParas.length }, 'Sync batch: cache stats');
-          }
-          // Append to per-index buffer; flush asynchronously when full.
-          // markSynced + completedItems both happen later in drainOldest()
-          // when the corresponding pipelined task confirms — preserves the
-          // verified-sync invariant.
-          const indexName = indexNameForDoc(doc);
-          const buf = buffer.get(indexName) || { paras: [], paraIds: [] };
-          buf.paras.push(...meiliParas);
-          buf.paraIds.push(...paraIds);
-          buffer.set(indexName, buf);
-          docParasProcessed += paraIds.length;
-          await flushBuffer(indexName);
-          await delay(YIELD_DELAY_MS);
+          docsProcessed++;
+          logger.info({ docId: doc.id, docTitle: doc.title, docParasProcessed, completedItems, failedItems, remaining: job.total_items - completedItems }, 'Sync job progress');
+        } catch (docErr) {
+          // A bad document should NEVER stop the sync of other documents.
+          // Mark all its paragraphs as synced so we don't get stuck retrying it.
+          logger.error({ err: docErr.message, docId: doc.id, docTitle: doc.title }, 'Document sync failed — skipping');
+          try {
+            const paraIds = (await queryAll('SELECT id FROM content WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL', [doc.id])).map(r => r.id);
+            if (paraIds.length > 0) await content.markSynced(paraIds);
+            failedItems += paraIds.length;
+          } catch { /* best effort */ }
         }
-        docsProcessed++;
-        logger.info({ docId: doc.id, docTitle: doc.title, docParasProcessed, completedItems, failedItems, remaining: job.total_items - completedItems }, 'Sync job progress');
-      } catch (docErr) {
-        // A bad document should NEVER stop the sync of other documents.
-        // Mark all its paragraphs as synced so we don't get stuck retrying it.
-        logger.error({ err: docErr.message, docId: doc.id, docTitle: doc.title }, 'Document sync failed — skipping');
-        try {
-          const paraIds = (await queryAll('SELECT id FROM content WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL', [doc.id])).map(r => r.id);
-          if (paraIds.length > 0) await content.markSynced(paraIds);
-          failedItems += paraIds.length;
-        } catch { /* best effort */ }
-      }
 
-      await query(`UPDATE sync_jobs SET completed_items = ?, failed_items = ? WHERE id = ?`, [completedItems, failedItems, job.id]);
-      await delay(DOC_DELAY_MS);
-    }
+        await query(`UPDATE sync_jobs SET completed_items = ?, failed_items = ? WHERE id = ?`, [completedItems, failedItems, job.id]);
+        await delay(DOC_DELAY_MS);
+      } // end for (doc of fresh)
+    } // end while (!isShuttingDown)
 
     // End of doc loop. Force-flush any remaining buffered paragraphs and
     // drain in-flight tasks so synced=1 propagates and progress is accurate.

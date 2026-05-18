@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T22:24:08.679Z",
+  "generated": "2026-05-18T22:35:32.964Z",
   "entries": [
+    {
+      "hash": "8c008501",
+      "date": "2026-05-18",
+      "type": "Performance",
+      "description": "Sync fetch limit 10→500 — prevents premature loop break; fills 5-slot pipeline (was only ~90 paras/job, now ~2500)",
+      "scope": null
+    },
     {
       "hash": "790aa7da",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Skip short/HTML paragraphs in enrichment enqueue (≥100 chars, no HTML)",
       "scope": null
-    },
-    {
-      "hash": "fa30a702",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Skip propagation in enrichment-api hot path to unblock submitNextBatch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "8c008501",
+        "date": "2026-05-18",
+        "type": "Performance",
+        "description": "Sync fetch limit 10→500 — prevents premature loop break; fills 5-slot pipeline (was only ~90 paras/job, now ~2500)",
+        "scope": null
+      },
       {
         "hash": "790aa7da",
         "date": "2026-05-18",
@@ -7009,15 +7016,6 @@
         "date": "2026-05-11",
         "type": "Fixed",
         "description": "Skip short/HTML paragraphs in enrichment enqueue (≥100 chars, no HTML)",
-        "scope": null
-      }
-    ],
-    "2026-05-10": [
-      {
-        "hash": "fa30a702",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Skip propagation in enrichment-api hot path to unblock submitNextBatch",
         "scope": null
       }
     ]
