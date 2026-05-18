@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T10:51:54.069Z",
+  "generated": "2026-05-18T11:32:24.359Z",
   "entries": [
+    {
+      "hash": "5bd16cc5",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Restore CATALOG-COMPANION quote instruction when sample titles have URLs",
+      "scope": null
+    },
     {
       "hash": "b0e01f58",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Hero image transform — 1536×600 matches clamp(280px,38vh,480px) display height",
       "scope": null
-    },
-    {
-      "hash": "824f17bd",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Add --remote flag to wrangler R2 uploads — images now reach Cloudflare R2",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "5bd16cc5",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Restore CATALOG-COMPANION quote instruction when sample titles have URLs",
+        "scope": null
+      },
       {
         "hash": "b0e01f58",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Hero image transform — 1536×600 matches clamp(280px,38vh,480px) display height",
-        "scope": null
-      },
-      {
-        "hash": "824f17bd",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Add --remote flag to wrangler R2 uploads — images now reach Cloudflare R2",
         "scope": null
       }
     ]

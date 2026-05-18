@@ -649,8 +649,11 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         }).join('\n');
         const distinctCollections = [...new Set(samples.map(d => d.collection).filter(Boolean))];
         const collectionNote = distinctCollections.length > 0 ? `\n\nCollections (from samples): ${distinctCollections.join(', ')}` : '';
+        const catalogBodyText = countResult.count === 0
+          ? `Library count (${filterDesc}):\nMatching documents: 0\n\n⛔ ZERO RESULTS — this library does NOT contain works matching these filters. Tell the user honestly that we don't have these works. Do NOT add quotes from any other source. Do NOT suggest related authors. Do NOT invent or approximate content from your training data.`
+          : `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles${sampleUrls.length > 0 ? ' (linked titles already have URLs embedded — use them as-is)' : ' (no URLs available — list as plain text only, no hyperlinks)'}:\n${sampleLines}${sampleUrls.length > 0 ? '\n\n⚠️ If CATALOG-COMPANION Q-entries appear below, quote at least one prose fragment inline using [fragment](citation_url).' : ''}`;
         retrieved.push({
-          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles${sampleUrls.length > 0 ? ' (linked titles already have URLs embedded — use them as-is)' : ' (no URLs available — list as plain text only, no hyperlinks)'}:\n${sampleLines}${sampleUrls.length > 0 ? '\n\n⚠️ If CATALOG-COMPANION Q-entries appear below, quote at least one prose fragment inline using [fragment](citation_url).' : ''}`,
+          text: catalogBodyText,
           source_title: 'Library Catalog',
           source_author: 'Ocean Library',
           citation_url: null,
@@ -660,6 +663,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           catalog_filters: catalogFilters
         });
         logger.info({ filters: catalogFilters, count: countResult.count }, 'filtered catalog query complete');
+
+        // Zero-count: no companion possible — return immediately so crafter sees only the "not found" message.
+        if (countResult.count === 0) {
+          return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
+        }
+
         // Companion search: get 1-2 citable prose passages from the filtered author/scope.
         // Use a generic theological query when user message is a meta/catalog question
         // ("Do you have books by X?") — the user message itself has poor semantic overlap
@@ -675,7 +684,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           /\bwhat\b.{0,30}\b(scripture|text|book|collection|tradition)s?\b/i.test(userMessage) ||
           /\bdo you (carry|have|hold)\b.{0,30}\b(scripture|text|book|collection|tradition)s?\b/i.test(userMessage)
         );
-        if (countResult.count > 0 && !isTraditionalListingQuery) {
+        if (!isTraditionalListingQuery) {
           try {
             // Compound queries ("how many by X and which discuss Y") — extract the
             // topic component so the companion search targets the subject, not the
@@ -772,26 +781,6 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           } catch (ce) {
             logger.warn({ err: ce.message }, 'author catalog companion search failed (non-fatal)');
           }
-        } else {
-          // count=0: author not in library — search for tradition-adjacent alternatives
-          // so the crafter can cite related content instead of responding with nothing.
-          // Use the author's likely tradition as a filter for targeted results.
-          try {
-            const authorName = catalogFilters.author || '';
-            // Detect tradition from author name keywords
-            const isBuddhist = /\b(thich|nhat hanh|dalai|lama|rinpoche|roshi|bhikkhu|ajahn|geshe|tulku)\b/i.test(authorName);
-            const isChristian = /\b(thomas|merton|father|brother|pope|john paul|benedict|francis)\b/i.test(authorName);
-            const isMuslim = /\b(rumi|hafiz|ibn|al-|sheikh|maulana|mulla)\b/i.test(authorName);
-            const isHindu = /\b(swami|sri|ramana|vivekananda|prabhupada|aurobindo)\b/i.test(authorName);
-            const altReligion = isBuddhist ? 'Buddhism' : isChristian ? 'Christianity' : isMuslim ? 'Islam' : isHindu ? 'Hinduism' : null;
-            const altQuery = 'spiritual wisdom teachings meditation prayer';
-            const altSearchArgs = { query: altQuery, mode: 'passages', limit: 4, semanticRatio: 0.8 };
-            if (altReligion) altSearchArgs.religion = altReligion;
-            const altPassages = await executeTool('search', altSearchArgs, { scope_config });
-            if (altPassages?.passages?.length) harvestPassages(altPassages, 'catalog_companion');
-          } catch (ae) {
-            logger.warn({ err: ae.message }, 'catalog zero-count alternative search failed');
-          }
         }
         return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
       } catch (e) {
@@ -811,17 +800,23 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // passages to "how many?" or "list the collections" responses is always
         // logically incoherent (the quote is irrelevant to enumeration).
         const isPureCountQuery = /\bhow many\b.{0,30}\b(total|altogether|in all|in the library)\b|\bhow many documents\b/i.test(userMessage) && !tradition;
-        // Language/tradition questions get companion passages — the response can ground the
-        // language list by citing a representative text in each language (cite≥2 threshold).
-        // Only pure collection/listing queries skip companion (a quote about "Pali Canon documents"
-        // is logically incoherent when the user asked to list all collections).
         const isPureListQuery = /\blist\b|\bshow me\b.*\b(collection|tradition|scripture|text)s?\b/i.test(userMessage) ||
-          /\bwhat\b.{0,30}\b(collection|scripture|tradition)s?\b/i.test(userMessage) ||
-          /\bwhat (do you have|collections|scriptures)\b/i.test(userMessage) ||
+          /\bwhat\b.{0,30}\b(collection|scripture|tradition|language)s?\b/i.test(userMessage) ||
+          /\bwhat (do you have|collections|scriptures|languages)\b/i.test(userMessage) ||
+          /\bwhat languages?\b/i.test(userMessage) ||
+          /\blargest collection\b/i.test(userMessage) ||
           /\bdo you (carry|have|hold)\b.{0,30}\b(scripture|tradition|text|collection)s?\b/i.test(userMessage);
         const skipCompanion = isPureCountQuery || isPureListQuery;
+
+        // For "largest collection" queries: pre-compute so the crafter doesn't have to reason from raw data.
+        const isLargestQuery = /\blargest\b.{0,20}\bcollection\b|\bbiggest\b.{0,20}\bcollection\b/i.test(userMessage);
+        const sortedCollections = (overview.collections || []).filter(c => c.documents > 0).sort((a, b) => b.documents - a.documents);
+        const largestNote = isLargestQuery && sortedCollections.length > 0
+          ? `\n\n⭐ LARGEST COLLECTION (pre-computed): "${sortedCollections[0].name}" with ${sortedCollections[0].documents} documents${sortedCollections[0].religion ? ' [' + sortedCollections[0].religion + ']' : ''}`
+          : '';
+
         retrieved.push({
-          text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}${languageLines ? '\n\nLanguages available:\n' + languageLines : ''}`,
+          text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}${languageLines ? '\n\nLanguages available:\n' + languageLines : ''}${largestNote}`,
           source_title: 'Library Catalog',
           source_author: 'Ocean Library',
           citation_url: null,
@@ -2166,10 +2161,10 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     if (q.is_catalog || q.via === 'library_overview' || q.via === 'library_count') {
       const label = q.via === 'library_count'
         ? q.catalog_count === 0
-          ? `[Q${i + 1} CATALOG-DATA — COUNT IS ZERO. A library search for this author returned no results. Your response MUST: (1) Open explicitly: "I searched our library for [author]'s works but found none." (2) Then pivot to CATALOG-COMPANION passages: weave actual PROSE FRAGMENTS inline (not just title links) — use the citation_url from the CATALOG-COMPANION Q-entry for each fragment. Format: "I searched for [author]'s works and found none, but our [tradition] collection includes passages like \\"fragment\\"(citation_url) from *Source Title*." Do NOT link bare titles. Do NOT say "0 documents". Do NOT fabricate URLs.]`
+          ? `[Q${i + 1} CATALOG-DATA — COUNT IS ZERO. Tell the user honestly that the library does not have works matching these filters. Do NOT add quotes or citations from any source. Do NOT suggest related authors. Do NOT use training-memory content. One sentence: "I don't have works by [author] in the library." is the correct response.]`
           : `[Q${i + 1} CATALOG-DATA — state the count as plain text ONLY. NEVER write [N documents](url). Sample titles may have URLs — list them using [title](url) in a separate listing. NEVER use a sample title URL as the source URL for a prose quote. NEVER use sample title TEXT as a quotable excerpt — titles are metadata, not prose. For prose quotes use CATALOG-COMPANION Q-entries only (the entries tagged CATALOG-COMPANION below).]`
         : q.pure_count
-          ? `[Q${i + 1} CATALOG-DATA — PURE COUNT QUERY. State the document count and tradition breakdown as plain text statistics. After the stats, add ONE inline citation from a CATALOG-COMPANION Q-entry that speaks to the breadth of knowledge or wisdom in these texts — choose a passage about books, knowledge, or divine guidance, NOT a thematic religious quote (like "raise with loud accord") that is clearly off-topic for a library count question. Do NOT hyperlink the count numbers themselves.]`
+          ? `[Q${i + 1} CATALOG-DATA — PURE COUNT QUERY. State the document count and tradition breakdown as plain text statistics ONLY. No quotes. No hyperlinks. No citations. Just the numbers from the data above.]`
           : `[Q${i + 1} CATALOG-DATA — plain text catalog only. This block contains NO quotable URLs. Render ALL text from this block as plain text only — NO hyperlinks of any kind. WRONG: ["Pali Canon"](url) or [44,937](url). RIGHT: Pali Canon ... 44,937 documents. Only CATALOG-COMPANION passages have citation URLs — use those for [fragment](url) quotes.]`;
       return `${label}\n${q.text}\n  Source: Library Catalog`;
     }
@@ -2412,6 +2407,13 @@ export function summarizeConversation(messages) {
 //
 // `sendEvent` (optional): SSE event emitter for debug-mode streaming
 // `debug` (optional): if true, emit debug_* SSE events at each stage
+// Social queries: greetings, thanks, minimal input — skip all research tools.
+const SOCIAL_RE = /^[\s?!.,;:…\u2026]*$|^\s*(thank(?:s|\s+you[!.]?)|you['']?re\s+welcome|hello|hi|hey|ok(?:ay)?|great|nice|cool|sure|bye|goodbye|perfect|awesome|wonderful|got\s+it|understood)[!.,\s]*$/i;
+
+function isSocialQuery(msg) {
+  return SOCIAL_RE.test((msg || '').trim());
+}
+
 export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location }) {
   const userMessage = messages[messages.length - 1].content;
 
@@ -2422,6 +2424,34 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   const scope_config = chatbot_location ? getScopeForLocation(chatbot_location) : undefined;
   if (sendEvent && debug && chatbot_location) {
     sendEvent({ type: 'debug_scope', chatbot_location, scope_config });
+  }
+
+  // Social short-circuit: greetings, thanks, "?", empty-ish messages.
+  // Skip research entirely — respond warmly in 1-2 sentences.
+  if (isSocialQuery(userMessage)) {
+    if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
+    const trimmed = userMessage.trim();
+    let reply;
+    if (/thank/i.test(trimmed)) {
+      reply = "You're welcome! Feel free to ask anytime — I'm here to help you explore the world's religious texts.";
+    } else if (/^[\s?!.,;:…\u2026]*$/.test(trimmed) || trimmed.length === 0) {
+      reply = "Hi! I'm Jafar — here to help you explore teachings and scriptures from the world's great religious traditions. What would you like to know?";
+    } else {
+      reply = "Hello! I'm here whenever you have a question about spiritual teachings, scriptures, or the texts in our library.";
+    }
+    if (sendEvent) {
+      for (const char of reply) sendEvent({ type: 'text', content: char });
+    }
+    return {
+      reply,
+      user_intent: 'social',
+      response_register: 'conversational',
+      retrieved_count: 0,
+      retrieval_quotes: [],
+      gate: { pass: true, picker: 'social-shortcircuit' },
+      retried: false,
+      research_calls: []
+    };
   }
 
   // Stage 1: classify intent + entities (1 mini call ~1-2s), then run
