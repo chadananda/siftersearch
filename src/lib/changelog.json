@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T04:01:39.690Z",
+  "generated": "2026-05-18T04:19:01.296Z",
   "entries": [
+    {
+      "hash": "bc1de1b8",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Avoid linking catalog titles when all share same collection URL (e.g. UHJ letters)",
+      "scope": null
+    },
     {
       "hash": "6dbf1e9c",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Site_root override field — crawler trees outside Dropbox",
       "scope": null
-    },
-    {
-      "hash": "424d464b",
-      "date": "2026-05-04",
-      "type": "Other",
-      "description": "Sync-processor routes paragraphs to per-site Meili indexes (Phase G)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "bc1de1b8",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Avoid linking catalog titles when all share same collection URL (e.g. UHJ letters)",
+        "scope": null
+      },
       {
         "hash": "6dbf1e9c",
         "date": "2026-05-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-04",
         "type": "Other",
         "description": "Site_root override field — crawler trees outside Dropbox",
-        "scope": null
-      },
-      {
-        "hash": "424d464b",
-        "date": "2026-05-04",
-        "type": "Other",
-        "description": "Sync-processor routes paragraphs to per-site Meili indexes (Phase G)",
         "scope": null
       }
     ]

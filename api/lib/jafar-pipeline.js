@@ -48,6 +48,7 @@ Routing rules:
 - Sequential reading requests ("read the opening of X", "show me the first paragraphs of Y", "read me the beginning of Z") → (1) find_document_for_citation to get the document_id, (2) search(document_id=<id>, mode="read", query="<title>", start=0, limit=8) to retrieve the actual sequential paragraphs from the beginning. Do NOT use read_document_for_question for this — it returns a QA summary, not sequential text. Pass ALL returned paragraphs to the crafter.
 - Specific named works (Tablet of Wisdom, Iqán, Hidden Words, Quran, Bhagavad Gita, Tao Te Ching, Gospel of John, Guru Granth Sahib, etc.) → find_document_for_citation, then read_document_for_question on the primary candidate. If you also search, ALWAYS add the religion filter matching that work's tradition.
 - Bahá'í historical events (Badasht, Shaykh Tabarsi, martyrdom of the Báb, Seven Martyrs, Bahá'u'lláh's exile, Fort of Tabarsi, Dawn-Breakers events, etc.) → ALWAYS call find_document_for_citation for BOTH "Dawn-Breakers" AND "God Passes By", then read_document_for_question on each with the event name as the question. These two works are the primary historical narratives and must be searched for any Bahá'í historical event question, even if neither is explicitly named in the query.
+- Multi-tradition comparison ("what other religions say about X", "how other traditions view Y", "from different religious perspectives on Z") → search SEPARATELY for each relevant tradition with a religion filter. Example: for "what other religions say about [Christian concept]", search Islam, Judaism, and Buddhist with their specific religion filters — do NOT rely on a single unfiltered search. Unfiltered search returns mostly Bahá'í texts which discuss other traditions only as secondary topics. Collect ≥1 quote per tradition.
 - Broad tradition overview ("tell me about Buddhism", "explain Islam", "what is Hinduism", "overview of Sikhism") → do MULTIPLE searches covering: (1) the tradition's foundational doctrinal framework (e.g. "Four Noble Truths Eightfold Path" for Buddhism; "Five Pillars" for Islam; "karma dharma moksha" for Hinduism; "Waheguru oneness" for Sikhism); (2) a famous text passage with religion filter; (3) a key ethical teaching. Use religion filter on all calls. Three separate searches produce better coverage than one broad query.
 - Doctrinal concepts (materialism, justice, the soul, faith, detachment, etc.) → search with mode:"passages" + religion filter
 - Specific named figures (Bahá'u'lláh, 'Abdu'l-Bahá, Plato in a tradition's text, etc.) → search with their name + the topic
@@ -107,6 +108,7 @@ const CATALOG_PATTERNS = [
   /\bwhat (?:kinds?|types?|forms?|sort)?(?:\s+of)?\s*scriptures? (?:do you|are|can|exist|is)\b/i,
   /\bdo you (have|carry|include)\b/i,
   /\bshow me (everything|all works?|all writings?)\b/i,
+  /\bshow me (?:books?|works?|writings?)\s+by\b/i,
   /\blist (all|every|the) works?\b/i,
 ];
 
