@@ -281,7 +281,8 @@ async function processSyncJob(job) {
             } else if (p.embedding) {
               // Cache miss but embedding exists in content DB — use it directly.
               // This handles empty/wiped embedding cache without losing vectors.
-              embedding = p.embedding;
+              // Must convert SQLite Buffer → Float32Array → Array for Meilisearch.
+              embedding = blobToFloatArray(p.embedding);
               dbFallbacks++;
             } else {
               cacheMisses++;

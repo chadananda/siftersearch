@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T21:12:17.256Z",
+  "generated": "2026-05-18T21:19:19.662Z",
   "entries": [
+    {
+      "hash": "9428d989",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Pipeline health endpoint WAL guard — skip slow COUNT when WAL > 200MB",
+      "scope": null
+    },
     {
       "hash": "7a20dfb2",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Wrap enqueueParagraphsForBatch in try-catch — retry on db lock without crashing tick",
       "scope": null
-    },
-    {
-      "hash": "30825a6e",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Make HyPE propagation non-fatal in enrichment-api tick — db lock during heavy watcher activity",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "9428d989",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Pipeline health endpoint WAL guard — skip slow COUNT when WAL > 200MB",
+        "scope": null
+      },
       {
         "hash": "7a20dfb2",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Wrap enqueueParagraphsForBatch in try-catch — retry on db lock without crashing tick",
-        "scope": null
-      },
-      {
-        "hash": "30825a6e",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Make HyPE propagation non-fatal in enrichment-api tick — db lock during heavy watcher activity",
         "scope": null
       }
     ]
