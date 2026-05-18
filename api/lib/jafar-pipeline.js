@@ -239,7 +239,8 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
             source_author: q.author,
             citation_url: q.source_url
               ? (q.external_para_id ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url)
-              : (q.doc_id ? `https://siftersearch.com/document/${q.doc_id}` : null),
+              : (q.doc_id && q.paragraph_index != null ? `https://siftersearch.com/document/${q.doc_id}#p${q.paragraph_index}` : null)
+              || (q.doc_id ? `https://siftersearch.com/document/${q.doc_id}` : null),
             doc_id: q.doc_id,
             religion: q.religion,
             authority: q.authority,
@@ -554,9 +555,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     const doc = result.document || {};
     for (const e of result.excerpts) {
       // Use paragraph-level source_url when available (set by executeReadDocumentForQuestion);
-      // fall back to document-level link. This ensures harvestExcerpts produces
-      // paragraph deeplinks, not just /document/{id} fallbacks.
+      // fall back to paragraph-anchored document URL so deeplinks navigate to the right passage.
       const citation_url = e.source_url
+        || (doc.id && e.paragraph_index != null ? `https://siftersearch.com/document/${doc.id}#p${e.paragraph_index}` : null)
         || (doc.id ? `https://siftersearch.com/document/${doc.id}` : null);
       retrieved.push({
         text: e.text || '',

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T02:34:56.813Z",
+  "generated": "2026-05-18T02:56:27.849Z",
   "entries": [
+    {
+      "hash": "afd9c32b",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Research phase uses multiple searches for broad tradition overview queries",
+      "scope": null
+    },
     {
       "hash": "eacd453c",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Refactor",
       "description": "Update worker-status.json with session 2 + production verification",
       "scope": null
-    },
-    {
-      "hash": "36d7a84e",
-      "date": "2026-05-02",
-      "type": "Refactor",
-      "description": "Worker-status.json — overnight session summary",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "afd9c32b",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Research phase uses multiple searches for broad tradition overview queries",
+        "scope": null
+      },
       {
         "hash": "eacd453c",
         "date": "2026-05-17",
@@ -7021,15 +7028,6 @@
         "date": "2026-05-03",
         "type": "Refactor",
         "description": "Update worker-status.json with session 2 + production verification",
-        "scope": null
-      }
-    ],
-    "2026-05-02": [
-      {
-        "hash": "36d7a84e",
-        "date": "2026-05-02",
-        "type": "Refactor",
-        "description": "Worker-status.json — overnight session summary",
         "scope": null
       }
     ]
