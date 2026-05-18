@@ -151,7 +151,8 @@ async function checkPm2() {
     }
     const procs = JSON.parse(stdout);
     const expected = ['siftersearch-api', 'siftersearch-worker',
-      'siftersearch-library-watcher', 'siftersearch-enrichment', 'siftersearch-updater'];
+      'siftersearch-library-watcher', 'siftersearch-enrichment', 'siftersearch-enrichment-api',
+      'siftersearch-deep-research', 'siftersearch-updater'];
     // Optional: graph workers only checked if they exist in PM2 list
     const optional = ['siftersearch-graph-extractor', 'siftersearch-graph-validator',
       'siftersearch-graph-resolver', 'siftersearch-graph-promoter'];

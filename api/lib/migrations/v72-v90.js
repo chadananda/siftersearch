@@ -358,4 +358,27 @@ export const migrations = {
 
     logger.info('Migration 75 complete: idx_content_dirty_updated covering index');
   },
+
+  76: async () => {
+    logger.info('Starting migration 76: composite index for getDocsWithDirtyParagraphs GROUP BY');
+
+    // getDocsWithDirtyParagraphs runs this subquery on every sync iteration:
+    //   SELECT doc_id, MAX(updated_at) FROM content
+    //   WHERE synced=0 AND deleted_at IS NULL
+    //   GROUP BY doc_id ORDER BY max_updated_at DESC LIMIT ?
+    //
+    // Without a composite (doc_id, updated_at) index, SQLite scans all 527K+
+    // unsynced rows to compute the per-doc MAX, then sorts them. With the
+    // composite partial index below, SQLite can read the first (highest
+    // updated_at) row per doc_id group directly from the index — O(distinct docs)
+    // instead of O(total unsynced rows). ~4000 docs vs 527K rows = 130x speedup.
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_content_dirty_doc_updated
+        ON content(doc_id, updated_at DESC)
+        WHERE synced = 0 AND deleted_at IS NULL
+    `);
+    await query(`ANALYZE content`);
+
+    logger.info('Migration 76 complete: idx_content_dirty_doc_updated composite index');
+  },
 };
