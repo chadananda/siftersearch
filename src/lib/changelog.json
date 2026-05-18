@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T13:27:00.284Z",
+  "generated": "2026-05-18T13:37:24.980Z",
   "entries": [
+    {
+      "hash": "dc94b9ce",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Migration 74 — unique constraints on entity tables break DB lock storm",
+      "scope": null
+    },
     {
       "hash": "c11ddf3e",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Intent classifier no longer defaults religion to Baha'i for general questions",
       "scope": null
-    },
-    {
-      "hash": "5ed913f3",
-      "date": "2026-05-10",
-      "type": "Other",
-      "description": "POST /admin/conversations/save — save chat messages as a published dialog",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "dc94b9ce",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Migration 74 — unique constraints on entity tables break DB lock storm",
+        "scope": null
+      },
       {
         "hash": "c11ddf3e",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Intent classifier no longer defaults religion to Baha'i for general questions",
-        "scope": null
-      },
-      {
-        "hash": "5ed913f3",
-        "date": "2026-05-10",
-        "type": "Other",
-        "description": "POST /admin/conversations/save — save chat messages as a published dialog",
         "scope": null
       }
     ]

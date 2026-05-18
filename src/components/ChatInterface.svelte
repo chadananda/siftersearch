@@ -1876,7 +1876,7 @@
                     {formatWithCommas(indexingInterpolated.items)} / {formatWithCommas(indexingInterpolated.totalItems)} paragraphs{#if indexingInterpolated.eta} · {indexingInterpolated.eta} remaining{/if}
                   </div>
                 </div>
-              {:else if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0 && libraryStats.indexingProgress.percentComplete < 100}
+              {:else if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0 && libraryStats.indexingProgress.percentComplete < 100 && (libraryStats.indexingProgress.pending ?? 0) > 5000}
                 <div class="ingestion-progress indexing">
                   <div class="ingestion-header">
                     <span class="ingestion-label">Search indexing</span>
@@ -1888,6 +1888,12 @@
                   <div class="ingestion-detail">
                     {formatWithCommas(libraryStats.indexingProgress.syncedParagraphs || 0)} / {formatWithCommas(libraryStats.indexingProgress.totalParagraphs)} paragraphs
                   </div>
+                </div>
+              {/if}
+              <!-- Edited docs note — shown separately, not as indexing progress -->
+              {#if (libraryStats?.pipelineStatus?.cooldownDocCount ?? 0) > 0}
+                <div class="cooldown-note">
+                  {libraryStats.pipelineStatus.cooldownDocCount} doc{libraryStats.pipelineStatus.cooldownDocCount === 1 ? '' : 's'} with recent edits pending re-index
                 </div>
               {/if}
               <!-- Knowledge Graph progress -->
@@ -2209,7 +2215,7 @@
                     {formatWithCommas(indexingInterpolated.items)} / {formatWithCommas(indexingInterpolated.totalItems)} paragraphs{#if indexingInterpolated.eta} · {indexingInterpolated.eta} remaining{/if}
                   </div>
                 </div>
-              {:else if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0 && libraryStats.indexingProgress.percentComplete < 100}
+              {:else if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0 && libraryStats.indexingProgress.percentComplete < 100 && (libraryStats.indexingProgress.pending ?? 0) > 5000}
                 <div class="ingestion-progress indexing" role="region" aria-label="Search index progress">
                   <div class="ingestion-header">
                     <span class="ingestion-label">Search indexing</span>
@@ -2221,6 +2227,12 @@
                   <div class="ingestion-detail">
                     {formatWithCommas(libraryStats.indexingProgress.syncedParagraphs || 0)} / {formatWithCommas(libraryStats.indexingProgress.totalParagraphs)} paragraphs
                   </div>
+                </div>
+              {/if}
+              <!-- Edited docs note — shown separately, not as indexing progress -->
+              {#if (libraryStats?.pipelineStatus?.cooldownDocCount ?? 0) > 0}
+                <div class="cooldown-note">
+                  {libraryStats.pipelineStatus.cooldownDocCount} doc{libraryStats.pipelineStatus.cooldownDocCount === 1 ? '' : 's'} with recent edits pending re-index
                 </div>
               {/if}
             {#if serverOffline}
@@ -3470,6 +3482,13 @@
   .ingestion-detail .pending-count {
     color: var(--warning);
     margin-left: 0.25rem;
+  }
+
+  .cooldown-note {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    padding: 0.2rem 0;
+    opacity: 0.7;
   }
 
   /* Active indexing job — animated shimmer on the fill bar */

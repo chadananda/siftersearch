@@ -29,7 +29,7 @@ let importJob = null;
 // Cache for count queries — 5s TTL; partial indexes make COUNT queries fast
 const countCache = { data: null, timestamp: 0, ttl: 30000 };
 
-const EMPTY_COUNTS = { totalDocs: 0, docsWithContent: 0, totalParagraphs: 0, unsyncedParagraphs: 0 };
+const EMPTY_COUNTS = { totalDocs: 0, docsWithContent: 0, totalParagraphs: 0, unsyncedParagraphs: 0, cooldownDocCount: 0 };
 
 export async function getCachedContentCounts() {
   return getCachedCounts();
@@ -45,19 +45,22 @@ async function getCachedCounts() {
     // Use docs table for totals (tiny table, instant) — never scan the 3.5M-row content table
     // paragraph_count on docs is maintained by the ingester, so SUM is authoritative
     // Only hit content table for unsynced count (partial index makes it fast)
-    const [docAgg, unsyncedParagraphs] = await Promise.all([
+    const [docAgg, unsyncedParagraphs, cooldownDocs] = await Promise.all([
       queryOne(`SELECT COUNT(*) as total_docs,
                        SUM(CASE WHEN paragraph_count > 0 THEN 1 ELSE 0 END) as docs_with_content,
                        SUM(paragraph_count) as total_paragraphs
                 FROM docs WHERE deleted_at IS NULL`),
-      queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL')
+      queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL'),
+      queryOne(`SELECT COUNT(*) as count FROM docs
+                WHERE deleted_at IS NULL AND updated_at > datetime('now', '-14400 seconds')`)
     ]);
 
     const result = {
       totalDocs: docAgg?.total_docs || 0,
       docsWithContent: docAgg?.docs_with_content || 0,
       totalParagraphs: docAgg?.total_paragraphs || 0,
-      unsyncedParagraphs: unsyncedParagraphs?.count || 0
+      unsyncedParagraphs: unsyncedParagraphs?.count || 0,
+      cooldownDocCount: cooldownDocs?.count || 0
     };
 
     countCache.data = result;

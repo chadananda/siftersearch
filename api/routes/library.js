@@ -362,7 +362,8 @@ export default async function libraryRoutes(fastify) {
       paragraphsNeedingEmbeddings: pipelineCache.data?.paragraphsNeedingEmbeddings ?? 0,
       paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
       oversizedSkipped: pipelineCache.data?.oversizedSkipped ?? 0,
-      knowledgeGraph: pipelineCache.data?.knowledgeGraph ?? { extracted: 0, total: 0, percent: 0 }
+      knowledgeGraph: pipelineCache.data?.knowledgeGraph ?? { extracted: 0, total: 0, percent: 0 },
+      cooldownDocCount: cachedCounts.cooldownDocCount ?? 0
     };
 
     // Calculate ingestion progress
@@ -380,7 +381,7 @@ export default async function libraryRoutes(fastify) {
       religionCounts,
       collectionCounts,
       languageCounts,
-      indexing: indexingStats.pending > 0 || indexingStats.processing > 0 || meiliProgress?.activeJob?.status === 'running' || (pipelineCache.data?.paragraphsNeedingEmbeddings > 0) || cachedCounts.unsyncedParagraphs > 100,
+      indexing: indexingStats.pending > 0 || indexingStats.processing > 0 || meiliProgress?.activeJob?.status === 'running' || (pipelineCache.data?.paragraphsNeedingEmbeddings > 0) || cachedCounts.unsyncedParagraphs > 5000,
       ingestionQueue: indexingStats,
       indexingProgress: meiliProgress,
       translating: translationStats.pending > 0 || translationStats.processing > 0,
