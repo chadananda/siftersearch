@@ -668,7 +668,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // Tradition-listing queries ("What Hindu scriptures do you carry?") should NOT
         // include prose companion quotes — the crafter misattributes them and fails
         // noHallucination. Author queries ("What books by Momen?") DO need companion.
-        const isTraditionalListingQuery = !catalogFilters.author && (
+        // Skip companion only for generic unfiltered listing queries ("what scriptures do you carry?").
+        // Religion-specific queries ("Do you have any Jain texts?") have catalogFilters.religion set —
+        // keep companion for those so the crafter has actual Jain passages to cite instead of going off-topic.
+        const isTraditionalListingQuery = !catalogFilters.author && !catalogFilters.religion && (
           /\bwhat\b.{0,30}\b(scripture|text|book|collection|tradition)s?\b/i.test(userMessage) ||
           /\bdo you (carry|have|hold)\b.{0,30}\b(scripture|text|book|collection|tradition)s?\b/i.test(userMessage)
         );
@@ -876,7 +879,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // Let the targeted tradition search run instead.
       // For comparative/multi-religion questions ("compare X", "how do different religions
       // view Y"), always run the full 5-tradition search to get inline-citable URLs.
-      const isComparativeQuestion = /\b(compare|contrast|how do.{0,30}differ|across.{0,20}religion|different.{0,20}religion|multiple.{0,20}tradition|both.*faith|both.*religion|two.*tradition)\b/i.test(userMessage);
+      const isComparativeQuestion = /\b(compare|contrast|how do.{0,30}differ|across.{0,20}religion|different.{0,20}religion|multiple.{0,20}tradition|both.*faith|both.*religion|two.*tradition|other religions? (?:say|teach|believe|view|think)|what.*other.{0,20}(?:religion|tradition|faith)s?\s+(?:say|teach|believe)|what do (?:other|different) religions?)\b/i.test(userMessage);
 
       // Always inject cached deep research quotes into retrieved — they are curated
       // and diversity-balanced. For simple questions, return early (skip live search).
@@ -964,6 +967,42 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // When true, fetch sequential paragraphs via mode='read' instead of document subagent QA.
   const isSequentialReadRequest = /\b(?:read|show)\s+(?:me\s+)?(?:the\s+)?(?:first|opening|beginning|start|intro)\b/i.test(userMessage) ||
     /\b(?:first\s+(?:few\s+)?paragraphs?|opening\s+(?:verses?|paragraphs?|lines?)|beginning\s+of)\b/i.test(userMessage);
+
+  // Branch 0: bare author name query — "Udo Schafer", "Moojan Momen" typed alone.
+  // When no work and no topics, treat as "who is this person / what do they write?".
+  // Check DB: if the name matches an author, retrieve passages FROM their works
+  // plus a document list so the crafter can cite actual content, not just describe them.
+  const isAuthorOnlyQuery = !effectiveWorkName && entities.named_persons.length > 0 &&
+    entities.topics.length === 0 && userMessage.trim().split(/\s+/).length <= 5;
+  if (isAuthorOnlyQuery) {
+    const personName = entities.named_persons[0];
+    tasks.push((async () => {
+      const authorDocs = await queryAll(
+        `SELECT id, title, author, source_url FROM docs WHERE author LIKE ? AND deleted_at IS NULL ORDER BY collection, title LIMIT 5`,
+        [`%${personName}%`]
+      );
+      if (authorDocs.length > 0) {
+        const docList = authorDocs.map(d => d.source_url ? `  - [${d.title}](${d.source_url})` : `  - ${d.title}`).join('\n');
+        retrieved.push({
+          text: `Works by ${personName} in the library:\n${docList}\n\n(Use companion passages below to quote actual text — do NOT end after this title list.)`,
+          source_title: 'Library Catalog',
+          source_author: 'Ocean Library',
+          citation_url: null,
+          via: 'author_catalog',
+          is_catalog: true
+        });
+        // Retrieve a representative passage from this author's works
+        const authorPassages = await runTool('search', {
+          query: 'key ideas themes insights',
+          author: personName,
+          mode: 'passages',
+          limit: 5,
+          semanticRatio: 0.7
+        });
+        harvestPassages(authorPassages, 'author_passages');
+      }
+    })());
+  }
 
   // Branch 1: user named a specific work (or earlier turn did) — fetch it
   // and hand the document to a focused QA subagent that can search/read
@@ -1871,6 +1910,11 @@ GOOD: "The library includes 35,931 documents from bahai-library.com — essays, 
 
 EXAMPLE — "How many books by Udo Schaefer?"
 GOOD: "The library holds 12 works by Udo Schaefer, covering Bahá'í jurisprudence, theology, and comparative religion."
+
+BARE AUTHOR NAME — user typed just a name, no question ("Udo Schaefer", "Rumi", "Moojan Momen"):
+Treat as "who is this person and what do they write?" — same pattern as AUTHOR CATALOG below.
+State count/works → quote one prose fragment from their writings.
+BAD — just describing who they are without citing their actual words.
 
 AUTHOR CATALOG — "Show me everything by Bahá'u'lláh" / "What do you have by the Universal House of Justice?" / "Do you have works by Rumi?"
 MANDATORY: Author catalog responses MUST include at least ONE inline prose quote from a companion passage — the author's actual words, not just a title listing. Listing titles without prose fragments = citationPresence=2 (FAILURE).
