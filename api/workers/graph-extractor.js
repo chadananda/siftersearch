@@ -23,6 +23,8 @@ import { runMigrations } from '../lib/migrations.js';
 import { chatCompletion } from '../lib/ai.js';
 import { trackCost, checkBudget } from '../lib/entity-cost-tracker.js';
 import { findEntity, addAlias, normalizeSurface } from '../lib/graph-db.js';
+import { getMeili, INDEXES } from '../lib/search.js';
+import { getAuthority } from '../lib/authority.js';
 
 const PROMPT_VERSION = 'extract-v1';
 const MODEL = process.env.EXTRACTION_MODEL || 'deepseek-chat';
@@ -164,6 +166,51 @@ async function resolveExtraction(extractionId, contentId, parsed, religion) {
   }
 
   await query(`UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, [extractionId]);
+
+  // Push new entity_mentions for this paragraph directly to Meili — immediately searchable.
+  await syncMentionsForContent(contentId);
+}
+
+// Push entity_mentions for a single content row to the Meili entity_mentions_idx.
+async function syncMentionsForContent(contentId) {
+  try {
+    const meili = getMeili();
+    if (!meili) return;
+    const rows = await queryAll(`
+      SELECT em.id, em.entity_id, em.content_id AS paragraph_id, em.role,
+             ge.canonical_name AS entity_canonical_name, ge.entity_type,
+             c.doc_id, d.religion, d.collection, d.encumbered, d.title, d.author, c.para_meta
+      FROM entity_mentions em
+      JOIN graph_entities ge ON ge.id = em.entity_id
+      JOIN content c ON c.id = em.content_id
+      JOIN docs d ON d.id = c.doc_id
+      WHERE em.content_id = ?
+    `, [contentId]);
+    if (!rows.length) return;
+    const docs = rows.map(row => {
+      let paraMeta = null;
+      try { paraMeta = JSON.parse(row.para_meta); } catch { /* ignore */ }
+      let authority = 0;
+      try { authority = getAuthority({ author: paraMeta?.author || row.author, title: row.title }); } catch { /* ignore */ }
+      return {
+        id: row.id,
+        entity_id: row.entity_id,
+        entity_canonical_name: row.entity_canonical_name,
+        entity_type: row.entity_type || null,
+        paragraph_id: row.paragraph_id,
+        doc_id: row.doc_id,
+        role: row.role || null,
+        religion: row.religion || null,
+        collection: row.collection || null,
+        authority,
+        encumbered: row.encumbered ? 1 : 0,
+      };
+    });
+    await meili.index(INDEXES.ENTITY_MENTIONS).addDocuments(docs, { primaryKey: 'id' });
+  } catch (err) {
+    // Non-fatal — entity still in SQLite, Meili sync can catch up later
+    logger.warn({ contentId, err: err.message }, 'Entity mentions Meili sync failed — will retry on next batch');
+  }
 }
 
 // Extract one paragraph — returns { extractionId, contentId, parsed } or null

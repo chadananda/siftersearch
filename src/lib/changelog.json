@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T13:09:33.249Z",
+  "generated": "2026-05-18T13:11:13.698Z",
   "entries": [
+    {
+      "hash": "f599fc2a",
+      "date": "2026-05-18",
+      "type": "Refactor",
+      "description": "Inline entity resolution in extractor — resolve immediately when LLM responds",
+      "scope": null
+    },
     {
       "hash": "73dcd4f8",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Interfaith-first by example — multi-tradition default, replace Baha'i-only examples",
       "scope": null
-    },
-    {
-      "hash": "d33a8cf1",
-      "date": "2026-05-10",
-      "type": "Other",
-      "description": "Jafar interfaith-first — draw from all traditions, not Bahá'í by default",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "f599fc2a",
+        "date": "2026-05-18",
+        "type": "Refactor",
+        "description": "Inline entity resolution in extractor — resolve immediately when LLM responds",
+        "scope": null
+      },
       {
         "hash": "73dcd4f8",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Other",
         "description": "Interfaith-first by example — multi-tradition default, replace Baha'i-only examples",
-        "scope": null
-      },
-      {
-        "hash": "d33a8cf1",
-        "date": "2026-05-10",
-        "type": "Other",
-        "description": "Jafar interfaith-first — draw from all traditions, not Bahá'í by default",
         "scope": null
       }
     ]
