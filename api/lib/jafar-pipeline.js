@@ -960,6 +960,11 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     sendEvent({ type: 'debug_work_carry', from_history: effectiveWorkName });
   }
 
+  // Sequential reading flag — "read the opening/beginning/first paragraphs of X"
+  // When true, fetch sequential paragraphs via mode='read' instead of document subagent QA.
+  const isSequentialReadRequest = /\b(?:read|show)\s+(?:me\s+)?(?:the\s+)?(?:first|opening|beginning|start|intro)\b/i.test(userMessage) ||
+    /\b(?:first\s+(?:few\s+)?paragraphs?|opening\s+(?:verses?|paragraphs?|lines?)|beginning\s+of)\b/i.test(userMessage);
+
   // Branch 1: user named a specific work (or earlier turn did) — fetch it
   // and hand the document to a focused QA subagent that can search/read
   // within it, rather than dumping 250 paragraphs into crafter context.
@@ -975,6 +980,20 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       });
       const primary = (find?.candidates || []).find(c => c.is_primary) || find?.candidates?.[0];
       if (primary?.document_id) {
+        if (isSequentialReadRequest) {
+          // For "show me the first few paragraphs / read the opening of X":
+          // fetch sequential text via mode='read' so crafter can block-quote
+          // the actual document text (CASE 1) instead of QA paraphrases.
+          if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search_read', args: { document_id: primary.document_id, start: 0, limit: 8 } });
+          const readResult = await runTool('search', {
+            query: effectiveWorkName,
+            document_id: primary.document_id,
+            mode: 'read',
+            start: 0,
+            limit: 8
+          });
+          harvestPassages(readResult, 'sequential_read');
+        } else {
         const { answerFromDocument } = await import('./document-subagent.js');
         if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'document_subagent', args: { document_id: primary.document_id, work_name: effectiveWorkName } });
         const sub = await answerFromDocument({
@@ -1008,6 +1027,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             answer: sub.subagent_answer
           });
         }
+        } // end else (non-sequential)
       }
       // Companion search filtered to the named work's religion — prevents
       // texts from other traditions quoting the same scripture from ranking

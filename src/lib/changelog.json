@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T05:58:20.889Z",
+  "generated": "2026-05-18T06:27:53.821Z",
   "entries": [
+    {
+      "hash": "5b860f2b",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "QURAN NOTE instructs crafter to cite only primary Quran text for Quran-specific queries",
+      "scope": null
+    },
     {
       "hash": "2aae45d4",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Sync-loop pendingIds + bump Meili timeout 60s→300s — break retry storm",
       "scope": null
-    },
-    {
-      "hash": "f17b93b2",
-      "date": "2026-05-08",
-      "type": "Performance",
-      "description": "Cross-doc batching + pipelined addDocuments — 5-10x sync throughput",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "5b860f2b",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "QURAN NOTE instructs crafter to cite only primary Quran text for Quran-specific queries",
+        "scope": null
+      },
       {
         "hash": "2aae45d4",
         "date": "2026-05-17",
@@ -7011,15 +7018,6 @@
         "date": "2026-05-09",
         "type": "Fixed",
         "description": "Sync-loop pendingIds + bump Meili timeout 60s→300s — break retry storm",
-        "scope": null
-      }
-    ],
-    "2026-05-08": [
-      {
-        "hash": "f17b93b2",
-        "date": "2026-05-08",
-        "type": "Performance",
-        "description": "Cross-doc batching + pipelined addDocuments — 5-10x sync throughput",
         "scope": null
       }
     ]
