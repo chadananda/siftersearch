@@ -25,8 +25,8 @@ dotenv.config({ path: join(ROOT, '.env-secrets') });
 dotenv.config({ path: join(ROOT, '.env-public') });
 
 const DB_PATH = process.env.SIFTER_DATABASE_URL || join(ROOT, 'data/sifter.db');
-const MEILI_HOST = process.env.MEILISEARCH_URL || 'http://localhost:7700';
-const MEILI_KEY = process.env.MEILISEARCH_API_KEY || '';
+const MEILI_HOST = process.env.MEILI_HOST || process.env.MEILISEARCH_URL || 'http://localhost:7700';
+const MEILI_KEY = process.env.MEILISEARCH_KEY || process.env.MEILISEARCH_API_KEY || '';
 
 const args = process.argv.slice(2);
 const batchIdx = args.indexOf('--batch');
