@@ -302,6 +302,7 @@ export function getAdjustedThresholds(questionType) {
     base.quoteEconomy = 2;
     base.inlineQuoteIntegration = 2;
     base.criticalEngagement = 1; // "Do you have books by X?" carries no premise to challenge
+    base.toolUsage = 3;          // library_count is valid fast-path for author lookups; accept any catalog tool
   }
   if (questionType === 'framing') {
     // These scenarios exist specifically to test criticalEngagement — raise its weight

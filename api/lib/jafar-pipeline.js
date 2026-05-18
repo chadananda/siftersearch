@@ -111,6 +111,9 @@ const CATALOG_PATTERNS = [
   /\bshow me (everything|all works?|all writings?)\b/i,
   /\bshow me (?:books?|works?|writings?)\s+by\b/i,
   /\blist (all|every|the) works?\b/i,
+  /\bwho (wrote|authored|contributed) the most\b/i,
+  /\bmost (?:prolific|books|works|documents)\b/i,
+  /\bwhich author\b.{0,30}\bmost\b/i,
 ];
 
 // Extract a tradition name from a catalog query so we can also do a targeted search
@@ -787,6 +790,34 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         logger.warn({ err: e.message }, 'library_count failed, falling through to normal research');
       }
     } else {
+      // Special case: author-ranking queries ("who wrote the most books in the library?")
+      // library_overview doesn't include author stats — query SQLite directly.
+      const isAuthorRankQuery = /\bwho (wrote|authored|contributed) the most\b|\bmost (?:prolific|books|works|documents)\b|\bwhich author\b.{0,30}\bmost\b/i.test(userMessage);
+      if (isAuthorRankQuery) {
+        if (debug) debugCalls.push({ name: 'author_count_query', args: {}, forced: true });
+        if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'author_count_query', args: {}, forced: true });
+        try {
+          const topAuthors = await queryAll(
+            `SELECT author, COUNT(*) as cnt FROM docs WHERE deleted_at IS NULL AND author IS NOT NULL AND author != '' AND author != 'Unknown'
+             GROUP BY author ORDER BY cnt DESC LIMIT 10`
+          );
+          const authorLines = topAuthors.map((r, i) => `  ${i + 1}. ${r.author}: ${r.cnt} documents`).join('\n');
+          retrieved.push({
+            text: `Top authors by document count in this library:\n${authorLines}\n\n⭐ Most prolific author (pre-computed): "${topAuthors[0]?.author}" with ${topAuthors[0]?.cnt} documents`,
+            source_title: 'Library Author Statistics',
+            source_author: 'Ocean Library',
+            citation_url: null,
+            via: 'library_overview',
+            is_catalog: true,
+            pure_count: true,
+            skip_quotes: true,
+          });
+          return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
+        } catch (ae) {
+          logger.warn({ err: ae.message }, 'author rank query failed, falling through');
+        }
+      }
+
       // Unfiltered catalog: library_overview + companion search
       if (debug) debugCalls.push({ name: 'library_overview', args: {}, forced: true });
       if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'library_overview', args: {}, forced: true });
