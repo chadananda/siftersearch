@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T13:37:24.980Z",
+  "generated": "2026-05-18T14:27:03.230Z",
   "entries": [
+    {
+      "hash": "ecaf43b3",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Separate cooldown docs from indexing progress display",
+      "scope": null
+    },
     {
       "hash": "dc94b9ce",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Remove religion routing from research — search all traditions, context-aware classifier",
       "scope": null
-    },
-    {
-      "hash": "b8edec89",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Intent classifier no longer defaults religion to Baha'i for general questions",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "ecaf43b3",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Separate cooldown docs from indexing progress display",
+        "scope": null
+      },
       {
         "hash": "dc94b9ce",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Remove religion routing from research — search all traditions, context-aware classifier",
-        "scope": null
-      },
-      {
-        "hash": "b8edec89",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Intent classifier no longer defaults religion to Baha'i for general questions",
         "scope": null
       }
     ]

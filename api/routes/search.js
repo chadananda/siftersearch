@@ -10,8 +10,9 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence } from '../lib/search.js';
-import { userQuery } from '../lib/db.js';
+import { queryOne, userQuery } from '../lib/db.js';
 import { getCachedContentCounts } from '../services/progress.js';
+import { CURRENT_VERSION } from '../lib/migrations/runner.js';
 import { optionalAuthenticate } from '../lib/auth.js';
 import { config } from '../lib/config.js';
 import { createRequire } from 'module';
@@ -434,6 +435,47 @@ export default async function searchRoutes(fastify) {
   fastify.get('/health', async () => {
     const health = await healthCheck();
     return health;
+  });
+
+  // Pipeline health — exposes sync staleness, entity health, schema version.
+  // Public read-only (no sensitive data). Used by health-check.mjs remotely.
+  fastify.get('/health/pipeline', async () => {
+    const [counts, schemaRow, syncStale, entityDup, promotionQ, recentExtractions] = await Promise.all([
+      getCachedContentCounts(),
+      queryOne(`SELECT version FROM _schema_version ORDER BY version DESC LIMIT 1`).catch(() => null),
+      queryOne(`SELECT COUNT(*) AS unsynced, MIN(created_at) AS oldest
+                FROM content WHERE synced = 0 AND deleted_at IS NULL`),
+      queryOne(`SELECT COUNT(*) AS total,
+                  COUNT(DISTINCT entity_id || '|' || content_id || '|' || COALESCE(role,'')) AS unique_combos
+                FROM entity_mentions`).catch(() => ({ total: 0, unique_combos: 0 })),
+      queryOne(`SELECT COUNT(*) AS n FROM promotion_queue WHERE resolved = 0`).catch(() => ({ n: 0 })),
+      queryOne(`SELECT COUNT(*) AS n FROM extraction_runs WHERE created_at > unixepoch() - 86400`).catch(() => ({ n: 0 }))
+    ]);
+
+    const oldestMs = syncStale?.oldest ? new Date(syncStale.oldest).getTime() : 0;
+    const oldestHours = oldestMs ? Math.round((Date.now() - oldestMs) / 360000) / 10 : 0;
+    const dupRatio = entityDup?.total > 0 ? Math.round((entityDup.total / entityDup.unique_combos) * 100) / 100 : 1;
+
+    return {
+      schema: { db_version: schemaRow?.version ?? 0, expected_version: CURRENT_VERSION },
+      sync: {
+        unsynced_count: syncStale?.unsynced ?? 0,
+        oldest_unsynced_hours: oldestHours,
+        total_paragraphs: counts.totalParagraphs,
+        cooldown_doc_count: counts.cooldownDocCount ?? 0
+      },
+      entity: {
+        mention_rows: entityDup?.total ?? 0,
+        dup_ratio: dupRatio,
+        promotion_queue_pending: promotionQ?.n ?? 0,
+        extraction_runs_24h: recentExtractions?.n ?? 0
+      },
+      status: {
+        sync_stuck: oldestHours > 4 && (syncStale?.unsynced ?? 0) > 1000,
+        lock_storm: dupRatio > 1.5,
+        migration_pending: (schemaRow?.version ?? 0) < CURRENT_VERSION
+      }
+    };
   });
 
   // AI-powered analysis of search results
