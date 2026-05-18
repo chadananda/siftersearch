@@ -2163,7 +2163,11 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     const bodyBlock = q.translation
       ? `original: ${q.text}\n  translation (en): ${q.translation}`
       : q.text;
-    const catalogCompanionTag = q.via === 'catalog_companion' ? ' CATALOG-COMPANION ← QUOTE THIS PASSAGE IN YOUR RESPONSE using [fragment](citation_url)' : '';
+    const catalogCompanionTag = (q.via === 'catalog_companion' || q.via === 'catalog_companion_sql')
+      ? ' CATALOG-COMPANION ← QUOTE THIS PASSAGE IN YOUR RESPONSE using [fragment](citation_url)'
+      : q.via === 'sequential_read_sql'
+        ? ' SEQUENTIAL-READ ← present these paragraphs in document order as consecutive block quotes (CASE 1 reading rule applies)'
+        : '';
     return `[Q${i + 1}${q.is_summary ? ' SUMMARY' : ''}${catalogCompanionTag}${tierTag}${religionTag}${langTag}] ${bodyBlock}\n  Citation: ${cite}\n  doc=${q.doc_id || '?'} para=${q.paragraph_index ?? '?'}`;
   }).join('\n\n');
 
