@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T22:00:23.281Z",
+  "generated": "2026-05-18T22:24:08.679Z",
   "entries": [
+    {
+      "hash": "790aa7da",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Enrichment check is remote_only from dev machine (localhost API ping guard)",
+      "scope": null
+    },
     {
       "hash": "df420554",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Skip propagation in enrichment-api hot path to unblock submitNextBatch",
       "scope": null
-    },
-    {
-      "hash": "a9ef7228",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Batch propagateHypeFromNormalizedHash to avoid minute-long write lock",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "790aa7da",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Enrichment check is remote_only from dev machine (localhost API ping guard)",
+        "scope": null
+      },
       {
         "hash": "df420554",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Skip propagation in enrichment-api hot path to unblock submitNextBatch",
-        "scope": null
-      },
-      {
-        "hash": "a9ef7228",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Batch propagateHypeFromNormalizedHash to avoid minute-long write lock",
         "scope": null
       }
     ]

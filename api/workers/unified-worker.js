@@ -217,7 +217,10 @@ async function processSyncJob(job) {
     // worker would re-process the same doc dozens of times before drain.
     const inFlightDocIds = new Set();
     while (!isShuttingDown) {
-      const docs = await content.getDocsWithDirtyParagraphs(10);
+      // Fetch enough docs to keep the 5-slot pipeline full. With FLUSH_PARAS=500
+      // and ~9 paras/doc, each pipeline slot needs ~56 docs. 500 gives headroom
+      // for the inFlightDocIds filter without prematurely breaking the loop.
+      const docs = await content.getDocsWithDirtyParagraphs(500);
       const fresh = docs.filter(d => !inFlightDocIds.has(d.id));
       if (fresh.length === 0) {
         // All visible-dirty docs are already in our pipeline. Drain one
