@@ -697,12 +697,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
               ? topicMatch[1].trim()
               : isMetaQuery ? 'spiritual teachings revelation faith God' : userMessage.slice(0, 200);
 
-            let companionPassages = null;
-            if (!isMetaQuery || hasTopicComponent) {
-              const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: hasTopicComponent ? 6 : 3, semanticRatio: 0.7 };
-              if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
-              companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
-            }
+            const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: hasTopicComponent ? 6 : 3, semanticRatio: 0.7 };
+            if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
+            const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
             if (catalogFilters.author) {
               // Check whether returned passages are actually from the requested author.
               // Normalize both sides: strip diacritics + apostrophes before comparing,

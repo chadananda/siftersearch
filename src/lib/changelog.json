@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T10:25:50.379Z",
+  "generated": "2026-05-18T10:38:20.034Z",
   "entries": [
+    {
+      "hash": "32352825",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Early-return only when ALL sample docs have no source_url",
+      "scope": null
+    },
     {
       "hash": "c1b5051b",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Switch CDN from R2 public URL to ImageKit endpoint for proper image sizing",
       "scope": null
-    },
-    {
-      "hash": "f299e9d1",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Dialog images → R2 direct upload, auto-generate in batch runner",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "32352825",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Early-return only when ALL sample docs have no source_url",
+        "scope": null
+      },
       {
         "hash": "c1b5051b",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Switch CDN from R2 public URL to ImageKit endpoint for proper image sizing",
-        "scope": null
-      },
-      {
-        "hash": "f299e9d1",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Dialog images → R2 direct upload, auto-generate in batch runner",
         "scope": null
       }
     ]
