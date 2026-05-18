@@ -690,22 +690,29 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
             const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
             if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
-            // If author filter returned no passages, search WITHIN the author's document directly.
-            // Handles semantic mismatch where theological query scores low against historical/scholarly
-            // works (e.g. Moojan Momen's historical texts). Use SQLite directly to avoid Meilisearch
-            // empty-query ranking unpredictability.
+            // If Meilisearch author-filter search returned no passages (common for multi-word author names
+            // like "Universal House of Justice" because Meilisearch CONTAINS requires an experimental
+            // feature flag), fall back to fetching paragraphs directly from SQLite.
             if (catalogFilters.author && !companionPassages?.passages?.length) {
               try {
                 const authorDocs = await queryAll(
-                  `SELECT id FROM docs WHERE author LIKE ? AND deleted_at IS NULL LIMIT 1`,
+                  `SELECT id, title, author, source_url FROM docs WHERE author LIKE ? AND deleted_at IS NULL ORDER BY id LIMIT 1`,
                   [`%${catalogFilters.author}%`]
                 );
                 if (authorDocs[0]?.id) {
-                  const inDocArgs = { query: 'key teachings ideas', document_id: authorDocs[0].id, mode: 'passages', limit: 3, semanticRatio: 0.3 };
-                  const inDocPassages = await executeTool('search', inDocArgs, { scope_config });
-                  if (inDocPassages?.passages?.length) harvestPassages(inDocPassages, 'catalog_companion');
+                  const doc = authorDocs[0];
+                  const contentRows = await queryAll(
+                    `SELECT text, external_id FROM content WHERE doc_id = ? AND deleted_at IS NULL AND length(text) > 80 ORDER BY position_idx LIMIT 4`,
+                    [doc.id]
+                  );
+                  for (const row of contentRows) {
+                    const url = doc.source_url && row.external_id
+                      ? `${doc.source_url}?paraId=${row.external_id}`
+                      : doc.source_url || null;
+                    retrieved.push({ text: row.text, source_title: doc.title, source_author: doc.author, citation_url: url, via: 'catalog_companion_sql' });
+                  }
                 }
-              } catch (fe) { /* ignore fallback errors */ }
+              } catch (sqlFallbackErr) { logger.debug({ err: sqlFallbackErr.message }, 'catalog sql fallback error'); }
             }
 
             // For compound queries with a topic component, also check deep research cache
@@ -1002,9 +1009,18 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       }
       if (authorDocs.length > 0) {
         const canonicalAuthor = authorDocs[0].author.split(',')[0].trim(); // first credited author
+        // Get total count — authorDocs is limited to 5, real total may be higher
+        const countFilter = nameParts.length >= 2 ? `%${nameParts[0]}%` : `%${personName}%`;
+        let totalCount = authorDocs.length;
+        try {
+          const countRow = await queryAll(
+            `SELECT COUNT(*) as cnt FROM docs WHERE author LIKE ? AND deleted_at IS NULL`, [countFilter]
+          );
+          totalCount = countRow[0]?.cnt ?? authorDocs.length;
+        } catch (countErr) { logger.debug({ err: countErr.message }, 'author count query failed, using sample size'); }
         const docList = authorDocs.map(d => d.source_url ? `  - [${d.title}](${d.source_url})` : `  - ${d.title}`).join('\n');
         retrieved.push({
-          text: `Works by ${canonicalAuthor} in the library:\n${docList}\n\n(Use companion passages below to quote actual text — do NOT end after this title list.)`,
+          text: `The library holds ${totalCount} work${totalCount === 1 ? '' : 's'} by ${canonicalAuthor}. Sample titles:\n${docList}\n\n⚠️ REQUIRED: Start your response with "The library holds ${totalCount} work${totalCount === 1 ? '' : 's'} by ${canonicalAuthor}" — then quote one prose fragment from the companion passages below. DO NOT begin with a biographical description.`,
           source_title: 'Library Catalog',
           source_author: 'Ocean Library',
           citation_url: null,
@@ -1934,9 +1950,11 @@ EXAMPLE — "How many books by Udo Schaefer?"
 GOOD: "The library holds 12 works by Udo Schaefer, covering Bahá'í jurisprudence, theology, and comparative religion."
 
 BARE AUTHOR NAME — user typed just a name, no question ("Udo Schaefer", "Rumi", "Moojan Momen"):
-Treat as "who is this person and what do they write?" — same pattern as AUTHOR CATALOG below.
-State count/works → quote one prose fragment from their writings.
-BAD — just describing who they are without citing their actual words.
+REQUIRED FIRST SENTENCE: "The library holds N works by [Name]." (the exact phrasing from the CATALOG DATA entry)
+THEN: optionally name 1-2 titles → quote one prose fragment from a companion passage.
+FORBIDDEN: Starting with "X is a prominent scholar..." or any biographical description — that is general knowledge, not library content.
+GOOD: "The library holds 12 works by Udo Schaefer, including Not a Man of Violence. In his words, ['justice requires a genuine orientation toward God'](url)."
+BAD: "Udo Schaefer is a prominent Bahá'í scholar and jurist known for his work..." (biography before library = WRONG)
 
 AUTHOR CATALOG — "Show me everything by Bahá'u'lláh" / "What do you have by the Universal House of Justice?" / "Do you have works by Rumi?"
 MANDATORY: Author catalog responses MUST include at least ONE inline prose quote from a companion passage — the author's actual words, not just a title listing. Listing titles without prose fragments = citationPresence=2 (FAILURE).
