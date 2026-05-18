@@ -634,8 +634,13 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         const countResult = await executeTool('library_count', catalogFilters, { scope_config });
         const filterDesc = Object.entries(catalogFilters).map(([k, v]) => `${k}="${v}"`).join(', ');
         const samples = countResult.sample_documents || [];
+        // Only link titles when each document has a UNIQUE URL (not a shared collection URL).
+        // Shared URLs (e.g. all UHJ letters pointing to oceanlibrary.com/administrative) are
+        // collection-level, not document-level — linking them as document links is misleading.
+        const sampleUrls = samples.map(d => d.source_url || d.citation_url).filter(Boolean);
+        const allSameUrl = sampleUrls.length > 1 && new Set(sampleUrls).size === 1;
         const sampleLines = samples.map(d => {
-          const url = d.source_url || d.citation_url;
+          const url = !allSameUrl ? (d.source_url || d.citation_url) : null;
           const titlePart = url ? `[${d.title}](${url})` : d.title;
           return `  - ${titlePart}${d.author ? ' by ' + d.author : ''}${d.collection ? ' [' + d.collection + ']' : ''}${d.year ? ' (' + d.year + ')' : ''}`;
         }).join('\n');
