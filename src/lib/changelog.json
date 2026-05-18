@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T02:33:51.215Z",
+  "generated": "2026-05-18T02:34:56.813Z",
   "entries": [
+    {
+      "hash": "eacd453c",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Reading requests use search(mode=read) not read_document_for_question",
+      "scope": null
+    },
     {
       "hash": "2395b1d4",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Refactor",
       "description": "Worker-status.json — overnight session summary",
       "scope": null
-    },
-    {
-      "hash": "7db1d601",
-      "date": "2026-05-02",
-      "type": "Other",
-      "description": "Skip indexing duplicates + remove existing from Meili",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "eacd453c",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Reading requests use search(mode=read) not read_document_for_question",
+        "scope": null
+      },
       {
         "hash": "2395b1d4",
         "date": "2026-05-17",
@@ -7023,13 +7030,6 @@
         "date": "2026-05-02",
         "type": "Refactor",
         "description": "Worker-status.json — overnight session summary",
-        "scope": null
-      },
-      {
-        "hash": "7db1d601",
-        "date": "2026-05-02",
-        "type": "Other",
-        "description": "Skip indexing duplicates + remove existing from Meili",
         "scope": null
       }
     ]
