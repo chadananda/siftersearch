@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T03:26:26.937Z",
+  "generated": "2026-05-18T03:33:59.569Z",
   "entries": [
+    {
+      "hash": "7b4a9c4e",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Author catalog + browsing must include passages, not just catalog listing",
+      "scope": null
+    },
     {
       "hash": "41217641",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Scope-aware sites-ingester routing + sites.yaml schema (Phases C+D)",
       "scope": null
-    },
-    {
-      "hash": "c649210c",
-      "date": "2026-05-04",
-      "type": "Other",
-      "description": "Site2rag adapter — generic crawler-MD parser for supplemental sites",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "7b4a9c4e",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Author catalog + browsing must include passages, not just catalog listing",
+        "scope": null
+      },
       {
         "hash": "41217641",
         "date": "2026-05-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-04",
         "type": "Other",
         "description": "Scope-aware sites-ingester routing + sites.yaml schema (Phases C+D)",
-        "scope": null
-      },
-      {
-        "hash": "c649210c",
-        "date": "2026-05-04",
-        "type": "Other",
-        "description": "Site2rag adapter — generic crawler-MD parser for supplemental sites",
         "scope": null
       }
     ]
