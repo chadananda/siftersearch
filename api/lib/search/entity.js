@@ -56,7 +56,7 @@ export async function syncEntityMentionsBatch({ getMeili, INDEXES }, { queryAll,
 
   const rows = await queryAll(`
     SELECT em.id AS mention_id, em.entity_id, em.content_id AS paragraph_id, em.role,
-           ge.canonical_name AS entity_canonical_name, ge.type AS entity_type,
+           ge.canonical_name AS entity_canonical_name, ge.entity_type,
            c.doc_id, d.religion, d.collection, d.encumbered, d.title, d.author,
            c.para_meta
     FROM entity_mentions em

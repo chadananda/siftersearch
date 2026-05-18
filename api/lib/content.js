@@ -772,7 +772,7 @@ async function getDocsWithDirtyParagraphs(limit = 50) {
     FROM docs d
     JOIN (
       SELECT doc_id, MAX(updated_at) as max_updated_at
-      FROM content
+      FROM content INDEXED BY idx_content_dirty_doc_updated
       WHERE synced = 0 AND deleted_at IS NULL
       GROUP BY doc_id
       ORDER BY max_updated_at DESC
