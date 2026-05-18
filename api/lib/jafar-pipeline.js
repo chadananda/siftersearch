@@ -687,33 +687,41 @@ export async function deterministicResearch({ entities, userMessage, messages, s
               ? topicMatch[1].trim()
               : isMetaQuery ? 'spiritual teachings revelation faith God' : userMessage.slice(0, 200);
 
+            // Companion search: try Meilisearch first; verify it returned passages actually from
+            // the requested author (Meilisearch CONTAINS filter is unreliable for multi-word names
+            // — it silently ignores the filter and returns unrelated results).
+            const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: hasTopicComponent ? 6 : 3, semanticRatio: 0.7 };
+            if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
+            const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
             if (catalogFilters.author) {
-              // Author-filtered queries: Meilisearch CONTAINS requires an experimental feature flag
-              // that is not enabled in production, so author filters are silently ignored and
-              // unrelated passages are returned. Bypass Meilisearch entirely and fetch directly
-              // from SQLite where the author LIKE filter is reliable.
-              try {
-                // Cross-doc query: find prose across ALL docs by this author (first doc may have 0 rows)
-                const contentRows = await queryAll(
-                  `SELECT c.text, c.external_para_id, d.title, d.author, d.source_url
-                   FROM content c JOIN docs d ON c.doc_id = d.id
-                   WHERE d.author LIKE ? AND d.deleted_at IS NULL AND c.deleted_at IS NULL
-                     AND length(c.text) > 120 AND c.paragraph_index > 2
-                   ORDER BY d.id, c.paragraph_index LIMIT 4`,
-                  [`%${catalogFilters.author}%`]
-                );
-                for (const row of contentRows) {
-                  const url = row.source_url && row.external_para_id
-                    ? `${row.source_url}?paraId=${row.external_para_id}`
-                    : row.source_url || null;
-                  retrieved.push({ text: row.text, source_title: row.title, source_author: row.author, citation_url: url, via: 'catalog_companion_sql' });
-                }
-              } catch (sqlFallbackErr) { logger.debug({ err: sqlFallbackErr.message }, 'catalog sql fallback error'); }
+              // Check whether returned passages are actually from the requested author.
+              // If Meilisearch's CONTAINS filter worked, at least one passage will match.
+              const authorLastName = catalogFilters.author.split(/\s+/).pop().toLowerCase();
+              const authorMatchedPassages = (companionPassages?.passages || []).filter(p =>
+                (p.author || '').toLowerCase().includes(authorLastName)
+              );
+              if (authorMatchedPassages.length > 0) {
+                harvestPassages({ passages: authorMatchedPassages }, 'catalog_companion');
+              } else {
+                // CONTAINS filter silently failed — go directly to SQLite
+                try {
+                  const contentRows = await queryAll(
+                    `SELECT c.text, c.external_para_id, d.title, d.author, d.source_url
+                     FROM content c JOIN docs d ON c.doc_id = d.id
+                     WHERE d.author LIKE ? AND d.deleted_at IS NULL AND c.deleted_at IS NULL
+                       AND length(c.text) > 120 AND c.paragraph_index > 2
+                     ORDER BY d.id, c.paragraph_index LIMIT 4`,
+                    [`%${catalogFilters.author}%`]
+                  );
+                  for (const row of contentRows) {
+                    const url = row.source_url && row.external_para_id
+                      ? `${row.source_url}?paraId=${row.external_para_id}`
+                      : row.source_url || null;
+                    retrieved.push({ text: row.text, source_title: row.title, source_author: row.author, citation_url: url, via: 'catalog_companion_sql' });
+                  }
+                } catch (sqlFallbackErr) { logger.debug({ err: sqlFallbackErr.message }, 'catalog sql fallback error'); }
+              }
             } else {
-              // Non-author filters (religion, language, scope): Meilisearch is reliable here
-              const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: hasTopicComponent ? 6 : 3, semanticRatio: 0.7 };
-              if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
-              const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
               if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
             }
 
