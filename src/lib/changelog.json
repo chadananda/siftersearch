@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T15:43:32.961Z",
+  "generated": "2026-05-18T15:46:13.015Z",
   "entries": [
+    {
+      "hash": "52c69e1b",
+      "date": "2026-05-18",
+      "type": "Performance",
+      "description": "Covering index on content(updated_at DESC) WHERE synced=0 — fixes O(N) sync sort",
+      "scope": null
+    },
     {
       "hash": "c7f5e320",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use full user message as passage search query, not lossy topic-join",
       "scope": null
-    },
-    {
-      "hash": "848cd60c",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Tier filter only for Baha'i-specific questions; multi-tradition crafter; debug_research event",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "52c69e1b",
+        "date": "2026-05-18",
+        "type": "Performance",
+        "description": "Covering index on content(updated_at DESC) WHERE synced=0 — fixes O(N) sync sort",
+        "scope": null
+      },
       {
         "hash": "c7f5e320",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Use full user message as passage search query, not lossy topic-join",
-        "scope": null
-      },
-      {
-        "hash": "848cd60c",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Tier filter only for Baha'i-specific questions; multi-tradition crafter; debug_research event",
         "scope": null
       }
     ]

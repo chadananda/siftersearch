@@ -152,19 +152,33 @@ async function checkPm2() {
     const procs = JSON.parse(stdout);
     const expected = ['siftersearch-api', 'siftersearch-worker',
       'siftersearch-library-watcher', 'siftersearch-enrichment', 'siftersearch-updater'];
+    // Optional: graph workers only checked if they exist in PM2 list
+    const optional = ['siftersearch-graph-extractor', 'siftersearch-graph-validator',
+      'siftersearch-graph-resolver', 'siftersearch-graph-promoter'];
     const summary = {};
+    const problems = [];
     for (const name of expected) {
       const p = procs.find(x => x.name === name);
-      if (!p) { summary[name] = 'missing'; continue; }
+      if (!p) { summary[name] = 'missing'; problems.push(`${name}: missing`); continue; }
       const status = p.pm2_env?.status || 'unknown';
       const restarts = p.pm2_env?.restart_time ?? 0;
       const uptime = p.pm2_env?.pm_uptime
         ? Math.round((Date.now() - p.pm2_env.pm_uptime) / 1000) : 0;
       summary[name] = `${status} (restarts=${restarts}, uptime=${uptime}s)`;
+      if (status !== 'online') problems.push(`${name}: ${status}`);
+      // Flag crash loops: >50 restarts is a process that keeps dying
+      if (restarts > 50) problems.push(`${name}: crash loop (${restarts} restarts)`);
     }
-    const allOnline = expected.every(n => summary[n]?.startsWith('online'));
-    if (allOnline) ok('pm2', 0, summary);
-    else fail('pm2', 'some processes not online', summary);
+    for (const name of optional) {
+      const p = procs.find(x => x.name === name);
+      if (!p) continue; // optional — absence is fine
+      const status = p.pm2_env?.status || 'unknown';
+      const restarts = p.pm2_env?.restart_time ?? 0;
+      summary[name] = `${status} (restarts=${restarts})`;
+      if (restarts > 50) problems.push(`${name}: crash loop (${restarts} restarts)`);
+    }
+    if (problems.length > 0) fail('pm2', problems.join('; '), summary);
+    else ok('pm2', 0, summary);
   } catch (err) {
     warn('pm2', `pm2 query failed: ${err.message}`);
   }
@@ -196,18 +210,19 @@ async function checkDbActivity() {
 // Calls /api/search/health/pipeline which queries the DB server-side.
 // Works from any machine (no direct DB access needed).
 // Checks: sync staleness, Meili vs DB divergence, entity lock-storm, schema version.
-let _pipelineHealth = null;
+// Shared promise so concurrent callers don't each make a separate request.
+let _pipelineHealthPromise = null;
 async function fetchPipelineHealth() {
-  if (_pipelineHealth) return _pipelineHealth;
-  try {
-    const res = await fetch(`${API_BASE}/api/search/health/pipeline`,
-      { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    _pipelineHealth = await res.json();
-  } catch (err) {
-    _pipelineHealth = { _error: err.message };
+  if (!_pipelineHealthPromise) {
+    _pipelineHealthPromise = fetch(`${API_BASE}/api/search/health/pipeline`,
+      { signal: AbortSignal.timeout(20000) })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .catch(err => ({ _error: err.message }));
   }
-  return _pipelineHealth;
+  return _pipelineHealthPromise;
 }
 
 async function checkSyncStaleness() {
