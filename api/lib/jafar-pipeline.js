@@ -642,7 +642,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         const distinctCollections = [...new Set(samples.map(d => d.collection).filter(Boolean))];
         const collectionNote = distinctCollections.length > 0 ? `\n\nCollections (from samples): ${distinctCollections.join(', ')}` : '';
         retrieved.push({
-          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles (with URLs — you may list these works using [title](url) format; for inline prose quotes use CATALOG-COMPANION passages only):\n${sampleLines}`,
+          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles (you MAY list up to 3 of these using [title](url); for ALL prose quotes you MUST use CATALOG-COMPANION passages — NOT these title entries):\n${sampleLines}\n\n⚠️ REQUIRED NEXT STEP: After listing the count and titles, quote at least one prose fragment from the CATALOG-COMPANION Q-entry. DO NOT end your response after the title list.`,
           source_title: 'Library Catalog',
           source_author: 'Ocean Library',
           citation_url: null,
@@ -2010,7 +2010,7 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     const bodyBlock = q.translation
       ? `original: ${q.text}\n  translation (en): ${q.translation}`
       : q.text;
-    const catalogCompanionTag = q.via === 'catalog_companion' ? ' CATALOG-COMPANION-cite-this-source-title-exactly-as-shown' : '';
+    const catalogCompanionTag = q.via === 'catalog_companion' ? ' CATALOG-COMPANION ← QUOTE THIS PASSAGE IN YOUR RESPONSE using [fragment](citation_url)' : '';
     return `[Q${i + 1}${q.is_summary ? ' SUMMARY' : ''}${catalogCompanionTag}${tierTag}${religionTag}${langTag}] ${bodyBlock}\n  Citation: ${cite}\n  doc=${q.doc_id || '?'} para=${q.paragraph_index ?? '?'}`;
   }).join('\n\n');
 

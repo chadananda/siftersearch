@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T03:54:37.338Z",
+  "generated": "2026-05-18T03:59:20.228Z",
   "entries": [
+    {
+      "hash": "41a5d243",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Catalog companion quote mandatory; bare-name author routing; reading framing",
+      "scope": null
+    },
     {
       "hash": "34aaf76d",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Jafar pipeline accepts chatbot_location + boot-time site registry (E3)",
       "scope": null
-    },
-    {
-      "hash": "fdd29665",
-      "date": "2026-05-04",
-      "type": "Other",
-      "description": "Scope-aware search federation (Phases E1+E2)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "41a5d243",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Catalog companion quote mandatory; bare-name author routing; reading framing",
+        "scope": null
+      },
       {
         "hash": "34aaf76d",
         "date": "2026-05-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-04",
         "type": "Other",
         "description": "Jafar pipeline accepts chatbot_location + boot-time site registry (E3)",
-        "scope": null
-      },
-      {
-        "hash": "fdd29665",
-        "date": "2026-05-04",
-        "type": "Other",
-        "description": "Scope-aware search federation (Phases E1+E2)",
         "scope": null
       }
     ]
