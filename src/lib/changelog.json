@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T15:33:50.993Z",
+  "generated": "2026-05-18T15:43:32.961Z",
   "entries": [
+    {
+      "hash": "c7f5e320",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Add ANALYZE/VACUUM/REINDEX to db.js isWrite regex — unblocks migration 74",
+      "scope": null
+    },
     {
       "hash": "15cd3203",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Tier filter only for Baha'i-specific questions; multi-tradition crafter; debug_research event",
       "scope": null
-    },
-    {
-      "hash": "eb53627f",
-      "date": "2026-05-10",
-      "type": "Other",
-      "description": "Parallel per-tradition search for general questions — prevents Baha'i corpus dominance",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "c7f5e320",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Add ANALYZE/VACUUM/REINDEX to db.js isWrite regex — unblocks migration 74",
+        "scope": null
+      },
       {
         "hash": "15cd3203",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Tier filter only for Baha'i-specific questions; multi-tradition crafter; debug_research event",
-        "scope": null
-      },
-      {
-        "hash": "eb53627f",
-        "date": "2026-05-10",
-        "type": "Other",
-        "description": "Parallel per-tradition search for general questions — prevents Baha'i corpus dominance",
         "scope": null
       }
     ]

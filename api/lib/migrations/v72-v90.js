@@ -338,4 +338,24 @@ export const migrations = {
 
     logger.info('Migration 74 complete: unique constraints on entity_aliases, entity_mentions, promotion_queue');
   },
+
+  75: async () => {
+    logger.info('Starting migration 75: covering index for sync-processor ORDER BY updated_at');
+
+    // getDirtyParagraphsBatch queries:
+    //   WHERE c.synced = 0 AND c.deleted_at IS NULL ORDER BY c.updated_at DESC LIMIT N
+    //
+    // The existing idx_content_unsynced partial index has no updated_at column,
+    // so SQLite must sort all 527K+ unsynced rows on every poll cycle — O(N log N)
+    // per batch instead of O(1). This covering index lets SQLite read the top-N
+    // rows directly from the index without a full scan or sort.
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_content_dirty_updated
+        ON content(updated_at DESC)
+        WHERE synced = 0 AND deleted_at IS NULL
+    `);
+    await query(`ANALYZE content`);
+
+    logger.info('Migration 75 complete: idx_content_dirty_updated covering index');
+  },
 };
