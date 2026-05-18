@@ -1208,7 +1208,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   if (/\b(suffer|suffering|evil|pain|grief|tragedy|allow.*suffer|why.*god.*allow|calamity|afflict)\b/i.test(userMessage)) {
     passageQuery = passageQuery.replace(/\bsuffer(ing)?\b/gi, 'trials').trim() + ' tests purpose ordained';
   }
-  if (passageQuery && passageQuery.trim()) {
+  if (passageQuery && passageQuery.trim() && !isAuthorOnlyQuery) {
     if (!effectiveWorkName) {
       // General interfaith question — parallel per-tradition searches with
       // collection filter to prefer primary texts. Without collection filter,
