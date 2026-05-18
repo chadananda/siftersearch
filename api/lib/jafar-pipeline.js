@@ -684,9 +684,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             const hasTopicComponent = !!topicMatch;
             const isMetaQuery = /\b(do you have|what books|any books|show me|list|how many|what works|do you carry|what collections|list the|list all)\b/i.test(userMessage);
 
-            // Pure meta-queries ("What books do you have?") already get title links from
-            // catalog data — skip companion search+SQL entirely to prevent misattributed quotes.
-            if (isMetaQuery && !hasTopicComponent) {
+            // Pure meta-queries with no linkable sample docs — skip companion entirely.
+            // When samples have source_url (UHJ, Rumi, etc.), continue: companion can cite real passages.
+            // When ALL samples have no URL (e.g., Momen Papers), companion only introduces
+            // misattributed content that the crafter can't properly cite.
+            const hasSampleUrls = sampleUrls.length > 0 && !allSameUrl;
+            if (isMetaQuery && !hasTopicComponent && !hasSampleUrls) {
               return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
             }
 

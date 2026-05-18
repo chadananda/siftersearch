@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T10:22:55.919Z",
+  "generated": "2026-05-18T10:25:50.379Z",
   "entries": [
+    {
+      "hash": "c1b5051b",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Library_count samples prefer docs with source_url for verifiable title links",
+      "scope": null
+    },
     {
       "hash": "87905d2c",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Dialog images → R2 direct upload, auto-generate in batch runner",
       "scope": null
-    },
-    {
-      "hash": "1875aace",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Dialog hero images — generate via gpt-image-1, serve from CF Pages static",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "c1b5051b",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Library_count samples prefer docs with source_url for verifiable title links",
+        "scope": null
+      },
       {
         "hash": "87905d2c",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Dialog images → R2 direct upload, auto-generate in batch runner",
-        "scope": null
-      },
-      {
-        "hash": "1875aace",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Dialog hero images — generate via gpt-image-1, serve from CF Pages static",
         "scope": null
       }
     ]
