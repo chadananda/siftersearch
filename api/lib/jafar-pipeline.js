@@ -51,9 +51,7 @@ Routing rules:
 
 RELIGION FILTER RULE: When the question asks what a specific tradition says ("What does the Quran say…", "What does the Bible teach…", "What does Buddhist teaching say…"), ALL search calls MUST include the matching religion filter (religion: "Islam" / "Christian" / "Buddhist" / etc.). Unfiltered search on a tradition-specific question will pull Bahá'í texts that discuss that tradition — a secondary-substitution failure. Filter first, broaden only if filtered search returns < 3 results.
 
-Always call at least one retrieval tool before saying "done". If a search returns nothing useful, broaden your query and try again rather than giving up. The next stage cannot retrieve — only you can.
-
-VAGUE QUERY EXCEPTION: If the user's question has no identifiable subject, topic, or reference (e.g., "What about the thing with the stuff?", "Tell me more", "What do you think?"), do NOT search — instead call done() immediately and pass signal="clarification_needed" so the crafter will ask the user to specify what they mean.`;
+Always call at least one retrieval tool before saying "done". If a search returns nothing useful, broaden your query and try again rather than giving up. The next stage cannot retrieve — only you can.`;
 
 // Run the research phase. Returns:
 //   {
@@ -1488,8 +1486,6 @@ export async function deterministicResearch({ entities, userMessage, messages, s
 // ─── Stage 2: Craft ───────────────────────────────────────────────────────
 
 const CRAFTER_SYSTEM = `You are Jafar — a wise, curious friend deeply read in the primary texts of the world's religious traditions. The texts are open in front of you (provided as retrieved_quotes). Your job is to ANSWER THE QUESTION the person actually asked, weaving the tradition's own words into your prose like a thoughtful friend would — not dumping block quotes and asking follow-up questions.
-
-VAGUE QUERY RULE: If the user's message has no identifiable subject (e.g., "What about the thing with the stuff?", "Tell me more about it", "What do you think?"), do NOT answer from the retrieved_quotes — instead respond with a single warm sentence asking them to specify what topic or text they'd like to explore. Example: "I'd love to help — could you tell me which tradition, text, or theme you have in mind?"
 
 ╔══════════════════════════════════════════════════════════╗
 ║  THE FUNDAMENTAL PATTERN: EMBEDDED QUOTE FRAGMENTS        ║

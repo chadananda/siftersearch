@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T03:15:21.339Z",
+  "generated": "2026-05-18T03:18:07.345Z",
   "entries": [
+    {
+      "hash": "f9162bea",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Broad tradition overview + vague query clarification + backfill-slugs script",
+      "scope": null
+    },
     {
       "hash": "10a998ce",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Supplemental sites foundation — migration 60 + getSiteDb infra",
       "scope": null
-    },
-    {
-      "hash": "c4546416",
-      "date": "2026-05-04",
-      "type": "Other",
-      "description": "Full slow-query coverage — instrumentDb() wraps every connection",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "f9162bea",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Broad tradition overview + vague query clarification + backfill-slugs script",
+        "scope": null
+      },
       {
         "hash": "10a998ce",
         "date": "2026-05-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-04",
         "type": "Other",
         "description": "Supplemental sites foundation — migration 60 + getSiteDb infra",
-        "scope": null
-      },
-      {
-        "hash": "c4546416",
-        "date": "2026-05-04",
-        "type": "Other",
-        "description": "Full slow-query coverage — instrumentDb() wraps every connection",
         "scope": null
       }
     ]
