@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T04:45:44.002Z",
+  "generated": "2026-05-18T04:54:27.180Z",
   "entries": [
+    {
+      "hash": "5808108c",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Use find_document + read_document fallback when author companion search returns empty",
+      "scope": null
+    },
     {
       "hash": "77e97ee8",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Oceanlibrary.com is scope=primary; wire authority_default to ranking",
       "scope": null
-    },
-    {
-      "hash": "76cf445b",
-      "date": "2026-05-04",
-      "type": "Other",
-      "description": "10-scenario search-merging suite + Phase H smoke deploy verified (v1 done)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "5808108c",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Use find_document + read_document fallback when author companion search returns empty",
+        "scope": null
+      },
       {
         "hash": "77e97ee8",
         "date": "2026-05-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-04",
         "type": "Fixed",
         "description": "Oceanlibrary.com is scope=primary; wire authority_default to ranking",
-        "scope": null
-      },
-      {
-        "hash": "76cf445b",
-        "date": "2026-05-04",
-        "type": "Other",
-        "description": "10-scenario search-merging suite + Phase H smoke deploy verified (v1 done)",
         "scope": null
       }
     ]
