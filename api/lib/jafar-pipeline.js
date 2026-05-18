@@ -2194,7 +2194,7 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
       const label = q.via === 'library_count'
         ? q.catalog_count === 0
           ? `[Q${i + 1} CATALOG-DATA — COUNT IS ZERO. Tell the user honestly that the library does not have works matching these filters. Do NOT add quotes or citations from any source. Do NOT suggest related authors. Do NOT use training-memory content. One sentence: "I don't have works by [author] in the library." is the correct response.]`
-          : `[Q${i + 1} CATALOG-DATA — state the count as plain text ONLY. NEVER write [N documents](url). Sample titles may have URLs — list them using [title](url) in a separate listing. NEVER use a sample title URL as the source URL for a prose quote. NEVER use sample title TEXT as a quotable excerpt — titles are metadata, not prose. For prose quotes use CATALOG-COMPANION Q-entries only (the entries tagged CATALOG-COMPANION below).]`
+          : `[Q${i + 1} CATALOG-DATA — AUTHOR LOOKUP. State the count as plain text. List sample titles with [title](url) links where available. DO NOT quote any prose text from this block — titles are metadata, not quotable text. If CATALOG-COMPANION Q-entries appear below, you MAY quote 1 fragment VERBATIM (word-for-word, not paraphrased). If you are not certain of the exact words in a passage, DO NOT QUOTE IT. A correct author-lookup response = count sentence + title list. No invented quotes.]`
         : q.pure_count
           ? `[Q${i + 1} CATALOG-DATA — PURE COUNT QUERY. State the document count and tradition breakdown as plain text statistics ONLY. No quotes. No hyperlinks. No citations. Just the numbers from the data above.]`
           : q.skip_quotes
