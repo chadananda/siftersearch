@@ -50,6 +50,26 @@ const SIFTER_API_KEY = process.env.PUBLIC_SIFTER_API_KEY;
 const checks = {};
 const startTime = Date.now();
 
+// Probe if a localhost URL is actually reachable (fast, 800ms max).
+// Used to distinguish "not on server" from "service down".
+async function isLocalhostReachable(url) {
+  try {
+    await fetch(url, { signal: AbortSignal.timeout(800) });
+    return true;
+  } catch (err) {
+    // ECONNREFUSED means port closed (service down); AbortError means timeout but port may be open
+    return err.name === 'AbortError';
+  }
+}
+
+let _meiliLocal = null; // cached: true=reachable, false=not on server
+async function meiliReachable() {
+  if (_meiliLocal === null) {
+    _meiliLocal = MEILI_URL.includes('localhost') ? await isLocalhostReachable(MEILI_URL) : true;
+  }
+  return _meiliLocal;
+}
+
 function ok(component, latencyMs, details = {}) {
   checks[component] = { ok: true, latency_ms: Math.round(latencyMs), ...details };
 }
@@ -103,6 +123,11 @@ async function meiliIndex(uid) {
 }
 
 async function checkMeili() {
+  if (!await meiliReachable()) {
+    for (const c of ['meili_paragraphs', 'meili_hype'])
+      warn(c, 'remote_only (run on tower-nas to check Meili)');
+    return;
+  }
   // Run both index checks in parallel — previously sequential 15s×2 = 30s worst case
   await Promise.all([
     // paragraphs (main)
@@ -135,6 +160,16 @@ async function checkMeili() {
 
 // ─── boss vLLM endpoint ───────────────────────────────────────────────────
 async function checkVllm() {
+  // boss is a Tailscale hostname — only reachable from tower-nas, not dev machine
+  const isLocalhostVllm = VLLM_URL.includes('localhost') || VLLM_URL.includes('127.0.0.1');
+  const isBossHostname = VLLM_URL.includes('boss');
+  if (isBossHostname || isLocalhostVllm) {
+    const reachable = await isLocalhostReachable(VLLM_URL.replace(/\/v1.*/, ''));
+    if (!reachable) {
+      warn('boss_vllm', 'remote_only (run on tower-nas to check vLLM)');
+      return;
+    }
+  }
   try {
     const [res, ms] = await timed(() =>
       fetch(`${VLLM_URL}/models`, { signal: AbortSignal.timeout(8000) })
@@ -260,21 +295,23 @@ async function checkSyncStaleness() {
   if (sync.unsynced_count === 0) return ok('sync_staleness', 0, { unsynced: 0 });
 
   if (status.sync_stuck) {
-    // No syncing activity in last 2h AND backlog > 1000 = truly stuck
     return fail('sync_staleness',
-      `${sync.unsynced_count.toLocaleString()} paragraphs unsynced, 0 synced in last 2h — sync processor stuck`,
+      `${sync.unsynced_count.toLocaleString()} paragraphs unsynced, none synced in last 2h — sync processor stuck`,
       details);
   }
   if (sync.unsynced_count > 50000) {
-    // Large backlog but making progress — warn with rate info
+    const rate = status.synced_last_2h > 0 ? `${status.synced_last_2h.toLocaleString()} synced in last 2h` : 'no activity in last 2h';
     return warn('sync_staleness',
-      `large backlog: ${sync.unsynced_count.toLocaleString()} unsynced (${status.synced_last_2h ?? '?'} synced in last 2h)`,
+      `large backlog: ${sync.unsynced_count.toLocaleString()} unsynced (${rate})`,
       details);
   }
   ok('sync_staleness', 0, details);
 }
 
 async function checkMeiliVsDb() {
+  if (!await meiliReachable()) {
+    return warn('meili_vs_db', 'remote_only (run on tower-nas to check Meili)');
+  }
   const ph = await fetchPipelineHealth();
   if (ph._error) return warn('meili_vs_db', `pipeline endpoint unavailable: ${ph._error}`);
 
@@ -456,6 +493,9 @@ async function checkDeepResearch() {
 
 // ─── Entity-mentions Meili sidecar ───────────────────────────────────────
 async function checkEntityMentionsIndex() {
+  if (!await meiliReachable()) {
+    return warn('entity_mentions_idx', 'remote_only (run on tower-nas to check Meili)');
+  }
   try {
     const headers = MEILI_KEY ? { Authorization: `Bearer ${MEILI_KEY}` } : {};
     const res = await fetch(`${MEILI_URL}/indexes/entity_mentions_idx/stats`,

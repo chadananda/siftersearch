@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T18:49:53.736Z",
+  "generated": "2026-05-18T18:57:01.988Z",
   "entries": [
+    {
+      "hash": "8e019b7d",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Force idx_content_dirty_doc_updated for getDocsWithDirtyParagraphs (43x speedup, 5s→117ms); fix ge.type→ge.entity_type in entity sync",
+      "scope": null
+    },
     {
       "hash": "1b39ed19",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "HyPE propagation via normalized_hash — wired into ingestion pipeline",
       "scope": null
-    },
-    {
-      "hash": "6bedebab",
-      "date": "2026-05-10",
-      "type": "Other",
-      "description": "Add source_lang + translation to debug_research event",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "8e019b7d",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Force idx_content_dirty_doc_updated for getDocsWithDirtyParagraphs (43x speedup, 5s→117ms); fix ge.type→ge.entity_type in entity sync",
+        "scope": null
+      },
       {
         "hash": "1b39ed19",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "New",
         "description": "HyPE propagation via normalized_hash — wired into ingestion pipeline",
-        "scope": null
-      },
-      {
-        "hash": "6bedebab",
-        "date": "2026-05-10",
-        "type": "Other",
-        "description": "Add source_lang + translation to debug_research event",
         "scope": null
       }
     ]
