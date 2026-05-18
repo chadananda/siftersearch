@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T12:13:59.264Z",
+  "generated": "2026-05-18T12:45:25.243Z",
   "entries": [
+    {
+      "hash": "73dcd4f8",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Revert isLargeCollection + add catalog-only exception to prevent hallucination",
+      "scope": null
+    },
     {
       "hash": "24a1089c",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Jafar interfaith-first — draw from all traditions, not Bahá'í by default",
       "scope": null
-    },
-    {
-      "hash": "16cf4b30",
-      "date": "2026-05-10",
-      "type": "Other",
-      "description": "More spacing between Q/A rounds (1.2rem → 1.75rem)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "73dcd4f8",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Revert isLargeCollection + add catalog-only exception to prevent hallucination",
+        "scope": null
+      },
       {
         "hash": "24a1089c",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Other",
         "description": "Jafar interfaith-first — draw from all traditions, not Bahá'í by default",
-        "scope": null
-      },
-      {
-        "hash": "16cf4b30",
-        "date": "2026-05-10",
-        "type": "Other",
-        "description": "More spacing between Q/A rounds (1.2rem → 1.75rem)",
         "scope": null
       }
     ]
