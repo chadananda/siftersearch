@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T02:26:34.682Z",
+  "generated": "2026-05-18T02:33:51.215Z",
   "entries": [
+    {
+      "hash": "2395b1d4",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Crafter inline quote quality — CASE 1 block quotes override 20-word rule",
+      "scope": null
+    },
     {
       "hash": "7411afee",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Skip indexing duplicates + remove existing from Meili",
       "scope": null
-    },
-    {
-      "hash": "0445c8fa",
-      "date": "2026-05-02",
-      "type": "Other",
-      "description": "Surface source_site + per-paragraph deep links",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "2395b1d4",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Crafter inline quote quality — CASE 1 block quotes override 20-word rule",
+        "scope": null
+      },
       {
         "hash": "7411afee",
         "date": "2026-05-17",
@@ -7023,13 +7030,6 @@
         "date": "2026-05-02",
         "type": "Other",
         "description": "Skip indexing duplicates + remove existing from Meili",
-        "scope": null
-      },
-      {
-        "hash": "0445c8fa",
-        "date": "2026-05-02",
-        "type": "Other",
-        "description": "Surface source_site + per-paragraph deep links",
         "scope": null
       }
     ]
