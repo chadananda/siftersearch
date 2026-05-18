@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T10:38:20.034Z",
+  "generated": "2026-05-18T10:51:54.069Z",
   "entries": [
+    {
+      "hash": "b0e01f58",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Restore companion search — early-return only for no-URL meta queries",
+      "scope": null
+    },
     {
       "hash": "32352825",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add --remote flag to wrangler R2 uploads — images now reach Cloudflare R2",
       "scope": null
-    },
-    {
-      "hash": "c814e1ca",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Switch CDN from R2 public URL to ImageKit endpoint for proper image sizing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "b0e01f58",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Restore companion search — early-return only for no-URL meta queries",
+        "scope": null
+      },
       {
         "hash": "32352825",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Add --remote flag to wrangler R2 uploads — images now reach Cloudflare R2",
-        "scope": null
-      },
-      {
-        "hash": "c814e1ca",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Switch CDN from R2 public URL to ImageKit endpoint for proper image sizing",
         "scope": null
       }
     ]

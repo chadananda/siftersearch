@@ -650,7 +650,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         const distinctCollections = [...new Set(samples.map(d => d.collection).filter(Boolean))];
         const collectionNote = distinctCollections.length > 0 ? `\n\nCollections (from samples): ${distinctCollections.join(', ')}` : '';
         retrieved.push({
-          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles${sampleUrls.length > 0 ? ' (linked titles already have URLs embedded — use them as-is)' : ' (no URLs available — list as plain text only, no hyperlinks)'}:\n${sampleLines}`,
+          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles${sampleUrls.length > 0 ? ' (linked titles already have URLs embedded — use them as-is)' : ' (no URLs available — list as plain text only, no hyperlinks)'}:\n${sampleLines}${sampleUrls.length > 0 ? '\n\n⚠️ If CATALOG-COMPANION Q-entries appear below, quote at least one prose fragment inline using [fragment](citation_url).' : ''}`,
           source_title: 'Library Catalog',
           source_author: 'Ocean Library',
           citation_url: null,
