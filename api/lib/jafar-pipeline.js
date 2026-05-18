@@ -616,6 +616,13 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     return { retrieved_quotes: [], subagent_syntheses: [], tool_calls: [], is_political: true };
   }
 
+  // Vague query guardrail: if the message has no discernible topic, skip research
+  // and flag for clarification.
+  if (/^(?:what about the (?:thing|stuff)|tell me more|the (?:usual|rest|thing)|more\.?|hm+\.?|ok\.?|sure\.?|go on\.?)[\s?!.]*$/i.test(userMessage.trim())) {
+    logger.info('vague query detected — skipping research, crafter will ask for clarification');
+    return { retrieved_quotes: [], subagent_syntheses: [], tool_calls: [], is_vague: true };
+  }
+
   // Catalog pre-fetch: for library overview/browsing questions, skip the
   // per-tradition search loop entirely and return authoritative count data.
   // Two paths:
@@ -1513,7 +1520,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
 
 // ─── Stage 2: Craft ───────────────────────────────────────────────────────
 
-const CRAFTER_SYSTEM = `You are Jafar — a wise, curious friend deeply read in the primary texts of the world's religious traditions. The texts are open in front of you (provided as retrieved_quotes). Your job is to ANSWER THE QUESTION the person actually asked, weaving the tradition's own words into your prose like a thoughtful friend would — not dumping block quotes and asking follow-up questions.
+const CRAFTER_SYSTEM = `You are Jafar — a wise, curious friend deeply read in the primary texts of the world's religious traditions. The texts are open in front of you (provided as retrieved_quotes). Your job is to ANSWER THE QUESTION the person actually asked, weaving the tradition's own words into your prose like a thoughtful friend would — not dumping block quotes. Do not ask follow-up questions unless the query is genuinely unintelligible (no topic whatsoever), in which case ask ONE brief clarifying question.
 
 ╔══════════════════════════════════════════════════════════╗
 ║  THE FUNDAMENTAL PATTERN: EMBEDDED QUOTE FRAGMENTS        ║
@@ -1578,7 +1585,7 @@ CASE 2 — A LONG passage (30+ words) so dense with meaning that fragments would
 - A multi-verse definitional passage from the Iqán
 - An extended paragraph where each clause builds on the last
 
-For CASE 2 (and ALL OTHER CASES except CASE 1): NEVER block-quote a short verse or saying (under 20 words). "Justice, justice shall you pursue" is 5 words — inline fragment, not a block. "The Shema" is 6 words — inline fragment: ["Hear O Israel, the Lord is our God"](url). Single verses and brief maxims must be woven as inline fragments.
+For CASE 2 (and ALL OTHER CASES except CASE 1): NEVER block-quote any passage under 40 words — that is always short enough to fragment inline. "Justice, justice shall you pursue" is 5 words — inline fragment, not a block. Single verses, brief maxims, even a two-clause sentence (15-39 words) MUST be woven as inline fragments. Ask yourself: "Can I pull a 5-15 word phrase from this?" If yes (and you almost always can), do that instead of block-quoting.
 
 For CASE 2: A SINGLE block quote, not a sandwich. Lift it out, let it stand, then ONE short sentence (or stop). No restating-prose tail.
 
@@ -2326,6 +2333,16 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
       }))
     });
   }
+  // Vague query early reply — no LLM needed
+  if (research.is_vague) {
+    const reply = "I'd love to explore that with you — could you say a bit more about what's on your mind?";
+    if (sendEvent) {
+      sendEvent({ type: 'stage', stage: 'craft' });
+      sendEvent({ type: 'text', content: reply });
+    }
+    return { reply, user_intent: userIntent, retrieved_count: 0, retrieval_quotes: [], gate: { pass: true }, retried: false, research_calls: [] };
+  }
+
   if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
   const onChunk = (text) => {
     if (sendEvent) sendEvent({ type: 'text', content: text });

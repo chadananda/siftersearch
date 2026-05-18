@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T05:05:16.053Z",
+  "generated": "2026-05-18T05:25:30.535Z",
   "entries": [
+    {
+      "hash": "6b42c7d0",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Author companion fallback uses SQLite query instead of Meilisearch empty-title lookup",
+      "scope": null
+    },
     {
       "hash": "462d7563",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Gate supersession to scope=primary; raise slow-query threshold to 150ms",
       "scope": null
-    },
-    {
-      "hash": "fb8c94f9",
-      "date": "2026-05-04",
-      "type": "Fixed",
-      "description": "IngestAllSites walks sites.yaml registry, not -sites/ directory",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "6b42c7d0",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Author companion fallback uses SQLite query instead of Meilisearch empty-title lookup",
+        "scope": null
+      },
       {
         "hash": "462d7563",
         "date": "2026-05-17",
@@ -7017,15 +7024,6 @@
         "date": "2026-05-05",
         "type": "Performance",
         "description": "Gate supersession to scope=primary; raise slow-query threshold to 150ms",
-        "scope": null
-      }
-    ],
-    "2026-05-04": [
-      {
-        "hash": "fb8c94f9",
-        "date": "2026-05-04",
-        "type": "Fixed",
-        "description": "IngestAllSites walks sites.yaml registry, not -sites/ directory",
         "scope": null
       }
     ]
