@@ -70,9 +70,8 @@ async function main() {
            c.translation, c.translation_segments,
            c.heading, c.blocktype,
            c.embedding, c.external_para_id, c.pdf_page,
-           c.source_url,
            d.title, d.author, d.filename, d.religion, d.collection,
-           d.language, d.year, d.source_site
+           d.language, d.year, d.source_site, d.source_url
     FROM content c
     JOIN docs d ON d.id = c.doc_id
     WHERE c.synced = 0 AND c.deleted_at IS NULL AND c.rowid > ?
