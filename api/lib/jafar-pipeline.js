@@ -695,10 +695,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
             if (catalogFilters.author) {
               // Check whether returned passages are actually from the requested author.
-              // If Meilisearch's CONTAINS filter worked, at least one passage will match.
-              const authorLastName = catalogFilters.author.split(/\s+/).pop().toLowerCase();
+              // Normalize both sides: strip diacritics + apostrophes before comparing,
+              // since Bahá'u'lláh uses curly apostrophes in catalog but straight in DB.
+              const normStr = s => (s || '').replace(/[\u2018\u2019\u02BC']/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+              const authorLastNorm = normStr(catalogFilters.author.split(/\s+/).pop()).slice(0, 7);
               const authorMatchedPassages = (companionPassages?.passages || []).filter(p =>
-                (p.author || '').toLowerCase().includes(authorLastName)
+                normStr(p.author).includes(authorLastNorm)
               );
               if (authorMatchedPassages.length > 0) {
                 harvestPassages({ passages: authorMatchedPassages }, 'catalog_companion');
