@@ -686,14 +686,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             const companionQuery = topicMatch
               ? topicMatch[1].trim()
               : isMetaQuery ? 'spiritual teachings revelation faith God' : userMessage.slice(0, 200);
-            const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: hasTopicComponent ? 6 : 3, semanticRatio: 0.7 };
-            if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
-            const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
-            if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
-            // If Meilisearch author-filter search returned no passages (common for multi-word author names
-            // like "Universal House of Justice" because Meilisearch CONTAINS requires an experimental
-            // feature flag), fall back to fetching paragraphs directly from SQLite.
-            if (catalogFilters.author && !companionPassages?.passages?.length) {
+
+            if (catalogFilters.author) {
+              // Author-filtered queries: Meilisearch CONTAINS requires an experimental feature flag
+              // that is not enabled in production, so author filters are silently ignored and
+              // unrelated passages are returned. Bypass Meilisearch entirely and fetch directly
+              // from SQLite where the author LIKE filter is reliable.
               try {
                 const authorDocs = await queryAll(
                   `SELECT id, title, author, source_url FROM docs WHERE author LIKE ? AND deleted_at IS NULL ORDER BY id LIMIT 1`,
@@ -701,7 +699,6 @@ export async function deterministicResearch({ entities, userMessage, messages, s
                 );
                 if (authorDocs[0]?.id) {
                   const doc = authorDocs[0];
-                  // Skip first 2 paragraphs (likely titles/headings) + require min 120 chars for substantive prose
                   const contentRows = await queryAll(
                     `SELECT text, external_id FROM content WHERE doc_id = ? AND deleted_at IS NULL AND length(text) > 120 AND position_idx > 2 ORDER BY position_idx LIMIT 4`,
                     [doc.id]
@@ -714,6 +711,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
                   }
                 }
               } catch (sqlFallbackErr) { logger.debug({ err: sqlFallbackErr.message }, 'catalog sql fallback error'); }
+            } else {
+              // Non-author filters (religion, language, scope): Meilisearch is reliable here
+              const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: hasTopicComponent ? 6 : 3, semanticRatio: 0.7 };
+              if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
+              const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
+              if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
             }
 
             // For compound queries with a topic component, also check deep research cache
