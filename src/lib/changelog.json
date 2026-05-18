@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T03:33:59.569Z",
+  "generated": "2026-05-18T03:45:49.129Z",
   "entries": [
+    {
+      "hash": "3ab4e562",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Jain religion filter — dont substitute other traditions; strengthen browsing rule",
+      "scope": null
+    },
     {
       "hash": "7b4a9c4e",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "HyPE enqueue gate — skip external sites in v1 (Phase F)",
       "scope": null
-    },
-    {
-      "hash": "caf8132f",
-      "date": "2026-05-04",
-      "type": "Other",
-      "description": "Scope-aware sites-ingester routing + sites.yaml schema (Phases C+D)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "3ab4e562",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Jain religion filter — dont substitute other traditions; strengthen browsing rule",
+        "scope": null
+      },
       {
         "hash": "7b4a9c4e",
         "date": "2026-05-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-04",
         "type": "Other",
         "description": "HyPE enqueue gate — skip external sites in v1 (Phase F)",
-        "scope": null
-      },
-      {
-        "hash": "caf8132f",
-        "date": "2026-05-04",
-        "type": "Other",
-        "description": "Scope-aware sites-ingester routing + sites.yaml schema (Phases C+D)",
         "scope": null
       }
     ]
