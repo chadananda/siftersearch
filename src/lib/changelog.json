@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T16:36:44.335Z",
+  "generated": "2026-05-18T17:12:13.233Z",
   "entries": [
+    {
+      "hash": "e3e58817",
+      "date": "2026-05-18",
+      "type": "New",
+      "description": "Deep_research queue + entity_mentions_idx health checks",
+      "scope": null
+    },
     {
       "hash": "0ed2d711",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Classifier work_name — null for multi-tradition questions",
       "scope": null
-    },
-    {
-      "hash": "af39eb05",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Per-tradition trimming + URL hallucination guard",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "e3e58817",
+        "date": "2026-05-18",
+        "type": "New",
+        "description": "Deep_research queue + entity_mentions_idx health checks",
+        "scope": null
+      },
       {
         "hash": "0ed2d711",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Classifier work_name — null for multi-tradition questions",
-        "scope": null
-      },
-      {
-        "hash": "af39eb05",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Per-tradition trimming + URL hallucination guard",
         "scope": null
       }
     ]

@@ -233,18 +233,23 @@ async function checkSyncStaleness() {
   const { sync, status } = ph;
   const details = {
     unsynced_count: sync.unsynced_count,
-    oldest_unsynced_hours: sync.oldest_unsynced_hours
+    oldest_unsynced_hours: sync.oldest_unsynced_hours,
+    synced_last_2h: status.synced_last_2h ?? 'n/a'
   };
 
   if (sync.unsynced_count === 0) return ok('sync_staleness', 0, { unsynced: 0 });
 
   if (status.sync_stuck) {
+    // No syncing activity in last 2h AND backlog > 1000 = truly stuck
     return fail('sync_staleness',
-      `${sync.unsynced_count.toLocaleString()} paragraphs unsynced, oldest is ${sync.oldest_unsynced_hours}h old — sync processor stuck`,
+      `${sync.unsynced_count.toLocaleString()} paragraphs unsynced, 0 synced in last 2h — sync processor stuck`,
       details);
   }
   if (sync.unsynced_count > 50000) {
-    return warn('sync_staleness', `large backlog: ${sync.unsynced_count.toLocaleString()} unsynced`, details);
+    // Large backlog but making progress — warn with rate info
+    return warn('sync_staleness',
+      `large backlog: ${sync.unsynced_count.toLocaleString()} unsynced (${status.synced_last_2h ?? '?'} synced in last 2h)`,
+      details);
   }
   ok('sync_staleness', 0, details);
 }
@@ -417,8 +422,14 @@ async function checkDeepResearch() {
     last_completed: dr.last_completed
   };
 
-  if (dr.queue_failed > 10) {
-    return warn('deep_research', `${dr.queue_failed} failed research tasks in queue`, details);
+  // Only fail if tasks are actively pending AND failing (not just historical failures with no work)
+  if (dr.queue_pending > 0 && dr.queue_failed > 10) {
+    return fail('deep_research',
+      `${dr.queue_failed} failed + ${dr.queue_pending} pending — worker may be crash-looping`, details);
+  }
+  // Historical failures with no pending work = past errors, worker is idle (ok)
+  if (dr.queue_failed > 50) {
+    return warn('deep_research', `${dr.queue_failed} historical failed tasks`, details);
   }
   ok('deep_research', 0, details);
 }
@@ -461,6 +472,12 @@ const probes = [
   ['enrichment', checkEnrichment]
 ];
 if (!QUICK) probes.push(['chat_smoke', checkChatSmoke]);
+
+// Pre-fetch the pipeline health endpoint eagerly so all pipeline-based checks
+// share a single warm request. Without this, the concurrent boss/Meili TCP
+// hangs in Promise.all can exhaust the libuv thread pool and delay the
+// pipeline fetch past its 20s timeout even though the API responds in <1s.
+await fetchPipelineHealth();
 
 await Promise.all(probes.map(([_, fn]) => fn().catch(err => fail(_, err.message))));
 
