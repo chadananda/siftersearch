@@ -741,7 +741,7 @@ async function syncOneSiteOnlyDb(meili, cfg) {
       FROM content c
       JOIN docs d ON d.id = c.doc_id
       WHERE c.synced = 0 AND c.deleted_at IS NULL
-      ORDER BY c.id
+      ORDER BY c.updated_at DESC
       LIMIT ?
     `).all(BATCH_SIZE);
 
