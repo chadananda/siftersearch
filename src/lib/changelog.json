@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T10:15:28.430Z",
+  "generated": "2026-05-18T10:19:27.187Z",
   "entries": [
+    {
+      "hash": "fdc4f98f",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Skip companion search for pure meta-queries (what books do you have?)",
+      "scope": null
+    },
     {
       "hash": "9783087e",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Related articles column moves to left on normal wide screens",
       "scope": null
-    },
-    {
-      "hash": "11595895",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Escape backticks in chat.js SYSTEM_PROMPT (broke API restart) + publish only at MIN_SCORE",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "fdc4f98f",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Skip companion search for pure meta-queries (what books do you have?)",
+        "scope": null
+      },
       {
         "hash": "9783087e",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Other",
         "description": "Related articles column moves to left on normal wide screens",
-        "scope": null
-      },
-      {
-        "hash": "11595895",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Escape backticks in chat.js SYSTEM_PROMPT (broke API restart) + publish only at MIN_SCORE",
         "scope": null
       }
     ]

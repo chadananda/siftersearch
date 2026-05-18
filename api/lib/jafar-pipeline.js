@@ -650,7 +650,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         const distinctCollections = [...new Set(samples.map(d => d.collection).filter(Boolean))];
         const collectionNote = distinctCollections.length > 0 ? `\n\nCollections (from samples): ${distinctCollections.join(', ')}` : '';
         retrieved.push({
-          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles (you MAY list up to 3 of these using [title](url); for ALL prose quotes you MUST use CATALOG-COMPANION passages — NOT these title entries):\n${sampleLines}\n\n⚠️ REQUIRED NEXT STEP: After listing the count and titles, quote at least one prose fragment from the CATALOG-COMPANION Q-entry. DO NOT end your response after the title list.`,
+          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}${collectionNote}\n\nSample titles (you MAY list up to 3 of these using [title](url); for ALL prose quotes you MUST use CATALOG-COMPANION passages — NOT these title entries):\n${sampleLines}`,
           source_title: 'Library Catalog',
           source_author: 'Ocean Library',
           citation_url: null,
@@ -683,13 +683,17 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             const topicMatch = userMessage.match(/\b(?:and |which ones? )(?:discuss|about|cover|on|related to|dealing with)\s+(.{3,50})(?:\?|$)/i);
             const hasTopicComponent = !!topicMatch;
             const isMetaQuery = /\b(do you have|what books|any books|show me|list|how many|what works|do you carry|what collections|list the|list all)\b/i.test(userMessage);
+
+            // Pure meta-queries ("What books do you have?") already get title links from
+            // catalog data — skip companion search+SQL entirely to prevent misattributed quotes.
+            if (isMetaQuery && !hasTopicComponent) {
+              return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
+            }
+
             const companionQuery = topicMatch
               ? topicMatch[1].trim()
               : isMetaQuery ? 'spiritual teachings revelation faith God' : userMessage.slice(0, 200);
 
-            // Companion search: skip for pure "what books do you have?" meta-queries —
-            // the catalog data already includes title links; companion passages only introduce
-            // off-topic or misattributed content. Only run when there's a topic component.
             let companionPassages = null;
             if (!isMetaQuery || hasTopicComponent) {
               const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: hasTopicComponent ? 6 : 3, semanticRatio: 0.7 };
