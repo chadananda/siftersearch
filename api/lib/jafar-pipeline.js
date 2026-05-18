@@ -687,12 +687,15 @@ export async function deterministicResearch({ entities, userMessage, messages, s
               ? topicMatch[1].trim()
               : isMetaQuery ? 'spiritual teachings revelation faith God' : userMessage.slice(0, 200);
 
-            // Companion search: try Meilisearch first; verify it returned passages actually from
-            // the requested author (Meilisearch CONTAINS filter is unreliable for multi-word names
-            // — it silently ignores the filter and returns unrelated results).
-            const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: hasTopicComponent ? 6 : 3, semanticRatio: 0.7 };
-            if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
-            const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
+            // Companion search: skip for pure "what books do you have?" meta-queries —
+            // the catalog data already includes title links; companion passages only introduce
+            // off-topic or misattributed content. Only run when there's a topic component.
+            let companionPassages = null;
+            if (!isMetaQuery || hasTopicComponent) {
+              const companionSearchArgs = { query: companionQuery, ...catalogFilters, mode: 'passages', limit: hasTopicComponent ? 6 : 3, semanticRatio: 0.7 };
+              if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
+              companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
+            }
             if (catalogFilters.author) {
               // Check whether returned passages are actually from the requested author.
               // Normalize both sides: strip diacritics + apostrophes before comparing,

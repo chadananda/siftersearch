@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T10:08:57.312Z",
+  "generated": "2026-05-18T10:15:28.430Z",
   "entries": [
+    {
+      "hash": "9783087e",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Suppress CATALOG-COMPANION quote tag when no citation_url — prevents hallucination",
+      "scope": null
+    },
     {
       "hash": "0e055b11",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Escape backticks in chat.js SYSTEM_PROMPT (broke API restart) + publish only at MIN_SCORE",
       "scope": null
-    },
-    {
-      "hash": "5a90c1d7",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Citation_integrity in judge + quote-text-as-link in crafter + delete hallucinated dialog 012",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "9783087e",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Suppress CATALOG-COMPANION quote tag when no citation_url — prevents hallucination",
+        "scope": null
+      },
       {
         "hash": "0e055b11",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Escape backticks in chat.js SYSTEM_PROMPT (broke API restart) + publish only at MIN_SCORE",
-        "scope": null
-      },
-      {
-        "hash": "5a90c1d7",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Citation_integrity in judge + quote-text-as-link in crafter + delete hallucinated dialog 012",
         "scope": null
       }
     ]
