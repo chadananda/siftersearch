@@ -164,11 +164,11 @@ async function processSyncJob(job) {
     //     dequeue (and that's where markSynced flips, preserving the
     //     verified-sync invariant).
     //
-    // Memory bound: PIPELINE_LIMIT=2 × FLUSH_PARAS=100 × ~12KB/para ≈ 2.4MB.
-    // Reduced from 4×200 to prevent Meilisearch task queue buildup.
+    // Memory bound: PIPELINE_LIMIT=5 × FLUSH_PARAS=500 × ~5KB/para ≈ 12.5MB.
+    // Increased for faster vector re-sync (was 2×100 = too slow for 4M re-index).
     // Timeout raised to 900s — observed tasks occasionally take 9+ minutes.
-    const PIPELINE_LIMIT = 2;
-    const FLUSH_PARAS = 100;
+    const PIPELINE_LIMIT = 5;
+    const FLUSH_PARAS = 500;
     const buffer = new Map();    // indexName -> { paras: [], paraIds: [] }
     const inFlight = [];         // [{task, paraIds, indexName}]
 
@@ -271,13 +271,18 @@ async function processSyncJob(job) {
           const cachedVectors = await content.getEmbeddingsFromCache(normalizedHashes);
           const meiliParas = [];
           const paraIds = [];
-          let cacheHits = 0, cacheMisses = 0;
+          let cacheHits = 0, cacheMisses = 0, dbFallbacks = 0;
           for (const p of paragraphs) {
             pendingIds.add(p.id);
             let embedding = null;
             if (p.normalized_hash && cachedVectors.has(p.normalized_hash)) {
               embedding = cachedVectors.get(p.normalized_hash);
               cacheHits++;
+            } else if (p.embedding) {
+              // Cache miss but embedding exists in content DB — use it directly.
+              // This handles empty/wiped embedding cache without losing vectors.
+              embedding = p.embedding;
+              dbFallbacks++;
             } else {
               cacheMisses++;
             }
@@ -299,8 +304,8 @@ async function processSyncJob(job) {
             });
             paraIds.push(p.id);
           }
-          if (cacheMisses > 0) {
-            logger.debug({ cacheHits, cacheMisses, batchSize: meiliParas.length }, 'Sync batch: cache misses will be FTS-only');
+          if (cacheMisses > 0 || dbFallbacks > 0) {
+            logger.debug({ cacheHits, cacheMisses, dbFallbacks, batchSize: meiliParas.length }, 'Sync batch: cache stats');
           }
           // Append to per-index buffer; flush asynchronously when full.
           // markSynced + completedItems both happen later in drainOldest()

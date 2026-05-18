@@ -818,7 +818,7 @@ async function getDirtyParagraphsForDoc(docId, limit = 500) {
   // ingested PDF docs (see api/services/site-adapters/site2rag.js).
   return queryAll(`
     SELECT id, doc_id, paragraph_index, text, heading, blocktype,
-           embedding_model, content_hash, normalized_hash,
+           embedding, embedding_model, content_hash, normalized_hash,
            translation, translation_segments, context,
            external_para_id, pdf_page,
            text_grounded, embedding_grounded, grounded_synced,

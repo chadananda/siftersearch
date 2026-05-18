@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T18:57:01.988Z",
+  "generated": "2026-05-18T19:33:47.673Z",
   "entries": [
+    {
+      "hash": "06dc7f2f",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Restore synced_last_2h to pipeline endpoint (fast via idx_content_recently_synced); fix sync_stuck logic; dev-machine remote_only for Meili/boss checks",
+      "scope": null
+    },
     {
       "hash": "8e019b7d",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Route primary doctrinal texts (Pali Canon, KJV, Tanakh, GGS, Vedas, Qur'an) to Anthropic batch API",
       "scope": null
-    },
-    {
-      "hash": "5349505c",
-      "date": "2026-05-10",
-      "type": "New",
-      "description": "HyPE propagation via normalized_hash — wired into ingestion pipeline",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "06dc7f2f",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Restore synced_last_2h to pipeline endpoint (fast via idx_content_recently_synced); fix sync_stuck logic; dev-machine remote_only for Meili/boss checks",
+        "scope": null
+      },
       {
         "hash": "8e019b7d",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "New",
         "description": "Route primary doctrinal texts (Pali Canon, KJV, Tanakh, GGS, Vedas, Qur'an) to Anthropic batch API",
-        "scope": null
-      },
-      {
-        "hash": "5349505c",
-        "date": "2026-05-10",
-        "type": "New",
-        "description": "HyPE propagation via normalized_hash — wired into ingestion pipeline",
         "scope": null
       }
     ]
