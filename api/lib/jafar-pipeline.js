@@ -239,8 +239,7 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
             source_author: q.author,
             citation_url: q.source_url
               ? (q.external_para_id ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url)
-              : (q.doc_id && q.paragraph_index != null ? `https://siftersearch.com/document/${q.doc_id}#p${q.paragraph_index}` : null)
-              || (q.doc_id ? `https://siftersearch.com/document/${q.doc_id}` : null),
+              : null,
             doc_id: q.doc_id,
             religion: q.religion,
             authority: q.authority,
@@ -313,7 +312,7 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
                 text: p.text || '',
                 source_title: p.title || '',
                 source_author: p.author || '',
-                citation_url: p.source_url || (p.document_id ? `https://siftersearch.com/document/${p.document_id}` : null),
+                citation_url: p.source_url || null,
                 doc_id: p.document_id,
                 paragraph_index: p.paragraph_index,
                 religion: p.religion || null,
@@ -327,7 +326,7 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
             for (const e of result.excerpts) {
               const citation_url = e.source_url
                 || (doc.base_url && e.paragraph_index != null ? `${doc.base_url}#p${e.paragraph_index}` : null)
-                || (doc.id ? `https://siftersearch.com/document/${doc.id}#p${e.paragraph_index}` : null);
+                || null;
               retrieved.push({
                 text: e.text || '',
                 source_title: doc.title || '',
@@ -539,7 +538,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         text: p.text || '',
         source_title: p.title || '',
         source_author: p.author || '',
-        citation_url: p.source_url || (p.document_id ? `https://siftersearch.com/document/${p.document_id}` : null),
+        citation_url: p.source_url || null,
         doc_id: p.document_id,
         paragraph_index: p.paragraph_index,
         religion: p.religion || null,
@@ -556,9 +555,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     for (const e of result.excerpts) {
       // Use paragraph-level source_url when available (set by executeReadDocumentForQuestion);
       // fall back to paragraph-anchored document URL so deeplinks navigate to the right passage.
-      const citation_url = e.source_url
-        || (doc.id && e.paragraph_index != null ? `https://siftersearch.com/document/${doc.id}#p${e.paragraph_index}` : null)
-        || (doc.id ? `https://siftersearch.com/document/${doc.id}` : null);
+      const citation_url = e.source_url || null;
       retrieved.push({
         text: e.text || '',
         // When the document subagent translated a non-English excerpt, the
@@ -707,7 +704,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
                       text: q.text, source_title: q.title, source_author: q.author,
                       citation_url: q.source_url
                         ? (q.external_para_id ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url)
-                        : (q.doc_id ? `https://siftersearch.com/document/${q.doc_id}` : null),
+                        : null,
                       doc_id: q.doc_id, religion: q.religion, authority: q.authority,
                       via: 'deep_research', relevance_score: q.relevance_score,
                     });
@@ -886,7 +883,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           source_author: q.author,
           citation_url: q.source_url
             ? (q.external_para_id ? `${q.source_url}?paraId=${q.external_para_id}` : q.source_url)
-            : (q.doc_id ? `https://siftersearch.com/document/${q.doc_id}` : null),
+            : null,
           doc_id: q.doc_id,
           religion: q.religion,
           authority: q.authority,
@@ -1027,7 +1024,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           const hit = hitByParaId[c.id] || {};
           const citation_url = (c.source_url && c.external_para_id)
             ? `${c.source_url}?paraId=${c.external_para_id}`
-            : (c.source_url || (c.doc_id ? `https://siftersearch.com/document/${c.doc_id}` : null));
+            : (c.source_url || null);
           retrieved.push({
             text: c.text || '',
             source_title: c.title || '',

@@ -205,7 +205,7 @@ When a search returns ≥3 passages, READ them carefully before saying *"no rele
 
 **URL rule — always link to the paragraph, not just the document:**
 - If the search result has a \`source_url\` field, use it. This is a paragraph-level deep link (e.g. \`https://oceanlibrary.com/.../?paraId=XXXXX\`) pointing directly to the quoted passage. Use it.
-- If no \`source_url\`, use \`https://siftersearch.com/document/{document_id}\`.
+- If no \`source_url\`, omit the link — attribute with author and title only, no URL.
 - Never invent URLs. Never link to bahai-library.com, bahai.org, or other external sites not returned by the search tool.
 
 **NEVER quote without searching.** Quoting from training memory is the same severity as fabricating. If you cannot find a quote via search, paraphrase the gist and say *"I'm working from memory and could not locate the exact passage."*
@@ -614,8 +614,8 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
           paragraph_index: hit.paragraph_index,
           ...(hit.matched_hype ? { matched_hype: hit.matched_hype } : {})
         };
-        // Deep-link priority: OceanLibrary para deeplink > internal /library/…#p{N} > /document/{id}
-        // Every result MUST have source_url — no link-less citations.
+        // Deep-link priority: OceanLibrary para deeplink > internal /library/…#p{N}
+        // If neither resolves, source_url stays null — docs missing metadata need fixing at the source.
         const paraAnchor = hit.paragraph_index != null ? `#p${hit.paragraph_index}` : '';
         if (meta?.source_site && meta?.source_url) {
           result.source_site = meta.source_site;
@@ -629,13 +629,10 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
           if (docSlug && meta.religion && meta.collection) {
             const base = `https://siftersearch.com/library/${encodeURIComponent(meta.religion)}/${encodeURIComponent(meta.collection)}/${docSlug}`;
             result.source_url = `${base}${paraAnchor}`;
-          } else {
-            result.source_url = `https://siftersearch.com/document/${docId}${paraAnchor}`;
           }
-        } else {
-          // Fallback: no SQLite metadata — still generate a usable URL from hit fields
-          result.source_url = `https://siftersearch.com/document/${docId}${paraAnchor}`;
+          // No slug/religion/collection → source_url stays null; fix the doc metadata, don't invent a URL
         }
+        // No meta → source_url stays null
         return result;
       })
     };
@@ -1112,14 +1109,14 @@ async function executeReadDocumentForQuestion({ document_id, question, max_parag
     if (docSlug && doc.religion && doc.collection) {
       return `https://siftersearch.com/library/${encodeURIComponent(doc.religion)}/${encodeURIComponent(doc.collection)}/${docSlug}#p${p.paragraph_index}`;
     }
-    // Fallback: document route with paragraph anchor — still a paragraph-level deeplink
-    return `https://siftersearch.com/document/${doc.id}#p${p.paragraph_index}`;
+    // No slug/religion/collection — doc missing metadata, no URL to generate
+    return null;
   };
 
   const slugForBase = doc.slug || (doc.filename ? doc.filename.replace(/\.[^.]+$/, '') : null);
   const docBase = slugForBase && doc.religion && doc.collection
     ? `https://siftersearch.com/library/${encodeURIComponent(doc.religion)}/${encodeURIComponent(doc.collection)}/${encodeURIComponent(slugForBase).replace(/%2F/g, '/')}`
-    : (doc.source_url || `https://siftersearch.com/document/${doc.id}`);
+    : (doc.source_url || null);
 
   return {
     document: { id: doc.id, title: doc.title, author: doc.author, religion: doc.religion, collection: doc.collection, year: doc.year, base_url: docBase },

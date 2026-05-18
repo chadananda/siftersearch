@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T02:56:27.849Z",
+  "generated": "2026-05-18T03:07:48.843Z",
   "entries": [
+    {
+      "hash": "b9f9e7cd",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "HarvestExcerpts fallback URL now includes #p{paragraph_index} anchor",
+      "scope": null
+    },
     {
       "hash": "afd9c32b",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "HyPE sync death-spiral — partial index + INDEXED BY hint + saner memory caps",
       "scope": null
-    },
-    {
-      "hash": "2c8ad959",
-      "date": "2026-05-03",
-      "type": "Refactor",
-      "description": "Update worker-status.json with session 2 + production verification",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "b9f9e7cd",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "HarvestExcerpts fallback URL now includes #p{paragraph_index} anchor",
+        "scope": null
+      },
       {
         "hash": "afd9c32b",
         "date": "2026-05-17",
@@ -7019,15 +7026,6 @@
         "date": "2026-05-04",
         "type": "Fixed",
         "description": "HyPE sync death-spiral — partial index + INDEXED BY hint + saner memory caps",
-        "scope": null
-      }
-    ],
-    "2026-05-03": [
-      {
-        "hash": "2c8ad959",
-        "date": "2026-05-03",
-        "type": "Refactor",
-        "description": "Update worker-status.json with session 2 + production verification",
         "scope": null
       }
     ]
