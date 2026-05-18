@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T05:43:20.240Z",
+  "generated": "2026-05-18T05:58:20.889Z",
   "entries": [
+    {
+      "hash": "2aae45d4",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Update CASE 1 block-quote override to match 40-word threshold",
+      "scope": null
+    },
     {
       "hash": "eb4ff8c9",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Cross-doc batching + pipelined addDocuments — 5-10x sync throughput",
       "scope": null
-    },
-    {
-      "hash": "c4497877",
-      "date": "2026-05-08",
-      "type": "Fixed",
-      "description": "Explicit primaryKey on per-site Meili addDocuments",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "2aae45d4",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Update CASE 1 block-quote override to match 40-word threshold",
+        "scope": null
+      },
       {
         "hash": "eb4ff8c9",
         "date": "2026-05-17",
@@ -7013,13 +7020,6 @@
         "date": "2026-05-08",
         "type": "Performance",
         "description": "Cross-doc batching + pipelined addDocuments — 5-10x sync throughput",
-        "scope": null
-      },
-      {
-        "hash": "c4497877",
-        "date": "2026-05-08",
-        "type": "Fixed",
-        "description": "Explicit primaryKey on per-site Meili addDocuments",
         "scope": null
       }
     ]
