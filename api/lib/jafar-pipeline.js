@@ -618,7 +618,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
 
   // Vague query guardrail: if the message has no discernible topic, skip research
   // and flag for clarification.
-  if (/^(?:what about the (?:thing|stuff)|tell me more|the (?:usual|rest|thing)|more\.?|hm+\.?|ok\.?|sure\.?|go on\.?)[\s?!.]*$/i.test(userMessage.trim())) {
+  if (/^(?:what about (?:the )?(?:thing|stuff)(?:\s+(?:with|about|for|on)\s+(?:the\s+)?(?:thing|stuff))?|tell me more|the (?:usual|rest|thing)|more\.?|hm+\.?|ok\.?|sure\.?|go on\.?)[\s?!.]*$/i.test(userMessage.trim())) {
     logger.info('vague query detected — skipping research, crafter will ask for clarification');
     return { retrieved_quotes: [], subagent_syntheses: [], tool_calls: [], is_vague: true };
   }
