@@ -10,6 +10,22 @@ export function stripTashkeel(text) {
   return text.replace(/[\u064B-\u065F\u0670]/g, '');
 }
 
+/**
+ * Strip Latin diacritics and combining marks so "Ṭáhirih" matches "Tahirih"
+ * and "Síyáh-Chál" matches "Siyah-Chal". NFD decomposes combined chars into
+ * base + combining, then we strip all Unicode combining characters (U+0300–U+036F,
+ * U+1AB0–U+1AFF, U+1DC0–U+1DFF, U+20D0–U+20FF, U+FE20–U+FE2F).
+ * Also handles underline-combining (U+0332) used in Bahá'í scholarly transliteration.
+ */
+export function stripDiacritics(text) {
+  return text.normalize('NFD').replace(/[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F\u0332]/g, '');
+}
+
+/** Normalize text for matching: strip both Arabic tashkeel and Latin diacritics, then lowercase. */
+export function normalizeForMatch(text) {
+  return stripTashkeel(stripDiacritics(text)).toLowerCase();
+}
+
 /** Simple Levenshtein distance for short strings. Quadratic; not for use on long text. */
 export function levenshtein(a, b) {
   if (a.length === 0) return b.length;
@@ -36,28 +52,30 @@ export function levenshtein(a, b) {
  * so it handles Arabic, Persian, Hebrew, etc.
  */
 export function textContainsFuzzy(text, term) {
-  const lowerText = stripTashkeel(text.toLowerCase());
-  const lowerTerm = stripTashkeel(term.toLowerCase());
+  const normText = normalizeForMatch(text);
+  const normTerm = normalizeForMatch(term);
 
-  if (lowerText.includes(lowerTerm)) return true;
+  if (normText.includes(normTerm)) return true;
 
-  const maxTypos = lowerTerm.length >= 9 ? 2 : (lowerTerm.length >= 5 ? 1 : 0);
+  const maxTypos = normTerm.length >= 9 ? 2 : (normTerm.length >= 5 ? 1 : 0);
   if (maxTypos === 0) return false;
 
-  const words = lowerText.match(/[\p{L}\p{N}]+/gu) || [];
+  const words = normText.match(/[\p{L}\p{N}]+/gu) || [];
   return words.some(word => {
-    if (Math.abs(word.length - lowerTerm.length) > 2) return false;
-    return levenshtein(word, lowerTerm) <= maxTypos;
+    if (Math.abs(word.length - normTerm.length) > 2) return false;
+    return levenshtein(word, normTerm) <= maxTypos;
   });
 }
 
 /**
- * Check if every term has a fuzzy match in hit.text or hit.title.
+ * Check if every term has a fuzzy match in hit.text, hit.title, or hit.text_grounded.
+ * text_grounded (prose_summary from graph extraction) resolves pronouns and uses
+ * plain ASCII transliteration, so "Tahirih" matches even when text uses "Ṭáhirih".
  * Combining text+title means "Bhagavad Gita dharma" finds Gita verses where
  * "bhagavad gita" appears in the title and "dharma" appears in the verse text.
  */
 export function hasAllTermMatches(hit, terms) {
-  const combined = ((hit.title || '') + ' ' + (hit.text || '')).trim();
+  const combined = ((hit.title || '') + ' ' + (hit.text || '') + ' ' + (hit.text_grounded || '')).trim();
   return terms.every(term => textContainsFuzzy(combined, term));
 }
 
@@ -85,14 +103,14 @@ function normalizeSpelling(text) {
  * matches to the top.
  */
 export function calculatePhraseScore(text, query, terms) {
-  const lowerText = normalizeSpelling(stripTashkeel(text.toLowerCase()));
-  const lowerQuery = normalizeSpelling(stripTashkeel(query.toLowerCase()));
+  const lowerText = normalizeSpelling(normalizeForMatch(text));
+  const lowerQuery = normalizeSpelling(normalizeForMatch(query));
 
   if (lowerText.includes(lowerQuery)) return 100;
 
   if (terms.length >= 2) {
     const positions = terms
-      .map(term => lowerText.indexOf(stripTashkeel(term)))
+      .map(term => lowerText.indexOf(normalizeForMatch(term)))
       .filter(p => p >= 0);
 
     if (positions.length === terms.length) {
