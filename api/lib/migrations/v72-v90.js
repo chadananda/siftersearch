@@ -398,4 +398,12 @@ export const migrations = {
 
     logger.info('Migration 77 complete: idx_content_recently_synced');
   },
+
+  78: async () => {
+    // em_synced was added to entity_mentions schema but missed on servers
+    // where migration 72 ran before the column was introduced. Add it now.
+    try { await query(`ALTER TABLE entity_mentions ADD COLUMN em_synced INTEGER DEFAULT 0`); } catch { /* already exists */ }
+    try { await query(`CREATE INDEX IF NOT EXISTS idx_em_unsynced ON entity_mentions(em_synced) WHERE em_synced = 0`); } catch { /* already exists */ }
+    logger.info('Migration 78 complete: em_synced column + index on entity_mentions');
+  },
 };

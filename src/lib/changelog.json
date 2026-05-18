@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T21:19:19.662Z",
+  "generated": "2026-05-18T21:28:50.679Z",
   "entries": [
+    {
+      "hash": "98fe31e4",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Convert content.embedding Buffer to Float32Array before Meili push",
+      "scope": null
+    },
     {
       "hash": "9428d989",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "IsPrimaryDoctrinal uses file_path substrings throughout — avoids broad collection/title matches that catch tafsir and OT/KJV books",
       "scope": null
-    },
-    {
-      "hash": "f8b670d8",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Wrap enqueueParagraphsForBatch in try-catch — retry on db lock without crashing tick",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "98fe31e4",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Convert content.embedding Buffer to Float32Array before Meili push",
+        "scope": null
+      },
       {
         "hash": "9428d989",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "IsPrimaryDoctrinal uses file_path substrings throughout — avoids broad collection/title matches that catch tafsir and OT/KJV books",
-        "scope": null
-      },
-      {
-        "hash": "f8b670d8",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Wrap enqueueParagraphsForBatch in try-catch — retry on db lock without crashing tick",
         "scope": null
       }
     ]
