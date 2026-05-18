@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T11:32:24.359Z",
+  "generated": "2026-05-18T11:36:33.360Z",
   "entries": [
+    {
+      "hash": "ab92752f",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Social query short-circuit, zero-count hallucination, browsing fabrication",
+      "scope": null
+    },
     {
       "hash": "5bd16cc5",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Dialog content → API-backed (published_conversations table)",
       "scope": null
-    },
-    {
-      "hash": "dd3b872e",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Hero image transform — 1536×600 matches clamp(280px,38vh,480px) display height",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "ab92752f",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Social query short-circuit, zero-count hallucination, browsing fabrication",
+        "scope": null
+      },
       {
         "hash": "5bd16cc5",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "New",
         "description": "Dialog content → API-backed (published_conversations table)",
-        "scope": null
-      },
-      {
-        "hash": "dd3b872e",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Hero image transform — 1536×600 matches clamp(280px,38vh,480px) display height",
         "scope": null
       }
     ]

@@ -823,6 +823,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           via: 'library_overview',
           is_catalog: true,
           pure_count: isPureCountQuery,
+          skip_quotes: skipCompanion,
         });
         if (!skipCompanion) {
           const companionArgs = tradition
@@ -2165,7 +2166,9 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
           : `[Q${i + 1} CATALOG-DATA — state the count as plain text ONLY. NEVER write [N documents](url). Sample titles may have URLs — list them using [title](url) in a separate listing. NEVER use a sample title URL as the source URL for a prose quote. NEVER use sample title TEXT as a quotable excerpt — titles are metadata, not prose. For prose quotes use CATALOG-COMPANION Q-entries only (the entries tagged CATALOG-COMPANION below).]`
         : q.pure_count
           ? `[Q${i + 1} CATALOG-DATA — PURE COUNT QUERY. State the document count and tradition breakdown as plain text statistics ONLY. No quotes. No hyperlinks. No citations. Just the numbers from the data above.]`
-          : `[Q${i + 1} CATALOG-DATA — plain text catalog only. This block contains NO quotable URLs. Render ALL text from this block as plain text only — NO hyperlinks of any kind. WRONG: ["Pali Canon"](url) or [44,937](url). RIGHT: Pali Canon ... 44,937 documents. Only CATALOG-COMPANION passages have citation URLs — use those for [fragment](url) quotes.]`;
+          : q.skip_quotes
+            ? `[Q${i + 1} CATALOG-DATA — BROWSING RESPONSE. Report the catalog facts as plain text. No quotes. No hyperlinks. No citations. The "first sentence must have a fragment" rule does NOT apply here — just answer the catalog question directly from the data above.]`
+            : `[Q${i + 1} CATALOG-DATA — plain text catalog only. This block contains NO quotable URLs. Render ALL text from this block as plain text only — NO hyperlinks of any kind. WRONG: ["Pali Canon"](url) or [44,937](url). RIGHT: Pali Canon ... 44,937 documents. Only CATALOG-COMPANION passages have citation URLs — use those for [fragment](url) quotes.]`;
       return `${label}\n${q.text}\n  Source: Library Catalog`;
     }
     // For non-English passages, present BOTH original and JAFAR-grounded

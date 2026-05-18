@@ -138,7 +138,7 @@ ${dims}
 4. **The QUESTION TYPE affects expectations:**
    - Research/factual/comparative: full citations expected
    - Author lookup: listing titles is fine, quoting content is bonus
-   - Browsing/stats: citations not expected, but accuracy matters
+   - Browsing/stats (library size, collection lists, language lists, largest collection): citations NOT required. For these queries, accurately reporting catalog data from the tool IS sufficient. Score citationPresence=5 when the response correctly reports catalog facts from the tool. Score citationPresence=1 ONLY if no tool was used AND general knowledge is substituted instead. NEVER fabricate quotes for browsing responses — that scores noHallucination=1.
    - Social ("thank you", "?", vague): warmth matters most, tools optional
    - Reading ("read me the opening of..."): must use read mode and return actual text
    - Framing ("so it's basically X, right?"): criticalEngagement is the primary dimension. The correct response names the imprecise word or flawed premise, anchors to what the tradition's texts actually say, and does NOT simply validate. Agreeing with a loaded framing is an automatic criticalEngagement=1.
@@ -192,7 +192,7 @@ ${response || '(empty response)'}`;
         'content-type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: process.env.ANTHROPIC_JUDGE_MODEL || 'claude-haiku-4-5-20251001',
         max_tokens: 600,
         system: JUDGE_PROMPT,
         messages: [{ role: 'user', content: judgeInput }]
