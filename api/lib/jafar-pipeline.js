@@ -687,16 +687,20 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
             const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
             if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
-            // If author filter returned no passages, use read_document_for_question on the
-            // author's first available document — handles semantic mismatch where a generic
-            // theological query scores low against historical/scholarly works (e.g. Momen)
+            // If author filter returned no passages, search WITHIN the author's document directly.
+            // Handles semantic mismatch where theological query scores low against historical/scholarly
+            // works (e.g. Moojan Momen's historical texts). Use SQLite directly to avoid Meilisearch
+            // empty-query ranking unpredictability.
             if (catalogFilters.author && !companionPassages?.passages?.length) {
               try {
-                const docResult = await executeTool('find_document_for_citation', { name: catalogFilters.author }, { scope_config });
-                const topDoc = docResult?.results?.[0];
-                if (topDoc?.doc_id) {
-                  const readResult = await executeTool('read_document_for_question', { doc_id: topDoc.doc_id, question: `What are the key ideas in this work?` }, { scope_config });
-                  if (readResult?.passages?.length) harvestPassages(readResult, 'catalog_companion');
+                const authorDocs = await queryAll(
+                  `SELECT id FROM docs WHERE author LIKE ? AND deleted_at IS NULL LIMIT 1`,
+                  [`%${catalogFilters.author}%`]
+                );
+                if (authorDocs[0]?.id) {
+                  const inDocArgs = { query: 'key teachings ideas', document_id: authorDocs[0].id, mode: 'passages', limit: 3, semanticRatio: 0.3 };
+                  const inDocPassages = await executeTool('search', inDocArgs, { scope_config });
+                  if (inDocPassages?.passages?.length) harvestPassages(inDocPassages, 'catalog_companion');
                 }
               } catch (fe) { /* ignore fallback errors */ }
             }

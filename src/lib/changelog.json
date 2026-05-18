@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T04:54:27.180Z",
+  "generated": "2026-05-18T05:05:16.053Z",
   "entries": [
+    {
+      "hash": "462d7563",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Prohibit formulaic tradition-listing; require thesis-first for passage queries",
+      "scope": null
+    },
     {
       "hash": "5808108c",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "IngestAllSites walks sites.yaml registry, not -sites/ directory",
       "scope": null
-    },
-    {
-      "hash": "cf3e54ee",
-      "date": "2026-05-04",
-      "type": "Fixed",
-      "description": "Oceanlibrary.com is scope=primary; wire authority_default to ranking",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "462d7563",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Prohibit formulaic tradition-listing; require thesis-first for passage queries",
+        "scope": null
+      },
       {
         "hash": "5808108c",
         "date": "2026-05-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-04",
         "type": "Fixed",
         "description": "IngestAllSites walks sites.yaml registry, not -sites/ directory",
-        "scope": null
-      },
-      {
-        "hash": "cf3e54ee",
-        "date": "2026-05-04",
-        "type": "Fixed",
-        "description": "Oceanlibrary.com is scope=primary; wire authority_default to ranking",
         "scope": null
       }
     ]
