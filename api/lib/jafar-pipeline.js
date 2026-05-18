@@ -700,12 +700,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
                 if (authorDocs[0]?.id) {
                   const doc = authorDocs[0];
                   const contentRows = await queryAll(
-                    `SELECT text, external_id FROM content WHERE doc_id = ? AND deleted_at IS NULL AND length(text) > 120 AND position_idx > 2 ORDER BY position_idx LIMIT 4`,
+                    `SELECT text, external_para_id FROM content WHERE doc_id = ? AND deleted_at IS NULL AND length(text) > 120 AND paragraph_index > 2 ORDER BY paragraph_index LIMIT 4`,
                     [doc.id]
                   );
                   for (const row of contentRows) {
-                    const url = doc.source_url && row.external_id
-                      ? `${doc.source_url}?paraId=${row.external_id}`
+                    const url = doc.source_url && row.external_para_id
+                      ? `${doc.source_url}?paraId=${row.external_para_id}`
                       : doc.source_url || null;
                     retrieved.push({ text: row.text, source_title: doc.title, source_author: doc.author, citation_url: url, via: 'catalog_companion_sql' });
                   }
@@ -1082,12 +1082,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
               );
               const docMeta = docRow[0] || {};
               const sqlRows = await queryAll(
-                `SELECT text, external_id FROM content WHERE doc_id = ? AND deleted_at IS NULL AND length(text) > 40 ORDER BY position_idx LIMIT 8`,
+                `SELECT text, external_para_id FROM content WHERE doc_id = ? AND deleted_at IS NULL AND length(text) > 40 ORDER BY paragraph_index LIMIT 8`,
                 [primary.document_id]
               );
               for (const row of sqlRows) {
-                const url = docMeta.source_url && row.external_id
-                  ? `${docMeta.source_url}?paraId=${row.external_id}`
+                const url = docMeta.source_url && row.external_para_id
+                  ? `${docMeta.source_url}?paraId=${row.external_para_id}`
                   : docMeta.source_url || null;
                 retrieved.push({ text: row.text, source_title: docMeta.title || effectiveWorkName || '', source_author: docMeta.author || '', citation_url: url, via: 'sequential_read_sql' });
               }
