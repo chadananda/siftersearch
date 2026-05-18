@@ -687,13 +687,17 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
             const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
             if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
-            // If author filter returned no passages, fall back to semantic search with
-            // author name in query (handles author-name format mismatches in index)
+            // If author filter returned no passages, use read_document_for_question on the
+            // author's first available document — handles semantic mismatch where a generic
+            // theological query scores low against historical/scholarly works (e.g. Momen)
             if (catalogFilters.author && !companionPassages?.passages?.length) {
               try {
-                const fallbackArgs = { query: `${catalogFilters.author} teachings writings`, limit: 3, semanticRatio: 0.7 };
-                const fallbackPassages = await executeTool('search', fallbackArgs, { scope_config });
-                if (fallbackPassages?.passages?.length) harvestPassages(fallbackPassages, 'catalog_companion');
+                const docResult = await executeTool('find_document_for_citation', { name: catalogFilters.author }, { scope_config });
+                const topDoc = docResult?.results?.[0];
+                if (topDoc?.doc_id) {
+                  const readResult = await executeTool('read_document_for_question', { doc_id: topDoc.doc_id, question: `What are the key ideas in this work?` }, { scope_config });
+                  if (readResult?.passages?.length) harvestPassages(readResult, 'catalog_companion');
+                }
               } catch (fe) { /* ignore fallback errors */ }
             }
 

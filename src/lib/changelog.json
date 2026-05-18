@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T04:40:54.758Z",
+  "generated": "2026-05-18T04:45:44.002Z",
   "entries": [
+    {
+      "hash": "77e97ee8",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Semantic fallback for author catalog companion search when author filter returns empty",
+      "scope": null
+    },
     {
       "hash": "1c74182d",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "10-scenario search-merging suite + Phase H smoke deploy verified (v1 done)",
       "scope": null
-    },
-    {
-      "hash": "00b29495",
-      "date": "2026-05-04",
-      "type": "Fixed",
-      "description": "Site2rag tolerates unquoted titles with `: ` (real-world frontmatter)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "77e97ee8",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Semantic fallback for author catalog companion search when author filter returns empty",
+        "scope": null
+      },
       {
         "hash": "1c74182d",
         "date": "2026-05-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-04",
         "type": "Other",
         "description": "10-scenario search-merging suite + Phase H smoke deploy verified (v1 done)",
-        "scope": null
-      },
-      {
-        "hash": "00b29495",
-        "date": "2026-05-04",
-        "type": "Fixed",
-        "description": "Site2rag tolerates unquoted titles with `: ` (real-world frontmatter)",
         "scope": null
       }
     ]
