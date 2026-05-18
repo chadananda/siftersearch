@@ -150,6 +150,10 @@ async function checkPm2() {
       return warn('pm2', 'pm2 not available locally (run on tower-nas to verify)');
     }
     const procs = JSON.parse(stdout);
+    // Empty list = pm2 running locally but no siftersearch processes — dev machine
+    if (procs.length === 0) {
+      return warn('pm2', 'pm2 not available locally (run on tower-nas to verify)');
+    }
     const expected = ['siftersearch-api', 'siftersearch-worker',
       'siftersearch-library-watcher', 'siftersearch-enrichment', 'siftersearch-enrichment-api',
       'siftersearch-deep-research', 'siftersearch-updater'];
