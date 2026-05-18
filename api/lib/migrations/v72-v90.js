@@ -288,4 +288,54 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_content_grounded_unsync ON content(grounded_synced) WHERE grounded_synced = 0 AND text_grounded IS NOT NULL`);
     logger.info('Migration 73 complete: embedding_grounded column');
   },
+
+  74: async () => {
+    // Fix: add missing UNIQUE constraints to entity_aliases, entity_mentions,
+    // and promotion_queue. Without these, INSERT OR IGNORE never ignores —
+    // every call inserts a duplicate row, causing full-table-scan on each
+    // write and 2000ms+ DB locks that block the entire sync pipeline.
+    //
+    // Steps: deduplicate existing rows, then create unique indexes.
+
+    // 1. Deduplicate promotion_queue — keep lowest id per (surface_norm, type)
+    await query(`
+      DELETE FROM promotion_queue
+      WHERE id NOT IN (
+        SELECT MIN(id) FROM promotion_queue GROUP BY surface_norm, type
+      )
+    `);
+    await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_pq_unique ON promotion_queue(surface_norm, type)`);
+
+    // 2. Deduplicate entity_aliases — keep highest confidence per (entity_id, surface_norm, lang)
+    await query(`
+      DELETE FROM entity_aliases
+      WHERE id NOT IN (
+        SELECT id FROM entity_aliases ea1
+        WHERE confidence = (
+          SELECT MAX(confidence) FROM entity_aliases ea2
+          WHERE ea2.entity_id = ea1.entity_id
+            AND ea2.surface_norm = ea1.surface_norm
+            AND ea2.lang = ea1.lang
+        )
+        GROUP BY entity_id, surface_norm, lang
+      )
+    `);
+    await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_alias_unique ON entity_aliases(entity_id, surface_norm, lang)`);
+
+    // 3. Deduplicate entity_mentions — keep lowest id per (entity_id, content_id, role)
+    await query(`
+      DELETE FROM entity_mentions
+      WHERE id NOT IN (
+        SELECT MIN(id) FROM entity_mentions GROUP BY entity_id, content_id, role
+      )
+    `);
+    await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_em_unique ON entity_mentions(entity_id, content_id, role)`);
+
+    // 4. Analyze the tables so SQLite uses the new indexes immediately
+    await query(`ANALYZE promotion_queue`);
+    await query(`ANALYZE entity_aliases`);
+    await query(`ANALYZE entity_mentions`);
+
+    logger.info('Migration 74 complete: unique constraints on entity_aliases, entity_mentions, promotion_queue');
+  },
 };
