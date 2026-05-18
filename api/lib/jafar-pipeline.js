@@ -977,24 +977,40 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   if (isAuthorOnlyQuery) {
     const personName = entities.named_persons[0];
     tasks.push((async () => {
-      const authorDocs = await queryAll(
-        `SELECT id, title, author, source_url FROM docs WHERE author LIKE ? AND deleted_at IS NULL ORDER BY collection, title LIMIT 5`,
-        [`%${personName}%`]
-      );
+      // Fuzzy author lookup: user types "Udo Schafer" but DB stores "Udo Schaefer" (ae variant).
+      // Match on first name AND first 4 chars of last name so transliteration variants resolve.
+      const nameParts = personName.split(/\s+/).filter(w => w.length > 2);
+      let authorDocs = [];
+      if (nameParts.length >= 2) {
+        const firstFilter = `%${nameParts[0]}%`;
+        const lastPrefix = nameParts[nameParts.length - 1].slice(0, 4);
+        authorDocs = await queryAll(
+          `SELECT id, title, author, source_url FROM docs WHERE author LIKE ? AND author LIKE ? AND deleted_at IS NULL ORDER BY collection, title LIMIT 5`,
+          [firstFilter, `%${lastPrefix}%`]
+        );
+      }
+      // Exact fallback
+      if (!authorDocs.length) {
+        authorDocs = await queryAll(
+          `SELECT id, title, author, source_url FROM docs WHERE author LIKE ? AND deleted_at IS NULL ORDER BY collection, title LIMIT 5`,
+          [`%${personName}%`]
+        );
+      }
       if (authorDocs.length > 0) {
+        const canonicalAuthor = authorDocs[0].author.split(',')[0].trim(); // first credited author
         const docList = authorDocs.map(d => d.source_url ? `  - [${d.title}](${d.source_url})` : `  - ${d.title}`).join('\n');
         retrieved.push({
-          text: `Works by ${personName} in the library:\n${docList}\n\n(Use companion passages below to quote actual text — do NOT end after this title list.)`,
+          text: `Works by ${canonicalAuthor} in the library:\n${docList}\n\n(Use companion passages below to quote actual text — do NOT end after this title list.)`,
           source_title: 'Library Catalog',
           source_author: 'Ocean Library',
           citation_url: null,
           via: 'author_catalog',
           is_catalog: true
         });
-        // Retrieve a representative passage from this author's works
+        // Use canonical author name for search so the filter resolves correctly in Meili
         const authorPassages = await runTool('search', {
           query: 'key ideas themes insights',
-          author: personName,
+          author: canonicalAuthor,
           mode: 'passages',
           limit: 5,
           semanticRatio: 0.7
