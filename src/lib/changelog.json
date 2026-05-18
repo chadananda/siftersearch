@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T04:29:19.485Z",
+  "generated": "2026-05-18T04:31:21.474Z",
   "entries": [
+    {
+      "hash": "6e46a5b3",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Narrow multi-tradition routing rule to explicit comparison queries only",
+      "scope": null
+    },
     {
       "hash": "95261ca8",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Phase G routing was on wrong worker — apply to unified-worker.js",
       "scope": null
-    },
-    {
-      "hash": "ba41d5a2",
-      "date": "2026-05-04",
-      "type": "Fixed",
-      "description": "Meili_index_prefix=null means \"share primary index\" (preserves OL)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "6e46a5b3",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Narrow multi-tradition routing rule to explicit comparison queries only",
+        "scope": null
+      },
       {
         "hash": "95261ca8",
         "date": "2026-05-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-04",
         "type": "Fixed",
         "description": "Phase G routing was on wrong worker — apply to unified-worker.js",
-        "scope": null
-      },
-      {
-        "hash": "ba41d5a2",
-        "date": "2026-05-04",
-        "type": "Fixed",
-        "description": "Meili_index_prefix=null means \"share primary index\" (preserves OL)",
         "scope": null
       }
     ]
