@@ -174,7 +174,7 @@ export function instrumentDb(db, dbName) {
 
 function runQuery(db, sql, params) {
   const stmt = db.prepare(sql);
-  const isWrite = /^\s*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|PRAGMA)\b/i.test(sql);
+  const isWrite = /^\s*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|PRAGMA|ANALYZE|VACUUM|REINDEX|ATTACH|DETACH)\b/i.test(sql);
   if (isWrite) {
     const info = stmt.run(...params);
     return { rows: [{ lastInsertRowid: info.lastInsertRowid, changes: info.changes }], lastInsertRowid: info.lastInsertRowid };
