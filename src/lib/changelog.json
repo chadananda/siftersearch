@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T02:08:01.548Z",
+  "generated": "2026-05-18T02:26:34.682Z",
   "entries": [
+    {
+      "hash": "7411afee",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Religion/author/collection filters now pass through keywordSearch to Meilisearch",
+      "scope": null
+    },
     {
       "hash": "473200c2",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Surface source_site + per-paragraph deep links",
       "scope": null
-    },
-    {
-      "hash": "8fd1e55f",
-      "date": "2026-04-30",
-      "type": "Fixed",
-      "description": "Skip footnote definitions in OceanLibrary adapter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "7411afee",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Religion/author/collection filters now pass through keywordSearch to Meilisearch",
+        "scope": null
+      },
       {
         "hash": "473200c2",
         "date": "2026-05-17",
@@ -7023,15 +7030,6 @@
         "date": "2026-05-02",
         "type": "Other",
         "description": "Surface source_site + per-paragraph deep links",
-        "scope": null
-      }
-    ],
-    "2026-04-30": [
-      {
-        "hash": "8fd1e55f",
-        "date": "2026-04-30",
-        "type": "Fixed",
-        "description": "Skip footnote definitions in OceanLibrary adapter",
         "scope": null
       }
     ]

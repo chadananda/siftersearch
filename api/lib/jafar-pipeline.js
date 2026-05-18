@@ -1540,7 +1540,7 @@ CASE 1 — The user explicitly asked for the verbatim text:
 - "Show me the beginning of the Kitáb-i-Íqán"
 - "Read the opening verses of the Bhagavad Gita"
 
-The user wants the text itself. A block quote is correct — minimal prose framing, let the text stand. For sequential reading requests ("first few paragraphs", "opening", "beginning"), output the retrieved paragraphs in document order as consecutive block quotes, separated by newlines.
+The user wants the text itself. Block quotes are required — minimal prose framing (one sentence before the first quote, one after the last, at most), let the text stand. For sequential reading requests ("first few paragraphs", "opening", "beginning"), output the retrieved paragraphs in document order as consecutive block quotes, separated by newlines. No prose woven between them. The NEVER-block-quote-under-20-words rule does NOT apply here — CASE 1 overrides it.
 
 NOT CASE 1 — "show me a key passage" or "can you give me an example?" These are asking for evidence, not verbatim transcription. Respond with woven prose fragments: weave the most important 8-12 words as an inline hyperlinked fragment, then name the source in plain text.
 
@@ -1549,9 +1549,9 @@ CASE 2 — A LONG passage (30+ words) so dense with meaning that fragments would
 - A multi-verse definitional passage from the Iqán
 - An extended paragraph where each clause builds on the last
 
-NEVER block-quote a short verse or saying (under 20 words). "Justice, justice shall you pursue" is 5 words — inline fragment, not a block. "The Shema" is 6 words — inline fragment: ["Hear O Israel, the Lord is our God"](url). Single verses and brief maxims must be woven as inline fragments.
+For CASE 2 (and ALL OTHER CASES except CASE 1): NEVER block-quote a short verse or saying (under 20 words). "Justice, justice shall you pursue" is 5 words — inline fragment, not a block. "The Shema" is 6 words — inline fragment: ["Hear O Israel, the Lord is our God"](url). Single verses and brief maxims must be woven as inline fragments.
 
-A SINGLE block quote, not a sandwich. Lift it out, let it stand, then ONE short sentence (or stop). No restating-prose tail.
+For CASE 2: A SINGLE block quote, not a sandwich. Lift it out, let it stand, then ONE short sentence (or stop). No restating-prose tail.
 
 In ALL OTHER CASES, weave fragments into prose. Default = embedded.
 
@@ -1579,7 +1579,12 @@ From a retrieved quote like "It is incumbent on these servants that they cleanse
 
 You can use 1-3 fragments from the same quote, OR pull fragments from 2-3 different quotes to build a richer engagement. Never quote the entire passage when a fragment carries the meaning.
 
-FORBIDDEN as a quote fragment: section titles, valley names, chapter labels, or heading text. "Valley of Search", "Hidden Words No. 3", "Book of Certitude" are NOT text fragments — they are labels. The fragment must be actual prose from the body of the text. WRONG: Bahá'u'lláh describes the ["Valley of Search"](url). CORRECT: In the Seven Valleys, the seeker is told to ["fly on the wings of longing in the air of love"](url).
+FORBIDDEN as a quote fragment: section titles, valley names, chapter labels, or heading text. "Valley of Search", "Hidden Words No. 3", "Book of Certitude", "Valley of Love" are NOT text fragments — they are labels. The fragment must be actual prose from the body of the text.
+
+WRONG: Bahá'u'lláh describes the ["Valley of Search"](url) and the seeker enters the ["Valley of Love"](url), becoming ["dissolved in the fire of love"](url).
+CORRECT: In the Seven Valleys, the seeker is bidden to ["burn away the veils with the fire of love"](url), and in the Valley of Knowledge sees that ["the true seeker hunteth naught but the object of his quest"](url).
+
+Each SENTENCE with a citation must embed actual text — not just a valley name with a link after it.
 
 The quotation marks make the fragment the AUTHORITY's words. The surrounding prose is YOUR engagement with those words. The reader hears both voices interleaved.
 
