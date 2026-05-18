@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T10:21:01.212Z",
+  "generated": "2026-05-18T10:22:55.919Z",
   "entries": [
+    {
+      "hash": "87905d2c",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Catalog sample titles — don't suggest URL format when no source_url available",
+      "scope": null
+    },
     {
       "hash": "4282840e",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Dialog hero images — generate via gpt-image-1, serve from CF Pages static",
       "scope": null
-    },
-    {
-      "hash": "f30153c4",
-      "date": "2026-05-10",
-      "type": "Other",
-      "description": "Dialog 012 regenerated (78%, unpublished — fallback-link-only, needs deep links)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "87905d2c",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Catalog sample titles — don't suggest URL format when no source_url available",
+        "scope": null
+      },
       {
         "hash": "4282840e",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Dialog hero images — generate via gpt-image-1, serve from CF Pages static",
-        "scope": null
-      },
-      {
-        "hash": "f30153c4",
-        "date": "2026-05-10",
-        "type": "Other",
-        "description": "Dialog 012 regenerated (78%, unpublished — fallback-link-only, needs deep links)",
         "scope": null
       }
     ]

@@ -1151,7 +1151,7 @@ export async function executeLibraryCount({ author, religion, site, language, co
   const where = conditions.join(' AND ');
   const [countRow, samples] = await Promise.all([
     queryOne(`SELECT COUNT(*) as count FROM docs WHERE ${where}`, params),
-    queryAll(`SELECT title, author, religion, collection, source_site, source_url, year FROM docs WHERE ${where} ORDER BY year DESC LIMIT 5`, params)
+    queryAll(`SELECT title, author, religion, collection, source_site, source_url, year FROM docs WHERE ${where} ORDER BY (source_url IS NOT NULL AND source_url != '') DESC, year DESC LIMIT 5`, params)
   ]);
 
   return {
