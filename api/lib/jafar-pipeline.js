@@ -687,6 +687,15 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: { query: companionQuery, ...catalogFilters } });
             const companionPassages = await executeTool('search', companionSearchArgs, { scope_config });
             if (companionPassages?.passages?.length) harvestPassages(companionPassages, 'catalog_companion');
+            // If author filter returned no passages, fall back to semantic search with
+            // author name in query (handles author-name format mismatches in index)
+            if (catalogFilters.author && !companionPassages?.passages?.length) {
+              try {
+                const fallbackArgs = { query: `${catalogFilters.author} teachings writings`, limit: 3, semanticRatio: 0.7 };
+                const fallbackPassages = await executeTool('search', fallbackArgs, { scope_config });
+                if (fallbackPassages?.passages?.length) harvestPassages(fallbackPassages, 'catalog_companion');
+              } catch (fe) { /* ignore fallback errors */ }
+            }
 
             // For compound queries with a topic component, also check deep research cache
             // — the catalog path short-circuits before the normal deep research check.

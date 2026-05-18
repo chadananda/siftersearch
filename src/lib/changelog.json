@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T04:31:21.474Z",
+  "generated": "2026-05-18T04:40:54.758Z",
   "entries": [
+    {
+      "hash": "1c74182d",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Route 'find passages about X' as evidence query (inline fragments, not block quotes) + dual search",
+      "scope": null
+    },
     {
       "hash": "6e46a5b3",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Site2rag tolerates unquoted titles with `: ` (real-world frontmatter)",
       "scope": null
-    },
-    {
-      "hash": "a519c4ab",
-      "date": "2026-05-04",
-      "type": "Fixed",
-      "description": "Phase G routing was on wrong worker — apply to unified-worker.js",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "1c74182d",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Route 'find passages about X' as evidence query (inline fragments, not block quotes) + dual search",
+        "scope": null
+      },
       {
         "hash": "6e46a5b3",
         "date": "2026-05-17",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-04",
         "type": "Fixed",
         "description": "Site2rag tolerates unquoted titles with `: ` (real-world frontmatter)",
-        "scope": null
-      },
-      {
-        "hash": "a519c4ab",
-        "date": "2026-05-04",
-        "type": "Fixed",
-        "description": "Phase G routing was on wrong worker — apply to unified-worker.js",
         "scope": null
       }
     ]
