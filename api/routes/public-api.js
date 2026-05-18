@@ -403,16 +403,9 @@ export default async function publicApiRoutes(fastify) {
 
     // Fallback: if hybrid search fails (no embeddings configured), use keyword search
     if (!searchResults.hits || searchResults.hits.length === 0) {
-      const filterParts = [];
-      if (filters.author) filterParts.push(`author CONTAINS "${filters.author}"`);
-      if (filters.religion) filterParts.push(`religion = "${filters.religion}"`);
-      if (filters.collection) filterParts.push(`collection CONTAINS "${filters.collection}"`);
-      if (filters.yearFrom) filterParts.push(`year >= ${filters.yearFrom}`);
-      if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
-      const filter = filterParts.length > 0 ? filterParts.join(' AND ') : undefined;
       searchResults = await keywordSearch(query, {
         limit: Math.min(limit * 2, 30),
-        filter
+        filters: searchFilters
       });
     }
 
@@ -531,13 +524,7 @@ export default async function publicApiRoutes(fastify) {
     const { query, limit = 10, filters = {} } = request.body;
     const startTime = Date.now();
 
-    const filterParts = [];
-    if (filters.author) filterParts.push(`author CONTAINS "${filters.author}"`);
-    if (filters.religion) filterParts.push(`religion = "${filters.religion}"`);
-    if (filters.collection) filterParts.push(`collection CONTAINS "${filters.collection}"`);
-    const filter = filterParts.length > 0 ? filterParts.join(' AND ') : undefined;
-
-    const searchResults = await keywordSearch(query, { limit, filter });
+    const searchResults = await keywordSearch(query, { limit, filters });
 
     const results = searchResults.hits.map(hit => ({
       id: hit.id,

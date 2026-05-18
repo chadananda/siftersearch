@@ -1,6 +1,41 @@
 {
-  "generated": "2026-05-18T01:29:06.918Z",
+  "generated": "2026-05-18T02:08:01.548Z",
   "entries": [
+    {
+      "hash": "473200c2",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Fuzzy matching — strip Latin diacritics + include text_grounded in hasAllTermMatches",
+      "scope": null
+    },
+    {
+      "hash": "fca15446",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Add text_grounded to unified-worker meiliDoc payload",
+      "scope": null
+    },
+    {
+      "hash": "7c101be0",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "PARA_BATCH_SIZE 100→1000 — process all doc rows in one inner loop pass",
+      "scope": null
+    },
+    {
+      "hash": "99dcf11a",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "GetDocsWithDirtyParagraphs — ORDER BY max updated_at DESC",
+      "scope": null
+    },
+    {
+      "hash": "90a90ee5",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "GetDirtyParagraphsBatch — ORDER BY updated_at DESC + text_grounded",
+      "scope": null
+    },
     {
       "hash": "73ea0f92",
       "date": "2026-05-17",
@@ -3465,45 +3500,45 @@
       "type": "Fixed",
       "description": "Skip footnote definitions in OceanLibrary adapter",
       "scope": null
-    },
-    {
-      "hash": "382c795b",
-      "date": "2026-04-30",
-      "type": "Fixed",
-      "description": "Title+author metadata path for supersession detection",
-      "scope": null
-    },
-    {
-      "hash": "06bb2a55",
-      "date": "2026-04-30",
-      "type": "Docs",
-      "description": "Operational guide + runbook for sites integration",
-      "scope": null
-    },
-    {
-      "hash": "38bb3d66",
-      "date": "2026-04-30",
-      "type": "Other",
-      "description": "Bigger SQLite cache + pre-warm + smaller supersession chunks",
-      "scope": null
-    },
-    {
-      "hash": "2ee72d9a",
-      "date": "2026-04-30",
-      "type": "Other",
-      "description": "Bulk-insert paragraphs in one transaction + --limit subset",
-      "scope": null
-    },
-    {
-      "hash": "e1d268a1",
-      "date": "2026-04-30",
-      "type": "Fixed",
-      "description": "UpsertDoc resolves docId via SELECT after upsert",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "473200c2",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Fuzzy matching — strip Latin diacritics + include text_grounded in hasAllTermMatches",
+        "scope": null
+      },
+      {
+        "hash": "fca15446",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Add text_grounded to unified-worker meiliDoc payload",
+        "scope": null
+      },
+      {
+        "hash": "7c101be0",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "PARA_BATCH_SIZE 100→1000 — process all doc rows in one inner loop pass",
+        "scope": null
+      },
+      {
+        "hash": "99dcf11a",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "GetDocsWithDirtyParagraphs — ORDER BY max updated_at DESC",
+        "scope": null
+      },
+      {
+        "hash": "90a90ee5",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "GetDirtyParagraphsBatch — ORDER BY updated_at DESC + text_grounded",
+        "scope": null
+      },
       {
         "hash": "73ea0f92",
         "date": "2026-05-17",
@@ -6997,41 +7032,6 @@
         "date": "2026-04-30",
         "type": "Fixed",
         "description": "Skip footnote definitions in OceanLibrary adapter",
-        "scope": null
-      },
-      {
-        "hash": "382c795b",
-        "date": "2026-04-30",
-        "type": "Fixed",
-        "description": "Title+author metadata path for supersession detection",
-        "scope": null
-      },
-      {
-        "hash": "06bb2a55",
-        "date": "2026-04-30",
-        "type": "Docs",
-        "description": "Operational guide + runbook for sites integration",
-        "scope": null
-      },
-      {
-        "hash": "38bb3d66",
-        "date": "2026-04-30",
-        "type": "Other",
-        "description": "Bigger SQLite cache + pre-warm + smaller supersession chunks",
-        "scope": null
-      },
-      {
-        "hash": "2ee72d9a",
-        "date": "2026-04-30",
-        "type": "Other",
-        "description": "Bulk-insert paragraphs in one transaction + --limit subset",
-        "scope": null
-      },
-      {
-        "hash": "e1d268a1",
-        "date": "2026-04-30",
-        "type": "Fixed",
-        "description": "UpsertDoc resolves docId via SELECT after upsert",
         "scope": null
       }
     ]
