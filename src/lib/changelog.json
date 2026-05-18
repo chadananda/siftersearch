@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T05:27:18.534Z",
+  "generated": "2026-05-18T05:29:49.698Z",
   "entries": [
+    {
+      "hash": "aae32866",
+      "date": "2026-05-17",
+      "type": "Fixed",
+      "description": "Extend vague-query pattern to match 'thing with the stuff' variant",
+      "scope": null
+    },
     {
       "hash": "c1d840ec",
       "date": "2026-05-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Verified Meili sync — await task confirmation before flipping synced=1",
       "scope": null
-    },
-    {
-      "hash": "1fcdd0d6",
-      "date": "2026-05-05",
-      "type": "Fixed",
-      "description": "Export STOP_WORDS from search/highlighting.js — Phase 4g regression",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-17": [
+      {
+        "hash": "aae32866",
+        "date": "2026-05-17",
+        "type": "Fixed",
+        "description": "Extend vague-query pattern to match 'thing with the stuff' variant",
+        "scope": null
+      },
       {
         "hash": "c1d840ec",
         "date": "2026-05-17",
@@ -7015,15 +7022,6 @@
         "date": "2026-05-07",
         "type": "Fixed",
         "description": "Verified Meili sync — await task confirmation before flipping synced=1",
-        "scope": null
-      }
-    ],
-    "2026-05-05": [
-      {
-        "hash": "1fcdd0d6",
-        "date": "2026-05-05",
-        "type": "Fixed",
-        "description": "Export STOP_WORDS from search/highlighting.js — Phase 4g regression",
         "scope": null
       }
     ]
