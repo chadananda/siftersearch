@@ -763,20 +763,23 @@ async function propagateEmbeddings() {
  * Get documents that have dirty (synced=0) paragraphs.
  */
 async function getDocsWithDirtyParagraphs(limit = 50) {
-  // Subquery on partial index is fast; avoids full JOIN scan.
-  // source_site + source_url included so the sync worker can route paragraphs
-  // to per-site Meili indexes and surface deeplinks back to the external page.
+  // Order by most-recently-updated doc first so newly extracted/modified content
+  // (e.g. graph prose_summary backfills) syncs before the historical backlog.
   return queryAll(`
     SELECT d.id, d.title, d.author, d.religion, d.collection,
            d.language, d.year, d.description, d.filename,
            d.source_site, d.source_url, d.scope
     FROM docs d
-    WHERE d.id IN (
-      SELECT DISTINCT doc_id FROM content
+    JOIN (
+      SELECT doc_id, MAX(updated_at) as max_updated_at
+      FROM content
       WHERE synced = 0 AND deleted_at IS NULL
+      GROUP BY doc_id
+      ORDER BY max_updated_at DESC
       LIMIT ?
-    )
-  `, [limit * 10]);  // over-fetch doc_ids since LIMIT inside subquery is on rows not distinct
+    ) dirty ON d.id = dirty.doc_id
+    ORDER BY dirty.max_updated_at DESC
+  `, [limit]);
 }
 
 /**
