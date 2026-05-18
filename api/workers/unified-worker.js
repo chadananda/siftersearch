@@ -284,6 +284,7 @@ async function processSyncJob(job) {
             meiliParas.push({
               id: p.id, doc_id: p.doc_id, paragraph_index: p.paragraph_index,
               text: p.text, context: p.context || null,
+              text_grounded: p.text_grounded || null,
               translation: p.translation || null, translation_segments: p.translation_segments || null,
               title: doc.title, author: doc.author, filename: doc.filename,
               religion: doc.religion, collection: doc.collection, language: doc.language,
