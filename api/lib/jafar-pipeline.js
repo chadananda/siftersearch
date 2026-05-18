@@ -972,8 +972,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // When no work and no topics, treat as "who is this person / what do they write?".
   // Check DB: if the name matches an author, retrieve passages FROM their works
   // plus a document list so the crafter can cite actual content, not just describe them.
+  // Bare author name: very short query (≤3 words) with a named person and no work identified.
+  // Topics check is omitted — classifier may add broad topics even for bare names.
   const isAuthorOnlyQuery = !effectiveWorkName && entities.named_persons.length > 0 &&
-    entities.topics.length === 0 && userMessage.trim().split(/\s+/).length <= 5;
+    userMessage.trim().split(/\s+/).length <= 3;
   if (isAuthorOnlyQuery) {
     const personName = entities.named_persons[0];
     tasks.push((async () => {
@@ -1007,13 +1009,14 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           via: 'author_catalog',
           is_catalog: true
         });
-        // Use canonical author name for search so the filter resolves correctly in Meili
+        // Use canonical author name for search so the filter resolves correctly in Meili.
+        // Generic spiritual/scholarly query surfaces representative content regardless of topic.
         const authorPassages = await runTool('search', {
-          query: 'key ideas themes insights',
+          query: 'faith justice ethics moral divine spiritual law truth',
           author: canonicalAuthor,
           mode: 'passages',
           limit: 5,
-          semanticRatio: 0.7
+          semanticRatio: 0.6
         });
         harvestPassages(authorPassages, 'author_passages');
       }
@@ -1208,7 +1211,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   if (/\b(suffer|suffering|evil|pain|grief|tragedy|allow.*suffer|why.*god.*allow|calamity|afflict)\b/i.test(userMessage)) {
     passageQuery = passageQuery.replace(/\bsuffer(ing)?\b/gi, 'trials').trim() + ' tests purpose ordained';
   }
-  if (passageQuery && passageQuery.trim() && !isAuthorOnlyQuery) {
+  if (passageQuery && passageQuery.trim()) {
     if (!effectiveWorkName) {
       // General interfaith question — parallel per-tradition searches with
       // collection filter to prefer primary texts. Without collection filter,
