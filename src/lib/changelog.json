@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T11:36:33.360Z",
+  "generated": "2026-05-18T11:40:34.134Z",
   "entries": [
+    {
+      "hash": "95aa255c",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Browsing query skip_quotes flag + judge prompt browsing exceptions",
+      "scope": null
+    },
     {
       "hash": "ab92752f",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add rounds_json to dialog upsert (NOT NULL constraint)",
       "scope": null
-    },
-    {
-      "hash": "ee7f8986",
-      "date": "2026-05-10",
-      "type": "New",
-      "description": "Dialog content → API-backed (published_conversations table)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "95aa255c",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Browsing query skip_quotes flag + judge prompt browsing exceptions",
+        "scope": null
+      },
       {
         "hash": "ab92752f",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Add rounds_json to dialog upsert (NOT NULL constraint)",
-        "scope": null
-      },
-      {
-        "hash": "ee7f8986",
-        "date": "2026-05-10",
-        "type": "New",
-        "description": "Dialog content → API-backed (published_conversations table)",
         "scope": null
       }
     ]
