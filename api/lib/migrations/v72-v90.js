@@ -381,4 +381,21 @@ export const migrations = {
 
     logger.info('Migration 76 complete: idx_content_dirty_doc_updated composite index');
   },
+
+  77: async () => {
+    logger.info('Starting migration 77: partial index for recently-synced rows');
+
+    // /api/search/health/pipeline checks how many rows were synced in last 2h:
+    //   SELECT COUNT(*) FROM content WHERE synced=1 AND updated_at > datetime('now','-2 hours')
+    // Without an index this scans ALL synced rows (~3M+) via better-sqlite3 (sync),
+    // blocking the Node.js event loop for 69s and making the API unresponsive.
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_content_recently_synced
+        ON content(updated_at DESC)
+        WHERE synced = 1
+    `);
+    await query(`ANALYZE content`);
+
+    logger.info('Migration 77 complete: idx_content_recently_synced');
+  },
 };

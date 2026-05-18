@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T17:53:34.327Z",
+  "generated": "2026-05-18T18:34:56.096Z",
   "entries": [
+    {
+      "hash": "3a6def03",
+      "date": "2026-05-18",
+      "type": "Performance",
+      "description": "Health-check 45s→18s during outages — parallelize meili checks, skip remote probes when api_down",
+      "scope": null
+    },
     {
       "hash": "95de047b",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "URL encoding for slugs with parens + regex handles parens in URLs",
       "scope": null
-    },
-    {
-      "hash": "0030476d",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "PrimaryOpts reference bug in interfaith search",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "3a6def03",
+        "date": "2026-05-18",
+        "type": "Performance",
+        "description": "Health-check 45s→18s during outages — parallelize meili checks, skip remote probes when api_down",
+        "scope": null
+      },
       {
         "hash": "95de047b",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "URL encoding for slugs with parens + regex handles parens in URLs",
-        "scope": null
-      },
-      {
-        "hash": "0030476d",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "PrimaryOpts reference bug in interfaith search",
         "scope": null
       }
     ]

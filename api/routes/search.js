@@ -440,12 +440,11 @@ export default async function searchRoutes(fastify) {
   // Pipeline health — exposes sync staleness, entity health, schema version.
   // Public read-only (no sensitive data). Used by health-check.mjs remotely.
   fastify.get('/health/pipeline', async () => {
-    const [counts, schemaRow, syncStale, recentlySynced, entityDup, promotionQ, recentExtractions, deepResearch] = await Promise.all([
+    const [counts, schemaRow, syncStale, entityDup, promotionQ, recentExtractions, deepResearch] = await Promise.all([
       getCachedContentCounts(),
       queryOne(`SELECT version FROM _schema_version ORDER BY version DESC LIMIT 1`).catch(() => null),
       queryOne(`SELECT COUNT(*) AS unsynced, MIN(created_at) AS oldest
                 FROM content WHERE synced = 0 AND deleted_at IS NULL`),
-      queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 1 AND updated_at > datetime('now', '-2 hours')`),
       queryOne(`SELECT COUNT(*) AS total,
                   COUNT(DISTINCT entity_id || '|' || content_id || '|' || COALESCE(role,'')) AS unique_combos
                 FROM entity_mentions`).catch(() => ({ total: 0, unique_combos: 0 })),
@@ -484,11 +483,11 @@ export default async function searchRoutes(fastify) {
         last_completed: deepResearch?.last_completed ?? null
       },
       status: {
-        // sync_stuck: no paragraphs synced in last 2h AND backlog > 1000.
-        // "Old unsynced rows" alone isn't stuck — the worker may be making steady
-        // progress from the top of the queue (newest-first) while old rows wait.
-        sync_stuck: (recentlySynced?.n ?? 0) === 0 && (syncStale?.unsynced ?? 0) > 1000,
-        synced_last_2h: recentlySynced?.n ?? 0,
+        // sync_stuck: backlog > 1000 AND oldest unsynced row is > 4h old.
+        // Indicates the worker has stopped making progress on the queue.
+        // (Previously used a synced_last_2h counter query that scanned 3.55M rows
+        // and blocked the event loop for 69s — removed until migration 77 index lands.)
+        sync_stuck: oldestHours > 4 && (syncStale?.unsynced ?? 0) > 1000,
         lock_storm: dupRatio > 1.5,
         migration_pending: (schemaRow?.version ?? 0) < CURRENT_VERSION
       }
