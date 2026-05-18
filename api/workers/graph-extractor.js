@@ -1,6 +1,8 @@
 #!/usr/bin/env node
-// Entity extraction worker. Reads content WHERE graph_enriched=0, calls DeepSeek
-// with extraction prompt v1, writes to paragraph_extractions.
+// Entity extraction worker. Reads content WHERE graph_enriched=0, calls LLM
+// with extract-v1 prompt, writes paragraph_extractions, then immediately
+// resolves entity_mentions/paragraph_roles/quote_instances inline.
+// LLM calls run concurrently; DB resolution writes run serially after each batch.
 // PM2 process: siftersearch-graph-extractor
 
 import dotenv from 'dotenv';
@@ -20,7 +22,7 @@ import { logger } from '../lib/logger.js';
 import { runMigrations } from '../lib/migrations.js';
 import { chatCompletion } from '../lib/ai.js';
 import { trackCost, checkBudget } from '../lib/entity-cost-tracker.js';
-import { findEntity } from '../lib/graph-db.js';
+import { findEntity, addAlias, normalizeSurface } from '../lib/graph-db.js';
 
 const PROMPT_VERSION = 'extract-v1';
 const MODEL = process.env.EXTRACTION_MODEL || 'deepseek-chat';
@@ -116,7 +118,55 @@ async function buildPrompt(row) {
     .replace('{{PRECEDING_SETTING}}', 'null');
 }
 
-// Extract one paragraph — returns null if budget exhausted or parse fails
+// Resolve a parsed extraction into entity_mentions, paragraph_roles, quote_instances.
+// Called serially after the concurrent LLM batch — safe for SQLite single-writer.
+async function resolveExtraction(extractionId, contentId, parsed, religion) {
+  for (const mention of parsed.mentions || []) {
+    let entityId = null;
+    if (mention.proposed_entity_id != null) {
+      const exists = await queryOne(`SELECT id FROM graph_entities WHERE id = ?`, [mention.proposed_entity_id]);
+      if (exists) entityId = mention.proposed_entity_id;
+    }
+    if (!entityId) {
+      const found = await findEntity({ surface: mention.surface, type: mention.type, religion });
+      entityId = found?.entity_id || null;
+    }
+    if (!entityId) {
+      await query(`INSERT OR IGNORE INTO promotion_queue (surface_norm, type, context_snippet, resolved, attempts, priority) VALUES (?, ?, ?, 0, 0, 10)`,
+        [normalizeSurface(mention.surface), mention.type || null, mention.surface.slice(0, 100)]);
+      continue;
+    }
+    await query(`INSERT OR IGNORE INTO entity_mentions (entity_id, content_id, role, resolution_confidence, status, extractor_version) VALUES (?, ?, ?, 0.9, 'resolved', ?)`,
+      [entityId, contentId, mention.local_role, PROMPT_VERSION]);
+    if (mention.surface) {
+      await addAlias(entityId, { surface: mention.surface, surfaceNorm: normalizeSurface(mention.surface), lang: 'en', source: PROMPT_VERSION, confidence: 0.7 });
+    }
+  }
+
+  const roles = parsed.roles || {};
+  const resolve = s => s ? findEntity({ surface: s }).then(r => r?.entity_id || null).catch(() => null) : Promise.resolve(null);
+  const [speakerEnt, narratorEnt, addresseeEnt, placeEnt] = await Promise.all([
+    resolve(roles.speaker), resolve(roles.narrator), resolve(roles.addressee),
+    roles.setting_place ? findEntity({ surface: roles.setting_place, type: 'place' }).then(r => r?.entity_id || null).catch(() => null) : null,
+  ]);
+  await query(`INSERT OR REPLACE INTO paragraph_roles (content_id, speaker_entity_id, narrator_entity_id, addressee_entity_id, setting_place_entity_id, setting_time, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [contentId, speakerEnt, narratorEnt, addresseeEnt, placeEnt, roles.setting_time || null, PROMPT_VERSION]);
+
+  for (const q of parsed.quotations || []) {
+    const speakerEnt2 = q.speaker_candidate ? (await findEntity({ surface: q.speaker_candidate }).catch(() => null))?.entity_id : null;
+    await query(`INSERT INTO quote_instances (content_id, span_start, span_end, speaker_surface, speaker_entity_id, attribution_pattern, nesting_depth, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [contentId, q.span?.[0], q.span?.[1], q.speaker_surface || null, speakerEnt2, q.attribution_pattern || 'direct', q.nesting_depth || 0, PROMPT_VERSION]);
+  }
+
+  if (parsed.prose_summary) {
+    await query(`UPDATE content SET text_grounded = ?, grounding_confidence = 0.9, grounded_synced = 0 WHERE id = ?`,
+      [parsed.prose_summary, contentId]);
+  }
+
+  await query(`UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, [extractionId]);
+}
+
+// Extract one paragraph — returns { extractionId, contentId, parsed } or null
 async function extractParagraph(row) {
   const budget = await checkBudget();
   if (budget.action === 'halt') {
@@ -231,6 +281,14 @@ async function extractParagraph(row) {
     'Paragraph extracted'
   );
 
+  // Resolve immediately — LLM response is here, DB work is cheap.
+  // Other paragraphs' LLM calls are still in-flight concurrently while we write.
+  try {
+    await resolveExtraction(lastInsertRowid, row.id, parsed, row.religion);
+  } catch (err) {
+    logger.warn({ contentId: row.id, err: err.message }, 'Inline resolution failed — extraction saved, resolution skipped');
+  }
+
   return lastInsertRowid;
 }
 
@@ -244,7 +302,7 @@ const GPB_DOC_ID = 21310;
 async function fetchBatch() {
   // Phase 1: drain GPB completely (smaller batch — Sonnet model)
   const gpbRows = await queryAll(`
-    SELECT c.id, c.text, c.doc_id
+    SELECT c.id, c.text, c.doc_id, d.religion
     FROM content c
     JOIN docs d ON d.id = c.doc_id
     WHERE c.doc_id = ? AND c.graph_enriched = 0
@@ -258,7 +316,7 @@ async function fetchBatch() {
 
   // Phase 2: all other non-duplicate docs
   return queryAll(`
-    SELECT c.id, c.text, c.doc_id
+    SELECT c.id, c.text, c.doc_id, d.religion
     FROM content c
     JOIN docs d ON d.id = c.doc_id
     WHERE c.graph_enriched = 0
