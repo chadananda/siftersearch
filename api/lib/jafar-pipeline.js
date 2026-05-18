@@ -1009,16 +1009,29 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           via: 'author_catalog',
           is_catalog: true
         });
-        // Use canonical author name for search so the filter resolves correctly in Meili.
-        // Generic spiritual/scholarly query surfaces representative content regardless of topic.
+        // Search WITHIN the first document by this author to guarantee passages FROM their work.
+        // Author-filtered Meili search can miss when compound author strings don't substring-match.
+        // A document_id-scoped search is guaranteed to return content by that author.
+        const firstDocId = authorDocs[0].id;
         const authorPassages = await runTool('search', {
           query: 'faith justice ethics moral divine spiritual law truth',
-          author: canonicalAuthor,
+          document_id: firstDocId,
           mode: 'passages',
-          limit: 5,
-          semanticRatio: 0.6
+          limit: 4,
+          semanticRatio: 0.5
         });
         harvestPassages(authorPassages, 'author_passages');
+        // Also try author-filtered search across all their works for diversity
+        if (!authorPassages?.passages?.length) {
+          const broadPassages = await runTool('search', {
+            query: 'faith justice ethics moral divine spiritual',
+            author: canonicalAuthor,
+            mode: 'passages',
+            limit: 4,
+            semanticRatio: 0.6
+          });
+          harvestPassages(broadPassages, 'author_passages');
+        }
       }
     })());
   }
