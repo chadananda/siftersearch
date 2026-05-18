@@ -973,11 +973,13 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // Check DB: if the name matches an author, retrieve passages FROM their works
   // plus a document list so the crafter can cite actual content, not just describe them.
   // Bare author name: very short query (≤3 words) with a named person and no work identified.
-  // Topics check is omitted — classifier may add broad topics even for bare names.
-  const isAuthorOnlyQuery = !effectiveWorkName && entities.named_persons.length > 0 &&
+  // Classifier may not recognize obscure scholarly authors (e.g. Udo Schaefer, Fazel Nasr) as
+  // named_persons — add title-case heuristic so DB lookup still runs even without classifier signal.
+  const _looksLikeName = /^[A-Z][a-záéíóú'-]+(?:\s+[A-Z][a-záéíóú'-]+){1,2}$/.test(userMessage.trim());
+  const isAuthorOnlyQuery = !effectiveWorkName && (entities.named_persons.length > 0 || _looksLikeName) &&
     userMessage.trim().split(/\s+/).length <= 3;
   if (isAuthorOnlyQuery) {
-    const personName = entities.named_persons[0];
+    const personName = entities.named_persons[0] || userMessage.trim();
     tasks.push((async () => {
       // Fuzzy author lookup: user types "Udo Schafer" but DB stores "Udo Schaefer" (ae variant).
       // Match on first name AND first 4 chars of last name so transliteration variants resolve.
