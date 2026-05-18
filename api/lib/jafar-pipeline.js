@@ -701,8 +701,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
                 );
                 if (authorDocs[0]?.id) {
                   const doc = authorDocs[0];
+                  // Skip first 2 paragraphs (likely titles/headings) + require min 120 chars for substantive prose
                   const contentRows = await queryAll(
-                    `SELECT text, external_id FROM content WHERE doc_id = ? AND deleted_at IS NULL AND length(text) > 80 ORDER BY position_idx LIMIT 4`,
+                    `SELECT text, external_id FROM content WHERE doc_id = ? AND deleted_at IS NULL AND length(text) > 120 AND position_idx > 2 ORDER BY position_idx LIMIT 4`,
                     [doc.id]
                   );
                   for (const row of contentRows) {
@@ -1068,6 +1069,27 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             limit: 8
           });
           harvestPassages(readResult, 'sequential_read');
+          // If Meilisearch mode='read' returned nothing (doc not indexed), fall back to SQLite.
+          // Common for Tao Te Ching, Bhagavad Gita, and other non-Bahá'í texts not yet in Meili.
+          if (!readResult?.passages?.length) {
+            try {
+              const docRow = await queryAll(
+                `SELECT title, author, source_url FROM docs WHERE id = ? LIMIT 1`,
+                [primary.document_id]
+              );
+              const docMeta = docRow[0] || {};
+              const sqlRows = await queryAll(
+                `SELECT text, external_id FROM content WHERE doc_id = ? AND deleted_at IS NULL AND length(text) > 40 ORDER BY position_idx LIMIT 8`,
+                [primary.document_id]
+              );
+              for (const row of sqlRows) {
+                const url = docMeta.source_url && row.external_id
+                  ? `${docMeta.source_url}?paraId=${row.external_id}`
+                  : docMeta.source_url || null;
+                retrieved.push({ text: row.text, source_title: docMeta.title || effectiveWorkName || '', source_author: docMeta.author || '', citation_url: url, via: 'sequential_read_sql' });
+              }
+            } catch (seqSqlErr) { logger.debug({ err: seqSqlErr.message }, 'sequential read SQL fallback failed'); }
+          }
         } else {
         const { answerFromDocument } = await import('./document-subagent.js');
         if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'document_subagent', args: { document_id: primary.document_id, work_name: effectiveWorkName } });
