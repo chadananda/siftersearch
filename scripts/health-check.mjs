@@ -382,7 +382,13 @@ async function checkSchemaVersion() {
 async function checkEnrichment() {
   try {
     const dbPath = join(PROJECT_ROOT, 'data/sifter.db');
-    if (!existsSync(dbPath)) return warn('enrichment', 'DB not local — skipped (run on tower-nas for full check)');
+    // Only meaningful on tower-nas: if localhost API isn't up, we're on a dev machine
+    // reading a stale DB copy with no recent enrichment writes.
+    const isOnServer = await fetch('http://localhost:7839/api/search/health', { signal: AbortSignal.timeout(1500) })
+      .then(() => true).catch(() => false);
+    if (!isOnServer) return warn('enrichment', 'remote_only (run on tower-nas to check enrichment)');
+
+    if (!existsSync(dbPath)) return warn('enrichment', 'remote_only (run on tower-nas to check enrichment)');
     const { default: Database } = await import('better-sqlite3');
     const db = new Database(dbPath, { readonly: true, fileMustExist: true });
 

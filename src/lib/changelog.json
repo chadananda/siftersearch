@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T21:28:50.679Z",
+  "generated": "2026-05-18T22:00:23.281Z",
   "entries": [
+    {
+      "hash": "df420554",
+      "date": "2026-05-18",
+      "type": "New",
+      "description": "Migration 78 — add em_synced column to entity_mentions (idempotent) Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
+      "scope": null
+    },
     {
       "hash": "98fe31e4",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Batch propagateHypeFromNormalizedHash to avoid minute-long write lock",
       "scope": null
-    },
-    {
-      "hash": "8d85df71",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "IsPrimaryDoctrinal uses file_path substrings throughout — avoids broad collection/title matches that catch tafsir and OT/KJV books",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "df420554",
+        "date": "2026-05-18",
+        "type": "New",
+        "description": "Migration 78 — add em_synced column to entity_mentions (idempotent) Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
+        "scope": null
+      },
       {
         "hash": "98fe31e4",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Batch propagateHypeFromNormalizedHash to avoid minute-long write lock",
-        "scope": null
-      },
-      {
-        "hash": "8d85df71",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "IsPrimaryDoctrinal uses file_path substrings throughout — avoids broad collection/title matches that catch tafsir and OT/KJV books",
         "scope": null
       }
     ]
