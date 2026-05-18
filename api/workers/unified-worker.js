@@ -41,7 +41,7 @@ let siteRegistryByDomain = {};
 // ============================================================
 // Configuration
 // ============================================================
-const PARA_BATCH_SIZE = 100;    // paragraphs per Meilisearch batch (100 × 12KB ≈ 1.2MB)
+const PARA_BATCH_SIZE = 1000;   // rows per getDirtyParagraphsForDoc call; must exceed largest doc so inner loop processes all rows in one pass
 const YIELD_DELAY_MS = 10;
 const DOC_DELAY_MS = 50;
 const IDLE_SLEEP_MS = 10000;
