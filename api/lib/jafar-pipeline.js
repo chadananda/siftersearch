@@ -693,22 +693,20 @@ export async function deterministicResearch({ entities, userMessage, messages, s
               // unrelated passages are returned. Bypass Meilisearch entirely and fetch directly
               // from SQLite where the author LIKE filter is reliable.
               try {
-                const authorDocs = await queryAll(
-                  `SELECT id, title, author, source_url FROM docs WHERE author LIKE ? AND deleted_at IS NULL ORDER BY id LIMIT 1`,
+                // Cross-doc query: find prose across ALL docs by this author (first doc may have 0 rows)
+                const contentRows = await queryAll(
+                  `SELECT c.text, c.external_para_id, d.title, d.author, d.source_url
+                   FROM content c JOIN docs d ON c.doc_id = d.id
+                   WHERE d.author LIKE ? AND d.deleted_at IS NULL AND c.deleted_at IS NULL
+                     AND length(c.text) > 120 AND c.paragraph_index > 2
+                   ORDER BY d.id, c.paragraph_index LIMIT 4`,
                   [`%${catalogFilters.author}%`]
                 );
-                if (authorDocs[0]?.id) {
-                  const doc = authorDocs[0];
-                  const contentRows = await queryAll(
-                    `SELECT text, external_para_id FROM content WHERE doc_id = ? AND deleted_at IS NULL AND length(text) > 120 AND paragraph_index > 2 ORDER BY paragraph_index LIMIT 4`,
-                    [doc.id]
-                  );
-                  for (const row of contentRows) {
-                    const url = doc.source_url && row.external_para_id
-                      ? `${doc.source_url}?paraId=${row.external_para_id}`
-                      : doc.source_url || null;
-                    retrieved.push({ text: row.text, source_title: doc.title, source_author: doc.author, citation_url: url, via: 'catalog_companion_sql' });
-                  }
+                for (const row of contentRows) {
+                  const url = row.source_url && row.external_para_id
+                    ? `${row.source_url}?paraId=${row.external_para_id}`
+                    : row.source_url || null;
+                  retrieved.push({ text: row.text, source_title: row.title, source_author: row.author, citation_url: url, via: 'catalog_companion_sql' });
                 }
               } catch (sqlFallbackErr) { logger.debug({ err: sqlFallbackErr.message }, 'catalog sql fallback error'); }
             } else {
