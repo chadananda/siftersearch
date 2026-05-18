@@ -440,7 +440,7 @@ export default async function searchRoutes(fastify) {
   // Pipeline health — exposes sync staleness, entity health, schema version.
   // Public read-only (no sensitive data). Used by health-check.mjs remotely.
   fastify.get('/health/pipeline', async () => {
-    const [counts, schemaRow, syncStale, entityDup, promotionQ, recentExtractions] = await Promise.all([
+    const [counts, schemaRow, syncStale, entityDup, promotionQ, recentExtractions, deepResearch] = await Promise.all([
       getCachedContentCounts(),
       queryOne(`SELECT version FROM _schema_version ORDER BY version DESC LIMIT 1`).catch(() => null),
       queryOne(`SELECT COUNT(*) AS unsynced, MIN(created_at) AS oldest
@@ -449,7 +449,13 @@ export default async function searchRoutes(fastify) {
                   COUNT(DISTINCT entity_id || '|' || content_id || '|' || COALESCE(role,'')) AS unique_combos
                 FROM entity_mentions`).catch(() => ({ total: 0, unique_combos: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM promotion_queue WHERE resolved = 0`).catch(() => ({ n: 0 })),
-      queryOne(`SELECT COUNT(*) AS n FROM extraction_runs WHERE created_at > unixepoch() - 86400`).catch(() => ({ n: 0 }))
+      queryOne(`SELECT COUNT(*) AS n FROM extraction_runs WHERE created_at > unixepoch() - 86400`).catch(() => ({ n: 0 })),
+      queryOne(`SELECT
+                  COUNT(*) AS total,
+                  SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+                  SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
+                  MAX(completed_at) AS last_completed
+                FROM deep_research_queue`).catch(() => null)
     ]);
 
     const oldestMs = syncStale?.oldest ? new Date(syncStale.oldest).getTime() : 0;
@@ -469,6 +475,12 @@ export default async function searchRoutes(fastify) {
         dup_ratio: dupRatio,
         promotion_queue_pending: promotionQ?.n ?? 0,
         extraction_runs_24h: recentExtractions?.n ?? 0
+      },
+      deep_research: {
+        queue_total: deepResearch?.total ?? 0,
+        queue_pending: deepResearch?.pending ?? 0,
+        queue_failed: deepResearch?.failed ?? 0,
+        last_completed: deepResearch?.last_completed ?? null
       },
       status: {
         sync_stuck: oldestHours > 4 && (syncStale?.unsynced ?? 0) > 1000,

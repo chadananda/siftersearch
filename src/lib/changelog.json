@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T16:12:13.179Z",
+  "generated": "2026-05-18T16:36:44.335Z",
   "entries": [
+    {
+      "hash": "0ed2d711",
+      "date": "2026-05-18",
+      "type": "Performance",
+      "description": "Composite index on content(doc_id, updated_at DESC) WHERE synced=0 — fixes sync GROUP BY",
+      "scope": null
+    },
     {
       "hash": "ec228685",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Per-tradition trimming + URL hallucination guard",
       "scope": null
-    },
-    {
-      "hash": "ff2e68ec",
-      "date": "2026-05-10",
-      "type": "Other",
-      "description": "Remove dead BAHAI_TOPIC_TO_WORK; interfaith examples in crafter prompt",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "0ed2d711",
+        "date": "2026-05-18",
+        "type": "Performance",
+        "description": "Composite index on content(doc_id, updated_at DESC) WHERE synced=0 — fixes sync GROUP BY",
+        "scope": null
+      },
       {
         "hash": "ec228685",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "Fixed",
         "description": "Per-tradition trimming + URL hallucination guard",
-        "scope": null
-      },
-      {
-        "hash": "ff2e68ec",
-        "date": "2026-05-10",
-        "type": "Other",
-        "description": "Remove dead BAHAI_TOPIC_TO_WORK; interfaith examples in crafter prompt",
         "scope": null
       }
     ]

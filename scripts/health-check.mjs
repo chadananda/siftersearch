@@ -402,6 +402,49 @@ async function checkChatSmoke() {
   }
 }
 
+// ─── Deep Research queue health ───────────────────────────────────────────
+async function checkDeepResearch() {
+  const ph = await fetchPipelineHealth();
+  if (ph._error) return warn('deep_research', `pipeline endpoint unavailable: ${ph._error}`);
+
+  const dr = ph.deep_research;
+  if (!dr) return warn('deep_research', 'deep_research stats missing from pipeline endpoint');
+
+  const details = {
+    queue_total: dr.queue_total,
+    queue_pending: dr.queue_pending,
+    queue_failed: dr.queue_failed,
+    last_completed: dr.last_completed
+  };
+
+  if (dr.queue_failed > 10) {
+    return warn('deep_research', `${dr.queue_failed} failed research tasks in queue`, details);
+  }
+  ok('deep_research', 0, details);
+}
+
+// ─── Entity-mentions Meili sidecar ───────────────────────────────────────
+async function checkEntityMentionsIndex() {
+  try {
+    const headers = MEILI_KEY ? { Authorization: `Bearer ${MEILI_KEY}` } : {};
+    const res = await fetch(`${MEILI_URL}/indexes/entity_mentions_idx/stats`,
+      { headers, signal: AbortSignal.timeout(10000) });
+    if (res.status === 404) {
+      // Not yet created — only warn if entity pipeline has data
+      const ph = await fetchPipelineHealth();
+      if ((ph.entity?.mention_rows ?? 0) > 100) {
+        return warn('entity_mentions_idx', `index missing but DB has ${ph.entity.mention_rows} rows — sidecar not yet synced`);
+      }
+      return ok('entity_mentions_idx', 0, { note: 'index not yet created (no data yet)' });
+    }
+    if (!res.ok) return warn('entity_mentions_idx', `HTTP ${res.status}`);
+    const stats = await res.json();
+    ok('entity_mentions_idx', 0, { docs: stats.numberOfDocuments });
+  } catch (err) {
+    warn('entity_mentions_idx', err.message);
+  }
+}
+
 // ─── Run all ──────────────────────────────────────────────────────────────
 const probes = [
   ['api', checkApi],
@@ -409,10 +452,12 @@ const probes = [
   ['boss_vllm', checkVllm],
   ['pm2', checkPm2],
   ['db_activity', checkDbActivity],
-  ['sync_staleness', checkSyncStaleness],   // catches "527K unsynced for 11 days"
-  ['meili_vs_db', checkMeiliVsDb],          // catches silent Meili/DB divergence
-  ['entity_pipeline', checkEntityPipeline], // catches lock-storm pattern
-  ['schema_version', checkSchemaVersion],   // catches pending migrations
+  ['sync_staleness', checkSyncStaleness],         // catches "527K unsynced for 11 days"
+  ['meili_vs_db', checkMeiliVsDb],                // catches silent Meili/DB divergence
+  ['entity_pipeline', checkEntityPipeline],       // catches lock-storm pattern
+  ['schema_version', checkSchemaVersion],         // catches pending migrations
+  ['deep_research', checkDeepResearch],           // deep_research_queue stuck/failing
+  ['entity_mentions_idx', checkEntityMentionsIndex], // sidecar Meili index populated
   ['enrichment', checkEnrichment]
 ];
 if (!QUICK) probes.push(['chat_smoke', checkChatSmoke]);
