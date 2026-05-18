@@ -67,15 +67,27 @@ async function timed(fn) {
 
 // ─── API health ───────────────────────────────────────────────────────────
 async function checkApi() {
+  // Try node fetch; fall back to curl if node HTTPS is broken in this environment
+  const url = `${API_BASE}/api/search/health`;
   try {
     const [res, ms] = await timed(() =>
-      fetch(`${API_BASE}/api/search/health`, { signal: AbortSignal.timeout(15000) })
+      fetch(url, { signal: AbortSignal.timeout(8000) })
     );
     if (!res.ok) return fail('api', `HTTP ${res.status}`, { latency_ms: ms });
     if (ms > 2000) return warn('api', `slow (${ms}ms)`, { latency_ms: ms });
-    ok('api', ms);
-  } catch (err) {
-    fail('api', err.message);
+    return ok('api', ms);
+  } catch {
+    // Curl fallback
+    try {
+      const t = Date.now();
+      const { stdout } = await exec(`curl -s --max-time 10 -o /dev/null -w "%{http_code}" "${url}"`, { timeout: 12000 });
+      const ms = Date.now() - t;
+      const code = parseInt(stdout.trim(), 10);
+      if (code === 200) return ok('api', ms, { via: 'curl' });
+      return fail('api', `HTTP ${code} (curl)`, { latency_ms: ms });
+    } catch (curlErr) {
+      fail('api', `down (curl also failed): ${curlErr.message}`);
+    }
   }
 }
 
@@ -216,16 +228,25 @@ async function checkDbActivity() {
 // Works from any machine (no direct DB access needed).
 // Checks: sync staleness, Meili vs DB divergence, entity lock-storm, schema version.
 // Shared promise so concurrent callers don't each make a separate request.
+// Falls back to curl if node fetch fails — node HTTPS can be unreliable under
+// concurrent socket pressure (boss/Meili TCP hangs exhaust libuv thread pool).
 let _pipelineHealthPromise = null;
 async function fetchPipelineHealth() {
   if (!_pipelineHealthPromise) {
-    _pipelineHealthPromise = fetch(`${API_BASE}/api/search/health/pipeline`,
-      { signal: AbortSignal.timeout(20000) })
+    const url = `${API_BASE}/api/search/health/pipeline`;
+    _pipelineHealthPromise = fetch(url, { signal: AbortSignal.timeout(8000) })
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .catch(err => ({ _error: err.message }));
+      .catch(async () => {
+        try {
+          const { stdout } = await exec(`curl -s --max-time 10 "${url}"`, { timeout: 12000 });
+          return JSON.parse(stdout.trim());
+        } catch (curlErr) {
+          return { _error: curlErr.message };
+        }
+      });
   }
   return _pipelineHealthPromise;
 }

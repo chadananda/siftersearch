@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T17:13:58.004Z",
+  "generated": "2026-05-18T17:26:57.712Z",
   "entries": [
+    {
+      "hash": "0324de7a",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "PM2 check treats empty process list as dev-machine skip, not all-missing fail",
+      "scope": null
+    },
     {
       "hash": "1ae21ed9",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Multilingual passage retrieval with inline translation",
       "scope": null
-    },
-    {
-      "hash": "e2bead71",
-      "date": "2026-05-10",
-      "type": "Fixed",
-      "description": "Primary-text collection filter + paragraph dedup for interfaith search",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "0324de7a",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "PM2 check treats empty process list as dev-machine skip, not all-missing fail",
+        "scope": null
+      },
       {
         "hash": "1ae21ed9",
         "date": "2026-05-18",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-10",
         "type": "New",
         "description": "Multilingual passage retrieval with inline translation",
-        "scope": null
-      },
-      {
-        "hash": "e2bead71",
-        "date": "2026-05-10",
-        "type": "Fixed",
-        "description": "Primary-text collection filter + paragraph dedup for interfaith search",
         "scope": null
       }
     ]
