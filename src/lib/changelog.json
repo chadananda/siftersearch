@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-18T22:35:32.964Z",
+  "generated": "2026-05-18T23:17:37.723Z",
   "entries": [
+    {
+      "hash": "16f8d883",
+      "date": "2026-05-18",
+      "type": "Performance",
+      "description": "Batch 500 docs per fetch instead of re-fetching per doc",
+      "scope": null
+    },
     {
       "hash": "8c008501",
       "date": "2026-05-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Exclude image-markdown paragraphs from enrichment enqueue",
       "scope": null
-    },
-    {
-      "hash": "8a91a1ad",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Skip short/HTML paragraphs in enrichment enqueue (≥100 chars, no HTML)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "16f8d883",
+        "date": "2026-05-18",
+        "type": "Performance",
+        "description": "Batch 500 docs per fetch instead of re-fetching per doc",
+        "scope": null
+      },
       {
         "hash": "8c008501",
         "date": "2026-05-18",
@@ -7009,13 +7016,6 @@
         "date": "2026-05-11",
         "type": "Fixed",
         "description": "Exclude image-markdown paragraphs from enrichment enqueue",
-        "scope": null
-      },
-      {
-        "hash": "8a91a1ad",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Skip short/HTML paragraphs in enrichment enqueue (≥100 chars, no HTML)",
         "scope": null
       }
     ]
