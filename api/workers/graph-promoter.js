@@ -213,7 +213,15 @@ async function workerLoop() {
   logger.info('Graph promoter starting');
 
   while (!isShuttingDown) {
-    const rows = await fetchBatch();
+    let rows;
+    try {
+      rows = await fetchBatch();
+    } catch (err) {
+      logger.error({ err: err.message }, 'fetchBatch failed — sleeping before retry');
+      await delay(IDLE_SLEEP_MS);
+      continue;
+    }
+
     if (rows.length === 0) {
       await delay(IDLE_SLEEP_MS);
       continue;

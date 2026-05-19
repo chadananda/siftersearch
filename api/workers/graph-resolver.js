@@ -179,7 +179,15 @@ async function workerLoop() {
   logger.info('Graph resolver starting');
 
   while (!isShuttingDown) {
-    const rows = await fetchBatch();
+    let rows;
+    try {
+      rows = await fetchBatch();
+    } catch (err) {
+      logger.error({ err: err.message }, 'fetchBatch failed — sleeping before retry');
+      await delay(IDLE_SLEEP_MS);
+      continue;
+    }
+
     if (rows.length === 0) {
       await delay(IDLE_SLEEP_MS);
       continue;
@@ -190,7 +198,7 @@ async function workerLoop() {
       try {
         await resolveOne(row);
       } catch (err) {
-        logger.error({ extractionId: row.id, err: err.message }, 'Resolution error');
+        logger.error({ extractionId: row.id, err: err.message }, 'Resolution error — skipping row');
       }
     }
     logger.info({ resolved: rows.length }, 'Resolution batch done');

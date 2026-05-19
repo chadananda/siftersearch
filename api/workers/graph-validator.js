@@ -73,14 +73,19 @@ async function validateOne(extraction) {
     parsed = { errors: [{ field: 'root', issue: 'non-JSON response from validator' }], confidence: 0.3, recommended_action: 'reextract' };
   }
 
-  await queryWithRetry(`
-    INSERT INTO extraction_validations
-      (extraction_id, validator_model, errors_json, confidence, recommended_action)
-    VALUES (?, ?, ?, ?, ?)
-  `, [extraction.id, MODEL, JSON.stringify(parsed.errors || []),
-      parsed.confidence ?? 0.5, parsed.recommended_action ?? 'arbitrate']);
+  try {
+    await queryWithRetry(`
+      INSERT INTO extraction_validations
+        (extraction_id, validator_model, errors_json, confidence, recommended_action)
+      VALUES (?, ?, ?, ?, ?)
+    `, [extraction.id, MODEL, JSON.stringify(parsed.errors || []),
+        parsed.confidence ?? 0.5, parsed.recommended_action ?? 'arbitrate']);
+  } catch (err) {
+    logger.error({ extractionId: extraction.id, err: err.message }, 'Failed to write validation');
+    return;
+  }
 
-  await trackCost({ model: MODEL, taskType: 'validation', paragraphId: extraction.content_id, inputTokens, outputTokens, cachedTokens: 0, costUsd });
+  await trackCost({ model: MODEL, taskType: 'validation', paragraphId: extraction.content_id, inputTokens, outputTokens, cachedTokens: 0, costUsd }).catch(() => {});
 
   logger.debug(
     { extractionId: extraction.id, action: parsed.recommended_action, confidence: parsed.confidence },
@@ -129,7 +134,15 @@ async function workerLoop() {
   logger.info({ model: MODEL }, 'Graph validator starting');
 
   while (!isShuttingDown) {
-    const rows = await fetchBatch();
+    let rows;
+    try {
+      rows = await fetchBatch();
+    } catch (err) {
+      logger.error({ err: err.message }, 'fetchBatch failed — sleeping before retry');
+      await delay(IDLE_SLEEP_MS);
+      continue;
+    }
+
     if (rows.length === 0) {
       await delay(IDLE_SLEEP_MS);
       continue;
@@ -138,7 +151,11 @@ async function workerLoop() {
     // Sequential to avoid hammering Anthropic rate limits
     for (const row of rows) {
       if (isShuttingDown) break;
-      await validateOne(row);
+      try {
+        await validateOne(row);
+      } catch (err) {
+        logger.error({ extractionId: row.id, err: err.message }, 'validateOne threw — skipping row');
+      }
     }
     logger.info({ validated: rows.length }, 'Validation batch done');
   }
