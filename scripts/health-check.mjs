@@ -13,7 +13,7 @@
  *   node scripts/health-check.mjs --verbose      # full per-check timing
  *
  * Components checked:
- *   - API responsiveness (/api/search/health)
+ *   - API responsiveness (/api/v1/health)
  *   - Meilisearch paragraphs index (size + embeddings)
  *   - Meilisearch hype_questions sidecar (size + embeddings)
  *   - boss vLLM endpoint
@@ -92,9 +92,9 @@ async function timed(fn) {
 
 // ─── API health ───────────────────────────────────────────────────────────
 async function checkApi() {
-  // Try node fetch; fall back to curl if node HTTPS is broken in this environment
-  const url = `${API_BASE}/api/search/health`;
-  // Cloudflare tunnel adds ~4-6s; localhost access should be <500ms
+  // Use /api/v1/health — lightweight, always fast. /api/search/health runs DB
+  // queries that can hang under heavy write contention, causing false "api down".
+  const url = `${API_BASE}/api/v1/health`;
   const isTunnel = !API_BASE.includes('localhost') && !API_BASE.includes('127.0.0.1');
   const slowThreshold = isTunnel ? 10000 : 2000;
   try {
