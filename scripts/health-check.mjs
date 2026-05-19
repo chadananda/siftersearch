@@ -213,7 +213,9 @@ async function checkPm2() {
     // pm2 sometimes emits log lines before the JSON array — find the array start
     const jsonStart = stdout ? stdout.indexOf('[') : -1;
     if (jsonStart === -1) {
-      return warn('pm2', 'pm2 not available locally (run on tower-nas to verify)');
+      // Debug: include what we got so we can diagnose the failure
+      const preview = (stdout || '').slice(0, 120).replace(/\n/g, '\\n');
+      return warn('pm2', `pm2 not available locally — got: ${preview || '(empty)'}`);
     }
     const procs = JSON.parse(stdout.slice(jsonStart));
     // Empty list = pm2 running locally but no siftersearch processes — dev machine
