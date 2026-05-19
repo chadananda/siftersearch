@@ -332,6 +332,22 @@ async function checkSyncStaleness() {
     synced_last_2h: status.synced_last_2h ?? 'n/a'
   };
 
+  // unsynced_count === -1 means the API skipped the COUNT(*) because WAL was too large.
+  // Fall back to direct DB query (only works on tower-nas where DB is local).
+  if (sync.unsynced_count === -1) {
+    try {
+      const dbPath = join(PROJECT_ROOT, 'data/sifter.db');
+      const { default: Database } = await import('better-sqlite3');
+      const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+      const row = db.prepare(`SELECT COUNT(*) AS n FROM content WHERE synced = 0 AND deleted_at IS NULL`).get();
+      db.close();
+      sync.unsynced_count = row?.n ?? -1;
+      if (sync.unsynced_count === -1) return warn('sync_staleness', 'WAL too large — unsynced count unavailable');
+    } catch {
+      return warn('sync_staleness', 'WAL too large — unsynced count unavailable (run on tower-nas)');
+    }
+  }
+
   if (sync.unsynced_count === 0) return ok('sync_staleness', 0, { unsynced: 0 });
 
   if (status.sync_stuck) {
