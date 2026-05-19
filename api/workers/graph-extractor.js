@@ -29,13 +29,7 @@ import { getAuthority } from '../lib/authority.js';
 const PROMPT_VERSION = 'extract-v1';
 const MODEL = process.env.EXTRACTION_MODEL || 'deepseek-chat';
 const MODEL_PROVIDER = process.env.EXTRACTION_PROVIDER || 'deepseek';
-// GPB is the canonical entity seed — use Sonnet for highest quality extraction.
-// Sonnet handles Bahá'í transliteration, pronoun resolution, and doctrinal nuance
-// far better than deepseek-chat. Cost is secondary for the seed document.
-const GPB_MODEL = process.env.GPB_EXTRACTION_MODEL || 'claude-sonnet-4-6';
-const GPB_MODEL_PROVIDER = process.env.GPB_EXTRACTION_PROVIDER || 'anthropic';
-const BATCH_SIZE = 16;
-const GPB_BATCH_SIZE = 4;  // smaller batch — Sonnet calls are slower
+const BATCH_SIZE = parseInt(process.env.EXTRACTION_BATCH_SIZE || '16', 10);
 const IDLE_SLEEP_MS = 30_000;
 
 const SYSTEM_PROMPT_TEMPLATE = readFileSync(
@@ -234,9 +228,8 @@ async function extractParagraph(row) {
     return null;
   }
 
-  const isGpb = row.doc_id === GPB_DOC_ID;
-  const activeModel = isGpb ? GPB_MODEL : MODEL;
-  const activeProvider = isGpb ? GPB_MODEL_PROVIDER : MODEL_PROVIDER;
+  const activeModel = MODEL;
+  const activeProvider = MODEL_PROVIDER;
 
   let result;
   try {
@@ -342,31 +335,13 @@ async function extractParagraph(row) {
   return lastInsertRowid;
 }
 
-// GPB doc ID — the CANONICAL copy (doc 21310, no duplicate_of) is what Meilisearch indexes.
-// Doc 8635 is a duplicate of 21310 and is excluded from search — do not extract it.
-const GPB_DOC_ID = 21310;
-
-// Fetch next batch — GPB paragraphs first, then everything else.
-// INVARIANT: never extract duplicate docs (duplicate_of IS NOT NULL) — they are
-// excluded from Meilisearch search and extracting them wastes budget.
+// Fetch next batch — strictly ordered by doc_priority DESC so higher-authority
+// docs always extract before lower-authority ones. Entity knowledge compounds:
+// each tier's aliases are available to all subsequent tiers' extraction prompts.
+// INVARIANT: never extract duplicate docs (duplicate_of IS NOT NULL).
 async function fetchBatch() {
-  // Phase 1: drain GPB completely (smaller batch — Sonnet model)
-  const gpbRows = await queryAll(`
-    SELECT c.id, c.text, c.doc_id, d.religion
-    FROM content c
-    JOIN docs d ON d.id = c.doc_id
-    WHERE c.doc_id = ? AND c.graph_enriched = 0
-      AND c.deleted_at IS NULL AND d.deleted_at IS NULL
-      AND d.duplicate_of IS NULL
-      AND length(c.text) > 50
-    ORDER BY c.paragraph_index ASC
-    LIMIT ?
-  `, [GPB_DOC_ID, GPB_BATCH_SIZE]);
-  if (gpbRows.length > 0) return gpbRows;
-
-  // Phase 2: all other non-duplicate docs
   return queryAll(`
-    SELECT c.id, c.text, c.doc_id, d.religion
+    SELECT c.id, c.text, c.doc_id, d.religion, d.doc_priority
     FROM content c
     JOIN docs d ON d.id = c.doc_id
     WHERE c.graph_enriched = 0
@@ -374,13 +349,55 @@ async function fetchBatch() {
       AND d.deleted_at IS NULL
       AND d.duplicate_of IS NULL
       AND length(c.text) > 50
+    ORDER BY d.doc_priority DESC, d.id ASC, c.paragraph_index ASC
     LIMIT ?
   `, [BATCH_SIZE]);
 }
 
+// Check if all extractions from docs at priority >= minPriority are resolved.
+// Used to gate tier transitions: don't start a new tier until the previous
+// tier's entities are fully in entity_aliases (resolver + promoter must catch up).
+async function isHigherTierFullyResolved(minPriority) {
+  const row = await queryOne(`
+    SELECT COUNT(*) AS n
+    FROM paragraph_extractions pe
+    JOIN content c ON c.id = pe.content_id
+    JOIN docs d ON d.id = c.doc_id
+    WHERE pe.resolved = 0 AND d.doc_priority >= ?
+  `, [minPriority]);
+  const pending = row?.n || 0;
+  const queueRow = await queryOne(`
+    SELECT COUNT(*) AS n FROM promotion_queue WHERE resolved = 0
+  `);
+  const queuePending = queueRow?.n || 0;
+  return pending === 0 && queuePending === 0;
+}
+
+let _lastBatchPriority = null;
+
 async function processOnce() {
   const rows = await fetchBatch();
   if (rows.length === 0) return 0;
+
+  const batchPriority = rows[0].doc_priority ?? 0;
+
+  // Tier boundary: if priority dropped since last batch, wait for resolver +
+  // promoter to fully process the higher tier before continuing. This ensures
+  // entity aliases from the previous tier are available to the current tier's
+  // candidate dictionary — the compounding effect.
+  if (_lastBatchPriority !== null && batchPriority < _lastBatchPriority) {
+    const ready = await isHigherTierFullyResolved(_lastBatchPriority);
+    if (!ready) {
+      logger.info(
+        { from: _lastBatchPriority, to: batchPriority },
+        'Tier boundary — waiting for resolver/promoter to catch up before continuing'
+      );
+      return 0;  // caller will sleep and retry
+    }
+    logger.info({ from: _lastBatchPriority, to: batchPriority }, 'Tier boundary cleared — compounding entities into next tier');
+    invalidateAliasCache();  // force fresh alias load for new tier
+  }
+  _lastBatchPriority = batchPriority;
 
   // Process concurrently
   const results = await Promise.allSettled(rows.map(r => extractParagraph(r)));
