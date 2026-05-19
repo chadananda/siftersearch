@@ -182,7 +182,11 @@ async function checkVllm() {
   if (isBossHostname || isLocalhostVllm) {
     const reachable = await isLocalhostReachable(VLLM_URL.replace(/\/v1.*/, ''));
     if (!reachable) {
-      warn('boss_vllm', 'remote_only (run on tower-nas to check vLLM)');
+      // isBossHostname means this ran on tower-nas but boss is unreachable (vLLM down)
+      const msg = isBossHostname
+        ? 'boss unreachable — vLLM likely down (restart vLLM on boss)'
+        : 'remote_only (run on tower-nas to check vLLM)';
+      warn('boss_vllm', msg);
       return;
     }
   }
@@ -203,8 +207,9 @@ async function checkVllm() {
 async function checkPm2() {
   // Only meaningful when running on tower-nas. If pm2 isn't local, skip.
   try {
-    const pm2bin = process.env.PM2_BIN || 'pm2';
-    const { stdout } = await exec(`${pm2bin} jlist 2>/dev/null`, { timeout: 15000, env: { ...process.env, PATH: `/usr/bin:/usr/local/bin:${process.env.PATH || ''}` } });
+    // Use full path; capture stderr too so we can see pm2 errors
+    const pm2bin = [process.env.PM2_BIN, '/usr/bin/pm2', '/usr/local/bin/pm2', 'pm2'].find(Boolean);
+    const { stdout, stderr } = await exec(`${pm2bin} jlist 2>&1`, { timeout: 15000 });
     // pm2 sometimes emits log lines before the JSON array — find the array start
     const jsonStart = stdout ? stdout.indexOf('[') : -1;
     if (jsonStart === -1) {
