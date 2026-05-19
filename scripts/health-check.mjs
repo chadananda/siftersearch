@@ -332,6 +332,14 @@ async function checkSyncStaleness() {
     synced_last_2h: status.synced_last_2h ?? 'n/a'
   };
 
+  // Check for stuck worker first (independent of WAL/count availability)
+  if (status.sync_stuck) {
+    const msg = sync.unsynced_count === -1
+      ? 'sync processor stuck — no rows synced in last 2h (WAL too large to count backlog)'
+      : `${sync.unsynced_count.toLocaleString()} paragraphs unsynced, none synced in last 2h — sync processor stuck`;
+    return fail('sync_staleness', msg, details);
+  }
+
   // unsynced_count === -1 means the API skipped the COUNT(*) because WAL was too large.
   // We CANNOT query the DB directly here — better-sqlite3 COUNT(*) on 4.7M rows blocks
   // the event loop for seconds, causing all parallel fetch() calls to time out.
@@ -340,12 +348,6 @@ async function checkSyncStaleness() {
   }
 
   if (sync.unsynced_count === 0) return ok('sync_staleness', 0, { unsynced: 0 });
-
-  if (status.sync_stuck) {
-    return fail('sync_staleness',
-      `${sync.unsynced_count.toLocaleString()} paragraphs unsynced, none synced in last 2h — sync processor stuck`,
-      details);
-  }
   // Mass-reset guard: if >50% of all paragraphs are unsynced, something catastrophic happened.
   // Use max(total_paragraphs, unsynced_count) as denominator to handle stale cached counts.
   const denom = Math.max(sync.total_paragraphs, sync.unsynced_count, 1);
