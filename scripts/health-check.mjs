@@ -333,19 +333,10 @@ async function checkSyncStaleness() {
   };
 
   // unsynced_count === -1 means the API skipped the COUNT(*) because WAL was too large.
-  // Fall back to direct DB query (only works on tower-nas where DB is local).
+  // We CANNOT query the DB directly here — better-sqlite3 COUNT(*) on 4.7M rows blocks
+  // the event loop for seconds, causing all parallel fetch() calls to time out.
   if (sync.unsynced_count === -1) {
-    try {
-      const dbPath = join(PROJECT_ROOT, 'data/sifter.db');
-      const { default: Database } = await import('better-sqlite3');
-      const db = new Database(dbPath, { readonly: true, fileMustExist: true });
-      const row = db.prepare(`SELECT COUNT(*) AS n FROM content WHERE synced = 0 AND deleted_at IS NULL`).get();
-      db.close();
-      sync.unsynced_count = row?.n ?? -1;
-      if (sync.unsynced_count === -1) return warn('sync_staleness', 'WAL too large — unsynced count unavailable');
-    } catch {
-      return warn('sync_staleness', 'WAL too large — unsynced count unavailable (run on tower-nas)');
-    }
+    return warn('sync_staleness', 'WAL too large — unsynced count unavailable (high write activity)');
   }
 
   if (sync.unsynced_count === 0) return ok('sync_staleness', 0, { unsynced: 0 });
@@ -355,12 +346,14 @@ async function checkSyncStaleness() {
       `${sync.unsynced_count.toLocaleString()} paragraphs unsynced, none synced in last 2h — sync processor stuck`,
       details);
   }
-  // Mass-reset guard: if >50% of all paragraphs are unsynced, something catastrophic happened
-  const massResetThreshold = sync.total_paragraphs > 0 ? sync.unsynced_count / sync.total_paragraphs : 0;
-  if (massResetThreshold > 0.5) {
+  // Mass-reset guard: if >50% of all paragraphs are unsynced, something catastrophic happened.
+  // Use max(total_paragraphs, unsynced_count) as denominator to handle stale cached counts.
+  const denom = Math.max(sync.total_paragraphs, sync.unsynced_count, 1);
+  const massResetThreshold = sync.unsynced_count / denom;
+  if (massResetThreshold > 0.5 && sync.unsynced_count > 500000) {
     return fail('sync_staleness',
-      `MASS RESET DETECTED: ${sync.unsynced_count.toLocaleString()} of ${sync.total_paragraphs.toLocaleString()} paragraphs unsynced (${Math.round(massResetThreshold * 100)}%) — restore Meili from backup instead of re-syncing`,
-      { ...details, total_paragraphs: sync.total_paragraphs, reset_fraction: massResetThreshold });
+      `MASS RESET DETECTED: ${sync.unsynced_count.toLocaleString()} paragraphs unsynced — restore Meili from backup instead of re-syncing`,
+      { ...details, total_paragraphs: sync.total_paragraphs, unsynced: sync.unsynced_count });
   }
   if (sync.unsynced_count > 50000) {
     const rate = status.synced_last_2h > 0 ? `${status.synced_last_2h.toLocaleString()} synced in last 2h` : 'no activity in last 2h';
