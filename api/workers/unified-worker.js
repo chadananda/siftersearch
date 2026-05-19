@@ -437,18 +437,15 @@ async function runFullSyncCheck() {
   try {
     const meili = await getMeili();
     if (!meili) { logger.warn('Meilisearch not available, skipping full sync check'); return; }
-    const dbDocs = await queryAll('SELECT id FROM docs WHERE deleted_at IS NULL');
-    const dbIdSet = new Set(dbDocs.map(d => d.id));
-    const meiliDocs = await meili.index('documents').getDocuments({ limit: 10000, fields: ['id'] });
-    const meiliIdSet = new Set((meiliDocs.results || []).map(d => d.id));
-    const missingInMeili = [...dbIdSet].filter(id => !meiliIdSet.has(id));
-    if (missingInMeili.length > 0) {
-      logger.info({ count: missingInMeili.length }, 'Found documents in DB missing from Meilisearch');
-      for (const docId of missingInMeili) await content.markDocDirty(docId);
-      logger.info({ count: missingInMeili.length }, 'Marked documents for re-sync');
-    }
+
+    // REMOVED: missingInMeili check — caused mass synced=0 resets.
+    // getDocuments(limit:10000) only returns 10K of 44K+ docs, making 34K appear
+    // "missing" and triggering markDocDirty on their ~3.4M paragraphs every hour.
+    // The paragraphs index sync is sufficient; documents index is populated by that sync.
+
+    // Spot-check 10 synced docs to catch count mismatches (paragraphs index only)
     const potentiallyStale = await queryAll(`
-      SELECT DISTINCT doc_id FROM content WHERE synced = 1 AND updated_at < datetime('now', '-1 hour') LIMIT 100
+      SELECT DISTINCT doc_id FROM content WHERE synced = 1 AND updated_at < datetime('now', '-1 hour') LIMIT 10
     `);
     for (const row of potentiallyStale) {
       const dbCount = await content.countByDocId(row.doc_id);
@@ -458,7 +455,10 @@ async function runFullSyncCheck() {
           await content.markDocDirty(row.doc_id);
           logger.info({ docId: row.doc_id, dbCount, meiliCount: meiliResult.estimatedTotalHits }, 'Paragraph count mismatch, marking for re-sync');
         }
-      } catch { await content.markDocDirty(row.doc_id); }
+      } catch (err) {
+        // Meili busy/slow — do NOT mark dirty; just log and skip
+        logger.warn({ docId: row.doc_id, err: err.message }, 'Meili search failed during stale check, skipping doc');
+      }
     }
     lastFullSyncTime = Date.now();
     logger.info('Full sync check complete');
