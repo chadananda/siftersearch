@@ -526,7 +526,7 @@ async function getUndisambiguated(limit = 20) {
   return queryAll(`
     SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype
     FROM content c
-    WHERE c.context IS NULL AND c.deleted_at IS NULL
+    WHERE c.context IS NULL AND c.deleted_at IS NULL AND c.graph_enriched = 1
     ORDER BY c.doc_id, c.paragraph_index
     LIMIT ?
   `, [limit]);
@@ -534,12 +534,15 @@ async function getUndisambiguated(limit = 20) {
 
 /**
  * Get paragraphs that need HyPE questions (context exists, hyp_questions missing).
+ * Uses text_grounded when available — graph enrichment must complete first.
  */
 async function getUnhyped(limit = 10) {
   return queryAll(`
-    SELECT id, doc_id, paragraph_index, text, context
+    SELECT id, doc_id, paragraph_index,
+           COALESCE(text_grounded, text) AS text, context
     FROM content
-    WHERE hyp_questions IS NULL AND context IS NOT NULL AND deleted_at IS NULL
+    WHERE hyp_questions IS NULL AND context IS NOT NULL
+      AND deleted_at IS NULL AND graph_enriched = 1
     ORDER BY id
     LIMIT ?
   `, [limit]);
