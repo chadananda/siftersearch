@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-19T19:34:29.733Z",
+  "generated": "2026-05-19T21:09:59.635Z",
   "entries": [
+    {
+      "hash": "6a629b81",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Migration 27 guard + setSchemaVersion retry — unblock promoter crash loop",
+      "scope": null
+    },
     {
       "hash": "822c72c7",
       "date": "2026-05-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Authority boost 1.0→2.0 to overcome HyPE weight advantage",
       "scope": null
-    },
-    {
-      "hash": "f52afd73",
-      "date": "2026-05-11",
-      "type": "Other",
-      "description": "Tighten filtered-religion author cap to 25% in multiIndexSearch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-19": [
+      {
+        "hash": "6a629b81",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Migration 27 guard + setSchemaVersion retry — unblock promoter crash loop",
+        "scope": null
+      },
       {
         "hash": "822c72c7",
         "date": "2026-05-19",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-11",
         "type": "Fixed",
         "description": "Authority boost 1.0→2.0 to overcome HyPE weight advantage",
-        "scope": null
-      },
-      {
-        "hash": "f52afd73",
-        "date": "2026-05-11",
-        "type": "Other",
-        "description": "Tighten filtered-religion author cap to 25% in multiIndexSearch",
         "scope": null
       }
     ]

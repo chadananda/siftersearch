@@ -55,7 +55,8 @@ Rules:
 - Preserve all diacritical marks exactly in canonical_name`;
 
 async function getCandidates(surfaceNorm, type) {
-  // Find potential matches by fuzzy surface overlap
+  // Prefix LIKE (no leading %) so idx_alias_surface index is used
+  const prefix = surfaceNorm.slice(0, 8) + '%';
   return queryAll(`
     SELECT ge.id, ge.canonical_name, ge.entity_type AS type, ge.religion
     FROM graph_entities ge
@@ -63,7 +64,7 @@ async function getCandidates(surfaceNorm, type) {
     WHERE ea.surface_norm LIKE ?
       ${type ? `AND ge.entity_type = '${type}'` : ''}
     LIMIT 10
-  `, [`%${surfaceNorm.slice(0, 10)}%`]);
+  `, [prefix]);
 }
 
 async function adjudicate(item, candidates) {
