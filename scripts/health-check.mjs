@@ -203,7 +203,8 @@ async function checkVllm() {
 async function checkPm2() {
   // Only meaningful when running on tower-nas. If pm2 isn't local, skip.
   try {
-    const { stdout } = await exec('pm2 jlist 2>/dev/null', { timeout: 15000 });
+    const pm2bin = process.env.PM2_BIN || 'pm2';
+    const { stdout } = await exec(`${pm2bin} jlist 2>/dev/null`, { timeout: 15000, env: { ...process.env, PATH: `/usr/bin:/usr/local/bin:${process.env.PATH || ''}` } });
     // pm2 sometimes emits log lines before the JSON array — find the array start
     const jsonStart = stdout ? stdout.indexOf('[') : -1;
     if (jsonStart === -1) {
@@ -345,7 +346,7 @@ async function checkMeiliVsDb() {
   try {
     const headers = MEILI_KEY ? { Authorization: `Bearer ${MEILI_KEY}` } : {};
     const res = await fetch(`${MEILI_URL}/indexes/paragraphs/stats`,
-      { headers, signal: AbortSignal.timeout(10000) });
+      { headers, signal: AbortSignal.timeout(30000) });
     if (!res.ok) return warn('meili_vs_db', `Meili stats HTTP ${res.status}`);
     const meiliCount = (await res.json()).numberOfDocuments || 0;
 
@@ -360,7 +361,8 @@ async function checkMeiliVsDb() {
     if (pct > 5) return warn('meili_vs_db', `Meili ${pct}% behind DB`, details);
     ok('meili_vs_db', 0, details);
   } catch (err) {
-    warn('meili_vs_db', err.message);
+    if (await meiliStatsBusy(err)) warn('meili_vs_db', 'stats timeout (Meili busy indexing — not a failure)');
+    else warn('meili_vs_db', err.message);
   }
 }
 
@@ -534,7 +536,7 @@ async function checkEntityMentionsIndex() {
   try {
     const headers = MEILI_KEY ? { Authorization: `Bearer ${MEILI_KEY}` } : {};
     const res = await fetch(`${MEILI_URL}/indexes/entity_mentions_idx/stats`,
-      { headers, signal: AbortSignal.timeout(10000) });
+      { headers, signal: AbortSignal.timeout(30000) });
     if (res.status === 404) {
       // Not yet created — only warn if entity pipeline has data
       const ph = await fetchPipelineHealth();
@@ -547,7 +549,8 @@ async function checkEntityMentionsIndex() {
     const stats = await res.json();
     ok('entity_mentions_idx', 0, { docs: stats.numberOfDocuments });
   } catch (err) {
-    warn('entity_mentions_idx', err.message);
+    if (await meiliStatsBusy(err)) warn('entity_mentions_idx', 'stats timeout (Meili busy indexing — not a failure)');
+    else warn('entity_mentions_idx', err.message);
   }
 }
 
