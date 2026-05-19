@@ -78,29 +78,31 @@ CONTEXT: "${item.context_snippet}"
 CANDIDATE ENTITIES:
 ${candidateList}`;
 
+  const sysMsg = { role: 'system', content: ADJUDICATION_SYSTEM };
+
   // Fast model vote
   let fastVote = null;
   try {
     const r = await chatCompletion(
-      [{ role: 'user', content: userMsg }],
-      { model: FAST_MODEL, provider: 'deepseek', temperature: 0, maxTokens: 512, systemPrompt: ADJUDICATION_SYSTEM, responseFormat: { type: 'json_object' } }
+      [sysMsg, { role: 'user', content: userMsg }],
+      { model: FAST_MODEL, provider: 'deepseek', temperature: 0, maxTokens: 512, responseFormat: { type: 'json_object' } }
     );
     const usage = r.usage || {};
     await trackCost({ model: FAST_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: usage.cachedTokens || 0, costUsd: ((usage.promptTokens||0) * 0.00027 + (usage.completionTokens||0) * 0.0011) / 1000 });
     fastVote = parseJsonResponse(r.content);
-  } catch (err) { logger.debug({ model: FAST_MODEL, err: err.message }, 'Fast vote failed'); }
+  } catch (err) { logger.warn({ model: FAST_MODEL, err: err.message }, 'Fast vote failed'); }
 
   // Detail model vote
   let detailVote = null;
   try {
     const r = await chatCompletion(
-      [{ role: 'user', content: userMsg }],
-      { model: DETAIL_MODEL, provider: 'anthropic', temperature: 0, maxTokens: 512, systemPrompt: ADJUDICATION_SYSTEM }
+      [sysMsg, { role: 'user', content: userMsg }],
+      { model: DETAIL_MODEL, provider: 'anthropic', temperature: 0, maxTokens: 512 }
     );
     const usage = r.usage || {};
     await trackCost({ model: DETAIL_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: 0, costUsd: ((usage.promptTokens||0) * 0.00025 + (usage.completionTokens||0) * 0.00125) / 1000 });
     detailVote = parseJsonResponse(r.content);
-  } catch (err) { logger.debug({ model: DETAIL_MODEL, err: err.message }, 'Detail vote failed'); }
+  } catch (err) { logger.warn({ model: DETAIL_MODEL, err: err.message }, 'Detail vote failed'); }
 
   // If both agree, use consensus. Otherwise arbitrate.
   const votes = [fastVote, detailVote].filter(Boolean);
@@ -119,8 +121,8 @@ ${candidateList}`;
       `Model ${i+1}: decision=${v.decision}, entity_id=${v.entity_id}, confidence=${v.confidence}`
     ).join('\n');
     const r = await chatCompletion(
-      [{ role: 'user', content: `${userMsg}\n\nMODEL VOTES:\n${modelVotesSummary}\n\nResolve the disagreement.` }],
-      { model: ARBITER_MODEL, provider: 'anthropic', temperature: 0, maxTokens: 512, systemPrompt: ADJUDICATION_SYSTEM }
+      [sysMsg, { role: 'user', content: `${userMsg}\n\nMODEL VOTES:\n${modelVotesSummary}\n\nResolve the disagreement.` }],
+      { model: ARBITER_MODEL, provider: 'anthropic', temperature: 0, maxTokens: 512 }
     );
     const usage = r.usage || {};
     await trackCost({ model: ARBITER_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: 0, costUsd: ((usage.promptTokens||0) * 0.003 + (usage.completionTokens||0) * 0.015) / 1000 });
