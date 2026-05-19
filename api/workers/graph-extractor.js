@@ -207,8 +207,9 @@ async function syncMentionsForContent(contentId) {
   }
 }
 
-// Extract one paragraph — returns { extractionId, contentId, parsed } or null
-async function extractParagraph(row) {
+// Call LLM for one paragraph — NO DB writes. Returns result data or null.
+// Run concurrently; write phase is separate and serial.
+async function callLLM(row) {
   const budget = await checkBudget();
   if (budget.action === 'halt') {
     logger.warn({ spend: budget.spend, budget: budget.budget }, 'Extraction budget exhausted — halting');
@@ -257,23 +258,18 @@ async function extractParagraph(row) {
   const outputTokens = usage.completionTokens || 0;
   const cachedTokens = usage.cachedTokens     || 0;
 
-  // Cost varies by provider/model
   const costUsd = activeProvider === 'anthropic'
-    // Sonnet 4.6: $3/1M input, $15/1M output, $0.30/1M cache read
     ? (inputTokens - cachedTokens) * 3 / 1_000_000
       + cachedTokens * 0.30 / 1_000_000
       + outputTokens * 15 / 1_000_000
     : activeProvider === 'local'
-    // Local inference: hardware cost only — track tokens for throughput, not spend
     ? 0
-    // deepseek-chat: $0.27/1M input, $0.014/1M cache, $1.10/1M output
     : (inputTokens - cachedTokens) * 0.00027 / 1000
       + cachedTokens * 0.000014 / 1000
       + outputTokens * 0.0011 / 1000;
 
   let parsed;
   try {
-    // deepseek-reasoner may wrap output in <think>...</think> or markdown fences
     let raw = result.content;
     raw = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
@@ -290,14 +286,26 @@ async function extractParagraph(row) {
     }, 'Failed to parse extraction JSON');
     if (fails >= MAX_FAILURES) {
       logger.warn({ contentId: row.id }, 'Marking paragraph unprocessable after repeated failures');
-      await query(`UPDATE content SET graph_enriched = -1, graph_enriched_at = datetime('now'),
-        extractor_version = 'skip:parse-failures' WHERE id = ?`, [row.id]);
-      _failCount.delete(row.id);
+      // Failure mark happens in the write phase below — return sentinel
+      return { row, activeModel, activeProvider, parsed: null, markFailed: true };
     }
     return null;
   }
 
-  // Write to paragraph_extractions
+  return { row, activeModel, activeProvider, parsed, inputTokens, outputTokens, cachedTokens, costUsd };
+}
+
+// Write one LLM result to DB — called serially to avoid SQLITE_BUSY contention.
+async function writeResult(llmResult) {
+  const { row, activeModel, activeProvider, parsed, inputTokens, outputTokens, cachedTokens, costUsd, markFailed } = llmResult;
+
+  if (markFailed) {
+    await query(`UPDATE content SET graph_enriched = -1, graph_enriched_at = datetime('now'),
+      extractor_version = 'skip:parse-failures' WHERE id = ?`, [row.id]);
+    _failCount.delete(row.id);
+    return null;
+  }
+
   const { lastInsertRowid } = await query(`
     INSERT INTO paragraph_extractions
       (content_id, model, prompt_version, output_json,
@@ -313,7 +321,6 @@ async function extractParagraph(row) {
     inputTokens, outputTokens, cachedTokens, costUsd,
   });
 
-  // Mark paragraph as extracted
   await query(`
     UPDATE content SET graph_enriched = 1, graph_enriched_at = datetime('now'),
       extractor_version = ? WHERE id = ?
@@ -324,8 +331,6 @@ async function extractParagraph(row) {
     'Paragraph extracted'
   );
 
-  // Resolve immediately — LLM response is here, DB work is cheap.
-  // Other paragraphs' LLM calls are still in-flight concurrently while we write.
   try {
     await resolveExtraction(lastInsertRowid, row.id, parsed, row.religion);
   } catch (err) {
@@ -399,10 +404,24 @@ async function processOnce() {
   }
   _lastBatchPriority = batchPriority;
 
-  // Process concurrently
-  const results = await Promise.allSettled(rows.map(r => extractParagraph(r)));
-  const succeeded = results.filter(r => r.status === 'fulfilled' && r.value !== null).length;
-  const failed    = results.filter(r => r.status === 'rejected' || r.value === null).length;
+  // Phase 1: LLM calls concurrently — no DB writes
+  const llmResults = await Promise.allSettled(rows.map(r => callLLM(r)));
+
+  // Phase 2: DB writes serially — eliminates concurrent SQLite write contention
+  // that causes SQLITE_BUSY in the validator and other graph workers.
+  let succeeded = 0;
+  let failed = 0;
+  for (const r of llmResults) {
+    if (r.status === 'rejected' || r.value === null) { failed++; continue; }
+    try {
+      const id = await writeResult(r.value);
+      if (id !== null) succeeded++;
+      else failed++;
+    } catch (err) {
+      logger.warn({ err: err.message }, 'writeResult failed');
+      failed++;
+    }
+  }
 
   if (failed > 0) logger.warn({ succeeded, failed }, 'Batch partial failures');
   invalidateAliasCache();

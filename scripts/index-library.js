@@ -37,6 +37,7 @@ import { ingestDocument } from '../api/services/ingester.js';
 import { getMeili, initializeIndexes, INDEXES } from '../api/lib/search.js';
 import { logger } from '../api/lib/logger.js';
 import { queryOne } from '../api/lib/db.js';
+import { hashContent } from '../api/lib/text-normalize.js';
 import { config } from '../api/lib/config.js';
 import { ensureServicesRunning } from '../api/lib/services.js';
 import { startImportBatch, updateImportProgress, clearImportBatch } from '../api/services/progress.js';

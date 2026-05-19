@@ -73,7 +73,7 @@ async function validateOne(extraction) {
     parsed = { errors: [{ field: 'root', issue: 'non-JSON response from validator' }], confidence: 0.3, recommended_action: 'reextract' };
   }
 
-  await query(`
+  await queryWithRetry(`
     INSERT INTO extraction_validations
       (extraction_id, validator_model, errors_json, confidence, recommended_action)
     VALUES (?, ?, ?, ?, ?)
@@ -108,6 +108,22 @@ process.on('SIGTERM', () => { isShuttingDown = true; });
 process.on('SIGINT', () => {});
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
+
+// Retry a DB write on SQLITE_BUSY with exponential backoff.
+// The extractor runs serial DB writes now, but the validator is a separate process
+// that can still race. This makes it resilient rather than crash-looping.
+async function queryWithRetry(sql, params, maxAttempts = 5) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      return await query(sql, params);
+    } catch (err) {
+      if (err.code !== 'SQLITE_BUSY' || i === maxAttempts - 1) throw err;
+      const wait = 1000 * Math.pow(2, i);
+      logger.warn({ attempt: i + 1, wait }, 'SQLITE_BUSY on write — retrying');
+      await delay(wait);
+    }
+  }
+}
 
 async function workerLoop() {
   logger.info({ model: MODEL }, 'Graph validator starting');

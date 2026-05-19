@@ -1,6 +1,41 @@
 {
-  "generated": "2026-05-19T09:07:39.271Z",
+  "generated": "2026-05-19T17:44:28.993Z",
   "entries": [
+    {
+      "hash": "f0bcb07a",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "SQLITE_BUSY crash in graph workers — 30s busy_timeout via env var",
+      "scope": null
+    },
+    {
+      "hash": "66f66b85",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Boss_vllm health check remote_only on dev machine (gate on meiliReachable)",
+      "scope": null
+    },
+    {
+      "hash": "4b7f1d4e",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "GetFileHash must trim content to match ingester hashContent(text.trim())",
+      "scope": null
+    },
+    {
+      "hash": "12ee1d51",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "ScanLibraryForIngestion mtime pre-check — skip file read for unchanged docs",
+      "scope": null
+    },
+    {
+      "hash": "deed190e",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "GetFileHash uses streaming MD5 — eliminates scan memory accumulation",
+      "scope": null
+    },
     {
       "hash": "5540ebb6",
       "date": "2026-05-19",
@@ -3465,45 +3500,45 @@
       "type": "Fixed",
       "description": "Pass extra filters (language/year) through cross-tradition search",
       "scope": null
-    },
-    {
-      "hash": "eb02d56f",
-      "date": "2026-05-11",
-      "type": "New",
-      "description": "Federated per-religion search for cross-tradition queries",
-      "scope": null
-    },
-    {
-      "hash": "28d09a29",
-      "date": "2026-05-11",
-      "type": "New",
-      "description": "Two-level diversity — religion for unfiltered, author for filtered",
-      "scope": null
-    },
-    {
-      "hash": "ce5e1914",
-      "date": "2026-05-11",
-      "type": "New",
-      "description": "Diversity constraint on unfiltered cross-tradition search",
-      "scope": null
-    },
-    {
-      "hash": "be90a873",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Compute authority live at search time — bypass stale Meili values",
-      "scope": null
-    },
-    {
-      "hash": "d2ae978f",
-      "date": "2026-05-11",
-      "type": "Performance",
-      "description": "Authority boost 1.0, rerank pool 20x for cross-tradition balance",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-19": [
+      {
+        "hash": "f0bcb07a",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "SQLITE_BUSY crash in graph workers — 30s busy_timeout via env var",
+        "scope": null
+      },
+      {
+        "hash": "66f66b85",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Boss_vllm health check remote_only on dev machine (gate on meiliReachable)",
+        "scope": null
+      },
+      {
+        "hash": "4b7f1d4e",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "GetFileHash must trim content to match ingester hashContent(text.trim())",
+        "scope": null
+      },
+      {
+        "hash": "12ee1d51",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "ScanLibraryForIngestion mtime pre-check — skip file read for unchanged docs",
+        "scope": null
+      },
+      {
+        "hash": "deed190e",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "GetFileHash uses streaming MD5 — eliminates scan memory accumulation",
+        "scope": null
+      },
       {
         "hash": "5540ebb6",
         "date": "2026-05-19",
@@ -6983,41 +7018,6 @@
         "date": "2026-05-11",
         "type": "Fixed",
         "description": "Pass extra filters (language/year) through cross-tradition search",
-        "scope": null
-      },
-      {
-        "hash": "eb02d56f",
-        "date": "2026-05-11",
-        "type": "New",
-        "description": "Federated per-religion search for cross-tradition queries",
-        "scope": null
-      },
-      {
-        "hash": "28d09a29",
-        "date": "2026-05-11",
-        "type": "New",
-        "description": "Two-level diversity — religion for unfiltered, author for filtered",
-        "scope": null
-      },
-      {
-        "hash": "ce5e1914",
-        "date": "2026-05-11",
-        "type": "New",
-        "description": "Diversity constraint on unfiltered cross-tradition search",
-        "scope": null
-      },
-      {
-        "hash": "be90a873",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Compute authority live at search time — bypass stale Meili values",
-        "scope": null
-      },
-      {
-        "hash": "d2ae978f",
-        "date": "2026-05-11",
-        "type": "Performance",
-        "description": "Authority boost 1.0, rerank pool 20x for cross-tradition balance",
         "scope": null
       }
     ]
