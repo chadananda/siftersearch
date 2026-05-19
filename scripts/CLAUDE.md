@@ -26,6 +26,26 @@ and `wip/` experimental scripts.
 - `segment-document.js`, `segment-calibrate.js` — segmenter manual runs.
 - `verify-deployment.js` — post-deploy smoke checks.
 
+## Meilisearch recovery — DO NOT use mass synced=0 reset
+
+If Meilisearch needs re-indexing, restore from the rsync backup instead of
+resetting `synced=0` on all rows. Re-syncing 4.6M paragraphs at ~700/min takes
+~4.5 days. Restoring from backup takes minutes.
+
+**Correct recovery path (on tower-nas):**
+1. `ls -la $BACKUP_DIR/meilisearch/` — verify backup exists and is recent
+2. `kill <bulk-sync-pid>` if running
+3. `sudo systemctl stop meilisearch`
+4. `rsync -aH $BACKUP_DIR/meilisearch/ /fast/meilisearch-data/`
+5. `sudo systemctl start meilisearch`
+6. Verify: `curl http://localhost:7700/indexes/paragraphs/stats | jq .numberOfDocuments`
+7. If count looks correct: `sqlite3 $DB "UPDATE content SET synced=1 WHERE deleted_at IS NULL AND embedding IS NOT NULL"`
+8. `pm2 start siftersearch-worker`
+
+**NEVER run:** `UPDATE content SET synced=0 WHERE ...` on large row counts.
+This queues 4.6M re-sync jobs and takes days. The health check will FAIL immediately
+with "MASS RESET DETECTED" — that's the signal to restore from backup, not wait.
+
 ## wip/ (experimental, not in package.json)
 - 30+ files for diagnostics, batch tests, and abandoned experiments. Treat as throwaway.
 

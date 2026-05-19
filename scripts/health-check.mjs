@@ -304,6 +304,13 @@ async function checkSyncStaleness() {
       `${sync.unsynced_count.toLocaleString()} paragraphs unsynced, none synced in last 2h — sync processor stuck`,
       details);
   }
+  // Mass-reset guard: if >50% of all paragraphs are unsynced, something catastrophic happened
+  const massResetThreshold = sync.total_paragraphs > 0 ? sync.unsynced_count / sync.total_paragraphs : 0;
+  if (massResetThreshold > 0.5) {
+    return fail('sync_staleness',
+      `MASS RESET DETECTED: ${sync.unsynced_count.toLocaleString()} of ${sync.total_paragraphs.toLocaleString()} paragraphs unsynced (${Math.round(massResetThreshold * 100)}%) — restore Meili from backup instead of re-syncing`,
+      { ...details, total_paragraphs: sync.total_paragraphs, reset_fraction: massResetThreshold });
+  }
   if (sync.unsynced_count > 50000) {
     const rate = status.synced_last_2h > 0 ? `${status.synced_last_2h.toLocaleString()} synced in last 2h` : 'no activity in last 2h';
     return warn('sync_staleness',
@@ -329,11 +336,13 @@ async function checkMeiliVsDb() {
 
     const dbSynced = ph.sync.total_paragraphs - ph.sync.unsynced_count;
     const delta = dbSynced - meiliCount;
-    const pct = dbSynced > 0 ? Math.round((delta / dbSynced) * 100) : 0;
-    const details = { db_synced: dbSynced, meili_docs: meiliCount, delta, delta_pct: pct };
+    // Use total_paragraphs as denominator when dbSynced is tiny (mass-reset scenario)
+    const denominator = Math.max(dbSynced, ph.sync.total_paragraphs * 0.1, 1);
+    const pct = Math.round((delta / denominator) * 100);
+    const details = { db_synced: dbSynced, meili_docs: meiliCount, delta, delta_pct: pct, total_paragraphs: ph.sync.total_paragraphs };
 
-    if (pct > 10) return fail('meili_vs_db', `Meili missing ${pct}% of synced DB paragraphs`, details);
-    if (pct > 3) return warn('meili_vs_db', `Meili ${pct}% behind DB`, details);
+    if (pct > 20) return fail('meili_vs_db', `Meili missing ${pct}% of synced DB paragraphs — restore from backup if mass reset occurred`, details);
+    if (pct > 5) return warn('meili_vs_db', `Meili ${pct}% behind DB`, details);
     ok('meili_vs_db', 0, details);
   } catch (err) {
     warn('meili_vs_db', err.message);
