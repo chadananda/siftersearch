@@ -24,7 +24,6 @@ dotenv.config({ path: '.env-secrets' });
 dotenv.config({ path: '.env-public' });
 
 import fs from 'fs/promises';
-import { createReadStream } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
@@ -70,16 +69,17 @@ const authorFilter = authorArg ? authorArg.split('=')[1] : null;
 // Store file hashes to detect actual changes (used during initial indexing)
 const fileHashes = new Map();
 
-// Helper to compute file content hash via streaming — avoids loading full file
-// into memory (prevents 1-2GB accumulation when scanning 8K+ docs in watch mode).
+// Hash file content matching ingester's hashContent(text.trim()) exactly.
+// Must trim because ingester stores MD5 of trimmed content (ingester.js:1105).
+// Reads full file but immediately discards — only one file in memory at a time.
 async function getFileHash(filePath) {
-  return new Promise((resolve) => {
-    const hash = crypto.createHash('md5');
-    const stream = createReadStream(filePath, { encoding: 'utf8', highWaterMark: 64 * 1024 });
-    stream.on('data', chunk => hash.update(chunk));
-    stream.on('end', () => resolve(hash.digest('hex')));
-    stream.on('error', () => resolve(null));
-  });
+  try {
+    const { readFile } = await import('node:fs/promises');
+    const content = await readFile(filePath, 'utf-8');
+    return hashContent(content.trim());
+  } catch {
+    return null;
+  }
 }
 
 // Helper to extract metadata from filename and path
