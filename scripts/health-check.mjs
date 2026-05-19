@@ -184,19 +184,15 @@ async function checkMeili() {
 
 // ─── boss vLLM endpoint ───────────────────────────────────────────────────
 async function checkVllm() {
-  // boss is a Tailscale hostname — only reachable from tower-nas, not dev machine
   const isLocalhostVllm = VLLM_URL.includes('localhost') || VLLM_URL.includes('127.0.0.1');
   const isBossHostname = VLLM_URL.includes('boss');
   if (isBossHostname || isLocalhostVllm) {
+    // Only meaningful on tower-nas (where Meili is also local).
+    // On a dev machine, boss is not on Tailscale — treat as remote_only.
+    const onServer = await meiliReachable();
+    if (!onServer) { warn('boss_vllm', 'remote_only (run on tower-nas to check vLLM)'); return; }
     const reachable = await isLocalhostReachable(VLLM_URL.replace(/\/v1.*/, ''));
-    if (!reachable) {
-      // isBossHostname means this ran on tower-nas but boss is unreachable (vLLM down)
-      const msg = isBossHostname
-        ? 'boss unreachable — vLLM likely down (restart vLLM on boss)'
-        : 'remote_only (run on tower-nas to check vLLM)';
-      warn('boss_vllm', msg);
-      return;
-    }
+    if (!reachable) { warn('boss_vllm', 'boss unreachable — llama-server down? (check port 8080 on boss)'); return; }
   }
   try {
     const [res, ms] = await timed(() =>
