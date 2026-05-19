@@ -28,7 +28,6 @@ import { promisify } from 'util';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { existsSync } from 'fs';
 
 const exec = promisify(execCb);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -441,47 +440,27 @@ async function checkSchemaVersion() {
 }
 
 // ─── Enrichment progress ──────────────────────────────────────────────────
+// Uses pipeline health endpoint (server-side partial-index queries) — no local
+// better-sqlite3 which would block the event loop and cause Meili fetch timeouts.
 async function checkEnrichment() {
-  try {
-    const dbPath = join(PROJECT_ROOT, 'data/sifter.db');
-    // Only meaningful on tower-nas: if localhost API isn't up, we're on a dev machine
-    // reading a stale DB copy with no recent enrichment writes.
-    const isOnServer = await fetch('http://localhost:7839/api/search/health', { signal: AbortSignal.timeout(1500) })
-      .then(() => true).catch(() => false);
-    if (!isOnServer) return warn('enrichment', 'remote_only (run on tower-nas to check enrichment)');
+  if (!await meiliReachable()) return warn('enrichment', 'remote_only (run on tower-nas to check enrichment)');
+  const ph = await fetchPipelineHealth();
+  if (ph._error) return warn('enrichment', `pipeline endpoint unavailable: ${ph._error}`);
+  if (!ph.enrichment) return warn('enrichment', 'enrichment stats missing from pipeline endpoint (deploy pending?)');
 
-    if (!existsSync(dbPath)) return warn('enrichment', 'remote_only (run on tower-nas to check enrichment)');
-    const { default: Database } = await import('better-sqlite3');
-    const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+  const total = ph.sync?.total_paragraphs ?? 0;
+  const { needs_context_count, needs_hype_count } = ph.enrichment;
+  const withContext = total - needs_context_count;
+  const ctxPct = total > 0 ? Math.round((withContext / total) * 100) : 0;
+  const withHype = withContext - needs_hype_count;
+  const hypePct = withContext > 0 ? Math.round((withHype / withContext) * 100) : 0;
+  const details = { total, context_pct: ctxPct, hype_pct: hypePct,
+    needs_context: needs_context_count, needs_hype: needs_hype_count };
 
-    const r = db.prepare(`
-      SELECT
-        COUNT(*) AS total,
-        SUM(CASE WHEN context IS NOT NULL THEN 1 ELSE 0 END) AS with_context,
-        SUM(CASE WHEN hyp_questions IS NOT NULL THEN 1 ELSE 0 END) AS with_hype,
-        SUM(CASE WHEN context IS NOT NULL AND updated_at >= datetime('now','-1 hour') THEN 1 ELSE 0 END) AS recent_context
-      FROM content
-      WHERE deleted_at IS NULL
-    `).get();
-    db.close();
-
-    const ctxPct = Math.round((r.with_context / r.total) * 100);
-    const hypePct = Math.round((r.with_hype / r.total) * 100);
-    const details = {
-      total: r.total,
-      context_pct: ctxPct,
-      hype_pct: hypePct,
-      recent_context_writes_1h: r.recent_context
-    };
-    if (r.with_context < r.total && r.recent_context === 0) {
-      return warn('enrichment',
-        `${100 - ctxPct}% paragraphs still need context, but no writes in last hour`,
-        details);
-    }
-    ok('enrichment', 0, details);
-  } catch (err) {
-    warn('enrichment', err.message);
+  if (needs_context_count > 0 && ctxPct < 50) {
+    return warn('enrichment', `context enrichment ${ctxPct}% complete (${needs_context_count.toLocaleString()} remaining)`, details);
   }
+  ok('enrichment', 0, details);
 }
 
 // ─── Chat smoke test ──────────────────────────────────────────────────────

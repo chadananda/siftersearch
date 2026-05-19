@@ -1,6 +1,139 @@
 {
-  "generated": "2026-05-18T23:17:37.723Z",
+  "generated": "2026-05-19T07:34:45.274Z",
   "entries": [
+    {
+      "hash": "249a1d33",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "IsLocalhostReachable — check /health endpoint, 3s timeout, robust error handling",
+      "scope": null
+    },
+    {
+      "hash": "290d424f",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Sync_staleness checks sync_stuck before exiting on WAL-large sentinel",
+      "scope": null
+    },
+    {
+      "hash": "61a97e46",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Sync_staleness event-loop + mass-reset denominator fixes",
+      "scope": null
+    },
+    {
+      "hash": "cb379fbb",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Sync_staleness falls back to direct DB query when API returns unsynced=-1",
+      "scope": null
+    },
+    {
+      "hash": "608df5a1",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Remove missingInMeili mass-reset bug in runFullSyncCheck",
+      "scope": null
+    },
+    {
+      "hash": "88f62e0d",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "PM2 crash-loop threshold 50→1000, enrichment treated as warn-only",
+      "scope": null
+    },
+    {
+      "hash": "c504a030",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "PM2 check — use spawnSync instead of exec (avoids async event-loop output issue)",
+      "scope": null
+    },
+    {
+      "hash": "7de6f721",
+      "date": "2026-05-18",
+      "type": "Other",
+      "description": "Pm2 exec write to /tmp",
+      "scope": null
+    },
+    {
+      "hash": "a250f6ac",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "PM2 check — use stdout",
+      "scope": null
+    },
+    {
+      "hash": "d35fb865",
+      "date": "2026-05-18",
+      "type": "Other",
+      "description": "PM2 warn includes stdout preview",
+      "scope": null
+    },
+    {
+      "hash": "8bf4e51f",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "PM2 full path + boss_vllm clearer warning message",
+      "scope": null
+    },
+    {
+      "hash": "fa83bfd1",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Health-check meili timeout for vs_db/entity_mentions + pm2 PATH",
+      "scope": null
+    },
+    {
+      "hash": "4a7990cf",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Health-check meili stats timeout + PM2 JSON parse",
+      "scope": null
+    },
+    {
+      "hash": "15013d8b",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Unified-worker saves completedItems on shutdown, reduce FLUSH_PARAS 500->100",
+      "scope": null
+    },
+    {
+      "hash": "16536924",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Health-check mass-reset detection + CLAUDE.md anti-pattern doc",
+      "scope": null
+    },
+    {
+      "hash": "51d52c9e",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "InitializeIndexes only PATCHes settings when changed — stops settingsUpdate queue pollution on API restart",
+      "scope": null
+    },
+    {
+      "hash": "ef954dd3",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Bulk-meili-sync use MEILISEARCH_KEY + MEILI_HOST env var names",
+      "scope": null
+    },
+    {
+      "hash": "8894a238",
+      "date": "2026-05-18",
+      "type": "Fixed",
+      "description": "Bulk-meili-sync source_url from docs not content",
+      "scope": null
+    },
+    {
+      "hash": "bf627ceb",
+      "date": "2026-05-18",
+      "type": "New",
+      "description": "Bulk-meili-sync — direct 2000-para batches, bypasses per-doc overhead Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
+      "scope": null
+    },
     {
       "hash": "16f8d883",
       "date": "2026-05-18",
@@ -3367,143 +3500,143 @@
       "type": "Fixed",
       "description": "PRIMARY_DOCTRINAL_PATHS Pickthall string — remove diacritic that broke ESM parse",
       "scope": null
-    },
-    {
-      "hash": "99437559",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "PRIMARY_DOCTRINAL_PATHS — add Bhagavad Gita, Tao Te Ching, Pickthall Quran for Sonnet HyPE",
-      "scope": null
-    },
-    {
-      "hash": "efef973e",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "CANONICAL_WORKS correct doc_ids + PII sanitization + political guardrail + library_count tool",
-      "scope": null
-    },
-    {
-      "hash": "b4e5e4d5",
-      "date": "2026-05-11",
-      "type": "New",
-      "description": "Mandatory PII sanitization for published conversations",
-      "scope": null
-    },
-    {
-      "hash": "374e631d",
-      "date": "2026-05-11",
-      "type": "New",
-      "description": "Jafar political guardrail — apolitical redirect for partisan questions",
-      "scope": null
-    },
-    {
-      "hash": "55a6674c",
-      "date": "2026-05-11",
-      "type": "New",
-      "description": "Library_count tool — filtered catalog queries by author/site/language/scope",
-      "scope": null
-    },
-    {
-      "hash": "127d46eb",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Add languages to library_overview + filter null religion from catalog text",
-      "scope": null
-    },
-    {
-      "hash": "b4290e53",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Cache library_overview 5min to avoid slow COUNT(*) on every browse question",
-      "scope": null
-    },
-    {
-      "hash": "45acdb14",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "CRAFTER_SYSTEM catalog instruction requires companion citations alongside catalog counts",
-      "scope": null
-    },
-    {
-      "hash": "d071e5a0",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Companion search uses religion filter for tradition-specific browsing queries",
-      "scope": null
-    },
-    {
-      "hash": "9bafe425",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Catalog pre-fetch was in runResearchPhaseInner (unused) not deterministicResearch",
-      "scope": null
-    },
-    {
-      "hash": "cff08af1",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Route browsing questions through catalog+search to prevent hallucination",
-      "scope": null
-    },
-    {
-      "hash": "1c86fab5",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Catalog pre-fetch — Bahá'í regex (Unicode word boundary) + always search alongside catalog",
-      "scope": null
-    },
-    {
-      "hash": "e94d783c",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Jafar browsing — catalog pre-fetch + tradition search + crafter catalog awareness",
-      "scope": null
-    },
-    {
-      "hash": "8b8f1f07",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Catalog queries skip LLM search loop, return library_overview directly",
-      "scope": null
-    },
-    {
-      "hash": "73cfdb92",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Inject library_overview into retrieved_quotes for catalog queries",
-      "scope": null
-    },
-    {
-      "hash": "53c10752",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Pre-fetch library_overview for catalog queries before LLM research phase",
-      "scope": null
-    },
-    {
-      "hash": "4b9dae41",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Remove catalog examples from search tool — route to library_overview",
-      "scope": null
-    },
-    {
-      "hash": "3602135a",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Add canonical works for non-Bahai scriptures + browsing routing",
-      "scope": null
-    },
-    {
-      "hash": "e56592e1",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Exclude image-markdown paragraphs from enrichment enqueue",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-18": [
+      {
+        "hash": "249a1d33",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "IsLocalhostReachable — check /health endpoint, 3s timeout, robust error handling",
+        "scope": null
+      },
+      {
+        "hash": "290d424f",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Sync_staleness checks sync_stuck before exiting on WAL-large sentinel",
+        "scope": null
+      },
+      {
+        "hash": "61a97e46",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Sync_staleness event-loop + mass-reset denominator fixes",
+        "scope": null
+      },
+      {
+        "hash": "cb379fbb",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Sync_staleness falls back to direct DB query when API returns unsynced=-1",
+        "scope": null
+      },
+      {
+        "hash": "608df5a1",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Remove missingInMeili mass-reset bug in runFullSyncCheck",
+        "scope": null
+      },
+      {
+        "hash": "88f62e0d",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "PM2 crash-loop threshold 50→1000, enrichment treated as warn-only",
+        "scope": null
+      },
+      {
+        "hash": "c504a030",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "PM2 check — use spawnSync instead of exec (avoids async event-loop output issue)",
+        "scope": null
+      },
+      {
+        "hash": "7de6f721",
+        "date": "2026-05-18",
+        "type": "Other",
+        "description": "Pm2 exec write to /tmp",
+        "scope": null
+      },
+      {
+        "hash": "a250f6ac",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "PM2 check — use stdout",
+        "scope": null
+      },
+      {
+        "hash": "d35fb865",
+        "date": "2026-05-18",
+        "type": "Other",
+        "description": "PM2 warn includes stdout preview",
+        "scope": null
+      },
+      {
+        "hash": "8bf4e51f",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "PM2 full path + boss_vllm clearer warning message",
+        "scope": null
+      },
+      {
+        "hash": "fa83bfd1",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Health-check meili timeout for vs_db/entity_mentions + pm2 PATH",
+        "scope": null
+      },
+      {
+        "hash": "4a7990cf",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Health-check meili stats timeout + PM2 JSON parse",
+        "scope": null
+      },
+      {
+        "hash": "15013d8b",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Unified-worker saves completedItems on shutdown, reduce FLUSH_PARAS 500->100",
+        "scope": null
+      },
+      {
+        "hash": "16536924",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Health-check mass-reset detection + CLAUDE.md anti-pattern doc",
+        "scope": null
+      },
+      {
+        "hash": "51d52c9e",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "InitializeIndexes only PATCHes settings when changed — stops settingsUpdate queue pollution on API restart",
+        "scope": null
+      },
+      {
+        "hash": "ef954dd3",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Bulk-meili-sync use MEILISEARCH_KEY + MEILI_HOST env var names",
+        "scope": null
+      },
+      {
+        "hash": "8894a238",
+        "date": "2026-05-18",
+        "type": "Fixed",
+        "description": "Bulk-meili-sync source_url from docs not content",
+        "scope": null
+      },
+      {
+        "hash": "bf627ceb",
+        "date": "2026-05-18",
+        "type": "New",
+        "description": "Bulk-meili-sync — direct 2000-para batches, bypasses per-doc overhead Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
+        "scope": null
+      },
       {
         "hash": "16f8d883",
         "date": "2026-05-18",
@@ -6883,139 +7016,6 @@
         "date": "2026-05-11",
         "type": "Fixed",
         "description": "PRIMARY_DOCTRINAL_PATHS Pickthall string — remove diacritic that broke ESM parse",
-        "scope": null
-      },
-      {
-        "hash": "99437559",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "PRIMARY_DOCTRINAL_PATHS — add Bhagavad Gita, Tao Te Ching, Pickthall Quran for Sonnet HyPE",
-        "scope": null
-      },
-      {
-        "hash": "efef973e",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "CANONICAL_WORKS correct doc_ids + PII sanitization + political guardrail + library_count tool",
-        "scope": null
-      },
-      {
-        "hash": "b4e5e4d5",
-        "date": "2026-05-11",
-        "type": "New",
-        "description": "Mandatory PII sanitization for published conversations",
-        "scope": null
-      },
-      {
-        "hash": "374e631d",
-        "date": "2026-05-11",
-        "type": "New",
-        "description": "Jafar political guardrail — apolitical redirect for partisan questions",
-        "scope": null
-      },
-      {
-        "hash": "55a6674c",
-        "date": "2026-05-11",
-        "type": "New",
-        "description": "Library_count tool — filtered catalog queries by author/site/language/scope",
-        "scope": null
-      },
-      {
-        "hash": "127d46eb",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Add languages to library_overview + filter null religion from catalog text",
-        "scope": null
-      },
-      {
-        "hash": "b4290e53",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Cache library_overview 5min to avoid slow COUNT(*) on every browse question",
-        "scope": null
-      },
-      {
-        "hash": "45acdb14",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "CRAFTER_SYSTEM catalog instruction requires companion citations alongside catalog counts",
-        "scope": null
-      },
-      {
-        "hash": "d071e5a0",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Companion search uses religion filter for tradition-specific browsing queries",
-        "scope": null
-      },
-      {
-        "hash": "9bafe425",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Catalog pre-fetch was in runResearchPhaseInner (unused) not deterministicResearch",
-        "scope": null
-      },
-      {
-        "hash": "cff08af1",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Route browsing questions through catalog+search to prevent hallucination",
-        "scope": null
-      },
-      {
-        "hash": "1c86fab5",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Catalog pre-fetch — Bahá'í regex (Unicode word boundary) + always search alongside catalog",
-        "scope": null
-      },
-      {
-        "hash": "e94d783c",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Jafar browsing — catalog pre-fetch + tradition search + crafter catalog awareness",
-        "scope": null
-      },
-      {
-        "hash": "8b8f1f07",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Catalog queries skip LLM search loop, return library_overview directly",
-        "scope": null
-      },
-      {
-        "hash": "73cfdb92",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Inject library_overview into retrieved_quotes for catalog queries",
-        "scope": null
-      },
-      {
-        "hash": "53c10752",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Pre-fetch library_overview for catalog queries before LLM research phase",
-        "scope": null
-      },
-      {
-        "hash": "4b9dae41",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Remove catalog examples from search tool — route to library_overview",
-        "scope": null
-      },
-      {
-        "hash": "3602135a",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Add canonical works for non-Bahai scriptures + browsing routing",
-        "scope": null
-      },
-      {
-        "hash": "e56592e1",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Exclude image-markdown paragraphs from enrichment enqueue",
         "scope": null
       }
     ]
