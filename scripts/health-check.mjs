@@ -269,6 +269,14 @@ async function checkPm2() {
       summary[name] = `${status} (restarts=${restarts})`;
       if (restarts > 1000) problems.push(`${name}: crash loop (${restarts} restarts)`);
     }
+    // Library-watcher memory check: max_memory_restart=3G in ecosystem.config.cjs.
+    // When it hits 3GB it's killed/restarted, re-scans all 8K docs, logs ~100MB/cycle.
+    const watcher = procs.find(x => x.name === 'siftersearch-library-watcher');
+    if (watcher?.monit?.memory) {
+      const memMB = Math.round(watcher.monit.memory / 1024 / 1024);
+      if (memMB > 2500) warnProblems.push(`siftersearch-library-watcher: memory ${memMB}MB (approaching 3GB restart limit — memory leak)`);
+      if (summary['siftersearch-library-watcher']) summary['siftersearch-library-watcher'] += `, mem=${memMB}MB`;
+    }
     if (problems.length > 0) fail('pm2', problems.join('; '), summary);
     else if (warnProblems.length > 0) warn('pm2', warnProblems.join('; '), summary);
     else ok('pm2', 0, summary);
@@ -575,6 +583,35 @@ async function checkEntityMentionsIndex() {
   }
 }
 
+// ─── Log file sizes ───────────────────────────────────────────────────────
+// Library watcher memory leak causes crash-restart cycles that flood logs.
+// Warn when total log dir size exceeds 10GB; fail at 20GB (disk risk on /home 218GB).
+async function checkLogFiles() {
+  // spawnSync check: if pm2 isn't local, we're not on tower-nas, skip silently
+  const pm2bin = [process.env.PM2_BIN, '/usr/bin/pm2', '/usr/local/bin/pm2', 'pm2'].find(Boolean);
+  const pm2test = spawnSync(pm2bin, ['jlist'], { timeout: 5000, maxBuffer: 256, encoding: 'utf8' });
+  if (pm2test.stdout?.indexOf('[') === -1) {
+    return warn('log_files', 'remote_only (run on tower-nas to check log files)');
+  }
+  try {
+    const logDir = join(PROJECT_ROOT, 'logs');
+    const { readdir, stat } = await import('node:fs/promises');
+    const files = await readdir(logDir).catch(() => []);
+    let totalBytes = 0;
+    for (const f of files) {
+      const s = await stat(join(logDir, f)).catch(() => null);
+      if (s) totalBytes += s.size;
+    }
+    const totalGB = Math.round(totalBytes / 1024 / 1024 / 1024 * 10) / 10;
+    const details = { total_gb: totalGB, log_dir: logDir };
+    if (totalGB > 20) return fail('log_files', `logs ${totalGB}GB — disk risk (clear old library-watcher logs)`, details);
+    if (totalGB > 10) return warn('log_files', `logs ${totalGB}GB (library-watcher memory leak flooding logs)`, details);
+    ok('log_files', 0, details);
+  } catch (err) {
+    warn('log_files', err.message);
+  }
+}
+
 // ─── Run all ──────────────────────────────────────────────────────────────
 
 // Run api + pipeline-health fetch in parallel first.
@@ -598,6 +635,7 @@ const probes = [
     ['meili_vs_db', checkMeiliVsDb],              // catches silent Meili/DB divergence
   ] : []),
   ['pm2', checkPm2],
+  ['log_files', checkLogFiles],                    // catches library-watcher log bloat
   ['db_activity', checkDbActivity],
   ['sync_staleness', checkSyncStaleness],         // catches "527K unsynced for 11 days"
   ['entity_pipeline', checkEntityPipeline],       // catches lock-storm pattern
