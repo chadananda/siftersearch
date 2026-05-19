@@ -88,7 +88,7 @@ ${candidateList}`;
     const usage = r.usage || {};
     await trackCost({ model: FAST_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: usage.cachedTokens || 0, costUsd: ((usage.promptTokens||0) * 0.00027 + (usage.completionTokens||0) * 0.0011) / 1000 });
     fastVote = JSON.parse(r.content);
-  } catch { /* ignore */ }
+  } catch (err) { logger.debug({ model: FAST_MODEL, err: err.message }, 'Fast vote failed'); }
 
   // Detail model vote
   let detailVote = null;
@@ -100,7 +100,7 @@ ${candidateList}`;
     const usage = r.usage || {};
     await trackCost({ model: DETAIL_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: 0, costUsd: ((usage.promptTokens||0) * 0.00025 + (usage.completionTokens||0) * 0.00125) / 1000 });
     detailVote = JSON.parse(r.content);
-  } catch { /* ignore */ }
+  } catch (err) { logger.debug({ model: DETAIL_MODEL, err: err.message }, 'Detail vote failed'); }
 
   // If both agree, use consensus. Otherwise arbitrate.
   const votes = [fastVote, detailVote].filter(Boolean);
@@ -125,7 +125,8 @@ ${candidateList}`;
     const usage = r.usage || {};
     await trackCost({ model: ARBITER_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: 0, costUsd: ((usage.promptTokens||0) * 0.003 + (usage.completionTokens||0) * 0.015) / 1000 });
     return JSON.parse(r.content);
-  } catch {
+  } catch (err) {
+    logger.debug({ model: ARBITER_MODEL, err: err.message }, 'Arbiter vote failed');
     return votes[0]; // fallback to first vote
   }
 }

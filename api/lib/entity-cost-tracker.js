@@ -4,8 +4,20 @@ import { logger } from './logger.js';
 
 const BUDGET = parseFloat(process.env.EXTRACTION_BUDGET_USD ?? '1000');
 
+async function queryWithRetry(sql, params, maxAttempts = 5) {
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      return await query(sql, params);
+    } catch (err) {
+      if (err.code !== 'SQLITE_BUSY' || i === maxAttempts - 1) throw err;
+      await delay(1000 * Math.pow(2, i));
+    }
+  }
+}
+
 export async function trackCost({ model, taskType, paragraphId, runId, inputTokens, outputTokens, cachedTokens, costUsd }) {
-  await query(
+  await queryWithRetry(
     `INSERT INTO extraction_runs (model, task_type, paragraph_id, run_id, input_tokens, output_tokens, cached_tokens, cost_usd)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [model, taskType, paragraphId ?? null, runId ?? null, inputTokens ?? 0, outputTokens ?? 0, cachedTokens ?? 0, costUsd]
