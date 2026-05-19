@@ -209,15 +209,14 @@ async function checkPm2() {
   try {
     // Use full path; capture stderr too so we can see pm2 errors
     const pm2bin = [process.env.PM2_BIN, '/usr/bin/pm2', '/usr/local/bin/pm2', 'pm2'].find(Boolean);
-    const { stdout, stderr } = await exec(`${pm2bin} jlist 2>&1`, { timeout: 15000 });
-    // pm2 sometimes emits log lines before the JSON array — find the array start
-    const jsonStart = stdout ? stdout.indexOf('[') : -1;
+    // maxBuffer: pm2 jlist ~60KB; use stderr fallback in case pm2 writes JSON there
+    const { stdout, stderr } = await exec(`${pm2bin} jlist`, { timeout: 15000, maxBuffer: 1024 * 1024 });
+    const raw = stdout || stderr || '';
+    const jsonStart = raw.indexOf('[');
     if (jsonStart === -1) {
-      // Debug: include what we got so we can diagnose the failure
-      const preview = (stdout || '').slice(0, 120).replace(/\n/g, '\\n');
-      return warn('pm2', `pm2 not available locally — got: ${preview || '(empty)'}`);
+      return warn('pm2', 'pm2 not available locally (run on tower-nas to verify)');
     }
-    const procs = JSON.parse(stdout.slice(jsonStart));
+    const procs = JSON.parse(raw.slice(jsonStart));
     // Empty list = pm2 running locally but no siftersearch processes — dev machine
     if (procs.length === 0) {
       return warn('pm2', 'pm2 not available locally (run on tower-nas to verify)');
