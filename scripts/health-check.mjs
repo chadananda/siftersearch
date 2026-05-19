@@ -149,12 +149,15 @@ async function checkMeili() {
     meiliIndex('paragraphs').then(({ stats, latency_ms }) => {
       if (!stats.numberOfDocuments) return warn('meili_paragraphs', 'empty');
       const embedRatio = stats.numberOfEmbeddedDocuments / stats.numberOfDocuments;
+      const embedPct = Math.round(embedRatio * 100);
+      // Low embed ratio is expected during initial sync or after mass reset recovery
+      // Only warn below 50% — ratio grows as sync-processor re-uploads with vectors
       if (embedRatio < 0.5) {
-        return warn('meili_paragraphs', `only ${Math.round(embedRatio * 100)}% embedded`,
+        return warn('meili_paragraphs', `${embedPct}% embedded (growing as sync re-uploads with vectors)`,
           { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments, latency_ms });
       }
       ok('meili_paragraphs', latency_ms,
-        { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments });
+        { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments, embed_pct: embedPct });
     }).catch(async err => {
       if (await meiliStatsBusy(err)) warn('meili_paragraphs', 'stats timeout (Meili busy indexing — not a failure)');
       else fail('meili_paragraphs', err.message);
@@ -306,22 +309,25 @@ async function checkDbActivity() {
 let _pipelineHealthPromise = null;
 async function fetchPipelineHealth() {
   if (!_pipelineHealthPromise) {
-    const url = `${API_BASE}/api/search/health/pipeline`;
-    // 60s timeout: the pipeline endpoint runs COUNT(*) on content which can be
-    // slow when the SQLite WAL is large (e.g., after a mass synced=0 reset).
-    _pipelineHealthPromise = fetch(url, { signal: AbortSignal.timeout(60000) })
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .catch(async () => {
-        try {
-          const { stdout } = await exec(`curl -s --max-time 60 "${url}"`, { timeout: 65000 });
-          return JSON.parse(stdout.trim());
-        } catch (curlErr) {
-          return { _error: curlErr.message };
-        }
-      });
+    // Prefer localhost when on tower-nas — avoids Cloudflare Tunnel round-trip
+    // and works even when the public URL is slow or unreachable.
+    const localUrl = 'http://localhost:7839/api/search/health/pipeline';
+    const publicUrl = `${API_BASE}/api/search/health/pipeline`;
+    _pipelineHealthPromise = (async () => {
+      // Try localhost first (fast, works on-server)
+      try {
+        const res = await fetch(localUrl, { signal: AbortSignal.timeout(15000) });
+        if (res.ok) return res.json();
+      } catch { /* not on tower-nas, fall through */ }
+      // Fall back to public URL
+      try {
+        const res = await fetch(publicUrl, { signal: AbortSignal.timeout(30000) });
+        if (res.ok) return res.json();
+        throw new Error(`HTTP ${res.status}`);
+      } catch (err) {
+        return { _error: err.message };
+      }
+    })();
   }
   return _pipelineHealthPromise;
 }

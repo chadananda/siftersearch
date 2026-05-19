@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-19T07:34:45.274Z",
+  "generated": "2026-05-19T07:49:04.492Z",
   "entries": [
+    {
+      "hash": "a2a98207",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Enrichment check blocks event loop — move stats to pipeline endpoint",
+      "scope": null
+    },
     {
       "hash": "249a1d33",
       "date": "2026-05-18",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Zoroastrian library restoration — clean avesta.org extraction + PRIMARY_DOCTRINAL_PATHS",
       "scope": null
-    },
-    {
-      "hash": "02f45511",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "PRIMARY_DOCTRINAL_PATHS Pickthall string — remove diacritic that broke ESM parse",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-19": [
+      {
+        "hash": "a2a98207",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Enrichment check blocks event loop — move stats to pipeline endpoint",
+        "scope": null
+      }
+    ],
     "2026-05-18": [
       {
         "hash": "249a1d33",
@@ -7009,13 +7018,6 @@
         "date": "2026-05-11",
         "type": "Fixed",
         "description": "Zoroastrian library restoration — clean avesta.org extraction + PRIMARY_DOCTRINAL_PATHS",
-        "scope": null
-      },
-      {
-        "hash": "02f45511",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "PRIMARY_DOCTRINAL_PATHS Pickthall string — remove diacritic that broke ESM parse",
         "scope": null
       }
     ]
