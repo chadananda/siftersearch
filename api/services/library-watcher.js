@@ -464,8 +464,8 @@ async function scanLibraryForIngestion() {
     watcherStats.lastScanFilesFound = diskFiles.length;
     const diskByPath = new Map(diskFiles.map(f => [f.relativePath, f]));
 
-    // Step 2: Load all active DB docs (file_path + file_hash)
-    const dbRows = await queryAll('SELECT id, file_path, file_hash FROM docs WHERE deleted_at IS NULL');
+    // Step 2: Load all active DB docs (file_path + file_hash + file_mtime)
+    const dbRows = await queryAll('SELECT id, file_path, file_hash, file_mtime FROM docs WHERE deleted_at IS NULL');
     const dbByPath = new Map(dbRows.map(r => [r.file_path, r]));
 
     logger.info({
@@ -488,9 +488,22 @@ async function scanLibraryForIngestion() {
     for (const relativePath of diskPathsSorted) {
       const diskFile = diskByPath.get(relativePath);
       try {
+        const dbDoc = dbByPath.get(relativePath);
+
+        // mtime pre-check: if stored mtime matches disk mtime, file is unchanged.
+        // Avoids the file read entirely for the 97%+ of docs that haven't changed.
+        // Dropbox-synced files can arrive with old mtimes, but in that case the
+        // stored and disk mtimes will differ, so we still fall through to hash check.
+        if (dbDoc?.file_mtime && dbDoc.file_hash) {
+          const storedMtimeMs = new Date(dbDoc.file_mtime).getTime();
+          if (Math.abs(storedMtimeMs - diskFile.mtime) < 1000) {
+            skippedCount++;
+            continue;
+          }
+        }
+
         const content = await readFile(diskFile.absolutePath, 'utf-8');
         const diskHash = hashContent(content.trim());
-        const dbDoc = dbByPath.get(relativePath);
 
         if (dbDoc && dbDoc.file_hash === diskHash) {
           skippedCount++;
