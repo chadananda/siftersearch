@@ -24,6 +24,7 @@ dotenv.config({ path: '.env-secrets' });
 dotenv.config({ path: '.env-public' });
 
 import fs from 'fs/promises';
+import { createReadStream } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
@@ -69,14 +70,16 @@ const authorFilter = authorArg ? authorArg.split('=')[1] : null;
 // Store file hashes to detect actual changes (used during initial indexing)
 const fileHashes = new Map();
 
-// Helper to compute file content hash
+// Helper to compute file content hash via streaming — avoids loading full file
+// into memory (prevents 1-2GB accumulation when scanning 8K+ docs in watch mode).
 async function getFileHash(filePath) {
-  try {
-    const content = await fs.readFile(filePath, 'utf-8');
-    return crypto.createHash('md5').update(content).digest('hex');
-  } catch {
-    return null;
-  }
+  return new Promise((resolve) => {
+    const hash = crypto.createHash('md5');
+    const stream = createReadStream(filePath, { encoding: 'utf8', highWaterMark: 64 * 1024 });
+    stream.on('data', chunk => hash.update(chunk));
+    stream.on('end', () => resolve(hash.digest('hex')));
+    stream.on('error', () => resolve(null));
+  });
 }
 
 // Helper to extract metadata from filename and path

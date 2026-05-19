@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-19T08:48:00.095Z",
+  "generated": "2026-05-19T09:07:39.271Z",
   "entries": [
+    {
+      "hash": "5540ebb6",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Library-watcher memory leak — skip full content load for unchanged docs",
+      "scope": null
+    },
     {
       "hash": "96c33a4c",
       "date": "2026-05-19",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Authority boost 1.0, rerank pool 20x for cross-tradition balance",
       "scope": null
-    },
-    {
-      "hash": "3e64e590",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Scripture authority for all traditions + religion backfill migration",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-19": [
+      {
+        "hash": "5540ebb6",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Library-watcher memory leak — skip full content load for unchanged docs",
+        "scope": null
+      },
       {
         "hash": "96c33a4c",
         "date": "2026-05-19",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-11",
         "type": "Performance",
         "description": "Authority boost 1.0, rerank pool 20x for cross-tradition balance",
-        "scope": null
-      },
-      {
-        "hash": "3e64e590",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Scripture authority for all traditions + religion backfill migration",
         "scope": null
       }
     ]
