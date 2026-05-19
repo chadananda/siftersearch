@@ -168,7 +168,7 @@ async function processSyncJob(job) {
     // Increased for faster vector re-sync (was 2×100 = too slow for 4M re-index).
     // Timeout raised to 900s — observed tasks occasionally take 9+ minutes.
     const PIPELINE_LIMIT = 5;
-    const FLUSH_PARAS = 500;
+    const FLUSH_PARAS = 100;  // Flush more frequently so each restart saves progress before the next restart
     const buffer = new Map();    // indexName -> { paras: [], paraIds: [] }
     const inFlight = [];         // [{task, paraIds, indexName}]
 
@@ -357,7 +357,7 @@ async function processSyncJob(job) {
       logger.info({ jobId: job.id, completedItems, failedItems, inFlight: inFlight.length }, 'Shutdown mid-job — requeueing');
       // Drain whatever can still finish quickly before requeue.
       while (inFlight.length > 0) await drainOldest();
-      await query(`UPDATE sync_jobs SET status = 'pending', started_at = NULL WHERE id = ?`, [job.id]);
+      await query(`UPDATE sync_jobs SET status = 'pending', started_at = NULL, completed_items = ?, failed_items = ? WHERE id = ?`, [completedItems, failedItems, job.id]);
       currentSyncJobId = null;
       return;
     }
