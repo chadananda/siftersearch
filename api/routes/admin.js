@@ -3892,6 +3892,14 @@ Collection: ${paragraph.collection || 'Unknown'}
       WHERE status = 'failed' ORDER BY id DESC LIMIT 10
     `);
 
+    // Graph pipeline stats
+    const graphExtracted   = await queryOne('SELECT COUNT(*) as c FROM content WHERE graph_enriched = 1 AND deleted_at IS NULL');
+    const graphPending     = await queryOne('SELECT COUNT(*) as c FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL AND length(text) > 50');
+    const extractUnresolved = await queryOne('SELECT COUNT(*) as c FROM paragraph_extractions WHERE resolved = 0');
+    const promotionPending = await queryOne('SELECT COUNT(*) as c FROM promotion_queue WHERE resolved = 0');
+    const aliasCount       = await queryOne('SELECT COUNT(*) as c FROM entity_aliases');
+    const entityCount      = await queryOne('SELECT COUNT(*) as c FROM graph_entities');
+
     return {
       summary: {
         totalParagraphs: total?.c || 0,
@@ -3901,6 +3909,14 @@ Collection: ${paragraph.collection || 'Unknown'}
         oversizedParagraphs: oversized.reduce((s, r) => s + r.count, 0),
         missedEmbedding: missedEmbedding?.c || 0,
         emptyDocuments: emptyDocs.length
+      },
+      graph: {
+        extracted: graphExtracted?.c || 0,
+        pending: graphPending?.c || 0,
+        extractionsUnresolved: extractUnresolved?.c || 0,
+        promotionQueuePending: promotionPending?.c || 0,
+        entityAliases: aliasCount?.c || 0,
+        graphEntities: entityCount?.c || 0,
       },
       oversizedByDocument: oversized,
       emptyDocuments: emptyDocs,

@@ -228,11 +228,15 @@ async function checkPm2() {
     const expected = ['siftersearch-api', 'siftersearch-worker',
       'siftersearch-library-watcher', 'siftersearch-enrichment-api',
       'siftersearch-deep-research', 'siftersearch-updater'];
-    // enrichment requires vLLM on boss — warn (not fail) when stopped
-    const warnIfStopped = ['siftersearch-enrichment'];
-    // Optional: graph workers only checked if they exist in PM2 list
-    const optional = ['siftersearch-graph-extractor', 'siftersearch-graph-validator',
-      'siftersearch-graph-resolver', 'siftersearch-graph-promoter'];
+    // warn (not fail) when stopped — all require external services or are tier-gated
+    const warnIfStopped = [
+      'siftersearch-enrichment',        // requires vLLM on boss
+      'siftersearch-graph-extractor',   // tier-gated; may idle between tiers
+      'siftersearch-graph-validator',
+      'siftersearch-graph-resolver',
+      'siftersearch-graph-promoter',
+    ];
+    const optional = [];
     const summary = {};
     const problems = [];
     const warnProblems = [];
@@ -608,6 +612,30 @@ async function checkLogFiles() {
   }
 }
 
+// ─── Graph extraction pipeline ───────────────────────────────────────────
+async function checkGraphPipeline() {
+  const ph = await fetchPipelineHealth();
+  if (ph._error) return warn('graph_pipeline', `pipeline endpoint error: ${ph._error}`);
+  const g = ph.graph;
+  if (!g) return warn('graph_pipeline', 'remote_only (run on tower-nas)');
+
+  const total = (g.extracted || 0) + (g.pending || 0);
+  const pct = total > 0 ? Math.round(g.extracted / total * 100) : 0;
+
+  // FAIL: resolver is backed up — extractor running but resolver not consuming
+  if (g.extractions_unresolved > 5000 && g.extraction_runs_24h > 0)
+    return fail('graph_pipeline', `resolver backlog: ${g.extractions_unresolved.toLocaleString()} unresolved extractions`, g);
+
+  // WARN: large unresolved backlog even if extractor is idle
+  if (g.extractions_unresolved > 1000)
+    return warn('graph_pipeline', `${g.extractions_unresolved.toLocaleString()} unresolved extractions (resolver may be stopped)`, g);
+
+  ok('graph_pipeline', 0, {
+    extracted: g.extracted, pending: g.pending, pct: `${pct}%`,
+    unresolved: g.extractions_unresolved, aliases: g.entity_aliases
+  });
+}
+
 // ─── Run all ──────────────────────────────────────────────────────────────
 
 // Run api + pipeline-health fetch in parallel first.
@@ -619,7 +647,7 @@ const apiDown = checks.api?.severity === 'fail';
 if (apiDown) {
   // When tower-nas is unreachable, skip all remote-service checks to avoid
   // burning 8s timeouts per check. Mark as warn so they appear in output.
-  for (const c of ['meili_paragraphs', 'meili_hype', 'boss_vllm', 'entity_mentions_idx', 'meili_vs_db', 'enrichment'])
+  for (const c of ['meili_paragraphs', 'meili_hype', 'boss_vllm', 'entity_mentions_idx', 'meili_vs_db', 'enrichment', 'graph_pipeline'])
     warn(c, 'skipped: api_down (tower-nas unreachable)');
 }
 
@@ -637,9 +665,11 @@ const probes = [
   ['entity_pipeline', checkEntityPipeline],       // catches lock-storm pattern
   ['schema_version', checkSchemaVersion],         // catches pending migrations
   ['deep_research', checkDeepResearch],           // deep_research_queue stuck/failing
-  // enrichment uses better-sqlite3 (synchronous) — blocks event loop on Dropbox-synced DB.
-  // Only meaningful on tower-nas where the DB is local NVMe; skip when api is down.
-  ...(!apiDown ? [['enrichment', checkEnrichment]] : []),
+  // enrichment + graph_pipeline: only meaningful on tower-nas; skip when api is down.
+  ...(!apiDown ? [
+    ['enrichment', checkEnrichment],
+    ['graph_pipeline', checkGraphPipeline],
+  ] : []),
 ];
 if (!QUICK) probes.push(['chat_smoke', checkChatSmoke]);
 

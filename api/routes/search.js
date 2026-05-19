@@ -462,7 +462,7 @@ export default async function searchRoutes(fastify) {
       }
     })();
 
-    const [counts, schemaRow, syncStale, recentlySynced, entityDup, promotionQ, recentExtractions, deepResearch] = await Promise.all([
+    const [counts, schemaRow, syncStale, recentlySynced, entityDup, promotionQ, recentExtractions, graphStats, deepResearch] = await Promise.all([
       getCachedContentCounts(),
       queryOne(`SELECT version FROM _schema_version ORDER BY version DESC LIMIT 1`).catch(() => null),
       syncStalePromise,
@@ -473,6 +473,13 @@ export default async function searchRoutes(fastify) {
                 FROM entity_mentions`).catch(() => ({ total: 0, unique_combos: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM promotion_queue WHERE resolved = 0`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM extraction_runs WHERE created_at > unixepoch() - 86400`).catch(() => ({ n: 0 })),
+      // Graph extraction pipeline progress
+      Promise.all([
+        queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 1 AND deleted_at IS NULL`).catch(() => ({ n: 0 })),
+        queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL AND length(text) > 50`).catch(() => ({ n: 0 })),
+        queryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0`).catch(() => ({ n: 0 })),
+        queryOne(`SELECT COUNT(*) AS n FROM entity_aliases`).catch(() => ({ n: 0 })),
+      ]),
       queryOne(`SELECT
                   COUNT(*) AS total,
                   SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
@@ -501,6 +508,12 @@ export default async function searchRoutes(fastify) {
         dup_ratio: dupRatio,
         promotion_queue_pending: promotionQ?.n ?? 0,
         extraction_runs_24h: recentExtractions?.n ?? 0
+      },
+      graph: {
+        extracted: graphStats[0]?.n ?? 0,
+        pending: graphStats[1]?.n ?? 0,
+        extractions_unresolved: graphStats[2]?.n ?? 0,
+        entity_aliases: graphStats[3]?.n ?? 0,
       },
       deep_research: {
         queue_total: deepResearch?.total ?? 0,
