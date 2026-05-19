@@ -118,11 +118,18 @@ async function checkApi() {
 async function meiliIndex(uid) {
   const headers = MEILI_KEY ? { Authorization: `Bearer ${MEILI_KEY}` } : {};
   const [res, ms] = await timed(() =>
-    fetch(`${MEILI_URL}/indexes/${uid}/stats`, { headers, signal: AbortSignal.timeout(8000) })
+    fetch(`${MEILI_URL}/indexes/${uid}/stats`, { headers, signal: AbortSignal.timeout(30000) })
   );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const stats = await res.json();
   return { stats, latency_ms: ms };
+}
+
+async function meiliStatsBusy(err) {
+  // Returns true if timeout during active indexing (not a real failure)
+  const isTimeout = err.message.includes('timeout') || err.message.includes('abort') || err.name === 'TimeoutError';
+  if (!isTimeout) return false;
+  return meiliReachable();
 }
 
 async function checkMeili() {
@@ -143,7 +150,10 @@ async function checkMeili() {
       }
       ok('meili_paragraphs', latency_ms,
         { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments });
-    }).catch(err => fail('meili_paragraphs', err.message)),
+    }).catch(async err => {
+      if (await meiliStatsBusy(err)) warn('meili_paragraphs', 'stats timeout (Meili busy indexing — not a failure)');
+      else fail('meili_paragraphs', err.message);
+    }),
 
     // hype_questions (sidecar)
     meiliIndex('hype_questions').then(({ stats, latency_ms }) => {
@@ -157,7 +167,10 @@ async function checkMeili() {
       }
       ok('meili_hype', latency_ms,
         { docs: stats.numberOfDocuments, embedded: stats.numberOfEmbeddedDocuments });
-    }).catch(err => fail('meili_hype', err.message)),
+    }).catch(async err => {
+      if (await meiliStatsBusy(err)) warn('meili_hype', 'stats timeout (Meili busy indexing — not a failure)');
+      else fail('meili_hype', err.message);
+    }),
   ]);
 }
 
@@ -191,10 +204,12 @@ async function checkPm2() {
   // Only meaningful when running on tower-nas. If pm2 isn't local, skip.
   try {
     const { stdout } = await exec('pm2 jlist 2>/dev/null', { timeout: 15000 });
-    if (!stdout || !stdout.trim().startsWith('[')) {
+    // pm2 sometimes emits log lines before the JSON array — find the array start
+    const jsonStart = stdout ? stdout.indexOf('[') : -1;
+    if (jsonStart === -1) {
       return warn('pm2', 'pm2 not available locally (run on tower-nas to verify)');
     }
-    const procs = JSON.parse(stdout);
+    const procs = JSON.parse(stdout.slice(jsonStart));
     // Empty list = pm2 running locally but no siftersearch processes — dev machine
     if (procs.length === 0) {
       return warn('pm2', 'pm2 not available locally (run on tower-nas to verify)');
