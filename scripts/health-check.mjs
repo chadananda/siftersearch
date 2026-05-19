@@ -23,7 +23,7 @@
  *   - Chat endpoint smoke test (skipped with --quick)
  */
 
-import { exec as execCb } from 'child_process';
+import { exec as execCb, spawnSync } from 'child_process';
 import { promisify } from 'util';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
@@ -209,11 +209,9 @@ async function checkPm2() {
   try {
     // Use full path; capture stderr too so we can see pm2 errors
     const pm2bin = [process.env.PM2_BIN, '/usr/bin/pm2', '/usr/local/bin/pm2', 'pm2'].find(Boolean);
-    // maxBuffer: pm2 jlist ~60KB; use stderr fallback in case pm2 writes JSON there
-    const { stdout, stderr } = await exec(`${pm2bin} jlist`, { timeout: 15000, maxBuffer: 1024 * 1024 });
-    // debug
-    try { const {writeFileSync} = await import('fs'); writeFileSync('/tmp/pm2-hc-debug.txt', JSON.stringify({solen: stdout?.length, selen: stderr?.length, start: (stdout||'').slice(0,50), pm2bin})); } catch {}
-    const raw = stdout || stderr || '';
+    // spawnSync avoids async event-loop issues that cause exec to return empty stdout
+    const pm2result = spawnSync(pm2bin, ['jlist'], { timeout: 15000, maxBuffer: 1024 * 1024, encoding: 'utf8' });
+    const raw = pm2result.stdout || pm2result.stderr || '';
     const jsonStart = raw.indexOf('[');
     if (jsonStart === -1) {
       return warn('pm2', 'pm2 not available locally (run on tower-nas to verify)');
