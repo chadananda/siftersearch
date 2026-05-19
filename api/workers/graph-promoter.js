@@ -87,7 +87,7 @@ ${candidateList}`;
     );
     const usage = r.usage || {};
     await trackCost({ model: FAST_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: usage.cachedTokens || 0, costUsd: ((usage.promptTokens||0) * 0.00027 + (usage.completionTokens||0) * 0.0011) / 1000 });
-    fastVote = JSON.parse(r.content);
+    fastVote = parseJsonResponse(r.content);
   } catch (err) { logger.debug({ model: FAST_MODEL, err: err.message }, 'Fast vote failed'); }
 
   // Detail model vote
@@ -99,7 +99,7 @@ ${candidateList}`;
     );
     const usage = r.usage || {};
     await trackCost({ model: DETAIL_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: 0, costUsd: ((usage.promptTokens||0) * 0.00025 + (usage.completionTokens||0) * 0.00125) / 1000 });
-    detailVote = JSON.parse(r.content);
+    detailVote = parseJsonResponse(r.content);
   } catch (err) { logger.debug({ model: DETAIL_MODEL, err: err.message }, 'Detail vote failed'); }
 
   // If both agree, use consensus. Otherwise arbitrate.
@@ -124,7 +124,7 @@ ${candidateList}`;
     );
     const usage = r.usage || {};
     await trackCost({ model: ARBITER_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: 0, costUsd: ((usage.promptTokens||0) * 0.003 + (usage.completionTokens||0) * 0.015) / 1000 });
-    return JSON.parse(r.content);
+    return parseJsonResponse(r.content);
   } catch (err) {
     logger.debug({ model: ARBITER_MODEL, err: err.message }, 'Arbiter vote failed');
     return votes[0]; // fallback to first vote
@@ -186,6 +186,12 @@ process.on('SIGTERM', () => { isShuttingDown = true; });
 process.on('SIGINT', () => {});
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
+
+// Strip markdown code fences (```json ... ```) that some models add around JSON output.
+function parseJsonResponse(content) {
+  const stripped = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  return JSON.parse(stripped);
+}
 
 async function queryWithRetry(sql, params, maxAttempts = 5) {
   for (let i = 0; i < maxAttempts; i++) {
