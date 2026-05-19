@@ -214,10 +214,20 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
-    // Entity extraction worker — reads content WHERE graph_enriched=0, calls
-    // DeepSeek to extract mentions/roles/quotes, writes to paragraph_extractions.
-    // Disabled by default: requires DEEPSEEK_API_KEY + migration 72 + calibration
-    // pass. Start manually: `pm2 start ecosystem.config.cjs --only siftersearch-graph-extractor`
+    // Graph entity extraction pipeline — four cooperating workers that run
+    // continuously as part of the normal pipeline. Each worker idles when
+    // there is no work and resumes automatically when new content arrives.
+    //
+    // Processing order:
+    //   graph-extractor  → paragraph_extractions (raw LLM output)
+    //   graph-validator  → extraction_validations (Haiku QA pass)
+    //   graph-resolver   → entity_mentions / aliases / text_grounded
+    //   graph-promoter   → promotion_queue → graph_entities (new entities)
+    //
+    // Model for extraction controlled by EXTRACTION_PROVIDER + EXTRACTION_MODEL
+    // env vars in .env-secrets. Defaults to deepseek-chat. Set to 'local' +
+    // LOCAL_LLM_MODEL for boss inference (free). Set to 'anthropic' +
+    // claude-sonnet-4-6 for highest quality on priority tiers.
     {
       name: 'siftersearch-graph-extractor',
       script: 'api/workers/graph-extractor.js',
@@ -227,19 +237,14 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '2G',
-      env: {
-        NODE_ENV: 'production'
-        // API keys loaded from .env-secrets by dotenv — do NOT pass here or
-        // PM2 would set them to '' (empty) and dotenv wouldn't override
-      },
-      exp_backoff_restart_delay: 15000,  // DeepSeek API errors benefit from longer backoff
+      env: { NODE_ENV: 'production' },
+      exp_backoff_restart_delay: 15000,
       max_restarts: 999999,
       min_uptime: '30s',
+      error_file: './logs/graph-extractor-error.log',
+      out_file: './logs/graph-extractor-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
-
-    // Entity validation worker — reads unvalidated paragraph_extractions, runs
-    // Haiku QA pass, writes to extraction_validations.
-    // Disabled by default: start after graph-extractor has processed a batch.
     {
       name: 'siftersearch-graph-validator',
       script: 'api/workers/graph-validator.js',
@@ -249,18 +254,14 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
-      env: {
-        NODE_ENV: 'production'
-      },
+      env: { NODE_ENV: 'production' },
       exp_backoff_restart_delay: 10000,
       max_restarts: 999999,
       min_uptime: '30s',
+      error_file: './logs/graph-validator-error.log',
+      out_file: './logs/graph-validator-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
-
-    // Entity resolution worker — reads accepted extractions, writes
-    // entity_mentions / paragraph_roles / quote_instances, generates
-    // grounded text embeddings.
-    // Disabled by default: start after graph-validator is running.
     {
       name: 'siftersearch-graph-resolver',
       script: 'api/workers/graph-resolver.js',
@@ -270,17 +271,14 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '2G',
-      env: {
-        NODE_ENV: 'production'
-      },
+      env: { NODE_ENV: 'production' },
       exp_backoff_restart_delay: 5000,
       max_restarts: 999999,
       min_uptime: '30s',
+      error_file: './logs/graph-resolver-error.log',
+      out_file: './logs/graph-resolver-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
-
-    // Entity promotion adjudicator — resolves surfaces in promotion_queue via
-    // multi-model voting, creates/merges graph_entities, writes er_audit_log.
-    // Disabled by default: start after resolver has processed some extractions.
     {
       name: 'siftersearch-graph-promoter',
       script: 'api/workers/graph-promoter.js',
@@ -290,12 +288,13 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
-      env: {
-        NODE_ENV: 'production'
-      },
+      env: { NODE_ENV: 'production' },
       exp_backoff_restart_delay: 10000,
       max_restarts: 999999,
       min_uptime: '30s',
+      error_file: './logs/graph-promoter-error.log',
+      out_file: './logs/graph-promoter-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
     // Sonnet API enrichment for tier 1-7 (Bahá'í primary doctrinal works).
