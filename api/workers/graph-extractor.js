@@ -270,6 +270,9 @@ async function extractParagraph(row) {
     ? (inputTokens - cachedTokens) * 3 / 1_000_000
       + cachedTokens * 0.30 / 1_000_000
       + outputTokens * 15 / 1_000_000
+    : activeProvider === 'local'
+    // Local inference: hardware cost only — track tokens for throughput, not spend
+    ? 0
     // deepseek-chat: $0.27/1M input, $0.014/1M cache, $1.10/1M output
     : (inputTokens - cachedTokens) * 0.00027 / 1000
       + cachedTokens * 0.000014 / 1000
@@ -390,7 +393,12 @@ async function processOnce() {
 }
 
 async function workerLoop() {
-  logger.info({ model: MODEL, batchSize: BATCH_SIZE }, 'Graph extractor starting');
+  const localUrl = process.env.LOCAL_LLM || 'http://localhost:8080/v1';
+  logger.info(
+    { model: MODEL, provider: MODEL_PROVIDER, batchSize: BATCH_SIZE,
+      ...(MODEL_PROVIDER === 'local' ? { localEndpoint: localUrl } : {}) },
+    'Graph extractor starting'
+  );
   let totalExtracted = 0;
 
   while (!isShuttingDown) {

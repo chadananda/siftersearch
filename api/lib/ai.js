@@ -17,6 +17,7 @@ let openaiClient = null;
 let anthropicClient = null;
 let ollamaClient = null;
 let deepseekClient = null;
+let localClient = null;
 
 function getOpenAI() {
   if (!openaiClient) {
@@ -56,6 +57,16 @@ export function getDeepSeek() {
   return deepseekClient;
 }
 
+// Local vLLM / llama-server — OpenAI-compatible, no API key required.
+// Endpoint from LOCAL_LLM env var (e.g. http://boss:8080/v1).
+export function getLocalLLM() {
+  if (!localClient) {
+    const baseURL = process.env.LOCAL_LLM || 'http://localhost:8080/v1';
+    localClient = new OpenAI({ apiKey: 'local', baseURL });
+  }
+  return localClient;
+}
+
 /**
  * Chat completion with any provider
  */
@@ -79,6 +90,8 @@ export async function chatCompletion(messages, options = {}) {
       return chatOllama(messages, { model, temperature, maxTokens, stream });
     case 'deepseek':
       return chatDeepSeek(messages, { model, temperature, maxTokens, stream, responseFormat: options.responseFormat });
+    case 'local':
+      return chatLocal(messages, { model, temperature, maxTokens, stream, responseFormat: options.responseFormat });
     default:
       throw new Error(`Unknown AI provider: ${provider}`);
   }
@@ -152,6 +165,27 @@ async function chatAnthropic(messages, { model, temperature, maxTokens, stream, 
       totalTokens: (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0)
     },
     model: response.model
+  };
+}
+
+async function chatLocal(messages, { model, temperature, maxTokens, stream, responseFormat }) {
+  const client = getLocalLLM();
+  // Model name from LOCAL_LLM_MODEL env or caller-supplied model string
+  const resolvedModel = model || process.env.LOCAL_LLM_MODEL || 'default';
+  const params = { model: resolvedModel, messages, temperature, max_tokens: maxTokens, stream };
+  if (responseFormat) params.response_format = responseFormat;
+  const response = await client.chat.completions.create(params);
+  if (stream) return response;
+  return {
+    content: response.choices[0].message.content,
+    finishReason: response.choices[0].finish_reason,
+    usage: {
+      promptTokens: response.usage?.prompt_tokens || 0,
+      completionTokens: response.usage?.completion_tokens || 0,
+      cachedTokens: 0,
+      totalTokens: response.usage?.total_tokens || 0,
+    },
+    model: response.model || resolvedModel,
   };
 }
 
