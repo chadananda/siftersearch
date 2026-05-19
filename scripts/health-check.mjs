@@ -53,13 +53,19 @@ const startTime = Date.now();
 // Probe if a localhost URL is actually reachable (fast, 800ms max).
 // Used to distinguish "not on server" from "service down".
 async function isLocalhostReachable(url) {
-  try {
-    await fetch(url, { signal: AbortSignal.timeout(800) });
-    return true;
-  } catch (err) {
-    // ECONNREFUSED means port closed (service down); AbortError means timeout but port may be open
-    return err.name === 'AbortError';
+  // Try /health endpoint for definitive check; fall back to base URL
+  const healthUrl = url.replace(/\/$/, '') + '/health';
+  for (const u of [healthUrl, url]) {
+    try {
+      const res = await fetch(u, { signal: AbortSignal.timeout(3000) });
+      if (res.ok || res.status < 500) return true;  // port is open, service responding
+    } catch (err) {
+      // AbortError = timeout but port listening (slow); anything else = connection error
+      if (err.name === 'AbortError') return true;
+      // ECONNREFUSED = port closed; fall through to false
+    }
   }
+  return false;
 }
 
 let _meiliLocal = null; // cached: true=reachable, false=not on server
