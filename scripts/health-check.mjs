@@ -222,13 +222,16 @@ async function checkPm2() {
       return warn('pm2', 'pm2 not available locally (run on tower-nas to verify)');
     }
     const expected = ['siftersearch-api', 'siftersearch-worker',
-      'siftersearch-library-watcher', 'siftersearch-enrichment', 'siftersearch-enrichment-api',
+      'siftersearch-library-watcher', 'siftersearch-enrichment-api',
       'siftersearch-deep-research', 'siftersearch-updater'];
+    // enrichment requires vLLM on boss — warn (not fail) when stopped
+    const warnIfStopped = ['siftersearch-enrichment'];
     // Optional: graph workers only checked if they exist in PM2 list
     const optional = ['siftersearch-graph-extractor', 'siftersearch-graph-validator',
       'siftersearch-graph-resolver', 'siftersearch-graph-promoter'];
     const summary = {};
     const problems = [];
+    const warnProblems = [];
     for (const name of expected) {
       const p = procs.find(x => x.name === name);
       if (!p) { summary[name] = 'missing'; problems.push(`${name}: missing`); continue; }
@@ -238,8 +241,17 @@ async function checkPm2() {
         ? Math.round((Date.now() - p.pm2_env.pm_uptime) / 1000) : 0;
       summary[name] = `${status} (restarts=${restarts}, uptime=${uptime}s)`;
       if (status !== 'online') problems.push(`${name}: ${status}`);
-      // Flag crash loops: >50 restarts is a process that keeps dying
-      if (restarts > 50) problems.push(`${name}: crash loop (${restarts} restarts)`);
+      // Flag crash loops: >1000 total restarts (processes accumulate restarts over months; 50 was too low)
+      if (restarts > 1000) problems.push(`${name}: crash loop (${restarts} restarts)`);
+    }
+    for (const name of warnIfStopped) {
+      const p = procs.find(x => x.name === name);
+      if (!p) { summary[name] = 'missing'; continue; }
+      const status = p.pm2_env?.status || 'unknown';
+      const restarts = p.pm2_env?.restart_time ?? 0;
+      summary[name] = `${status} (restarts=${restarts})`;
+      // enrichment is vLLM-dependent — only warn, don't fail
+      if (status !== 'online') warnProblems.push(`${name}: ${status} (requires vLLM on boss)`);
     }
     for (const name of optional) {
       const p = procs.find(x => x.name === name);
@@ -247,9 +259,10 @@ async function checkPm2() {
       const status = p.pm2_env?.status || 'unknown';
       const restarts = p.pm2_env?.restart_time ?? 0;
       summary[name] = `${status} (restarts=${restarts})`;
-      if (restarts > 50) problems.push(`${name}: crash loop (${restarts} restarts)`);
+      if (restarts > 1000) problems.push(`${name}: crash loop (${restarts} restarts)`);
     }
     if (problems.length > 0) fail('pm2', problems.join('; '), summary);
+    else if (warnProblems.length > 0) warn('pm2', warnProblems.join('; '), summary);
     else ok('pm2', 0, summary);
   } catch (err) {
     warn('pm2', `pm2 query failed: ${err.message}`);
