@@ -82,6 +82,16 @@ export const migrations = {
   // Version 27: Migrate docs.id from TEXT to INTEGER for efficiency
   // This is a major schema change that requires recreating tables
   27: async () => {
+    // Guard: if docs.id is already INTEGER, this migration ran previously.
+    // _schema_version can get out of sync (e.g. SQLITE_BUSY during setSchemaVersion);
+    // detect the already-applied state and skip to avoid a catastrophic re-run.
+    const docsInfo = await queryAll("PRAGMA table_info(docs)");
+    const idCol = docsInfo.find(c => c.name === 'id');
+    if (idCol && idCol.type && idCol.type.toUpperCase().includes('INTEGER')) {
+      logger.info('Migration 27: docs.id is already INTEGER — skipping (previously applied)');
+      return;
+    }
+
     logger.info('Starting migration 27: Convert docs.id from TEXT to INTEGER');
 
     // Drop any leftover temp tables from failed migrations

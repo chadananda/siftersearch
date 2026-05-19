@@ -1,6 +1,48 @@
 {
-  "generated": "2026-05-19T18:35:45.167Z",
+  "generated": "2026-05-19T19:34:29.733Z",
   "entries": [
+    {
+      "hash": "822c72c7",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Promoter system prompt — pass as role:system message not dropped option",
+      "scope": null
+    },
+    {
+      "hash": "03701400",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Force DeepSeek JSON mode in promoter adjudication",
+      "scope": null
+    },
+    {
+      "hash": "5d6b45c6",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Promoter JSON parsing — strip markdown code fences from DeepSeek responses",
+      "scope": null
+    },
+    {
+      "hash": "785a95db",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "TrackCost retry + promoter adjudication debug logging",
+      "scope": null
+    },
+    {
+      "hash": "130fe7c4",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "QueryWithRetry in graph-extractor — all write paths resilient to SQLITE_BUSY",
+      "scope": null
+    },
+    {
+      "hash": "9d8bb617",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "QueryWithRetry in resolver+promoter — eliminate SQLITE_BUSY deadlock",
+      "scope": null
+    },
     {
       "hash": "97f6edb4",
       "date": "2026-05-19",
@@ -3458,52 +3500,52 @@
       "type": "Other",
       "description": "Tighten filtered-religion author cap to 25% in multiIndexSearch",
       "scope": null
-    },
-    {
-      "hash": "9bd15868",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Authority-weighted sort + author diversity in multiIndexSearch for filtered queries",
-      "scope": null
-    },
-    {
-      "hash": "6ddc2bee",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Authority-weight RRF sort in multiIndexSearch before diversity cap",
-      "scope": null
-    },
-    {
-      "hash": "01ad03a3",
-      "date": "2026-05-11",
-      "type": "Other",
-      "description": "Log Bahai sub-query top-3 in crossTraditionSearch",
-      "scope": null
-    },
-    {
-      "hash": "b377561c",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Widen crossTraditionSearch fetch to 15+ per religion for authority reranking",
-      "scope": null
-    },
-    {
-      "hash": "bb7900f3",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Authority-sort within crossTraditionSearch — primary texts win quota slots",
-      "scope": null
-    },
-    {
-      "hash": "88ecaf26",
-      "date": "2026-05-11",
-      "type": "Other",
-      "description": "Tighten cross-tradition cap to 25% (max 2/8) for better diversity",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-19": [
+      {
+        "hash": "822c72c7",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Promoter system prompt — pass as role:system message not dropped option",
+        "scope": null
+      },
+      {
+        "hash": "03701400",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Force DeepSeek JSON mode in promoter adjudication",
+        "scope": null
+      },
+      {
+        "hash": "5d6b45c6",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Promoter JSON parsing — strip markdown code fences from DeepSeek responses",
+        "scope": null
+      },
+      {
+        "hash": "785a95db",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "TrackCost retry + promoter adjudication debug logging",
+        "scope": null
+      },
+      {
+        "hash": "130fe7c4",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "QueryWithRetry in graph-extractor — all write paths resilient to SQLITE_BUSY",
+        "scope": null
+      },
+      {
+        "hash": "9d8bb617",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "QueryWithRetry in resolver+promoter — eliminate SQLITE_BUSY deadlock",
+        "scope": null
+      },
       {
         "hash": "97f6edb4",
         "date": "2026-05-19",
@@ -6976,48 +7018,6 @@
         "date": "2026-05-11",
         "type": "Other",
         "description": "Tighten filtered-religion author cap to 25% in multiIndexSearch",
-        "scope": null
-      },
-      {
-        "hash": "9bd15868",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Authority-weighted sort + author diversity in multiIndexSearch for filtered queries",
-        "scope": null
-      },
-      {
-        "hash": "6ddc2bee",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Authority-weight RRF sort in multiIndexSearch before diversity cap",
-        "scope": null
-      },
-      {
-        "hash": "01ad03a3",
-        "date": "2026-05-11",
-        "type": "Other",
-        "description": "Log Bahai sub-query top-3 in crossTraditionSearch",
-        "scope": null
-      },
-      {
-        "hash": "b377561c",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Widen crossTraditionSearch fetch to 15+ per religion for authority reranking",
-        "scope": null
-      },
-      {
-        "hash": "bb7900f3",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Authority-sort within crossTraditionSearch — primary texts win quota slots",
-        "scope": null
-      },
-      {
-        "hash": "88ecaf26",
-        "date": "2026-05-11",
-        "type": "Other",
-        "description": "Tighten cross-tradition cap to 25% (max 2/8) for better diversity",
         "scope": null
       }
     ]

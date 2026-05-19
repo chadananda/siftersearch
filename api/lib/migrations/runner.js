@@ -30,11 +30,20 @@ async function getSchemaVersion() {
   }
 }
 
-/** Set schema version (content DB) */
+/** Set schema version (content DB) — retries on SQLITE_BUSY */
 async function setSchemaVersion(version) {
-  await query(`CREATE TABLE IF NOT EXISTS _schema_version (version INTEGER PRIMARY KEY)`);
-  await query('DELETE FROM _schema_version');
-  await query('INSERT INTO _schema_version (version) VALUES (?)', [version]);
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+  for (let i = 0; i < 10; i++) {
+    try {
+      await query(`CREATE TABLE IF NOT EXISTS _schema_version (version INTEGER PRIMARY KEY)`);
+      await query('DELETE FROM _schema_version');
+      await query('INSERT INTO _schema_version (version) VALUES (?)', [version]);
+      return;
+    } catch (err) {
+      if (err.code !== 'SQLITE_BUSY' || i === 9) throw err;
+      await delay(2000 * Math.pow(1.5, i));
+    }
+  }
 }
 
 /** Get current user database schema version */
