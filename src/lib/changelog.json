@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-19T08:13:12.485Z",
+  "generated": "2026-05-19T08:48:00.095Z",
   "entries": [
+    {
+      "hash": "96c33a4c",
+      "date": "2026-05-19",
+      "type": "Other",
+      "description": "Library-watcher memory + log-size checks in health-check",
+      "scope": null
+    },
     {
       "hash": "d93aa250",
       "date": "2026-05-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Scripture authority for all traditions + religion backfill migration",
       "scope": null
-    },
-    {
-      "hash": "f2412ccf",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Authority for primary scriptures + stronger authority influence",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-19": [
+      {
+        "hash": "96c33a4c",
+        "date": "2026-05-19",
+        "type": "Other",
+        "description": "Library-watcher memory + log-size checks in health-check",
+        "scope": null
+      },
       {
         "hash": "d93aa250",
         "date": "2026-05-19",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-11",
         "type": "Fixed",
         "description": "Scripture authority for all traditions + religion backfill migration",
-        "scope": null
-      },
-      {
-        "hash": "f2412ccf",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Authority for primary scriptures + stronger authority influence",
         "scope": null
       }
     ]

@@ -495,23 +495,27 @@ async function indexLibrary() {
       if (skipExisting && !dryRun) {
         const existingDoc = await getExistingDocument(file.path);
         if (existingDoc) {
-          // Compute current file hash and compare with stored hash
+          // Both getFileHash and the ingester use MD5 — direct comparison is valid.
+          // Avoid reading full file content for unchanged docs (prevents 2-3GB memory
+          // accumulation when scanning 8,514 docs in watch mode).
           const currentHash = await getFileHash(file.path);
           if (currentHash) fileHashes.set(file.path, currentHash);
 
-          // Compare MD5 hash with stored file_hash (convert to compare first 32 chars)
-          // If file hasn't changed, skip. Otherwise re-index to pick up changes.
           const storedHash = existingDoc.file_hash;
+          if (storedHash && currentHash && storedHash === currentHash) {
+            // Hash match — file unchanged, skip without loading content
+            stats.skipped++;
+            updateImportProgress('skipped');
+            continue;
+          }
+
           if (storedHash && currentHash) {
-            // Different hash algorithm, so just check if file content changed via ingestDocument
-            // The ingester handles metadata-only vs full re-index internally
+            // Hash changed — let ingester determine what changed (content vs metadata)
             const content = await fs.readFile(file.path, 'utf-8');
-            // Use metadata.relativePath if available, otherwise compute from file.path
             const relativePath = file.metadata.relativePath || path.relative(config.library.basePath, file.path);
             const result = await ingestDocument(content, { file_mtime: new Date().toISOString() }, relativePath);
 
             if (result.skipped || result.status === 'unchanged') {
-              console.log(`${progress} ⏭️  SKIP: ${file.metadata.title} (unchanged)`);
               stats.skipped++;
               updateImportProgress('skipped');
               continue;
@@ -528,7 +532,6 @@ async function indexLibrary() {
             }
           }
 
-          console.log(`${progress} ⏭️  SKIP: ${file.metadata.title} (already indexed)`);
           stats.skipped++;
           updateImportProgress('skipped');
           continue;
