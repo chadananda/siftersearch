@@ -462,7 +462,7 @@ export default async function searchRoutes(fastify) {
       }
     })();
 
-    const [counts, schemaRow, syncStale, recentlySynced, entityDup, promotionQ, recentExtractions, deepResearch, needsContext, needsHype] = await Promise.all([
+    const [counts, schemaRow, syncStale, recentlySynced, entityDup, promotionQ, recentExtractions, deepResearch] = await Promise.all([
       getCachedContentCounts(),
       queryOne(`SELECT version FROM _schema_version ORDER BY version DESC LIMIT 1`).catch(() => null),
       syncStalePromise,
@@ -479,10 +479,9 @@ export default async function searchRoutes(fastify) {
                   SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
                   MAX(completed_at) AS last_completed
                 FROM deep_research_queue`).catch(() => null),
-      // Uses idx_content_needs_context partial index — avoids full table scan
-      queryOne(`SELECT COUNT(*) AS n FROM content WHERE context IS NULL AND deleted_at IS NULL`).catch(() => ({ n: 0 })),
-      // Uses idx_content_needs_hype partial index
-      queryOne(`SELECT COUNT(*) AS n FROM content WHERE hyp_questions IS NULL AND context IS NOT NULL AND deleted_at IS NULL`).catch(() => ({ n: 0 })),
+      // NOTE: enrichment stats (needs_context_count etc.) are NOT queried here —
+      // those partial-index scans take 80+ seconds when WAL is large, blocking
+      // the Fastify event loop. Add them only after WAL drains (post bulk-sync).
     ]);
 
     const oldestMs = syncStale?.oldest ? new Date(syncStale.oldest).getTime() : 0;
@@ -508,10 +507,6 @@ export default async function searchRoutes(fastify) {
         queue_pending: deepResearch?.pending ?? 0,
         queue_failed: deepResearch?.failed ?? 0,
         last_completed: deepResearch?.last_completed ?? null
-      },
-      enrichment: {
-        needs_context_count: needsContext?.n ?? 0,
-        needs_hype_count: needsHype?.n ?? 0,
       },
       status: {
         // sync_stuck: backlog > 1000 AND oldest rows are stale AND no recent sync activity.

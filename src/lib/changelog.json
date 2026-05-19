@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-19T07:49:04.492Z",
+  "generated": "2026-05-19T07:57:00.765Z",
   "entries": [
+    {
+      "hash": "4da03df9",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Pipeline health uses localhost first; embed warn threshold context",
+      "scope": null
+    },
     {
       "hash": "a2a98207",
       "date": "2026-05-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "PRIMARY_DOCTRINAL_PATHS — add Jain, Confucian, Zhuangzi for Sonnet HyPE",
       "scope": null
-    },
-    {
-      "hash": "20529198",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Zoroastrian library restoration — clean avesta.org extraction + PRIMARY_DOCTRINAL_PATHS",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-19": [
+      {
+        "hash": "4da03df9",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Pipeline health uses localhost first; embed warn threshold context",
+        "scope": null
+      },
       {
         "hash": "a2a98207",
         "date": "2026-05-19",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-11",
         "type": "New",
         "description": "PRIMARY_DOCTRINAL_PATHS — add Jain, Confucian, Zhuangzi for Sonnet HyPE",
-        "scope": null
-      },
-      {
-        "hash": "20529198",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Zoroastrian library restoration — clean avesta.org extraction + PRIMARY_DOCTRINAL_PATHS",
         "scope": null
       }
     ]
