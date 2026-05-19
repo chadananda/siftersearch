@@ -31,6 +31,19 @@ process.on('SIGINT', () => {});
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
+async function queryWithRetry(sql, params, maxAttempts = 5) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      return await query(sql, params);
+    } catch (err) {
+      if (err.code !== 'SQLITE_BUSY' || i === maxAttempts - 1) throw err;
+      const wait = 1000 * Math.pow(2, i);
+      logger.warn({ attempt: i + 1, wait }, 'SQLITE_BUSY on write — retrying');
+      await delay(wait);
+    }
+  }
+}
+
 // Resolve a mention's proposed_entity_id or find/create by canonical name.
 // Returns entity_id or null if unresolvable.
 async function resolveMention(mention, religion) {
@@ -46,7 +59,7 @@ async function resolveMention(mention, religion) {
 
   // Don't auto-create — send unresolved to promotion_queue
   const surfaceNorm = normalizeSurface(mention.surface);
-  await query(`
+  await queryWithRetry(`
     INSERT OR IGNORE INTO promotion_queue
       (surface_norm, type, context_snippet, resolved, attempts, priority)
     VALUES (?, ?, ?, 0, 0, 10)
@@ -74,7 +87,7 @@ async function resolveOne(extraction) {
     const entityId = await resolveMention(mention, religion);
     if (!entityId) continue;
 
-    await query(`
+    await queryWithRetry(`
       INSERT OR IGNORE INTO entity_mentions
         (entity_id, content_id, role, resolution_confidence, status, extractor_version)
       VALUES (?, ?, ?, ?, 'resolved', ?)
@@ -100,7 +113,7 @@ async function resolveOne(extraction) {
   const addresseeEnt   = roles.addressee? (await findEntity({ surface: roles.addressee}))?.entity_id : null;
   const placeEntity    = roles.setting_place ? (await findEntity({ surface: roles.setting_place, type: 'place' }))?.entity_id : null;
 
-  await query(`
+  await queryWithRetry(`
     INSERT OR REPLACE INTO paragraph_roles
       (content_id, speaker_entity_id, narrator_entity_id, addressee_entity_id,
        setting_place_entity_id, setting_time, extractor_version)
@@ -113,7 +126,7 @@ async function resolveOne(extraction) {
     const speakerEnt = q.speaker_candidate
       ? (await findEntity({ surface: q.speaker_candidate }))?.entity_id
       : null;
-    await query(`
+    await queryWithRetry(`
       INSERT INTO quote_instances
         (content_id, span_start, span_end, speaker_surface, speaker_entity_id,
          attribution_pattern, nesting_depth, extractor_version)
@@ -134,7 +147,7 @@ async function resolveOne(extraction) {
     } catch (err) {
       logger.warn({ contentId: extraction.content_id, err: err.message }, 'Failed to embed grounded text');
     }
-    await query(`
+    await queryWithRetry(`
       UPDATE content SET
         text_grounded = ?, grounding_confidence = ?, grounding_notes = ?,
         embedding_grounded = ?, grounded_synced = 0
@@ -144,7 +157,7 @@ async function resolveOne(extraction) {
   }
 
   // 5. Mark extraction resolved
-  await query(`UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, [extraction.id]);
+  await queryWithRetry(`UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, [extraction.id]);
 
   logger.debug({ extractionId: extraction.id, contentId: extraction.content_id }, 'Resolution complete');
 }

@@ -133,7 +133,7 @@ ${candidateList}`;
 async function applyDecision(item, decision) {
   const modelVotesJson = JSON.stringify({ decision: decision.decision, entity_id: decision.entity_id, confidence: decision.confidence });
 
-  await query(`
+  await queryWithRetry(`
     INSERT INTO er_audit_log (action, candidate, model_votes, run_id)
     VALUES (?, ?, ?, ?)
   `, [decision.decision, item.surface_norm, modelVotesJson, null]);
@@ -146,7 +146,7 @@ async function applyDecision(item, decision) {
       source: 'promoter',
       confidence: decision.confidence,
     });
-    await query(`UPDATE promotion_queue SET resolved = 1 WHERE id = ?`, [item.id]);
+    await queryWithRetry(`UPDATE promotion_queue SET resolved = 1 WHERE id = ?`, [item.id]);
     logger.info({ surface: item.surface_norm, entityId: decision.entity_id }, 'Merged alias');
 
   } else if (decision.decision === 'create' && decision.canonical_name) {
@@ -155,15 +155,17 @@ async function applyDecision(item, decision) {
       type: decision.entity_type || item.type,
       aliases: [{ surface: item.context_snippet?.slice(0, 200) || item.surface_norm, surfaceNorm: item.surface_norm, lang: 'en', source: 'promoter', confidence: decision.confidence }],
     });
-    await query(`UPDATE promotion_queue SET resolved = 1 WHERE id = ?`, [item.id]);
+    await queryWithRetry(`UPDATE promotion_queue SET resolved = 1 WHERE id = ?`, [item.id]);
     logger.info({ surface: item.surface_norm, entityId, canonical: decision.canonical_name }, 'Created entity');
 
   } else {
-    // Reject or low confidence — bump attempts
-    await query(`UPDATE promotion_queue SET attempts = attempts + 1 WHERE id = ?`, [item.id]);
-    if (item.attempts + 1 >= MAX_ATTEMPTS) {
-      await query(`UPDATE promotion_queue SET resolved = 1 WHERE id = ?`, [item.id]);
+    // Reject or low confidence — bump attempts, resolve at MAX_ATTEMPTS
+    const newAttempts = item.attempts + 1;
+    if (newAttempts >= MAX_ATTEMPTS) {
+      await queryWithRetry(`UPDATE promotion_queue SET attempts = ?, resolved = 1 WHERE id = ?`, [newAttempts, item.id]);
       logger.debug({ surface: item.surface_norm }, 'Promotion rejected after max attempts');
+    } else {
+      await queryWithRetry(`UPDATE promotion_queue SET attempts = ? WHERE id = ?`, [newAttempts, item.id]);
     }
   }
 }
@@ -184,6 +186,19 @@ process.on('SIGINT', () => {});
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
+async function queryWithRetry(sql, params, maxAttempts = 5) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      return await query(sql, params);
+    } catch (err) {
+      if (err.code !== 'SQLITE_BUSY' || i === maxAttempts - 1) throw err;
+      const wait = 1000 * Math.pow(2, i);
+      logger.warn({ attempt: i + 1, wait }, 'SQLITE_BUSY on write — retrying');
+      await delay(wait);
+    }
+  }
+}
+
 async function workerLoop() {
   logger.info('Graph promoter starting');
 
@@ -202,7 +217,7 @@ async function workerLoop() {
         if (decision) await applyDecision(row, decision);
       } catch (err) {
         logger.error({ surfaceNorm: row.surface_norm, err: err.message }, 'Promotion error');
-        await query(`UPDATE promotion_queue SET attempts = attempts + 1 WHERE id = ?`, [row.id]);
+        await queryWithRetry(`UPDATE promotion_queue SET attempts = attempts + 1 WHERE id = ?`, [row.id]).catch(() => {});
       }
     }
     logger.info({ promoted: rows.length }, 'Promotion batch done');

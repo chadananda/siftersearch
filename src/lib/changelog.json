@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-19T18:02:05.917Z",
+  "generated": "2026-05-19T18:35:45.167Z",
   "entries": [
+    {
+      "hash": "97f6edb4",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Remove propagateHypeFromNormalizedHash() from enrichment startup path",
+      "scope": null
+    },
     {
       "hash": "eaf80c1e",
       "date": "2026-05-19",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Tighten cross-tradition cap to 25% (max 2/8) for better diversity",
       "scope": null
-    },
-    {
-      "hash": "62f5b878",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Cross-tradition diversity after RRF — HyPE double-boosts Baha'i",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-19": [
+      {
+        "hash": "97f6edb4",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Remove propagateHypeFromNormalizedHash() from enrichment startup path",
+        "scope": null
+      },
       {
         "hash": "eaf80c1e",
         "date": "2026-05-19",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-11",
         "type": "Other",
         "description": "Tighten cross-tradition cap to 25% (max 2/8) for better diversity",
-        "scope": null
-      },
-      {
-        "hash": "62f5b878",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Cross-tradition diversity after RRF — HyPE double-boosts Baha'i",
         "scope": null
       }
     ]
