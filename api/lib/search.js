@@ -515,16 +515,26 @@ export async function initializeIndexes() {
     } catch { /* index may already exist or Meilisearch busy */ }
   }
 
-  // Enqueue settings (5s timeout — just needs to accept the task, not process it)
+  // Only PATCH settings if they differ from current — avoids queuing settingsUpdate
+  // tasks on every API restart, which block the document indexing queue.
   for (const [indexName, settings] of [[INDEXES.PARAGRAPHS, paragraphSettings], [INDEXES.DOCUMENTS, documentSettings], [INDEXES.HYPE_QUESTIONS, hypeSettings], [INDEXES.DEEP_RESEARCH, deepResearchSettings], [INDEXES.ENTITY_MENTIONS, entityMentionsSettings]]) {
     try {
+      const currentRes = await fetchWithTimeout(`${meiliUrl}/indexes/${indexName}/settings`, { headers }, 5000);
+      const current = currentRes.ok ? await currentRes.json() : null;
+      const needsUpdate = !current || Object.keys(settings).some(key => {
+        return JSON.stringify(current[key]) !== JSON.stringify(settings[key]);
+      });
+      if (!needsUpdate) {
+        logger.info({ index: indexName }, 'Settings unchanged, skipping update');
+        continue;
+      }
       const res = await fetchWithTimeout(`${meiliUrl}/indexes/${indexName}/settings`, {
         method: 'PATCH', headers, body: JSON.stringify(settings)
       });
       const task = await res.json();
-      logger.info({ taskUid: task.taskUid, index: indexName }, 'Settings update enqueued');
+      logger.info({ taskUid: task.taskUid, index: indexName }, 'Settings update enqueued (changed)');
     } catch (err) {
-      logger.warn({ err: err.message, index: indexName }, 'Settings enqueue failed (Meilisearch may be busy)');
+      logger.warn({ err: err.message, index: indexName }, 'Settings check/enqueue failed (Meilisearch may be busy)');
     }
   }
 
