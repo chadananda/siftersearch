@@ -51,6 +51,19 @@ const _failCount = new Map();
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
+async function queryWithRetry(sql, params, maxAttempts = 5) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      return await query(sql, params);
+    } catch (err) {
+      if (err.code !== 'SQLITE_BUSY' || i === maxAttempts - 1) throw err;
+      const wait = 1000 * Math.pow(2, i);
+      logger.warn({ attempt: i + 1, wait }, 'SQLITE_BUSY on write — retrying');
+      await delay(wait);
+    }
+  }
+}
+
 // Cache alias count — skip the expensive join when no aliases exist yet
 let _hasAliases = null;
 async function hasAliases() {
@@ -128,11 +141,11 @@ async function resolveExtraction(extractionId, contentId, parsed, religion) {
       entityId = found?.entity_id || null;
     }
     if (!entityId) {
-      await query(`INSERT OR IGNORE INTO promotion_queue (surface_norm, type, context_snippet, resolved, attempts, priority) VALUES (?, ?, ?, 0, 0, 10)`,
+      await queryWithRetry(`INSERT OR IGNORE INTO promotion_queue (surface_norm, type, context_snippet, resolved, attempts, priority) VALUES (?, ?, ?, 0, 0, 10)`,
         [normalizeSurface(mention.surface), mention.type || null, mention.surface.slice(0, 100)]);
       continue;
     }
-    await query(`INSERT OR IGNORE INTO entity_mentions (entity_id, content_id, role, resolution_confidence, status, extractor_version) VALUES (?, ?, ?, 0.9, 'resolved', ?)`,
+    await queryWithRetry(`INSERT OR IGNORE INTO entity_mentions (entity_id, content_id, role, resolution_confidence, status, extractor_version) VALUES (?, ?, ?, 0.9, 'resolved', ?)`,
       [entityId, contentId, mention.local_role, PROMPT_VERSION]);
     if (mention.surface) {
       await addAlias(entityId, { surface: mention.surface, surfaceNorm: normalizeSurface(mention.surface), lang: 'en', source: PROMPT_VERSION, confidence: 0.7 });
@@ -145,21 +158,21 @@ async function resolveExtraction(extractionId, contentId, parsed, religion) {
     resolve(roles.speaker), resolve(roles.narrator), resolve(roles.addressee),
     roles.setting_place ? findEntity({ surface: roles.setting_place, type: 'place' }).then(r => r?.entity_id || null).catch(() => null) : null,
   ]);
-  await query(`INSERT OR REPLACE INTO paragraph_roles (content_id, speaker_entity_id, narrator_entity_id, addressee_entity_id, setting_place_entity_id, setting_time, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  await queryWithRetry(`INSERT OR REPLACE INTO paragraph_roles (content_id, speaker_entity_id, narrator_entity_id, addressee_entity_id, setting_place_entity_id, setting_time, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [contentId, speakerEnt, narratorEnt, addresseeEnt, placeEnt, roles.setting_time || null, PROMPT_VERSION]);
 
   for (const q of parsed.quotations || []) {
     const speakerEnt2 = q.speaker_candidate ? (await findEntity({ surface: q.speaker_candidate }).catch(() => null))?.entity_id : null;
-    await query(`INSERT INTO quote_instances (content_id, span_start, span_end, speaker_surface, speaker_entity_id, attribution_pattern, nesting_depth, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    await queryWithRetry(`INSERT INTO quote_instances (content_id, span_start, span_end, speaker_surface, speaker_entity_id, attribution_pattern, nesting_depth, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [contentId, q.span?.[0], q.span?.[1], q.speaker_surface || null, speakerEnt2, q.attribution_pattern || 'direct', q.nesting_depth || 0, PROMPT_VERSION]);
   }
 
   if (parsed.prose_summary) {
-    await query(`UPDATE content SET text_grounded = ?, grounding_confidence = 0.9, grounded_synced = 0 WHERE id = ?`,
+    await queryWithRetry(`UPDATE content SET text_grounded = ?, grounding_confidence = 0.9, grounded_synced = 0 WHERE id = ?`,
       [parsed.prose_summary, contentId]);
   }
 
-  await query(`UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, [extractionId]);
+  await queryWithRetry(`UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, [extractionId]);
 
   // Push new entity_mentions for this paragraph directly to Meili — immediately searchable.
   await syncMentionsForContent(contentId);
@@ -300,13 +313,13 @@ async function writeResult(llmResult) {
   const { row, activeModel, activeProvider, parsed, inputTokens, outputTokens, cachedTokens, costUsd, markFailed } = llmResult;
 
   if (markFailed) {
-    await query(`UPDATE content SET graph_enriched = -1, graph_enriched_at = datetime('now'),
+    await queryWithRetry(`UPDATE content SET graph_enriched = -1, graph_enriched_at = datetime('now'),
       extractor_version = 'skip:parse-failures' WHERE id = ?`, [row.id]);
     _failCount.delete(row.id);
     return null;
   }
 
-  const { lastInsertRowid } = await query(`
+  const { lastInsertRowid } = await queryWithRetry(`
     INSERT INTO paragraph_extractions
       (content_id, model, prompt_version, output_json,
        input_tokens, output_tokens, cached_tokens, cost_usd, resolved)
@@ -321,7 +334,7 @@ async function writeResult(llmResult) {
     inputTokens, outputTokens, cachedTokens, costUsd,
   });
 
-  await query(`
+  await queryWithRetry(`
     UPDATE content SET graph_enriched = 1, graph_enriched_at = datetime('now'),
       extractor_version = ? WHERE id = ?
   `, [PROMPT_VERSION, row.id]);
