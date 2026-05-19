@@ -211,6 +211,8 @@ async function checkPm2() {
     const pm2bin = [process.env.PM2_BIN, '/usr/bin/pm2', '/usr/local/bin/pm2', 'pm2'].find(Boolean);
     // maxBuffer: pm2 jlist ~60KB; use stderr fallback in case pm2 writes JSON there
     const { stdout, stderr } = await exec(`${pm2bin} jlist`, { timeout: 15000, maxBuffer: 1024 * 1024 });
+    // debug
+    try { const {writeFileSync} = await import('fs'); writeFileSync('/tmp/pm2-hc-debug.txt', JSON.stringify({solen: stdout?.length, selen: stderr?.length, start: (stdout||'').slice(0,50), pm2bin})); } catch {}
     const raw = stdout || stderr || '';
     const jsonStart = raw.indexOf('[');
     if (jsonStart === -1) {
