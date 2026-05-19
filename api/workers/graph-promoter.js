@@ -83,7 +83,7 @@ ${candidateList}`;
   try {
     const r = await chatCompletion(
       [{ role: 'user', content: userMsg }],
-      { model: FAST_MODEL, provider: 'deepseek', temperature: 0, maxTokens: 512, systemPrompt: ADJUDICATION_SYSTEM }
+      { model: FAST_MODEL, provider: 'deepseek', temperature: 0, maxTokens: 512, systemPrompt: ADJUDICATION_SYSTEM, responseFormat: { type: 'json_object' } }
     );
     const usage = r.usage || {};
     await trackCost({ model: FAST_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: usage.cachedTokens || 0, costUsd: ((usage.promptTokens||0) * 0.00027 + (usage.completionTokens||0) * 0.0011) / 1000 });
