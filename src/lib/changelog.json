@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-19T17:44:28.993Z",
+  "generated": "2026-05-19T18:02:05.917Z",
   "entries": [
+    {
+      "hash": "eaf80c1e",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Serial DB writes in graph-extractor eliminates SQLITE_BUSY validator crash",
+      "scope": null
+    },
     {
       "hash": "f0bcb07a",
       "date": "2026-05-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Cross-tradition diversity after RRF — HyPE double-boosts Baha'i",
       "scope": null
-    },
-    {
-      "hash": "4067bc12",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Pass extra filters (language/year) through cross-tradition search",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-19": [
+      {
+        "hash": "eaf80c1e",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Serial DB writes in graph-extractor eliminates SQLITE_BUSY validator crash",
+        "scope": null
+      },
       {
         "hash": "f0bcb07a",
         "date": "2026-05-19",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-11",
         "type": "Fixed",
         "description": "Cross-tradition diversity after RRF — HyPE double-boosts Baha'i",
-        "scope": null
-      },
-      {
-        "hash": "4067bc12",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Pass extra filters (language/year) through cross-tradition search",
         "scope": null
       }
     ]

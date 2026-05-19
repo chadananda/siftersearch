@@ -644,8 +644,11 @@ async function main() {
 
   saveState();
 
-  // Propagate HyPE from exact-match duplicates before processing — free cache hit
-  await propagateHypeFromNormalizedHash();
+  // NOTE: propagateHypeFromNormalizedHash() was here but removed from the startup
+  // path. On a 3.5M-row content table the self-join UPDATE holds the SQLite write
+  // lock for hours, blocking all other writers (graph-validator, extractor, etc.).
+  // Run it as a one-off maintenance task instead:
+  //   node -e "import('./api/lib/sonnet-enrichment.js').then(m=>m.propagateHypeFromNormalizedHash())"
 
   // Process documents
   for (let i = startDocIndex; i < docs.length; i++) {
