@@ -29,9 +29,11 @@ function createContentConnection() {
   const path = stripFilePrefix(url) || './data/sifter.db';
   const db = new Database(path);
   db.pragma('journal_mode = WAL');
-  // 5s timeout: long enough for brief contention, short enough to not stall the API event loop.
-  // better-sqlite3 blocks synchronously — a 30s timeout would freeze all requests for 30s.
-  db.pragma('busy_timeout = 5000');
+  // API default: 5s — long enough for brief contention, short enough not to stall requests.
+  // Worker processes set SQLITE_BUSY_TIMEOUT_MS=30000 to survive write contention from
+  // concurrent graph pipeline workers without crashing.
+  const busyTimeout = parseInt(process.env.SQLITE_BUSY_TIMEOUT_MS || '5000', 10);
+  db.pragma(`busy_timeout = ${busyTimeout}`);
   // Bump page cache to ~512MB. Default 2MB is far too small for this DB —
   // the content table indexes alone are ~50MB and we hammer them with
   // sites-ingester supersession queries. With a generous cache, the
