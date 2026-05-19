@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-19T22:07:26.204Z",
+  "generated": "2026-05-19T22:12:16.941Z",
   "entries": [
+    {
+      "hash": "01168693",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Worker crash resistance — wrap fetchBatch and per-row in try-catch",
+      "scope": null
+    },
     {
       "hash": "a5c32dd8",
       "date": "2026-05-19",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Relax religion-filter author cap 25%→33% to allow 3 surahs/gospels per author",
       "scope": null
-    },
-    {
-      "hash": "3e4a0adf",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "Deduplicate hits by doc_id — prevent same book appearing multiple times",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-19": [
+      {
+        "hash": "01168693",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Worker crash resistance — wrap fetchBatch and per-row in try-catch",
+        "scope": null
+      },
       {
         "hash": "a5c32dd8",
         "date": "2026-05-19",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-11",
         "type": "Other",
         "description": "Relax religion-filter author cap 25%→33% to allow 3 surahs/gospels per author",
-        "scope": null
-      },
-      {
-        "hash": "3e4a0adf",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "Deduplicate hits by doc_id — prevent same book appearing multiple times",
         "scope": null
       }
     ]

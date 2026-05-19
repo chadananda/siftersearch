@@ -140,6 +140,11 @@ module.exports = {
       exec_mode: 'fork',
       autorestart: true,
       watch: false,
+      // V8 heap cap at 2GB forces GC before PM2's 3G RSS limit is reached.
+      // Without this, the initial scan + hourly re-scan can spike to 3.7GB
+      // faster than PM2's 30s RSS check fires, causing OOM kills instead of
+      // clean PM2 restarts. Node RSS = heap + stack + shared libs ≈ heap + 200MB.
+      node_args: '--max-old-space-size=2048',
       max_memory_restart: '3G',
       env: {
         NODE_ENV: 'production',
@@ -181,7 +186,10 @@ module.exports = {
       watch: false,
       max_memory_restart: '2G',
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        // Must match actual vLLM --max-model-len on boss. 8192 = current live value.
+        // Bump to 32768 here when boss is reconfigured with extended context window.
+        LOCAL_LLM_CONTEXT: '8192'
       },
       exp_backoff_restart_delay: 10000, // 10s, 20s, 40s — gentle on boss vLLM
       max_restarts: 999999,

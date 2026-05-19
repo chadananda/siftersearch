@@ -42,11 +42,14 @@ import { detectLanguageFeatures } from '../api/services/segmenter.js';
 const DB_PATH = join(PROJECT_ROOT, 'data', 'sifter.db');
 const STATE_FILE = join(PROJECT_ROOT, 'tmp', 'enrichment-state.json');
 const PIPELINE_VERSION = 'v3-batched';
-const MAX_CONTEXT = 32768; // Qwen3-30B-A3B MoE with expanded context
-const RESERVED_DECODE = 2000; // larger output for batched responses
+// Read actual vLLM context from env — defaults to 8192 (conservative; matches
+// the current boss vLLM --max-model-len setting). Set LOCAL_LLM_CONTEXT in
+// .env-public when boss is reconfigured with a larger context window.
+const MAX_CONTEXT = parseInt(process.env.LOCAL_LLM_CONTEXT || '8192', 10);
+const RESERVED_DECODE = 1000; // output budget for batched responses
 const USER_PROMPT_TOKENS = 100;
 const SAFETY_MARGIN = 500;
-const MAX_WINDOW_CHARS = 50000; // hard limit for system prompt chars
+const MAX_WINDOW_CHARS = Math.floor(MAX_CONTEXT * 3); // ~3 chars/token safety limit
 const DEFAULT_N = 20;
 // vLLM generates at ~25 tok/s on boss. A full HyPE batch (max 3000 output
 // tokens) needs ~120s just to generate, plus prompt prefill, plus any
