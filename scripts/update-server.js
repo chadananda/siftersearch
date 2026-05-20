@@ -448,6 +448,16 @@ async function applyUpdates() {
   if (!await swapPm2Process('siftersearch-api')) failed = true;
   if (!await swapPm2Process('siftersearch-worker')) failed = true;
   if (!await swapPm2Process('siftersearch-deep-research')) failed = true;
+  // Library-watcher and enrichment workers — restart after API/worker to
+  // avoid SQLite write contention during the deploy window.
+  await swapPm2Process('siftersearch-library-watcher');
+  await swapPm2Process('siftersearch-enrichment');
+  await swapPm2Process('siftersearch-enrichment-api');
+  // Graph pipeline workers — crash-resistance fixes must propagate on deploy.
+  await swapPm2Process('siftersearch-graph-extractor');
+  await swapPm2Process('siftersearch-graph-validator');
+  await swapPm2Process('siftersearch-graph-resolver');
+  await swapPm2Process('siftersearch-graph-promoter');
 
   if (failed) {
     log('error', 'Some processes failed to start');
