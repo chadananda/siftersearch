@@ -141,9 +141,10 @@ module.exports = {
       autorestart: true,
       watch: false,
       // PM2 v6 ignores node_args in ecosystem config — use NODE_OPTIONS instead.
-      // 4GB heap gives the initial 8,514-file scan room to GC effectively.
-      // 1536 was wrong (pinned OOM at peak). max_memory_restart 6G = heap + overhead.
-      max_memory_restart: '6G',
+      // 4GB heap. max_memory_restart 12G: the first scan after Dropbox sync reads
+      // all 8514 files to write back mtimes — one-time cost. Subsequent scans
+      // skip all files via mtime match (~200MB). 188GB box can handle 12G.
+      max_memory_restart: '12G',
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',

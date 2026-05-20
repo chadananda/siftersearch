@@ -506,6 +506,12 @@ async function scanLibraryForIngestion() {
         const diskHash = hashContent(content.trim());
 
         if (dbDoc && dbDoc.file_hash === diskHash) {
+          // Hash match — write back current mtime so the NEXT scan's mtime
+          // pre-check can skip this file without reading it at all.
+          if (dbDoc.file_mtime !== diskFile.mtime.toString()) {
+            await query('UPDATE docs SET file_mtime = ? WHERE id = ?',
+              [new Date(diskFile.mtime).toISOString(), dbDoc.id]).catch(() => {});
+          }
           skippedCount++;
           continue;
         }
