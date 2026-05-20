@@ -140,12 +140,13 @@ module.exports = {
       exec_mode: 'fork',
       autorestart: true,
       watch: false,
-      // V8 heap cap at 2GB forces GC before PM2's 3G RSS limit is reached.
-      // Without this, the initial scan + hourly re-scan can spike to 3.7GB
-      // faster than PM2's 30s RSS check fires, causing OOM kills instead of
-      // clean PM2 restarts. Node RSS = heap + stack + shared libs ≈ heap + 200MB.
-      node_args: '--max-old-space-size=1536',
-      max_memory_restart: '3G',
+      // V8 heap limit at 4GB gives the initial 8,514-file scan room to run GC
+      // effectively without hitting the old-space limit. 1536 was wrong — it
+      // pinned the OOM exactly at 1.5GB where the scan's unGCd file strings peak.
+      // With 188GB RAM, 4GB is still very conservative. PM2 RSS limit is 6G
+      // (heap + stack + shared libs ≈ heap + 200MB so 4G heap → ~4.2G RSS).
+      node_args: '--max-old-space-size=4096',
+      max_memory_restart: '6G',
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',

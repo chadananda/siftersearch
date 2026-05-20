@@ -36,7 +36,7 @@ import { indexDocumentFromText, getIndexingStatus, removeDocument } from '../api
 import { ingestDocument } from '../api/services/ingester.js';
 import { getMeili, initializeIndexes, INDEXES } from '../api/lib/search.js';
 import { logger } from '../api/lib/logger.js';
-import { queryOne } from '../api/lib/db.js';
+import { queryOne, query } from '../api/lib/db.js';
 import { hashContent } from '../api/lib/text-normalize.js';
 import { config } from '../api/lib/config.js';
 import { ensureServicesRunning } from '../api/lib/services.js';
@@ -520,12 +520,23 @@ async function indexLibrary() {
           }
 
           // mtime changed or not stored: compute hash to confirm
+          let currentMtimeForUpdate;
+          try {
+            const s = await fs.stat(file.path);
+            currentMtimeForUpdate = s.mtime.toISOString();
+          } catch { /* ignore */ }
+
           const currentHash = await getFileHash(file.path);
           if (currentHash) fileHashes.set(file.path, currentHash);
 
           const storedHash = existingDoc.file_hash;
           if (storedHash && currentHash && storedHash === currentHash) {
-            // Hash match — file unchanged despite mtime change (Dropbox touch), skip
+            // Hash match — file unchanged despite mtime change (Dropbox touch).
+            // Update stored mtime so the NEXT scan can use the fast mtime path
+            // and skip the file read entirely.
+            if (currentMtimeForUpdate && existingDoc.id) {
+              await query('UPDATE docs SET file_mtime = ? WHERE id = ?', [currentMtimeForUpdate, existingDoc.id]).catch(() => {});
+            }
             stats.skipped++;
             updateImportProgress('skipped');
             continue;
