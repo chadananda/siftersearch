@@ -140,16 +140,15 @@ module.exports = {
       exec_mode: 'fork',
       autorestart: true,
       watch: false,
-      // V8 heap limit at 4GB gives the initial 8,514-file scan room to run GC
-      // effectively without hitting the old-space limit. 1536 was wrong — it
-      // pinned the OOM exactly at 1.5GB where the scan's unGCd file strings peak.
-      // With 188GB RAM, 4GB is still very conservative. PM2 RSS limit is 6G
-      // (heap + stack + shared libs ≈ heap + 200MB so 4G heap → ~4.2G RSS).
-      node_args: '--max-old-space-size=4096',
+      // PM2 v6 ignores node_args in ecosystem config — use NODE_OPTIONS instead.
+      // 4GB heap gives the initial 8,514-file scan room to GC effectively.
+      // 1536 was wrong (pinned OOM at peak). max_memory_restart 6G = heap + overhead.
       max_memory_restart: '6G',
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',
+        // NODE_OPTIONS is always read by Node.js regardless of PM2 invocation method.
+        NODE_OPTIONS: '--max-old-space-size=4096',
         // Reduce SQLite cache: 512MB cache + 1GB mmap caused RSS >3G in <5min.
         // The watcher does sequential scans — a warm cache isn't critical.
         SQLITE_CACHE_MB: '64',
