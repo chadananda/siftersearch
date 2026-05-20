@@ -34,14 +34,14 @@ function createContentConnection() {
   // concurrent graph pipeline workers without crashing.
   const busyTimeout = parseInt(process.env.SQLITE_BUSY_TIMEOUT_MS || '5000', 10);
   db.pragma(`busy_timeout = ${busyTimeout}`);
-  // Bump page cache to ~512MB. Default 2MB is far too small for this DB —
-  // the content table indexes alone are ~50MB and we hammer them with
-  // sites-ingester supersession queries. With a generous cache, the
-  // normalized_hash + active partial indexes stay resident in RAM and
-  // 50s cold-cache spikes go away. Each connection gets its own cache;
-  // the worker / library-watcher / ingester all benefit.
-  db.pragma('cache_size = -524288');  // negative = KiB; 512 MB
-  db.pragma('mmap_size = 1073741824'); // 1 GB mmap for read-mostly workloads
+  // Bump page cache. Default 2MB is far too small for the content table indexes.
+  // SQLITE_CACHE_MB overrides the default — set to a lower value (e.g. 64) for
+  // memory-constrained processes like library-watcher (512MB cache + 1GB mmap
+  // caused RSS to reach 3G in <5 minutes, triggering OOM restart loops).
+  const cacheMb = parseInt(process.env.SQLITE_CACHE_MB || '512', 10);
+  db.pragma(`cache_size = ${-cacheMb * 1024}`);  // negative = KiB
+  const mmapMb = parseInt(process.env.SQLITE_MMAP_MB || '1024', 10);
+  db.pragma(`mmap_size = ${mmapMb * 1024 * 1024}`);
   logger.info({ path }, 'Content DB connected (local)');
   return instrumentDb(db, 'content');
 }

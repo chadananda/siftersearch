@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-20T00:46:28.204Z",
+  "generated": "2026-05-20T01:10:29.503Z",
   "entries": [
+    {
+      "hash": "47ad239c",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Updater swaps all workers on deploy — was missing graph+enrichment+watcher",
+      "scope": null
+    },
     {
       "hash": "afb27845",
       "date": "2026-05-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Embedding cache path hyphen→underscore in fix-html-embeddings script",
       "scope": null
-    },
-    {
-      "hash": "f47e8d31",
-      "date": "2026-05-11",
-      "type": "Fixed",
-      "description": "CleanForEmbedding — strip HTML before embedding, preserve case/punctuation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-19": [
+      {
+        "hash": "47ad239c",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Updater swaps all workers on deploy — was missing graph+enrichment+watcher",
+        "scope": null
+      },
       {
         "hash": "afb27845",
         "date": "2026-05-19",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-11",
         "type": "Fixed",
         "description": "Embedding cache path hyphen→underscore in fix-html-embeddings script",
-        "scope": null
-      },
-      {
-        "hash": "f47e8d31",
-        "date": "2026-05-11",
-        "type": "Fixed",
-        "description": "CleanForEmbedding — strip HTML before embedding, preserve case/punctuation",
         "scope": null
       }
     ]

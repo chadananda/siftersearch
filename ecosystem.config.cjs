@@ -144,11 +144,15 @@ module.exports = {
       // Without this, the initial scan + hourly re-scan can spike to 3.7GB
       // faster than PM2's 30s RSS check fires, causing OOM kills instead of
       // clean PM2 restarts. Node RSS = heap + stack + shared libs ≈ heap + 200MB.
-      node_args: '--max-old-space-size=2048',
+      node_args: '--max-old-space-size=1536',
       max_memory_restart: '3G',
       env: {
         NODE_ENV: 'production',
-        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
+        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',
+        // Reduce SQLite cache: 512MB cache + 1GB mmap caused RSS >3G in <5min.
+        // The watcher does sequential scans — a warm cache isn't critical.
+        SQLITE_CACHE_MB: '64',
+        SQLITE_MMAP_MB: '128',
       },
       exp_backoff_restart_delay: 5000,
       max_restarts: 999999,
