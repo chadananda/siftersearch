@@ -441,26 +441,29 @@ export default async function searchRoutes(fastify) {
   // Public read-only (no sensitive data). Used by health-check.mjs remotely.
   fastify.get('/health/pipeline', async () => {
     // Guard: better-sqlite3 blocks the event loop synchronously. If the WAL is large
-    // (e.g. after a mass UPDATE), COUNT(*) on 4M+ unsynced rows can take minutes and
-    // freeze all requests. Check WAL size first (async fs.stat) and skip the query if
-    // WAL > 200MB — return sentinel -1 so callers know the value is unavailable.
-    const syncStalePromise = (async () => {
-      try {
-        const db = await getDb();
-        const dbFile = db.pragma('database_list')[0]?.file;
-        if (dbFile) {
-          const { stat } = await import('node:fs/promises');
-          const walStat = await stat(dbFile + '-wal').catch(() => null);
-          if (walStat && walStat.size > 200 * 1024 * 1024) {
-            return { unsynced: -1, oldest: null };  // WAL too large — skip to avoid blocking
-          }
-        }
-        return queryOne(`SELECT COUNT(*) AS unsynced, MIN(created_at) AS oldest
-                         FROM content WHERE synced = 0 AND deleted_at IS NULL`);
-      } catch {
-        return { unsynced: -1, oldest: null };
-      }
-    })();
+    // (library-watcher initial scan or mass UPDATE), COUNT(*) on 4M+ rows can take
+    // seconds and freeze all requests. Check WAL size once; skip heavy queries > 200MB.
+    const { stat: fsStat } = await import('node:fs/promises');
+    const db = await getDb();
+    const dbFile = db.pragma('database_list')[0]?.file;
+    const walStat = dbFile ? await fsStat(dbFile + '-wal').catch(() => null) : null;
+    const walLarge = walStat ? walStat.size > 200 * 1024 * 1024 : false;
+
+    const syncStalePromise = walLarge
+      ? Promise.resolve({ unsynced: -1, oldest: null })
+      : queryOne(`SELECT COUNT(*) AS unsynced, MIN(created_at) AS oldest
+                   FROM content WHERE synced = 0 AND deleted_at IS NULL`).catch(() => ({ unsynced: -1, oldest: null }));
+
+    // Graph stats: content table COUNT(*) queries are slow when WAL is large.
+    // Return sentinel -1 when walLarge so callers know counts are unavailable.
+    const graphStatsPromise = walLarge
+      ? Promise.resolve([{ n: -1 }, { n: -1 }, { n: 0 }, { n: 0 }])
+      : Promise.all([
+          queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 1 AND deleted_at IS NULL`).catch(() => ({ n: 0 })),
+          queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL AND length(text) > 50`).catch(() => ({ n: 0 })),
+          queryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0`).catch(() => ({ n: 0 })),
+          queryOne(`SELECT COUNT(*) AS n FROM entity_aliases`).catch(() => ({ n: 0 })),
+        ]);
 
     const [counts, schemaRow, syncStale, recentlySynced, entityDup, promotionQ, recentExtractions, graphStats, deepResearch] = await Promise.all([
       getCachedContentCounts(),
@@ -473,13 +476,7 @@ export default async function searchRoutes(fastify) {
                 FROM entity_mentions`).catch(() => ({ total: 0, unique_combos: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM promotion_queue WHERE resolved = 0`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM extraction_runs WHERE created_at > unixepoch() - 86400`).catch(() => ({ n: 0 })),
-      // Graph extraction pipeline progress
-      Promise.all([
-        queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 1 AND deleted_at IS NULL`).catch(() => ({ n: 0 })),
-        queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL AND length(text) > 50`).catch(() => ({ n: 0 })),
-        queryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0`).catch(() => ({ n: 0 })),
-        queryOne(`SELECT COUNT(*) AS n FROM entity_aliases`).catch(() => ({ n: 0 })),
-      ]),
+      graphStatsPromise,
       queryOne(`SELECT
                   COUNT(*) AS total,
                   SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
