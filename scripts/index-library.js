@@ -47,7 +47,7 @@ import { startLibraryWatcher, stopLibraryWatcher } from '../api/services/library
 async function getExistingDocument(filePath) {
   const basePath = config.library.basePath;
   const relativePath = path.relative(basePath, filePath);
-  return queryOne('SELECT id, file_hash, body_hash FROM docs WHERE file_path = ? AND deleted_at IS NULL', [relativePath]);
+  return queryOne('SELECT id, file_hash, body_hash, file_mtime FROM docs WHERE file_path = ? AND deleted_at IS NULL', [relativePath]);
 }
 
 // Parse CLI arguments
@@ -499,15 +499,33 @@ async function indexLibrary() {
       if (skipExisting && !dryRun) {
         const existingDoc = await getExistingDocument(file.path);
         if (existingDoc) {
-          // Both getFileHash and the ingester use MD5 — direct comparison is valid.
-          // Avoid reading full file content for unchanged docs (prevents 2-3GB memory
-          // accumulation when scanning 8,514 docs in watch mode).
+          // Fast path: compare file mtime before reading content.
+          // If mtime matches stored mtime, content definitely hasn't changed — skip
+          // without reading the file. This avoids loading 8,514 files into the V8 heap
+          // during the initial scan (which caused 1.5GB heap OOM every 2-3 minutes).
+          // Dropbox can update mtime on sync, so we fall through to hash comparison
+          // when mtime changes.
+          const storedMtime = existingDoc.file_mtime;
+          if (storedMtime) {
+            try {
+              const stat = await fs.stat(file.path);
+              const currentMtime = stat.mtime.toISOString();
+              if (currentMtime === storedMtime) {
+                // mtime unchanged — skip without reading file
+                stats.skipped++;
+                updateImportProgress('skipped');
+                continue;
+              }
+            } catch { /* stat failed — fall through to hash check */ }
+          }
+
+          // mtime changed or not stored: compute hash to confirm
           const currentHash = await getFileHash(file.path);
           if (currentHash) fileHashes.set(file.path, currentHash);
 
           const storedHash = existingDoc.file_hash;
           if (storedHash && currentHash && storedHash === currentHash) {
-            // Hash match — file unchanged, skip without loading content
+            // Hash match — file unchanged despite mtime change (Dropbox touch), skip
             stats.skipped++;
             updateImportProgress('skipped');
             continue;
