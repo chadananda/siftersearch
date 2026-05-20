@@ -473,7 +473,8 @@ async function checkEnrichment() {
   if (!await meiliReachable()) return warn('enrichment', 'remote_only (run on tower-nas to check enrichment)');
   const ph = await fetchPipelineHealth();
   if (ph._error) return warn('enrichment', `pipeline endpoint unavailable: ${ph._error}`);
-  if (!ph.enrichment) return warn('enrichment', 'enrichment stats missing from pipeline endpoint (deploy pending?)');
+  // enrichment stats are skipped in pipeline endpoint when WAL is large (would block).
+  if (!ph.enrichment) return ok('enrichment', 0, { note: 'stats deferred (WAL large or not yet available)' });
 
   const total = ph.sync?.total_paragraphs ?? 0;
   const { needs_context_count, needs_hype_count } = ph.enrichment;
