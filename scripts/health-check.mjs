@@ -201,7 +201,14 @@ async function checkVllm() {
     if (!res.ok) return fail('boss_vllm', `HTTP ${res.status}`, { latency_ms: ms });
     const data = await res.json();
     const model = data?.data?.[0]?.id || 'unknown';
-    ok('boss_vllm', ms, { model });
+    // Verify context window matches LOCAL_LLM_CONTEXT — mismatch caused 27K-token overflow errors
+    const configuredContext = parseInt(process.env.LOCAL_LLM_CONTEXT || '8192', 10);
+    const serverContext = data?.data?.[0]?.context_window;
+    if (serverContext && serverContext < configuredContext) {
+      warn('boss_vllm', `context window mismatch: server=${serverContext} < configured=${configuredContext} (update LOCAL_LLM_CONTEXT)`, { model, latency_ms: ms });
+      return;
+    }
+    ok('boss_vllm', ms, { model, context_window: serverContext || 'unknown' });
   } catch (err) {
     fail('boss_vllm', err.message);
   }
