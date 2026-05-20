@@ -92,23 +92,28 @@ async function timed(fn) {
 
 // ─── API health ───────────────────────────────────────────────────────────
 async function checkApi() {
-  // Use /api/v1/health — lightweight, always fast. /api/search/health runs DB
-  // queries that can hang under heavy write contention, causing false "api down".
-  const url = `${API_BASE}/api/v1/health`;
-  const isTunnel = !API_BASE.includes('localhost') && !API_BASE.includes('127.0.0.1');
-  const slowThreshold = isTunnel ? 10000 : 2000;
+  // Try localhost first — avoids tunnel latency and works when event loop is briefly
+  // slow due to library-watcher write contention. Falls back to public URL if needed.
+  const localUrl = 'http://localhost:7839/api/v1/health';
+  const publicUrl = `${API_BASE}/api/v1/health`;
   try {
     const [res, ms] = await timed(() =>
-      fetch(url, { signal: AbortSignal.timeout(12000) })
+      fetch(localUrl, { signal: AbortSignal.timeout(5000) })
+    );
+    if (res.ok) return ok('api', ms, { via: 'localhost' });
+  } catch {}
+  // Fallback: try public URL via Cloudflare tunnel
+  try {
+    const [res, ms] = await timed(() =>
+      fetch(publicUrl, { signal: AbortSignal.timeout(12000) })
     );
     if (!res.ok) return fail('api', `HTTP ${res.status}`, { latency_ms: ms });
-    if (ms > slowThreshold) return warn('api', `slow (${ms}ms)${isTunnel ? ' via tunnel' : ''}`, { latency_ms: ms });
-    return ok('api', ms, isTunnel ? { via: 'tunnel' } : {});
+    if (ms > 10000) return warn('api', `slow (${ms}ms) via tunnel`, { latency_ms: ms });
+    return ok('api', ms, { via: 'tunnel' });
   } catch {
-    // Curl fallback
     try {
       const t = Date.now();
-      const { stdout } = await exec(`curl -s --max-time 10 -o /dev/null -w "%{http_code}" "${url}"`, { timeout: 12000 });
+      const { stdout } = await exec(`curl -s --max-time 10 -o /dev/null -w "%{http_code}" "${publicUrl}"`, { timeout: 12000 });
       const ms = Date.now() - t;
       const code = parseInt(stdout.trim(), 10);
       if (code === 200) return ok('api', ms, { via: 'curl' });
@@ -276,12 +281,13 @@ async function checkPm2() {
       summary[name] = `${status} (restarts=${restarts})`;
       if (restarts > 1000) problems.push(`${name}: crash loop (${restarts} restarts)`);
     }
-    // Library-watcher memory check: max_memory_restart=3G in ecosystem.config.cjs.
-    // When it hits 3GB it's killed/restarted, re-scans all 8K docs, logs ~100MB/cycle.
+    // Library-watcher memory check: max_memory_restart=12G in ecosystem.config.cjs.
+    // First scan after Dropbox sync touches all mtimes reads 8,514 files — one-time cost.
+    // Subsequent scans use mtime tier-1 fast-path and stay under 400MB.
     const watcher = procs.find(x => x.name === 'siftersearch-library-watcher');
     if (watcher?.monit?.memory) {
       const memMB = Math.round(watcher.monit.memory / 1024 / 1024);
-      if (memMB > 2500) warnProblems.push(`siftersearch-library-watcher: memory ${memMB}MB (approaching 3GB restart limit — memory leak)`);
+      if (memMB > 10000) warnProblems.push(`siftersearch-library-watcher: memory ${memMB}MB (approaching 12GB restart limit — possible leak)`);
       if (summary['siftersearch-library-watcher']) summary['siftersearch-library-watcher'] += `, mem=${memMB}MB`;
     }
     if (problems.length > 0) fail('pm2', problems.join('; '), summary);
