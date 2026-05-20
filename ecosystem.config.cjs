@@ -145,19 +145,25 @@ module.exports = {
       autorestart: true,
       watch: false,
       // PM2 v6 ignores node_args in ecosystem config — use NODE_OPTIONS instead.
-      // 4GB heap. max_memory_restart 12G: the first scan after Dropbox sync reads
-      // all 8514 files to write back mtimes — one-time cost. Subsequent scans
-      // skip all files via mtime match (~200MB). 188GB box can handle 12G.
+      // 8GB heap: concurrent library scan + orphan cleanup + sites-ingester pushes
+      // the V8 heap past 4GB (confirmed SIGABRT at 2026-05-19 20:46 with 4G limit).
+      // max_memory_restart 12G: the first scan after Dropbox sync reads all 8514
+      // files to write back mtimes — one-time cost. Subsequent scans skip all files
+      // via mtime match (~200MB). 188GB box can handle 12G.
       max_memory_restart: '12G',
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',
         // NODE_OPTIONS is always read by Node.js regardless of PM2 invocation method.
-        NODE_OPTIONS: '--max-old-space-size=4096',
+        NODE_OPTIONS: '--max-old-space-size=8192',
         // Reduce SQLite cache: 512MB cache + 1GB mmap caused RSS >3G in <5min.
         // The watcher does sequential scans — a warm cache isn't critical.
         SQLITE_CACHE_MB: '64',
         SQLITE_MMAP_MB: '128',
+        // 30s busy_timeout: graph workers and sync-worker hold write locks for up to
+        // ~10s under WAL pressure. Default 5s causes "database is locked" errors
+        // during orphan cleanup, blocking deletions and logging noise.
+        SQLITE_BUSY_TIMEOUT_MS: '30000',
       },
       exp_backoff_restart_delay: 5000,
       max_restarts: 999999,
