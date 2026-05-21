@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-21T23:25:09.111Z",
+  "generated": "2026-05-21T23:48:31.631Z",
   "entries": [
+    {
+      "hash": "d901073f",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Remove graph_enriched=1 full-table-scan from pipeline background refresh",
+      "scope": null
+    },
     {
       "hash": "f0f377b3",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Escape backticks in chat.js prompt template + non-blocking logAIUsage",
       "scope": null
-    },
-    {
-      "hash": "bf61d020",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Retry DB publish on SQLITE_BUSY in jafar-batch-runner",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "d901073f",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Remove graph_enriched=1 full-table-scan from pipeline background refresh",
+        "scope": null
+      },
       {
         "hash": "f0f377b3",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Escape backticks in chat.js prompt template + non-blocking logAIUsage",
-        "scope": null
-      },
-      {
-        "hash": "bf61d020",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Retry DB publish on SQLITE_BUSY in jafar-batch-runner",
         "scope": null
       }
     ]
