@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-21T23:19:45.252Z",
+  "generated": "2026-05-21T23:25:09.111Z",
   "entries": [
+    {
+      "hash": "f0f377b3",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Remove MIN(created_at) from pipeline background query — it bypassed partial index",
+      "scope": null
+    },
     {
       "hash": "02de39ff",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Retry DB publish on SQLITE_BUSY in jafar-batch-runner",
       "scope": null
-    },
-    {
-      "hash": "6069a43e",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Inline quoted phrases should be hyperlinks not trailing citations",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "f0f377b3",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Remove MIN(created_at) from pipeline background query — it bypassed partial index",
+        "scope": null
+      },
       {
         "hash": "02de39ff",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Retry DB publish on SQLITE_BUSY in jafar-batch-runner",
-        "scope": null
-      },
-      {
-        "hash": "6069a43e",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Inline quoted phrases should be hyperlinks not trailing citations",
         "scope": null
       }
     ]

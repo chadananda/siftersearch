@@ -43,19 +43,26 @@ async function refreshPipelineCounts() {
   if (_pipelineCache.refreshing) return;
   _pipelineCache.refreshing = true;
   try {
-    const [unsyncedRow, graphEnriched, graphPending, extractionsPending, aliasCount] = await Promise.all([
-      // COUNT(*) only — idx_content_unsynced partial index makes this ~1ms
-      // DO NOT add MIN(created_at) here — it forces table lookups on every unsynced row
+    // Only run queries that have covering indexes. Full-table scans block the event loop.
+    // idx_content_unsynced: partial index on synced=0 AND deleted_at IS NULL → fast COUNT
+    // idx_content_graph_unsync: partial index on graph_enriched=0 → fast COUNT
+    // No index for graph_enriched=1 — derive from total minus pending instead
+    // paragraph_extractions and entity_aliases are small tables → fast
+    const [unsyncedRow, graphPending, extractionsPending, aliasCount, docAgg] = await Promise.all([
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 0 AND deleted_at IS NULL`).catch(() => ({ n: -1 })),
-      queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 1 AND deleted_at IS NULL`).catch(() => ({ n: -1 })),
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL AND length(text) > 50`).catch(() => ({ n: -1 })),
       queryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM entity_aliases`).catch(() => ({ n: 0 })),
+      queryOne(`SELECT SUM(paragraph_count) AS total FROM docs WHERE deleted_at IS NULL`).catch(() => ({ total: 0 })),
     ]);
+    const totalParas = docAgg?.total ?? 0;
+    const graphPendingN = graphPending?.n ?? -1;
+    // graphEnriched = total - pending (avoids full-table scan on graph_enriched=1)
+    const graphEnrichedN = (totalParas > 0 && graphPendingN >= 0) ? totalParas - graphPendingN : -1;
     _pipelineCache.data = {
       unsynced: unsyncedRow?.n ?? -1,
-      graphEnriched: graphEnriched?.n ?? -1,
-      graphPending: graphPending?.n ?? -1,
+      graphEnriched: graphEnrichedN,
+      graphPending: graphPendingN,
       extractionsPending: extractionsPending?.n ?? 0,
       aliasCount: aliasCount?.n ?? 0,
     };
