@@ -449,21 +449,33 @@ export default async function searchRoutes(fastify) {
     const walStat = dbFile ? await fsStat(dbFile + '-wal').catch(() => null) : null;
     const walLarge = walStat ? walStat.size > 200 * 1024 * 1024 : false;
 
+    // Timeout wrapper: better-sqlite3 blocks the event loop synchronously.
+    // Cold-cache COUNT(*) on 4M+ rows can take 60s+ and freeze all requests.
+    // Cap at 8s — return sentinel -1 if the query is still warming up.
+    const withTimeout = (promise, ms, fallback) =>
+      Promise.race([promise, new Promise(r => setTimeout(() => r(fallback), ms))]);
+
     const syncStalePromise = walLarge
       ? Promise.resolve({ unsynced: -1, oldest: null })
-      : queryOne(`SELECT COUNT(*) AS unsynced, MIN(created_at) AS oldest
-                   FROM content WHERE synced = 0 AND deleted_at IS NULL`).catch(() => ({ unsynced: -1, oldest: null }));
+      : withTimeout(
+          queryOne(`SELECT COUNT(*) AS unsynced, MIN(created_at) AS oldest
+                     FROM content WHERE synced = 0 AND deleted_at IS NULL`).catch(() => ({ unsynced: -1, oldest: null })),
+          8000, { unsynced: -1, oldest: null }
+        );
 
     // Graph stats: content table COUNT(*) queries are slow when WAL is large.
     // Return sentinel -1 when walLarge so callers know counts are unavailable.
     const graphStatsPromise = walLarge
       ? Promise.resolve([{ n: -1 }, { n: -1 }, { n: 0 }, { n: 0 }])
-      : Promise.all([
-          queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 1 AND deleted_at IS NULL`).catch(() => ({ n: 0 })),
-          queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL AND length(text) > 50`).catch(() => ({ n: 0 })),
-          queryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0`).catch(() => ({ n: 0 })),
-          queryOne(`SELECT COUNT(*) AS n FROM entity_aliases`).catch(() => ({ n: 0 })),
-        ]);
+      : withTimeout(
+          Promise.all([
+            queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 1 AND deleted_at IS NULL`).catch(() => ({ n: 0 })),
+            queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL AND length(text) > 50`).catch(() => ({ n: 0 })),
+            queryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0`).catch(() => ({ n: 0 })),
+            queryOne(`SELECT COUNT(*) AS n FROM entity_aliases`).catch(() => ({ n: 0 })),
+          ]),
+          8000, [{ n: -1 }, { n: -1 }, { n: 0 }, { n: 0 }]
+        );
 
     const [counts, schemaRow, syncStale, recentlySynced, entityDup, promotionQ, recentExtractions, graphStats, deepResearch] = await Promise.all([
       getCachedContentCounts(),

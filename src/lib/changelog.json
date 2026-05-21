@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-21T21:23:18.619Z",
+  "generated": "2026-05-21T21:41:01.601Z",
   "entries": [
+    {
+      "hash": "a6a4c8e0",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Hourly WAL checkpoint in sync-worker — prevent unbounded WAL growth",
+      "scope": null
+    },
     {
       "hash": "0fd46ea4",
       "date": "2026-05-19",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Content variable shadowing module import in indexer + ingester",
       "scope": null
-    },
-    {
-      "hash": "db996e11",
-      "date": "2026-05-12",
-      "type": "New",
-      "description": "Generate + regenerate dialog admin API endpoints (SSE streaming)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-21": [
+      {
+        "hash": "a6a4c8e0",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Hourly WAL checkpoint in sync-worker — prevent unbounded WAL growth",
+        "scope": null
+      }
+    ],
     "2026-05-19": [
       {
         "hash": "0fd46ea4",
@@ -7009,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Content variable shadowing module import in indexer + ingester",
-        "scope": null
-      },
-      {
-        "hash": "db996e11",
-        "date": "2026-05-12",
-        "type": "New",
-        "description": "Generate + regenerate dialog admin API endpoints (SSE streaming)",
         "scope": null
       }
     ]
