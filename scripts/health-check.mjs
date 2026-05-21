@@ -101,7 +101,7 @@ async function checkApi() {
       fetch(localUrl, { signal: AbortSignal.timeout(5000) })
     );
     if (res.ok) return ok('api', ms, { via: 'localhost' });
-  } catch {}
+  } catch { /* localhost not reachable, try public URL */ }
   // Fallback: try public URL via Cloudflare tunnel
   try {
     const [res, ms] = await timed(() =>

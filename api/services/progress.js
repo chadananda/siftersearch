@@ -26,8 +26,48 @@ async function getMeiliClient() {
 // In-memory tracking for current import batch
 let importJob = null;
 
-// Cache for count queries — 5s TTL; partial indexes make COUNT queries fast
+// Cache for count queries — 30s TTL; partial indexes make COUNT queries fast
 const countCache = { data: null, timestamp: 0, ttl: 30000 };
+
+// Pipeline health counts — refreshed every 5min in background, NEVER on request thread.
+// better-sqlite3 blocks the event loop; COUNT(*) on 4M+ rows takes 60s on cold cache.
+const PIPELINE_REFRESH_MS = 5 * 60 * 1000;
+const PIPELINE_SENTINEL = { unsynced: -1, oldest: null, graphEnriched: -1, graphPending: -1, extractionsPending: 0, aliasCount: 0 };
+let _pipelineCache = { data: { ...PIPELINE_SENTINEL }, refreshing: false };
+
+async function refreshPipelineCounts() {
+  if (_pipelineCache.refreshing) return;
+  _pipelineCache.refreshing = true;
+  try {
+    const [syncStale, graphEnriched, graphPending, extractionsPending, aliasCount] = await Promise.all([
+      queryOne(`SELECT COUNT(*) AS unsynced, MIN(created_at) AS oldest FROM content WHERE synced = 0 AND deleted_at IS NULL`).catch(() => ({ unsynced: -1, oldest: null })),
+      queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 1 AND deleted_at IS NULL`).catch(() => ({ n: -1 })),
+      queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL AND length(text) > 50`).catch(() => ({ n: -1 })),
+      queryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0`).catch(() => ({ n: 0 })),
+      queryOne(`SELECT COUNT(*) AS n FROM entity_aliases`).catch(() => ({ n: 0 })),
+    ]);
+    _pipelineCache.data = {
+      unsynced: syncStale?.unsynced ?? -1,
+      oldest: syncStale?.oldest ?? null,
+      graphEnriched: graphEnriched?.n ?? -1,
+      graphPending: graphPending?.n ?? -1,
+      extractionsPending: extractionsPending?.n ?? 0,
+      aliasCount: aliasCount?.n ?? 0,
+    };
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Pipeline count background refresh failed');
+  } finally {
+    _pipelineCache.refreshing = false;
+  }
+}
+
+// Kick first refresh after 10s (let DB settle at startup), then every 5min
+setTimeout(refreshPipelineCounts, 10_000);
+setInterval(refreshPipelineCounts, PIPELINE_REFRESH_MS);
+
+export function getCachedPipelineCounts() {
+  return _pipelineCache.data;
+}
 
 const EMPTY_COUNTS = { totalDocs: 0, docsWithContent: 0, totalParagraphs: 0, unsyncedParagraphs: 0, cooldownDocCount: 0 };
 
@@ -234,5 +274,6 @@ export default {
   getImportProgress,
   getIngestionProgress,
   getIndexingProgress,
-  getAllProgress
+  getAllProgress,
+  getCachedPipelineCounts
 };

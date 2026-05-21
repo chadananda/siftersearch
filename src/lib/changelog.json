@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-21T22:42:42.898Z",
+  "generated": "2026-05-21T22:51:06.579Z",
   "entries": [
+    {
+      "hash": "04d25e11",
+      "date": "2026-05-21",
+      "type": "New",
+      "description": "Centralized DB service with named queries",
+      "scope": null
+    },
     {
       "hash": "bfca6934",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Paragraph deeplinks for read_document_for_question excerpts",
       "scope": null
-    },
-    {
-      "hash": "e52efd59",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Reduce busy_timeout 30s→5s + retry DB lock on worker startup",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "04d25e11",
+        "date": "2026-05-21",
+        "type": "New",
+        "description": "Centralized DB service with named queries",
+        "scope": null
+      },
       {
         "hash": "bfca6934",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Paragraph deeplinks for read_document_for_question excerpts",
-        "scope": null
-      },
-      {
-        "hash": "e52efd59",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Reduce busy_timeout 30s→5s + retry DB lock on worker startup",
         "scope": null
       }
     ]

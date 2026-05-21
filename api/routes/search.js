@@ -10,8 +10,8 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence } from '../lib/search.js';
-import { queryOne, userQuery, getDb } from '../lib/db.js';
-import { getCachedContentCounts } from '../services/progress.js';
+import { queryOne, userQuery } from '../lib/db.js';
+import { getCachedContentCounts, getCachedPipelineCounts } from '../services/progress.js';
 import { CURRENT_VERSION } from '../lib/migrations/runner.js';
 import { optionalAuthenticate } from '../lib/auth.js';
 import { config } from '../lib/config.js';
@@ -440,47 +440,14 @@ export default async function searchRoutes(fastify) {
   // Pipeline health — exposes sync staleness, entity health, schema version.
   // Public read-only (no sensitive data). Used by health-check.mjs remotely.
   fastify.get('/health/pipeline', async () => {
-    // Guard: better-sqlite3 blocks the event loop synchronously. If the WAL is large
-    // (library-watcher initial scan or mass UPDATE), COUNT(*) on 4M+ rows can take
-    // seconds and freeze all requests. Check WAL size once; skip heavy queries > 200MB.
-    const { stat: fsStat } = await import('node:fs/promises');
-    const db = await getDb();
-    const dbFile = db.pragma('database_list')[0]?.file;
-    const walStat = dbFile ? await fsStat(dbFile + '-wal').catch(() => null) : null;
-    const walLarge = walStat ? walStat.size > 200 * 1024 * 1024 : false;
+    // Heavy COUNT(*) queries on 4M+ rows are pre-computed in background (progress.js)
+    // and refreshed every 5 minutes. This endpoint NEVER runs them synchronously —
+    // better-sqlite3 blocks the Node.js event loop, making Promise.race timeouts useless.
+    const pipeline = getCachedPipelineCounts();
 
-    // Timeout wrapper: better-sqlite3 blocks the event loop synchronously.
-    // Cold-cache COUNT(*) on 4M+ rows can take 60s+ and freeze all requests.
-    // Cap at 8s — return sentinel -1 if the query is still warming up.
-    const withTimeout = (promise, ms, fallback) =>
-      Promise.race([promise, new Promise(r => setTimeout(() => r(fallback), ms))]);
-
-    const syncStalePromise = walLarge
-      ? Promise.resolve({ unsynced: -1, oldest: null })
-      : withTimeout(
-          queryOne(`SELECT COUNT(*) AS unsynced, MIN(created_at) AS oldest
-                     FROM content WHERE synced = 0 AND deleted_at IS NULL`).catch(() => ({ unsynced: -1, oldest: null })),
-          8000, { unsynced: -1, oldest: null }
-        );
-
-    // Graph stats: content table COUNT(*) queries are slow when WAL is large.
-    // Return sentinel -1 when walLarge so callers know counts are unavailable.
-    const graphStatsPromise = walLarge
-      ? Promise.resolve([{ n: -1 }, { n: -1 }, { n: 0 }, { n: 0 }])
-      : withTimeout(
-          Promise.all([
-            queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 1 AND deleted_at IS NULL`).catch(() => ({ n: 0 })),
-            queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL AND length(text) > 50`).catch(() => ({ n: 0 })),
-            queryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0`).catch(() => ({ n: 0 })),
-            queryOne(`SELECT COUNT(*) AS n FROM entity_aliases`).catch(() => ({ n: 0 })),
-          ]),
-          8000, [{ n: -1 }, { n: -1 }, { n: 0 }, { n: 0 }]
-        );
-
-    const [counts, schemaRow, syncStale, recentlySynced, entityDup, promotionQ, recentExtractions, graphStats, deepResearch] = await Promise.all([
+    const [counts, schemaRow, recentlySynced, entityDup, promotionQ, recentExtractions, deepResearch] = await Promise.all([
       getCachedContentCounts(),
       queryOne(`SELECT version FROM _schema_version ORDER BY version DESC LIMIT 1`).catch(() => null),
-      syncStalePromise,
       // Fast with idx_content_recently_synced (migration 77) — partial index on synced=1 rows
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 1 AND updated_at > datetime('now', '-2 hours')`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS total,
@@ -488,17 +455,17 @@ export default async function searchRoutes(fastify) {
                 FROM entity_mentions`).catch(() => ({ total: 0, unique_combos: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM promotion_queue WHERE resolved = 0`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM extraction_runs WHERE created_at > unixepoch() - 86400`).catch(() => ({ n: 0 })),
-      graphStatsPromise,
       queryOne(`SELECT
                   COUNT(*) AS total,
                   SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
                   SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
                   MAX(completed_at) AS last_completed
                 FROM deep_research_queue`).catch(() => null),
-      // NOTE: enrichment stats (needs_context_count etc.) are NOT queried here —
-      // those partial-index scans take 80+ seconds when WAL is large, blocking
-      // the Fastify event loop. Add them only after WAL drains (post bulk-sync).
     ]);
+
+    // Unpack background-cached pipeline counts (sentinels = still warming up)
+    const syncStale = { unsynced: pipeline.unsynced, oldest: pipeline.oldest };
+    const graphStats = [{ n: pipeline.graphEnriched }, { n: pipeline.graphPending }, { n: pipeline.extractionsPending }, { n: pipeline.aliasCount }];
 
     const oldestMs = syncStale?.oldest ? new Date(syncStale.oldest).getTime() : 0;
     const oldestHours = oldestMs ? Math.round((Date.now() - oldestMs) / 360000) / 10 : 0;
