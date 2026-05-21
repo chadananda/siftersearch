@@ -25,7 +25,7 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { query, queryOne, queryAll, getSiteDb } from '../lib/db.js';
+import { query, queryOne, queryAll, getSiteDb, getDb } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { getMeili } from '../lib/search.js';
 import { content } from '../lib/content.js';
@@ -45,6 +45,7 @@ const COOLDOWN_MS = 0;  // No artificial throttle — Meili handles the load fin
 const IDLE_SLEEP_MS = 10000;      // Sleep when nothing to do
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;     // 5 minutes
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // 1 hour
+const WAL_CHECKPOINT_INTERVAL_MS = 60 * 60 * 1000; // 1 hour — prevent WAL from accumulating
 const LOG_PROGRESS_EVERY = 10;    // Log every N documents
 
 // Shutdown flag — set on SIGTERM, causes worker to stop after current document
@@ -54,6 +55,7 @@ let currentJobId = null;
 // Timestamps for periodic tasks
 let lastCleanupTime = 0;
 let lastFullSyncTime = 0;
+let lastWalCheckpointTime = 0;
 
 // Small delay to yield event loop
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -689,6 +691,17 @@ async function runPeriodicTasksIfDue() {
   const now = Date.now();
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await runCleanupCycle();
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await runFullSyncCheck();
+  if (now - lastWalCheckpointTime >= WAL_CHECKPOINT_INTERVAL_MS) {
+    try {
+      const db = await getDb();
+      const result = db.pragma('wal_checkpoint(PASSIVE)');
+      const { busy, log, checkpointed } = result[0];
+      logger.info({ busy, log, checkpointed }, 'WAL checkpoint');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'WAL checkpoint failed');
+    }
+    lastWalCheckpointTime = now;
+  }
   // Sync each site-only DB on every idle cycle. Site-only DBs are small
   // (bahaiteachings ~30 MB / 60K paragraphs); a full pass is cheap and we
   // can't rely on sync_jobs since those live only in the main DB.

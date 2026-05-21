@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-20T04:15:44.332Z",
+  "generated": "2026-05-21T21:23:18.619Z",
   "entries": [
+    {
+      "hash": "0fd46ea4",
+      "date": "2026-05-19",
+      "type": "Fixed",
+      "description": "Library-watcher SIGABRT — raise V8 heap 4G→8G, add 30s SQLite busy timeout",
+      "scope": null
+    },
     {
       "hash": "333ae19f",
       "date": "2026-05-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Generate + regenerate dialog admin API endpoints (SSE streaming)",
       "scope": null
-    },
-    {
-      "hash": "74552f7c",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "PATCH hero endpoint + Q&A round summaries + hero update in batch runner",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-19": [
+      {
+        "hash": "0fd46ea4",
+        "date": "2026-05-19",
+        "type": "Fixed",
+        "description": "Library-watcher SIGABRT — raise V8 heap 4G→8G, add 30s SQLite busy timeout",
+        "scope": null
+      },
       {
         "hash": "333ae19f",
         "date": "2026-05-19",
@@ -7009,13 +7016,6 @@
         "date": "2026-05-12",
         "type": "New",
         "description": "Generate + regenerate dialog admin API endpoints (SSE streaming)",
-        "scope": null
-      },
-      {
-        "hash": "74552f7c",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "PATCH hero endpoint + Q&A round summaries + hero update in batch runner",
         "scope": null
       }
     ]
