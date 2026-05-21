@@ -16,6 +16,32 @@ const PROJECT_ROOT = __dirname;
 
 module.exports = {
   apps: [
+    // DB Service — owns the single better-sqlite3 connection; all other processes connect via Unix socket.
+    // Must start before siftersearch-api and siftersearch-worker.
+    {
+      name: 'siftersearch-db',
+      script: 'api/workers/db-worker.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '2G',
+      env: {
+        NODE_ENV: 'production',
+        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',
+        BACKUP_DIR: '/tank/backups/siftersearch',
+        SQLITE_BUSY_TIMEOUT_MS: '30000',
+        DB_ROLE: 'server',
+      },
+      exp_backoff_restart_delay: 2000,
+      max_restarts: 999999,
+      min_uptime: '10s',
+      error_file: './logs/db-error.log',
+      out_file: './logs/db-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
     // SifterSearch API Server (read-only DB access)
     {
       name: 'siftersearch-api',

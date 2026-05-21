@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-21T21:41:01.601Z",
+  "generated": "2026-05-21T22:42:42.898Z",
   "entries": [
+    {
+      "hash": "bfca6934",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Pipeline health endpoint 8s timeout — prevent cold-cache query from blocking event loop",
+      "scope": null
+    },
     {
       "hash": "a6a4c8e0",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Reduce busy_timeout 30s→5s + retry DB lock on worker startup",
       "scope": null
-    },
-    {
-      "hash": "3adc81a1",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Content variable shadowing module import in indexer + ingester",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "bfca6934",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Pipeline health endpoint 8s timeout — prevent cold-cache query from blocking event loop",
+        "scope": null
+      },
       {
         "hash": "a6a4c8e0",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Reduce busy_timeout 30s→5s + retry DB lock on worker startup",
-        "scope": null
-      },
-      {
-        "hash": "3adc81a1",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Content variable shadowing module import in indexer + ingester",
         "scope": null
       }
     ]

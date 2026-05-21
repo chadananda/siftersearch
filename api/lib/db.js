@@ -112,11 +112,11 @@ export const getBatchDb = getDb;
 // matter for tuning. Bumped from 15ms after observing the log was 99% noise.
 const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '150', 10);
 
-function logQueryTiming(sql, params, startTime, dbName) {
+function logQueryTiming(sql, params, startTime, dbName, name = '') {
   const duration = Date.now() - startTime;
   if (duration >= SLOW_QUERY_THRESHOLD_MS) {
     const shortSql = (sql || '').replace(/\s+/g, ' ').trim().slice(0, 200);
-    logger.warn({ duration, sql: shortSql, params: params?.length > 5 ? `[${params.length} params]` : params, db: dbName }, `Slow query (${duration}ms)`);
+    logger.warn({ name, duration, sql: shortSql, params: params?.length > 5 ? `[${params.length} params]` : params, db: dbName }, `Slow query (${duration}ms)${name ? ` [${name}]` : ''}`);
   }
 }
 
@@ -184,52 +184,58 @@ function runQuery(db, sql, params) {
   return { rows: stmt.all(...params) };
 }
 
-export async function query(sql, params = []) {
+export async function query(sql, params = [], name = '') {
   const db = await getDb();
   const start = Date.now();
   const result = runQuery(db, sql, params);
-  logQueryTiming(sql, params, start, 'content');
+  logQueryTiming(sql, params, start, 'content', name);
   return result;
 }
 
-export async function queryOne(sql, params = []) {
-  const result = await query(sql, params);
+export async function queryOne(sql, params = [], name = '') {
+  const result = await query(sql, params, name);
   return result.rows[0] || null;
 }
 
-export async function queryAll(sql, params = []) {
-  const result = await query(sql, params);
+export async function queryAll(sql, params = [], name = '') {
+  const result = await query(sql, params, name);
   return result.rows;
 }
 
-export async function transaction(statements) {
+export async function transaction(statements, name = '') {
   const db = await getDb();
+  const start = Date.now();
   const txn = db.transaction((stmts) => stmts.map(({ sql, args = [] }) => db.prepare(sql).run(...args)));
-  return txn(statements);
+  const result = txn(statements);
+  logQueryTiming('TRANSACTION', null, start, 'content', name);
+  return result;
 }
 
-export async function userQuery(sql, params = []) {
+export async function userQuery(sql, params = [], name = '') {
   const db = await getUserDb();
   const start = Date.now();
   const result = runQuery(db, sql, params);
-  logQueryTiming(sql, params, start, 'user');
+  logQueryTiming(sql, params, start, 'user', name);
   return result;
 }
 
-export async function userQueryOne(sql, params = []) {
-  const result = await userQuery(sql, params);
+export async function userQueryOne(sql, params = [], name = '') {
+  const result = await userQuery(sql, params, name);
   return result.rows[0] || null;
 }
 
-export async function userQueryAll(sql, params = []) {
-  const result = await userQuery(sql, params);
+export async function userQueryAll(sql, params = [], name = '') {
+  const result = await userQuery(sql, params, name);
   return result.rows;
 }
 
-export async function userTransaction(statements) {
+export async function userTransaction(statements, name = '') {
   const db = await getUserDb();
+  const start = Date.now();
   const txn = db.transaction((stmts) => stmts.map(({ sql, args = [] }) => db.prepare(sql).run(...args)));
-  return txn(statements);
+  const result = txn(statements);
+  logQueryTiming('TRANSACTION', null, start, 'user', name);
+  return result;
 }
 
 export const batchQuery = query;
