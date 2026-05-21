@@ -26,29 +26,34 @@ async function getMeiliClient() {
 // In-memory tracking for current import batch
 let importJob = null;
 
-// Cache for count queries — 30s TTL; partial indexes make COUNT queries fast
-const countCache = { data: null, timestamp: 0, ttl: 30000 };
+// Cache for count queries — 5min TTL; the synced=0 COUNT(*) uses a partial index
+// but can still take 1-3s under write pressure, so don't hammer it every 30s.
+const countCache = { data: null, timestamp: 0, ttl: 5 * 60 * 1000 };
 
 // Pipeline health counts — refreshed every 5min in background, NEVER on request thread.
-// better-sqlite3 blocks the event loop; COUNT(*) on 4M+ rows takes 60s on cold cache.
+// better-sqlite3 blocks the event loop; avoid any query that forces a full table scan.
+// IMPORTANT: never include MIN(created_at) in the synced=0 query — it bypasses the
+// partial index (idx_content_unsynced) and scans all 4M+ rows, blocking for 60-70s.
+// COUNT(*) alone uses the index and runs in milliseconds.
 const PIPELINE_REFRESH_MS = 5 * 60 * 1000;
-const PIPELINE_SENTINEL = { unsynced: -1, oldest: null, graphEnriched: -1, graphPending: -1, extractionsPending: 0, aliasCount: 0 };
+const PIPELINE_SENTINEL = { unsynced: -1, graphEnriched: -1, graphPending: -1, extractionsPending: 0, aliasCount: 0 };
 let _pipelineCache = { data: { ...PIPELINE_SENTINEL }, refreshing: false };
 
 async function refreshPipelineCounts() {
   if (_pipelineCache.refreshing) return;
   _pipelineCache.refreshing = true;
   try {
-    const [syncStale, graphEnriched, graphPending, extractionsPending, aliasCount] = await Promise.all([
-      queryOne(`SELECT COUNT(*) AS unsynced, MIN(created_at) AS oldest FROM content WHERE synced = 0 AND deleted_at IS NULL`).catch(() => ({ unsynced: -1, oldest: null })),
+    const [unsyncedRow, graphEnriched, graphPending, extractionsPending, aliasCount] = await Promise.all([
+      // COUNT(*) only — idx_content_unsynced partial index makes this ~1ms
+      // DO NOT add MIN(created_at) here — it forces table lookups on every unsynced row
+      queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 0 AND deleted_at IS NULL`).catch(() => ({ n: -1 })),
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 1 AND deleted_at IS NULL`).catch(() => ({ n: -1 })),
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL AND length(text) > 50`).catch(() => ({ n: -1 })),
       queryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM entity_aliases`).catch(() => ({ n: 0 })),
     ]);
     _pipelineCache.data = {
-      unsynced: syncStale?.unsynced ?? -1,
-      oldest: syncStale?.oldest ?? null,
+      unsynced: unsyncedRow?.n ?? -1,
       graphEnriched: graphEnriched?.n ?? -1,
       graphPending: graphPending?.n ?? -1,
       extractionsPending: extractionsPending?.n ?? 0,
@@ -61,8 +66,8 @@ async function refreshPipelineCounts() {
   }
 }
 
-// Kick first refresh after 10s (let DB settle at startup), then every 5min
-setTimeout(refreshPipelineCounts, 10_000);
+// Kick first refresh after 30s (let DB settle at startup), then every 5min
+setTimeout(refreshPipelineCounts, 30_000);
 setInterval(refreshPipelineCounts, PIPELINE_REFRESH_MS);
 
 export function getCachedPipelineCounts() {

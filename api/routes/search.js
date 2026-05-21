@@ -464,18 +464,15 @@ export default async function searchRoutes(fastify) {
     ]);
 
     // Unpack background-cached pipeline counts (sentinels = still warming up)
-    const syncStale = { unsynced: pipeline.unsynced, oldest: pipeline.oldest };
+    // oldest_unsynced_hours omitted — MIN(created_at) query bypasses partial index, too slow
     const graphStats = [{ n: pipeline.graphEnriched }, { n: pipeline.graphPending }, { n: pipeline.extractionsPending }, { n: pipeline.aliasCount }];
 
-    const oldestMs = syncStale?.oldest ? new Date(syncStale.oldest).getTime() : 0;
-    const oldestHours = oldestMs ? Math.round((Date.now() - oldestMs) / 360000) / 10 : 0;
     const dupRatio = entityDup?.total > 0 ? Math.round((entityDup.total / entityDup.unique_combos) * 100) / 100 : 1;
 
     return {
       schema: { db_version: schemaRow?.version ?? 0, expected_version: CURRENT_VERSION },
       sync: {
-        unsynced_count: syncStale?.unsynced ?? 0,  // -1 = count timed out (WAL too large)
-        oldest_unsynced_hours: oldestHours,
+        unsynced_count: pipeline.unsynced,  // -1 = background cache not yet populated
         total_paragraphs: counts.totalParagraphs,
         cooldown_doc_count: counts.cooldownDocCount ?? 0
       },
@@ -498,9 +495,8 @@ export default async function searchRoutes(fastify) {
         last_completed: deepResearch?.last_completed ?? null
       },
       status: {
-        // sync_stuck: backlog > 1000 AND oldest rows are stale AND no recent sync activity.
-        // All three must be true — a large old backlog is normal when worker is catching up.
-        sync_stuck: syncStale?.unsynced !== -1 && oldestHours > 4 && (syncStale?.unsynced ?? 0) > 1000 && (recentlySynced?.n ?? 0) === 0,
+        // sync_stuck: large backlog AND no recent sync activity (oldest removed — MIN query too slow)
+        sync_stuck: pipeline.unsynced !== -1 && pipeline.unsynced > 1000 && (recentlySynced?.n ?? 0) === 0,
         synced_last_2h: recentlySynced?.n ?? 0,
         lock_storm: dupRatio > 1.5,
         migration_pending: (schemaRow?.version ?? 0) < CURRENT_VERSION
