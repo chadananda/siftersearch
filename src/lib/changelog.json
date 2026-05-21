@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-21T23:48:31.631Z",
+  "generated": "2026-05-21T23:55:47.705Z",
   "entries": [
+    {
+      "hash": "b98b4e89",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Drop length(text) from graph_enriched=0 background count — defeats partial index",
+      "scope": null
+    },
     {
       "hash": "d901073f",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Paragraph deeplinks for all docs — fallback to /document/{id}#p{idx}",
       "scope": null
-    },
-    {
-      "hash": "dc1fccd3",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Escape backticks in chat.js prompt template + non-blocking logAIUsage",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "b98b4e89",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Drop length(text) from graph_enriched=0 background count — defeats partial index",
+        "scope": null
+      },
       {
         "hash": "d901073f",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Paragraph deeplinks for all docs — fallback to /document/{id}#p{idx}",
-        "scope": null
-      },
-      {
-        "hash": "dc1fccd3",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Escape backticks in chat.js prompt template + non-blocking logAIUsage",
         "scope": null
       }
     ]

@@ -440,34 +440,25 @@ export default async function searchRoutes(fastify) {
   // Pipeline health — exposes sync staleness, entity health, schema version.
   // Public read-only (no sensitive data). Used by health-check.mjs remotely.
   fastify.get('/health/pipeline', async () => {
-    // Heavy COUNT(*) queries on 4M+ rows are pre-computed in background (progress.js)
-    // and refreshed every 5 minutes. This endpoint NEVER runs them synchronously —
-    // better-sqlite3 blocks the Node.js event loop, making Promise.race timeouts useless.
+    // All heavy COUNT(*) queries on large tables are pre-computed in the background (progress.js).
+    // This endpoint ONLY reads from caches or hits tiny tables — zero blocking event loop.
+    // Rule: never add a query on content/entity_mentions/graph_* tables here directly.
     const pipeline = getCachedPipelineCounts();
+    const counts = await getCachedContentCounts();
 
-    const [counts, schemaRow, recentlySynced, entityDup, promotionQ, recentExtractions, deepResearch] = await Promise.all([
-      getCachedContentCounts(),
+    // Small-table queries only — these have indexed lookups, fast even under write pressure
+    const [schemaRow, recentlySynced, promotionQ, recentExtractions, deepResearch] = await Promise.all([
       queryOne(`SELECT version FROM _schema_version ORDER BY version DESC LIMIT 1`).catch(() => null),
-      // Fast with idx_content_recently_synced (migration 77) — partial index on synced=1 rows
+      // idx_content_recently_synced partial index — only scans recent rows
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 1 AND updated_at > datetime('now', '-2 hours')`).catch(() => ({ n: 0 })),
-      queryOne(`SELECT COUNT(*) AS total,
-                  COUNT(DISTINCT entity_id || '|' || content_id || '|' || COALESCE(role,'')) AS unique_combos
-                FROM entity_mentions`).catch(() => ({ total: 0, unique_combos: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM promotion_queue WHERE resolved = 0`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM extraction_runs WHERE created_at > unixepoch() - 86400`).catch(() => ({ n: 0 })),
-      queryOne(`SELECT
-                  COUNT(*) AS total,
+      queryOne(`SELECT COUNT(*) AS total,
                   SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
                   SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
                   MAX(completed_at) AS last_completed
                 FROM deep_research_queue`).catch(() => null),
     ]);
-
-    // Unpack background-cached pipeline counts (sentinels = still warming up)
-    // oldest_unsynced_hours omitted — MIN(created_at) query bypasses partial index, too slow
-    const graphStats = [{ n: pipeline.graphEnriched }, { n: pipeline.graphPending }, { n: pipeline.extractionsPending }, { n: pipeline.aliasCount }];
-
-    const dupRatio = entityDup?.total > 0 ? Math.round((entityDup.total / entityDup.unique_combos) * 100) / 100 : 1;
 
     return {
       schema: { db_version: schemaRow?.version ?? 0, expected_version: CURRENT_VERSION },
@@ -477,16 +468,15 @@ export default async function searchRoutes(fastify) {
         cooldown_doc_count: counts.cooldownDocCount ?? 0
       },
       entity: {
-        mention_rows: entityDup?.total ?? 0,
-        dup_ratio: dupRatio,
+        mention_rows: pipeline.aliasCount,  // from background cache
         promotion_queue_pending: promotionQ?.n ?? 0,
         extraction_runs_24h: recentExtractions?.n ?? 0
       },
       graph: {
-        extracted: graphStats[0]?.n ?? 0,
-        pending: graphStats[1]?.n ?? 0,
-        extractions_unresolved: graphStats[2]?.n ?? 0,
-        entity_aliases: graphStats[3]?.n ?? 0,
+        extracted: pipeline.graphEnriched,   // -1 = not yet populated
+        pending: pipeline.graphPending,      // -1 = not yet populated
+        extractions_unresolved: pipeline.extractionsPending,
+        entity_aliases: pipeline.aliasCount,
       },
       deep_research: {
         queue_total: deepResearch?.total ?? 0,
@@ -495,10 +485,8 @@ export default async function searchRoutes(fastify) {
         last_completed: deepResearch?.last_completed ?? null
       },
       status: {
-        // sync_stuck: large backlog AND no recent sync activity (oldest removed — MIN query too slow)
         sync_stuck: pipeline.unsynced !== -1 && pipeline.unsynced > 1000 && (recentlySynced?.n ?? 0) === 0,
         synced_last_2h: recentlySynced?.n ?? 0,
-        lock_storm: dupRatio > 1.5,
         migration_pending: (schemaRow?.version ?? 0) < CURRENT_VERSION
       }
     };

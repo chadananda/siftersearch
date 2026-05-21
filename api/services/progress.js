@@ -48,11 +48,15 @@ async function refreshPipelineCounts() {
     // idx_content_graph_unsync: partial index on graph_enriched=0 → fast COUNT
     // No index for graph_enriched=1 — derive from total minus pending instead
     // paragraph_extractions and entity_aliases are small tables → fast
+    // IMPORTANT: never include MIN(created_at) in the synced=0 query — it bypasses the
+    // partial index (idx_content_unsynced) and scans all 4M+ rows, blocking for 60-70s.
+    // COUNT(*) alone uses the index and runs in milliseconds.
+    // IMPORTANT: idx_content_graph_unsync WHERE clause is only `graph_enriched=0` — do NOT
+    // add `AND deleted_at IS NULL`; that condition is not in the index, forcing table lookups
+    // on every indexed row and turning a fast COUNT into a 108s full scan.
     const [unsyncedRow, graphPending, extractionsPending, aliasCount, docAgg] = await Promise.all([
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 0 AND deleted_at IS NULL`).catch(() => ({ n: -1 })),
-      // idx_content_graph_unsync covers graph_enriched=0 — do NOT add length(text) or other
-      // non-indexed columns; they force table lookups on every row and defeat the index.
-      queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL`).catch(() => ({ n: -1 })),
+      queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0`).catch(() => ({ n: -1 })),
       queryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM entity_aliases`).catch(() => ({ n: 0 })),
       queryOne(`SELECT SUM(paragraph_count) AS total FROM docs WHERE deleted_at IS NULL`).catch(() => ({ total: 0 })),
