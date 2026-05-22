@@ -445,7 +445,7 @@ async function checkMeiliSyncTasks() {
 
   if (stale_count > 0) {
     return warn('meili_sync_tasks',
-      `${stale_count} processing task(s) older than 8h (oldest: ${oldest_age_hours?.toFixed(1)}h) — HNSW rebuild may be blocking queue`,
+      `${stale_count} processing task(s) older than 12h (oldest: ${oldest_age_hours?.toFixed(1)}h) — HNSW rebuild blocking queue; reconciler auto-resolves hourly`,
       details);
   }
   ok('meili_sync_tasks', 0, details);
