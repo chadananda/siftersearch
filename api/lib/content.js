@@ -258,10 +258,20 @@ async function restoreByDoc(docId) {
  * Hard-delete soft-deleted content older than the given date.
  */
 async function hardDeleteExpired(olderThan) {
-  return query(
-    'DELETE FROM content WHERE deleted_at IS NOT NULL AND deleted_at < ?',
-    [olderThan]
-  );
+  // Batch 500 rows at a time to avoid holding the write lock for minutes on large tables.
+  // A single DELETE on 250K+ rows blocks the event loop and all other writers for ~15 minutes.
+  const BATCH = 500;
+  let total = 0;
+  let batch;
+  do {
+    batch = await query(
+      'DELETE FROM content WHERE id IN (SELECT id FROM content WHERE deleted_at IS NOT NULL AND deleted_at < ? LIMIT ?)',
+      [olderThan, BATCH]
+    );
+    total += batch?.changes || 0;
+    if (batch?.changes > 0) await new Promise(r => setImmediate(r));
+  } while (batch?.changes > 0);
+  return { changes: total };
 }
 
 /**

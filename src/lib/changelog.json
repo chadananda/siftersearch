@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T00:28:53.461Z",
+  "generated": "2026-05-22T00:42:00.017Z",
   "entries": [
+    {
+      "hash": "7b9a42b9",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Bump sync worker SQLITE_BUSY_TIMEOUT_MS 30s→120s",
+      "scope": null
+    },
     {
       "hash": "007120fe",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Render Jafar replies as markdown HTML; fix broken library deeplinks",
       "scope": null
-    },
-    {
-      "hash": "5a344ba6",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Research phase enforces religion filter for tradition-specific queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "7b9a42b9",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Bump sync worker SQLITE_BUSY_TIMEOUT_MS 30s→120s",
+        "scope": null
+      },
       {
         "hash": "007120fe",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Render Jafar replies as markdown HTML; fix broken library deeplinks",
-        "scope": null
-      },
-      {
-        "hash": "5a344ba6",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Research phase enforces religion filter for tradition-specific queries",
         "scope": null
       }
     ]
