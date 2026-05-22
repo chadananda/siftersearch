@@ -7,7 +7,7 @@
  * GET /api/search/health - Search health check
  */
 
-import { readFile, stat } from 'fs/promises';
+import { readFile, stat, realpath } from 'fs/promises';
 import { join } from 'path';
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence } from '../lib/search.js';
 import { queryOne, userQuery } from '../lib/db.js';
@@ -470,7 +470,9 @@ export default async function searchRoutes(fastify) {
                   SUM(CASE WHEN submitted_at < unixepoch() - 14400 THEN 1 ELSE 0 END) AS stale_count,
                   MIN(submitted_at) AS oldest_submitted
                 FROM meili_sync_tasks WHERE status = 'processing'`).catch(() => null),
-      stat(`${DB_PATH}-wal`).catch(() => null),
+      // Resolve symlink before stat — DB_PATH may point to a symlink (e.g. data/sifter.db → /fast/...)
+      // and the WAL file lives next to the real file, not the symlink.
+      realpath(DB_PATH).then(real => stat(`${real}-wal`)).catch(() => null),
     ]);
 
     return {

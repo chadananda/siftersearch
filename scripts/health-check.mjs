@@ -705,9 +705,9 @@ async function checkGraphPipeline() {
   if (g.extractions_unresolved > 5000 && g.extraction_runs_24h > 0)
     return fail('graph_pipeline', `resolver backlog: ${g.extractions_unresolved.toLocaleString()} unresolved extractions`, g);
 
-  // WARN: large unresolved backlog even if extractor is idle
+  // WARN: large unresolved backlog — may be awaiting validation, not a resolver stall
   if (g.extractions_unresolved > 1000)
-    return warn('graph_pipeline', `${g.extractions_unresolved.toLocaleString()} unresolved extractions (resolver may be stopped)`, g);
+    return warn('graph_pipeline', `${g.extractions_unresolved.toLocaleString()} unresolved extractions (awaiting validation or re-extraction)`, g);
 
   ok('graph_pipeline', 0, {
     extracted: g.extracted, pending: g.pending, pct: `${pct}%`,
