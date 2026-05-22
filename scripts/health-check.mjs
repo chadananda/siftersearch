@@ -375,13 +375,17 @@ async function fetchPipelineHealth() {
         const res = await fetch(localUrl, { signal: AbortSignal.timeout(15000) });
         if (res.ok) return res.json();
       } catch { /* not on tower-nas, fall through */ }
-      // Fall back to public URL
-      try {
-        const res = await fetch(publicUrl, { signal: AbortSignal.timeout(30000) });
-        if (res.ok) return res.json();
-        throw new Error(`HTTP ${res.status}`);
-      } catch (err) {
-        return { _error: err.message };
+      // Fall back to public URL with one retry — a single transient failure otherwise
+      // cascades into 8+ simultaneous "fetch failed" warnings, masking real issues.
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const res = await fetch(publicUrl, { signal: AbortSignal.timeout(30000) });
+          if (res.ok) return res.json();
+          throw new Error(`HTTP ${res.status}`);
+        } catch (err) {
+          if (attempt < 2) await new Promise(r => setTimeout(r, 3000)); // wait 3s before retry
+          else return { _error: err.message };
+        }
       }
     })();
   }
