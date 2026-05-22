@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-21T23:55:47.705Z",
+  "generated": "2026-05-22T00:06:35.331Z",
   "entries": [
+    {
+      "hash": "3860aa4d",
+      "date": "2026-05-21",
+      "type": "Performance",
+      "description": "Strip all blocking queries from pipeline health endpoint",
+      "scope": null
+    },
     {
       "hash": "b98b4e89",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Research-stage excerpt harvesting uses e.source_url for paragraph deeplinks",
       "scope": null
-    },
-    {
-      "hash": "8397d3b6",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Paragraph deeplinks for all docs — fallback to /document/{id}#p{idx}",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "3860aa4d",
+        "date": "2026-05-21",
+        "type": "Performance",
+        "description": "Strip all blocking queries from pipeline health endpoint",
+        "scope": null
+      },
       {
         "hash": "b98b4e89",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Research-stage excerpt harvesting uses e.source_url for paragraph deeplinks",
-        "scope": null
-      },
-      {
-        "hash": "8397d3b6",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Paragraph deeplinks for all docs — fallback to /document/{id}#p{idx}",
         "scope": null
       }
     ]

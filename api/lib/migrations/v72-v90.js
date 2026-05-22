@@ -406,4 +406,12 @@ export const migrations = {
     try { await query(`CREATE INDEX IF NOT EXISTS idx_em_unsynced ON entity_mentions(em_synced) WHERE em_synced = 0`); } catch { /* already exists */ }
     logger.info('Migration 78 complete: em_synced column + index on entity_mentions');
   },
+  79: async () => {
+    // Replace idx_content_graph_unsync (WHERE graph_enriched=0 only) with a covering index
+    // that also filters deleted_at IS NULL. Without this, any query adding `AND deleted_at IS NULL`
+    // forces table lookups on every indexed row — 108s full scan on 4M+ rows.
+    await query(`DROP INDEX IF EXISTS idx_content_graph_unsync`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_content_graph_unsync ON content(graph_enriched) WHERE graph_enriched = 0 AND deleted_at IS NULL`);
+    logger.info('Migration 79 complete: idx_content_graph_unsync now covers deleted_at IS NULL');
+  },
 };
