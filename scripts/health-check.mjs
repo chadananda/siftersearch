@@ -155,17 +155,21 @@ async function checkMeiliBatchStall() {
     const stalled = results.filter(t => {
       if (!t.startedAt) return false;
       const runMs = now - new Date(t.startedAt).getTime();
-      return runMs > 10 * 60 * 1000; // > 10 minutes is abnormal
+      // paragraphs index HNSW rebuild for 4M+ vectors takes ~30min/batch — allow 45min before alerting
+      return runMs > 45 * 60 * 1000;
     });
     if (stalled.length > 0) {
       const oldest = stalled.reduce((a, b) =>
         new Date(a.startedAt) < new Date(b.startedAt) ? a : b);
       const runMin = Math.round((now - new Date(oldest.startedAt).getTime()) / 60000);
       fail('meili_batch_stall',
-        `batch ${oldest.batchUid} stalled ${runMin}min (task ${oldest.uid}, ${oldest.indexUid}) — restart meilisearch`,
+        `batch ${oldest.batchUid} stuck ${runMin}min (task ${oldest.uid}, ${oldest.indexUid}) — restore Meilisearch from backup`,
         { stalled_count: stalled.length, oldest_task: oldest.uid, run_minutes: runMin });
     } else {
-      ok('meili_batch_stall', 0, { processing: results.length });
+      const maxMin = results.length > 0
+        ? Math.max(...results.filter(t => t.startedAt).map(t => Math.round((now - new Date(t.startedAt).getTime()) / 60000)))
+        : 0;
+      ok('meili_batch_stall', 0, { processing: results.length, max_run_min: maxMin });
     }
   } catch (err) {
     warn('meili_batch_stall', `tasks check failed: ${err.message}`);

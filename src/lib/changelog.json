@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T01:20:01.178Z",
+  "generated": "2026-05-22T01:33:24.203Z",
   "entries": [
+    {
+      "hash": "a7050c27",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Reduce Meili task poll 50ms to 500ms; add batch-stall health check",
+      "scope": null
+    },
     {
       "hash": "688875eb",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Style",
       "description": "Q text margin +5px, scripture links italic, smart quotes in dialog body",
       "scope": null
-    },
-    {
-      "hash": "eb74b946",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Authority.js stale-while-revalidate — stop event-loop blocking on lib scan",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "a7050c27",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Reduce Meili task poll 50ms to 500ms; add batch-stall health check",
+        "scope": null
+      },
       {
         "hash": "688875eb",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Style",
         "description": "Q text margin +5px, scripture links italic, smart quotes in dialog body",
-        "scope": null
-      },
-      {
-        "hash": "eb74b946",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Authority.js stale-while-revalidate — stop event-loop blocking on lib scan",
         "scope": null
       }
     ]
