@@ -358,35 +358,57 @@ async function writeResult(llmResult) {
 // each tier's aliases are available to all subsequent tiers' extraction prompts.
 // INVARIANT: never extract duplicate docs (duplicate_of IS NOT NULL).
 async function fetchBatch() {
-  // Two sources of work:
-  // 1. New content (graph_enriched=0) — normal forward progress
-  // 2. Reextract candidates: graph_enriched=1 but latest validation says 'reextract'
-  //    and attempt count < 3. Extractor owns graph_enriched — validator must NOT write it.
   return queryAll(`
     SELECT c.id, c.text, c.doc_id, d.religion, d.doc_priority
     FROM content c
     JOIN docs d ON d.id = c.doc_id
-    WHERE c.deleted_at IS NULL
+    WHERE c.graph_enriched = 0
+      AND c.deleted_at IS NULL
       AND d.deleted_at IS NULL
       AND d.duplicate_of IS NULL
       AND length(c.text) > 50
-      AND (
-        c.graph_enriched = 0
-        OR (
-          c.graph_enriched = 1
-          AND (SELECT COUNT(*) FROM paragraph_extractions pe WHERE pe.content_id = c.id) < 3
-          AND EXISTS (
-            SELECT 1 FROM paragraph_extractions pe2
-            JOIN extraction_validations ev ON ev.extraction_id = pe2.id
-            WHERE pe2.content_id = c.id
-              AND ev.recommended_action = 'reextract'
-              AND pe2.id = (SELECT MAX(id) FROM paragraph_extractions WHERE content_id = c.id)
-          )
-        )
-      )
     ORDER BY d.doc_priority DESC, d.id ASC, c.paragraph_index ASC
     LIMIT ?
   `, [BATCH_SIZE]);
+}
+
+// Reset up to 200 reextract-flagged paragraphs back to graph_enriched=0 per call.
+// Runs periodically — not on every fetch — so it doesn't block the main loop.
+// Extractor owns graph_enriched: validator writes only to extraction_validations.
+const REEXTRACT_INTERVAL_MS = 5 * 60 * 1000; // 5 min
+let lastReextractReset = 0;
+
+async function resetReextractQueue() {
+  if (Date.now() - lastReextractReset < REEXTRACT_INTERVAL_MS) return;
+  lastReextractReset = Date.now();
+  try {
+    // Find content where latest extraction was rejected by validator (reextract)
+    // and attempt count < 3. Reset to graph_enriched=0 so fetchBatch picks them up.
+    // Uses a bounded IN list to avoid a full table scan.
+    const candidates = await queryAll(`
+      SELECT pe.content_id,
+             COUNT(pe2.id) AS attempts
+      FROM paragraph_extractions pe
+      JOIN extraction_validations ev ON ev.extraction_id = pe.id
+      JOIN paragraph_extractions pe2 ON pe2.content_id = pe.content_id
+      WHERE ev.recommended_action = 'reextract'
+        AND pe.id = (SELECT MAX(id) FROM paragraph_extractions WHERE content_id = pe.content_id)
+      GROUP BY pe.content_id
+      HAVING attempts < 3
+      LIMIT 200
+    `);
+    if (candidates.length === 0) return;
+    const ids = candidates.map(r => r.content_id);
+    // Batch the UPDATE in one statement using IN clause
+    const placeholders = ids.map(() => '?').join(',');
+    await queryWithRetry(
+      `UPDATE content SET graph_enriched = 0 WHERE id IN (${placeholders})`,
+      ids
+    );
+    logger.info({ reset: ids.length }, 'Reextract queue: reset graph_enriched=0 for retry');
+  } catch (err) {
+    logger.warn({ err: err.message }, 'resetReextractQueue failed (non-fatal)');
+  }
 }
 
 // Check if all extractions from docs at priority >= minPriority are resolved.
@@ -470,6 +492,7 @@ async function workerLoop() {
   while (!isShuttingDown) {
     const count = await processOnce();
     if (count === 0) {
+      await resetReextractQueue(); // re-queue reextract candidates before sleeping
       logger.info({ totalExtracted }, 'No work — sleeping');
       await delay(IDLE_SLEEP_MS);
     } else {
