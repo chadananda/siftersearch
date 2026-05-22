@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T00:42:00.017Z",
+  "generated": "2026-05-22T00:59:10.410Z",
   "entries": [
+    {
+      "hash": "ef85e4a9",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Batch hardDeleteExpired — prevent 15-min write lock on 250K+ soft-deleted rows",
+      "scope": null
+    },
     {
       "hash": "7b9a42b9",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Title-pattern authority 10 for Quran/Bible translations with Unknown author",
       "scope": null
-    },
-    {
-      "hash": "41d76fed",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Render Jafar replies as markdown HTML; fix broken library deeplinks",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "ef85e4a9",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Batch hardDeleteExpired — prevent 15-min write lock on 250K+ soft-deleted rows",
+        "scope": null
+      },
       {
         "hash": "7b9a42b9",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Title-pattern authority 10 for Quran/Bible translations with Unknown author",
-        "scope": null
-      },
-      {
-        "hash": "41d76fed",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Render Jafar replies as markdown HTML; fix broken library deeplinks",
         "scope": null
       }
     ]

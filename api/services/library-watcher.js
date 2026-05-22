@@ -974,10 +974,9 @@ export function startLibraryWatcher(libraryPaths) {
       watcherStats.startedAt = new Date().toISOString();
       logger.info({ paths, religionRoots: religionRoots.size }, 'Library watcher ready');
 
-      // Start periodic orphan cleanup
+      // Start periodic orphan cleanup — no immediate startup call; first run fires after
+      // ORPHAN_CLEANUP_INTERVAL_MS so the sync worker can acquire write locks uncontested.
       orphanCleanupTimer = setInterval(cleanupOrphanedDocuments, ORPHAN_CLEANUP_INTERVAL_MS);
-      // Run initial cleanup after a short delay
-      setTimeout(cleanupOrphanedDocuments, 10000);
 
       // Start hourly library scan for stable files
       libraryScanTimer = setInterval(scanLibraryForIngestion, LIBRARY_SCAN_INTERVAL_MS);

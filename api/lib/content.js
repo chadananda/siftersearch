@@ -257,19 +257,22 @@ async function restoreByDoc(docId) {
 /**
  * Hard-delete soft-deleted content older than the given date.
  */
-async function hardDeleteExpired(olderThan) {
-  // Batch 500 rows at a time to avoid holding the write lock for minutes on large tables.
-  // A single DELETE on 250K+ rows blocks the event loop and all other writers for ~15 minutes.
-  const BATCH = 500;
+async function hardDeleteExpired(olderThan, maxRows = 1000) {
+  // Batch 100 rows at a time with a 1-second yield between batches to avoid blocking
+  // other writers. Each 100-row DELETE holds the write lock for ~2-3s; the 1s gap lets
+  // the sync worker and other writers get in. Cap at maxRows per call so the periodic
+  // cleanup chips away at large backlogs without monopolizing the DB for minutes.
+  const BATCH = 100;
   let total = 0;
   let batch;
   do {
+    if (total >= maxRows) break;
     batch = await query(
       'DELETE FROM content WHERE id IN (SELECT id FROM content WHERE deleted_at IS NOT NULL AND deleted_at < ? LIMIT ?)',
-      [olderThan, BATCH]
+      [olderThan, Math.min(BATCH, maxRows - total)]
     );
     total += batch?.changes || 0;
-    if (batch?.changes > 0) await new Promise(r => setImmediate(r));
+    if (batch?.changes > 0) await new Promise(r => setTimeout(r, 1000));
   } while (batch?.changes > 0);
   return { changes: total };
 }
