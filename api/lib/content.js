@@ -865,6 +865,21 @@ async function markSynced(ids) {
   }
 }
 
+// Mark paragraphs as unsynced so the worker re-queues them.
+// Used by the Meilisearch task reconciler when a submitted task fails.
+async function markUnsynced(ids) {
+  if (!ids || ids.length === 0) return;
+  const ts = now();
+  const BATCH = 500;
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const batch = ids.slice(i, i + BATCH);
+    await query(
+      `UPDATE content SET synced = 0, updated_at = ? WHERE id IN (${batch.map(() => '?').join(',')})`,
+      [ts, ...batch]
+    );
+  }
+}
+
 // ============================================================
 // Embedding-worker operations
 // ============================================================
@@ -1087,6 +1102,7 @@ export const content = {
   getDirtyParagraphsBatch,
   getDirtyParagraphsForDoc,
   markSynced,
+  markUnsynced,
 
   // Embedding cache helpers
   initEmbeddingCacheIfNeeded,

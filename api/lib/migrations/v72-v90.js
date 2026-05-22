@@ -414,4 +414,19 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_content_graph_unsync ON content(graph_enriched) WHERE graph_enriched = 0 AND deleted_at IS NULL`);
     logger.info('Migration 79 complete: idx_content_graph_unsync now covers deleted_at IS NULL');
   },
+  80: async () => {
+    // Optimistic Meilisearch sync: track submitted tasks so the worker never
+    // blocks waiting for HNSW indexing (which takes 15-60min at 4M+ vectors).
+    // Worker marks synced=1 immediately on submission; reconciler handles failures.
+    await query(`CREATE TABLE IF NOT EXISTS meili_sync_tasks (
+      task_uid    INTEGER PRIMARY KEY,
+      index_uid   TEXT    NOT NULL,
+      para_ids    TEXT    NOT NULL,   -- JSON array of content.id values
+      submitted_at INTEGER DEFAULT (unixepoch()),
+      status      TEXT    DEFAULT 'processing',  -- processing|succeeded|failed
+      resolved_at INTEGER
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_meili_sync_tasks_status ON meili_sync_tasks(status, submitted_at) WHERE status = 'processing'`);
+    logger.info('Migration 80 complete: meili_sync_tasks table for optimistic sync');
+  },
 };

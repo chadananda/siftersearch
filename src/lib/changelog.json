@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T03:03:30.077Z",
+  "generated": "2026-05-22T06:25:29.322Z",
   "entries": [
+    {
+      "hash": "14b4c5aa",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Increase Meili task timeout 900s→7200s — HNSW on 4M+ vector index takes 15-60min/batch",
+      "scope": null
+    },
     {
       "hash": "55f1c6c7",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "By-path route slugifies URL params before comparison — library deeplinks now resolve",
       "scope": null
-    },
-    {
-      "hash": "f53a2585",
-      "date": "2026-05-12",
-      "type": "Style",
-      "description": "TOC answer items get 0.6rem bottom padding to breathe from next question",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "14b4c5aa",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Increase Meili task timeout 900s→7200s — HNSW on 4M+ vector index takes 15-60min/batch",
+        "scope": null
+      },
       {
         "hash": "55f1c6c7",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "By-path route slugifies URL params before comparison — library deeplinks now resolve",
-        "scope": null
-      },
-      {
-        "hash": "f53a2585",
-        "date": "2026-05-12",
-        "type": "Style",
-        "description": "TOC answer items get 0.6rem bottom padding to breathe from next question",
         "scope": null
       }
     ]

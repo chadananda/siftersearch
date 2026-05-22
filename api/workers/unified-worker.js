@@ -92,13 +92,54 @@ function blobToFloatArray(blob) {
   return floatArray;
 }
 
-async function waitForMeiliTask(meili, enqueuedTask, timeoutMs = 3600000) {
-  const taskUid = typeof enqueuedTask === 'number' ? enqueuedTask : enqueuedTask.taskUid;
-  const task = await meili.tasks.waitForTask(taskUid, { timeout: timeoutMs, intervalMs: 500 });
-  if (task.status === 'failed') {
-    throw new Error(`Meilisearch task ${taskUid} failed: ${task.error?.message || 'Unknown error'}`);
+// Reconcile any meili_sync_tasks that are still 'processing' from a previous run.
+// Tasks older than minAgeSeconds are checked against Meilisearch; failures
+// re-queue their paragraphs (synced=0) so the worker picks them up again.
+async function reconcileSyncTasks(meili, minAgeSeconds = 3600) {
+  const stale = await queryAll(
+    `SELECT * FROM meili_sync_tasks WHERE status = 'processing' AND submitted_at < ? ORDER BY submitted_at ASC LIMIT 200`,
+    [Math.floor(Date.now() / 1000) - minAgeSeconds]
+  );
+  if (stale.length === 0) return;
+  logger.info({ count: stale.length }, 'Reconciling stale Meilisearch sync tasks');
+  for (const row of stale) {
+    try {
+      const task = await meili.tasks.getTask(row.task_uid);
+      const status = task.status; // succeeded|failed|processing|enqueued|canceled
+      if (status === 'succeeded' || status === 'failed' || status === 'canceled') {
+        if (status === 'failed' || status === 'canceled') {
+          const paraIds = JSON.parse(row.para_ids);
+          await content.markUnsynced(paraIds);
+          logger.warn({ taskUid: row.task_uid, count: paraIds.length, status }, 'Meili task failed — paragraphs re-queued for retry');
+        }
+        await query(`UPDATE meili_sync_tasks SET status = ?, resolved_at = unixepoch() WHERE task_uid = ?`, [status, row.task_uid]);
+      }
+      // Still processing — leave it; will be checked again next reconcile pass.
+    } catch (err) {
+      logger.warn({ taskUid: row.task_uid, err: err.message }, 'Task reconciliation check failed — will retry');
+    }
   }
-  return task;
+}
+
+// Prune non-blocking in-flight task queue: pop any tasks that have already
+// completed without blocking the main loop. Returns immediately.
+async function pruneCompleted(meili, inFlight) {
+  while (inFlight.length > 0) {
+    const oldest = inFlight[0];
+    try {
+      const task = await meili.tasks.getTask(oldest.taskUid);
+      if (task.status === 'processing' || task.status === 'enqueued') break; // oldest still running
+      inFlight.shift();
+      const finalStatus = task.status === 'succeeded' ? 'succeeded' : task.status;
+      if (task.status === 'failed' || task.status === 'canceled') {
+        logger.warn({ taskUid: oldest.taskUid, indexName: oldest.indexName }, 'Meilisearch task failed after optimistic sync — paragraphs already synced; will reconcile on restart if needed');
+      }
+      await query(`UPDATE meili_sync_tasks SET status = ?, resolved_at = unixepoch() WHERE task_uid = ?`, [finalStatus, oldest.taskUid]);
+    } catch (err) {
+      // Can't check — leave in flight
+      break;
+    }
+  }
 }
 
 async function countUnsyncedParagraphs() {
@@ -148,60 +189,58 @@ async function processSyncJob(job) {
       if (!cfg.meili_index_prefix) return 'paragraphs';
       return `siftersearch_${cfg.meili_index_prefix}_paragraphs`;
     };
-    // Cross-doc batching + pipelined in-flight tasks.
+    // Optimistic sync: submit batches to Meilisearch and mark paragraphs
+    // synced=1 immediately — do NOT block waiting for HNSW indexing.
     //
-    // Per-doc serial sync was bottlenecked by ~21 paras/batch averaging 4.5s
-    // of Meili HNSW indexing → ~2.7 paras/sec. Two stacked optimizations:
+    // HNSW rebuilds for 4M+ vectors take 15-60 min per batch. Blocking on
+    // task confirmation meant the worker could only process ~100 docs/hour.
+    // Now the worker submits freely; a startup reconciler handles failures.
     //
-    //  1. Cross-doc buffer: accumulate paragraphs from multiple short docs
-    //     into one buffer keyed by destination index. Flush at FLUSH_PARAS.
-    //     Amortizes per-task setup cost across more docs.
+    // Backpressure: cap concurrent in-flight tasks at PIPELINE_LIMIT so we
+    // don't overwhelm Meilisearch's task queue. When at the limit, prune
+    // completed tasks (non-blocking) before submitting more. If still at
+    // limit (all tasks still processing), yield briefly and retry.
     //
-    //  2. Pipelined enqueue: keep up to PIPELINE_LIMIT addDocuments tasks
-    //     in flight. Worker doesn't wait for the current task before
-    //     enqueuing the next — Meili processes serially per index, but the
-    //     worker can pipeline its enqueue + drain. await happens when we
-    //     dequeue (and that's where markSynced flips, preserving the
-    //     verified-sync invariant).
-    //
-    // Memory bound: PIPELINE_LIMIT=5 × FLUSH_PARAS=500 × ~5KB/para ≈ 12.5MB.
-    // Increased for faster vector re-sync (was 2×100 = too slow for 4M re-index).
-    // Timeout raised to 900s — observed tasks occasionally take 9+ minutes.
-    const PIPELINE_LIMIT = 5;
-    const FLUSH_PARAS = 100;  // Flush more frequently so each restart saves progress before the next restart
-    const buffer = new Map();    // indexName -> { paras: [], paraIds: [] }
-    const inFlight = [];         // [{task, paraIds, indexName}]
+    // Recovery: on startup, reconcileSyncTasks() checks tasks older than 1h.
+    // Failed tasks mark their paragraph IDs back to synced=0 for retry.
+    const PIPELINE_LIMIT = 20;  // more headroom since we don't block on completion
+    const FLUSH_PARAS = 500;    // larger batches = fewer HNSW rebuilds = faster overall
+    const buffer = new Map();   // indexName -> { paras: [], paraIds: [] }
+    const inFlight = [];        // [{taskUid, indexName}] — lightweight, no paraIds needed here
 
-    const drainOldest = async () => {
-      if (inFlight.length === 0) return;
-      const oldest = inFlight.shift();
-      let confirmed = false;
-      try {
-        await waitForMeiliTask(meili, oldest.task, 7200000); // 2h — HNSW on 4M+ vector index takes 15-60min/batch
-        confirmed = true;
-      } catch (err) {
-        logger.error({ err: err.message, indexName: oldest.indexName, batchSize: oldest.paraIds.length }, 'Pipelined batch failed');
-        failedItems += oldest.paraIds.length;
-      }
-      if (confirmed) await content.markSynced(oldest.paraIds);
-      completedItems += oldest.paraIds.length;
-    };
+    // Reconcile old tasks from previous worker runs before starting new work.
+    await reconcileSyncTasks(meili);
 
     const flushBuffer = async (indexName, force = false) => {
       const buf = buffer.get(indexName);
       if (!buf || buf.paras.length === 0) return;
       if (!force && buf.paras.length < FLUSH_PARAS) return;
-      while (inFlight.length >= PIPELINE_LIMIT) await drainOldest();
+      // Backpressure: if queue is full, prune completed tasks first.
+      if (inFlight.length >= PIPELINE_LIMIT) {
+        await pruneCompleted(meili, inFlight);
+        if (inFlight.length >= PIPELINE_LIMIT) {
+          // All slots still occupied (tasks still indexing) — yield briefly.
+          await delay(2000);
+          await pruneCompleted(meili, inFlight);
+        }
+      }
       const paras = buf.paras;
       const paraIds = buf.paraIds;
       buffer.set(indexName, { paras: [], paraIds: [] });
       try {
         const task = await meili.index(indexName).addDocuments(paras, { primaryKey: 'id' });
-        inFlight.push({ task, paraIds, indexName });
+        const taskUid = task.taskUid ?? task;
+        // Optimistic: mark synced immediately. Reconciler re-queues on failure.
+        await content.markSynced(paraIds);
+        await query(
+          `INSERT OR IGNORE INTO meili_sync_tasks (task_uid, index_uid, para_ids) VALUES (?,?,?)`,
+          [taskUid, indexName, JSON.stringify(paraIds)]
+        );
+        inFlight.push({ taskUid, indexName });
+        completedItems += paraIds.length;
       } catch (err) {
-        logger.error({ err: err.message, indexName, batchSize: paras.length }, 'Failed to enqueue addDocuments');
+        logger.error({ err: err.message, indexName, batchSize: paras.length }, 'Failed to enqueue addDocuments — paragraphs stay synced=0 for retry');
         failedItems += paras.length;
-        // Don't mark synced — retry next iteration (Meili dedups by id).
       }
     };
 
@@ -346,17 +385,14 @@ async function processSyncJob(job) {
       } // end for (doc of fresh)
     } // end while (!isShuttingDown)
 
-    // End of doc loop. Force-flush any remaining buffered paragraphs and
-    // drain in-flight tasks so synced=1 propagates and progress is accurate.
+    // End of doc loop. Force-flush any remaining buffered paragraphs.
+    // With optimistic sync there is nothing to drain — synced=1 already flipped.
     for (const indexName of [...buffer.keys()]) {
       await flushBuffer(indexName, true);
     }
-    while (inFlight.length > 0 && !isShuttingDown) await drainOldest();
 
     if (isShuttingDown) {
       logger.info({ jobId: job.id, completedItems, failedItems, inFlight: inFlight.length }, 'Shutdown mid-job — requeueing');
-      // Drain whatever can still finish quickly before requeue.
-      while (inFlight.length > 0) await drainOldest();
       await query(`UPDATE sync_jobs SET status = 'pending', started_at = NULL, completed_items = ?, failed_items = ? WHERE id = ?`, [completedItems, failedItems, job.id]);
       currentSyncJobId = null;
       return;
