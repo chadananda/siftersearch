@@ -87,6 +87,26 @@ async function validateOne(extraction) {
 
   await trackCost({ model: MODEL, taskType: 'validation', paragraphId: extraction.content_id, inputTokens, outputTokens, cachedTokens: 0, costUsd }).catch(() => {});
 
+  // Cycle reextract back into the extractor queue — otherwise 'reextract' is a dead end:
+  // graph_enriched=1 means the extractor never picks it up again.
+  // Cap at 3 attempts to avoid infinite loops; beyond that mark permanently skipped (-1).
+  if (parsed.recommended_action === 'reextract') {
+    try {
+      const { count } = await queryWithRetry(
+        `SELECT COUNT(*) as count FROM paragraph_extractions WHERE content_id = ?`,
+        [extraction.content_id]
+      );
+      const nextEnriched = (count >= 3) ? -1 : 0;
+      await queryWithRetry(
+        `UPDATE content SET graph_enriched = ? WHERE id = ?`,
+        [nextEnriched, extraction.content_id]
+      );
+      logger.debug({ contentId: extraction.content_id, attempts: count, nextEnriched }, 'Reextract: reset graph_enriched');
+    } catch (err) {
+      logger.warn({ extractionId: extraction.id, err: err.message }, 'Failed to reset graph_enriched for reextract');
+    }
+  }
+
   logger.debug(
     { extractionId: extraction.id, action: parsed.recommended_action, confidence: parsed.confidence },
     'Validation written'
