@@ -411,11 +411,16 @@ async function bulkUpdateEmbeddings(rows, embeddings) {
 
   if (valid.length === 0) return { changes: 0 };
 
-  // Single transaction for all content updates
-  await transaction(valid.map(({ id, buf }) => ({
+  // Chunked writes — prevent holding the write lock for thousands of BLOB updates at once
+  const WRITE_CHUNK = 100;
+  const stmts = valid.map(({ id, buf }) => ({
     sql: 'UPDATE content SET embedding = ?, embedding_model = ?, synced = 0, updated_at = ? WHERE id = ?',
     args: [buf, model, ts, id]
-  })));
+  }));
+  for (let j = 0; j < stmts.length; j += WRITE_CHUNK) {
+    await transaction(stmts.slice(j, j + WRITE_CHUNK));
+    if (j + WRITE_CHUNK < stmts.length) await new Promise(r => setTimeout(r, 50));
+  }
 
   // Batch cache inserts (separate DB — not part of main transaction)
   if (embeddingCacheReady && cacheEntries.length > 0) {

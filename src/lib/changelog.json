@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T22:51:35.036Z",
+  "generated": "2026-05-22T22:57:14.603Z",
   "entries": [
+    {
+      "hash": "b2524eb9",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Chunk enrichment_pending writes — prevent write-lock starvation",
+      "scope": null
+    },
     {
       "hash": "b5a3affd",
       "date": "2026-05-22",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Enrich missing source_site from docs table before authority scoring",
       "scope": null
-    },
-    {
-      "hash": "3a2b100f",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Add fallback source_url to all search results",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-22": [
+      {
+        "hash": "b2524eb9",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Chunk enrichment_pending writes — prevent write-lock starvation",
+        "scope": null
+      },
       {
         "hash": "b5a3affd",
         "date": "2026-05-22",
@@ -7013,13 +7020,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Enrich missing source_site from docs table before authority scoring",
-        "scope": null
-      },
-      {
-        "hash": "3a2b100f",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Add fallback source_url to all search results",
         "scope": null
       }
     ]
