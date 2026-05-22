@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T00:59:10.410Z",
+  "generated": "2026-05-22T01:20:01.178Z",
   "entries": [
+    {
+      "hash": "688875eb",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Purge 100 rows/batch+1s delay, no startup orphan check — prevent sync worker starvation",
+      "scope": null
+    },
     {
       "hash": "ef85e4a9",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Authority.js stale-while-revalidate — stop event-loop blocking on lib scan",
       "scope": null
-    },
-    {
-      "hash": "b530370c",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Title-pattern authority 10 for Quran/Bible translations with Unknown author",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "688875eb",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Purge 100 rows/batch+1s delay, no startup orphan check — prevent sync worker starvation",
+        "scope": null
+      },
       {
         "hash": "ef85e4a9",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Authority.js stale-while-revalidate — stop event-loop blocking on lib scan",
-        "scope": null
-      },
-      {
-        "hash": "b530370c",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Title-pattern authority 10 for Quran/Bible translations with Unknown author",
         "scope": null
       }
     ]

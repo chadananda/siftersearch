@@ -142,12 +142,43 @@ async function meiliStatsBusy(err) {
   return meiliReachable();
 }
 
+async function checkMeiliBatchStall() {
+  if (!await meiliReachable()) return; // only meaningful on tower-nas
+  const headers = MEILI_KEY ? { Authorization: `Bearer ${MEILI_KEY}` } : {};
+  try {
+    const res = await fetch(`${MEILI_URL}/tasks?statuses=processing&limit=20`,
+      { headers, signal: AbortSignal.timeout(5000) });
+    if (!res.ok) { warn('meili_batch_stall', `tasks endpoint HTTP ${res.status}`); return; }
+    const { results } = await res.json();
+    if (!results || results.length === 0) { ok('meili_batch_stall', 0, { processing: 0 }); return; }
+    const now = Date.now();
+    const stalled = results.filter(t => {
+      if (!t.startedAt) return false;
+      const runMs = now - new Date(t.startedAt).getTime();
+      return runMs > 10 * 60 * 1000; // > 10 minutes is abnormal
+    });
+    if (stalled.length > 0) {
+      const oldest = stalled.reduce((a, b) =>
+        new Date(a.startedAt) < new Date(b.startedAt) ? a : b);
+      const runMin = Math.round((now - new Date(oldest.startedAt).getTime()) / 60000);
+      fail('meili_batch_stall',
+        `batch ${oldest.batchUid} stalled ${runMin}min (task ${oldest.uid}, ${oldest.indexUid}) — restart meilisearch`,
+        { stalled_count: stalled.length, oldest_task: oldest.uid, run_minutes: runMin });
+    } else {
+      ok('meili_batch_stall', 0, { processing: results.length });
+    }
+  } catch (err) {
+    warn('meili_batch_stall', `tasks check failed: ${err.message}`);
+  }
+}
+
 async function checkMeili() {
   if (!await meiliReachable()) {
-    for (const c of ['meili_paragraphs', 'meili_hype'])
+    for (const c of ['meili_paragraphs', 'meili_hype', 'meili_batch_stall'])
       warn(c, 'remote_only (run on tower-nas to check Meili)');
     return;
   }
+  checkMeiliBatchStall(); // fire-and-forget alongside index checks
   // Run both index checks in parallel — previously sequential 15s×2 = 30s worst case
   await Promise.all([
     // paragraphs (main)

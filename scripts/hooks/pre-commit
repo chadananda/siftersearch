@@ -144,3 +144,15 @@ echo -e "${GREEN}[pre-commit]${NC} ✓ Client deployed to Cloudflare Pages (prod
 echo -e "${GREEN}[pre-commit]${NC} ✓ All checks passed, deployment ready"
 echo -e "${BLUE}[pre-commit]${NC} Client: https://siftersearch.com (v${NEW_VERSION})"
 echo -e "${BLUE}[pre-commit]${NC} Server will auto-update when commit is pushed"
+
+# ============================================
+# PHASE 6: Production Health Snapshot (non-blocking — informs, never aborts)
+# ============================================
+
+echo -e "${BLUE}[pre-commit]${NC} Running production health check..."
+if node scripts/health-check.mjs --quick 2>&1; then
+  echo -e "${GREEN}[pre-commit]${NC} ✓ Production health: all systems operational"
+else
+  echo -e "${YELLOW}[pre-commit]${NC} ⚠ Production health issues detected — review output above before shipping"
+  echo -e "${YELLOW}[pre-commit]${NC}   Commit is NOT aborted. Address issues or run with SKIP_HEALTH=1 to suppress."
+fi
