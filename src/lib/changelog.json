@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T01:33:24.203Z",
+  "generated": "2026-05-22T03:03:30.077Z",
   "entries": [
+    {
+      "hash": "55f1c6c7",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Meili_batch_stall threshold 10min→45min (paragraphs HNSW ~30min/batch normal)",
+      "scope": null
+    },
     {
       "hash": "a7050c27",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Style",
       "description": "TOC answer items get 0.6rem bottom padding to breathe from next question",
       "scope": null
-    },
-    {
-      "hash": "f0ca5167",
-      "date": "2026-05-12",
-      "type": "Style",
-      "description": "Q text margin +5px, scripture links italic, smart quotes in dialog body",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "55f1c6c7",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Meili_batch_stall threshold 10min→45min (paragraphs HNSW ~30min/batch normal)",
+        "scope": null
+      },
       {
         "hash": "a7050c27",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Style",
         "description": "TOC answer items get 0.6rem bottom padding to breathe from next question",
-        "scope": null
-      },
-      {
-        "hash": "f0ca5167",
-        "date": "2026-05-12",
-        "type": "Style",
-        "description": "Q text margin +5px, scripture links italic, smart quotes in dialog body",
         "scope": null
       }
     ]

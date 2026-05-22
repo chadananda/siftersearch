@@ -177,7 +177,7 @@ async function processSyncJob(job) {
       const oldest = inFlight.shift();
       let confirmed = false;
       try {
-        await waitForMeiliTask(meili, oldest.task, 900000);
+        await waitForMeiliTask(meili, oldest.task, 7200000); // 2h — HNSW on 4M+ vector index takes 15-60min/batch
         confirmed = true;
       } catch (err) {
         logger.error({ err: err.message, indexName: oldest.indexName, batchSize: oldest.paraIds.length }, 'Pipelined batch failed');
