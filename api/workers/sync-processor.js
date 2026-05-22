@@ -46,6 +46,7 @@ const IDLE_SLEEP_MS = 10000;      // Sleep when nothing to do
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;     // 5 minutes
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // 1 hour
 const WAL_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000; // 15 min — TRUNCATE keeps WAL near-zero
+const MEILI_RECONCILE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour — resolve orphaned meili_sync_tasks
 const LOG_PROGRESS_EVERY = 10;    // Log every N documents
 
 // Shutdown flag — set on SIGTERM, causes worker to stop after current document
@@ -56,6 +57,7 @@ let currentJobId = null;
 let lastCleanupTime = 0;
 let lastFullSyncTime = 0;
 let lastWalCheckpointTime = 0;
+let lastMeiliReconcileTime = 0;
 
 // Small delay to yield event loop
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -685,12 +687,51 @@ async function processJob(job) {
 }
 
 /**
+ * Reconcile meili_sync_tasks rows still marked 'processing' against Meili's
+ * actual task status. Only checks tasks older than 1h — lets active syncs finish.
+ * Resolves succeeded/failed/canceled; leaves enqueued/processing untouched.
+ */
+async function reconcileMeiliSyncTasks() {
+  const cutoff = Math.floor(Date.now() / 1000) - 3600; // 1h ago
+  const stale = await queryAll(
+    `SELECT task_uid, para_ids FROM meili_sync_tasks WHERE status = 'processing' AND submitted_at < ? ORDER BY submitted_at ASC LIMIT 200`,
+    [cutoff]
+  );
+  if (stale.length === 0) return;
+  logger.info({ count: stale.length }, 'Reconciling stale meili_sync_tasks');
+  const meili = getMeili();
+  let resolved = 0;
+  for (const row of stale) {
+    try {
+      const task = await meili.tasks.getTask(row.task_uid);
+      const s = task.status;
+      if (s === 'succeeded' || s === 'failed' || s === 'canceled') {
+        if (s === 'failed' || s === 'canceled') {
+          const paraIds = JSON.parse(row.para_ids);
+          await content.markUnsynced(paraIds);
+          logger.warn({ taskUid: row.task_uid, count: paraIds.length, s }, 'Meili task failed — paragraphs re-queued');
+        }
+        await query(`UPDATE meili_sync_tasks SET status = ?, resolved_at = unixepoch() WHERE task_uid = ?`, [s, row.task_uid]);
+        resolved++;
+      }
+    } catch (err) {
+      logger.warn({ taskUid: row.task_uid, err: err.message }, 'Task reconcile check failed — will retry next hour');
+    }
+  }
+  if (resolved > 0) logger.info({ resolved }, 'meili_sync_tasks reconcile complete');
+}
+
+/**
  * Run periodic tasks if their intervals have elapsed
  */
 async function runPeriodicTasksIfDue() {
   const now = Date.now();
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await runCleanupCycle();
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await runFullSyncCheck();
+  if (now - lastMeiliReconcileTime >= MEILI_RECONCILE_INTERVAL_MS) {
+    await reconcileMeiliSyncTasks();
+    lastMeiliReconcileTime = now;
+  }
   if (now - lastWalCheckpointTime >= WAL_CHECKPOINT_INTERVAL_MS) {
     try {
       const db = await getDb();
