@@ -231,12 +231,18 @@ export async function enqueueParagraphsForBatch({ limit = 100000 } = {}) {
     );
     if (rows.length === 0) continue;
 
-    // INSERT OR IGNORE — content_id is PK so already-queued rows are skipped
+    // INSERT OR IGNORE — content_id is PK so already-queued rows are skipped.
+    // Write in sub-chunks of 100 rows with a brief yield between each to avoid
+    // holding the SQLite write lock for minutes and starving other writers.
+    const WRITE_CHUNK = 100;
     const stmts = rows.map(r => ({
       sql: 'INSERT OR IGNORE INTO enrichment_pending (content_id, tier) VALUES (?, ?)',
       args: [r.id, tierByDocId.get(r.doc_id)]
     }));
-    await transaction(stmts);
+    for (let j = 0; j < stmts.length; j += WRITE_CHUNK) {
+      await transaction(stmts.slice(j, j + WRITE_CHUNK));
+      if (j + WRITE_CHUNK < stmts.length) await new Promise(r => setTimeout(r, 50));
+    }
     totalQueued += rows.length;
   }
 
