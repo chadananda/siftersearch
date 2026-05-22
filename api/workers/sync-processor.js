@@ -694,13 +694,24 @@ async function runPeriodicTasksIfDue() {
   if (now - lastWalCheckpointTime >= WAL_CHECKPOINT_INTERVAL_MS) {
     try {
       const db = await getDb();
-      // TRUNCATE resets WAL to 0 after checkpointing — PASSIVE only copies frames
-      // but never truncates, so WAL grows unboundedly under sustained write load.
-      // better-sqlite3 read transactions are synchronous and short; TRUNCATE waits
-      // for them to finish (busy_timeout applies) then resets the file.
       const result = db.pragma('wal_checkpoint(TRUNCATE)');
       const { busy, log, checkpointed } = result[0];
       logger.info({ busy, log, checkpointed }, 'WAL checkpoint (TRUNCATE)');
+      // If readers block TRUNCATE and WAL is large (>2M pages ≈ 8GB), restart the
+      // API to clear its perpetual read marks, then re-checkpoint. The API is
+      // stateless and restarts in <5s — brief unavailability beats a 12GB WAL.
+      if (busy && log > 2000000) {
+        logger.warn({ log }, 'WAL checkpoint blocked — restarting siftersearch-api to release reader locks');
+        try {
+          const { execSync } = await import('child_process');
+          execSync('pm2 restart siftersearch-api', { timeout: 30000, stdio: 'inherit' });
+          await new Promise(r => setTimeout(r, 5000)); // wait for API to come back up
+          const result2 = db.pragma('wal_checkpoint(TRUNCATE)');
+          logger.info(result2[0], 'WAL checkpoint (TRUNCATE) after API restart');
+        } catch (restartErr) {
+          logger.warn({ err: restartErr.message }, 'API restart or re-checkpoint failed');
+        }
+      }
     } catch (err) {
       logger.warn({ err: err.message }, 'WAL checkpoint failed');
     }

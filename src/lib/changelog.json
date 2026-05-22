@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T12:31:30.791Z",
+  "generated": "2026-05-22T12:58:36.397Z",
   "entries": [
+    {
+      "hash": "2479f7df",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "WAL stat resolves symlink; improve graph_pipeline warning text",
+      "scope": null
+    },
     {
       "hash": "32114458",
       "date": "2026-05-22",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Every search result always has source_url — null meta fallback to /document/{id}",
       "scope": null
-    },
-    {
-      "hash": "12d5c1ac",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Post-enrichment OL re-sort — OL hits always surface first after docMeta enrichment",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-22": [
+      {
+        "hash": "2479f7df",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "WAL stat resolves symlink; improve graph_pipeline warning text",
+        "scope": null
+      },
       {
         "hash": "32114458",
         "date": "2026-05-22",
@@ -7013,13 +7020,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Every search result always has source_url — null meta fallback to /document/{id}",
-        "scope": null
-      },
-      {
-        "hash": "12d5c1ac",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Post-enrichment OL re-sort — OL hits always surface first after docMeta enrichment",
         "scope": null
       }
     ]

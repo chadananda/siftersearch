@@ -458,7 +458,7 @@ async function checkWal() {
 
   const gb = ph.wal.size_gb;
   const details = { size_gb: gb };
-  if (gb > 8) return fail('wal_size', `WAL ${gb}GB — checkpoint blocked (restart api to release reader locks)`, details);
+  if (gb > 8) return fail('wal_size', `WAL ${gb}GB — TRUNCATE checkpoint blocked; worker will auto-restart API to clear reader locks`, details);
   if (gb > 3) return warn('wal_size', `WAL ${gb}GB — larger than normal, read performance degraded`, details);
   ok('wal_size', 0, details);
 }
