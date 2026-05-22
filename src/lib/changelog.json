@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T12:58:36.397Z",
+  "generated": "2026-05-22T13:20:27.212Z",
   "entries": [
+    {
+      "hash": "0dd5e1e1",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Auto-restart siftersearch-api when WAL TRUNCATE checkpoint blocked by reader locks",
+      "scope": null
+    },
     {
       "hash": "2479f7df",
       "date": "2026-05-22",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Enforce book-specific citations when citation pipeline used — no cross-text leakage",
       "scope": null
-    },
-    {
-      "hash": "bd41be34",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Every search result always has source_url — null meta fallback to /document/{id}",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-22": [
+      {
+        "hash": "0dd5e1e1",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Auto-restart siftersearch-api when WAL TRUNCATE checkpoint blocked by reader locks",
+        "scope": null
+      },
       {
         "hash": "2479f7df",
         "date": "2026-05-22",
@@ -7013,13 +7020,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Enforce book-specific citations when citation pipeline used — no cross-text leakage",
-        "scope": null
-      },
-      {
-        "hash": "bd41be34",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Every search result always has source_url — null meta fallback to /document/{id}",
         "scope": null
       }
     ]

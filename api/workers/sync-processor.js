@@ -881,6 +881,10 @@ async function workerLoop() {
       if (job) {
         currentJobId = job.id;
         await processJob(job);
+        // Run periodic tasks after each job (WAL checkpoint, cleanup, full-sync).
+        // Previously only ran in idle — but when there's always work the idle
+        // branch never fires, so WAL checkpoint never ran.
+        await runPeriodicTasksIfDue();
         // Immediately check for more work — no sleep after a job completes
         continue;
       }
