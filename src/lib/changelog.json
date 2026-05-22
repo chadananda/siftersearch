@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T13:20:27.212Z",
+  "generated": "2026-05-22T15:40:38.536Z",
   "entries": [
+    {
+      "hash": "cea99ebc",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Run periodic tasks (WAL checkpoint) after each sync job, not only when idle",
+      "scope": null
+    },
     {
       "hash": "0dd5e1e1",
       "date": "2026-05-22",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Religion-filtered companion search when named work — prevents cross-tradition leakage",
       "scope": null
-    },
-    {
-      "hash": "56acb285",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Enforce book-specific citations when citation pipeline used — no cross-text leakage",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-22": [
+      {
+        "hash": "cea99ebc",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Run periodic tasks (WAL checkpoint) after each sync job, not only when idle",
+        "scope": null
+      },
       {
         "hash": "0dd5e1e1",
         "date": "2026-05-22",
@@ -7013,13 +7020,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Religion-filtered companion search when named work — prevents cross-tradition leakage",
-        "scope": null
-      },
-      {
-        "hash": "56acb285",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Enforce book-specific citations when citation pipeline used — no cross-text leakage",
         "scope": null
       }
     ]

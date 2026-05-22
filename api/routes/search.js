@@ -464,10 +464,11 @@ export default async function searchRoutes(fastify) {
                   SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
                   MAX(completed_at) AS last_completed
                 FROM deep_research_queue`).catch(() => null),
-      // meili_sync_tasks: count stale processing tasks (>4h) and total in-flight
+      // meili_sync_tasks: count stale processing tasks (>8h) and total in-flight.
+      // 8h threshold: HNSW rebuilds on 4M+ vector indexes routinely take 5-8h.
       queryOne(`SELECT
                   COUNT(*) AS total_processing,
-                  SUM(CASE WHEN submitted_at < unixepoch() - 14400 THEN 1 ELSE 0 END) AS stale_count,
+                  SUM(CASE WHEN submitted_at < unixepoch() - 28800 THEN 1 ELSE 0 END) AS stale_count,
                   MIN(submitted_at) AS oldest_submitted
                 FROM meili_sync_tasks WHERE status = 'processing'`).catch(() => null),
       // Resolve symlink before stat — DB_PATH may point to a symlink (e.g. data/sifter.db → /fast/...)
