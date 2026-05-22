@@ -20,17 +20,26 @@ logger.info({ unembedded: total }, 'Embedding worker starting');
 
 startEmbeddingWorker();
 
-// Log progress every 30s and exit when done
-const monitor = setInterval(async () => {
-  const stats = getEmbeddingStats();
-  const count = await getUnembeddedCount();
-  logger.info({ generated: stats.embeddingsGenerated, remaining: count?.total }, 'Embedding progress');
-  if (count?.total === 0) {
-    logger.info('All embeddings complete. Exiting.');
-    clearInterval(monitor);
-    setTimeout(() => process.exit(0), 2000);
-  }
-}, 30000);
+// Long-running service loop: log progress, back off idle polling to 5min max.
+// Never exit — PM2 restart on exit wastes cycles and produces misleading restart counters.
+let idleMs = 30000;   // start at 30s; grows to 5min when no work
+let monitor;
+function scheduleMonitor() {
+  monitor = setTimeout(async () => {
+    const stats = getEmbeddingStats();
+    const count = await getUnembeddedCount();
+    const remaining = count?.total ?? 0;
+    logger.info({ generated: stats.embeddingsGenerated, remaining }, 'Embedding progress');
+    if (remaining === 0) {
+      idleMs = Math.min(idleMs * 2, 5 * 60 * 1000); // back off: 30s → 60s → 120s → 300s
+    } else {
+      idleMs = 30000; // work found — reset to fast polling
+    }
+    scheduleMonitor();
+  }, idleMs);
+}
+scheduleMonitor();
 
-process.on('SIGTERM', () => { clearInterval(monitor); process.exit(0); });
-process.on('SIGINT', () => { clearInterval(monitor); process.exit(0); });
+let stopping = false;
+process.on('SIGTERM', () => { if (!stopping) { stopping = true; clearTimeout(monitor); process.exit(0); } });
+process.on('SIGINT',  () => { if (!stopping) { stopping = true; clearTimeout(monitor); process.exit(0); } });

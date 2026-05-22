@@ -359,6 +359,30 @@ async function runCleanupCycle() {
       logger.warn({ err: paraErr.message }, 'Paragraph-level orphan cleanup failed');
     }
 
+    // Prune resolved meili_sync_tasks older than 7 days — prevents unbounded table growth
+    // and keeps the Meilisearch /tasks list endpoint responsive.
+    try {
+      const cutoff7d = Math.floor(Date.now() / 1000) - 7 * 86400;
+      const pruned = await query(
+        `DELETE FROM meili_sync_tasks WHERE status != 'processing' AND submitted_at < ?`,
+        [cutoff7d]
+      );
+      if (pruned.changes > 0) logger.info({ pruned: pruned.changes }, 'Pruned old meili_sync_tasks rows');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'meili_sync_tasks pruning failed (non-fatal)');
+    }
+
+    // Purge Meilisearch historical tasks older than 7 days — the /tasks list endpoint
+    // hangs when thousands of completed tasks accumulate. Purge succeeded+failed tasks
+    // that are at least 7 days old so diagnostics stay fast.
+    try {
+      const before7d = new Date(Date.now() - 7 * 86400 * 1000).toISOString();
+      const taskPurge = await meili.deleteTasks({ statuses: ['succeeded', 'failed', 'canceled'], beforeEnqueuedAt: before7d });
+      if (taskPurge?.taskUid) logger.info({ purgeTaskUid: taskPurge.taskUid, before: before7d }, 'Meili historical task purge submitted');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Meili task purge failed (non-fatal)');
+    }
+
     lastCleanupTime = Date.now();
     logger.info('Cleanup cycle complete');
   } catch (err) {
