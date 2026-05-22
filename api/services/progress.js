@@ -53,7 +53,7 @@ async function refreshPipelineCounts() {
     // COUNT(*) alone uses the index and runs in milliseconds.
     const [unsyncedRow, graphPending, extractionsPending, aliasCount, docAgg] = await Promise.all([
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 0 AND deleted_at IS NULL`).catch(() => ({ n: -1 })),
-      // idx_content_graph_unsync (migration 79+) covers graph_enriched=0 AND deleted_at IS NULL — fast COUNT
+      // idx_content_graph_unsync (migration 79) covers graph_enriched=0 AND deleted_at IS NULL — fast COUNT.
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL`).catch(() => ({ n: -1 })),
       queryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM entity_aliases`).catch(() => ({ n: 0 })),

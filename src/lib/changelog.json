@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T00:06:35.331Z",
+  "generated": "2026-05-22T00:16:39.848Z",
   "entries": [
+    {
+      "hash": "c308d35b",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Migration 79 — covering index for graph_enriched=0 AND deleted_at IS NULL",
+      "scope": null
+    },
     {
       "hash": "3860aa4d",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "StripUngroundedLinks base URL matching + judge fallback-link-only clarified",
       "scope": null
-    },
-    {
-      "hash": "47bd4a1a",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Research-stage excerpt harvesting uses e.source_url for paragraph deeplinks",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "c308d35b",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Migration 79 — covering index for graph_enriched=0 AND deleted_at IS NULL",
+        "scope": null
+      },
       {
         "hash": "3860aa4d",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "StripUngroundedLinks base URL matching + judge fallback-link-only clarified",
-        "scope": null
-      },
-      {
-        "hash": "47bd4a1a",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Research-stage excerpt harvesting uses e.source_url for paragraph deeplinks",
         "scope": null
       }
     ]
