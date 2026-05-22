@@ -451,6 +451,18 @@ async function checkMeiliSyncTasks() {
   ok('meili_sync_tasks', 0, details);
 }
 
+async function checkWal() {
+  const ph = await fetchPipelineHealth();
+  if (ph._error) return warn('wal_size', `pipeline endpoint unavailable: ${ph._error}`);
+  if (!ph.wal || ph.wal.size_gb === null) return warn('wal_size', 'WAL file not found or endpoint outdated');
+
+  const gb = ph.wal.size_gb;
+  const details = { size_gb: gb };
+  if (gb > 8) return fail('wal_size', `WAL ${gb}GB — checkpoint blocked (restart api to release reader locks)`, details);
+  if (gb > 3) return warn('wal_size', `WAL ${gb}GB — larger than normal, read performance degraded`, details);
+  ok('wal_size', 0, details);
+}
+
 async function checkMeiliVsDb() {
   if (!await meiliReachable()) {
     return warn('meili_vs_db', 'remote_only (run on tower-nas to check Meili)');
@@ -730,6 +742,7 @@ const probes = [
   ['db_activity', checkDbActivity],
   ['sync_staleness', checkSyncStaleness],         // catches "527K unsynced for 11 days"
   ['meili_sync_tasks', checkMeiliSyncTasks],      // catches stale optimistic-sync tasks
+  ['wal_size', checkWal],                          // catches WAL bloat blocking checkpoints
   ['entity_pipeline', checkEntityPipeline],       // catches lock-storm pattern
   ['schema_version', checkSchemaVersion],         // catches pending migrations
   ['deep_research', checkDeepResearch],           // deep_research_queue stuck/failing

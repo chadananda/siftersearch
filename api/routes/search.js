@@ -7,7 +7,7 @@
  * GET /api/search/health - Search health check
  */
 
-import { readFile } from 'fs/promises';
+import { readFile, stat } from 'fs/promises';
 import { join } from 'path';
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence } from '../lib/search.js';
 import { queryOne, userQuery } from '../lib/db.js';
@@ -20,6 +20,12 @@ const require = createRequire(import.meta.url);
 const { version: serverVersion } = require('../../package.json');
 import { aiService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
+
+// Resolved once at startup — used by /health/pipeline WAL size check
+const DB_PATH = (() => {
+  const url = process.env.TURSO_DATABASE_URL || 'file:./data/sifter.db';
+  return url.startsWith('file:') ? url.slice(5) : url;
+})();
 import { ResearcherAgent } from '../agents/agent-researcher.js';
 import { checkQueryLimit, incrementSearchCount, incrementUserSearchCount, getAnonymousUserId } from '../lib/anonymous.js';
 import { ApiError } from '../lib/errors.js';
@@ -447,7 +453,7 @@ export default async function searchRoutes(fastify) {
     const counts = await getCachedContentCounts();
 
     // Small-table queries only — these have indexed lookups, fast even under write pressure
-    const [schemaRow, recentlySynced, promotionQ, recentExtractions, deepResearch, staleSyncTasks] = await Promise.all([
+    const [schemaRow, recentlySynced, promotionQ, recentExtractions, deepResearch, staleSyncTasks, walStat] = await Promise.all([
       queryOne(`SELECT version FROM _schema_version ORDER BY version DESC LIMIT 1`).catch(() => null),
       // idx_content_recently_synced partial index — only scans recent rows
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 1 AND updated_at > datetime('now', '-2 hours')`).catch(() => ({ n: 0 })),
@@ -464,6 +470,7 @@ export default async function searchRoutes(fastify) {
                   SUM(CASE WHEN submitted_at < unixepoch() - 14400 THEN 1 ELSE 0 END) AS stale_count,
                   MIN(submitted_at) AS oldest_submitted
                 FROM meili_sync_tasks WHERE status = 'processing'`).catch(() => null),
+      stat(`${DB_PATH}-wal`).catch(() => null),
     ]);
 
     return {
@@ -496,6 +503,10 @@ export default async function searchRoutes(fastify) {
         oldest_age_hours: staleSyncTasks?.oldest_submitted
           ? ((Date.now() / 1000 - staleSyncTasks.oldest_submitted) / 3600)
           : null
+      },
+      wal: {
+        size_gb: walStat ? Math.round(walStat.size / 1073741824 * 10) / 10 : null,
+        size_bytes: walStat?.size ?? null
       },
       status: {
         sync_stuck: pipeline.unsynced !== -1 && pipeline.unsynced > 1000 && (recentlySynced?.n ?? 0) === 0,

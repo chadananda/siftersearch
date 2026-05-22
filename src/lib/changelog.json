@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T11:10:14.799Z",
+  "generated": "2026-05-22T12:07:33.128Z",
   "entries": [
+    {
+      "hash": "5bdefb55",
+      "date": "2026-05-22",
+      "type": "New",
+      "description": "Health check for stale meili_sync_tasks + pipeline endpoint sync_tasks field",
+      "scope": null
+    },
     {
       "hash": "5656b757",
       "date": "2026-05-21",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "OL docs always preferred — 1.4x authority multiplier + fuzzy scripture URL fallback",
       "scope": null
-    },
-    {
-      "hash": "a378e2dc",
-      "date": "2026-05-12",
-      "type": "New",
-      "description": "Verse/book-scoped search instructions + ?find= highlight on library deeplinks",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-22": [
+      {
+        "hash": "5bdefb55",
+        "date": "2026-05-22",
+        "type": "New",
+        "description": "Health check for stale meili_sync_tasks + pipeline endpoint sync_tasks field",
+        "scope": null
+      }
+    ],
     "2026-05-21": [
       {
         "hash": "5656b757",
@@ -7011,13 +7020,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "OL docs always preferred — 1.4x authority multiplier + fuzzy scripture URL fallback",
-        "scope": null
-      },
-      {
-        "hash": "a378e2dc",
-        "date": "2026-05-12",
-        "type": "New",
-        "description": "Verse/book-scoped search instructions + ?find= highlight on library deeplinks",
         "scope": null
       }
     ]
