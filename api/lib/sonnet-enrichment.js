@@ -137,9 +137,10 @@ export function parseSonnetResponse(text) {
  *
  * Returns count of rows updated.
  */
-export async function propagateHypeFromNormalizedHash({ batchSize = 500 } = {}) {
-  // Batched to avoid holding the write lock for minutes on large tables.
-  // Each batch updates at most batchSize rows, releases the lock, then loops.
+export async function propagateHypeFromNormalizedHash({ batchSize = 100 } = {}) {
+  // Batched with explicit yield between chunks — prevents holding write lock for minutes.
+  // idx_content_hype_hash (normalized_hash WHERE hyp_questions IS NOT NULL) makes the
+  // inner IN subquery efficient; without it this scan takes minutes on 4M+ rows.
   let totalPropagated = 0;
   let batch;
   do {
@@ -170,6 +171,7 @@ export async function propagateHypeFromNormalizedHash({ batchSize = 500 } = {}) 
     `, [batchSize]);
     batch = result?.changes ?? 0;
     totalPropagated += batch;
+    if (batch >= batchSize) await new Promise(r => setTimeout(r, 50));
   } while (batch >= batchSize);
   if (totalPropagated > 0) logger.info({ propagated: totalPropagated }, 'propagateHypeFromNormalizedHash: copied HyPE from duplicate paragraphs');
   return totalPropagated;

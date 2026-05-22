@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T22:57:14.603Z",
+  "generated": "2026-05-22T23:31:03.311Z",
   "entries": [
+    {
+      "hash": "bbf47efd",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Chunk bulkUpdateEmbeddings writes — prevent write-lock starvation",
+      "scope": null
+    },
     {
       "hash": "b2524eb9",
       "date": "2026-05-22",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Increase cross-tradition per-religion fetch limit 15→30",
       "scope": null
-    },
-    {
-      "hash": "4e3f7d5b",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Enrich missing source_site from docs table before authority scoring",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-22": [
+      {
+        "hash": "bbf47efd",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Chunk bulkUpdateEmbeddings writes — prevent write-lock starvation",
+        "scope": null
+      },
       {
         "hash": "b2524eb9",
         "date": "2026-05-22",
@@ -7013,13 +7020,6 @@
         "date": "2026-05-12",
         "type": "Performance",
         "description": "Increase cross-tradition per-religion fetch limit 15→30",
-        "scope": null
-      },
-      {
-        "hash": "4e3f7d5b",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Enrich missing source_site from docs table before authority scoring",
         "scope": null
       }
     ]

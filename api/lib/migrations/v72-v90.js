@@ -429,4 +429,11 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_meili_sync_tasks_status ON meili_sync_tasks(status, submitted_at) WHERE status = 'processing'`);
     logger.info('Migration 80 complete: meili_sync_tasks table for optimistic sync');
   },
+  81: async () => {
+    // idx_content_hype_hash: speeds up the IN subquery inside propagateHypeFromNormalizedHash.
+    // Without this, `SELECT normalized_hash FROM content WHERE hyp_questions IS NOT NULL` full-scans
+    // 4.45M rows every batch, holding the write lock for minutes.
+    await query(`CREATE INDEX IF NOT EXISTS idx_content_hype_hash ON content(normalized_hash) WHERE hyp_questions IS NOT NULL AND normalized_hash IS NOT NULL`);
+    logger.info('Migration 81 complete: idx_content_hype_hash for propagateHypeFromNormalizedHash');
+  },
 };
