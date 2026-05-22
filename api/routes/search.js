@@ -447,7 +447,7 @@ export default async function searchRoutes(fastify) {
     const counts = await getCachedContentCounts();
 
     // Small-table queries only — these have indexed lookups, fast even under write pressure
-    const [schemaRow, recentlySynced, promotionQ, recentExtractions, deepResearch] = await Promise.all([
+    const [schemaRow, recentlySynced, promotionQ, recentExtractions, deepResearch, staleSyncTasks] = await Promise.all([
       queryOne(`SELECT version FROM _schema_version ORDER BY version DESC LIMIT 1`).catch(() => null),
       // idx_content_recently_synced partial index — only scans recent rows
       queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 1 AND updated_at > datetime('now', '-2 hours')`).catch(() => ({ n: 0 })),
@@ -458,6 +458,12 @@ export default async function searchRoutes(fastify) {
                   SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
                   MAX(completed_at) AS last_completed
                 FROM deep_research_queue`).catch(() => null),
+      // meili_sync_tasks: count stale processing tasks (>4h) and total in-flight
+      queryOne(`SELECT
+                  COUNT(*) AS total_processing,
+                  SUM(CASE WHEN submitted_at < unixepoch() - 14400 THEN 1 ELSE 0 END) AS stale_count,
+                  MIN(submitted_at) AS oldest_submitted
+                FROM meili_sync_tasks WHERE status = 'processing'`).catch(() => null),
     ]);
 
     return {
@@ -483,6 +489,13 @@ export default async function searchRoutes(fastify) {
         queue_pending: deepResearch?.pending ?? 0,
         queue_failed: deepResearch?.failed ?? 0,
         last_completed: deepResearch?.last_completed ?? null
+      },
+      sync_tasks: {
+        total_processing: staleSyncTasks?.total_processing ?? 0,
+        stale_count: staleSyncTasks?.stale_count ?? 0,
+        oldest_age_hours: staleSyncTasks?.oldest_submitted
+          ? ((Date.now() / 1000 - staleSyncTasks.oldest_submitted) / 3600)
+          : null
       },
       status: {
         sync_stuck: pipeline.unsynced !== -1 && pipeline.unsynced > 1000 && (recentlySynced?.n ?? 0) === 0,

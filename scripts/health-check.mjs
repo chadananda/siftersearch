@@ -433,6 +433,24 @@ async function checkSyncStaleness() {
   ok('sync_staleness', 0, details);
 }
 
+async function checkMeiliSyncTasks() {
+  const ph = await fetchPipelineHealth();
+  if (ph._error) return warn('meili_sync_tasks', `pipeline endpoint unavailable: ${ph._error}`);
+
+  const { sync_tasks } = ph;
+  if (!sync_tasks) return warn('meili_sync_tasks', 'pipeline endpoint missing sync_tasks — API may need restart');
+
+  const { stale_count, oldest_age_hours, total_processing } = sync_tasks;
+  const details = { stale_count, oldest_age_hours, total_processing };
+
+  if (stale_count > 0) {
+    return warn('meili_sync_tasks',
+      `${stale_count} processing task(s) older than 4h (oldest: ${oldest_age_hours?.toFixed(1)}h) — reconciler may be stuck`,
+      details);
+  }
+  ok('meili_sync_tasks', 0, details);
+}
+
 async function checkMeiliVsDb() {
   if (!await meiliReachable()) {
     return warn('meili_vs_db', 'remote_only (run on tower-nas to check Meili)');
@@ -711,6 +729,7 @@ const probes = [
   ['log_files', checkLogFiles],                    // catches library-watcher log bloat
   ['db_activity', checkDbActivity],
   ['sync_staleness', checkSyncStaleness],         // catches "527K unsynced for 11 days"
+  ['meili_sync_tasks', checkMeiliSyncTasks],      // catches stale optimistic-sync tasks
   ['entity_pipeline', checkEntityPipeline],       // catches lock-storm pattern
   ['schema_version', checkSchemaVersion],         // catches pending migrations
   ['deep_research', checkDeepResearch],           // deep_research_queue stuck/failing

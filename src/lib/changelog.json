@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T06:25:29.322Z",
+  "generated": "2026-05-22T11:10:14.799Z",
   "entries": [
+    {
+      "hash": "5656b757",
+      "date": "2026-05-21",
+      "type": "Performance",
+      "description": "Optimistic Meili sync — markSynced immediately, reconcile failures on restart",
+      "scope": null
+    },
     {
       "hash": "14b4c5aa",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Verse/book-scoped search instructions + ?find= highlight on library deeplinks",
       "scope": null
-    },
-    {
-      "hash": "50b27181",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "By-path route slugifies URL params before comparison — library deeplinks now resolve",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "5656b757",
+        "date": "2026-05-21",
+        "type": "Performance",
+        "description": "Optimistic Meili sync — markSynced immediately, reconcile failures on restart",
+        "scope": null
+      },
       {
         "hash": "14b4c5aa",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "New",
         "description": "Verse/book-scoped search instructions + ?find= highlight on library deeplinks",
-        "scope": null
-      },
-      {
-        "hash": "50b27181",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "By-path route slugifies URL params before comparison — library deeplinks now resolve",
         "scope": null
       }
     ]
