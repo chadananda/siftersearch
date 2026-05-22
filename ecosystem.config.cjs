@@ -96,10 +96,10 @@ module.exports = {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',
         BACKUP_DIR: '/tank/backups/siftersearch',
-        // 30s busy_timeout: library-watcher holds write locks for up to ~10s during
-        // ingest/orphan cleanup. Default 5s causes repeated "database is locked" errors
-        // in the sync loop — bumped to match graph workers which already use 30s.
-        SQLITE_BUSY_TIMEOUT_MS: '30000'
+        // 120s busy_timeout: with 7 concurrent writers (watcher, embedding, graph extractor,
+        // graph resolver, graph validator, graph promoter, sync), write lock contention can
+        // exceed 30s. 30s was causing repeated "database is locked" failures mid-sync.
+        SQLITE_BUSY_TIMEOUT_MS: '120000'
       },
       // 30s for HyPE sidecar batches (which include OpenAI embedding calls
       // ~10-20s wall) to complete before SIGKILL. Default 1.6s would cut

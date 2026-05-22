@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T00:16:39.848Z",
+  "generated": "2026-05-22T00:28:53.461Z",
   "entries": [
+    {
+      "hash": "007120fe",
+      "date": "2026-05-21",
+      "type": "Fixed",
+      "description": "Restore AND deleted_at IS NULL in graph_enriched background count",
+      "scope": null
+    },
     {
       "hash": "c308d35b",
       "date": "2026-05-21",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Research phase enforces religion filter for tradition-specific queries",
       "scope": null
-    },
-    {
-      "hash": "2ce242b6",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "StripUngroundedLinks base URL matching + judge fallback-link-only clarified",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-21": [
+      {
+        "hash": "007120fe",
+        "date": "2026-05-21",
+        "type": "Fixed",
+        "description": "Restore AND deleted_at IS NULL in graph_enriched background count",
+        "scope": null
+      },
       {
         "hash": "c308d35b",
         "date": "2026-05-21",
@@ -7011,13 +7018,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Research phase enforces religion filter for tradition-specific queries",
-        "scope": null
-      },
-      {
-        "hash": "2ce242b6",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "StripUngroundedLinks base URL matching + judge fallback-link-only clarified",
         "scope": null
       }
     ]
