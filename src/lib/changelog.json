@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T22:05:15.651Z",
+  "generated": "2026-05-22T22:11:48.904Z",
   "entries": [
+    {
+      "hash": "f7744da8",
+      "date": "2026-05-22",
+      "type": "Performance",
+      "description": "Doc-by-doc fetchBatch in graph-extractor — eliminates 98s sort",
+      "scope": null
+    },
     {
       "hash": "b876f89b",
       "date": "2026-05-22",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Expand author-name routing exception to bullet list with all cases",
       "scope": null
-    },
-    {
-      "hash": "2a8fae0c",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Raise Meilisearch task confirmation timeout 300s→900s",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-22": [
+      {
+        "hash": "f7744da8",
+        "date": "2026-05-22",
+        "type": "Performance",
+        "description": "Doc-by-doc fetchBatch in graph-extractor — eliminates 98s sort",
+        "scope": null
+      },
       {
         "hash": "b876f89b",
         "date": "2026-05-22",
@@ -7013,13 +7020,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Expand author-name routing exception to bullet list with all cases",
-        "scope": null
-      },
-      {
-        "hash": "2a8fae0c",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Raise Meilisearch task confirmation timeout 300s→900s",
         "scope": null
       }
     ]

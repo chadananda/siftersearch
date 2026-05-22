@@ -361,21 +361,20 @@ let _currentDocPriority = 0;
 let _currentDocReligion = null;
 
 async function pickNextDoc() {
-  return queryOne(`
-    SELECT d.id, d.doc_priority, d.religion
-    FROM docs d
-    WHERE d.deleted_at IS NULL
+  // No ORDER BY — just find any unprocessed doc quickly via the partial index.
+  // Processing order between docs doesn't matter once we commit to one doc at a time.
+  // The idx_content_graph_unsync index returns the first row immediately (LIMIT 1).
+  const row = await queryOne(`
+    SELECT c.doc_id AS id, d.doc_priority, d.religion
+    FROM content c
+    JOIN docs d ON d.id = c.doc_id
+    WHERE c.graph_enriched = 0
+      AND c.deleted_at IS NULL
+      AND d.deleted_at IS NULL
       AND d.duplicate_of IS NULL
-      AND EXISTS (
-        SELECT 1 FROM content c
-        WHERE c.doc_id = d.id
-          AND c.graph_enriched = 0
-          AND c.deleted_at IS NULL
-          AND length(c.text) > 50
-      )
-    ORDER BY d.doc_priority DESC, d.id ASC
     LIMIT 1
   `);
+  return row || null;
 }
 
 async function fetchBatch() {
