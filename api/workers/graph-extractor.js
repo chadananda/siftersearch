@@ -358,15 +358,32 @@ async function writeResult(llmResult) {
 // each tier's aliases are available to all subsequent tiers' extraction prompts.
 // INVARIANT: never extract duplicate docs (duplicate_of IS NOT NULL).
 async function fetchBatch() {
+  // Two sources of work:
+  // 1. New content (graph_enriched=0) — normal forward progress
+  // 2. Reextract candidates: graph_enriched=1 but latest validation says 'reextract'
+  //    and attempt count < 3. Extractor owns graph_enriched — validator must NOT write it.
   return queryAll(`
     SELECT c.id, c.text, c.doc_id, d.religion, d.doc_priority
     FROM content c
     JOIN docs d ON d.id = c.doc_id
-    WHERE c.graph_enriched = 0
-      AND c.deleted_at IS NULL
+    WHERE c.deleted_at IS NULL
       AND d.deleted_at IS NULL
       AND d.duplicate_of IS NULL
       AND length(c.text) > 50
+      AND (
+        c.graph_enriched = 0
+        OR (
+          c.graph_enriched = 1
+          AND (SELECT COUNT(*) FROM paragraph_extractions pe WHERE pe.content_id = c.id) < 3
+          AND EXISTS (
+            SELECT 1 FROM paragraph_extractions pe2
+            JOIN extraction_validations ev ON ev.extraction_id = pe2.id
+            WHERE pe2.content_id = c.id
+              AND ev.recommended_action = 'reextract'
+              AND pe2.id = (SELECT MAX(id) FROM paragraph_extractions WHERE content_id = c.id)
+          )
+        )
+      )
     ORDER BY d.doc_priority DESC, d.id ASC, c.paragraph_index ASC
     LIMIT ?
   `, [BATCH_SIZE]);
