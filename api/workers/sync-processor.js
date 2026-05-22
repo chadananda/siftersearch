@@ -45,7 +45,7 @@ const COOLDOWN_MS = 0;  // No artificial throttle — Meili handles the load fin
 const IDLE_SLEEP_MS = 10000;      // Sleep when nothing to do
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;     // 5 minutes
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // 1 hour
-const WAL_CHECKPOINT_INTERVAL_MS = 60 * 60 * 1000; // 1 hour — prevent WAL from accumulating
+const WAL_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000; // 15 min — TRUNCATE keeps WAL near-zero
 const LOG_PROGRESS_EVERY = 10;    // Log every N documents
 
 // Shutdown flag — set on SIGTERM, causes worker to stop after current document
@@ -694,9 +694,13 @@ async function runPeriodicTasksIfDue() {
   if (now - lastWalCheckpointTime >= WAL_CHECKPOINT_INTERVAL_MS) {
     try {
       const db = await getDb();
-      const result = db.pragma('wal_checkpoint(PASSIVE)');
+      // TRUNCATE resets WAL to 0 after checkpointing — PASSIVE only copies frames
+      // but never truncates, so WAL grows unboundedly under sustained write load.
+      // better-sqlite3 read transactions are synchronous and short; TRUNCATE waits
+      // for them to finish (busy_timeout applies) then resets the file.
+      const result = db.pragma('wal_checkpoint(TRUNCATE)');
       const { busy, log, checkpointed } = result[0];
-      logger.info({ busy, log, checkpointed }, 'WAL checkpoint');
+      logger.info({ busy, log, checkpointed }, 'WAL checkpoint (TRUNCATE)');
     } catch (err) {
       logger.warn({ err: err.message }, 'WAL checkpoint failed');
     }

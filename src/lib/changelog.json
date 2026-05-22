@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T12:07:33.128Z",
+  "generated": "2026-05-22T12:21:17.185Z",
   "entries": [
+    {
+      "hash": "80002398",
+      "date": "2026-05-22",
+      "type": "New",
+      "description": "WAL size health check + pipeline endpoint wal field",
+      "scope": null
+    },
     {
       "hash": "5bdefb55",
       "date": "2026-05-22",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Escape backticks in SYSTEM_PROMPT template literal — fixes syntax error crashing API",
       "scope": null
-    },
-    {
-      "hash": "371ffa89",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "OL docs always preferred — 1.4x authority multiplier + fuzzy scripture URL fallback",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-22": [
+      {
+        "hash": "80002398",
+        "date": "2026-05-22",
+        "type": "New",
+        "description": "WAL size health check + pipeline endpoint wal field",
+        "scope": null
+      },
       {
         "hash": "5bdefb55",
         "date": "2026-05-22",
@@ -7013,13 +7020,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Escape backticks in SYSTEM_PROMPT template literal — fixes syntax error crashing API",
-        "scope": null
-      },
-      {
-        "hash": "371ffa89",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "OL docs always preferred — 1.4x authority multiplier + fuzzy scripture URL fallback",
         "scope": null
       }
     ]
