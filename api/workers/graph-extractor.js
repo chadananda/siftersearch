@@ -372,6 +372,7 @@ async function pickNextDoc() {
       AND c.deleted_at IS NULL
       AND d.deleted_at IS NULL
       AND d.duplicate_of IS NULL
+      AND length(c.text) > 50
     LIMIT 1
   `);
   return row || null;

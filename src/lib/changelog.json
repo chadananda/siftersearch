@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T22:11:48.904Z",
+  "generated": "2026-05-22T22:19:33.449Z",
   "entries": [
+    {
+      "hash": "b586758d",
+      "date": "2026-05-22",
+      "type": "Performance",
+      "description": "PickNextDoc O(1) — drop EXISTS, use LIMIT 1 on partial index",
+      "scope": null
+    },
     {
       "hash": "f7744da8",
       "date": "2026-05-22",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "INTENT_SYSTEM maps author names to canonical works for work_name extraction",
       "scope": null
-    },
-    {
-      "hash": "0ffacda6",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Expand author-name routing exception to bullet list with all cases",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-22": [
+      {
+        "hash": "b586758d",
+        "date": "2026-05-22",
+        "type": "Performance",
+        "description": "PickNextDoc O(1) — drop EXISTS, use LIMIT 1 on partial index",
+        "scope": null
+      },
       {
         "hash": "f7744da8",
         "date": "2026-05-22",
@@ -7013,13 +7020,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "INTENT_SYSTEM maps author names to canonical works for work_name extraction",
-        "scope": null
-      },
-      {
-        "hash": "0ffacda6",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Expand author-name routing exception to bullet list with all cases",
         "scope": null
       }
     ]
