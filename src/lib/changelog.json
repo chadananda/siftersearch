@@ -1,6 +1,62 @@
 {
-  "generated": "2026-05-22T15:40:38.536Z",
+  "generated": "2026-05-22T22:05:15.651Z",
   "entries": [
+    {
+      "hash": "b876f89b",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Revert O(n²) fetchBatch; add resetReextractQueue periodic task",
+      "scope": null
+    },
+    {
+      "hash": "b343f118",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Extractor owns graph_enriched — validator must not write content table",
+      "scope": null
+    },
+    {
+      "hash": "8fe4b219",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Graph-validator cycles reextract back to extractor queue",
+      "scope": null
+    },
+    {
+      "hash": "59ebea7b",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Retry logic in fetchPipelineHealth — prevent transient-failure alarm storm",
+      "scope": null
+    },
+    {
+      "hash": "364e7380",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Service-pattern fixes for 3 architectural debt items",
+      "scope": null
+    },
+    {
+      "hash": "bec71bdf",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Raise meili_sync_tasks stale threshold 8h→12h; clarify warning message",
+      "scope": null
+    },
+    {
+      "hash": "2ce0792e",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Add meili_sync_tasks reconciler to sync-processor periodic tasks",
+      "scope": null
+    },
+    {
+      "hash": "3a98fa9c",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Raise meili_sync_tasks stale threshold 4h→8h — HNSW rebuilds on 4M+ vectors take 5-8h",
+      "scope": null
+    },
     {
       "hash": "cea99ebc",
       "date": "2026-05-22",
@@ -3444,66 +3500,66 @@
       "type": "Fixed",
       "description": "Raise Meilisearch task confirmation timeout 300s→900s",
       "scope": null
-    },
-    {
-      "hash": "20078f21",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Author-name exception placed directly under interfaith default rule",
-      "scope": null
-    },
-    {
-      "hash": "eac13e4a",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Escape backticks in system prompt template literal (syntax error)",
-      "scope": null
-    },
-    {
-      "hash": "8dcaf292",
-      "date": "2026-05-12",
-      "type": "New",
-      "description": "Explicit author→work routing table for citation pipeline",
-      "scope": null
-    },
-    {
-      "hash": "ff0da670",
-      "date": "2026-05-12",
-      "type": "New",
-      "description": "Author-name citation hints — Lao Tzu→Tao Te Ching, single-author works",
-      "scope": null
-    },
-    {
-      "hash": "064c19c0",
-      "date": "2026-05-12",
-      "type": "Performance",
-      "description": "Reduce sync pipeline limit 4→2, batch size 200→100 — fix Meili timeout",
-      "scope": null
-    },
-    {
-      "hash": "5d950719",
-      "date": "2026-05-12",
-      "type": "New",
-      "description": "Expand CANONICAL_WORKS — OL Psalms, Genesis, Isaiah, Acts, Bukhari, Ramayana, etc.",
-      "scope": null
-    },
-    {
-      "hash": "6d7c0edb",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "External_para_id in subagent SELECT — proper OL paragraph deep links",
-      "scope": null
-    },
-    {
-      "hash": "fc64d39f",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Religion-filtered companion search when named work — prevents cross-tradition leakage",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-22": [
+      {
+        "hash": "b876f89b",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Revert O(n²) fetchBatch; add resetReextractQueue periodic task",
+        "scope": null
+      },
+      {
+        "hash": "b343f118",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Extractor owns graph_enriched — validator must not write content table",
+        "scope": null
+      },
+      {
+        "hash": "8fe4b219",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Graph-validator cycles reextract back to extractor queue",
+        "scope": null
+      },
+      {
+        "hash": "59ebea7b",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Retry logic in fetchPipelineHealth — prevent transient-failure alarm storm",
+        "scope": null
+      },
+      {
+        "hash": "364e7380",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Service-pattern fixes for 3 architectural debt items",
+        "scope": null
+      },
+      {
+        "hash": "bec71bdf",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Raise meili_sync_tasks stale threshold 8h→12h; clarify warning message",
+        "scope": null
+      },
+      {
+        "hash": "2ce0792e",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Add meili_sync_tasks reconciler to sync-processor periodic tasks",
+        "scope": null
+      },
+      {
+        "hash": "3a98fa9c",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Raise meili_sync_tasks stale threshold 4h→8h — HNSW rebuilds on 4M+ vectors take 5-8h",
+        "scope": null
+      },
       {
         "hash": "cea99ebc",
         "date": "2026-05-22",
@@ -6964,62 +7020,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Raise Meilisearch task confirmation timeout 300s→900s",
-        "scope": null
-      },
-      {
-        "hash": "20078f21",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Author-name exception placed directly under interfaith default rule",
-        "scope": null
-      },
-      {
-        "hash": "eac13e4a",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Escape backticks in system prompt template literal (syntax error)",
-        "scope": null
-      },
-      {
-        "hash": "8dcaf292",
-        "date": "2026-05-12",
-        "type": "New",
-        "description": "Explicit author→work routing table for citation pipeline",
-        "scope": null
-      },
-      {
-        "hash": "ff0da670",
-        "date": "2026-05-12",
-        "type": "New",
-        "description": "Author-name citation hints — Lao Tzu→Tao Te Ching, single-author works",
-        "scope": null
-      },
-      {
-        "hash": "064c19c0",
-        "date": "2026-05-12",
-        "type": "Performance",
-        "description": "Reduce sync pipeline limit 4→2, batch size 200→100 — fix Meili timeout",
-        "scope": null
-      },
-      {
-        "hash": "5d950719",
-        "date": "2026-05-12",
-        "type": "New",
-        "description": "Expand CANONICAL_WORKS — OL Psalms, Genesis, Isaiah, Acts, Bukhari, Ramayana, etc.",
-        "scope": null
-      },
-      {
-        "hash": "6d7c0edb",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "External_para_id in subagent SELECT — proper OL paragraph deep links",
-        "scope": null
-      },
-      {
-        "hash": "fc64d39f",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Religion-filtered companion search when named work — prevents cross-tradition leakage",
         "scope": null
       }
     ]

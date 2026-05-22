@@ -353,23 +353,63 @@ async function writeResult(llmResult) {
   return lastInsertRowid;
 }
 
-// Fetch next batch — strictly ordered by doc_priority DESC so higher-authority
-// docs always extract before lower-authority ones. Entity knowledge compounds:
-// each tier's aliases are available to all subsequent tiers' extraction prompts.
-// INVARIANT: never extract duplicate docs (duplicate_of IS NOT NULL).
-async function fetchBatch() {
-  return queryAll(`
-    SELECT c.id, c.text, c.doc_id, d.religion, d.doc_priority
-    FROM content c
-    JOIN docs d ON d.id = c.doc_id
-    WHERE c.graph_enriched = 0
-      AND c.deleted_at IS NULL
-      AND d.deleted_at IS NULL
+// Doc-by-doc state: pick highest-priority unprocessed doc once, exhaust it,
+// then pick again. Avoids sorting 4.45M content rows per fetch (was 98s).
+// Uses idx_content_doc_graph (doc_id, graph_enriched WHERE graph_enriched=0).
+let _currentDocId = null;
+let _currentDocPriority = 0;
+let _currentDocReligion = null;
+
+async function pickNextDoc() {
+  return queryOne(`
+    SELECT d.id, d.doc_priority, d.religion
+    FROM docs d
+    WHERE d.deleted_at IS NULL
       AND d.duplicate_of IS NULL
-      AND length(c.text) > 50
-    ORDER BY d.doc_priority DESC, d.id ASC, c.paragraph_index ASC
-    LIMIT ?
-  `, [BATCH_SIZE]);
+      AND EXISTS (
+        SELECT 1 FROM content c
+        WHERE c.doc_id = d.id
+          AND c.graph_enriched = 0
+          AND c.deleted_at IS NULL
+          AND length(c.text) > 50
+      )
+    ORDER BY d.doc_priority DESC, d.id ASC
+    LIMIT 1
+  `);
+}
+
+async function fetchBatch() {
+  // Loop allows immediate pick-next when current doc is exhausted.
+  // At most 2 iterations: current doc attempt → pick next → its first batch.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (!_currentDocId) {
+      const doc = await pickNextDoc();
+      if (!doc) return []; // no unprocessed docs left
+      _currentDocId = doc.id;
+      _currentDocPriority = doc.doc_priority ?? 0;
+      _currentDocReligion = doc.religion || null;
+      logger.debug({ docId: _currentDocId, priority: _currentDocPriority }, 'Switched to next doc');
+    }
+
+    const rows = await queryAll(`
+      SELECT c.id, c.text, c.doc_id
+      FROM content c
+      WHERE c.doc_id = ?
+        AND c.graph_enriched = 0
+        AND c.deleted_at IS NULL
+        AND length(c.text) > 50
+      ORDER BY c.paragraph_index ASC
+      LIMIT ?
+    `, [_currentDocId, BATCH_SIZE]);
+
+    if (rows.length === 0) {
+      _currentDocId = null; // doc exhausted — try next on second iteration
+      continue;
+    }
+
+    return rows.map(r => ({ ...r, religion: _currentDocReligion, doc_priority: _currentDocPriority }));
+  }
+  return [];
 }
 
 // Reset up to 200 reextract-flagged paragraphs back to graph_enriched=0 per call.
@@ -405,6 +445,7 @@ async function resetReextractQueue() {
       `UPDATE content SET graph_enriched = 0 WHERE id IN (${placeholders})`,
       ids
     );
+    _currentDocId = null; // force re-evaluation of next doc after resets
     logger.info({ reset: ids.length }, 'Reextract queue: reset graph_enriched=0 for retry');
   } catch (err) {
     logger.warn({ err: err.message }, 'resetReextractQueue failed (non-fatal)');
