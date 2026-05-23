@@ -48,6 +48,10 @@ const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // 1 hour
 const WAL_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000; // 15 min — TRUNCATE keeps WAL near-zero
 const MEILI_RECONCILE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour — resolve orphaned meili_sync_tasks
 const LOG_PROGRESS_EVERY = 10;    // Log every N documents
+// Pre-wipe reset: rows created before April Meili wipe still have synced=1 but aren't in Meili.
+// Reset them 5000/cycle inside this process (single-writer) to avoid write contention.
+const PRE_WIPE_CUTOFF = '2026-04-04';
+const PRE_WIPE_BATCH = 5000;
 
 // Shutdown flag — set on SIGTERM, causes worker to stop after current document
 let isShuttingDown = false;
@@ -58,6 +62,9 @@ let lastCleanupTime = 0;
 let lastFullSyncTime = 0;
 let lastWalCheckpointTime = 0;
 let lastMeiliReconcileTime = 0;
+// Pre-wipe reset state
+let preWipeResetDone = false;
+let preWipeResetTotal = 0;
 
 // Small delay to yield event loop
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -746,9 +753,36 @@ async function reconcileMeiliSyncTasks() {
 }
 
 /**
+ * Reset a batch of pre-April-wipe rows that still have synced=1 but aren't in Meili.
+ * Runs inside this process to avoid competing for the write lock with other workers.
+ */
+async function resetPreWipeBatch() {
+  if (preWipeResetDone) return;
+  try {
+    const result = await query(
+      `UPDATE content SET synced = 0 WHERE rowid IN (
+         SELECT rowid FROM content WHERE synced = 1 AND created_at < ? LIMIT ?
+       )`,
+      [PRE_WIPE_CUTOFF, PRE_WIPE_BATCH]
+    );
+    const changed = result?.changes ?? 0;
+    preWipeResetTotal += changed;
+    if (changed > 0) {
+      logger.info({ changed, total: preWipeResetTotal }, 'Pre-wipe sync reset batch');
+    } else {
+      logger.info({ total: preWipeResetTotal }, 'Pre-wipe sync reset complete');
+      preWipeResetDone = true;
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Pre-wipe sync reset batch failed (non-fatal)');
+  }
+}
+
+/**
  * Run periodic tasks if their intervals have elapsed
  */
 async function runPeriodicTasksIfDue() {
+  await resetPreWipeBatch();
   const now = Date.now();
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await runCleanupCycle();
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await runFullSyncCheck();
@@ -762,10 +796,10 @@ async function runPeriodicTasksIfDue() {
       const result = db.pragma('wal_checkpoint(TRUNCATE)');
       const { busy, log, checkpointed } = result[0];
       logger.info({ busy, log, checkpointed }, 'WAL checkpoint (TRUNCATE)');
-      // If readers block TRUNCATE and WAL is large (>2M pages ≈ 8GB), restart the
+      // If readers block TRUNCATE and WAL is large (>50K pages ≈ 200MB), restart the
       // API to clear its perpetual read marks, then re-checkpoint. The API is
-      // stateless and restarts in <5s — brief unavailability beats a 12GB WAL.
-      if (busy && log > 2000000) {
+      // stateless and restarts in <5s — brief unavailability beats a multi-GB WAL.
+      if (busy && log > 50000) {
         logger.warn({ log }, 'WAL checkpoint blocked — restarting siftersearch-api to release reader locks');
         try {
           const { execSync } = await import('child_process');

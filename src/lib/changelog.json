@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-22T23:31:03.311Z",
+  "generated": "2026-05-23T01:35:52.099Z",
   "entries": [
+    {
+      "hash": "dbd75b4f",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "PropagateHypeFromNormalizedHash lock starvation — smaller batches + index",
+      "scope": null
+    },
     {
       "hash": "bbf47efd",
       "date": "2026-05-22",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Supplementary OL queries guarantee OL docs reach authority ranking",
       "scope": null
-    },
-    {
-      "hash": "ffb5916b",
-      "date": "2026-05-12",
-      "type": "Performance",
-      "description": "Increase cross-tradition per-religion fetch limit 15→30",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-22": [
+      {
+        "hash": "dbd75b4f",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "PropagateHypeFromNormalizedHash lock starvation — smaller batches + index",
+        "scope": null
+      },
       {
         "hash": "bbf47efd",
         "date": "2026-05-22",
@@ -7013,13 +7020,6 @@
         "date": "2026-05-12",
         "type": "New",
         "description": "Supplementary OL queries guarantee OL docs reach authority ranking",
-        "scope": null
-      },
-      {
-        "hash": "ffb5916b",
-        "date": "2026-05-12",
-        "type": "Performance",
-        "description": "Increase cross-tradition per-religion fetch limit 15→30",
         "scope": null
       }
     ]
