@@ -16,7 +16,7 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { query, queryOne, queryAll, getSiteDb } from '../lib/db.js';
+import { query, queryOne, queryAll, getSiteDb, getDb } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { getMeili, syncHypeBatch, syncEntityMentionsBatch } from '../lib/search.js';
 import { syncAliasesToMeili } from '../lib/graph-meili-sync.js';
@@ -55,6 +55,7 @@ const HYPE_SYNC_BATCH = 100;              // paragraphs per batch (~500 question
 const ENTITY_SYNC_INTERVAL_MS = 120 * 1000;  // 2 min — entity mentions index
 const ENTITY_SYNC_BATCH = 200;
 const ALIAS_SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 min — synonym refresh
+const WAL_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000; // 15 min — TRUNCATE keeps WAL near-zero
 // Pre-wipe reset: rows with created_at before April Meili wipe still have synced=1 but aren't in Meili.
 // Reset 500 per cycle — small enough to not stall other writers sharing the WAL.
 const PRE_WIPE_CUTOFF = '2026-04-04';
@@ -72,6 +73,7 @@ let lastUsageReportTime = 0;
 let lastHypeSyncTime = 0;
 let lastEntitySyncTime = 0;
 let lastAliasSyncTime = 0;
+let lastWalCheckpointTime = 0;
 let activeHeartbeatInterval = null;
 let preWipeResetDone = false;
 let preWipeResetTotal = 0;
@@ -756,6 +758,31 @@ async function runPeriodicTasks() {
     } catch (err) {
       logger.error({ err: err.message }, 'Backup failed');
     }
+  }
+  // WAL checkpoint — TRUNCATE every 15 min to prevent WAL from growing to GB-scale.
+  // Restarts the API on block (API holds perpetual read marks; stateless, restarts in <5s).
+  if (now - lastWalCheckpointTime >= WAL_CHECKPOINT_INTERVAL_MS) {
+    try {
+      const db = await getDb();
+      const result = db.pragma('wal_checkpoint(TRUNCATE)');
+      const { busy, log, checkpointed } = result[0];
+      logger.info({ busy, log, checkpointed }, 'WAL checkpoint (TRUNCATE)');
+      if (busy && log > 50000) {
+        logger.warn({ log }, 'WAL checkpoint blocked — restarting siftersearch-api to release reader locks');
+        try {
+          const { execSync } = await import('child_process');
+          execSync('pm2 restart siftersearch-api', { timeout: 30000, stdio: 'inherit' });
+          await new Promise(r => setTimeout(r, 5000));
+          const result2 = db.pragma('wal_checkpoint(TRUNCATE)');
+          logger.info(result2[0], 'WAL checkpoint (TRUNCATE) after API restart');
+        } catch (restartErr) {
+          logger.warn({ err: restartErr.message }, 'API restart or re-checkpoint failed');
+        }
+      }
+    } catch (err) {
+      logger.warn({ err: err.message }, 'WAL checkpoint failed');
+    }
+    lastWalCheckpointTime = now;
   }
 }
 
