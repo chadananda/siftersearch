@@ -182,9 +182,10 @@ async function checkMeili() {
       warn(c, 'remote_only (run on tower-nas to check Meili)');
     return;
   }
-  checkMeiliBatchStall(); // fire-and-forget alongside index checks
-  // Run both index checks in parallel — previously sequential 15s×2 = 30s worst case
+  // Run all three checks in parallel — batch stall was fire-and-forget before, causing
+  // intermittent missing result if main checks finish before batch stall fetch completes
   await Promise.all([
+    checkMeiliBatchStall(),
     // paragraphs (main)
     meiliIndex('paragraphs').then(({ stats, latency_ms }) => {
       if (!stats.numberOfDocuments) return warn('meili_paragraphs', 'empty');
