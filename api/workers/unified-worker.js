@@ -55,6 +55,10 @@ const HYPE_SYNC_BATCH = 100;              // paragraphs per batch (~500 question
 const ENTITY_SYNC_INTERVAL_MS = 120 * 1000;  // 2 min — entity mentions index
 const ENTITY_SYNC_BATCH = 200;
 const ALIAS_SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 min — synonym refresh
+// Pre-wipe reset: rows with created_at before April Meili wipe still have synced=1 but aren't in Meili.
+// Reset 5K per cycle inside this single-writer process to avoid external write contention.
+const PRE_WIPE_CUTOFF = '2026-04-04';
+const PRE_WIPE_BATCH = 5000;
 
 // ============================================================
 // State
@@ -69,6 +73,8 @@ let lastHypeSyncTime = 0;
 let lastEntitySyncTime = 0;
 let lastAliasSyncTime = 0;
 let activeHeartbeatInterval = null;
+let preWipeResetDone = false;
+let preWipeResetTotal = 0;
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -693,7 +699,30 @@ async function syncOneSiteOnlyDb(meili, cfg) {
   return total;
 }
 
+async function resetPreWipeBatch() {
+  if (preWipeResetDone) return;
+  try {
+    const result = await query(
+      `UPDATE content SET synced = 0 WHERE rowid IN (
+         SELECT rowid FROM content WHERE synced = 1 AND created_at < ? LIMIT ?
+       )`,
+      [PRE_WIPE_CUTOFF, PRE_WIPE_BATCH]
+    );
+    const changed = result?.changes ?? 0;
+    preWipeResetTotal += changed;
+    if (changed > 0) {
+      logger.info({ changed, total: preWipeResetTotal }, 'Pre-wipe sync reset batch');
+    } else {
+      logger.info({ total: preWipeResetTotal }, 'Pre-wipe sync reset complete');
+      preWipeResetDone = true;
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Pre-wipe sync reset batch failed (non-fatal)');
+  }
+}
+
 async function runPeriodicTasks() {
+  await resetPreWipeBatch();
   const now = Date.now();
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await runCleanupCycle();
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await runFullSyncCheck();
