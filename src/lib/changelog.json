@@ -1,6 +1,48 @@
 {
-  "generated": "2026-05-23T01:35:52.099Z",
+  "generated": "2026-05-23T15:47:58.668Z",
   "entries": [
+    {
+      "hash": "69c79256",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Await checkMeiliBatchStall in Promise.all — prevent silent result drop",
+      "scope": null
+    },
+    {
+      "hash": "6c8a3d5e",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Improve meili_sync_tasks health message — accurate HNSW rebuild context",
+      "scope": null
+    },
+    {
+      "hash": "372b253a",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Add WAL checkpoint to unified-worker — prevents 2.7GB WAL accumulation",
+      "scope": null
+    },
+    {
+      "hash": "b05d72b5",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Write-lock starvation in sync pipeline — chunk markSynced + graph-extractor yield",
+      "scope": null
+    },
+    {
+      "hash": "bbde1dc0",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Pre-wipe meili sync reset in unified-worker (active writer process)",
+      "scope": null
+    },
+    {
+      "hash": "fb25f9fa",
+      "date": "2026-05-22",
+      "type": "Fixed",
+      "description": "Pre-wipe meili sync reset + WAL threshold — resolve meili_vs_db health failure",
+      "scope": null
+    },
     {
       "hash": "dbd75b4f",
       "date": "2026-05-22",
@@ -3458,52 +3500,52 @@
       "type": "Fixed",
       "description": "Switch Buddhist+Judaism primary searches to author-based targeting — OL primary texts have hash collection IDs not readable names",
       "scope": null
-    },
-    {
-      "hash": "e1151fba",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Christian primary search targets OL Matthew directly (author:Matthew) not collection filter that misses OL Gospel books",
-      "scope": null
-    },
-    {
-      "hash": "97c18210",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Public API /v1/search religion filter was silently dropped — hybridSearch expects filters:{} not filter:string",
-      "scope": null
-    },
-    {
-      "hash": "502afda7",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "OceanLibrary deep links in Jafar citations — subagent now fetches source_site/source_url/slug and computes per-paragraph paraId URLs; pipeline returns retrieval_quotes so citations event is populated",
-      "scope": null
-    },
-    {
-      "hash": "f6f6db36",
-      "date": "2026-05-12",
-      "type": "New",
-      "description": "Add primary scripture authors for all traditions to AUTHOR_AUTHORITY",
-      "scope": null
-    },
-    {
-      "hash": "a36809f3",
-      "date": "2026-05-12",
-      "type": "Other",
-      "description": "Increase OL source multiplier 1.4→2.0 to bridge archaic-language gap",
-      "scope": null
-    },
-    {
-      "hash": "12e40b38",
-      "date": "2026-05-12",
-      "type": "New",
-      "description": "Supplementary OL queries guarantee OL docs reach authority ranking",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-22": [
+      {
+        "hash": "69c79256",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Await checkMeiliBatchStall in Promise.all — prevent silent result drop",
+        "scope": null
+      },
+      {
+        "hash": "6c8a3d5e",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Improve meili_sync_tasks health message — accurate HNSW rebuild context",
+        "scope": null
+      },
+      {
+        "hash": "372b253a",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Add WAL checkpoint to unified-worker — prevents 2.7GB WAL accumulation",
+        "scope": null
+      },
+      {
+        "hash": "b05d72b5",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Write-lock starvation in sync pipeline — chunk markSynced + graph-extractor yield",
+        "scope": null
+      },
+      {
+        "hash": "bbde1dc0",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Pre-wipe meili sync reset in unified-worker (active writer process)",
+        "scope": null
+      },
+      {
+        "hash": "fb25f9fa",
+        "date": "2026-05-22",
+        "type": "Fixed",
+        "description": "Pre-wipe meili sync reset + WAL threshold — resolve meili_vs_db health failure",
+        "scope": null
+      },
       {
         "hash": "dbd75b4f",
         "date": "2026-05-22",
@@ -6978,48 +7020,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Switch Buddhist+Judaism primary searches to author-based targeting — OL primary texts have hash collection IDs not readable names",
-        "scope": null
-      },
-      {
-        "hash": "e1151fba",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Christian primary search targets OL Matthew directly (author:Matthew) not collection filter that misses OL Gospel books",
-        "scope": null
-      },
-      {
-        "hash": "97c18210",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Public API /v1/search religion filter was silently dropped — hybridSearch expects filters:{} not filter:string",
-        "scope": null
-      },
-      {
-        "hash": "502afda7",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "OceanLibrary deep links in Jafar citations — subagent now fetches source_site/source_url/slug and computes per-paragraph paraId URLs; pipeline returns retrieval_quotes so citations event is populated",
-        "scope": null
-      },
-      {
-        "hash": "f6f6db36",
-        "date": "2026-05-12",
-        "type": "New",
-        "description": "Add primary scripture authors for all traditions to AUTHOR_AUTHORITY",
-        "scope": null
-      },
-      {
-        "hash": "a36809f3",
-        "date": "2026-05-12",
-        "type": "Other",
-        "description": "Increase OL source multiplier 1.4→2.0 to bridge archaic-language gap",
-        "scope": null
-      },
-      {
-        "hash": "12e40b38",
-        "date": "2026-05-12",
-        "type": "New",
-        "description": "Supplementary OL queries guarantee OL docs reach authority ranking",
         "scope": null
       }
     ]

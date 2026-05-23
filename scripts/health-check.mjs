@@ -449,8 +449,12 @@ async function checkMeiliSyncTasks() {
   const details = { stale_count, oldest_age_hours, total_processing };
 
   if (stale_count > 0) {
+    const ageH = oldest_age_hours?.toFixed(1);
+    const context = oldest_age_hours >= 24
+      ? `Meili HNSW rebuild at ${ageH}h — past expected window; check tower-nas: curl -s 'http://localhost:7700/tasks?limit=3&statuses=processing' -H 'Authorization: Bearer <MEILI_KEY>' | jq '.results[].duration'`
+      : `Meili HNSW vector index rebuild in progress (${ageH}h); tasks queued, will clear when rebuild completes`;
     return warn('meili_sync_tasks',
-      `${stale_count} processing task(s) older than 12h (oldest: ${oldest_age_hours?.toFixed(1)}h) — Meili HNSW vector index rebuild in progress (normal for large collections); tasks queued, will clear when rebuild completes`,
+      `${stale_count} processing task(s) older than 12h (oldest: ${ageH}h) — ${context}`,
       details);
   }
   ok('meili_sync_tasks', 0, details);
