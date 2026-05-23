@@ -56,9 +56,9 @@ const ENTITY_SYNC_INTERVAL_MS = 120 * 1000;  // 2 min — entity mentions index
 const ENTITY_SYNC_BATCH = 200;
 const ALIAS_SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 min — synonym refresh
 // Pre-wipe reset: rows with created_at before April Meili wipe still have synced=1 but aren't in Meili.
-// Reset 5K per cycle inside this single-writer process to avoid external write contention.
+// Reset 500 per cycle — small enough to not stall other writers sharing the WAL.
 const PRE_WIPE_CUTOFF = '2026-04-04';
-const PRE_WIPE_BATCH = 5000;
+const PRE_WIPE_BATCH = 500;
 
 // ============================================================
 // State

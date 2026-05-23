@@ -859,7 +859,7 @@ async function markSynced(ids) {
   if (!ids || ids.length === 0) return;
 
   const ts = now();
-  const BATCH = 500; // SQLite variable limit safety
+  const BATCH = 100; // 100-row chunks — avoids prolonged write-lock starvation
   for (let i = 0; i < ids.length; i += BATCH) {
     const batch = ids.slice(i, i + BATCH);
     await query(`
@@ -867,6 +867,7 @@ async function markSynced(ids) {
         grounded_synced = CASE WHEN grounded_synced = 0 AND embedding_grounded IS NOT NULL THEN 1 ELSE grounded_synced END
       WHERE id IN (${batch.map(() => '?').join(',')})
     `, [ts, ...batch]);
+    if (i + BATCH < ids.length) await new Promise(r => setTimeout(r, 50));
   }
 }
 

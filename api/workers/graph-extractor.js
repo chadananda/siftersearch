@@ -514,6 +514,7 @@ async function processOnce() {
       logger.warn({ err: err.message }, 'writeResult failed');
       failed++;
     }
+    await delay(50); // yield between writes to reduce write-lock starvation for other workers
   }
 
   if (failed > 0) logger.warn({ succeeded, failed }, 'Batch partial failures');
