@@ -545,6 +545,20 @@ export async function initializeIndexes() {
   // which destroys the vector index and requires a week-long re-index.
   // Verify both PARAGRAPHS and HYPE_QUESTIONS (any vector-bearing index).
   setTimeout(async () => {
+    // Guard: never re-apply embedder settings while Meilisearch is processing tasks.
+    // A PATCH to /settings when HNSW is rebuilding cancels + restarts the rebuild,
+    // turning a 24h job into an infinite loop across API restarts.
+    try {
+      const tasksRes = await fetch(`${meiliUrl}/tasks?statuses=processing&limit=1`, { headers });
+      const tasksJson = await tasksRes.json();
+      if (tasksJson?.results?.length > 0) {
+        logger.info('Skipping embedder verification — Meilisearch has tasks in processing state');
+        return;
+      }
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Could not check Meilisearch task status before embedder verify');
+    }
+
     for (const indexUid of [INDEXES.PARAGRAPHS, INDEXES.HYPE_QUESTIONS]) {
       try {
         const res = await fetch(`${meiliUrl}/indexes/${indexUid}/settings/embedders`, { headers });
