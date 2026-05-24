@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-24T13:24:12.243Z",
+  "generated": "2026-05-24T14:02:30.819Z",
   "entries": [
+    {
+      "hash": "ff81aa12",
+      "date": "2026-05-24",
+      "type": "Fixed",
+      "description": "Escalate meili HNSW stuck to fail() at 36h + guard embedder re-apply during rebuild",
+      "scope": null
+    },
     {
       "hash": "c6d33233",
       "date": "2026-05-23",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "BM25-dominant search for primary scripture lookups — surfaces exact keyword matches over semantic drift",
       "scope": null
-    },
-    {
-      "hash": "ece3e5ad",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Strip question boilerplate from passage search query — surfaces Matthew 5:44 for 'love your enemies' queries",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-24": [
+      {
+        "hash": "ff81aa12",
+        "date": "2026-05-24",
+        "type": "Fixed",
+        "description": "Escalate meili HNSW stuck to fail() at 36h + guard embedder re-apply during rebuild",
+        "scope": null
+      }
+    ],
     "2026-05-23": [
       {
         "hash": "c6d33233",
@@ -7015,13 +7024,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "BM25-dominant search for primary scripture lookups — surfaces exact keyword matches over semantic drift",
-        "scope": null
-      },
-      {
-        "hash": "ece3e5ad",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Strip question boilerplate from passage search query — surfaces Matthew 5:44 for 'love your enemies' queries",
         "scope": null
       }
     ]

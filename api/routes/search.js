@@ -453,10 +453,12 @@ export default async function searchRoutes(fastify) {
     const counts = await getCachedContentCounts();
 
     // Small-table queries only — these have indexed lookups, fast even under write pressure
-    const [schemaRow, recentlySynced, promotionQ, recentExtractions, deepResearch, staleSyncTasks, walStat] = await Promise.all([
+    const [schemaRow, activeSyncJob, promotionQ, recentExtractions, deepResearch, staleSyncTasks, walStat] = await Promise.all([
       queryOne(`SELECT version FROM _schema_version ORDER BY version DESC LIMIT 1`).catch(() => null),
-      // idx_content_recently_synced partial index — only scans recent rows
-      queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced = 1 AND updated_at > datetime('now', '-2 hours')`).catch(() => ({ n: 0 })),
+      // Active sync job — authoritative "worker is working" signal. updated_at on content
+      // rows is set at INSERT time, not when synced changes, so counting synced rows by
+      // updated_at gives false-zero when old paragraphs are synced. sync_jobs.status is exact.
+      queryOne(`SELECT id, completed_items, total_items FROM sync_jobs WHERE status = 'running' ORDER BY id DESC LIMIT 1`).catch(() => null),
       queryOne(`SELECT COUNT(*) AS n FROM promotion_queue WHERE resolved = 0`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS n FROM extraction_runs WHERE created_at > unixepoch() - 86400`).catch(() => ({ n: 0 })),
       queryOne(`SELECT COUNT(*) AS total,
@@ -513,8 +515,9 @@ export default async function searchRoutes(fastify) {
         size_bytes: walStat?.size ?? null
       },
       status: {
-        sync_stuck: pipeline.unsynced !== -1 && pipeline.unsynced > 1000 && (recentlySynced?.n ?? 0) === 0,
-        synced_last_2h: recentlySynced?.n ?? 0,
+        sync_stuck: pipeline.unsynced !== -1 && pipeline.unsynced > 1000 && !activeSyncJob,
+        synced_last_2h: activeSyncJob?.completed_items ?? 0,
+        active_sync_job: !!activeSyncJob,
         migration_pending: (schemaRow?.version ?? 0) < CURRENT_VERSION
       }
     };

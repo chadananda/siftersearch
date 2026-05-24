@@ -407,8 +407,8 @@ async function checkSyncStaleness() {
   // Check for stuck worker first (independent of WAL/count availability)
   if (status.sync_stuck) {
     const msg = sync.unsynced_count === -1
-      ? 'sync processor stuck — no rows synced in last 2h (WAL too large to count backlog)'
-      : `${sync.unsynced_count.toLocaleString()} paragraphs unsynced, none synced in last 2h — sync processor stuck`;
+      ? 'sync processor stuck — no active sync job and WAL too large to count backlog'
+      : `${sync.unsynced_count.toLocaleString()} paragraphs unsynced, no active sync job running`;
     return fail('sync_staleness', msg, details);
   }
 
@@ -430,9 +430,9 @@ async function checkSyncStaleness() {
       { ...details, total_paragraphs: sync.total_paragraphs, unsynced: sync.unsynced_count });
   }
   if (sync.unsynced_count > 50000) {
-    const rate = status.synced_last_2h > 0 ? `${status.synced_last_2h.toLocaleString()} synced in last 2h` : 'no activity in last 2h';
+    const activity = status.active_sync_job ? 'sync job running' : 'no active sync job';
     return warn('sync_staleness',
-      `large backlog: ${sync.unsynced_count.toLocaleString()} unsynced (${rate})`,
+      `large backlog: ${sync.unsynced_count.toLocaleString()} unsynced (${activity})`,
       details);
   }
   ok('sync_staleness', 0, details);
