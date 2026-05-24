@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-24T14:02:30.819Z",
+  "generated": "2026-05-24T14:26:05.763Z",
   "entries": [
+    {
+      "hash": "189e5f97",
+      "date": "2026-05-24",
+      "type": "Fixed",
+      "description": "Sync_stuck detection uses sync_jobs.status not updated_at — eliminate false positives",
+      "scope": null
+    },
     {
       "hash": "ff81aa12",
       "date": "2026-05-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Allow multi-passage per doc for author-filtered searches — docDedup cap was blocking Matthew 5:44 behind peacemakers from same KJV doc",
       "scope": null
-    },
-    {
-      "hash": "3c36db47",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "BM25-dominant search for primary scripture lookups — surfaces exact keyword matches over semantic drift",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-24": [
+      {
+        "hash": "189e5f97",
+        "date": "2026-05-24",
+        "type": "Fixed",
+        "description": "Sync_stuck detection uses sync_jobs.status not updated_at — eliminate false positives",
+        "scope": null
+      },
       {
         "hash": "ff81aa12",
         "date": "2026-05-24",
@@ -7017,13 +7024,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Allow multi-passage per doc for author-filtered searches — docDedup cap was blocking Matthew 5:44 behind peacemakers from same KJV doc",
-        "scope": null
-      },
-      {
-        "hash": "3c36db47",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "BM25-dominant search for primary scripture lookups — surfaces exact keyword matches over semantic drift",
         "scope": null
       }
     ]

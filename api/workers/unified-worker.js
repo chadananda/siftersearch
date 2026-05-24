@@ -275,9 +275,11 @@ async function processSyncJob(job) {
         // task to release some IDs back, then re-check. If nothing in
         // flight either, we're truly done.
         if (inFlight.length === 0) break;
-        await drainOldest();
-        // After drain, paragraphs from the oldest task are now synced=1.
-        // Their docs are no longer dirty. Clear the set and re-fetch.
+        // Optimistic sync: synced=1 is already set on submission. Yield briefly
+        // then prune completed tasks so inFlightDocIds stays bounded. No need
+        // to block until Meili confirms — just release IDs and re-fetch.
+        await delay(2000);
+        await pruneCompleted(meili, inFlight);
         inFlightDocIds.clear();
         continue;
       }
