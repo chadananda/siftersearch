@@ -517,19 +517,25 @@ export async function initializeIndexes() {
 
   // Only PATCH settings if they differ from current — avoids queuing settingsUpdate
   // tasks on every API restart, which block the document indexing queue.
+  // IMPORTANT: exclude `embedders` from this comparison — Meilisearch returns extra
+  // fields (e.g. {type, source, dimensions}) that don't round-trip cleanly through
+  // JSON.stringify, causing false positives. Embedder settings are managed exclusively
+  // in the setTimeout block below which reads and compares them correctly.
   for (const [indexName, settings] of [[INDEXES.PARAGRAPHS, paragraphSettings], [INDEXES.DOCUMENTS, documentSettings], [INDEXES.HYPE_QUESTIONS, hypeSettings], [INDEXES.DEEP_RESEARCH, deepResearchSettings], [INDEXES.ENTITY_MENTIONS, entityMentionsSettings]]) {
     try {
       const currentRes = await fetchWithTimeout(`${meiliUrl}/indexes/${indexName}/settings`, { headers }, 5000);
       const current = currentRes.ok ? await currentRes.json() : null;
-      const needsUpdate = !current || Object.keys(settings).some(key => {
-        return JSON.stringify(current[key]) !== JSON.stringify(settings[key]);
+      const { embedders: _ignored, ...settingsWithoutEmbedders } = settings;
+      const needsUpdate = !current || Object.keys(settingsWithoutEmbedders).some(key => {
+        return JSON.stringify(current[key]) !== JSON.stringify(settingsWithoutEmbedders[key]);
       });
       if (!needsUpdate) {
         logger.info({ index: indexName }, 'Settings unchanged, skipping update');
         continue;
       }
+      const patchBody = settingsWithoutEmbedders;
       const res = await fetchWithTimeout(`${meiliUrl}/indexes/${indexName}/settings`, {
-        method: 'PATCH', headers, body: JSON.stringify(settings)
+        method: 'PATCH', headers, body: JSON.stringify(patchBody)
       });
       const task = await res.json();
       logger.info({ taskUid: task.taskUid, index: indexName }, 'Settings update enqueued (changed)');
