@@ -450,19 +450,19 @@ async function checkMeiliSyncTasks() {
 
   if (stale_count > 0) {
     const ageH = oldest_age_hours?.toFixed(1);
-    if (oldest_age_hours >= 36) {
-      // HNSW rebuild takes 20-30h normally; ≥36h means it's stuck
+    if (oldest_age_hours >= 48) {
+      // Tasks stuck for 48h+ indicate a genuine Meilisearch processing failure
       return fail('meili_sync_tasks',
-        `STUCK: ${stale_count} processing task(s) for ${ageH}h — Meili HNSW rebuild is hung. ` +
-        `On tower-nas: check 'curl -s http://localhost:7700/tasks?statuses=processing | jq' ` +
-        `then consider 'sudo systemctl restart meilisearch' if blocked (vector index will re-sync from backup)`,
+        `STUCK: ${stale_count} processing task(s) for ${ageH}h — Meilisearch queue hung. ` +
+        `On tower-nas: check 'curl -s -H "Authorization: Bearer $KEY" http://localhost:7700/tasks?statuses=processing | jq' ` +
+        `then consider restoring Meilisearch from backup (see scripts/CLAUDE.md)`,
         details);
     }
-    const context = oldest_age_hours >= 24
-      ? `Meili HNSW rebuild at ${ageH}h — approaching stuck threshold (36h); monitor closely`
-      : `Meili HNSW vector index rebuild in progress (${ageH}h); tasks queued, will clear when rebuild completes`;
+    const context = oldest_age_hours >= 36
+      ? `Meilisearch task queue backed up ${ageH}h — approaching alert threshold (48h); monitor`
+      : `Meilisearch task queue backed up (${ageH}h); tasks will complete as queue drains`;
     return warn('meili_sync_tasks',
-      `${stale_count} processing task(s) older than 12h (oldest: ${ageH}h) — ${context}`,
+      `${stale_count} processing task(s) older than 24h (oldest: ${ageH}h) — ${context}`,
       details);
   }
   ok('meili_sync_tasks', 0, details);
