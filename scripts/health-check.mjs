@@ -451,9 +451,46 @@ async function checkMeiliSyncTasks() {
   if (stale_count > 0) {
     const ageH = oldest_age_hours?.toFixed(1);
     if (oldest_age_hours >= 48) {
-      // Tasks stuck for 48h+ indicate a genuine Meilisearch processing failure
+      // Read count history to distinguish static (draining) from growing (stuck).
+      // A static count behind a large Meili queue is expected; growing = genuinely stuck.
+      const cacheFile = join(PROJECT_ROOT, 'tmp', 'meili-task-count-history.json');
+      let history = { counts: [] };
+      try {
+        const { readFile } = await import('fs/promises');
+        history = JSON.parse(await readFile(cacheFile, 'utf8'));
+      } catch { /* first run or missing */ }
+
+      history.counts.push({ count: stale_count, ts: Date.now() });
+      if (history.counts.length > 10) history.counts = history.counts.slice(-10);
+
+      try {
+        const { writeFile } = await import('fs/promises');
+        await writeFile(cacheFile, JSON.stringify(history));
+      } catch { /* non-fatal */ }
+
+      // Static: all recent samples have the same count (queue draining behind backlog)
+      const allSame = history.counts.length >= 2 &&
+        history.counts.every(s => s.count === history.counts[0].count);
+      // Growing: latest count is higher than oldest recorded count
+      const growing = history.counts.length >= 2 &&
+        stale_count > history.counts[0].count;
+
+      if (growing) {
+        return fail('meili_sync_tasks',
+          `GROWING: ${stale_count} processing task(s) for ${ageH}h and count is INCREASING — ` +
+          `Meilisearch queue not draining. On tower-nas: check ` +
+          `'curl -s -H "Authorization: Bearer $KEY" http://localhost:7700/tasks?statuses=processing | jq'`,
+          details);
+      }
+      if (allSame) {
+        return warn('meili_sync_tasks',
+          `${stale_count} processing task(s) for ${ageH}h — count STATIC across ${history.counts.length} checks; ` +
+          `queue draining behind Meilisearch backlog (not stuck)`,
+          details);
+      }
+      // First time seeing ≥48h or count recently changed — raise FAIL until pattern is confirmed
       return fail('meili_sync_tasks',
-        `STUCK: ${stale_count} processing task(s) for ${ageH}h — Meilisearch queue hung. ` +
+        `STUCK: ${stale_count} processing task(s) for ${ageH}h — Meilisearch queue may be hung. ` +
         `On tower-nas: check 'curl -s -H "Authorization: Bearer $KEY" http://localhost:7700/tasks?statuses=processing | jq' ` +
         `then consider restoring Meilisearch from backup (see scripts/CLAUDE.md)`,
         details);

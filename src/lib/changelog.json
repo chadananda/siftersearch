@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-26T20:40:33.993Z",
+  "generated": "2026-05-26T21:03:43.914Z",
   "entries": [
+    {
+      "hash": "92d5b179",
+      "date": "2026-05-26",
+      "type": "Fixed",
+      "description": "Arabic/Chinese embedding crash + cap sidecar cache batch at 200 params",
+      "scope": null
+    },
     {
       "hash": "c3244787",
       "date": "2026-05-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "CATALOG_PATTERNS regex was matching interfaith search queries as catalog queries",
       "scope": null
-    },
-    {
-      "hash": "51c02898",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Post-merge author filter in multiIndexSearch blocks HyPE leaking non-matching authors",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-26": [
+      {
+        "hash": "92d5b179",
+        "date": "2026-05-26",
+        "type": "Fixed",
+        "description": "Arabic/Chinese embedding crash + cap sidecar cache batch at 200 params",
+        "scope": null
+      },
       {
         "hash": "c3244787",
         "date": "2026-05-26",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "CATALOG_PATTERNS regex was matching interfaith search queries as catalog queries",
-        "scope": null
-      },
-      {
-        "hash": "51c02898",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Post-merge author filter in multiIndexSearch blocks HyPE leaking non-matching authors",
         "scope": null
       }
     ]
