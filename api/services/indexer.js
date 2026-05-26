@@ -173,30 +173,32 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
       const uncachedNormalizedHashes = uncachedIndices.map(i =>
         computeNormalizedHash(paragraphs[i].text)
       );
-      const placeholders = uncachedNormalizedHashes.map(() => '?').join(',');
 
-      // Global lookup by normalized_hash: finds ANY content with matching normalized text
-      // Includes all content (even soft-deleted) to maximize embedding reuse.
-      // We pull sidecar enrichment columns alongside the embedding so an
-      // ingest that sees a hash hit also inherits any disambiguation /
-      // HyPE work that was done on the prior copy.
-      // GROUP BY ensures we only return one row per hash (any row will do —
-      // the embedding+sidecar bundle for verbatim text is interchangeable).
-      const globalMatches = await queryAll(
-        `SELECT normalized_hash,
-                MAX(embedding) AS embedding,
-                MAX(embedding_model) AS embedding_model,
-                MAX(hyp_thesis) AS hyp_thesis,
-                MAX(hyp_questions) AS hyp_questions,
-                MAX(context) AS context,
-                MAX(context_model) AS context_model
-         FROM content
-         WHERE normalized_hash IN (${placeholders})
-           AND embedding IS NOT NULL
-           AND embedding_model = ?
-         GROUP BY normalized_hash`,
-        [...uncachedNormalizedHashes, EMBEDDING_MODEL]
-      );
+      // Chunk IN queries to ≤200 params — avoids SQLite SQLITE_MAX_VARIABLE_NUMBER
+      // limit and caps per-query memory for large documents (e.g. 1682-para books).
+      const HASH_BATCH = 200;
+      const globalMatchRows = [];
+      for (let b = 0; b < uncachedNormalizedHashes.length; b += HASH_BATCH) {
+        const batchHashes = uncachedNormalizedHashes.slice(b, b + HASH_BATCH);
+        const placeholders = batchHashes.map(() => '?').join(',');
+        const rows = await queryAll(
+          `SELECT normalized_hash,
+                  MAX(embedding) AS embedding,
+                  MAX(embedding_model) AS embedding_model,
+                  MAX(hyp_thesis) AS hyp_thesis,
+                  MAX(hyp_questions) AS hyp_questions,
+                  MAX(context) AS context,
+                  MAX(context_model) AS context_model
+           FROM content
+           WHERE normalized_hash IN (${placeholders})
+             AND embedding IS NOT NULL
+             AND embedding_model = ?
+           GROUP BY normalized_hash`,
+          [...batchHashes, EMBEDDING_MODEL]
+        );
+        globalMatchRows.push(...rows);
+      }
+      const globalMatches = globalMatchRows;
 
       // Build normalized_hash -> bundle map from global matches
       const globalBundles = new Map();
@@ -296,10 +298,16 @@ async function storeInLibsql(document, paragraphs) {
 
     // Insert all paragraphs via content API and collect auto-generated ids
     for (const para of paragraphs) {
-      // Convert Float32Array to Buffer for BLOB storage
-      const embeddingBlob = para.embedding
-        ? Buffer.from(para.embedding.buffer || para.embedding)
-        : null;
+      // Convert embedding to Buffer for BLOB storage.
+      // OpenAI returns plain float arrays; Float32Array has .buffer; handle all cases.
+      const embeddingBlob = (() => {
+        const emb = para.embedding;
+        if (!emb) return null;
+        if (Buffer.isBuffer(emb)) return emb;
+        if (emb.buffer instanceof ArrayBuffer) return Buffer.from(emb.buffer, emb.byteOffset, emb.byteLength);
+        if (Array.isArray(emb) || ArrayBuffer.isView(emb)) return Buffer.from(new Float32Array(emb).buffer);
+        return null;
+      })();
 
       const result = await content.insertParagraph(docId, {
         paragraphIndex: para.paragraph_index,

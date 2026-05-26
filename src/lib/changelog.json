@@ -1,6 +1,27 @@
 {
-  "generated": "2026-05-25T02:13:19.093Z",
+  "generated": "2026-05-26T20:40:33.993Z",
   "entries": [
+    {
+      "hash": "c3244787",
+      "date": "2026-05-26",
+      "type": "Fixed",
+      "description": "Prevent library-watcher crash loop — catch all floating promises",
+      "scope": null
+    },
+    {
+      "hash": "93c7e74c",
+      "date": "2026-05-24",
+      "type": "Fixed",
+      "description": "Raise meili_sync_tasks stale threshold 12h→24h/48h, fix queue backlog messaging",
+      "scope": null
+    },
+    {
+      "hash": "d96d5302",
+      "date": "2026-05-24",
+      "type": "Fixed",
+      "description": "Exclude embedders from settings diff to prevent false settingsUpdate on restart",
+      "scope": null
+    },
     {
       "hash": "14cdc0c4",
       "date": "2026-05-24",
@@ -3479,31 +3500,33 @@
       "type": "Fixed",
       "description": "Post-merge author filter in multiIndexSearch blocks HyPE leaking non-matching authors",
       "scope": null
-    },
-    {
-      "hash": "e4e852ad",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Islam slot — broadAuthor pins both primary+broad searches to OL suras (author=Muhammad)",
-      "scope": null
-    },
-    {
-      "hash": "24d83543",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "OL fallback uses title LIKE filter to prevent Bukhari URL cross-assignment to Quran passages",
-      "scope": null
-    },
-    {
-      "hash": "2dae06b5",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Normalize gerunds in passageQuery — loving your enemies → love enemies for BM25 keyword match",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-26": [
+      {
+        "hash": "c3244787",
+        "date": "2026-05-26",
+        "type": "Fixed",
+        "description": "Prevent library-watcher crash loop — catch all floating promises",
+        "scope": null
+      }
+    ],
     "2026-05-24": [
+      {
+        "hash": "93c7e74c",
+        "date": "2026-05-24",
+        "type": "Fixed",
+        "description": "Raise meili_sync_tasks stale threshold 12h→24h/48h, fix queue backlog messaging",
+        "scope": null
+      },
+      {
+        "hash": "d96d5302",
+        "date": "2026-05-24",
+        "type": "Fixed",
+        "description": "Exclude embedders from settings diff to prevent false settingsUpdate on restart",
+        "scope": null
+      },
       {
         "hash": "14cdc0c4",
         "date": "2026-05-24",
@@ -7003,27 +7026,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Post-merge author filter in multiIndexSearch blocks HyPE leaking non-matching authors",
-        "scope": null
-      },
-      {
-        "hash": "e4e852ad",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Islam slot — broadAuthor pins both primary+broad searches to OL suras (author=Muhammad)",
-        "scope": null
-      },
-      {
-        "hash": "24d83543",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "OL fallback uses title LIKE filter to prevent Bukhari URL cross-assignment to Quran passages",
-        "scope": null
-      },
-      {
-        "hash": "2dae06b5",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Normalize gerunds in passageQuery — loving your enemies → love enemies for BM25 keyword match",
         "scope": null
       }
     ]
