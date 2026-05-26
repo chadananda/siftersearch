@@ -668,6 +668,13 @@ async function indexLibrary() {
   }
 }
 
+// Keep the watcher process alive even if an unexpected async error escapes.
+// Individual document failures are caught per-doc; this is a final backstop
+// so a bad file never kills the entire watcher process.
+process.on('unhandledRejection', (reason) => {
+  console.error('[library-watcher] Unhandled rejection (process kept alive):', reason);
+});
+
 // Run
 indexLibrary().catch(err => {
   console.error('Fatal error:', err);

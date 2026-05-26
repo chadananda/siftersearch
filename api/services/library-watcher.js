@@ -593,6 +593,8 @@ async function scanLibraryForIngestion() {
 async function processAddBatch() {
   addBatchTimer = null;
 
+  try {
+
   const adds = new Map(pendingAdds);
   pendingAdds.clear();
 
@@ -701,6 +703,11 @@ async function processAddBatch() {
       watcherStats.errors++;
       logger.error({ err: err.message, filePath, eventType }, 'Failed to process file');
     }
+  }
+
+  } catch (err) {
+    watcherStats.errors++;
+    logger.error({ err: err.message }, 'processAddBatch: unexpected error — batch aborted');
   }
 }
 
@@ -927,14 +934,16 @@ export function startLibraryWatcher(libraryPaths) {
   watcher
     .on('add', path => {
       if (path.endsWith('meta.yaml')) {
-        handleMetaYamlChange(path);
+        handleMetaYamlChange(path).catch(err =>
+          logger.error({ err: err.message, path }, 'handleMetaYamlChange failed on add'));
       } else {
         queueAddEvent(path, 'add');
       }
     })
     .on('change', path => {
       if (path.endsWith('meta.yaml')) {
-        handleMetaYamlChange(path);
+        handleMetaYamlChange(path).catch(err =>
+          logger.error({ err: err.message, path }, 'handleMetaYamlChange failed on change'));
       } else {
         queueAddEvent(path, 'change');
       }
@@ -946,7 +955,8 @@ export function startLibraryWatcher(libraryPaths) {
           logger.error({ err: err.message, path }, 'refreshReligionRoots failed after meta.yaml unlink'));
         return;
       }
-      queueDeleteEvent(path);
+      queueDeleteEvent(path).catch(err =>
+        logger.error({ err: err.message, path }, 'queueDeleteEvent failed'));
     })
     .on('unlinkDir', async (path) => {
       // Directory deleted - trigger immediate orphan cleanup for that path
