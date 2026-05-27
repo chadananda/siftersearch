@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T17:14:12.858Z",
+  "generated": "2026-05-27T17:15:48.584Z",
   "entries": [
+    {
+      "hash": "004d5fde",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Remove stale MODEL reference in seedDocContextFromDB",
+      "scope": null
+    },
     {
       "hash": "19edbfbe",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Convert &#39; HTML entities to smart apostrophe in text nodes",
       "scope": null
-    },
-    {
-      "hash": "a6d08dab",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "SmartyPants smart quotes + inline quote italics in dialog rendering",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "004d5fde",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Remove stale MODEL reference in seedDocContextFromDB",
+        "scope": null
+      },
       {
         "hash": "19edbfbe",
         "date": "2026-05-27",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Convert &#39; HTML entities to smart apostrophe in text nodes",
-        "scope": null
-      },
-      {
-        "hash": "a6d08dab",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "SmartyPants smart quotes + inline quote italics in dialog rendering",
         "scope": null
       }
     ]

@@ -32,6 +32,9 @@ export async function getMonthlySpend() {
   return row?.total ?? 0;
 }
 
+let _lastWarnAt = 0;
+const WARN_INTERVAL_MS = 60 * 60 * 1000; // log budget warnings at most once per hour
+
 export async function checkBudget() {
   const spend = await getMonthlySpend();
   const fraction = spend / BUDGET;
@@ -40,7 +43,11 @@ export async function checkBudget() {
   else if (fraction >= 0.8) action = 'local';
   else if (fraction >= 0.5) action = 'warn';
   if (action !== 'ok') {
-    logger.warn({ spend, budget: BUDGET, fraction: fraction.toFixed(3), action }, 'Entity extraction budget alert');
+    const now = Date.now();
+    if (now - _lastWarnAt >= WARN_INTERVAL_MS) {
+      logger.warn({ spend, budget: BUDGET, fraction: fraction.toFixed(3), action }, 'Entity extraction budget alert');
+      _lastWarnAt = now;
+    }
   }
   return { spend, budget: BUDGET, fraction, action };
 }
