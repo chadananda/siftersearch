@@ -425,10 +425,10 @@ async function seedDocContextFromDB(docId) {
              json_extract(pe.output_json, '$.roles.setting_time')  AS setting_time
       FROM paragraph_extractions pe
       JOIN content c ON c.id = pe.content_id
-      WHERE c.doc_id = ? AND pe.model = ? AND c.deleted_at IS NULL
+      WHERE c.doc_id = ? AND c.deleted_at IS NULL
       ORDER BY c.paragraph_index DESC
       LIMIT ?
-    `, [docId, MODEL, DOC_CONTEXT_PARA_COUNT]);
+    `, [docId, DOC_CONTEXT_PARA_COUNT]);
 
     if (rows.length === 0) return;
 

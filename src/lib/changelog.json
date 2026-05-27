@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T17:12:52.395Z",
+  "generated": "2026-05-27T17:14:12.858Z",
   "entries": [
+    {
+      "hash": "19edbfbe",
+      "date": "2026-05-27",
+      "type": "Other",
+      "description": "Move entity pipeline model settings to .env-public for easy tuning",
+      "scope": null
+    },
     {
       "hash": "a772e339",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "SmartyPants smart quotes + inline quote italics in dialog rendering",
       "scope": null
-    },
-    {
-      "hash": "671a1fe3",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "VARIANT_MAP humility→humble in passageQuery transforms",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "19edbfbe",
+        "date": "2026-05-27",
+        "type": "Other",
+        "description": "Move entity pipeline model settings to .env-public for easy tuning",
+        "scope": null
+      },
       {
         "hash": "a772e339",
         "date": "2026-05-27",
@@ -7019,15 +7026,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "SmartyPants smart quotes + inline quote italics in dialog rendering",
-        "scope": null
-      }
-    ],
-    "2026-05-12": [
-      {
-        "hash": "671a1fe3",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "VARIANT_MAP humility→humble in passageQuery transforms",
         "scope": null
       }
     ]
