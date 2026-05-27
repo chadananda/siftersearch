@@ -48,8 +48,14 @@ Work: {{WORK_TITLE}}
 Author: {{AUTHOR}}
 Period: {{PERIOD_NAME}} ({{PERIOD_DATE_RANGE}})
 Episode context: {{EPISODE_NAME}}
-Preceding paragraph speaker: {{PRECEDING_SPEAKER}}
-Preceding paragraph setting: {{PRECEDING_SETTING}}
+Current speaker (from recent context): {{PRECEDING_SPEAKER}}
+Current setting (from recent context): {{PRECEDING_SETTING}}
+
+### Preceding paragraphs (rolling context window)
+
+The paragraphs below immediately precede the target paragraph. Use them to resolve pronouns, carry forward speaker identity, and maintain narrative continuity. A speaker established several paragraphs back remains the active speaker unless explicitly changed.
+
+{{PRECEDING_TEXT}}
 
 ### GPB period and ministry reference (use when Work = "God Passes By")
 

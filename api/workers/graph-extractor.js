@@ -111,10 +111,17 @@ async function getEnvelope(docId) {
   };
 }
 
-// Build the full system prompt for a paragraph
-async function buildPrompt(row) {
+// Build the full system prompt for a paragraph.
+// docContext is a snapshot of _docContext taken at batch-start time so all
+// paragraphs in the batch share the same pre-batch context (correct: they run
+// concurrently and none can see what the others found in this batch).
+async function buildPrompt(row, docContext) {
   const envelope = await getEnvelope(row.doc_id);
   const candidates = await buildCandidateDictionary(row.text);
+  const ctx = docContext || {};
+
+  const settingStr = [ctx.lastSettingPlace, ctx.lastSettingTime].filter(Boolean).join(', ') || 'null';
+  const precedingText = ctx.precedingText || '(start of document — no preceding paragraphs)';
 
   return SYSTEM_PROMPT_TEMPLATE
     .replace('{{CANDIDATE_DICTIONARY}}', candidates)
@@ -123,8 +130,9 @@ async function buildPrompt(row) {
     .replace('{{PERIOD_NAME}}', envelope.periodName)
     .replace('{{PERIOD_DATE_RANGE}}', envelope.periodDateRange)
     .replace('{{EPISODE_NAME}}', '')
-    .replace('{{PRECEDING_SPEAKER}}', 'null')
-    .replace('{{PRECEDING_SETTING}}', 'null');
+    .replace('{{PRECEDING_SPEAKER}}', ctx.lastSpeaker || 'null')
+    .replace('{{PRECEDING_SETTING}}', settingStr)
+    .replace('{{PRECEDING_TEXT}}', precedingText);
 }
 
 // Resolve a parsed extraction into entity_mentions, paragraph_roles, quote_instances.
@@ -236,7 +244,7 @@ async function callLLM(row) {
 
   let systemPrompt;
   try {
-    systemPrompt = await buildPrompt(row);
+    systemPrompt = await buildPrompt(row, row._docContext);
   } catch (err) {
     logger.error({ contentId: row.id, err: err.message }, 'buildPrompt failed');
     return null;
@@ -360,6 +368,51 @@ let _currentDocId = null;
 let _currentDocPriority = 0;
 let _currentDocReligion = null;
 
+// Rolling narrative context per doc. Tracks the last resolved speaker/setting
+// and last 5 paragraph texts so each batch can resolve pronouns established
+// several paragraphs earlier (e.g. speaker identified 5 paragraphs back).
+// Reset whenever we switch docs.
+const DOC_CONTEXT_PARA_COUNT = 5;
+const DOC_CONTEXT_PARA_CHARS = 400; // truncate each preceding para to keep tokens reasonable
+
+let _docContext = {
+  lastSpeaker: null,
+  lastNarrator: null,
+  lastSettingPlace: null,
+  lastSettingTime: null,
+  recentParaTexts: [], // most recent first after reversal in buildPrecedingText()
+};
+
+function resetDocContext() {
+  _docContext = {
+    lastSpeaker: null,
+    lastNarrator: null,
+    lastSettingPlace: null,
+    lastSettingTime: null,
+    recentParaTexts: [],
+  };
+}
+
+// Called after each successful write (serial, paragraph_index order within a batch).
+function updateDocContext(parsed, paraText) {
+  const roles = parsed?.roles || {};
+  if (roles.speaker)       _docContext.lastSpeaker       = roles.speaker;
+  if (roles.narrator)      _docContext.lastNarrator      = roles.narrator;
+  if (roles.setting_place) _docContext.lastSettingPlace  = roles.setting_place;
+  if (roles.setting_time)  _docContext.lastSettingTime   = roles.setting_time;
+  _docContext.recentParaTexts.push(paraText.slice(0, DOC_CONTEXT_PARA_CHARS));
+  if (_docContext.recentParaTexts.length > DOC_CONTEXT_PARA_COUNT)
+    _docContext.recentParaTexts.shift();
+}
+
+function buildPrecedingText() {
+  if (_docContext.recentParaTexts.length === 0) return '(start of document — no preceding paragraphs)';
+  return [..._docContext.recentParaTexts]
+    .reverse() // most recent last so model reads in narrative order
+    .map((t, i, arr) => `[${arr.length - i} paragraph${arr.length - i === 1 ? '' : 's'} before]: ${t}`)
+    .join('\n\n');
+}
+
 async function pickNextDoc() {
   const row = await queryOne(`
     SELECT c.doc_id AS id, d.doc_priority, d.religion
@@ -386,6 +439,7 @@ async function fetchBatch() {
       _currentDocId = doc.id;
       _currentDocPriority = doc.doc_priority ?? 0;
       _currentDocReligion = doc.religion || null;
+      resetDocContext();
       logger.debug({ docId: _currentDocId, priority: _currentDocPriority }, 'Switched to next doc');
     }
 
@@ -495,19 +549,37 @@ async function processOnce() {
   }
   _lastBatchPriority = batchPriority;
 
+  // Snapshot rolling context at batch-start so all concurrent LLM calls share
+  // the same pre-batch context (they can't see each other's results mid-flight).
+  const batchDocContext = {
+    lastSpeaker:      _docContext.lastSpeaker,
+    lastNarrator:     _docContext.lastNarrator,
+    lastSettingPlace: _docContext.lastSettingPlace,
+    lastSettingTime:  _docContext.lastSettingTime,
+    precedingText:    buildPrecedingText(),
+  };
+  const rowsWithContext = rows.map(r => ({ ...r, _docContext: batchDocContext }));
+
   // Phase 1: LLM calls concurrently — no DB writes
-  const llmResults = await Promise.allSettled(rows.map(r => callLLM(r)));
+  const llmResults = await Promise.allSettled(rowsWithContext.map(r => callLLM(r)));
 
   // Phase 2: DB writes serially — eliminates concurrent SQLite write contention
   // that causes SQLITE_BUSY in the validator and other graph workers.
+  // Also updates rolling doc context in paragraph_index order for next batch.
   let succeeded = 0;
   let failed = 0;
-  for (const r of llmResults) {
+  for (let i = 0; i < llmResults.length; i++) {
+    const r = llmResults[i];
     if (r.status === 'rejected' || r.value === null) { failed++; continue; }
     try {
       const id = await writeResult(r.value);
-      if (id !== null) succeeded++;
-      else failed++;
+      if (id !== null) {
+        succeeded++;
+        // Update rolling context so next batch sees resolved speaker/setting
+        updateDocContext(r.value.parsed, rows[i].text);
+      } else {
+        failed++;
+      }
     } catch (err) {
       logger.warn({ err: err.message }, 'writeResult failed');
       failed++;
