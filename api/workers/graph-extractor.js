@@ -261,7 +261,7 @@ async function callLLM(row) {
         model: activeModel,
         provider: activeProvider,
         temperature: 0,
-        maxTokens: 8192,
+        maxTokens: 16384,
         // Anthropic: system prompt instructs JSON; enable caching for the large extraction prompt.
         // deepseek-v4-pro: json_object required for reliable structured output.
         ...(activeProvider === 'anthropic'
