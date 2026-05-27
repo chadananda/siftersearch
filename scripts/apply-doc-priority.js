@@ -18,7 +18,7 @@ function matchesLayer(doc, match) {
   if (match.title_contains && !doc.title?.includes(match.title_contains)) return false;
   if (match.author_contains && !doc.author?.includes(match.author_contains)) return false;
   if (match.religion && doc.religion !== match.religion) return false;
-  if (match.authority_gte !== undefined && (doc.authority ?? 0) < match.authority_gte) return false;
+  if (match.tier && doc.tier !== match.tier) return false;
   return true;
 }
 
@@ -29,7 +29,7 @@ export async function applyDocPriority() {
     ...(config.other_layers ?? []),
   ].sort((a, b) => b.priority - a.priority);
 
-  const docs = await queryAll(`SELECT id, title, author, religion, authority FROM docs WHERE deleted_at IS NULL`);
+  const docs = await queryAll(`SELECT id, title, author, religion, tier FROM docs WHERE deleted_at IS NULL`);
   let updated = 0;
 
   for (const doc of docs) {

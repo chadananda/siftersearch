@@ -6,8 +6,8 @@
     {"layer": 3, "match": {"title_contains": "Revelation of Bahá'u'lláh", "author_contains": "Taherzadeh"}, "priority": 800},
     {"layer": 4, "match": {"author_contains": "Balyuzi"}, "priority": 700},
     {"layer": 5, "match": {"author_contains": "Mazandarani"}, "priority": 600},
-    {"layer": 6, "match": {"religion": "Bahá'í", "authority_gte": 8}, "priority": 500},
-    {"layer": 7, "match": {"religion": "Bahá'í", "authority_gte": 5}, "priority": 400},
+    {"layer": 6, "match": {"religion": "Bahá'í", "tier": "revealed"}, "priority": 500},
+    {"layer": 7, "match": {"religion": "Bahá'í", "tier": "central_figure"}, "priority": 400},
     {"layer": 8, "match": {"religion": "Bahá'í"}, "priority": 300}
   ]
 }

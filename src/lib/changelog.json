@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T05:43:10.037Z",
+  "generated": "2026-05-27T11:52:39.656Z",
   "entries": [
+    {
+      "hash": "3136b9e1",
+      "date": "2026-05-26",
+      "type": "Fixed",
+      "description": "Calibrate-deepseek cap concurrency at 10 to prevent SQLITE_BUSY; add dedup-library script",
+      "scope": null
+    },
     {
       "hash": "6b9539aa",
       "date": "2026-05-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Christian semanticRatio=0.35 + passageQuery plural/3rdPerson regex",
       "scope": null
-    },
-    {
-      "hash": "27cfdb31",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "PassageQuery stripping for 'religions' (plural) and 'teaches' (3rd person)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-26": [
+      {
+        "hash": "3136b9e1",
+        "date": "2026-05-26",
+        "type": "Fixed",
+        "description": "Calibrate-deepseek cap concurrency at 10 to prevent SQLITE_BUSY; add dedup-library script",
+        "scope": null
+      },
       {
         "hash": "6b9539aa",
         "date": "2026-05-26",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Christian semanticRatio=0.35 + passageQuery plural/3rdPerson regex",
-        "scope": null
-      },
-      {
-        "hash": "27cfdb31",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "PassageQuery stripping for 'religions' (plural) and 'teaches' (3rd person)",
         "scope": null
       }
     ]
