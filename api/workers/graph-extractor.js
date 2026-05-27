@@ -27,14 +27,26 @@ import { getMeili, INDEXES } from '../lib/search.js';
 import { getAuthority } from '../lib/authority.js';
 
 const PROMPT_VERSION = 'extract-v1';
-const MODEL = process.env.EXTRACTION_MODEL || 'deepseek-v4-flash';
-const MODEL_PROVIDER = process.env.EXTRACTION_PROVIDER || 'deepseek';
 const BATCH_SIZE = parseInt(process.env.EXTRACTION_BATCH_SIZE || '16', 10);
 const IDLE_SLEEP_MS = 30_000;
-// Only extract docs at or above this priority. Default 50 = primary + institutional
-// sources only (Bahá'í tiers 1-7, Islamic primary, etc). Set to 0 to process
-// all docs. Set to 70 for Bahá'í doctrinal works only.
-const MIN_EXTRACTION_PRIORITY = parseInt(process.env.MIN_EXTRACTION_PRIORITY || '50', 10);
+
+// Tiered model selection: higher authority → better model, more careful extraction.
+// Priority thresholds mirror authority_tiers seed values in migration 72:
+//   >= 70 = revealed/central_figure/authorized_interpretation (Bahá'í primary)
+//   >= 40 = institutional/approved_history/primary_scripture_other/tradition
+//   <  40 = scholarly/secondary/reference/unknown
+const TIER_HIGH_MIN_PRIORITY  = parseInt(process.env.EXTRACTION_TIER_HIGH  || '70', 10);
+const TIER_MID_MIN_PRIORITY   = parseInt(process.env.EXTRACTION_TIER_MID   || '40', 10);
+const MODEL_HIGH     = process.env.EXTRACTION_MODEL_HIGH  || 'deepseek-v4-pro';
+const MODEL_MID      = process.env.EXTRACTION_MODEL_MID   || 'deepseek-v4-flash';
+const MODEL_LOW      = process.env.EXTRACTION_MODEL_LOW   || 'deepseek-v4-flash';
+const PROVIDER = 'deepseek';
+
+function modelForPriority(docPriority) {
+  if ((docPriority ?? 0) >= TIER_HIGH_MIN_PRIORITY) return MODEL_HIGH;
+  if ((docPriority ?? 0) >= TIER_MID_MIN_PRIORITY)  return MODEL_MID;
+  return MODEL_LOW;
+}
 
 const SYSTEM_PROMPT_TEMPLATE = readFileSync(
   join(PROJECT_ROOT, 'api/lib/llm-prompts/extract-v1.md'), 'utf8'
@@ -258,8 +270,8 @@ async function callLLM(row) {
     return null;
   }
 
-  const activeModel = MODEL;
-  const activeProvider = MODEL_PROVIDER;
+  const activeModel = modelForPriority(row.doc_priority);
+  const activeProvider = PROVIDER;
 
   let result;
   try {
@@ -469,7 +481,6 @@ async function pickNextDoc() {
     FROM docs d INDEXED BY idx_docs_priority_active
     WHERE d.deleted_at IS NULL
       AND d.duplicate_of IS NULL
-      AND d.doc_priority >= ?
       AND EXISTS (
         SELECT 1 FROM content c
         WHERE c.doc_id = d.id
@@ -479,7 +490,7 @@ async function pickNextDoc() {
       )
     ORDER BY d.doc_priority DESC
     LIMIT 1
-  `, [MIN_EXTRACTION_PRIORITY]);
+  `);
   return row || null;
 }
 
@@ -650,8 +661,8 @@ async function processOnce() {
 async function workerLoop() {
   const localUrl = process.env.LOCAL_LLM || 'http://localhost:8080/v1';
   logger.info(
-    { model: MODEL, provider: MODEL_PROVIDER, batchSize: BATCH_SIZE,
-      ...(MODEL_PROVIDER === 'local' ? { localEndpoint: localUrl } : {}) },
+    { modelHigh: MODEL_HIGH, modelMid: MODEL_MID, modelLow: MODEL_LOW, batchSize: BATCH_SIZE,
+      tierHighMin: TIER_HIGH_MIN_PRIORITY, tierMidMin: TIER_MID_MIN_PRIORITY },
     'Graph extractor starting'
   );
   let totalExtracted = 0;

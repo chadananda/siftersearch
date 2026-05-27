@@ -285,11 +285,14 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         SQLITE_BUSY_TIMEOUT_MS: '30000',
-        EXTRACTION_PROVIDER: 'deepseek',
-        EXTRACTION_MODEL: 'deepseek-v4-flash',
-        // Only process docs at or above this doc_priority. 50 = primary + institutional
-        // sources (Bahá'í tiers 1-7, Islamic primary, etc). Set to 0 for all docs.
-        MIN_EXTRACTION_PRIORITY: '50',
+        // Tiered extraction: high-authority docs (priority >= 70) get the
+        // better model; everything else gets flash. Processes all docs,
+        // highest priority first, so we get maximum value early.
+        EXTRACTION_MODEL_HIGH: 'deepseek-v4-pro',   // Bahá'í primary + other primary scripture
+        EXTRACTION_MODEL_MID:  'deepseek-v4-flash',  // institutional / tradition-doctrinal
+        EXTRACTION_MODEL_LOW:  'deepseek-v4-flash',  // scholarly / secondary / reference
+        EXTRACTION_TIER_HIGH: '70',
+        EXTRACTION_TIER_MID:  '40',
       },
       exp_backoff_restart_delay: 15000,
       max_restarts: 999999,
