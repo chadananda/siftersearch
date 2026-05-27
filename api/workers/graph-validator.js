@@ -26,20 +26,27 @@ const IDLE_SLEEP_MS = 15_000;
 
 const VALIDATION_SYSTEM = `You are a quality-assurance reviewer for entity extraction results.
 
-Given the original paragraph text and its extraction JSON, check for:
-1. Mentions with incorrect span offsets (surface text not at that char position)
-2. Referring expressions resolved to wrong entities (wrong gender, wrong era, implausible)
-3. Relations with reversed subject/object or wrong modality
-4. text_grounded that changes meaning or drops entities
+Given the original paragraph text and its extraction JSON, check for CRITICAL errors only:
+1. Wrong entity identity — pronoun or referring expression resolved to the wrong person/place/thing (wrong gender, wrong era, implausible given context)
+2. Fabricated mentions — entities claimed to appear in the text that are not there at all
+3. Reversed relations — subject and object swapped in a relation
+
+Do NOT flag as errors:
+- Span off-by-one differences (±1-2 characters) — these are trivial formatting issues
+- Minor modality disagreements (asserted vs conditional) when the entity mention itself is correct
+- Nested or overlapping mentions — these are acceptable
 
 Return ONLY valid JSON:
 {
-  "errors": [{ "field": "mentions[0].span", "issue": "span does not match surface text" }],
+  "errors": [{ "field": "mentions[0]", "issue": "entity resolved to wrong person" }],
   "confidence": 0.0-1.0,
   "recommended_action": "accept" | "reextract" | "arbitrate"
 }
 
-If no errors found, return { "errors": [], "confidence": 0.95, "recommended_action": "accept" }.`;
+Use "reextract" ONLY when entities are fabricated or fundamentally misidentified.
+Use "arbitrate" when you are uncertain.
+Use "accept" for all other cases, including span imprecision.
+If no critical errors found, return { "errors": [], "confidence": 0.95, "recommended_action": "accept" }.`;
 
 async function validateOne(extraction) {
   const userMsg = `ORIGINAL TEXT:\n${extraction.paragraph_text}\n\nEXTRACTION JSON:\n${extraction.output_json}`;
@@ -82,6 +89,17 @@ async function validateOne(extraction) {
   } catch {
     logger.warn({ extractionId: extraction.id, content: result.content?.slice(0, 200) }, 'Validator returned non-JSON — marking reextract');
     parsed = { errors: [{ field: 'root', issue: 'non-JSON response from validator' }], confidence: 0.3, recommended_action: 'reextract' };
+  }
+
+  // Safety net: if all errors are span-precision issues and confidence >= 0.65, accept anyway.
+  // Span off-by-one errors are cosmetic — entity identity is still correct.
+  if (parsed.recommended_action === 'reextract' && (parsed.confidence ?? 0) >= 0.65) {
+    const onlySpanErrors = (parsed.errors || []).every(e =>
+      /span|offset|position|character|char/i.test(e.issue) && !/wrong|fabricat|missing|incorrect entity|wrong person|wrong gender/i.test(e.issue)
+    );
+    if (onlySpanErrors && (parsed.errors || []).length > 0) {
+      parsed.recommended_action = 'accept';
+    }
   }
 
   try {

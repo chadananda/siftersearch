@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T18:42:19.224Z",
+  "generated": "2026-05-27T21:25:42.432Z",
   "entries": [
+    {
+      "hash": "9d74e18c",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Use transaction() not manual BEGIN/COMMIT in apply-doc-priority",
+      "scope": null
+    },
     {
       "hash": "e529d0d2",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Fallback-link-only judge false positive; theodicy query expansion for suffering queries",
       "scope": null
-    },
-    {
-      "hash": "d3f899d2",
-      "date": "2026-05-13",
-      "type": "New",
-      "description": "Jafar PREMISE WIDENING — reframe suffering/trial questions to show purpose, not balance",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "9d74e18c",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Use transaction() not manual BEGIN/COMMIT in apply-doc-priority",
+        "scope": null
+      },
       {
         "hash": "e529d0d2",
         "date": "2026-05-27",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Fallback-link-only judge false positive; theodicy query expansion for suffering queries",
-        "scope": null
-      },
-      {
-        "hash": "d3f899d2",
-        "date": "2026-05-13",
-        "type": "New",
-        "description": "Jafar PREMISE WIDENING — reframe suffering/trial questions to show purpose, not balance",
         "scope": null
       }
     ]
