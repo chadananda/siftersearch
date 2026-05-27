@@ -99,7 +99,10 @@ async function scoreModel(model, items) {
   const scores = {};
   for (const cat of CATEGORIES) scores[cat] = { correct: 0, total: 0 };
 
-  await Promise.all(items.map(async (item) => {
+  // Cap concurrency at 10 to avoid SQLITE_BUSY on ai_usage writes
+  const CONCURRENCY = 10;
+  for (let i = 0; i < items.length; i += CONCURRENCY) {
+    await Promise.all(items.slice(i, i + CONCURRENCY).map(async (item) => {
     try {
       const result = await chatCompletion([
         {
@@ -131,6 +134,7 @@ async function scoreModel(model, items) {
       scores[item.category].total++;
     }
   }));
+  } // end batched concurrency loop
 
   return scores;
 }

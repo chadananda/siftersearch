@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T05:24:14.726Z",
+  "generated": "2026-05-27T05:43:10.037Z",
   "entries": [
+    {
+      "hash": "6b9539aa",
+      "date": "2026-05-26",
+      "type": "Fixed",
+      "description": "Calibrate-deepseek — handle NBSP in GPB title via GLOB + skip HTML paragraphs",
+      "scope": null
+    },
     {
       "hash": "16078737",
       "date": "2026-05-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "PassageQuery stripping for 'religions' (plural) and 'teaches' (3rd person)",
       "scope": null
-    },
-    {
-      "hash": "22d85465",
-      "date": "2026-05-12",
-      "type": "Chore",
-      "description": "Bump version to 2.45.18",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-26": [
+      {
+        "hash": "6b9539aa",
+        "date": "2026-05-26",
+        "type": "Fixed",
+        "description": "Calibrate-deepseek — handle NBSP in GPB title via GLOB + skip HTML paragraphs",
+        "scope": null
+      },
       {
         "hash": "16078737",
         "date": "2026-05-26",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "PassageQuery stripping for 'religions' (plural) and 'teaches' (3rd person)",
-        "scope": null
-      },
-      {
-        "hash": "22d85465",
-        "date": "2026-05-12",
-        "type": "Chore",
-        "description": "Bump version to 2.45.18",
         "scope": null
       }
     ]
