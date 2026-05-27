@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T17:11:25.898Z",
+  "generated": "2026-05-27T17:12:52.395Z",
   "entries": [
+    {
+      "hash": "a772e339",
+      "date": "2026-05-27",
+      "type": "New",
+      "description": "Tiered extraction — v4-pro for high-authority, v4-flash for rest; process all docs priority-first",
+      "scope": null
+    },
     {
       "hash": "32471228",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "VARIANT_MAP humility→humble in passageQuery transforms",
       "scope": null
-    },
-    {
-      "hash": "696bc074",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Dynamic REQUIRED traditions warning in crafter user payload",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "a772e339",
+        "date": "2026-05-27",
+        "type": "New",
+        "description": "Tiered extraction — v4-pro for high-authority, v4-flash for rest; process all docs priority-first",
+        "scope": null
+      },
       {
         "hash": "32471228",
         "date": "2026-05-27",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "VARIANT_MAP humility→humble in passageQuery transforms",
-        "scope": null
-      },
-      {
-        "hash": "696bc074",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Dynamic REQUIRED traditions warning in crafter user payload",
         "scope": null
       }
     ]

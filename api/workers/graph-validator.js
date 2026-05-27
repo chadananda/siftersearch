@@ -20,7 +20,7 @@ import { runMigrations } from '../lib/migrations.js';
 import { chatCompletion } from '../lib/ai.js';
 import { trackCost } from '../lib/entity-cost-tracker.js';
 
-const MODEL = 'claude-haiku-4-5-20251001';
+const MODEL = process.env.VALIDATOR_MODEL || 'claude-haiku-4-5-20251001';
 const BATCH_SIZE = 20;
 const IDLE_SLEEP_MS = 15_000;
 

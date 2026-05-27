@@ -26,10 +26,10 @@ const BATCH_SIZE = 10;
 const IDLE_SLEEP_MS = 60_000;
 const MAX_ATTEMPTS = 3;
 
-// Models used for voting (cheapest first, deepseek-v4-pro as tie-breaker)
-const FAST_MODEL   = 'deepseek-v4-flash';
-const DETAIL_MODEL = 'claude-haiku-4-5-20251001';
-const ARBITER_MODEL = 'deepseek-v4-pro';
+// Models used for voting — configurable via .env-public
+const FAST_MODEL    = process.env.PROMOTER_FAST_MODEL    || 'deepseek-v4-flash';
+const DETAIL_MODEL  = process.env.PROMOTER_DETAIL_MODEL  || 'claude-haiku-4-5-20251001';
+const ARBITER_MODEL = process.env.PROMOTER_ARBITER_MODEL || 'deepseek-v4-pro';
 
 const ADJUDICATION_SYSTEM = `You are an entity disambiguation expert for a multi-religion digital library.
 
