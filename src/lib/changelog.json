@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T17:15:48.584Z",
+  "generated": "2026-05-27T18:29:49.903Z",
   "entries": [
+    {
+      "hash": "d36d171d",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Rate-limit budget warn logs to 1/hr; bump budget to 3000/mo for full corpus",
+      "scope": null
+    },
     {
       "hash": "004d5fde",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Persist assessment_json from jafar-batch-runner to published_conversations",
       "scope": null
-    },
-    {
-      "hash": "696fa93d",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Convert &#39; HTML entities to smart apostrophe in text nodes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "d36d171d",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Rate-limit budget warn logs to 1/hr; bump budget to 3000/mo for full corpus",
+        "scope": null
+      },
       {
         "hash": "004d5fde",
         "date": "2026-05-27",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Persist assessment_json from jafar-batch-runner to published_conversations",
-        "scope": null
-      },
-      {
-        "hash": "696fa93d",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Convert &#39; HTML entities to smart apostrophe in text nodes",
         "scope": null
       }
     ]

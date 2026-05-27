@@ -447,4 +447,15 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_ev_extraction_id ON extraction_validations(extraction_id)`);
     logger.info('Migration 82 complete: idx_ev_extraction_id on extraction_validations');
   },
+
+  83: async () => {
+    // Correct authority_tiers ranks: institutional (UHJ/NSA) has legislative value only,
+    // not doctrinal — it ranks below scholarly which has historical value.
+    // New order (high to low): revealed > central_figure/primary_scripture_other >
+    // authorized_interpretation > tradition_doctrinal > tradition_authoritative >
+    // approved_history > scholarly > secondary > institutional > reference > unknown
+    await query(`UPDATE authority_tiers SET rank=25, description='Letters and pronouncements of the Universal House of Justice — legislative authority, not doctrinal' WHERE tier='institutional'`);
+    await query(`UPDATE authority_tiers SET rank=50, description='Modern academic scholarship — historical and analytical value' WHERE tier='scholarly'`);
+    logger.info('Migration 83 complete: corrected authority_tiers ranks (institutional 70→25, scholarly 40→50)');
+  },
 };

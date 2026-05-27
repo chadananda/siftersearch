@@ -1,13 +1,30 @@
 {
-  "_comment": "Doc extraction priority for entity extraction pipeline. Higher priority = processed first. Run scripts/apply-doc-priority.js after editing.",
+  "_comment": "Doc extraction priority for entity extraction pipeline. Higher = processed first. Run scripts/apply-doc-priority.js after editing. Extraction model tiers (set in .env-public): HIGH >= 400 → v4-pro, MID 100-399 → v4-flash, LOW < 100 → v4-flash.",
+
   "bahai_layers": [
     {"layer": 1, "match": {"title": "God Passes By", "author_contains": "Shoghi Effendi"}, "priority": 1000},
     {"layer": 2, "match": {"title_contains": "Dawn-Breakers"}, "priority": 900},
     {"layer": 3, "match": {"title_contains": "Revelation of Bahá'u'lláh", "author_contains": "Taherzadeh"}, "priority": 800},
     {"layer": 4, "match": {"author_contains": "Balyuzi"}, "priority": 700},
     {"layer": 5, "match": {"author_contains": "Mazandarani"}, "priority": 600},
-    {"layer": 6, "match": {"religion": "Bahá'í", "tier": "revealed"}, "priority": 500},
-    {"layer": 7, "match": {"religion": "Bahá'í", "tier": "central_figure"}, "priority": 400},
-    {"layer": 8, "match": {"religion": "Bahá'í"}, "priority": 300}
+    {"layer": 6, "match": {"religion": "Bahá'í", "tier": "revealed"}, "priority": 550},
+    {"layer": 7, "match": {"religion": "Bahá'í", "tier": "central_figure"}, "priority": 500},
+    {"layer": 8, "match": {"religion": "Bahá'í", "tier": "authorized_interpretation"}, "priority": 480},
+    {"layer": 9, "match": {"religion": "Bahá'í", "tier": "approved_history"}, "priority": 350},
+    {"layer": 10, "match": {"religion": "Bahá'í", "tier": "scholarly"}, "priority": 250},
+    {"layer": 11, "match": {"religion": "Bahá'í", "tier": "secondary"}, "priority": 150},
+    {"layer": 12, "match": {"religion": "Bahá'í", "tier": "institutional"}, "priority": 80},
+    {"layer": 13, "match": {"religion": "Bahá'í"}, "priority": 200}
+  ],
+
+  "other_layers": [
+    {"layer": 20, "match": {"tier": "primary_scripture_other"}, "priority": 480},
+    {"layer": 21, "match": {"tier": "tradition_doctrinal"}, "priority": 440},
+    {"layer": 22, "match": {"tier": "tradition_authoritative"}, "priority": 380},
+    {"layer": 23, "match": {"tier": "approved_history"}, "priority": 320},
+    {"layer": 24, "match": {"tier": "scholarly"}, "priority": 250},
+    {"layer": 25, "match": {"tier": "secondary"}, "priority": 150},
+    {"layer": 26, "match": {"tier": "institutional"}, "priority": 80},
+    {"layer": 27, "match": {"tier": "reference"}, "priority": 60}
   ]
 }
