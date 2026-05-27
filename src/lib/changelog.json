@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T15:46:48.875Z",
+  "generated": "2026-05-27T15:57:53.891Z",
   "entries": [
+    {
+      "hash": "f27bcc00",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Migration 82 — idx_ev_extraction_id on extraction_validations",
+      "scope": null
+    },
     {
       "hash": "47f43293",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "SHARED-TEXT RULE for Psalms appearing in both Christian/Judaism indexes",
       "scope": null
-    },
-    {
-      "hash": "106e760b",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Pure BM25 for Christian primary + extend length limit for 5-tradition replies",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "f27bcc00",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Migration 82 — idx_ev_extraction_id on extraction_validations",
+        "scope": null
+      },
       {
         "hash": "47f43293",
         "date": "2026-05-27",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "SHARED-TEXT RULE for Psalms appearing in both Christian/Judaism indexes",
-        "scope": null
-      },
-      {
-        "hash": "106e760b",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Pure BM25 for Christian primary + extend length limit for 5-tradition replies",
         "scope": null
       }
     ]

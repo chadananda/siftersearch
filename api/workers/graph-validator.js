@@ -68,8 +68,11 @@ async function validateOne(extraction) {
 
   let parsed;
   try {
-    parsed = JSON.parse(result.content);
+    // Strip markdown fences that Claude models often add despite instructions
+    const raw = result.content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    parsed = JSON.parse(raw);
   } catch {
+    logger.warn({ extractionId: extraction.id, content: result.content?.slice(0, 200) }, 'Validator returned non-JSON — marking reextract');
     parsed = { errors: [{ field: 'root', issue: 'non-JSON response from validator' }], confidence: 0.3, recommended_action: 'reextract' };
   }
 
