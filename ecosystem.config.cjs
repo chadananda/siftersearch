@@ -287,6 +287,9 @@ module.exports = {
         SQLITE_BUSY_TIMEOUT_MS: '30000',
         EXTRACTION_PROVIDER: 'deepseek',
         EXTRACTION_MODEL: 'deepseek-v4-flash',
+        // Only process docs at or above this doc_priority. 50 = primary + institutional
+        // sources (Bahá'í tiers 1-7, Islamic primary, etc). Set to 0 for all docs.
+        MIN_EXTRACTION_PRIORITY: '50',
       },
       exp_backoff_restart_delay: 15000,
       max_restarts: 999999,

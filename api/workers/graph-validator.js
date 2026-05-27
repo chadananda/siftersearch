@@ -171,15 +171,27 @@ async function workerLoop() {
     }
 
     // Sequential to avoid hammering Anthropic rate limits
+    let skipped = 0;
     for (const row of rows) {
       if (isShuttingDown) break;
+      // Auto-accept trivial paragraphs (<150 chars) — not worth Haiku QA cost.
+      // Span errors and entity confusion are rare in short text.
+      if (row.paragraph_text.length < 150) {
+        await queryWithRetry(`
+          INSERT INTO extraction_validations
+            (extraction_id, validator_model, errors_json, confidence, recommended_action)
+          VALUES (?, ?, ?, ?, ?)
+        `, [row.id, 'auto-accept:short', '[]', 0.9, 'accept']).catch(() => {});
+        skipped++;
+        continue;
+      }
       try {
         await validateOne(row);
       } catch (err) {
         logger.error({ extractionId: row.id, err: err.message }, 'validateOne threw — skipping row');
       }
     }
-    logger.info({ validated: rows.length }, 'Validation batch done');
+    logger.info({ validated: rows.length - skipped, autoAccepted: skipped }, 'Validation batch done');
   }
 
   logger.info('Graph validator shutting down');

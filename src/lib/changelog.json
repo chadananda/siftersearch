@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T17:00:17.997Z",
+  "generated": "2026-05-27T17:05:47.910Z",
   "entries": [
+    {
+      "hash": "433f4535",
+      "date": "2026-05-27",
+      "type": "Other",
+      "description": "Extraction model deepseek-v4-pro → deepseek-v4-flash",
+      "scope": null
+    },
     {
       "hash": "0819528f",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Text dedup scoped per-religion — prevents cross-religion Psalms dedup regression",
       "scope": null
-    },
-    {
-      "hash": "b3769658",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Buddhist queryTransform maps mercy→loving-kindness for primary search",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "433f4535",
+        "date": "2026-05-27",
+        "type": "Other",
+        "description": "Extraction model deepseek-v4-pro → deepseek-v4-flash",
+        "scope": null
+      },
       {
         "hash": "0819528f",
         "date": "2026-05-27",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Text dedup scoped per-religion — prevents cross-religion Psalms dedup regression",
-        "scope": null
-      },
-      {
-        "hash": "b3769658",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Buddhist queryTransform maps mercy→loving-kindness for primary search",
         "scope": null
       }
     ]

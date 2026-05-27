@@ -26,10 +26,10 @@ const BATCH_SIZE = 10;
 const IDLE_SLEEP_MS = 60_000;
 const MAX_ATTEMPTS = 3;
 
-// Models used for voting (cheapest first, Sonnet as tie-breaker)
-const FAST_MODEL   = 'deepseek-v4-pro';
+// Models used for voting (cheapest first, deepseek-v4-pro as tie-breaker)
+const FAST_MODEL   = 'deepseek-v4-flash';
 const DETAIL_MODEL = 'claude-haiku-4-5-20251001';
-const ARBITER_MODEL = 'claude-sonnet-4-6';
+const ARBITER_MODEL = 'deepseek-v4-pro';
 
 const ADJUDICATION_SYSTEM = `You are an entity disambiguation expert for a multi-religion digital library.
 
@@ -116,17 +116,18 @@ ${candidateList}`;
     return votes[0];
   }
 
-  // Arbitrate with Sonnet
+  // Arbitrate with deepseek-v4-pro
   try {
     const modelVotesSummary = votes.map((v, i) =>
       `Model ${i+1}: decision=${v.decision}, entity_id=${v.entity_id}, confidence=${v.confidence}`
     ).join('\n');
     const r = await chatCompletion(
       [sysMsg, { role: 'user', content: `${userMsg}\n\nMODEL VOTES:\n${modelVotesSummary}\n\nResolve the disagreement.` }],
-      { model: ARBITER_MODEL, provider: 'anthropic', temperature: 0, maxTokens: 512 }
+      { model: ARBITER_MODEL, provider: 'deepseek', temperature: 0, maxTokens: 512 }
     );
     const usage = r.usage || {};
-    await trackCost({ model: ARBITER_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: 0, costUsd: ((usage.promptTokens||0) * 0.003 + (usage.completionTokens||0) * 0.015) / 1000 });
+    // deepseek-v4-pro: $0.00055/K input, $0.0022/K output
+    await trackCost({ model: ARBITER_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: 0, costUsd: ((usage.promptTokens||0) * 0.00055 + (usage.completionTokens||0) * 0.0022) / 1000 });
     return parseJsonResponse(r.content);
   } catch (err) {
     logger.debug({ model: ARBITER_MODEL, err: err.message }, 'Arbiter vote failed');
