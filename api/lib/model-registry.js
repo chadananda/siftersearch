@@ -280,9 +280,9 @@ export const MODEL_REGISTRY = {
   // --- DeepSeek API (cloud, OpenAI-compatible) ---
   // IMPORTANT: Verify model IDs at https://api.deepseek.com/models before first use.
   // If IDs differ, update these two keys — they are the single source of truth.
-  'deepseek-chat': {
+  'deepseek-v4-flash': {
     provider: 'deepseek',
-    name: 'DeepSeek V3',
+    name: 'DeepSeek V4 Flash (non-thinking)',
     type: 'chat',
     pricing: { input: 0.00027, output: 0.0011 },
     contextWindow: 64000,
@@ -294,9 +294,9 @@ export const MODEL_REGISTRY = {
     notes: 'Primary bulk extraction model. Supports response_format json_schema. Cache hits ~98% discount.'
   },
 
-  'deepseek-reasoner': {
+  'deepseek-v4-pro': {
     provider: 'deepseek',
-    name: 'DeepSeek R1',
+    name: 'DeepSeek V4 Pro (thinking)',
     type: 'chat',
     pricing: { input: 0.00055, output: 0.0022 },
     contextWindow: 64000,

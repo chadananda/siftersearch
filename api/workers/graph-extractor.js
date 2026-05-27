@@ -27,7 +27,7 @@ import { getMeili, INDEXES } from '../lib/search.js';
 import { getAuthority } from '../lib/authority.js';
 
 const PROMPT_VERSION = 'extract-v1';
-const MODEL = process.env.EXTRACTION_MODEL || 'deepseek-chat';
+const MODEL = process.env.EXTRACTION_MODEL || 'deepseek-v4-flash';
 const MODEL_PROVIDER = process.env.EXTRACTION_PROVIDER || 'deepseek';
 const BATCH_SIZE = parseInt(process.env.EXTRACTION_BATCH_SIZE || '16', 10);
 const IDLE_SLEEP_MS = 30_000;
@@ -255,7 +255,7 @@ async function callLLM(row) {
         temperature: 0,
         maxTokens: 8192,
         // Anthropic: system prompt instructs JSON; enable caching for the large extraction prompt.
-        // deepseek-chat: json_object required for reliable structured output.
+        // deepseek-v4-flash: json_object required for reliable structured output.
         ...(activeProvider === 'anthropic'
           ? { usePromptCache: true }
           : { responseFormat: { type: 'json_object' } }),

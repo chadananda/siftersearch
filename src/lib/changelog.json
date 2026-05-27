@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T11:52:39.656Z",
+  "generated": "2026-05-27T12:08:43.100Z",
   "entries": [
+    {
+      "hash": "6ebea481",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Doc priority — use tier column (not missing authority), add dedup-library script",
+      "scope": null
+    },
     {
       "hash": "3136b9e1",
       "date": "2026-05-26",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "SemanticRatio for Buddhism (0.3) and Judaism (0.35) primary searches",
       "scope": null
-    },
-    {
-      "hash": "8e25c386",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Christian semanticRatio=0.35 + passageQuery plural/3rdPerson regex",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-27": [
+      {
+        "hash": "6ebea481",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Doc priority — use tier column (not missing authority), add dedup-library script",
+        "scope": null
+      }
+    ],
     "2026-05-26": [
       {
         "hash": "3136b9e1",
@@ -7019,13 +7028,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "SemanticRatio for Buddhism (0.3) and Judaism (0.35) primary searches",
-        "scope": null
-      },
-      {
-        "hash": "8e25c386",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Christian semanticRatio=0.35 + passageQuery plural/3rdPerson regex",
         "scope": null
       }
     ]
