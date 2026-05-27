@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T18:29:49.903Z",
+  "generated": "2026-05-27T18:40:52.725Z",
   "entries": [
+    {
+      "hash": "c288a77f",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Institutional ranks below scholarly; tier thresholds match doc_priority scale",
+      "scope": null
+    },
     {
       "hash": "d36d171d",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Render em/strong inside link text; add off-topic-citation assessment flag",
       "scope": null
-    },
-    {
-      "hash": "68385ee9",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Persist assessment_json from jafar-batch-runner to published_conversations",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "c288a77f",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Institutional ranks below scholarly; tier thresholds match doc_priority scale",
+        "scope": null
+      },
       {
         "hash": "d36d171d",
         "date": "2026-05-27",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Render em/strong inside link text; add off-topic-citation assessment flag",
-        "scope": null
-      },
-      {
-        "hash": "68385ee9",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Persist assessment_json from jafar-batch-runner to published_conversations",
         "scope": null
       }
     ]

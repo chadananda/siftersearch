@@ -1,30 +1,48 @@
 {
-  "_comment": "Doc extraction priority for entity extraction pipeline. Higher = processed first. Run scripts/apply-doc-priority.js after editing. Extraction model tiers (set in .env-public): HIGH >= 400 → v4-pro, MID 100-399 → v4-flash, LOW < 100 → v4-flash.",
+  "_comment": "Doc extraction priority for entity extraction pipeline. Higher = processed first. Run scripts/apply-doc-priority.js after editing. docs.tier is unreliable (defaulted to 'secondary') — use author/title/religion matching instead. Religion field uses 'Baha'i' (no diacritics). Extraction model tiers (EXTRACTION_TIER_HIGH/MID in .env-public): HIGH >= 400 → v4-pro, MID 100-399 → v4-flash, LOW < 100 → v4-flash.",
 
   "bahai_layers": [
-    {"layer": 1, "match": {"title": "God Passes By", "author_contains": "Shoghi Effendi"}, "priority": 1000},
-    {"layer": 2, "match": {"title_contains": "Dawn-Breakers"}, "priority": 900},
-    {"layer": 3, "match": {"title_contains": "Revelation of Bahá'u'lláh", "author_contains": "Taherzadeh"}, "priority": 800},
-    {"layer": 4, "match": {"author_contains": "Balyuzi"}, "priority": 700},
-    {"layer": 5, "match": {"author_contains": "Mazandarani"}, "priority": 600},
-    {"layer": 6, "match": {"religion": "Bahá'í", "tier": "revealed"}, "priority": 550},
-    {"layer": 7, "match": {"religion": "Bahá'í", "tier": "central_figure"}, "priority": 500},
-    {"layer": 8, "match": {"religion": "Bahá'í", "tier": "authorized_interpretation"}, "priority": 480},
-    {"layer": 9, "match": {"religion": "Bahá'í", "tier": "approved_history"}, "priority": 350},
-    {"layer": 10, "match": {"religion": "Bahá'í", "tier": "scholarly"}, "priority": 250},
-    {"layer": 11, "match": {"religion": "Bahá'í", "tier": "secondary"}, "priority": 150},
-    {"layer": 12, "match": {"religion": "Bahá'í", "tier": "institutional"}, "priority": 80},
-    {"layer": 13, "match": {"religion": "Bahá'í"}, "priority": 200}
+    {"layer": 1,  "match": {"title": "God Passes By"},                          "priority": 1000},
+    {"layer": 2,  "match": {"title_contains": "Dawn-Breakers"},                 "priority": 900},
+    {"layer": 3,  "match": {"title_contains": "Revelation of Bah", "author_contains": "Taherzadeh"}, "priority": 800},
+    {"layer": 4,  "match": {"author_contains": "Balyuzi"},                      "priority": 700},
+    {"layer": 5,  "match": {"author_contains": "Mazandarani"},                  "priority": 600},
+
+    {"layer": 6,  "match": {"author_contains": "Bah\u00e1'u'll\u00e1h"},        "priority": 550},
+    {"layer": 7,  "match": {"author_contains": "bahaullah"},                    "priority": 550},
+    {"layer": 8,  "match": {"author_contains": "B\u00e1b"},                     "priority": 545},
+    {"layer": 9,  "match": {"author_contains": "bab"},                          "priority": 545},
+
+    {"layer": 10, "match": {"author_contains": "'Abdu'l-Bah\u00e1"},            "priority": 500},
+    {"layer": 11, "match": {"author_contains": "abdul-baha"},                   "priority": 500},
+
+    {"layer": 12, "match": {"author_contains": "Shoghi Effendi"},               "priority": 480},
+
+    {"layer": 13, "match": {"author_contains": "buck"},                         "priority": 320},
+    {"layer": 14, "match": {"author_contains": "hatcher"},                      "priority": 320},
+    {"layer": 15, "match": {"author_contains": "Momen"},                        "priority": 320},
+    {"layer": 16, "match": {"author_contains": "Stockman"},                     "priority": 320},
+    {"layer": 17, "match": {"author_contains": "Hassall"},                      "priority": 320},
+    {"layer": 18, "match": {"author_contains": "hassall"},                      "priority": 320},
+    {"layer": 19, "match": {"author_contains": "Cole"},                         "priority": 300},
+    {"layer": 20, "match": {"author_contains": "cole"},                         "priority": 300},
+
+    {"layer": 21, "match": {"author_contains": "Universal House of Justice"},   "priority": 80},
+    {"layer": 22, "match": {"author_contains": "bic"},                          "priority": 80},
+
+    {"layer": 23, "match": {"religion": "Baha'i"},                              "priority": 200}
   ],
 
   "other_layers": [
-    {"layer": 20, "match": {"tier": "primary_scripture_other"}, "priority": 480},
-    {"layer": 21, "match": {"tier": "tradition_doctrinal"}, "priority": 440},
-    {"layer": 22, "match": {"tier": "tradition_authoritative"}, "priority": 380},
-    {"layer": 23, "match": {"tier": "approved_history"}, "priority": 320},
-    {"layer": 24, "match": {"tier": "scholarly"}, "priority": 250},
-    {"layer": 25, "match": {"tier": "secondary"}, "priority": 150},
-    {"layer": 26, "match": {"tier": "institutional"}, "priority": 80},
-    {"layer": 27, "match": {"tier": "reference"}, "priority": 60}
+    {"layer": 30, "match": {"religion": "Judaism"},                             "priority": 440},
+    {"layer": 31, "match": {"religion": "Islam"},                               "priority": 440},
+    {"layer": 32, "match": {"religion": "Christian"},                           "priority": 440},
+    {"layer": 33, "match": {"religion": "Zoroastrian"},                         "priority": 440},
+    {"layer": 34, "match": {"religion": "Hindu"},                               "priority": 440},
+    {"layer": 35, "match": {"religion": "Buddhist"},                            "priority": 440},
+    {"layer": 36, "match": {"religion": "Tao"},                                 "priority": 440},
+    {"layer": 37, "match": {"religion": "Confucian"},                           "priority": 440},
+    {"layer": 38, "match": {"religion": "Sikh"},                                "priority": 440},
+    {"layer": 39, "match": {"religion": "Jain"},                                "priority": 440}
   ]
 }

@@ -30,8 +30,10 @@ export async function applyDocPriority() {
   ].sort((a, b) => b.priority - a.priority);
 
   const docs = await queryAll(`SELECT id, title, author, religion, tier FROM docs WHERE deleted_at IS NULL`);
-  let updated = 0;
 
+  // Build priority map in JS, then write in a single transaction.
+  // Avoids 45K individual writes that cause SQLITE_BUSY under concurrent workers.
+  const updates = [];
   for (const doc of docs) {
     let priority = 100; // default
     for (const layer of allLayers) {
@@ -40,12 +42,23 @@ export async function applyDocPriority() {
         break;
       }
     }
-    await query(`UPDATE docs SET doc_priority = ? WHERE id = ?`, [priority, doc.id]);
-    updated++;
+    updates.push([priority, doc.id]);
   }
 
-  logger.info({ updated, layers: allLayers.length }, 'Doc priorities applied');
-  return updated;
+  // Single transaction — one write lock acquisition for all updates.
+  await query('BEGIN');
+  try {
+    for (const [priority, id] of updates) {
+      await query(`UPDATE docs SET doc_priority = ? WHERE id = ?`, [priority, id]);
+    }
+    await query('COMMIT');
+  } catch (err) {
+    await query('ROLLBACK').catch(() => {});
+    throw err;
+  }
+
+  logger.info({ updated: updates.length, layers: allLayers.length }, 'Doc priorities applied');
+  return updates.length;
 }
 
 // Run standalone
