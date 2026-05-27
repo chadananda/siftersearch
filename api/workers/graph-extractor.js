@@ -368,19 +368,18 @@ let _currentDocId = null;
 let _currentDocPriority = 0;
 let _currentDocReligion = null;
 
-// Rolling narrative context per doc. Tracks the last resolved speaker/setting
-// and last 5 paragraph texts so each batch can resolve pronouns established
-// several paragraphs earlier (e.g. speaker identified 5 paragraphs back).
-// Reset whenever we switch docs.
-const DOC_CONTEXT_PARA_COUNT = 5;
-const DOC_CONTEXT_PARA_CHARS = 400; // truncate each preceding para to keep tokens reasonable
+// Rolling narrative context per doc. Stores prose_summary from each extraction
+// (not raw text) — summaries are ~67 chars avg, fully resolved (no pronouns),
+// so 12 fit in ~800 chars. Also carries forward last resolved speaker/setting.
+// Reset + seeded from DB whenever we switch docs, so restarts don't lose context.
+const DOC_CONTEXT_PARA_COUNT = 12;
 
 let _docContext = {
   lastSpeaker: null,
   lastNarrator: null,
   lastSettingPlace: null,
   lastSettingTime: null,
-  recentParaTexts: [], // most recent first after reversal in buildPrecedingText()
+  recentSummaries: [], // prose_summary strings, oldest first
 };
 
 function resetDocContext() {
@@ -389,28 +388,68 @@ function resetDocContext() {
     lastNarrator: null,
     lastSettingPlace: null,
     lastSettingTime: null,
-    recentParaTexts: [],
+    recentSummaries: [],
   };
 }
 
+// On doc switch, seed context from already-processed paragraphs so a restart
+// mid-doc doesn't start blind. Queries the last N prose_summaries by paragraph_index.
+async function seedDocContextFromDB(docId) {
+  try {
+    const rows = await queryAll(`
+      SELECT c.paragraph_index,
+             json_extract(pe.output_json, '$.prose_summary') AS summary,
+             json_extract(pe.output_json, '$.roles.speaker')       AS speaker,
+             json_extract(pe.output_json, '$.roles.narrator')      AS narrator,
+             json_extract(pe.output_json, '$.roles.setting_place') AS setting_place,
+             json_extract(pe.output_json, '$.roles.setting_time')  AS setting_time
+      FROM paragraph_extractions pe
+      JOIN content c ON c.id = pe.content_id
+      WHERE c.doc_id = ? AND pe.model = ? AND c.deleted_at IS NULL
+      ORDER BY c.paragraph_index DESC
+      LIMIT ?
+    `, [docId, MODEL, DOC_CONTEXT_PARA_COUNT]);
+
+    if (rows.length === 0) return;
+
+    // Rows are DESC — reverse to chronological order
+    const ordered = [...rows].reverse();
+    for (const r of ordered) {
+      if (r.summary) _docContext.recentSummaries.push(r.summary);
+      if (r.speaker)       _docContext.lastSpeaker      = r.speaker;
+      if (r.narrator)      _docContext.lastNarrator     = r.narrator;
+      if (r.setting_place) _docContext.lastSettingPlace = r.setting_place;
+      if (r.setting_time)  _docContext.lastSettingTime  = r.setting_time;
+    }
+    if (_docContext.recentSummaries.length > DOC_CONTEXT_PARA_COUNT)
+      _docContext.recentSummaries = _docContext.recentSummaries.slice(-DOC_CONTEXT_PARA_COUNT);
+
+    logger.debug({ docId, seeded: rows.length }, 'Doc context seeded from prior extractions');
+  } catch (err) {
+    logger.warn({ docId, err: err.message }, 'seedDocContextFromDB failed — starting fresh');
+  }
+}
+
 // Called after each successful write (serial, paragraph_index order within a batch).
-function updateDocContext(parsed, paraText) {
+function updateDocContext(parsed) {
   const roles = parsed?.roles || {};
-  if (roles.speaker)       _docContext.lastSpeaker       = roles.speaker;
-  if (roles.narrator)      _docContext.lastNarrator      = roles.narrator;
-  if (roles.setting_place) _docContext.lastSettingPlace  = roles.setting_place;
-  if (roles.setting_time)  _docContext.lastSettingTime   = roles.setting_time;
-  _docContext.recentParaTexts.push(paraText.slice(0, DOC_CONTEXT_PARA_CHARS));
-  if (_docContext.recentParaTexts.length > DOC_CONTEXT_PARA_COUNT)
-    _docContext.recentParaTexts.shift();
+  if (roles.speaker)       _docContext.lastSpeaker      = roles.speaker;
+  if (roles.narrator)      _docContext.lastNarrator     = roles.narrator;
+  if (roles.setting_place) _docContext.lastSettingPlace = roles.setting_place;
+  if (roles.setting_time)  _docContext.lastSettingTime  = roles.setting_time;
+  const summary = parsed?.prose_summary;
+  if (summary) {
+    _docContext.recentSummaries.push(summary);
+    if (_docContext.recentSummaries.length > DOC_CONTEXT_PARA_COUNT)
+      _docContext.recentSummaries.shift();
+  }
 }
 
 function buildPrecedingText() {
-  if (_docContext.recentParaTexts.length === 0) return '(start of document — no preceding paragraphs)';
-  return [..._docContext.recentParaTexts]
-    .reverse() // most recent last so model reads in narrative order
-    .map((t, i, arr) => `[${arr.length - i} paragraph${arr.length - i === 1 ? '' : 's'} before]: ${t}`)
-    .join('\n\n');
+  if (_docContext.recentSummaries.length === 0) return '(start of document — no preceding paragraphs)';
+  return _docContext.recentSummaries
+    .map((s, i, arr) => `[${i + 1}/${arr.length}]: ${s}`)
+    .join('\n');
 }
 
 async function pickNextDoc() {
@@ -440,6 +479,7 @@ async function fetchBatch() {
       _currentDocPriority = doc.doc_priority ?? 0;
       _currentDocReligion = doc.religion || null;
       resetDocContext();
+      await seedDocContextFromDB(_currentDocId);
       logger.debug({ docId: _currentDocId, priority: _currentDocPriority }, 'Switched to next doc');
     }
 
@@ -576,7 +616,7 @@ async function processOnce() {
       if (id !== null) {
         succeeded++;
         // Update rolling context so next batch sees resolved speaker/setting
-        updateDocContext(r.value.parsed, rows[i].text);
+        updateDocContext(r.value.parsed);
       } else {
         failed++;
       }

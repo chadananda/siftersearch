@@ -51,9 +51,9 @@ Episode context: {{EPISODE_NAME}}
 Current speaker (from recent context): {{PRECEDING_SPEAKER}}
 Current setting (from recent context): {{PRECEDING_SETTING}}
 
-### Preceding paragraphs (rolling context window)
+### Preceding paragraph summaries (rolling context window)
 
-The paragraphs below immediately precede the target paragraph. Use them to resolve pronouns, carry forward speaker identity, and maintain narrative continuity. A speaker established several paragraphs back remains the active speaker unless explicitly changed.
+The summaries below are extracted prose summaries of the paragraphs immediately preceding the target paragraph, in narrative order. Each summary is fully resolved — all figures are named explicitly. Use them to carry forward speaker identity, narrative setting, and entity context. A speaker established several paragraphs back remains active unless explicitly changed.
 
 {{PRECEDING_TEXT}}
 
