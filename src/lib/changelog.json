@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T05:18:56.602Z",
+  "generated": "2026-05-27T05:24:14.726Z",
   "entries": [
+    {
+      "hash": "16078737",
+      "date": "2026-05-26",
+      "type": "Fixed",
+      "description": "Calibrate-deepseek — select GPB by content count, skip image/nav paragraphs",
+      "scope": null
+    },
     {
       "hash": "2b9ef5ca",
       "date": "2026-05-26",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Bump version to 2.45.18",
       "scope": null
-    },
-    {
-      "hash": "d7c5e99b",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Filter Bismillah formula in multiIndexSearch — prevents mercy/compassion false positives",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-26": [
+      {
+        "hash": "16078737",
+        "date": "2026-05-26",
+        "type": "Fixed",
+        "description": "Calibrate-deepseek — select GPB by content count, skip image/nav paragraphs",
+        "scope": null
+      },
       {
         "hash": "2b9ef5ca",
         "date": "2026-05-26",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-12",
         "type": "Chore",
         "description": "Bump version to 2.45.18",
-        "scope": null
-      },
-      {
-        "hash": "d7c5e99b",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Filter Bismillah formula in multiIndexSearch — prevents mercy/compassion false positives",
         "scope": null
       }
     ]

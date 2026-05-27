@@ -30,12 +30,13 @@ async function generateFixture() {
   logger.info('Generating calibration fixture from GPB paragraphs...');
   mkdirSync(resolve(__dirname, 'calibration'), { recursive: true });
 
-  // Pick the GPB doc with the most content (not necessarily the newest)
+  // Pick the GPB doc with the most plain-text content (titles may have NBSP)
   const gpbId = await queryOne(
-    `SELECT d.id FROM docs d
-     JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL
-     WHERE trim(d.title) = 'God Passes By' AND d.deleted_at IS NULL
-     GROUP BY d.id ORDER BY COUNT(c.id) DESC LIMIT 1`
+    `SELECT c.doc_id AS id FROM content c
+     JOIN docs d ON d.id = c.doc_id AND d.deleted_at IS NULL
+     WHERE d.title GLOB 'God Passes By*' AND c.deleted_at IS NULL
+       AND c.text NOT LIKE '<%' AND length(c.text) > 100
+     GROUP BY c.doc_id ORDER BY COUNT(*) DESC LIMIT 1`
   );
   if (!gpbId) throw new Error('God Passes By not found in docs table');
 
