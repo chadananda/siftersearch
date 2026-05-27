@@ -76,8 +76,9 @@ async function hasAliases() {
 // Invalidate after each batch so new aliases are picked up progressively
 function invalidateAliasCache() { _hasAliases = null; }
 
-// Build candidate dictionary for a paragraph — entities already known in the DB
-// whose canonical names appear (case-insensitive) in the text.
+// Build candidate dictionary — top 60 entities (by name length desc, longer = more specific)
+// whose canonical names appear in the paragraph text.
+const CANDIDATE_LIMIT = 60;
 async function buildCandidateDictionary(text) {
   if (!(await hasAliases())) return '(none pre-retrieved)';
   const textNorm = text.toLowerCase();
@@ -88,7 +89,10 @@ async function buildCandidateDictionary(text) {
     WHERE ea.confidence >= 0.8
     ORDER BY ge.canonical_name
   `);
-  const matches = rows.filter(r => textNorm.includes(r.canonical_name.toLowerCase()));
+  const matches = rows
+    .filter(r => r.canonical_name.length >= 4 && textNorm.includes(r.canonical_name.toLowerCase()))
+    .sort((a, b) => b.canonical_name.length - a.canonical_name.length)
+    .slice(0, CANDIDATE_LIMIT);
   if (matches.length === 0) return '(none pre-retrieved)';
   return matches.map(r =>
     `  ${r.id}: "${r.canonical_name}" [${r.type || 'unknown'}${r.religion ? ', ' + r.religion : ''}]`
@@ -124,15 +128,15 @@ async function buildPrompt(row, docContext) {
   const precedingText = ctx.precedingText || '(start of document — no preceding paragraphs)';
 
   return SYSTEM_PROMPT_TEMPLATE
-    .replace('{{CANDIDATE_DICTIONARY}}', candidates)
-    .replace('{{WORK_TITLE}}', envelope.workTitle)
-    .replace('{{AUTHOR}}', envelope.author)
-    .replace('{{PERIOD_NAME}}', envelope.periodName)
-    .replace('{{PERIOD_DATE_RANGE}}', envelope.periodDateRange)
-    .replace('{{EPISODE_NAME}}', '')
-    .replace('{{PRECEDING_SPEAKER}}', ctx.lastSpeaker || 'null')
-    .replace('{{PRECEDING_SETTING}}', settingStr)
-    .replace('{{PRECEDING_TEXT}}', precedingText);
+    .replaceAll('{{CANDIDATE_DICTIONARY}}', candidates)
+    .replaceAll('{{WORK_TITLE}}', envelope.workTitle)
+    .replaceAll('{{AUTHOR}}', envelope.author)
+    .replaceAll('{{PERIOD_NAME}}', envelope.periodName)
+    .replaceAll('{{PERIOD_DATE_RANGE}}', envelope.periodDateRange)
+    .replaceAll('{{EPISODE_NAME}}', '')
+    .replaceAll('{{PRECEDING_SPEAKER}}', ctx.lastSpeaker || 'null')
+    .replaceAll('{{PRECEDING_SETTING}}', settingStr)
+    .replaceAll('{{PRECEDING_TEXT}}', precedingText);
 }
 
 // Resolve a parsed extraction into entity_mentions, paragraph_roles, quote_instances.
