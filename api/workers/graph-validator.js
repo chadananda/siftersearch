@@ -73,8 +73,11 @@ async function validateOne(extraction) {
 
   let parsed;
   try {
-    // Prepend the prefill '{' that the API omits from its response, strip any trailing fence.
-    const raw = ('{' + result.content).replace(/\s*```\s*$/, '').trim();
+    // Prepend the '{' prefill omitted from the API response, then extract just
+    // the JSON object (Haiku often appends prose after the closing brace).
+    const text = '{' + result.content;
+    const lastBrace = text.lastIndexOf('}');
+    const raw = lastBrace > 0 ? text.slice(0, lastBrace + 1) : text;
     parsed = JSON.parse(raw);
   } catch {
     logger.warn({ extractionId: extraction.id, content: result.content?.slice(0, 200) }, 'Validator returned non-JSON — marking reextract');

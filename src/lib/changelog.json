@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T16:00:06.448Z",
+  "generated": "2026-05-27T16:01:46.153Z",
   "entries": [
+    {
+      "hash": "2185a656",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Graph-validator pass system msg in messages array + assistant prefill",
+      "scope": null
+    },
     {
       "hash": "2028e683",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Remove Siddhartha Buddha author filter from Buddhist primary search",
       "scope": null
-    },
-    {
-      "hash": "18320f23",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Text-level dedup in harvestPassages — prevents duplicate Psalms across traditions",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "2185a656",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Graph-validator pass system msg in messages array + assistant prefill",
+        "scope": null
+      },
       {
         "hash": "2028e683",
         "date": "2026-05-27",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Remove Siddhartha Buddha author filter from Buddhist primary search",
-        "scope": null
-      },
-      {
-        "hash": "18320f23",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Text-level dedup in harvestPassages — prevents duplicate Psalms across traditions",
         "scope": null
       }
     ]
