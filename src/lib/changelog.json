@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T05:16:51.622Z",
+  "generated": "2026-05-27T05:18:56.602Z",
   "entries": [
+    {
+      "hash": "2b9ef5ca",
+      "date": "2026-05-26",
+      "type": "Fixed",
+      "description": "Calibrate-deepseek — drop Unicode LIKE filter + strip markdown from JSON parse",
+      "scope": null
+    },
     {
       "hash": "6830904a",
       "date": "2026-05-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Filter Bismillah formula in multiIndexSearch — prevents mercy/compassion false positives",
       "scope": null
-    },
-    {
-      "hash": "cc8e3584",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Islam uses semanticRatio=0.4 to surface thematic suras via semantic matching",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-26": [
+      {
+        "hash": "2b9ef5ca",
+        "date": "2026-05-26",
+        "type": "Fixed",
+        "description": "Calibrate-deepseek — drop Unicode LIKE filter + strip markdown from JSON parse",
+        "scope": null
+      },
       {
         "hash": "6830904a",
         "date": "2026-05-26",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Filter Bismillah formula in multiIndexSearch — prevents mercy/compassion false positives",
-        "scope": null
-      },
-      {
-        "hash": "cc8e3584",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Islam uses semanticRatio=0.4 to surface thematic suras via semantic matching",
         "scope": null
       }
     ]
