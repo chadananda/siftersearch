@@ -286,7 +286,7 @@ module.exports = {
         NODE_ENV: 'production',
         SQLITE_BUSY_TIMEOUT_MS: '30000',
         EXTRACTION_PROVIDER: 'deepseek',
-        EXTRACTION_MODEL: 'deepseek-v4-pro',
+        EXTRACTION_MODEL: 'deepseek-v4-flash',
       },
       exp_backoff_restart_delay: 15000,
       max_restarts: 999999,

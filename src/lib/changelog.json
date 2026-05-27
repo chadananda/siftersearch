@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T16:01:46.153Z",
+  "generated": "2026-05-27T17:00:17.997Z",
   "entries": [
+    {
+      "hash": "0819528f",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Graph-validator extract JSON by lastIndexOf('}') — Haiku appends prose",
+      "scope": null
+    },
     {
       "hash": "2185a656",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Buddhist queryTransform maps mercy→loving-kindness for primary search",
       "scope": null
-    },
-    {
-      "hash": "d164d96e",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Remove Siddhartha Buddha author filter from Buddhist primary search",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "0819528f",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Graph-validator extract JSON by lastIndexOf('}') — Haiku appends prose",
+        "scope": null
+      },
       {
         "hash": "2185a656",
         "date": "2026-05-27",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Buddhist queryTransform maps mercy→loving-kindness for primary search",
-        "scope": null
-      },
-      {
-        "hash": "d164d96e",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Remove Siddhartha Buddha author filter from Buddhist primary search",
         "scope": null
       }
     ]
