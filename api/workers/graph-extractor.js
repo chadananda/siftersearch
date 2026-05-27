@@ -453,15 +453,21 @@ function buildPrecedingText() {
 }
 
 async function pickNextDoc() {
+  // Walk docs in priority order (idx_docs_priority_active), stop at first with
+  // unprocessed content. INDEXED BY forces the priority index so SQLite walks
+  // DESC and short-circuits at LIMIT 1 — ~8ms vs 80s without the hint.
   const row = await queryOne(`
-    SELECT c.doc_id AS id, d.doc_priority, d.religion
-    FROM content c
-    JOIN docs d ON d.id = c.doc_id
-    WHERE c.graph_enriched = 0
-      AND c.deleted_at IS NULL
-      AND d.deleted_at IS NULL
+    SELECT d.id, d.doc_priority, d.religion
+    FROM docs d INDEXED BY idx_docs_priority_active
+    WHERE d.deleted_at IS NULL
       AND d.duplicate_of IS NULL
-      AND length(c.text) > 50
+      AND EXISTS (
+        SELECT 1 FROM content c
+        WHERE c.doc_id = d.id
+          AND c.graph_enriched = 0
+          AND c.deleted_at IS NULL
+          AND length(c.text) > 50
+      )
     ORDER BY d.doc_priority DESC
     LIMIT 1
   `);

@@ -271,6 +271,9 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_extractions_resolved ON paragraph_extractions(resolved)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_extraction_runs_date ON extraction_runs(created_at)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_docs_priority ON docs(doc_priority DESC)`);
+    // Partial index for pickNextDoc: walk docs by priority, filtered to active non-duplicate docs.
+    // INDEXED BY hint on the query forces this path → ~8ms vs 80s full table scan.
+    await query(`CREATE INDEX IF NOT EXISTS idx_docs_priority_active ON docs(doc_priority DESC) WHERE deleted_at IS NULL AND duplicate_of IS NULL`);
 
     logger.info('Migration 72 complete: entity layer schema');
   },
