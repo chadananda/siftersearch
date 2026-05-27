@@ -30,7 +30,7 @@ async function generateFixture() {
   logger.info('Generating calibration fixture from GPB paragraphs...');
   mkdirSync(resolve(__dirname, 'calibration'), { recursive: true });
 
-  const gpbId = await queryOne(`SELECT id FROM docs WHERE title = 'God Passes By' AND deleted_at IS NULL LIMIT 1`);
+  const gpbId = await queryOne(`SELECT id FROM docs WHERE trim(title) = 'God Passes By' AND deleted_at IS NULL ORDER BY id DESC LIMIT 1`);
   if (!gpbId) throw new Error('God Passes By not found in docs table');
 
   // Sample 120 paragraphs with factual content (names, dates, places)

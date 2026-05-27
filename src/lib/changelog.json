@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-26T21:03:43.914Z",
+  "generated": "2026-05-27T05:14:55.659Z",
   "entries": [
+    {
+      "hash": "9da99d66",
+      "date": "2026-05-26",
+      "type": "Fixed",
+      "description": "Meili_sync_tasks false-positive FAIL — downgrade to WARN when count is static",
+      "scope": null
+    },
     {
       "hash": "92d5b179",
       "date": "2026-05-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Filter Bismillah boilerplate from Islam citations + BM25-dominant broad search",
       "scope": null
-    },
-    {
-      "hash": "38a97c2b",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "CATALOG_PATTERNS regex was matching interfaith search queries as catalog queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-26": [
+      {
+        "hash": "9da99d66",
+        "date": "2026-05-26",
+        "type": "Fixed",
+        "description": "Meili_sync_tasks false-positive FAIL — downgrade to WARN when count is static",
+        "scope": null
+      },
       {
         "hash": "92d5b179",
         "date": "2026-05-26",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Filter Bismillah boilerplate from Islam citations + BM25-dominant broad search",
-        "scope": null
-      },
-      {
-        "hash": "38a97c2b",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "CATALOG_PATTERNS regex was matching interfaith search queries as catalog queries",
         "scope": null
       }
     ]
