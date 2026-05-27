@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T18:40:52.725Z",
+  "generated": "2026-05-27T18:42:19.224Z",
   "entries": [
+    {
+      "hash": "e529d0d2",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Authority tiers + doc priority — use real author/religion fields",
+      "scope": null
+    },
     {
       "hash": "c288a77f",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Jafar PREMISE WIDENING — reframe suffering/trial questions to show purpose, not balance",
       "scope": null
-    },
-    {
-      "hash": "5f487afe",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Render em/strong inside link text; add off-topic-citation assessment flag",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "e529d0d2",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Authority tiers + doc priority — use real author/religion fields",
+        "scope": null
+      },
       {
         "hash": "c288a77f",
         "date": "2026-05-27",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-13",
         "type": "New",
         "description": "Jafar PREMISE WIDENING — reframe suffering/trial questions to show purpose, not balance",
-        "scope": null
-      },
-      {
-        "hash": "5f487afe",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Render em/strong inside link text; add off-topic-citation assessment flag",
         "scope": null
       }
     ]

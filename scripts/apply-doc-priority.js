@@ -6,7 +6,7 @@
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { queryAll, query } from '../api/lib/db.js';
+import { queryAll, query, transaction } from '../api/lib/db.js';
 import { logger } from '../api/lib/logger.js';
 import { runMigrations } from '../api/lib/migrations/runner.js';
 
@@ -46,16 +46,10 @@ export async function applyDocPriority() {
   }
 
   // Single transaction — one write lock acquisition for all updates.
-  await query('BEGIN');
-  try {
-    for (const [priority, id] of updates) {
-      await query(`UPDATE docs SET doc_priority = ? WHERE id = ?`, [priority, id]);
-    }
-    await query('COMMIT');
-  } catch (err) {
-    await query('ROLLBACK').catch(() => {});
-    throw err;
-  }
+  await transaction(
+    updates.map(([priority, id]) => ({ sql: 'UPDATE docs SET doc_priority = ? WHERE id = ?', args: [priority, id] })),
+    'apply-doc-priority'
+  );
 
   logger.info({ updated: updates.length, layers: allLayers.length }, 'Doc priorities applied');
   return updates.length;
