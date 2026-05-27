@@ -27,7 +27,7 @@ const IDLE_SLEEP_MS = 60_000;
 const MAX_ATTEMPTS = 3;
 
 // Models used for voting (cheapest first, Sonnet as tie-breaker)
-const FAST_MODEL   = 'deepseek-v4-flash';
+const FAST_MODEL   = 'deepseek-v4-pro';
 const DETAIL_MODEL = 'claude-haiku-4-5-20251001';
 const ARBITER_MODEL = 'claude-sonnet-4-6';
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T12:08:43.100Z",
+  "generated": "2026-05-27T12:13:18.190Z",
   "entries": [
+    {
+      "hash": "8e1d7fc3",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Replace deprecated deepseek-chat/reasoner with deepseek-v4-flash/pro throughout",
+      "scope": null
+    },
     {
       "hash": "6ebea481",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "PassageQuery strips up to 6 adjectives before religion/tradition noun",
       "scope": null
-    },
-    {
-      "hash": "819306d3",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "SemanticRatio for Buddhism (0.3) and Judaism (0.35) primary searches",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "8e1d7fc3",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Replace deprecated deepseek-chat/reasoner with deepseek-v4-flash/pro throughout",
+        "scope": null
+      },
       {
         "hash": "6ebea481",
         "date": "2026-05-27",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "PassageQuery strips up to 6 adjectives before religion/tradition noun",
-        "scope": null
-      },
-      {
-        "hash": "819306d3",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "SemanticRatio for Buddhism (0.3) and Judaism (0.35) primary searches",
         "scope": null
       }
     ]

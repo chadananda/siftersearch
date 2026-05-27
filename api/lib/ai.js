@@ -193,6 +193,8 @@ async function chatDeepSeek(messages, { model, temperature, maxTokens, stream, r
   const client = getDeepSeek();
   const params = { model, messages, temperature, max_tokens: maxTokens, stream };
   if (responseFormat) params.response_format = responseFormat;
+  // Always disable thinking for deepseek-v4-pro — use non-thinking mode (on sale, same quality)
+  if (model === 'deepseek-v4-pro') params.thinking = { type: 'disabled' };
   const response = await client.chat.completions.create(params);
   if (stream) return response;
   return {

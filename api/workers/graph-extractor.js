@@ -27,7 +27,7 @@ import { getMeili, INDEXES } from '../lib/search.js';
 import { getAuthority } from '../lib/authority.js';
 
 const PROMPT_VERSION = 'extract-v1';
-const MODEL = process.env.EXTRACTION_MODEL || 'deepseek-v4-flash';
+const MODEL = process.env.EXTRACTION_MODEL || 'deepseek-v4-pro';
 const MODEL_PROVIDER = process.env.EXTRACTION_PROVIDER || 'deepseek';
 const BATCH_SIZE = parseInt(process.env.EXTRACTION_BATCH_SIZE || '16', 10);
 const IDLE_SLEEP_MS = 30_000;
@@ -255,7 +255,7 @@ async function callLLM(row) {
         temperature: 0,
         maxTokens: 8192,
         // Anthropic: system prompt instructs JSON; enable caching for the large extraction prompt.
-        // deepseek-v4-flash: json_object required for reliable structured output.
+        // deepseek-v4-pro: json_object required for reliable structured output.
         ...(activeProvider === 'anthropic'
           ? { usePromptCache: true }
           : { responseFormat: { type: 'json_object' } }),
@@ -361,9 +361,6 @@ let _currentDocPriority = 0;
 let _currentDocReligion = null;
 
 async function pickNextDoc() {
-  // No ORDER BY — just find any unprocessed doc quickly via the partial index.
-  // Processing order between docs doesn't matter once we commit to one doc at a time.
-  // The idx_content_graph_unsync index returns the first row immediately (LIMIT 1).
   const row = await queryOne(`
     SELECT c.doc_id AS id, d.doc_priority, d.religion
     FROM content c
@@ -373,6 +370,7 @@ async function pickNextDoc() {
       AND d.deleted_at IS NULL
       AND d.duplicate_of IS NULL
       AND length(c.text) > 50
+    ORDER BY d.doc_priority DESC
     LIMIT 1
   `);
   return row || null;

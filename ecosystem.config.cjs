@@ -273,10 +273,6 @@ module.exports = {
     //   graph-resolver   → entity_mentions / aliases / text_grounded
     //   graph-promoter   → promotion_queue → graph_entities (new entities)
     //
-    // Model for extraction controlled by EXTRACTION_PROVIDER + EXTRACTION_MODEL
-    // env vars in .env-secrets. Defaults to deepseek-chat. Set to 'local' +
-    // LOCAL_LLM_MODEL for boss inference (free). Set to 'anthropic' +
-    // claude-sonnet-4-6 for highest quality on priority tiers.
     {
       name: 'siftersearch-graph-extractor',
       script: 'api/workers/graph-extractor.js',
@@ -286,7 +282,12 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '2G',
-      env: { NODE_ENV: 'production', SQLITE_BUSY_TIMEOUT_MS: '30000' },
+      env: {
+        NODE_ENV: 'production',
+        SQLITE_BUSY_TIMEOUT_MS: '30000',
+        EXTRACTION_PROVIDER: 'deepseek',
+        EXTRACTION_MODEL: 'deepseek-v4-pro',
+      },
       exp_backoff_restart_delay: 15000,
       max_restarts: 999999,
       min_uptime: '30s',

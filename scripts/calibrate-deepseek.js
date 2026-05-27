@@ -17,10 +17,9 @@ const FIXTURE_PATH = resolve(__dirname, 'calibration/bahai-calibration-set.json'
 const ROUTING_PATH = resolve(__dirname, '../config/model-routing.json');
 
 const MODELS = [
-  { id: 'deepseek-v4-flash',           provider: 'deepseek' },
-  { id: 'deepseek-v4-pro',       provider: 'deepseek' },
-  { id: 'claude-haiku-4-5-20251001', provider: 'anthropic' },
-  { id: 'claude-sonnet-4-6',       provider: 'anthropic' },
+  { id: 'deepseek-v4-pro',            provider: 'deepseek' },
+  { id: 'claude-haiku-4-5-20251001',  provider: 'anthropic' },
+  { id: 'claude-sonnet-4-6',          provider: 'anthropic' },
 ];
 
 // 5 categories for calibration
@@ -142,14 +141,14 @@ async function scoreModel(model, items) {
 function computeRouting(calibrationResults) {
   const routing = {};
   for (const cat of CATEGORIES) {
-    // Find deepseek-v4-flash accuracy for this category
-    const flashScores = calibrationResults['deepseek-v4-flash']?.[cat];
+    // Find deepseek-v4-pro accuracy for this category
+    const flashScores = calibrationResults['deepseek-v4-pro']?.[cat];
     const flashAccuracy = flashScores ? flashScores.correct / flashScores.total : 0;
 
     if (flashAccuracy >= 0.85) {
-      routing[cat] = { extractor: 'deepseek-v4-flash', validate_fraction: 0.05, note: 'trusted' };
+      routing[cat] = { extractor: 'deepseek-v4-pro', validate_fraction: 0.05, note: 'trusted' };
     } else if (flashAccuracy >= 0.70) {
-      routing[cat] = { extractor: 'deepseek-v4-flash', validate_fraction: 1.0, note: 'untrusted' };
+      routing[cat] = { extractor: 'deepseek-v4-pro', validate_fraction: 1.0, note: 'untrusted' };
     } else {
       routing[cat] = { extractor: 'claude-sonnet-4-6', validate_fraction: 0.1, note: 'below_threshold' };
     }
