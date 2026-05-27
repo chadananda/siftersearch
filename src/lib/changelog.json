@@ -1,6 +1,41 @@
 {
-  "generated": "2026-05-27T12:53:41.701Z",
+  "generated": "2026-05-27T15:41:37.382Z",
   "entries": [
+    {
+      "hash": "f498c8ab",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Extraction over-extraction — add scope boundary, mention cap, dynamic work title",
+      "scope": null
+    },
+    {
+      "hash": "1d47dc0e",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Bump max_tokens 8192→16384 for entity-dense paragraphs",
+      "scope": null
+    },
+    {
+      "hash": "863a2d8c",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "PickNextDoc 80s→8ms — INDEXED BY idx_docs_priority_active + partial index",
+      "scope": null
+    },
+    {
+      "hash": "fc8b381f",
+      "date": "2026-05-27",
+      "type": "New",
+      "description": "Prose summary rolling context window, 12 preceding paras, DB seed on restart",
+      "scope": null
+    },
+    {
+      "hash": "b5bccdbb",
+      "date": "2026-05-27",
+      "type": "New",
+      "description": "Rolling 5-paragraph context window for entity extraction",
+      "scope": null
+    },
     {
       "hash": "8277939d",
       "date": "2026-05-27",
@@ -3465,45 +3500,45 @@
       "type": "Fixed",
       "description": "Crafter Christian citation rule — prefer NT Gospel passages over OT Psalms",
       "scope": null
-    },
-    {
-      "hash": "f6009bc7",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Add religion tag to crafter quotes + MANDATORY 5-tradition instruction",
-      "scope": null
-    },
-    {
-      "hash": "eed48d83",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Crafter must cite all 5 traditions for interfaith queries",
-      "scope": null
-    },
-    {
-      "hash": "505f1cc1",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Reduce Christian primary semanticRatio 0.35→0.1 — BM25 now dominates for KJV",
-      "scope": null
-    },
-    {
-      "hash": "c617d575",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Hybrid search matchingStrategy + passageQuery morphological simplification",
-      "scope": null
-    },
-    {
-      "hash": "56b375c9",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Judaism primary search — drop King David author filter, raise semanticRatio",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "f498c8ab",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Extraction over-extraction — add scope boundary, mention cap, dynamic work title",
+        "scope": null
+      },
+      {
+        "hash": "1d47dc0e",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Bump max_tokens 8192→16384 for entity-dense paragraphs",
+        "scope": null
+      },
+      {
+        "hash": "863a2d8c",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "PickNextDoc 80s→8ms — INDEXED BY idx_docs_priority_active + partial index",
+        "scope": null
+      },
+      {
+        "hash": "fc8b381f",
+        "date": "2026-05-27",
+        "type": "New",
+        "description": "Prose summary rolling context window, 12 preceding paras, DB seed on restart",
+        "scope": null
+      },
+      {
+        "hash": "b5bccdbb",
+        "date": "2026-05-27",
+        "type": "New",
+        "description": "Rolling 5-paragraph context window for entity extraction",
+        "scope": null
+      },
       {
         "hash": "8277939d",
         "date": "2026-05-27",
@@ -6993,41 +7028,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Crafter Christian citation rule — prefer NT Gospel passages over OT Psalms",
-        "scope": null
-      },
-      {
-        "hash": "f6009bc7",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Add religion tag to crafter quotes + MANDATORY 5-tradition instruction",
-        "scope": null
-      },
-      {
-        "hash": "eed48d83",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Crafter must cite all 5 traditions for interfaith queries",
-        "scope": null
-      },
-      {
-        "hash": "505f1cc1",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Reduce Christian primary semanticRatio 0.35→0.1 — BM25 now dominates for KJV",
-        "scope": null
-      },
-      {
-        "hash": "c617d575",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Hybrid search matchingStrategy + passageQuery morphological simplification",
-        "scope": null
-      },
-      {
-        "hash": "56b375c9",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Judaism primary search — drop King David author filter, raise semanticRatio",
         "scope": null
       }
     ]

@@ -94,18 +94,29 @@ async function validateOne(extraction) {
 }
 
 async function fetchBatch() {
-  // Extractions not yet validated (no row in extraction_validations)
-  return queryAll(`
-    SELECT pe.id, pe.content_id, pe.output_json,
-           c.text AS paragraph_text
+  // Two-step to avoid full scan of wide output_json column.
+  // Step 1: get IDs using indexes only (no blob reads).
+  const ids = await queryAll(`
+    SELECT pe.id
     FROM paragraph_extractions pe
-    JOIN content c ON c.id = pe.content_id
-    LEFT JOIN extraction_validations ev ON ev.extraction_id = pe.id
-    WHERE ev.id IS NULL
-      AND pe.resolved = 0
+    WHERE pe.resolved = 0
+      AND NOT EXISTS (
+        SELECT 1 FROM extraction_validations ev WHERE ev.extraction_id = pe.id
+      )
     ORDER BY pe.id ASC
     LIMIT ?
   `, [BATCH_SIZE]);
+  if (ids.length === 0) return [];
+
+  // Step 2: fetch output_json only for the matched rows.
+  const ph = ids.map(() => '?').join(',');
+  return queryAll(`
+    SELECT pe.id, pe.content_id, pe.output_json, c.text AS paragraph_text
+    FROM paragraph_extractions pe
+    JOIN content c ON c.id = pe.content_id
+    WHERE pe.id IN (${ph})
+    ORDER BY pe.id ASC
+  `, ids.map(r => r.id));
 }
 
 let isShuttingDown = false;

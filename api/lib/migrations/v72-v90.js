@@ -270,6 +270,7 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_pending_bridge ON pending_bridge_relations(target_tradition, status)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_extractions_resolved ON paragraph_extractions(resolved)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_extraction_runs_date ON extraction_runs(created_at)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ev_extraction_id ON extraction_validations(extraction_id)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_docs_priority ON docs(doc_priority DESC)`);
     // Partial index for pickNextDoc: walk docs by priority, filtered to active non-duplicate docs.
     // INDEXED BY hint on the query forces this path → ~8ms vs 80s full table scan.
