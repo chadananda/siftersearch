@@ -440,4 +440,11 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_content_hype_hash ON content(normalized_hash) WHERE hyp_questions IS NOT NULL AND normalized_hash IS NOT NULL`);
     logger.info('Migration 81 complete: idx_content_hype_hash for propagateHypeFromNormalizedHash');
   },
+  82: async () => {
+    // idx_ev_extraction_id: covers the NOT EXISTS subquery in graph-validator fetchBatch.
+    // Without this index, the NOT EXISTS check scans extraction_validations linearly for each
+    // of the 14K+ paragraph_extractions rows, causing 3-7s read locks every ~23s.
+    await query(`CREATE INDEX IF NOT EXISTS idx_ev_extraction_id ON extraction_validations(extraction_id)`);
+    logger.info('Migration 82 complete: idx_ev_extraction_id on extraction_validations');
+  },
 };

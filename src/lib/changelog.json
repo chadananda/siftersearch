@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T15:41:37.382Z",
+  "generated": "2026-05-27T15:46:48.875Z",
   "entries": [
+    {
+      "hash": "47f43293",
+      "date": "2026-05-27",
+      "type": "Performance",
+      "description": "Graph-validator two-step fetchBatch + idx_ev_extraction_id index",
+      "scope": null
+    },
     {
       "hash": "f498c8ab",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Pure BM25 for Christian primary + extend length limit for 5-tradition replies",
       "scope": null
-    },
-    {
-      "hash": "8a96df4c",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Crafter Christian citation rule — prefer NT Gospel passages over OT Psalms",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "47f43293",
+        "date": "2026-05-27",
+        "type": "Performance",
+        "description": "Graph-validator two-step fetchBatch + idx_ev_extraction_id index",
+        "scope": null
+      },
       {
         "hash": "f498c8ab",
         "date": "2026-05-27",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Pure BM25 for Christian primary + extend length limit for 5-tradition replies",
-        "scope": null
-      },
-      {
-        "hash": "8a96df4c",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Crafter Christian citation rule — prefer NT Gospel passages over OT Psalms",
         "scope": null
       }
     ]
