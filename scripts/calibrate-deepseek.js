@@ -36,8 +36,7 @@ async function generateFixture() {
   // Sample 120 paragraphs with factual content (names, dates, places)
   const paragraphs = await queryAll(
     `SELECT id, text FROM content
-     WHERE doc_id = ? AND deleted_at IS NULL AND length(text) > 100
-       AND (text LIKE '%Bahá%' OR text LIKE '%Báb%' OR text LIKE '%ʿAbdu%' OR text LIKE '%Shoghi%')
+     WHERE doc_id = ? AND deleted_at IS NULL AND length(text) > 150
      ORDER BY RANDOM() LIMIT 120`,
     [gpbId.id]
   );
@@ -62,7 +61,10 @@ async function generateFixture() {
       });
 
       let parsed;
-      try { parsed = JSON.parse(result.content); } catch { continue; }
+      try {
+        const raw = result.content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+        parsed = JSON.parse(raw);
+      } catch { continue; }
       if (!parsed.question || !parsed.answer_keywords?.length) continue;
 
       items.push({

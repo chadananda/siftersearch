@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T05:14:55.659Z",
+  "generated": "2026-05-27T05:16:51.622Z",
   "entries": [
+    {
+      "hash": "6830904a",
+      "date": "2026-05-26",
+      "type": "Fixed",
+      "description": "Calibrate-deepseek GPB lookup — trim trailing spaces in title match",
+      "scope": null
+    },
     {
       "hash": "9da99d66",
       "date": "2026-05-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Islam uses semanticRatio=0.4 to surface thematic suras via semantic matching",
       "scope": null
-    },
-    {
-      "hash": "d9f2e7bc",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "Filter Bismillah boilerplate from Islam citations + BM25-dominant broad search",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-26": [
+      {
+        "hash": "6830904a",
+        "date": "2026-05-26",
+        "type": "Fixed",
+        "description": "Calibrate-deepseek GPB lookup — trim trailing spaces in title match",
+        "scope": null
+      },
       {
         "hash": "9da99d66",
         "date": "2026-05-26",
@@ -7019,13 +7026,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Islam uses semanticRatio=0.4 to surface thematic suras via semantic matching",
-        "scope": null
-      },
-      {
-        "hash": "d9f2e7bc",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "Filter Bismillah boilerplate from Islam citations + BM25-dominant broad search",
         "scope": null
       }
     ]
