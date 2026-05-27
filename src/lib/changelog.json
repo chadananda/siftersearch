@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-27T15:57:53.891Z",
+  "generated": "2026-05-27T16:00:06.448Z",
   "entries": [
+    {
+      "hash": "2028e683",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Graph-validator strip markdown fences before JSON.parse",
+      "scope": null
+    },
     {
       "hash": "f27bcc00",
       "date": "2026-05-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Text-level dedup in harvestPassages — prevents duplicate Psalms across traditions",
       "scope": null
-    },
-    {
-      "hash": "facf4ae3",
-      "date": "2026-05-12",
-      "type": "Fixed",
-      "description": "SHARED-TEXT RULE for Psalms appearing in both Christian/Judaism indexes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-27": [
+      {
+        "hash": "2028e683",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Graph-validator strip markdown fences before JSON.parse",
+        "scope": null
+      },
       {
         "hash": "f27bcc00",
         "date": "2026-05-27",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-12",
         "type": "Fixed",
         "description": "Text-level dedup in harvestPassages — prevents duplicate Psalms across traditions",
-        "scope": null
-      },
-      {
-        "hash": "facf4ae3",
-        "date": "2026-05-12",
-        "type": "Fixed",
-        "description": "SHARED-TEXT RULE for Psalms appearing in both Christian/Judaism indexes",
         "scope": null
       }
     ]

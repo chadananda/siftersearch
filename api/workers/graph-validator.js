@@ -46,14 +46,19 @@ async function validateOne(extraction) {
 
   let result;
   try {
+    // Pass system message in messages array — chatCompletion ignores the systemPrompt option.
+    // Prefill assistant response with '{' to force JSON output from Haiku.
     result = await chatCompletion(
-      [{ role: 'user', content: userMsg }],
+      [
+        { role: 'system', content: VALIDATION_SYSTEM },
+        { role: 'user', content: userMsg },
+        { role: 'assistant', content: '{' },
+      ],
       {
         model: MODEL,
         provider: 'anthropic',
         temperature: 0,
         maxTokens: 1024,
-        systemPrompt: VALIDATION_SYSTEM,
       }
     );
   } catch (err) {
@@ -68,8 +73,8 @@ async function validateOne(extraction) {
 
   let parsed;
   try {
-    // Strip markdown fences that Claude models often add despite instructions
-    const raw = result.content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    // Prepend the prefill '{' that the API omits from its response, strip any trailing fence.
+    const raw = ('{' + result.content).replace(/\s*```\s*$/, '').trim();
     parsed = JSON.parse(raw);
   } catch {
     logger.warn({ extractionId: extraction.id, content: result.content?.slice(0, 200) }, 'Validator returned non-JSON — marking reextract');
