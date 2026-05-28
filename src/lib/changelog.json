@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-28T19:09:35.314Z",
+  "generated": "2026-05-28T19:44:03.060Z",
   "entries": [
+    {
+      "hash": "a2fd4252",
+      "date": "2026-05-28",
+      "type": "Fixed",
+      "description": "Tier boundary check blocked extractor on arbitrate/reextract backlog",
+      "scope": null
+    },
     {
       "hash": "89378dd9",
       "date": "2026-05-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add guardian and the shoghi effendi to author aliases",
       "scope": null
-    },
-    {
-      "hash": "af06fd39",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Para-attribution institution patterns before generic BY_RE",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-28": [
+      {
+        "hash": "a2fd4252",
+        "date": "2026-05-28",
+        "type": "Fixed",
+        "description": "Tier boundary check blocked extractor on arbitrate/reextract backlog",
+        "scope": null
+      },
       {
         "hash": "89378dd9",
         "date": "2026-05-28",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Add guardian and the shoghi effendi to author aliases",
-        "scope": null
-      },
-      {
-        "hash": "af06fd39",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Para-attribution institution patterns before generic BY_RE",
         "scope": null
       }
     ]

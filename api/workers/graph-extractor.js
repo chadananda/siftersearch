@@ -17,7 +17,7 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { query, queryAll, queryOne, graphQuery, graphQueryAll, graphQueryOne } from '../lib/db.js';
+import { query, queryAll, queryOne, transaction, graphQuery, graphQueryAll, graphQueryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { runMigrations, runGraphMigrations } from '../lib/migrations/runner.js';
 import { chatCompletion } from '../lib/ai.js';
@@ -76,6 +76,19 @@ const MAX_FAILURES = 3;
 const _failCount = new Map();
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
+
+async function transactionWithRetry(stmts, maxAttempts = 5) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      return await transaction(stmts);
+    } catch (err) {
+      if (err.code !== 'SQLITE_BUSY' || i === maxAttempts - 1) throw err;
+      const wait = 1000 * Math.pow(2, i);
+      logger.warn({ attempt: i + 1, wait, stmts: stmts.length }, 'SQLITE_BUSY on batch transaction — retrying');
+      await delay(wait);
+    }
+  }
+}
 
 async function queryWithRetry(sql, params, maxAttempts = 5) {
   for (let i = 0; i < maxAttempts; i++) {
@@ -223,14 +236,12 @@ async function resolveExtraction(extractionId, contentId, parsed, religion) {
       [contentId, q.span?.[0], q.span?.[1], q.speaker_surface || null, speakerEnt2, q.attribution_pattern || 'direct', q.nesting_depth || 0, PROMPT_VERSION]);
   }
 
-  if (parsed.prose_summary) {
-    await queryWithRetry(`UPDATE content SET text_grounded = ?, grounding_confidence = 0.9, grounded_synced = 0 WHERE id = ?`,
-      [parsed.prose_summary, contentId]);
-  }
-
   await graphQueryWithRetry(`UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, [extractionId]);
 
   await syncMentionsForContent(contentId);
+
+  // Return prose_summary so processOnce can batch the text_grounded write with graph_enriched
+  return parsed.prose_summary || null;
 }
 
 // Push entity_mentions for a single content row to the Meili entity_mentions_idx.
@@ -391,23 +402,20 @@ async function writeResult(llmResult) {
     inputTokens, outputTokens, cachedTokens, costUsd,
   });
 
-  await queryWithRetry(`
-    UPDATE content SET graph_enriched = 1, graph_enriched_at = datetime('now'),
-      extractor_version = ? WHERE id = ?
-  `, [PROMPT_VERSION, row.id]);
-
   logger.debug(
     { contentId: row.id, extractionId: lastInsertRowid, costUsd: costUsd.toFixed(6) },
     'Paragraph extracted'
   );
 
+  let groundedText = null;
   try {
-    await resolveExtraction(lastInsertRowid, row.id, parsed, row.religion);
+    groundedText = await resolveExtraction(lastInsertRowid, row.id, parsed, row.religion);
   } catch (err) {
     logger.warn({ contentId: row.id, err: err.message }, 'Inline resolution failed — extraction saved, resolution skipped');
   }
 
-  return lastInsertRowid;
+  // Return contentId + groundedText so processOnce can batch all sifter.db writes
+  return { extractionId: lastInsertRowid, contentId: row.id, groundedText };
 }
 
 // Doc-by-doc state: pick highest-priority unprocessed doc once, exhaust it,
@@ -658,19 +666,19 @@ async function processOnce() {
   // Phase 1: LLM calls concurrently — no DB writes
   const llmResults = await Promise.allSettled(rowsWithContext.map(r => callLLM(r)));
 
-  // Phase 2: DB writes serially — eliminates concurrent SQLite write contention
-  // that causes SQLITE_BUSY in the validator and other graph workers.
-  // Also updates rolling doc context in paragraph_index order for next batch.
+  // Phase 2: graph.db writes serially (entity_mentions, extractions, etc.)
+  // Collect sifter.db updates (graph_enriched + text_grounded) for final batch.
   let succeeded = 0;
   let failed = 0;
+  const contentSucceeded = [];   // [{contentId, groundedText}] for batch commit
   for (let i = 0; i < llmResults.length; i++) {
     const r = llmResults[i];
     if (r.status === 'rejected' || r.value === null) { failed++; continue; }
     try {
-      const id = await writeResult(r.value);
-      if (id !== null) {
+      const result = await writeResult(r.value);
+      if (result !== null) {
         succeeded++;
-        // Update rolling context so next batch sees resolved speaker/setting
+        contentSucceeded.push({ contentId: result.contentId, groundedText: result.groundedText });
         updateDocContext(r.value.parsed);
       } else {
         failed++;
@@ -679,7 +687,26 @@ async function processOnce() {
       logger.warn({ err: err.message }, 'writeResult failed');
       failed++;
     }
-    await delay(50); // yield between writes to reduce write-lock starvation for other workers
+  }
+
+  // Phase 3: single sifter.db transaction for all graph_enriched + text_grounded updates.
+  // One lock acquisition instead of N — eliminates the main SQLITE_BUSY bottleneck.
+  if (contentSucceeded.length > 0) {
+    const stmts = [];
+    const ids = contentSucceeded.map(r => r.contentId);
+    const ph = ids.map(() => '?').join(',');
+    stmts.push({ sql: `UPDATE content SET graph_enriched = 1, graph_enriched_at = datetime('now'), extractor_version = ? WHERE id IN (${ph})`, args: [PROMPT_VERSION, ...ids] });
+    for (const { contentId, groundedText } of contentSucceeded) {
+      if (groundedText) {
+        stmts.push({ sql: `UPDATE content SET text_grounded = ?, grounding_confidence = 0.9, grounded_synced = 0 WHERE id = ?`, args: [groundedText, contentId] });
+      }
+    }
+    try {
+      await transactionWithRetry(stmts);
+    } catch (err) {
+      logger.warn({ err: err.message, count: stmts.length }, 'Batch sifter.db commit failed — will retry next cycle');
+      succeeded = 0;  // Don't count as succeeded; fetchBatch will re-fetch same rows
+    }
   }
 
   if (failed > 0) logger.warn({ succeeded, failed }, 'Batch partial failures');
