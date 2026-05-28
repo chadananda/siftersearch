@@ -136,24 +136,51 @@ async function resolveOne(extraction) {
         q.attribution_pattern || 'direct', q.nesting_depth || 0, EXTRACTOR_VERSION]);
   }
 
-  // 4. Store grounded text on content row + generate grounded embedding
-  if (parsed.text_grounded) {
-    let embeddingBlob = null;
-    try {
-      const { embedding } = await createEmbedding(parsed.text_grounded, { caller: 'graph-resolver' });
-      if (embedding?.length) {
-        embeddingBlob = Buffer.from(new Float32Array(embedding).buffer);
-      }
-    } catch (err) {
-      logger.warn({ contentId: extraction.content_id, err: err.message }, 'Failed to embed grounded text');
+  // 4. Build grounded text algorithmically from span substitutions — no LLM call needed.
+  // Apply referring_expressions resolutions (end→start so earlier offsets stay valid).
+  const refExprs = (parsed.referring_expressions || []).filter(
+    re => re.span_start != null && re.span_end != null && re.resolved_entity_id != null
+  );
+  if (refExprs.length > 0) {
+    // Fetch canonical names for all resolved entity IDs in one query
+    const entityIds = [...new Set(refExprs.map(re => re.resolved_entity_id))];
+    const ph = entityIds.map(() => '?').join(',');
+    const entityRows = await queryAll(`SELECT id, canonical_name FROM graph_entities WHERE id IN (${ph})`, entityIds);
+    const nameMap = new Map(entityRows.map(r => [r.id, r.canonical_name]));
+
+    const originalText = extraction.paragraph_text;
+    const subs = refExprs
+      .map(re => ({ start: re.span_start, end: re.span_end, name: nameMap.get(re.resolved_entity_id) }))
+      .filter(s => s.name)
+      .sort((a, b) => b.start - a.start);
+
+    let grounded = originalText;
+    for (const { start, end, name } of subs) {
+      // Ensure boundary spaces so substitution doesn't concatenate adjacent words
+      const before = grounded.slice(0, start);
+      const after = grounded.slice(end);
+      const needsLeadingSpace  = before.length > 0 && !/\s$/.test(before) && !/^\s/.test(name);
+      const needsTrailingSpace = after.length > 0  && !/^\s/.test(after)  && !/\s$/.test(name);
+      grounded = before + (needsLeadingSpace ? ' ' : '') + name + (needsTrailingSpace ? ' ' : '') + after;
     }
-    await queryWithRetry(`
-      UPDATE content SET
-        text_grounded = ?, grounding_confidence = ?, grounding_notes = ?,
-        embedding_grounded = ?, grounded_synced = 0
-      WHERE id = ?
-    `, [parsed.text_grounded, parsed.grounding_confidence, parsed.grounding_notes,
-        embeddingBlob, extraction.content_id]);
+
+    // Only store if text actually changed
+    if (grounded !== originalText) {
+      let embeddingBlob = null;
+      try {
+        const { embedding } = await createEmbedding(grounded, { caller: 'graph-resolver' });
+        if (embedding?.length) {
+          embeddingBlob = Buffer.from(new Float32Array(embedding).buffer);
+        }
+      } catch (err) {
+        logger.warn({ contentId: extraction.content_id, err: err.message }, 'Failed to embed grounded text');
+      }
+      await queryWithRetry(`
+        UPDATE content SET
+          text_grounded = ?, embedding_grounded = ?, grounded_synced = 0
+        WHERE id = ?
+      `, [grounded, embeddingBlob, extraction.content_id]);
+    }
   }
 
   // 5. Mark extraction resolved
@@ -163,11 +190,12 @@ async function resolveOne(extraction) {
 }
 
 async function fetchBatch() {
-  // Accepted extractions not yet resolved
+  // Accepted extractions not yet resolved; include paragraph_text for grounded substitution
   return queryAll(`
-    SELECT pe.id, pe.content_id, pe.output_json
+    SELECT pe.id, pe.content_id, pe.output_json, c.text AS paragraph_text
     FROM paragraph_extractions pe
     JOIN extraction_validations ev ON ev.extraction_id = pe.id
+    JOIN content c ON c.id = pe.content_id
     WHERE pe.resolved = 0
       AND ev.recommended_action = 'accept'
     ORDER BY pe.id ASC

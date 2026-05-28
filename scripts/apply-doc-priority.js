@@ -27,7 +27,7 @@ export async function applyDocPriority() {
   const allLayers = [
     ...(config.bahai_layers ?? []),
     ...(config.other_layers ?? []),
-  ].sort((a, b) => b.priority - a.priority);
+  ].sort((a, b) => a.layer - b.layer); // layer order = specificity; specific rules before catch-alls
 
   const docs = await queryAll(`SELECT id, title, author, religion, tier FROM docs WHERE deleted_at IS NULL`);
 

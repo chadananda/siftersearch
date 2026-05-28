@@ -48,12 +48,22 @@ function modelForPriority(docPriority) {
   return MODEL_LOW;
 }
 
-const SYSTEM_PROMPT_TEMPLATE = readFileSync(
-  join(PROJECT_ROOT, 'api/lib/llm-prompts/extract-v1.md'), 'utf8'
-);
-const OUTPUT_SCHEMA = JSON.parse(
-  readFileSync(join(PROJECT_ROOT, 'api/lib/llm-prompts/extract-v1.schema.json'), 'utf8')
-);
+// Split the prompt template into a static system message (identical on every call → cached)
+// and a dynamic context block (varies per paragraph → goes in user message).
+// DeepSeek and Anthropic both cache based on a shared system-message prefix.
+const _templateRaw = readFileSync(join(PROJECT_ROOT, 'api/lib/llm-prompts/extract-v1.md'), 'utf8');
+const _CAND_MARKER   = '\n### Candidate entity dictionary';
+const _OUTPUT_MARKER = '\n## Output format';
+const _candIdx   = _templateRaw.indexOf(_CAND_MARKER);
+const _outputIdx = _templateRaw.indexOf(_OUTPUT_MARKER);
+
+// Static system prompt: instruction preamble + output schema.
+// Generalize the one work-title reference so no variable leaks into the system message.
+const STATIC_SYSTEM_PROMPT = (
+  _templateRaw.slice(0, _candIdx).trimEnd()
+  + '\n\n'
+  + _templateRaw.slice(_outputIdx)
+).replace(/This passage comes from \*\{\{WORK_TITLE\}\}\* — /g, 'This passage comes from a primary source — ');
 
 let isShuttingDown = false;
 
@@ -131,28 +141,35 @@ async function getEnvelope(docId) {
   };
 }
 
-// Build the full system prompt for a paragraph.
-// docContext is a snapshot of _docContext taken at batch-start time so all
-// paragraphs in the batch share the same pre-batch context (correct: they run
-// concurrently and none can see what the others found in this batch).
-async function buildPrompt(row, docContext) {
+// Build the dynamic context block that goes in the USER message (not system).
+// The system message is STATIC_SYSTEM_PROMPT — identical for every call so it's cached.
+// All per-paragraph variables live here: candidate dict, doc envelope, preceding summaries.
+// docContext is snapshotted at batch-start so all concurrent paragraphs share the same
+// pre-batch narrative state (none can see what the others found in the same batch).
+async function buildContextBlock(row, docContext) {
   const envelope = await getEnvelope(row.doc_id);
   const candidates = await buildCandidateDictionary(row.text);
   const ctx = docContext || {};
-
   const settingStr = [ctx.lastSettingPlace, ctx.lastSettingTime].filter(Boolean).join(', ') || 'null';
   const precedingText = ctx.precedingText || '(start of document — no preceding paragraphs)';
 
-  return SYSTEM_PROMPT_TEMPLATE
-    .replaceAll('{{CANDIDATE_DICTIONARY}}', candidates)
-    .replaceAll('{{WORK_TITLE}}', envelope.workTitle)
-    .replaceAll('{{AUTHOR}}', envelope.author)
-    .replaceAll('{{PERIOD_NAME}}', envelope.periodName)
-    .replaceAll('{{PERIOD_DATE_RANGE}}', envelope.periodDateRange)
-    .replaceAll('{{EPISODE_NAME}}', '')
-    .replaceAll('{{PRECEDING_SPEAKER}}', ctx.lastSpeaker || 'null')
-    .replaceAll('{{PRECEDING_SETTING}}', settingStr)
-    .replaceAll('{{PRECEDING_TEXT}}', precedingText);
+  return `### Candidate entity dictionary
+
+${candidates}
+
+### Structural envelope
+
+Work: ${envelope.workTitle}
+Author: ${envelope.author}
+Religion: ${envelope.religion}
+Current speaker: ${ctx.lastSpeaker || 'null'}
+Current setting: ${settingStr}
+
+### Preceding paragraph summaries
+
+${precedingText}
+
+---`;
 }
 
 // Resolve a parsed extraction into entity_mentions, paragraph_roles, quote_instances.
@@ -262,11 +279,11 @@ async function callLLM(row) {
     return null;
   }
 
-  let systemPrompt;
+  let contextBlock;
   try {
-    systemPrompt = await buildPrompt(row, row._docContext);
+    contextBlock = await buildContextBlock(row, row._docContext);
   } catch (err) {
-    logger.error({ contentId: row.id, err: err.message }, 'buildPrompt failed');
+    logger.error({ contentId: row.id, err: err.message }, 'buildContextBlock failed');
     return null;
   }
 
@@ -276,7 +293,10 @@ async function callLLM(row) {
   let result;
   try {
     result = await chatCompletion(
-      [{ role: 'system', content: systemPrompt }, { role: 'user', content: row.text }],
+      [
+        { role: 'system', content: STATIC_SYSTEM_PROMPT },
+        { role: 'user', content: contextBlock + '\n\n' + row.text },
+      ],
       {
         model: activeModel,
         provider: activeProvider,
