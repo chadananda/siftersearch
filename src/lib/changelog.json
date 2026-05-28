@@ -1,6 +1,48 @@
 {
-  "generated": "2026-05-27T21:25:42.432Z",
+  "generated": "2026-05-28T16:30:16.199Z",
   "entries": [
+    {
+      "hash": "3879cf2e",
+      "date": "2026-05-28",
+      "type": "New",
+      "description": "Separate graph.db from sifter.db + startup model logging",
+      "scope": null
+    },
+    {
+      "hash": "c3a8c07b",
+      "date": "2026-05-28",
+      "type": "Fixed",
+      "description": "Extraction model deepseek-v4-flash for all tiers, pro for adjudication only",
+      "scope": null
+    },
+    {
+      "hash": "f5c272fc",
+      "date": "2026-05-28",
+      "type": "Fixed",
+      "description": "Trim title/author/subtitle from OceanLibrary frontmatter on ingest",
+      "scope": null
+    },
+    {
+      "hash": "7f47e9fd",
+      "date": "2026-05-28",
+      "type": "Fixed",
+      "description": "Trim doc title before exact-match in apply-doc-priority",
+      "scope": null
+    },
+    {
+      "hash": "971d740d",
+      "date": "2026-05-28",
+      "type": "Fixed",
+      "description": "Layer sort order, algorithmic grounded text, extractor prompt caching",
+      "scope": null
+    },
+    {
+      "hash": "6ac4b0bf",
+      "date": "2026-05-27",
+      "type": "Fixed",
+      "description": "Validator too strict — only flag entity identity errors, not span precision",
+      "scope": null
+    },
     {
       "hash": "9d74e18c",
       "date": "2026-05-27",
@@ -3458,52 +3500,54 @@
       "type": "New",
       "description": "Deep Research — slug, sections_json, addNotifyEmail, sync rename",
       "scope": null
-    },
-    {
-      "hash": "5a9773e9",
-      "date": "2026-05-13",
-      "type": "New",
-      "description": "Para_meta attribution — per-paragraph authorship for compilations",
-      "scope": null
-    },
-    {
-      "hash": "be99e221",
-      "date": "2026-05-13",
-      "type": "New",
-      "description": "Deep Research system — pre-computed authoritative passage sets per question",
-      "scope": null
-    },
-    {
-      "hash": "ca342005",
-      "date": "2026-05-13",
-      "type": "New",
-      "description": "Bump Lights of Guidance authority to 8; add topic-relevance schema doc",
-      "scope": null
-    },
-    {
-      "hash": "10f18656",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Decode &quot; entities before smart-quote processing",
-      "scope": null
-    },
-    {
-      "hash": "7309677c",
-      "date": "2026-05-13",
-      "type": "New",
-      "description": "Render assessment section on dialog page; preserve hero image on rerun",
-      "scope": null
-    },
-    {
-      "hash": "a72397d6",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Fallback-link-only judge false positive; theodicy query expansion for suffering queries",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-28": [
+      {
+        "hash": "3879cf2e",
+        "date": "2026-05-28",
+        "type": "New",
+        "description": "Separate graph.db from sifter.db + startup model logging",
+        "scope": null
+      },
+      {
+        "hash": "c3a8c07b",
+        "date": "2026-05-28",
+        "type": "Fixed",
+        "description": "Extraction model deepseek-v4-flash for all tiers, pro for adjudication only",
+        "scope": null
+      },
+      {
+        "hash": "f5c272fc",
+        "date": "2026-05-28",
+        "type": "Fixed",
+        "description": "Trim title/author/subtitle from OceanLibrary frontmatter on ingest",
+        "scope": null
+      },
+      {
+        "hash": "7f47e9fd",
+        "date": "2026-05-28",
+        "type": "Fixed",
+        "description": "Trim doc title before exact-match in apply-doc-priority",
+        "scope": null
+      },
+      {
+        "hash": "971d740d",
+        "date": "2026-05-28",
+        "type": "Fixed",
+        "description": "Layer sort order, algorithmic grounded text, extractor prompt caching",
+        "scope": null
+      }
+    ],
     "2026-05-27": [
+      {
+        "hash": "6ac4b0bf",
+        "date": "2026-05-27",
+        "type": "Fixed",
+        "description": "Validator too strict — only flag entity identity errors, not span precision",
+        "scope": null
+      },
       {
         "hash": "9d74e18c",
         "date": "2026-05-27",
@@ -6984,48 +7028,6 @@
         "date": "2026-05-13",
         "type": "New",
         "description": "Deep Research — slug, sections_json, addNotifyEmail, sync rename",
-        "scope": null
-      },
-      {
-        "hash": "5a9773e9",
-        "date": "2026-05-13",
-        "type": "New",
-        "description": "Para_meta attribution — per-paragraph authorship for compilations",
-        "scope": null
-      },
-      {
-        "hash": "be99e221",
-        "date": "2026-05-13",
-        "type": "New",
-        "description": "Deep Research system — pre-computed authoritative passage sets per question",
-        "scope": null
-      },
-      {
-        "hash": "ca342005",
-        "date": "2026-05-13",
-        "type": "New",
-        "description": "Bump Lights of Guidance authority to 8; add topic-relevance schema doc",
-        "scope": null
-      },
-      {
-        "hash": "10f18656",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Decode &quot; entities before smart-quote processing",
-        "scope": null
-      },
-      {
-        "hash": "7309677c",
-        "date": "2026-05-13",
-        "type": "New",
-        "description": "Render assessment section on dialog page; preserve hero image on rerun",
-        "scope": null
-      },
-      {
-        "hash": "a72397d6",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Fallback-link-only judge false positive; theodicy query expansion for suffering queries",
         "scope": null
       }
     ]

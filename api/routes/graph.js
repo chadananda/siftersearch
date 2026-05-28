@@ -8,6 +8,7 @@
  */
 
 import { queryAll, queryOne } from '../lib/db.js';
+import { graphQueryAll, graphQueryOne } from '../lib/db.js';
 
 export default async function graphRoutes(server) {
 
@@ -225,5 +226,69 @@ export default async function graphRoutes(server) {
     }));
 
     return { entity, connected };
+  });
+
+  // GET /entity/search?q=&limit= — global entity name search across all religions
+  server.get('/entity/search', async (request) => {
+    const { q, limit = 20, religion } = request.query;
+    if (!q) return [];
+    const params = [`%${q}%`];
+    let sql = `SELECT id, name, canonical_name, entity_type, religion, mention_count
+               FROM graph_entities WHERE (name LIKE ? OR canonical_name LIKE ?)`;
+    params.push(`%${q}%`);
+    if (religion) { sql += ' AND religion = ?'; params.push(religion); }
+    sql += ' ORDER BY mention_count DESC LIMIT ?';
+    params.push(Number(limit));
+    const rows = await queryAll(sql, params);
+    return rows.map(r => ({
+      id: Number(r.id), name: r.name, canonicalName: r.canonical_name,
+      type: r.entity_type, religion: r.religion, mentionCount: Number(r.mention_count)
+    }));
+  });
+
+  // GET /entity/:id/mentions?doc_id=&limit=&offset= — paragraphs mentioning this entity
+  server.get('/entity/:id/mentions', async (request) => {
+    const { id } = request.params;
+    const { doc_id, limit = 50, offset = 0 } = request.query;
+
+    const entity = await queryOne(
+      'SELECT id, name, canonical_name, entity_type, religion FROM graph_entities WHERE id = ?', [id]
+    );
+    if (!entity) return server.httpErrors.notFound('Entity not found');
+
+    // Fetch mention content_ids from graph.db
+    let mentionSql = 'SELECT content_id, role FROM entity_mentions WHERE entity_id = ?';
+    const mParams = [id];
+    mentionSql += ' ORDER BY id LIMIT ? OFFSET ?';
+    mParams.push(Number(limit), Number(offset));
+    const mentions = await graphQueryAll(mentionSql, mParams);
+    if (mentions.length === 0) return { entity: { id: Number(entity.id), name: entity.name }, paragraphs: [], total: 0 };
+
+    // Fetch paragraph text + doc info from sifter.db
+    const cids = mentions.map(m => m.content_id);
+    const ph = cids.map(() => '?').join(',');
+    let contentSql = `SELECT c.id, c.text, c.doc_id, c.position, d.title, d.author
+                      FROM content c JOIN docs d ON d.id = c.doc_id
+                      WHERE c.id IN (${ph})`;
+    const cParams = [...cids];
+    if (doc_id) { contentSql += ' AND c.doc_id = ?'; cParams.push(doc_id); }
+    contentSql += ' ORDER BY c.doc_id, c.position';
+    const contentRows = await queryAll(contentSql, cParams);
+    const roleMap = new Map(mentions.map(m => [m.content_id, m.role]));
+
+    const totalRow = await graphQueryOne(
+      'SELECT COUNT(*) as n FROM entity_mentions WHERE entity_id = ?', [id]
+    );
+
+    return {
+      entity: { id: Number(entity.id), name: entity.name, canonicalName: entity.canonical_name, type: entity.entity_type, religion: entity.religion },
+      paragraphs: contentRows.map(r => ({
+        contentId: r.id, docId: r.doc_id, title: r.title, author: r.author,
+        position: r.position, text: r.text, role: roleMap.get(r.id) || null
+      })),
+      total: totalRow?.n ?? 0,
+      limit: Number(limit),
+      offset: Number(offset)
+    };
   });
 }
