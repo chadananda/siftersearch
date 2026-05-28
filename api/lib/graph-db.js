@@ -14,7 +14,7 @@
  */
 
 import Database from 'better-sqlite3';
-import { instrumentDb, query as mainQuery, queryOne as mainQueryOne, queryAll as mainQueryAll } from './db.js';
+import { instrumentDb, query as mainQuery, queryOne as mainQueryOne, queryAll as mainQueryAll, graphQuery, graphQueryOne, graphQueryAll } from './db.js';
 
 function upsertEntity(db, { name, entityType, canonicalName, religion = '', language, era, description, sourceDocIds = [] }) {
   const canon = canonicalName || name;
@@ -134,15 +134,15 @@ export async function findEntity({ surface, type, religion, lang } = {}) {
   if (!surface) return null;
   const norm = normalizeSurface(surface);
 
-  // 1. Exact alias match
+  // 1. Exact alias match (graph.db)
   let sql = `SELECT entity_id, confidence FROM entity_aliases WHERE surface_norm = ?`;
   const args = [norm];
   if (lang) { sql += ` AND lang = ?`; args.push(lang); }
   sql += ` ORDER BY confidence DESC LIMIT 1`;
-  const aliasRow = await mainQueryOne(sql, args);
+  const aliasRow = await graphQueryOne(sql, args);
   if (aliasRow) return { entity_id: aliasRow.entity_id, confidence: aliasRow.confidence, method: 'alias' };
 
-  // 2. Exact canonical name match on graph_entities
+  // 2. Exact canonical name match on graph_entities (sifter.db)
   let entSql = `SELECT id FROM graph_entities WHERE lower(canonical_name) = ?`;
   const entArgs = [surface.toLowerCase()];
   if (type) { entSql += ` AND entity_type = ?`; entArgs.push(type); }
@@ -160,7 +160,7 @@ export async function resolveAlias(surfaceNorm, lang) {
   const args = [surfaceNorm];
   if (lang) { sql += ` AND lang = ?`; args.push(lang); }
   sql += ` ORDER BY confidence DESC LIMIT 1`;
-  const row = await mainQueryOne(sql, args);
+  const row = await graphQueryOne(sql, args);
   return row?.entity_id ?? null;
 }
 
@@ -181,10 +181,10 @@ export async function createEntity({ canonicalName, type, religion = '', aliases
   return entityId;
 }
 
-/** Add an alias for an entity. */
+/** Add an alias for an entity (entity_aliases lives in graph.db). */
 export async function addAlias(entityId, { surface, surfaceNorm, lang = 'en', source, confidence = 1.0 }) {
   const norm = surfaceNorm ?? normalizeSurface(surface);
-  await mainQuery(
+  await graphQuery(
     `INSERT OR IGNORE INTO entity_aliases (entity_id, surface, surface_norm, lang, source, confidence) VALUES (?,?,?,?,?,?)`,
     [entityId, surface, norm, lang, source ?? null, confidence]
   );
@@ -196,14 +196,14 @@ export async function addAlias(entityId, { surface, surfaceNorm, lang = 'en', so
  */
 export async function mergeEntities(keeperId, mergedIds, { reason, evidence } = {}) {
   for (const id of mergedIds) {
-    await mainQuery(`UPDATE entity_aliases SET entity_id = ? WHERE entity_id = ?`, [keeperId, id]);
-    await mainQuery(`UPDATE entity_mentions SET entity_id = ? WHERE entity_id = ?`, [keeperId, id]);
+    await graphQuery(`UPDATE entity_aliases SET entity_id = ? WHERE entity_id = ?`, [keeperId, id]);
+    await graphQuery(`UPDATE entity_mentions SET entity_id = ? WHERE entity_id = ?`, [keeperId, id]);
     await mainQuery(`UPDATE graph_relations SET source_entity_id = ? WHERE source_entity_id = ?`, [keeperId, id]);
     await mainQuery(`UPDATE graph_relations SET target_entity_id = ? WHERE target_entity_id = ?`, [keeperId, id]);
     await mainQuery(`UPDATE graph_entities SET mention_count = mention_count + (SELECT COALESCE(mention_count,0) FROM graph_entities WHERE id = ?) WHERE id = ?`, [id, keeperId]);
     await mainQuery(`DELETE FROM graph_entities WHERE id = ?`, [id]);
   }
-  const result = await mainQuery(
+  const result = await graphQuery(
     `INSERT INTO er_audit_log (action, candidate, model_votes, evidence_paragraphs) VALUES ('merge', ?, ?, ?)`,
     [JSON.stringify({ keeperId, mergedIds }), reason ?? null, evidence ?? null]
   );
@@ -222,12 +222,12 @@ export async function splitEntity(entityId, splits, { reason, evidence } = {}) {
     const newId = await createEntity({ canonicalName: split.canonicalName ?? original.canonical_name, type: original.entity_type, religion: original.religion, aliases: split.aliases ?? [] });
     if (split.mentions?.length) {
       const placeholders = split.mentions.map(() => '?').join(',');
-      await mainQuery(`UPDATE entity_mentions SET entity_id = ? WHERE id IN (${placeholders})`, [newId, ...split.mentions]);
+      await graphQuery(`UPDATE entity_mentions SET entity_id = ? WHERE id IN (${placeholders})`, [newId, ...split.mentions]);
     }
     newIds.push(newId);
   }
   await mainQuery(`DELETE FROM graph_entities WHERE id = ?`, [entityId]);
-  await mainQuery(
+  await graphQuery(
     `INSERT INTO er_audit_log (action, candidate, model_votes, evidence_paragraphs) VALUES ('split', ?, ?, ?)`,
     [JSON.stringify({ originalId: entityId, newIds }), reason ?? null, evidence ?? null]
   );
@@ -236,14 +236,26 @@ export async function splitEntity(entityId, splits, { reason, evidence } = {}) {
 
 /** Get all mentions for an entity. */
 export async function getMentions(entityId, { limit = 100 } = {}) {
-  return mainQueryAll(
-    `SELECT em.*, c.text, d.title FROM entity_mentions em
-     JOIN content c ON c.id = em.content_id
-     JOIN docs d ON d.id = c.doc_id
-     WHERE em.entity_id = ? AND c.deleted_at IS NULL
-     ORDER BY em.created_at DESC LIMIT ?`,
+  const mentions = await graphQueryAll(
+    `SELECT * FROM entity_mentions WHERE entity_id = ? ORDER BY created_at DESC LIMIT ?`,
     [entityId, limit]
   );
+  if (!mentions.length) return mentions;
+  const cids = [...new Set(mentions.map(m => m.content_id))];
+  const cph = cids.map(() => '?').join(',');
+  const contentRows = await mainQueryAll(`SELECT id, text, doc_id FROM content WHERE id IN (${cph}) AND deleted_at IS NULL`, cids);
+  const docIds = [...new Set(contentRows.map(r => r.doc_id))];
+  const dph = docIds.map(() => '?').join(',');
+  const docRows = docIds.length ? await mainQueryAll(`SELECT id, title FROM docs WHERE id IN (${dph})`, docIds) : [];
+  const textMap = new Map(contentRows.map(r => [r.id, r]));
+  const docMap = new Map(docRows.map(r => [r.id, r]));
+  return mentions
+    .filter(m => textMap.has(m.content_id))
+    .map(m => {
+      const c = textMap.get(m.content_id);
+      const d = docMap.get(c?.doc_id) || {};
+      return { ...m, text: c?.text, title: d.title };
+    });
 }
 
 /** Get relations for an entity (in, out, or both). */
@@ -255,7 +267,7 @@ export async function getRelations(entityId, direction = 'both') {
 
 /** Record an extraction run. Returns the inserted id. */
 export async function recordExtraction({ contentId, model, promptVersion, outputJson, inputTokens, outputTokens, cachedTokens, costUsd, extractorVersion }) {
-  const result = await mainQuery(
+  const result = await graphQuery(
     `INSERT INTO paragraph_extractions (content_id, model, prompt_version, output_json, input_tokens, output_tokens, cached_tokens, cost_usd, extractor_version) VALUES (?,?,?,?,?,?,?,?,?)`,
     [contentId, model, promptVersion, outputJson ? JSON.stringify(outputJson) : null, inputTokens ?? 0, outputTokens ?? 0, cachedTokens ?? 0, costUsd ?? 0, extractorVersion ?? 'v1']
   );

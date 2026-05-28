@@ -1,13 +1,6 @@
-/**
- * better-sqlite3 Database Client
- *
- * Two separate databases:
- * 1. Content DB (local SQLite) - docs, content, library_nodes, jobs, processed_cache
- * 2. User DB (local SQLite) - users, sessions, auth, forum, donations, conversations
- *
- * All operations are synchronous (better-sqlite3 C++ bindings).
- * Exported function signatures are async for backward compatibility.
- */
+// better-sqlite3 Database Client
+// Three separate databases: content (sifter.db), user, graph (graph.db).
+// Exported function signatures are async for backward compatibility.
 
 import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
@@ -17,6 +10,7 @@ import { runSiteMigrations } from './migrations/site.js';
 
 let contentDb = null;
 let userDb = null;
+let graphDb = null;
 const siteDbCache = new Map();
 
 function stripFilePrefix(url) {
@@ -60,6 +54,17 @@ function createUserConnection() {
   return instrumentDb(db, 'user');
 }
 
+function createGraphConnection() {
+  const dbPath = './data/graph.db';
+  const db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
+  db.pragma('busy_timeout = 30000');
+  db.pragma('cache_size = -131072');  // 128MB in KiB
+  db.pragma('mmap_size = 268435456'); // 256MB
+  logger.info({ path: dbPath }, 'Graph DB connected');
+  return instrumentDb(db, 'graph');
+}
+
 export async function getDb() {
   if (!contentDb) contentDb = createContentConnection();
   return contentDb;
@@ -68,6 +73,11 @@ export async function getDb() {
 export async function getUserDb() {
   if (userDb === null) userDb = createUserConnection();
   return userDb || await getDb();
+}
+
+export async function getGraphDb() {
+  if (!graphDb) graphDb = createGraphConnection();
+  return graphDb;
 }
 
 // Site-only DBs: one SQLite file per site at data/sites/<safe-id>.db.
@@ -238,15 +248,43 @@ export async function userTransaction(statements, name = '') {
   return result;
 }
 
+export async function graphQuery(sql, params = [], name = '') {
+  const db = await getGraphDb();
+  const start = Date.now();
+  const result = runQuery(db, sql, params);
+  logQueryTiming(sql, params, start, 'graph', name);
+  return result;
+}
+
+export async function graphQueryOne(sql, params = [], name = '') {
+  const result = await graphQuery(sql, params, name);
+  return result.rows[0] || null;
+}
+
+export async function graphQueryAll(sql, params = [], name = '') {
+  const result = await graphQuery(sql, params, name);
+  return result.rows;
+}
+
+export async function graphTransaction(statements, name = '') {
+  const db = await getGraphDb();
+  const start = Date.now();
+  const txn = db.transaction((stmts) => stmts.map(({ sql, args = [] }) => db.prepare(sql).run(...args)));
+  const result = txn(statements);
+  logQueryTiming('TRANSACTION', null, start, 'graph', name);
+  return result;
+}
+
 export const batchQuery = query;
 export const batchTransaction = transaction;
 export const batchQueryOne = queryOne;
 export const batchQueryAll = queryAll;
 
 export default {
-  getDb, getUserDb, getBatchDb,
+  getDb, getUserDb, getBatchDb, getGraphDb,
   query, queryOne, queryAll,
   batchQuery, batchQueryOne, batchQueryAll,
   transaction, batchTransaction,
-  userQuery, userQueryOne, userQueryAll, userTransaction
+  userQuery, userQueryOne, userQueryAll, userTransaction,
+  graphQuery, graphQueryOne, graphQueryAll, graphTransaction
 };

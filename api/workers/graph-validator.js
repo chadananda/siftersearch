@@ -14,7 +14,7 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { query, queryAll } from '../lib/db.js';
+import { query, queryAll, graphQuery, graphQueryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { runMigrations } from '../lib/migrations.js';
 import { chatCompletion } from '../lib/ai.js';
@@ -103,7 +103,7 @@ async function validateOne(extraction) {
   }
 
   try {
-    await queryWithRetry(`
+    await graphQueryWithRetry(`
       INSERT INTO extraction_validations
         (extraction_id, validator_model, errors_json, confidence, recommended_action)
       VALUES (?, ?, ?, ?, ?)
@@ -123,10 +123,8 @@ async function validateOne(extraction) {
 }
 
 async function fetchBatch() {
-  // Two-step to avoid full scan of wide output_json column.
-  // Step 1: get IDs using indexes only (no blob reads).
-  const ids = await queryAll(`
-    SELECT pe.id
+  const ids = await graphQueryAll(`
+    SELECT pe.id, pe.content_id, pe.output_json
     FROM paragraph_extractions pe
     WHERE pe.resolved = 0
       AND NOT EXISTS (
@@ -136,16 +134,11 @@ async function fetchBatch() {
     LIMIT ?
   `, [BATCH_SIZE]);
   if (ids.length === 0) return [];
-
-  // Step 2: fetch output_json only for the matched rows.
-  const ph = ids.map(() => '?').join(',');
-  return queryAll(`
-    SELECT pe.id, pe.content_id, pe.output_json, c.text AS paragraph_text
-    FROM paragraph_extractions pe
-    JOIN content c ON c.id = pe.content_id
-    WHERE pe.id IN (${ph})
-    ORDER BY pe.id ASC
-  `, ids.map(r => r.id));
+  const contentIds = [...new Set(ids.map(r => r.content_id))];
+  const cph = contentIds.map(() => '?').join(',');
+  const textRows = await queryAll(`SELECT id, text FROM content WHERE id IN (${cph})`, contentIds);
+  const textMap = new Map(textRows.map(r => [r.id, r.text]));
+  return ids.map(pe => ({ ...pe, paragraph_text: textMap.get(pe.content_id) || '' }));
 }
 
 let isShuttingDown = false;
@@ -154,9 +147,6 @@ process.on('SIGINT', () => {});
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
-// Retry a DB write on SQLITE_BUSY with exponential backoff.
-// The extractor runs serial DB writes now, but the validator is a separate process
-// that can still race. This makes it resilient rather than crash-looping.
 async function queryWithRetry(sql, params, maxAttempts = 5) {
   for (let i = 0; i < maxAttempts; i++) {
     try {
@@ -170,8 +160,21 @@ async function queryWithRetry(sql, params, maxAttempts = 5) {
   }
 }
 
+async function graphQueryWithRetry(sql, params, maxAttempts = 5) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      return await graphQuery(sql, params);
+    } catch (err) {
+      if (err.code !== 'SQLITE_BUSY' || i === maxAttempts - 1) throw err;
+      const wait = 1000 * Math.pow(2, i);
+      logger.warn({ attempt: i + 1, wait }, 'SQLITE_BUSY on graph write — retrying');
+      await delay(wait);
+    }
+  }
+}
+
 async function workerLoop() {
-  logger.info({ model: MODEL }, 'Graph validator starting');
+  logger.info({ model: MODEL, modelEnvVar: 'VALIDATOR_MODEL' }, 'Graph validator starting — verify model matches .env-public');
 
   while (!isShuttingDown) {
     let rows;
@@ -195,7 +198,7 @@ async function workerLoop() {
       // Auto-accept trivial paragraphs (<150 chars) — not worth Haiku QA cost.
       // Span errors and entity confusion are rare in short text.
       if (row.paragraph_text.length < 150) {
-        await queryWithRetry(`
+        await graphQueryWithRetry(`
           INSERT INTO extraction_validations
             (extraction_id, validator_model, errors_json, confidence, recommended_action)
           VALUES (?, ?, ?, ?, ?)

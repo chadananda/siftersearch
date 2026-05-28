@@ -17,7 +17,7 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { query, queryAll, queryOne } from '../lib/db.js';
+import { query, queryAll, queryOne, graphQuery, graphQueryAll, graphQueryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { runMigrations } from '../lib/migrations.js';
 import { chatCompletion } from '../lib/ai.js';
@@ -37,7 +37,7 @@ const IDLE_SLEEP_MS = 30_000;
 //   <  40 = scholarly/secondary/reference/unknown
 const TIER_HIGH_MIN_PRIORITY  = parseInt(process.env.EXTRACTION_TIER_HIGH  || '70', 10);
 const TIER_MID_MIN_PRIORITY   = parseInt(process.env.EXTRACTION_TIER_MID   || '40', 10);
-const MODEL_HIGH     = process.env.EXTRACTION_MODEL_HIGH  || 'deepseek-v4-pro';
+const MODEL_HIGH     = process.env.EXTRACTION_MODEL_HIGH  || 'deepseek-v4-flash';
 const MODEL_MID      = process.env.EXTRACTION_MODEL_MID   || 'deepseek-v4-flash';
 const MODEL_LOW      = process.env.EXTRACTION_MODEL_LOW   || 'deepseek-v4-flash';
 const PROVIDER = 'deepseek';
@@ -90,11 +90,24 @@ async function queryWithRetry(sql, params, maxAttempts = 5) {
   }
 }
 
+async function graphQueryWithRetry(sql, params, maxAttempts = 5) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      return await graphQuery(sql, params);
+    } catch (err) {
+      if (err.code !== 'SQLITE_BUSY' || i === maxAttempts - 1) throw err;
+      const wait = 1000 * Math.pow(2, i);
+      logger.warn({ attempt: i + 1, wait }, 'SQLITE_BUSY on graph write — retrying');
+      await delay(wait);
+    }
+  }
+}
+
 // Cache alias count — skip the expensive join when no aliases exist yet
 let _hasAliases = null;
 async function hasAliases() {
   if (_hasAliases === null) {
-    const row = await queryOne(`SELECT COUNT(*) as n FROM entity_aliases WHERE confidence >= 0.8`);
+    const row = await graphQueryOne(`SELECT COUNT(*) as n FROM entity_aliases WHERE confidence >= 0.8`);
     _hasAliases = (row?.n || 0) > 0;
   }
   return _hasAliases;
@@ -108,13 +121,11 @@ const CANDIDATE_LIMIT = 60;
 async function buildCandidateDictionary(text) {
   if (!(await hasAliases())) return '(none pre-retrieved)';
   const textNorm = text.toLowerCase();
-  const rows = await queryAll(`
-    SELECT DISTINCT ge.id, ge.canonical_name, ge.entity_type AS type, ge.religion
-    FROM entity_aliases ea
-    JOIN graph_entities ge ON ge.id = ea.entity_id
-    WHERE ea.confidence >= 0.8
-    ORDER BY ge.canonical_name
-  `);
+  const aliasRows = await graphQueryAll(`SELECT DISTINCT entity_id FROM entity_aliases WHERE confidence >= 0.8`);
+  if (aliasRows.length === 0) return '(none pre-retrieved)';
+  const entityIds = [...new Set(aliasRows.map(r => r.entity_id))];
+  const ph2 = entityIds.map(() => '?').join(',');
+  const rows = await queryAll(`SELECT id, canonical_name, entity_type AS type, religion FROM graph_entities WHERE id IN (${ph2})`, entityIds);
   const matches = rows
     .filter(r => r.canonical_name.length >= 4 && textNorm.includes(r.canonical_name.toLowerCase()))
     .sort((a, b) => b.canonical_name.length - a.canonical_name.length)
@@ -186,11 +197,11 @@ async function resolveExtraction(extractionId, contentId, parsed, religion) {
       entityId = found?.entity_id || null;
     }
     if (!entityId) {
-      await queryWithRetry(`INSERT OR IGNORE INTO promotion_queue (surface_norm, type, context_snippet, resolved, attempts, priority) VALUES (?, ?, ?, 0, 0, 10)`,
+      await graphQueryWithRetry(`INSERT OR IGNORE INTO promotion_queue (surface_norm, type, context_snippet, resolved, attempts, priority) VALUES (?, ?, ?, 0, 0, 10)`,
         [normalizeSurface(mention.surface), mention.type || null, mention.surface.slice(0, 100)]);
       continue;
     }
-    await queryWithRetry(`INSERT OR IGNORE INTO entity_mentions (entity_id, content_id, role, resolution_confidence, status, extractor_version) VALUES (?, ?, ?, 0.9, 'resolved', ?)`,
+    await graphQueryWithRetry(`INSERT OR IGNORE INTO entity_mentions (entity_id, content_id, role, resolution_confidence, status, extractor_version) VALUES (?, ?, ?, 0.9, 'resolved', ?)`,
       [entityId, contentId, mention.local_role, PROMPT_VERSION]);
     if (mention.surface) {
       await addAlias(entityId, { surface: mention.surface, surfaceNorm: normalizeSurface(mention.surface), lang: 'en', source: PROMPT_VERSION, confidence: 0.7 });
@@ -203,12 +214,12 @@ async function resolveExtraction(extractionId, contentId, parsed, religion) {
     resolve(roles.speaker), resolve(roles.narrator), resolve(roles.addressee),
     roles.setting_place ? findEntity({ surface: roles.setting_place, type: 'place' }).then(r => r?.entity_id || null).catch(() => null) : null,
   ]);
-  await queryWithRetry(`INSERT OR REPLACE INTO paragraph_roles (content_id, speaker_entity_id, narrator_entity_id, addressee_entity_id, setting_place_entity_id, setting_time, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  await graphQueryWithRetry(`INSERT OR REPLACE INTO paragraph_roles (content_id, speaker_entity_id, narrator_entity_id, addressee_entity_id, setting_place_entity_id, setting_time, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [contentId, speakerEnt, narratorEnt, addresseeEnt, placeEnt, roles.setting_time || null, PROMPT_VERSION]);
 
   for (const q of parsed.quotations || []) {
     const speakerEnt2 = q.speaker_candidate ? (await findEntity({ surface: q.speaker_candidate }).catch(() => null))?.entity_id : null;
-    await queryWithRetry(`INSERT INTO quote_instances (content_id, span_start, span_end, speaker_surface, speaker_entity_id, attribution_pattern, nesting_depth, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    await graphQueryWithRetry(`INSERT INTO quote_instances (content_id, span_start, span_end, speaker_surface, speaker_entity_id, attribution_pattern, nesting_depth, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [contentId, q.span?.[0], q.span?.[1], q.speaker_surface || null, speakerEnt2, q.attribution_pattern || 'direct', q.nesting_depth || 0, PROMPT_VERSION]);
   }
 
@@ -217,9 +228,8 @@ async function resolveExtraction(extractionId, contentId, parsed, religion) {
       [parsed.prose_summary, contentId]);
   }
 
-  await queryWithRetry(`UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, [extractionId]);
+  await graphQueryWithRetry(`UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, [extractionId]);
 
-  // Push new entity_mentions for this paragraph directly to Meili — immediately searchable.
   await syncMentionsForContent(contentId);
 }
 
@@ -228,16 +238,15 @@ async function syncMentionsForContent(contentId) {
   try {
     const meili = getMeili();
     if (!meili) return;
-    const rows = await queryAll(`
-      SELECT em.id, em.entity_id, em.content_id AS paragraph_id, em.role,
-             ge.canonical_name AS entity_canonical_name, ge.entity_type,
-             c.doc_id, d.religion, d.collection, d.encumbered, d.title, d.author, c.para_meta
-      FROM entity_mentions em
-      JOIN graph_entities ge ON ge.id = em.entity_id
-      JOIN content c ON c.id = em.content_id
-      JOIN docs d ON d.id = c.doc_id
-      WHERE em.content_id = ?
-    `, [contentId]);
+    const mentionRows = await graphQueryAll(`SELECT id, entity_id, content_id AS paragraph_id, role FROM entity_mentions WHERE content_id = ?`, [contentId]);
+    if (!mentionRows.length) return;
+    const entityIds = [...new Set(mentionRows.map(r => r.entity_id))];
+    const eph = entityIds.map(() => '?').join(',');
+    const entityRows = await queryAll(`SELECT id, canonical_name, entity_type FROM graph_entities WHERE id IN (${eph})`, entityIds);
+    const entityMap = new Map(entityRows.map(r => [r.id, r]));
+    const contentRow = await queryOne(`SELECT doc_id, para_meta FROM content WHERE id = ?`, [contentId]);
+    const docRow = contentRow ? await queryOne(`SELECT religion, collection, encumbered, title, author FROM docs WHERE id = ?`, [contentRow.doc_id]) : null;
+    const rows = mentionRows.map(em => ({ ...em, ...entityMap.get(em.entity_id), doc_id: contentRow?.doc_id, para_meta: contentRow?.para_meta, ...docRow }));
     if (!rows.length) return;
     const docs = rows.map(row => {
       let paraMeta = null;
@@ -247,7 +256,7 @@ async function syncMentionsForContent(contentId) {
       return {
         id: row.id,
         entity_id: row.entity_id,
-        entity_canonical_name: row.entity_canonical_name,
+        entity_canonical_name: row.canonical_name || null,
         entity_type: row.entity_type || null,
         paragraph_id: row.paragraph_id,
         doc_id: row.doc_id,
@@ -367,7 +376,7 @@ async function writeResult(llmResult) {
     return null;
   }
 
-  const { lastInsertRowid } = await queryWithRetry(`
+  const { lastInsertRowid } = await graphQueryWithRetry(`
     INSERT INTO paragraph_extractions
       (content_id, model, prompt_version, output_json,
        input_tokens, output_tokens, cached_tokens, cost_usd, resolved)
@@ -436,19 +445,24 @@ function resetDocContext() {
 // mid-doc doesn't start blind. Queries the last N prose_summaries by paragraph_index.
 async function seedDocContextFromDB(docId) {
   try {
-    const rows = await queryAll(`
-      SELECT c.paragraph_index,
-             json_extract(pe.output_json, '$.prose_summary') AS summary,
-             json_extract(pe.output_json, '$.roles.speaker')       AS speaker,
-             json_extract(pe.output_json, '$.roles.narrator')      AS narrator,
-             json_extract(pe.output_json, '$.roles.setting_place') AS setting_place,
-             json_extract(pe.output_json, '$.roles.setting_time')  AS setting_time
-      FROM paragraph_extractions pe
-      JOIN content c ON c.id = pe.content_id
-      WHERE c.doc_id = ? AND c.deleted_at IS NULL
-      ORDER BY c.paragraph_index DESC
-      LIMIT ?
-    `, [docId, DOC_CONTEXT_PARA_COUNT]);
+    const contentRows = await queryAll(`SELECT id, paragraph_index FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index DESC LIMIT ?`, [docId, DOC_CONTEXT_PARA_COUNT * 3]);
+    if (contentRows.length === 0) return;
+    const contentIds = contentRows.map(r => r.id);
+    const cidPh = contentIds.map(() => '?').join(',');
+    const cidMap = new Map(contentRows.map(r => [r.id, r.paragraph_index]));
+    const peRows = await graphQueryAll(`
+      SELECT content_id,
+             json_extract(output_json, '$.prose_summary') AS summary,
+             json_extract(output_json, '$.roles.speaker')       AS speaker,
+             json_extract(output_json, '$.roles.narrator')      AS narrator,
+             json_extract(output_json, '$.roles.setting_place') AS setting_place,
+             json_extract(output_json, '$.roles.setting_time')  AS setting_time
+      FROM paragraph_extractions WHERE content_id IN (${cidPh})
+    `, contentIds);
+    const rows = peRows
+      .map(pe => ({ ...pe, paragraph_index: cidMap.get(pe.content_id) ?? 0 }))
+      .sort((a, b) => b.paragraph_index - a.paragraph_index)
+      .slice(0, DOC_CONTEXT_PARA_COUNT);
 
     if (rows.length === 0) return;
 
@@ -563,7 +577,7 @@ async function resetReextractQueue() {
     // Find content where latest extraction was rejected by validator (reextract)
     // and attempt count < 3. Reset to graph_enriched=0 so fetchBatch picks them up.
     // Uses a bounded IN list to avoid a full table scan.
-    const candidates = await queryAll(`
+    const candidates = await graphQueryAll(`
       SELECT pe.content_id,
              COUNT(pe2.id) AS attempts
       FROM paragraph_extractions pe
@@ -594,17 +608,18 @@ async function resetReextractQueue() {
 // Used to gate tier transitions: don't start a new tier until the previous
 // tier's entities are fully in entity_aliases (resolver + promoter must catch up).
 async function isHigherTierFullyResolved(minPriority) {
-  const row = await queryOne(`
-    SELECT COUNT(*) AS n
-    FROM paragraph_extractions pe
-    JOIN content c ON c.id = pe.content_id
-    JOIN docs d ON d.id = c.doc_id
-    WHERE pe.resolved = 0 AND d.doc_priority >= ?
-  `, [minPriority]);
-  const pending = row?.n || 0;
-  const queueRow = await queryOne(`
-    SELECT COUNT(*) AS n FROM promotion_queue WHERE resolved = 0
-  `);
+  const highPriorityDocs = await queryAll(`SELECT id FROM docs WHERE doc_priority >= ? AND deleted_at IS NULL`, [minPriority]);
+  const docIds = highPriorityDocs.map(r => r.id);
+  let pending = 0;
+  if (docIds.length > 0) {
+    const contentRows = await queryAll(`SELECT id FROM content WHERE doc_id IN (${docIds.map(() => '?').join(',')})`, docIds);
+    const cids = contentRows.map(r => r.id);
+    if (cids.length > 0) {
+      const peRow = await graphQueryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0 AND content_id IN (${cids.map(() => '?').join(',')})`, cids);
+      pending = peRow?.n || 0;
+    }
+  }
+  const queueRow = await graphQueryOne(`SELECT COUNT(*) AS n FROM promotion_queue WHERE resolved = 0`);
   const queuePending = queueRow?.n || 0;
   return pending === 0 && queuePending === 0;
 }
@@ -679,12 +694,11 @@ async function processOnce() {
 }
 
 async function workerLoop() {
-  const localUrl = process.env.LOCAL_LLM || 'http://localhost:8080/v1';
-  logger.info(
-    { modelHigh: MODEL_HIGH, modelMid: MODEL_MID, modelLow: MODEL_LOW, batchSize: BATCH_SIZE,
-      tierHighMin: TIER_HIGH_MIN_PRIORITY, tierMidMin: TIER_MID_MIN_PRIORITY },
-    'Graph extractor starting'
-  );
+  logger.info({
+    modelHigh: MODEL_HIGH, modelMid: MODEL_MID, modelLow: MODEL_LOW,
+    tierHigh: TIER_HIGH_MIN_PRIORITY, tierMid: TIER_MID_MIN_PRIORITY,
+    provider: PROVIDER
+  }, 'Graph extractor starting — verify models match .env-public');
   let totalExtracted = 0;
 
   while (!isShuttingDown) {

@@ -15,7 +15,7 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { query, queryAll, queryOne } from '../lib/db.js';
+import { query, queryAll, queryOne, graphQuery, graphQueryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { runMigrations } from '../lib/migrations.js';
 import { chatCompletion } from '../lib/ai.js';
@@ -55,16 +55,13 @@ Rules:
 - Preserve all diacritical marks exactly in canonical_name`;
 
 async function getCandidates(surfaceNorm, type) {
-  // Prefix LIKE (no leading %) so idx_alias_surface index is used
   const prefix = surfaceNorm.slice(0, 8) + '%';
-  return queryAll(`
-    SELECT ge.id, ge.canonical_name, ge.entity_type AS type, ge.religion
-    FROM graph_entities ge
-    JOIN entity_aliases ea ON ea.entity_id = ge.id
-    WHERE ea.surface_norm LIKE ?
-      ${type ? `AND ge.entity_type = '${type}'` : ''}
-    LIMIT 10
-  `, [prefix]);
+  const aliasRows = await graphQueryAll(`SELECT DISTINCT entity_id FROM entity_aliases WHERE surface_norm LIKE ? LIMIT 30`, [prefix]);
+  if (aliasRows.length === 0) return [];
+  const entityIds = aliasRows.map(r => r.entity_id);
+  const ph = entityIds.map(() => '?').join(',');
+  const typeFilter = type ? `AND entity_type = '${type}'` : '';
+  return queryAll(`SELECT id, canonical_name, entity_type AS type, religion FROM graph_entities WHERE id IN (${ph}) ${typeFilter} LIMIT 10`, entityIds);
 }
 
 async function adjudicate(item, candidates) {
@@ -138,7 +135,7 @@ ${candidateList}`;
 async function applyDecision(item, decision) {
   const modelVotesJson = JSON.stringify({ decision: decision.decision, entity_id: decision.entity_id, confidence: decision.confidence });
 
-  await queryWithRetry(`
+  await graphQueryWithRetry(`
     INSERT INTO er_audit_log (action, candidate, model_votes, run_id)
     VALUES (?, ?, ?, ?)
   `, [decision.decision, item.surface_norm, modelVotesJson, null]);
@@ -151,7 +148,7 @@ async function applyDecision(item, decision) {
       source: 'promoter',
       confidence: decision.confidence,
     });
-    await queryWithRetry(`UPDATE promotion_queue SET resolved = 1 WHERE id = ?`, [item.id]);
+    await graphQueryWithRetry(`UPDATE promotion_queue SET resolved = 1 WHERE id = ?`, [item.id]);
     logger.info({ surface: item.surface_norm, entityId: decision.entity_id }, 'Merged alias');
 
   } else if (decision.decision === 'create' && decision.canonical_name) {
@@ -160,23 +157,22 @@ async function applyDecision(item, decision) {
       type: decision.entity_type || item.type,
       aliases: [{ surface: item.context_snippet?.slice(0, 200) || item.surface_norm, surfaceNorm: item.surface_norm, lang: 'en', source: 'promoter', confidence: decision.confidence }],
     });
-    await queryWithRetry(`UPDATE promotion_queue SET resolved = 1 WHERE id = ?`, [item.id]);
+    await graphQueryWithRetry(`UPDATE promotion_queue SET resolved = 1 WHERE id = ?`, [item.id]);
     logger.info({ surface: item.surface_norm, entityId, canonical: decision.canonical_name }, 'Created entity');
 
   } else {
-    // Reject or low confidence — bump attempts, resolve at MAX_ATTEMPTS
     const newAttempts = item.attempts + 1;
     if (newAttempts >= MAX_ATTEMPTS) {
-      await queryWithRetry(`UPDATE promotion_queue SET attempts = ?, resolved = 1 WHERE id = ?`, [newAttempts, item.id]);
+      await graphQueryWithRetry(`UPDATE promotion_queue SET attempts = ?, resolved = 1 WHERE id = ?`, [newAttempts, item.id]);
       logger.debug({ surface: item.surface_norm }, 'Promotion rejected after max attempts');
     } else {
-      await queryWithRetry(`UPDATE promotion_queue SET attempts = ? WHERE id = ?`, [newAttempts, item.id]);
+      await graphQueryWithRetry(`UPDATE promotion_queue SET attempts = ? WHERE id = ?`, [newAttempts, item.id]);
     }
   }
 }
 
 async function fetchBatch() {
-  return queryAll(`
+  return graphQueryAll(`
     SELECT id, surface_norm, type, context_snippet, doc_id, content_id, attempts
     FROM promotion_queue
     WHERE resolved = 0 AND attempts < ?
@@ -210,8 +206,21 @@ async function queryWithRetry(sql, params, maxAttempts = 5) {
   }
 }
 
+async function graphQueryWithRetry(sql, params, maxAttempts = 5) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      return await graphQuery(sql, params);
+    } catch (err) {
+      if (err.code !== 'SQLITE_BUSY' || i === maxAttempts - 1) throw err;
+      const wait = 1000 * Math.pow(2, i);
+      logger.warn({ attempt: i + 1, wait }, 'SQLITE_BUSY on graph write — retrying');
+      await delay(wait);
+    }
+  }
+}
+
 async function workerLoop() {
-  logger.info('Graph promoter starting');
+  logger.info({ fastModel: FAST_MODEL, detailModel: DETAIL_MODEL, arbiterModel: ARBITER_MODEL }, 'Graph promoter starting — verify models match .env-public');
 
   while (!isShuttingDown) {
     let rows;
@@ -236,7 +245,7 @@ async function workerLoop() {
         if (decision) await applyDecision(row, decision);
       } catch (err) {
         logger.error({ surfaceNorm: row.surface_norm, err: err.message }, 'Promotion error');
-        await queryWithRetry(`UPDATE promotion_queue SET attempts = attempts + 1 WHERE id = ?`, [row.id]).catch(() => {});
+        await graphQueryWithRetry(`UPDATE promotion_queue SET attempts = attempts + 1 WHERE id = ?`, [row.id]).catch(() => {});
       }
     }
     logger.info({ promoted: rows.length }, 'Promotion batch done');

@@ -15,7 +15,7 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { query, queryAll, queryOne } from '../lib/db.js';
+import { query, queryAll, queryOne, graphQuery, graphQueryAll, graphQueryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { runMigrations } from '../lib/migrations.js';
 import { createEmbedding } from '../lib/ai.js';
@@ -44,6 +44,19 @@ async function queryWithRetry(sql, params, maxAttempts = 5) {
   }
 }
 
+async function graphQueryWithRetry(sql, params, maxAttempts = 5) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      return await graphQuery(sql, params);
+    } catch (err) {
+      if (err.code !== 'SQLITE_BUSY' || i === maxAttempts - 1) throw err;
+      const wait = 1000 * Math.pow(2, i);
+      logger.warn({ attempt: i + 1, wait }, 'SQLITE_BUSY on graph write — retrying');
+      await delay(wait);
+    }
+  }
+}
+
 // Resolve a mention's proposed_entity_id or find/create by canonical name.
 // Returns entity_id or null if unresolvable.
 async function resolveMention(mention, religion) {
@@ -57,9 +70,8 @@ async function resolveMention(mention, religion) {
   const found = await findEntity({ surface: mention.surface, type: mention.type, religion });
   if (found?.entity_id) return found.entity_id;
 
-  // Don't auto-create — send unresolved to promotion_queue
   const surfaceNorm = normalizeSurface(mention.surface);
-  await queryWithRetry(`
+  await graphQueryWithRetry(`
     INSERT OR IGNORE INTO promotion_queue
       (surface_norm, type, context_snippet, resolved, attempts, priority)
     VALUES (?, ?, ?, 0, 0, 10)
@@ -87,7 +99,7 @@ async function resolveOne(extraction) {
     const entityId = await resolveMention(mention, religion);
     if (!entityId) continue;
 
-    await queryWithRetry(`
+    await graphQueryWithRetry(`
       INSERT OR IGNORE INTO entity_mentions
         (entity_id, content_id, role, resolution_confidence, status, extractor_version)
       VALUES (?, ?, ?, ?, 'resolved', ?)
@@ -113,7 +125,7 @@ async function resolveOne(extraction) {
   const addresseeEnt   = roles.addressee? (await findEntity({ surface: roles.addressee}))?.entity_id : null;
   const placeEntity    = roles.setting_place ? (await findEntity({ surface: roles.setting_place, type: 'place' }))?.entity_id : null;
 
-  await queryWithRetry(`
+  await graphQueryWithRetry(`
     INSERT OR REPLACE INTO paragraph_roles
       (content_id, speaker_entity_id, narrator_entity_id, addressee_entity_id,
        setting_place_entity_id, setting_time, extractor_version)
@@ -126,7 +138,7 @@ async function resolveOne(extraction) {
     const speakerEnt = q.speaker_candidate
       ? (await findEntity({ surface: q.speaker_candidate }))?.entity_id
       : null;
-    await queryWithRetry(`
+    await graphQueryWithRetry(`
       INSERT INTO quote_instances
         (content_id, span_start, span_end, speaker_surface, speaker_entity_id,
          attribution_pattern, nesting_depth, extractor_version)
@@ -183,28 +195,31 @@ async function resolveOne(extraction) {
     }
   }
 
-  // 5. Mark extraction resolved
-  await queryWithRetry(`UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, [extraction.id]);
+  await graphQueryWithRetry(`UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, [extraction.id]);
 
   logger.debug({ extractionId: extraction.id, contentId: extraction.content_id }, 'Resolution complete');
 }
 
 async function fetchBatch() {
-  // Accepted extractions not yet resolved; include paragraph_text for grounded substitution
-  return queryAll(`
-    SELECT pe.id, pe.content_id, pe.output_json, c.text AS paragraph_text
+  const peRows = await graphQueryAll(`
+    SELECT pe.id, pe.content_id, pe.output_json
     FROM paragraph_extractions pe
     JOIN extraction_validations ev ON ev.extraction_id = pe.id
-    JOIN content c ON c.id = pe.content_id
     WHERE pe.resolved = 0
       AND ev.recommended_action = 'accept'
     ORDER BY pe.id ASC
     LIMIT ?
   `, [BATCH_SIZE]);
+  if (peRows.length === 0) return [];
+  const contentIds = [...new Set(peRows.map(r => r.content_id))];
+  const cph = contentIds.map(() => '?').join(',');
+  const textRows = await queryAll(`SELECT id, text FROM content WHERE id IN (${cph})`, contentIds);
+  const textMap = new Map(textRows.map(r => [r.id, r.text]));
+  return peRows.map(pe => ({ ...pe, paragraph_text: textMap.get(pe.content_id) || '' }));
 }
 
 async function workerLoop() {
-  logger.info('Graph resolver starting');
+  logger.info({ graphDb: './data/graph.db' }, 'Graph resolver starting — writing entity_mentions/paragraph_roles/quote_instances to graph.db');
 
   while (!isShuttingDown) {
     let rows;
