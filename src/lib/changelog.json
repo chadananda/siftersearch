@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-28T16:50:34.394Z",
+  "generated": "2026-05-28T17:04:08.259Z",
   "entries": [
+    {
+      "hash": "856ea36c",
+      "date": "2026-05-28",
+      "type": "Fixed",
+      "description": "Content column is paragraph_index not position in entity mentions",
+      "scope": null
+    },
     {
       "hash": "3e042196",
       "date": "2026-05-28",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "/research/ pages + ShareButtons component",
       "scope": null
-    },
-    {
-      "hash": "991d3ddf",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Para-attribution BY_RE stops at to for clean UHJ extraction",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-28": [
+      {
+        "hash": "856ea36c",
+        "date": "2026-05-28",
+        "type": "Fixed",
+        "description": "Content column is paragraph_index not position in entity mentions",
+        "scope": null
+      },
       {
         "hash": "3e042196",
         "date": "2026-05-28",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-13",
         "type": "New",
         "description": "/research/ pages + ShareButtons component",
-        "scope": null
-      },
-      {
-        "hash": "991d3ddf",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Para-attribution BY_RE stops at to for clean UHJ extraction",
         "scope": null
       }
     ]

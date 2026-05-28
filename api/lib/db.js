@@ -117,16 +117,36 @@ export async function getSiteDb(siteId, indexPrefix) {
 
 export const getBatchDb = getDb;
 
-// 150ms threshold filters out routine INSERT/UPDATE chatter (ai_usage logging,
-// small bulk inserts) and surfaces actually-slow queries — the ones that
-// matter for tuning. Bumped from 15ms after observing the log was 99% noise.
+// 150ms threshold surfaces actually-slow queries. Set SLOW_QUERY_THRESHOLD_MS
+// to tune. All SELECT reads are also logged at debug level so LOG_LEVEL=debug
+// exposes every read with its duration for index analysis.
 const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '150', 10);
+const IS_SELECT = /^\s*SELECT\b/i;
+const IS_WRITE = /^\s*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|PRAGMA|ANALYZE|VACUUM|REINDEX|ATTACH|DETACH)\b/i;
 
-function logQueryTiming(sql, params, startTime, dbName, name = '') {
+// origPrepare is the unwrapped db.prepare — used for EXPLAIN so we don't recurse.
+function logQueryTiming(sql, params, startTime, dbName, name = '', origPrepare = null) {
   const duration = Date.now() - startTime;
+  const isSelect = IS_SELECT.test(sql);
+  const shortSql = (sql || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+  const logParams = params?.length > 5 ? `[${params.length} params]` : params;
+
+  // All reads visible at debug level — filter with LOG_LEVEL=debug to see index usage
+  if (isSelect) {
+    logger.debug({ name, duration, sql: shortSql, db: dbName }, `read ${duration}ms`);
+  }
+
   if (duration >= SLOW_QUERY_THRESHOLD_MS) {
-    const shortSql = (sql || '').replace(/\s+/g, ' ').trim().slice(0, 200);
-    logger.warn({ name, duration, sql: shortSql, params: params?.length > 5 ? `[${params.length} params]` : params, db: dbName }, `Slow query (${duration}ms)${name ? ` [${name}]` : ''}`);
+    let queryPlan = null;
+    if (isSelect && origPrepare) {
+      try {
+        const plan = origPrepare(`EXPLAIN QUERY PLAN ${sql}`).all(...(params || []));
+        queryPlan = plan.map(r => r.detail).join(' | ');
+      } catch { /* non-fatal — EXPLAIN may fail on complex CTEs */ }
+    }
+    const kind = isSelect ? 'read' : 'write';
+    logger.warn({ name, duration, sql: shortSql, params: logParams, db: dbName, queryPlan },
+      `Slow ${kind} (${duration}ms)${name ? ` [${name}]` : ''}`);
   }
 }
 
@@ -149,7 +169,7 @@ export function instrumentDb(db, dbName) {
       stmt[method] = (...args) => {
         const start = Date.now();
         const result = orig(...args);
-        logQueryTiming(sql, args, start, dbName);
+        logQueryTiming(sql, args, start, dbName, '', origPrepare);
         return result;
       };
     }
@@ -181,6 +201,7 @@ export function instrumentDb(db, dbName) {
   };
 
   Object.defineProperty(db, '__instrumented', { value: true, enumerable: false });
+  Object.defineProperty(db, '__origPrepare', { value: origPrepare, enumerable: false });
   return db;
 }
 
@@ -198,7 +219,7 @@ export async function query(sql, params = [], name = '') {
   const db = await getDb();
   const start = Date.now();
   const result = runQuery(db, sql, params);
-  logQueryTiming(sql, params, start, 'content', name);
+  logQueryTiming(sql, params, start, 'content', name, db.__origPrepare);
   return result;
 }
 
@@ -225,7 +246,7 @@ export async function userQuery(sql, params = [], name = '') {
   const db = await getUserDb();
   const start = Date.now();
   const result = runQuery(db, sql, params);
-  logQueryTiming(sql, params, start, 'user', name);
+  logQueryTiming(sql, params, start, 'user', name, db.__origPrepare);
   return result;
 }
 
@@ -252,7 +273,7 @@ export async function graphQuery(sql, params = [], name = '') {
   const db = await getGraphDb();
   const start = Date.now();
   const result = runQuery(db, sql, params);
-  logQueryTiming(sql, params, start, 'graph', name);
+  logQueryTiming(sql, params, start, 'graph', name, db.__origPrepare);
   return result;
 }
 
