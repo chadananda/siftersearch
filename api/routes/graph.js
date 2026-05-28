@@ -256,29 +256,40 @@ export default async function graphRoutes(server) {
     );
     if (!entity) return server.httpErrors.notFound('Entity not found');
 
-    // Fetch mention content_ids from graph.db
+    // When filtering by doc, pre-fetch the content_ids for that doc so we can
+    // push the filter into graph.db (cross-DB join not possible directly).
+    let docContentIds = null;
+    if (doc_id) {
+      const rows = await queryAll('SELECT id FROM content WHERE doc_id = ?', [doc_id]);
+      docContentIds = rows.map(r => r.id);
+      if (docContentIds.length === 0) return { entity: { id: Number(entity.id), name: entity.name }, paragraphs: [], total: 0 };
+    }
+
+    // Fetch mention content_ids from graph.db, optionally restricted to doc
     let mentionSql = 'SELECT content_id, role FROM entity_mentions WHERE entity_id = ?';
     const mParams = [id];
+    if (docContentIds) {
+      mentionSql += ` AND content_id IN (${docContentIds.map(() => '?').join(',')})`;
+      mParams.push(...docContentIds);
+    }
+    const totalRow = await graphQueryOne(
+      mentionSql.replace('SELECT content_id, role', 'SELECT COUNT(*) as n'), mParams
+    );
     mentionSql += ' ORDER BY id LIMIT ? OFFSET ?';
     mParams.push(Number(limit), Number(offset));
     const mentions = await graphQueryAll(mentionSql, mParams);
-    if (mentions.length === 0) return { entity: { id: Number(entity.id), name: entity.name }, paragraphs: [], total: 0 };
+    if (mentions.length === 0) return { entity: { id: Number(entity.id), name: entity.name }, paragraphs: [], total: totalRow?.n ?? 0 };
 
     // Fetch paragraph text + doc info from sifter.db
     const cids = mentions.map(m => m.content_id);
     const ph = cids.map(() => '?').join(',');
-    let contentSql = `SELECT c.id, c.text, c.doc_id, c.position, d.title, d.author
-                      FROM content c JOIN docs d ON d.id = c.doc_id
-                      WHERE c.id IN (${ph})`;
-    const cParams = [...cids];
-    if (doc_id) { contentSql += ' AND c.doc_id = ?'; cParams.push(doc_id); }
-    contentSql += ' ORDER BY c.doc_id, c.position';
-    const contentRows = await queryAll(contentSql, cParams);
-    const roleMap = new Map(mentions.map(m => [m.content_id, m.role]));
-
-    const totalRow = await graphQueryOne(
-      'SELECT COUNT(*) as n FROM entity_mentions WHERE entity_id = ?', [id]
+    const contentRows = await queryAll(
+      `SELECT c.id, c.text, c.doc_id, c.position, d.title, d.author
+       FROM content c JOIN docs d ON d.id = c.doc_id
+       WHERE c.id IN (${ph}) ORDER BY c.position`,
+      cids
     );
+    const roleMap = new Map(mentions.map(m => [m.content_id, m.role]));
 
     return {
       entity: { id: Number(entity.id), name: entity.name, canonicalName: entity.canonical_name, type: entity.entity_type, religion: entity.religion },

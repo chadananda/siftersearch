@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-28T16:30:16.199Z",
+  "generated": "2026-05-28T16:37:44.025Z",
   "entries": [
+    {
+      "hash": "fc4dcf50",
+      "date": "2026-05-28",
+      "type": "New",
+      "description": "Entity mentions API — GET /api/graph/entity/search + /entity/:id/mentions",
+      "scope": null
+    },
     {
       "hash": "3879cf2e",
       "date": "2026-05-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Para-attribution transaction API + remove unused query import",
       "scope": null
-    },
-    {
-      "hash": "677b2589",
-      "date": "2026-05-13",
-      "type": "New",
-      "description": "Deep Research — slug, sections_json, addNotifyEmail, sync rename",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-28": [
+      {
+        "hash": "fc4dcf50",
+        "date": "2026-05-28",
+        "type": "New",
+        "description": "Entity mentions API — GET /api/graph/entity/search + /entity/:id/mentions",
+        "scope": null
+      },
       {
         "hash": "3879cf2e",
         "date": "2026-05-28",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Para-attribution transaction API + remove unused query import",
-        "scope": null
-      },
-      {
-        "hash": "677b2589",
-        "date": "2026-05-13",
-        "type": "New",
-        "description": "Deep Research — slug, sections_json, addNotifyEmail, sync rename",
         "scope": null
       }
     ]
