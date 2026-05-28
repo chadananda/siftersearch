@@ -181,6 +181,10 @@ async function insertParagraph(docId, {
  * Used during document ingestion for performance.
  * @returns {Array} Transaction results
  */
+// Max rows per transaction — keeps each lock acquisition under ~1s so
+// concurrent writers (graph-extractor, sync-processor) can interleave.
+const BULK_INSERT_BATCH = 200;
+
 async function bulkInsertParagraphs(docId, paragraphs) {
   const ts = now();
   const statements = paragraphs.map(p => {
@@ -202,20 +206,21 @@ async function bulkInsertParagraphs(docId, paragraphs) {
         embedding, embeddingModel,
         p.hyp_thesis || null, p.hyp_questions || null,
         p.context || null, p.context_model || null,
-        // enhanced_synced=0 always — picked up by the sync worker if there's
-        // anything to sync; if all sidecars are null, sync is a no-op.
         0,
         p.external_para_id || null,
-        // pdf_page is null for primary corpus + HTML-derived sites; set for
-        // PDF-derived MD via the site2rag adapter so search results can build
-        // deeplinks like `<source_url>#page=<pdf_page>`.
         typeof p.pdf_page === 'number' ? p.pdf_page : null,
         ts, ts
       ]
     };
   });
 
-  return transaction(statements);
+  for (let i = 0; i < statements.length; i += BULK_INSERT_BATCH) {
+    await transaction(statements.slice(i, i + BULK_INSERT_BATCH));
+    // Yield between batches — releases the write lock so other processes
+    // (graph-extractor, sync-processor) can interleave without SQLITE_BUSY.
+    if (i + BULK_INSERT_BATCH < statements.length)
+      await new Promise(resolve => setImmediate(resolve));
+  }
 }
 
 /**
@@ -225,11 +230,18 @@ async function deleteParagraph(id) {
   return query('DELETE FROM content WHERE id = ?', [id]);
 }
 
-/**
- * Hard-delete all paragraphs for a document.
- */
+// Hard-delete all paragraphs for a document in 500-row batches.
+// Batching keeps each transaction under ~1s so concurrent writers can interleave.
 async function deleteParagraphsByDoc(docId) {
-  return query('DELETE FROM content WHERE doc_id = ?', [docId]);
+  const BATCH = 500;
+  while (true) {
+    const rows = await queryAll(`SELECT id FROM content WHERE doc_id = ? LIMIT ?`, [docId, BATCH]);
+    if (rows.length === 0) break;
+    const ph = rows.map(() => '?').join(',');
+    await query(`DELETE FROM content WHERE id IN (${ph})`, rows.map(r => r.id));
+    await new Promise(resolve => setImmediate(resolve));
+    if (rows.length < BATCH) break;
+  }
 }
 
 /**

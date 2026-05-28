@@ -1937,6 +1937,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   for (let i = 0; i < deleteStatements.length; i += BATCH_SIZE) {
     const batch = deleteStatements.slice(i, i + BATCH_SIZE);
     await transaction(batch);
+    await new Promise(resolve => setImmediate(resolve));
   }
 
   // Also delete stale paragraph IDs from Meilisearch
@@ -1958,12 +1959,14 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   for (let i = 0; i < updateStatements.length; i += BATCH_SIZE) {
     const batch = updateStatements.slice(i, i + BATCH_SIZE);
     await transaction(batch);
+    await new Promise(resolve => setImmediate(resolve));
   }
 
   // 3. Insert new paragraphs
   for (let i = 0; i < insertStatements.length; i += BATCH_SIZE) {
     const batch = insertStatements.slice(i, i + BATCH_SIZE);
     await transaction(batch);
+    await new Promise(resolve => setImmediate(resolve));
   }
 
   logger.info({

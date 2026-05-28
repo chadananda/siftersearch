@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-28T20:31:30.229Z",
+  "generated": "2026-05-28T20:56:10.892Z",
   "entries": [
+    {
+      "hash": "c913ede6",
+      "date": "2026-05-28",
+      "type": "Performance",
+      "description": "Batch graph.db writes per paragraph into single graphTransaction",
+      "scope": null
+    },
     {
       "hash": "21152d7c",
       "date": "2026-05-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Deep research — correct tradition→religion filter names + re-attach candidate text after rerank",
       "scope": null
-    },
-    {
-      "hash": "fe15303a",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Deep-research-worker chat() strips system role + passes filters to hybridSearch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-28": [
+      {
+        "hash": "c913ede6",
+        "date": "2026-05-28",
+        "type": "Performance",
+        "description": "Batch graph.db writes per paragraph into single graphTransaction",
+        "scope": null
+      },
       {
         "hash": "21152d7c",
         "date": "2026-05-28",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Deep research — correct tradition→religion filter names + re-attach candidate text after rerank",
-        "scope": null
-      },
-      {
-        "hash": "fe15303a",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Deep-research-worker chat() strips system role + passes filters to hybridSearch",
         "scope": null
       }
     ]
