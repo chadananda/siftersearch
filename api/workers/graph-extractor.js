@@ -17,7 +17,7 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { query, queryAll, queryOne, transaction, graphQuery, graphQueryAll, graphQueryOne } from '../lib/db.js';
+import { query, queryAll, queryOne, transaction, graphQuery, graphQueryAll, graphQueryOne, graphTransaction } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { runMigrations, runGraphMigrations } from '../lib/migrations/runner.js';
 import { chatCompletion } from '../lib/ai.js';
@@ -197,8 +197,12 @@ ${precedingText}
 }
 
 // Resolve a parsed extraction into entity_mentions, paragraph_roles, quote_instances.
-// Called serially after the concurrent LLM batch — safe for SQLite single-writer.
+// Phase A: all reads (entity lookups, alias cache). Phase B: single graphTransaction.
+// One WAL lock instead of N individual inserts — eliminates 168-290ms-per-insert overhead.
 async function resolveExtraction(extractionId, contentId, parsed, religion) {
+  const graphStmts = [];
+
+  // Phase A: resolve entity IDs from reads, collect write statements
   for (const mention of parsed.mentions || []) {
     let entityId = null;
     if (mention.proposed_entity_id != null) {
@@ -210,14 +214,15 @@ async function resolveExtraction(extractionId, contentId, parsed, religion) {
       entityId = found?.entity_id || null;
     }
     if (!entityId) {
-      await graphQueryWithRetry(`INSERT OR IGNORE INTO promotion_queue (surface_norm, type, context_snippet, resolved, attempts, priority) VALUES (?, ?, ?, 0, 0, 10)`,
-        [normalizeSurface(mention.surface), mention.type || null, mention.surface.slice(0, 100)]);
+      graphStmts.push({ sql: `INSERT OR IGNORE INTO promotion_queue (surface_norm, type, context_snippet, resolved, attempts, priority) VALUES (?, ?, ?, 0, 0, 10)`,
+        args: [normalizeSurface(mention.surface), mention.type || null, mention.surface.slice(0, 100)] });
       continue;
     }
-    await graphQueryWithRetry(`INSERT OR IGNORE INTO entity_mentions (entity_id, content_id, role, resolution_confidence, status, extractor_version) VALUES (?, ?, ?, 0.9, 'resolved', ?)`,
-      [entityId, contentId, mention.local_role, PROMPT_VERSION]);
+    graphStmts.push({ sql: `INSERT OR IGNORE INTO entity_mentions (entity_id, content_id, role, resolution_confidence, status, extractor_version) VALUES (?, ?, ?, 0.9, 'resolved', ?)`,
+      args: [entityId, contentId, mention.local_role, PROMPT_VERSION] });
     if (mention.surface) {
-      await addAlias(entityId, { surface: mention.surface, surfaceNorm: normalizeSurface(mention.surface), lang: 'en', source: PROMPT_VERSION, confidence: 0.7 });
+      graphStmts.push({ sql: `INSERT OR IGNORE INTO entity_aliases (entity_id, surface, surface_norm, lang, source, confidence) VALUES (?,?,?,?,?,?)`,
+        args: [entityId, mention.surface, normalizeSurface(mention.surface), 'en', PROMPT_VERSION, 0.7] });
     }
   }
 
@@ -227,16 +232,19 @@ async function resolveExtraction(extractionId, contentId, parsed, religion) {
     resolve(roles.speaker), resolve(roles.narrator), resolve(roles.addressee),
     roles.setting_place ? findEntity({ surface: roles.setting_place, type: 'place' }).then(r => r?.entity_id || null).catch(() => null) : null,
   ]);
-  await graphQueryWithRetry(`INSERT OR REPLACE INTO paragraph_roles (content_id, speaker_entity_id, narrator_entity_id, addressee_entity_id, setting_place_entity_id, setting_time, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [contentId, speakerEnt, narratorEnt, addresseeEnt, placeEnt, roles.setting_time || null, PROMPT_VERSION]);
+  graphStmts.push({ sql: `INSERT OR REPLACE INTO paragraph_roles (content_id, speaker_entity_id, narrator_entity_id, addressee_entity_id, setting_place_entity_id, setting_time, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [contentId, speakerEnt, narratorEnt, addresseeEnt, placeEnt, roles.setting_time || null, PROMPT_VERSION] });
 
   for (const q of parsed.quotations || []) {
     const speakerEnt2 = q.speaker_candidate ? (await findEntity({ surface: q.speaker_candidate }).catch(() => null))?.entity_id : null;
-    await graphQueryWithRetry(`INSERT INTO quote_instances (content_id, span_start, span_end, speaker_surface, speaker_entity_id, attribution_pattern, nesting_depth, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [contentId, q.span?.[0], q.span?.[1], q.speaker_surface || null, speakerEnt2, q.attribution_pattern || 'direct', q.nesting_depth || 0, PROMPT_VERSION]);
+    graphStmts.push({ sql: `INSERT INTO quote_instances (content_id, span_start, span_end, speaker_surface, speaker_entity_id, attribution_pattern, nesting_depth, extractor_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [contentId, q.span?.[0], q.span?.[1], q.speaker_surface || null, speakerEnt2, q.attribution_pattern || 'direct', q.nesting_depth || 0, PROMPT_VERSION] });
   }
 
-  await graphQueryWithRetry(`UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, [extractionId]);
+  graphStmts.push({ sql: `UPDATE paragraph_extractions SET resolved = 1 WHERE id = ?`, args: [extractionId] });
+
+  // Phase B: single transaction — all graph.db writes in one WAL commit
+  await graphTransaction(graphStmts);
 
   await syncMentionsForContent(contentId);
 

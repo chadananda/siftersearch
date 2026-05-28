@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-28T19:51:29.573Z",
+  "generated": "2026-05-28T20:31:30.229Z",
   "entries": [
+    {
+      "hash": "21152d7c",
+      "date": "2026-05-28",
+      "type": "Fixed",
+      "description": "Batch transaction retry — 20 attempts capped at 5s, no idle sleep on failure",
+      "scope": null
+    },
     {
       "hash": "647125b3",
       "date": "2026-05-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Deep-research-worker chat() strips system role + passes filters to hybridSearch",
       "scope": null
-    },
-    {
-      "hash": "3d313b2e",
-      "date": "2026-05-13",
-      "type": "New",
-      "description": "Add Research tab to NavBar (links to /research index)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-28": [
+      {
+        "hash": "21152d7c",
+        "date": "2026-05-28",
+        "type": "Fixed",
+        "description": "Batch transaction retry — 20 attempts capped at 5s, no idle sleep on failure",
+        "scope": null
+      },
       {
         "hash": "647125b3",
         "date": "2026-05-28",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Deep-research-worker chat() strips system role + passes filters to hybridSearch",
-        "scope": null
-      },
-      {
-        "hash": "3d313b2e",
-        "date": "2026-05-13",
-        "type": "New",
-        "description": "Add Research tab to NavBar (links to /research index)",
         "scope": null
       }
     ]
