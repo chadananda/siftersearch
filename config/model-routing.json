@@ -1,10 +1,10 @@
 {
-  "_comment": "Default model routing before calibration runs. Run scripts/calibrate-deepseek.js --run to regenerate.",
+  "_comment": "Documents model routing intent. Workers read from .env-public (EXTRACTION_MODEL_*, PROMOTER_*_MODEL) — this file is used by scripts/calibrate-deepseek.js only.",
   "_calibrated": false,
   "_calibrated_at": null,
 
   "extraction": {
-    "primary": "deepseek-v4-pro",
+    "primary": "deepseek-v4-flash",
     "fallback": "claude-haiku-4-5-20251001",
     "max_concurrent": 16
   },
@@ -17,8 +17,8 @@
     "fallback": "claude-sonnet-4-6"
   },
   "promotion_voting": {
-    "models": ["deepseek-v4-pro", "claude-haiku-4-5-20251001"],
-    "arbitrator": "claude-sonnet-4-6",
+    "models": ["deepseek-v4-flash", "claude-haiku-4-5-20251001"],
+    "arbitrator": "deepseek-v4-pro",
     "consensus_threshold": 0.67
   }
 }
