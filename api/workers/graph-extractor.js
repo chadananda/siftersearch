@@ -19,7 +19,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { query, queryAll, queryOne, graphQuery, graphQueryAll, graphQueryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
-import { runMigrations } from '../lib/migrations.js';
+import { runMigrations, runGraphMigrations } from '../lib/migrations/runner.js';
 import { chatCompletion } from '../lib/ai.js';
 import { trackCost, checkBudget } from '../lib/entity-cost-tracker.js';
 import { findEntity, addAlias, normalizeSurface } from '../lib/graph-db.js';
@@ -726,6 +726,7 @@ const scriptPath = fileURLToPath(import.meta.url);
 // PM2 uses ProcessContainerFork.js as argv[1]; use pm_exec_path as fallback
 const isMain = process.argv[1] === scriptPath || process.env.pm_exec_path === scriptPath;
 if (isMain) {
-  await runMigrations();
+  await runMigrations();        // sifter.db + user.db
+  await runGraphMigrations();   // graph.db — workers own this, not the API
   await workerLoop();
 }

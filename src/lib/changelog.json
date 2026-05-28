@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-28T16:37:44.025Z",
+  "generated": "2026-05-28T16:42:38.401Z",
   "entries": [
+    {
+      "hash": "39a14868",
+      "date": "2026-05-28",
+      "type": "Fixed",
+      "description": "Entity mentions — pre-filter by doc_id via content_ids before graph.db query",
+      "scope": null
+    },
     {
       "hash": "fc4dcf50",
       "date": "2026-05-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Para-attribution regex — stop author capture at recipient",
       "scope": null
-    },
-    {
-      "hash": "2d1fe631",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Para-attribution transaction API + remove unused query import",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-28": [
+      {
+        "hash": "39a14868",
+        "date": "2026-05-28",
+        "type": "Fixed",
+        "description": "Entity mentions — pre-filter by doc_id via content_ids before graph.db query",
+        "scope": null
+      },
       {
         "hash": "fc4dcf50",
         "date": "2026-05-28",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Para-attribution regex — stop author capture at recipient",
-        "scope": null
-      },
-      {
-        "hash": "2d1fe631",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Para-attribution transaction API + remove unused query import",
         "scope": null
       }
     ]

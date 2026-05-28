@@ -17,7 +17,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { query, queryAll, queryOne, graphQuery, graphQueryAll, graphQueryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
-import { runMigrations } from '../lib/migrations.js';
+import { runMigrations, runGraphMigrations } from '../lib/migrations/runner.js';
 import { createEmbedding } from '../lib/ai.js';
 import { findEntity, createEntity, addAlias, normalizeSurface } from '../lib/graph-db.js';
 
@@ -254,5 +254,6 @@ const scriptPath = fileURLToPath(import.meta.url);
 const isMain = process.argv[1] === scriptPath || process.env.pm_exec_path === scriptPath;
 if (isMain) {
   await runMigrations();
+  await runGraphMigrations();
   await workerLoop();
 }

@@ -174,16 +174,18 @@ async function runUserMigrations() {
 }
 
 
+// runMigrations: migrate sifter.db + user.db only. Graph workers call
+// runGraphMigrations() directly — the API is read-only on graph.db.
 export async function runMigrations() {
   const contentResult = await runContentMigrations();
   const userResult = await runUserMigrations();
-  const graphResult = await runGraphMigrations();
   return {
     content: contentResult,
     user: userResult,
-    graph: graphResult,
     from: contentResult.from,
     to: contentResult.to,
-    applied: contentResult.applied + userResult.applied + graphResult.applied
+    applied: contentResult.applied + userResult.applied
   };
 }
+
+export { runGraphMigrations };
