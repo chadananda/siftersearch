@@ -170,9 +170,9 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
 
   // Doc-level fields
   const docFields = {
-    title: frontmatter.title || '',
-    subtitle: frontmatter.subtitle || '',
-    author: frontmatter.author || 'Unknown',
+    title: (frontmatter.title || '').trim(),
+    subtitle: (frontmatter.subtitle || '').trim(),
+    author: (frontmatter.author || 'Unknown').trim(),
     religion: ourReligion || 'General',
     collection: frontmatter.collection_id || '',
     description: frontmatter.description || frontmatter.description_short || '',
