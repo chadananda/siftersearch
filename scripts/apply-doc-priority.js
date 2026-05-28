@@ -14,7 +14,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const CONFIG_PATH = resolve(__dirname, '../config/doc-tier-priority.json');
 
 function matchesLayer(doc, match) {
-  if (match.title && doc.title !== match.title) return false;
+  if (match.title && doc.title?.trim() !== match.title) return false;
   if (match.title_contains && !doc.title?.includes(match.title_contains)) return false;
   if (match.author_contains && !doc.author?.includes(match.author_contains)) return false;
   if (match.religion && doc.religion !== match.religion) return false;
