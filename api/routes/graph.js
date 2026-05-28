@@ -284,9 +284,9 @@ export default async function graphRoutes(server) {
     const cids = mentions.map(m => m.content_id);
     const ph = cids.map(() => '?').join(',');
     const contentRows = await queryAll(
-      `SELECT c.id, c.text, c.doc_id, c.position, d.title, d.author
+      `SELECT c.id, c.text, c.doc_id, c.paragraph_index, d.title, d.author
        FROM content c JOIN docs d ON d.id = c.doc_id
-       WHERE c.id IN (${ph}) ORDER BY c.position`,
+       WHERE c.id IN (${ph}) ORDER BY c.paragraph_index`,
       cids
     );
     const roleMap = new Map(mentions.map(m => [m.content_id, m.role]));
@@ -295,7 +295,7 @@ export default async function graphRoutes(server) {
       entity: { id: Number(entity.id), name: entity.name, canonicalName: entity.canonical_name, type: entity.entity_type, religion: entity.religion },
       paragraphs: contentRows.map(r => ({
         contentId: r.id, docId: r.doc_id, title: r.title, author: r.author,
-        position: r.position, text: r.text, role: roleMap.get(r.id) || null
+        position: r.paragraph_index, text: r.text, role: roleMap.get(r.id) || null
       })),
       total: totalRow?.n ?? 0,
       limit: Number(limit),

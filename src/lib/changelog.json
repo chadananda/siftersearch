@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-28T16:42:38.401Z",
+  "generated": "2026-05-28T16:50:34.394Z",
   "entries": [
+    {
+      "hash": "3e042196",
+      "date": "2026-05-28",
+      "type": "Fixed",
+      "description": "API no longer runs graph migrations — graph workers own graph.db writes",
+      "scope": null
+    },
     {
       "hash": "39a14868",
       "date": "2026-05-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Para-attribution BY_RE stops at to for clean UHJ extraction",
       "scope": null
-    },
-    {
-      "hash": "44eaea20",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Para-attribution regex — stop author capture at recipient",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-28": [
+      {
+        "hash": "3e042196",
+        "date": "2026-05-28",
+        "type": "Fixed",
+        "description": "API no longer runs graph migrations — graph workers own graph.db writes",
+        "scope": null
+      },
       {
         "hash": "39a14868",
         "date": "2026-05-28",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Para-attribution BY_RE stops at to for clean UHJ extraction",
-        "scope": null
-      },
-      {
-        "hash": "44eaea20",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Para-attribution regex — stop author capture at recipient",
         "scope": null
       }
     ]
