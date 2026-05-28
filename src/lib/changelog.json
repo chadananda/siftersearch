@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-28T17:04:08.259Z",
+  "generated": "2026-05-28T19:09:35.314Z",
   "entries": [
+    {
+      "hash": "89378dd9",
+      "date": "2026-05-28",
+      "type": "New",
+      "description": "Log all reads at debug level + EXPLAIN QUERY PLAN for slow reads",
+      "scope": null
+    },
     {
       "hash": "856ea36c",
       "date": "2026-05-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Para-attribution institution patterns before generic BY_RE",
       "scope": null
-    },
-    {
-      "hash": "580f8654",
-      "date": "2026-05-13",
-      "type": "New",
-      "description": "/research/ pages + ShareButtons component",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-28": [
+      {
+        "hash": "89378dd9",
+        "date": "2026-05-28",
+        "type": "New",
+        "description": "Log all reads at debug level + EXPLAIN QUERY PLAN for slow reads",
+        "scope": null
+      },
       {
         "hash": "856ea36c",
         "date": "2026-05-28",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Para-attribution institution patterns before generic BY_RE",
-        "scope": null
-      },
-      {
-        "hash": "580f8654",
-        "date": "2026-05-13",
-        "type": "New",
-        "description": "/research/ pages + ShareButtons component",
         "scope": null
       }
     ]

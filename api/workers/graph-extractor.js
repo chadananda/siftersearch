@@ -605,23 +605,17 @@ async function resetReextractQueue() {
 }
 
 // Check if all extractions from docs at priority >= minPriority are resolved.
-// Used to gate tier transitions: don't start a new tier until the previous
-// tier's entities are fully in entity_aliases (resolver + promoter must catch up).
-async function isHigherTierFullyResolved(minPriority) {
+// Used to gate tier transitions: checks that all higher-priority paragraphs
+// are fully extracted (graph_enriched=1). Resolution and promotion are
+// background processes — waiting for them to complete would block indefinitely
+// since 'arbitrate' extractions never reach resolved=1 via the resolver.
+async function isHigherTierFullyExtracted(minPriority) {
   const highPriorityDocs = await queryAll(`SELECT id FROM docs WHERE doc_priority >= ? AND deleted_at IS NULL`, [minPriority]);
   const docIds = highPriorityDocs.map(r => r.id);
-  let pending = 0;
-  if (docIds.length > 0) {
-    const contentRows = await queryAll(`SELECT id FROM content WHERE doc_id IN (${docIds.map(() => '?').join(',')})`, docIds);
-    const cids = contentRows.map(r => r.id);
-    if (cids.length > 0) {
-      const peRow = await graphQueryOne(`SELECT COUNT(*) AS n FROM paragraph_extractions WHERE resolved = 0 AND content_id IN (${cids.map(() => '?').join(',')})`, cids);
-      pending = peRow?.n || 0;
-    }
-  }
-  const queueRow = await graphQueryOne(`SELECT COUNT(*) AS n FROM promotion_queue WHERE resolved = 0`);
-  const queuePending = queueRow?.n || 0;
-  return pending === 0 && queuePending === 0;
+  if (docIds.length === 0) return true;
+  const ph = docIds.map(() => '?').join(',');
+  const row = await queryOne(`SELECT COUNT(*) AS n FROM content WHERE doc_id IN (${ph}) AND graph_enriched = 0 AND deleted_at IS NULL`, docIds);
+  return (row?.n || 0) === 0;
 }
 
 let _lastBatchPriority = null;
@@ -637,7 +631,7 @@ async function processOnce() {
   // entity aliases from the previous tier are available to the current tier's
   // candidate dictionary — the compounding effect.
   if (_lastBatchPriority !== null && batchPriority < _lastBatchPriority) {
-    const ready = await isHigherTierFullyResolved(_lastBatchPriority);
+    const ready = await isHigherTierFullyExtracted(_lastBatchPriority);
     if (!ready) {
       logger.info(
         { from: _lastBatchPriority, to: batchPriority },
