@@ -77,13 +77,13 @@ const _failCount = new Map();
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
-async function transactionWithRetry(stmts, maxAttempts = 5) {
+async function transactionWithRetry(stmts, maxAttempts = 20) {
   for (let i = 0; i < maxAttempts; i++) {
     try {
       return await transaction(stmts);
     } catch (err) {
       if (err.code !== 'SQLITE_BUSY' || i === maxAttempts - 1) throw err;
-      const wait = 1000 * Math.pow(2, i);
+      const wait = Math.min(5000, 1000 * Math.pow(2, i));  // cap at 5s
       logger.warn({ attempt: i + 1, wait, stmts: stmts.length }, 'SQLITE_BUSY on batch transaction — retrying');
       await delay(wait);
     }
@@ -705,7 +705,7 @@ async function processOnce() {
       await transactionWithRetry(stmts);
     } catch (err) {
       logger.warn({ err: err.message, count: stmts.length }, 'Batch sifter.db commit failed — will retry next cycle');
-      succeeded = 0;  // Don't count as succeeded; fetchBatch will re-fetch same rows
+      succeeded = -1;  // Signal caller to retry immediately without sleeping
     }
   }
 
@@ -728,7 +728,7 @@ async function workerLoop() {
       await resetReextractQueue(); // re-queue reextract candidates before sleeping
       logger.info({ totalExtracted }, 'No work — sleeping');
       await delay(IDLE_SLEEP_MS);
-    } else {
+    } else if (count > 0) {
       totalExtracted += count;
       if (totalExtracted % 100 === 0) {
         const budget = await checkBudget();

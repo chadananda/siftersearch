@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-28T19:44:03.060Z",
+  "generated": "2026-05-28T19:51:29.573Z",
   "entries": [
+    {
+      "hash": "647125b3",
+      "date": "2026-05-28",
+      "type": "Performance",
+      "description": "Batch all sifter.db writes per extraction batch into one transaction",
+      "scope": null
+    },
     {
       "hash": "a2fd4252",
       "date": "2026-05-28",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add Research tab to NavBar (links to /research index)",
       "scope": null
-    },
-    {
-      "hash": "9c2c4fdc",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Add guardian and the shoghi effendi to author aliases",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-28": [
+      {
+        "hash": "647125b3",
+        "date": "2026-05-28",
+        "type": "Performance",
+        "description": "Batch all sifter.db writes per extraction batch into one transaction",
+        "scope": null
+      },
       {
         "hash": "a2fd4252",
         "date": "2026-05-28",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-13",
         "type": "New",
         "description": "Add Research tab to NavBar (links to /research index)",
-        "scope": null
-      },
-      {
-        "hash": "9c2c4fdc",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Add guardian and the shoghi effendi to author aliases",
         "scope": null
       }
     ]
