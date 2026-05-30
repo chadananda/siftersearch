@@ -56,9 +56,10 @@ const ENTITY_SYNC_INTERVAL_MS = 30 * 1000;   // 30s — drain backlog faster
 const ENTITY_SYNC_BATCH = 1000;
 const ALIAS_SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 min — synonym refresh
 const WAL_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000; // 15 min — TRUNCATE keeps WAL near-zero
-// Pre-wipe reset: rows with created_at before April Meili wipe still have synced=1 but aren't in Meili.
-// Reset 500 per cycle — small enough to not stall other writers sharing the WAL.
-const PRE_WIPE_CUTOFF = '2026-04-04';
+// Pre-wipe reset disabled: it created an infinite loop fighting the sync worker
+// (sync marks synced=1, reset marks synced=0, repeat forever on 3.45M rows).
+// Paragraphs are re-indexed via normal synced=0 processing when needed.
+const PRE_WIPE_CUTOFF = '2020-01-01'; // effectively disabled — no rows match
 const PRE_WIPE_BATCH = 500;
 
 // ============================================================

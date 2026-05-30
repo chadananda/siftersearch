@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-30T15:53:40.311Z",
+  "generated": "2026-05-30T16:24:06.518Z",
   "entries": [
+    {
+      "hash": "6bd49bfb",
+      "date": "2026-05-30",
+      "type": "Performance",
+      "description": "Increase entity mention sync batch 200→1000, interval 2min→30s",
+      "scope": null
+    },
     {
       "hash": "c9d668f4",
       "date": "2026-05-30",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Include slug in deep-research list API response",
       "scope": null
-    },
-    {
-      "hash": "5dbe470a",
-      "date": "2026-05-13",
-      "type": "New",
-      "description": "Quoted_authors in para_meta — detect inline quotes by primary authors",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-30": [
+      {
+        "hash": "6bd49bfb",
+        "date": "2026-05-30",
+        "type": "Performance",
+        "description": "Increase entity mention sync batch 200→1000, interval 2min→30s",
+        "scope": null
+      },
       {
         "hash": "c9d668f4",
         "date": "2026-05-30",
@@ -7023,13 +7030,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Include slug in deep-research list API response",
-        "scope": null
-      },
-      {
-        "hash": "5dbe470a",
-        "date": "2026-05-13",
-        "type": "New",
-        "description": "Quoted_authors in para_meta — detect inline quotes by primary authors",
         "scope": null
       }
     ]
