@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-28T20:56:10.892Z",
+  "generated": "2026-05-30T13:56:50.786Z",
   "entries": [
+    {
+      "hash": "4be9c33b",
+      "date": "2026-05-28",
+      "type": "Fixed",
+      "description": "Batch bulkInsertParagraphs + deleteParagraphsByDoc to prevent SQLITE_BUSY storms",
+      "scope": null
+    },
     {
       "hash": "c913ede6",
       "date": "2026-05-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Rerank passages in batches of 30 — large single-batch LLM call returned empty JSON",
       "scope": null
-    },
-    {
-      "hash": "d595b88c",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Deep research — correct tradition→religion filter names + re-attach candidate text after rerank",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-28": [
+      {
+        "hash": "4be9c33b",
+        "date": "2026-05-28",
+        "type": "Fixed",
+        "description": "Batch bulkInsertParagraphs + deleteParagraphsByDoc to prevent SQLITE_BUSY storms",
+        "scope": null
+      },
       {
         "hash": "c913ede6",
         "date": "2026-05-28",
@@ -7021,13 +7028,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Rerank passages in batches of 30 — large single-batch LLM call returned empty JSON",
-        "scope": null
-      },
-      {
-        "hash": "d595b88c",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Deep research — correct tradition→religion filter names + re-attach candidate text after rerank",
         "scope": null
       }
     ]

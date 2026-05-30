@@ -27,7 +27,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { query, queryOne, queryAll, getSiteDb, getDb } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
-import { getMeili } from '../lib/search.js';
+import { getMeili, syncEntityMentionsBatch } from '../lib/search.js';
 import { content } from '../lib/content.js';
 import { getAuthority } from '../lib/authority.js';
 import { runMigrations } from '../lib/migrations.js';
@@ -816,6 +816,17 @@ async function runPeriodicTasksIfDue() {
     }
     lastWalCheckpointTime = now;
   }
+  // Sync resolved entity mentions to Meilisearch sidecar (entity_mentions_idx).
+  // Runs every periodic cycle — drains em_synced=0 rows in small batches.
+  try {
+    const emResult = await syncEntityMentionsBatch({ limit: 500 });
+    if (emResult.indexed > 0) {
+      logger.info({ indexed: emResult.indexed }, 'Entity mentions sidecar synced');
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Entity mention sync failed (non-fatal)');
+  }
+
   // Sync each site-only DB on every idle cycle. Site-only DBs are small
   // (bahaiteachings ~30 MB / 60K paragraphs); a full pass is cheap and we
   // can't rely on sync_jobs since those live only in the main DB.
