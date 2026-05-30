@@ -52,8 +52,8 @@ const HEARTBEAT_INTERVAL_MS = 30000;
 const USAGE_REPORT_INTERVAL_MS = 5 * 60 * 1000;
 const HYPE_SYNC_INTERVAL_MS = 60 * 1000;  // 60s — keep new HyPE indexed promptly
 const HYPE_SYNC_BATCH = 100;              // paragraphs per batch (~500 questions = 1 OpenAI batch call)
-const ENTITY_SYNC_INTERVAL_MS = 120 * 1000;  // 2 min — entity mentions index
-const ENTITY_SYNC_BATCH = 200;
+const ENTITY_SYNC_INTERVAL_MS = 30 * 1000;   // 30s — drain backlog faster
+const ENTITY_SYNC_BATCH = 1000;
 const ALIAS_SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 min — synonym refresh
 const WAL_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000; // 15 min — TRUNCATE keeps WAL near-zero
 // Pre-wipe reset: rows with created_at before April Meili wipe still have synced=1 but aren't in Meili.

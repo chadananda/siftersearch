@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-30T13:56:50.786Z",
+  "generated": "2026-05-30T15:53:40.311Z",
   "entries": [
+    {
+      "hash": "c9d668f4",
+      "date": "2026-05-30",
+      "type": "New",
+      "description": "Wire entity mention sync into sync-processor periodic loop",
+      "scope": null
+    },
     {
       "hash": "4be9c33b",
       "date": "2026-05-28",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Quoted_authors in para_meta — detect inline quotes by primary authors",
       "scope": null
-    },
-    {
-      "hash": "b9e42d2d",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Rerank passages in batches of 30 — large single-batch LLM call returned empty JSON",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-30": [
+      {
+        "hash": "c9d668f4",
+        "date": "2026-05-30",
+        "type": "New",
+        "description": "Wire entity mention sync into sync-processor periodic loop",
+        "scope": null
+      }
+    ],
     "2026-05-28": [
       {
         "hash": "4be9c33b",
@@ -7021,13 +7030,6 @@
         "date": "2026-05-13",
         "type": "New",
         "description": "Quoted_authors in para_meta — detect inline quotes by primary authors",
-        "scope": null
-      },
-      {
-        "hash": "b9e42d2d",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Rerank passages in batches of 30 — large single-batch LLM call returned empty JSON",
         "scope": null
       }
     ]
