@@ -878,24 +878,42 @@ async function workerLoop() {
       // 1. Check for pending sync jobs → process
       let syncJob = await getNextPendingSyncJob();
       if (!syncJob) {
-        const unsyncedCount = await countUnsyncedParagraphs();
-        if (unsyncedCount > 0) {
-          logger.info({ unsyncedCount }, 'Found unsynced content — creating sync job');
-          const jobId = await createSyncJob('sync', unsyncedCount);
-          syncJob = await queryOne(`SELECT * FROM sync_jobs WHERE id = ?`, [jobId]);
+        try {
+          const unsyncedCount = await countUnsyncedParagraphs();
+          if (unsyncedCount > 0) {
+            logger.info({ unsyncedCount }, 'Found unsynced content — creating sync job');
+            const jobId = await createSyncJob('sync', unsyncedCount);
+            syncJob = await queryOne(`SELECT * FROM sync_jobs WHERE id = ?`, [jobId]);
+          }
+        } catch (err) {
+          if (err.message?.includes('database is locked')) {
+            logger.warn('DB locked creating sync job — skipping to periodic tasks');
+          } else {
+            logger.error({ err: err.message }, 'Sync job creation failed');
+          }
         }
       }
       if (syncJob) {
         currentSyncJobId = syncJob.id;
-        await processSyncJob(syncJob);
+        try {
+          await processSyncJob(syncJob);
+        } catch (err) {
+          if (err.message?.includes('database is locked')) {
+            logger.warn('DB locked processing sync job — continuing');
+          } else throw err;
+        }
         didWork = true;
       }
       // 2. Check for pending translation/audio jobs → process one
       if (!isShuttingDown) {
-        const translationJob = await getNextPendingTranslationJob();
-        if (translationJob) {
-          await processTranslationAudioJob(translationJob);
-          didWork = true;
+        try {
+          const translationJob = await getNextPendingTranslationJob();
+          if (translationJob) {
+            await processTranslationAudioJob(translationJob);
+            didWork = true;
+          }
+        } catch (err) {
+          if (!err.message?.includes('database is locked')) throw err;
         }
       }
       // 3. Run periodic tasks (cleanup, full sync check, email queue)

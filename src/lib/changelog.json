@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-30T16:24:06.518Z",
+  "generated": "2026-05-30T16:31:44.719Z",
   "entries": [
+    {
+      "hash": "17bfe0ba",
+      "date": "2026-05-30",
+      "type": "Fixed",
+      "description": "Disable pre-wipe reset that caused infinite DB-lock loop",
+      "scope": null
+    },
     {
       "hash": "6bd49bfb",
       "date": "2026-05-30",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "GetDeepResearchBySlug — exclude embedding blob, parse JSON fields",
       "scope": null
-    },
-    {
-      "hash": "e35f34b0",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Include slug in deep-research list API response",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-30": [
+      {
+        "hash": "17bfe0ba",
+        "date": "2026-05-30",
+        "type": "Fixed",
+        "description": "Disable pre-wipe reset that caused infinite DB-lock loop",
+        "scope": null
+      },
       {
         "hash": "6bd49bfb",
         "date": "2026-05-30",
@@ -7023,13 +7030,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "GetDeepResearchBySlug — exclude embedding blob, parse JSON fields",
-        "scope": null
-      },
-      {
-        "hash": "e35f34b0",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Include slug in deep-research list API response",
         "scope": null
       }
     ]
