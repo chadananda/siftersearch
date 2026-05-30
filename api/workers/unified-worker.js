@@ -394,6 +394,11 @@ async function processSyncJob(job) {
         await query(`UPDATE sync_jobs SET completed_items = ?, failed_items = ? WHERE id = ?`, [completedItems, failedItems, job.id]);
         await delay(DOC_DELAY_MS);
       } // end for (doc of fresh)
+      // Run entity sync between doc batches so it doesn't wait for the full
+      // sync job to complete (which can take hours with 4M+ paragraphs).
+      if (Date.now() - lastEntitySyncTime >= ENTITY_SYNC_INTERVAL_MS) {
+        await runEntitySyncCycle();
+      }
     } // end while (!isShuttingDown)
 
     // End of doc loop. Force-flush any remaining buffered paragraphs.

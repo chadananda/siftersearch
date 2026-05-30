@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-30T16:31:44.719Z",
+  "generated": "2026-05-30T16:58:52.923Z",
   "entries": [
+    {
+      "hash": "fb538663",
+      "date": "2026-05-30",
+      "type": "Fixed",
+      "description": "Isolate sync job DB-lock failures so periodic tasks (entity sync) always run",
+      "scope": null
+    },
     {
       "hash": "17bfe0ba",
       "date": "2026-05-30",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Research slug page — handle pre-parsed JSON fields from API",
       "scope": null
-    },
-    {
-      "hash": "55896d65",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "GetDeepResearchBySlug — exclude embedding blob, parse JSON fields",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-30": [
+      {
+        "hash": "fb538663",
+        "date": "2026-05-30",
+        "type": "Fixed",
+        "description": "Isolate sync job DB-lock failures so periodic tasks (entity sync) always run",
+        "scope": null
+      },
       {
         "hash": "17bfe0ba",
         "date": "2026-05-30",
@@ -7023,13 +7030,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Research slug page — handle pre-parsed JSON fields from API",
-        "scope": null
-      },
-      {
-        "hash": "55896d65",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "GetDeepResearchBySlug — exclude embedding blob, parse JSON fields",
         "scope": null
       }
     ]
