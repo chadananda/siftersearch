@@ -73,14 +73,26 @@ async function runOne(fix) {
       body: JSON.stringify(reqBody),
       signal: AbortSignal.timeout(25000)
     });
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      const preview = await res.text().then(t => t.slice(0, 120));
+      return { id: fix.id, category: fix.category || 'uncategorized', ok: false,
+        error: `HTTP ${res.status} non-JSON`, errorType: 'http_error',
+        latency_ms: Date.now() - t0, intent: fix.intent };
+    }
     body = await res.json();
   } catch (err) {
-    return { id: fix.id, category: fix.category || 'uncategorized', ok: false, error: err.message, latency_ms: Date.now() - t0, intent: fix.intent };
+    const isTimeout = err.name === 'TimeoutError' || err.message.includes('timeout') || err.message.includes('abort');
+    return { id: fix.id, category: fix.category || 'uncategorized', ok: false,
+      error: err.message, errorType: isTimeout ? 'timeout' : 'network',
+      latency_ms: Date.now() - t0, intent: fix.intent };
   }
   const round_trip_ms = Date.now() - t0;
   // Prefer server-reported timing (no network noise) if available
   const latency_ms = body?._timing?.total_ms ?? round_trip_ms;
-  if (!res.ok) return { id: fix.id, category: fix.category || 'uncategorized', ok: false, error: `HTTP ${res.status}`, latency_ms: round_trip_ms, intent: fix.intent };
+  if (!res.ok) return { id: fix.id, category: fix.category || 'uncategorized', ok: false,
+    error: `HTTP ${res.status}`, errorType: 'http_error',
+    latency_ms: round_trip_ms, intent: fix.intent };
 
   const hits = body.results || body.hits || body.passages || [];
   let rank = -1;
@@ -227,6 +239,20 @@ const categories = Object.fromEntries(
   Object.entries(categoryMap).map(([k, v]) => [k, { ...v, pass_rate: Math.round(v.passed / v.total * 100) }])
 );
 
+const failBreakdown = (() => {
+  let not_found=0, text_mismatch=0, anti_test=0, authority_low=0, timed_out=0, http_error=0, network_error=0;
+  for (const r of results.filter(r => !r.ok)) {
+    if (r.errorType === 'timeout') { timed_out++; continue; }
+    if (r.errorType === 'http_error') { http_error++; continue; }
+    if (r.errorType === 'network') { network_error++; continue; }
+    if (r.rank === null) not_found++;
+    else if (!r.text_hit) text_mismatch++;
+    if (!r.anti_hit) anti_test++;
+    if (!r.authority_hit) authority_low++;
+  }
+  return { not_found, text_mismatch, anti_test, authority_low, timed_out, http_error, network_error };
+})();
+
 const report = {
   run_at: new Date().toISOString(),
   total: results.length,
@@ -239,6 +265,7 @@ const report = {
   top_k: TOP_K,
   api_base: API_BASE,
   categories,
+  failure_breakdown: failBreakdown,
   results
 };
 
@@ -343,17 +370,13 @@ Category breakdown:
 ${Object.entries(report.categories).map(([k, v]) => `  ${k}: ${v.pass_rate}% (${v.passed}/${v.total})`).join('\n')}
 
 Failure breakdown:
-${(() => {
-  let notFound=0, textMiss=0, antiTest=0, authority=0, timeout=0;
-  for (const r of results.filter(r => !r.ok)) {
-    if (r.error) { timeout++; continue; }
-    if (r.rank === null) notFound++;
-    else if (!r.text_hit) textMiss++;
-    if (!r.anti_hit) antiTest++;
-    if (!r.authority_hit) authority++;
-  }
-  return `  Not found in top 10: ${notFound}\n  Text mismatch: ${textMiss}\n  Anti-test failed: ${antiTest}\n  Authority too low: ${authority}\n  API timeout: ${timeout}`;
-})()}
+  Not found in top 10: ${failBreakdown.not_found}
+  Text mismatch: ${failBreakdown.text_mismatch}
+  Anti-test failed: ${failBreakdown.anti_test}
+  Authority too low: ${failBreakdown.authority_low}
+  Timed out: ${failBreakdown.timed_out}
+  HTTP error (5xx/4xx): ${failBreakdown.http_error}
+  Network/other error: ${failBreakdown.network_error}
 
 ## Trend
 ${trendSummary}

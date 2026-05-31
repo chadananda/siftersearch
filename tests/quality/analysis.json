@@ -1,74 +1,91 @@
 {
-  "summary": "The test suite is effectively non-functional: 51 of 52 tests fail with API timeouts or HTML error responses (HTTP 503 / DOCTYPE responses), indicating the search API itself is unreachable or returning error pages instead of JSON. No meaningful search-quality signal can be extracted until the service availability issue is resolved.",
+  "summary": "Pass rate has recovered from 2% to 56% now that the API is returning JSON, with authority-ranking (100%) and cross-tradition (100%) performing perfectly. The biggest gaps are entity-aware queries (22%) suffering from frequent timeouts and concept-match (42%) where queries return rank-1 hits but fail text-match assertions — suggesting the right *kind* of document is found but not the specific target passage.",
   "strengths": [
     {
-      "title": "One test passing proves end-to-end path works",
-      "detail": "1/52 tests passed, confirming the test harness, fixture format, and at least one code path through hybridSearch can return valid results when the API responds."
+      "title": "Authority weighting works as designed",
+      "detail": "authority-ranking category is 100% (4/4) and authority_hit=true on essentially every failing test, confirming the post-retrieval authority multiplier in api/lib/authority.js is correctly preferring high-authority sources."
     },
     {
-      "title": "Fast p50 latency on responsive requests",
-      "detail": "p50 of 77ms suggests that when the API does respond, the underlying Meilisearch + vector retrieval is performant; the p95 of 1092ms reflects timeout/error cases rather than slow queries."
+      "title": "Cross-tradition routing is solid",
+      "detail": "cross-tradition is 100% (5/5), indicating the hybrid BM25+semantic stack handles multi-corpus disambiguation well when queries are sufficiently distinctive."
+    },
+    {
+      "title": "Massive recovery from infra regression",
+      "detail": "Pass rate jumped 2% → 56% after the API/HTML-response issue was resolved, validating that the prior analysis correctly diagnosed an infra problem rather than a quality regression."
     }
   ],
   "critical_gaps": [
     {
-      "title": "API returning HTML error pages instead of JSON",
-      "detail": "Nearly every failure is 'Unexpected token <, \"<!DOCTYPE \"...' meaning the test client is hitting an HTML error page (likely a reverse proxy 502/503/504 or a Next.js error page) rather than the JSON search endpoint. This is an infrastructure/routing failure, not a relevance failure.",
-      "evidence": "50/52 failures show DOCTYPE parse errors; tablet-of-wisdom-nature explicitly shows HTTP 503. All categories affected uniformly (phrase-match, concept-match, authority-ranking, cross-tradition, entity-aware)."
+      "title": "Entity-aware queries timing out",
+      "detail": "5 of 9 entity-aware tests fail with 'operation aborted due to timeout' at p95=25s. These are likely triggering the full jafar-pipeline (intent → research → craft) which compounds latency, and entity resolution may be issuing too many sub-queries.",
+      "evidence": "entity-quddus-character-tracking, entity-letters-of-living, entity-shoghi-effendi-guardian, entity-bab-martyrdom, entity-mulla-husayn-speaker all error with timeout"
     },
     {
-      "title": "Failure classification masks real signal",
-      "detail": "All 51 failures are categorized as 'API timeout' in the breakdown, but the actual errors are 503s and HTML responses — these are distinct failure modes. The test runner needs to distinguish between true timeouts, HTTP error codes, and malformed responses.",
-      "evidence": "Failure breakdown shows 51 'API timeout' but error messages indicate HTTP 503 and HTML responses, not actual timeouts."
+      "title": "Concept-match returns rank-1 but wrong passage",
+      "detail": "11 concept-match failures have rank=1 with text_hit=false. The retriever finds the correct book/author (e.g., Mahabharata for dharma, Matthew for golden rule, Sura II for zakat) but surfaces a non-target paragraph. This is a within-document ranking / paragraph-selection problem, not a retrieval problem.",
+      "evidence": "christian-golden-rule (Matthew, rank 1, text miss), islamic-zakat-charity (Sura II, rank 1, text miss), hindu-dharma (Mahabharata 12, rank 1, text miss), buddhist-compassion-karuna, islamic-daily-prayers"
     },
     {
-      "title": "No relevance signal recoverable",
-      "detail": "Because the API is failing before search runs, we cannot evaluate BM25/vector hybrid quality, authority weighting, or the jafar-pipeline intent→research→craft flow. All downstream quality work is blocked.",
-      "evidence": "0% pass on concept-match, authority-ranking, cross-tradition, entity-aware categories — all bottlenecked at the HTTP layer."
+      "title": "Phrase-match misses on archaic/liturgical phrasing",
+      "detail": "Phrase-match queries with stylized scripture language (e.g. 'cleanse thy heart', 'Inaccessible Most High Most Holy') return null rank entirely — the target paragraph is not even in top 10. Embedding similarity likely dominates over rare-phrase BM25 here.",
+      "evidence": "hidden-words-cleanse-heart, long-healing-prayer-opening, aqdas-obligatory-prayer, seven-valleys-law-secret-path all rank=null"
+    },
+    {
+      "title": "p95 latency at 25s is unworkable",
+      "detail": "p50 6.4s and p95 25s indicate test timeouts (likely 25s client limit) are the direct cause of 6 errored tests. Even passing tests are slow enough to mask other regressions."
     }
   ],
   "action_plan": [
     {
       "priority": 1,
-      "title": "Diagnose and fix API 503 / HTML response root cause",
+      "title": "Bypass jafar-pipeline for test/eval path and add per-stage timeouts",
       "impact": "high",
       "effort": "low",
-      "description": "The API endpoint is returning HTML (likely from a proxy or Next.js error page) instead of JSON. Until this is fixed, no search-quality work can proceed. Most likely causes: Meilisearch connection failure, missing env vars, or the API process crashing under test load.",
-      "implementation": "1) curl the search endpoint manually with one of the failing queries (e.g., the tablet-of-wisdom-nature query) and inspect the full HTML response — it will reveal whether this is nginx/Caddy/Vercel proxy or Next.js error. 2) Check api/lib/search.js hybridSearch for unhandled exceptions; wrap Meilisearch client calls in try/catch and return JSON errors. 3) Verify MEILI_HOST, MEILI_API_KEY, and OpenAI API key env vars are set in the deployed environment. 4) Check Meilisearch health endpoint and confirm indexes exist and are not still syncing (note from changelog: 'sync queue clearing').",
-      "success_metric": "Reduce DOCTYPE/503 errors from 51 to 0; expose true search-quality pass rate (expected jump to baseline ~40-60% based on prior 58% core figure in changelog)."
+      "description": "The 6 timeout failures are concentrated in entity-aware tests, which likely fan out through the intent→research→craft pipeline. Add a 'raw' or 'eval' mode that runs hybridSearch directly, and wrap each pipeline stage with AbortController timeouts (e.g., 4s intent, 8s research) so a slow stage degrades gracefully rather than hanging.",
+      "implementation": "In api/lib/jafar-pipeline.js, accept an options.mode='raw' to skip intent+craft and return hybridSearch results directly. In the test runner, pass mode=raw for ranking tests. Add Promise.race with AbortController in each stage. Log per-stage latency.",
+      "success_metric": "Eliminate all 6 timeout errors; entity-aware category climbs from 22% toward 60%+; p95 drops below 10s."
     },
     {
       "priority": 2,
-      "title": "Improve test runner error classification",
-      "impact": "medium",
-      "effort": "low",
-      "description": "Current failure breakdown lumps HTTP 503, JSON parse failures, and real timeouts under 'API timeout'. This makes triage impossible. Split into distinct buckets.",
-      "implementation": "In the test runner (likely tests/run.js or similar), catch fetch errors and classify: (a) network/timeout, (b) HTTP non-2xx with status code, (c) JSON.parse failure with response preview, (d) result-level mismatch. Log first 200 chars of body on parse failure to identify proxy vs app errors fast.",
-      "success_metric": "Future failure reports show actionable categories; eliminates ambiguous 'API timeout' bucket."
+      "title": "Boost BM25 weight and enable phrase/proximity matching for archaic queries",
+      "impact": "high",
+      "effort": "medium",
+      "description": "Four phrase-match failures (cleanse thy heart, Inaccessible Most High, secret of the path, etc.) return rank=null, indicating semantic embeddings are pulling toward thematically similar but lexically wrong paragraphs. Rare-token phrases should be retrieved by BM25, not embeddings.",
+      "implementation": "In api/lib/search.js hybridSearch, increase BM25 weight in the fusion (try 0.6 BM25 / 0.4 vector vs current). Enable Meilisearch phrase matching ('\"...\"') when query contains ≥3 rare tokens (IDF-based heuristic). Consider Meilisearch attribute weights so paragraph text outranks title.",
+      "success_metric": "Phrase-match category 67% → 85%+; recover hidden-words-cleanse-heart, long-healing-prayer-opening, aqdas-obligatory-prayer."
     },
     {
       "priority": 3,
-      "title": "Add /health and /search smoke tests to CI gate",
-      "impact": "medium",
-      "effort": "low",
-      "description": "A simple precondition check before running the 52-fixture suite would have flagged this in seconds rather than producing a misleading 2% quality score.",
-      "implementation": "Prepend the test runner with a single GET to /api/search?q=test that asserts 200 + valid JSON shape. If it fails, abort the suite with a clear infrastructure-error message rather than running 52 fixtures.",
-      "success_metric": "Future infrastructure outages produce 'API unreachable' aborts instead of polluting quality metrics."
+      "title": "Improve paragraph-level reranking within correctly-retrieved documents",
+      "impact": "high",
+      "effort": "medium",
+      "description": "11 concept-match failures find rank-1 results from the *correct* book/author but the wrong paragraph. Add a second-stage reranker that scores paragraph-query overlap using token-level features (exact token hits, n-gram overlap, position of key terms) before authority weighting.",
+      "implementation": "In api/lib/authority.js (or new api/lib/rerank.js), after authority multiplication, apply a paragraph-quality boost: count of query tokens present in paragraph / paragraph length, with bonus for bigram matches. Tune on the 11 failing concept-match cases.",
+      "success_metric": "Concept-match category 42% → 65%+; specifically recover christian-golden-rule, hindu-dharma, islamic-zakat-charity."
     },
     {
       "priority": 4,
-      "title": "Confirm Meilisearch index population post-sync",
-      "impact": "high",
+      "title": "Add entity index and entity-aware query expansion",
+      "impact": "medium",
+      "effort": "medium",
+      "description": "Entity queries like 'Declaration of the Bab May 1844 Shiraz' or 'first Letter of the Living' need entity-grounded retrieval, not just lexical/semantic. A small entity dictionary (Bab, Mulla Husayn, Quddus, Shoghi Effendi, Letters of the Living, etc.) with associated canonical passages/aliases would dramatically help.",
+      "implementation": "Create data/entities.json with entity → {aliases, canonical_passages, related_terms}. In api/lib/search.js, detect entity mentions in query and OR-expand with aliases; boost paragraphs whose entity tags match. Eventually backfill an entity field on paragraphs.",
+      "success_metric": "Entity-aware category 22% → 60%+; recover entity-mulla-husayn-first-believer (currently rank 7), entity-declaration-bab-1844."
+    },
+    {
+      "priority": 5,
+      "title": "Split timeout failure class and add stage-level metrics",
+      "impact": "low",
       "effort": "low",
-      "description": "The changelog notes the Meilisearch sync queue was clearing. If the 503 is caused by an empty or partially-populated index, fixing the API alone won't restore the prior 58% core pass rate.",
-      "implementation": "After API is reachable, query Meilisearch stats endpoint (/indexes/{name}/stats) to confirm documentCount matches expected corpus size. Verify both BM25 index and pgvector embeddings table have parity rows. Re-run any failed sync tasks.",
-      "success_metric": "Restore pass rate to or above the 58% baseline noted in 2026-05-31 changelog entry."
+      "description": "Continue the previous run's recommendation: distinguish client-side AbortController timeouts from server 5xx and pipeline-stage timeouts. Without this, P1 above is hard to verify.",
+      "implementation": "In the test runner, capture which stage timed out (header from API: X-Pipeline-Stage). Bucket errors as timeout-intent, timeout-retrieval, timeout-craft, http-5xx.",
+      "success_metric": "Clearer failure breakdown; faster iteration on P1."
     }
   ],
-  "notes_on_previous": "No prior analyses exist. The changelog mentions a 58% core baseline on 2026-05-31, but the current 2% result and uniform 503/HTML failures strongly suggest a regression in deployment or infrastructure rather than a search-quality regression. Do not begin tuning BM25 weights, authority multipliers, or rerank logic until the API is confirmed to be returning JSON — any quality changes made now would be evaluated against noise.",
-  "generated_at": "2026-05-31T16:50:35.545Z",
+  "notes_on_previous": "The previous analysis correctly identified the 2% pass rate as an infra problem and explicitly warned against tuning quality knobs against noise — that restraint paid off, and the recovery to 56% confirms the underlying search stack was healthy. The recommendation to add /health smoke tests and improve error classification remains unimplemented; carrying that forward (P5) is still cheap and worthwhile. No dead ends to avoid — prior analysis made no quality-tuning changes.",
+  "generated_at": "2026-05-31T17:16:52.259Z",
   "model": "claude-opus-4-7",
   "suite": "Core (52 fixtures)",
-  "pass_rate": 2,
-  "run_at": "2026-05-31T16:49:56.276Z"
+  "pass_rate": 56,
+  "run_at": "2026-05-31T17:09:37.657Z"
 }

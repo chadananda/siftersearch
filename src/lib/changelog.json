@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T16:59:06.131Z",
+  "generated": "2026-05-31T17:19:09.132Z",
   "entries": [
+    {
+      "hash": "588e12a4",
+      "date": "2026-05-31",
+      "type": "Fixed",
+      "description": "Add _timing to public-api.js search endpoint (correct handler for POST /api/v1/search)",
+      "scope": null
+    },
     {
       "hash": "7ea6b36b",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Sub-question-specific answer notes replace reranker main-question notes",
       "scope": null
-    },
-    {
-      "hash": "672011e6",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Increase conceptualRecon max_tokens 4096→6000 — canonical_examples expands response size",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "588e12a4",
+        "date": "2026-05-31",
+        "type": "Fixed",
+        "description": "Add _timing to public-api.js search endpoint (correct handler for POST /api/v1/search)",
+        "scope": null
+      },
       {
         "hash": "7ea6b36b",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Sub-question-specific answer notes replace reranker main-question notes",
-        "scope": null
-      },
-      {
-        "hash": "672011e6",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Increase conceptualRecon max_tokens 4096→6000 — canonical_examples expands response size",
         "scope": null
       }
     ]
