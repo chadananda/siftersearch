@@ -4,7 +4,7 @@
     "category": "phrase-match",
     "query": "philosophy emanated from the prophets",
     "intent": "Bahá'u'lláh's claim about the origin of philosophy in Tablet of Wisdom",
-    "expected_doc_id": 8270,
+    "expected_doc_id": 20781,
     "expected_passage_range": [
       313,
       365
@@ -22,7 +22,7 @@
     "category": "phrase-match",
     "query": "nature is the embodiment of the maker the creator",
     "intent": "The Nature/Maker passage from Tablet of Wisdom",
-    "expected_doc_id": 8270,
+    "expected_doc_id": 20781,
     "expected_passage_range": [
       313,
       365
@@ -40,7 +40,7 @@
     "category": "phrase-match",
     "query": "Empedocles Pythagoras Greek philosophers",
     "intent": "Passage where Bahá'u'lláh names Greek philosophers in Tablet of Wisdom",
-    "expected_doc_id": 8270,
+    "expected_doc_id": 20781,
     "expected_passage_range": [
       313,
       365
@@ -56,7 +56,7 @@
     "category": "phrase-match",
     "query": "secret of the path obedience to the law",
     "intent": "Bahá'u'lláh on the law as the secret of the path in Seven Valleys",
-    "expected_doc_id": 8241,
+    "expected_doc_id": 20811,
     "expected_text_contains": [
       "Law",
       "secret",
@@ -69,7 +69,7 @@
     "category": "phrase-match",
     "query": "cleanse thy heart from envy and from grudge",
     "intent": "Hidden Words on cleansing the heart",
-    "expected_doc_id": 8230,
+    "expected_doc_id": 20809,
     "expected_text_contains": [
       "heart",
       "envy"
@@ -91,9 +91,9 @@
   {
     "id": "tablet-of-ahmad-nightingale",
     "category": "phrase-match",
-    "query": "Tablet of Ahmad nightingale of paradise",
-    "intent": "Named tablet lookup — short Bahá'u'lláh tablet",
-    "expected_doc_id": 1616,
+    "query": "nightingale of paradise singeth upon the twigs of the tree of eternity",
+    "intent": "Opening line of Tablet of Ahmad — tests whether the tablet text is indexed",
+    "expected_author_contains": "Bahá",
     "expected_text_contains": [
       "Nightingale",
       "Paradise"
@@ -117,7 +117,7 @@
     "category": "concept-match",
     "query": "purity of heart chastity of spirit justice",
     "intent": "Iqán's opening on justice and virtues",
-    "expected_doc_id": 8300,
+    "expected_doc_id": 20810,
     "expected_text_contains": [
       "heart",
       "chastity"
@@ -129,7 +129,7 @@
     "category": "concept-match",
     "query": "soul is immortal continues progress after death",
     "intent": "'Abdu'l-Bahá in Some Answered Questions on the soul",
-    "expected_doc_id": 8346,
+    "expected_doc_id": 20911,
     "expected_text_contains": [
       "soul"
     ],

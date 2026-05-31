@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T14:14:34.088Z",
+  "generated": "2026-05-31T14:45:44.823Z",
   "entries": [
+    {
+      "hash": "248af39e",
+      "date": "2026-05-31",
+      "type": "Docs",
+      "description": "Search Quality Battery page with live results",
+      "scope": null
+    },
     {
       "hash": "63de106d",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Increase clusterAndStructure max_tokens to 8192, add response debug logging",
       "scope": null
-    },
-    {
-      "hash": "4f86ff85",
-      "date": "2026-05-13",
-      "type": "Other",
-      "description": "Aspect-based research structure with excerpt extraction",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "248af39e",
+        "date": "2026-05-31",
+        "type": "Docs",
+        "description": "Search Quality Battery page with live results",
+        "scope": null
+      },
       {
         "hash": "63de106d",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Increase clusterAndStructure max_tokens to 8192, add response debug logging",
-        "scope": null
-      },
-      {
-        "hash": "4f86ff85",
-        "date": "2026-05-13",
-        "type": "Other",
-        "description": "Aspect-based research structure with excerpt extraction",
         "scope": null
       }
     ]
