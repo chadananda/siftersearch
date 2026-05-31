@@ -108,8 +108,10 @@ async function runOne(fix) {
     const hAuthor = normalize(h.author || '');
 
     let docMatch = false;
-    if (typeof fix.expected_doc_id === 'number') {
-      if (hDocId === fix.expected_doc_id) {
+    const altDocIds = Array.isArray(fix.expected_doc_ids) ? fix.expected_doc_ids : [];
+    if (typeof fix.expected_doc_id === 'number' || altDocIds.length > 0) {
+      const allAccepted = altDocIds.length > 0 ? altDocIds : [fix.expected_doc_id];
+      if (allAccepted.includes(hDocId)) {
         if (Array.isArray(fix.expected_passage_range)) {
           const [lo, hi] = fix.expected_passage_range;
           const pIdx = h.paragraphIndex ?? h.paragraph_index;

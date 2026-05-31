@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T20:08:07.684Z",
+  "generated": "2026-05-31T20:39:35.340Z",
   "entries": [
+    {
+      "hash": "e847e83b",
+      "date": "2026-05-31",
+      "type": "Fixed",
+      "description": "Thread AbortSignal to ollama/OpenAI calls — cancel background analysis on timeout",
+      "scope": null
+    },
     {
       "hash": "06a6579d",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Traditional compact share buttons, quote links, right-aligned source, sort by relevance",
       "scope": null
-    },
-    {
-      "hash": "2172796a",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "/api/search/quick now returns source_site, source_url, external_para_id",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "e847e83b",
+        "date": "2026-05-31",
+        "type": "Fixed",
+        "description": "Thread AbortSignal to ollama/OpenAI calls — cancel background analysis on timeout",
+        "scope": null
+      },
       {
         "hash": "06a6579d",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Other",
         "description": "Traditional compact share buttons, quote links, right-aligned source, sort by relevance",
-        "scope": null
-      },
-      {
-        "hash": "2172796a",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "/api/search/quick now returns source_site, source_url, external_para_id",
         "scope": null
       }
     ]

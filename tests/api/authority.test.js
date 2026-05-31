@@ -89,36 +89,37 @@ describe('Authority System', () => {
   });
 
   describe('getAuthority function', () => {
-    describe('author-based authority (fallback)', () => {
-      // Author-based authority only applies when no collection/religion authority exists
-      it('should return 10 for Bahá\'u\'lláh when no collection/religion match', () => {
+    describe('author-based authority (fallback default)', () => {
+      // Author authority is a DEFAULT (not override) — title patterns and collections take priority.
+      // Compilations/anthologies by primary authors get author-default (8), not canonical-work value (10).
+      it('should return 8 for Bahá\'u\'lláh author without title/collection match (compilation default)', () => {
         const authority = getAuthority({
           author: 'Bahá\'u\'lláh',
           religion: 'Unknown Religion',
           collection: 'Unknown Collection'
         });
-        expect(authority).toBe(10);
+        expect(authority).toBe(8);
       });
 
-      it('should return 10 for The Báb when no collection/religion match', () => {
+      it('should return 8 for The Báb author without title/collection match', () => {
         const authority = getAuthority({
           author: 'The Báb',
           religion: 'Unknown Religion',
           collection: 'Unknown Collection'
         });
-        expect(authority).toBe(10);
+        expect(authority).toBe(8);
       });
 
-      it('should return 9 for Shoghi Effendi when no collection/religion match', () => {
+      it('should return 7 for Shoghi Effendi without title/collection match', () => {
         const authority = getAuthority({
           author: 'Shoghi Effendi',
           religion: 'Unknown Religion',
           collection: 'Unknown Collection'
         });
-        expect(authority).toBe(9);
+        expect(authority).toBe(7);
       });
 
-      it('should match author by substring when no collection/religion match', () => {
+      it('should return 10 for "Tablets of Bahá\'u\'lláh..." title in author field (OceanLibrary pattern)', () => {
         const authority = getAuthority({
           author: 'Tablets of Bahá\'u\'lláh revealed after the Kitáb-i-Aqdas',
           religion: 'Unknown Religion',
@@ -246,15 +247,15 @@ describe('Authority System', () => {
         expect(authority).toBe(10);
       });
 
-      it('should use author-based authority before religion default when collection does not match', () => {
-        // Author authority fires before religion default — Bahá'u'lláh is auth=10
-        // even when the collection doesn't exist in the authority map.
+      it('should use author-based authority (8) before religion default (6) when collection does not match', () => {
+        // Author authority (8) fires before religion default (6) for unknown collections.
+        // But canonical named works (Seven Valleys, etc.) get 10 via title patterns (step 3).
         const authority = getAuthority({
           author: 'Bahá\'u\'lláh',
           religion: 'Bahai Faith',
           collection: 'Some Unknown Collection'
         });
-        expect(authority).toBe(10);
+        expect(authority).toBe(8);
       });
     });
   });

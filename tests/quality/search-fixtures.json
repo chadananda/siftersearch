@@ -62,7 +62,11 @@
       "secret",
       "Path"
     ],
-    "religion_filter": "Baha'i"
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      20811,
+      20777
+    ]
   },
   {
     "id": "hidden-words-cleanse-heart",
@@ -122,7 +126,11 @@
       "heart",
       "chastity"
     ],
-    "religion_filter": "Baha'i"
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      20810,
+      20777
+    ]
   },
   {
     "id": "saq-immortality-soul",
@@ -133,7 +141,11 @@
     "expected_text_contains": [
       "soul"
     ],
-    "religion_filter": "Baha'i"
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      20911,
+      20777
+    ]
   },
   {
     "id": "shoghi-effendi-progressive-revelation",

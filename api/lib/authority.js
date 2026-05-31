@@ -26,77 +26,81 @@ let lastLoadTime = 0;
 let backgroundRefreshPending = false;
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes — library structure changes rarely
 
-// Author-based authority overrides (Central Figures, institutions, primary scripture authors).
+// Author-based authority defaults — used when no title pattern or collection override matches.
+// These are DEFAULTS, not overrides: collection meta.yaml and title patterns take priority.
 // Matched by exact equality — avoids false positives like "Muhammad Husayn Tabatabai"
 // matching the prophet "Muhammad" or "John Calvin" matching the apostle "John".
 // OceanLibrary stores individual book authors as the canonical name (e.g. "Matthew",
 // "John", "Siddhartha Buddha") — exact match is safe and necessary here.
+// Lower than title-pattern authority (10) so that named canonical works beat compilations
+// by the same author (e.g. Seven Valleys beats "Bahá'í Sacred Writings" anthology).
 const AUTHOR_AUTHORITY = {
-  // Bahá'í Central Figures
-  "Bahá'u'lláh": 10,
-  "Baha'u'llah": 10,
-  "The Báb": 10,
-  "The Bab": 10,
-  "'Abdu'l-Bahá": 9,
-  "Abdu'l-Baha": 9,
-  "Abdul-Baha": 9,
-  "Shoghi Effendi": 9,
-  "Universal House of Justice": 8,
+  // Bahá'í Central Figures — canonical works get 10 via TITLE_AUTHORITY patterns;
+  // compilations and unrecognized works fall back to these default values.
+  "Bahá'u'lláh": 8,
+  "Baha'u'llah": 8,
+  "The Báb": 8,
+  "The Bab": 8,
+  "'Abdu'l-Bahá": 7,
+  "Abdu'l-Baha": 7,
+  "Abdul-Baha": 7,
+  "Shoghi Effendi": 7,
+  "Universal House of Justice": 7,
   // Islamic scripture — OceanLibrary Quran surahs have author="Muhammad" (exact)
-  "Muhammad": 10,
+  "Muhammad": 8,
   // Christian scripture — OceanLibrary individual Gospel/Epistle books
-  "Matthew": 10,
-  "Mark": 10,
-  "Luke": 10,
-  "John": 10,
-  "Paul": 10,
+  "Matthew": 8,
+  "Mark": 8,
+  "Luke": 8,
+  "John": 8,
+  "Paul": 8,
   // Buddhist primary texts — OceanLibrary attribution
-  "Siddhartha Buddha": 10,
-  "Gautama Buddha": 10,
-  "The Buddha": 10,
+  "Siddhartha Buddha": 8,
+  "Gautama Buddha": 8,
+  "The Buddha": 8,
   // Tao primary texts
-  "Lao-tzu": 10,
-  "Laozi": 10,
-  "Lao Tzu": 10,
-  "Chuang Tzu": 9,
-  "Zhuangzi": 9,
+  "Lao-tzu": 8,
+  "Laozi": 8,
+  "Lao Tzu": 8,
+  "Chuang Tzu": 7,
+  "Zhuangzi": 7,
   // Confucian primary texts
-  "Confucius": 10,
-  "Mencius": 9,
+  "Confucius": 8,
+  "Mencius": 7,
   // Jewish scripture — OceanLibrary prophets/kings (exact author names from OL ingestion)
-  "Moses": 10,
-  "King David": 10,
-  "King Solomon": 9,
-  "Isaiah": 10,
-  "Jeremiah": 10,
-  "Daniel": 9,
-  "Joshua": 9,
-  "Samuel": 9,
-  "Ezra": 9,
-  "Nehemiah": 9,
-  "Hosea": 9,
-  "Amos": 9,
-  "Micah": 9,
-  "Joel": 9,
-  "Jonah": 9,
-  "Habakkuk": 9,
-  "Haggai": 9,
-  "Zechariah": 9,
-  "Malachi": 9,
-  "Obadiah": 9,
-  "Zephaniah": 9,
+  "Moses": 8,
+  "King David": 8,
+  "King Solomon": 7,
+  "Isaiah": 8,
+  "Jeremiah": 8,
+  "Daniel": 7,
+  "Joshua": 7,
+  "Samuel": 7,
+  "Ezra": 7,
+  "Nehemiah": 7,
+  "Hosea": 7,
+  "Amos": 7,
+  "Micah": 7,
+  "Joel": 7,
+  "Jonah": 7,
+  "Habakkuk": 7,
+  "Haggai": 7,
+  "Zechariah": 7,
+  "Malachi": 7,
+  "Obadiah": 7,
+  "Zephaniah": 7,
   // Hindu primary scripture authors
-  "Vyāsa": 10,
-  "Vyasa": 10,
-  "Valmiki": 10,
+  "Vyāsa": 8,
+  "Vyasa": 8,
+  "Valmiki": 8,
   // Zoroastrian — Gathas author
-  "Zoroaster": 10,
-  "Zarathustra": 10,
+  "Zoroaster": 8,
+  "Zarathustra": 8,
   // Sikh — Guru Granth Sahib contributors
-  "Guru Nanak": 10,
-  "Guru Nanak Dev": 10,
-  "Kabîr": 9,
-  "Kabir": 9,
+  "Guru Nanak": 8,
+  "Guru Nanak Dev": 8,
+  "Kabîr": 7,
+  "Kabir": 7,
 };
 
 // Title-pattern authority overrides for primary scriptures stored under "Unknown" author.
@@ -138,8 +142,22 @@ const TITLE_AUTHORITY = [
   { pattern: /^(the\s+)?gathas?(\s*$|\s*[-—(])/i, authority: 10 },
   // Guru Granth Sahib
   { pattern: /^(the\s+)?guru\s+granth\s+sahib(\s*$|\s*[-—(])/i, authority: 10 },
-  // Bahá'í primary scriptures stored under book-title author fields
-  { pattern: /bah[aá][''\u2019]u[''\u2019]ll[aá]h/i, authority: 10 },
+  // Bahá'í canonical primary scriptures — explicit title patterns give 10 so they beat
+  // compilations/anthologies that inherit author-default authority (8).
+  { pattern: /^(the\s+)?kit[aá]b-i-[ií]q[aá]n(\s*$|\s*[-—(])/i, authority: 10 },  // Book of Certitude
+  { pattern: /^(the\s+)?(most\s+holy\s+book|kit[aá]b-i-aqdas)(\s*$|\s*[-—(])/i, authority: 10 },  // Aqdas
+  { pattern: /^(the\s+)?seven\s+valleys(\s+and\s+the\s+four\s+valleys)?(\s*$|\s*[-—(])/i, authority: 10 },
+  { pattern: /^(the\s+)?four\s+valleys(\s*$|\s*[-—(])/i, authority: 10 },
+  { pattern: /^(the\s+)?hidden\s+words(\s+of\s+bah[aá]'?u'?ll[aá]h)?(\s*$|\s*[-—(])/i, authority: 10 },
+  { pattern: /^gleanings\s+from\s+the\s+writings\s+of\s+bah[aá]/i, authority: 10 },
+  { pattern: /^(the\s+)?epistle\s+to\s+the\s+son\s+of\s+the\s+wolf(\s*$|\s*[-—(])/i, authority: 10 },
+  { pattern: /^prayers\s+and\s+meditations(\s*$|\s*[-—(])/i, authority: 10 },
+  { pattern: /^tablets?\s+of\s+bah[aá]'?u'?ll[aá]h(\s*$|\s*[-—(])/i, authority: 10 },
+  { pattern: /^(the\s+)?(tabernacle|summons)\s+of\s+(the\s+lord\s+of\s+hosts|god)(\s*$|\s*[-—(])/i, authority: 10 },
+  { pattern: /^some\s+answered\s+questions(\s*$|\s*[-—(])/i, authority: 10 },
+  // Writings/Letters/etc. "of Bahá'u'lláh" — catches "Tablets of Bahá'u'lláh revealed after..."
+  // which OceanLibrary sometimes stores as the author field.
+  { pattern: /^(letters?|writings?|words?|tablets?|gems)\s+of\s+bah[aá][''\u2019]u[''\u2019]ll[aá]h/i, authority: 10 },
   // Lights of Guidance — authenticated Bahá'í Q&A compiled by Helen Hornby.
   // Each entry directly answers a doctrinal question; treat as high-authority reference.
   { pattern: /^lights\s+of\s+guidance/i, authority: 8 },
@@ -272,20 +290,22 @@ export function getAuthority(doc) {
     return libAuth.collections[religion][collection];
   }
 
-  // 3. Author-based authority for primary scripture authors (Central Figures, prophets).
-  // Evaluated BEFORE religion meta.yaml so Bahá'u'lláh (10) isn't overridden by
-  // the Bahá'í religion default (6 — correct for general scholarly Bahá'í works).
+  // 3. Title-pattern authority — canonical named works win over author-default authority.
+  // Evaluated before author defaults so "Seven Valleys" (10) beats a "Bahá'í Sacred Writings"
+  // anthology (author-default 8) when both are attributed to Bahá'u'lláh.
+  // Also checks authorNorm for OceanLibrary's pattern of storing a book title in the author field
+  // (e.g., author="Tablets of Bahá'u'lláh revealed after the Kitáb-i-Aqdas").
+  for (const { pattern, titleOnly, authority: titleAuth } of TITLE_AUTHORITY) {
+    if (doc.title && pattern.test(doc.title)) return titleAuth;
+    if (!titleOnly && authorNorm && pattern.test(authorNorm)) return titleAuth;
+  }
+
+  // 4. Author-based authority — fallback default for primary scripture authors when no
+  // title pattern matches. Compilations and anthologies that don't match a specific title
+  // pattern inherit this lower default (8 for Central Figures vs 10 for named canonical works).
   // Uses exact string equality to avoid false positives like "Muhammad Husayn Tabatabai".
   if (authorNorm && AUTHOR_AUTHORITY[authorNorm] !== undefined) {
     return AUTHOR_AUTHORITY[authorNorm];
-  }
-
-  // 4. Title-pattern authority for primary scriptures where author/religion metadata
-  // doesn't uniquely identify them (e.g. Quran stored under "Unknown" author).
-  // Also before religion default for same reason as step 3.
-  for (const { pattern, authority: titleAuth } of TITLE_AUTHORITY) {
-    if (doc.title && pattern.test(doc.title)) return titleAuth;
-    if (authorNorm && pattern.test(authorNorm)) return titleAuth;
   }
 
   // 5. Religion default from meta.yaml — applies to general content without recognized author.
