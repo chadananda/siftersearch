@@ -224,7 +224,8 @@ export async function analyzePassagesParallel(query, passages, options = {}) {
     researchContext = '',
     batchSize = BATCH_SIZE,
     maxConcurrent = MAX_CONCURRENT,
-    useExcerpts = true
+    useExcerpts = true,
+    signal = null
   } = options;
 
   const startTime = Date.now();
@@ -258,6 +259,7 @@ export async function analyzePassagesParallel(query, passages, options = {}) {
   // Process batches in parallel (with concurrency limit)
   const allResults = [];
   for (let i = 0; i < batches.length; i += maxConcurrent) {
+    if (signal?.aborted) break;
     const batchGroup = batches.slice(i, i + maxConcurrent);
     const batchPromises = batchGroup.map((batch, idx) =>
       analyzeBatch(query, batch, i + idx, researchContext)

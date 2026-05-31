@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T17:19:09.132Z",
+  "generated": "2026-05-31T18:42:24.913Z",
   "entries": [
+    {
+      "hash": "ec40cb85",
+      "date": "2026-05-31",
+      "type": "Fixed",
+      "description": "Search quality test runner distinguishes infra errors from search failures",
+      "scope": null
+    },
     {
       "hash": "588e12a4",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Pass 100 candidates to clustering — threshold 3 not 5",
       "scope": null
-    },
-    {
-      "hash": "9d54fd9a",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Sub-question-specific answer notes replace reranker main-question notes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "ec40cb85",
+        "date": "2026-05-31",
+        "type": "Fixed",
+        "description": "Search quality test runner distinguishes infra errors from search failures",
+        "scope": null
+      },
       {
         "hash": "588e12a4",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Pass 100 candidates to clustering — threshold 3 not 5",
-        "scope": null
-      },
-      {
-        "hash": "9d54fd9a",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Sub-question-specific answer notes replace reranker main-question notes",
         "scope": null
       }
     ]

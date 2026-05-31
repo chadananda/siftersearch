@@ -449,12 +449,18 @@ export default async function publicApiRoutes(fastify) {
       rerank_score: hit.rerank_score,
     }));
 
-    // Run AI analysis with a 10-second timeout; fall back to score-ordered results
+    // Run AI analysis with a 10-second timeout; fall back to score-ordered results.
+    // AbortController cancels remaining batch groups when timeout fires — prevents
+    // background AI call accumulation that degrades server performance under load.
+    const analysisAc = new AbortController();
     const analysisTimeout = new Promise(resolve =>
-      setTimeout(() => resolve({ results: passages.map(p => ({ ...p, score: p.rerank_score || 0 })) }), 10000)
+      setTimeout(() => {
+        analysisAc.abort();
+        resolve({ results: passages.map(p => ({ ...p, score: p.rerank_score || 0 })) });
+      }, 10000)
     );
     const analysis = await Promise.race([
-      analyzePassagesParallel(query, passages, { batchSize: 2, maxConcurrent: 10 }),
+      analyzePassagesParallel(query, passages, { batchSize: 2, maxConcurrent: 10, signal: analysisAc.signal }),
       analysisTimeout
     ]);
 
