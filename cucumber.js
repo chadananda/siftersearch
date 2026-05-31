@@ -130,3 +130,11 @@ export const dev = {
   tags: '@critical-path',
   format: ['@cucumber/pretty-formatter']
 };
+
+// Search quality battery (calls live production API)
+export const searchQuality = {
+  ...common,
+  paths: ['tests/features/search-quality.feature'],
+  tags: '@search-quality',
+  format: ['@cucumber/pretty-formatter', 'html:test-results/search-quality-report.html']
+};

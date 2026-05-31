@@ -449,11 +449,14 @@ export default async function publicApiRoutes(fastify) {
       rerank_score: hit.rerank_score,
     }));
 
-    // Run AI analysis
-    const analysis = await analyzePassagesParallel(query, passages, {
-      batchSize: 2,
-      maxConcurrent: 10
-    });
+    // Run AI analysis with a 10-second timeout; fall back to score-ordered results
+    const analysisTimeout = new Promise(resolve =>
+      setTimeout(() => resolve({ results: passages.map(p => ({ ...p, score: p.rerank_score || 0 })) }), 10000)
+    );
+    const analysis = await Promise.race([
+      analyzePassagesParallel(query, passages, { batchSize: 2, maxConcurrent: 10 }),
+      analysisTimeout
+    ]);
 
     // When the query names a tradition (e.g. "Quran", "Buddhist"), results from that
     // tradition sort before all others regardless of LLM score. Within each group,
@@ -478,6 +481,7 @@ export default async function publicApiRoutes(fastify) {
       author: result.author,
       religion: result.religion,
       collection: result.collection,
+      authority: result.authority,
       score: result.score,
       summary: result.summary || result.briefAnswer || '',
       url: getParagraphUrl(result, result.paragraph_index),

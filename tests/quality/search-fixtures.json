@@ -1,100 +1,562 @@
 [
   {
     "id": "tablet-of-wisdom-philosophy",
+    "category": "phrase-match",
     "query": "philosophy emanated from the prophets",
-    "intent": "phrase-match — Bahá'u'lláh's claim about the origin of philosophy in Tablet of Wisdom",
+    "intent": "Bahá'u'lláh's claim about the origin of philosophy in Tablet of Wisdom",
     "expected_doc_id": 8270,
-    "expected_passage_range": [313, 365],
-    "expected_text_contains": ["essence", "fundamentals", "philosophy", "Prophets"],
+    "expected_passage_range": [
+      313,
+      365
+    ],
+    "expected_text_contains": [
+      "essence",
+      "fundamentals",
+      "philosophy",
+      "Prophets"
+    ],
     "religion_filter": "Baha'i"
   },
   {
     "id": "tablet-of-wisdom-nature",
+    "category": "phrase-match",
     "query": "nature is the embodiment of the maker the creator",
-    "intent": "phrase-match — the Nature/Maker passage from Tablet of Wisdom",
+    "intent": "The Nature/Maker passage from Tablet of Wisdom",
     "expected_doc_id": 8270,
-    "expected_passage_range": [313, 365],
-    "expected_text_contains": ["Nature", "embodiment", "Name", "Maker"],
+    "expected_passage_range": [
+      313,
+      365
+    ],
+    "expected_text_contains": [
+      "Nature",
+      "embodiment",
+      "Name",
+      "Maker"
+    ],
     "religion_filter": "Baha'i"
   },
   {
     "id": "tablet-of-wisdom-greek-philosophers",
+    "category": "phrase-match",
     "query": "Empedocles Pythagoras Greek philosophers",
-    "intent": "literal-name match — passage where Bahá'u'lláh names Greek philosophers",
+    "intent": "Passage where Bahá'u'lláh names Greek philosophers in Tablet of Wisdom",
     "expected_doc_id": 8270,
-    "expected_passage_range": [313, 365],
-    "expected_text_contains": ["Empedocles", "Pythagoras"],
+    "expected_passage_range": [
+      313,
+      365
+    ],
+    "expected_text_contains": [
+      "Empedocles",
+      "Pythagoras"
+    ],
     "religion_filter": "Baha'i"
   },
   {
     "id": "seven-valleys-law-secret-path",
+    "category": "phrase-match",
     "query": "secret of the path obedience to the law",
-    "intent": "phrase-match — Bahá'u'lláh on the law as the secret of the path",
+    "intent": "Bahá'u'lláh on the law as the secret of the path in Seven Valleys",
     "expected_doc_id": 8241,
-    "expected_text_contains": ["Law", "secret", "Path"],
-    "religion_filter": "Baha'i"
-  },
-  {
-    "id": "iqan-justice",
-    "query": "purity of heart chastity of spirit justice",
-    "intent": "concept-match — Iqán's opening on justice + virtues",
-    "expected_doc_id": 8300,
-    "expected_text_contains": ["heart", "chastity"],
+    "expected_text_contains": [
+      "Law",
+      "secret",
+      "Path"
+    ],
     "religion_filter": "Baha'i"
   },
   {
     "id": "hidden-words-cleanse-heart",
+    "category": "phrase-match",
     "query": "cleanse thy heart from envy and from grudge",
-    "intent": "phrase-match — Hidden Words on cleansing the heart",
+    "intent": "Hidden Words on cleansing the heart",
     "expected_doc_id": 8230,
-    "expected_text_contains": ["heart", "envy"],
+    "expected_text_contains": [
+      "heart",
+      "envy"
+    ],
     "religion_filter": "Baha'i"
   },
   {
     "id": "long-healing-prayer-opening",
+    "category": "phrase-match",
     "query": "Inaccessible Most High Most Holy Most Glorious",
-    "intent": "phrase-match — Long Healing Prayer opening attributes of God",
+    "intent": "Long Healing Prayer opening attributes of God",
     "expected_doc_id": 16597,
-    "expected_text_contains": ["Inaccessible", "Holy"],
+    "expected_text_contains": [
+      "Inaccessible",
+      "Holy"
+    ],
     "religion_filter": "Baha'i"
   },
   {
-    "id": "tablet-of-ahmad-promise",
+    "id": "tablet-of-ahmad-nightingale",
+    "category": "phrase-match",
     "query": "Tablet of Ahmad nightingale of paradise",
-    "intent": "named-tablet lookup — short Bahá'u'lláh tablet doc 1616",
+    "intent": "Named tablet lookup — short Bahá'u'lláh tablet",
     "expected_doc_id": 1616,
-    "expected_text_contains": ["Nightingale", "Paradise"],
-    "religion_filter": "Baha'i"
-  },
-  {
-    "id": "saq-immortality-soul",
-    "query": "soul is immortal continues progress after death",
-    "intent": "concept-match — 'Abdu'l-Bahá in Some Answered Questions on the soul",
-    "expected_doc_id": 8346,
-    "expected_text_contains": ["soul"],
-    "religion_filter": "Baha'i"
-  },
-  {
-    "id": "shoghi-effendi-progressive-revelation",
-    "query": "progressive revelation successive manifestations",
-    "intent": "concept-match — Shoghi Effendi's framing of progressive revelation",
-    "expected_author_contains": "Shoghi",
+    "expected_text_contains": [
+      "Nightingale",
+      "Paradise"
+    ],
     "religion_filter": "Baha'i"
   },
   {
     "id": "aqdas-obligatory-prayer",
+    "category": "phrase-match",
     "query": "obligatory prayer command from age of maturity",
-    "intent": "phrase-match — Aqdas on obligatory prayer ordinance",
+    "intent": "Aqdas on obligatory prayer ordinance",
     "expected_doc_id": 16712,
-    "expected_text_contains": ["pray", "obligatory"],
+    "expected_text_contains": [
+      "pray",
+      "obligatory"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "iqan-justice",
+    "category": "concept-match",
+    "query": "purity of heart chastity of spirit justice",
+    "intent": "Iqán's opening on justice and virtues",
+    "expected_doc_id": 8300,
+    "expected_text_contains": [
+      "heart",
+      "chastity"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "saq-immortality-soul",
+    "category": "concept-match",
+    "query": "soul is immortal continues progress after death",
+    "intent": "'Abdu'l-Bahá in Some Answered Questions on the soul",
+    "expected_doc_id": 8346,
+    "expected_text_contains": [
+      "soul"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "shoghi-effendi-progressive-revelation",
+    "category": "concept-match",
+    "query": "progressive revelation successive manifestations",
+    "intent": "Shoghi Effendi's framing of progressive revelation",
+    "expected_author_contains": "Shoghi",
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "bahai-daily-obligatory-prayer",
+    "category": "concept-match",
+    "query": "daily obligatory prayer",
+    "intent": "Bahá'í teachings on daily prayer requirement",
+    "expected_author_contains": "Bahá",
+    "min_authority": 7,
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "bahai-detachment",
+    "category": "concept-match",
+    "query": "detachment from this world",
+    "intent": "Bahá'u'lláh on detachment as a virtue",
+    "expected_author_contains": "Bahá",
+    "min_authority": 7,
+    "expected_text_contains": [
+      "detach"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "bahai-economic-justice",
+    "category": "concept-match",
+    "query": "economic justice equality of rich and poor",
+    "intent": "Bahá'í writings on economic equality",
+    "min_authority": 6,
+    "expected_text_contains": [
+      "poor",
+      "rich"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "bahai-harmony-science-religion",
+    "category": "concept-match",
+    "query": "harmony of science and religion",
+    "intent": "Bahá'í view on science and religion as complementary",
+    "min_authority": 6,
+    "expected_text_contains": [
+      "science",
+      "religion"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "bahai-unity-humanity",
+    "category": "concept-match",
+    "query": "unity in diversity humanity one family",
+    "intent": "Bahá'í principle of the oneness of humanity",
+    "min_authority": 6,
+    "expected_text_contains": [
+      "unity"
+    ],
     "religion_filter": "Baha'i"
   },
   {
     "id": "primary-not-secondary",
+    "category": "authority-ranking",
     "query": "Bahá'u'lláh on materialism science",
-    "intent": "anti-test — top hit should be Bahá'u'lláh primary, NOT Esslemont/commentary",
+    "intent": "Anti-test — top hit should be Bahá'u'lláh primary, NOT Esslemont/commentary",
     "expected_author_contains": "Bahá",
     "expected_author_not_contains": "Esslemont",
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "bahai-covenant-primary",
+    "category": "authority-ranking",
+    "query": "covenant of Baha'u'llah",
+    "intent": "Primary source should outrank commentary on the Covenant",
+    "min_authority": 7,
+    "expected_author_not_contains": "Esslemont",
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "prayer-authority",
+    "category": "authority-ranking",
+    "query": "prayer for healing and protection",
+    "intent": "Sacred text prayer should rank above commentary on prayer",
+    "min_authority": 7,
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "quran-bismillah",
+    "category": "authority-ranking",
+    "query": "In the name of God the compassionate the merciful",
+    "intent": "Bismillah — opening of the Quran; primary scripture must rank first",
+    "min_authority": 7,
+    "expected_text_contains": [
+      "merciful",
+      "compassionate"
+    ],
+    "religion_filter": "Islam"
+  },
+  {
+    "id": "islamic-ablution",
+    "category": "concept-match",
+    "query": "ablution ritual purity before prayer",
+    "intent": "Islamic teachings on wudu/ablution before salat",
+    "min_authority": 5,
+    "expected_text_contains": [
+      "prayer"
+    ],
+    "religion_filter": "Islam"
+  },
+  {
+    "id": "islamic-daily-prayers",
+    "category": "concept-match",
+    "query": "five daily prayers salat",
+    "intent": "Five Pillars of Islam — daily prayer obligation",
+    "min_authority": 5,
+    "expected_text_contains": [
+      "prayer"
+    ],
+    "religion_filter": "Islam"
+  },
+  {
+    "id": "islamic-fasting-ramadan",
+    "category": "concept-match",
+    "query": "fasting during Ramadan",
+    "intent": "Islamic sawm — fasting as a pillar of Islam",
+    "min_authority": 5,
+    "expected_text_contains": [
+      "fast"
+    ],
+    "religion_filter": "Islam"
+  },
+  {
+    "id": "islamic-zakat-charity",
+    "category": "concept-match",
+    "query": "charity giving to the poor zakat",
+    "intent": "Zakat as one of the Five Pillars",
+    "min_authority": 5,
+    "expected_text_contains": [
+      "poor"
+    ],
+    "religion_filter": "Islam"
+  },
+  {
+    "id": "islamic-hadith-patience",
+    "category": "phrase-match",
+    "query": "patience and endurance in the face of hardship",
+    "intent": "Islamic teachings on sabr (patience) in Hadith literature",
+    "min_authority": 5,
+    "expected_text_contains": [
+      "patient"
+    ],
+    "religion_filter": "Islam"
+  },
+  {
+    "id": "islamic-justice",
+    "category": "concept-match",
+    "query": "justice and equality in Islam",
+    "intent": "Islamic views on social justice",
+    "min_authority": 5,
+    "religion_filter": "Islam"
+  },
+  {
+    "id": "buddhist-four-noble-truths",
+    "category": "phrase-match",
+    "query": "Four Noble Truths suffering cessation",
+    "intent": "Buddha's foundational teaching — the Four Noble Truths",
+    "min_authority": 6,
+    "expected_text_contains": [
+      "suffering"
+    ],
+    "religion_filter": "Buddhist"
+  },
+  {
+    "id": "buddhist-eightfold-path",
+    "category": "phrase-match",
+    "query": "Eightfold Path right action right speech right livelihood",
+    "intent": "Noble Eightfold Path from the Pali Canon",
+    "min_authority": 6,
+    "expected_text_contains": [
+      "right"
+    ],
+    "religion_filter": "Buddhist"
+  },
+  {
+    "id": "buddhist-compassion-karuna",
+    "category": "concept-match",
+    "query": "compassion loving-kindness Karuna Metta",
+    "intent": "Buddhist virtues of compassion and loving-kindness",
+    "min_authority": 5,
+    "expected_text_contains": [
+      "compassion"
+    ],
+    "religion_filter": "Buddhist"
+  },
+  {
+    "id": "buddhist-mindfulness",
+    "category": "concept-match",
+    "query": "mindfulness meditation awareness present moment",
+    "intent": "Buddhist teachings on mindfulness practice",
+    "min_authority": 5,
+    "expected_text_contains": [
+      "mind"
+    ],
+    "religion_filter": "Buddhist"
+  },
+  {
+    "id": "buddhist-enlightenment",
+    "category": "concept-match",
+    "query": "achieving enlightenment liberation Nirvana",
+    "intent": "Buddhist goal of enlightenment and liberation from suffering",
+    "min_authority": 5,
+    "expected_text_contains": [
+      "enlighten"
+    ],
+    "religion_filter": "Buddhist"
+  },
+  {
+    "id": "christian-lords-prayer",
+    "category": "phrase-match",
+    "query": "Our Father who art in heaven hallowed be thy name",
+    "intent": "The Lord's Prayer from Matthew 6",
+    "min_authority": 7,
+    "expected_text_contains": [
+      "heaven"
+    ],
+    "religion_filter": "Christian"
+  },
+  {
+    "id": "christian-beatitudes-meek",
+    "category": "phrase-match",
+    "query": "Blessed are the meek for they shall inherit the earth",
+    "intent": "Beatitudes — meek shall inherit the earth",
+    "min_authority": 7,
+    "expected_text_contains": [
+      "meek",
+      "earth"
+    ],
+    "religion_filter": "Christian"
+  },
+  {
+    "id": "christian-love-neighbor",
+    "category": "phrase-match",
+    "query": "Love thy neighbor as thyself",
+    "intent": "Great Commandment from the Gospels",
+    "min_authority": 7,
+    "expected_text_contains": [
+      "neighbor"
+    ],
+    "religion_filter": "Christian"
+  },
+  {
+    "id": "christian-golden-rule",
+    "category": "concept-match",
+    "query": "do unto others as you would have them do to you",
+    "intent": "Golden Rule from the Sermon on the Mount",
+    "min_authority": 7,
+    "expected_text_contains": [
+      "others"
+    ],
+    "religion_filter": "Christian"
+  },
+  {
+    "id": "hindu-dharma",
+    "category": "concept-match",
+    "query": "dharma duty righteous action",
+    "intent": "Hindu concept of dharma as righteous duty",
+    "min_authority": 5,
+    "expected_text_contains": [
+      "dharma"
+    ],
+    "religion_filter": "Hindu"
+  },
+  {
+    "id": "hindu-bhagavad-gita-action",
+    "category": "phrase-match",
+    "query": "action without attachment to results Bhagavad Gita",
+    "intent": "Krishna's teaching on nishkama karma",
+    "min_authority": 6,
+    "expected_text_contains": [
+      "action"
+    ],
+    "religion_filter": "Hindu"
+  },
+  {
+    "id": "hindu-devotion-bhakti",
+    "category": "concept-match",
+    "query": "devotion to God Bhakti path",
+    "intent": "Hindu path of devotional worship — Bhakti yoga",
+    "min_authority": 5,
+    "expected_text_contains": [
+      "devotion"
+    ],
+    "religion_filter": "Hindu"
+  },
+  {
+    "id": "cross-love-universal",
+    "category": "cross-tradition",
+    "query": "love is the foundation of all religion",
+    "intent": "Universal virtue — love — present across every tradition",
+    "min_authority": 5
+  },
+  {
+    "id": "cross-justice-universal",
+    "category": "cross-tradition",
+    "query": "justice equity fairness",
+    "intent": "Universal virtue — justice — present across traditions",
+    "min_authority": 5
+  },
+  {
+    "id": "cross-forgiveness",
+    "category": "cross-tradition",
+    "query": "forgiveness mercy pardon sins",
+    "intent": "Forgiveness as a virtue across religious traditions",
+    "min_authority": 5
+  },
+  {
+    "id": "cross-prayer-meditation",
+    "category": "cross-tradition",
+    "query": "prayer and meditation communion with the divine",
+    "intent": "Contemplative practice across traditions",
+    "min_authority": 5
+  },
+  {
+    "id": "cross-afterlife",
+    "category": "cross-tradition",
+    "query": "life after death immortality of the soul",
+    "intent": "Afterlife beliefs across traditions",
+    "min_authority": 5
+  },
+  {
+    "id": "entity-mulla-husayn-first-believer",
+    "category": "entity-aware",
+    "query": "first Letter of the Living",
+    "intent": "Alias — 'first Letter of the Living' resolves to Mullá Ḥusayn entity",
+    "expected_entity_canonical": "Mullá Ḥusayn",
+    "expected_doc_id": 21308,
+    "expected_text_contains": [
+      "Husayn"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-mulla-husayn-babul-bab",
+    "category": "entity-aware",
+    "query": "Babul-Bab gate of the gate Dawn-Breakers",
+    "intent": "Title alias 'Bábul-Báb' resolves to Mullá Ḥusayn",
+    "expected_entity_canonical": "Mullá Ḥusayn",
+    "expected_doc_id": 21308,
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-tahirih-poetess",
+    "category": "entity-aware",
+    "query": "poetess of Qazvin Tahirih Qurratul-Ayn unveiled",
+    "intent": "Multiple aliases for Ṭáhirih — poetess, Qurratu'l-'Ayn",
+    "expected_entity_canonical": "Ṭáhirih",
+    "expected_doc_id": 21308,
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-declaration-bab-1844",
+    "category": "entity-aware",
+    "query": "Declaration of the Bab May 1844 Shiraz",
+    "intent": "Event entity — Declaration of the Báb in Shíráz, 1844",
+    "expected_doc_id": 21308,
+    "expected_text_contains": [
+      "Báb",
+      "Shíráz"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-quddus-character-tracking",
+    "category": "entity-aware",
+    "query": "Quddus Letters of the Living Dawn-Breakers",
+    "intent": "Character tracking — Quddús across the Dawn-Breakers narrative",
+    "expected_entity_canonical": "Quddús",
+    "expected_doc_id": 21308,
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-letters-of-living",
+    "category": "entity-aware",
+    "query": "Letters of the Living eighteen disciples of the Bab",
+    "intent": "Entity set — all eighteen Letters of the Living",
+    "expected_doc_id": 21308,
+    "expected_text_contains": [
+      "Letters"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-shoghi-effendi-guardian",
+    "category": "entity-aware",
+    "query": "Guardian of the Baha'i Faith administrative order",
+    "intent": "Title alias — 'Guardian' resolves to Shoghi Effendi",
+    "expected_author_contains": "Shoghi",
+    "min_authority": 7,
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-bab-martyrdom",
+    "category": "entity-aware",
+    "query": "martyrdom of the Bab Tabriz 1850",
+    "intent": "Event entity — martyrdom of the Báb in Tabriz",
+    "expected_doc_id": 21308,
+    "expected_text_contains": [
+      "Báb"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-mulla-husayn-speaker",
+    "category": "entity-aware",
+    "query": "what Mulla Husayn said spoke declared",
+    "intent": "Role-filtered — paragraphs where Mullá Ḥusayn is the speaker",
+    "expected_entity_canonical": "Mullá Ḥusayn",
+    "expected_doc_id": 21308,
     "religion_filter": "Baha'i"
   }
 ]

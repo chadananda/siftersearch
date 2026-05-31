@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T13:15:30.813Z",
+  "generated": "2026-05-31T13:57:05.634Z",
   "entries": [
+    {
+      "hash": "63de106d",
+      "date": "2026-05-31",
+      "type": "Docs",
+      "description": "Add Entity-Aware Search page under Research section",
+      "scope": null
+    },
     {
       "hash": "42c2618d",
       "date": "2026-05-30",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Aspect-based research structure with excerpt extraction",
       "scope": null
-    },
-    {
-      "hash": "b232f786",
-      "date": "2026-05-13",
-      "type": "New",
-      "description": "Deduplicate cross-publication quotes, prefer primary sources",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-31": [
+      {
+        "hash": "63de106d",
+        "date": "2026-05-31",
+        "type": "Docs",
+        "description": "Add Entity-Aware Search page under Research section",
+        "scope": null
+      }
+    ],
     "2026-05-30": [
       {
         "hash": "42c2618d",
@@ -7023,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Other",
         "description": "Aspect-based research structure with excerpt extraction",
-        "scope": null
-      },
-      {
-        "hash": "b232f786",
-        "date": "2026-05-13",
-        "type": "New",
-        "description": "Deduplicate cross-publication quotes, prefer primary sources",
         "scope": null
       }
     ]
