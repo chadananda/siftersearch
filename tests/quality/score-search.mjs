@@ -31,6 +31,7 @@ dotenv.config({ path: join(ROOT, '.env-public') });
 const args = process.argv.slice(2);
 const JSON_ONLY = args.includes('--json');
 const WRITE_REPORT = args.includes('--write-report');
+const ANALYZE = args.includes('--analyze'); // generate AI analysis after writing report
 const TOP_K = parseInt(args.find(a => a.startsWith('--top-k='))?.split('=')[1] || '10', 10);
 const CATEGORY = args.find(a => a.startsWith('--category='))?.split('=')[1] || null;
 const OCEAN = args.includes('--ocean'); // run ocean-fixtures.json instead of search-fixtures.json
@@ -254,6 +255,151 @@ if (WRITE_REPORT) {
   history.push(snapshot);
   writeFileSync(histPath, JSON.stringify(history, null, 2));
   if (!JSON_ONLY) console.log(`History appended to tests/quality/${histName}`);
+}
+
+if (ANALYZE && WRITE_REPORT) {
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  const suiteName = ALL ? 'Combined (Core + Ocean)' : OCEAN ? 'Ocean (491 fixtures)' : 'Core (52 fixtures)';
+  const analysisName = ALL ? 'all-analysis.json' : OCEAN ? 'ocean-analysis.json' : 'analysis.json';
+  const histName = ALL ? 'all-history.json' : OCEAN ? 'ocean-history.json' : 'history.json';
+  const changesPath = join(__dirname, 'changes.json');
+
+  let prevAnalysis = null;
+  try { prevAnalysis = JSON.parse(readFileSync(join(__dirname, analysisName), 'utf8')); } catch {}
+  const analysisHistoryName = ALL ? 'all-analysis-history.json' : OCEAN ? 'ocean-analysis-history.json' : 'analysis-history.json';
+  let analysisHistory = [];
+  try { analysisHistory = JSON.parse(readFileSync(join(__dirname, analysisHistoryName), 'utf8')); } catch {}
+  let histArr = [];
+  try { histArr = JSON.parse(readFileSync(join(__dirname, histName), 'utf8')); } catch {}
+  let changes = [];
+  try { changes = JSON.parse(readFileSync(changesPath, 'utf8')); } catch {}
+
+  // Top failing tests (by category, up to 20)
+  const failingSample = results.filter(r => !r.ok).slice(0, 30).map(r => ({
+    id: r.id, query: r.query, category: r.category,
+    rank: r.rank, text_hit: r.text_hit, anti_hit: r.anti_hit, authority_hit: r.authority_hit,
+    top_hit_author: r.top_hit_author, top_hit_title: r.top_hit_title, error: r.error || null
+  }));
+
+  const trendSummary = histArr.length > 1
+    ? `Pass rate trend: ${histArr.map(h => `${h.pass_rate}%`).join(' → ')} (${histArr.length} runs)`
+    : 'First run — no trend data yet.';
+
+  const changeSummary = changes.length > 0
+    ? changes.slice(-10).map(c => `- ${c.date}: ${c.description} → ${c.result}`).join('\n')
+    : 'No change log entries yet.';
+
+  // Last 5 prior analyses (oldest first), summarized for context
+  const priorAnalysesSummary = analysisHistory.slice(-5).map((a, i) => {
+    const actions = a.action_plan?.map(p => `    #${p.priority} ${p.title}`).join('\n') || '    (none)';
+    return `Run ${i + 1} (${a.generated_at?.slice(0,10)}, pass_rate=${a.pass_rate}%):\n  Summary: ${a.summary}\n  Actions suggested:\n${actions}`;
+  }).join('\n\n') || 'No prior analyses.';
+
+  const prompt = `You are a search-quality engineer with full context on SifterSearch's improvement history. Your job is to analyze current test results, consider what has already been tried, and produce a specific, actionable improvement plan.
+
+SifterSearch is a multi-tradition religious library search engine built on Meilisearch + pgvector-style hybrid search (BM25 keyword + 512-dim semantic vectors), with authority-weighted reranking.
+
+## Architecture context
+- Search stack: Meilisearch (BM25 keyword) + text-embedding-3-large @ 512 dims (semantic)
+- Reranking: authority field (0–10) on paragraphs; applied post-retrieval in api/lib/authority.js
+- Pipeline: api/lib/search.js hybridSearch → api/lib/jafar-pipeline.js (intent → research → craft)
+- Scoring model: source authority (primary=3,secondary=2,general=1,supplemental=0) × match quality (exact=5, all_words=3, some_words=2, no_words=0)
+- Test suite: ${suiteName}
+
+## Current results
+Pass rate: ${report.pass_rate}% (${report.passed}/${report.total})
+MRR: ${report.mrr}
+Latency p50: ${report.latency_p50_ms}ms · p95: ${report.latency_p95_ms}ms
+
+Category breakdown:
+${Object.entries(report.categories).map(([k, v]) => `  ${k}: ${v.pass_rate}% (${v.passed}/${v.total})`).join('\n')}
+
+Failure breakdown:
+${(() => {
+  let notFound=0, textMiss=0, antiTest=0, authority=0, timeout=0;
+  for (const r of results.filter(r => !r.ok)) {
+    if (r.error) { timeout++; continue; }
+    if (r.rank === null) notFound++;
+    else if (!r.text_hit) textMiss++;
+    if (!r.anti_hit) antiTest++;
+    if (!r.authority_hit) authority++;
+  }
+  return `  Not found in top 10: ${notFound}\n  Text mismatch: ${textMiss}\n  Anti-test failed: ${antiTest}\n  Authority too low: ${authority}\n  API timeout: ${timeout}`;
+})()}
+
+## Trend
+${trendSummary}
+
+## Failing tests sample (up to 30)
+${JSON.stringify(failingSample, null, 2)}
+
+## Change log (what has been tried)
+${changeSummary}
+
+## Previous analyses (oldest → newest)
+${priorAnalysesSummary}
+
+## Most recent analysis (full)
+${prevAnalysis ? `Generated: ${prevAnalysis.generated_at}\nPass rate at time: ${prevAnalysis.pass_rate}%\nSummary: ${prevAnalysis.summary}\nGaps identified: ${prevAnalysis.critical_gaps?.map(g => g.title).join(', ') || 'none'}\nAction plan:\n${prevAnalysis.action_plan?.map(a => `  #${a.priority} [${a.impact} impact/${a.effort} effort] ${a.title}: ${a.description}`).join('\n') || 'none'}\nNotes on previous: ${prevAnalysis.notes_on_previous || 'none'}` : 'No previous analysis.'}
+
+## Your task
+Analyze these results and produce a JSON object with this exact structure:
+{
+  "summary": "2-3 sentence executive summary of current state — strengths and biggest gap",
+  "strengths": [
+    { "title": "short title", "detail": "1-2 sentences with evidence from results" }
+  ],
+  "critical_gaps": [
+    { "title": "short title", "detail": "what is failing and why", "evidence": "specific failing test IDs or patterns" }
+  ],
+  "action_plan": [
+    {
+      "priority": 1,
+      "title": "concise action title",
+      "impact": "high|medium|low",
+      "effort": "high|medium|low",
+      "description": "what to do and why — 2-3 sentences",
+      "implementation": "specific technical steps — file paths, function names, config changes",
+      "success_metric": "what test improvement to expect"
+    }
+  ],
+  "notes_on_previous": "assessment of what the previous approach achieved, any dead ends to avoid"
+}
+
+Return ONLY the JSON object, no prose, no markdown fences.`;
+
+  if (!JSON_ONLY) console.log('\nGenerating AI analysis with claude-opus-4-7...');
+  const msg = await client.messages.create({
+    model: 'claude-opus-4-7',
+    max_tokens: 4000,
+    messages: [{ role: 'user', content: prompt }]
+  });
+
+  let analysis;
+  try {
+    const raw = msg.content[0].text.trim();
+    const jsonStr = raw.startsWith('{') ? raw : raw.slice(raw.indexOf('{'));
+    analysis = JSON.parse(jsonStr);
+  } catch (e) {
+    analysis = { summary: 'Parse error — see raw.', raw: msg.content[0].text };
+  }
+
+  analysis.generated_at = new Date().toISOString();
+  analysis.model = 'claude-opus-4-7';
+  analysis.suite = suiteName;
+  analysis.pass_rate = report.pass_rate;
+  analysis.run_at = report.run_at;
+
+  writeFileSync(join(__dirname, analysisName), JSON.stringify(analysis, null, 2));
+  if (!JSON_ONLY) console.log(`Analysis written to tests/quality/${analysisName}`);
+
+  // Append to analysis history (without full failing tests data)
+  const historySnapshot = { ...analysis };
+  analysisHistory.push(historySnapshot);
+  writeFileSync(join(__dirname, analysisHistoryName), JSON.stringify(analysisHistory, null, 2));
+  if (!JSON_ONLY) console.log(`Analysis history appended to tests/quality/${analysisHistoryName}`);
 }
 
 process.exit(passed === results.length ? 0 : 1);

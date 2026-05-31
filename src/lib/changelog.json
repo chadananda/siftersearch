@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T16:34:38.508Z",
+  "generated": "2026-05-31T16:48:37.524Z",
   "entries": [
+    {
+      "hash": "c22894ba",
+      "date": "2026-05-31",
+      "type": "Docs",
+      "description": "Lighthouse score gauges, full fixture tables, run history tracking",
+      "scope": null
+    },
     {
       "hash": "5cc85b94",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Shorter summaries, varied sub-question phrasing, plain language",
       "scope": null
-    },
-    {
-      "hash": "6384096c",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Quote volume, answer brevity, relevance sort — threshold 5, perAngle 35, short answer phrase, 2-4 sentence excerpts, quotes sorted by score",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "c22894ba",
+        "date": "2026-05-31",
+        "type": "Docs",
+        "description": "Lighthouse score gauges, full fixture tables, run history tracking",
+        "scope": null
+      },
       {
         "hash": "5cc85b94",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Shorter summaries, varied sub-question phrasing, plain language",
-        "scope": null
-      },
-      {
-        "hash": "6384096c",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Quote volume, answer brevity, relevance sort — threshold 5, perAngle 35, short answer phrase, 2-4 sentence excerpts, quotes sorted by score",
         "scope": null
       }
     ]
