@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T19:49:03.947Z",
+  "generated": "2026-05-31T20:08:07.684Z",
   "entries": [
+    {
+      "hash": "06a6579d",
+      "date": "2026-05-31",
+      "type": "Fixed",
+      "description": "TelemetryDb busy_timeout 0→50ms — prevent WAL init crash on contended startup",
+      "scope": null
+    },
     {
       "hash": "06c414d2",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "/api/search/quick now returns source_site, source_url, external_para_id",
       "scope": null
-    },
-    {
-      "hash": "c31a4d38",
-      "date": "2026-05-13",
-      "type": "Other",
-      "description": "Share strip becomes copy + share-dropdown; source title is the link",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "06a6579d",
+        "date": "2026-05-31",
+        "type": "Fixed",
+        "description": "TelemetryDb busy_timeout 0→50ms — prevent WAL init crash on contended startup",
+        "scope": null
+      },
       {
         "hash": "06c414d2",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "/api/search/quick now returns source_site, source_url, external_para_id",
-        "scope": null
-      },
-      {
-        "hash": "c31a4d38",
-        "date": "2026-05-13",
-        "type": "Other",
-        "description": "Share strip becomes copy + share-dropdown; source title is the link",
         "scope": null
       }
     ]

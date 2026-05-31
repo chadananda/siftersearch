@@ -462,13 +462,14 @@ function getClient(provider) {
 
 async function chatOpenAI(messages, opts) {
   const client = getClient('openai');
+  const reqOpts = opts.signal ? { signal: opts.signal } : {};
   const response = await client.chat.completions.create({
     model: opts.model,
     messages,
     temperature: opts.temperature,
     max_tokens: opts.maxTokens,
     stream: opts.stream || false
-  });
+  }, reqOpts);
 
   if (opts.stream) return response;
 
@@ -542,7 +543,8 @@ async function chatOllama(messages, opts) {
       temperature: opts.temperature,
       num_predict: opts.maxTokens
     },
-    stream: opts.stream || false
+    stream: opts.stream || false,
+    ...(opts.signal ? { signal: opts.signal } : {}),
   });
 
   if (opts.stream) return response;

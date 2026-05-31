@@ -69,7 +69,7 @@ function truncateAtWord(text, maxLength) {
  * Uses excerpts (extracted sentences) instead of full paragraphs for efficiency.
  * Returns scored and annotated results.
  */
-async function analyzeBatch(query, passages, batchIndex, researchContext = '') {
+async function analyzeBatch(query, passages, batchIndex, researchContext = '', signal = null) {
   // Use excerpt if available, otherwise fall back to full text (truncated)
   // Normalize text to remove markdown that could confuse keyPhrase matching
   // When Voyage reranking handles relevance ordering, we only need extraction (summary, keyPhrase, coreTerms).
@@ -110,7 +110,8 @@ OUTPUT FORMAT:
     ], {
       temperature: 0.1,  // Lower temperature for more precise copying
       maxTokens: hasVoyageReranking ? 400 : 600, // Less work when Voyage handles ranking
-      caller: 'search:summarize'
+      caller: 'search:summarize',
+      signal,
     });
 
     // Parse JSON response
@@ -121,8 +122,10 @@ OUTPUT FORMAT:
     }
     return [];
   } catch (err) {
-    logger.warn({ err, batchIndex, passageCount: passages.length }, 'Batch analysis failed');
-    // Return passages with default scores on failure
+    if (err.name !== 'AbortError') {
+      logger.warn({ err, batchIndex, passageCount: passages.length }, 'Batch analysis failed');
+    }
+    // Return passages with default scores on failure or abort
     return passages.map(p => ({
       globalIndex: p.globalIndex,
       score: 50,
@@ -262,7 +265,7 @@ export async function analyzePassagesParallel(query, passages, options = {}) {
     if (signal?.aborted) break;
     const batchGroup = batches.slice(i, i + maxConcurrent);
     const batchPromises = batchGroup.map((batch, idx) =>
-      analyzeBatch(query, batch, i + idx, researchContext)
+      analyzeBatch(query, batch, i + idx, researchContext, signal)
     );
 
     const groupResults = await Promise.all(batchPromises);
