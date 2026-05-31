@@ -116,17 +116,17 @@ export async function getSiteDb(siteId, indexPrefix) {
   return db;
 }
 
-// Telemetry DB: separate connection with a 200ms busy timeout.
+// Telemetry DB: separate connection with a 50ms busy timeout.
 // Used exclusively for fire-and-forget writes (ai_usage, search_log) that must
 // never block the event loop. If contended (e.g., sync worker holding WAL lock),
-// the write times out quickly and is silently dropped — telemetry is best-effort.
+// the write fails quickly and is silently dropped — telemetry is best-effort.
 function getTelemetryDb() {
   if (!telemetryDb) {
     const url = process.env.TURSO_DATABASE_URL || 'file:./data/sifter.db';
     const dbPath = stripFilePrefix(url) || './data/sifter.db';
     const db = new Database(dbPath);
     db.pragma('journal_mode = WAL');
-    db.pragma('busy_timeout = 0');   // fail immediately if contended — never block event loop
+    db.pragma('busy_timeout = 50');  // 50ms: fail fast if contended — never stall event loop, but tolerate brief WAL lock windows
     db.pragma('cache_size = -4096'); // 4MB — minimal cache, telemetry is write-only
     telemetryDb = db;  // not instrumented — avoids recursive slow-write logging
   }

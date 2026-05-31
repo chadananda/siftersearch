@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T19:32:07.729Z",
+  "generated": "2026-05-31T19:49:03.947Z",
   "entries": [
+    {
+      "hash": "06c414d2",
+      "date": "2026-05-31",
+      "type": "Fixed",
+      "description": "Telemetry DB uses busy_timeout=0 — zero event loop blocking",
+      "scope": null
+    },
     {
       "hash": "1f9fd698",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Share strip becomes copy + share-dropdown; source title is the link",
       "scope": null
-    },
-    {
-      "hash": "13c7b729",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "ClusterAndStructure assigns generously — prefer used over wasted",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "06c414d2",
+        "date": "2026-05-31",
+        "type": "Fixed",
+        "description": "Telemetry DB uses busy_timeout=0 — zero event loop blocking",
+        "scope": null
+      },
       {
         "hash": "1f9fd698",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Other",
         "description": "Share strip becomes copy + share-dropdown; source title is the link",
-        "scope": null
-      },
-      {
-        "hash": "13c7b729",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "ClusterAndStructure assigns generously — prefer used over wasted",
         "scope": null
       }
     ]
