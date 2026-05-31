@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T19:21:31.820Z",
+  "generated": "2026-05-31T19:32:07.729Z",
   "entries": [
+    {
+      "hash": "1f9fd698",
+      "date": "2026-05-31",
+      "type": "Fixed",
+      "description": "Telemetry writes use fail-fast DB connection — unblocks search timeouts",
+      "scope": null
+    },
     {
       "hash": "d9d2c8b5",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "ClusterAndStructure assigns generously — prefer used over wasted",
       "scope": null
-    },
-    {
-      "hash": "516c1562",
-      "date": "2026-05-13",
-      "type": "Other",
-      "description": "Compact quote cards — vertical share strip, drop LinkedIn",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "1f9fd698",
+        "date": "2026-05-31",
+        "type": "Fixed",
+        "description": "Telemetry writes use fail-fast DB connection — unblocks search timeouts",
+        "scope": null
+      },
       {
         "hash": "d9d2c8b5",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "ClusterAndStructure assigns generously — prefer used over wasted",
-        "scope": null
-      },
-      {
-        "hash": "516c1562",
-        "date": "2026-05-13",
-        "type": "Other",
-        "description": "Compact quote cards — vertical share strip, drop LinkedIn",
         "scope": null
       }
     ]

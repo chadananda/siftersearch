@@ -126,8 +126,8 @@ function getTelemetryDb() {
     const dbPath = stripFilePrefix(url) || './data/sifter.db';
     const db = new Database(dbPath);
     db.pragma('journal_mode = WAL');
-    db.pragma('busy_timeout = 200');  // fail fast — telemetry is not critical
-    db.pragma('cache_size = -4096');  // 4MB — minimal cache, telemetry is write-only
+    db.pragma('busy_timeout = 0');   // fail immediately if contended — never block event loop
+    db.pragma('cache_size = -4096'); // 4MB — minimal cache, telemetry is write-only
     telemetryDb = db;  // not instrumented — avoids recursive slow-write logging
   }
   return telemetryDb;
