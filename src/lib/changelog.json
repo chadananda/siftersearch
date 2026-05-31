@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T16:11:55.943Z",
+  "generated": "2026-05-31T16:18:39.149Z",
   "entries": [
+    {
+      "hash": "7eecbedc",
+      "date": "2026-05-31",
+      "type": "New",
+      "description": "Expand search quality battery to 543 tests (52 core + 491 ocean)",
+      "scope": null
+    },
     {
       "hash": "cde59aee",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Conceptual recon step — LLM knowledge drives search before library query",
       "scope": null
-    },
-    {
-      "hash": "c81a9ad4",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Anchor decomposeAngles queries to core topic keywords — revert threshold to 7",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "7eecbedc",
+        "date": "2026-05-31",
+        "type": "New",
+        "description": "Expand search quality battery to 543 tests (52 core + 491 ocean)",
+        "scope": null
+      },
       {
         "hash": "cde59aee",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Other",
         "description": "Conceptual recon step — LLM knowledge drives search before library query",
-        "scope": null
-      },
-      {
-        "hash": "c81a9ad4",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Anchor decomposeAngles queries to core topic keywords — revert threshold to 7",
         "scope": null
       }
     ]

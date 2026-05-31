@@ -54,7 +54,7 @@ const oceanRunDate = oceanReport ? fmtDate(oceanReport.run_at) : null;
   activeSection="search-quality"
 >
   <h1>Search Quality Battery</h1>
-  <p class="subtitle">543 test fixtures measuring relevance, authority ranking, and cross-tradition search — 52 curated SifterSearch tests plus 491 from the <a href="https://github.com/dnotes/ocean-search-testing" target="_blank" rel="noopener">ocean-search-testing</a> framework</p>
+  <p class="subtitle">543 test fixtures measuring relevance, authority ranking, and cross-tradition search — 52 curated SifterSearch tests plus 491 from the ocean-search-testing framework by <a href="mailto:dhuntatwork@gmail.com">David Hunt</a>. See <a href="/docs/ocean-search-testing">the full scoring model and implementation guide</a>.</p>
 
   <h2>Overview</h2>
 
@@ -158,8 +158,8 @@ const oceanRunDate = oceanReport ? fmtDate(oceanReport.run_at) : null;
 
   <h2>Suite 2: Ocean Search Testing (491 tests)</h2>
   <p>
-    Adapted from the <a href="https://github.com/dnotes/ocean-search-testing" target="_blank" rel="noopener">ocean-search-testing</a>
-    framework by <a href="mailto:dhuntatwork@gmail.com">David Hunt</a>. These 491 fixtures cover phrase matching,
+    491 fixtures adapted from the ocean-search-testing framework by
+    <a href="mailto:dhuntatwork@gmail.com">David Hunt</a>, covering phrase matching,
     concept retrieval, and cross-tradition queries across all major world religions in the corpus.
   </p>
 
@@ -385,22 +385,10 @@ node tests/quality/score-search.mjs --ocean --category=cross-tradition</code></p
     </tbody>
   </table>
 
-  <h2>Adaptation from Ocean Search Testing</h2>
-
   <p>
-    The 491-fixture ocean suite is adapted from the
-    <a href="https://github.com/dnotes/ocean-search-testing" target="_blank" rel="noopener">ocean-search-testing</a>
-    framework created by <a href="mailto:dhuntatwork@gmail.com">David Hunt</a>. The original
-    framework tested Elasticsearch using an ordering-error metric (median rank error ≤5%
-    tolerance). This adaptation targets the SifterSearch Meilisearch + Fastify API using
-    precision@K, MRR, and authority-tier checks — a better fit for passage-level retrieval
-    where exact rank matters less than top-10 recall.
-  </p>
-  <p>
-    Fixture coverage: 168 phrase-match, 271 concept-match, 52 cross-tradition queries spanning
-    Bahá'í, Christian, Islamic, Buddhist, Hindu, Jewish, and Zoroastrian traditions. Queries
-    were deduplicated (keeping the 15-result variant where both 15 and 500 existed) and mapped to
-    SifterSearch religion filter values.
+    For full documentation on the ocean-search-testing scoring model, document authority weights,
+    implementation gaps, and how this applies beyond religious search, see the
+    <a href="/docs/ocean-search-testing">Ocean Search Testing guide</a>.
   </p>
 </DocsLayout>
 

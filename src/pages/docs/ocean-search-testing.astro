@@ -1,0 +1,355 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout
+  title="Ocean Search Testing — PRD & Implementation Guide"
+  description="How SifterSearch applies David Hunt's ocean search testing framework: the source authority + phrase fidelity scoring model, 491 converted test fixtures, and implementation roadmap."
+  activeSection="ocean-search-testing"
+>
+  <h1>Ocean Search Testing</h1>
+  <p class="subtitle">
+    Source authority × phrase fidelity — the scoring model behind SifterSearch's 491-fixture
+    ocean test suite, adapted from the ocean-search-testing framework
+    by <a href="mailto:dhuntatwork@gmail.com">David Hunt</a>.
+  </p>
+
+  <div class="attribution-box">
+    <p>
+      The scoring model, fixture queries, authority weights, and design decisions on this page
+      are adapted from David Hunt's ocean-search-testing framework (MIT license). Our adaptation
+      replaces Elasticsearch + ordering-error with Meilisearch + MRR/precision@K. The 491 test
+      queries are converted from his original BDD fixtures.
+    </p>
+    <p class="attribution-links">Contact: <a href="mailto:dhuntatwork@gmail.com">dhuntatwork@gmail.com</a></p>
+  </div>
+
+  <h2>Core Scoring Model</h2>
+
+  <p>
+    Search quality is the product of two independent dimensions: <strong>source authority</strong>
+    (how reliable is this document as a source?) and <strong>match quality</strong>
+    (how well do the user's words appear in this passage?).
+  </p>
+
+  <p>The combined score = <code>authority_score + match_score</code> (maximum 8):</p>
+
+  <div class="score-grid">
+    <table class="quality-table">
+      <thead>
+        <tr>
+          <th>Source tier</th>
+          <th>Score</th>
+          <th>Examples</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Primary</strong></td><td>3</td><td>Revealed text, primary scripture — Qur'an, Bible, Upanishads, Bahá'u'lláh's writings, Avesta</td></tr>
+        <tr><td><strong>Secondary</strong></td><td>2</td><td>Authoritative interpretation — canonical Hadith, Talmud, Shoghi Effendi, doctrinal compilations</td></tr>
+        <tr><td><strong>General</strong></td><td>1</td><td>Published scholarly and devotional works by recognized community members</td></tr>
+        <tr><td><strong>Supplemental</strong></td><td>0</td><td>Peripheral, provisional, or unofficial works</td></tr>
+      </tbody>
+    </table>
+
+    <table class="quality-table">
+      <thead>
+        <tr>
+          <th>Match quality</th>
+          <th>Score</th>
+          <th>Meaning</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Exact phrase</strong></td><td>5</td><td>All search terms appear in exact sequence</td></tr>
+        <tr><td><strong>All words</strong></td><td>3</td><td>All terms present but not as a phrase</td></tr>
+        <tr><td><strong>Some words</strong></td><td>2</td><td>Partial term coverage</td></tr>
+        <tr><td><strong>No words</strong></td><td>0</td><td>Semantic/conceptual match only</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Expected result ordering</h3>
+  <p>
+    The ideal ranking is by combined score descending. The critical insight:
+    a <em>primary</em> source with <em>some-words</em> match (3+2=5) should rank
+    equal to a <em>supplemental</em> source with an <em>exact-phrase</em> match (0+5=5),
+    and above a <em>general</em> source with <em>all-words</em> match (1+3=4).
+    Authority wins ties.
+  </p>
+
+  <table class="quality-table ordering-table">
+    <thead>
+      <tr><th>Combined score</th><th>Tier combinations (rank-equivalent)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="score-cell text-success">8</td><td>Primary + exact phrase</td></tr>
+      <tr><td class="score-cell text-success">7</td><td>Secondary + exact phrase</td></tr>
+      <tr><td class="score-cell text-success">6</td><td>Primary + all words · General + exact phrase</td></tr>
+      <tr><td class="score-cell text-warning">5</td><td>Primary + some words · Secondary + all words · Supplemental + exact phrase</td></tr>
+      <tr><td class="score-cell text-warning">4</td><td>Secondary + some words · General + all words</td></tr>
+      <tr><td class="score-cell text-warning">3</td><td>Primary + no words · General + some words · Supplemental + all words</td></tr>
+      <tr><td class="score-cell text-error">2</td><td>Secondary + no words · Supplemental + some words</td></tr>
+      <tr><td class="score-cell text-error">1</td><td>General + no words</td></tr>
+      <tr><td class="score-cell text-error">0</td><td>Supplemental + no words</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Document Authority Weights</h2>
+
+  <p>
+    Every document in the corpus receives an authority weight at index time. The original framework
+    uses a 1–8 scale (1 = highest); SifterSearch maps this to a 0–10 scale (10 = highest).
+    Key assignments:
+  </p>
+
+  <table class="quality-table">
+    <thead>
+      <tr><th>Tradition</th><th>Tier 1 (Primary)</th><th>Tier 2 (Secondary)</th><th>Tier 3 (General)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Bahá'í</strong></td>
+        <td>Writings of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá; Shoghi Effendi's interpretive letters</td>
+        <td>UHJ Messages, approved compilations, Memorials of the Faithful</td>
+        <td>Taherzadeh, Balyuzi, Esslemont, Abu'l-Fadl, Star of the West</td>
+      </tr>
+      <tr>
+        <td><strong>Christian</strong></td>
+        <td>All books of the Bible</td>
+        <td>Deuterocanonical works</td>
+        <td>Other authors and commentaries</td>
+      </tr>
+      <tr>
+        <td><strong>Islam</strong></td>
+        <td>Qur'an (all translations)</td>
+        <td>Sahih Muslim, Bukhari, Forty Hadith of Nawawi</td>
+        <td>Other works by Muslim authors</td>
+      </tr>
+      <tr>
+        <td><strong>Judaism</strong></td>
+        <td>Torah / Tanakh</td>
+        <td>Mishnah, Talmud, Midrash</td>
+        <td>Other texts</td>
+      </tr>
+      <tr>
+        <td><strong>Hindu</strong></td>
+        <td>Upanishads, Mahabharata, Rig Veda, Bhagavad-Gita, Ramayana</td>
+        <td>Yoga Sutras, Songs of Kabir</td>
+        <td>Other works</td>
+      </tr>
+      <tr>
+        <td><strong>Zoroastrian</strong></td>
+        <td>Avesta, Khorda Avesta</td>
+        <td>—</td>
+        <td>All other texts</td>
+      </tr>
+      <tr>
+        <td><strong>Buddhist</strong></td>
+        <td>Core sutras (Pali Canon, Heart Sutra, Diamond Sutra)</td>
+        <td>Other canonical collections</td>
+        <td>Commentaries and modern works</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Success Metrics</h2>
+
+  <h3>Ordering error (original)</h3>
+  <p>
+    For each query over N books, compute the ideal result order (by combined score descending).
+    Ordering error = how many positions each result is displaced from ideal.
+    <strong>Pass threshold: median ordering error ≤ 5% of N.</strong>
+  </p>
+  <p>
+    This is stricter than precision@K: it penalizes any out-of-order result, not just results
+    that fall outside the top K.
+  </p>
+
+  <h3>SifterSearch adaptations</h3>
+  <ul>
+    <li><strong>Precision@10</strong> — did the expected document appear in the top 10 results?</li>
+    <li><strong>MRR</strong> — Mean Reciprocal Rank; penalises results that appear late in the list</li>
+    <li><strong>Text check</strong> — does the matching passage contain the expected phrase?</li>
+    <li><strong>Anti-test</strong> — top result must NOT be from a forbidden secondary author</li>
+  </ul>
+
+  <h3>Performance target</h3>
+  <p>
+    The original framework requires <strong>&lt; 200ms</strong> per query on a dedicated
+    Elasticsearch cluster. SifterSearch targets <strong>p50 &lt; 500ms, p95 &lt; 2000ms</strong>
+    under normal load (Meilisearch on shared hardware).
+  </p>
+
+  <h2>Test Fixture Coverage</h2>
+
+  <p>491 queries (deduplicated from 635) across 11 traditions and 5 categories:</p>
+
+  <table class="quality-table">
+    <thead>
+      <tr><th>Category</th><th>Count</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>phrase-match</td><td>168</td><td>Near-verbatim phrases that should surface a specific passage</td></tr>
+      <tr><td>concept-match</td><td>271</td><td>Conceptual queries with religion filter — primary source should rank first</td></tr>
+      <tr><td>cross-tradition</td><td>52</td><td>Universal concepts without religion filter — multi-tradition results expected</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Thematic contexts covered: creation stories, afterlife, virtues, prayer and ritual,
+    named scriptures, historical events and figures, theological concepts, end times prophecy,
+    charity and community, commandments and law, requirements for spiritual growth.
+  </p>
+
+  <h2>SifterSearch Implementation Gaps</h2>
+
+  <h3>1. Phrase match boosting (high priority)</h3>
+  <p>
+    Queries of 4+ words should trigger a dedicated exact-phrase Meilisearch pass
+    (<code>matchingStrategy: 'all'</code>) with a 3× score boost relative to the vector
+    similarity score. Without this, the hybrid search may rank a semantically related passage
+    above the verbatim source.
+  </p>
+  <p>
+    <strong>Fix location:</strong> <code>api/lib/search.js:hybridSearch</code> — add phrase detection
+    and a boosted keyword-first pass when the query matches the phrase pattern.
+  </p>
+
+  <h3>2. Cross-tradition authority normalization (medium priority)</h3>
+  <p>
+    Currently each tradition calibrates its own 0–10 authority scale independently.
+    For cross-tradition queries, "primary Christian" and "primary Bahá'í" must rank equally.
+    Implement four cross-tradition tiers (A/B/C/D) that supersede the per-tradition scale
+    when no religion filter is active.
+  </p>
+
+  <h3>3. Ordering error metric (low priority)</h3>
+  <p>
+    MRR already captures most of the information in the ordering-error metric. Adding it
+    to <code>score-search.mjs</code> would allow direct comparison with the original
+    framework's results, but is not required for search quality improvement.
+  </p>
+
+  <h2>Running the Battery</h2>
+
+  <div class="code-block">
+    <pre><code># Ocean suite (491 fixtures from David Hunt's framework)
+npm run test:search-quality:ocean
+
+# Core + ocean combined (543 fixtures total)
+npm run test:search-quality:all
+
+# Filter by category
+node tests/quality/score-search.mjs --ocean --category=phrase-match</code></pre>
+  </div>
+
+  <p>
+    See the <a href="/docs/search-quality">Search Quality Battery</a> page for current scores
+    and the failing tests breakdown.
+  </p>
+
+  <h2>Applicability Beyond Religious Search</h2>
+
+  <p>
+    The authority × match_quality scoring model applies to any corpus where source credibility matters:
+  </p>
+  <ul>
+    <li><strong>Legal research:</strong> statute/constitution (primary) > case law (secondary) > commentary (general)</li>
+    <li><strong>Academic search:</strong> peer-reviewed journal > conference paper > preprint > blog</li>
+    <li><strong>Medical information:</strong> clinical guideline > systematic review > RCT > patient forum</li>
+    <li><strong>News archives:</strong> wire service > major newspaper > local paper > blog</li>
+  </ul>
+  <p>
+    The general recipe: (1) assign an authority tier to every document at index time,
+    (2) store as a numeric field, (3) use it as a multiplicative score boost,
+    (4) give exact phrase matches a 5× quality bonus over pure semantic matches,
+    (5) measure with MRR and ordering error.
+  </p>
+
+</DocsLayout>
+
+<style>
+  .subtitle {
+    font-size: 1.15rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    max-width: 72ch;
+  }
+
+  .attribution-box {
+    padding: 1.25rem 1.5rem;
+    background: var(--surface-2);
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    border-left: 4px solid var(--accent);
+    margin-bottom: 2.5rem;
+  }
+
+  .attribution-box p { margin: 0 0 0.5rem; font-size: 0.95rem; color: var(--text-secondary); }
+  .attribution-box p:last-child { margin: 0; }
+  .attribution-links { font-size: 0.85rem; color: var(--text-muted); }
+
+  .score-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  @media (max-width: 700px) {
+    .score-grid { grid-template-columns: 1fr; }
+  }
+
+  .quality-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin: 1.5rem 0;
+  }
+
+  .quality-table th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .quality-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+  }
+
+  .quality-table tr:hover td { background: var(--surface-2); }
+
+  .ordering-table .score-cell {
+    font-weight: 700;
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    width: 60px;
+  }
+
+  .text-success { color: var(--success); }
+  .text-warning { color: var(--warning); }
+  .text-error { color: var(--error); }
+
+  .code-block {
+    background: var(--surface-2);
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    overflow: auto;
+    margin: 1.5rem 0;
+  }
+
+  .code-block pre { margin: 0; padding: 1.25rem; }
+  .code-block code { font-family: monospace; font-size: 0.85rem; color: var(--text-primary); }
+
+  h2 { margin-top: 2.5rem; }
+  h3 { margin-top: 2rem; }
+  ul { padding-left: 1.5rem; }
+  li { margin-bottom: 0.4rem; }
+</style>
