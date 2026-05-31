@@ -1,13 +1,8 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import reportData from '../../../tests/quality/results-latest.json';
 
-let report = null;
-try {
-  const raw = readFileSync(join(process.cwd(), 'tests/quality/results-latest.json'), 'utf-8');
-  report = JSON.parse(raw);
-} catch {}
+const report = reportData || null;
 
 const categoryLabels = {
   'phrase-match': 'Phrase Match',
@@ -298,10 +293,11 @@ npm run test:bdd:search-quality</code></pre>
   <p>
     This battery is adapted from the
     <a href="https://github.com/dnotes/ocean-search-testing" target="_blank" rel="noopener">ocean-search-testing</a>
-    framework. The original framework tested Elasticsearch using an ordering-error metric
-    (median rank error ≤5% tolerance). This adaptation targets the SifterSearch Meilisearch +
-    Fastify API using precision@K, MRR, and authority-tier checks — a better fit for passage-level
-    retrieval where exact rank matters less than top-10 recall.
+    framework created by <a href="mailto:dhuntatwork@gmail.com">David Hunt</a>. The original
+    framework tested Elasticsearch using an ordering-error metric (median rank error ≤5%
+    tolerance). This adaptation targets the SifterSearch Meilisearch + Fastify API using
+    precision@K, MRR, and authority-tier checks — a better fit for passage-level retrieval
+    where exact rank matters less than top-10 recall.
   </p>
 </DocsLayout>
 
