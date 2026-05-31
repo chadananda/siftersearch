@@ -1,0 +1,431 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+let report = null;
+try {
+  const raw = readFileSync(join(process.cwd(), 'tests/quality/results-latest.json'), 'utf-8');
+  report = JSON.parse(raw);
+} catch {}
+
+const categoryLabels = {
+  'phrase-match': 'Phrase Match',
+  'concept-match': 'Concept Match',
+  'authority-ranking': 'Authority Ranking',
+  'cross-tradition': 'Cross-Tradition',
+  'entity-aware': 'Entity-Aware',
+};
+
+const categoryDescriptions = {
+  'phrase-match': 'Exact or near-exact phrases that should surface a specific known passage',
+  'concept-match': 'Conceptual queries where a specific document or author should appear',
+  'authority-ranking': 'Primary sources must rank above secondary sources and commentary',
+  'cross-tradition': 'Universal concepts found across multiple religious traditions',
+  'entity-aware': 'Named-entity queries requiring the graph layer (aliases, roles, character tracking)',
+};
+
+function passClass(rate) {
+  if (rate >= 80) return 'text-success';
+  if (rate >= 60) return 'text-warning';
+  return 'text-error';
+}
+
+function failReasons(r) {
+  const reasons = [];
+  if (r.error) return ['API timeout'];
+  if (r.rank === null) reasons.push('not found in top 10');
+  if (r.rank !== null && !r.text_hit) reasons.push('text mismatch');
+  if (!r.anti_hit) reasons.push('anti-test failed');
+  if (!r.authority_hit) reasons.push('authority too low');
+  return reasons;
+}
+
+const runDate = report ? new Date(report.run_at).toLocaleDateString('en-US', {
+  year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+}) : null;
+---
+
+<DocsLayout
+  title="Search Quality Battery"
+  description="Automated search quality scoring against 52 test fixtures across phrase-match, concept-match, authority-ranking, cross-tradition, and entity-aware categories."
+  activeSection="search-quality"
+>
+  <h1>Search Quality Battery</h1>
+  <p class="subtitle">52 test fixtures measuring relevance, authority ranking, and entity-aware search — adapted from the OceanLibrary search-testing framework</p>
+
+  {report ? (
+    <div class="run-meta">
+      <span>Last run: {runDate}</span>
+      <span class="sep">·</span>
+      <span>Top-{report.top_k} evaluation</span>
+      <span class="sep">·</span>
+      <span>p50 latency: {report.latency_p50_ms}ms</span>
+      <span class="sep">·</span>
+      <span>p95 latency: {report.latency_p95_ms}ms</span>
+    </div>
+  ) : (
+    <p class="no-results">No results on file yet. Run <code>npm run test:search-quality</code> to generate.</p>
+  )}
+
+  <h2>Overview</h2>
+
+  <p>
+    Search quality is measured across five dimensions. Each test specifies a query, the expected
+    result (by document ID, author, or text content), and optional authority-tier requirements.
+    The battery runs against the live production API and writes machine-readable results that
+    update this page.
+  </p>
+
+  <h3>Scoring model</h3>
+  <ul>
+    <li><strong>Precision@10</strong> — did the expected document appear in the top 10 results?</li>
+    <li><strong>MRR</strong> — Mean Reciprocal Rank; penalises results that appear late in the list</li>
+    <li><strong>Text check</strong> — does the matching passage contain the expected phrase?</li>
+    <li><strong>Anti-test</strong> — the top result must NOT be from a forbidden author (secondary source should not beat primary)</li>
+    <li><strong>Authority gate</strong> — the matching result must meet a minimum authority tier (1–10 scale)</li>
+  </ul>
+
+  {report && (
+    <>
+      <h2>Current Results</h2>
+
+      <div class="score-card">
+        <div class={`score-big ${passClass(report.pass_rate)}`}>
+          {report.passed}/{report.total}
+        </div>
+        <div class="score-label">tests passing</div>
+        <div class={`score-pct ${passClass(report.pass_rate)}`}>{report.pass_rate}%</div>
+        <div class="score-mrr">MRR {typeof report.mrr === 'number' ? report.mrr.toFixed(3) : 'N/A'}</div>
+      </div>
+
+      <h3>By Category</h3>
+      <table class="quality-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Tests</th>
+            <th>Passing</th>
+            <th>Rate</th>
+            <th>What it measures</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(report.categories).map(([cat, stats]) => (
+            <tr>
+              <td><strong>{categoryLabels[cat] || cat}</strong></td>
+              <td>{stats.total}</td>
+              <td>{stats.passed}</td>
+              <td class={passClass(stats.pass_rate)}>{stats.pass_rate}%</td>
+              <td class="desc">{categoryDescriptions[cat] || ''}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {report.results.filter(r => !r.ok).length > 0 && (
+        <>
+          <h3>Failing Tests</h3>
+          <table class="quality-table failures">
+            <thead>
+              <tr>
+                <th>Test</th>
+                <th>Category</th>
+                <th>Rank</th>
+                <th>Query</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.results.filter(r => !r.ok).map(r => (
+                <tr>
+                  <td class="test-id">{r.id}</td>
+                  <td>{categoryLabels[r.category] || r.category}</td>
+                  <td class={r.rank ? '' : 'text-error'}>{r.rank ?? 'NF'}</td>
+                  <td class="query-cell">{r.query}</td>
+                  <td class="text-muted">{failReasons(r).join(', ')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </>
+  )}
+
+  <h2>Test Categories</h2>
+
+  <h3>Phrase Match</h3>
+  <p>
+    The most demanding category. A user searches for near-verbatim phrases from a specific text.
+    The expected document must appear in the top 10 and the matching passage must contain the
+    quoted phrase. Failure here means the search index failed to surface a highly relevant
+    result — either a recall failure (the document wasn't indexed) or a ranking failure
+    (it ranked below position 10).
+  </p>
+  <p>
+    Example: searching "cleanse thy heart from envy and from grudge" should surface the
+    Hidden Words of Bahá'u'lláh (document 8230) in the top 10, with a passage containing "envy".
+  </p>
+
+  <h3>Concept Match</h3>
+  <p>
+    The user describes a concept in their own words rather than quoting directly. The search
+    must identify the best authoritative source even without exact-phrase overlap. This exercises
+    semantic search (embedding similarity) and the authority reranking layer.
+  </p>
+  <p>
+    Example: "soul is immortal continues progress after death" should surface Some Answered
+    Questions (document 8346) with text containing "soul".
+  </p>
+
+  <h3>Authority Ranking</h3>
+  <p>
+    Primary sources (revealed text, authority tier ≥ 7) must outrank secondary sources and
+    commentary for the same topic. If a researcher asks about Bahá'u'lláh's views on science,
+    the top result should be Bahá'u'lláh himself — not an Esslemont commentary about those views.
+  </p>
+  <p>
+    These anti-tests catch the most common relevance failure in religious search: secondary
+    sources that discuss primary sources end up ranking higher because they use more of the
+    search terms explicitly.
+  </p>
+
+  <h3>Cross-Tradition</h3>
+  <p>
+    Universal religious concepts (love, forgiveness, justice, afterlife) should return results
+    from multiple traditions with high authority scores. These tests verify that the federated
+    multi-tradition search works correctly and that cross-tradition queries don't collapse to a
+    single tradition's corpus.
+  </p>
+
+  <h3>Entity-Aware</h3>
+  <p>
+    Queries that require the graph entity layer — alias resolution, role filtering, and
+    character tracking across a long work. For example, "first Letter of the Living" must
+    resolve to Mullá Ḥusayn and surface passages from the Dawn-Breakers (document 21308)
+    even though the phrase "Mullá Ḥusayn" may not appear in the matched passage.
+  </p>
+  <p>
+    These tests are only meaningful after the entity extraction pipeline has run and the
+    <code>entity_mentions_idx</code> Meilisearch sidecar is populated. Current coverage:
+    48,254 entity mentions from 3.55M paragraphs.
+  </p>
+
+  <h2>Running the Battery</h2>
+
+  <div class="code-block">
+    <pre><code># Full battery with report (updates this page)
+npm run test:search-quality
+
+# JSON output only
+npm run test:search-quality:json
+
+# Single category
+node tests/quality/score-search.mjs --category=entity-aware
+
+# BDD version (Cucumber)
+npm run test:bdd:search-quality</code></pre>
+  </div>
+
+  <p>
+    The battery writes <code>tests/quality/results-latest.json</code> which this page reads
+    at build time. Run the battery and commit the JSON to update the live report.
+  </p>
+
+  <h2>Test Fixture Format</h2>
+
+  <p>
+    Fixtures live in <code>tests/quality/search-fixtures.json</code>. Each fixture is a JSON
+    object with the following fields:
+  </p>
+
+  <div class="code-block">
+    <pre><code>{`{
+  "id": "hidden-words-cleanse-heart",
+  "category": "phrase-match",
+  "query": "cleanse thy heart from envy and from grudge",
+  "religion_filter": "Baha'i",
+  "expected_doc_id": 8230,
+  "expected_text_contains": ["envy"],
+  "intent": "Phrase match for Arabic Hidden Words"
+}`}</code></pre>
+  </div>
+
+  <p>Optional fields:</p>
+  <ul>
+    <li><code>expected_doc_id</code> — integer document ID that must appear in top-K</li>
+    <li><code>expected_author_contains</code> — author name substring (use when doc ID isn't known)</li>
+    <li><code>expected_author_not_contains</code> — anti-test: top result must NOT be this author</li>
+    <li><code>expected_text_contains</code> — array of phrases, all must appear in the matched passage</li>
+    <li><code>min_authority</code> — minimum authority tier (1–10) for the matching result</li>
+    <li><code>religion_filter</code> — filter results to a specific tradition</li>
+    <li><code>expected_passage_range</code> — <code>[lo, hi]</code> paragraph index range</li>
+  </ul>
+
+  <h2>Interpreting Results</h2>
+
+  <table class="quality-table">
+    <thead>
+      <tr><th>Flag</th><th>Meaning</th><th>Common cause</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>rank=NF</code></td>
+        <td>Document not found in top {report?.top_k ?? 10}</td>
+        <td>Recall failure, wrong doc ID, or timeout</td>
+      </tr>
+      <tr>
+        <td><code>text-mismatch</code></td>
+        <td>Doc found but passage doesn't contain expected phrase</td>
+        <td>Ranking surfaced the wrong paragraph, or phrase too strict</td>
+      </tr>
+      <tr>
+        <td><code>anti-test-failed</code></td>
+        <td>Top result is from a forbidden secondary source</td>
+        <td>Authority reranking not working for this query</td>
+      </tr>
+      <tr>
+        <td><code>authority-too-low</code></td>
+        <td>Result authority tier below required minimum</td>
+        <td>Authority metadata missing or reranking failure</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Adaption from Ocean Search Testing</h2>
+
+  <p>
+    This battery is adapted from the
+    <a href="https://github.com/dnotes/ocean-search-testing" target="_blank" rel="noopener">ocean-search-testing</a>
+    framework. The original framework tested Elasticsearch using an ordering-error metric
+    (median rank error ≤5% tolerance). This adaptation targets the SifterSearch Meilisearch +
+    Fastify API using precision@K, MRR, and authority-tier checks — a better fit for passage-level
+    retrieval where exact rank matters less than top-10 recall.
+  </p>
+</DocsLayout>
+
+<style>
+  .subtitle {
+    font-size: 1.15rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    max-width: 68ch;
+  }
+
+  .run-meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .sep { opacity: 0.4; }
+
+  .no-results {
+    padding: 1rem 1.25rem;
+    background: var(--surface-2);
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .score-card {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--surface-2);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    margin: 1.5rem 0;
+  }
+
+  .score-big {
+    font-size: 2.2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .score-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .score-pct {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-left: auto;
+  }
+
+  .score-mrr {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+
+  .quality-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin: 1.5rem 0;
+  }
+
+  .quality-table th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .quality-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+  }
+
+  .quality-table tr:hover td { background: var(--surface-2); }
+
+  .quality-table .desc { color: var(--text-muted); font-size: 0.82rem; }
+  .quality-table .test-id { font-family: monospace; font-size: 0.8rem; }
+  .quality-table .query-cell { max-width: 260px; }
+  .quality-table .text-muted { color: var(--text-muted); }
+  .quality-table .text-error { color: var(--error); }
+
+  .failures tbody tr:nth-child(odd) td { background: var(--surface-1); }
+
+  .text-success { color: var(--success); }
+  .text-warning { color: var(--warning); }
+  .text-error { color: var(--error); }
+
+  .code-block {
+    background: var(--surface-2);
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    overflow: auto;
+    margin: 1.5rem 0;
+  }
+
+  .code-block pre {
+    margin: 0;
+    padding: 1.25rem;
+  }
+
+  .code-block code {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+  }
+
+  h2 { margin-top: 2.5rem; }
+  h3 { margin-top: 2rem; }
+  ul { padding-left: 1.5rem; }
+  li { margin-bottom: 0.4rem; }
+  code { font-size: 0.875em; }
+</style>

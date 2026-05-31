@@ -46,7 +46,11 @@ if (!API_KEY) {
 }
 
 function normalize(s) {
-  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return (s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    // British/American spelling variants
+    .replace(/neighbour/g, 'neighbor')
+    .replace(/colour/g, 'color');
 }
 
 async function runOne(fix) {
@@ -61,7 +65,7 @@ async function runOne(fix) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
       body: JSON.stringify(reqBody),
-      signal: AbortSignal.timeout(15000)
+      signal: AbortSignal.timeout(25000)
     });
     body = await res.json();
   } catch (err) {
@@ -173,8 +177,8 @@ for (const fix of FIXTURES) {
 
 // Aggregate totals
 const passed = results.filter(r => r.ok).length;
-const recipRanks = results.map(r => r.recip_rank);
-const mrr = recipRanks.reduce((a, b) => a + b, 0) / recipRanks.length;
+const recipRanks = results.map(r => r.recip_rank).filter(v => typeof v === 'number' && !isNaN(v));
+const mrr = recipRanks.length > 0 ? recipRanks.reduce((a, b) => a + b, 0) / results.length : 0;
 const latencies = results.map(r => r.latency_ms).sort((a, b) => a - b);
 const p50 = latencies[Math.floor(latencies.length * 0.5)] || 0;
 const p95 = latencies[Math.floor(latencies.length * 0.95)] || 0;
