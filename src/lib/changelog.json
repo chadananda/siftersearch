@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-30T16:58:52.923Z",
+  "generated": "2026-05-31T13:15:30.813Z",
   "entries": [
+    {
+      "hash": "42c2618d",
+      "date": "2026-05-30",
+      "type": "Fixed",
+      "description": "Entity sync runs between doc batches + fix missing waitForMeiliTask",
+      "scope": null
+    },
     {
       "hash": "fb538663",
       "date": "2026-05-30",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Deduplicate cross-publication quotes, prefer primary sources",
       "scope": null
-    },
-    {
-      "hash": "c426015e",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Research slug page — handle pre-parsed JSON fields from API",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-30": [
+      {
+        "hash": "42c2618d",
+        "date": "2026-05-30",
+        "type": "Fixed",
+        "description": "Entity sync runs between doc batches + fix missing waitForMeiliTask",
+        "scope": null
+      },
       {
         "hash": "fb538663",
         "date": "2026-05-30",
@@ -7023,13 +7030,6 @@
         "date": "2026-05-13",
         "type": "New",
         "description": "Deduplicate cross-publication quotes, prefer primary sources",
-        "scope": null
-      },
-      {
-        "hash": "c426015e",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Research slug page — handle pre-parsed JSON fields from API",
         "scope": null
       }
     ]

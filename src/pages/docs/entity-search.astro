@@ -1,0 +1,501 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout
+  title="Entity-Aware Search"
+  description="How SifterSearch's graph entity extraction enables character tracking, variant name resolution, and role-filtered search across the full library."
+  activeSection="entity-search"
+>
+  <h1>Entity-Aware Search</h1>
+  <p class="subtitle">How named entity extraction makes people, places, and events searchable — across spelling variants, titles, and the full sweep of a long work</p>
+
+  <h2>The Problem Keyword Search Cannot Solve</h2>
+
+  <p>
+    Religious and historical texts are full of figures who appear under many names. The first
+    person to believe in the Báb is called "Mullá Ḥusayn" in some passages, "the first Letter
+    of the Living" in others, "Bábul-Báb" in still others, and simply "he" in dozens more where
+    context supplies the referent. A keyword search for any one of these finds a fraction of the
+    record. A search for all of them requires knowing every variant in advance — and even then
+    misses the pronoun references entirely.
+  </p>
+  <p>
+    The same problem applies to roles. A researcher who wants to know <em>what Ṭáhirih said</em>
+    is asking a different question from one who wants to know <em>what was said about her</em>.
+    Keyword search cannot distinguish the two: both return every paragraph where her name
+    appears. The distinction between speaker, subject, and addressee requires structured data
+    that keyword indexes do not carry.
+  </p>
+  <p>
+    And across a long work like the <em>Dawn-Breakers</em> — 900 pages, 200+ named figures —
+    tracking a minor character from their first appearance to their last requires either reading
+    the whole book or accepting that the search will miss chapters where their name is spelled
+    differently, abbreviated, or replaced by a title.
+  </p>
+
+  <h2>The Solution: An Entity Mentions Sidecar</h2>
+
+  <p>
+    SifterSearch runs each passage through an extraction pipeline that identifies named entities —
+    people, places, organizations, events — and resolves them to canonical identities. Every
+    resolved mention is stored in a sidecar index (<code>entity_mentions_idx</code>) alongside
+    the canonical entity ID, the paragraph it appears in, the role the entity plays in that
+    paragraph (speaker, subject, addressee, narrator), and authority metadata inherited from
+    the source document.
+  </p>
+  <p>
+    This means that "Mullá Ḥusayn," "the first Letter of the Living," "Bábul-Báb," and the
+    pronoun "he" in a passage whose context makes the referent clear all map to a single
+    entity ID. A search that resolves to that entity finds <em>all</em> mentions — every
+    paragraph in the library, across all documents, regardless of how the name was rendered.
+  </p>
+
+  <!-- Before/After: variant resolution -->
+  <div class="diagram">
+    <div class="compare-grid">
+      <div class="compare-card compare-before">
+        <div class="compare-label compare-label-before">Keyword search: "Mullá Ḥusayn"</div>
+        <p class="compare-text">
+          Finds paragraphs containing that exact transliteration.<br/>
+          Misses: <span class="mark-ambiguous">"first Letter of the Living"</span>,
+          <span class="mark-ambiguous">"Bábul-Báb"</span>,
+          <span class="mark-ambiguous">"Mulla Husain"</span>,
+          <span class="mark-ambiguous">"he"</span> (when referent is contextual),
+          <span class="mark-ambiguous">Arabic/Persian passages</span> using the original form.
+        </p>
+        <div class="compare-issues">
+          <div class="issue-tag">Misses title variants</div>
+          <div class="issue-tag">Misses diacritic variants</div>
+          <div class="issue-tag">Misses pronoun references</div>
+          <div class="issue-tag">Misses non-English passages</div>
+        </div>
+      </div>
+      <div class="compare-arrow-col">
+        <svg viewBox="0 0 40 60" class="compare-arrow-svg" aria-hidden="true">
+          <path d="M8 30 L28 30" stroke="currentColor" stroke-width="2" fill="none"/>
+          <polygon points="24,25 34,30 24,35" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="compare-card compare-after">
+        <div class="compare-label compare-label-after">Entity search: Mullá Ḥusayn (entity #1222917)</div>
+        <p class="compare-text">
+          Finds every paragraph where the extraction pipeline resolved any mention to this entity —
+          regardless of how the name was written, which title was used, or which language the passage is in.
+        </p>
+        <div class="compare-notes">
+          <div class="note-tag">All name variants matched</div>
+          <div class="note-tag">Title references matched</div>
+          <div class="note-tag">Contextual pronouns matched</div>
+          <div class="note-tag">Role metadata available (speaker / subject)</div>
+        </div>
+      </div>
+    </div>
+    <p class="diagram-caption">Entity resolution collapses all surface forms of a name into one canonical identity, then retrieves every mention in the library against that identity.</p>
+  </div>
+
+  <h2>Four Capabilities This Unlocks</h2>
+
+  <h3>1. Complete coverage of a figure across a long work</h3>
+  <p>
+    The <em>Dawn-Breakers</em> alone contains 2,052 resolved entity mentions. Before entity
+    extraction, a researcher tracking a figure through the narrative had to rely on the index
+    in the back of the book — if one existed, if it was complete, and if the spelling they
+    searched matched the transliteration in the index. Now a single query retrieves every
+    mention, in sequence, with the surrounding passage text.
+  </p>
+
+  <h3>2. Role-filtered search</h3>
+  <p>
+    Each mention is tagged with the role the entity plays: <code>speaker</code> (this entity
+    said these words), <code>subject</code> (this entity is being described), <code>addressee</code>
+    (these words were directed to this entity), or <code>narrator</code> (this entity is
+    recounting something). This makes it possible to ask "what did X say?" rather than "where
+    does X appear?" — a distinction that is impossible to make with keyword search.
+  </p>
+
+  <h3>3. Authority-weighted retrieval</h3>
+  <p>
+    Every mention inherits the authority tier of its source document. A statement attributed to
+    the Báb in the <em>Dawn-Breakers</em> (a secondary historical source) is ranked differently
+    from the same statement found in primary scripture. Researchers studying what a figure
+    <em>actually wrote</em> versus what was <em>reported about them</em> can filter accordingly.
+  </p>
+
+  <h3>4. Cross-document entity continuity</h3>
+  <p>
+    The same entity ID appears across all indexed documents. A query for Mullá Ḥusayn returns
+    his appearances in the <em>Dawn-Breakers</em>, in <em>God Passes By</em>, in pilgrim notes,
+    and in <em>Memorials of the Faithful</em> — without the researcher needing to know which
+    documents to search or how the name was rendered in each.
+  </p>
+
+  <h2>Example Queries</h2>
+
+  <p>
+    Each link below demonstrates a question the entity-aware search handles that keyword
+    search cannot answer reliably. Try them — the difference is most visible on questions about
+    minor figures, variant names, or specific speech acts.
+  </p>
+
+  <div class="example-grid">
+
+    <div class="example-card">
+      <div class="example-tag example-tag-variant">Variant resolution</div>
+      <p class="example-question">
+        <a href="https://oceanlibrary.com/?q=What+is+known+about+the+first+Letter+of+the+Living" target="_blank" rel="noopener">
+          What is known about the first Letter of the Living?
+        </a>
+      </p>
+      <p class="example-why">
+        "First Letter of the Living," "Mullá Ḥusayn," and "Bábul-Báb" all resolve to the
+        same entity. Results include passages that use none of these phrases but whose
+        contextual referent the extraction pipeline identified.
+      </p>
+    </div>
+
+    <div class="example-card">
+      <div class="example-tag example-tag-variant">Variant resolution</div>
+      <p class="example-question">
+        <a href="https://oceanlibrary.com/?q=Find+all+mentions+of+Tahirih+in+the+Dawn-Breakers" target="_blank" rel="noopener">
+          Find all mentions of Ṭáhirih in the Dawn-Breakers
+        </a>
+      </p>
+      <p class="example-why">
+        Catches "Qurratu'l-'Ayn," "the poetess of Qazvín," "the fair and immortal heroine,"
+        "she," and every other surface form resolved to this entity across all 900 pages.
+      </p>
+    </div>
+
+    <div class="example-card">
+      <div class="example-tag example-tag-role">Role-filtered</div>
+      <p class="example-question">
+        <a href="https://oceanlibrary.com/?q=What+did+Tahirih+say+at+the+conference+of+Badasht" target="_blank" rel="noopener">
+          What did Ṭáhirih say at the conference of Badasht?
+        </a>
+      </p>
+      <p class="example-why">
+        Filters for <code>role=speaker</code> on Ṭáhirih's entity, returning only the
+        paragraphs where she speaks — not the many more where she is discussed.
+      </p>
+    </div>
+
+    <div class="example-card">
+      <div class="example-tag example-tag-role">Role-filtered</div>
+      <p class="example-question">
+        <a href="https://oceanlibrary.com/?q=Compile+direct+statements+by+the+Bab+in+the+Dawn-Breakers" target="_blank" rel="noopener">
+          Compile direct statements by the Báb in the Dawn-Breakers
+        </a>
+      </p>
+      <p class="example-why">
+        <code>role=speaker</code> on the Báb's entity, scoped to the Dawn-Breakers.
+        Distinguishes the Báb's own words from Nabíl's descriptions of him — a distinction
+        that matters deeply for anyone doing doctrinal research.
+      </p>
+    </div>
+
+    <div class="example-card">
+      <div class="example-tag example-tag-tracking">Character tracking</div>
+      <p class="example-question">
+        <a href="https://oceanlibrary.com/?q=What+happened+to+Quddus+after+the+siege+of+Shaykh+Tabarsí" target="_blank" rel="noopener">
+          What happened to Quddús after the siege of Shaykh Ṭabarsí?
+        </a>
+      </p>
+      <p class="example-why">
+        Tracks a figure through later chapters of a long work — finding mentions in passages
+        where the name may not appear but the entity was resolved from context.
+      </p>
+    </div>
+
+    <div class="example-card">
+      <div class="example-tag example-tag-tracking">Character tracking</div>
+      <p class="example-question">
+        <a href="https://oceanlibrary.com/?q=Trace+Mulla+Husayn+from+his+first+meeting+with+the+Bab+to+his+martyrdom" target="_blank" rel="noopener">
+          Trace Mullá Ḥusayn from his first meeting with the Báb to his martyrdom
+        </a>
+      </p>
+      <p class="example-why">
+        Returns mentions in narrative order across the full arc of the Dawn-Breakers —
+        spanning passages that use the canonical name, his titles, and contextual pronouns.
+      </p>
+    </div>
+
+    <div class="example-card">
+      <div class="example-tag example-tag-crossdoc">Cross-document</div>
+      <p class="example-question">
+        <a href="https://oceanlibrary.com/?q=How+does+Shoghi+Effendi+describe+Mulla+Husayn+compared+to+Nabil" target="_blank" rel="noopener">
+          How does Shoghi Effendi describe Mullá Ḥusayn compared to Nabíl?
+        </a>
+      </p>
+      <p class="example-why">
+        The same entity ID appears in <em>God Passes By</em> (Shoghi Effendi) and the
+        <em>Dawn-Breakers</em> (Nabíl). Authority tier metadata allows the response to
+        attribute each passage to its source and rank them accordingly.
+      </p>
+    </div>
+
+    <div class="example-card">
+      <div class="example-tag example-tag-crossdoc">Cross-document</div>
+      <p class="example-question">
+        <a href="https://oceanlibrary.com/?q=Find+every+primary+source+reference+to+the+Declaration+of+the+Bab" target="_blank" rel="noopener">
+          Find every primary-source reference to the Declaration of the Báb
+        </a>
+      </p>
+      <p class="example-why">
+        The Declaration (May 23, 1844) is an event entity. Filtering by
+        <code>authority_tier = primary_scripture</code> or <code>revealed</code> surfaces
+        only passages from authoritative sources — not secondary histories, however accurate.
+      </p>
+    </div>
+
+    <div class="example-card">
+      <div class="example-tag example-tag-assembly">Assembly</div>
+      <p class="example-question">
+        <a href="https://oceanlibrary.com/?q=Who+was+present+at+the+Declaration+of+the+Bab+on+May+23+1844" target="_blank" rel="noopener">
+          Who was present at the Declaration of the Báb on May 23, 1844?
+        </a>
+      </p>
+      <p class="example-why">
+        Entity mentions filtered to that event and those paragraphs surface the cast of
+        that night — including figures mentioned once, in passing, who would not survive
+        a keyword search for their names.
+      </p>
+    </div>
+
+    <div class="example-card">
+      <div class="example-tag example-tag-assembly">Assembly</div>
+      <p class="example-question">
+        <a href="https://oceanlibrary.com/?q=List+every+Letter+of+the+Living+and+what+is+known+about+each" target="_blank" rel="noopener">
+          List every Letter of the Living and what is known about each
+        </a>
+      </p>
+      <p class="example-why">
+        The eighteen Letters of the Living are an entity set. Each has their own entity ID
+        with associated mentions across the library. This query assembles a structured
+        answer that would take hours to compile manually.
+      </p>
+    </div>
+
+  </div>
+
+  <h2>How It Works</h2>
+
+  <p>
+    The extraction pipeline runs once per passage, offline, before the passage enters the
+    search index. A language model reads each paragraph with surrounding context and
+    identifies named entities, their canonical forms, and their roles. The results are
+    stored in the <code>entity_mentions</code> table in the main database, then synced
+    to <code>entity_mentions_idx</code> in Meilisearch — a dedicated index that sits
+    alongside the primary paragraphs index.
+  </p>
+  <p>
+    At search time, when a query names a recognizable entity, the orchestrator resolves
+    the name to an entity ID (via the alias table, which maps every known surface form),
+    then performs a filtered search against the entity_mentions index in parallel with
+    the standard paragraph search. Results from both indexes are merged and reranked
+    before the response is generated.
+  </p>
+  <p>
+    The alias table is what makes variant resolution work: it stores every known surface
+    form — canonical name, honorific titles, shortened forms, diacritic variants, and
+    resolved contextual references — mapped to a single entity ID with a confidence
+    score. A query for "Mulla Husain" (without diacritics) resolves to the same entity
+    as "Mullá Ḥusayn" because both appear in the alias table pointing to the same ID.
+  </p>
+
+  <!-- Architecture diagram -->
+  <div class="diagram">
+    <svg viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Entity search architecture diagram" class="entity-arch-svg">
+      <!-- Extraction pipeline (top row) -->
+      <text x="10" y="18" class="lane-label">INDEXING TIME</text>
+      <rect x="10" y="25" width="100" height="50" rx="6" class="node-box node-source"/>
+      <text x="60" y="47" text-anchor="middle" class="node-label">Paragraph</text>
+      <text x="60" y="63" text-anchor="middle" class="node-label">text</text>
+      <path d="M110 50 L138 50" class="arrow-line"/>
+      <polygon points="134,45 144,50 134,55" class="arrow-head"/>
+      <rect x="144" y="25" width="120" height="50" rx="6" class="node-box node-step"/>
+      <text x="204" y="47" text-anchor="middle" class="node-label">Entity</text>
+      <text x="204" y="63" text-anchor="middle" class="node-label">Extraction</text>
+      <path d="M264 50 L292 50" class="arrow-line"/>
+      <polygon points="288,45 298,50 288,55" class="arrow-head"/>
+      <rect x="298" y="25" width="120" height="50" rx="6" class="node-box node-step"/>
+      <text x="358" y="47" text-anchor="middle" class="node-label">Alias</text>
+      <text x="358" y="63" text-anchor="middle" class="node-label">Resolution</text>
+      <path d="M418 50 L446 50" class="arrow-line"/>
+      <polygon points="442,45 452,50 442,55" class="arrow-head"/>
+      <rect x="452" y="25" width="120" height="50" rx="6" class="node-box node-step"/>
+      <text x="512" y="47" text-anchor="middle" class="node-label">Role</text>
+      <text x="512" y="63" text-anchor="middle" class="node-label">Tagging</text>
+      <path d="M572 50 L600 50" class="arrow-line"/>
+      <polygon points="596,45 606,50 596,55" class="arrow-head"/>
+      <rect x="606" y="25" width="140" height="50" rx="6" class="node-box node-output"/>
+      <text x="676" y="47" text-anchor="middle" class="node-label">entity_mentions</text>
+      <text x="676" y="63" text-anchor="middle" class="node-label">_idx</text>
+
+      <!-- Search pipeline (bottom row) -->
+      <text x="10" y="118" class="lane-label">SEARCH TIME</text>
+      <rect x="10" y="125" width="100" height="50" rx="6" class="node-box node-source"/>
+      <text x="60" y="147" text-anchor="middle" class="node-label">User</text>
+      <text x="60" y="163" text-anchor="middle" class="node-label">query</text>
+      <path d="M110 150 L138 150" class="arrow-line"/>
+      <polygon points="134,145 144,150 134,155" class="arrow-head"/>
+      <rect x="144" y="125" width="120" height="50" rx="6" class="node-box node-step"/>
+      <text x="204" y="147" text-anchor="middle" class="node-label">Entity</text>
+      <text x="204" y="163" text-anchor="middle" class="node-label">Name → ID</text>
+      <path d="M264 150 L292 150" class="arrow-line"/>
+      <polygon points="288,145 298,150 288,155" class="arrow-head"/>
+      <rect x="298" y="125" width="130" height="50" rx="6" class="node-box node-step"/>
+      <text x="363" y="147" text-anchor="middle" class="node-label">Parallel</text>
+      <text x="363" y="163" text-anchor="middle" class="node-label">index search</text>
+      <path d="M428 150 L456 150" class="arrow-line"/>
+      <polygon points="452,145 462,150 452,155" class="arrow-head"/>
+      <rect x="462" y="125" width="120" height="50" rx="6" class="node-box node-step"/>
+      <text x="522" y="147" text-anchor="middle" class="node-label">RRF</text>
+      <text x="522" y="163" text-anchor="middle" class="node-label">merge + rerank</text>
+      <path d="M582 150 L610 150" class="arrow-line"/>
+      <polygon points="606,145 616,150 606,155" class="arrow-head"/>
+      <rect x="616" y="125" width="140" height="50" rx="6" class="node-box node-output"/>
+      <text x="686" y="147" text-anchor="middle" class="node-label">Entity-enriched</text>
+      <text x="686" y="163" text-anchor="middle" class="node-label">results</text>
+    </svg>
+    <p class="diagram-caption">Entity extraction runs once at index time (top). At search time (bottom), name resolution and parallel index search add zero latency overhead — the entity index is already built.</p>
+  </div>
+
+  <h2>Current Coverage</h2>
+
+  <p>
+    Entity extraction is currently complete for the Bahá'í primary corpus, including the full
+    text of the <em>Dawn-Breakers</em> (2,052 resolved mentions across 900 pages),
+    <em>God Passes By</em>, <em>Memorials of the Faithful</em>, and the major collected
+    writings of Bahá'u'lláh and 'Abdu'l-Bahá. The pipeline is running continuously;
+    coverage across the broader library expands each week.
+  </p>
+  <p>
+    The entity graph for Islamic, Buddhist, and other traditions is in early stages. Questions
+    about figures in those traditions will fall back to the standard paragraph search if no
+    entity match is found — the result is still useful, just without the completeness that
+    entity resolution provides.
+  </p>
+
+  <hr />
+  <p style="font-size: 0.8rem; color: var(--text-muted);">Last updated: May 2026</p>
+</DocsLayout>
+
+<style>
+  /* ---- Shared diagram container ---- */
+  .diagram {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--surface-0);
+    border: 1px solid var(--border-default);
+    border-radius: 0.75rem;
+    overflow-x: auto;
+  }
+  .diagram-caption {
+    margin: 0.75rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+  }
+
+  /* ---- SVG tokens ---- */
+  .node-box { fill: var(--surface-2); stroke: var(--border-default); stroke-width: 1.5; }
+  .node-source { fill: var(--surface-2); stroke: var(--accent-primary); stroke-width: 2; }
+  .node-output { fill: var(--accent-primary); stroke: var(--accent-primary); stroke-width: 1.5; }
+  .node-step { fill: var(--surface-2); }
+  .node-label { font-size: 12px; fill: var(--text-primary); font-family: system-ui, sans-serif; font-weight: 500; }
+  .node-sublabel { font-size: 10px; fill: var(--text-secondary); font-family: system-ui, sans-serif; }
+  .node-output .node-label, .node-output text { fill: var(--accent-primary-text); }
+  .arrow-line { stroke: var(--text-secondary); stroke-width: 1.5; fill: none; }
+  .arrow-head { fill: var(--text-secondary); }
+  .lane-label { font-size: 10px; fill: var(--text-muted); font-family: system-ui, sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .entity-arch-svg { width: 100%; min-width: 640px; display: block; }
+
+  /* ---- Before/After compare ---- */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 48px 1fr;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .compare-card {
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-default);
+  }
+  .compare-before { background: color-mix(in srgb, var(--error) 6%, var(--surface-1)); border-color: color-mix(in srgb, var(--error) 30%, transparent); }
+  .compare-after { background: color-mix(in srgb, var(--success) 6%, var(--surface-1)); border-color: color-mix(in srgb, var(--success) 30%, transparent); }
+  .compare-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.6rem; }
+  .compare-label-before { color: var(--error); }
+  .compare-label-after { color: var(--success); }
+  .compare-text { font-size: 0.9rem; line-height: 1.6; color: var(--text-primary); margin: 0 0 0.75rem; }
+  .mark-ambiguous {
+    background: color-mix(in srgb, var(--warning) 25%, transparent);
+    color: var(--warning);
+    border-radius: 2px;
+    padding: 0 2px;
+    font-style: italic;
+  }
+  .compare-issues, .compare-notes { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .issue-tag {
+    font-size: 0.7rem; padding: 2px 8px; border-radius: 99px;
+    background: color-mix(in srgb, var(--error) 12%, var(--surface-2));
+    color: var(--error); border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
+  }
+  .note-tag {
+    font-size: 0.7rem; padding: 2px 8px; border-radius: 99px;
+    background: color-mix(in srgb, var(--success) 12%, var(--surface-2));
+    color: var(--success); border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  }
+  .compare-arrow-col { display: flex; align-items: center; justify-content: center; }
+  .compare-arrow-svg { width: 40px; height: 60px; color: var(--text-muted); }
+  @media (max-width: 600px) {
+    .compare-grid { grid-template-columns: 1fr; }
+    .compare-arrow-col { transform: rotate(90deg); }
+  }
+
+  /* ---- Example query cards ---- */
+  .example-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0 2rem;
+  }
+  .example-card {
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border-default);
+    border-radius: 0.6rem;
+    background: var(--surface-1);
+  }
+  .example-tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 2px 8px;
+    border-radius: 99px;
+    margin-bottom: 0.6rem;
+    border: 1px solid transparent;
+  }
+  .example-tag-variant { background: color-mix(in srgb, var(--accent-primary) 12%, var(--surface-2)); color: var(--accent-primary); border-color: color-mix(in srgb, var(--accent-primary) 30%, transparent); }
+  .example-tag-role { background: color-mix(in srgb, var(--info) 12%, var(--surface-2)); color: var(--info); border-color: color-mix(in srgb, var(--info) 30%, transparent); }
+  .example-tag-tracking { background: color-mix(in srgb, var(--warning) 12%, var(--surface-2)); color: var(--warning); border-color: color-mix(in srgb, var(--warning) 30%, transparent); }
+  .example-tag-crossdoc { background: color-mix(in srgb, var(--success) 12%, var(--surface-2)); color: var(--success); border-color: color-mix(in srgb, var(--success) 30%, transparent); }
+  .example-tag-assembly { background: color-mix(in srgb, var(--accent-secondary, var(--accent-primary)) 12%, var(--surface-2)); color: var(--accent-secondary, var(--accent-primary)); border-color: color-mix(in srgb, var(--accent-secondary, var(--accent-primary)) 30%, transparent); }
+  .example-question {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0 0 0.6rem;
+  }
+  .example-question a { color: var(--accent-primary); text-decoration: none; }
+  .example-question a:hover { text-decoration: underline; }
+  .example-why {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+</style>
