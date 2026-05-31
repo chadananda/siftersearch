@@ -11,6 +11,7 @@ import { runSiteMigrations } from './migrations/site.js';
 let contentDb = null;
 let userDb = null;
 let graphDb = null;
+let telemetryDb = null;
 const siteDbCache = new Map();
 
 function stripFilePrefix(url) {
@@ -113,6 +114,23 @@ export async function getSiteDb(siteId, indexPrefix) {
   siteDbCache.set(key, db);
   logger.info({ siteId, path: dbPath }, 'Site DB connected');
   return db;
+}
+
+// Telemetry DB: separate connection with a 200ms busy timeout.
+// Used exclusively for fire-and-forget writes (ai_usage, search_log) that must
+// never block the event loop. If contended (e.g., sync worker holding WAL lock),
+// the write times out quickly and is silently dropped — telemetry is best-effort.
+function getTelemetryDb() {
+  if (!telemetryDb) {
+    const url = process.env.TURSO_DATABASE_URL || 'file:./data/sifter.db';
+    const dbPath = stripFilePrefix(url) || './data/sifter.db';
+    const db = new Database(dbPath);
+    db.pragma('journal_mode = WAL');
+    db.pragma('busy_timeout = 200');  // fail fast — telemetry is not critical
+    db.pragma('cache_size = -4096');  // 4MB — minimal cache, telemetry is write-only
+    telemetryDb = db;  // not instrumented — avoids recursive slow-write logging
+  }
+  return telemetryDb;
 }
 
 export const getBatchDb = getDb;
@@ -301,11 +319,21 @@ export const batchTransaction = transaction;
 export const batchQueryOne = queryOne;
 export const batchQueryAll = queryAll;
 
+// Fire-and-forget write for telemetry (ai_usage, search_log).
+// Uses a dedicated connection with 200ms busy_timeout — if the WAL is contended
+// (sync worker holding write lock), the write fails quickly rather than freezing
+// the Node.js event loop for up to SQLITE_BUSY_TIMEOUT_MS (up to 120s).
+export function telemetryQuery(sql, params = []) {
+  const db = getTelemetryDb();
+  db.prepare(sql).run(...params);
+}
+
 export default {
   getDb, getUserDb, getBatchDb, getGraphDb,
   query, queryOne, queryAll,
   batchQuery, batchQueryOne, batchQueryAll,
   transaction, batchTransaction,
   userQuery, userQueryOne, userQueryAll, userTransaction,
-  graphQuery, graphQueryOne, graphQueryAll, graphTransaction
+  graphQuery, graphQueryOne, graphQueryAll, graphTransaction,
+  telemetryQuery
 };

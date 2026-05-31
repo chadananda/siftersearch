@@ -17,7 +17,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Ollama } from 'ollama';
 import { config } from './config.js';
 import { logger } from './logger.js';
-import { query } from './db.js';
+import { query, telemetryQuery } from './db.js';
 
 // =============================================================================
 // MODEL PRICING (per 1K tokens, Jan 2025)
@@ -255,13 +255,14 @@ export function logAIUsage({
   jobId = null,
   documentId = null
 }) {
-  // Defer to next event-loop tick so the current request handler finishes first.
-  setImmediate(async () => {
+  // Telemetry write: use dedicated connection with 200ms busy_timeout so WAL
+  // contention from the sync worker never freezes the event loop.
+  setImmediate(() => {
     try {
       const pricing = MODEL_PRICING[model] || { input: 0, output: 0 };
       const inputTokens = promptTokens || totalTokens;
       const cost = (inputTokens * pricing.input + completionTokens * pricing.output) / 1000;
-      await query(
+      telemetryQuery(
         `INSERT INTO ai_usage (
           provider, model, service_type,
           prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd,

@@ -34,7 +34,7 @@ import { rerank } from '../lib/reranker.js';
 import { logger } from '../lib/logger.js';
 import { ApiError } from '../lib/errors.js';
 import { validateApiKey } from '../lib/api-keys.js';
-import { query, queryOne, queryAll, userQuery, userQueryOne } from '../lib/db.js';
+import { query, queryOne, queryAll, userQuery, userQueryOne, telemetryQuery } from '../lib/db.js';
 import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billing.js';
 import { slugifyPath, generateDocSlug } from '../lib/slug.js';
 
@@ -76,13 +76,19 @@ function getParagraphUrl(doc, paragraphIndex) {
   return `${getDocumentUrl(doc)}#p${paragraphIndex}`;
 }
 
-/** Log search to search_log table (fire-and-forget) */
-function logApiSearch({ query, apiKeyId, resultCount, durationMs, searchType, filters }) {
-  userQuery(
-    `INSERT INTO search_log (query, api_key_id, result_count, duration_ms, search_type, filters, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-    [query, apiKeyId || null, resultCount || 0, durationMs || 0, searchType || 'api', filters ? JSON.stringify(filters) : null]
-  ).catch(err => logger.warn({ err }, 'Failed to log API search'));
+/** Log search to search_log table (fire-and-forget, fail-fast) */
+function logApiSearch({ query: q, apiKeyId, resultCount, durationMs, searchType, filters }) {
+  setImmediate(() => {
+    try {
+      telemetryQuery(
+        `INSERT INTO search_log (query, api_key_id, result_count, duration_ms, search_type, filters, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [q, apiKeyId || null, resultCount || 0, durationMs || 0, searchType || 'api', filters ? JSON.stringify(filters) : null]
+      );
+    } catch (err) {
+      logger.warn({ err }, 'Failed to log API search');
+    }
+  });
 }
 
 /**

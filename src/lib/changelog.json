@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T18:52:16.830Z",
+  "generated": "2026-05-31T19:21:31.820Z",
   "entries": [
+    {
+      "hash": "d9d2c8b5",
+      "date": "2026-05-31",
+      "type": "Fixed",
+      "description": "Cap hybridSearch embedding call at 5s to prevent hang under concurrent load",
+      "scope": null
+    },
     {
       "hash": "e8953c32",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Compact quote cards — vertical share strip, drop LinkedIn",
       "scope": null
-    },
-    {
-      "hash": "4d01d057",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Validate para_ids against content table before inserting quotes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "d9d2c8b5",
+        "date": "2026-05-31",
+        "type": "Fixed",
+        "description": "Cap hybridSearch embedding call at 5s to prevent hang under concurrent load",
+        "scope": null
+      },
       {
         "hash": "e8953c32",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Other",
         "description": "Compact quote cards — vertical share strip, drop LinkedIn",
-        "scope": null
-      },
-      {
-        "hash": "4d01d057",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Validate para_ids against content table before inserting quotes",
         "scope": null
       }
     ]
