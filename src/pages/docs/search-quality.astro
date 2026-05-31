@@ -1,8 +1,10 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import reportData from '../../../tests/quality/results-latest.json';
+import oceanReportData from '../../../tests/quality/ocean-results-latest.json';
 
 const report = reportData || null;
+const oceanReport = oceanReportData || null;
 
 const categoryLabels = {
   'phrase-match': 'Phrase Match',
@@ -36,32 +38,23 @@ function failReasons(r) {
   return reasons;
 }
 
-const runDate = report ? new Date(report.run_at).toLocaleDateString('en-US', {
-  year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-}) : null;
+function fmtDate(isoStr) {
+  return new Date(isoStr).toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+}
+
+const runDate = report ? fmtDate(report.run_at) : null;
+const oceanRunDate = oceanReport ? fmtDate(oceanReport.run_at) : null;
 ---
 
 <DocsLayout
   title="Search Quality Battery"
-  description="Automated search quality scoring against 52 test fixtures across phrase-match, concept-match, authority-ranking, cross-tradition, and entity-aware categories."
+  description="Automated search quality scoring across 543 test fixtures — 52 curated SifterSearch tests plus 491 from the OceanLibrary search-testing framework by David Hunt."
   activeSection="search-quality"
 >
   <h1>Search Quality Battery</h1>
-  <p class="subtitle">52 test fixtures measuring relevance, authority ranking, and entity-aware search — adapted from the OceanLibrary search-testing framework</p>
-
-  {report ? (
-    <div class="run-meta">
-      <span>Last run: {runDate}</span>
-      <span class="sep">·</span>
-      <span>Top-{report.top_k} evaluation</span>
-      <span class="sep">·</span>
-      <span>p50 latency: {report.latency_p50_ms}ms</span>
-      <span class="sep">·</span>
-      <span>p95 latency: {report.latency_p95_ms}ms</span>
-    </div>
-  ) : (
-    <p class="no-results">No results on file yet. Run <code>npm run test:search-quality</code> to generate.</p>
-  )}
+  <p class="subtitle">543 test fixtures measuring relevance, authority ranking, and cross-tradition search — 52 curated SifterSearch tests plus 491 from the <a href="https://github.com/dnotes/ocean-search-testing" target="_blank" rel="noopener">ocean-search-testing</a> framework</p>
 
   <h2>Overview</h2>
 
@@ -81,10 +74,25 @@ const runDate = report ? new Date(report.run_at).toLocaleDateString('en-US', {
     <li><strong>Authority gate</strong> — the matching result must meet a minimum authority tier (1–10 scale)</li>
   </ul>
 
+  <h2>Suite 1: SifterSearch Core (52 tests)</h2>
+  <p>Hand-curated fixtures targeting known documents by ID, with strict phrase and authority checks.</p>
+
+  {report ? (
+    <div class="run-meta">
+      <span>Last run: {runDate}</span>
+      <span class="sep">·</span>
+      <span>Top-{report.top_k} evaluation</span>
+      <span class="sep">·</span>
+      <span>p50: {report.latency_p50_ms}ms</span>
+      <span class="sep">·</span>
+      <span>p95: {report.latency_p95_ms}ms</span>
+    </div>
+  ) : (
+    <p class="no-results">No results on file yet. Run <code>npm run test:search-quality</code> to generate.</p>
+  )}
+
   {report && (
     <>
-      <h2>Current Results</h2>
-
       <div class="score-card">
         <div class={`score-big ${passClass(report.pass_rate)}`}>
           {report.passed}/{report.total}
@@ -133,6 +141,90 @@ const runDate = report ? new Date(report.run_at).toLocaleDateString('en-US', {
             </thead>
             <tbody>
               {report.results.filter(r => !r.ok).map(r => (
+                <tr>
+                  <td class="test-id">{r.id}</td>
+                  <td>{categoryLabels[r.category] || r.category}</td>
+                  <td class={r.rank ? '' : 'text-error'}>{r.rank ?? 'NF'}</td>
+                  <td class="query-cell">{r.query}</td>
+                  <td class="text-muted">{failReasons(r).join(', ')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </>
+  )}
+
+  <h2>Suite 2: Ocean Search Testing (491 tests)</h2>
+  <p>
+    Adapted from the <a href="https://github.com/dnotes/ocean-search-testing" target="_blank" rel="noopener">ocean-search-testing</a>
+    framework by <a href="mailto:dhuntatwork@gmail.com">David Hunt</a>. These 491 fixtures cover phrase matching,
+    concept retrieval, and cross-tradition queries across all major world religions in the corpus.
+  </p>
+
+  {oceanReport ? (
+    <div class="run-meta">
+      <span>Last run: {oceanRunDate}</span>
+      <span class="sep">·</span>
+      <span>Top-{oceanReport.top_k} evaluation</span>
+      <span class="sep">·</span>
+      <span>p50: {oceanReport.latency_p50_ms}ms</span>
+      <span class="sep">·</span>
+      <span>p95: {oceanReport.latency_p95_ms}ms</span>
+    </div>
+  ) : (
+    <p class="no-results">No results on file yet. Run <code>npm run test:search-quality:ocean</code> to generate.</p>
+  )}
+
+  {oceanReport && (
+    <>
+      <div class="score-card">
+        <div class={`score-big ${passClass(oceanReport.pass_rate)}`}>
+          {oceanReport.passed}/{oceanReport.total}
+        </div>
+        <div class="score-label">tests passing</div>
+        <div class={`score-pct ${passClass(oceanReport.pass_rate)}`}>{oceanReport.pass_rate}%</div>
+        <div class="score-mrr">MRR {typeof oceanReport.mrr === 'number' ? oceanReport.mrr.toFixed(3) : 'N/A'}</div>
+      </div>
+
+      <h3>By Category</h3>
+      <table class="quality-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Tests</th>
+            <th>Passing</th>
+            <th>Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(oceanReport.categories).map(([cat, stats]) => (
+            <tr>
+              <td><strong>{categoryLabels[cat] || cat}</strong></td>
+              <td>{stats.total}</td>
+              <td>{stats.passed}</td>
+              <td class={passClass(stats.pass_rate)}>{stats.pass_rate}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {oceanReport.results.filter(r => !r.ok).length > 0 && (
+        <>
+          <h3>Failing Tests (first 50)</h3>
+          <table class="quality-table failures">
+            <thead>
+              <tr>
+                <th>Test</th>
+                <th>Category</th>
+                <th>Rank</th>
+                <th>Query</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              {oceanReport.results.filter(r => !r.ok).slice(0, 50).map(r => (
                 <tr>
                   <td class="test-id">{r.id}</td>
                   <td>{categoryLabels[r.category] || r.category}</td>
@@ -210,28 +302,33 @@ const runDate = report ? new Date(report.run_at).toLocaleDateString('en-US', {
   <h2>Running the Battery</h2>
 
   <div class="code-block">
-    <pre><code># Full battery with report (updates this page)
+    <pre><code># Core suite (52 tests) — writes results-latest.json
 npm run test:search-quality
+
+# Ocean suite (491 tests) — writes ocean-results-latest.json
+npm run test:search-quality:ocean
+
+# Both suites combined — writes all-results-latest.json
+npm run test:search-quality:all
 
 # JSON output only
 npm run test:search-quality:json
 
 # Single category
-node tests/quality/score-search.mjs --category=entity-aware
-
-# BDD version (Cucumber)
-npm run test:bdd:search-quality</code></pre>
+node tests/quality/score-search.mjs --category=concept-match
+node tests/quality/score-search.mjs --ocean --category=cross-tradition</code></pre>
   </div>
 
   <p>
-    The battery writes <code>tests/quality/results-latest.json</code> which this page reads
+    Each command writes a JSON file (<code>tests/quality/*-results-latest.json</code>) which this page reads
     at build time. Run the battery and commit the JSON to update the live report.
   </p>
 
   <h2>Test Fixture Format</h2>
 
   <p>
-    Fixtures live in <code>tests/quality/search-fixtures.json</code>. Each fixture is a JSON
+    Core fixtures live in <code>tests/quality/search-fixtures.json</code>; ocean fixtures in
+    <code>tests/quality/ocean-fixtures.json</code>. Each fixture is a JSON
     object with the following fields:
   </p>
 
@@ -288,16 +385,22 @@ npm run test:bdd:search-quality</code></pre>
     </tbody>
   </table>
 
-  <h2>Adaption from Ocean Search Testing</h2>
+  <h2>Adaptation from Ocean Search Testing</h2>
 
   <p>
-    This battery is adapted from the
+    The 491-fixture ocean suite is adapted from the
     <a href="https://github.com/dnotes/ocean-search-testing" target="_blank" rel="noopener">ocean-search-testing</a>
     framework created by <a href="mailto:dhuntatwork@gmail.com">David Hunt</a>. The original
     framework tested Elasticsearch using an ordering-error metric (median rank error ≤5%
     tolerance). This adaptation targets the SifterSearch Meilisearch + Fastify API using
     precision@K, MRR, and authority-tier checks — a better fit for passage-level retrieval
     where exact rank matters less than top-10 recall.
+  </p>
+  <p>
+    Fixture coverage: 168 phrase-match, 271 concept-match, 52 cross-tradition queries spanning
+    Bahá'í, Christian, Islamic, Buddhist, Hindu, Jewish, and Zoroastrian traditions. Queries
+    were deduplicated (keeping the 15-result variant where both 15 and 500 existed) and mapped to
+    SifterSearch religion filter values.
   </p>
 </DocsLayout>
 

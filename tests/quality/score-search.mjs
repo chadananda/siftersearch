@@ -240,9 +240,10 @@ if (JSON_ONLY) {
 }
 
 if (WRITE_REPORT) {
-  const outPath = join(__dirname, 'results-latest.json');
+  const outName = ALL ? 'all-results-latest.json' : OCEAN ? 'ocean-results-latest.json' : 'results-latest.json';
+  const outPath = join(__dirname, outName);
   writeFileSync(outPath, JSON.stringify(report, null, 2));
-  if (!JSON_ONLY) console.log(`\nReport written to tests/quality/results-latest.json`);
+  if (!JSON_ONLY) console.log(`\nReport written to tests/quality/${outName}`);
 }
 
 process.exit(passed === results.length ? 0 : 1);

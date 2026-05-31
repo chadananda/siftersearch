@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T15:31:05.961Z",
+  "generated": "2026-05-31T16:11:55.943Z",
   "entries": [
+    {
+      "hash": "cde59aee",
+      "date": "2026-05-31",
+      "type": "New",
+      "description": "Add 491 ocean-search-testing fixtures + --ocean/--all runner flags",
+      "scope": null
+    },
     {
       "hash": "6da70dca",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Anchor decomposeAngles queries to core topic keywords — revert threshold to 7",
       "scope": null
-    },
-    {
-      "hash": "0db45932",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Stricter relevance scoring in rerankPassages — raise threshold 7→8",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "cde59aee",
+        "date": "2026-05-31",
+        "type": "New",
+        "description": "Add 491 ocean-search-testing fixtures + --ocean/--all runner flags",
+        "scope": null
+      },
       {
         "hash": "6da70dca",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Anchor decomposeAngles queries to core topic keywords — revert threshold to 7",
-        "scope": null
-      },
-      {
-        "hash": "0db45932",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Stricter relevance scoring in rerankPassages — raise threshold 7→8",
         "scope": null
       }
     ]

@@ -79,6 +79,7 @@ export default [
       'data/**',
       'tmp/**',
       'scripts/wip/**',
+      'planning/**',
       '*.min.js',
       // Skip Svelte/Astro files - need special parsers
       '**/*.svelte',
