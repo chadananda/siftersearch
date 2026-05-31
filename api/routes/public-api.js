@@ -494,7 +494,16 @@ export default async function publicApiRoutes(fastify) {
       recordUsage(request.apiKeyUserId, request.apiKeyId, 'search', false).catch(() => {});
     }
 
-    return { results, query, totalFound: searchResults.hits.length, processingTimeMs: durationMs };
+    return {
+      results,
+      query,
+      totalFound: searchResults.hits.length,
+      processingTimeMs: durationMs,
+      _timing: {
+        total_ms: durationMs,
+        meili_ms: searchResults.processingTimeMs ?? null,
+      }
+    };
   });
 
   /**

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T16:56:32.631Z",
+  "generated": "2026-05-31T16:59:06.131Z",
   "entries": [
+    {
+      "hash": "7ea6b36b",
+      "date": "2026-05-31",
+      "type": "Performance",
+      "description": "Server-side timing in search response + preflight check in test runner",
+      "scope": null
+    },
     {
       "hash": "18942deb",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Increase conceptualRecon max_tokens 4096→6000 — canonical_examples expands response size",
       "scope": null
-    },
-    {
-      "hash": "11ff8910",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Framework-level searches find Isaiah 53, Karbala, passion of Christ",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "7ea6b36b",
+        "date": "2026-05-31",
+        "type": "Performance",
+        "description": "Server-side timing in search response + preflight check in test runner",
+        "scope": null
+      },
       {
         "hash": "18942deb",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Increase conceptualRecon max_tokens 4096→6000 — canonical_examples expands response size",
-        "scope": null
-      },
-      {
-        "hash": "11ff8910",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Framework-level searches find Isaiah 53, Karbala, passion of Christ",
         "scope": null
       }
     ]
