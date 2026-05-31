@@ -2,9 +2,13 @@
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import reportData from '../../../tests/quality/results-latest.json';
 import oceanReportData from '../../../tests/quality/ocean-results-latest.json';
+import historyData from '../../../tests/quality/history.json';
+import oceanHistoryData from '../../../tests/quality/ocean-history.json';
 
 const report = reportData || null;
 const oceanReport = oceanReportData || null;
+const history = Array.isArray(historyData) ? historyData : [];
+const oceanHistory = Array.isArray(oceanHistoryData) ? oceanHistoryData : [];
 
 const categoryLabels = {
   'phrase-match': 'Phrase Match',
@@ -14,505 +18,582 @@ const categoryLabels = {
   'entity-aware': 'Entity-Aware',
 };
 
-const categoryDescriptions = {
-  'phrase-match': 'Exact or near-exact phrases that should surface a specific known passage',
-  'concept-match': 'Conceptual queries where a specific document or author should appear',
-  'authority-ranking': 'Primary sources must rank above secondary sources and commentary',
-  'cross-tradition': 'Universal concepts found across multiple religious traditions',
-  'entity-aware': 'Named-entity queries requiring the graph layer (aliases, roles, character tracking)',
-};
-
 function passClass(rate) {
-  if (rate >= 80) return 'text-success';
-  if (rate >= 60) return 'text-warning';
-  return 'text-error';
+  if (rate >= 80) return 'pass-high';
+  if (rate >= 60) return 'pass-mid';
+  return 'pass-low';
+}
+
+function gaugeColor(score) {
+  if (score == null) return 'var(--border)';
+  if (score >= 80) return 'var(--success)';
+  if (score >= 60) return 'var(--warning)';
+  return 'var(--error)';
 }
 
 function failReasons(r) {
-  const reasons = [];
-  if (r.error) return ['API timeout'];
-  if (r.rank === null) reasons.push('not found in top 10');
-  if (r.rank !== null && !r.text_hit) reasons.push('text mismatch');
-  if (!r.anti_hit) reasons.push('anti-test failed');
-  if (!r.authority_hit) reasons.push('authority too low');
-  return reasons;
+  if (r.error) return ['timeout'];
+  const f = [];
+  if (r.rank === null) f.push('not found');
+  else if (!r.text_hit) f.push('text mismatch');
+  if (!r.anti_hit) f.push('anti-test');
+  if (!r.authority_hit) f.push('authority');
+  return f;
 }
 
-function fmtDate(isoStr) {
-  return new Date(isoStr).toLocaleDateString('en-US', {
-    year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+function fmtDate(s) {
+  return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function rankBuckets(results) {
+  const buckets = { 1: 0, '2-3': 0, '4-10': 0, NF: 0 };
+  for (const r of results) {
+    if (r.rank === 1) buckets[1]++;
+    else if (r.rank >= 2 && r.rank <= 3) buckets['2-3']++;
+    else if (r.rank >= 4) buckets['4-10']++;
+    else buckets.NF++;
+  }
+  return buckets;
+}
+
+function failBreakdown(results) {
+  let notFound = 0, textMiss = 0, antiTest = 0, authority = 0, timeout = 0;
+  for (const r of results.filter(r => !r.ok)) {
+    if (r.error) { timeout++; continue; }
+    if (r.rank === null) notFound++;
+    else if (!r.text_hit) textMiss++;
+    if (!r.anti_hit) antiTest++;
+    if (!r.authority_hit) authority++;
+  }
+  return { notFound, textMiss, antiTest, authority, timeout };
+}
+
+// Performance score: p50 latency → 0-100
+// Target: <500ms = green, 500-2000ms = yellow, >2000ms = red
+function perfScore(p50ms) {
+  if (p50ms == null) return null;
+  if (p50ms <= 300) return 100;
+  if (p50ms <= 500) return Math.round(100 - ((p50ms - 300) / 200) * 15);
+  if (p50ms <= 1000) return Math.round(85 - ((p50ms - 500) / 500) * 25);
+  if (p50ms <= 2000) return Math.round(60 - ((p50ms - 1000) / 1000) * 30);
+  if (p50ms <= 5000) return Math.round(30 - ((p50ms - 2000) / 3000) * 30);
+  return 0;
+}
+
+// Gauge arc: r=40, circumference=251.3, fill based on 0-100 score
+function gaugeArc(score) {
+  if (score == null) return '0 251.3';
+  return `${Math.round(score / 100 * 251.3)} 251.3`;
+}
+
+// Build sparkline SVG path from history array
+function sparkPath(hist, key, w, h) {
+  if (!hist || hist.length < 2) return '';
+  const vals = hist.map(h => h[key] ?? 0);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const range = max - min || 1;
+  const pts = vals.map((v, i) => {
+    const x = Math.round((i / (vals.length - 1)) * w);
+    const y = Math.round(h - ((v - min) / range) * h);
+    return `${x},${y}`;
   });
+  return 'M' + pts.join('L');
 }
 
-const runDate = report ? fmtDate(report.run_at) : null;
-const oceanRunDate = oceanReport ? fmtDate(oceanReport.run_at) : null;
+// Compute gauges for core suite
+const coreGauges = report ? [
+  { label: 'Pass Rate', score: report.pass_rate, sub: `${report.passed}/${report.total}` },
+  { label: 'MRR', score: Math.round(report.mrr * 100), sub: report.mrr.toFixed(3) },
+  { label: 'Rank 1', score: report.results ? Math.round(report.results.filter(r => r.rank === 1).length / report.total * 100) : null, sub: `${report.results?.filter(r => r.rank === 1).length ?? '?'} exact` },
+  { label: 'Authority', score: report.categories?.['authority-ranking']?.pass_rate ?? null, sub: report.categories?.['authority-ranking'] ? `${report.categories['authority-ranking'].passed}/${report.categories['authority-ranking'].total}` : 'n/a' },
+  { label: 'Performance', score: perfScore(report.latency_p50_ms), sub: `${report.latency_p50_ms < 1000 ? report.latency_p50_ms + 'ms' : (report.latency_p50_ms/1000).toFixed(1)+'s'} p50` },
+] : null;
+
+const oceanGauges = oceanReport ? [
+  { label: 'Pass Rate', score: oceanReport.pass_rate, sub: `${oceanReport.passed}/${oceanReport.total}` },
+  { label: 'MRR', score: Math.round(oceanReport.mrr * 100), sub: oceanReport.mrr.toFixed(3) },
+  { label: 'Rank 1', score: oceanReport.results ? Math.round(oceanReport.results.filter(r => r.rank === 1).length / oceanReport.total * 100) : null, sub: `${oceanReport.results?.filter(r => r.rank === 1).length ?? '?'} exact` },
+  { label: 'Phrase Match', score: oceanReport.categories?.['phrase-match']?.pass_rate ?? null, sub: oceanReport.categories?.['phrase-match'] ? `${oceanReport.categories['phrase-match'].passed}/${oceanReport.categories['phrase-match'].total}` : 'n/a' },
+  { label: 'Performance', score: perfScore(oceanReport.latency_p50_ms), sub: `${oceanReport.latency_p50_ms < 1000 ? oceanReport.latency_p50_ms + 'ms' : (oceanReport.latency_p50_ms/1000).toFixed(1)+'s'} p50` },
+] : null;
+
+const coreRanks = report ? rankBuckets(report.results) : null;
+const coreFails = report ? failBreakdown(report.results) : null;
+const oceanFails = oceanReport ? failBreakdown(oceanReport.results) : null;
+const oceanRanks = oceanReport ? rankBuckets(oceanReport.results) : null;
 ---
 
 <DocsLayout
   title="Search Quality Battery"
-  description="Automated search quality scoring across 543 test fixtures — 52 curated SifterSearch tests plus 491 from the OceanLibrary search-testing framework by David Hunt."
+  description="Live search quality scores across 543 test fixtures — 52 curated SifterSearch tests plus 491 from David Hunt's ocean-search-testing framework."
   activeSection="search-quality"
 >
-  <h1>Search Quality Battery</h1>
-  <p class="subtitle">543 test fixtures measuring relevance, authority ranking, and cross-tradition search — 52 curated SifterSearch tests plus 491 from the ocean-search-testing framework by <a href="mailto:dhuntatwork@gmail.com">David Hunt</a>. See <a href="/docs/ocean-search-testing">the full scoring model and implementation guide</a>.</p>
-
-  <h2>Overview</h2>
-
-  <p>
-    Search quality is measured across five dimensions. Each test specifies a query, the expected
-    result (by document ID, author, or text content), and optional authority-tier requirements.
-    The battery runs against the live production API and writes machine-readable results that
-    update this page.
+  <h1>Search Quality</h1>
+  <p class="subtitle">
+    543 test fixtures — 52 curated + 491 from <a href="/docs/ocean-search-testing">David Hunt's framework</a>.
+    Scores update when the battery is run and the JSON committed.
   </p>
 
-  <h3>Scoring model</h3>
-  <ul>
-    <li><strong>Precision@10</strong> — did the expected document appear in the top 10 results?</li>
-    <li><strong>MRR</strong> — Mean Reciprocal Rank; penalises results that appear late in the list</li>
-    <li><strong>Text check</strong> — does the matching passage contain the expected phrase?</li>
-    <li><strong>Anti-test</strong> — the top result must NOT be from a forbidden author (secondary source should not beat primary)</li>
-    <li><strong>Authority gate</strong> — the matching result must meet a minimum authority tier (1–10 scale)</li>
-  </ul>
-
-  <h2>Suite 1: SifterSearch Core (52 tests)</h2>
-  <p>Hand-curated fixtures targeting known documents by ID, with strict phrase and authority checks.</p>
-
-  {report ? (
-    <div class="run-meta">
-      <span>Last run: {runDate}</span>
-      <span class="sep">·</span>
-      <span>Top-{report.top_k} evaluation</span>
-      <span class="sep">·</span>
-      <span>p50: {report.latency_p50_ms}ms</span>
-      <span class="sep">·</span>
-      <span>p95: {report.latency_p95_ms}ms</span>
+  <!-- ═══ CORE SUITE GAUGES ═══ -->
+  <section class="gauge-section">
+    <div class="gauge-header">
+      <span class="suite-label">Core Suite</span>
+      <span class="suite-count">52 tests</span>
+      {report && <span class="suite-date">{fmtDate(report.run_at)}</span>}
     </div>
-  ) : (
-    <p class="no-results">No results on file yet. Run <code>npm run test:search-quality</code> to generate.</p>
-  )}
-
-  {report && (
-    <>
-      <div class="score-card">
-        <div class={`score-big ${passClass(report.pass_rate)}`}>
-          {report.passed}/{report.total}
-        </div>
-        <div class="score-label">tests passing</div>
-        <div class={`score-pct ${passClass(report.pass_rate)}`}>{report.pass_rate}%</div>
-        <div class="score-mrr">MRR {typeof report.mrr === 'number' ? report.mrr.toFixed(3) : 'N/A'}</div>
+    {coreGauges ? (
+      <div class="gauge-row">
+        {coreGauges.map(g => (
+          <div class="gauge-cell">
+            <svg class="gauge-svg" viewBox="0 0 100 100" aria-label={`${g.label}: ${g.score ?? 'no data'}`}>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--surface-3, #e5e7eb)" stroke-width="9"/>
+              {g.score != null && (
+                <circle
+                  cx="50" cy="50" r="40"
+                  fill="none"
+                  stroke={gaugeColor(g.score)}
+                  stroke-width="9"
+                  stroke-dasharray={gaugeArc(g.score)}
+                  stroke-linecap="round"
+                  transform="rotate(-90 50 50)"
+                />
+              )}
+              <text x="50" y="46" text-anchor="middle" class="gauge-num" style={`fill:${g.score != null ? gaugeColor(g.score) : 'var(--text-muted)'}`}>
+                {g.score != null ? g.score : '—'}
+              </text>
+              <text x="50" y="62" text-anchor="middle" class="gauge-sub">{g.sub}</text>
+            </svg>
+            <div class="gauge-label">{g.label}</div>
+          </div>
+        ))}
       </div>
+    ) : (
+      <p class="no-data">Run <code>npm run test:search-quality</code></p>
+    )}
+  </section>
 
-      <h3>By Category</h3>
-      <table class="quality-table">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Tests</th>
-            <th>Passing</th>
-            <th>Rate</th>
-            <th>What it measures</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(report.categories).map(([cat, stats]) => (
-            <tr>
-              <td><strong>{categoryLabels[cat] || cat}</strong></td>
-              <td>{stats.total}</td>
-              <td>{stats.passed}</td>
-              <td class={passClass(stats.pass_rate)}>{stats.pass_rate}%</td>
-              <td class="desc">{categoryDescriptions[cat] || ''}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  <!-- ═══ OCEAN SUITE GAUGES ═══ -->
+  <section class="gauge-section">
+    <div class="gauge-header">
+      <span class="suite-label">Ocean Suite</span>
+      <span class="suite-count">491 tests</span>
+      {oceanReport && <span class="suite-date">{fmtDate(oceanReport.run_at)}</span>}
+    </div>
+    {oceanGauges ? (
+      <div class="gauge-row">
+        {oceanGauges.map(g => (
+          <div class="gauge-cell">
+            <svg class="gauge-svg" viewBox="0 0 100 100" aria-label={`${g.label}: ${g.score ?? 'no data'}`}>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--surface-3, #e5e7eb)" stroke-width="9"/>
+              {g.score != null && (
+                <circle
+                  cx="50" cy="50" r="40"
+                  fill="none"
+                  stroke={gaugeColor(g.score)}
+                  stroke-width="9"
+                  stroke-dasharray={gaugeArc(g.score)}
+                  stroke-linecap="round"
+                  transform="rotate(-90 50 50)"
+                />
+              )}
+              <text x="50" y="46" text-anchor="middle" class="gauge-num" style={`fill:${g.score != null ? gaugeColor(g.score) : 'var(--text-muted)'}`}>
+                {g.score != null ? g.score : '—'}
+              </text>
+              <text x="50" y="62" text-anchor="middle" class="gauge-sub">{g.sub}</text>
+            </svg>
+            <div class="gauge-label">{g.label}</div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <p class="no-data">Run <code>npm run test:search-quality:ocean</code></p>
+    )}
+  </section>
 
-      {report.results.filter(r => !r.ok).length > 0 && (
-        <>
-          <h3>Failing Tests</h3>
-          <table class="quality-table failures">
-            <thead>
-              <tr>
-                <th>Test</th>
-                <th>Category</th>
-                <th>Rank</th>
-                <th>Query</th>
-                <th>Reason</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.results.filter(r => !r.ok).map(r => (
-                <tr>
-                  <td class="test-id">{r.id}</td>
-                  <td>{categoryLabels[r.category] || r.category}</td>
-                  <td class={r.rank ? '' : 'text-error'}>{r.rank ?? 'NF'}</td>
-                  <td class="query-cell">{r.query}</td>
-                  <td class="text-muted">{failReasons(r).join(', ')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
-    </>
+  <!-- ═══ HISTORY ═══ -->
+  {(history.length > 1 || oceanHistory.length > 1) && (
+    <section>
+      <h2>Score History</h2>
+      <div class="history-grid">
+        {history.length > 1 && (
+          <div class="history-chart">
+            <div class="history-chart-header">
+              <span class="history-suite">Core Suite</span>
+              <span class="history-range">{history.length} runs · {history[0].run_at.slice(0,10)} → {history[history.length-1].run_at.slice(0,10)}</span>
+            </div>
+            <svg class="spark" viewBox={`0 0 200 50`} preserveAspectRatio="none">
+              <path d={sparkPath(history, 'pass_rate', 200, 50)} class="spark-line"/>
+            </svg>
+            <div class="history-table-wrap">
+              <table class="history-table">
+                <thead><tr><th>Date</th><th>Pass%</th><th>MRR</th><th>p50</th></tr></thead>
+                <tbody>
+                  {[...history].reverse().slice(0, 10).map(h => (
+                    <tr>
+                      <td>{new Date(h.run_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})}</td>
+                      <td class={passClass(h.pass_rate)}>{h.pass_rate}%</td>
+                      <td>{h.mrr.toFixed(3)}</td>
+                      <td>{h.latency_p50_ms < 1000 ? h.latency_p50_ms+'ms' : (h.latency_p50_ms/1000).toFixed(1)+'s'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        {oceanHistory.length > 1 && (
+          <div class="history-chart">
+            <div class="history-chart-header">
+              <span class="history-suite">Ocean Suite</span>
+              <span class="history-range">{oceanHistory.length} runs · {oceanHistory[0].run_at.slice(0,10)} → {oceanHistory[oceanHistory.length-1].run_at.slice(0,10)}</span>
+            </div>
+            <svg class="spark" viewBox={`0 0 200 50`} preserveAspectRatio="none">
+              <path d={sparkPath(oceanHistory, 'pass_rate', 200, 50)} class="spark-line"/>
+            </svg>
+            <div class="history-table-wrap">
+              <table class="history-table">
+                <thead><tr><th>Date</th><th>Pass%</th><th>MRR</th><th>p50</th></tr></thead>
+                <tbody>
+                  {[...oceanHistory].reverse().slice(0, 10).map(h => (
+                    <tr>
+                      <td>{new Date(h.run_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})}</td>
+                      <td class={passClass(h.pass_rate)}>{h.pass_rate}%</td>
+                      <td>{h.mrr.toFixed(3)}</td>
+                      <td>{h.latency_p50_ms < 1000 ? h.latency_p50_ms+'ms' : (h.latency_p50_ms/1000).toFixed(1)+'s'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
   )}
 
-  <h2>Suite 2: Ocean Search Testing (491 tests)</h2>
-  <p>
-    491 fixtures adapted from the ocean-search-testing framework by
-    <a href="mailto:dhuntatwork@gmail.com">David Hunt</a>, covering phrase matching,
-    concept retrieval, and cross-tradition queries across all major world religions in the corpus.
-  </p>
-
-  {oceanReport ? (
-    <div class="run-meta">
-      <span>Last run: {oceanRunDate}</span>
-      <span class="sep">·</span>
-      <span>Top-{oceanReport.top_k} evaluation</span>
-      <span class="sep">·</span>
-      <span>p50: {oceanReport.latency_p50_ms}ms</span>
-      <span class="sep">·</span>
-      <span>p95: {oceanReport.latency_p95_ms}ms</span>
-    </div>
-  ) : (
-    <p class="no-results">No results on file yet. Run <code>npm run test:search-quality:ocean</code> to generate.</p>
+  <!-- ═══ CATEGORY BREAKDOWN ═══ -->
+  {report && (
+    <section>
+      <h2>Core — By Category</h2>
+      <div class="cat-bars">
+        {Object.entries(report.categories).map(([cat, stats]) => (
+          <div class="cat-row">
+            <span class="cat-label">{categoryLabels[cat] || cat}</span>
+            <div class="cat-bar-wrap">
+              <div class={`cat-bar-fill ${passClass(stats.pass_rate)}`} style={`width:${stats.pass_rate}%`}></div>
+            </div>
+            <span class={`cat-pct ${passClass(stats.pass_rate)}`}>{stats.pass_rate}%</span>
+            <span class="cat-frac">{stats.passed}/{stats.total}</span>
+          </div>
+        ))}
+      </div>
+    </section>
   )}
 
   {oceanReport && (
-    <>
-      <div class="score-card">
-        <div class={`score-big ${passClass(oceanReport.pass_rate)}`}>
-          {oceanReport.passed}/{oceanReport.total}
-        </div>
-        <div class="score-label">tests passing</div>
-        <div class={`score-pct ${passClass(oceanReport.pass_rate)}`}>{oceanReport.pass_rate}%</div>
-        <div class="score-mrr">MRR {typeof oceanReport.mrr === 'number' ? oceanReport.mrr.toFixed(3) : 'N/A'}</div>
+    <section>
+      <h2>Ocean — By Category</h2>
+      <div class="cat-bars">
+        {Object.entries(oceanReport.categories).map(([cat, stats]) => (
+          <div class="cat-row">
+            <span class="cat-label">{categoryLabels[cat] || cat}</span>
+            <div class="cat-bar-wrap">
+              <div class={`cat-bar-fill ${passClass(stats.pass_rate)}`} style={`width:${stats.pass_rate}%`}></div>
+            </div>
+            <span class={`cat-pct ${passClass(stats.pass_rate)}`}>{stats.pass_rate}%</span>
+            <span class="cat-frac">{stats.passed}/{stats.total}</span>
+          </div>
+        ))}
       </div>
+    </section>
+  )}
 
-      <h3>By Category</h3>
-      <table class="quality-table">
+  <!-- ═══ RANK DISTRIBUTION ═══ -->
+  {(coreRanks || oceanRanks) && (
+    <section>
+      <h2>Rank Distribution</h2>
+      <div class="rank-dist-grid">
+        {coreRanks && (
+          <div class="rank-dist">
+            <h3>Core (52)</h3>
+            {[['Rank 1', coreRanks[1], 'success'], ['Rank 2–3', coreRanks['2-3'], 'warning'], ['Rank 4–10', coreRanks['4-10'], 'info'], ['Not found', coreRanks.NF, 'error']].map(([lbl, n, cls]) => (
+              <div class="rank-row">
+                <span class="rank-lbl">{lbl}</span>
+                <div class="rank-bar-wrap">
+                  <div class={`rank-bar-fill rank-${cls}`} style={`width:${Math.round(n/52*100)}%`}></div>
+                </div>
+                <span class="rank-n">{n}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {oceanRanks && (
+          <div class="rank-dist">
+            <h3>Ocean (491)</h3>
+            {[['Rank 1', oceanRanks[1], 'success'], ['Rank 2–3', oceanRanks['2-3'], 'warning'], ['Rank 4–10', oceanRanks['4-10'], 'info'], ['Not found', oceanRanks.NF, 'error']].map(([lbl, n, cls]) => (
+              <div class="rank-row">
+                <span class="rank-lbl">{lbl}</span>
+                <div class="rank-bar-wrap">
+                  <div class={`rank-bar-fill rank-${cls}`} style={`width:${Math.round(n/491*100)}%`}></div>
+                </div>
+                <span class="rank-n">{n}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  )}
+
+  <!-- ═══ FAILURE BREAKDOWN ═══ -->
+  {(coreFails || oceanFails) && (() => {
+    const total = (report?.fail ?? 0) + (oceanReport?.fail ?? 0);
+    return total > 0 ? (
+      <section>
+        <h2>Failure Breakdown</h2>
+        <div class="fail-grid">
+          {coreFails && report.fail > 0 && (
+            <div class="fail-card">
+              <div class="fail-title">Core failures ({report.fail})</div>
+              {[
+                ['Not found in top 10', coreFails.notFound],
+                ['Text mismatch', coreFails.textMiss],
+                ['Anti-test failed', coreFails.antiTest],
+                ['Authority too low', coreFails.authority],
+                ['API timeout', coreFails.timeout],
+              ].filter(([,n]) => n > 0).map(([lbl, n]) => (
+                <div class="fail-row">
+                  <span class="fail-lbl">{lbl}</span>
+                  <div class="fail-bar-wrap">
+                    <div class="fail-bar-fill" style={`width:${Math.round(n/report.fail*100)}%`}></div>
+                  </div>
+                  <span class="fail-n">{n}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {oceanFails && oceanReport.fail > 0 && (
+            <div class="fail-card">
+              <div class="fail-title">Ocean failures ({oceanReport.fail})</div>
+              {[
+                ['Not found in top 10', oceanFails.notFound],
+                ['Text mismatch', oceanFails.textMiss],
+                ['Anti-test failed', oceanFails.antiTest],
+                ['Authority too low', oceanFails.authority],
+                ['API timeout', oceanFails.timeout],
+              ].filter(([,n]) => n > 0).map(([lbl, n]) => (
+                <div class="fail-row">
+                  <span class="fail-lbl">{lbl}</span>
+                  <div class="fail-bar-wrap">
+                    <div class="fail-bar-fill" style={`width:${Math.round(n/oceanReport.fail*100)}%`}></div>
+                  </div>
+                  <span class="fail-n">{n}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    ) : null;
+  })()}
+
+  <!-- ═══ FAILING TESTS TABLE ═══ -->
+  {report && report.results.filter(r => !r.ok).length > 0 && (
+    <section>
+      <h2>Core — Failing Tests</h2>
+      <table class="fail-table">
         <thead>
-          <tr>
-            <th>Category</th>
-            <th>Tests</th>
-            <th>Passing</th>
-            <th>Rate</th>
-          </tr>
+          <tr><th>Query</th><th>Cat</th><th>Rank</th><th>Top hit</th><th>Reason</th></tr>
         </thead>
         <tbody>
-          {Object.entries(oceanReport.categories).map(([cat, stats]) => (
+          {report.results.filter(r => !r.ok).map(r => (
             <tr>
-              <td><strong>{categoryLabels[cat] || cat}</strong></td>
-              <td>{stats.total}</td>
-              <td>{stats.passed}</td>
-              <td class={passClass(stats.pass_rate)}>{stats.pass_rate}%</td>
+              <td class="q-cell">{r.query}</td>
+              <td class="cat-cell">{(categoryLabels[r.category] || r.category).replace(' ', '\u00a0')}</td>
+              <td class={r.rank ? 'rank-cell' : 'rank-cell nf'}>{r.rank ?? 'NF'}</td>
+              <td class="hit-cell">{r.top_hit_title ? `${r.top_hit_author} — ${r.top_hit_title.slice(0,40)}` : '—'}</td>
+              <td class="reason-cell">{failReasons(r).join(', ')}</td>
             </tr>
           ))}
         </tbody>
       </table>
-
-      {oceanReport.results.filter(r => !r.ok).length > 0 && (
-        <>
-          <h3>Failing Tests (first 50)</h3>
-          <table class="quality-table failures">
-            <thead>
-              <tr>
-                <th>Test</th>
-                <th>Category</th>
-                <th>Rank</th>
-                <th>Query</th>
-                <th>Reason</th>
-              </tr>
-            </thead>
-            <tbody>
-              {oceanReport.results.filter(r => !r.ok).slice(0, 50).map(r => (
-                <tr>
-                  <td class="test-id">{r.id}</td>
-                  <td>{categoryLabels[r.category] || r.category}</td>
-                  <td class={r.rank ? '' : 'text-error'}>{r.rank ?? 'NF'}</td>
-                  <td class="query-cell">{r.query}</td>
-                  <td class="text-muted">{failReasons(r).join(', ')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
-    </>
+    </section>
   )}
 
-  <h2>Test Categories</h2>
+  <!-- ═══ HOW TO RUN ═══ -->
+  <section>
+    <h2>Running the Battery</h2>
+    <div class="code-block">
+      <pre><code>npm run test:search-quality          # core 52 tests
+npm run test:search-quality:ocean    # ocean 491 tests
+npm run test:search-quality:all      # both combined</code></pre>
+    </div>
+    <p class="run-note">
+      Each command writes a JSON file under <code>tests/quality/</code>. Commit the file to update this page.
+      See <a href="/docs/ocean-search-testing">the scoring model guide</a> for details on how results are evaluated.
+    </p>
+  </section>
 
-  <h3>Phrase Match</h3>
-  <p>
-    The most demanding category. A user searches for near-verbatim phrases from a specific text.
-    The expected document must appear in the top 10 and the matching passage must contain the
-    quoted phrase. Failure here means the search index failed to surface a highly relevant
-    result — either a recall failure (the document wasn't indexed) or a ranking failure
-    (it ranked below position 10).
-  </p>
-  <p>
-    Example: searching "cleanse thy heart from envy and from grudge" should surface the
-    Hidden Words of Bahá'u'lláh (document 8230) in the top 10, with a passage containing "envy".
-  </p>
-
-  <h3>Concept Match</h3>
-  <p>
-    The user describes a concept in their own words rather than quoting directly. The search
-    must identify the best authoritative source even without exact-phrase overlap. This exercises
-    semantic search (embedding similarity) and the authority reranking layer.
-  </p>
-  <p>
-    Example: "soul is immortal continues progress after death" should surface Some Answered
-    Questions (document 8346) with text containing "soul".
-  </p>
-
-  <h3>Authority Ranking</h3>
-  <p>
-    Primary sources (revealed text, authority tier ≥ 7) must outrank secondary sources and
-    commentary for the same topic. If a researcher asks about Bahá'u'lláh's views on science,
-    the top result should be Bahá'u'lláh himself — not an Esslemont commentary about those views.
-  </p>
-  <p>
-    These anti-tests catch the most common relevance failure in religious search: secondary
-    sources that discuss primary sources end up ranking higher because they use more of the
-    search terms explicitly.
-  </p>
-
-  <h3>Cross-Tradition</h3>
-  <p>
-    Universal religious concepts (love, forgiveness, justice, afterlife) should return results
-    from multiple traditions with high authority scores. These tests verify that the federated
-    multi-tradition search works correctly and that cross-tradition queries don't collapse to a
-    single tradition's corpus.
-  </p>
-
-  <h3>Entity-Aware</h3>
-  <p>
-    Queries that require the graph entity layer — alias resolution, role filtering, and
-    character tracking across a long work. For example, "first Letter of the Living" must
-    resolve to Mullá Ḥusayn and surface passages from the Dawn-Breakers (document 21308)
-    even though the phrase "Mullá Ḥusayn" may not appear in the matched passage.
-  </p>
-  <p>
-    These tests are only meaningful after the entity extraction pipeline has run and the
-    <code>entity_mentions_idx</code> Meilisearch sidecar is populated. Current coverage:
-    48,254 entity mentions from 3.55M paragraphs.
-  </p>
-
-  <h2>Running the Battery</h2>
-
-  <div class="code-block">
-    <pre><code># Core suite (52 tests) — writes results-latest.json
-npm run test:search-quality
-
-# Ocean suite (491 tests) — writes ocean-results-latest.json
-npm run test:search-quality:ocean
-
-# Both suites combined — writes all-results-latest.json
-npm run test:search-quality:all
-
-# JSON output only
-npm run test:search-quality:json
-
-# Single category
-node tests/quality/score-search.mjs --category=concept-match
-node tests/quality/score-search.mjs --ocean --category=cross-tradition</code></pre>
-  </div>
-
-  <p>
-    Each command writes a JSON file (<code>tests/quality/*-results-latest.json</code>) which this page reads
-    at build time. Run the battery and commit the JSON to update the live report.
-  </p>
-
-  <h2>Test Fixture Format</h2>
-
-  <p>
-    Core fixtures live in <code>tests/quality/search-fixtures.json</code>; ocean fixtures in
-    <code>tests/quality/ocean-fixtures.json</code>. Each fixture is a JSON
-    object with the following fields:
-  </p>
-
-  <div class="code-block">
-    <pre><code>{`{
-  "id": "hidden-words-cleanse-heart",
-  "category": "phrase-match",
-  "query": "cleanse thy heart from envy and from grudge",
-  "religion_filter": "Baha'i",
-  "expected_doc_id": 8230,
-  "expected_text_contains": ["envy"],
-  "intent": "Phrase match for Arabic Hidden Words"
-}`}</code></pre>
-  </div>
-
-  <p>Optional fields:</p>
-  <ul>
-    <li><code>expected_doc_id</code> — integer document ID that must appear in top-K</li>
-    <li><code>expected_author_contains</code> — author name substring (use when doc ID isn't known)</li>
-    <li><code>expected_author_not_contains</code> — anti-test: top result must NOT be this author</li>
-    <li><code>expected_text_contains</code> — array of phrases, all must appear in the matched passage</li>
-    <li><code>min_authority</code> — minimum authority tier (1–10) for the matching result</li>
-    <li><code>religion_filter</code> — filter results to a specific tradition</li>
-    <li><code>expected_passage_range</code> — <code>[lo, hi]</code> paragraph index range</li>
-  </ul>
-
-  <h2>Interpreting Results</h2>
-
-  <table class="quality-table">
-    <thead>
-      <tr><th>Flag</th><th>Meaning</th><th>Common cause</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>rank=NF</code></td>
-        <td>Document not found in top {report?.top_k ?? 10}</td>
-        <td>Recall failure, wrong doc ID, or timeout</td>
-      </tr>
-      <tr>
-        <td><code>text-mismatch</code></td>
-        <td>Doc found but passage doesn't contain expected phrase</td>
-        <td>Ranking surfaced the wrong paragraph, or phrase too strict</td>
-      </tr>
-      <tr>
-        <td><code>anti-test-failed</code></td>
-        <td>Top result is from a forbidden secondary source</td>
-        <td>Authority reranking not working for this query</td>
-      </tr>
-      <tr>
-        <td><code>authority-too-low</code></td>
-        <td>Result authority tier below required minimum</td>
-        <td>Authority metadata missing or reranking failure</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <p>
-    For full documentation on the ocean-search-testing scoring model, document authority weights,
-    implementation gaps, and how this applies beyond religious search, see the
-    <a href="/docs/ocean-search-testing">Ocean Search Testing guide</a>.
-  </p>
 </DocsLayout>
 
 <style>
   .subtitle {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     color: var(--text-secondary);
-    margin-bottom: 2rem;
-    max-width: 68ch;
+    margin: 0.25rem 0 2rem;
+    max-width: 72ch;
   }
 
-  .run-meta {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 2rem;
+  /* ── Gauge sections ── */
+  .gauge-section {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .gauge-header {
     display: flex;
+    align-items: baseline;
     gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .suite-label { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); }
+  .suite-count { font-size: 0.8rem; color: var(--text-muted); }
+  .suite-date { font-size: 0.75rem; color: var(--text-muted); margin-left: auto; }
+
+  .gauge-row {
+    display: flex;
+    gap: 1rem;
     flex-wrap: wrap;
   }
 
-  .sep { opacity: 0.4; }
-
-  .no-results {
-    padding: 1rem 1.25rem;
-    background: var(--surface-2);
-    border-radius: 8px;
-    border: 1px solid var(--border-subtle);
-    color: var(--text-muted);
-    margin-bottom: 2rem;
-  }
-
-  .score-card {
+  .gauge-cell {
     display: flex;
-    align-items: baseline;
-    gap: 1rem;
-    padding: 1.25rem 1.5rem;
-    background: var(--surface-2);
-    border-radius: 12px;
-    border: 1px solid var(--border-subtle);
-    margin: 1.5rem 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 80px;
+    max-width: 120px;
   }
 
-  .score-big {
-    font-size: 2.2rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
+  .gauge-svg {
+    width: 90px;
+    height: 90px;
+    overflow: visible;
   }
 
-  .score-label {
-    color: var(--text-muted);
-    font-size: 0.9rem;
+  .gauge-num {
+    font-size: 22px;
+    font-weight: 800;
+    font-family: inherit;
   }
 
-  .score-pct {
-    font-size: 1.4rem;
-    font-weight: 600;
-    margin-left: auto;
+  .gauge-sub {
+    font-size: 10px;
+    fill: var(--text-muted);
+    font-family: inherit;
   }
 
-  .score-mrr {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-  }
-
-  .quality-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.875rem;
-    margin: 1.5rem 0;
-  }
-
-  .quality-table th {
-    text-align: left;
-    padding: 0.5rem 0.75rem;
-    border-bottom: 2px solid var(--border);
+  .gauge-label {
+    font-size: 0.72rem;
     color: var(--text-secondary);
     font-weight: 600;
-    font-size: 0.8rem;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
+    text-align: center;
   }
 
-  .quality-table td {
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--border-subtle);
-    vertical-align: top;
+  .no-data { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+  .no-data code { font-size: 0.8rem; }
+
+  /* ── Color roles ── */
+  .pass-high, .cat-pct.pass-high { color: var(--success); }
+  .pass-mid, .cat-pct.pass-mid { color: var(--warning); }
+  .pass-low, .cat-pct.pass-low { color: var(--error); }
+  .cat-bar-fill.pass-high { background: var(--success); }
+  .cat-bar-fill.pass-mid { background: var(--warning); }
+  .cat-bar-fill.pass-low { background: var(--error); }
+
+  /* ── Category bars ── */
+  .cat-bars { display: flex; flex-direction: column; gap: 0.6rem; margin: 1rem 0 2rem; }
+  .cat-row { display: grid; grid-template-columns: 10rem 1fr 3rem 3.5rem; align-items: center; gap: 0.75rem; }
+  .cat-label { font-size: 0.875rem; color: var(--text-secondary); }
+  .cat-bar-wrap { height: 10px; background: var(--surface-2); border-radius: 5px; overflow: hidden; border: 1px solid var(--border-subtle); }
+  .cat-bar-fill { height: 100%; border-radius: 5px; }
+  .cat-pct { font-size: 0.875rem; font-weight: 600; text-align: right; }
+  .cat-frac { font-size: 0.78rem; color: var(--text-muted); }
+
+  /* ── Rank distribution ── */
+  .rank-dist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1rem 0 2rem; }
+  @media (max-width: 640px) { .rank-dist-grid { grid-template-columns: 1fr; } }
+  .rank-dist h3 { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin: 0 0 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .rank-row { display: grid; grid-template-columns: 6rem 1fr 2rem; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+  .rank-lbl { font-size: 0.82rem; color: var(--text-secondary); }
+  .rank-bar-wrap { height: 12px; background: var(--surface-2); border-radius: 4px; overflow: hidden; border: 1px solid var(--border-subtle); }
+  .rank-bar-fill { height: 100%; border-radius: 4px; }
+  .rank-success { background: var(--success); }
+  .rank-warning { background: var(--warning); }
+  .rank-info { background: var(--accent, #4a90e2); opacity: 0.7; }
+  .rank-error { background: var(--surface-3, #ddd); }
+  .rank-n { font-size: 0.82rem; color: var(--text-muted); text-align: right; }
+
+  /* ── Failure breakdown ── */
+  .fail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1rem 0 2rem; }
+  @media (max-width: 640px) { .fail-grid { grid-template-columns: 1fr; } }
+  .fail-card { }
+  .fail-title { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.75rem; }
+  .fail-row { display: grid; grid-template-columns: 10rem 1fr 2rem; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+  .fail-lbl { font-size: 0.82rem; color: var(--text-secondary); }
+  .fail-bar-wrap { height: 10px; background: var(--surface-2); border-radius: 4px; overflow: hidden; border: 1px solid var(--border-subtle); }
+  .fail-bar-fill { height: 100%; border-radius: 4px; background: var(--error); opacity: 0.6; }
+  .fail-n { font-size: 0.82rem; color: var(--text-muted); text-align: right; }
+
+  /* ── Failing tests table ── */
+  .fail-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 1rem 0 2rem; }
+  .fail-table th {
+    text-align: left; padding: 0.4rem 0.6rem;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-secondary); font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.04em;
   }
+  .fail-table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
+  .fail-table tr:hover td { background: var(--surface-2); }
+  .q-cell { max-width: 220px; font-style: italic; color: var(--text-secondary); }
+  .cat-cell { white-space: nowrap; font-size: 0.75rem; color: var(--text-muted); }
+  .rank-cell { font-weight: 600; text-align: center; }
+  .rank-cell.nf { color: var(--error); }
+  .hit-cell { font-size: 0.78rem; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .reason-cell { font-size: 0.78rem; color: var(--error); white-space: nowrap; }
 
-  .quality-table tr:hover td { background: var(--surface-2); }
+  /* ── Running section ── */
+  .code-block { background: var(--surface-2); border-radius: 8px; border: 1px solid var(--border-subtle); overflow: auto; margin: 1rem 0; }
+  .code-block pre { margin: 0; padding: 1rem 1.25rem; }
+  .code-block code { font-family: monospace; font-size: 0.85rem; color: var(--text-primary); }
+  .run-note { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.75rem; }
 
-  .quality-table .desc { color: var(--text-muted); font-size: 0.82rem; }
-  .quality-table .test-id { font-family: monospace; font-size: 0.8rem; }
-  .quality-table .query-cell { max-width: 260px; }
-  .quality-table .text-muted { color: var(--text-muted); }
-  .quality-table .text-error { color: var(--error); }
+  /* ── Score history ── */
+  .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1rem 0 2rem; }
+  @media (max-width: 640px) { .history-grid { grid-template-columns: 1fr; } }
+  .history-chart { }
+  .history-chart-header { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .history-suite { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+  .history-range { font-size: 0.72rem; color: var(--text-muted); margin-left: auto; }
+  .spark { width: 100%; height: 50px; display: block; margin-bottom: 1rem; overflow: visible; }
+  .spark-line { fill: none; stroke: var(--accent, #4a90e2); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .history-table-wrap { overflow-x: auto; }
+  .history-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .history-table th { text-align: left; padding: 0.3rem 0.5rem; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .history-table td { padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border-subtle); }
+  .history-table .pass-high { color: var(--success); font-weight: 600; }
+  .history-table .pass-mid { color: var(--warning); font-weight: 600; }
+  .history-table .pass-low { color: var(--error); font-weight: 600; }
 
-  .failures tbody tr:nth-child(odd) td { background: var(--surface-1); }
-
-  .text-success { color: var(--success); }
-  .text-warning { color: var(--warning); }
-  .text-error { color: var(--error); }
-
-  .code-block {
-    background: var(--surface-2);
-    border-radius: 8px;
-    border: 1px solid var(--border-subtle);
-    overflow: auto;
-    margin: 1.5rem 0;
-  }
-
-  .code-block pre {
-    margin: 0;
-    padding: 1.25rem;
-  }
-
-  .code-block code {
-    font-family: monospace;
-    font-size: 0.85rem;
-    color: var(--text-primary);
-  }
-
-  h2 { margin-top: 2.5rem; }
-  h3 { margin-top: 2rem; }
-  ul { padding-left: 1.5rem; }
-  li { margin-bottom: 0.4rem; }
+  h2 { margin-top: 2.5rem; margin-bottom: 0.25rem; }
+  h3 { margin-top: 1.5rem; }
   code { font-size: 0.875em; }
+  section { margin-bottom: 1rem; }
 </style>

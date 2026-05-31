@@ -244,6 +244,16 @@ if (WRITE_REPORT) {
   const outPath = join(__dirname, outName);
   writeFileSync(outPath, JSON.stringify(report, null, 2));
   if (!JSON_ONLY) console.log(`\nReport written to tests/quality/${outName}`);
+
+  // Append summary to history file (no per-result data — just headline metrics)
+  const histName = ALL ? 'all-history.json' : OCEAN ? 'ocean-history.json' : 'history.json';
+  const histPath = join(__dirname, histName);
+  let history = [];
+  try { history = JSON.parse(readFileSync(histPath, 'utf8')); } catch {}
+  const snapshot = { run_at: report.run_at, total: report.total, passed: report.passed, pass_rate: report.pass_rate, mrr: report.mrr, latency_p50_ms: report.latency_p50_ms, latency_p95_ms: report.latency_p95_ms, categories: Object.fromEntries(Object.entries(report.categories).map(([k,v]) => [k, {passed: v.passed, total: v.total, pass_rate: v.pass_rate}])) };
+  history.push(snapshot);
+  writeFileSync(histPath, JSON.stringify(history, null, 2));
+  if (!JSON_ONLY) console.log(`History appended to tests/quality/${histName}`);
 }
 
 process.exit(passed === results.length ? 0 : 1);

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T16:18:39.149Z",
+  "generated": "2026-05-31T16:34:38.508Z",
   "entries": [
+    {
+      "hash": "5cc85b94",
+      "date": "2026-05-31",
+      "type": "Docs",
+      "description": "Add ocean-search-testing scoring model guide + update search quality page",
+      "scope": null
+    },
     {
       "hash": "7eecbedc",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Quote volume, answer brevity, relevance sort — threshold 5, perAngle 35, short answer phrase, 2-4 sentence excerpts, quotes sorted by score",
       "scope": null
-    },
-    {
-      "hash": "86a1b00e",
-      "date": "2026-05-13",
-      "type": "Other",
-      "description": "Conceptual recon step — LLM knowledge drives search before library query",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "5cc85b94",
+        "date": "2026-05-31",
+        "type": "Docs",
+        "description": "Add ocean-search-testing scoring model guide + update search quality page",
+        "scope": null
+      },
       {
         "hash": "7eecbedc",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Quote volume, answer brevity, relevance sort — threshold 5, perAngle 35, short answer phrase, 2-4 sentence excerpts, quotes sorted by score",
-        "scope": null
-      },
-      {
-        "hash": "86a1b00e",
-        "date": "2026-05-13",
-        "type": "Other",
-        "description": "Conceptual recon step — LLM knowledge drives search before library query",
         "scope": null
       }
     ]

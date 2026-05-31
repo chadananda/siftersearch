@@ -1,5 +1,19 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import fixtures from '../../../tests/quality/ocean-fixtures.json';
+
+function cleanIntent(s) {
+  if (!s) return '';
+  return s.replace(/^(Timing|Search (Ordering|results|filters)[^:]*): /i, '')
+          .replace(/^>-\s*/, '')
+          .replace(/["""\u201c\u201d]/g, '')
+          .replace(/\s*\([^)]*\)\s*/g, ' ')
+          .trim();
+}
+
+const phraseMatch = fixtures.filter(f => f.category === 'phrase-match').map(f => ({ ...f, intentClean: cleanIntent(f.intent) }));
+const conceptMatch = fixtures.filter(f => f.category === 'concept-match').map(f => ({ ...f, intentClean: cleanIntent(f.intent) }));
+const crossTradition = fixtures.filter(f => f.category === 'cross-tradition').map(f => ({ ...f, intentClean: cleanIntent(f.intent) }));
 ---
 
 <DocsLayout
@@ -180,27 +194,6 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     under normal load (Meilisearch on shared hardware).
   </p>
 
-  <h2>Test Fixture Coverage</h2>
-
-  <p>491 queries (deduplicated from 635) across 11 traditions and 5 categories:</p>
-
-  <table class="quality-table">
-    <thead>
-      <tr><th>Category</th><th>Count</th><th>Description</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>phrase-match</td><td>168</td><td>Near-verbatim phrases that should surface a specific passage</td></tr>
-      <tr><td>concept-match</td><td>271</td><td>Conceptual queries with religion filter — primary source should rank first</td></tr>
-      <tr><td>cross-tradition</td><td>52</td><td>Universal concepts without religion filter — multi-tradition results expected</td></tr>
-    </tbody>
-  </table>
-
-  <p>
-    Thematic contexts covered: creation stories, afterlife, virtues, prayer and ritual,
-    named scriptures, historical events and figures, theological concepts, end times prophecy,
-    charity and community, commandments and law, requirements for spiritual growth.
-  </p>
-
   <h2>SifterSearch Implementation Gaps</h2>
 
   <h3>1. Phrase match boosting (high priority)</h3>
@@ -248,23 +241,74 @@ node tests/quality/score-search.mjs --ocean --category=phrase-match</code></pre>
     and the failing tests breakdown.
   </p>
 
-  <h2>Applicability Beyond Religious Search</h2>
+  <!-- ═══ FULL FIXTURE LISTING ═══ -->
 
-  <p>
-    The authority × match_quality scoring model applies to any corpus where source credibility matters:
+  <h2>Phrase-Match Fixtures ({phraseMatch.length})</h2>
+  <p class="fixture-desc">
+    Near-verbatim phrases that should surface a specific passage. These test whether the
+    exact words from a sacred text can be retrieved — the highest-priority match quality tier.
   </p>
-  <ul>
-    <li><strong>Legal research:</strong> statute/constitution (primary) > case law (secondary) > commentary (general)</li>
-    <li><strong>Academic search:</strong> peer-reviewed journal > conference paper > preprint > blog</li>
-    <li><strong>Medical information:</strong> clinical guideline > systematic review > RCT > patient forum</li>
-    <li><strong>News archives:</strong> wire service > major newspaper > local paper > blog</li>
-  </ul>
-  <p>
-    The general recipe: (1) assign an authority tier to every document at index time,
-    (2) store as a numeric field, (3) use it as a multiplicative score boost,
-    (4) give exact phrase matches a 5× quality bonus over pure semantic matches,
-    (5) measure with MRR and ordering error.
+  <table class="fixture-table">
+    <thead>
+      <tr><th>#</th><th>Query</th><th>Expected text contains</th><th>Filter</th><th>Intent</th></tr>
+    </thead>
+    <tbody>
+      {phraseMatch.map((f, i) => (
+        <tr>
+          <td class="fx-num">{i + 1}</td>
+          <td class="fx-query">{f.query}</td>
+          <td class="fx-expect">{(f.expected_text_contains || []).join(', ')}</td>
+          <td class="fx-filter">{f.religion_filter || '—'}</td>
+          <td class="fx-intent">{f.intentClean}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <h2>Concept-Match Fixtures ({conceptMatch.length})</h2>
+  <p class="fixture-desc">
+    Conceptual queries with religion filter — primary source should rank first. These test
+    whether the authority-weighted ranking correctly promotes primary scriptures above
+    secondary and general sources for tradition-specific searches.
   </p>
+  <table class="fixture-table">
+    <thead>
+      <tr><th>#</th><th>Query</th><th>Expected text contains</th><th>Filter</th><th>Intent</th></tr>
+    </thead>
+    <tbody>
+      {conceptMatch.map((f, i) => (
+        <tr>
+          <td class="fx-num">{i + 1}</td>
+          <td class="fx-query">{f.query}</td>
+          <td class="fx-expect">{(f.expected_text_contains || []).join(', ')}</td>
+          <td class="fx-filter">{f.religion_filter || '—'}</td>
+          <td class="fx-intent">{f.intentClean}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <h2>Cross-Tradition Fixtures ({crossTradition.length})</h2>
+  <p class="fixture-desc">
+    Universal concepts without religion filter — multi-tradition results expected. These test
+    whether cross-tradition authority normalization is working: primary scripture from
+    any tradition should rank equally against primary scripture from another.
+  </p>
+  <table class="fixture-table">
+    <thead>
+      <tr><th>#</th><th>Query</th><th>Expected text contains</th><th>Intent</th></tr>
+    </thead>
+    <tbody>
+      {crossTradition.map((f, i) => (
+        <tr>
+          <td class="fx-num">{i + 1}</td>
+          <td class="fx-query">{f.query}</td>
+          <td class="fx-expect">{(f.expected_text_contains || []).join(', ')}</td>
+          <td class="fx-intent">{f.intentClean || '—'}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
 
 </DocsLayout>
 
@@ -347,6 +391,83 @@ node tests/quality/score-search.mjs --ocean --category=phrase-match</code></pre>
 
   .code-block pre { margin: 0; padding: 1.25rem; }
   .code-block code { font-family: monospace; font-size: 0.85rem; color: var(--text-primary); }
+
+  /* ── Fixture tables ── */
+  .fixture-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0.5rem 0 1rem;
+    max-width: 72ch;
+  }
+
+  .fixture-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    margin: 0.5rem 0 3rem;
+    table-layout: fixed;
+  }
+
+  .fixture-table th {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--surface-2);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .fixture-table td {
+    padding: 0.35rem 0.6rem;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fixture-table tr:hover td { background: var(--surface-2); }
+
+  .fx-num {
+    width: 2.5rem;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  .fx-query {
+    width: 22%;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-style: italic;
+  }
+
+  .fx-expect {
+    width: 18%;
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+
+  .fx-filter {
+    width: 10%;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .fx-intent {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   h2 { margin-top: 2.5rem; }
   h3 { margin-top: 2rem; }
