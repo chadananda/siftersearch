@@ -77,8 +77,10 @@ async function runOne(fix) {
   } catch (err) {
     return { id: fix.id, category: fix.category || 'uncategorized', ok: false, error: err.message, latency_ms: Date.now() - t0, intent: fix.intent };
   }
-  const latency_ms = Date.now() - t0;
-  if (!res.ok) return { id: fix.id, category: fix.category || 'uncategorized', ok: false, error: `HTTP ${res.status}`, latency_ms, intent: fix.intent };
+  const round_trip_ms = Date.now() - t0;
+  // Prefer server-reported timing (no network noise) if available
+  const latency_ms = body?._timing?.total_ms ?? round_trip_ms;
+  if (!res.ok) return { id: fix.id, category: fix.category || 'uncategorized', ok: false, error: `HTTP ${res.status}`, latency_ms: round_trip_ms, intent: fix.intent };
 
   const hits = body.results || body.hits || body.passages || [];
   let rank = -1;
@@ -162,6 +164,30 @@ async function runOne(fix) {
     intent: fix.intent,
     religion_filter: fix.religion_filter
   };
+}
+
+// Preflight: verify API returns JSON before running 52+ tests
+{
+  let preflightOk = false;
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+      body: JSON.stringify({ query: 'love', limit: 1 }),
+      signal: AbortSignal.timeout(15000)
+    });
+    const ct = r.headers.get('content-type') || '';
+    preflightOk = ct.includes('application/json');
+    if (!preflightOk) {
+      const preview = await r.text().then(t => t.slice(0, 200));
+      console.error(`\n✗ API preflight failed: non-JSON response (${r.status})\n  Preview: ${preview}`);
+      process.exit(3);
+    }
+  } catch (err) {
+    console.error(`\n✗ API preflight failed: ${err.message}`);
+    process.exit(3);
+  }
+  if (!JSON_ONLY) console.log(`  Preflight OK — API responding at ${API_BASE}`);
 }
 
 const results = [];

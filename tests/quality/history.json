@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "run_at": "2026-05-31T16:49:56.276Z",
+    "total": 52,
+    "passed": 1,
+    "pass_rate": 2,
+    "mrr": 0.019,
+    "latency_p50_ms": 77,
+    "latency_p95_ms": 1092,
+    "categories": {
+      "phrase-match": {
+        "passed": 1,
+        "total": 15,
+        "pass_rate": 7
+      },
+      "concept-match": {
+        "passed": 0,
+        "total": 19,
+        "pass_rate": 0
+      },
+      "authority-ranking": {
+        "passed": 0,
+        "total": 4,
+        "pass_rate": 0
+      },
+      "cross-tradition": {
+        "passed": 0,
+        "total": 5,
+        "pass_rate": 0
+      },
+      "entity-aware": {
+        "passed": 0,
+        "total": 9,
+        "pass_rate": 0
+      }
+    }
+  }
+]

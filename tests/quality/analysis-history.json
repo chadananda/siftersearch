@@ -1,1 +1,76 @@
-[]
+[
+  {
+    "summary": "The test suite is effectively non-functional: 51 of 52 tests fail with API timeouts or HTML error responses (HTTP 503 / DOCTYPE responses), indicating the search API itself is unreachable or returning error pages instead of JSON. No meaningful search-quality signal can be extracted until the service availability issue is resolved.",
+    "strengths": [
+      {
+        "title": "One test passing proves end-to-end path works",
+        "detail": "1/52 tests passed, confirming the test harness, fixture format, and at least one code path through hybridSearch can return valid results when the API responds."
+      },
+      {
+        "title": "Fast p50 latency on responsive requests",
+        "detail": "p50 of 77ms suggests that when the API does respond, the underlying Meilisearch + vector retrieval is performant; the p95 of 1092ms reflects timeout/error cases rather than slow queries."
+      }
+    ],
+    "critical_gaps": [
+      {
+        "title": "API returning HTML error pages instead of JSON",
+        "detail": "Nearly every failure is 'Unexpected token <, \"<!DOCTYPE \"...' meaning the test client is hitting an HTML error page (likely a reverse proxy 502/503/504 or a Next.js error page) rather than the JSON search endpoint. This is an infrastructure/routing failure, not a relevance failure.",
+        "evidence": "50/52 failures show DOCTYPE parse errors; tablet-of-wisdom-nature explicitly shows HTTP 503. All categories affected uniformly (phrase-match, concept-match, authority-ranking, cross-tradition, entity-aware)."
+      },
+      {
+        "title": "Failure classification masks real signal",
+        "detail": "All 51 failures are categorized as 'API timeout' in the breakdown, but the actual errors are 503s and HTML responses — these are distinct failure modes. The test runner needs to distinguish between true timeouts, HTTP error codes, and malformed responses.",
+        "evidence": "Failure breakdown shows 51 'API timeout' but error messages indicate HTTP 503 and HTML responses, not actual timeouts."
+      },
+      {
+        "title": "No relevance signal recoverable",
+        "detail": "Because the API is failing before search runs, we cannot evaluate BM25/vector hybrid quality, authority weighting, or the jafar-pipeline intent→research→craft flow. All downstream quality work is blocked.",
+        "evidence": "0% pass on concept-match, authority-ranking, cross-tradition, entity-aware categories — all bottlenecked at the HTTP layer."
+      }
+    ],
+    "action_plan": [
+      {
+        "priority": 1,
+        "title": "Diagnose and fix API 503 / HTML response root cause",
+        "impact": "high",
+        "effort": "low",
+        "description": "The API endpoint is returning HTML (likely from a proxy or Next.js error page) instead of JSON. Until this is fixed, no search-quality work can proceed. Most likely causes: Meilisearch connection failure, missing env vars, or the API process crashing under test load.",
+        "implementation": "1) curl the search endpoint manually with one of the failing queries (e.g., the tablet-of-wisdom-nature query) and inspect the full HTML response — it will reveal whether this is nginx/Caddy/Vercel proxy or Next.js error. 2) Check api/lib/search.js hybridSearch for unhandled exceptions; wrap Meilisearch client calls in try/catch and return JSON errors. 3) Verify MEILI_HOST, MEILI_API_KEY, and OpenAI API key env vars are set in the deployed environment. 4) Check Meilisearch health endpoint and confirm indexes exist and are not still syncing (note from changelog: 'sync queue clearing').",
+        "success_metric": "Reduce DOCTYPE/503 errors from 51 to 0; expose true search-quality pass rate (expected jump to baseline ~40-60% based on prior 58% core figure in changelog)."
+      },
+      {
+        "priority": 2,
+        "title": "Improve test runner error classification",
+        "impact": "medium",
+        "effort": "low",
+        "description": "Current failure breakdown lumps HTTP 503, JSON parse failures, and real timeouts under 'API timeout'. This makes triage impossible. Split into distinct buckets.",
+        "implementation": "In the test runner (likely tests/run.js or similar), catch fetch errors and classify: (a) network/timeout, (b) HTTP non-2xx with status code, (c) JSON.parse failure with response preview, (d) result-level mismatch. Log first 200 chars of body on parse failure to identify proxy vs app errors fast.",
+        "success_metric": "Future failure reports show actionable categories; eliminates ambiguous 'API timeout' bucket."
+      },
+      {
+        "priority": 3,
+        "title": "Add /health and /search smoke tests to CI gate",
+        "impact": "medium",
+        "effort": "low",
+        "description": "A simple precondition check before running the 52-fixture suite would have flagged this in seconds rather than producing a misleading 2% quality score.",
+        "implementation": "Prepend the test runner with a single GET to /api/search?q=test that asserts 200 + valid JSON shape. If it fails, abort the suite with a clear infrastructure-error message rather than running 52 fixtures.",
+        "success_metric": "Future infrastructure outages produce 'API unreachable' aborts instead of polluting quality metrics."
+      },
+      {
+        "priority": 4,
+        "title": "Confirm Meilisearch index population post-sync",
+        "impact": "high",
+        "effort": "low",
+        "description": "The changelog notes the Meilisearch sync queue was clearing. If the 503 is caused by an empty or partially-populated index, fixing the API alone won't restore the prior 58% core pass rate.",
+        "implementation": "After API is reachable, query Meilisearch stats endpoint (/indexes/{name}/stats) to confirm documentCount matches expected corpus size. Verify both BM25 index and pgvector embeddings table have parity rows. Re-run any failed sync tasks.",
+        "success_metric": "Restore pass rate to or above the 58% baseline noted in 2026-05-31 changelog entry."
+      }
+    ],
+    "notes_on_previous": "No prior analyses exist. The changelog mentions a 58% core baseline on 2026-05-31, but the current 2% result and uniform 503/HTML failures strongly suggest a regression in deployment or infrastructure rather than a search-quality regression. Do not begin tuning BM25 weights, authority multipliers, or rerank logic until the API is confirmed to be returning JSON — any quality changes made now would be evaluated against noise.",
+    "generated_at": "2026-05-31T16:50:35.545Z",
+    "model": "claude-opus-4-7",
+    "suite": "Core (52 fixtures)",
+    "pass_rate": 2,
+    "run_at": "2026-05-31T16:49:56.276Z"
+  }
+]

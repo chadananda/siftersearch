@@ -257,20 +257,25 @@ export default async function searchRoutes(fastify) {
       filters,
       semanticRatio
     });
+    const totalMs = Date.now() - startTime;
 
     const userId = request.user?.id;
     const anonymousUserId = request.headers['x-user-id'];
     logSearch({
       query, userId, anonymousUserId,
       resultCount: results.hits?.length || 0,
-      durationMs: Date.now() - startTime,
+      durationMs: totalMs,
       searchType: mode, filters
     });
 
     return {
       ...results,
       mode,
-      filters
+      filters,
+      _timing: {
+        total_ms: totalMs,
+        meili_ms: results.processingTimeMs ?? null,
+      }
     };
   });
 

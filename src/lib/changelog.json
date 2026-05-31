@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T16:48:37.524Z",
+  "generated": "2026-05-31T16:56:32.631Z",
   "entries": [
+    {
+      "hash": "18942deb",
+      "date": "2026-05-31",
+      "type": "Other",
+      "description": "AI analysis + change log for search quality page",
+      "scope": null
+    },
     {
       "hash": "c22894ba",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Framework-level searches find Isaiah 53, Karbala, passion of Christ",
       "scope": null
-    },
-    {
-      "hash": "8b522a80",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Shorter summaries, varied sub-question phrasing, plain language",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "18942deb",
+        "date": "2026-05-31",
+        "type": "Other",
+        "description": "AI analysis + change log for search quality page",
+        "scope": null
+      },
       {
         "hash": "c22894ba",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Framework-level searches find Isaiah 53, Karbala, passion of Christ",
-        "scope": null
-      },
-      {
-        "hash": "8b522a80",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Shorter summaries, varied sub-question phrasing, plain language",
         "scope": null
       }
     ]
