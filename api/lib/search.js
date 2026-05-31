@@ -648,14 +648,20 @@ export async function hybridSearch(query, options = {}) {
 
   const filterString = filterParts.length > 0 ? filterParts.join(' AND ') : undefined;
 
-  // Generate embedding for semantic search
+  // Generate embedding for semantic search — cap at 5s to prevent hanging under load
   let vector = null;
   if (semanticRatio > 0) {
     try {
-      const embedding = await createEmbedding(query, { caller: 'search' });
+      const embeddingTimeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('embedding timeout')), 5000)
+      );
+      const embedding = await Promise.race([
+        createEmbedding(query, { caller: 'search' }),
+        embeddingTimeout
+      ]);
       vector = embedding.embedding;
     } catch (err) {
-      logger.warn({ err }, 'Failed to generate embedding, falling back to keyword search');
+      logger.warn({ err: err.message }, 'Failed to generate embedding, falling back to keyword search');
     }
   }
 

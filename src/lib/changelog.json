@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T18:42:24.913Z",
+  "generated": "2026-05-31T18:52:16.830Z",
   "entries": [
+    {
+      "hash": "e8953c32",
+      "date": "2026-05-31",
+      "type": "Fixed",
+      "description": "Abort background analyzePassagesParallel on timeout — prevent AI call accumulation",
+      "scope": null
+    },
     {
       "hash": "ec40cb85",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Validate para_ids against content table before inserting quotes",
       "scope": null
-    },
-    {
-      "hash": "81e93c17",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Pass 100 candidates to clustering — threshold 3 not 5",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "e8953c32",
+        "date": "2026-05-31",
+        "type": "Fixed",
+        "description": "Abort background analyzePassagesParallel on timeout — prevent AI call accumulation",
+        "scope": null
+      },
       {
         "hash": "ec40cb85",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Validate para_ids against content table before inserting quotes",
-        "scope": null
-      },
-      {
-        "hash": "81e93c17",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Pass 100 candidates to clustering — threshold 3 not 5",
         "scope": null
       }
     ]
