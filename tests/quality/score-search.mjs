@@ -33,11 +33,16 @@ const JSON_ONLY = args.includes('--json');
 const WRITE_REPORT = args.includes('--write-report');
 const TOP_K = parseInt(args.find(a => a.startsWith('--top-k='))?.split('=')[1] || '10', 10);
 const CATEGORY = args.find(a => a.startsWith('--category='))?.split('=')[1] || null;
+const OCEAN = args.includes('--ocean'); // run ocean-fixtures.json instead of search-fixtures.json
+const ALL = args.includes('--all');     // run both fixture sets combined
 
 const API_BASE = process.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const API_KEY = process.env.PUBLIC_SIFTER_API_KEY;
 
-const rawFixtures = JSON.parse(readFileSync(join(__dirname, 'search-fixtures.json'), 'utf-8'));
+const coreFixtures = JSON.parse(readFileSync(join(__dirname, 'search-fixtures.json'), 'utf-8'));
+let oceanFixtures = [];
+try { oceanFixtures = JSON.parse(readFileSync(join(__dirname, 'ocean-fixtures.json'), 'utf-8')); } catch {}
+const rawFixtures = ALL ? [...coreFixtures, ...oceanFixtures] : OCEAN ? oceanFixtures : coreFixtures;
 const FIXTURES = CATEGORY ? rawFixtures.filter(f => f.category === CATEGORY) : rawFixtures;
 
 if (!API_KEY) {

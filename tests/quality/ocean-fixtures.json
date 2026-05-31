@@ -1,0 +1,4423 @@
+[
+  {
+    "id": "adam-eve-bahai",
+    "category": "concept-match",
+    "query": "Adam Eve",
+    "intent": "Search results should allow search filters by category",
+    "religion_filter": "Baha'i",
+    "expected_text_contains": [
+      "account"
+    ]
+  },
+  {
+    "id": "adam-eve-christian",
+    "category": "concept-match",
+    "query": "Adam Eve",
+    "intent": "Search results should allow search filters by category with some latitude",
+    "religion_filter": "Christian",
+    "expected_text_contains": [
+      "conceived"
+    ]
+  },
+  {
+    "id": "advancing-civilization",
+    "category": "concept-match",
+    "query": "advancing civilization",
+    "intent": "Search Ordering customization: advancing civilization (dashes)",
+    "expected_text_contains": [
+      "created"
+    ]
+  },
+  {
+    "id": "amidah",
+    "category": "concept-match",
+    "query": "Amidah",
+    "intent": "Search Ordering: Amidah (Jewish) prayers in the Torah",
+    "expected_text_contains": [
+      "repetition"
+    ]
+  },
+  {
+    "id": "gahanbar",
+    "category": "concept-match",
+    "query": "Gahanbar",
+    "intent": "Search Ordering: Gahanbar (Zoroastrian) festivals and observances",
+    "expected_text_contains": [
+      "ÂFRÎN"
+    ]
+  },
+  {
+    "id": "garden-of-eden",
+    "category": "concept-match",
+    "query": "Garden of Eden",
+    "intent": "Search Ordering: Garden of Eden (Baha''i) Creation story in the Baha''i Faith",
+    "expected_text_contains": [
+      "forth"
+    ]
+  },
+  {
+    "id": "gathas",
+    "category": "concept-match",
+    "query": "Gathas",
+    "intent": "Search Ordering: Gathas (Zoroastrian) sacred text: Avesta",
+    "expected_text_contains": [
+      "That"
+    ]
+  },
+  {
+    "id": "gender-equality",
+    "category": "concept-match",
+    "query": "gender equality",
+    "intent": "Search Ordering: gender equality (Baha''i) writings on equality",
+    "expected_text_contains": [
+      "principle"
+    ]
+  },
+  {
+    "id": "generosity",
+    "category": "concept-match",
+    "query": "generosity",
+    "intent": "Search Ordering: generosity (Buddhist) virtues",
+    "expected_text_contains": [
+      "gracious"
+    ]
+  },
+  {
+    "id": "giving-charity",
+    "category": "concept-match",
+    "query": "giving charity",
+    "intent": "Search Ordering: giving charity (Islamic) requirements for spiritual growth",
+    "expected_text_contains": [
+      "What"
+    ]
+  },
+  {
+    "id": "global-harmony",
+    "category": "concept-match",
+    "query": "global harmony",
+    "intent": "Search Ordering: global harmony (Baha''i) views on peace",
+    "expected_text_contains": [
+      "potential"
+    ]
+  },
+  {
+    "id": "glorify-god",
+    "category": "concept-match",
+    "query": "glorify God",
+    "intent": "Search Ordering: glorify God (Christian) purpose of existence",
+    "expected_text_contains": [
+      "meeting"
+    ]
+  },
+  {
+    "id": "golden-rule",
+    "category": "concept-match",
+    "query": "Golden Rule",
+    "intent": "Search Ordering: Golden Rule (Christian) Sermon on the Mount",
+    "expected_text_contains": [
+      "relations"
+    ]
+  },
+  {
+    "id": "good-deeds",
+    "category": "concept-match",
+    "query": "good deeds",
+    "intent": "Search Ordering: good deeds (Zoroastrian) virtues",
+    "expected_text_contains": [
+      "perfume"
+    ]
+  },
+  {
+    "id": "good-samaritan",
+    "category": "concept-match",
+    "query": "good samaritan",
+    "intent": "Search Ordering: good samaritan (Christian) miracles and parables",
+    "expected_text_contains": [
+      "parable"
+    ]
+  },
+  {
+    "id": "good-thoughts",
+    "category": "concept-match",
+    "query": "good thoughts",
+    "intent": "Search Ordering: good thoughts (Zoroastrian) virtues",
+    "expected_text_contains": [
+      "never"
+    ]
+  },
+  {
+    "id": "good-words",
+    "category": "concept-match",
+    "query": "good words",
+    "intent": "Search Ordering: good words (Zoroastrian) virtues",
+    "expected_text_contains": [
+      "following"
+    ]
+  },
+  {
+    "id": "gospel-of-john",
+    "category": "concept-match",
+    "query": "Gospel of John",
+    "intent": "Search Ordering: Gospel of John (Christian) Gospels and their messages",
+    "expected_text_contains": [
+      "fifteenth"
+    ]
+  },
+  {
+    "id": "gospel-of-luke",
+    "category": "concept-match",
+    "query": "Gospel of Luke",
+    "intent": "Search Ordering: Gospel of Luke (Christian) Gospels and their messages",
+    "expected_text_contains": [
+      "Gospel"
+    ]
+  },
+  {
+    "id": "gospel-of-mark",
+    "category": "concept-match",
+    "query": "Gospel of Mark",
+    "intent": "Search Ordering: Gospel of Mark (Christian) Gospels and their messages",
+    "expected_text_contains": [
+      "Gospel"
+    ]
+  },
+  {
+    "id": "gospel-of-matthew",
+    "category": "concept-match",
+    "query": "Gospel of Matthew",
+    "intent": "Search Ordering: Gospel of Matthew (Christian) Gospels and their messages",
+    "expected_text_contains": [
+      "Christ"
+    ]
+  },
+  {
+    "id": "gratitude",
+    "category": "concept-match",
+    "query": "gratitude",
+    "intent": "Search Ordering: gratitude (Islamic) virtues",
+    "expected_text_contains": [
+      "humility"
+    ]
+  },
+  {
+    "id": "great-commandment",
+    "category": "concept-match",
+    "query": "Great Commandment",
+    "intent": "Search Ordering: Great Commandment (Christian) commandments in the Bible",
+    "expected_text_contains": [
+      "saying"
+    ]
+  },
+  {
+    "id": "great-resurrection",
+    "category": "concept-match",
+    "query": "Great Resurrection",
+    "intent": "Search Ordering: Great Resurrection (Baha''i) end times prophecies",
+    "expected_text_contains": [
+      "exclaim"
+    ]
+  },
+  {
+    "id": "great-tribulation",
+    "category": "concept-match",
+    "query": "Great Tribulation",
+    "intent": "Search Ordering: Great Tribulation (Christian) end times prophecies",
+    "expected_text_contains": [
+      "which"
+    ]
+  },
+  {
+    "id": "hadith",
+    "category": "concept-match",
+    "query": "Hadith",
+    "intent": "Search Ordering: Hadith (Islamic) guidance on ethics",
+    "expected_text_contains": [
+      "tradition"
+    ]
+  },
+  {
+    "id": "hadiths-on-patience",
+    "category": "concept-match",
+    "query": "Hadiths on patience",
+    "intent": "Search Ordering: Hadiths on patience (Islamic) teachings on patience",
+    "expected_text_contains": [
+      "narrate"
+    ]
+  },
+  {
+    "id": "halakha",
+    "category": "concept-match",
+    "query": "Halakha",
+    "intent": "Search Ordering: Halakha (Jewish) laws in the Talmud",
+    "expected_text_contains": [
+      "Johanan"
+    ]
+  },
+  {
+    "id": "hanukkah",
+    "category": "concept-match",
+    "query": "Hanukkah",
+    "intent": "Search Ordering: Hanukkah (Jewish) holidays and traditions",
+    "expected_text_contains": [
+      "There"
+    ]
+  },
+  {
+    "id": "haoma-ceremony",
+    "category": "concept-match",
+    "query": "Haoma ceremony",
+    "intent": "Search Ordering: Haoma ceremony (Zoroastrian) rituals and ceremonies",
+    "expected_text_contains": [
+      "utterances"
+    ]
+  },
+  {
+    "id": "harmony",
+    "category": "concept-match",
+    "query": "harmony",
+    "intent": "Search Ordering: harmony (Taoist) concepts of yin and yang",
+    "expected_text_contains": [
+      "peoples"
+    ]
+  },
+  {
+    "id": "harmony-with-nature",
+    "category": "concept-match",
+    "query": "harmony with nature",
+    "intent": "Search Ordering: harmony with nature (Taoist) views on nature",
+    "expected_text_contains": [
+      "Trh"
+    ]
+  },
+  {
+    "id": "havdalah",
+    "category": "concept-match",
+    "query": "Havdalah",
+    "intent": "Search Ordering: Havdalah (Jewish) prayers in the Torah",
+    "expected_text_contains": [
+      "recite"
+    ]
+  },
+  {
+    "id": "healing-prayer",
+    "category": "concept-match",
+    "query": "Healing prayer",
+    "intent": "Search Ordering: Healing prayer (Baha''i) prayers and meditations",
+    "expected_text_contains": [
+      "These"
+    ]
+  },
+  {
+    "id": "heart-sutra",
+    "category": "concept-match",
+    "query": "Heart Sutra",
+    "intent": "Search Ordering customization: Heart Sutra (synonyms and exact matches)",
+    "expected_text_contains": [
+      "should"
+    ]
+  },
+  {
+    "id": "helping-the-poor",
+    "category": "concept-match",
+    "query": "helping the poor",
+    "intent": "Search Ordering: helping the poor (Jewish) teachings on charity",
+    "expected_text_contains": [
+      "question"
+    ]
+  },
+  {
+    "id": "herbal-medicine",
+    "category": "concept-match",
+    "query": "herbal medicine",
+    "intent": "Search Ordering: herbal medicine (Taoist) practices for health",
+    "expected_text_contains": [
+      "with"
+    ]
+  },
+  {
+    "id": "hiranyagarbha",
+    "category": "concept-match",
+    "query": "Hiranyagarbha",
+    "intent": "Search Ordering: Hiranyagarbha (Hindu) creation myths",
+    "expected_text_contains": [
+      "all"
+    ]
+  },
+  {
+    "id": "holy-fire",
+    "category": "concept-match",
+    "query": "holy fire",
+    "intent": "Search Ordering: holy fire (Zoroastrian) teachings on purity",
+    "expected_text_contains": [
+      "shade"
+    ]
+  },
+  {
+    "id": "house-of-lies",
+    "category": "concept-match",
+    "query": "House of Lies",
+    "intent": "Search Ordering: House of Lies (Zoroastrian) views on the afterlife",
+    "expected_text_contains": [
+      "compasseth"
+    ]
+  },
+  {
+    "id": "house-of-song",
+    "category": "concept-match",
+    "query": "House of Song",
+    "intent": "Search Ordering: House of Song (Zoroastrian) views on the afterlife",
+    "expected_text_contains": [
+      "hands"
+    ]
+  },
+  {
+    "id": "how-great-thou-art",
+    "category": "concept-match",
+    "query": "How Great Thou Art",
+    "intent": "Search Ordering: How Great Thou Art (Christian) hymns and psalms",
+    "expected_text_contains": [
+      "What"
+    ]
+  },
+  {
+    "id": "hukhta",
+    "category": "concept-match",
+    "query": "Hukhta",
+    "intent": "Search Ordering: Hukhta (Zoroastrian) virtues",
+    "expected_text_contains": [
+      "Humata"
+    ]
+  },
+  {
+    "id": "humata",
+    "category": "concept-match",
+    "query": "Humata",
+    "intent": "Search Ordering: Humata (Zoroastrian) virtues",
+    "expected_text_contains": [
+      "three"
+    ]
+  },
+  {
+    "id": "humility",
+    "category": "concept-match",
+    "query": "humility",
+    "intent": "Search Ordering: humility (Christian) virtues",
+    "expected_text_contains": [
+      "Reverence"
+    ]
+  },
+  {
+    "id": "hvarshta",
+    "category": "concept-match",
+    "query": "Hvarshta",
+    "intent": "Search Ordering: Hvarshta (Zoroastrian) virtues",
+    "expected_text_contains": [
+      "Hukhta"
+    ]
+  },
+  {
+    "id": "ibrahim",
+    "category": "concept-match",
+    "query": "Ibrahim",
+    "intent": "Search Ordering: Ibrahim (Islamic) stories from the Quran",
+    "expected_text_contains": [
+      "father"
+    ]
+  },
+  {
+    "id": "ikhlas",
+    "category": "concept-match",
+    "query": "Ikhlas",
+    "intent": "Search Ordering: Ikhlas (Islamic) virtues",
+    "expected_text_contains": [
+      "Ikhl"
+    ]
+  },
+  {
+    "id": "immortality",
+    "category": "concept-match",
+    "query": "immortality",
+    "intent": "Search Ordering: immortality (Taoist) alchemy and longevity",
+    "expected_text_contains": [
+      "bears"
+    ]
+  },
+  {
+    "id": "immortality-practices",
+    "category": "concept-match",
+    "query": "immortality practices",
+    "intent": "Search Ordering: immortality practices (Taoist) views on immortality",
+    "expected_text_contains": [
+      "these"
+    ]
+  },
+  {
+    "id": "inner-chapters",
+    "category": "concept-match",
+    "query": "inner chapters",
+    "intent": "Search Ordering: inner chapters (Taoist) texts: Zhuangzi",
+    "expected_text_contains": [
+      "Chapter"
+    ]
+  },
+  {
+    "id": "interconnectedness",
+    "category": "concept-match",
+    "query": "interconnectedness",
+    "intent": "Search Ordering: interconnectedness (Taoist) concepts of yin and yang",
+    "expected_text_contains": [
+      "Stars"
+    ]
+  },
+  {
+    "id": "isaiah",
+    "category": "concept-match",
+    "query": "Isaiah",
+    "intent": "Search Ordering: Isaiah (Jewish) prophets and their messages",
+    "expected_text_contains": [
+      "Amoz"
+    ]
+  },
+  {
+    "id": "jain-festivals",
+    "category": "concept-match",
+    "query": "Jain festivals",
+    "intent": "Search Ordering: Jain festivals (Jain) scriptures: Kalpa Sutra",
+    "expected_text_contains": [
+      "Festival"
+    ]
+  },
+  {
+    "id": "jeremiah",
+    "category": "concept-match",
+    "query": "Jeremiah",
+    "intent": "Search Ordering: Jeremiah (Jewish) prophets and their messages",
+    "expected_text_contains": [
+      "heard"
+    ]
+  },
+  {
+    "id": "joseph",
+    "category": "concept-match",
+    "query": "Joseph",
+    "intent": "Search Ordering: Joseph (Islamic) stories from the Quran",
+    "expected_text_contains": [
+      "Jacob"
+    ]
+  },
+  {
+    "id": "justice-and-equality",
+    "category": "concept-match",
+    "query": "justice and equality",
+    "intent": "Search Ordering: justice and equality (Baha''i) writings on justice",
+    "expected_text_contains": [
+      "animals"
+    ]
+  },
+  {
+    "id": "justice-in-islam",
+    "category": "concept-match",
+    "query": "justice in Islam",
+    "intent": "Search Ordering: justice in Islam (Islamic) views on social justice",
+    "expected_text_contains": [
+      "revenge"
+    ]
+  },
+  {
+    "id": "kaddish",
+    "category": "concept-match",
+    "query": "Kaddish",
+    "intent": "Search Ordering: Kaddish (Jewish) prayers in the Torah",
+    "expected_text_contains": [
+      "Mourner"
+    ]
+  },
+  {
+    "id": "kalki-avatar",
+    "category": "concept-match",
+    "query": "Kalki Avatar",
+    "intent": "Search Ordering: Kalki Avatar (Hindu) end times prophecies",
+    "expected_text_contains": [
+      "Investigation"
+    ]
+  },
+  {
+    "id": "kalpa-sutra",
+    "category": "concept-match",
+    "query": "Kalpa Sutra",
+    "intent": "Search Ordering: Kalpa Sutra (Jain) scriptures: Agamas",
+    "expected_text_contains": [
+      "KALPA"
+    ]
+  },
+  {
+    "id": "karuna",
+    "category": "concept-match",
+    "query": "Karuna",
+    "intent": "Search Ordering: Karuna (Buddhist) teachings on compassion",
+    "expected_text_contains": [
+      "principle"
+    ]
+  },
+  {
+    "id": "kashrut",
+    "category": "concept-match",
+    "query": "Kashrut",
+    "intent": "Search Ordering: Kashrut (Jewish) laws in the Talmud",
+    "expected_text_contains": [
+      "Sabbath"
+    ]
+  },
+  {
+    "id": "kauravas",
+    "category": "concept-match",
+    "query": "Kauravas",
+    "intent": "Search Ordering: Kauravas (Hindu) epics: Mahabharata and Ramayana",
+    "expected_text_contains": [
+      "samsaptakas"
+    ]
+  },
+  {
+    "id": "kindness",
+    "category": "concept-match",
+    "query": "kindness",
+    "intent": "Search Ordering customization: kindness (dashes, \"loving-kindness\")",
+    "expected_text_contains": [
+      "Cultivating"
+    ]
+  },
+  {
+    "id": "king-david",
+    "category": "concept-match",
+    "query": "King David",
+    "intent": "Search Ordering: King David (Jewish) history in the Old Testament",
+    "expected_text_contains": [
+      "them"
+    ]
+  },
+  {
+    "id": "kosher",
+    "category": "concept-match",
+    "query": "Kosher",
+    "intent": "Search Ordering: Kosher (Jewish) dietary laws",
+    "expected_text_contains": [
+      "Hebrew"
+    ]
+  },
+  {
+    "id": "krishna-and-radha",
+    "category": "concept-match",
+    "query": "Krishna and Radha",
+    "intent": "Search Ordering: Krishna and Radha (Hindu) festival of Holi",
+    "expected_text_contains": [
+      "Sanjaya"
+    ]
+  },
+  {
+    "id": "lakshmi",
+    "category": "concept-match",
+    "query": "Lakshmi",
+    "intent": ">-",
+    "expected_text_contains": [
+      "sinless"
+    ]
+  },
+  {
+    "id": "law-of-karma",
+    "category": "concept-match",
+    "query": "Law of Karma",
+    "intent": "Search Ordering customization: Law of Karma (search finds transposed phrase)",
+    "expected_text_contains": [
+      "souls"
+    ]
+  },
+  {
+    "id": "lazarus",
+    "category": "concept-match",
+    "query": "lazarus",
+    "intent": "Search Ordering customization: lazarus (dashes)",
+    "expected_text_contains": [
+      "seeth"
+    ]
+  },
+  {
+    "id": "lesser-peace",
+    "category": "concept-match",
+    "query": "Lesser Peace",
+    "intent": "Search Ordering: Lesser Peace (Baha''i) views on global unity",
+    "expected_text_contains": [
+      "anticipated"
+    ]
+  },
+  {
+    "id": "liberation",
+    "category": "concept-match",
+    "query": "liberation",
+    "intent": "Search Ordering: liberation (Jain) views on karma and reincarnation",
+    "expected_text_contains": [
+      "worshipping"
+    ]
+  },
+  {
+    "id": "life-of-mahavira",
+    "category": "concept-match",
+    "query": "life of Mahavira",
+    "intent": "Search Ordering: life of Mahavira (Jain) scriptures: Kalpa Sutra",
+    "expected_text_contains": [
+      "Lecture"
+    ]
+  },
+  {
+    "id": "lifelong-learning",
+    "category": "concept-match",
+    "query": "Lifelong learning",
+    "intent": "Search Ordering: Lifelong learning (Confucian) thoughts on education",
+    "expected_text_contains": [
+      "interpersonal"
+    ]
+  },
+  {
+    "id": "living-a-life-of-truth",
+    "category": "concept-match",
+    "query": "living a life of truth",
+    "intent": "Search Ordering: living a life of truth (Jain) purpose of existence",
+    "expected_text_contains": [
+      "observed"
+    ]
+  },
+  {
+    "id": "living-a-moral-life",
+    "category": "concept-match",
+    "query": "living a moral life",
+    "intent": "Search Ordering: living a moral life (Jewish) purpose of existence",
+    "expected_text_contains": [
+      "thereby"
+    ]
+  },
+  {
+    "id": "living-naturally",
+    "category": "concept-match",
+    "query": "living naturally",
+    "intent": "Search Ordering: living naturally (Taoist) purpose of existence",
+    "expected_text_contains": [
+      "there"
+    ]
+  },
+  {
+    "id": "living-righteously",
+    "category": "concept-match",
+    "query": "living righteously",
+    "intent": "Search Ordering: living righteously (Islamic) purpose of existence",
+    "expected_text_contains": [
+      "forest"
+    ]
+  },
+  {
+    "id": "loaves-and-fishes",
+    "category": "concept-match",
+    "query": "loaves and fishes",
+    "intent": "Search Ordering: loaves and fishes (Christian) miracles and parables",
+    "expected_text_contains": [
+      "seven"
+    ]
+  },
+  {
+    "id": "longevity",
+    "category": "concept-match",
+    "query": "longevity",
+    "intent": "Search Ordering: longevity (Taoist) views on immortality",
+    "expected_text_contains": [
+      "blest"
+    ]
+  },
+  {
+    "id": "lords-prayer",
+    "category": "concept-match",
+    "query": "Lord's Prayer",
+    "intent": "Search Ordering: Lord''s Prayer (Christian) Sermon on the Mount",
+    "expected_text_contains": [
+      "persevere"
+    ]
+  },
+  {
+    "id": "lotus-sutra",
+    "category": "concept-match",
+    "query": "Lotus Sutra",
+    "intent": "Search Ordering customization: Lotus Sutra (phrase matches are better)",
+    "expected_text_contains": [
+      "Brief"
+    ]
+  },
+  {
+    "id": "love-thy-neighbor",
+    "category": "concept-match",
+    "query": "Love thy neighbor",
+    "intent": "Search Ordering: Love thy neighbor (Christian) teachings on love",
+    "expected_text_contains": [
+      "Thou"
+    ]
+  },
+  {
+    "id": "loving-kindness",
+    "category": "concept-match",
+    "query": "loving-kindness",
+    "intent": "Search Ordering: loving-kindness (Buddhist) meditation practices",
+    "expected_text_contains": [
+      "garden"
+    ]
+  },
+  {
+    "id": "loyalty",
+    "category": "concept-match",
+    "query": "loyalty",
+    "intent": "Search Ordering: loyalty (Confucian) virtues",
+    "expected_text_contains": [
+      "devotion"
+    ]
+  },
+  {
+    "id": "loyalty-to-family",
+    "category": "concept-match",
+    "query": "loyalty to family",
+    "intent": "Search Ordering: loyalty to family (Confucian) views on loyalty",
+    "expected_text_contains": [
+      "Kampala"
+    ]
+  },
+  {
+    "id": "loyalty-to-ruler",
+    "category": "concept-match",
+    "query": "loyalty to ruler",
+    "intent": "Search Ordering: loyalty to ruler (Confucian) views on loyalty",
+    "expected_text_contains": [
+      "government"
+    ]
+  },
+  {
+    "id": "mahavir-jayanti",
+    "category": "concept-match",
+    "query": "Mahavir Jayanti",
+    "intent": "Search Ordering: Mahavir Jayanti (Jain) rituals and festivals",
+    "expected_text_contains": [
+      "Purnima"
+    ]
+  },
+  {
+    "id": "mahavira",
+    "category": "concept-match",
+    "query": "Mahavira",
+    "intent": "Search Ordering: Mahavira (Jain) stories of the Tirthankaras",
+    "expected_text_contains": [
+      "described"
+    ]
+  },
+  {
+    "id": "mahavrata",
+    "category": "concept-match",
+    "query": "Mahavrata",
+    "intent": "Search Ordering: Mahavrata (Jain) practices of asceticism",
+    "expected_text_contains": [
+      "Chandogas"
+    ]
+  },
+  {
+    "id": "maintaining-harmony",
+    "category": "concept-match",
+    "query": "maintaining harmony",
+    "intent": "Search Ordering: maintaining harmony (Confucian) purpose of existence",
+    "expected_text_contains": [
+      "supreme"
+    ]
+  },
+  {
+    "id": "maitreya",
+    "category": "concept-match",
+    "query": "Maitreya",
+    "intent": "Search Ordering: Maitreya (Buddhist) end times prophecies",
+    "expected_text_contains": [
+      "anger"
+    ]
+  },
+  {
+    "id": "mandate-of-heaven",
+    "category": "concept-match",
+    "query": "Mandate of Heaven",
+    "intent": "Search Ordering: Mandate of Heaven (Confucian) views on governance",
+    "expected_text_contains": [
+      "Then"
+    ]
+  },
+  {
+    "id": "meditation",
+    "category": "concept-match",
+    "query": "meditation",
+    "intent": "Search Ordering: meditation (Taoist) practices and rituals",
+    "expected_text_contains": [
+      "contains"
+    ]
+  },
+  {
+    "id": "mental-training",
+    "category": "concept-match",
+    "query": "mental training",
+    "intent": "Search Ordering: mental training (Buddhist) views on the nature of the mind",
+    "expected_text_contains": [
+      "integral"
+    ]
+  },
+  {
+    "id": "millennium",
+    "category": "concept-match",
+    "query": "Millennium",
+    "intent": "Search Ordering: Millennium (Christian) end times prophecies",
+    "expected_text_contains": [
+      "advent"
+    ]
+  },
+  {
+    "id": "mindful-living",
+    "category": "concept-match",
+    "query": "mindful living",
+    "intent": "Search Ordering: mindful living (Buddhist) teachings on mindfulness",
+    "expected_text_contains": [
+      "continue"
+    ]
+  },
+  {
+    "id": "mindfulness",
+    "category": "concept-match",
+    "query": "mindfulness",
+    "intent": "Search Ordering: mindfulness (Buddhist) virtues",
+    "expected_text_contains": [
+      "Four"
+    ]
+  },
+  {
+    "id": "mindfulness-meditation",
+    "category": "concept-match",
+    "query": "mindfulness meditation",
+    "intent": "Search Ordering: mindfulness meditation (Buddhist) teachings on mindfulness",
+    "expected_text_contains": [
+      "Four"
+    ]
+  },
+  {
+    "id": "mithra",
+    "category": "concept-match",
+    "query": "Mithra",
+    "intent": "Search Ordering: Mithra (Zoroastrian) teachings on good and evil",
+    "expected_text_contains": [
+      "desire"
+    ]
+  },
+  {
+    "id": "moderation",
+    "category": "concept-match",
+    "query": "moderation",
+    "intent": "Search Ordering: moderation (Taoist) virtues",
+    "expected_text_contains": [
+      "clothes"
+    ]
+  },
+  {
+    "id": "moksha",
+    "category": "concept-match",
+    "query": "Moksha",
+    "intent": "Search Ordering: Moksha (Hindu) beliefs about the soul",
+    "expected_text_contains": [
+      "quietude"
+    ]
+  },
+  {
+    "id": "monastic-rules",
+    "category": "concept-match",
+    "query": "monastic rules",
+    "intent": "Search Ordering: monastic rules (Jain) scriptures: Kalpa Sutra",
+    "expected_text_contains": [
+      "lives"
+    ]
+  },
+  {
+    "id": "moral-conduct",
+    "category": "concept-match",
+    "query": "moral conduct",
+    "intent": "Search Ordering: moral conduct (Islamic) guidance on ethics",
+    "expected_text_contains": [
+      "matter"
+    ]
+  },
+  {
+    "id": "moral-development",
+    "category": "concept-match",
+    "query": "moral development",
+    "intent": "Search Ordering: moral development (Confucian) views on human nature",
+    "expected_text_contains": [
+      "transcendence"
+    ]
+  },
+  {
+    "id": "moral-education",
+    "category": "concept-match",
+    "query": "moral education",
+    "intent": "Search Ordering: moral education (Baha''i) writings on education",
+    "expected_text_contains": [
+      "countries"
+    ]
+  },
+  {
+    "id": "moral-laws",
+    "category": "concept-match",
+    "query": "moral laws",
+    "intent": "Search Ordering: moral laws (Christian) commandments in the Bible",
+    "expected_text_contains": [
+      "Thou"
+    ]
+  },
+  {
+    "id": "moral-leadership",
+    "category": "concept-match",
+    "query": "moral leadership",
+    "intent": "Search Ordering: moral leadership (Confucian) views on leadership",
+    "expected_text_contains": [
+      "widespread"
+    ]
+  },
+  {
+    "id": "morning-prayer",
+    "category": "concept-match",
+    "query": "Morning prayer",
+    "intent": "Search Ordering: Morning prayer (Baha''i) prayers and meditations",
+    "expected_text_contains": [
+      "ablutions"
+    ]
+  },
+  {
+    "id": "most-great-peace",
+    "category": "concept-match",
+    "query": "Most Great Peace",
+    "intent": "Search Ordering: Most Great Peace (Baha''i) views on global unity",
+    "expected_text_contains": [
+      "other"
+    ]
+  },
+  {
+    "id": "mudita",
+    "category": "concept-match",
+    "query": "Mudita",
+    "intent": "Search Ordering: Mudita (Buddhist) teachings on compassion",
+    "expected_text_contains": [
+      "Markandeya"
+    ]
+  },
+  {
+    "id": "natural-flow",
+    "category": "concept-match",
+    "query": "natural flow",
+    "intent": "Search Ordering: natural flow (Taoist) views on nature",
+    "expected_text_contains": [
+      "There"
+    ]
+  },
+  {
+    "id": "naturalness",
+    "category": "concept-match",
+    "query": "naturalness",
+    "intent": "Search Ordering: naturalness (Taoist) virtues",
+    "expected_text_contains": [
+      "polish"
+    ]
+  },
+  {
+    "id": "nature-as-a-teacher",
+    "category": "concept-match",
+    "query": "nature as a teacher",
+    "intent": "Search Ordering: nature as a teacher (Taoist) views on nature",
+    "expected_text_contains": [
+      "disposition"
+    ]
+  },
+  {
+    "id": "nirodha",
+    "category": "concept-match",
+    "query": "Nirodha",
+    "intent": "Search Ordering: Nirodha (Buddhist) Four Noble Truths",
+    "expected_text_contains": [
+      "being"
+    ]
+  },
+  {
+    "id": "non-action",
+    "category": "concept-match",
+    "query": "non-action",
+    "intent": "Search Ordering: non-action (Taoist) philosophy and the Tao",
+    "expected_text_contains": [
+      "advantage"
+    ]
+  },
+  {
+    "id": "non-attachment",
+    "category": "concept-match",
+    "query": "non-attachment",
+    "intent": "Search Ordering: non-attachment (Jain) teachings on detachment",
+    "expected_text_contains": [
+      "Third"
+    ]
+  },
+  {
+    "id": "non-harming",
+    "category": "concept-match",
+    "query": "non-harming",
+    "intent": "Search Ordering: non-harming (Jain) philosophy of ahimsa",
+    "expected_text_contains": [
+      "given"
+    ]
+  },
+  {
+    "id": "non-possessiveness",
+    "category": "concept-match",
+    "query": "non-possessiveness",
+    "intent": "Search Ordering: non-possessiveness (Jain) teachings on non-violence",
+    "expected_text_contains": [
+      "opposition"
+    ]
+  },
+  {
+    "id": "non-stealing",
+    "category": "concept-match",
+    "query": "non-stealing",
+    "intent": "Search Ordering: non-stealing (Jain) teachings on non-violence",
+    "expected_text_contains": [
+      "killing"
+    ]
+  },
+  {
+    "id": "non-violence",
+    "category": "concept-match",
+    "query": "non-violence",
+    "intent": "Search Ordering: non-violence (Jain) virtues",
+    "expected_text_contains": [
+      "harmlessness"
+    ]
+  },
+  {
+    "id": "nowruz",
+    "category": "concept-match",
+    "query": "Nowruz",
+    "intent": "Search Ordering: Nowruz (Zoroastrian) festivals and observances",
+    "expected_text_contains": [
+      "Persian"
+    ]
+  },
+  {
+    "id": "observing-the-fast",
+    "category": "concept-match",
+    "query": "observing the Fast",
+    "intent": "Search Ordering: observing the Fast (Baha''i) requirements for spiritual growth",
+    "expected_text_contains": [
+      "following"
+    ]
+  },
+  {
+    "id": "origin-of-suffering",
+    "category": "concept-match",
+    "query": "origin of suffering",
+    "intent": "Search Ordering: origin of suffering (Buddhist) Four Noble Truths",
+    "expected_text_contains": [
+      "noble"
+    ]
+  },
+  {
+    "id": "pali-canon",
+    "category": "concept-match",
+    "query": "Pali Canon",
+    "intent": "Search Ordering: Pali Canon (Buddhist) sutras and scriptures",
+    "expected_text_contains": [
+      "discourses"
+    ]
+  },
+  {
+    "id": "pandavas",
+    "category": "concept-match",
+    "query": "Pandavas",
+    "intent": "Search Ordering: Pandavas (Hindu) epics: Mahabharata and Ramayana",
+    "expected_text_contains": [
+      "Then"
+    ]
+  },
+  {
+    "id": "paradise",
+    "category": "concept-match",
+    "query": "paradise",
+    "intent": "Search Ordering: paradise (Islamic) beliefs about the afterlife",
+    "expected_text_contains": [
+      "forth"
+    ]
+  },
+  {
+    "id": "parental-respect",
+    "category": "concept-match",
+    "query": "parental respect",
+    "intent": "Search Ordering: parental respect (Confucian) views on family",
+    "expected_text_contains": [
+      "filial"
+    ]
+  },
+  {
+    "id": "parshvanatha",
+    "category": "concept-match",
+    "query": "Parshvanatha",
+    "intent": "Search Ordering: Parshvanatha (Jain) stories of the Tirthankaras",
+    "expected_text_contains": [
+      "Tirtha"
+    ]
+  },
+  {
+    "id": "paryushana",
+    "category": "concept-match",
+    "query": "Paryushana",
+    "intent": "Search Ordering: Paryushana (Jain) rituals and festivals",
+    "expected_text_contains": [
+      "Year"
+    ]
+  },
+  {
+    "id": "passover",
+    "category": "concept-match",
+    "query": "Passover",
+    "intent": "Search Ordering: Passover (Jewish) holidays and traditions",
+    "expected_text_contains": [
+      "there"
+    ]
+  },
+  {
+    "id": "path-to-end-suffering",
+    "category": "concept-match",
+    "query": "path to end suffering",
+    "intent": "Search Ordering: path to end suffering (Buddhist) teachings on suffering",
+    "expected_text_contains": [
+      "Life"
+    ]
+  },
+  {
+    "id": "patience",
+    "category": "concept-match",
+    "query": "patience",
+    "intent": "Search Ordering: patience (Islamic) virtues",
+    "expected_text_contains": [
+      "tenderness"
+    ]
+  },
+  {
+    "id": "patience-in-adversity",
+    "category": "concept-match",
+    "query": "patience in adversity",
+    "intent": "Search Ordering: patience in adversity (Islamic) teachings on patience",
+    "expected_text_contains": [
+      "Siva"
+    ]
+  },
+  {
+    "id": "peaceful-coexistence",
+    "category": "concept-match",
+    "query": "peaceful coexistence",
+    "intent": "Search Ordering: peaceful coexistence (Jain) philosophy of ahimsa",
+    "expected_text_contains": [
+      "there"
+    ]
+  },
+  {
+    "id": "peaceful-governance",
+    "category": "concept-match",
+    "query": "peaceful governance",
+    "intent": "Search Ordering: peaceful governance (Baha''i) views on peace",
+    "expected_text_contains": [
+      "increase"
+    ]
+  },
+  {
+    "id": "practicing-non-violence",
+    "category": "concept-match",
+    "query": "practicing non-violence",
+    "intent": "Search Ordering: practicing non-violence (Jain) purpose of existence",
+    "expected_text_contains": [
+      "partisan"
+    ]
+  },
+  {
+    "id": "practicing-simplicity",
+    "category": "concept-match",
+    "query": "practicing simplicity",
+    "intent": "Search Ordering: practicing simplicity (Taoist) purpose of existence",
+    "expected_text_contains": [
+      "calmness"
+    ]
+  },
+  {
+    "id": "prajapati",
+    "category": "concept-match",
+    "query": "Prajapati",
+    "intent": "Search Ordering: Prajapati (Hindu) creation myths",
+    "expected_text_contains": [
+      "Brahma"
+    ]
+  },
+  {
+    "id": "prayer",
+    "category": "concept-match",
+    "query": "prayer",
+    "intent": "Search Ordering: prayer (Islam) Pillars of Islam",
+    "expected_text_contains": [
+      "mentioned"
+    ]
+  },
+  {
+    "id": "present-moment-awareness",
+    "category": "concept-match",
+    "query": "present moment awareness",
+    "intent": "Search Ordering: present moment awareness (Buddhist) teachings on mindfulness",
+    "expected_text_contains": [
+      "remains"
+    ]
+  },
+  {
+    "id": "prohibited-foods",
+    "category": "concept-match",
+    "query": "prohibited foods",
+    "intent": "Search Ordering: prohibited foods (Jewish) dietary laws",
+    "expected_text_contains": [
+      "Strictly"
+    ]
+  },
+  {
+    "id": "promoting-justice",
+    "category": "concept-match",
+    "query": "promoting justice",
+    "intent": "Search Ordering: promoting justice (Jewish) purpose of existence",
+    "expected_text_contains": [
+      "title"
+    ]
+  },
+  {
+    "id": "prophet-abraham",
+    "category": "concept-match",
+    "query": "Prophet Abraham",
+    "intent": "Search Ordering: Prophet Abraham (Islamic) stories of the prophets",
+    "expected_text_contains": [
+      "identifying"
+    ]
+  },
+  {
+    "id": "prophet-jesus",
+    "category": "concept-match",
+    "query": "Prophet Jesus",
+    "intent": "Search Ordering: Prophet Jesus (Islamic) stories of the prophets",
+    "expected_text_contains": [
+      "multitude"
+    ]
+  },
+  {
+    "id": "prophet-moses",
+    "category": "concept-match",
+    "query": "Prophet Moses",
+    "intent": "Search Ordering: Prophet Moses (Islamic) stories of the prophets",
+    "expected_text_contains": [
+      "against"
+    ]
+  },
+  {
+    "id": "prophet-muhammad",
+    "category": "concept-match",
+    "query": "Prophet Muhammad",
+    "intent": "Search Ordering: Prophet Muhammad (Islamic) stories of the prophets",
+    "expected_text_contains": [
+      "beauty"
+    ]
+  },
+  {
+    "id": "propriety",
+    "category": "concept-match",
+    "query": "propriety",
+    "intent": "Search Ordering: propriety (Confucian) virtues",
+    "expected_text_contains": [
+      "others"
+    ]
+  },
+  {
+    "id": "proverbs",
+    "category": "concept-match",
+    "query": "Proverbs",
+    "intent": "Search Ordering: Proverbs (Jewish) wisdom literature",
+    "expected_text_contains": [
+      "Proverbs"
+    ]
+  },
+  {
+    "id": "psalm-100",
+    "category": "concept-match",
+    "query": "Psalm 100",
+    "intent": "Search Ordering: Psalm 100 (Christian) hymns and psalms",
+    "expected_text_contains": [
+      "Psalm"
+    ]
+  },
+  {
+    "id": "psalm-121",
+    "category": "concept-match",
+    "query": "Psalm 121",
+    "intent": "Search Ordering: Psalm 121 (Christian) Psalms",
+    "expected_text_contains": [
+      "Psalm"
+    ]
+  },
+  {
+    "id": "psalm-91",
+    "category": "concept-match",
+    "query": "Psalm 91",
+    "intent": "Search Ordering: Psalm 91 (Christian) Psalms",
+    "expected_text_contains": [
+      "Psalm"
+    ]
+  },
+  {
+    "id": "purity",
+    "category": "concept-match",
+    "query": "purity",
+    "intent": "Search Ordering: purity (Hindu) virtues",
+    "expected_text_contains": [
+      "effected"
+    ]
+  },
+  {
+    "id": "purusha-sukta",
+    "category": "concept-match",
+    "query": "Purusha Sukta",
+    "intent": "Search Ordering: Purusha Sukta (Hindu) creation myths",
+    "expected_text_contains": [
+      "mystical"
+    ]
+  },
+  {
+    "id": "quranic-verses-on-patience",
+    "category": "concept-match",
+    "query": "Quranic verses on patience",
+    "intent": "Search Ordering: Quranic verses on patience (Islamic) teachings on patience",
+    "expected_text_contains": [
+      "which"
+    ]
+  },
+  {
+    "id": "raising-lazarus",
+    "category": "concept-match",
+    "query": "raising Lazarus",
+    "intent": "Search Ordering: raising Lazarus (Christian) miracles of Jesus",
+    "expected_text_contains": [
+      "affected"
+    ]
+  },
+  {
+    "id": "rama-and-sita",
+    "category": "concept-match",
+    "query": "Rama and Sita",
+    "intent": "Search Ordering: Rama and Sita (Hindu) festival of Diwali",
+    "expected_text_contains": [
+      "Then"
+    ]
+  },
+  {
+    "id": "ramadan",
+    "category": "concept-match",
+    "query": "Ramadan",
+    "intent": "Search Ordering customization: Ramadan (synonyms)",
+    "expected_text_contains": [
+      "latter"
+    ]
+  },
+  {
+    "id": "rapture",
+    "category": "concept-match",
+    "query": "Rapture",
+    "intent": "Search Ordering: Rapture (Christian) end times prophecies",
+    "expected_text_contains": [
+      "Great"
+    ]
+  },
+  {
+    "id": "rational-thought",
+    "category": "concept-match",
+    "query": "rational thought",
+    "intent": "Search Ordering: rational thought (Baha''i) views on science and religion",
+    "expected_text_contains": [
+      "almost"
+    ]
+  },
+  {
+    "id": "reading-the-quran",
+    "category": "concept-match",
+    "query": "reading the Quran",
+    "intent": "Search Ordering: reading the Quran (Islamic) requirements for spiritual growth",
+    "expected_text_contains": [
+      "month"
+    ]
+  },
+  {
+    "id": "realizing-atman",
+    "category": "concept-match",
+    "query": "realizing Atman",
+    "intent": "Search Ordering: realizing Atman (Hindu) purpose of existence",
+    "expected_text_contains": [
+      "soldiers"
+    ]
+  },
+  {
+    "id": "rebirth",
+    "category": "concept-match",
+    "query": "rebirth",
+    "intent": "Search Ordering: rebirth (Buddhist) views on reincarnation",
+    "expected_text_contains": [
+      "knowledge"
+    ]
+  },
+  {
+    "id": "rebirth-of-the-world",
+    "category": "concept-match",
+    "query": "rebirth of the world",
+    "intent": "Search Ordering: rebirth of the world (Hindu) end times prophecies",
+    "expected_text_contains": [
+      "escapes"
+    ]
+  },
+  {
+    "id": "rectification-of-names",
+    "category": "concept-match",
+    "query": "rectification of names",
+    "intent": "Search Ordering: rectification of names (Confucian) views on leadership",
+    "expected_text_contains": [
+      "ethics"
+    ]
+  },
+  {
+    "id": "reincarnation",
+    "category": "concept-match",
+    "query": "reincarnation",
+    "intent": "Search Ordering: reincarnation (Hindu) beliefs about the soul",
+    "expected_text_contains": [
+      "substantial"
+    ]
+  },
+  {
+    "id": "renewal-of-moral-order",
+    "category": "concept-match",
+    "query": "renewal of moral order",
+    "intent": "Search Ordering: renewal of moral order (Confucian) end times prophecies",
+    "expected_text_contains": [
+      "Confucius"
+    ]
+  },
+  {
+    "id": "renunciation",
+    "category": "concept-match",
+    "query": "renunciation",
+    "intent": "Search Ordering: renunciation (Jain) teachings on detachment",
+    "expected_text_contains": [
+      "fourth"
+    ]
+  },
+  {
+    "id": "repairing-the-world",
+    "category": "concept-match",
+    "query": "repairing the world",
+    "intent": "Search Ordering: repairing the world (Jewish) purpose of existence",
+    "expected_text_contains": [
+      "suffer"
+    ]
+  },
+  {
+    "id": "respect-for-all-life",
+    "category": "concept-match",
+    "query": "respect for all life",
+    "intent": "Search Ordering: respect for all life (Jain) philosophy of ahimsa",
+    "expected_text_contains": [
+      "Vanaprastha"
+    ]
+  },
+  {
+    "id": "respect-for-elders",
+    "category": "concept-match",
+    "query": "respect for elders",
+    "intent": "Search Ordering: respect for elders (Confucian) views on respect",
+    "expected_text_contains": [
+      "working"
+    ]
+  },
+  {
+    "id": "resurrection",
+    "category": "concept-match",
+    "query": "resurrection",
+    "intent": "Search Ordering: resurrection (Islamic) beliefs about the afterlife",
+    "expected_text_contains": [
+      "taste"
+    ]
+  },
+  {
+    "id": "resurrection-and-judgment",
+    "category": "concept-match",
+    "query": "resurrection and judgment",
+    "intent": "Search Ordering customization: resurrection and judgment (stopwords, slop)",
+    "expected_text_contains": [
+      "terms"
+    ]
+  },
+  {
+    "id": "resurrection-of-the-dead",
+    "category": "concept-match",
+    "query": "resurrection of the dead",
+    "intent": "Search Ordering: resurrection of the dead (Jewish) end times prophecies",
+    "expected_text_contains": [
+      "heard"
+    ]
+  },
+  {
+    "id": "return-of-jesus",
+    "category": "concept-match",
+    "query": "return of Jesus",
+    "intent": "Search Ordering: return of Jesus (Islamic) end times prophecies",
+    "expected_text_contains": [
+      "beginning"
+    ]
+  },
+  {
+    "id": "return-of-the-manifestations",
+    "category": "concept-match",
+    "query": "return of the manifestations",
+    "intent": "Search Ordering: return of the manifestations (Baha''i) end times prophecies",
+    "expected_text_contains": [
+      "Qualities"
+    ]
+  },
+  {
+    "id": "right-action",
+    "category": "concept-match",
+    "query": "right action",
+    "intent": "Search Ordering: right action (Buddhist) Eightfold Path",
+    "expected_text_contains": [
+      "eightfold"
+    ]
+  },
+  {
+    "id": "right-conduct",
+    "category": "concept-match",
+    "query": "right conduct",
+    "intent": "Search Ordering: right conduct (Jain) teachings on spirituality",
+    "expected_text_contains": [
+      "knowledge"
+    ]
+  },
+  {
+    "id": "right-faith",
+    "category": "concept-match",
+    "query": "right faith",
+    "intent": "Search Ordering: right faith (Jain) teachings on spirituality",
+    "expected_text_contains": [
+      "kinds"
+    ]
+  },
+  {
+    "id": "right-intention",
+    "category": "concept-match",
+    "query": "right intention",
+    "intent": "Search Ordering: right intention (Buddhist) Eightfold Path",
+    "expected_text_contains": [
+      "wrong"
+    ]
+  },
+  {
+    "id": "right-knowledge",
+    "category": "concept-match",
+    "query": "right knowledge",
+    "intent": "Search Ordering: right knowledge (Jain) teachings on spirituality",
+    "expected_text_contains": [
+      "wrong"
+    ]
+  },
+  {
+    "id": "right-mindfulness",
+    "category": "concept-match",
+    "query": "right mindfulness",
+    "intent": "Search Ordering: right mindfulness (Buddhist) Eightfold Path",
+    "expected_text_contains": [
+      "eightfold"
+    ]
+  },
+  {
+    "id": "right-speech",
+    "category": "concept-match",
+    "query": "right speech",
+    "intent": "Search Ordering: right speech (Buddhist) Eightfold Path",
+    "expected_text_contains": [
+      "eightfold"
+    ]
+  },
+  {
+    "id": "righteousness",
+    "category": "concept-match",
+    "query": "righteousness",
+    "intent": "Search Ordering: righteousness (Islamic) virtues",
+    "expected_text_contains": [
+      "people"
+    ]
+  },
+  {
+    "id": "rights-of-the-poor",
+    "category": "concept-match",
+    "query": "rights of the poor",
+    "intent": "Search Ordering: rights of the poor (Islamic) views on social justice",
+    "expected_text_contains": [
+      "careth"
+    ]
+  },
+  {
+    "id": "rigveda",
+    "category": "concept-match",
+    "query": "Rigveda",
+    "intent": "Search Ordering: Rigveda (Hindu) scriptures: Vedas and Upanishads",
+    "expected_text_contains": [
+      "referred"
+    ]
+  },
+  {
+    "id": "ritual",
+    "category": "concept-match",
+    "query": "ritual",
+    "intent": "Search Ordering: ritual (Confucian) principles of harmony",
+    "expected_text_contains": [
+      "blessing"
+    ]
+  },
+  {
+    "id": "ritual-offerings",
+    "category": "concept-match",
+    "query": "ritual offerings",
+    "intent": "Search Ordering: ritual offerings (Taoist) practices and rituals",
+    "expected_text_contains": [
+      "either"
+    ]
+  },
+  {
+    "id": "rosh-hashanah",
+    "category": "concept-match",
+    "query": "Rosh Hashanah",
+    "intent": "Search Ordering: Rosh Hashanah (Jewish) holidays and traditions",
+    "expected_text_contains": [
+      "That"
+    ]
+  },
+  {
+    "id": "sabbath",
+    "category": "concept-match",
+    "query": "Sabbath",
+    "intent": "Search Ordering: Sabbath (Jewish) laws in the Talmud",
+    "expected_text_contains": [
+      "those"
+    ]
+  },
+  {
+    "id": "sacred-fire",
+    "category": "concept-match",
+    "query": "sacred fire",
+    "intent": "Search Ordering: sacred fire (Zoroastrian) concepts of fire and light",
+    "expected_text_contains": [
+      "thing"
+    ]
+  },
+  {
+    "id": "sadaqah",
+    "category": "concept-match",
+    "query": "Sadaqah",
+    "intent": "Search Ordering customization: Sadaqah (dashes)",
+    "expected_text_contains": [
+      "Musaddiq"
+    ]
+  },
+  {
+    "id": "salah-times",
+    "category": "concept-match",
+    "query": "Salah times",
+    "intent": "Search Ordering: Salah times (Islamic) teachings on prayer",
+    "expected_text_contains": [
+      "saplings"
+    ]
+  },
+  {
+    "id": "sallekhana",
+    "category": "concept-match",
+    "query": "Sallekhana",
+    "intent": "Search Ordering: Sallekhana (Jain) rituals and festivals",
+    "expected_text_contains": [
+      "process"
+    ]
+  },
+  {
+    "id": "salt-and-light",
+    "category": "concept-match",
+    "query": "salt and light",
+    "intent": "Search Ordering: salt and light (Christian) Sermon on the Mount",
+    "expected_text_contains": [
+      "first"
+    ]
+  },
+  {
+    "id": "samatha",
+    "category": "concept-match",
+    "query": "Samatha",
+    "intent": "Search Ordering: Samatha (Buddhist) meditation practices",
+    "expected_text_contains": [
+      "right"
+    ]
+  },
+  {
+    "id": "samaveda",
+    "category": "concept-match",
+    "query": "Samaveda",
+    "intent": "Search Ordering: Samaveda (Hindu) scriptures: Vedas and Upanishads",
+    "expected_text_contains": [
+      "Rigveda"
+    ]
+  },
+  {
+    "id": "samsara",
+    "category": "concept-match",
+    "query": "samsara",
+    "intent": "Search Ordering: samsara (Buddhist) views on reincarnation",
+    "expected_text_contains": [
+      "again"
+    ]
+  },
+  {
+    "id": "samskaras",
+    "category": "concept-match",
+    "query": "Samskaras",
+    "intent": "Search Ordering: Samskaras (Hindu) rituals and ceremonies",
+    "expected_text_contains": [
+      "Investigation"
+    ]
+  },
+  {
+    "id": "samudaya",
+    "category": "concept-match",
+    "query": "Samudaya",
+    "intent": "Search Ordering: Samudaya (Buddhist) Four Noble Truths",
+    "expected_text_contains": [
+      "cessation"
+    ]
+  },
+  {
+    "id": "satipatthana-sutta",
+    "category": "concept-match",
+    "query": "Satipatthana Sutta",
+    "intent": "Search Ordering: Satipatthana Sutta (Buddhist) teachings on mindfulness",
+    "expected_text_contains": [
+      "Maha"
+    ]
+  },
+  {
+    "id": "scientific-discovery",
+    "category": "concept-match",
+    "query": "scientific discovery",
+    "intent": "Search Ordering: scientific discovery (Baha''i) views on science and religion",
+    "expected_text_contains": [
+      "enterprises"
+    ]
+  },
+  {
+    "id": "second-coming-of-christ",
+    "category": "concept-match",
+    "query": "Second Coming of Christ",
+    "intent": "Search Ordering: Second Coming of Christ (Christian) end times prophecies",
+    "expected_text_contains": [
+      "indeed"
+    ]
+  },
+  {
+    "id": "second-temple-period",
+    "category": "concept-match",
+    "query": "Second Temple period",
+    "intent": "Search Ordering customization: Second Temple period (dashes)",
+    "expected_text_contains": [
+      "During"
+    ]
+  },
+  {
+    "id": "seeking-moksha",
+    "category": "concept-match",
+    "query": "seeking moksha",
+    "intent": "Search Ordering: seeking moksha (Hindu) purpose of existence",
+    "expected_text_contains": [
+      "bereft"
+    ]
+  },
+  {
+    "id": "separation-of-milk-and-meat",
+    "category": "concept-match",
+    "query": "separation of milk and meat",
+    "intent": "Search Ordering: separation of milk and meat (Jewish) dietary laws",
+    "expected_text_contains": [
+      "Asuri"
+    ]
+  },
+  {
+    "id": "service-to-humanity",
+    "category": "concept-match",
+    "query": "service to humanity",
+    "intent": "Search Ordering: service to humanity (Baha''i) purpose of existence",
+    "expected_text_contains": [
+      "other"
+    ]
+  },
+  {
+    "id": "serving-god",
+    "category": "concept-match",
+    "query": "serving God",
+    "intent": "Search Ordering: serving God (Islamic) purpose of existence",
+    "expected_text_contains": [
+      "promise"
+    ]
+  },
+  {
+    "id": "serving-society",
+    "category": "concept-match",
+    "query": "serving society",
+    "intent": "Search Ordering: serving society (Confucian) purpose of existence",
+    "expected_text_contains": [
+      "They"
+    ]
+  },
+  {
+    "id": "shabbat",
+    "category": "concept-match",
+    "query": "Shabbat",
+    "intent": "Search Ordering: Shabbat (Jewish) laws in the Talmud",
+    "expected_text_contains": [
+      "month"
+    ]
+  },
+  {
+    "id": "shahada",
+    "category": "concept-match",
+    "query": "Shahada",
+    "intent": "Search Ordering customization: Shahada (dashes)",
+    "expected_text_contains": [
+      "qualities"
+    ]
+  },
+  {
+    "id": "shalom",
+    "category": "concept-match",
+    "query": "Shalom",
+    "intent": "Search Ordering customization: Shalom (dashes)",
+    "expected_text_contains": [
+      "called"
+    ]
+  },
+  {
+    "id": "shambhala",
+    "category": "concept-match",
+    "query": "Shambhala",
+    "intent": "Search Ordering: Shambhala (Buddhist) end times prophecies",
+    "expected_text_contains": [
+      "Spirit"
+    ]
+  },
+  {
+    "id": "sharia",
+    "category": "concept-match",
+    "query": "Sharia",
+    "intent": "Search Ordering: Sharia (Islamic) guidance on ethics",
+    "expected_text_contains": [
+      "Muwafiqat"
+    ]
+  },
+  {
+    "id": "shaucha",
+    "category": "concept-match",
+    "query": "Shaucha",
+    "intent": "Search Ordering: Shaucha (Hindu) virtues",
+    "expected_text_contains": [
+      "Honesty"
+    ]
+  },
+  {
+    "id": "shema-yisrael",
+    "category": "concept-match",
+    "query": "Shema Yisrael",
+    "intent": "Search Ordering: Shema Yisrael (Jewish) prayers in the Torah",
+    "expected_text_contains": [
+      "unification"
+    ]
+  },
+  {
+    "id": "signs-of-the-hour",
+    "category": "concept-match",
+    "query": "signs of the Hour",
+    "intent": "Search Ordering: signs of the Hour (Islamic) end times prophecies",
+    "expected_text_contains": [
+      "believed"
+    ]
+  },
+  {
+    "id": "simplicity",
+    "category": "concept-match",
+    "query": "simplicity",
+    "intent": "Search Ordering: simplicity (Taoist) virtues",
+    "expected_text_contains": [
+      "study"
+    ]
+  },
+  {
+    "id": "sincerity",
+    "category": "concept-match",
+    "query": "sincerity",
+    "intent": "Search Ordering: sincerity (Islamic) virtues",
+    "expected_text_contains": [
+      "daystar"
+    ]
+  },
+  {
+    "id": "social-justice",
+    "category": "concept-match",
+    "query": "social justice",
+    "intent": "Search Ordering: social justice (Baha''i) writings on justice",
+    "expected_text_contains": [
+      "human"
+    ]
+  },
+  {
+    "id": "spiritual-education",
+    "category": "concept-match",
+    "query": "spiritual education",
+    "intent": "Search Ordering: spiritual education (Baha''i) writings on education",
+    "expected_text_contains": [
+      "loving"
+    ]
+  },
+  {
+    "id": "spiritual-immortality",
+    "category": "concept-match",
+    "query": "spiritual immortality",
+    "intent": "Search Ordering: spiritual immortality (Taoist) views on immortality",
+    "expected_text_contains": [
+      "inner"
+    ]
+  },
+  {
+    "id": "spiritual-liberation",
+    "category": "concept-match",
+    "query": "spiritual liberation",
+    "intent": "Search Ordering: spiritual liberation (Jain) teachings on spirituality",
+    "expected_text_contains": [
+      "might"
+    ]
+  },
+  {
+    "id": "spiritual-purity",
+    "category": "concept-match",
+    "query": "spiritual purity",
+    "intent": "Search Ordering: spiritual purity (Zoroastrian) teachings on purity",
+    "expected_text_contains": [
+      "shows"
+    ]
+  },
+  {
+    "id": "spiritual-springtime",
+    "category": "concept-match",
+    "query": "spiritual springtime",
+    "intent": "Search Ordering: spiritual springtime (Baha''i) end times prophecies",
+    "expected_text_contains": [
+      "Holy"
+    ]
+  },
+  {
+    "id": "spiritual-truths",
+    "category": "concept-match",
+    "query": "spiritual truths",
+    "intent": "Search Ordering: spiritual truths (Baha''i) views on science and religion",
+    "expected_text_contains": [
+      "preceded"
+    ]
+  },
+  {
+    "id": "spring-festival",
+    "category": "concept-match",
+    "query": "spring festival",
+    "intent": "Search Ordering: spring festival (Hindu) festival of Holi",
+    "expected_text_contains": [
+      "there"
+    ]
+  },
+  {
+    "id": "studying-the-torah",
+    "category": "concept-match",
+    "query": "studying the Torah",
+    "intent": "Search Ordering: studying the Torah (Jewish) requirements for spiritual growth",
+    "expected_text_contains": [
+      "Rabbi"
+    ]
+  },
+  {
+    "id": "suffering",
+    "category": "concept-match",
+    "query": "suffering",
+    "intent": "Search Ordering: suffering (Buddhist) Four Noble Truths",
+    "expected_text_contains": [
+      "obstacles"
+    ]
+  },
+  {
+    "id": "supplication",
+    "category": "concept-match",
+    "query": "supplication",
+    "intent": "Search Ordering: supplication (Islamic) teachings on prayer",
+    "expected_text_contains": [
+      "loving"
+    ]
+  },
+  {
+    "id": "sutras",
+    "category": "concept-match",
+    "query": "Sutras",
+    "intent": ">-",
+    "expected_text_contains": [
+      "meaning"
+    ]
+  },
+  {
+    "id": "symbolism-of-light",
+    "category": "concept-match",
+    "query": "symbolism of light",
+    "intent": "Search Ordering: symbolism of light (Zoroastrian) concepts of fire and light",
+    "expected_text_contains": [
+      "shadow"
+    ]
+  },
+  {
+    "id": "sympathetic-joy",
+    "category": "concept-match",
+    "query": "sympathetic joy",
+    "intent": "Search Ordering: sympathetic joy (Buddhist) teachings on compassion",
+    "expected_text_contains": [
+      "adorns"
+    ]
+  },
+  {
+    "id": "tablet-of-ahmad",
+    "category": "concept-match",
+    "query": "Tablet of Ahmad",
+    "intent": "Search Ordering: Tablet of Ahmad (Baha''i) prayers and meditations",
+    "expected_text_contains": [
+      "Healing"
+    ]
+  },
+  {
+    "id": "tai-chi",
+    "category": "concept-match",
+    "query": "Tai Chi",
+    "intent": "Search Ordering: Tai Chi (Taoist) practices and rituals",
+    "expected_text_contains": [
+      "enterprise"
+    ]
+  },
+  {
+    "id": "taoist-cosmology",
+    "category": "concept-match",
+    "query": "Taoist cosmology",
+    "intent": "Search Ordering: Taoist cosmology (Taoist) views on nature",
+    "expected_text_contains": [
+      "secularised"
+    ]
+  },
+  {
+    "id": "tarawih-prayers",
+    "category": "concept-match",
+    "query": "Tarawih prayers",
+    "intent": "Search Ordering: Tarawih prayers (Islamic) teachings on Prayer",
+    "expected_text_contains": [
+      "Such"
+    ]
+  },
+  {
+    "id": "teaching-the-cause",
+    "category": "concept-match",
+    "query": "teaching the Cause",
+    "intent": "Search Ordering: teaching the Cause (Baha''i) requirements for spiritual growth",
+    "expected_text_contains": [
+      "themselves"
+    ]
+  },
+  {
+    "id": "ten-commandments",
+    "category": "concept-match",
+    "query": "Ten Commandments",
+    "intent": "Search Ordering: Ten Commandments (Christian) commandments in the Bible",
+    "expected_text_contains": [
+      "forbids"
+    ]
+  },
+  {
+    "id": "the-analects",
+    "category": "concept-match",
+    "query": "The Analects",
+    "intent": "Search Ordering: The Analects (Confucian) thoughts on education",
+    "expected_text_contains": [
+      "Confucius"
+    ]
+  },
+  {
+    "id": "the-way",
+    "category": "concept-match",
+    "query": "the Way",
+    "intent": "Search Ordering: \"the Way\" (Taoist) teachings",
+    "expected_text_contains": [
+      "those"
+    ]
+  },
+  {
+    "id": "thought-processes",
+    "category": "concept-match",
+    "query": "thought processes",
+    "intent": "Search Ordering: thought processes (Buddhist) views on the nature of the mind",
+    "expected_text_contains": [
+      "With"
+    ]
+  },
+  {
+    "id": "tikkun-olam",
+    "category": "concept-match",
+    "query": "Tikkun Olam",
+    "intent": "Search Ordering: Tikkun Olam (Jewish) moral teachings",
+    "expected_text_contains": [
+      "Nekudim"
+    ]
+  },
+  {
+    "id": "to-know-and-love-god",
+    "category": "concept-match",
+    "query": "to know and love God",
+    "intent": "Search Ordering: to know and love God (Baha''i) purpose of existence",
+    "expected_text_contains": [
+      "after"
+    ]
+  },
+  {
+    "id": "trustworthy",
+    "category": "concept-match",
+    "query": "trustworthy",
+    "intent": "Search Ordering: trustworthy (Baha''i) David''s favorite search phrase",
+    "expected_text_contains": [
+      "faithful"
+    ]
+  },
+  {
+    "id": "truthfulness",
+    "category": "concept-match",
+    "query": "truthfulness",
+    "intent": "Search Ordering: truthfulness (Baha''i) virtues",
+    "expected_text_contains": [
+      "restraint"
+    ]
+  },
+  {
+    "id": "turning-water-into-wine",
+    "category": "concept-match",
+    "query": "turning water into wine",
+    "intent": "Search Ordering: turning water into wine (Christian) miracles of Jesus",
+    "expected_text_contains": [
+      "message"
+    ]
+  },
+  {
+    "id": "universal-education",
+    "category": "concept-match",
+    "query": "universal education",
+    "intent": "Search Ordering: universal education (Baha''i) writings on education",
+    "expected_text_contains": [
+      "They"
+    ]
+  },
+  {
+    "id": "universal-house-of-justice",
+    "category": "concept-match",
+    "query": "Universal House of Justice",
+    "intent": "Search Ordering: Universal House of Justice (Baha''i) writings on unity",
+    "expected_text_contains": [
+      "Research"
+    ]
+  },
+  {
+    "id": "universal-liberation",
+    "category": "concept-match",
+    "query": "universal liberation",
+    "intent": "Search Ordering: universal liberation (Jain) end times prophecies",
+    "expected_text_contains": [
+      "Amitayus"
+    ]
+  },
+  {
+    "id": "valley-of-true-poverty",
+    "category": "concept-match",
+    "query": "valley of true poverty",
+    "intent": "Search Ordering: \"valley of true poverty\" (Baha''i) mysticism",
+    "expected_text_contains": [
+      "wayfarer"
+    ]
+  },
+  {
+    "id": "vendidad",
+    "category": "concept-match",
+    "query": "Vendidad",
+    "intent": "Search Ordering: Vendidad (Zoroastrian) sacred text: Avesta",
+    "expected_text_contains": [
+      "Vend"
+    ]
+  },
+  {
+    "id": "vipassana",
+    "category": "concept-match",
+    "query": "Vipassana",
+    "intent": "Search Ordering: Vipassana (Buddhist) meditation practices",
+    "expected_text_contains": [
+      "place"
+    ]
+  },
+  {
+    "id": "vishnu",
+    "category": "concept-match",
+    "query": "Vishnu",
+    "intent": "Search Ordering: Vishnu (Hindu) deities and their stories",
+    "expected_text_contains": [
+      "Hearing"
+    ]
+  },
+  {
+    "id": "visperad",
+    "category": "concept-match",
+    "query": "Visperad",
+    "intent": "Search Ordering: Visperad (Zoroastrian) prayers and hymns",
+    "expected_text_contains": [
+      "present"
+    ]
+  },
+  {
+    "id": "vohu-manah",
+    "category": "concept-match",
+    "query": "Vohu Manah",
+    "intent": "Search Ordering: Vohu Manah (Zoroastrian) virtues",
+    "expected_text_contains": [
+      "their"
+    ]
+  },
+  {
+    "id": "walking-on-water",
+    "category": "concept-match",
+    "query": "walking on water",
+    "intent": "Search Ordering: walking on water (Christian) miracles of Jesus",
+    "expected_text_contains": [
+      "earth"
+    ]
+  },
+  {
+    "id": "water-into-wine",
+    "category": "concept-match",
+    "query": "water into wine",
+    "intent": "Search Ordering: \"water into wine\" (Christian) miracles of Jesus",
+    "expected_text_contains": [
+      "miracles"
+    ]
+  },
+  {
+    "id": "wisdom",
+    "category": "concept-match",
+    "query": "wisdom",
+    "intent": "Search Ordering: wisdom (Confucian) virtues",
+    "expected_text_contains": [
+      "declare"
+    ]
+  },
+  {
+    "id": "wisdom-of-solomon",
+    "category": "concept-match",
+    "query": "Wisdom of Solomon",
+    "intent": "Search Ordering: Wisdom of Solomon (Jewish) wisdom literature",
+    "expected_text_contains": [
+      "peoples"
+    ]
+  },
+  {
+    "id": "world-government",
+    "category": "concept-match",
+    "query": "world government",
+    "intent": "Search Ordering: world government (Baha''i) views on global unity",
+    "expected_text_contains": [
+      "emergence"
+    ]
+  },
+  {
+    "id": "world-peace",
+    "category": "concept-match",
+    "query": "world peace",
+    "intent": "Search Ordering: world peace (Baha''i) writings on unity",
+    "expected_text_contains": [
+      "understanding"
+    ]
+  },
+  {
+    "id": "world-to-come",
+    "category": "concept-match",
+    "query": "world to come",
+    "intent": "Search Ordering: \"world to come\" (Baha''i) life after death",
+    "expected_text_contains": [
+      "this"
+    ]
+  },
+  {
+    "id": "worship-and-obedience",
+    "category": "concept-match",
+    "query": "worship and obedience",
+    "intent": "Search Ordering: worship and obedience (Islamic) purpose of existence",
+    "expected_text_contains": [
+      "Sraosha"
+    ]
+  },
+  {
+    "id": "worshiping-ahura-mazda",
+    "category": "concept-match",
+    "query": "worshiping Ahura Mazda",
+    "intent": "Search Ordering: worshiping Ahura Mazda (Zoroastrian) purpose of existence",
+    "expected_text_contains": [
+      "worship"
+    ]
+  },
+  {
+    "id": "wu-wei",
+    "category": "concept-match",
+    "query": "wu wei",
+    "intent": "Search Ordering: wu wei (Taoist) philosophy and the Tao",
+    "expected_text_contains": [
+      "exchanged"
+    ]
+  },
+  {
+    "id": "xunzis-evil-nature",
+    "category": "concept-match",
+    "query": "Xunzi's evil nature",
+    "intent": "Search Ordering: Xunzi''s evil nature (Confucian) views on human nature",
+    "expected_text_contains": [
+      "however"
+    ]
+  },
+  {
+    "id": "yashts",
+    "category": "concept-match",
+    "query": "Yashts",
+    "intent": "Search Ordering: Yashts (Zoroastrian) prayers and hymns",
+    "expected_text_contains": [
+      "Much"
+    ]
+  },
+  {
+    "id": "yin-and-yang",
+    "category": "concept-match",
+    "query": "Yin and Yang",
+    "intent": "Search Ordering customization: Yin and Yang (stopword \"and\")",
+    "expected_text_contains": [
+      "parents"
+    ]
+  },
+  {
+    "id": "yom-kippur",
+    "category": "concept-match",
+    "query": "Yom Kippur",
+    "intent": "Search Ordering: Yom Kippur (Jewish) holidays and traditions",
+    "expected_text_contains": [
+      "Yisrael"
+    ]
+  },
+  {
+    "id": "acts-of-kindness-and-charity",
+    "category": "cross-tradition",
+    "query": "acts of kindness and charity",
+    "intent": ">-",
+    "expected_text_contains": [
+      "Before"
+    ]
+  },
+  {
+    "id": "adam-eve-judaism",
+    "category": "cross-tradition",
+    "query": "Adam Eve (Judaism)",
+    "intent": ">-",
+    "expected_text_contains": [
+      "first"
+    ]
+  },
+  {
+    "id": "chanting-and-recitation-of-sutras",
+    "category": "cross-tradition",
+    "query": "chanting and recitation of sutras",
+    "intent": ">-",
+    "expected_text_contains": [
+      "Buddha"
+    ]
+  },
+  {
+    "id": "community-service-and-charity",
+    "category": "cross-tradition",
+    "query": "community service and charity",
+    "intent": ">-",
+    "expected_text_contains": [
+      "called"
+    ]
+  },
+  {
+    "id": "eightfold-path",
+    "category": "cross-tradition",
+    "query": "Eightfold Path",
+    "intent": ">-",
+    "expected_text_contains": [
+      "simply"
+    ]
+  },
+  {
+    "id": "engaging-in-selfless-service",
+    "category": "cross-tradition",
+    "query": "engaging in selfless service",
+    "intent": ">-",
+    "expected_text_contains": [
+      "Your"
+    ]
+  },
+  {
+    "id": "establishment-of-gods-kingdom-on-earth",
+    "category": "cross-tradition",
+    "query": "establishment of God's Kingdom on Earth",
+    "intent": ">-",
+    "expected_text_contains": [
+      "century"
+    ]
+  },
+  {
+    "id": "establishment-of-the-kingdom-of-god-on-earth",
+    "category": "cross-tradition",
+    "query": "establishment of the Kingdom of God on Earth",
+    "intent": ">-",
+    "expected_text_contains": [
+      "century"
+    ]
+  },
+  {
+    "id": "final-renovation-of-the-universe",
+    "category": "cross-tradition",
+    "query": "final renovation of the universe",
+    "intent": ">-",
+    "expected_text_contains": [
+      "harmazd"
+    ]
+  },
+  {
+    "id": "following-asha",
+    "category": "cross-tradition",
+    "query": "following Asha",
+    "intent": ">-",
+    "expected_text_contains": [
+      "pronounced"
+    ]
+  },
+  {
+    "id": "four-noble-truths",
+    "category": "cross-tradition",
+    "query": "Four Noble Truths",
+    "intent": ">-",
+    "expected_text_contains": [
+      "respect"
+    ]
+  },
+  {
+    "id": "gods-love",
+    "category": "cross-tradition",
+    "query": "God's love",
+    "intent": ">-",
+    "expected_text_contains": [
+      "roses"
+    ]
+  },
+  {
+    "id": "harmony-of-science-and-religion",
+    "category": "cross-tradition",
+    "query": "harmony of science and religion",
+    "intent": ">-",
+    "expected_text_contains": [
+      "With"
+    ]
+  },
+  {
+    "id": "heaven-and-hell",
+    "category": "cross-tradition",
+    "query": "Heaven and Hell",
+    "intent": ">-",
+    "expected_text_contains": [
+      "dwellings"
+    ]
+  },
+  {
+    "id": "internal-alchemy",
+    "category": "cross-tradition",
+    "query": "internal alchemy",
+    "intent": ">-",
+    "expected_text_contains": [
+      "shamanistic"
+    ]
+  },
+  {
+    "id": "living-in-harmony-with-nature",
+    "category": "cross-tradition",
+    "query": "living in harmony with nature",
+    "intent": ">-",
+    "expected_text_contains": [
+      "nothing"
+    ]
+  },
+  {
+    "id": "living-in-harmony-with-the-universe",
+    "category": "cross-tradition",
+    "query": "living in harmony with the universe",
+    "intent": ">-",
+    "expected_text_contains": [
+      "Water"
+    ]
+  },
+  {
+    "id": "love-and-serve-others",
+    "category": "cross-tradition",
+    "query": "love and serve others",
+    "intent": ">-",
+    "expected_text_contains": [
+      "creatures"
+    ]
+  },
+  {
+    "id": "meditation-and-breath-control",
+    "category": "cross-tradition",
+    "query": "meditation and breath control",
+    "intent": ">-",
+    "expected_text_contains": [
+      "sages"
+    ]
+  },
+  {
+    "id": "meditation-and-mindfulness",
+    "category": "cross-tradition",
+    "query": "meditation and mindfulness",
+    "intent": ">-",
+    "expected_text_contains": [
+      "adorns"
+    ]
+  },
+  {
+    "id": "meditation-and-reflection",
+    "category": "cross-tradition",
+    "query": "meditation and reflection",
+    "intent": ">-",
+    "expected_text_contains": [
+      "devotedly"
+    ]
+  },
+  {
+    "id": "mencius-goodness-of-human-nature",
+    "category": "cross-tradition",
+    "query": "Mencius' goodness of human nature",
+    "intent": ">-",
+    "expected_text_contains": [
+      "Unlike"
+    ]
+  },
+  {
+    "id": "middle-way",
+    "category": "cross-tradition",
+    "query": "Middle Way",
+    "intent": ">-",
+    "expected_text_contains": [
+      "between"
+    ]
+  },
+  {
+    "id": "observing-fasting-and-rituals",
+    "category": "cross-tradition",
+    "query": "observing fasting and rituals",
+    "intent": ">-",
+    "expected_text_contains": [
+      "another"
+    ]
+  },
+  {
+    "id": "observing-fasting-during-ramadan",
+    "category": "cross-tradition",
+    "query": "observing fasting during Ramadan",
+    "intent": ">-",
+    "expected_text_contains": [
+      "Apostle"
+    ]
+  },
+  {
+    "id": "observing-fire-rituals",
+    "category": "cross-tradition",
+    "query": "observing fire rituals",
+    "intent": ">-",
+    "expected_text_contains": [
+      "should"
+    ]
+  },
+  {
+    "id": "observing-rituals-and-ceremonies",
+    "category": "cross-tradition",
+    "query": "observing rituals and ceremonies",
+    "intent": ">-",
+    "expected_text_contains": [
+      "shown"
+    ]
+  },
+  {
+    "id": "observing-the-sabbath",
+    "category": "cross-tradition",
+    "query": "observing the Sabbath",
+    "intent": ">-",
+    "expected_text_contains": [
+      "purity"
+    ]
+  },
+  {
+    "id": "oneness-of-humanity",
+    "category": "cross-tradition",
+    "query": "oneness of humanity",
+    "intent": ">-",
+    "expected_text_contains": [
+      "Mainspring"
+    ]
+  },
+  {
+    "id": "oneness-of-humankind",
+    "category": "cross-tradition",
+    "query": "oneness of humankind",
+    "intent": ">-",
+    "expected_text_contains": [
+      "peace"
+    ]
+  },
+  {
+    "id": "oneness-of-mankind",
+    "category": "cross-tradition",
+    "query": "oneness of mankind",
+    "intent": ">-",
+    "expected_text_contains": [
+      "demonstrate"
+    ]
+  },
+  {
+    "id": "participating-in-sacraments",
+    "category": "cross-tradition",
+    "query": "participating in sacraments",
+    "intent": ">-",
+    "expected_text_contains": [
+      "symbols"
+    ]
+  },
+  {
+    "id": "participation-in-retreats",
+    "category": "cross-tradition",
+    "query": "participation in retreats",
+    "intent": ">-",
+    "expected_text_contains": [
+      "effected"
+    ]
+  },
+  {
+    "id": "performing-daily-puja",
+    "category": "cross-tradition",
+    "query": "performing daily puja",
+    "intent": ">-",
+    "expected_text_contains": [
+      "sacred"
+    ]
+  },
+  {
+    "id": "practicing-filial-piety",
+    "category": "cross-tradition",
+    "query": "practicing filial piety",
+    "intent": ">-",
+    "expected_text_contains": [
+      "follow"
+    ]
+  },
+  {
+    "id": "practicing-good-thoughts-good-words-good-deeds",
+    "category": "cross-tradition",
+    "query": "practicing good thoughts good words good deeds",
+    "intent": ">-",
+    "expected_text_contains": [
+      "listen"
+    ]
+  },
+  {
+    "id": "practicing-the-eightfold-path",
+    "category": "cross-tradition",
+    "query": "practicing the Eightfold Path",
+    "intent": ">-",
+    "expected_text_contains": [
+      "Because"
+    ]
+  },
+  {
+    "id": "promoting-good-thoughts-words-and-deeds",
+    "category": "cross-tradition",
+    "query": "promoting good thoughts words and deeds",
+    "intent": ">-",
+    "expected_text_contains": [
+      "follows"
+    ]
+  },
+  {
+    "id": "read-and-study-the-bible",
+    "category": "cross-tradition",
+    "query": "read and study the Bible",
+    "intent": ">-",
+    "expected_text_contains": [
+      "Holy"
+    ]
+  },
+  {
+    "id": "reading-the-writings-every-morning-and-evening",
+    "category": "cross-tradition",
+    "query": "reading the Writings every morning and evening",
+    "intent": ">-",
+    "expected_text_contains": [
+      "stated"
+    ]
+  },
+  {
+    "id": "regular-prayer-and-worship",
+    "category": "cross-tradition",
+    "query": "regular prayer and worship",
+    "intent": ">-",
+    "expected_text_contains": [
+      "Offering"
+    ]
+  },
+  {
+    "id": "ritual-purity",
+    "category": "cross-tradition",
+    "query": "ritual purity",
+    "intent": ">-",
+    "expected_text_contains": [
+      "There"
+    ]
+  },
+  {
+    "id": "self-cultivation",
+    "category": "cross-tradition",
+    "query": "self-cultivation",
+    "intent": ">-",
+    "expected_text_contains": [
+      "pursue"
+    ]
+  },
+  {
+    "id": "spiritual-assembly-title-local-spiritual-assembly",
+    "category": "cross-tradition",
+    "query": "spiritual assembly (title:Local Spiritual Assembly)",
+    "intent": "Search results should respect negated words",
+    "expected_text_contains": [
+      "attained"
+    ]
+  },
+  {
+    "id": "spiritual-creation",
+    "category": "cross-tradition",
+    "query": "spiritual creation",
+    "intent": ">-",
+    "expected_text_contains": [
+      "genesis"
+    ]
+  },
+  {
+    "id": "studying-taoist-texts",
+    "category": "cross-tradition",
+    "query": "studying Taoist texts",
+    "intent": ">-",
+    "expected_text_contains": [
+      "based"
+    ]
+  },
+  {
+    "id": "studying-the-avesta",
+    "category": "cross-tradition",
+    "query": "studying the Avesta",
+    "intent": ">-",
+    "expected_text_contains": [
+      "representits"
+    ]
+  },
+  {
+    "id": "the-good-samaritan",
+    "category": "cross-tradition",
+    "query": "The Good Samaritan",
+    "intent": ">-",
+    "expected_text_contains": [
+      "parable"
+    ]
+  },
+  {
+    "id": "the-lost-sheep",
+    "category": "cross-tradition",
+    "query": "The Lost Sheep",
+    "intent": ">-",
+    "expected_text_contains": [
+      "rather"
+    ]
+  },
+  {
+    "id": "the-prodigal-son",
+    "category": "cross-tradition",
+    "query": "The Prodigal Son",
+    "intent": ">-",
+    "expected_text_contains": [
+      "spends"
+    ]
+  },
+  {
+    "id": "the-sower-and-the-seed",
+    "category": "cross-tradition",
+    "query": "The Sower and the Seed",
+    "intent": ">-",
+    "expected_text_contains": [
+      "Where"
+    ]
+  },
+  {
+    "id": "transmigration-of-souls",
+    "category": "cross-tradition",
+    "query": "transmigration of souls",
+    "intent": ">-",
+    "expected_text_contains": [
+      "learned"
+    ]
+  },
+  {
+    "id": "ablution",
+    "category": "phrase-match",
+    "query": "ablution",
+    "intent": "Timing: \"ablution\" (Islamic - teachings on prayer)",
+    "expected_text_contains": [
+      "either"
+    ]
+  },
+  {
+    "id": "achieving-enlightenment",
+    "category": "phrase-match",
+    "query": "achieving enlightenment",
+    "intent": "Timing: \"achieving enlightenment\" (Buddhist - purpose of existence)",
+    "expected_text_contains": [
+      "Wish"
+    ]
+  },
+  {
+    "id": "achieving-immortality",
+    "category": "phrase-match",
+    "query": "achieving immortality",
+    "intent": "Timing: \"achieving immortality\" (Taoist - purpose of existence)",
+    "expected_text_contains": [
+      "attaining"
+    ]
+  },
+  {
+    "id": "acts-of-kindness",
+    "category": "phrase-match",
+    "query": "acts of kindness",
+    "intent": "Timing: \"\"acts of kindness\"\" (Jewish - teachings on charity)",
+    "expected_text_contains": [
+      "every"
+    ]
+  },
+  {
+    "id": "adam-and-eve",
+    "category": "phrase-match",
+    "query": "Adam and Eve",
+    "intent": "Timing: \"Adam and Eve\" (Baha''i - Creation story in the Baha''i Faith)",
+    "expected_text_contains": [
+      "account"
+    ]
+  },
+  {
+    "id": "adam-eve",
+    "category": "phrase-match",
+    "query": "Adam Eve",
+    "intent": "Timing: \"Adam Eve\" (Baha''i - Creation story in the Baha''i Faith)",
+    "expected_text_contains": [
+      "first"
+    ]
+  },
+  {
+    "id": "administrative-order",
+    "category": "phrase-match",
+    "query": "administrative order",
+    "intent": "Timing: \"administrative order\" (Baha''i - writings on justice)",
+    "expected_text_contains": [
+      "functioning"
+    ]
+  },
+  {
+    "id": "ahimsa",
+    "category": "phrase-match",
+    "query": "Ahimsa",
+    "intent": "Timing: \"Ahimsa\" (Jain - virtues)",
+    "expected_text_contains": [
+      "among"
+    ]
+  },
+  {
+    "id": "ahriman",
+    "category": "phrase-match",
+    "query": "Ahriman",
+    "intent": "Timing: \"Ahriman\" (Zoroastrian - creation story)",
+    "expected_text_contains": [
+      "would"
+    ]
+  },
+  {
+    "id": "ahura-mazda",
+    "category": "phrase-match",
+    "query": "Ahura Mazda",
+    "intent": "Timing: \"Ahura Mazda\" (Zoroastrian - creation story)",
+    "expected_text_contains": [
+      "answered"
+    ]
+  },
+  {
+    "id": "amazing-grace",
+    "category": "phrase-match",
+    "query": "Amazing Grace",
+    "intent": "Timing: \"Amazing Grace\" (Christian - hymns and psalms)",
+    "expected_text_contains": [
+      "relying"
+    ]
+  },
+  {
+    "id": "anavah",
+    "category": "phrase-match",
+    "query": "Anavah",
+    "intent": "Timing: \"Anavah\" (Jewish - virtues)",
+    "expected_text_contains": [
+      "contained"
+    ]
+  },
+  {
+    "id": "angra-mainyu",
+    "category": "phrase-match",
+    "query": "Angra Mainyu",
+    "intent": "Timing: \"Angra Mainyu\" (Zoroastrian - teachings on good and evil)",
+    "expected_text_contains": [
+      "Thereupon"
+    ]
+  },
+  {
+    "id": "aparigraha",
+    "category": "phrase-match",
+    "query": "Aparigraha",
+    "intent": "Timing: \"Aparigraha\" (Jain - virtues)",
+    "expected_text_contains": [
+      "Brahmacharya"
+    ]
+  },
+  {
+    "id": "appearance-of-mahdi",
+    "category": "phrase-match",
+    "query": "appearance of Mahdi",
+    "intent": "Timing: \"appearance of Mahdi\" (Islamic - end times prophecies)",
+    "expected_text_contains": [
+      "Persia"
+    ]
+  },
+  {
+    "id": "armageddon",
+    "category": "phrase-match",
+    "query": "Armageddon",
+    "intent": "Timing: \"Armageddon\" (Christian - end times prophecies)",
+    "expected_text_contains": [
+      "called"
+    ]
+  },
+  {
+    "id": "asceticism",
+    "category": "phrase-match",
+    "query": "asceticism",
+    "intent": "Timing: \"asceticism\" (Jain - teachings on detachment)",
+    "expected_text_contains": [
+      "Devoted"
+    ]
+  },
+  {
+    "id": "asha",
+    "category": "phrase-match",
+    "query": "Asha",
+    "intent": "Search Ordering customization: Asha (dashes and \"‘A’Asha\")",
+    "expected_text_contains": [
+      "Ahuna"
+    ]
+  },
+  {
+    "id": "asteya",
+    "category": "phrase-match",
+    "query": "Asteya",
+    "intent": "Timing: \"Asteya\" (Jain - virtues)",
+    "expected_text_contains": [
+      "falsehood"
+    ]
+  },
+  {
+    "id": "atar",
+    "category": "phrase-match",
+    "query": "Atar",
+    "intent": "Timing: \"Atar\" (Zoroastrian - concepts of fire and light)",
+    "expected_text_contains": [
+      "Whom"
+    ]
+  },
+  {
+    "id": "atharvaveda",
+    "category": "phrase-match",
+    "query": "Atharvaveda",
+    "intent": "Timing: \"Atharvaveda\" (Hindu - scriptures: Vedas and Upanishads)",
+    "expected_text_contains": [
+      "Atharv"
+    ]
+  },
+  {
+    "id": "atman",
+    "category": "phrase-match",
+    "query": "Atman",
+    "intent": "Timing: \"Atman\" (Hindu - beliefs about the soul)",
+    "expected_text_contains": [
+      "thing"
+    ]
+  },
+  {
+    "id": "attaining-liberation",
+    "category": "phrase-match",
+    "query": "attaining liberation",
+    "intent": "Timing: \"attaining liberation\" (Jain - purpose of existence)",
+    "expected_text_contains": [
+      "enlightenment"
+    ]
+  },
+  {
+    "id": "attaining-nirvana",
+    "category": "phrase-match",
+    "query": "attaining Nirvana",
+    "intent": "Timing: \"attaining Nirvana\" (Buddhist - purpose of existence)",
+    "expected_text_contains": [
+      "planes"
+    ]
+  },
+  {
+    "id": "babylonian-exile",
+    "category": "phrase-match",
+    "query": "Babylonian Exile",
+    "intent": "Timing: \"Babylonian Exile\" (Jewish - history and culture)",
+    "expected_text_contains": [
+      "tears"
+    ]
+  },
+  {
+    "id": "bahaullah",
+    "category": "phrase-match",
+    "query": "Baha'u'llah",
+    "intent": "Timing: \"Baha''u''llah\"\" (word with quotes)",
+    "expected_text_contains": [
+      "Revelation"
+    ]
+  },
+  {
+    "id": "balance",
+    "category": "phrase-match",
+    "query": "balance",
+    "intent": "Timing: \"balance\" (Taoist - concepts of yin and yang)",
+    "expected_text_contains": [
+      "Will"
+    ]
+  },
+  {
+    "id": "beatitudes",
+    "category": "phrase-match",
+    "query": "Beatitudes",
+    "intent": "Timing: \"Beatitudes\" (Christian - Sermon on the Mount)",
+    "expected_text_contains": [
+      "Soden"
+    ]
+  },
+  {
+    "id": "benevolence",
+    "category": "phrase-match",
+    "query": "benevolence",
+    "intent": "Timing: \"benevolence\" (Confucian - virtues)",
+    "expected_text_contains": [
+      "render"
+    ]
+  },
+  {
+    "id": "benevolent-rule",
+    "category": "phrase-match",
+    "query": "benevolent rule",
+    "intent": "Timing: \"benevolent rule\" (Confucian - views on governance)",
+    "expected_text_contains": [
+      "their"
+    ]
+  },
+  {
+    "id": "bhagavad-gita",
+    "category": "phrase-match",
+    "query": "Bhagavad Gita",
+    "intent": "Timing: \"Bhagavad Gita\" (Hindu - epics: Mahabharata and Ramayana)",
+    "expected_text_contains": [
+      "Chapter"
+    ]
+  },
+  {
+    "id": "bhakti",
+    "category": "phrase-match",
+    "query": "Bhakti",
+    "intent": "Timing: \"Bhakti\" (Hindu - virtues)",
+    "expected_text_contains": [
+      "Pravachana"
+    ]
+  },
+  {
+    "id": "blessed-are-the-meek",
+    "category": "phrase-match",
+    "query": "blessed are the meek",
+    "intent": "Timing: \"\"blessed are the meek\"\"\" (exact phrase)",
+    "expected_text_contains": [
+      "shall"
+    ]
+  },
+  {
+    "id": "blessed-are-the-peacemakers",
+    "category": "phrase-match",
+    "query": "Blessed are the peacemakers",
+    "intent": "Timing: \"Blessed are the peacemakers\" (Christian - Beatitudes)",
+    "expected_text_contains": [
+      "shall"
+    ]
+  },
+  {
+    "id": "blessed-are-the-poor-in-spirit",
+    "category": "phrase-match",
+    "query": "Blessed are the poor in spirit",
+    "intent": "Timing: \"Blessed are the poor in spirit\" (Christian - Beatitudes)",
+    "expected_text_contains": [
+      "taught"
+    ]
+  },
+  {
+    "id": "blessed-are-the-pure-in-heart",
+    "category": "phrase-match",
+    "query": "Blessed are the pure in heart",
+    "intent": "Timing: \"Blessed are the pure in heart\" (Christian - Beatitudes)",
+    "expected_text_contains": [
+      "shall"
+    ]
+  },
+  {
+    "id": "brahmacharya",
+    "category": "phrase-match",
+    "query": "Brahmacharya",
+    "intent": "Timing: \"Brahmacharya\" (Jain - virtues)",
+    "expected_text_contains": [
+      "practised"
+    ]
+  },
+  {
+    "id": "brahman",
+    "category": "phrase-match",
+    "query": "Brahman",
+    "intent": "Timing: \"Brahman\" (Hindu - beliefs about the soul)",
+    "expected_text_contains": [
+      "indeed"
+    ]
+  },
+  {
+    "id": "brahmas-creation",
+    "category": "phrase-match",
+    "query": "Brahma's creation",
+    "intent": "Timing: \"Brahma''s creation\" (Hindu - creation myths)",
+    "expected_text_contains": [
+      "primal"
+    ]
+  },
+  {
+    "id": "breath-control",
+    "category": "phrase-match",
+    "query": "breath control",
+    "intent": "Timing: \"breath control\" (Taoist - alchemy and longevity)",
+    "expected_text_contains": [
+      "sending"
+    ]
+  },
+  {
+    "id": "brihadaranyaka-upanishad",
+    "category": "phrase-match",
+    "query": "Brihadaranyaka Upanishad",
+    "intent": "Timing: \"Brihadaranyaka Upanishad\" (Hindu - scriptures: Vedas and Upanishads)",
+    "expected_text_contains": [
+      "Brihadaranyaka"
+    ]
+  },
+  {
+    "id": "bundahishn",
+    "category": "phrase-match",
+    "query": "Bundahishn",
+    "intent": "Timing: \"Bundahishn\" (Zoroastrian - creation story)",
+    "expected_text_contains": [
+      "passage"
+    ]
+  },
+  {
+    "id": "butterfly-dream",
+    "category": "phrase-match",
+    "query": "Butterfly Dream",
+    "intent": "Timing: \"Butterfly Dream\" (Taoist - texts: Zhuangzi)",
+    "expected_text_contains": [
+      "formerly"
+    ]
+  },
+  {
+    "id": "cause-of-suffering",
+    "category": "phrase-match",
+    "query": "cause of suffering",
+    "intent": "Timing: \"cause of suffering\" (Buddhist - teachings on suffering)",
+    "expected_text_contains": [
+      "often"
+    ]
+  },
+  {
+    "id": "cessation-of-suffering",
+    "category": "phrase-match",
+    "query": "cessation of suffering",
+    "intent": "Timing: \"cessation of suffering\" (Buddhist - Four Noble Truths)",
+    "expected_text_contains": [
+      "noble"
+    ]
+  },
+  {
+    "id": "charitable-giving",
+    "category": "phrase-match",
+    "query": "charitable giving",
+    "intent": "Timing: \"charitable giving\" (Jewish - teachings on charity)",
+    "expected_text_contains": [
+      "therefore"
+    ]
+  },
+  {
+    "id": "charity",
+    "category": "phrase-match",
+    "query": "charity",
+    "intent": "Timing: \"charity\" (Islam - Pillars of Islam)",
+    "expected_text_contains": [
+      "exhorts"
+    ]
+  },
+  {
+    "id": "chastity",
+    "category": "phrase-match",
+    "query": "chastity",
+    "intent": "Timing: \"chastity\" (Jain - virtues)",
+    "expected_text_contains": [
+      "Penance"
+    ]
+  },
+  {
+    "id": "chesed",
+    "category": "phrase-match",
+    "query": "Chesed",
+    "intent": "Timing: \"Chesed\" (Jewish - virtues)",
+    "expected_text_contains": [
+      "Hazo"
+    ]
+  },
+  {
+    "id": "chinvat-bridge",
+    "category": "phrase-match",
+    "query": "Chinvat Bridge",
+    "intent": "Timing: \"Chinvat Bridge\" (Zoroastrian - views on the afterlife)",
+    "expected_text_contains": [
+      "account"
+    ]
+  },
+  {
+    "id": "chochmah",
+    "category": "phrase-match",
+    "query": "Chochmah",
+    "intent": "Timing: \"Chochmah\" (Jewish - virtues)",
+    "expected_text_contains": [
+      "somewhat"
+    ]
+  },
+  {
+    "id": "cleanliness",
+    "category": "phrase-match",
+    "query": "cleanliness",
+    "intent": "Timing: \"cleanliness\" (Zoroastrian - teachings on purity)",
+    "expected_text_contains": [
+      "There"
+    ]
+  },
+  {
+    "id": "coming-of-a-sage-king",
+    "category": "phrase-match",
+    "query": "coming of a sage king",
+    "intent": "Timing: \"coming of a sage king\" (Confucian - end times prophecies)",
+    "expected_text_contains": [
+      "foremost"
+    ]
+  },
+  {
+    "id": "coming-of-saoshyant",
+    "category": "phrase-match",
+    "query": "coming of Saoshyant",
+    "intent": "Timing: \"coming of Saoshyant\" (Zoroastrian - end times prophecies)",
+    "expected_text_contains": [
+      "fiend"
+    ]
+  },
+  {
+    "id": "coming-of-the-messiah",
+    "category": "phrase-match",
+    "query": "coming of the Messiah",
+    "intent": "Timing: \"coming of the Messiah\" (Jewish - end times prophecies)",
+    "expected_text_contains": [
+      "Jews"
+    ]
+  },
+  {
+    "id": "commandments-of-jesus",
+    "category": "phrase-match",
+    "query": "commandments of Jesus",
+    "intent": "Timing: \"commandments of Jesus\" (Christian - commandments in the Bible)",
+    "expected_text_contains": [
+      "teachings"
+    ]
+  },
+  {
+    "id": "compassion",
+    "category": "phrase-match",
+    "query": "compassion",
+    "intent": "Timing: \"compassion\" (Buddhist - virtues)",
+    "expected_text_contains": [
+      "kindness"
+    ]
+  },
+  {
+    "id": "consciousness",
+    "category": "phrase-match",
+    "query": "consciousness",
+    "intent": "Timing: \"consciousness\" (Buddhist - views on the nature of the mind)",
+    "expected_text_contains": [
+      "consequence"
+    ]
+  },
+  {
+    "id": "courtesy",
+    "category": "phrase-match",
+    "query": "courtesy",
+    "intent": "Timing: \"courtesy\" (Confucian - views on respect)",
+    "expected_text_contains": [
+      "With"
+    ]
+  },
+  {
+    "id": "covenant",
+    "category": "phrase-match",
+    "query": "covenant",
+    "intent": "Timing: \"covenant\" (Zoroastrian - teachings on good and evil)",
+    "expected_text_contains": [
+      "entered"
+    ]
+  },
+  {
+    "id": "covenant-with-abraham",
+    "category": "phrase-match",
+    "query": "Covenant with Abraham",
+    "intent": "Timing: \"Covenant with Abraham\" (Jewish - history in the Old Testament)",
+    "expected_text_contains": [
+      "Then"
+    ]
+  },
+  {
+    "id": "cultivating-virtue",
+    "category": "phrase-match",
+    "query": "cultivating virtue",
+    "intent": "Timing: \"cultivating virtue\" (Confucian - purpose of existence)",
+    "expected_text_contains": [
+      "spiritual"
+    ]
+  },
+  {
+    "id": "cycle-of-life",
+    "category": "phrase-match",
+    "query": "cycle of life",
+    "intent": "Timing: \"cycle of life\" (Buddhist - views on reincarnation)",
+    "expected_text_contains": [
+      "remain"
+    ]
+  },
+  {
+    "id": "cyclical-view-of-history",
+    "category": "phrase-match",
+    "query": "cyclical view of history",
+    "intent": "Timing: \"cyclical view of history\" (Confucian - end times prophecies)",
+    "expected_text_contains": [
+      "recurring"
+    ]
+  },
+  {
+    "id": "daily-obligatory-prayer",
+    "category": "phrase-match",
+    "query": "daily obligatory prayer",
+    "intent": "Timing: \"daily obligatory prayer\" (Baha''i - requirements for spiritual growth)",
+    "expected_text_contains": [
+      "importance"
+    ]
+  },
+  {
+    "id": "daily-prayer",
+    "category": "phrase-match",
+    "query": "daily prayer",
+    "intent": "Timing: \"daily prayer\" (Jewish - requirements for spiritual growth)",
+    "expected_text_contains": [
+      "healing"
+    ]
+  },
+  {
+    "id": "daily-prayers",
+    "category": "phrase-match",
+    "query": "daily prayers",
+    "intent": "Timing: \"daily prayers\" (Islamic - requirements for spiritual growth)",
+    "expected_text_contains": [
+      "--"
+    ]
+  },
+  {
+    "id": "daniel",
+    "category": "phrase-match",
+    "query": "Daniel",
+    "intent": "Timing: \"Daniel\" (Jewish - prophets and their messages)",
+    "expected_text_contains": [
+      "ninety"
+    ]
+  },
+  {
+    "id": "dao",
+    "category": "phrase-match",
+    "query": "Dao",
+    "intent": "Timing: \"Dao\" (Taoist - philosophy and the Tao)",
+    "expected_text_contains": [
+      "would"
+    ]
+  },
+  {
+    "id": "daoist-philosophy",
+    "category": "phrase-match",
+    "query": "Daoist philosophy",
+    "intent": "Timing: \"Daoist philosophy\" (Taoist - texts: Zhuangzi)",
+    "expected_text_contains": [
+      "Chinese"
+    ]
+  },
+  {
+    "id": "day-of-judgment",
+    "category": "phrase-match",
+    "query": "Day of Judgment",
+    "intent": "Timing: \"Day of Judgment\" (Islamic - end times prophecies)",
+    "expected_text_contains": [
+      "amongst"
+    ]
+  },
+  {
+    "id": "deference",
+    "category": "phrase-match",
+    "query": "deference",
+    "intent": "Timing: \"deference\" (Confucian - views on respect)",
+    "expected_text_contains": [
+      "extraordinary"
+    ]
+  },
+  {
+    "id": "detachment",
+    "category": "phrase-match",
+    "query": "detachment",
+    "intent": "Timing: \"detachment\" (Baha''i - virtues)",
+    "expected_text_contains": [
+      "willingly"
+    ]
+  },
+  {
+    "id": "devotion",
+    "category": "phrase-match",
+    "query": "devotion",
+    "intent": "Timing: \"devotion\" (Hindu - virtues)",
+    "expected_text_contains": [
+      "spirit"
+    ]
+  },
+  {
+    "id": "dharma",
+    "category": "phrase-match",
+    "query": "dharma",
+    "intent": "Timing: \"dharma\" (Hindu - virtues)",
+    "expected_text_contains": [
+      "ignorant"
+    ]
+  },
+  {
+    "id": "diamond-sutra",
+    "category": "phrase-match",
+    "query": "Diamond Sutra",
+    "intent": "Timing: \"Diamond Sutra\" (Buddhist - sutras and scriptures)",
+    "expected_text_contains": [
+      "Venerable"
+    ]
+  },
+  {
+    "id": "diaspora",
+    "category": "phrase-match",
+    "query": "Diaspora",
+    "intent": "Timing: \"Diaspora\" (Jewish - history and culture)",
+    "expected_text_contains": [
+      "length"
+    ]
+  },
+  {
+    "id": "dietary-laws",
+    "category": "phrase-match",
+    "query": "dietary laws",
+    "intent": "Timing: \"dietary laws\" (Jewish - laws in the Talmud)",
+    "expected_text_contains": [
+      "death"
+    ]
+  },
+  {
+    "id": "dietary-practices",
+    "category": "phrase-match",
+    "query": "dietary practices",
+    "intent": "Timing: \"dietary practices\" (Taoist - practices for health)",
+    "expected_text_contains": [
+      "breathing"
+    ]
+  },
+  {
+    "id": "diwali",
+    "category": "phrase-match",
+    "query": "Diwali",
+    "intent": "Timing: \"Diwali\" (Jain - rituals and festivals)",
+    "expected_text_contains": [
+      "Doukhobor"
+    ]
+  },
+  {
+    "id": "druj",
+    "category": "phrase-match",
+    "query": "Druj",
+    "intent": "Timing: \"Druj\" (Zoroastrian - teachings on good and evil)",
+    "expected_text_contains": [
+      "shall"
+    ]
+  },
+  {
+    "id": "dua",
+    "category": "phrase-match",
+    "query": "Dua",
+    "intent": "Search Ordering: Dua (Islamic) teachings on prayer",
+    "expected_text_contains": [
+      "words"
+    ]
+  },
+  {
+    "id": "duality",
+    "category": "phrase-match",
+    "query": "duality",
+    "intent": "Timing: \"duality\" (Taoist - concepts of yin and yang)",
+    "expected_text_contains": [
+      "felicity"
+    ]
+  },
+  {
+    "id": "dukkha",
+    "category": "phrase-match",
+    "query": "Dukkha",
+    "intent": "Timing: \"Dukkha\" (Buddhist - teachings on suffering)",
+    "expected_text_contains": [
+      "Noble"
+    ]
+  },
+  {
+    "id": "durga",
+    "category": "phrase-match",
+    "query": "Durga",
+    "intent": "Timing: \"Durga\" (Hindu - deities and their stories)",
+    "expected_text_contains": [
+      "Mahagouri"
+    ]
+  },
+  {
+    "id": "duty",
+    "category": "phrase-match",
+    "query": "duty",
+    "intent": "Timing: \"duty\" (Hindu - teachings on dharma)",
+    "expected_text_contains": [
+      "Udaya"
+    ]
+  },
+  {
+    "id": "ecclesiastes",
+    "category": "phrase-match",
+    "query": "Ecclesiastes",
+    "intent": "Timing: \"Ecclesiastes\" (Jewish - wisdom literature)",
+    "expected_text_contains": [
+      "Chapter"
+    ]
+  },
+  {
+    "id": "economic-justice",
+    "category": "phrase-match",
+    "query": "economic justice",
+    "intent": "Timing: \"economic justice\" (Baha''i - writings on equality)",
+    "expected_text_contains": [
+      "sixth"
+    ]
+  },
+  {
+    "id": "education-for-women",
+    "category": "phrase-match",
+    "query": "education for women",
+    "intent": "Timing: \"education for women\" (Baha''i - writings on education)",
+    "expected_text_contains": [
+      "number"
+    ]
+  },
+  {
+    "id": "eid-al-fitr",
+    "category": "phrase-match",
+    "query": "Eid al-Fitr",
+    "intent": "Timing: \"Eid al-Fitr\" (Islamic - views on fasting)",
+    "expected_text_contains": [
+      "celebrate"
+    ]
+  },
+  {
+    "id": "elimination-of-prejudice",
+    "category": "phrase-match",
+    "query": "elimination of prejudice",
+    "intent": "Timing: \"elimination of prejudice\" (Baha''i - writings on equality)",
+    "expected_text_contains": [
+      "empowerment"
+    ]
+  },
+  {
+    "id": "emergence-of-a-new-era",
+    "category": "phrase-match",
+    "query": "emergence of a new era",
+    "intent": "Timing: \"emergence of a new era\" (Taoist - end times prophecies)",
+    "expected_text_contains": [
+      "German"
+    ]
+  },
+  {
+    "id": "end-of-a-cosmic-cycle",
+    "category": "phrase-match",
+    "query": "end of a cosmic cycle",
+    "intent": "Timing: \"end of a cosmic cycle\" (Taoist - end times prophecies)",
+    "expected_text_contains": [
+      "provided"
+    ]
+  },
+  {
+    "id": "end-of-kali-yuga",
+    "category": "phrase-match",
+    "query": "end of Kali Yuga",
+    "intent": "Timing: \"end of Kali Yuga\" (Hindu - end times prophecies)",
+    "expected_text_contains": [
+      "beginning"
+    ]
+  },
+  {
+    "id": "end-of-suffering",
+    "category": "phrase-match",
+    "query": "end of suffering",
+    "intent": "Timing: \"end of suffering\" (Buddhist - teachings on suffering)",
+    "expected_text_contains": [
+      "once"
+    ]
+  },
+  {
+    "id": "ending-suffering",
+    "category": "phrase-match",
+    "query": "ending suffering",
+    "intent": "Timing: \"ending suffering\" (Buddhist - purpose of existence)",
+    "expected_text_contains": [
+      "practices"
+    ]
+  },
+  {
+    "id": "endowments",
+    "category": "phrase-match",
+    "query": "endowments",
+    "intent": "Timing: \"endowments\" (Islamic - teachings on charity)",
+    "expected_text_contains": [
+      "national"
+    ]
+  },
+  {
+    "id": "equality-of-races",
+    "category": "phrase-match",
+    "query": "equality of races",
+    "intent": "Timing: \"equality of races\" (Baha''i - writings on equality)",
+    "expected_text_contains": [
+      "account"
+    ]
+  },
+  {
+    "id": "eternal-life",
+    "category": "phrase-match",
+    "query": "eternal life",
+    "intent": "Timing: \"eternal life\" (Christian - purpose of existence)",
+    "expected_text_contains": [
+      "Court"
+    ]
+  },
+  {
+    "id": "ethical-behavior",
+    "category": "phrase-match",
+    "query": "ethical behavior",
+    "intent": "Timing: \"ethical behavior\" (Islamic - guidance on ethics)",
+    "expected_text_contains": [
+      "Buddha"
+    ]
+  },
+  {
+    "id": "ethical-living",
+    "category": "phrase-match",
+    "query": "ethical living",
+    "intent": "Timing: \"ethical living\" (Hindu - teachings on dharma)",
+    "expected_text_contains": [
+      "creatures"
+    ]
+  },
+  {
+    "id": "evening-prayer",
+    "category": "phrase-match",
+    "query": "Evening prayer",
+    "intent": "Timing: \"Evening prayer\" (Baha''i - prayers and meditations)",
+    "expected_text_contains": [
+      "illustrious"
+    ]
+  },
+  {
+    "id": "ever-advancing",
+    "category": "phrase-match",
+    "query": "ever-advancing",
+    "intent": "Timing: \"ever-advancing\"\" (word with a dash)",
+    "expected_text_contains": [
+      "devoted"
+    ]
+  },
+  {
+    "id": "exodus",
+    "category": "phrase-match",
+    "query": "Exodus",
+    "intent": "Timing: \"Exodus\" (Jewish - history and culture)",
+    "expected_text_contains": [
+      "Exodus"
+    ]
+  },
+  {
+    "id": "ezekiel",
+    "category": "phrase-match",
+    "query": "Ezekiel",
+    "intent": "Timing: \"Ezekiel\" (Jewish - prophets and their messages)",
+    "expected_text_contains": [
+      "Ezekiel"
+    ]
+  },
+  {
+    "id": "fairness",
+    "category": "phrase-match",
+    "query": "fairness",
+    "intent": "Timing: \"fairness\" (Baha''i - writings on justice)",
+    "expected_text_contains": [
+      "endowed"
+    ]
+  },
+  {
+    "id": "fairness-and-equity",
+    "category": "phrase-match",
+    "query": "fairness and equity",
+    "intent": "Timing: \"fairness and equity\" (Islamic - views on social justice)",
+    "expected_text_contains": [
+      "glorious"
+    ]
+  },
+  {
+    "id": "faith",
+    "category": "phrase-match",
+    "query": "faith",
+    "intent": "Timing: \"faith\" (Islam - Pillars of Islam)",
+    "expected_text_contains": [
+      "doubt"
+    ]
+  },
+  {
+    "id": "family-hierarchy",
+    "category": "phrase-match",
+    "query": "family hierarchy",
+    "intent": "Timing: \"family hierarchy\" (Confucian - views on family)",
+    "expected_text_contains": [
+      "scion"
+    ]
+  },
+  {
+    "id": "family-loyalty",
+    "category": "phrase-match",
+    "query": "family loyalty",
+    "intent": "Timing: \"family loyalty\" (Confucian - views on family)",
+    "expected_text_contains": [
+      "members"
+    ]
+  },
+  {
+    "id": "feeding-the-5000",
+    "category": "phrase-match",
+    "query": "feeding the 5000",
+    "intent": "Timing: \"feeding the 5000\" (Christian - miracles of Jesus)",
+    "expected_text_contains": [
+      "Healing"
+    ]
+  },
+  {
+    "id": "festival-of-colors",
+    "category": "phrase-match",
+    "query": "festival of colors",
+    "intent": "Timing: \"festival of colors\" (Hindu - festival of Holi)",
+    "expected_text_contains": [
+      "Krishna"
+    ]
+  },
+  {
+    "id": "festival-of-lights",
+    "category": "phrase-match",
+    "query": "festival of lights",
+    "intent": "Timing: \"festival of lights\" (Hindu - festival of Diwali)",
+    "expected_text_contains": [
+      "Covenant"
+    ]
+  },
+  {
+    "id": "fighting-evil",
+    "category": "phrase-match",
+    "query": "fighting evil",
+    "intent": "Timing: \"fighting evil\" (Zoroastrian - purpose of existence)",
+    "expected_text_contains": [
+      "Buddha"
+    ]
+  },
+  {
+    "id": "filial-piety",
+    "category": "phrase-match",
+    "query": "filial piety",
+    "intent": "Timing: \"filial piety\" (Confucian - views on loyalty)",
+    "expected_text_contains": [
+      "their"
+    ]
+  },
+  {
+    "id": "final-judgment",
+    "category": "phrase-match",
+    "query": "final judgment",
+    "intent": "Timing: \"final judgment\" (Zoroastrian - views on the afterlife)",
+    "expected_text_contains": [
+      "deliver"
+    ]
+  },
+  {
+    "id": "fire-temple",
+    "category": "phrase-match",
+    "query": "fire temple",
+    "intent": "Timing: \"fire temple\" (Zoroastrian - rituals and ceremonies)",
+    "expected_text_contains": [
+      "ablaze"
+    ]
+  },
+  {
+    "id": "fire-temples",
+    "category": "phrase-match",
+    "query": "fire temples",
+    "intent": "Timing: \"fire temples\" (Zoroastrian - concepts of fire and light)",
+    "expected_text_contains": [
+      "world"
+    ]
+  },
+  {
+    "id": "five-precepts",
+    "category": "phrase-match",
+    "query": "Five Precepts",
+    "intent": "Timing: \"Five Precepts\" (Buddhist - Teachings of the Buddha in the Pali Canon)",
+    "expected_text_contains": [
+      "subdued"
+    ]
+  },
+  {
+    "id": "follow-jesus-teachings",
+    "category": "phrase-match",
+    "query": "follow Jesus' teachings",
+    "intent": "Timing: \"follow Jesus'' teachings\" (Christian - purpose of existence)",
+    "expected_text_contains": [
+      "contention"
+    ]
+  },
+  {
+    "id": "following-dharma",
+    "category": "phrase-match",
+    "query": "following dharma",
+    "intent": "Timing: \"following dharma\" (Hindu - purpose of existence)",
+    "expected_text_contains": [
+      "possesses"
+    ]
+  },
+  {
+    "id": "following-the-middle-way",
+    "category": "phrase-match",
+    "query": "following the Middle Way",
+    "intent": "Timing: \"following the Middle Way\" (Buddhist - purpose of existence)",
+    "expected_text_contains": [
+      "obtained"
+    ]
+  },
+  {
+    "id": "forgiveness",
+    "category": "phrase-match",
+    "query": "forgiveness",
+    "intent": "Timing: \"forgiveness\" (Christian - virtues)",
+    "expected_text_contains": [
+      "Lord"
+    ]
+  },
+  {
+    "id": "frashokereti",
+    "category": "phrase-match",
+    "query": "Frashokereti",
+    "intent": "Timing: \"Frashokereti\" (Zoroastrian - end times prophecies)",
+    "expected_text_contains": [
+      "farshigard"
+    ]
+  },
+  {
+    "id": "fulfilling-gods-commandments",
+    "category": "phrase-match",
+    "query": "fulfilling God's commandments",
+    "intent": "Timing: \"fulfilling God''s commandments\" (Jewish - purpose of existence)",
+    "expected_text_contains": [
+      "marriage"
+    ]
+  },
+  {
+    "id": "fulfilling-ones-role",
+    "category": "phrase-match",
+    "query": "fulfilling one's role",
+    "intent": "Timing: \"fulfilling one''s role\" (Confucian - purpose of existence)",
+    "expected_text_contains": [
+      "exact"
+    ]
+  },
+  {
+    "id": "future-buddha",
+    "category": "phrase-match",
+    "query": "future Buddha",
+    "intent": "Timing: \"future Buddha\" (Buddhist - end times prophecies)",
+    "expected_text_contains": [
+      "present"
+    ]
+  },
+  {
+    "id": "god",
+    "category": "phrase-match",
+    "query": "God",
+    "intent": "Timing: \"God\"\" (maximum number of results)",
+    "expected_text_contains": [
+      "other"
+    ]
+  },
+  {
+    "id": "god-baha",
+    "category": "phrase-match",
+    "query": "God (Baha)",
+    "intent": "Timing: \"God (Baha)\"\" (common search with filtering)",
+    "expected_text_contains": [
+      "preserve"
+    ]
+  },
+  {
+    "id": "holi",
+    "category": "phrase-match",
+    "query": "Holi",
+    "intent": "Search Ordering customization: \"Holi\" (footnote number in one text)",
+    "expected_text_contains": [
+      "bonfire"
+    ]
+  },
+  {
+    "id": "holi-festival",
+    "category": "phrase-match",
+    "query": "\"Holi\" festival",
+    "intent": "Search Ordering: \"Holi\" festival (Hindu) traditions of Holi",
+    "expected_text_contains": [
+      "Holi"
+    ]
+  },
+  {
+    "id": "iftar",
+    "category": "phrase-match",
+    "query": "Iftar",
+    "intent": "Search Ordering: Iftar (Islamic) views on fasting",
+    "expected_text_contains": [
+      "fifty"
+    ]
+  },
+  {
+    "id": "iman",
+    "category": "phrase-match",
+    "query": "Iman",
+    "intent": "Search Ordering customization: Iman (dashes)",
+    "expected_text_contains": [
+      "ÁJÍ"
+    ]
+  },
+  {
+    "id": "isa",
+    "category": "phrase-match",
+    "query": "Isa",
+    "intent": "Search Ordering: Isa (Islamic) stories from the Quran",
+    "expected_text_contains": [
+      "creatures"
+    ]
+  },
+  {
+    "id": "jesus",
+    "category": "phrase-match",
+    "query": "Jesus",
+    "intent": "Search Ordering: Jesus (Islamic) stories from the Quran",
+    "expected_text_contains": [
+      "which"
+    ]
+  },
+  {
+    "id": "job",
+    "category": "phrase-match",
+    "query": "Job",
+    "intent": "Search Ordering: Job (Jewish) wisdom literature",
+    "expected_text_contains": [
+      "progeny"
+    ]
+  },
+  {
+    "id": "justice",
+    "category": "phrase-match",
+    "query": "justice",
+    "intent": "Timing: \"justice\"\" (single word that should be somewhat common)",
+    "expected_text_contains": [
+      "without"
+    ]
+  },
+  {
+    "id": "justice-baha",
+    "category": "phrase-match",
+    "query": "justice (Baha)",
+    "intent": "Timing: \"justice (Baha)\"\" (single word with filtering)",
+    "expected_text_contains": [
+      "Universal"
+    ]
+  },
+  {
+    "id": "karma",
+    "category": "phrase-match",
+    "query": "karma",
+    "intent": "Search Ordering: karma (Buddhist) views on reincarnation",
+    "expected_text_contains": [
+      "stain"
+    ]
+  },
+  {
+    "id": "lie",
+    "category": "phrase-match",
+    "query": "lie",
+    "intent": "Search Ordering: lie (Zoroastrian) ethics and morality",
+    "expected_text_contains": [
+      "night"
+    ]
+  },
+  {
+    "id": "love",
+    "category": "phrase-match",
+    "query": "love",
+    "intent": "Search Ordering: love (Christian) virtues",
+    "expected_text_contains": [
+      "living"
+    ]
+  },
+  {
+    "id": "magga",
+    "category": "phrase-match",
+    "query": "Magga",
+    "intent": "Search Ordering: Magga (Buddhist) Four Noble Truths",
+    "expected_text_contains": [
+      "vibhanga"
+    ]
+  },
+  {
+    "id": "metta",
+    "category": "phrase-match",
+    "query": "Metta",
+    "intent": "Search Ordering: Metta (Buddhist) meditation practices",
+    "expected_text_contains": [
+      "Mett"
+    ]
+  },
+  {
+    "id": "metta-buddhist",
+    "category": "phrase-match",
+    "query": "metta (Buddhist)",
+    "intent": "Timing: \"metta (Buddhist)\"\" (uncommon word with filtering)",
+    "expected_text_contains": [
+      "Mett"
+    ]
+  },
+  {
+    "id": "moses",
+    "category": "phrase-match",
+    "query": "Moses",
+    "intent": "Search Ordering: Moses (Islamic) stories from the Quran",
+    "expected_text_contains": [
+      "spoke"
+    ]
+  },
+  {
+    "id": "musa",
+    "category": "phrase-match",
+    "query": "Musa",
+    "intent": "Search Ordering: Musa (Islamic) stories from the Quran",
+    "expected_text_contains": [
+      "Japan"
+    ]
+  },
+  {
+    "id": "peace",
+    "category": "phrase-match",
+    "query": "peace",
+    "intent": "Search Ordering: peace (Jewish) virtues",
+    "expected_text_contains": [
+      "immortal"
+    ]
+  },
+  {
+    "id": "poor-in-your-midst-are-my-trust",
+    "category": "phrase-match",
+    "query": "poor in your midst are my trust",
+    "intent": "Timing: \"poor in your midst are my trust\"\" (longer inexact phrase)",
+    "expected_text_contains": [
+      "guard"
+    ]
+  },
+  {
+    "id": "poor-in-your-midst-are-my-trust-baha",
+    "category": "phrase-match",
+    "query": "poor in your midst are my trust (Baha)",
+    "intent": "Timing: \"poor in your midst are my trust (Baha)\"\" (phrase with filtering)",
+    "expected_text_contains": [
+      "guard"
+    ]
+  },
+  {
+    "id": "puja",
+    "category": "phrase-match",
+    "query": "Puja",
+    "intent": "Search Ordering customization: Puja (dashes)",
+    "expected_text_contains": [
+      "before"
+    ]
+  },
+  {
+    "id": "ren",
+    "category": "phrase-match",
+    "query": "Ren",
+    "intent": "Search Ordering: Ren (Confucian) principles of harmony",
+    "expected_text_contains": [
+      "things"
+    ]
+  },
+  {
+    "id": "sabr",
+    "category": "phrase-match",
+    "query": "Sabr",
+    "intent": "Search Ordering customization: Sabr (dashes)",
+    "expected_text_contains": [
+      "revealed"
+    ]
+  },
+  {
+    "id": "sadeh",
+    "category": "phrase-match",
+    "query": "Sadeh",
+    "intent": "Search Ordering: Sadeh (Zoroastrian) festivals and observances",
+    "expected_text_contains": [
+      "Field"
+    ]
+  },
+  {
+    "id": "salah",
+    "category": "phrase-match",
+    "query": "Salah",
+    "intent": "Search Ordering customization: Salah (dashes)",
+    "expected_text_contains": [
+      "lived"
+    ]
+  },
+  {
+    "id": "satya",
+    "category": "phrase-match",
+    "query": "Satya",
+    "intent": "Search Ordering: Satya (Jain) teachings on non-violence",
+    "expected_text_contains": [
+      "earth"
+    ]
+  },
+  {
+    "id": "sawm",
+    "category": "phrase-match",
+    "query": "Sawm",
+    "intent": "Search Ordering customization: Sawm (dashes)",
+    "expected_text_contains": [
+      "Know"
+    ]
+  },
+  {
+    "id": "shiva",
+    "category": "phrase-match",
+    "query": "Shiva",
+    "intent": "Search Ordering: Shiva (Hindu) deities and their stories",
+    "expected_text_contains": [
+      "large"
+    ]
+  },
+  {
+    "id": "shukr",
+    "category": "phrase-match",
+    "query": "Shukr",
+    "intent": "Search Ordering customization: Shukr (dashes)",
+    "expected_text_contains": [
+      "about"
+    ]
+  },
+  {
+    "id": "taqwa",
+    "category": "phrase-match",
+    "query": "Taqwa",
+    "intent": "Search Ordering customization: Taqwa (dashes)",
+    "expected_text_contains": [
+      "accept"
+    ]
+  },
+  {
+    "id": "truth",
+    "category": "phrase-match",
+    "query": "truth",
+    "intent": "Search Ordering: truth (Zoroastrian) virtues",
+    "expected_text_contains": [
+      "Brahman"
+    ]
+  },
+  {
+    "id": "waqf",
+    "category": "phrase-match",
+    "query": "Waqf",
+    "intent": "Search Ordering: Waqf (Islamic) teachings on charity",
+    "expected_text_contains": [
+      "converting"
+    ]
+  },
+  {
+    "id": "wudu",
+    "category": "phrase-match",
+    "query": "Wudu",
+    "intent": "Search Ordering: Wudu (Islamic) teachings on prayer",
+    "expected_text_contains": [
+      "Wipe"
+    ]
+  },
+  {
+    "id": "yajna",
+    "category": "phrase-match",
+    "query": "Yajna",
+    "intent": "Search Ordering customization: Yajna (dashes)",
+    "expected_text_contains": [
+      "dwelleth"
+    ]
+  },
+  {
+    "id": "yasna",
+    "category": "phrase-match",
+    "query": "Yasna",
+    "intent": "Search Ordering: Yasna (Zoroastrian) sacred text: Avesta",
+    "expected_text_contains": [
+      "worship"
+    ]
+  },
+  {
+    "id": "yusuf",
+    "category": "phrase-match",
+    "query": "Yusuf",
+    "intent": "Search Ordering: Yusuf (Islamic) stories from the Quran",
+    "expected_text_contains": [
+      "highly"
+    ]
+  },
+  {
+    "id": "zakat",
+    "category": "phrase-match",
+    "query": "Zakat",
+    "intent": "Search Ordering: Zakat (Islam) Pillars of Islam",
+    "expected_text_contains": [
+      "matter"
+    ]
+  },
+  {
+    "id": "zhi",
+    "category": "phrase-match",
+    "query": "Zhi",
+    "intent": "Search Ordering: Zhi (Confucian) virtues",
+    "expected_text_contains": [
+      "Venerable"
+    ]
+  },
+  {
+    "id": "zhong",
+    "category": "phrase-match",
+    "query": "Zhong",
+    "intent": "Search Ordering: Zhong (Confucian) virtues",
+    "expected_text_contains": [
+      "Collier"
+    ]
+  }
+]

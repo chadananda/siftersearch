@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T15:15:51.734Z",
+  "generated": "2026-05-31T15:31:05.961Z",
   "entries": [
+    {
+      "hash": "6da70dca",
+      "date": "2026-05-31",
+      "type": "Docs",
+      "description": "Credit David Hunt as creator of ocean-search-testing framework",
+      "scope": null
+    },
     {
       "hash": "5832ef9a",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Stricter relevance scoring in rerankPassages — raise threshold 7→8",
       "scope": null
-    },
-    {
-      "hash": "60fe9305",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Replace generic 'Overview' h2 with canonical question for SEO",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "6da70dca",
+        "date": "2026-05-31",
+        "type": "Docs",
+        "description": "Credit David Hunt as creator of ocean-search-testing framework",
+        "scope": null
+      },
       {
         "hash": "5832ef9a",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Stricter relevance scoring in rerankPassages — raise threshold 7→8",
-        "scope": null
-      },
-      {
-        "hash": "60fe9305",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Replace generic 'Overview' h2 with canonical question for SEO",
         "scope": null
       }
     ]
