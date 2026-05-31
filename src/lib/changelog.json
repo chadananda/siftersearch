@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T20:39:35.340Z",
+  "generated": "2026-05-31T21:16:38.154Z",
   "entries": [
+    {
+      "hash": "dc25afd2",
+      "date": "2026-05-31",
+      "type": "Fixed",
+      "description": "Author authority is a fallback default, not an override",
+      "scope": null
+    },
     {
       "hash": "e847e83b",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Restore share dropdown with classic share icon, fix popup clipping",
       "scope": null
-    },
-    {
-      "hash": "b3beacf6",
-      "date": "2026-05-13",
-      "type": "Other",
-      "description": "Traditional compact share buttons, quote links, right-aligned source, sort by relevance",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "dc25afd2",
+        "date": "2026-05-31",
+        "type": "Fixed",
+        "description": "Author authority is a fallback default, not an override",
+        "scope": null
+      },
       {
         "hash": "e847e83b",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Other",
         "description": "Restore share dropdown with classic share icon, fix popup clipping",
-        "scope": null
-      },
-      {
-        "hash": "b3beacf6",
-        "date": "2026-05-13",
-        "type": "Other",
-        "description": "Traditional compact share buttons, quote links, right-aligned source, sort by relevance",
         "scope": null
       }
     ]

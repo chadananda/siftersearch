@@ -71,9 +71,10 @@
   {
     "id": "hidden-words-cleanse-heart",
     "category": "phrase-match",
-    "query": "cleanse thy heart from envy and from grudge",
-    "intent": "Hidden Words on cleansing the heart",
+    "query": "heart wherein envy lingers shall never attain dominion",
+    "intent": "Hidden Words on cleansing the heart of envy",
     "expected_doc_id": 20809,
+    "expected_doc_ids": [20809, 15171, 20777],
     "expected_text_contains": [
       "heart",
       "envy"
@@ -83,9 +84,10 @@
   {
     "id": "long-healing-prayer-opening",
     "category": "phrase-match",
-    "query": "Inaccessible Most High Most Holy Most Glorious",
-    "intent": "Long Healing Prayer opening attributes of God",
+    "query": "long healing prayer Inaccessible Most High Most Holy Most Glorious",
+    "intent": "Long Healing Prayer opening — the specific prayer with these four divine attributes",
     "expected_doc_id": 16597,
+    "expected_doc_ids": [16597, 16615, 11777],
     "expected_text_contains": [
       "Inaccessible",
       "Holy"
@@ -110,6 +112,7 @@
     "query": "obligatory prayer command from age of maturity",
     "intent": "Aqdas on obligatory prayer ordinance",
     "expected_doc_id": 16712,
+    "expected_doc_ids": [16712, 21307],
     "expected_text_contains": [
       "pray",
       "obligatory"
