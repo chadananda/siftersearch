@@ -185,26 +185,23 @@ const searchConfig = {
   authorityRankPosition: getInt('AUTHORITY_RANK_POSITION', 4),
   // Authority post-hoc boost applied on every hybridSearch result.
   // final = relevance * (1 + boost * (authority - 5) / 5)
-  // At boost=1.0, authority 10 gets +100% (2x), authority 5 is neutral, authority 1 gets -80%.
-  // Ranking rules alone don't fight through hybrid vector scores (scores are unique,
-  // so authority:desc rarely tiebreaks); this boost makes canonical sources actually surface.
-  // Cross-tradition problem: Bahá'í secondary sources quote Jesus/Quran extensively and
-  // score higher semantically for Bible/Quran topics than the actual scripture. HyPE weight
-  // is 1.5; Fananapazir at HyPE rank 0 scores 0.041 RRF vs Muhammad at main rank 0 at 0.017.
-  // Boost ≥ 1.44 needed for auth=10 to overcome HyPE-dominant commentary (auth=5).
-  // Boost=2.0 gives a 3× multiplier for auth=10, safely clearing the HyPE advantage.
-  authorityBoost: parseFloat(get('AUTHORITY_BOOST', '2.0')),
-  // OceanLibrary source multiplier: OL single-book docs (e.g., Gospel of Matthew) often
-  // score lower in Meilisearch than large composite non-OL docs (e.g., full Bible) or
-  // non-OL modern translations — because the OL versions use classical language that
-  // matches modern queries less precisely. 2.0× ensures OL wins when it has ≥50% of the
-  // non-OL raw relevance, which covers archaic-language translation gaps.
-  olSourceMultiplier: parseFloat(get('OL_SOURCE_MULTIPLIER', '2.0')),
-  // Fetch this multiple of `limit` from Meilisearch before reranking, so high-authority
-  // hits that were just outside the top N can move in. Increased to 20 so primary texts
-  // at position 50-100 in semantic ranking can surface via authority promotion.
-  // Performance: Meili handles 200-doc fetches in <50ms; cost is worth the diversity gain.
-  authorityRerankMultiplier: parseFloat(get('AUTHORITY_RERANK_MULTIPLIER', '20'))
+  // Tiebreaker weight: authority nudges scores among near-equal relevance results.
+  // formula: score = relevance × olMultiplier × (1 + boost × (auth - 5) / 5)
+  // At boost=0.2: auth=10 gets +20% vs auth=5, auth=1 gets -16%. A low-relevance
+  // primary source cannot beat a high-relevance secondary — authority only decides
+  // ties within the same relevance tier. Previous boost=2.0 caused 3× override,
+  // surfacing poor paragraph matches from canonical sources above strong matches
+  // from secondary sources (wrong paragraph from right book problem).
+  authorityBoost: parseFloat(get('AUTHORITY_BOOST', '0.2')),
+  // OceanLibrary source multiplier: compensates for archaic language scoring lower
+  // in BM25 vs modern translations. 1.2× is enough to prefer OL when relevance
+  // is close without overriding significantly better non-OL matches.
+  // Previous 2.0× was too aggressive — it doubled OL scores regardless of match quality.
+  olSourceMultiplier: parseFloat(get('OL_SOURCE_MULTIPLIER', '1.2')),
+  // Fetch this multiple of `limit` from Meilisearch before reranking. With authority
+  // as a tiebreaker (not override), we don't need to pull position 50-100 results;
+  // reducing to 5 keeps reranking within the genuinely relevant result set.
+  authorityRerankMultiplier: parseFloat(get('AUTHORITY_RERANK_MULTIPLIER', '5'))
 };
 
 // Server configuration

@@ -440,9 +440,9 @@ const fails = report ? failBreakdown(report) : null;
             </tr>
             <tr>
               <td><code>overFetch multiplier</code></td>
-              <td class="val">20×</td>
+              <td class="val">5×</td>
               <td><code>AUTHORITY_RERANK_MULTIPLIER</code></td>
-              <td>Fetch this many × limit before reranking so high-authority hits outside top N can surface.</td>
+              <td>Fetch this many × limit before reranking. With authority as tiebreaker (not override), 5× keeps reranking within the genuinely relevant result set.</td>
             </tr>
             <tr>
               <td><code>TOP_K</code></td>
@@ -462,15 +462,15 @@ const fails = report ? failBreakdown(report) : null;
           <tbody>
             <tr>
               <td><code>authorityBoost</code></td>
-              <td class="val">2.0</td>
+              <td class="val">0.2</td>
               <td><code>AUTHORITY_BOOST</code></td>
-              <td>Weight of authority in final score. auth=10 gets a 3× multiplier; auth=1 gets 0.4×. Needed ≥1.44 to overcome HyPE commentary advantage.</td>
+              <td>Tiebreaker weight. auth=10 gets +20% vs auth=5; auth=1 gets −16%. A poor match from a canonical source cannot beat a strong match from a secondary source.</td>
             </tr>
             <tr>
               <td><code>olSourceMultiplier</code></td>
-              <td class="val">2.0×</td>
+              <td class="val">1.2×</td>
               <td><code>OL_SOURCE_MULTIPLIER</code></td>
-              <td>OceanLibrary hits multiply score by 2×. Compensates for archaic language scoring lower in BM25 vs. modern translations.</td>
+              <td>OceanLibrary hits get a 1.2× nudge to compensate for archaic language scoring lower in BM25. Not enough to override a significantly better non-OL match.</td>
             </tr>
           </tbody>
         </table>

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-01T16:19:35.675Z",
+  "generated": "2026-06-01T16:42:08.776Z",
   "entries": [
+    {
+      "hash": "03c8cd15",
+      "date": "2026-06-01",
+      "type": "Fixed",
+      "description": "Update analysis.json suite label to Ocean (504 fixtures)",
+      "scope": null
+    },
     {
       "hash": "fc17a7a1",
       "date": "2026-05-31",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Interleave quotes by tradition while preserving relevance order",
       "scope": null
-    },
-    {
-      "hash": "60bdbb85",
-      "date": "2026-05-13",
-      "type": "Other",
-      "description": "Bilingual quotes display in two-column layout (original",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-06-01": [
+      {
+        "hash": "03c8cd15",
+        "date": "2026-06-01",
+        "type": "Fixed",
+        "description": "Update analysis.json suite label to Ocean (504 fixtures)",
+        "scope": null
+      }
+    ],
     "2026-05-31": [
       {
         "hash": "fc17a7a1",
@@ -7025,13 +7034,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Interleave quotes by tradition while preserving relevance order",
-        "scope": null
-      },
-      {
-        "hash": "60bdbb85",
-        "date": "2026-05-13",
-        "type": "Other",
-        "description": "Bilingual quotes display in two-column layout (original",
         "scope": null
       }
     ]
