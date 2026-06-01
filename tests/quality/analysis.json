@@ -81,7 +81,7 @@
   "notes_on_previous": "The previous plan was on target: P1 (bypass pipeline / timeouts) eliminated the timeout class entirely (0 timeouts now vs 6 before), and overall pass rate moved 56%→71%. P3 (paragraph-level reranking) was correctly identified as the next big lever and is now the #1 priority — the failure pattern has crystallized around 'right book, wrong paragraph,' confirming that diagnosis. P4 (entity index) also remains valid and is reprioritized to #2 since entity-aware is the lowest-scoring category (56%). No dead ends; the restraint shown in run 1 (not tuning against noise) continues to pay dividends. P5 from the prior run (stage-level metrics) is still unimplemented and carried forward — cheap and worth doing before further tuning.",
   "generated_at": "2026-06-01T02:16:35.506Z",
   "model": "claude-opus-4-7",
-  "suite": "Core (52 fixtures)",
+  "suite": "Ocean (504 fixtures)",
   "pass_rate": 71,
   "run_at": "2026-06-01T02:15:41.696Z"
 }
