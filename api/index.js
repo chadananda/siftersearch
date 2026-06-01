@@ -31,7 +31,7 @@ import { stopEmbeddingWorker } from './services/embedding-worker.js';
 import { stopLibraryWatcher } from './services/library-watcher.js';
 import { config } from './lib/config.js';
 import { initAIProcessingState } from './lib/ai-services.js';
-import { prewarmCache, POPULAR_QUERIES } from './lib/search.js';
+import { prewarmCache, POPULAR_QUERIES, warmOlDocIdCache } from './lib/search.js';
 
 // Validate all environment variables on startup
 // This will print a detailed report and exit if required vars are missing
@@ -136,9 +136,11 @@ const start = async () => {
       // TODO: Move to standalone PM2 process like library-watcher
       logger.info('Embedding worker disabled in API (blocks event loop), needs standalone process');
 
-      // Pre-warm search cache with popular queries (background, non-blocking)
+      // Pre-warm caches (background, non-blocking)
       // Delayed by 5s to let Meilisearch finish any pending tasks first
       setTimeout(async () => {
+        // OL doc ID cache — pre-warm immediately to prevent thundering-herd on first search wave
+        warmOlDocIdCache().catch(err => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));
         try {
           const result = await prewarmCache(POPULAR_QUERIES);
           logger.info({ warmed: result.warmed, elapsedMs: result.elapsedMs }, 'Search cache pre-warmed');

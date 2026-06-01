@@ -205,23 +205,39 @@ const CROSS_TRADITION_RELIGIONS = [
 // Matthew) score lower in Meilisearch than large composite non-OL docs (e.g., full
 // Bible) for any sub-passage query. Caching OL IDs enables supplementary per-religion
 // queries that guarantee OL hits enter the authority-ranking candidate pool.
+//
+// Promise-singleton pattern prevents thundering-herd: if 20 concurrent searches all
+// miss the cold cache simultaneously, only one DB query fires — others await that promise.
 let _olDocIdCache = null;
 let _olDocIdCacheTime = 0;
+let _olDocIdPromise = null;
 
 async function getOlDocIdsByReligion() {
   const now = Date.now();
   if (_olDocIdCache && now - _olDocIdCacheTime < 3600000) return _olDocIdCache;
-  const rows = await queryAll(
-    `SELECT id, religion FROM docs WHERE source_site = 'oceanlibrary.com' AND deleted_at IS NULL`
-  );
-  const map = {};
-  for (const { id, religion } of rows) {
-    if (!map[religion]) map[religion] = [];
-    map[religion].push(id);
-  }
-  _olDocIdCache = map;
-  _olDocIdCacheTime = now;
-  return map;
+  if (_olDocIdPromise) return _olDocIdPromise;
+  _olDocIdPromise = (async () => {
+    try {
+      const rows = await queryAll(
+        `SELECT id, religion FROM docs WHERE source_site = 'oceanlibrary.com' AND deleted_at IS NULL`
+      );
+      const map = {};
+      for (const { id, religion } of rows) {
+        if (!map[religion]) map[religion] = [];
+        map[religion].push(id);
+      }
+      _olDocIdCache = map;
+      _olDocIdCacheTime = Date.now();
+      return map;
+    } finally {
+      _olDocIdPromise = null;
+    }
+  })();
+  return _olDocIdPromise;
+}
+
+export async function warmOlDocIdCache() {
+  return getOlDocIdsByReligion();
 }
 
 /**

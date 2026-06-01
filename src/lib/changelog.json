@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-31T21:16:38.154Z",
+  "generated": "2026-06-01T01:31:47.496Z",
   "entries": [
+    {
+      "hash": "2a1fc238",
+      "date": "2026-05-31",
+      "type": "Fixed",
+      "description": "Update search fixture queries/accepted docs to match Meilisearch reality",
+      "scope": null
+    },
     {
       "hash": "dc25afd2",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Copy button includes quote text + attribution, not just URL",
       "scope": null
-    },
-    {
-      "hash": "baab1db0",
-      "date": "2026-05-13",
-      "type": "Other",
-      "description": "Restore share dropdown with classic share icon, fix popup clipping",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "2a1fc238",
+        "date": "2026-05-31",
+        "type": "Fixed",
+        "description": "Update search fixture queries/accepted docs to match Meilisearch reality",
+        "scope": null
+      },
       {
         "hash": "dc25afd2",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Copy button includes quote text + attribution, not just URL",
-        "scope": null
-      },
-      {
-        "hash": "baab1db0",
-        "date": "2026-05-13",
-        "type": "Other",
-        "description": "Restore share dropdown with classic share icon, fix popup clipping",
         "scope": null
       }
     ]
