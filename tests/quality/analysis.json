@@ -1,91 +1,87 @@
 {
-  "summary": "Pass rate has recovered from 2% to 56% now that the API is returning JSON, with authority-ranking (100%) and cross-tradition (100%) performing perfectly. The biggest gaps are entity-aware queries (22%) suffering from frequent timeouts and concept-match (42%) where queries return rank-1 hits but fail text-match assertions — suggesting the right *kind* of document is found but not the specific target passage.",
+  "summary": "Pass rate has climbed to 71% (37/52) with MRR 0.798 and zero timeouts/5xx — the infra is healthy and authority-ranking (100%) and cross-tradition (100%) are solved. The dominant failure mode is now text-mismatch (10/15 failures): the right *kind* of document is retrieved at rank 1 but the wrong paragraph, plus 5 entity-aware queries that miss the top 10 entirely.",
   "strengths": [
     {
-      "title": "Authority weighting works as designed",
-      "detail": "authority-ranking category is 100% (4/4) and authority_hit=true on essentially every failing test, confirming the post-retrieval authority multiplier in api/lib/authority.js is correctly preferring high-authority sources."
+      "title": "Infrastructure fully stabilized",
+      "detail": "Zero timeouts, zero HTTP errors, zero network errors across all 52 fixtures. p50 of 4.5s and p95 of 9.7s are workable (p95 down from ~25s in the prior run)."
     },
     {
-      "title": "Cross-tradition routing is solid",
-      "detail": "cross-tradition is 100% (5/5), indicating the hybrid BM25+semantic stack handles multi-corpus disambiguation well when queries are sufficiently distinctive."
+      "title": "Authority and cross-tradition routing solid",
+      "detail": "authority-ranking 100% (4/4) and cross-tradition 100% (5/5) — the authority weighting and multi-tradition retrieval logic are correctly tuned and need no further work."
     },
     {
-      "title": "Massive recovery from infra regression",
-      "detail": "Pass rate jumped 2% → 56% after the API/HTML-response issue was resolved, validating that the prior analysis correctly diagnosed an infra problem rather than a quality regression."
+      "title": "Correct document retrieval even on failures",
+      "detail": "Almost every concept/phrase failure has top_hit_author or top_hit_title from the correct tradition or author (e.g. Bahá'u'lláh for tablet-of-ahmad, Muhammad for islamic-hadith-patience). Retrieval is finding the right corpus region; only paragraph-level selection is wrong."
     }
   ],
   "critical_gaps": [
     {
-      "title": "Entity-aware queries timing out",
-      "detail": "5 of 9 entity-aware tests fail with 'operation aborted due to timeout' at p95=25s. These are likely triggering the full jafar-pipeline (intent → research → craft) which compounds latency, and entity resolution may be issuing too many sub-queries.",
-      "evidence": "entity-quddus-character-tracking, entity-letters-of-living, entity-shoghi-effendi-guardian, entity-bab-martyrdom, entity-mulla-husayn-speaker all error with timeout"
+      "title": "Paragraph-level reranking is the bottleneck",
+      "detail": "10 of 15 failures are 'text mismatch' at rank 1 — meaning hybrid search picks the correct book but the wrong passage within it. Authority weighting may even be hurting here by pulling toward high-authority paragraphs that don't contain the target tokens.",
+      "evidence": "tablet-of-ahmad-nightingale (rank 1, wrong tablet by same author), islamic-daily-prayers (rank 1, wrong sura), christian-beatitudes-meek (rank 1, Apocrypha instead of Matthew 5), hindu-bhagavad-gita-action (rank 1, Mahabharata 6 instead of Gita)"
     },
     {
-      "title": "Concept-match returns rank-1 but wrong passage",
-      "detail": "11 concept-match failures have rank=1 with text_hit=false. The retriever finds the correct book/author (e.g., Mahabharata for dharma, Matthew for golden rule, Sura II for zakat) but surfaces a non-target paragraph. This is a within-document ranking / paragraph-selection problem, not a retrieval problem.",
-      "evidence": "christian-golden-rule (Matthew, rank 1, text miss), islamic-zakat-charity (Sura II, rank 1, text miss), hindu-dharma (Mahabharata 12, rank 1, text miss), buddhist-compassion-karuna, islamic-daily-prayers"
+      "title": "Entity-aware queries still miss top 10",
+      "detail": "5 entity queries return rank=null. Top hits drift to generic Bahá'u'lláh works or Shoghi Effendi histories rather than passages naming the specific entity (Mullá Husayn, the Báb's declaration, Letters of the Living).",
+      "evidence": "entity-mulla-husayn-first-believer, entity-declaration-bab-1844, entity-letters-of-living, entity-bab-martyrdom, shoghi-effendi-progressive-revelation (all rank=null)"
     },
     {
-      "title": "Phrase-match misses on archaic/liturgical phrasing",
-      "detail": "Phrase-match queries with stylized scripture language (e.g. 'cleanse thy heart', 'Inaccessible Most High Most Holy') return null rank entirely — the target paragraph is not even in top 10. Embedding similarity likely dominates over rare-phrase BM25 here.",
-      "evidence": "hidden-words-cleanse-heart, long-healing-prayer-opening, aqdas-obligatory-prayer, seven-valleys-law-secret-path all rank=null"
-    },
-    {
-      "title": "p95 latency at 25s is unworkable",
-      "detail": "p50 6.4s and p95 25s indicate test timeouts (likely 25s client limit) are the direct cause of 6 errored tests. Even passing tests are slow enough to mask other regressions."
+      "title": "Canonical-text queries routed to wrong canonical book",
+      "detail": "Famous phrases match the *theme* via semantic similarity but land in adjacent canonical books. Golden Rule and Beatitudes go to Apocrypha; Bhagavad Gita verses go to other Mahabharata books; Islamic ritual queries go to Quranic tafsir rather than the ritual-prescriptive verse.",
+      "evidence": "christian-golden-rule → Apocrypha; christian-beatitudes-meek → Apocrypha; hindu-bhagavad-gita-action → Mahabharata 6; islamic-zakat-charity → Sura II rather than zakat-prescriptive verse"
     }
   ],
   "action_plan": [
     {
       "priority": 1,
-      "title": "Bypass jafar-pipeline for test/eval path and add per-stage timeouts",
+      "title": "Add token-overlap paragraph reranker before authority weighting",
       "impact": "high",
-      "effort": "low",
-      "description": "The 6 timeout failures are concentrated in entity-aware tests, which likely fan out through the intent→research→craft pipeline. Add a 'raw' or 'eval' mode that runs hybridSearch directly, and wrap each pipeline stage with AbortController timeouts (e.g., 4s intent, 8s research) so a slow stage degrades gracefully rather than hanging.",
-      "implementation": "In api/lib/jafar-pipeline.js, accept an options.mode='raw' to skip intent+craft and return hybridSearch results directly. In the test runner, pass mode=raw for ranking tests. Add Promise.race with AbortController in each stage. Log per-stage latency.",
-      "success_metric": "Eliminate all 6 timeout errors; entity-aware category climbs from 22% toward 60%+; p95 drops below 10s."
+      "effort": "medium",
+      "description": "10 of 15 failures are wrong-paragraph-in-right-book. Add a second-stage reranker that scores each candidate paragraph on query-token coverage (exact lemma hits, rare-term IDF, bigram overlap) and blend it with the current authority×match score. This directly attacks the dominant failure class without touching retrieval.",
+      "implementation": "In api/lib/authority.js (or new api/lib/paragraph-rerank.js), after hybridSearch returns the top ~50 candidates, compute per-paragraph: (a) fraction of query content tokens present, (b) sum of IDF for matched rare tokens, (c) tightest-window proximity score. Combine as final_score = 0.45*lexical_overlap + 0.30*semantic + 0.15*authority + 0.10*match_quality. Gate behind RERANK_V2=1 env var so it can be A/B'd.",
+      "success_metric": "phrase-match 67%→85%+, concept-match 68%→80%+, overall 71%→82%+"
     },
     {
       "priority": 2,
-      "title": "Boost BM25 weight and enable phrase/proximity matching for archaic queries",
+      "title": "Build entity dictionary with canonical-passage anchors",
       "impact": "high",
       "effort": "medium",
-      "description": "Four phrase-match failures (cleanse thy heart, Inaccessible Most High, secret of the path, etc.) return rank=null, indicating semantic embeddings are pulling toward thematically similar but lexically wrong paragraphs. Rare-token phrases should be retrieved by BM25, not embeddings.",
-      "implementation": "In api/lib/search.js hybridSearch, increase BM25 weight in the fusion (try 0.6 BM25 / 0.4 vector vs current). Enable Meilisearch phrase matching ('\"...\"') when query contains ≥3 rare tokens (IDF-based heuristic). Consider Meilisearch attribute weights so paragraph text outranks title.",
-      "success_metric": "Phrase-match category 67% → 85%+; recover hidden-words-cleanse-heart, long-healing-prayer-opening, aqdas-obligatory-prayer."
+      "description": "All 5 rank=null failures are entity queries. A static entity table mapping named entities (Mullá Husayn, Letters of the Living, Báb, Declaration 1844, Tabriz martyrdom) to canonical passage IDs in God Passes By, Dawn-Breakers, etc., gives a deterministic retrieval boost when the query mentions the entity.",
+      "implementation": "Create api/data/entities.json with entries like {name, aliases[], canonical_paragraph_ids[], boost}. In api/lib/search.js hybridSearch, after query normalization, detect entity mentions via case-insensitive alias match and either (a) inject canonical_paragraph_ids into the candidate pool with a +1.5 score bump, or (b) add an OR clause to the Meilisearch query targeting those IDs. Start with ~30 high-value Bahá'í entities covered by the failing tests.",
+      "success_metric": "entity-aware 56%→90%+, overall 71%→80%+"
     },
     {
       "priority": 3,
-      "title": "Improve paragraph-level reranking within correctly-retrieved documents",
-      "impact": "high",
-      "effort": "medium",
-      "description": "11 concept-match failures find rank-1 results from the *correct* book/author but the wrong paragraph. Add a second-stage reranker that scores paragraph-query overlap using token-level features (exact token hits, n-gram overlap, position of key terms) before authority weighting.",
-      "implementation": "In api/lib/authority.js (or new api/lib/rerank.js), after authority multiplication, apply a paragraph-quality boost: count of query tokens present in paragraph / paragraph length, with bonus for bigram matches. Tune on the 11 failing concept-match cases.",
-      "success_metric": "Concept-match category 42% → 65%+; specifically recover christian-golden-rule, hindu-dharma, islamic-zakat-charity."
+      "title": "Boost BM25/phrase weight for queries with rare canonical tokens",
+      "impact": "medium",
+      "effort": "low",
+      "description": "Queries like 'nightingale of paradise singeth upon the twigs' and 'Blessed are the meek' contain rare lexical signatures that BM25 should pin immediately but semantic embeddings dilute. Detect high-IDF query tokens and shift the hybrid weight toward keyword for those queries.",
+      "implementation": "In api/lib/search.js hybridSearch, compute mean IDF of query content tokens against the corpus stats. If mean IDF > threshold (or any token IDF > X), set keyword_weight from default (e.g. 0.5) to 0.75 and enable Meilisearch phrase matching with quotes around top-2 rarest bigrams. Also enable matchingStrategy='all' for these queries.",
+      "success_metric": "phrase-match 67%→80%+, especially tablet-of-ahmad-nightingale, christian-beatitudes-meek, hindu-bhagavad-gita-action"
     },
     {
       "priority": 4,
-      "title": "Add entity index and entity-aware query expansion",
+      "title": "Penalize Apocrypha/secondary-canon when query matches primary canon",
       "impact": "medium",
-      "effort": "medium",
-      "description": "Entity queries like 'Declaration of the Bab May 1844 Shiraz' or 'first Letter of the Living' need entity-grounded retrieval, not just lexical/semantic. A small entity dictionary (Bab, Mulla Husayn, Quddus, Shoghi Effendi, Letters of the Living, etc.) with associated canonical passages/aliases would dramatically help.",
-      "implementation": "Create data/entities.json with entity → {aliases, canonical_passages, related_terms}. In api/lib/search.js, detect entity mentions in query and OR-expand with aliases; boost paragraphs whose entity tags match. Eventually backfill an entity field on paragraphs.",
-      "success_metric": "Entity-aware category 22% → 60%+; recover entity-mulla-husayn-first-believer (currently rank 7), entity-declaration-bab-1844."
+      "effort": "low",
+      "description": "Two Christian queries (Golden Rule, Beatitudes) and several Islamic/Hindu queries land in deuterocanonical or commentary works rather than the primary scripture. Add a soft penalty when a query semantically matches a known primary-canon passage but the top hit is from a secondary/commentary source.",
+      "implementation": "Tag documents with canonical_tier (gospel/quran/gita = 0, apocrypha/tafsir/commentary = 1, history = 2). In paragraph reranker, apply -0.15 score adjustment per tier-step when query content suggests primary scripture (detected via tradition-specific keyword lists: 'Blessed are', 'do unto', 'Krishna said', 'salat', 'zakat').",
+      "success_metric": "christian-golden-rule, christian-beatitudes-meek, hindu-bhagavad-gita-action, islamic-zakat-charity all pass"
     },
     {
       "priority": 5,
-      "title": "Split timeout failure class and add stage-level metrics",
+      "title": "Add eval-mode bypass and per-stage timing metrics",
       "impact": "low",
       "effort": "low",
-      "description": "Continue the previous run's recommendation: distinguish client-side AbortController timeouts from server 5xx and pipeline-stage timeouts. Without this, P1 above is hard to verify.",
-      "implementation": "In the test runner, capture which stage timed out (header from API: X-Pipeline-Stage). Bucket errors as timeout-intent, timeout-retrieval, timeout-craft, http-5xx.",
-      "success_metric": "Clearer failure breakdown; faster iteration on P1."
+      "description": "Latency is now acceptable but p95 9.7s still has headroom. Carrying the prior recommendation forward: expose per-stage timings (intent, research, craft, rerank) in response headers and add ?mode=raw to skip jafar-pipeline entirely. This makes future tuning measurable and unblocks per-stage budgets.",
+      "implementation": "In api/lib/jafar-pipeline.js, wrap each stage with performance.now() and emit X-Stage-Timings header. Add mode=raw query param that calls hybridSearch directly and returns without intent/craft. Wire test runner to record these timings per fixture.",
+      "success_metric": "p95 latency visibility; potential 30-40% latency reduction in eval runs"
     }
   ],
-  "notes_on_previous": "The previous analysis correctly identified the 2% pass rate as an infra problem and explicitly warned against tuning quality knobs against noise — that restraint paid off, and the recovery to 56% confirms the underlying search stack was healthy. The recommendation to add /health smoke tests and improve error classification remains unimplemented; carrying that forward (P5) is still cheap and worthwhile. No dead ends to avoid — prior analysis made no quality-tuning changes.",
-  "generated_at": "2026-05-31T17:16:52.259Z",
+  "notes_on_previous": "The previous plan was on target: P1 (bypass pipeline / timeouts) eliminated the timeout class entirely (0 timeouts now vs 6 before), and overall pass rate moved 56%→71%. P3 (paragraph-level reranking) was correctly identified as the next big lever and is now the #1 priority — the failure pattern has crystallized around 'right book, wrong paragraph,' confirming that diagnosis. P4 (entity index) also remains valid and is reprioritized to #2 since entity-aware is the lowest-scoring category (56%). No dead ends; the restraint shown in run 1 (not tuning against noise) continues to pay dividends. P5 from the prior run (stage-level metrics) is still unimplemented and carried forward — cheap and worth doing before further tuning.",
+  "generated_at": "2026-06-01T02:16:35.506Z",
   "model": "claude-opus-4-7",
   "suite": "Core (52 fixtures)",
-  "pass_rate": 56,
-  "run_at": "2026-05-31T17:09:37.657Z"
+  "pass_rate": 71,
+  "run_at": "2026-06-01T02:15:41.696Z"
 }

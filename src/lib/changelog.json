@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-01T01:31:47.496Z",
+  "generated": "2026-06-01T02:17:13.168Z",
   "entries": [
+    {
+      "hash": "299166ed",
+      "date": "2026-05-31",
+      "type": "Fixed",
+      "description": "API crash under concurrent load — busy_timeout + promise-singleton",
+      "scope": null
+    },
     {
       "hash": "2a1fc238",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Copy formats as quote + markdown reference link",
       "scope": null
-    },
-    {
-      "hash": "4c6ec1fd",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Copy button includes quote text + attribution, not just URL",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "299166ed",
+        "date": "2026-05-31",
+        "type": "Fixed",
+        "description": "API crash under concurrent load — busy_timeout + promise-singleton",
+        "scope": null
+      },
       {
         "hash": "2a1fc238",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Copy formats as quote + markdown reference link",
-        "scope": null
-      },
-      {
-        "hash": "4c6ec1fd",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Copy button includes quote text + attribution, not just URL",
         "scope": null
       }
     ]
