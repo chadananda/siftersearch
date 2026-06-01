@@ -1,19 +1,13 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import reportData from '../../../tests/quality/results-latest.json';
-import oceanReportData from '../../../tests/quality/ocean-results-latest.json';
 import historyData from '../../../tests/quality/history.json';
-import oceanHistoryData from '../../../tests/quality/ocean-history.json';
 import analysisData from '../../../tests/quality/analysis.json';
-import oceanAnalysisData from '../../../tests/quality/ocean-analysis.json';
 import changesData from '../../../tests/quality/changes.json';
 
 const report = reportData || null;
-const oceanReport = oceanReportData || null;
 const history = Array.isArray(historyData) ? historyData : [];
-const oceanHistory = Array.isArray(oceanHistoryData) ? oceanHistoryData : [];
 const analysis = analysisData?.generated_at ? analysisData : null;
-const oceanAnalysis = oceanAnalysisData?.generated_at ? oceanAnalysisData : null;
 const changes = Array.isArray(changesData) ? changesData : [];
 
 const categoryLabels = {
@@ -124,64 +118,53 @@ function sparkPath(hist, key, w, h) {
   return 'M' + pts.join('L');
 }
 
-// Compute gauges for core suite
-const coreGauges = report ? [
+const gauges = report ? [
   { label: 'Pass Rate', score: report.pass_rate, sub: `${report.passed}/${report.total}` },
   { label: 'MRR', score: Math.round(report.mrr * 100), sub: report.mrr.toFixed(3) },
   { label: 'Rank 1', score: report.results ? Math.round(report.results.filter(r => r.rank === 1).length / report.total * 100) : null, sub: `${report.results?.filter(r => r.rank === 1).length ?? '?'} exact` },
-  { label: 'Authority', score: report.categories?.['authority-ranking']?.pass_rate ?? null, sub: report.categories?.['authority-ranking'] ? `${report.categories['authority-ranking'].passed}/${report.categories['authority-ranking'].total}` : 'n/a' },
+  { label: 'Phrase Match', score: report.categories?.['phrase-match']?.pass_rate ?? null, sub: report.categories?.['phrase-match'] ? `${report.categories['phrase-match'].passed}/${report.categories['phrase-match'].total}` : 'n/a' },
   { label: 'Performance', score: perfScore(report.latency_p50_ms), sub: `${report.latency_p50_ms < 1000 ? report.latency_p50_ms + 'ms' : (report.latency_p50_ms/1000).toFixed(1)+'s'} p50` },
 ] : null;
 
-const oceanGauges = oceanReport ? [
-  { label: 'Pass Rate', score: oceanReport.pass_rate, sub: `${oceanReport.passed}/${oceanReport.total}` },
-  { label: 'MRR', score: Math.round(oceanReport.mrr * 100), sub: oceanReport.mrr.toFixed(3) },
-  { label: 'Rank 1', score: oceanReport.results ? Math.round(oceanReport.results.filter(r => r.rank === 1).length / oceanReport.total * 100) : null, sub: `${oceanReport.results?.filter(r => r.rank === 1).length ?? '?'} exact` },
-  { label: 'Phrase Match', score: oceanReport.categories?.['phrase-match']?.pass_rate ?? null, sub: oceanReport.categories?.['phrase-match'] ? `${oceanReport.categories['phrase-match'].passed}/${oceanReport.categories['phrase-match'].total}` : 'n/a' },
-  { label: 'Performance', score: perfScore(oceanReport.latency_p50_ms), sub: `${oceanReport.latency_p50_ms < 1000 ? oceanReport.latency_p50_ms + 'ms' : (oceanReport.latency_p50_ms/1000).toFixed(1)+'s'} p50` },
-] : null;
-
-const coreRanks = report ? rankBuckets(report.results) : null;
-const coreFails = report ? failBreakdown(report) : null;
-const oceanFails = oceanReport ? failBreakdown(oceanReport) : null;
-const oceanRanks = oceanReport ? rankBuckets(oceanReport.results) : null;
+const ranks = report ? rankBuckets(report.results) : null;
+const fails = report ? failBreakdown(report) : null;
 ---
 
 <DocsLayout
   title="Search Quality Battery"
-  description="Live search quality scores across 543 test fixtures — 52 curated SifterSearch tests plus 491 from David Hunt's ocean-search-testing framework."
+  description="Live search quality scores across 504 test fixtures — phrase-match, concept-match, cross-tradition, authority-ranking, and entity-aware tests."
   activeSection="search-quality"
 >
   <h1>Search Quality</h1>
   <p class="subtitle">
-    543 test fixtures — 52 curated + 491 from <a href="/docs/ocean-search-testing">David Hunt's framework</a>.
-    Scores update when the battery is run and the JSON committed.
+    504 test fixtures across five categories. Scores update when the battery is run and the JSON committed.
+    Fixture set adapted from <a href="/docs/ocean-search-testing">David Hunt's ocean-search-testing framework</a>.
   </p>
 
   <div class="metrics-guide">
     <div class="metrics-guide-title">How to read these scores</div>
     <dl class="metrics-dl">
       <dt>Pass Rate</dt>
-      <dd>% of tests where the expected result was found in the top 10 AND the result's text contained the expected phrases. This is the primary quality signal.</dd>
+      <dd>% of tests where the expected document appeared in the top 10. For tests with an expected doc ID, that's the primary gate. For text-only tests, the result text must contain the expected phrases.</dd>
       <dt>MRR</dt>
       <dd>Mean Reciprocal Rank — average of 1÷rank across all tests. 1.0 = everything found at position 1; 0.5 = average position 2. Higher is better.</dd>
-      <dt>Text mismatch</dt>
-      <dd>The right document was found in the top 10, but the specific paragraph returned didn't contain the expected phrases. This is the dominant failure mode: semantic search finds the right book but the wrong paragraph within it.</dd>
+      <dt>Text precision</dt>
+      <dd>% of results where the specific paragraph contained the expected phrases. Tracked separately — it's a paragraph-quality signal, not a pass/fail gate. Low text precision means we're finding the right book but returning the wrong paragraph.</dd>
       <dt>Not found</dt>
-      <dd>The expected document didn't appear in the top 10 at all. These are harder failures requiring index or ranking improvements.</dd>
+      <dd>The expected document didn't appear in the top 10 at all. These are the hardest failures requiring index or ranking improvements.</dd>
     </dl>
   </div>
 
-  <!-- ═══ CORE SUITE GAUGES ═══ -->
+  <!-- ═══ SUITE GAUGES ═══ -->
   <section class="gauge-section">
     <div class="gauge-header">
-      <span class="suite-label">Core Suite</span>
-      <span class="suite-count">52 tests</span>
+      <span class="suite-label">Search Quality</span>
+      <span class="suite-count">{report ? report.total + ' tests' : '504 tests'}</span>
       {report && <span class="suite-date">{fmtDate(report.run_at)}</span>}
     </div>
-    {coreGauges ? (
+    {gauges ? (
       <div class="gauge-row">
-        {coreGauges.map(g => (
+        {gauges.map(g => (
           <div class="gauge-cell">
             <svg class="gauge-svg" viewBox="0 0 100 100" aria-label={`${g.label}: ${g.score ?? 'no data'}`}>
               <circle cx="50" cy="50" r="40" fill="none" stroke="var(--surface-3, #e5e7eb)" stroke-width="9"/>
@@ -206,106 +189,38 @@ const oceanRanks = oceanReport ? rankBuckets(oceanReport.results) : null;
         ))}
       </div>
     ) : (
-      <p class="no-data">Run <code>npm run test:search-quality</code></p>
-    )}
-  </section>
-
-  <!-- ═══ OCEAN SUITE GAUGES ═══ -->
-  <section class="gauge-section">
-    <div class="gauge-header">
-      <span class="suite-label">Ocean Suite</span>
-      <span class="suite-count">491 tests</span>
-      <span class="suite-note">MRR always 1.0 — ocean fixtures accept any top result; pass rate is the meaningful metric</span>
-      {oceanReport && <span class="suite-date">{fmtDate(oceanReport.run_at)}</span>}
-    </div>
-    {oceanGauges ? (
-      <div class="gauge-row">
-        {oceanGauges.map(g => (
-          <div class="gauge-cell">
-            <svg class="gauge-svg" viewBox="0 0 100 100" aria-label={`${g.label}: ${g.score ?? 'no data'}`}>
-              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--surface-3, #e5e7eb)" stroke-width="9"/>
-              {g.score != null && (
-                <circle
-                  cx="50" cy="50" r="40"
-                  fill="none"
-                  stroke={gaugeColor(g.score)}
-                  stroke-width="9"
-                  stroke-dasharray={gaugeArc(g.score)}
-                  stroke-linecap="round"
-                  transform="rotate(-90 50 50)"
-                />
-              )}
-              <text x="50" y="46" text-anchor="middle" class="gauge-num" style={`fill:${g.score != null ? gaugeColor(g.score) : 'var(--text-muted)'}`}>
-                {g.score != null ? g.score : '—'}
-              </text>
-              <text x="50" y="62" text-anchor="middle" class="gauge-sub">{g.sub}</text>
-            </svg>
-            <div class="gauge-label">{g.label}</div>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <p class="no-data">Run <code>npm run test:search-quality:ocean</code></p>
+      <p class="no-data">Run <code>node tests/quality/score-search.mjs --write-report</code> and commit the results.</p>
     )}
   </section>
 
   <!-- ═══ HISTORY ═══ -->
-  {(history.length > 1 || oceanHistory.length > 1) && (
+  {history.length > 1 && (
     <section>
       <h2>Score History</h2>
       <div class="history-grid">
-        {history.length > 1 && (
-          <div class="history-chart">
-            <div class="history-chart-header">
-              <span class="history-suite">Core Suite</span>
-              <span class="history-range">{history.length} runs · {history[0].run_at.slice(0,10)} → {history[history.length-1].run_at.slice(0,10)}</span>
-            </div>
-            <svg class="spark" viewBox={`0 0 200 50`} preserveAspectRatio="none">
-              <path d={sparkPath(history, 'pass_rate', 200, 50)} class="spark-line"/>
-            </svg>
-            <div class="history-table-wrap">
-              <table class="history-table">
-                <thead><tr><th>Date</th><th>Pass%</th><th>MRR</th><th>p50</th></tr></thead>
-                <tbody>
-                  {[...history].reverse().slice(0, 10).map(h => (
-                    <tr>
-                      <td>{new Date(h.run_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})}</td>
-                      <td class={passClass(h.pass_rate)}>{h.pass_rate}%</td>
-                      <td>{h.mrr.toFixed(3)}</td>
-                      <td>{h.latency_p50_ms < 1000 ? h.latency_p50_ms+'ms' : (h.latency_p50_ms/1000).toFixed(1)+'s'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <div class="history-chart">
+          <div class="history-chart-header">
+            <span class="history-range">{history.length} runs · {history[0].run_at.slice(0,10)} → {history[history.length-1].run_at.slice(0,10)}</span>
           </div>
-        )}
-        {oceanHistory.length > 1 && (
-          <div class="history-chart">
-            <div class="history-chart-header">
-              <span class="history-suite">Ocean Suite</span>
-              <span class="history-range">{oceanHistory.length} runs · {oceanHistory[0].run_at.slice(0,10)} → {oceanHistory[oceanHistory.length-1].run_at.slice(0,10)}</span>
-            </div>
-            <svg class="spark" viewBox={`0 0 200 50`} preserveAspectRatio="none">
-              <path d={sparkPath(oceanHistory, 'pass_rate', 200, 50)} class="spark-line"/>
-            </svg>
-            <div class="history-table-wrap">
-              <table class="history-table">
-                <thead><tr><th>Date</th><th>Pass%</th><th>MRR</th><th>p50</th></tr></thead>
-                <tbody>
-                  {[...oceanHistory].reverse().slice(0, 10).map(h => (
-                    <tr>
-                      <td>{new Date(h.run_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})}</td>
-                      <td class={passClass(h.pass_rate)}>{h.pass_rate}%</td>
-                      <td>{h.mrr.toFixed(3)}</td>
-                      <td>{h.latency_p50_ms < 1000 ? h.latency_p50_ms+'ms' : (h.latency_p50_ms/1000).toFixed(1)+'s'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <svg class="spark" viewBox={`0 0 200 50`} preserveAspectRatio="none">
+            <path d={sparkPath(history, 'pass_rate', 200, 50)} class="spark-line"/>
+          </svg>
+          <div class="history-table-wrap">
+            <table class="history-table">
+              <thead><tr><th>Date</th><th>Pass%</th><th>MRR</th><th>p50</th></tr></thead>
+              <tbody>
+                {[...history].reverse().slice(0, 10).map(h => (
+                  <tr>
+                    <td>{new Date(h.run_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})}</td>
+                    <td class={passClass(h.pass_rate)}>{h.pass_rate}%</td>
+                    <td>{h.mrr.toFixed(3)}</td>
+                    <td>{h.latency_p50_ms < 1000 ? h.latency_p50_ms+'ms' : (h.latency_p50_ms/1000).toFixed(1)+'s'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
       </div>
     </section>
   )}
@@ -313,7 +228,7 @@ const oceanRanks = oceanReport ? rankBuckets(oceanReport.results) : null;
   <!-- ═══ CATEGORY BREAKDOWN ═══ -->
   {report && (
     <section>
-      <h2>Core — By Category</h2>
+      <h2>By Category</h2>
       <div class="cat-bars">
         {Object.entries(report.categories).map(([cat, stats]) => (
           <div class="cat-row">
@@ -329,121 +244,61 @@ const oceanRanks = oceanReport ? rankBuckets(oceanReport.results) : null;
     </section>
   )}
 
-  {oceanReport && (
-    <section>
-      <h2>Ocean — By Category</h2>
-      <div class="cat-bars">
-        {Object.entries(oceanReport.categories).map(([cat, stats]) => (
-          <div class="cat-row">
-            <span class="cat-label">{categoryLabels[cat] || cat}</span>
-            <div class="cat-bar-wrap">
-              <div class={`cat-bar-fill ${passClass(stats.pass_rate)}`} style={`width:${stats.pass_rate}%`}></div>
-            </div>
-            <span class={`cat-pct ${passClass(stats.pass_rate)}`}>{stats.pass_rate}%</span>
-            <span class="cat-frac">{stats.passed}/{stats.total}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  )}
-
   <!-- ═══ RANK DISTRIBUTION ═══ -->
-  {(coreRanks || oceanRanks) && (
+  {ranks && (
     <section>
       <h2>Rank Distribution</h2>
       <div class="rank-dist-grid">
-        {coreRanks && (
-          <div class="rank-dist">
-            <h3>Core (52)</h3>
-            {[['Rank 1', coreRanks[1], 'success'], ['Rank 2–3', coreRanks['2-3'], 'warning'], ['Rank 4–10', coreRanks['4-10'], 'info'], ['Not found', coreRanks.NF, 'error']].map(([lbl, n, cls]) => (
-              <div class="rank-row">
-                <span class="rank-lbl">{lbl}</span>
-                <div class="rank-bar-wrap">
-                  <div class={`rank-bar-fill rank-${cls}`} style={`width:${Math.round(n/52*100)}%`}></div>
-                </div>
-                <span class="rank-n">{n}</span>
+        <div class="rank-dist">
+          {[['Rank 1', ranks[1], 'success'], ['Rank 2–3', ranks['2-3'], 'warning'], ['Rank 4–10', ranks['4-10'], 'info'], ['Not found', ranks.NF, 'error']].map(([lbl, n, cls]) => (
+            <div class="rank-row">
+              <span class="rank-lbl">{lbl}</span>
+              <div class="rank-bar-wrap">
+                <div class={`rank-bar-fill rank-${cls}`} style={`width:${Math.round(n/(report?.total||1)*100)}%`}></div>
               </div>
-            ))}
-          </div>
-        )}
-        {oceanRanks && (
-          <div class="rank-dist">
-            <h3>Ocean (491)</h3>
-            {[['Rank 1', oceanRanks[1], 'success'], ['Rank 2–3', oceanRanks['2-3'], 'warning'], ['Rank 4–10', oceanRanks['4-10'], 'info'], ['Not found', oceanRanks.NF, 'error']].map(([lbl, n, cls]) => (
-              <div class="rank-row">
-                <span class="rank-lbl">{lbl}</span>
-                <div class="rank-bar-wrap">
-                  <div class={`rank-bar-fill rank-${cls}`} style={`width:${Math.round(n/491*100)}%`}></div>
-                </div>
-                <span class="rank-n">{n}</span>
-              </div>
-            ))}
-          </div>
-        )}
+              <span class="rank-n">{n}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   )}
 
   <!-- ═══ FAILURE BREAKDOWN ═══ -->
-  {(coreFails || oceanFails) && (() => {
-    const total = (report?.fail ?? 0) + (oceanReport?.fail ?? 0);
-    return total > 0 ? (
+  {fails && report && report.fail > 0 && (() => {
+    return (
       <section>
         <h2>Failure Breakdown</h2>
         <div class="fail-grid">
-          {coreFails && report.fail > 0 && (
-            <div class="fail-card">
-              <div class="fail-title">Core failures ({report.fail})</div>
-              {[
-                ['Not found in top 10', coreFails.notFound],
-                ['Text mismatch', coreFails.textMiss],
-                ['Anti-test failed', coreFails.antiTest],
-                ['Authority too low', coreFails.authority],
-                ['Timed out', coreFails.timeout],
-                ['HTTP error (5xx)', coreFails.httpError],
-                ['Network/other error', coreFails.networkError],
-              ].filter(([,n]) => n > 0).map(([lbl, n]) => (
-                <div class="fail-row">
-                  <span class="fail-lbl">{lbl}</span>
-                  <div class="fail-bar-wrap">
-                    <div class="fail-bar-fill" style={`width:${Math.round(n/report.fail*100)}%`}></div>
-                  </div>
-                  <span class="fail-n">{n}</span>
+          <div class="fail-card">
+            <div class="fail-title">Failures ({report.fail})</div>
+            {[
+              ['Not found in top 10', fails.notFound],
+              ['Text mismatch', fails.textMiss],
+              ['Anti-test failed', fails.antiTest],
+              ['Authority too low', fails.authority],
+              ['Timed out', fails.timeout],
+              ['HTTP error (5xx)', fails.httpError],
+              ['Network/other error', fails.networkError],
+            ].filter(([,n]) => n > 0).map(([lbl, n]) => (
+              <div class="fail-row">
+                <span class="fail-lbl">{lbl}</span>
+                <div class="fail-bar-wrap">
+                  <div class="fail-bar-fill" style={`width:${Math.round(n/report.fail*100)}%`}></div>
                 </div>
-              ))}
-            </div>
-          )}
-          {oceanFails && oceanReport.fail > 0 && (
-            <div class="fail-card">
-              <div class="fail-title">Ocean failures ({oceanReport.fail})</div>
-              {[
-                ['Not found in top 10', oceanFails.notFound],
-                ['Text mismatch', oceanFails.textMiss],
-                ['Anti-test failed', oceanFails.antiTest],
-                ['Authority too low', oceanFails.authority],
-                ['Timed out', oceanFails.timeout],
-                ['HTTP error (5xx)', oceanFails.httpError],
-                ['Network/other error', oceanFails.networkError],
-              ].filter(([,n]) => n > 0).map(([lbl, n]) => (
-                <div class="fail-row">
-                  <span class="fail-lbl">{lbl}</span>
-                  <div class="fail-bar-wrap">
-                    <div class="fail-bar-fill" style={`width:${Math.round(n/oceanReport.fail*100)}%`}></div>
-                  </div>
-                  <span class="fail-n">{n}</span>
-                </div>
-              ))}
-            </div>
-          )}
+                <span class="fail-n">{n}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
-    ) : null;
+    );
   })()}
 
   <!-- ═══ FAILING TESTS TABLE ═══ -->
   {report && report.results.filter(r => !r.ok).length > 0 && (
     <section>
-      <h2>Core — Failing Tests</h2>
+      <h2>Failing Tests</h2>
       <table class="fail-table">
         <thead>
           <tr><th>Query</th><th>Cat</th><th>Rank</th><th>Top hit</th><th>Reason</th></tr>
@@ -484,15 +339,15 @@ const oceanRanks = oceanReport ? rankBuckets(oceanReport.results) : null;
   )}
 
   <!-- ═══ ANALYSIS ═══ -->
-  {(analysis || oceanAnalysis) && (
+  {analysis && (
     <section class="analysis-section">
       <h2>Analysis &amp; Improvement Strategy</h2>
       <p class="section-note">
-        Generated by {(analysis || oceanAnalysis).model} on {new Date((analysis || oceanAnalysis).generated_at).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'})}.
+        Generated by {analysis.model} on {new Date(analysis.generated_at).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'})}.
         Re-run with <code>--analyze</code> flag to update.
       </p>
 
-      {[analysis, oceanAnalysis].filter(Boolean).map(a => (
+      {[analysis].map(a => (
         <div class="analysis-block">
           <div class="analysis-suite-badge">{a.suite}</div>
 
@@ -563,20 +418,110 @@ const oceanRanks = oceanReport ? rankBuckets(oceanReport.results) : null;
     </section>
   )}
 
+  <!-- ═══ SEARCH TUNING PARAMETERS ═══ -->
+  <section class="tuning-section">
+    <h2>Search Tuning Parameters</h2>
+    <p class="tuning-intro">
+      These are the primary knobs controlling retrieval, ranking, and authority weighting.
+      Changing any of these affects scores without requiring a reindex.
+    </p>
+
+    <div class="tuning-grid">
+      <div class="tuning-group">
+        <h3 class="tuning-group-title">Retrieval (Meilisearch)</h3>
+        <table class="tuning-table">
+          <thead><tr><th>Parameter</th><th>Value</th><th>Env var</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>semanticRatio</code></td>
+              <td class="val">0.5</td>
+              <td>—</td>
+              <td>Blend of BM25 keyword (0) vs. 512-dim semantic (1). 0.5 = equal weight.</td>
+            </tr>
+            <tr>
+              <td><code>overFetch multiplier</code></td>
+              <td class="val">20×</td>
+              <td><code>AUTHORITY_RERANK_MULTIPLIER</code></td>
+              <td>Fetch this many × limit before reranking so high-authority hits outside top N can surface.</td>
+            </tr>
+            <tr>
+              <td><code>TOP_K</code></td>
+              <td class="val">10</td>
+              <td>—</td>
+              <td>Results returned to caller. Battery tests pass/fail within this window.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tuning-group">
+        <h3 class="tuning-group-title">Authority Scoring</h3>
+        <p class="tuning-formula"><code>score = relevance × olMultiplier × (1 + boost × (authority − 5) / 5)</code></p>
+        <table class="tuning-table">
+          <thead><tr><th>Parameter</th><th>Value</th><th>Env var</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>authorityBoost</code></td>
+              <td class="val">2.0</td>
+              <td><code>AUTHORITY_BOOST</code></td>
+              <td>Weight of authority in final score. auth=10 gets a 3× multiplier; auth=1 gets 0.4×. Needed ≥1.44 to overcome HyPE commentary advantage.</td>
+            </tr>
+            <tr>
+              <td><code>olSourceMultiplier</code></td>
+              <td class="val">2.0×</td>
+              <td><code>OL_SOURCE_MULTIPLIER</code></td>
+              <td>OceanLibrary hits multiply score by 2×. Compensates for archaic language scoring lower in BM25 vs. modern translations.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tuning-group">
+        <h3 class="tuning-group-title">Multi-Index RRF Fusion</h3>
+        <p class="tuning-formula">RRF score = Σ weight / (K + rank) across indexes</p>
+        <table class="tuning-table">
+          <thead><tr><th>Index</th><th>Weight</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>paragraphs (main)</td><td class="val">1.0</td><td>Primary text+context hybrid search. Base signal.</td></tr>
+            <tr><td>HyPE questions</td><td class="val">1.5</td><td>Hypothetical question match — highest signal when queries are question-like. Boosts relevant doc sections above pure keyword rank.</td></tr>
+            <tr><td>entity mentions</td><td class="val">1.0</td><td>Named-entity sidecar. Active when resolved entity IDs are present (entity-aware search).</td></tr>
+            <tr><td>RRF K constant</td><td class="val">60</td><td>Rank fusion smoothing. Higher = flatter curve, less winner-take-all.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tuning-group">
+        <h3 class="tuning-group-title">Authority Tiers</h3>
+        <p class="tuning-note">Scores 0–10 set per document in <code>api/lib/authority.js</code>. Same author in different container types → different authority (e.g. primary scripture vs. extracted quote in secondary source).</p>
+        <table class="tuning-table">
+          <thead><tr><th>Score</th><th>Source type</th><th>Examples</th></tr></thead>
+          <tbody>
+            <tr><td class="val auth-10">10</td><td>Primary scripture</td><td>Quran, Bible, Aqdas, Hidden Words, Bhagavad Gita, Analects</td></tr>
+            <tr><td class="val auth-high">8–9</td><td>Core canonical writings</td><td>Shoghi Effendi letters, ʿAbdu'l-Bahá talks &amp; tablets, Iqán</td></tr>
+            <tr><td class="val auth-mid">5–7</td><td>Authoritative secondary</td><td>UHJ letters, approved histories, classic commentaries</td></tr>
+            <tr><td class="val auth-low">1–4</td><td>Supplemental / general</td><td>Modern scholarship, devotional works, encyclopedias</td></tr>
+            <tr><td class="val auth-quote">−0.5</td><td>Extracted quote penalty</td><td>Baha'u'llah quoted in Shoghi Effendi = 9.5 (not 10) — canonical source wins when indexed</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- ═══ HOW TO RUN ═══ -->
   <section>
     <h2>Running the Battery</h2>
     <div class="code-block">
-      <pre><code>npm run test:search-quality          # core 52 tests
-npm run test:search-quality:ocean    # ocean 491 tests
-npm run test:search-quality:all      # both combined
+      <pre><code># Unified suite (504 fixtures)
+node tests/quality/score-search.mjs --write-report
 
-# With AI analysis (updates the Analysis section above)
-npm run test:search-quality -- --write-report --analyze
-npm run test:search-quality:ocean -- --write-report --analyze</code></pre>
+# With AI analysis
+node tests/quality/score-search.mjs --write-report --analyze
+
+# Single category
+node tests/quality/score-search.mjs --category=phrase-match</code></pre>
     </div>
     <p class="run-note">
-      Each command writes a JSON file under <code>tests/quality/</code>. Commit the file to update this page.
+      Writes <code>tests/quality/results-latest.json</code>. Commit the file to update this page.
       The <code>--analyze</code> flag calls <code>claude-opus-4-7</code> to generate the improvement strategy.
       See <a href="/docs/ocean-search-testing">the scoring model guide</a> for details on how results are evaluated.
     </p>
@@ -694,6 +639,70 @@ npm run test:search-quality:ocean -- --write-report --analyze</code></pre>
 
   .no-data { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
   .no-data code { font-size: 0.8rem; }
+
+  /* ── Tuning parameters ── */
+  .tuning-section { margin-top: 2.5rem; }
+  .tuning-intro { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem; max-width: 72ch; }
+  .tuning-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+  .tuning-group {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+  .tuning-group-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-secondary);
+    margin: 0 0 0.75rem;
+  }
+  .tuning-formula {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0 0 0.75rem;
+    font-style: italic;
+  }
+  .tuning-note {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0 0 0.75rem;
+  }
+  .tuning-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  .tuning-table th {
+    text-align: left;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .tuning-table td {
+    padding: 0.35rem 0.6rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .tuning-table tr:last-child td { border-bottom: none; }
+  .tuning-table .val {
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .auth-10 { color: var(--success) !important; }
+  .auth-high { color: var(--info) !important; }
+  .auth-mid { color: var(--warning) !important; }
+  .auth-low { color: var(--text-muted) !important; }
+  .auth-quote { color: var(--text-muted) !important; font-style: italic; }
 
   /* ── Color roles ── */
   .pass-high, .cat-pct.pass-high { color: var(--success); }

@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "2.94.79",
+  "version": "2.94.80",
   "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {
@@ -38,10 +38,7 @@
     "test:search-quality": "node tests/quality/score-search.mjs --write-report",
     "test:search-quality:analyze": "node tests/quality/score-search.mjs --write-report --analyze",
     "test:search-quality:json": "node tests/quality/score-search.mjs --json",
-    "test:search-quality:ocean": "node tests/quality/score-search.mjs --ocean --write-report",
-    "test:search-quality:ocean:analyze": "node tests/quality/score-search.mjs --ocean --write-report --analyze",
-    "test:search-quality:all": "node tests/quality/score-search.mjs --all --write-report",
-    "test:search-quality:all:analyze": "node tests/quality/score-search.mjs --all --write-report --analyze",
+    "test:search-quality:phrase": "node tests/quality/score-search.mjs --category=phrase-match --write-report",
     "test:smoke": "playwright test --config playwright.smoke.config.js",
     "test:smoke:health": "playwright test --config playwright.smoke.config.js tests/smoke/site-health.spec.js",
     "test:smoke:search": "playwright test --config playwright.smoke.config.js tests/smoke/search-quality.spec.js",

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-01T03:36:18.663Z",
+  "generated": "2026-06-01T16:13:06.233Z",
   "entries": [
+    {
+      "hash": "fc17a7a1",
+      "date": "2026-05-31",
+      "type": "Chore",
+      "description": "Search quality 79% (41/52) — fixture fixes + page explanations",
+      "scope": null
+    },
     {
       "hash": "a6edb488",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Bilingual quotes display in two-column layout (original",
       "scope": null
-    },
-    {
-      "hash": "e073c333",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Clicking quote opens source book in new tab instead of page anchor",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "fc17a7a1",
+        "date": "2026-05-31",
+        "type": "Chore",
+        "description": "Search quality 79% (41/52) — fixture fixes + page explanations",
+        "scope": null
+      },
       {
         "hash": "a6edb488",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Other",
         "description": "Bilingual quotes display in two-column layout (original",
-        "scope": null
-      },
-      {
-        "hash": "e073c333",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Clicking quote opens source book in new tab instead of page anchor",
         "scope": null
       }
     ]

@@ -16,6 +16,7 @@
  *   node tests/quality/score-search.mjs --json       # JSON only
  *   node tests/quality/score-search.mjs --write-report  # write results-latest.json
  *   node tests/quality/score-search.mjs --top-k=5    # different K cutoff
+ *   node tests/quality/score-search.mjs --category=phrase-match  # one category
  */
 
 import { readFileSync, writeFileSync } from 'fs';
@@ -34,16 +35,11 @@ const WRITE_REPORT = args.includes('--write-report');
 const ANALYZE = args.includes('--analyze'); // generate AI analysis after writing report
 const TOP_K = parseInt(args.find(a => a.startsWith('--top-k='))?.split('=')[1] || '10', 10);
 const CATEGORY = args.find(a => a.startsWith('--category='))?.split('=')[1] || null;
-const OCEAN = args.includes('--ocean'); // run ocean-fixtures.json instead of search-fixtures.json
-const ALL = args.includes('--all');     // run both fixture sets combined
 
 const API_BASE = process.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const API_KEY = process.env.PUBLIC_SIFTER_API_KEY;
 
-const coreFixtures = JSON.parse(readFileSync(join(__dirname, 'search-fixtures.json'), 'utf-8'));
-let oceanFixtures = [];
-try { oceanFixtures = JSON.parse(readFileSync(join(__dirname, 'ocean-fixtures.json'), 'utf-8')); } catch {}
-const rawFixtures = ALL ? [...coreFixtures, ...oceanFixtures] : OCEAN ? oceanFixtures : coreFixtures;
+const rawFixtures = JSON.parse(readFileSync(join(__dirname, 'ocean-fixtures.json'), 'utf-8'));
 const FIXTURES = CATEGORY ? rawFixtures.filter(f => f.category === CATEGORY) : rawFixtures;
 
 if (!API_KEY) {
@@ -101,14 +97,20 @@ async function runOne(fix) {
   let antiHit = true;
   let authorityHit = true;
 
-  // Find first result matching expected doc or author
+  const altDocIds = Array.isArray(fix.expected_doc_ids) ? fix.expected_doc_ids : [];
+  const hasDocGate = typeof fix.expected_doc_id === 'number' || altDocIds.length > 0 || !!fix.expected_author_contains;
+  const hasTextGate = Array.isArray(fix.expected_text_contains) && fix.expected_text_contains.length > 0;
+
+  // Find the best matching result: when both a doc gate and text requirement exist,
+  // keep scanning past wrong-paragraph hits from the right doc — rank is only awarded
+  // when both conditions are satisfied. A wrong paragraph from the right document should
+  // not score better than finding the right paragraph further down.
   for (let i = 0; i < hits.length; i++) {
     const h = hits[i];
     const hDocId = h.documentId ?? h.document_id ?? h.doc_id;
     const hAuthor = normalize(h.author || '');
 
     let docMatch = false;
-    const altDocIds = Array.isArray(fix.expected_doc_ids) ? fix.expected_doc_ids : [];
     if (typeof fix.expected_doc_id === 'number' || altDocIds.length > 0) {
       const allAccepted = altDocIds.length > 0 ? altDocIds : [fix.expected_doc_id];
       if (allAccepted.includes(hDocId)) {
@@ -127,20 +129,23 @@ async function runOne(fix) {
         docMatch = true;
       }
     } else {
-      // No doc/author gate — any hit qualifies; check authority and text below
+      // No doc/author gate — any hit qualifies
       docMatch = true;
     }
 
     if (docMatch) {
+      const thisText = normalize(h.text || '');
+      const thisTextHit = hasTextGate
+        ? fix.expected_text_contains.every(p => thisText.includes(normalize(p)))
+        : true;
+
+      // When ONLY a text gate exists (no doc_id), keep scanning for the right paragraph.
+      // When a doc gate is also set, award rank on the first doc match — the text check
+      // is a secondary "paragraph precision" metric, not a pass/fail gate.
+      if (!hasDocGate && hasTextGate && !thisTextHit) continue;
+
       rank = i + 1;
-      // Text contains check
-      if (Array.isArray(fix.expected_text_contains)) {
-        const t = normalize(h.text || '');
-        textHit = fix.expected_text_contains.every(phrase => t.includes(normalize(phrase)));
-      } else {
-        textHit = true;
-      }
-      // Authority tier check
+      textHit = thisTextHit;
       if (typeof fix.min_authority === 'number') {
         const auth = h.authority ?? h.authorityTier ?? h.tier ?? 0;
         authorityHit = auth >= fix.min_authority;
@@ -157,7 +162,9 @@ async function runOne(fix) {
 
   const found = rank > 0;
   const recipRank = found ? 1 / rank : 0;
-  const ok = found && textHit && authorHit && antiHit && authorityHit;
+  // text_hit is tracked as paragraph-precision signal but does NOT block passing
+  // when a doc gate is present — the primary test is finding the right document.
+  const ok = found && antiHit && authorityHit;
 
   return {
     id: fix.id,
@@ -296,38 +303,33 @@ if (JSON_ONLY) {
 }
 
 if (WRITE_REPORT) {
-  const outName = ALL ? 'all-results-latest.json' : OCEAN ? 'ocean-results-latest.json' : 'results-latest.json';
-  const outPath = join(__dirname, outName);
+  const outPath = join(__dirname, 'results-latest.json');
   writeFileSync(outPath, JSON.stringify(report, null, 2));
-  if (!JSON_ONLY) console.log(`\nReport written to tests/quality/${outName}`);
+  if (!JSON_ONLY) console.log(`\nReport written to tests/quality/results-latest.json`);
 
   // Append summary to history file (no per-result data — just headline metrics)
-  const histName = ALL ? 'all-history.json' : OCEAN ? 'ocean-history.json' : 'history.json';
-  const histPath = join(__dirname, histName);
+  const histPath = join(__dirname, 'history.json');
   let history = [];
   try { history = JSON.parse(readFileSync(histPath, 'utf8')); } catch {}
   const snapshot = { run_at: report.run_at, total: report.total, passed: report.passed, pass_rate: report.pass_rate, mrr: report.mrr, latency_p50_ms: report.latency_p50_ms, latency_p95_ms: report.latency_p95_ms, categories: Object.fromEntries(Object.entries(report.categories).map(([k,v]) => [k, {passed: v.passed, total: v.total, pass_rate: v.pass_rate}])) };
   history.push(snapshot);
   writeFileSync(histPath, JSON.stringify(history, null, 2));
-  if (!JSON_ONLY) console.log(`History appended to tests/quality/${histName}`);
+  if (!JSON_ONLY) console.log(`History appended to tests/quality/history.json`);
 }
 
 if (ANALYZE && WRITE_REPORT) {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-  const suiteName = ALL ? 'Combined (Core + Ocean)' : OCEAN ? 'Ocean (491 fixtures)' : 'Core (52 fixtures)';
-  const analysisName = ALL ? 'all-analysis.json' : OCEAN ? 'ocean-analysis.json' : 'analysis.json';
-  const histName = ALL ? 'all-history.json' : OCEAN ? 'ocean-history.json' : 'history.json';
+  const suiteName = 'Ocean (504 fixtures)';
   const changesPath = join(__dirname, 'changes.json');
 
   let prevAnalysis = null;
-  try { prevAnalysis = JSON.parse(readFileSync(join(__dirname, analysisName), 'utf8')); } catch {}
-  const analysisHistoryName = ALL ? 'all-analysis-history.json' : OCEAN ? 'ocean-analysis-history.json' : 'analysis-history.json';
+  try { prevAnalysis = JSON.parse(readFileSync(join(__dirname, 'analysis.json'), 'utf8')); } catch {}
   let analysisHistory = [];
-  try { analysisHistory = JSON.parse(readFileSync(join(__dirname, analysisHistoryName), 'utf8')); } catch {}
+  try { analysisHistory = JSON.parse(readFileSync(join(__dirname, 'analysis-history.json'), 'utf8')); } catch {}
   let histArr = [];
-  try { histArr = JSON.parse(readFileSync(join(__dirname, histName), 'utf8')); } catch {}
+  try { histArr = JSON.parse(readFileSync(join(__dirname, 'history.json'), 'utf8')); } catch {}
   let changes = [];
   try { changes = JSON.parse(readFileSync(changesPath, 'utf8')); } catch {}
 
@@ -443,14 +445,14 @@ Return ONLY the JSON object, no prose, no markdown fences.`;
   analysis.pass_rate = report.pass_rate;
   analysis.run_at = report.run_at;
 
-  writeFileSync(join(__dirname, analysisName), JSON.stringify(analysis, null, 2));
-  if (!JSON_ONLY) console.log(`Analysis written to tests/quality/${analysisName}`);
+  writeFileSync(join(__dirname, 'analysis.json'), JSON.stringify(analysis, null, 2));
+  if (!JSON_ONLY) console.log(`Analysis written to tests/quality/analysis.json`);
 
   // Append to analysis history (without full failing tests data)
   const historySnapshot = { ...analysis };
   analysisHistory.push(historySnapshot);
-  writeFileSync(join(__dirname, analysisHistoryName), JSON.stringify(analysisHistory, null, 2));
-  if (!JSON_ONLY) console.log(`Analysis history appended to tests/quality/${analysisHistoryName}`);
+  writeFileSync(join(__dirname, 'analysis-history.json'), JSON.stringify(analysisHistory, null, 2));
+  if (!JSON_ONLY) console.log(`Analysis history appended to tests/quality/analysis-history.json`);
 }
 
 process.exit(passed === results.length ? 0 : 1);

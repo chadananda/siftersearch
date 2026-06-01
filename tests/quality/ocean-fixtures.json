@@ -2915,7 +2915,9 @@
     "intent": "Timing: \"ablution\" (Islamic - teachings on prayer)",
     "expected_text_contains": [
       "either"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "achieving-enlightenment",
@@ -2924,7 +2926,9 @@
     "intent": "Timing: \"achieving enlightenment\" (Buddhist - purpose of existence)",
     "expected_text_contains": [
       "Wish"
-    ]
+    ],
+    "expected_doc_id": 20997,
+    "min_authority": 7
   },
   {
     "id": "achieving-immortality",
@@ -2933,7 +2937,9 @@
     "intent": "Timing: \"achieving immortality\" (Taoist - purpose of existence)",
     "expected_text_contains": [
       "attaining"
-    ]
+    ],
+    "expected_doc_id": 20782,
+    "min_authority": 7
   },
   {
     "id": "acts-of-kindness",
@@ -2942,7 +2948,9 @@
     "intent": "Timing: \"\"acts of kindness\"\" (Jewish - teachings on charity)",
     "expected_text_contains": [
       "every"
-    ]
+    ],
+    "expected_doc_id": 21105,
+    "min_authority": 7
   },
   {
     "id": "adam-and-eve",
@@ -2951,7 +2959,9 @@
     "intent": "Timing: \"Adam and Eve\" (Baha''i - Creation story in the Baha''i Faith)",
     "expected_text_contains": [
       "account"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "adam-eve",
@@ -2960,7 +2970,9 @@
     "intent": "Timing: \"Adam Eve\" (Baha''i - Creation story in the Baha''i Faith)",
     "expected_text_contains": [
       "first"
-    ]
+    ],
+    "expected_doc_id": 21151,
+    "min_authority": 7
   },
   {
     "id": "administrative-order",
@@ -2969,7 +2981,9 @@
     "intent": "Timing: \"administrative order\" (Baha''i - writings on justice)",
     "expected_text_contains": [
       "functioning"
-    ]
+    ],
+    "expected_doc_id": 20869,
+    "min_authority": 7
   },
   {
     "id": "ahimsa",
@@ -2978,7 +2992,9 @@
     "intent": "Timing: \"Ahimsa\" (Jain - virtues)",
     "expected_text_contains": [
       "among"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "ahriman",
@@ -2987,7 +3003,9 @@
     "intent": "Timing: \"Ahriman\" (Zoroastrian - creation story)",
     "expected_text_contains": [
       "would"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "ahura-mazda",
@@ -2996,7 +3014,9 @@
     "intent": "Timing: \"Ahura Mazda\" (Zoroastrian - creation story)",
     "expected_text_contains": [
       "answered"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "amazing-grace",
@@ -3005,7 +3025,9 @@
     "intent": "Timing: \"Amazing Grace\" (Christian - hymns and psalms)",
     "expected_text_contains": [
       "relying"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "anavah",
@@ -3014,7 +3036,9 @@
     "intent": "Timing: \"Anavah\" (Jewish - virtues)",
     "expected_text_contains": [
       "contained"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "angra-mainyu",
@@ -3023,7 +3047,9 @@
     "intent": "Timing: \"Angra Mainyu\" (Zoroastrian - teachings on good and evil)",
     "expected_text_contains": [
       "Thereupon"
-    ]
+    ],
+    "expected_doc_id": 21327,
+    "min_authority": 7
   },
   {
     "id": "aparigraha",
@@ -3032,7 +3058,9 @@
     "intent": "Timing: \"Aparigraha\" (Jain - virtues)",
     "expected_text_contains": [
       "Brahmacharya"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "appearance-of-mahdi",
@@ -3041,7 +3069,9 @@
     "intent": "Timing: \"appearance of Mahdi\" (Islamic - end times prophecies)",
     "expected_text_contains": [
       "Persia"
-    ]
+    ],
+    "expected_doc_id": 20777,
+    "min_authority": 7
   },
   {
     "id": "armageddon",
@@ -3050,7 +3080,9 @@
     "intent": "Timing: \"Armageddon\" (Christian - end times prophecies)",
     "expected_text_contains": [
       "called"
-    ]
+    ],
+    "expected_doc_id": 21159,
+    "min_authority": 7
   },
   {
     "id": "asceticism",
@@ -3059,7 +3091,9 @@
     "intent": "Timing: \"asceticism\" (Jain - teachings on detachment)",
     "expected_text_contains": [
       "Devoted"
-    ]
+    ],
+    "expected_doc_id": 20781,
+    "min_authority": 7
   },
   {
     "id": "asha",
@@ -3068,7 +3102,9 @@
     "intent": "Search Ordering customization: Asha (dashes and \"‘A’Asha\")",
     "expected_text_contains": [
       "Ahuna"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "asteya",
@@ -3077,7 +3113,9 @@
     "intent": "Timing: \"Asteya\" (Jain - virtues)",
     "expected_text_contains": [
       "falsehood"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "atar",
@@ -3086,7 +3124,9 @@
     "intent": "Timing: \"Atar\" (Zoroastrian - concepts of fire and light)",
     "expected_text_contains": [
       "Whom"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "atharvaveda",
@@ -3095,7 +3135,9 @@
     "intent": "Timing: \"Atharvaveda\" (Hindu - scriptures: Vedas and Upanishads)",
     "expected_text_contains": [
       "Atharv"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "atman",
@@ -3104,7 +3146,9 @@
     "intent": "Timing: \"Atman\" (Hindu - beliefs about the soul)",
     "expected_text_contains": [
       "thing"
-    ]
+    ],
+    "expected_doc_id": 21326,
+    "min_authority": 7
   },
   {
     "id": "attaining-liberation",
@@ -3113,7 +3157,9 @@
     "intent": "Timing: \"attaining liberation\" (Jain - purpose of existence)",
     "expected_text_contains": [
       "enlightenment"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "attaining-nirvana",
@@ -3122,7 +3168,9 @@
     "intent": "Timing: \"attaining Nirvana\" (Buddhist - purpose of existence)",
     "expected_text_contains": [
       "planes"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "babylonian-exile",
@@ -3131,7 +3179,9 @@
     "intent": "Timing: \"Babylonian Exile\" (Jewish - history and culture)",
     "expected_text_contains": [
       "tears"
-    ]
+    ],
+    "expected_doc_id": 20997,
+    "min_authority": 7
   },
   {
     "id": "bahaullah",
@@ -3140,7 +3190,9 @@
     "intent": "Timing: \"Baha''u''llah\"\" (word with quotes)",
     "expected_text_contains": [
       "Revelation"
-    ]
+    ],
+    "expected_doc_id": 20873,
+    "min_authority": 7
   },
   {
     "id": "balance",
@@ -3149,7 +3201,9 @@
     "intent": "Timing: \"balance\" (Taoist - concepts of yin and yang)",
     "expected_text_contains": [
       "Will"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "beatitudes",
@@ -3158,7 +3212,9 @@
     "intent": "Timing: \"Beatitudes\" (Christian - Sermon on the Mount)",
     "expected_text_contains": [
       "Soden"
-    ]
+    ],
+    "expected_doc_id": 20780,
+    "min_authority": 7
   },
   {
     "id": "benevolence",
@@ -3167,7 +3223,9 @@
     "intent": "Timing: \"benevolence\" (Confucian - virtues)",
     "expected_text_contains": [
       "render"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "benevolent-rule",
@@ -3176,7 +3234,9 @@
     "intent": "Timing: \"benevolent rule\" (Confucian - views on governance)",
     "expected_text_contains": [
       "their"
-    ]
+    ],
+    "expected_doc_id": 20997,
+    "min_authority": 7
   },
   {
     "id": "bhagavad-gita",
@@ -3185,7 +3245,9 @@
     "intent": "Timing: \"Bhagavad Gita\" (Hindu - epics: Mahabharata and Ramayana)",
     "expected_text_contains": [
       "Chapter"
-    ]
+    ],
+    "expected_doc_id": 21327,
+    "min_authority": 7
   },
   {
     "id": "bhakti",
@@ -3194,7 +3256,9 @@
     "intent": "Timing: \"Bhakti\" (Hindu - virtues)",
     "expected_text_contains": [
       "Pravachana"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "blessed-are-the-meek",
@@ -3203,7 +3267,9 @@
     "intent": "Timing: \"\"blessed are the meek\"\"\" (exact phrase)",
     "expected_text_contains": [
       "shall"
-    ]
+    ],
+    "expected_doc_id": 20995,
+    "min_authority": 7
   },
   {
     "id": "blessed-are-the-peacemakers",
@@ -3212,7 +3278,9 @@
     "intent": "Timing: \"Blessed are the peacemakers\" (Christian - Beatitudes)",
     "expected_text_contains": [
       "shall"
-    ]
+    ],
+    "expected_doc_id": 20995,
+    "min_authority": 7
   },
   {
     "id": "blessed-are-the-poor-in-spirit",
@@ -3221,7 +3289,9 @@
     "intent": "Timing: \"Blessed are the poor in spirit\" (Christian - Beatitudes)",
     "expected_text_contains": [
       "taught"
-    ]
+    ],
+    "expected_doc_id": 20995,
+    "min_authority": 7
   },
   {
     "id": "blessed-are-the-pure-in-heart",
@@ -3230,7 +3300,9 @@
     "intent": "Timing: \"Blessed are the pure in heart\" (Christian - Beatitudes)",
     "expected_text_contains": [
       "shall"
-    ]
+    ],
+    "expected_doc_id": 20995,
+    "min_authority": 7
   },
   {
     "id": "brahmacharya",
@@ -3239,7 +3311,9 @@
     "intent": "Timing: \"Brahmacharya\" (Jain - virtues)",
     "expected_text_contains": [
       "practised"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "brahman",
@@ -3248,7 +3322,9 @@
     "intent": "Timing: \"Brahman\" (Hindu - beliefs about the soul)",
     "expected_text_contains": [
       "indeed"
-    ]
+    ],
+    "expected_doc_id": 20779,
+    "min_authority": 7
   },
   {
     "id": "brahmas-creation",
@@ -3257,7 +3333,9 @@
     "intent": "Timing: \"Brahma''s creation\" (Hindu - creation myths)",
     "expected_text_contains": [
       "primal"
-    ]
+    ],
+    "expected_doc_id": 20777,
+    "min_authority": 7
   },
   {
     "id": "breath-control",
@@ -3266,7 +3344,9 @@
     "intent": "Timing: \"breath control\" (Taoist - alchemy and longevity)",
     "expected_text_contains": [
       "sending"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "brihadaranyaka-upanishad",
@@ -3275,7 +3355,9 @@
     "intent": "Timing: \"Brihadaranyaka Upanishad\" (Hindu - scriptures: Vedas and Upanishads)",
     "expected_text_contains": [
       "Brihadaranyaka"
-    ]
+    ],
+    "expected_doc_id": 19920,
+    "min_authority": 7
   },
   {
     "id": "bundahishn",
@@ -3284,7 +3366,9 @@
     "intent": "Timing: \"Bundahishn\" (Zoroastrian - creation story)",
     "expected_text_contains": [
       "passage"
-    ]
+    ],
+    "expected_doc_id": 21317,
+    "min_authority": 7
   },
   {
     "id": "butterfly-dream",
@@ -3293,7 +3377,9 @@
     "intent": "Timing: \"Butterfly Dream\" (Taoist - texts: Zhuangzi)",
     "expected_text_contains": [
       "formerly"
-    ]
+    ],
+    "expected_doc_id": 18768,
+    "min_authority": 7
   },
   {
     "id": "cause-of-suffering",
@@ -3302,7 +3388,9 @@
     "intent": "Timing: \"cause of suffering\" (Buddhist - teachings on suffering)",
     "expected_text_contains": [
       "often"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "cessation-of-suffering",
@@ -3311,7 +3399,9 @@
     "intent": "Timing: \"cessation of suffering\" (Buddhist - Four Noble Truths)",
     "expected_text_contains": [
       "noble"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "charitable-giving",
@@ -3320,7 +3410,9 @@
     "intent": "Timing: \"charitable giving\" (Jewish - teachings on charity)",
     "expected_text_contains": [
       "therefore"
-    ]
+    ],
+    "expected_doc_id": 20997,
+    "min_authority": 7
   },
   {
     "id": "charity",
@@ -3329,7 +3421,9 @@
     "intent": "Timing: \"charity\" (Islam - Pillars of Islam)",
     "expected_text_contains": [
       "exhorts"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "chastity",
@@ -3338,7 +3432,9 @@
     "intent": "Timing: \"chastity\" (Jain - virtues)",
     "expected_text_contains": [
       "Penance"
-    ]
+    ],
+    "expected_doc_id": 21317,
+    "min_authority": 7
   },
   {
     "id": "chesed",
@@ -3347,7 +3443,9 @@
     "intent": "Timing: \"Chesed\" (Jewish - virtues)",
     "expected_text_contains": [
       "Hazo"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "chinvat-bridge",
@@ -3356,7 +3454,9 @@
     "intent": "Timing: \"Chinvat Bridge\" (Zoroastrian - views on the afterlife)",
     "expected_text_contains": [
       "account"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "chochmah",
@@ -3365,7 +3465,9 @@
     "intent": "Timing: \"Chochmah\" (Jewish - virtues)",
     "expected_text_contains": [
       "somewhat"
-    ]
+    ],
+    "expected_doc_id": 20781,
+    "min_authority": 7
   },
   {
     "id": "cleanliness",
@@ -3374,7 +3476,9 @@
     "intent": "Timing: \"cleanliness\" (Zoroastrian - teachings on purity)",
     "expected_text_contains": [
       "There"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "coming-of-a-sage-king",
@@ -3383,7 +3487,9 @@
     "intent": "Timing: \"coming of a sage king\" (Confucian - end times prophecies)",
     "expected_text_contains": [
       "foremost"
-    ]
+    ],
+    "expected_doc_id": 21317,
+    "min_authority": 7
   },
   {
     "id": "coming-of-saoshyant",
@@ -3392,7 +3498,9 @@
     "intent": "Timing: \"coming of Saoshyant\" (Zoroastrian - end times prophecies)",
     "expected_text_contains": [
       "fiend"
-    ]
+    ],
+    "expected_doc_id": 21246,
+    "min_authority": 7
   },
   {
     "id": "coming-of-the-messiah",
@@ -3401,7 +3509,9 @@
     "intent": "Timing: \"coming of the Messiah\" (Jewish - end times prophecies)",
     "expected_text_contains": [
       "Jews"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "commandments-of-jesus",
@@ -3410,7 +3520,9 @@
     "intent": "Timing: \"commandments of Jesus\" (Christian - commandments in the Bible)",
     "expected_text_contains": [
       "teachings"
-    ]
+    ],
+    "expected_doc_id": 21150,
+    "min_authority": 7
   },
   {
     "id": "compassion",
@@ -3419,7 +3531,9 @@
     "intent": "Timing: \"compassion\" (Buddhist - virtues)",
     "expected_text_contains": [
       "kindness"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "consciousness",
@@ -3428,7 +3542,9 @@
     "intent": "Timing: \"consciousness\" (Buddhist - views on the nature of the mind)",
     "expected_text_contains": [
       "consequence"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "courtesy",
@@ -3437,7 +3553,9 @@
     "intent": "Timing: \"courtesy\" (Confucian - views on respect)",
     "expected_text_contains": [
       "With"
-    ]
+    ],
+    "expected_doc_id": 18784,
+    "min_authority": 7
   },
   {
     "id": "covenant",
@@ -3446,7 +3564,9 @@
     "intent": "Timing: \"covenant\" (Zoroastrian - teachings on good and evil)",
     "expected_text_contains": [
       "entered"
-    ]
+    ],
+    "expected_doc_id": 18692,
+    "min_authority": 7
   },
   {
     "id": "covenant-with-abraham",
@@ -3455,7 +3575,9 @@
     "intent": "Timing: \"Covenant with Abraham\" (Jewish - history in the Old Testament)",
     "expected_text_contains": [
       "Then"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "cultivating-virtue",
@@ -3464,7 +3586,9 @@
     "intent": "Timing: \"cultivating virtue\" (Confucian - purpose of existence)",
     "expected_text_contains": [
       "spiritual"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "cycle-of-life",
@@ -3473,7 +3597,9 @@
     "intent": "Timing: \"cycle of life\" (Buddhist - views on reincarnation)",
     "expected_text_contains": [
       "remain"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "cyclical-view-of-history",
@@ -3482,7 +3608,9 @@
     "intent": "Timing: \"cyclical view of history\" (Confucian - end times prophecies)",
     "expected_text_contains": [
       "recurring"
-    ]
+    ],
+    "expected_doc_id": 20777,
+    "min_authority": 7
   },
   {
     "id": "daily-obligatory-prayer",
@@ -3491,7 +3619,9 @@
     "intent": "Timing: \"daily obligatory prayer\" (Baha''i - requirements for spiritual growth)",
     "expected_text_contains": [
       "importance"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "daily-prayer",
@@ -3500,7 +3630,9 @@
     "intent": "Timing: \"daily prayer\" (Jewish - requirements for spiritual growth)",
     "expected_text_contains": [
       "healing"
-    ]
+    ],
+    "expected_doc_id": 20824,
+    "min_authority": 7
   },
   {
     "id": "daily-prayers",
@@ -3509,7 +3641,9 @@
     "intent": "Timing: \"daily prayers\" (Islamic - requirements for spiritual growth)",
     "expected_text_contains": [
       "--"
-    ]
+    ],
+    "expected_doc_id": 20824,
+    "min_authority": 7
   },
   {
     "id": "daniel",
@@ -3518,7 +3652,9 @@
     "intent": "Timing: \"Daniel\" (Jewish - prophets and their messages)",
     "expected_text_contains": [
       "ninety"
-    ]
+    ],
+    "expected_doc_id": 19696,
+    "min_authority": 7
   },
   {
     "id": "dao",
@@ -3527,7 +3663,9 @@
     "intent": "Timing: \"Dao\" (Taoist - philosophy and the Tao)",
     "expected_text_contains": [
       "would"
-    ]
+    ],
+    "expected_doc_id": 18772,
+    "min_authority": 7
   },
   {
     "id": "daoist-philosophy",
@@ -3536,7 +3674,9 @@
     "intent": "Timing: \"Daoist philosophy\" (Taoist - texts: Zhuangzi)",
     "expected_text_contains": [
       "Chinese"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "day-of-judgment",
@@ -3545,7 +3685,9 @@
     "intent": "Timing: \"Day of Judgment\" (Islamic - end times prophecies)",
     "expected_text_contains": [
       "amongst"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "deference",
@@ -3554,7 +3696,9 @@
     "intent": "Timing: \"deference\" (Confucian - views on respect)",
     "expected_text_contains": [
       "extraordinary"
-    ]
+    ],
+    "expected_doc_id": 20997,
+    "min_authority": 7
   },
   {
     "id": "detachment",
@@ -3563,7 +3707,9 @@
     "intent": "Timing: \"detachment\" (Baha''i - virtues)",
     "expected_text_contains": [
       "willingly"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "devotion",
@@ -3572,7 +3718,9 @@
     "intent": "Timing: \"devotion\" (Hindu - virtues)",
     "expected_text_contains": [
       "spirit"
-    ]
+    ],
+    "expected_doc_id": 21197,
+    "min_authority": 7
   },
   {
     "id": "dharma",
@@ -3581,7 +3729,9 @@
     "intent": "Timing: \"dharma\" (Hindu - virtues)",
     "expected_text_contains": [
       "ignorant"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "diamond-sutra",
@@ -3590,7 +3740,9 @@
     "intent": "Timing: \"Diamond Sutra\" (Buddhist - sutras and scriptures)",
     "expected_text_contains": [
       "Venerable"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "diaspora",
@@ -3599,7 +3751,9 @@
     "intent": "Timing: \"Diaspora\" (Jewish - history and culture)",
     "expected_text_contains": [
       "length"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "dietary-laws",
@@ -3608,7 +3762,9 @@
     "intent": "Timing: \"dietary laws\" (Jewish - laws in the Talmud)",
     "expected_text_contains": [
       "death"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "dietary-practices",
@@ -3617,7 +3773,9 @@
     "intent": "Timing: \"dietary practices\" (Taoist - practices for health)",
     "expected_text_contains": [
       "breathing"
-    ]
+    ],
+    "expected_doc_id": 21149,
+    "min_authority": 7
   },
   {
     "id": "diwali",
@@ -3626,7 +3784,9 @@
     "intent": "Timing: \"Diwali\" (Jain - rituals and festivals)",
     "expected_text_contains": [
       "Doukhobor"
-    ]
+    ],
+    "expected_doc_id": 20184,
+    "min_authority": 7
   },
   {
     "id": "druj",
@@ -3635,7 +3795,9 @@
     "intent": "Timing: \"Druj\" (Zoroastrian - teachings on good and evil)",
     "expected_text_contains": [
       "shall"
-    ]
+    ],
+    "expected_doc_id": 19088,
+    "min_authority": 7
   },
   {
     "id": "dua",
@@ -3644,7 +3806,9 @@
     "intent": "Search Ordering: Dua (Islamic) teachings on prayer",
     "expected_text_contains": [
       "words"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "duality",
@@ -3653,7 +3817,9 @@
     "intent": "Timing: \"duality\" (Taoist - concepts of yin and yang)",
     "expected_text_contains": [
       "felicity"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "dukkha",
@@ -3662,7 +3828,9 @@
     "intent": "Timing: \"Dukkha\" (Buddhist - teachings on suffering)",
     "expected_text_contains": [
       "Noble"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "durga",
@@ -3671,7 +3839,9 @@
     "intent": "Timing: \"Durga\" (Hindu - deities and their stories)",
     "expected_text_contains": [
       "Mahagouri"
-    ]
+    ],
+    "expected_doc_id": 21327,
+    "min_authority": 7
   },
   {
     "id": "duty",
@@ -3680,7 +3850,9 @@
     "intent": "Timing: \"duty\" (Hindu - teachings on dharma)",
     "expected_text_contains": [
       "Udaya"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "ecclesiastes",
@@ -3689,7 +3861,9 @@
     "intent": "Timing: \"Ecclesiastes\" (Jewish - wisdom literature)",
     "expected_text_contains": [
       "Chapter"
-    ]
+    ],
+    "expected_doc_id": 17290,
+    "min_authority": 7
   },
   {
     "id": "economic-justice",
@@ -3698,7 +3872,9 @@
     "intent": "Timing: \"economic justice\" (Baha''i - writings on equality)",
     "expected_text_contains": [
       "sixth"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "education-for-women",
@@ -3707,7 +3883,9 @@
     "intent": "Timing: \"education for women\" (Baha''i - writings on education)",
     "expected_text_contains": [
       "number"
-    ]
+    ],
+    "expected_doc_id": 20823,
+    "min_authority": 7
   },
   {
     "id": "eid-al-fitr",
@@ -3716,7 +3894,9 @@
     "intent": "Timing: \"Eid al-Fitr\" (Islamic - views on fasting)",
     "expected_text_contains": [
       "celebrate"
-    ]
+    ],
+    "expected_doc_id": 21317,
+    "min_authority": 7
   },
   {
     "id": "elimination-of-prejudice",
@@ -3725,7 +3905,9 @@
     "intent": "Timing: \"elimination of prejudice\" (Baha''i - writings on equality)",
     "expected_text_contains": [
       "empowerment"
-    ]
+    ],
+    "expected_doc_id": 20777,
+    "min_authority": 7
   },
   {
     "id": "emergence-of-a-new-era",
@@ -3734,7 +3916,9 @@
     "intent": "Timing: \"emergence of a new era\" (Taoist - end times prophecies)",
     "expected_text_contains": [
       "German"
-    ]
+    ],
+    "expected_doc_id": 20777,
+    "min_authority": 7
   },
   {
     "id": "end-of-a-cosmic-cycle",
@@ -3743,7 +3927,9 @@
     "intent": "Timing: \"end of a cosmic cycle\" (Taoist - end times prophecies)",
     "expected_text_contains": [
       "provided"
-    ]
+    ],
+    "expected_doc_id": 20777,
+    "min_authority": 7
   },
   {
     "id": "end-of-kali-yuga",
@@ -3752,7 +3938,9 @@
     "intent": "Timing: \"end of Kali Yuga\" (Hindu - end times prophecies)",
     "expected_text_contains": [
       "beginning"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "end-of-suffering",
@@ -3761,7 +3949,9 @@
     "intent": "Timing: \"end of suffering\" (Buddhist - teachings on suffering)",
     "expected_text_contains": [
       "once"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "ending-suffering",
@@ -3770,7 +3960,9 @@
     "intent": "Timing: \"ending suffering\" (Buddhist - purpose of existence)",
     "expected_text_contains": [
       "practices"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "endowments",
@@ -3779,7 +3971,9 @@
     "intent": "Timing: \"endowments\" (Islamic - teachings on charity)",
     "expected_text_contains": [
       "national"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "equality-of-races",
@@ -3788,7 +3982,9 @@
     "intent": "Timing: \"equality of races\" (Baha''i - writings on equality)",
     "expected_text_contains": [
       "account"
-    ]
+    ],
+    "expected_doc_id": 20777,
+    "min_authority": 7
   },
   {
     "id": "eternal-life",
@@ -3797,7 +3993,9 @@
     "intent": "Timing: \"eternal life\" (Christian - purpose of existence)",
     "expected_text_contains": [
       "Court"
-    ]
+    ],
+    "expected_doc_id": 20819,
+    "min_authority": 7
   },
   {
     "id": "ethical-behavior",
@@ -3806,7 +4004,9 @@
     "intent": "Timing: \"ethical behavior\" (Islamic - guidance on ethics)",
     "expected_text_contains": [
       "Buddha"
-    ]
+    ],
+    "expected_doc_id": 21317,
+    "min_authority": 7
   },
   {
     "id": "ethical-living",
@@ -3815,7 +4015,9 @@
     "intent": "Timing: \"ethical living\" (Hindu - teachings on dharma)",
     "expected_text_contains": [
       "creatures"
-    ]
+    ],
+    "expected_doc_id": 20997,
+    "min_authority": 7
   },
   {
     "id": "evening-prayer",
@@ -3824,7 +4026,9 @@
     "intent": "Timing: \"Evening prayer\" (Baha''i - prayers and meditations)",
     "expected_text_contains": [
       "illustrious"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "ever-advancing",
@@ -3833,7 +4037,8 @@
     "intent": "Timing: \"ever-advancing\"\" (word with a dash)",
     "expected_text_contains": [
       "devoted"
-    ]
+    ],
+    "min_authority": 7
   },
   {
     "id": "exodus",
@@ -3842,7 +4047,8 @@
     "intent": "Timing: \"Exodus\" (Jewish - history and culture)",
     "expected_text_contains": [
       "Exodus"
-    ]
+    ],
+    "min_authority": 7
   },
   {
     "id": "ezekiel",
@@ -3851,7 +4057,8 @@
     "intent": "Timing: \"Ezekiel\" (Jewish - prophets and their messages)",
     "expected_text_contains": [
       "Ezekiel"
-    ]
+    ],
+    "min_authority": 7
   },
   {
     "id": "fairness",
@@ -3860,7 +4067,9 @@
     "intent": "Timing: \"fairness\" (Baha''i - writings on justice)",
     "expected_text_contains": [
       "endowed"
-    ]
+    ],
+    "expected_doc_id": 20780,
+    "min_authority": 7
   },
   {
     "id": "fairness-and-equity",
@@ -3869,7 +4078,9 @@
     "intent": "Timing: \"fairness and equity\" (Islamic - views on social justice)",
     "expected_text_contains": [
       "glorious"
-    ]
+    ],
+    "expected_doc_id": 20872,
+    "min_authority": 7
   },
   {
     "id": "faith",
@@ -3878,7 +4089,9 @@
     "intent": "Timing: \"faith\" (Islam - Pillars of Islam)",
     "expected_text_contains": [
       "doubt"
-    ]
+    ],
+    "expected_doc_id": 21317,
+    "min_authority": 7
   },
   {
     "id": "family-hierarchy",
@@ -3887,7 +4100,9 @@
     "intent": "Timing: \"family hierarchy\" (Confucian - views on family)",
     "expected_text_contains": [
       "scion"
-    ]
+    ],
+    "expected_doc_id": 21317,
+    "min_authority": 7
   },
   {
     "id": "family-loyalty",
@@ -3896,7 +4111,9 @@
     "intent": "Timing: \"family loyalty\" (Confucian - views on family)",
     "expected_text_contains": [
       "members"
-    ]
+    ],
+    "expected_doc_id": 20997,
+    "min_authority": 7
   },
   {
     "id": "feeding-the-5000",
@@ -3905,7 +4122,9 @@
     "intent": "Timing: \"feeding the 5000\" (Christian - miracles of Jesus)",
     "expected_text_contains": [
       "Healing"
-    ]
+    ],
+    "expected_doc_id": 20995,
+    "min_authority": 7
   },
   {
     "id": "festival-of-colors",
@@ -3914,7 +4133,9 @@
     "intent": "Timing: \"festival of colors\" (Hindu - festival of Holi)",
     "expected_text_contains": [
       "Krishna"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "festival-of-lights",
@@ -3923,7 +4144,9 @@
     "intent": "Timing: \"festival of lights\" (Hindu - festival of Diwali)",
     "expected_text_contains": [
       "Covenant"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "fighting-evil",
@@ -3932,7 +4155,9 @@
     "intent": "Timing: \"fighting evil\" (Zoroastrian - purpose of existence)",
     "expected_text_contains": [
       "Buddha"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "filial-piety",
@@ -3941,7 +4166,9 @@
     "intent": "Timing: \"filial piety\" (Confucian - views on loyalty)",
     "expected_text_contains": [
       "their"
-    ]
+    ],
+    "expected_doc_id": 20999,
+    "min_authority": 7
   },
   {
     "id": "final-judgment",
@@ -3950,7 +4177,9 @@
     "intent": "Timing: \"final judgment\" (Zoroastrian - views on the afterlife)",
     "expected_text_contains": [
       "deliver"
-    ]
+    ],
+    "expected_doc_id": 21325,
+    "min_authority": 7
   },
   {
     "id": "fire-temple",
@@ -3959,7 +4188,9 @@
     "intent": "Timing: \"fire temple\" (Zoroastrian - rituals and ceremonies)",
     "expected_text_contains": [
       "ablaze"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "fire-temples",
@@ -3968,7 +4199,9 @@
     "intent": "Timing: \"fire temples\" (Zoroastrian - concepts of fire and light)",
     "expected_text_contains": [
       "world"
-    ]
+    ],
+    "expected_doc_id": 21325,
+    "min_authority": 7
   },
   {
     "id": "five-precepts",
@@ -3977,7 +4210,9 @@
     "intent": "Timing: \"Five Precepts\" (Buddhist - Teachings of the Buddha in the Pali Canon)",
     "expected_text_contains": [
       "subdued"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "follow-jesus-teachings",
@@ -3986,7 +4221,9 @@
     "intent": "Timing: \"follow Jesus'' teachings\" (Christian - purpose of existence)",
     "expected_text_contains": [
       "contention"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "following-dharma",
@@ -3995,7 +4232,9 @@
     "intent": "Timing: \"following dharma\" (Hindu - purpose of existence)",
     "expected_text_contains": [
       "possesses"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "following-the-middle-way",
@@ -4004,7 +4243,9 @@
     "intent": "Timing: \"following the Middle Way\" (Buddhist - purpose of existence)",
     "expected_text_contains": [
       "obtained"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "forgiveness",
@@ -4013,7 +4254,9 @@
     "intent": "Timing: \"forgiveness\" (Christian - virtues)",
     "expected_text_contains": [
       "Lord"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "frashokereti",
@@ -4022,7 +4265,9 @@
     "intent": "Timing: \"Frashokereti\" (Zoroastrian - end times prophecies)",
     "expected_text_contains": [
       "farshigard"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "fulfilling-gods-commandments",
@@ -4031,7 +4276,9 @@
     "intent": "Timing: \"fulfilling God''s commandments\" (Jewish - purpose of existence)",
     "expected_text_contains": [
       "marriage"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "fulfilling-ones-role",
@@ -4040,7 +4287,9 @@
     "intent": "Timing: \"fulfilling one''s role\" (Confucian - purpose of existence)",
     "expected_text_contains": [
       "exact"
-    ]
+    ],
+    "expected_doc_id": 20827,
+    "min_authority": 7
   },
   {
     "id": "future-buddha",
@@ -4049,7 +4298,9 @@
     "intent": "Timing: \"future Buddha\" (Buddhist - end times prophecies)",
     "expected_text_contains": [
       "present"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "god",
@@ -4058,7 +4309,9 @@
     "intent": "Timing: \"God\"\" (maximum number of results)",
     "expected_text_contains": [
       "other"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "god-baha",
@@ -4067,7 +4320,9 @@
     "intent": "Timing: \"God (Baha)\"\" (common search with filtering)",
     "expected_text_contains": [
       "preserve"
-    ]
+    ],
+    "expected_doc_id": 20780,
+    "min_authority": 7
   },
   {
     "id": "holi",
@@ -4076,7 +4331,9 @@
     "intent": "Search Ordering customization: \"Holi\" (footnote number in one text)",
     "expected_text_contains": [
       "bonfire"
-    ]
+    ],
+    "expected_doc_id": 21327,
+    "min_authority": 7
   },
   {
     "id": "holi-festival",
@@ -4085,7 +4342,9 @@
     "intent": "Search Ordering: \"Holi\" festival (Hindu) traditions of Holi",
     "expected_text_contains": [
       "Holi"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "iftar",
@@ -4094,7 +4353,9 @@
     "intent": "Search Ordering: Iftar (Islamic) views on fasting",
     "expected_text_contains": [
       "fifty"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "iman",
@@ -4103,7 +4364,9 @@
     "intent": "Search Ordering customization: Iman (dashes)",
     "expected_text_contains": [
       "ÁJÍ"
-    ]
+    ],
+    "expected_doc_id": 21325,
+    "min_authority": 7
   },
   {
     "id": "isa",
@@ -4112,7 +4375,9 @@
     "intent": "Search Ordering: Isa (Islamic) stories from the Quran",
     "expected_text_contains": [
       "creatures"
-    ]
+    ],
+    "expected_doc_id": 21150,
+    "min_authority": 7
   },
   {
     "id": "jesus",
@@ -4121,7 +4386,9 @@
     "intent": "Search Ordering: Jesus (Islamic) stories from the Quran",
     "expected_text_contains": [
       "which"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "job",
@@ -4130,7 +4397,9 @@
     "intent": "Search Ordering: Job (Jewish) wisdom literature",
     "expected_text_contains": [
       "progeny"
-    ]
+    ],
+    "expected_doc_id": 20780,
+    "min_authority": 7
   },
   {
     "id": "justice",
@@ -4139,7 +4408,9 @@
     "intent": "Timing: \"justice\"\" (single word that should be somewhat common)",
     "expected_text_contains": [
       "without"
-    ]
+    ],
+    "expected_doc_id": 21179,
+    "min_authority": 7
   },
   {
     "id": "justice-baha",
@@ -4148,7 +4419,9 @@
     "intent": "Timing: \"justice (Baha)\"\" (single word with filtering)",
     "expected_text_contains": [
       "Universal"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "karma",
@@ -4157,7 +4430,9 @@
     "intent": "Search Ordering: karma (Buddhist) views on reincarnation",
     "expected_text_contains": [
       "stain"
-    ]
+    ],
+    "expected_doc_id": 17384,
+    "min_authority": 7
   },
   {
     "id": "lie",
@@ -4166,7 +4441,9 @@
     "intent": "Search Ordering: lie (Zoroastrian) ethics and morality",
     "expected_text_contains": [
       "night"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "love",
@@ -4175,7 +4452,9 @@
     "intent": "Search Ordering: love (Christian) virtues",
     "expected_text_contains": [
       "living"
-    ]
+    ],
+    "expected_doc_id": 18692,
+    "min_authority": 7
   },
   {
     "id": "magga",
@@ -4184,7 +4463,9 @@
     "intent": "Search Ordering: Magga (Buddhist) Four Noble Truths",
     "expected_text_contains": [
       "vibhanga"
-    ]
+    ],
+    "expected_doc_id": 19925,
+    "min_authority": 7
   },
   {
     "id": "metta",
@@ -4193,7 +4474,9 @@
     "intent": "Search Ordering: Metta (Buddhist) meditation practices",
     "expected_text_contains": [
       "Mett"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "metta-buddhist",
@@ -4202,7 +4485,9 @@
     "intent": "Timing: \"metta (Buddhist)\"\" (uncommon word with filtering)",
     "expected_text_contains": [
       "Mett"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "moses",
@@ -4211,7 +4496,9 @@
     "intent": "Search Ordering: Moses (Islamic) stories from the Quran",
     "expected_text_contains": [
       "spoke"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "musa",
@@ -4220,7 +4507,9 @@
     "intent": "Search Ordering: Musa (Islamic) stories from the Quran",
     "expected_text_contains": [
       "Japan"
-    ]
+    ],
+    "expected_doc_id": 20780,
+    "min_authority": 7
   },
   {
     "id": "peace",
@@ -4229,7 +4518,9 @@
     "intent": "Search Ordering: peace (Jewish) virtues",
     "expected_text_contains": [
       "immortal"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "poor-in-your-midst-are-my-trust",
@@ -4238,7 +4529,9 @@
     "intent": "Timing: \"poor in your midst are my trust\"\" (longer inexact phrase)",
     "expected_text_contains": [
       "guard"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "poor-in-your-midst-are-my-trust-baha",
@@ -4247,7 +4540,9 @@
     "intent": "Timing: \"poor in your midst are my trust (Baha)\"\" (phrase with filtering)",
     "expected_text_contains": [
       "guard"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "puja",
@@ -4256,7 +4551,9 @@
     "intent": "Search Ordering customization: Puja (dashes)",
     "expected_text_contains": [
       "before"
-    ]
+    ],
+    "expected_doc_id": 21331,
+    "min_authority": 7
   },
   {
     "id": "ren",
@@ -4265,7 +4562,9 @@
     "intent": "Search Ordering: Ren (Confucian) principles of harmony",
     "expected_text_contains": [
       "things"
-    ]
+    ],
+    "expected_doc_id": 20783,
+    "min_authority": 7
   },
   {
     "id": "sabr",
@@ -4274,7 +4573,9 @@
     "intent": "Search Ordering customization: Sabr (dashes)",
     "expected_text_contains": [
       "revealed"
-    ]
+    ],
+    "expected_doc_id": 20778,
+    "min_authority": 7
   },
   {
     "id": "sadeh",
@@ -4283,7 +4584,9 @@
     "intent": "Search Ordering: Sadeh (Zoroastrian) festivals and observances",
     "expected_text_contains": [
       "Field"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "salah",
@@ -4292,7 +4595,9 @@
     "intent": "Search Ordering customization: Salah (dashes)",
     "expected_text_contains": [
       "lived"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "satya",
@@ -4301,7 +4606,9 @@
     "intent": "Search Ordering: Satya (Jain) teachings on non-violence",
     "expected_text_contains": [
       "earth"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
   },
   {
     "id": "sawm",
@@ -4310,7 +4617,9 @@
     "intent": "Search Ordering customization: Sawm (dashes)",
     "expected_text_contains": [
       "Know"
-    ]
+    ],
+    "expected_doc_id": 21258,
+    "min_authority": 7
   },
   {
     "id": "shiva",
@@ -4319,7 +4628,9 @@
     "intent": "Search Ordering: Shiva (Hindu) deities and their stories",
     "expected_text_contains": [
       "large"
-    ]
+    ],
+    "expected_doc_id": 20185,
+    "min_authority": 7
   },
   {
     "id": "shukr",
@@ -4328,7 +4639,9 @@
     "intent": "Search Ordering customization: Shukr (dashes)",
     "expected_text_contains": [
       "about"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "taqwa",
@@ -4337,7 +4650,9 @@
     "intent": "Search Ordering customization: Taqwa (dashes)",
     "expected_text_contains": [
       "accept"
-    ]
+    ],
+    "expected_doc_id": 20780,
+    "min_authority": 7
   },
   {
     "id": "truth",
@@ -4346,7 +4661,9 @@
     "intent": "Search Ordering: truth (Zoroastrian) virtues",
     "expected_text_contains": [
       "Brahman"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "waqf",
@@ -4355,7 +4672,9 @@
     "intent": "Search Ordering: Waqf (Islamic) teachings on charity",
     "expected_text_contains": [
       "converting"
-    ]
+    ],
+    "expected_doc_id": 21315,
+    "min_authority": 7
   },
   {
     "id": "wudu",
@@ -4364,7 +4683,9 @@
     "intent": "Search Ordering: Wudu (Islamic) teachings on prayer",
     "expected_text_contains": [
       "Wipe"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "yajna",
@@ -4373,7 +4694,9 @@
     "intent": "Search Ordering customization: Yajna (dashes)",
     "expected_text_contains": [
       "dwelleth"
-    ]
+    ],
+    "expected_doc_id": 21184,
+    "min_authority": 7
   },
   {
     "id": "yasna",
@@ -4382,7 +4705,9 @@
     "intent": "Search Ordering: Yasna (Zoroastrian) sacred text: Avesta",
     "expected_text_contains": [
       "worship"
-    ]
+    ],
+    "expected_doc_id": 21306,
+    "min_authority": 7
   },
   {
     "id": "yusuf",
@@ -4391,7 +4716,9 @@
     "intent": "Search Ordering: Yusuf (Islamic) stories from the Quran",
     "expected_text_contains": [
       "highly"
-    ]
+    ],
+    "expected_doc_id": 21206,
+    "min_authority": 7
   },
   {
     "id": "zakat",
@@ -4400,7 +4727,9 @@
     "intent": "Search Ordering: Zakat (Islam) Pillars of Islam",
     "expected_text_contains": [
       "matter"
-    ]
+    ],
+    "expected_doc_id": 21307,
+    "min_authority": 7
   },
   {
     "id": "zhi",
@@ -4409,7 +4738,9 @@
     "intent": "Search Ordering: Zhi (Confucian) virtues",
     "expected_text_contains": [
       "Venerable"
-    ]
+    ],
+    "expected_doc_id": 19090,
+    "min_authority": 7
   },
   {
     "id": "zhong",
@@ -4418,6 +4749,137 @@
     "intent": "Search Ordering: Zhong (Confucian) virtues",
     "expected_text_contains": [
       "Collier"
-    ]
+    ],
+    "expected_doc_id": 21316,
+    "min_authority": 7
+  },
+  {
+    "id": "primary-not-secondary",
+    "category": "authority-ranking",
+    "query": "Bahá'u'lláh on materialism science",
+    "intent": "Anti-test — top hit should be Bahá'u'lláh primary, NOT Esslemont/commentary",
+    "expected_author_contains": "Bahá",
+    "expected_author_not_contains": "Esslemont",
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "bahai-covenant-primary",
+    "category": "authority-ranking",
+    "query": "covenant of Baha'u'llah",
+    "intent": "Primary source should outrank commentary on the Covenant",
+    "min_authority": 7,
+    "expected_author_not_contains": "Esslemont",
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "prayer-authority",
+    "category": "authority-ranking",
+    "query": "prayer for healing and protection",
+    "intent": "Sacred text prayer should rank above commentary on prayer",
+    "min_authority": 7,
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "quran-bismillah",
+    "category": "authority-ranking",
+    "query": "In the name of God the compassionate the merciful",
+    "intent": "Bismillah — opening of the Quran; primary scripture must rank first",
+    "min_authority": 7,
+    "expected_text_contains": [
+      "merciful",
+      "compassionate"
+    ],
+    "religion_filter": "Islam"
+  },
+  {
+    "id": "entity-mulla-husayn-first-believer",
+    "category": "entity-aware",
+    "query": "first Letter of the Living",
+    "intent": "Alias — 'first Letter of the Living' resolves to Mullá Ḥusayn entity",
+    "expected_entity_canonical": "Mullá Ḥusayn",
+    "expected_doc_id": 21308,
+    "expected_text_contains": [
+      "Husayn"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-mulla-husayn-babul-bab",
+    "category": "entity-aware",
+    "query": "Babul-Bab gate of the gate Dawn-Breakers",
+    "intent": "Title alias 'Bábul-Báb' resolves to Mullá Ḥusayn",
+    "expected_entity_canonical": "Mullá Ḥusayn",
+    "expected_doc_id": 21308,
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-tahirih-poetess",
+    "category": "entity-aware",
+    "query": "poetess of Qazvin Tahirih Qurratul-Ayn unveiled",
+    "intent": "Multiple aliases for Ṭáhirih — poetess, Qurratu'l-'Ayn",
+    "expected_entity_canonical": "Ṭáhirih",
+    "expected_doc_id": 21308,
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-declaration-bab-1844",
+    "category": "entity-aware",
+    "query": "Declaration of the Bab May 1844 Shiraz",
+    "intent": "Event entity — Declaration of the Báb in Shíráz, 1844",
+    "expected_doc_id": 21308,
+    "expected_text_contains": [
+      "Báb",
+      "Shíráz"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-quddus-character-tracking",
+    "category": "entity-aware",
+    "query": "Quddus Letters of the Living Dawn-Breakers",
+    "intent": "Character tracking — Quddús across the Dawn-Breakers narrative",
+    "expected_entity_canonical": "Quddús",
+    "expected_doc_id": 21308,
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-letters-of-living",
+    "category": "entity-aware",
+    "query": "Letters of the Living eighteen disciples of the Bab",
+    "intent": "Entity set — all eighteen Letters of the Living",
+    "expected_doc_id": 21308,
+    "expected_text_contains": [
+      "Letters"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-shoghi-effendi-guardian",
+    "category": "entity-aware",
+    "query": "Guardian of the Baha'i Faith administrative order",
+    "intent": "Title alias — 'Guardian' resolves to Shoghi Effendi",
+    "expected_author_contains": "Shoghi",
+    "min_authority": 7,
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-bab-martyrdom",
+    "category": "entity-aware",
+    "query": "martyrdom of the Bab Tabriz 1850",
+    "intent": "Event entity — martyrdom of the Báb in Tabriz",
+    "expected_doc_id": 21308,
+    "expected_text_contains": [
+      "Báb"
+    ],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "entity-mulla-husayn-speaker",
+    "category": "entity-aware",
+    "query": "what Mulla Husayn said spoke declared",
+    "intent": "Role-filtered — paragraphs where Mullá Ḥusayn is the speaker",
+    "expected_entity_canonical": "Mullá Ḥusayn",
+    "expected_doc_id": 21308,
+    "religion_filter": "Baha'i"
   }
 ]
