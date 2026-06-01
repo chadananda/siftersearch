@@ -158,6 +158,20 @@ const oceanRanks = oceanReport ? rankBuckets(oceanReport.results) : null;
     Scores update when the battery is run and the JSON committed.
   </p>
 
+  <div class="metrics-guide">
+    <div class="metrics-guide-title">How to read these scores</div>
+    <dl class="metrics-dl">
+      <dt>Pass Rate</dt>
+      <dd>% of tests where the expected result was found in the top 10 AND the result's text contained the expected phrases. This is the primary quality signal.</dd>
+      <dt>MRR</dt>
+      <dd>Mean Reciprocal Rank — average of 1÷rank across all tests. 1.0 = everything found at position 1; 0.5 = average position 2. Higher is better.</dd>
+      <dt>Text mismatch</dt>
+      <dd>The right document was found in the top 10, but the specific paragraph returned didn't contain the expected phrases. This is the dominant failure mode: semantic search finds the right book but the wrong paragraph within it.</dd>
+      <dt>Not found</dt>
+      <dd>The expected document didn't appear in the top 10 at all. These are harder failures requiring index or ranking improvements.</dd>
+    </dl>
+  </div>
+
   <!-- ═══ CORE SUITE GAUGES ═══ -->
   <section class="gauge-section">
     <div class="gauge-header">
@@ -201,6 +215,7 @@ const oceanRanks = oceanReport ? rankBuckets(oceanReport.results) : null;
     <div class="gauge-header">
       <span class="suite-label">Ocean Suite</span>
       <span class="suite-count">491 tests</span>
+      <span class="suite-note">MRR always 1.0 — ocean fixtures accept any top result; pass rate is the meaningful metric</span>
       {oceanReport && <span class="suite-date">{fmtDate(oceanReport.run_at)}</span>}
     </div>
     {oceanGauges ? (
@@ -594,7 +609,45 @@ npm run test:search-quality:ocean -- --write-report --analyze</code></pre>
   }
   .suite-label { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); }
   .suite-count { font-size: 0.8rem; color: var(--text-muted); }
+  .suite-note { font-size: 0.72rem; color: var(--text-muted); font-style: italic; }
   .suite-date { font-size: 0.75rem; color: var(--text-muted); margin-left: auto; }
+
+  /* ── Metrics guide ── */
+  .metrics-guide {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 0.9rem 1.25rem;
+    margin-bottom: 1.5rem;
+    max-width: 72ch;
+  }
+  .metrics-guide-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-secondary);
+    margin-bottom: 0.65rem;
+  }
+  .metrics-dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.35rem 1rem;
+    margin: 0;
+  }
+  .metrics-dl dt {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    padding-top: 0.05rem;
+  }
+  .metrics-dl dd {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.5;
+  }
 
   .gauge-row {
     display: flex;

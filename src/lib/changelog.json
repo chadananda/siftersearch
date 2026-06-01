@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-01T02:17:13.168Z",
+  "generated": "2026-06-01T03:36:18.663Z",
   "entries": [
+    {
+      "hash": "a6edb488",
+      "date": "2026-05-31",
+      "type": "Chore",
+      "description": "Update search quality results — 37/52 (71%), MRR 0.798",
+      "scope": null
+    },
     {
       "hash": "299166ed",
       "date": "2026-05-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Clicking quote opens source book in new tab instead of page anchor",
       "scope": null
-    },
-    {
-      "hash": "a1eba8b5",
-      "date": "2026-05-13",
-      "type": "Fixed",
-      "description": "Copy formats as quote + markdown reference link",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-31": [
+      {
+        "hash": "a6edb488",
+        "date": "2026-05-31",
+        "type": "Chore",
+        "description": "Update search quality results — 37/52 (71%), MRR 0.798",
+        "scope": null
+      },
       {
         "hash": "299166ed",
         "date": "2026-05-31",
@@ -7025,13 +7032,6 @@
         "date": "2026-05-13",
         "type": "Fixed",
         "description": "Clicking quote opens source book in new tab instead of page anchor",
-        "scope": null
-      },
-      {
-        "hash": "a1eba8b5",
-        "date": "2026-05-13",
-        "type": "Fixed",
-        "description": "Copy formats as quote + markdown reference link",
         "scope": null
       }
     ]

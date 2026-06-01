@@ -214,5 +214,113 @@
         "pass_rate": 56
       }
     }
+  },
+  {
+    "run_at": "2026-06-01T03:24:49.758Z",
+    "total": 52,
+    "passed": 39,
+    "pass_rate": 75,
+    "mrr": 0.821,
+    "latency_p50_ms": 3464,
+    "latency_p95_ms": 7460,
+    "categories": {
+      "phrase-match": {
+        "passed": 13,
+        "total": 15,
+        "pass_rate": 87
+      },
+      "concept-match": {
+        "passed": 12,
+        "total": 19,
+        "pass_rate": 63
+      },
+      "authority-ranking": {
+        "passed": 4,
+        "total": 4,
+        "pass_rate": 100
+      },
+      "cross-tradition": {
+        "passed": 5,
+        "total": 5,
+        "pass_rate": 100
+      },
+      "entity-aware": {
+        "passed": 5,
+        "total": 9,
+        "pass_rate": 56
+      }
+    }
+  },
+  {
+    "run_at": "2026-06-01T03:30:39.473Z",
+    "total": 52,
+    "passed": 42,
+    "pass_rate": 81,
+    "mrr": 0.82,
+    "latency_p50_ms": 3869,
+    "latency_p95_ms": 10374,
+    "categories": {
+      "phrase-match": {
+        "passed": 11,
+        "total": 15,
+        "pass_rate": 73
+      },
+      "concept-match": {
+        "passed": 17,
+        "total": 19,
+        "pass_rate": 89
+      },
+      "authority-ranking": {
+        "passed": 4,
+        "total": 4,
+        "pass_rate": 100
+      },
+      "cross-tradition": {
+        "passed": 5,
+        "total": 5,
+        "pass_rate": 100
+      },
+      "entity-aware": {
+        "passed": 5,
+        "total": 9,
+        "pass_rate": 56
+      }
+    }
+  },
+  {
+    "run_at": "2026-06-01T03:35:27.505Z",
+    "total": 52,
+    "passed": 41,
+    "pass_rate": 79,
+    "mrr": 0.833,
+    "latency_p50_ms": 3820,
+    "latency_p95_ms": 10466,
+    "categories": {
+      "phrase-match": {
+        "passed": 10,
+        "total": 15,
+        "pass_rate": 67
+      },
+      "concept-match": {
+        "passed": 17,
+        "total": 19,
+        "pass_rate": 89
+      },
+      "authority-ranking": {
+        "passed": 4,
+        "total": 4,
+        "pass_rate": 100
+      },
+      "cross-tradition": {
+        "passed": 5,
+        "total": 5,
+        "pass_rate": 100
+      },
+      "entity-aware": {
+        "passed": 5,
+        "total": 9,
+        "pass_rate": 56
+      }
+    }
   }
 ]
