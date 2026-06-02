@@ -27,7 +27,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { query, queryOne, queryAll, getSiteDb, getDb } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
-import { getMeili, syncEntityMentionsBatch } from '../lib/search.js';
+import { getMeili, syncEntityMentionsBatch, INDEXES } from '../lib/search.js';
 import { content } from '../lib/content.js';
 import { getAuthority } from '../lib/authority.js';
 import { runMigrations } from '../lib/migrations.js';
@@ -47,6 +47,7 @@ const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;     // 5 minutes
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // 1 hour
 const WAL_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000; // 15 min — TRUNCATE keeps WAL near-zero
 const MEILI_RECONCILE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour — resolve orphaned meili_sync_tasks
+const ENTITY_MENTIONS_SYNC_INTERVAL_MS = 30_000;    // 30 seconds — push em_synced=0 rows to Meili
 const LOG_PROGRESS_EVERY = 10;    // Log every N documents
 // Pre-wipe reset: rows created before April Meili wipe still have synced=1 but aren't in Meili.
 // Reset them 5000/cycle inside this process (single-writer) to avoid write contention.
@@ -62,6 +63,7 @@ let lastCleanupTime = 0;
 let lastFullSyncTime = 0;
 let lastWalCheckpointTime = 0;
 let lastMeiliReconcileTime = 0;
+let lastEntityMentionsSyncTime = 0;
 // Pre-wipe reset state
 let preWipeResetDone = false;
 let preWipeResetTotal = 0;
@@ -781,11 +783,38 @@ async function resetPreWipeBatch() {
 /**
  * Run periodic tasks if their intervals have elapsed
  */
+// Create entity_mentions_idx if missing. Settings are applied by the API's
+// initializeIndexes() on next restart; we just need the index to exist so
+// addDocuments calls succeed. No-op if already present.
+async function ensureEntityMentionsIndex() {
+  const meili = getMeili();
+  if (!meili) return;
+  try {
+    await meili.getIndex(INDEXES.ENTITY_MENTIONS);
+  } catch {
+    try {
+      await meili.createIndex(INDEXES.ENTITY_MENTIONS, { primaryKey: 'id' });
+      logger.info({ index: INDEXES.ENTITY_MENTIONS }, 'entity_mentions_idx created');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'entity_mentions_idx creation failed');
+    }
+  }
+}
+
 async function runPeriodicTasksIfDue() {
   await resetPreWipeBatch();
   const now = Date.now();
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await runCleanupCycle();
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await runFullSyncCheck();
+  if (now - lastEntityMentionsSyncTime >= ENTITY_MENTIONS_SYNC_INTERVAL_MS) {
+    try {
+      const result = await syncEntityMentionsBatch();
+      if (result.indexed > 0) logger.info(result, 'Entity mentions synced to Meilisearch');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Entity mentions sync error');
+    }
+    lastEntityMentionsSyncTime = now;
+  }
   if (now - lastMeiliReconcileTime >= MEILI_RECONCILE_INTERVAL_MS) {
     await reconcileMeiliSyncTasks();
     lastMeiliReconcileTime = now;
@@ -816,17 +845,6 @@ async function runPeriodicTasksIfDue() {
     }
     lastWalCheckpointTime = now;
   }
-  // Sync resolved entity mentions to Meilisearch sidecar (entity_mentions_idx).
-  // Runs every periodic cycle — drains em_synced=0 rows in small batches.
-  try {
-    const emResult = await syncEntityMentionsBatch({ limit: 500 });
-    if (emResult.indexed > 0) {
-      logger.info({ indexed: emResult.indexed }, 'Entity mentions sidecar synced');
-    }
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Entity mention sync failed (non-fatal)');
-  }
-
   // Sync each site-only DB on every idle cycle. Site-only DBs are small
   // (bahaiteachings ~30 MB / 60K paragraphs); a full pass is cheap and we
   // can't rely on sync_jobs since those live only in the main DB.
@@ -943,6 +961,7 @@ async function workerLoop() {
   // Skip initializeIndexes() — it queues settingsUpdate tasks in Meilisearch
   // on every restart, and those tasks block the entire queue while Meili rebuilds
   // indexes on 2M+ documents. The API server handles index initialization.
+  await ensureEntityMentionsIndex();
 
   // Load sites.yaml so source_site → meili_index_prefix routing works during
   // sync. Skipping is non-fatal — without registry entries, supplemental
