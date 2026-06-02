@@ -246,6 +246,16 @@ async function resolveExtraction(extractionId, contentId, parsed, religion) {
   // Phase B: single transaction — all graph.db writes in one WAL commit
   await graphTransaction(graphStmts);
 
+  // Also mirror entity_mentions to sifter.db so sync worker can push to Meilisearch.
+  // graphTransaction wrote to graph.db; sifter.db entity_mentions is what the
+  // unified-worker reads for entity_mentions_idx sync (every 30s, 1000/batch).
+  const mentionStmts = graphStmts.filter(s => s.sql.includes('INSERT OR IGNORE INTO entity_mentions'));
+  if (mentionStmts.length > 0) {
+    try {
+      await transaction(mentionStmts);
+    } catch { /* non-fatal — sync worker will catch up via periodic migration */ }
+  }
+
   await syncMentionsForContent(contentId);
 
   // Return prose_summary so processOnce can batch the text_grounded write with graph_enriched

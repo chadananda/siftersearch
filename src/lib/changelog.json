@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-02T06:36:23.547Z",
+  "generated": "2026-06-02T06:54:02.140Z",
   "entries": [
+    {
+      "hash": "abc485b",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "Write entity_mentions to sifter.db not graph.db",
+      "scope": "resolver"
+    },
     {
       "hash": "c2c6fe5",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Parallelize deep research pipeline + add assessAndSupplement",
       "scope": null
-    },
-    {
-      "hash": "65b137d",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "Lower rerank threshold 7 to 5 for cross-tradition research coverage",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "abc485b",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "Write entity_mentions to sifter.db not graph.db",
+        "scope": "resolver"
+      },
       {
         "hash": "c2c6fe5",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Performance",
         "description": "Parallelize deep research pipeline + add assessAndSupplement",
-        "scope": null
-      },
-      {
-        "hash": "65b137d",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "Lower rerank threshold 7 to 5 for cross-tradition research coverage",
         "scope": null
       }
     ]
