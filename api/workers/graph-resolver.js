@@ -99,7 +99,8 @@ async function resolveOne(extraction) {
     const entityId = await resolveMention(mention, religion);
     if (!entityId) continue;
 
-    await graphQueryWithRetry(`
+    // Write to sifter.db (not graph.db) — sync worker reads entity_mentions from sifter.db
+    await queryWithRetry(`
       INSERT OR IGNORE INTO entity_mentions
         (entity_id, content_id, role, resolution_confidence, status, extractor_version)
       VALUES (?, ?, ?, ?, 'resolved', ?)

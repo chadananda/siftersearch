@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-02T06:30:33.427Z",
+  "generated": "2026-06-02T06:36:23.547Z",
   "entries": [
+    {
+      "hash": "c2c6fe5",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "Process 'arbitrate' extractions alongside 'accept'",
+      "scope": "resolver"
+    },
     {
       "hash": "98c20fb",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Lower rerank threshold 7 to 5 for cross-tradition research coverage",
       "scope": null
-    },
-    {
-      "hash": "ec8b6a2",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "KnowledgeBrief JSON truncation — increase max_tokens + trim prompt + salvage partial JSON",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "c2c6fe5",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "Process 'arbitrate' extractions alongside 'accept'",
+        "scope": "resolver"
+      },
       {
         "hash": "98c20fb",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "Lower rerank threshold 7 to 5 for cross-tradition research coverage",
-        "scope": null
-      },
-      {
-        "hash": "ec8b6a2",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "KnowledgeBrief JSON truncation — increase max_tokens + trim prompt + salvage partial JSON",
         "scope": null
       }
     ]
