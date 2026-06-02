@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-02T04:17:57.343Z",
+  "generated": "2026-06-02T06:26:41.806Z",
   "entries": [
+    {
+      "hash": "53ba291",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "Doc-tier-priority — add Saiedi/Momen, move Momen above scripture, pilgrim notes above catch-all",
+      "scope": null
+    },
     {
       "hash": "7381e5b",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Siftersearch-deep-research PM2 process to ecosystem config",
       "scope": null
-    },
-    {
-      "hash": "3754adc",
-      "date": "%as",
-      "type": "Refactor",
-      "description": "Knowledge-brief deep research pipeline — guided search replaces cold fan-out",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "53ba291",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "Doc-tier-priority — add Saiedi/Momen, move Momen above scripture, pilgrim notes above catch-all",
+        "scope": null
+      },
       {
         "hash": "7381e5b",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Other",
         "description": "Siftersearch-deep-research PM2 process to ecosystem config",
-        "scope": null
-      },
-      {
-        "hash": "3754adc",
-        "date": "%as",
-        "type": "Refactor",
-        "description": "Knowledge-brief deep research pipeline — guided search replaces cold fan-out",
         "scope": null
       }
     ]

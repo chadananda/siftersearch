@@ -18,10 +18,10 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 import { query, queryAll, queryOne, graphQuery, graphQueryAll, graphQueryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { runMigrations, runGraphMigrations } from '../lib/migrations/runner.js';
-import { createEmbedding } from '../lib/ai.js';
 import { findEntity, createEntity, addAlias, normalizeSurface } from '../lib/graph-db.js';
 
 const BATCH_SIZE = 50;
+const CONCURRENCY = 12;
 const IDLE_SLEEP_MS = 10_000;
 const EXTRACTOR_VERSION = 'extract-v1';
 
@@ -176,22 +176,11 @@ async function resolveOne(extraction) {
       grounded = before + (needsLeadingSpace ? ' ' : '') + name + (needsTrailingSpace ? ' ' : '') + after;
     }
 
-    // Only store if text actually changed
+    // Only store if text actually changed — embedding happens in ingester (grounded_synced=0 triggers it)
     if (grounded !== originalText) {
-      let embeddingBlob = null;
-      try {
-        const { embedding } = await createEmbedding(grounded, { caller: 'graph-resolver' });
-        if (embedding?.length) {
-          embeddingBlob = Buffer.from(new Float32Array(embedding).buffer);
-        }
-      } catch (err) {
-        logger.warn({ contentId: extraction.content_id, err: err.message }, 'Failed to embed grounded text');
-      }
       await queryWithRetry(`
-        UPDATE content SET
-          text_grounded = ?, embedding_grounded = ?, grounded_synced = 0
-        WHERE id = ?
-      `, [grounded, embeddingBlob, extraction.content_id]);
+        UPDATE content SET text_grounded = ?, grounded_synced = 0 WHERE id = ?
+      `, [grounded, extraction.content_id]);
     }
   }
 
@@ -236,13 +225,14 @@ async function workerLoop() {
       continue;
     }
 
-    for (const row of rows) {
-      if (isShuttingDown) break;
-      try {
-        await resolveOne(row);
-      } catch (err) {
-        logger.error({ extractionId: row.id, err: err.message }, 'Resolution error — skipping row');
-      }
+    // Process in parallel chunks to speed up entity resolution
+    for (let i = 0; i < rows.length && !isShuttingDown; i += CONCURRENCY) {
+      const chunk = rows.slice(i, i + CONCURRENCY);
+      await Promise.all(chunk.map(row =>
+        resolveOne(row).catch(err =>
+          logger.error({ extractionId: row.id, err: err.message }, 'Resolution error — skipping row')
+        )
+      ));
     }
     logger.info({ resolved: rows.length }, 'Resolution batch done');
   }
