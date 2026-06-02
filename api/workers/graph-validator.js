@@ -20,7 +20,7 @@ import { runMigrations, runGraphMigrations } from '../lib/migrations/runner.js';
 import { chatCompletion } from '../lib/ai.js';
 import { trackCost } from '../lib/entity-cost-tracker.js';
 
-const MODEL = process.env.VALIDATOR_MODEL || 'claude-haiku-4-5-20251001';
+const MODEL = process.env.VALIDATOR_MODEL || 'deepseek-v4-flash';
 const BATCH_SIZE = 20;
 const IDLE_SLEEP_MS = 15_000;
 
@@ -59,13 +59,13 @@ async function validateOne(extraction) {
       [
         { role: 'system', content: VALIDATION_SYSTEM },
         { role: 'user', content: userMsg },
-        { role: 'assistant', content: '{' },
       ],
       {
         model: MODEL,
-        provider: 'anthropic',
+        provider: 'deepseek',
         temperature: 0,
-        maxTokens: 1024,
+        maxTokens: 4096,
+        responseFormat: { type: 'json_object' },
       }
     );
   } catch (err) {

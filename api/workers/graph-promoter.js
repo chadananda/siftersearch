@@ -28,7 +28,7 @@ const MAX_ATTEMPTS = 3;
 
 // Models used for voting — configurable via .env-public
 const FAST_MODEL    = process.env.PROMOTER_FAST_MODEL    || 'deepseek-v4-flash';
-const DETAIL_MODEL  = process.env.PROMOTER_DETAIL_MODEL  || 'claude-haiku-4-5-20251001';
+const DETAIL_MODEL  = process.env.PROMOTER_DETAIL_MODEL  || 'deepseek-v4-flash';
 const ARBITER_MODEL = process.env.PROMOTER_ARBITER_MODEL || 'deepseek-v4-pro';
 
 const ADJUDICATION_SYSTEM = `You are an entity disambiguation expert for a multi-religion digital library.
@@ -95,7 +95,7 @@ ${candidateList}`;
   try {
     const r = await chatCompletion(
       [sysMsg, { role: 'user', content: userMsg }],
-      { model: DETAIL_MODEL, provider: 'anthropic', temperature: 0, maxTokens: 512 }
+      { model: DETAIL_MODEL, provider: 'deepseek', temperature: 0, maxTokens: 512, responseFormat: { type: 'json_object' } }
     );
     const usage = r.usage || {};
     await trackCost({ model: DETAIL_MODEL, taskType: 'adjudication', inputTokens: usage.promptTokens || 0, outputTokens: usage.completionTokens || 0, cachedTokens: 0, costUsd: ((usage.promptTokens||0) * 0.00025 + (usage.completionTokens||0) * 0.00125) / 1000 });
