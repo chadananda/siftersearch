@@ -339,7 +339,7 @@ async function callLLM(row) {
         model: activeModel,
         provider: activeProvider,
         temperature: 0,
-        maxTokens: 64000,
+        maxTokens: 4096,
         // Anthropic: system prompt instructs JSON; enable caching for the large extraction prompt.
         // deepseek-v4-pro: json_object required for reliable structured output.
         ...(activeProvider === 'anthropic'
@@ -349,6 +349,14 @@ async function callLLM(row) {
     );
   } catch (err) {
     logger.error({ contentId: row.id, model: activeModel, err: err.message }, 'Extraction API call failed');
+    // Count API failures same as parse failures — after MAX_FAILURES, mark unprocessable
+    // to prevent infinite retry loops on paragraphs that consistently timeout.
+    const fails = (_failCount.get(row.id) || 0) + 1;
+    _failCount.set(row.id, fails);
+    if (fails >= MAX_FAILURES) {
+      logger.warn({ contentId: row.id }, 'Marking paragraph unprocessable after repeated API failures');
+      return { row, activeModel, activeProvider, parsed: null, markFailed: true };
+    }
     return null;
   }
 
