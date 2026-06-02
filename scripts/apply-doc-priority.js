@@ -17,6 +17,7 @@ function matchesLayer(doc, match) {
   if (match.title && doc.title?.trim() !== match.title) return false;
   if (match.title_contains && !doc.title?.includes(match.title_contains)) return false;
   if (match.author_contains && !doc.author?.includes(match.author_contains)) return false;
+  if (match.collection_contains && !doc.collection?.includes(match.collection_contains)) return false;
   if (match.religion && doc.religion !== match.religion) return false;
   if (match.tier && doc.tier !== match.tier) return false;
   return true;
@@ -29,7 +30,7 @@ export async function applyDocPriority() {
     ...(config.other_layers ?? []),
   ].sort((a, b) => a.layer - b.layer); // layer order = specificity; specific rules before catch-alls
 
-  const docs = await queryAll(`SELECT id, title, author, religion, tier FROM docs WHERE deleted_at IS NULL`);
+  const docs = await queryAll(`SELECT id, title, author, religion, tier, collection FROM docs WHERE deleted_at IS NULL`);
 
   // Build priority map in JS, then write in a single transaction.
   // Avoids 45K individual writes that cause SQLITE_BUSY under concurrent workers.

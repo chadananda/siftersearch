@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-02T04:06:25.170Z",
+  "generated": "2026-06-02T04:17:57.343Z",
   "entries": [
+    {
+      "hash": "7381e5b",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "Use deepseek-v4 across all graph workers, drop old models",
+      "scope": null
+    },
     {
       "hash": "ef2bd47",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Refactor",
       "description": "Knowledge-brief deep research pipeline — guided search replaces cold fan-out",
       "scope": null
-    },
-    {
-      "hash": "2974b18",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "BACKUP_DIR=/tank/backups/siftersearch in worker env — keep backups off root disk",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "7381e5b",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "Use deepseek-v4 across all graph workers, drop old models",
+        "scope": null
+      },
       {
         "hash": "ef2bd47",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Refactor",
         "description": "Knowledge-brief deep research pipeline — guided search replaces cold fan-out",
-        "scope": null
-      },
-      {
-        "hash": "2974b18",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "BACKUP_DIR=/tank/backups/siftersearch in worker env — keep backups off root disk",
         "scope": null
       }
     ]
