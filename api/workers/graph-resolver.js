@@ -195,7 +195,7 @@ async function fetchBatch() {
     FROM paragraph_extractions pe
     JOIN extraction_validations ev ON ev.extraction_id = pe.id
     WHERE pe.resolved = 0
-      AND ev.recommended_action = 'accept'
+      AND ev.recommended_action IN ('accept', 'arbitrate')
     ORDER BY pe.id ASC
     LIMIT ?
   `, [BATCH_SIZE]);

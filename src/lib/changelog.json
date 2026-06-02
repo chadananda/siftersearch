@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-02T06:26:41.806Z",
+  "generated": "2026-06-02T06:30:33.427Z",
   "entries": [
+    {
+      "hash": "98c20fb",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "Remove blocking embedding call, parallelize batch 12x",
+      "scope": "resolver"
+    },
     {
       "hash": "53ba291",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "KnowledgeBrief JSON truncation — increase max_tokens + trim prompt + salvage partial JSON",
       "scope": null
-    },
-    {
-      "hash": "1f02bb9",
-      "date": "%as",
-      "type": "Other",
-      "description": "Siftersearch-deep-research PM2 process to ecosystem config",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "98c20fb",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "Remove blocking embedding call, parallelize batch 12x",
+        "scope": "resolver"
+      },
       {
         "hash": "53ba291",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "KnowledgeBrief JSON truncation — increase max_tokens + trim prompt + salvage partial JSON",
-        "scope": null
-      },
-      {
-        "hash": "1f02bb9",
-        "date": "%as",
-        "type": "Other",
-        "description": "Siftersearch-deep-research PM2 process to ecosystem config",
         "scope": null
       }
     ]
