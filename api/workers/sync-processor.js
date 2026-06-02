@@ -542,6 +542,7 @@ async function processJob(job) {
   let completedItems = job.completed_items || 0;
   let failedItems = job.failed_items || 0;
   const seenDocIds = new Set();
+  let batchCount = 0;
 
   try {
     const meili = await getMeili();
@@ -699,6 +700,18 @@ async function processJob(job) {
 
       // Cooldown — let Meilisearch finish indexing before next batch
       await delay(COOLDOWN_MS);
+
+      // Run entity mentions sync every 10 content batches so it isn't blocked
+      // by long-running content jobs (which may take hours to complete).
+      batchCount++;
+      if (batchCount % 10 === 0) {
+        try {
+          const emResult = await syncEntityMentionsBatch();
+          if (emResult?.indexed > 0) logger.info(emResult, 'Entity mentions synced mid-job');
+        } catch (err) {
+          logger.warn({ err: err.message }, 'Entity mentions sync error mid-job');
+        }
+      }
     }
 
     if (isShuttingDown) {
