@@ -392,10 +392,13 @@ async function processSyncJob(job) {
         }
 
         await query(`UPDATE sync_jobs SET completed_items = ?, failed_items = ? WHERE id = ?`, [completedItems, failedItems, job.id]);
+        // Run entity sync every 10 docs so slow DB writes don't block it for hours.
+        if (docsProcessed % 10 === 0 && Date.now() - lastEntitySyncTime >= ENTITY_SYNC_INTERVAL_MS) {
+          await runEntitySyncCycle();
+        }
         await delay(DOC_DELAY_MS);
       } // end for (doc of fresh)
-      // Run entity sync between doc batches so it doesn't wait for the full
-      // sync job to complete (which can take hours with 4M+ paragraphs).
+      // Also check after each batch in case the inner loop was skipped (continue path).
       if (Date.now() - lastEntitySyncTime >= ENTITY_SYNC_INTERVAL_MS) {
         await runEntitySyncCycle();
       }
@@ -611,6 +614,13 @@ async function runAliasSyncCycle() {
 // Sync site-only DB content to per-site Meili indexes. Site-only sites live
 // in their own SQLite at data/sites/<prefix>.db (separate from main sifter.db);
 // the main sync_jobs table doesn't cover them, so we pump them from the
+async function waitForMeiliTask(meili, enqueuedTask, timeoutMs = 3600000) {
+  const taskUid = typeof enqueuedTask === 'number' ? enqueuedTask : enqueuedTask.taskUid;
+  const task = await meili.tasks.waitForTask(taskUid, { timeout: timeoutMs });
+  if (task.status === 'failed') throw new Error(`Meilisearch task ${taskUid} failed: ${task.error?.message || 'unknown'}`);
+  return task;
+}
+
 // periodic-tasks loop. Idempotent: only synced=0 rows pushed; flag flips
 // after Meili confirms the task. Per-site failures logged but never kill
 // the loop.
