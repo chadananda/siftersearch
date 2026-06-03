@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-02T23:57:43.962Z",
+  "generated": "2026-06-03T00:02:59.227Z",
   "entries": [
+    {
+      "hash": "20b8cb9",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "Cap maxTokens at 4096 and track API timeout failures",
+      "scope": "graph-extractor"
+    },
     {
       "hash": "8e5fdb4",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Create ai_usage table (was missing from migrations — all logAIUsage calls silently failed)",
       "scope": null
-    },
-    {
-      "hash": "e3f2da1",
-      "date": "%as",
-      "type": "New",
-      "description": "Deep research LLM cost tracking per run and per step",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "20b8cb9",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "Cap maxTokens at 4096 and track API timeout failures",
+        "scope": "graph-extractor"
+      },
       {
         "hash": "8e5fdb4",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "Create ai_usage table (was missing from migrations — all logAIUsage calls silently failed)",
-        "scope": null
-      },
-      {
-        "hash": "e3f2da1",
-        "date": "%as",
-        "type": "New",
-        "description": "Deep research LLM cost tracking per run and per step",
         "scope": null
       }
     ]

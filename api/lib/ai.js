@@ -89,7 +89,7 @@ export async function chatCompletion(messages, options = {}) {
     case 'ollama':
       return chatOllama(messages, { model, temperature, maxTokens, stream });
     case 'deepseek':
-      return chatDeepSeek(messages, { model, temperature, maxTokens, stream, responseFormat: options.responseFormat });
+      return chatDeepSeek(messages, { model, temperature, maxTokens, stream, responseFormat: options.responseFormat, thinking: options.thinking ?? false });
     case 'local':
       return chatLocal(messages, { model, temperature, maxTokens, stream, responseFormat: options.responseFormat });
     default:
@@ -189,11 +189,15 @@ async function chatLocal(messages, { model, temperature, maxTokens, stream, resp
   };
 }
 
-async function chatDeepSeek(messages, { model, temperature, maxTokens, stream, responseFormat }) {
+async function chatDeepSeek(messages, { model, temperature, maxTokens, stream, responseFormat, thinking = false }) {
   const client = getDeepSeek();
   const params = { model, messages, temperature, max_tokens: maxTokens, stream };
   if (responseFormat) params.response_format = responseFormat;
-  // deepseek-v4-flash is non-thinking by default; deepseek-v4-pro uses thinking mode for adjudication
+  // Explicitly control thinking mode — never rely on model defaults.
+  // deepseek-v4-flash: thinking disabled (fast extraction/classification)
+  // deepseek-v4-pro: thinking enabled (adjudication, promotion)
+  // Per DeepSeek API docs: https://api-docs.deepseek.com/guides/thinking_mode
+  params.thinking = { type: thinking ? 'enabled' : 'disabled' };
   const response = await client.chat.completions.create(params);
   if (stream) return response;
   return {
