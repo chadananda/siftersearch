@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-03T00:11:15.830Z",
+  "generated": "2026-06-03T01:58:01.567Z",
   "entries": [
+    {
+      "hash": "3540b91",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "Pass DeepSeek thinking param via extra_body not top-level",
+      "scope": "ai"
+    },
     {
       "hash": "291de2a",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Refactor",
       "description": "Research quality footer — admin-only, client-hydrated (not SSR)",
       "scope": null
-    },
-    {
-      "hash": "5488ba7",
-      "date": "%as",
-      "type": "New",
-      "description": "Deep research quality assessment + generation metadata footer",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "3540b91",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "Pass DeepSeek thinking param via extra_body not top-level",
+        "scope": "ai"
+      },
       {
         "hash": "291de2a",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Refactor",
         "description": "Research quality footer — admin-only, client-hydrated (not SSR)",
-        "scope": null
-      },
-      {
-        "hash": "5488ba7",
-        "date": "%as",
-        "type": "New",
-        "description": "Deep research quality assessment + generation metadata footer",
         "scope": null
       }
     ]

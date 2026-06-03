@@ -495,7 +495,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
 
   // Compute hashes for document deduplication and rename detection (SHA-256 for consistency with ingester)
   const fileHash = hashContent(text);     // Full file including frontmatter
-  const bodyHash = hashContent(content);  // Body only - use for rename detection
+  const bodyHash = hashContent(bodyText); // Body only - use for rename detection
 
   // Check for cached embeddings in libsql (using file_path for lookup, fallback to body_hash for renames)
   const cachedEmbeddings = await getCachedEmbeddings(filePath, chunksWithHashes, bodyHash);
