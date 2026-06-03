@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-03T00:02:59.227Z",
+  "generated": "2026-06-03T00:11:15.830Z",
   "entries": [
+    {
+      "hash": "291de2a",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "Explicitly set DeepSeek thinking mode via API parameter",
+      "scope": "ai"
+    },
     {
       "hash": "20b8cb9",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Deep research quality assessment + generation metadata footer",
       "scope": null
-    },
-    {
-      "hash": "e90f847",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "Create ai_usage table (was missing from migrations — all logAIUsage calls silently failed)",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "291de2a",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "Explicitly set DeepSeek thinking mode via API parameter",
+        "scope": "ai"
+      },
       {
         "hash": "20b8cb9",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "New",
         "description": "Deep research quality assessment + generation metadata footer",
-        "scope": null
-      },
-      {
-        "hash": "e90f847",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "Create ai_usage table (was missing from migrations — all logAIUsage calls silently failed)",
         "scope": null
       }
     ]

@@ -197,7 +197,8 @@ async function chatDeepSeek(messages, { model, temperature, maxTokens, stream, r
   // deepseek-v4-flash: thinking disabled (fast extraction/classification)
   // deepseek-v4-pro: thinking enabled (adjudication, promotion)
   // Per DeepSeek API docs: https://api-docs.deepseek.com/guides/thinking_mode
-  params.thinking = { type: thinking ? 'enabled' : 'disabled' };
+  // extra_body passes non-standard params through the OpenAI SDK to the underlying API
+  params.extra_body = { thinking: { type: thinking ? 'enabled' : 'disabled' } };
   const response = await client.chat.completions.create(params);
   if (stream) return response;
   return {
