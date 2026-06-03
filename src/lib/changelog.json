@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-03T02:47:00.933Z",
+  "generated": "2026-06-03T02:57:43.262Z",
   "entries": [
+    {
+      "hash": "523378e",
+      "date": "%as",
+      "type": "New",
+      "description": "Single-writer foundation — route writes through worker-hosted write API",
+      "scope": "db"
+    },
     {
       "hash": "2e11dd7",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add startup trace to deep-research-worker for PM2 crash investigation",
       "scope": null
-    },
-    {
-      "hash": "d564de3",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "Add siftersearch-deep-research to all update-server swap paths",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "523378e",
+        "date": "%as",
+        "type": "New",
+        "description": "Single-writer foundation — route writes through worker-hosted write API",
+        "scope": "db"
+      },
       {
         "hash": "2e11dd7",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Other",
         "description": "Add startup trace to deep-research-worker for PM2 crash investigation",
-        "scope": null
-      },
-      {
-        "hash": "d564de3",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "Add siftersearch-deep-research to all update-server swap paths",
         "scope": null
       }
     ]

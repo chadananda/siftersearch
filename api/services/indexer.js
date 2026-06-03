@@ -574,7 +574,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
     paragraph_index: index,
     text,
     content_hash: chunksWithHashes[index].hash,
-    heading: extractHeading(content, text),
+    heading: extractHeading(bodyText, text),
     blocktype: 'paragraph',
     embedding: embeddings[index],
     ...(sidecars[index] || {})
@@ -623,7 +623,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
     language: finalMeta.language,
     year: finalMeta.year ? parseInt(finalMeta.year, 10) : null,
     authority,  // Doctrinal weight (1-10) for ranking - same as parent document
-    heading: extractHeading(content, text), // Try to find section heading
+    heading: extractHeading(bodyText, text), // Try to find section heading
     _vectors: {
       default: embeddings[index]
     },
