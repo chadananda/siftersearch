@@ -16,7 +16,9 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
+import { createServer } from 'node:http';
 import { query, queryOne, queryAll, getSiteDb, getDb } from '../lib/db.js';
+import { applyWriteBatch } from '../lib/write-server.js';
 import { logger } from '../lib/logger.js';
 import { getMeili, syncHypeBatch, syncEntityMentionsBatch } from '../lib/search.js';
 import { syncAliasesToMeili } from '../lib/graph-meili-sync.js';
@@ -964,9 +966,44 @@ function shutdown() {
   }, 60000);
 }
 
+// Single-writer HTTP host. Starts only when SIFTER_WRITER_PORT is set, so the
+// mechanism is dark until explicitly enabled. The worker owns the sole write
+// connection; other processes POST {statements:[{sql,args}]} to /write and we
+// apply them as one atomic transaction. better-sqlite3 is synchronous, so
+// these never interleave with the worker loop's own writes.
+function startWriteServer() {
+  const port = parseInt(process.env.SIFTER_WRITER_PORT || '', 10);
+  if (!port) return;
+  const server = createServer((req, res) => {
+    if (req.method !== 'POST' || req.url !== '/write') {
+      res.writeHead(404); res.end(); return;
+    }
+    let body = '';
+    req.on('data', c => { body += c; });
+    req.on('end', async () => {
+      try {
+        const { statements, name } = JSON.parse(body);
+        const db = await getDb();
+        const start = Date.now();
+        const results = applyWriteBatch(db, statements);
+        const ms = Date.now() - start;
+        if (ms > 1000) logger.warn({ ms, count: statements.length, name }, 'Slow write batch');
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ results }));
+      } catch (err) {
+        logger.error({ err: err.message }, 'Write batch failed');
+        res.writeHead(500, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+  });
+  server.listen(port, '127.0.0.1', () => logger.info({ port }, 'Single-writer HTTP server listening'));
+}
+
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
+startWriteServer();
 workerLoop().catch(err => {
   logger.error({ err: err.message }, 'Unified worker crashed');
   process.exit(1);

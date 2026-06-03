@@ -7,6 +7,33 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { logger } from './logger.js';
 import { runSiteMigrations } from './migrations/site.js';
+import { isWriteSql } from './write-server.js';
+
+// Single-writer routing. When SIFTER_WRITER_URL is set, content-db WRITES are
+// POSTed to the writer process (which owns the only write connection) instead
+// of opening a local write txn — this is what kills multi-process lock
+// contention. Reads always stay direct (WAL allows unlimited concurrent
+// readers). The writer process itself sets SIFTER_IS_WRITER=1 so it writes
+// directly and never calls itself. Unset = legacy direct-write (zero change).
+const WRITER_URL = process.env.SIFTER_WRITER_URL || null;
+const IS_WRITER = process.env.SIFTER_IS_WRITER === '1';
+const ROUTE_WRITES = !!WRITER_URL && !IS_WRITER;
+
+// POST a batch of {sql,args} to the writer; returns per-statement results.
+// Fails loud — never silently falls back to a direct write (that would
+// reintroduce the contention this whole mechanism exists to prevent).
+async function postWriteBatch(statements, name = '') {
+  const res = await fetch(`${WRITER_URL}/write`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ statements, name }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`writer ${res.status}: ${detail.slice(0, 200)}`);
+  }
+  return (await res.json()).results;
+}
 
 let contentDb = null;
 let userDb = null;
@@ -234,6 +261,11 @@ function runQuery(db, sql, params) {
 }
 
 export async function query(sql, params = [], name = '') {
+  // Route content writes through the single writer when configured.
+  if (ROUTE_WRITES && isWriteSql(sql)) {
+    const [r] = await postWriteBatch([{ sql, args: params }], name);
+    return { rows: [{ lastInsertRowid: r.lastInsertRowid, changes: r.changes }], lastInsertRowid: r.lastInsertRowid };
+  }
   const db = await getDb();
   const start = Date.now();
   const result = runQuery(db, sql, params);
@@ -252,6 +284,9 @@ export async function queryAll(sql, params = [], name = '') {
 }
 
 export async function transaction(statements, name = '') {
+  // Route the whole batch through the single writer when configured — it
+  // applies them as one atomic transaction on the sole write connection.
+  if (ROUTE_WRITES) return postWriteBatch(statements, name);
   const db = await getDb();
   const start = Date.now();
   const txn = db.transaction((stmts) => stmts.map(({ sql, args = [] }) => db.prepare(sql).run(...args)));

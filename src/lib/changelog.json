@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-03T01:58:01.567Z",
+  "generated": "2026-06-03T02:47:00.933Z",
   "entries": [
+    {
+      "hash": "2e11dd7",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "Hash bodyText not imported content namespace object",
+      "scope": "indexer"
+    },
     {
       "hash": "3540b91",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add siftersearch-deep-research to all update-server swap paths",
       "scope": null
-    },
-    {
-      "hash": "bccc92a",
-      "date": "%as",
-      "type": "Refactor",
-      "description": "Research quality footer — admin-only, client-hydrated (not SSR)",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "2e11dd7",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "Hash bodyText not imported content namespace object",
+        "scope": "indexer"
+      },
       {
         "hash": "3540b91",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "Add siftersearch-deep-research to all update-server swap paths",
-        "scope": null
-      },
-      {
-        "hash": "bccc92a",
-        "date": "%as",
-        "type": "Refactor",
-        "description": "Research quality footer — admin-only, client-hydrated (not SSR)",
         "scope": null
       }
     ]
