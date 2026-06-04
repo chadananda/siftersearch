@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-04T01:38:24.669Z",
+  "generated": "2026-06-04T01:48:16.187Z",
   "entries": [
+    {
+      "hash": "7d36178",
+      "date": "%as",
+      "type": "New",
+      "description": "Enable write API host on siftersearch-worker",
+      "scope": "single-writer"
+    },
     {
       "hash": "2d251f8",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Use Haiku for rerank scoring, cut token budgets — ~60% cost reduction",
       "scope": null
-    },
-    {
-      "hash": "9a8691e",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "IsMain check for PM2 ESM fork — detect pm_exec_path or argv endsWith",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "7d36178",
+        "date": "%as",
+        "type": "New",
+        "description": "Enable write API host on siftersearch-worker",
+        "scope": "single-writer"
+      },
       {
         "hash": "2d251f8",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Performance",
         "description": "Use Haiku for rerank scoring, cut token budgets — ~60% cost reduction",
-        "scope": null
-      },
-      {
-        "hash": "9a8691e",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "IsMain check for PM2 ESM fork — detect pm_exec_path or argv endsWith",
         "scope": null
       }
     ]

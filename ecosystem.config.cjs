@@ -102,8 +102,9 @@ module.exports = {
         SQLITE_BUSY_TIMEOUT_MS: '120000',
         // Single-writer: this process owns the sole write connection and hosts the
         // write API on this port. SIFTER_IS_WRITER=1 keeps its own writes direct.
-        // Other writers set SIFTER_WRITER_URL=http://127.0.0.1:7841 to route writes here.
-        SIFTER_WRITER_PORT: '7841',
+        // Other writers set SIFTER_WRITER_URL=http://127.0.0.1:7849 to route writes here.
+        // 7849 chosen because 7839-7842 are taken (api, lnker-server, etc.).
+        SIFTER_WRITER_PORT: '7849',
         SIFTER_IS_WRITER: '1'
       },
       // 30s for HyPE sidecar batches (which include OpenAI embedding calls

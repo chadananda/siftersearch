@@ -997,6 +997,11 @@ function startWriteServer() {
       }
     });
   });
+  // A failed bind must never crash the worker — the write endpoint is auxiliary
+  // to the critical sync/job loop. Log loudly and continue writing directly.
+  server.on('error', (err) => {
+    logger.error({ err: err.message, port }, 'Single-writer HTTP server failed to bind — continuing without write endpoint');
+  });
   server.listen(port, '127.0.0.1', () => logger.info({ port }, 'Single-writer HTTP server listening'));
 }
 
