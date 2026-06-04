@@ -291,6 +291,9 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         SQLITE_BUSY_TIMEOUT_MS: '30000',
+        // Route sifter.db writes through the single-writer worker (port 7849)
+        // to eliminate cross-process lock contention.
+        SIFTER_WRITER_URL: 'http://127.0.0.1:7849',
         // Model tier thresholds + model names configured in .env-public
         // (EXTRACTION_MODEL_HIGH/MID/LOW, EXTRACTION_TIER_HIGH/MID)
       },
@@ -310,7 +313,7 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
-      env: { NODE_ENV: 'production', SQLITE_BUSY_TIMEOUT_MS: '30000' },
+      env: { NODE_ENV: 'production', SQLITE_BUSY_TIMEOUT_MS: '30000', SIFTER_WRITER_URL: 'http://127.0.0.1:7849' },
       exp_backoff_restart_delay: 10000,
       max_restarts: 999999,
       min_uptime: '30s',
@@ -327,7 +330,7 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '2G',
-      env: { NODE_ENV: 'production', SQLITE_BUSY_TIMEOUT_MS: '30000' },
+      env: { NODE_ENV: 'production', SQLITE_BUSY_TIMEOUT_MS: '30000', SIFTER_WRITER_URL: 'http://127.0.0.1:7849' },
       exp_backoff_restart_delay: 5000,
       max_restarts: 999999,
       min_uptime: '30s',
@@ -344,7 +347,7 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
-      env: { NODE_ENV: 'production', SQLITE_BUSY_TIMEOUT_MS: '30000' },
+      env: { NODE_ENV: 'production', SQLITE_BUSY_TIMEOUT_MS: '30000', SIFTER_WRITER_URL: 'http://127.0.0.1:7849' },
       exp_backoff_restart_delay: 10000,
       max_restarts: 999999,
       min_uptime: '30s',

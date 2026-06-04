@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-04T01:48:16.187Z",
+  "generated": "2026-06-04T01:56:31.736Z",
   "entries": [
+    {
+      "hash": "fc271ae",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "Move single-writer port 7841 to 7849 + crash-proof the bind",
+      "scope": "worker"
+    },
     {
       "hash": "7d36178",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Raise knowledgeBrief max_tokens 6000→10000 — 6K too small, causes JSON truncation",
       "scope": null
-    },
-    {
-      "hash": "8b8f783",
-      "date": "%as",
-      "type": "Performance",
-      "description": "Use Haiku for rerank scoring, cut token budgets — ~60% cost reduction",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "fc271ae",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "Move single-writer port 7841 to 7849 + crash-proof the bind",
+        "scope": "worker"
+      },
       {
         "hash": "7d36178",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "Raise knowledgeBrief max_tokens 6000→10000 — 6K too small, causes JSON truncation",
-        "scope": null
-      },
-      {
-        "hash": "8b8f783",
-        "date": "%as",
-        "type": "Performance",
-        "description": "Use Haiku for rerank scoring, cut token budgets — ~60% cost reduction",
         "scope": null
       }
     ]
