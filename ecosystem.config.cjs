@@ -196,6 +196,9 @@ module.exports = {
         // ~10s under WAL pressure. Default 5s causes "database is locked" errors
         // during orphan cleanup, blocking deletions and logging noise.
         SQLITE_BUSY_TIMEOUT_MS: '30000',
+        // Route sifter.db writes through the single-writer worker (port 7849) to
+        // eliminate lock contention with content-sync. Reads stay direct (WAL).
+        SIFTER_WRITER_URL: 'http://127.0.0.1:7849',
       },
       exp_backoff_restart_delay: 5000,
       max_restarts: 999999,
@@ -373,7 +376,10 @@ module.exports = {
       watch: false,
       max_memory_restart: '2G',
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        // Route sifter.db writes (Sonnet enrichment write-back via sonnet-enrichment.js
+        // query()/transaction()) through the single-writer worker on port 7849.
+        SIFTER_WRITER_URL: 'http://127.0.0.1:7849'
       },
       exp_backoff_restart_delay: 30000,  // 30s, 60s, 120s — Anthropic 429s benefit from longer backoff
       max_restarts: 999999,
