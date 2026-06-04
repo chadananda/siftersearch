@@ -99,7 +99,12 @@ module.exports = {
         // 120s busy_timeout: with 7 concurrent writers (watcher, embedding, graph extractor,
         // graph resolver, graph validator, graph promoter, sync), write lock contention can
         // exceed 30s. 30s was causing repeated "database is locked" failures mid-sync.
-        SQLITE_BUSY_TIMEOUT_MS: '120000'
+        SQLITE_BUSY_TIMEOUT_MS: '120000',
+        // Single-writer: this process owns the sole write connection and hosts the
+        // write API on this port. SIFTER_IS_WRITER=1 keeps its own writes direct.
+        // Other writers set SIFTER_WRITER_URL=http://127.0.0.1:7841 to route writes here.
+        SIFTER_WRITER_PORT: '7841',
+        SIFTER_IS_WRITER: '1'
       },
       // 30s for HyPE sidecar batches (which include OpenAI embedding calls
       // ~10-20s wall) to complete before SIGKILL. Default 1.6s would cut

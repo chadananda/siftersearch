@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-03T02:57:43.262Z",
+  "generated": "2026-06-04T01:38:24.669Z",
   "entries": [
+    {
+      "hash": "2d251f8",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "ExtractHeading(bodyText) not imported content object — 2nd occurrence",
+      "scope": "indexer"
+    },
     {
       "hash": "523378e",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "IsMain check for PM2 ESM fork — detect pm_exec_path or argv endsWith",
       "scope": null
-    },
-    {
-      "hash": "0df9827",
-      "date": "%as",
-      "type": "Other",
-      "description": "Add startup trace to deep-research-worker for PM2 crash investigation",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "2d251f8",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "ExtractHeading(bodyText) not imported content object — 2nd occurrence",
+        "scope": "indexer"
+      },
       {
         "hash": "523378e",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "IsMain check for PM2 ESM fork — detect pm_exec_path or argv endsWith",
-        "scope": null
-      },
-      {
-        "hash": "0df9827",
-        "date": "%as",
-        "type": "Other",
-        "description": "Add startup trace to deep-research-worker for PM2 crash investigation",
         "scope": null
       }
     ]
