@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-05T13:34:26.126Z",
+  "generated": "2026-06-05T13:39:43.813Z",
   "entries": [
+    {
+      "hash": "380a064",
+      "date": "%as",
+      "type": "Refactor",
+      "description": "Generate pipeline snapshot out-of-process, API reads file",
+      "scope": "status"
+    },
     {
       "hash": "de962d9",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Strip Hugo block attrs {language=\"en\"} and mid-text footnote defs from passage text",
       "scope": null
-    },
-    {
-      "hash": "9875408",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "Remove quote doubling, share menus click-outside+opacity, Reddit per-tradition, print CSS, related dialogs sidebar",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "380a064",
+        "date": "%as",
+        "type": "Refactor",
+        "description": "Generate pipeline snapshot out-of-process, API reads file",
+        "scope": "status"
+      },
       {
         "hash": "de962d9",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "Strip Hugo block attrs {language=\"en\"} and mid-text footnote defs from passage text",
-        "scope": null
-      },
-      {
-        "hash": "9875408",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "Remove quote doubling, share menus click-outside+opacity, Reddit per-tradition, print CSS, related dialogs sidebar",
         "scope": null
       }
     ]

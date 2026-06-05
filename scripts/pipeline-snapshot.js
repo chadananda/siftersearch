@@ -41,9 +41,12 @@ async function main() {
     fully_synced: b.mentions > 0 && b.synced === b.mentions,
   }));
 
-  const [backlog, enriched] = await Promise.all([
+  // Both use partial/covering indexes (idx_content_unsynced_partial,
+  // idx_content_graph_unsync on =0) — fast. Counting graph_enriched=1 instead
+  // would full-scan 3.3M rows (~3 min), so we report what REMAINS to extract.
+  const [backlog, remaining] = await Promise.all([
     queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced=0 AND deleted_at IS NULL`).catch(() => ({ n: null })),
-    queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched=1 AND deleted_at IS NULL`).catch(() => ({ n: null })),
+    queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched=0 AND deleted_at IS NULL`).catch(() => ({ n: null })),
   ]);
 
   let meili = {};
@@ -73,7 +76,7 @@ async function main() {
       books_fully_synced: books.filter(b => b.fully_synced).length,
       books_pending: books.filter(b => !b.fully_synced).map(b => ({ title: b.title, mentions: b.mentions, synced: b.synced })),
       sync_backlog: backlog?.n ?? null,
-      graph_enriched_done: enriched?.n ?? null,
+      entity_extraction_remaining: remaining?.n ?? null,
     },
     meili,
   };
