@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-05T14:24:08.176Z",
+  "generated": "2026-06-05T18:31:46.803Z",
   "entries": [
+    {
+      "hash": "49b216c",
+      "date": "%as",
+      "type": "New",
+      "description": "Side-rebuild script for paragraphs index (build fresh + atomic swap)",
+      "scope": "meili"
+    },
     {
       "hash": "bccb4ef",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Sidebar share copy-link includes title+description+URL, not just URL",
       "scope": null
-    },
-    {
-      "hash": "a584e1c",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "DiscoveryFanOut searches ALL 8 traditions per angle, not just LLM-selected ones",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "49b216c",
+        "date": "%as",
+        "type": "New",
+        "description": "Side-rebuild script for paragraphs index (build fresh + atomic swap)",
+        "scope": "meili"
+      },
       {
         "hash": "bccb4ef",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "Sidebar share copy-link includes title+description+URL, not just URL",
-        "scope": null
-      },
-      {
-        "hash": "a584e1c",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "DiscoveryFanOut searches ALL 8 traditions per angle, not just LLM-selected ones",
         "scope": null
       }
     ]

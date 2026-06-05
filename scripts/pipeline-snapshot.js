@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { writeFileSync, mkdirSync } from 'fs';
+import { execSync } from 'child_process';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
@@ -67,6 +68,36 @@ async function main() {
     meili = { error: err.message };
   }
 
+  // Embedding coverage: embedding IS NULL uses idx_content_needs_embedding_v2 (fast).
+  // This is the authoritative "are embeddings generated?" number — DB is source of truth.
+  const embMissing = await queryOne(`SELECT COUNT(*) AS n FROM content WHERE embedding IS NULL AND deleted_at IS NULL`).catch(() => ({ n: null }));
+
+  // Entity-mention sidecar: em_synced=0 uses idx_em_unsynced partial index (fast).
+  // mentions_unsynced = backlog waiting to reach entity_mentions_idx.
+  const emUnsynced = await queryOne(`SELECT COUNT(*) AS n FROM entity_mentions WHERE em_synced=0`).catch(() => ({ n: null }));
+  let entityIdxDocs = null;
+  try {
+    const s = await fetch(`${config.search.host}/indexes/entity_mentions_idx/stats`, {
+      headers: { Authorization: `Bearer ${config.search.apiKey}` }, signal: AbortSignal.timeout(8000),
+    }).then(r => r.json());
+    entityIdxDocs = s.numberOfDocuments ?? null;
+  } catch { /* index may be absent */ }
+
+  // Live PM2 worker states — the authoritative "what's running" map. Cheap.
+  let workers = {};
+  try {
+    const list = JSON.parse(execSync('pm2 jlist', { encoding: 'utf8', timeout: 8000 }));
+    for (const p of list) {
+      if (!p.name?.startsWith('siftersearch-')) continue;
+      workers[p.name.replace('siftersearch-', '')] = {
+        status: p.pm2_env?.status ?? null,
+        restarts: p.pm2_env?.restart_time ?? null,
+      };
+    }
+  } catch (err) {
+    workers = { error: err.message };
+  }
+
   const snapshot = {
     generated_at: new Date().toISOString(),
     computed_in_ms: Date.now() - t0,
@@ -75,10 +106,20 @@ async function main() {
       books_total: books.length,
       books_fully_synced: books.filter(b => b.fully_synced).length,
       books_pending: books.filter(b => !b.fully_synced).map(b => ({ title: b.title, mentions: b.mentions, synced: b.synced })),
-      sync_backlog: backlog?.n ?? null,
-      entity_extraction_remaining: remaining?.n ?? null,
     },
+    embeddings: {
+      db_missing: embMissing?.n ?? null,            // paragraphs with no embedding in the DB (≈0 = generation done)
+      meili_embedded: meili.embedded_docs ?? null,  // paragraphs with vectors in Meili
+      meili_docs: meili.paragraphs_docs ?? null,    // paragraphs in Meili (any)
+    },
+    entity_pipeline: {
+      extraction_remaining: remaining?.n ?? null,   // content graph_enriched=0 (left to extract)
+      mentions_unsynced: emUnsynced?.n ?? null,      // entity_mentions em_synced=0 (left to push to sidecar)
+      sidecar_idx_docs: entityIdxDocs,               // docs in entity_mentions_idx
+    },
+    content_sync_backlog: backlog?.n ?? null,        // content synced=0 (left to push to paragraphs index)
     meili,
+    workers,
   };
 
   const dataDir = join(ROOT, 'data');
