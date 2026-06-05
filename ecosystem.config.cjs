@@ -387,6 +387,24 @@ module.exports = {
       error_file: './logs/enrichment-api-error.log',
       out_file: './logs/enrichment-api-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
+      // One-shot snapshot generator: runs every 5 min via cron_restart, computes
+      // the pipeline/Meili status in isolation, writes data/pipeline-status.json,
+      // then exits. autorestart:false so PM2 only re-runs it on the cron tick —
+      // keeping the heavy synchronous queries out of the API and worker loops.
+      name: 'siftersearch-pipeline-snapshot',
+      script: 'scripts/pipeline-snapshot.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: false,
+      cron_restart: '*/5 * * * *',
+      watch: false,
+      env: { NODE_ENV: 'production' },
+      error_file: './logs/pipeline-snapshot-error.log',
+      out_file: './logs/pipeline-snapshot-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     }
   ]
 };

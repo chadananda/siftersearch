@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-05T13:25:41.439Z",
+  "generated": "2026-06-05T13:34:26.126Z",
   "entries": [
+    {
+      "hash": "de962d9",
+      "date": "%as",
+      "type": "New",
+      "description": "Add cached /server/pipeline status snapshot endpoint",
+      "scope": "admin"
+    },
     {
       "hash": "22f0277",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Remove quote doubling, share menus click-outside+opacity, Reddit per-tradition, print CSS, related dialogs sidebar",
       "scope": null
-    },
-    {
-      "hash": "87255d1",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "Search quality, Buddhist authority, Bahai suppression, inline verse markers",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "de962d9",
+        "date": "%as",
+        "type": "New",
+        "description": "Add cached /server/pipeline status snapshot endpoint",
+        "scope": "admin"
+      },
       {
         "hash": "22f0277",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "Remove quote doubling, share menus click-outside+opacity, Reddit per-tradition, print CSS, related dialogs sidebar",
-        "scope": null
-      },
-      {
-        "hash": "87255d1",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "Search quality, Buddhist authority, Bahai suppression, inline verse markers",
         "scope": null
       }
     ]
