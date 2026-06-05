@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-05T14:01:37.618Z",
+  "generated": "2026-06-05T14:24:08.176Z",
   "entries": [
+    {
+      "hash": "bccb4ef",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "Restore the embedding worker to PM2 (root cause of stalled embeddings)",
+      "scope": "embeddings"
+    },
     {
       "hash": "a8f1840",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "DiscoveryFanOut searches ALL 8 traditions per angle, not just LLM-selected ones",
       "scope": null
-    },
-    {
-      "hash": "48ffe7a",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "Diversity sweep in deep-research — ensure all 8 major traditions get candidates",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "bccb4ef",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "Restore the embedding worker to PM2 (root cause of stalled embeddings)",
+        "scope": "embeddings"
+      },
       {
         "hash": "a8f1840",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "DiscoveryFanOut searches ALL 8 traditions per angle, not just LLM-selected ones",
-        "scope": null
-      },
-      {
-        "hash": "48ffe7a",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "Diversity sweep in deep-research — ensure all 8 major traditions get candidates",
         "scope": null
       }
     ]
