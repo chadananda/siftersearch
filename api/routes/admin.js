@@ -48,6 +48,7 @@
 
 import { join } from 'path';
 import { query, queryOne, queryAll, userQuery, userQueryOne, userQueryAll } from '../lib/db.js';
+import { config } from '../lib/config.js';
 import { ApiError } from '../lib/errors.js';
 import { requireTier, requireInternal } from '../lib/auth.js';
 import { getStats as getSearchStats, getMeili } from '../lib/search.js';
@@ -62,6 +63,85 @@ import { createApiKey, listApiKeys, revokeApiKey, getAllApiKeys } from '../lib/a
 
 // Track background tasks
 const backgroundTasks = new Map();
+
+// ── Pipeline status snapshot ────────────────────────────────────────────────
+// One low-token call (GET /api/admin/server/pipeline) replaces the recurring
+// SSH+sqlite probes used to monitor entity-pipeline + Meili health. The heavy
+// queries (entity_mentions join, synced=0 scan) are cached with
+// stale-while-revalidate: the handler always returns instantly; a stale cache
+// triggers a background refresh. Read-only — safe on the API's read connection.
+const PIPELINE_TTL_MS = 120000;
+const pipelineCache = { data: null, computedAt: 0, computing: false };
+
+async function meiliTaskTotal(status) {
+  const r = await fetch(`${config.search.host}/tasks?statuses=${status}&limit=0`, {
+    headers: { Authorization: `Bearer ${config.search.apiKey}` },
+    signal: AbortSignal.timeout(8000),
+  });
+  const j = await r.json();
+  return j.total ?? null;
+}
+
+async function computePipelineSnapshot() {
+  const t0 = Date.now();
+  const rows = await queryAll(
+    `SELECT d.title, d.doc_priority AS priority, COUNT(em.id) AS mentions,
+            SUM(CASE WHEN em.em_synced=1 THEN 1 ELSE 0 END) AS synced
+     FROM entity_mentions em
+     JOIN content c ON c.id = CAST(em.content_id AS INTEGER)
+     JOIN docs d ON d.id = c.doc_id
+     WHERE d.doc_priority >= 600
+     GROUP BY d.id ORDER BY d.doc_priority DESC, synced DESC LIMIT 40`
+  ).catch(() => []);
+  const books = rows.map(b => ({
+    title: b.title, priority: b.priority, mentions: b.mentions, synced: b.synced,
+    fully_synced: b.mentions > 0 && b.synced === b.mentions,
+  }));
+  const [backlog, enriched] = await Promise.all([
+    queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced=0 AND deleted_at IS NULL`).catch(() => ({ n: null })),
+    queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched=1 AND deleted_at IS NULL`).catch(() => ({ n: null })),
+  ]);
+  let meili = {};
+  try {
+    const [enqueued, processing, failed, pstats] = await Promise.all([
+      meiliTaskTotal('enqueued'), meiliTaskTotal('processing'), meiliTaskTotal('failed'),
+      fetch(`${config.search.host}/indexes/paragraphs/stats`, {
+        headers: { Authorization: `Bearer ${config.search.apiKey}` }, signal: AbortSignal.timeout(8000),
+      }).then(r => r.json()).catch(() => ({})),
+    ]);
+    meili = {
+      enqueued, processing, failed,
+      paragraphs_docs: pstats.numberOfDocuments ?? null,
+      embedded_docs: pstats.numberOfEmbeddings ?? null,
+      indexing: pstats.isIndexing ?? null,
+    };
+  } catch (err) {
+    meili = { error: err.message };
+  }
+  return {
+    priority_books: books,
+    summary: {
+      books_total: books.length,
+      books_fully_synced: books.filter(b => b.fully_synced).length,
+      books_pending: books.filter(b => !b.fully_synced).map(b => ({ title: b.title, mentions: b.mentions, synced: b.synced })),
+      sync_backlog: backlog?.n ?? null,
+      graph_enriched_done: enriched?.n ?? null,
+    },
+    meili,
+    computed_in_ms: Date.now() - t0,
+  };
+}
+
+function refreshPipelineIfStale() {
+  if (pipelineCache.computing) return;
+  const age = Date.now() - pipelineCache.computedAt;
+  if (pipelineCache.data && age < PIPELINE_TTL_MS) return;
+  pipelineCache.computing = true;
+  computePipelineSnapshot()
+    .then(d => { pipelineCache.data = d; pipelineCache.computedAt = Date.now(); })
+    .catch(err => logger.warn({ err: err.message }, 'Pipeline snapshot compute failed'))
+    .finally(() => { pipelineCache.computing = false; });
+}
 
 export default async function adminRoutes(fastify) {
   // Note: Server management routes (/server/*) use requireInternal which accepts
@@ -99,6 +179,22 @@ export default async function adminRoutes(fastify) {
       analytics: {
         last30Days: analyticsStats
       }
+    };
+  });
+
+  // Low-token pipeline + Meili health snapshot. Cached (stale-while-revalidate)
+  // so repeated polling is instant. Returns {status:'computing'} until warm.
+  fastify.get('/server/pipeline', { preHandler: requireInternal }, async () => {
+    refreshPipelineIfStale();
+    if (!pipelineCache.data) {
+      return { status: 'computing', message: 'Snapshot warming up — retry in a few seconds.' };
+    }
+    const ageMs = Date.now() - pipelineCache.computedAt;
+    return {
+      ...pipelineCache.data,
+      computed_at: new Date(pipelineCache.computedAt).toISOString(),
+      cache_age_s: Math.round(ageMs / 1000),
+      stale: ageMs > PIPELINE_TTL_MS,
     };
   });
 

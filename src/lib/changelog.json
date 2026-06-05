@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-04T02:06:05.798Z",
+  "generated": "2026-06-05T13:25:41.439Z",
   "entries": [
+    {
+      "hash": "22f0277",
+      "date": "%as",
+      "type": "New",
+      "description": "Route 4 graph workers through worker write endpoint",
+      "scope": "single-writer"
+    },
     {
       "hash": "a571982",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Search quality, Buddhist authority, Bahai suppression, inline verse markers",
       "scope": null
-    },
-    {
-      "hash": "60ee1bc",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "Add TITLE_AUTHORITY patterns for Buddhist canonical texts",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "22f0277",
+        "date": "%as",
+        "type": "New",
+        "description": "Route 4 graph workers through worker write endpoint",
+        "scope": "single-writer"
+      },
       {
         "hash": "a571982",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "Search quality, Buddhist authority, Bahai suppression, inline verse markers",
-        "scope": null
-      },
-      {
-        "hash": "60ee1bc",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "Add TITLE_AUTHORITY patterns for Buddhist canonical texts",
         "scope": null
       }
     ]
