@@ -389,6 +389,32 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
+      // Embedding generator: polls content for embedding IS NULL, embeds via
+      // OpenAI (text-embedding-3-large @ 512 dims), stores to content.embedding
+      // + embedding_cache.db. Was orphaned out of the ecosystem during the
+      // single-writer refactor (nothing started it) — that halted generation.
+      // SIFTER_WRITER_URL routes its content writes through the single writer.
+      name: 'siftersearch-embedding',
+      script: 'scripts/run-embedding-worker.mjs',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '2G',
+      env: {
+        NODE_ENV: 'production',
+        SQLITE_BUSY_TIMEOUT_MS: '30000',
+        SIFTER_WRITER_URL: 'http://127.0.0.1:7849',
+      },
+      exp_backoff_restart_delay: 10000,
+      max_restarts: 999999,
+      min_uptime: '30s',
+      error_file: './logs/embedding-error.log',
+      out_file: './logs/embedding-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
       // One-shot snapshot generator: runs every 5 min via cron_restart, computes
       // the pipeline/Meili status in isolation, writes data/pipeline-status.json,
       // then exits. autorestart:false so PM2 only re-runs it on the cron tick —

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-05T13:39:43.813Z",
+  "generated": "2026-06-05T14:01:37.618Z",
   "entries": [
+    {
+      "hash": "a8f1840",
+      "date": "%as",
+      "type": "Performance",
+      "description": "Count graph_enriched=0 (indexed) not =1 (full scan)",
+      "scope": "status"
+    },
     {
       "hash": "380a064",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Diversity sweep in deep-research — ensure all 8 major traditions get candidates",
       "scope": null
-    },
-    {
-      "hash": "84933dc",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "Strip Hugo block attrs {language=\"en\"} and mid-text footnote defs from passage text",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "a8f1840",
+        "date": "%as",
+        "type": "Performance",
+        "description": "Count graph_enriched=0 (indexed) not =1 (full scan)",
+        "scope": "status"
+      },
       {
         "hash": "380a064",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "Diversity sweep in deep-research — ensure all 8 major traditions get candidates",
-        "scope": null
-      },
-      {
-        "hash": "84933dc",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "Strip Hugo block attrs {language=\"en\"} and mid-text footnote defs from passage text",
         "scope": null
       }
     ]
