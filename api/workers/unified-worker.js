@@ -433,6 +433,15 @@ async function processSyncJob(job) {
 // Cleanup cycles (from sync-processor.js)
 // ============================================================
 
+// Destructive DB↔Meili reconcile is OFF by default. It diffs the full docs table
+// against an unpaginated 10K-doc slice of Meili, so at corpus scale it mislabels docs
+// "stale" (→ slow per-doc deleteDocuments(filter)) and, on any count lag, "mismatched"
+// (→ markDocDirty → re-sync). While Meili's task queue is backed up its live state lags
+// the DB, so each pass generates more corrective work than Meili drains — a runaway
+// re-sync/deletion storm. Consistency comes from a clean bulk build instead. Re-enable
+// transiently with SYNC_RECONCILE=1 only when consistent AND the diffs are paginated.
+const RECONCILE_ENABLED = process.env.SYNC_RECONCILE === '1';
+
 async function runCleanupCycle() {
   logger.info('Starting cleanup cycle');
   try {
@@ -443,7 +452,7 @@ async function runCleanupCycle() {
     const dbDocs = await queryAll('SELECT id FROM docs WHERE deleted_at IS NULL');
     const dbIdSet = new Set(dbDocs.map(d => d.id));
     const staleIds = meiliDocs.results.filter(d => !dbIdSet.has(d.id)).map(d => d.id);
-    if (staleIds.length > 0) {
+    if (RECONCILE_ENABLED && staleIds.length > 0) {
       logger.info({ count: staleIds.length }, 'Found stale documents in Meilisearch');
       await meili.index('documents').deleteDocuments(staleIds);
       for (const id of staleIds) {
@@ -471,7 +480,7 @@ async function runCleanupCycle() {
           offset += 1000;
         }
         const orphanIds = meiliParaIds.filter(id => !dbContentIds.has(id));
-        if (orphanIds.length > 0) {
+        if (RECONCILE_ENABLED && orphanIds.length > 0) {
           await paragraphsIndex.deleteDocuments(orphanIds);
           totalOrphans += orphanIds.length;
           logger.info({ docId: doc.id, orphans: orphanIds.length }, 'Cleaned orphaned paragraphs from Meilisearch');
@@ -508,7 +517,7 @@ async function runFullSyncCheck() {
       const dbCount = await content.countByDocId(row.doc_id);
       try {
         const meiliResult = await meili.index('paragraphs').search('', { filter: `doc_id = ${row.doc_id}`, limit: 0 });
-        if (dbCount !== meiliResult.estimatedTotalHits) {
+        if (RECONCILE_ENABLED && dbCount !== meiliResult.estimatedTotalHits) {
           await content.markDocDirty(row.doc_id);
           logger.info({ docId: row.doc_id, dbCount, meiliCount: meiliResult.estimatedTotalHits }, 'Paragraph count mismatch, marking for re-sync');
         }

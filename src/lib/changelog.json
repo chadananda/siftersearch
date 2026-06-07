@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-07T15:32:33.461Z",
+  "generated": "2026-06-07T15:35:53.772Z",
   "entries": [
+    {
+      "hash": "672b497",
+      "date": "%as",
+      "type": "Fixed",
+      "description": "Disable self-amplifying reconcile storm (root cause of Meili never indexing)",
+      "scope": "sync"
+    },
     {
       "hash": "e2e71cc",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Deep research hero images via DALL-E 3 stored to R2",
       "scope": null
-    },
-    {
-      "hash": "2c5e340",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "Share UX — click-outside via bind:this, full quote reference, tradition subreddits, new-tab links",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "672b497",
+        "date": "%as",
+        "type": "Fixed",
+        "description": "Disable self-amplifying reconcile storm (root cause of Meili never indexing)",
+        "scope": "sync"
+      },
       {
         "hash": "e2e71cc",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "New",
         "description": "Deep research hero images via DALL-E 3 stored to R2",
-        "scope": null
-      },
-      {
-        "hash": "2c5e340",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "Share UX — click-outside via bind:this, full quote reference, tradition subreddits, new-tab links",
         "scope": null
       }
     ]
