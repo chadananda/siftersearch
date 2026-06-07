@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-05T18:31:46.803Z",
+  "generated": "2026-06-07T15:32:33.461Z",
   "entries": [
+    {
+      "hash": "e2e71cc",
+      "date": "%as",
+      "type": "New",
+      "description": "Enrich pipeline snapshot into single source of truth",
+      "scope": "status"
+    },
     {
       "hash": "49b216c",
       "date": "%as",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Share UX — click-outside via bind:this, full quote reference, tradition subreddits, new-tab links",
       "scope": null
-    },
-    {
-      "hash": "8815e2b",
-      "date": "%as",
-      "type": "Fixed",
-      "description": "Sidebar share copy-link includes title+description+URL, not just URL",
-      "scope": null
     }
   ],
   "grouped": {
     "%as": [
+      {
+        "hash": "e2e71cc",
+        "date": "%as",
+        "type": "New",
+        "description": "Enrich pipeline snapshot into single source of truth",
+        "scope": "status"
+      },
       {
         "hash": "49b216c",
         "date": "%as",
@@ -6995,13 +7002,6 @@
         "date": "%as",
         "type": "Fixed",
         "description": "Share UX — click-outside via bind:this, full quote reference, tradition subreddits, new-tab links",
-        "scope": null
-      },
-      {
-        "hash": "8815e2b",
-        "date": "%as",
-        "type": "Fixed",
-        "description": "Sidebar share copy-link includes title+description+URL, not just URL",
         "scope": null
       }
     ]

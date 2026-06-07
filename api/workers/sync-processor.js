@@ -48,6 +48,16 @@ const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // 1 hour
 const WAL_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000; // 15 min — TRUNCATE keeps WAL near-zero
 const MEILI_RECONCILE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour — resolve orphaned meili_sync_tasks
 const ENTITY_MENTIONS_SYNC_INTERVAL_MS = 30_000;    // 30 seconds — push em_synced=0 rows to Meili
+
+// Destructive DB↔Meili reconcile (mark-missing-dirty + delete-stale-by-filter) is OFF by
+// default. It compared the full docs table against only the FIRST 10,000 Meili docs
+// (getDocuments({limit:10000}), unpaginated), so at corpus scale (~21K docs) it mislabels
+// every doc past the 10K slice as "missing" → markDocDirty → re-sync, and others as
+// "stale" → slow per-doc deleteDocuments(filter). When Meili lags (big task queue) this
+// becomes a self-amplifying re-sync + deletion storm that grows faster than Meili drains.
+// Consistency is established by a clean bulk build instead. Re-enable transiently with
+// SYNC_RECONCILE=1 only when the index is known-consistent AND this code is paginated.
+const RECONCILE_ENABLED = process.env.SYNC_RECONCILE === '1';
 const LOG_PROGRESS_EVERY = 10;    // Log every N documents
 // Pre-wipe reset: rows created before April Meili wipe still have synced=1 but aren't in Meili.
 // Reset them 5000/cycle inside this process (single-writer) to avoid write contention.
@@ -324,7 +334,7 @@ async function runCleanupCycle() {
     const dbIdSet = new Set(dbDocs.map(d => d.id));
 
     const staleIds = meiliDocs.results.filter(d => !dbIdSet.has(d.id)).map(d => d.id);
-    if (staleIds.length > 0) {
+    if (RECONCILE_ENABLED && staleIds.length > 0) {
       logger.info({ count: staleIds.length }, 'Found stale documents in Meilisearch');
       await meili.index('documents').deleteDocuments(staleIds);
       for (const id of staleIds) {
@@ -356,7 +366,7 @@ async function runCleanupCycle() {
           offset += 1000;
         }
         const orphanIds = meiliParaIds.filter(id => !dbContentIds.has(id));
-        if (orphanIds.length > 0) {
+        if (RECONCILE_ENABLED && orphanIds.length > 0) {
           await paragraphsIndex.deleteDocuments(orphanIds);
           totalOrphans += orphanIds.length;
           logger.info({ docId: doc.id, orphans: orphanIds.length }, 'Cleaned orphaned paragraphs from Meilisearch');
@@ -403,6 +413,7 @@ async function runCleanupCycle() {
  * Run hourly full sync check — catches documents missed by regular sync
  */
 async function runFullSyncCheck() {
+  if (!RECONCILE_ENABLED) { logger.info('Full sync check disabled (SYNC_RECONCILE!=1) — skipping to avoid re-sync storm'); return; }
   logger.info('Starting full sync check');
   try {
     const meili = await getMeili();
