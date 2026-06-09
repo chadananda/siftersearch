@@ -28,13 +28,19 @@ async function meiliTaskTotal(status) {
 async function main() {
   const t0 = Date.now();
 
+  // deleted_at filters are REQUIRED: orphan entity_mentions linger on content
+  // whose doc was later soft-deleted as a duplicate (the forward sync in
+  // api/lib/search/entity.js skips deleted content, but never removes mentions
+  // already pushed before deletion). Without these filters the snapshot counts
+  // those orphans as a "pending" book (e.g. a deduped Dawn-Breakers showing
+  // 0/373) and inflates "fully synced" with deleted-content mentions.
   const rows = await queryAll(
     `SELECT d.title, d.doc_priority AS priority, COUNT(em.id) AS mentions,
             SUM(CASE WHEN em.em_synced=1 THEN 1 ELSE 0 END) AS synced
      FROM entity_mentions em
      JOIN content c ON c.id = CAST(em.content_id AS INTEGER)
      JOIN docs d ON d.id = c.doc_id
-     WHERE d.doc_priority >= 600
+     WHERE d.doc_priority >= 600 AND c.deleted_at IS NULL AND d.deleted_at IS NULL
      GROUP BY d.id ORDER BY d.doc_priority DESC, synced DESC LIMIT 40`
   ).catch(() => []);
   const books = rows.map(b => ({

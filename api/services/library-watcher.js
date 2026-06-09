@@ -198,7 +198,12 @@ async function queueDeleteEvent(filePath) {
     }
 
     if (!doc.body_hash) {
-      // No body_hash, can't detect moves - delete immediately
+      // No body_hash, can't detect moves. Still confirm the file is genuinely
+      // gone (not a spurious unlink) before removing.
+      if (await fileExists(filePath)) {
+        logger.warn({ filePath, docId: doc.id }, 'Delete skipped: file still exists on disk (spurious unlink)');
+        return;
+      }
       logger.info({ filePath, docId: doc.id }, 'Delete: no body_hash, removing immediately');
       await removeDocument(doc.id);
       watcherStats.filesRemoved++;
@@ -254,6 +259,13 @@ async function processPendingDelete(bodyHash) {
         newPath: movedDoc.file_path,
         documentId: movedDoc.id
       }, 'Delete cancelled: content found at new path (move detected)');
+      return;
+    }
+
+    // Guard against spurious unlink events (Dropbox re-sync can emit a delete
+    // for a file that still exists). Only remove if the file is CONFIRMED gone.
+    if (await fileExists(pending.filePath)) {
+      logger.warn({ filePath: pending.filePath, docId: pending.docId }, 'Delete cancelled: file still exists on disk (spurious unlink)');
       return;
     }
 
@@ -430,6 +442,14 @@ const SCAN_WORK_MS = parseInt(process.env.SCAN_WORK_MS ?? '500', 10);
 const SCAN_PAUSE_MS = parseInt(process.env.SCAN_PAUSE_MS ?? '150', 10);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// Deletion safety guards for the disk-vs-db scan (Step 3b). A scan that would
+// soft-delete more than max(ABS, FRACTION × live docs) is treated as a broken
+// enumeration (Dropbox mid-sync / flaky mount / IO error) and ABORTED rather
+// than executed. Without this, one failed enumeration deletes every doc it
+// missed — that gutted 128K paras of canonical scripture in 2026-05..06.
+const SCAN_DELETE_ABS_LIMIT = parseInt(process.env.SCAN_DELETE_ABS_LIMIT ?? '25', 10);
+const SCAN_DELETE_FRACTION = parseFloat(process.env.SCAN_DELETE_FRACTION ?? '0.01');
+
 /**
  * Hourly library scan using disk-vs-database comparison.
  *
@@ -465,7 +485,7 @@ async function scanLibraryForIngestion() {
     const diskByPath = new Map(diskFiles.map(f => [f.relativePath, f]));
 
     // Step 2: Load all active DB docs (file_path + file_hash + file_mtime)
-    const dbRows = await queryAll('SELECT id, file_path, file_hash, file_mtime FROM docs WHERE deleted_at IS NULL');
+    const dbRows = await queryAll('SELECT id, file_path, file_hash, file_mtime, source_site FROM docs WHERE deleted_at IS NULL');
     const dbByPath = new Map(dbRows.map(r => [r.file_path, r]));
 
     logger.info({
@@ -544,10 +564,45 @@ async function scanLibraryForIngestion() {
       }
     }
 
-    // Step 3b: Find DB docs whose files no longer exist on disk → soft-delete
+    // Step 3b: Find DB docs whose files no longer exist on disk → soft-delete.
+    //
+    // SAFETY: deletion here is triggered purely by absence from THIS scan's disk
+    // enumeration, so a partial/failed enumeration would mass-delete everything
+    // it missed. That is exactly what gutted 128K paragraphs of canonical
+    // scripture in 2026-05..06 (memory project_canonical_gutted_by_dedupe_20260609).
+    // Three guards:
+    //   1. source_site docs are owned by sites-ingester (auto-restores on file
+    //      delete) — the disk scan must never delete them.
+    //   2. Circuit breaker: an implausibly large candidate set means the scan is
+    //      broken, not that the library was emptied — abort all deletions.
+    //   3. Per-file re-check: only delete when the file is *confirmed* absent.
+    const deleteCandidates = [];
     for (const [filePath, dbDoc] of dbByPath) {
-      if (!diskByPath.has(filePath)) {
+      if (diskByPath.has(filePath)) continue;
+      if (dbDoc.source_site) continue;   // sites-ingester owns these
+      deleteCandidates.push([filePath, dbDoc]);
+    }
+
+    const deleteGuardLimit = Math.max(SCAN_DELETE_ABS_LIMIT, Math.floor(dbByPath.size * SCAN_DELETE_FRACTION));
+    if (deleteCandidates.length > deleteGuardLimit) {
+      errorCount++;
+      watcherStats.errors++;
+      logger.error({
+        candidates: deleteCandidates.length, guardLimit: deleteGuardLimit,
+        diskFiles: diskFiles.length, dbDocs: dbByPath.size,
+      }, 'Library scan: ABORTING deletions — candidate set exceeds guard limit (probable incomplete enumeration, NOT mass file removal)');
+    } else {
+      for (const [filePath, dbDoc] of deleteCandidates) {
         try {
+          // Confirm the file is genuinely gone before deleting. access() throws
+          // only when truly absent; if it succeeds, the enumeration merely
+          // missed the file — skip rather than delete live content.
+          let stillExists = false;
+          try { await access(join(basePath, filePath)); stillExists = true; } catch { stillExists = false; }
+          if (stillExists) {
+            logger.warn({ filePath, docId: dbDoc.id }, 'Library scan: doc missing from enumeration but file exists on disk — skipping delete');
+            continue;
+          }
           await removeDocument(dbDoc.id);
           deletedCount++;
           watcherStats.filesRemoved++;

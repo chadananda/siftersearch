@@ -1,7 +1,20 @@
 #!/usr/bin/env node
 /**
- * Deduplicate documents by title + collection
- * Keeps the most recently modified version
+ * Deduplicate documents by title + collection.
+ *
+ * SURVIVOR RULE: the canonical OceanLibrary original ALWAYS wins. Only among
+ * docs of equal canonical-status do we fall back to most-recently-updated.
+ *
+ * History: the old rule ("keep most-recently-updated", no source awareness)
+ * gutted 155 OceanLibrary canonicals / 128K paragraphs (2026-05..06) because
+ * later-imported duplicate copies had newer updated_at. See memory
+ * project_canonical_gutted_by_dedupe_20260609. NEVER prefer a non-canonical
+ * copy over an oceanlibrary.com original again.
+ *
+ * NOTE: this script writes directly (bypassing the single-writer worker) and
+ * does NOT remove deleted docs from Meilisearch or cascade entity_mentions
+ * cleanup — run the worker's reconcile/removal path after, or supersede this
+ * with a writer-routed dedup. Manual, --delete required to mutate.
  */
 
 import Database from 'better-sqlite3';
@@ -42,7 +55,8 @@ async function main() {
     console.log(`"${dup.title}" (${dup.count} copies)`);
     console.log(`   ${dup.religion} -> ${dup.collection}`);
 
-    const docs = db.prepare(`SELECT id, file_path, file_hash, paragraph_count, created_at, updated_at FROM docs WHERE id IN (${ids.join(',')}) ORDER BY updated_at DESC, paragraph_count DESC`).all();
+    // Canonical OceanLibrary original wins first; then most-recent, then most paragraphs.
+    const docs = db.prepare(`SELECT id, file_path, file_hash, paragraph_count, created_at, updated_at, source_site FROM docs WHERE id IN (${ids.join(',')}) ORDER BY (source_site = 'oceanlibrary.com') DESC, updated_at DESC, paragraph_count DESC`).all();
     const keepDoc = docs[0];
     console.log(`   KEEP: ${keepDoc.id} (${keepDoc.paragraph_count} paragraphs, updated: ${keepDoc.updated_at?.substring(0, 10)})`);
     console.log(`          ${keepDoc.file_path?.substring(0, 80)}`);
