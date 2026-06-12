@@ -17,7 +17,7 @@
 //   - removed from disk → soft-delete the import doc, AND auto-restore any of
 //     our docs whose duplicate_of pointed at it
 
-import { readFile, readdir, stat } from 'fs/promises';
+import { readFile, readdir, stat, access } from 'fs/promises';
 import { join, relative } from 'path';
 import yaml from 'yaml';
 
@@ -117,22 +117,37 @@ async function loadAdapter(adapterName) {
 
 // ─── Walk a site for .md files ──────────────────────────────────────────
 
-async function walkSite(siteRoot, results = []) {
+async function walkSite(siteRoot, results = [], state = { errored: false }) {
   let entries;
-  try { entries = await readdir(siteRoot, { withFileTypes: true }); } catch { return results; }
+  // A readdir failure (slow/timing-out site2rag tree, transient IO) must NOT be
+  // swallowed silently: a partial walk would make reconcileDeletes soft-delete
+  // every doc it "missed". Record the failure so the caller suppresses deletes.
+  try { entries = await readdir(siteRoot, { withFileTypes: true }); }
+  catch (err) {
+    state.errored = true;
+    logger.warn({ siteRoot, err: err.message }, 'Sites-ingester: walk readdir failed — deletions will be suppressed this run');
+    return results;
+  }
   for (const entry of entries) {
     const full = join(siteRoot, entry.name);
     if (entry.isDirectory()) {
       // Skip metadata folders inside the site root
       if (entry.name === '.site' || entry.name === '.bridge') continue;
       if (entry.name.startsWith('.')) continue;
-      await walkSite(full, results);
+      await walkSite(full, results, state);
     } else if (entry.isFile() && entry.name.endsWith('.md')) {
       results.push(full);
     }
   }
   return results;
 }
+
+// Deletion safety guards for reconcileDeletes. A run that would soft-delete more
+// than max(ABS, FRACTION × the site's docs) is treated as an incomplete walk and
+// ABORTED. Without this, one slow/partial site2rag walk guts the whole site —
+// this re-gutted ~30 restored canonical docs/day until fixed (2026-06-12).
+const SITE_DELETE_ABS_LIMIT = parseInt(process.env.SITE_DELETE_ABS_LIMIT ?? '25', 10);
+const SITE_DELETE_FRACTION = parseFloat(process.env.SITE_DELETE_FRACTION ?? '0.02');
 
 // ─── Cache lookup with sidecar harvest ──────────────────────────────────
 // Same logic as indexer.getCachedEmbeddings(globalLookup) but without the
@@ -606,10 +621,25 @@ async function reconcileDeletes(siteId, basePath, diskPaths) {
     `SELECT id, file_path FROM docs WHERE source_site = ? AND deleted_at IS NULL`,
     [siteId]
   );
-  let deleted = 0, restored = 0;
-  for (const row of inDb) {
+  const candidates = inDb.filter(row => !onDisk.has(join(basePath, row.file_path)));
+
+  // Circuit breaker: an implausibly large candidate set means the walk was
+  // partial (slow/timing-out site2rag tree), not that the site was emptied.
+  const guard = Math.max(SITE_DELETE_ABS_LIMIT, Math.floor(inDb.length * SITE_DELETE_FRACTION));
+  if (candidates.length > guard) {
+    logger.error({ siteId, candidates: candidates.length, guard, dbDocs: inDb.length, diskFiles: diskPaths.length },
+      'Sites-ingester: ABORTING deletes — candidate set exceeds guard (probable incomplete walk, NOT mass file removal)');
+    return { deleted: 0, restored: 0, aborted: candidates.length };
+  }
+
+  let deleted = 0, restored = 0, skipped = 0;
+  for (const row of candidates) {
     const abs = join(basePath, row.file_path);
-    if (onDisk.has(abs)) continue;
+    // Confirm the file is genuinely gone before deleting — a walk miss (transient
+    // IO) must not delete live content. access() throws only when truly absent.
+    let exists = false;
+    try { await access(abs); exists = true; } catch { exists = false; }
+    if (exists) { skipped++; logger.warn({ siteId, doc_id: row.id, file_path: row.file_path }, 'Sites-ingester: doc missing from walk but file exists — skipping delete'); continue; }
     // File gone — soft-delete + auto-restore any docs we'd marked superseded
     await query('UPDATE docs SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [row.id]);
     await query('UPDATE content SET deleted_at = CURRENT_TIMESTAMP, synced = 0 WHERE doc_id = ?', [row.id]);
@@ -617,7 +647,7 @@ async function reconcileDeletes(siteId, basePath, diskPaths) {
     restored += await clearSupersedeesOf(row.id);
     logger.info({ doc_id: row.id, file_path: row.file_path }, 'Sites-ingester: file gone, soft-deleted import');
   }
-  return { deleted, restored };
+  return { deleted, restored, skipped };
 }
 
 // ─── Public API: run a single site through the full pipeline ────────────
@@ -655,7 +685,8 @@ export async function ingestSite(siteId, opts = {}) {
     logger.warn({ err: err.message }, 'Sites-ingester: pre-warm failed (non-fatal)');
   }
 
-  let files = await walkSite(siteRoot);
+  const walkState = { errored: false };
+  let files = await walkSite(siteRoot, [], walkState);
   // Optional subset for validation runs.
   if (typeof opts.limit === 'number' && opts.limit > 0 && files.length > opts.limit) {
     files = files.slice(0, opts.limit);
@@ -698,7 +729,9 @@ export async function ingestSite(siteId, opts = {}) {
   // 525 books we didn't process this run.
   const reconcile = (typeof opts.limit === 'number' && opts.limit > 0)
     ? { deleted: 0, restored: 0, skipped: 'subset run' }
-    : await reconcileDeletes(siteId, basePath, files);
+    : walkState.errored
+      ? { deleted: 0, restored: 0, skipped: 'walk incomplete (readdir error) — deletions suppressed' }
+      : await reconcileDeletes(siteId, basePath, files);
 
   logger.info({ siteId, stats, reconcile }, 'Sites-ingester: complete');
   return { siteId, stats, reconcile, errors };
