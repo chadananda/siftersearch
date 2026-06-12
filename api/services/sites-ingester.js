@@ -148,6 +148,8 @@ async function walkSite(siteRoot, results = [], state = { errored: false }) {
 // this re-gutted ~30 restored canonical docs/day until fixed (2026-06-12).
 const SITE_DELETE_ABS_LIMIT = parseInt(process.env.SITE_DELETE_ABS_LIMIT ?? '25', 10);
 const SITE_DELETE_FRACTION = parseFloat(process.env.SITE_DELETE_FRACTION ?? '0.02');
+// Master gate for file-absence soft-deletes — OFF by default (see reconcileDeletes).
+const DELETE_ON_ABSENCE = process.env.SITES_DELETE_ON_ABSENCE === '1';
 
 // ─── Cache lookup with sidecar harvest ──────────────────────────────────
 // Same logic as indexer.getCachedEmbeddings(globalLookup) but without the
@@ -622,6 +624,17 @@ async function reconcileDeletes(siteId, basePath, diskPaths) {
     [siteId]
   );
   const candidates = inDb.filter(row => !onDisk.has(join(basePath, row.file_path)));
+
+  // Default OFF: the OceanLibrary/-sites source-file mirror on tower-nas is not
+  // reliably complete (Dropbox/site2rag sync gaps, fetch timeouts), so "file
+  // absent from this walk" is NOT trustworthy evidence the doc should die. This
+  // gutted ~260K paras of canonical scripture (project_canonical_gutted_by_dedupe_20260609).
+  // Enable SITES_DELETE_ON_ABSENCE=1 only once the mirror is known-complete.
+  if (!DELETE_ON_ABSENCE) {
+    if (candidates.length) logger.warn({ siteId, would_delete: candidates.length, dbDocs: inDb.length, diskFiles: diskPaths.length },
+      'Sites-ingester: delete-on-absence DISABLED (SITES_DELETE_ON_ABSENCE!=1) — skipping; candidates left intact');
+    return { deleted: 0, restored: 0, skipped: candidates.length, gated: true };
+  }
 
   // Circuit breaker: an implausibly large candidate set means the walk was
   // partial (slow/timing-out site2rag tree), not that the site was emptied.
