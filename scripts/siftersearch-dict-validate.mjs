@@ -29,13 +29,24 @@ const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i >= 0 
 const DOC = parseInt(arg('doc', '21310'), 10);   // OceanLibrary "God Passes By" canonical
 const LIMIT = parseInt(arg('limit', '120'), 10);
 const MODEL = arg('model', 'deepseek-v4-flash');
+// Everything Shoghi Effendi names in GPB is, by definition, core — he names
+// only what matters to the century's narrative. Entities established while
+// processing a canon doc are flagged core (never deprioritized when messier,
+// more detailed books like Mázandarání's Táríkh-i-Ẓuhúru'l-Ḥaqq arrive later).
+const CANON_DOCS = new Set([21310]);   // 21310 = God Passes By
+const CORE = CANON_DOCS.has(DOC);
 
-// ── normalize: NFD strip-diacritics + lowercase + drop apostrophes/hamza/ayn +
-//    hyphens->space. Folds transliteration spelling variants of the SAME string
-//    (Ṭáhirih==Tahirih) WITHOUT collapsing namesakes (the full token sequence,
-//    incl. the nisba, stays distinct). Keeps the nisba — never strips place. ──
-const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '')
-  .toLowerCase().replace(/[’'ʼʻ`´ʾʿ‘]/g, '').replace(/[-–—]/g, ' ')
+// ── normalize for matching/dedup: NFD strip-diacritics + lowercase + drop
+//    apostrophes/hamza/ayn + hyphens->space, AND fold the genitive linkers that
+//    vary between Persian izáfat ("-i-") and Arabic construct/article ("-u'l-",
+//    " al-") styles, so "Kitáb-i-Aqdas", "Kitábu'l-Aqdas" and "Kitáb al-Aqdas"
+//    all key to "kitab aqdas". Folds transliteration spelling variants of the
+//    SAME string (Ṭáhirih==Tahirih) WITHOUT collapsing namesakes — the content
+//    tokens (incl. a person's nisba) survive, only the linker is removed. ──
+const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  .replace(/[-\s](iy?|yi|ul|u['’]?l|i['’]?l|al)[-\s]/g, ' ')   // genitive linker as its own token
+  .replace(/u['’]l[-\s]/g, ' ').replace(/['’]l[-\s]/g, ' ')    // attached Arabic article: ...u'l-
+  .replace(/[’'ʼʻ`´ʾʿ‘]/g, '').replace(/[-–—]/g, ' ')
   .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
 
 // Honorifics + connectors carry no disambiguating power on their own; exclude
@@ -89,8 +100,12 @@ RESOLUTION RULES (critical):
 - Never merge two people merely for sharing a name — there are no surnames. When genuinely unsure, prefer "new" with the fullest canonical name you can infer.
 
 EXTRACTION RULES:
-- Types: person | place | work (books/tablets/letters) | event | concept (significant doctrinal/technical terms only — Covenant, Manifestation, Dispensation, Letters of the Living; NOT generic phrases like "the Cause", "the friends", "the East").
+- Types: person | place | work (books/tablets/letters) | event | concept (significant doctrinal/technical terms only — Covenant, Manifestation, Dispensation, Letters of the Living; NOT generic phrases like "the Cause", "the friends", "the East"). An abstraction (a Revelation, Cause, Dispensation, Faith, Order) is ALWAYS a concept/event, NEVER a person — even when "His"/"its" points to a person.
 - "canonical" = the fullest standard identifying form: honorific + given name + nisba, OR the title the person is known by. Resolve epithets/pronouns to the named person; NEVER output a bare pronoun.
+- CANONICAL NAMES MUST BE CLEAN — name/title only, NO parenthetical glosses (canonical "Qayyúmu'l-Asmá'", NOT "Qayyúmu'l-Asmá' (Commentary on the Súrih of Joseph)"). Any clarifying gloss goes in "descriptor" only; a parenthetical inside the canonical fragments the entity into duplicates.
+- WORK/TABLET TITLES appear in BOTH Persian izáfat ("Kitáb-i-Aqdas", "Lawḥ-i-...") and Arabic construct/article ("Kitábu'l-Aqdas", "Kitáb al-Aqdas", "Súratu'l-...") styles — these are the SAME work; resolve to ONE entity and never create a second for the other style.
+- REPEATING NAMES ARE EXPECTED AND MEANINGFUL — do NOT avoid or drop a shared given name (Fáṭimih, Muḥammad, Ḥasan, Ḥusayn, ‘Alí). Many distinct important people share one; resolve by CONTEXT to the correct individual and keep the name as THAT person's alias. Ṭáhirih's given name is Fáṭimih (Fáṭimih Baraghání) and is theologically significant; Fáṭimih the daughter of the Prophet is a DIFFERENT person — context decides which, and BOTH retain the name "Fáṭimih". A prophet/Imám named only by a bare given name takes a clear full canonical ("the Prophet Muḥammad"), but the bare name remains an alias resolved by context — never collapse all "Muḥammad"s into one entity, and never discard the name.
+- MULTILINGUAL: a name may appear in Latin transliteration ("Mullá Ḥusayn-i-Bushrú'í") OR in Arabic/Persian script ("ملا حسين البشروئي" / "ملا حسین بشروئی"). All denote the SAME entity. Resolve a script mention to the existing transliterated entity, keep the standard transliteration as the canonical, and record the Arabic/Persian-script form as an alias. Arabic and Persian renderings of one name are the same entity.
 - For a NEW entity, also give a terse one-line "descriptor" that distinguishes this person from same-named others: honorific/title + nisba (village/region) + role + era. Required when match="new"; else null.
 - Preserve exact diacritics (á í ú ḥ ṭ ṣ ‘ ’ …); never ASCII apostrophes.
 
@@ -107,10 +122,10 @@ const ents = new Map();              // id -> {id,type,canonical,descriptor,sign
 const byKey = new Map();             // `${type}|${matchKey}` -> id   (dedupe new vs existing)
 const matchKey = (canonical, type) => `${type}|${norm(canonical)}`;
 
-function addEntity({ canonical, type, descriptor, aliases = [], seed = false }) {
+function addEntity({ canonical, type, descriptor, aliases = [], seed = false, core = false }) {
   const k = matchKey(canonical, type);
   if (byKey.has(k)) return ents.get(byKey.get(k));
-  const e = { id: nextId++, type, canonical, descriptor: descriptor || null, significance: 0, aliasNorms: new Set(), surfaces: new Set(), seed };
+  const e = { id: nextId++, type, canonical, descriptor: descriptor || null, significance: 0, aliasNorms: new Set(), surfaces: new Set(), seed, core: seed || core };
   for (const a of [canonical, ...aliases]) { e.aliasNorms.add(norm(a)); e.surfaces.add(a); }
   ents.set(e.id, e); byKey.set(k, e.id);
   return e;
@@ -172,7 +187,7 @@ for (const r of rows) {
     else {
       const k = matchKey(ent.canonical, type);
       if (byKey.has(k)) { e = ents.get(byKey.get(k)); tag = `match(key) → ${e.canonical}`; matched++; }
-      else { e = addEntity({ canonical: ent.canonical, type, descriptor: ent.descriptor }); tag = `NEW → ${e.canonical}`; created++; }
+      else { e = addEntity({ canonical: ent.canonical, type, descriptor: ent.descriptor, core: CORE }); tag = `NEW → ${e.canonical}`; created++; }
     }
     e.significance++; e.aliasNorms.add(norm(ent.surface)); e.surfaces.add(ent.surface);
     if (!e.descriptor && ent.descriptor) e.descriptor = ent.descriptor;
