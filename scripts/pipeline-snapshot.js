@@ -7,7 +7,7 @@
 import dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { execSync } from 'child_process';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -104,9 +104,33 @@ async function main() {
     workers = { error: err.message };
   }
 
+  // ── Content-integrity tripwire ───────────────────────────────────────────
+  // The single universal safety net against ANY content-gutting bug (no matter
+  // which path causes it): track total live paragraphs against a running
+  // high-water baseline. A sharp unexplained drop = something is deleting en
+  // masse → raise an alert the monitor surfaces. deleted_at IS NULL uses the
+  // partial index, so this is cheap. See project_canonical_gutted_by_dedupe_20260609.
+  const liveParas = (await queryOne(`SELECT COUNT(*) AS n FROM content WHERE deleted_at IS NULL`).catch(() => ({ n: null })))?.n ?? null;
+  let prev = {};
+  try { prev = JSON.parse(readFileSync(join(ROOT, 'data', 'pipeline-status.json'), 'utf8'))?.integrity ?? {}; } catch { /* first run */ }
+  // High-water baseline carries forward; only ratchets UP on healthy growth.
+  const baseline = Math.max(prev.baseline_live_paras ?? 0, liveParas ?? 0);
+  // Alert if live content fell >2% (or >5000 paras) below the baseline high.
+  const dropThreshold = Math.max(5000, Math.floor(baseline * 0.02));
+  const drop = (liveParas != null && baseline) ? baseline - liveParas : 0;
+  const integrity = {
+    live_paras: liveParas,
+    baseline_live_paras: baseline,
+    drop_from_baseline: drop,
+    alert: drop > dropThreshold
+      ? `CONTENT DROP: live paragraphs ${liveParas} is ${drop} below baseline ${baseline} (>${dropThreshold}) — possible gutting, investigate deletions`
+      : null,
+  };
+
   const snapshot = {
     generated_at: new Date().toISOString(),
     computed_in_ms: Date.now() - t0,
+    integrity,
     priority_books: books,
     summary: {
       books_total: books.length,
