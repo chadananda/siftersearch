@@ -53,8 +53,20 @@ function writeBatch(statements, name) {
   });
 }
 
+// Canonicalize a surface so apostrophe variants and leading articles collapse to
+// one entity (root cause of "the Báb"/"Báb" and Bahá'u'lláh straight-vs-curly
+// fragmentation: normalizeSurface only strips diacritics+lowercases). Unify all
+// apostrophe-like chars to ' (U+2019) for every type; strip a leading article
+// for people/concepts (titles of works/places keep theirs).
+function canonName(name, type) {
+  let s = String(name).replace(/[‘’ʼʻ`´'`]/g, '’');
+  if (type === 'person' || type === 'concept') s = s.replace(/^(the|a|an)\s+/i, '');
+  return s.replace(/\s+/g, ' ').trim();
+}
+
 const entCache = new Map();   // `${type}|${norm}` -> entity_id (resolve/create once, reuse)
-async function resolveOrCreate(name, type, religion) {
+async function resolveOrCreate(rawName, type, religion) {
+  const name = canonName(rawName, type);
   const norm = normalizeSurface(name);
   if (!norm) return null;
   const key = `${type}|${norm}`;
