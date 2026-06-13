@@ -29,6 +29,7 @@ import { aiService } from '../lib/ai-services.js';
 // default. Use the named export so `content.deleteParagraphsByDoc` resolves;
 // `import * as content` would land in the wrong namespace.
 import { content } from '../lib/content.js';
+import { adjudicateSameWork } from '../lib/dedup-adjudicator.js';
 import {
   hashNormalized as normalizedHash,
   hashContent as fileHashOf,
@@ -538,21 +539,25 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
   // possible. Already covered by isSiteOnly above.
   let supersedes = null;
   if (siteConfig.scope === 'primary' && !existing) {
-    const [hashCandidates, metaCandidates] = await Promise.all([
-      findSupersessionCandidates(hashes),
-      findMetadataCandidates(docFields.title, docFields.author)
-    ]);
-    const decision = adapter.detectSupersedee(
-      { title: docFields.title, author: docFields.author, paragraph_count: paragraphs.length },
-      hashCandidates,
-      metaCandidates,
-      { threshold }
-    );
-    supersedes = decision.supersedes;
-    if (supersedes) {
-      logger.info({ file: relPath, supersedes, reason: decision.reason }, 'Sites-ingester: supersession detected');
-    } else if (metaCandidates.length > 0 || hashCandidates.length > 0) {
-      logger.debug({ file: relPath, hash_n: hashCandidates.length, meta_n: metaCandidates.length, reason: decision.reason }, 'Sites-ingester: candidates inspected, no supersession');
+    // Candidate generation by REAL content overlap (shared paragraph hashes) —
+    // a signal, never a decision. The same-work DECISION is an AI judgment over
+    // the actual text (adjudicateSameWork), not title/author keyword matching,
+    // which previously mislabeled distinct works (Analects→Epistle of James,
+    // "Ibn Ezra on Amos"→Amos). See feedback_oceanlibrary_canonical.
+    const hashCandidates = await findSupersessionCandidates(hashes);
+    const candidateIds = [...new Set(hashCandidates.map(c => c.doc_id))].slice(0, 4);
+    for (const candId of candidateIds) {
+      const verdict = await adjudicateSameWork(
+        { title: docFields.title, author: docFields.author, religion: docFields.religion, paragraphs },
+        candId
+      ).catch(e => ({ same: false, confidence: 0, reason: `adjudicator error: ${e.message}` }));
+      if (verdict.same && verdict.confidence >= 0.85) {
+        supersedes = candId;
+        logger.info({ file: relPath, supersedes, confidence: verdict.confidence, reason: verdict.reason },
+          'Sites-ingester: AI confirmed same work — marking our copy duplicate_of the OceanLibrary canonical');
+        break;
+      }
+      logger.debug({ file: relPath, candId, verdict }, 'Sites-ingester: AI judged distinct work — not superseding');
     }
   }
 
