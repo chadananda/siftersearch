@@ -28,7 +28,7 @@ const SYSTEM = `You process ONE paragraph of religious/historical text for a dig
 Fields:
 - "people","places","documents","events","concepts","authors": the named entities ACTUALLY in the current paragraph. Resolve epithets/pronouns to canonical names ONLY when certain from context. NEVER output bare pronouns. "concepts" = significant doctrinal/technical terms only (Covenant, Manifestation, Dispensation) — never generic phrases ("the Cause","the friends","the East").
 - "questions": every distinct hypothetical question THIS paragraph directly answers, each natural and standalone (include the subject).
-- "grounded": the current paragraph restated as tersely as possible with all vague references (pronouns, "the party", "the West wall") resolved to named people/places/dates using PRIOR CONTEXT — a single self-contained statement usable out of book context.
+- "grounded": a DISAMBIGUATION OVERLAY, not a summary. ONE sentence (two at most). Resolve every vague reference (pronouns, "the party", "the West wall") to its named person/place/date using PRIOR CONTEXT, so the paragraph's references are unambiguous out of context. Keep it as close to minimal as possible — do NOT restate all the paragraph's details or add narrative; the full text is kept separately. State only who/what/where/when needed to clarify the references.
 
 Rules: preserve exact diacritics (á í ú ḥ ṭ ṣ ʻ ʼ …), never ASCII apostrophes. Deduplicate each list; empty = []. Quality over quantity; never pad.
 
