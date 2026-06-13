@@ -28,7 +28,10 @@ const SYSTEM = `You process ONE paragraph of religious/historical text for a dig
 Fields:
 - "people","places","documents","events","concepts","authors": the named entities ACTUALLY in the current paragraph. Resolve epithets/pronouns to canonical names ONLY when certain from context. NEVER output bare pronouns. "concepts" = significant doctrinal/technical terms only (Covenant, Manifestation, Dispensation) — never generic phrases ("the Cause","the friends","the East").
 - "questions": every distinct hypothetical question THIS paragraph directly answers, each natural and standalone (include the subject).
-- "grounded": a DISAMBIGUATION OVERLAY, not a summary. ONE sentence (two at most). Resolve every vague reference (pronouns, "the party", "the West wall") to its named person/place/date using PRIOR CONTEXT, so the paragraph's references are unambiguous out of context. Keep it as close to minimal as possible — do NOT restate all the paragraph's details or add narrative; the full text is kept separately. State only who/what/where/when needed to clarify the references.
+- "grounded": a terse RESTATEMENT of the paragraph's core point with every vague reference replaced by its named referent, so it stands alone out of context. Model it exactly on this style:
+    PARAGRAPH: "The party arrived at the West wall by morning."  ->
+    grounded: "Mullá Ḥusayn and his companions reached the West gate of Shíráz on the morning of 23 May 1844."
+  Write the RESOLVED SENTENCE ITSELF (one sentence, two at most) — convey what happens, with names/places/dates filled in. Do NOT write a glossary like "'the Faith' refers to..."; do NOT add detail beyond the paragraph or summarize every clause. Use PRIOR CONTEXT to resolve references.
 
 Rules: preserve exact diacritics (á í ú ḥ ṭ ṣ ʻ ʼ …), never ASCII apostrophes. Deduplicate each list; empty = []. Quality over quantity; never pad.
 
