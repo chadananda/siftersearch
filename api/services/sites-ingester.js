@@ -148,8 +148,6 @@ async function walkSite(siteRoot, results = [], state = { errored: false }) {
 // this re-gutted ~30 restored canonical docs/day until fixed (2026-06-12).
 const SITE_DELETE_ABS_LIMIT = parseInt(process.env.SITE_DELETE_ABS_LIMIT ?? '25', 10);
 const SITE_DELETE_FRACTION = parseFloat(process.env.SITE_DELETE_FRACTION ?? '0.02');
-// Master gate for file-absence soft-deletes — OFF by default (see reconcileDeletes).
-const DELETE_ON_ABSENCE = process.env.SITES_DELETE_ON_ABSENCE === '1';
 
 // ─── Cache lookup with sidecar harvest ──────────────────────────────────
 // Same logic as indexer.getCachedEmbeddings(globalLookup) but without the
@@ -617,50 +615,42 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
 
 // ─── Soft-delete docs whose files vanished from disk ─────────────────────
 
-async function reconcileDeletes(siteId, basePath, diskPaths) {
+async function reconcileDeletes(siteId, basePath, diskPaths, walkComplete) {
+  // 1. Never delete on an incomplete walk — absence is untrustworthy then.
+  if (!walkComplete) {
+    logger.warn({ siteId, diskFiles: diskPaths.length }, 'Sites-ingester: walk incomplete (readdir error) — skipping ALL deletions this run');
+    return { deleted: 0, restored: 0, skipped: 'incomplete walk' };
+  }
   const onDisk = new Set(diskPaths);
   const inDb = await queryAll(
     `SELECT id, file_path FROM docs WHERE source_site = ? AND deleted_at IS NULL`,
     [siteId]
   );
   const candidates = inDb.filter(row => !onDisk.has(join(basePath, row.file_path)));
+  if (!candidates.length) return { deleted: 0, restored: 0, candidates: 0 };
 
-  // Default OFF: the OceanLibrary/-sites source-file mirror on tower-nas is not
-  // reliably complete (Dropbox/site2rag sync gaps, fetch timeouts), so "file
-  // absent from this walk" is NOT trustworthy evidence the doc should die. This
-  // gutted ~260K paras of canonical scripture (project_canonical_gutted_by_dedupe_20260609).
-  // Enable SITES_DELETE_ON_ABSENCE=1 only once the mirror is known-complete.
-  if (!DELETE_ON_ABSENCE) {
-    if (candidates.length) logger.warn({ siteId, would_delete: candidates.length, dbDocs: inDb.length, diskFiles: diskPaths.length },
-      'Sites-ingester: delete-on-absence DISABLED (SITES_DELETE_ON_ABSENCE!=1) — skipping; candidates left intact');
-    return { deleted: 0, restored: 0, skipped: candidates.length, gated: true };
-  }
-
-  // Circuit breaker: an implausibly large candidate set means the walk was
-  // partial (slow/timing-out site2rag tree), not that the site was emptied.
-  const guard = Math.max(SITE_DELETE_ABS_LIMIT, Math.floor(inDb.length * SITE_DELETE_FRACTION));
-  if (candidates.length > guard) {
-    logger.error({ siteId, candidates: candidates.length, guard, dbDocs: inDb.length, diskFiles: diskPaths.length },
-      'Sites-ingester: ABORTING deletes — candidate set exceeds guard (probable incomplete walk, NOT mass file removal)');
-    return { deleted: 0, restored: 0, aborted: candidates.length };
-  }
-
-  let deleted = 0, restored = 0, skipped = 0;
+  // 2. Verify ACTUAL filesystem absence per candidate. The walk's string-set is
+  //    unreliable (path-encoding diffs, dual canonical/main trees), so the
+  //    filesystem is the source of truth. Only a real ENOENT counts as absent;
+  //    EIO/EACCES/etc. = "unknown", never deleted.
+  const verifiedAbsent = [];
   for (const row of candidates) {
-    const abs = join(basePath, row.file_path);
-    // Confirm the file is genuinely gone before deleting — a walk miss (transient
-    // IO) must not delete live content. access() throws only when truly absent.
-    let exists = false;
-    try { await access(abs); exists = true; } catch { exists = false; }
-    if (exists) { skipped++; logger.warn({ siteId, doc_id: row.id, file_path: row.file_path }, 'Sites-ingester: doc missing from walk but file exists — skipping delete'); continue; }
-    // File gone — soft-delete + auto-restore any docs we'd marked superseded
-    await query('UPDATE docs SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [row.id]);
-    await query('UPDATE content SET deleted_at = CURRENT_TIMESTAMP, synced = 0 WHERE doc_id = ?', [row.id]);
-    deleted++;
-    restored += await clearSupersedeesOf(row.id);
-    logger.info({ doc_id: row.id, file_path: row.file_path }, 'Sites-ingester: file gone, soft-deleted import');
+    let absent = false;
+    try { await access(join(basePath, row.file_path)); }
+    catch (e) { absent = (e && e.code === 'ENOENT'); }
+    if (absent) verifiedAbsent.push(row.id);
+    else logger.warn({ siteId, doc_id: row.id, file_path: row.file_path }, 'Sites-ingester: candidate file actually resolves (or unreadable) — NOT deleting');
   }
-  return { deleted, restored, skipped };
+  if (!verifiedAbsent.length) return { deleted: 0, restored: 0, candidates: candidates.length };
+
+  // 3. Route through the guarded chokepoint: refuses OceanLibrary canonical docs,
+  //    circuit-breaks on implausible counts, and audits.
+  const guard = Math.max(SITE_DELETE_ABS_LIMIT, Math.floor(inDb.length * SITE_DELETE_FRACTION));
+  const res = await content.safeSoftDeleteDocs(verifiedAbsent, { reason: `sites-reconcile:${siteId}`, runId: siteId, maxDelete: guard });
+  // 4. Auto-restore docs that had been superseded by the ones actually deleted.
+  let restored = 0;
+  for (const id of (res.deletedIds || [])) restored += await clearSupersedeesOf(id);
+  return { deleted: res.deleted, restored, protected_ol: res.protected_ol, aborted: res.aborted, candidates: candidates.length };
 }
 
 // ─── Public API: run a single site through the full pipeline ────────────
@@ -742,9 +732,7 @@ export async function ingestSite(siteId, opts = {}) {
   // 525 books we didn't process this run.
   const reconcile = (typeof opts.limit === 'number' && opts.limit > 0)
     ? { deleted: 0, restored: 0, skipped: 'subset run' }
-    : walkState.errored
-      ? { deleted: 0, restored: 0, skipped: 'walk incomplete (readdir error) — deletions suppressed' }
-      : await reconcileDeletes(siteId, basePath, files);
+    : await reconcileDeletes(siteId, basePath, files, !walkState.errored);
 
   logger.info({ siteId, stats, reconcile }, 'Sites-ingester: complete');
   return { siteId, stats, reconcile, errors };

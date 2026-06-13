@@ -256,6 +256,53 @@ async function softDeleteByDoc(docId) {
 }
 
 /**
+ * THE single guarded path for soft-deleting whole documents (doc row + content).
+ * Enforces the project's hard invariants so no caller can reintroduce the
+ * content-gutting bug class (see feedback_oceanlibrary_canonical and
+ * project_canonical_gutted_by_dedupe_20260609):
+ *
+ *   1. NEVER soft-deletes an OceanLibrary canonical doc (source_site='oceanlibrary.com').
+ *      OceanLibrary is always canonical; its -sites files are not under our control,
+ *      so an apparently-missing file is a sync gap, never grounds for deletion.
+ *   2. Circuit breaker: refuses a batch larger than maxDelete — an implausibly
+ *      large delete set means a bug (partial walk / encoding mismatch), not real
+ *      removals.
+ *   3. Audited: logs reason, runId, counts, and a sample of affected ids.
+ *
+ * Callers MUST have already established that deletion is warranted — i.e. the
+ * file is filesystem-verified absent (real ENOENT), or this is an explicit
+ * dedup action. This function enforces the DB-side invariants on top of that.
+ */
+async function safeSoftDeleteDocs(docIds, { reason = 'unspecified', runId = null, maxDelete = 25 } = {}) {
+  const ids = [...new Set((docIds || []).filter(Boolean))];
+  if (ids.length === 0) return { deleted: 0, protected_ol: 0, aborted: false };
+
+  const ph = ids.map(() => '?').join(',');
+  const rows = await queryAll(`SELECT id, source_site FROM docs WHERE id IN (${ph})`, ids);
+  const olIds = new Set(rows.filter(r => r.source_site === 'oceanlibrary.com').map(r => r.id));
+  const deletable = ids.filter(id => !olIds.has(id));
+  if (olIds.size) {
+    logger.warn({ reason, runId, protected_ol: olIds.size, sample: [...olIds].slice(0, 20) },
+      'safeSoftDeleteDocs: REFUSED to delete OceanLibrary canonical docs (always canonical)');
+  }
+  if (deletable.length > maxDelete) {
+    logger.error({ reason, runId, count: deletable.length, maxDelete },
+      'safeSoftDeleteDocs: ABORTING — batch exceeds maxDelete (probable bug, not real removals)');
+    return { deleted: 0, protected_ol: olIds.size, aborted: true, would_delete: deletable.length };
+  }
+  const ts = now();
+  for (const id of deletable) {
+    await query('UPDATE docs SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL', [ts, ts, id]);
+    await query('UPDATE content SET deleted_at = ?, synced = 0 WHERE doc_id = ? AND deleted_at IS NULL', [ts, id]);
+  }
+  if (deletable.length) {
+    logger.warn({ reason, runId, deleted: deletable.length, protected_ol: olIds.size, sample: deletable.slice(0, 50) },
+      'safeSoftDeleteDocs: soft-deleted docs (AUDIT)');
+  }
+  return { deleted: deletable.length, deletedIds: deletable, protected_ol: olIds.size, aborted: false };
+}
+
+/**
  * Restore soft-deleted paragraphs for a document.
  */
 async function restoreByDoc(docId) {
@@ -1081,6 +1128,7 @@ export const content = {
   deleteParagraph,
   deleteParagraphsByDoc,
   softDeleteByDoc,
+  safeSoftDeleteDocs,
   restoreByDoc,
   hardDeleteExpired,
   bulkReplace,
