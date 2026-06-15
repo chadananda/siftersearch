@@ -1,6 +1,7 @@
 ---
 import Layout from './Layout.astro';
 import NavBar from '../components/common/NavBar.svelte';
+import { getCollection } from 'astro:content';
 
 interface Props {
   title: string;
@@ -10,49 +11,45 @@ interface Props {
 
 const { title, description, activeSection } = Astro.props;
 
-// Navigation structure
-const navSections = [
-  {
-    title: 'Getting Started',
-    items: [
-      { href: '/docs', label: 'Overview', slug: 'overview' },
-      { href: '/docs/library', label: 'Library', slug: 'library' },
-      { href: '/docs/research-assistant', label: 'Research Assistant', slug: 'research-assistant' },
-      { href: '/library/acquisitions', label: 'Acquisition Wishlist', slug: 'acquisitions' },
-    ]
-  },
-  {
-    title: 'Research',
-    items: [
-      { href: '/docs/research-strategy', label: 'Search Strategy', slug: 'research-strategy' },
-      { href: '/docs/indexing-layers', label: 'Indexing Layers', slug: 'indexing-layers' },
-      { href: '/docs/entity-search', label: 'Entity-Aware Search', slug: 'entity-search' },
-      { href: '/docs/search-quality', label: 'Search Quality Battery', slug: 'search-quality' },
-      { href: '/docs/translation-pipeline', label: 'Translation Pipeline', slug: 'translation-pipeline' },
-    ]
-  },
-  {
-    title: 'Agents',
-    items: [
-      { href: '/docs/agents', label: 'Agent Architecture', slug: 'agents' },
-      { href: '/docs/agents/sifter', label: 'Sifter (Orchestrator)', slug: 'sifter' },
-      { href: '/docs/agents/researcher', label: 'Researcher', slug: 'researcher' },
-      { href: '/docs/agents/analyzer', label: 'Analyzer', slug: 'analyzer' },
-      { href: '/docs/agents/translator', label: 'Translator', slug: 'translator' },
-      { href: '/docs/agents/narrator', label: 'Narrator', slug: 'narrator' },
-      { href: '/docs/agents/memory', label: 'Memory', slug: 'memory' },
-      { href: '/docs/agents/librarian', label: 'Librarian', slug: 'librarian' },
-      { href: '/docs/agents/transcriber', label: 'Transcriber', slug: 'transcriber' },
-    ]
-  },
-  {
-    title: 'API Reference',
-    items: [
-      { href: '/docs/api', label: 'Public API', slug: 'api' },
-      { href: '/docs/api-billing', label: 'API Billing', slug: 'api-billing' },
-    ]
+// Sidebar nav is built from each section's REAL backing store, never a hardcoded
+// page list — publishing a page makes it appear with no code change:
+//   • DB pages (doc_pages) via the content API, grouped by their `section`.
+//   • The `agents` content collection (file-based, prerendered) → Agents group.
+// Only section group titles + order are configured (chrome). Unknown sections
+// title-case + sort last. Any source failing degrades gracefully (empty rail).
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+const SECTION_META = {
+  'getting-started': { title: 'Getting Started', order: 1 },
+  research: { title: 'Research', order: 2 },
+  agents: { title: 'Agents', order: 3 },
+  api: { title: 'API Reference', order: 4 },
+};
+const titleCase = (s) => s.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const groups = new Map();
+const push = (key, item) => { (groups.get(key) || groups.set(key, []).get(key)).push(item); };
+try {
+  const res = await fetch(`${API_BASE}/api/v1/pages`);
+  if (!res.ok) throw new Error(`pages list returned ${res.status}`);
+  const { docs = [] } = await res.json();
+  for (const d of docs) push(d.section || 'documentation', { href: `/docs/${d.slug}`, label: d.nav_label || d.title, slug: d.slug, sort: d.sort_order ?? 100 });
+} catch (err) {
+  console.error('DocsLayout: DB nav fetch failed', err instanceof Error ? err.message : err);
+}
+try {
+  for (const a of await getCollection('agents')) {
+    const s = a.id.replace(/^agent-/, '');
+    push('agents', { href: `/docs/agents/${s}`, label: a.data.title || `${titleCase(s)} Agent`, slug: s, sort: a.data.order ?? 100 });
   }
-];
+} catch (err) {
+  console.error('DocsLayout: agents collection failed', err instanceof Error ? err.message : err);
+}
+const navSections = [...groups]
+  .map(([key, items]) => ({
+    title: SECTION_META[key]?.title || titleCase(key),
+    order: SECTION_META[key]?.order ?? 99,
+    items: items.sort((a, b) => (a.sort - b.sort) || a.label.localeCompare(b.label)),
+  }))
+  .sort((a, b) => (a.order - b.order) || a.title.localeCompare(b.title));
 ---
 
 <Layout title={`${title} - SifterSearch Docs`} description={description}>
