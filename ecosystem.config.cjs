@@ -61,7 +61,13 @@ module.exports = {
       wait_ready: false,
       env: {
         NODE_ENV: 'production',
-        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
+        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',
+        // Route the API's admin/CMS writes (doc_pages CRUD, etc.) through the
+        // single writer on 7849 instead of opening a direct write txn. Without
+        // this the API was the one unrouted writer, so its admin writes
+        // contended with the worker and intermittently hit SQLITE_BUSY.
+        SIFTER_WRITER_URL: 'http://127.0.0.1:7849',
+        SQLITE_BUSY_TIMEOUT_MS: '30000'
       },
       // 30s gives Fastify time to drain in-flight chat SSE streams
       // (typically 5-15s each) before SIGKILL on deploy. 5s was too short —
