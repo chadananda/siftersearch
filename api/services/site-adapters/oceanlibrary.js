@@ -77,6 +77,10 @@ function cleanParagraphText(text, type) {
     t = t.replace(/^#+\s*/, '');         // ### Foo → Foo
     t = t.replace(/^\\?-\s*\d+(\.\d+)*\s*-\s*$/, ''); // section markers like "- 1.1 -"
   }
+  // Strip a leading markdown list marker ("1.  " / "12. " or bullet "- " / "* ").
+  // OceanLibrary writes martyr-rolls and enumerations as list items; the marker
+  // is presentation, not content.
+  t = t.replace(/^\s*(?:\d{1,3}\.|[-*])\s+/, '');
   t = t.replace(/<br\s*\/?>/gi, '');     // <br> → ''
   return t.trim();
 }
@@ -104,21 +108,17 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
 
   // Split body into blocks on blank lines.
   //
-  // Footnote definitions (`[^N]: …`) at the end of OL files are written on
-  // consecutive lines with no blank-line separation, so they collapse into
-  // one giant block (e.g. the Aqdas's 209 footnotes → one 143 KB block →
-  // OpenAI 8192-token embed rejection). Pre-split any block containing
-  // footnote definitions on the per-line `[^…]:` pattern, then drop the
-  // footnote sub-blocks entirely — they're reference apparatus, not body
-  // text, and the inline footnote markers (`[^N]`) inside paragraphs are
-  // sufficient for the reader to recognise the citation.
+  // Footnote definitions (`[^N]: …`) at the end of OL files are often written on
+  // consecutive lines with no blank-line separation, so they collapse into one
+  // giant block (e.g. the Aqdas's 209 footnotes → one 143 KB block → OpenAI
+  // 8192-token embed rejection). Pre-split any footnote-bearing block on the
+  // per-line `[^…]:` pattern so each definition becomes its own small block.
+  // They are KEPT — footnotes are content (stored below as blocktype 'footnote'
+  // with external_para_id `fn_<marker>`), per "all content must be ingested".
   const rawBlocks = body.split(/\n{2,}/)
     .flatMap(b => {
-      // If the block contains footnote definitions, split each one off and
-      // discard them.
       if (/^\[\^[^\]]+\]:/m.test(b)) {
-        return b.split(/\n(?=\[\^[^\]]+\]:)/)
-          .filter(part => !/^\[\^[^\]]+\]:/.test(part.trim()));
+        return b.split(/\n(?=\[\^[^\]]+\]:)/);
       }
       return [b];
     })
@@ -128,45 +128,83 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
   const paragraphs = [];
   let currentHeading = '';
   let paragraphIndex = 0;
+  // A text block whose `{id …}` attribute may arrive on the FOLLOWING block.
+  // OceanLibrary writes list items (martyr rolls, enumerations) as a text block
+  // followed by a standalone attribute block — without this, every list item was
+  // silently dropped (the Dawn-Breakers Sang-Sar martyr roll, 2026-06-16).
+  let pendingText = null;
 
-  for (const raw of rawBlocks) {
-    const { text, attrs } = parseBlock(raw);
-    if (!attrs) {
-      // Unstructured block (very rare in OceanLibrary export). Skip — we don't
-      // want to invent IDs.
-      continue;
-    }
-    const type = attrs.type || 'par';
-
-    // Skip non-content blocks
-    if (type === 'hr' || type === 'toc') continue;
-    if (type === 'title') continue; // Use frontmatter title, skip in-body title/copyright
-
-    // Headers update the running heading but aren't stored as paragraphs.
+  // Emit a (text, attrs) pair according to its block type. attrs may be null
+  // (attr-less prose) — such content is KEPT with a null external_para_id rather
+  // than dropped; only structural blocks (hr/toc/title/header) are not stored.
+  const emit = (text, attrs) => {
+    const type = (attrs && attrs.type) || 'par';
+    if (type === 'hr' || type === 'toc') return;
+    if (type === 'title') return; // use frontmatter title, skip in-body title/copyright
     if (type === 'header') {
       const h = cleanParagraphText(text, type);
       if (h) currentHeading = h;
-      continue;
+      return;
     }
-
-    // Paragraph or preamble — store it
-    if (type !== 'par' && type !== 'preamble') {
-      // Unknown type — preserve as paragraph but flag the type so we can audit
-      // (e.g. footnotes, blockquotes, lists could surface as new types later).
-    }
-
     const cleanText = cleanParagraphText(text, type);
-    if (!cleanText) continue;
-
+    if (!cleanText) return;
     paragraphs.push({
       paragraph_index: paragraphIndex++,
       text: cleanText,
       heading: currentHeading,
       blocktype: type === 'preamble' ? 'preamble' : 'paragraph',
-      external_para_id: attrs.id || null,
-      language: attrs.language || frontmatter.language || 'en'
+      external_para_id: (attrs && attrs.id) || null,
+      language: (attrs && attrs.language) || frontmatter.language || 'en'
     });
+  };
+  const flushPending = () => {
+    if (pendingText !== null) { emit(pendingText, null); pendingText = null; }
+  };
+
+  for (const raw of rawBlocks) {
+    // Footnote definition (`[^N]: …`) → stored as its own footnote paragraph so
+    // it stays searchable. The marker becomes the external_para_id (`fn_<N>`).
+    const fnMatch = raw.match(/^\[\^([^\]]+)\]:\s*([\s\S]*)$/);
+    if (fnMatch) {
+      flushPending();
+      const fnText = fnMatch[2].trim();
+      if (fnText) {
+        paragraphs.push({
+          paragraph_index: paragraphIndex++,
+          text: fnText,
+          heading: currentHeading,
+          blocktype: 'footnote',
+          external_para_id: `fn_${fnMatch[1]}`,
+          language: frontmatter.language || 'en'
+        });
+      }
+      continue;
+    }
+
+    const { text, attrs } = parseBlock(raw);
+
+    if (!attrs) {
+      // Text with no trailing attr. Its `{id …}` may be on the NEXT block; hold
+      // it. Flush any earlier pending text first (kept with a null id — content
+      // is never dropped merely because it lacks an explicit id).
+      flushPending();
+      pendingText = text;
+      continue;
+    }
+
+    if (text === '') {
+      // Standalone attribute block → belongs to the immediately preceding text
+      // block (matches block-parser.js semantics + the OceanLibrary list shape).
+      if (pendingText !== null) { emit(pendingText, attrs); pendingText = null; }
+      // else: orphan attribute with no preceding text — nothing to attach.
+      continue;
+    }
+
+    // Block carries its own inline attribute (the common case + headers).
+    flushPending();
+    emit(text, attrs);
   }
+  flushPending();
 
   // Doc-level fields
   const docFields = {
