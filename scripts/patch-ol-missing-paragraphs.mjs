@@ -143,38 +143,22 @@ async function patchDoc(absPath) {
   if (!APPLY) return result;
 
   // ── APPLY ──────────────────────────────────────────────────────────────
-  // 1. embeddings for the missing paragraphs (cache-reuse, then embed misses)
-  const hashes = missing.map(p => hashNormalized(p.text));
-  const cached = await harvestEmbeddings(hashes);
-  const missIdx = missing.map((_, i) => i).filter(i => !cached.has(hashes[i]));
-  let fresh = [];
-  if (missIdx.length) {
-    const texts = missIdx.map(i => cleanForEmbedding(missing[i].text));
-    fresh = await aiService('embedding').embed(texts, { caller: 'patch-ol-missing' });
-  }
-  let fi = 0;
-  const rows = missing.map((p, i) => {
-    // Cached embeddings are already stored as exact-size blobs — reuse the Buffer
-    // directly (round-tripping through Float32Array(.buffer) can read a pooled
-    // ArrayBuffer's wrong slice). Fresh embeddings arrive as Array<number>.
-    let embedding = null, embeddingModel = null;
-    if (cached.has(hashes[i])) {
-      embedding = cached.get(hashes[i]);           // Buffer (2048 bytes = 512×f32)
-      embeddingModel = EMBEDDING_MODEL;
-    } else {
-      const e = fresh[fi++];
-      if (e) { embedding = toBlob(e); embeddingModel = EMBEDDING_MODEL; }
-    }
-    return {
-      paragraphIndex: p.paragraph_index,           // position in the FULL fixed parse
-      text: p.text,
-      heading: p.heading || '',
-      blocktype: p.blocktype || 'paragraph',
-      embedding,
-      embeddingModel,
-      external_para_id: p.external_para_id || null
-    };
-  });
+  // Insert with NULL embeddings. Embedding Buffers cannot cross the JSON
+  // single-writer HTTP hop — they deserialize to plain objects, which
+  // better-sqlite3 treats as named-parameter bindings, leaving the anonymous
+  // `?` placeholders unfilled ("Too few parameter values"). We don't need to
+  // embed here anyway: the embedding-worker (PM2, runs AS the writer) backfills
+  // any `embedding IS NULL` row, and the sync-worker then pushes it to Meili.
+  // Rows are FTS-searchable immediately (synced=0 → null-vector Meili doc).
+  const rows = missing.map(p => ({
+    paragraphIndex: p.paragraph_index,             // position in the FULL fixed parse
+    text: p.text,
+    heading: p.heading || '',
+    blocktype: p.blocktype || 'paragraph',
+    embedding: null,
+    embeddingModel: null,
+    external_para_id: p.external_para_id || null
+  }));
 
   // 2. renumber EXISTING rows' paragraph_index to the full-parse order so the
   //    inserted rows slot in correctly. This updates ONLY paragraph_index — no
