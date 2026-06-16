@@ -40,6 +40,10 @@ const { aiService } = await import(join(ROOT, 'api/lib/ai-services.js'));
 
 const args = process.argv.slice(2);
 const APPLY = args.includes('--apply');
+// --skip-empty: only touch docs that already have live content (the "partial"
+// list/footnote-drop cases). Docs with 0 live content are a separate problem
+// (unsegmented mega-paragraphs / never-ingested) handled in a later phase.
+const SKIP_EMPTY = args.includes('--skip-empty');
 const fileFilter = (() => { const i = args.indexOf('--file'); return i >= 0 ? args[i + 1] : null; })();
 const limit = (() => { const i = args.indexOf('--limit'); return i >= 0 ? parseInt(args[i + 1], 10) : null; })();
 
@@ -116,6 +120,8 @@ async function patchDoc(absPath) {
     'SELECT id, external_para_id, normalized_hash FROM content WHERE doc_id = ? AND deleted_at IS NULL',
     [docId]
   );
+  if (SKIP_EMPTY && existing.length === 0) return { relPath, docId, status: 'skipped_empty', parsed: parsed.length };
+
   const existingIds = new Set(existing.filter(r => r.external_para_id).map(r => r.external_para_id));
   const existingHashes = new Set(existing.map(r => r.normalized_hash));
 
@@ -211,12 +217,13 @@ if (limit) files = files.slice(0, limit);
 console.log(`${APPLY ? '⚙ APPLY' : '🔍 DRY-RUN'} — OL source: ${siteRoot}`);
 console.log(`files to inspect: ${files.length}\n`);
 
-const totals = { docs: 0, affected: 0, existing: 0, parsed: 0, missing: 0, footnotes: 0, inserted: 0, renumbered: 0, verifyFail: 0, noDoc: 0, parseErr: 0 };
+const totals = { docs: 0, affected: 0, existing: 0, parsed: 0, missing: 0, footnotes: 0, inserted: 0, renumbered: 0, verifyFail: 0, noDoc: 0, parseErr: 0, skippedEmpty: 0 };
 const failures = [];
 
 for (const abs of files) {
   const r = await patchDoc(abs).catch(e => ({ relPath: relative(basePath, abs), status: 'error', error: e.message }));
   totals.docs++;
+  if (r.status === 'skipped_empty') { totals.skippedEmpty++; continue; }
   if (r.status === 'no_db_doc') { totals.noDoc++; continue; }
   if (r.status === 'parse_error' || r.status === 'error') { totals.parseErr++; failures.push(r); console.log(`  ✗ ${r.relPath}: ${r.error}`); continue; }
   if (r.status === 'complete') { totals.existing += r.existing; totals.parsed += r.parsed; continue; }
@@ -233,6 +240,7 @@ for (const abs of files) {
 
 console.log('\n──────── SUMMARY ────────');
 console.log(`docs inspected:        ${totals.docs}`);
+console.log(`skipped (empty docs):  ${totals.skippedEmpty}`);
 console.log(`docs with no DB row:   ${totals.noDoc}`);
 console.log(`parse errors:          ${totals.parseErr}`);
 console.log(`affected docs:         ${totals.affected}`);
