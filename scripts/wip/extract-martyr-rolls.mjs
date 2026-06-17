@@ -54,6 +54,9 @@ const ROLLS = [
   { tag: 'Míyámay',    start: 789, end: 819, prov: 'Bábí; companion of the village of Míyámay (Khurásán) martyred at the fort of Shaykh Ṭabarsí, 1849. (The Dawn-Breakers, Míyámay roll.)' },
   { tag: 'Sang-Sar',   start: 821, end: 841, prov: 'Bábí; companion of the village of Sang-Sar (district of Simnán) — one of the eighteen martyred — who fell in the Bábí upheaval of Mázindarán. (The Dawn-Breakers, Sang-Sar roll.)' },
   { tag: 'Mázindarán', start: 843, end: 869, prov: 'Bábí; one of the twenty-seven recorded martyrs among the adherents of the Faith in Mázindarán. (The Dawn-Breakers, Mázindarán roll.)' },
+  // Individually-commemorated companions of Mullá Ḥusayn at Ṭabarsí (776-788 group;
+  // only the still-pending bare ones 777/784 are picked up — the rest are done/-1).
+  { tag: 'companion of Mullá Ḥusayn', start: 776, end: 788, prov: 'Bábí; companion of Mullá Ḥusayn martyred at the fort of Shaykh Ṭabarsí (1849), individually commemorated in The Dawn-Breakers.' },
   // --- REMAINING martyr rolls (town-specific framing confirmed) ---
   { tag: 'Savád-Kúh',  start: 871, end: 875, prov: 'Bábí; one of the five ascertained believers of Savád-Kúh martyred in the Shaykh Ṭabarsí upheaval, 1849. (The Dawn-Breakers, Savád-Kúh roll.)' },
   { tag: 'Ardistán',   start: 877, end: 882, prov: 'Bábí; martyr from the town of Ardistán, named in the roll of Shaykh Ṭabarsí martyrs in The Dawn-Breakers.' },
@@ -124,6 +127,20 @@ function run() {
     tx();
     console.log(`  ✓ ${roll.tag}: ${decided.length} entities + mentions + enriched`);
   }
+  // --- Colophon stragglers (paras 88/93/94): not martyrs. 93 = the author's name
+  //     (Muḥammad-i-Zarandí = Nabíl) → alias+mention on the existing Nabíl entity.
+  //     88 ("— The Translator.") + 94 (place/date) → processed, no entity. ---
+  if (APPLY) {
+    const nabil = sdb.prepare(`SELECT id FROM graph_entities WHERE canonical_name='Nabíl' AND entity_type='person'`).get();
+    if (nabil) {
+      insAlias.run(nabil.id, 'Muḥammad-i-Zarandí', normalizeSurface('Muḥammad-i-Zarandí'), EV);
+      insMention.run(nabil.id, '21053852', EV);
+      console.log(`  ✓ colophon: linked "Muḥammad-i-Zarandí" → Nabíl #${nabil.id}`);
+    }
+    for (const cid of [21053847, 21053852, 21053853]) flipEnriched.run(EV, cid);
+    console.log(`  ✓ colophon: 3 paras processed`);
+  }
+
   console.log(`\n${APPLY ? '⚙ APPLIED' : '🔍 DRY-RUN'}: ${APPLY ? `created ${created} entities, ${mentions} mentions, ${enriched} enriched` : 're-run with --apply to write'}`);
   process.exit(0);
 }
