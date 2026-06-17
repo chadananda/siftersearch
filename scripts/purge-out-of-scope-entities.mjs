@@ -84,15 +84,14 @@ console.log(`\n=== 1. ARCHIVE → ${dir} ===`);
 await mkdir(dir, { recursive: true });
 execSync(`sqlite3 ${join(ROOT, 'data/graph.db')} ".backup '${dir}/graph.db'"`);   // full graph.db (all mentions + aliases)
 console.log(`   ✓ graph.db backed up (all entity_mentions + entity_aliases)`);
-// dump the out-of-scope graph_entities + their relations from sifter.db
+// Dump the out-of-scope graph_entities (small, ~6880). Stream rows — NO push(...bigArray)
+// (that overflowed the stack). graph_relations are NOT dumped (3M-row table; recoverable
+// from the daily sifter.db backup + the deleteEntityIds recorded in MANIFEST).
 const delEnts = [];
-for (const c of chunks(deleteEntityIds, 800)) delEnts.push(...await mainQueryAll(`SELECT * FROM graph_entities WHERE id IN (${c.join(',')})`));
-const delRels = [];
-for (const c of chunks(deleteEntityIds, 800)) delRels.push(...await mainQueryAll(`SELECT * FROM graph_relations WHERE source_entity_id IN (${c.join(',')}) OR target_entity_id IN (${c.join(',')})`));
+for (const c of chunks(deleteEntityIds, 800)) { const rows = await mainQueryAll(`SELECT * FROM graph_entities WHERE id IN (${c.join(',')})`); for (const r of rows) delEnts.push(r); }
 await writeFile(`${dir}/out-of-scope-graph_entities.json`, JSON.stringify(delEnts));
-await writeFile(`${dir}/out-of-scope-graph_relations.json`, JSON.stringify(delRels));
-await writeFile(`${dir}/MANIFEST.json`, JSON.stringify({ ts, keepDocs: KEEP_DOCS, deletedEntities: deleteEntityIds.length, deletedMentions: outScopeMentionIds.length, deletedRelations: delRels.length, deleteEntityIds }, null, 1));
-console.log(`   ✓ dumped ${delEnts.length} graph_entities + ${delRels.length} graph_relations + MANIFEST`);
+await writeFile(`${dir}/MANIFEST.json`, JSON.stringify({ ts, keepDocs: KEEP_DOCS, deletedEntities: deleteEntityIds.length, deletedMentions: outScopeMentionIds.length, deleteEntityIds }, null, 1));
+console.log(`   ✓ dumped ${delEnts.length} graph_entities + MANIFEST (graph_relations recoverable from daily sifter.db backup + the ids)`);
 
 console.log(`\n=== 2. DELETE ===`);
 let n = 0;
@@ -102,7 +101,7 @@ let a = 0;
 for (const c of chunks(deleteEntityIds, 500)) { const r = await graphQuery(`DELETE FROM entity_aliases WHERE entity_id IN (${c.map(() => '?').join(',')})`, c); a += r?.changes || 0; }
 console.log(`   ✓ entity_aliases for deleted entities removed (graph.db)`);
 for (const c of chunks(deleteEntityIds, 500)) await mainQuery(`DELETE FROM graph_relations WHERE source_entity_id IN (${c.map(() => '?').join(',')}) OR target_entity_id IN (${c.map(() => '?').join(',')})`, [...c, ...c]);
-console.log(`   ✓ ${delRels.length} graph_relations removed (sifter.db via writer)`);
+console.log(`   ✓ graph_relations referencing deleted entities removed (sifter.db via writer)`);
 for (const c of chunks(deleteEntityIds, 500)) await mainQuery(`DELETE FROM graph_entities WHERE id IN (${c.map(() => '?').join(',')})`, c);
 console.log(`   ✓ ${deleteEntityIds.length} out-of-scope graph_entities removed (sifter.db via writer)`);
 
