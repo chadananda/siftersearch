@@ -75,8 +75,8 @@ const MIYAMAY = {
 const ROLLS = [MIYAMAY];
 
 async function createPerson(canonical, description) {
-  await query(`INSERT OR IGNORE INTO graph_entities (canonical_name, name, entity_type, religion, description, source_doc_ids) VALUES (?,?, 'person', '', ?, ?)`,
-    [canonical, canonical, description, JSON.stringify([DOC])]);
+  await query(`INSERT OR IGNORE INTO graph_entities (canonical_name, name, entity_type, religion, description) VALUES (?,?, 'person', '', ?)`,
+    [canonical, canonical, description]);
   const row = await queryOne(`SELECT id FROM graph_entities WHERE canonical_name = ? AND entity_type='person' AND religion=''`, [canonical]);
   return row.id;
 }
