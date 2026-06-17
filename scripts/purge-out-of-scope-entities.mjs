@@ -46,14 +46,16 @@ function preflight() {
 
 // ── compute the in-scope / out-of-scope sets ─────────────────────────────────
 console.log('Computing scope sets…');
+// NOTE: sidecar entity_mentions.content_id is a FLOAT-formatted string ("10030602.0"),
+// while content.id is an integer — compare as integers (parseInt drops the ".0").
 const inScopeContent = new Set(
-  (await mainQueryAll(`SELECT id FROM content WHERE doc_id IN (${KEEP_DOCS.join(',')})`)).map(r => String(r.id))
+  (await mainQueryAll(`SELECT id FROM content WHERE doc_id IN (${KEEP_DOCS.join(',')})`)).map(r => Number(r.id))
 );
 const allMentions = await graphQueryAll(`SELECT id, entity_id, content_id FROM entity_mentions`);
 const inScopeEntityIds = new Set();
 const outScopeMentionIds = [];
 for (const m of allMentions) {
-  if (inScopeContent.has(String(m.content_id))) inScopeEntityIds.add(m.entity_id);
+  if (inScopeContent.has(parseInt(m.content_id, 10))) inScopeEntityIds.add(m.entity_id);
   else outScopeMentionIds.push(m.id);
 }
 const allEntityIds = new Set(allMentions.map(m => m.entity_id));
