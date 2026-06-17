@@ -47,10 +47,11 @@ const ONLY_DOCS = (process.env.EXTRACT_ONLY_DOCS || '').split(',').map(s => pars
 // One-shot: exit when no scoped work remains, instead of idle-sleeping forever (for
 // a controlled, scoped backfill run rather than the long-lived PM2 daemon).
 const ONESHOT = process.env.EXTRACT_ONESHOT === '1';
-// Min paragraph length to extract. Default 50 skips trivial fragments corpus-wide,
-// but the recovered martyr-roll list-items ("Mullá Muḥammad-Mihdí,") are shorter —
-// a scoped backfill lowers this so those name-dense paragraphs aren't skipped.
-const MIN_TEXT_LEN = parseInt(process.env.EXTRACT_MIN_LEN || '50', 10);
+// Min paragraph length to extract. DEFAULT 0 = skip nothing (a >50 filter silently
+// dropped short but entity-dense list-items like "Mullá Muḥammad-Mihdí," — data loss).
+// Short fragments still get full context from the rolling-summary prompt; raise via
+// EXTRACT_MIN_LEN only for a deliberately-scoped run.
+const MIN_TEXT_LEN = parseInt(process.env.EXTRACT_MIN_LEN || '0', 10);
 
 function modelForPriority(docPriority) {
   if ((docPriority ?? 0) >= TIER_HIGH_MIN_PRIORITY) return MODEL_HIGH;
@@ -812,5 +813,13 @@ const isMain = process.argv[1] === scriptPath || process.env.pm_exec_path === sc
 if (isMain) {
   await runMigrations();        // sifter.db + user.db
   await runGraphMigrations();   // graph.db — workers own this, not the API
+  // Re-queue lever: graph_enriched=-1 marks paragraphs that failed extraction 3×.
+  // That must never be a silent permanent skip — EXTRACT_REQUEUE_FAILED=1 resets them
+  // to 0 so a fixed/better extractor re-attempts them. Scoped by EXTRACT_ONLY_DOCS.
+  if (process.env.EXTRACT_REQUEUE_FAILED === '1') {
+    const scope = ONLY_DOCS.length ? `AND doc_id IN (${ONLY_DOCS.join(',')})` : '';
+    const r = await query(`UPDATE content SET graph_enriched = 0 WHERE graph_enriched = -1 AND deleted_at IS NULL ${scope}`);
+    logger.info({ requeued: r?.changes ?? r?.rows?.[0]?.changes }, 'Re-queued previously-abandoned (-1) paragraphs');
+  }
   await workerLoop();
 }
