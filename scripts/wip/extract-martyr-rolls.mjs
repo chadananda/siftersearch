@@ -55,6 +55,7 @@ function cleanName(t) {
     .replace(/\[\^[^\]]*\]/g, '')
     .replace(/\[pg[^\]]*\]/gi, '')
     .replace(/\\/g, '')
+    .replace(/\s*—.*$/, '')          // strip em-dash trailing notes ("— all residents of Zanján")
     .replace(/\s+and\s*$/i, '')
     .replace(/[,.;:\s]+$/g, '')
     .trim();
