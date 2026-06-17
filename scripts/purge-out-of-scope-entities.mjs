@@ -30,7 +30,7 @@ const ROOT = join(__dirname, '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
 dotenv.config({ path: join(ROOT, '.env-public') });
 
-const { mainQuery, mainQueryAll, graphQuery, graphQueryAll } = await import(join(ROOT, 'api/lib/graph-db.js'));
+const { query: mainQuery, queryAll: mainQueryAll, graphQuery, graphQueryAll } = await import(join(ROOT, 'api/lib/db.js'));
 
 const APPLY = process.argv.includes('--apply');
 const KEEP_DOCS = [21308, 21310];

@@ -31,8 +31,9 @@ const ROOT = join(__dirname, '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
 dotenv.config({ path: join(ROOT, '.env-public') });
 
-const { mainQuery, mainQueryOne, mainQueryAll, graphQuery, graphQueryAll, mergeEntities } =
-  await import(join(ROOT, 'api/lib/graph-db.js'));
+const { mergeEntities } = await import(join(ROOT, 'api/lib/graph-db.js'));
+const { query: mainQuery, queryOne: mainQueryOne, queryAll: mainQueryAll, graphQuery, graphQueryAll } =
+  await import(join(ROOT, 'api/lib/db.js'));
 
 const args = process.argv.slice(2);
 const APPLY = args.includes('--apply');
