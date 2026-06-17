@@ -24,12 +24,28 @@ const ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
 dotenv.config({ path: join(ROOT, '.env-public') });
 
-const { query, queryAll, graphQuery, transaction } = await import(join(ROOT, 'api/lib/db.js'));
+import Database from 'better-sqlite3';
+import { execSync } from 'child_process';
 const { normalizeSurface } = await import(join(ROOT, 'api/lib/graph-db.js'));
 
 const APPLY = process.argv.includes('--apply');
 const DOC = 21308;
 const EV = 'cc-subscription-rolls-v1';
+
+// DIRECT better-sqlite3 (NOT the HTTP single-writer, which degrades under bulk load on
+// the un-vacuumed DB). Requires siftersearch-worker STOPPED so we are the sole writer.
+const sdb = new Database(join(ROOT, 'data/sifter.db'));
+sdb.pragma('journal_mode = WAL'); sdb.pragma('busy_timeout = 30000');
+const gdb = new Database(join(ROOT, 'data/graph.db'));
+gdb.pragma('journal_mode = WAL'); gdb.pragma('busy_timeout = 30000');
+
+function preflight() {
+  const procs = JSON.parse(execSync('pm2 jlist 2>/dev/null', { encoding: 'utf8' }));
+  const w = procs.find(p => p.name === 'siftersearch-worker');
+  if (w && w.pm2_env.status === 'online') throw new Error('REFUSING --apply: stop siftersearch-worker first (direct-write sole-writer requirement).');
+}
+// helpers using DIRECT connections
+const queryAll = (sql, args = []) => sdb.prepare(sql).all(...args);
 
 // Each ROLL: { tag, prov, start, end }. prov = the standalone descriptor (from the
 // framing paragraph). tag = short locative used to disambiguate canonical names.
@@ -70,14 +86,21 @@ function bareName(t) {
   return cleanName(t).split(',')[0].trim();
 }
 
-async function run() {
+// prepared statements (direct)
+const insEntity = sdb.prepare(`INSERT OR IGNORE INTO graph_entities (canonical_name, name, entity_type, religion, description) VALUES (?,?, 'person', '', ?)`);
+const selId = sdb.prepare(`SELECT id FROM graph_entities WHERE canonical_name = ? AND entity_type='person' AND religion=''`);
+const insAlias = gdb.prepare(`INSERT OR IGNORE INTO entity_aliases (entity_id, surface, surface_norm, lang, source, confidence) VALUES (?,?,?, 'en', ?, 0.9)`);
+const insMention = gdb.prepare(`INSERT OR IGNORE INTO entity_mentions (entity_id, content_id, role, resolution_confidence, status, extractor_version) VALUES (?,?, 'subject', 1.0, 'resolved', ?)`);
+const flipEnriched = sdb.prepare(`UPDATE content SET graph_enriched = 1, graph_enriched_at = datetime('now'), extractor_version = ? WHERE id = ?`);
+
+function run() {
+  if (APPLY) preflight();
   let created = 0, mentions = 0, enriched = 0;
   for (const roll of ROLLS) {
-    const rows = await queryAll(
+    const rows = queryAll(
       `SELECT id, paragraph_index, text FROM content WHERE doc_id=? AND deleted_at IS NULL AND COALESCE(graph_enriched,0)=0 AND blocktype='paragraph' AND paragraph_index BETWEEN ? AND ? ORDER BY paragraph_index`,
       [DOC, roll.start, roll.end]
     );
-    // Decide canonicals (disambiguate same-name within the roll by paragraph_index)
     const decided = [];
     const seen = new Map();
     for (const r of rows) {
@@ -88,23 +111,17 @@ async function run() {
     console.log(`\n=== ${roll.tag} [${roll.start}-${roll.end}] — ${decided.length} pending members ===`);
     if (!APPLY) { for (const d of decided) console.log(`  [${d.cid}] "${d.canonical}"${d.kin ? `  ← ${d.kin}` : ''}`); continue; }
     if (!decided.length) continue;
-
-    // 1. ONE writer transaction: insert all entities
-    await transaction(decided.map(d => ({ sql: `INSERT OR IGNORE INTO graph_entities (canonical_name, name, entity_type, religion, description) VALUES (?,?, 'person', '', ?)`, args: [d.canonical, d.canonical, d.description] })));
-    // 2. one read: resolve ids
-    const ph = decided.map(() => '?').join(',');
-    const idRows = await queryAll(`SELECT id, canonical_name FROM graph_entities WHERE canonical_name IN (${ph}) AND entity_type='person' AND religion=''`, decided.map(d => d.canonical));
-    const idMap = new Map(idRows.map(r => [r.canonical_name, r.id]));
-    // 3. graph.db (direct, fast): aliases + mentions
-    for (const d of decided) {
-      const id = idMap.get(d.canonical); if (!id) continue;
-      await graphQuery(`INSERT OR IGNORE INTO entity_aliases (entity_id, surface, surface_norm, lang, source, confidence) VALUES (?,?,?, 'en', ?, 0.9)`, [id, d.bare, normalizeSurface(d.bare), EV]);
-      await graphQuery(`INSERT OR IGNORE INTO entity_mentions (entity_id, content_id, role, resolution_confidence, status, extractor_version) VALUES (?,?, 'subject', 1.0, 'resolved', ?)`, [id, String(d.cid), EV]);
-      created++; mentions++;
-    }
-    // 4. ONE writer transaction: flip graph_enriched for the whole roll
-    await transaction([{ sql: `UPDATE content SET graph_enriched = 1, graph_enriched_at = datetime('now'), extractor_version = ? WHERE id IN (${decided.map(() => '?').join(',')})`, args: [EV, ...decided.map(d => d.cid)] }]);
-    enriched += decided.length;
+    const tx = sdb.transaction(() => {
+      for (const d of decided) {
+        insEntity.run(d.canonical, d.canonical, d.description);
+        const id = selId.get(d.canonical).id;
+        insAlias.run(id, d.bare, normalizeSurface(d.bare), EV);
+        insMention.run(id, String(d.cid), EV);
+        flipEnriched.run(EV, d.cid);
+        created++; mentions++; enriched++;
+      }
+    });
+    tx();
     console.log(`  ✓ ${roll.tag}: ${decided.length} entities + mentions + enriched`);
   }
   console.log(`\n${APPLY ? '⚙ APPLIED' : '🔍 DRY-RUN'}: ${APPLY ? `created ${created} entities, ${mentions} mentions, ${enriched} enriched` : 're-run with --apply to write'}`);
