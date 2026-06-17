@@ -160,20 +160,15 @@ async function patchDoc(absPath) {
     external_para_id: p.external_para_id || null
   }));
 
-  // 2. renumber EXISTING rows' paragraph_index to the full-parse order so the
-  //    inserted rows slot in correctly. This updates ONLY paragraph_index — no
-  //    synced change → Meili is NOT asked to re-ingest these rows.
-  const parsedIndexById = new Map(parsed.filter(p => p.external_para_id).map(p => [p.external_para_id, p.paragraph_index]));
-  const ts = new Date().toISOString();
-  const updates = [];
-  for (const r of existing) {
-    if (!r.external_para_id) continue;
-    const newIdx = parsedIndexById.get(r.external_para_id);
-    if (newIdx !== undefined) updates.push({ sql: 'UPDATE content SET paragraph_index = ?, updated_at = ? WHERE id = ?', args: [newIdx, ts, r.id] });
-  }
-  for (let i = 0; i < updates.length; i += 200) await transaction(updates.slice(i, i + 200));
-
-  // 3. insert ONLY the missing rows (synced=0 → Meili picks up just these)
+  // Insert ONLY the missing rows (synced=0 → sync-worker pushes just these;
+  // embedding=null → embedding-worker backfills vectors).
+  //
+  // NO renumber of existing rows. The earlier version issued one UPDATE per
+  // existing row to slot inserts into reading order — across the whole corpus
+  // that was ~200K UPDATEs that flooded the synchronous single-writer (99% CPU,
+  // timeouts). Not worth it: inserted rows keep their full-parse paragraph_index,
+  // so footnotes (the bulk of the misses) sort to the doc end (correct) and the
+  // minority of list items may sit slightly out of order — fine for search.
   await content.bulkInsertParagraphs(docId, rows);
 
   // 4. VERIFY this doc: existing ids all still present + unchanged count; new ids added.
@@ -184,7 +179,6 @@ async function patchDoc(absPath) {
   const lostExisting = [...existingIds].filter(id => !afterIds.has(id));
   const addedCount = after.length - existing.length;
   result.applied = true;
-  result.renumbered = updates.length;
   result.inserted = rows.length;
   result.verify_added = addedCount;
   result.verify_no_existing_lost = lostExisting.length === 0;
@@ -204,8 +198,23 @@ console.log(`files to inspect: ${files.length}\n`);
 const totals = { docs: 0, affected: 0, existing: 0, parsed: 0, missing: 0, footnotes: 0, inserted: 0, renumbered: 0, verifyFail: 0, noDoc: 0, parseErr: 0, skippedEmpty: 0 };
 const failures = [];
 
+// Transient single-writer errors (fetch failed / 408 / 5xx / conn reset) get
+// retried with backoff — patchDoc is idempotent (re-diffs by id), so a retry
+// only inserts what's still missing. Non-transient errors → per-doc failure.
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function runDoc(abs, tries = 3) {
+  for (let t = 1; t <= tries; t++) {
+    try { return await patchDoc(abs); }
+    catch (e) {
+      const transient = /fetch failed|writer (408|5\d\d)|ECONN|socket|timeout/i.test(e.message || '');
+      if (t < tries && transient) { await sleep(800 * t); continue; }
+      return { relPath: relative(basePath, abs), status: 'error', error: e.message };
+    }
+  }
+}
+
 for (const abs of files) {
-  const r = await patchDoc(abs).catch(e => ({ relPath: relative(basePath, abs), status: 'error', error: e.message }));
+  const r = await runDoc(abs);
   totals.docs++;
   if (r.status === 'skipped_empty') { totals.skippedEmpty++; continue; }
   if (r.status === 'no_db_doc') { totals.noDoc++; continue; }
@@ -214,7 +223,7 @@ for (const abs of files) {
   totals.affected++;
   totals.existing += r.existing; totals.parsed += r.parsed; totals.missing += r.missing; totals.footnotes += r.footnotesMissing;
   if (r.applied) {
-    totals.inserted += r.inserted; totals.renumbered += r.renumbered;
+    totals.inserted += r.inserted;
     if (!r.verify_ok) { totals.verifyFail++; failures.push(r); }
     console.log(`  ${r.verify_ok ? '✓' : '✗ VERIFY FAILED'} ${r.relPath} — +${r.inserted} (${r.footnotesMissing} fn) | existing ${r.existing} kept=${r.verify_no_existing_lost}`);
   } else {
@@ -233,7 +242,6 @@ console.log(`would-be-complete:     ${totals.parsed} (parsed by fixed adapter)`)
 console.log(`MISSING paragraphs:    ${totals.missing}  (${totals.footnotes} footnotes, ${totals.missing - totals.footnotes} list/prose)`);
 if (APPLY) {
   console.log(`INSERTED:              ${totals.inserted}`);
-  console.log(`paragraph_index renumbered (no re-sync): ${totals.renumbered}`);
   console.log(`verify failures:       ${totals.verifyFail}`);
 }
 if (failures.length) {
