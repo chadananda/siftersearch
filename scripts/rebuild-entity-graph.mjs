@@ -28,18 +28,21 @@ const GRAPH = 'data/graph.db';
 const BACKUP_ROOT = process.env.BACKUP_DIR || '/tank/backups/siftersearch';
 
 // Tables keyed by graph_entities id — delete a row if ANY listed column points outside the keeper set.
+// (Aliases = name-forms of an entity, not a per-book extraction → keeper-entity-scoped. Relations
+//  among keeper entities are kept. quote_clusters/significance/bridge are entity-scoped but ~empty.)
 const ENTITY_KEYED = {
   graph_relations: ['source_entity_id', 'target_entity_id'],
-  entity_mentions: ['entity_id'],          // sifter.db stale-duplicate copy
-  entity_aliases: ['entity_id'],           // sifter.db stale-duplicate copy
+  entity_aliases: ['entity_id'],
   set_members: ['entity_id'],
   quote_clusters: ['speaker_entity_id'],
-  quote_instances: ['speaker_entity_id'],
   significance_markers: ['subject_entity_id'],
   pending_bridge_relations: ['subject_entity_id', 'target_entity_id'],
 };
-// Tables keyed by content_id (paragraph) — keep only rows for the two books' paragraphs.
-const CONTENT_KEYED = { paragraph_roles: 'content_id' };
+// Tables keyed by content_id (a paragraph) — keep ONLY rows for the two books' paragraphs.
+// A mention/quote is an EXTRACTION from a specific book; we must not keep extractions from
+// other books (even of a keeper entity like Bahá'u'lláh in Taherzadeh) — those get extracted
+// later when those books are authorized. Research records (verify/*.md) may still cite them.
+const CONTENT_KEYED = { entity_mentions: 'content_id', quote_instances: 'content_id', paragraph_roles: 'content_id' };
 
 function preflightApply() {
   const procs = JSON.parse(execSync('pm2 jlist 2>/dev/null', { encoding: 'utf8' }));
