@@ -40,7 +40,17 @@ const TIER_MID_MIN_PRIORITY   = parseInt(process.env.EXTRACTION_TIER_MID   || '4
 const MODEL_HIGH     = process.env.EXTRACTION_MODEL_HIGH  || 'deepseek-v4-flash';
 const MODEL_MID      = process.env.EXTRACTION_MODEL_MID   || 'deepseek-v4-flash';
 const MODEL_LOW      = process.env.EXTRACTION_MODEL_LOW   || 'deepseek-v4-flash';
-const PROVIDER = 'deepseek';
+const PROVIDER = process.env.EXTRACTION_PROVIDER || 'deepseek';
+// Scope lock: when set (comma-separated doc ids), extract ONLY from these docs — the
+// rest of the corpus is never touched. Empty = whole-corpus (the normal pipeline).
+const ONLY_DOCS = (process.env.EXTRACT_ONLY_DOCS || '').split(',').map(s => parseInt(s.trim(), 10)).filter(Number.isFinite);
+// One-shot: exit when no scoped work remains, instead of idle-sleeping forever (for
+// a controlled, scoped backfill run rather than the long-lived PM2 daemon).
+const ONESHOT = process.env.EXTRACT_ONESHOT === '1';
+// Min paragraph length to extract. Default 50 skips trivial fragments corpus-wide,
+// but the recovered martyr-roll list-items ("Mullá Muḥammad-Mihdí,") are shorter —
+// a scoped backfill lowers this so those name-dense paragraphs aren't skipped.
+const MIN_TEXT_LEN = parseInt(process.env.EXTRACT_MIN_LEN || '50', 10);
 
 function modelForPriority(docPriority) {
   if ((docPriority ?? 0) >= TIER_HIGH_MIN_PRIORITY) return MODEL_HIGH;
@@ -564,17 +574,19 @@ async function pickNextDoc() {
   // Walk docs in priority order (idx_docs_priority_active), stop at first with
   // unprocessed content. INDEXED BY forces the priority index so SQLite walks
   // DESC and short-circuits at LIMIT 1 — ~8ms vs 80s without the hint.
+  const docScope = ONLY_DOCS.length ? `AND d.id IN (${ONLY_DOCS.join(',')})` : '';
   const row = await queryOne(`
     SELECT d.id, d.doc_priority, d.religion
     FROM docs d INDEXED BY idx_docs_priority_active
     WHERE d.deleted_at IS NULL
       AND d.duplicate_of IS NULL
+      ${docScope}
       AND EXISTS (
         SELECT 1 FROM content c
         WHERE c.doc_id = d.id
           AND c.graph_enriched = 0
           AND c.deleted_at IS NULL
-          AND length(c.text) > 50
+          AND length(c.text) > ${MIN_TEXT_LEN}
       )
     ORDER BY d.doc_priority DESC
     LIMIT 1
@@ -603,7 +615,7 @@ async function fetchBatch() {
       WHERE c.doc_id = ?
         AND c.graph_enriched = 0
         AND c.deleted_at IS NULL
-        AND length(c.text) > 50
+        AND length(c.text) > ${MIN_TEXT_LEN}
       ORDER BY c.paragraph_index ASC
       LIMIT ?
     `, [_currentDocId, BATCH_SIZE]);
@@ -771,6 +783,11 @@ async function workerLoop() {
   while (!isShuttingDown) {
     const count = await processOnce();
     if (count === 0) {
+      if (ONESHOT) {
+        logger.info({ totalExtracted, onlyDocs: ONLY_DOCS }, 'One-shot scope drained — exiting');
+        isShuttingDown = true;
+        break;
+      }
       await resetReextractQueue(); // re-queue reextract candidates before sleeping
       logger.info({ totalExtracted }, 'No work — sleeping');
       await delay(IDLE_SLEEP_MS);
