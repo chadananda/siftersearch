@@ -34,8 +34,19 @@ const EV = 'cc-subscription-rolls-v1';
 // Each ROLL: { tag, prov, start, end }. prov = the standalone descriptor (from the
 // framing paragraph). tag = short locative used to disambiguate canonical names.
 const ROLLS = [
-  { tag: 'Sang-Sar',   start: 821, end: 841, prov: 'Bábí; companion of the village of Sang-Sar (district of Simnán) — one of the eighteen martyred — who fell in the Bábí upheavals of Mázindarán. (The Dawn-Breakers, Sang-Sar roll.)' },
+  // --- DONE (kept for the record; pending-only filter makes them no-ops) ---
+  { tag: 'Míyámay',    start: 789, end: 819, prov: 'Bábí; companion of the village of Míyámay (Khurásán) martyred at the fort of Shaykh Ṭabarsí, 1849. (The Dawn-Breakers, Míyámay roll.)' },
+  { tag: 'Sang-Sar',   start: 821, end: 841, prov: 'Bábí; companion of the village of Sang-Sar (district of Simnán) — one of the eighteen martyred — who fell in the Bábí upheaval of Mázindarán. (The Dawn-Breakers, Sang-Sar roll.)' },
   { tag: 'Mázindarán', start: 843, end: 869, prov: 'Bábí; one of the twenty-seven recorded martyrs among the adherents of the Faith in Mázindarán. (The Dawn-Breakers, Mázindarán roll.)' },
+  // --- REMAINING martyr rolls (town-specific framing confirmed) ---
+  { tag: 'Savád-Kúh',  start: 871, end: 875, prov: 'Bábí; one of the five ascertained believers of Savád-Kúh martyred in the Shaykh Ṭabarsí upheaval, 1849. (The Dawn-Breakers, Savád-Kúh roll.)' },
+  { tag: 'Ardistán',   start: 877, end: 882, prov: 'Bábí; martyr from the town of Ardistán, named in the roll of Shaykh Ṭabarsí martyrs in The Dawn-Breakers.' },
+  { tag: 'Iṣfahán',    start: 883, end: 917, prov: 'Bábí; one of the thirty recorded martyrs from the city of Iṣfahán, named in the roll of Shaykh Ṭabarsí martyrs in The Dawn-Breakers.' },
+  { tag: 'Ṭabarsí',    start: 918, end: 939, prov: 'Bábí; martyr of the Shaykh Ṭabarsí upheaval (1849), named in the martyr roll in The Dawn-Breakers.' },
+  { tag: 'Zanján',     start: 940, end: 944, prov: 'Bábí; martyr, a resident of Zanján, named in the roll of Shaykh Ṭabarsí martyrs in The Dawn-Breakers.' },
+  { tag: 'Qáyin',      start: 946, end: 951, prov: 'Bábí; martyr of the Shaykh Ṭabarsí upheaval (this group included masons native to Kirmán resident in Qáyin), named in The Dawn-Breakers.' },
+  // --- ENEMY OFFICERS (framing p960: opponents of Quddús) — NOT Bábí, NOT martyrs ---
+  { tag: 'Ṭabarsí-officer', start: 961, end: 974, prov: 'Persian military officer / commander who opposed and besieged the Bábí defenders of the fort of Shaykh Ṭabarsí; named among the opposing officers in The Dawn-Breakers. (Not a Bábí; an opponent.)' },
 ];
 
 // trailing footnote markers [^N], page markers [pg N]/[pgN], trailing "and", punctuation
