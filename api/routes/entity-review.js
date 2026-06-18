@@ -11,6 +11,18 @@ import { query, queryAll, graphQueryAll } from '../lib/db.js';
 import { requireAdmin } from '../lib/auth.js';
 
 const DOCS = { 21308: 'The Dawn-Breakers', 21310: 'God Passes By' };
+// GPB (21310) chapter map — pre-mapped by paragraph_index from GPB's actual TOC
+// (bahai.org). The `heading` column holds marginal SECTION summaries, NOT chapter
+// titles, so chapters MUST be mapped by range. Period I = Foreword + Chapters I–V.
+const GPB_CHAPTERS = [
+  { ch: 0, title: 'Foreword', start: 0, end: 10 },
+  { ch: 1, title: 'The Birth of the Bábí Revelation', start: 11, end: 34 },
+  { ch: 2, title: "The Báb's Captivity in Ádhirbáyján", start: 35, end: 60 },
+  { ch: 3, title: 'Upheavals in Mázindarán, Nayríz and Zanján', start: 61, end: 81 },
+  { ch: 4, title: 'The Execution of the Báb', start: 82, end: 98 },
+  { ch: 5, title: 'The Attempt on the Life of the Sháh and its Consequences', start: 99, end: 131 },
+];
+const gpbChapter = (idx) => GPB_CHAPTERS.find(c => idx >= c.start && idx <= c.end) || null;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 async function buildModel() {
@@ -64,18 +76,27 @@ function render(ents) {
 
   const sections = types.map((t, i) => {
     const te = ents.filter(e => (e.entity_type || 'unknown') === t);
-    // group by first-introduction chapter, ordered by (doc, firstIdx)
-    const groups = new Map(); // key: doc|heading
+    // group by CHAPTER (pre-mapped by paragraph range); the marginal section-heading
+    // is shown as a per-entity sub-label, never used as the group key.
+    const groups = new Map();
     for (const e of te) {
-      const key = e.firstDoc ? `${e.firstDoc} ${e.firstHeading}` : 'none';
-      if (!groups.has(key)) groups.set(key, { doc: e.firstDoc, heading: e.firstHeading, minIdx: e.firstIdx, list: [] });
-      const g = groups.get(key); g.list.push(e); if (e.firstIdx < g.minIdx) g.minIdx = e.firstIdx;
+      let key, label, order;
+      if (e.firstDoc === 21310) {
+        const ch = gpbChapter(e.firstIdx);
+        key = ch ? 'g' + ch.ch : 'none';
+        label = !ch ? 'Not yet linked to a chapter' : (ch.ch === 0 ? 'God Passes By · Foreword' : `God Passes By · Chapter ${ch.ch} — ${ch.title}`);
+        order = ch ? ch.start : 9e9;
+      } else if (e.firstDoc === 21308) {
+        key = 'db'; label = 'The Dawn-Breakers (not yet chapter-mapped)'; order = 8e9;
+      } else { key = 'none'; label = 'Not yet linked to a chapter'; order = 9e9; }
+      if (!groups.has(key)) groups.set(key, { label, order, list: [] });
+      groups.get(key).list.push(e);
     }
-    const ordered = [...groups.values()].sort((a, b) => ((a.doc === 21308 ? 0 : a.doc === 21310 ? 1 : 2) * 1e9 + a.minIdx) - ((b.doc === 21308 ? 0 : b.doc === 21310 ? 1 : 2) * 1e9 + b.minIdx));
+    const ordered = [...groups.values()].sort((a, b) => a.order - b.order);
     const body = ordered.map(g => {
-      const title = g.doc ? `${esc(DOCS[g.doc] || g.doc)} — ${esc(g.heading)}` : 'Not yet linked to a chapter';
+      const title = esc(g.label);
       const items = g.list.sort((a, b) => a.canonical_name.localeCompare(b.canonical_name)).map(e => `
-        <details class="ent"><summary>${esc(e.canonical_name)} <span class="meta">· ${e.mentions} mention${e.mentions === 1 ? '' : 's'}${e.religion ? ' · ' + esc(e.religion) : ''}${e.era ? ' · ' + esc(e.era) : ''}</span></summary>
+        <details class="ent"><summary>${esc(e.canonical_name)} <span class="meta">· ${e.mentions} mention${e.mentions === 1 ? '' : 's'}${e.firstHeading ? ' · § ' + esc(e.firstHeading) : ''}${e.religion ? ' · ' + esc(e.religion) : ''}${e.era ? ' · ' + esc(e.era) : ''}</span></summary>
           <div class="rec">
             ${e.description ? `<p class="desc">${esc(e.description)}</p>` : '<p class="nodesc">(no description yet)</p>'}
             ${e.aliases.length ? `<p class="al"><b>Aliases:</b> ${e.aliases.map(esc).join(' · ')}</p>` : ''}
