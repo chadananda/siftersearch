@@ -196,8 +196,14 @@ export async function addAlias(entityId, { surface, surfaceNorm, lang = 'en', so
  */
 export async function mergeEntities(keeperId, mergedIds, { reason, evidence } = {}) {
   for (const id of mergedIds) {
-    await graphQuery(`UPDATE entity_aliases SET entity_id = ? WHERE entity_id = ?`, [keeperId, id]);
-    await graphQuery(`UPDATE entity_mentions SET entity_id = ? WHERE entity_id = ?`, [keeperId, id]);
+    // Repoint aliases + mentions to the keeper. Use OR IGNORE because the keeper may already
+    // have the same (entity_id,surface_norm) alias or (entity_id,content_id,role) mention as
+    // the merged entity (true duplicates often share mentions) — those would violate the
+    // UNIQUE constraints. Then drop any leftover (conflicting) rows still on the merged id.
+    await graphQuery(`UPDATE OR IGNORE entity_aliases SET entity_id = ? WHERE entity_id = ?`, [keeperId, id]);
+    await graphQuery(`DELETE FROM entity_aliases WHERE entity_id = ?`, [id]);
+    await graphQuery(`UPDATE OR IGNORE entity_mentions SET entity_id = ? WHERE entity_id = ?`, [keeperId, id]);
+    await graphQuery(`DELETE FROM entity_mentions WHERE entity_id = ?`, [id]);
     await mainQuery(`UPDATE graph_relations SET source_entity_id = ? WHERE source_entity_id = ?`, [keeperId, id]);
     await mainQuery(`UPDATE graph_relations SET target_entity_id = ? WHERE target_entity_id = ?`, [keeperId, id]);
     await mainQuery(`UPDATE graph_entities SET mention_count = mention_count + (SELECT COALESCE(mention_count,0) FROM graph_entities WHERE id = ?) WHERE id = ?`, [id, keeperId]);
