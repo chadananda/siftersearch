@@ -71,7 +71,8 @@
 <style>
   .er-bar { display: flex; gap: 14px; align-items: center; padding: 10px 0; flex-wrap: wrap; }
   .er-bar h2 { margin: 0; font-size: 20px; }
-  .er-bar button { padding: 6px 16px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; background: #f4f4f5; font-size: 14px; }
+  .er-bar button { padding: 6px 16px; border: 1px solid #2563eb; border-radius: 6px; cursor: pointer; background: #2563eb; color: #fff; font-size: 14px; font-weight: 600; }
+  .er-bar button:hover:not(:disabled) { background: #1d4ed8; border-color: #1d4ed8; }
   .er-bar button:disabled { opacity: .5; cursor: default; }
   .muted { color: #888; font-size: 13px; }
   .err { color: #c0392b; font-size: 13px; }
