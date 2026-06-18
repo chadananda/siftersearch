@@ -28,7 +28,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<':
 async function buildModel() {
   // 1. all entities (sifter.db)
   const entities = await queryAll(`SELECT id, canonical_name, entity_type, religion, era, description FROM graph_entities ORDER BY canonical_name`);
-  const byId = new Map(entities.map(e => [Number(e.id), { ...e, id: Number(e.id), aliases: [], mentions: 0, firstDoc: null, firstHeading: null, firstIdx: Infinity }]));
+  const byId = new Map(entities.map(e => [Number(e.id), { ...e, id: Number(e.id), aliases: [], relations: [], mentions: 0, firstDoc: null, firstHeading: null, firstIdx: Infinity }]));
 
   // 2. aliases (graph.db)
   for (const a of await graphQueryAll(`SELECT entity_id, surface FROM entity_aliases`)) {
@@ -64,6 +64,14 @@ async function buildModel() {
     e.flagged = c !== undefined;
     e.flagComment = c || '';
   }
+
+  // 5. relationship edges (sifter.db graph_relations) — outgoing, resolved to names
+  try {
+    for (const r of await queryAll(`SELECT source_entity_id, target_entity_id, relation_type FROM graph_relations`)) {
+      const e = byId.get(Number(r.source_entity_id)), t = byId.get(Number(r.target_entity_id));
+      if (e && t) e.relations.push({ type: r.relation_type, target: t.canonical_name });
+    }
+  } catch { /* graph_relations may be absent */ }
   return [...byId.values()];
 }
 
@@ -100,6 +108,7 @@ function render(ents) {
           <div class="rec">
             ${e.description ? `<p class="desc">${esc(e.description)}</p>` : '<p class="nodesc">(no description yet)</p>'}
             ${e.aliases.length ? `<p class="al"><b>Aliases:</b> ${e.aliases.map(esc).join(' · ')}</p>` : ''}
+            ${e.relations.length ? `<p class="rel"><b>Relationships:</b> ${e.relations.map(r => esc(r.type) + ' → ' + esc(r.target)).join(' · ')}</p>` : ''}
             <p class="id">entity #${e.id}</p>
             <div class="flagwrap${e.flagged ? ' on' : ''}">
               <label class="flag"><input type="checkbox" class="flagcb" id="fc-${e.id}" data-id="${e.id}"${e.flagged ? ' checked' : ''}> ⚑ Flag for review</label>
@@ -134,6 +143,7 @@ main{padding:16px;max-width:980px;margin:0 auto}
 .desc{margin:4px 0;color:#333}
 .nodesc{color:#bbb;font-style:italic;margin:4px 0}
 .al{font-size:13px;color:#555;margin:4px 0}
+.rel{font-size:13px;color:#3b6;margin:4px 0}
 .id{font-size:11px;color:#bbb;margin:2px 0}
 .flagwrap{margin-top:6px;border-top:1px dashed #eee;padding-top:6px}
 .flagwrap.on{border-top-color:#f0c36d}
