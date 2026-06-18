@@ -1,5 +1,6 @@
 {
   "_comment": "Doc extraction priority for entity extraction pipeline. Higher = processed first. Run scripts/apply-doc-priority.js after editing. docs.tier is unreliable (defaulted to 'secondary') — use author/title/religion matching instead. Religion field uses 'Baha'i' (no diacritics). Extraction model tiers (EXTRACTION_TIER_HIGH/MID in .env-public): HIGH >= 400 → v4-pro, MID 100-399 → v4-flash, LOW < 100 → v4-flash.",
+  "_ordering_rationale": "INTERPRETIVE-BEFORE-PRIMARY, and within the authoritative writings WORK BACKWARDS CHRONOLOGICALLY (interpreters before scripture) — deliberate. Order: GPB(1000) seed -> Dawn-Breakers(900) -> secondary histories(620-800) -> PILGRIM NOTES(600, eyewitness history + interpretive) -> modern HISTORICAL scholarship(580) -> then the authoritative writings NEWEST-FIRST: Shoghi Effendi(550) -> 'Abdu'l-Bahá(530) -> Bahá'u'lláh(510) -> the Báb(500). WHY: an interpretation is a CORRECTION of a non-obvious meaning that the primary text alone is prone to be MISread on; the correct concept must be formed FIRST (from the later interpreter) before the concept is encountered in the earlier primary text, or the source mis-seeds it. E.g. Shoghi Effendi fixes the true station of 'Abdu'l-Bahá, or the meaning of 'the day that shall not be followed by night,' before those appear in scripture. CHRONOLOGY MATTERS: latest interpreter -> earliest revelation. The 580 scholarship tier assumes HISTORICAL scholarship; devotional/apologetic work sits lower. First-match-wins by array order, so the specific Pilgrim-Notes collection match precedes author matches.",
 
   "bahai_layers": [
     {"layer": 1,  "match": {"title": "God Passes By"},                          "priority": 1000},
@@ -10,25 +11,26 @@
     {"layer": 6,  "match": {"author_contains": "Momen"},                        "priority": 650},
     {"layer": 7,  "match": {"author_contains": "Mazandarani"},                  "priority": 620},
 
-    {"layer": 8,  "match": {"author_contains": "Bahá'u'lláh"},                  "priority": 550},
-    {"layer": 9,  "match": {"author_contains": "bahaullah"},                    "priority": 550},
-    {"layer": 10, "match": {"author_contains": "Báb"},                          "priority": 545},
-    {"layer": 11, "match": {"author_contains": "bab"},                          "priority": 545},
+    {"layer": 8,  "match": {"collection_contains": "Pilgrim Notes"},            "priority": 600},
 
-    {"layer": 12, "match": {"author_contains": "'Abdu'l-Bahá"},                 "priority": 500},
-    {"layer": 13, "match": {"author_contains": "abdul-baha"},                   "priority": 500},
+    {"layer": 9,  "match": {"author_contains": "buck"},                         "priority": 580},
+    {"layer": 10, "match": {"author_contains": "hatcher"},                      "priority": 580},
+    {"layer": 11, "match": {"author_contains": "Stockman"},                     "priority": 580},
+    {"layer": 12, "match": {"author_contains": "Hassall"},                      "priority": 580},
+    {"layer": 13, "match": {"author_contains": "hassall"},                      "priority": 580},
+    {"layer": 14, "match": {"author_contains": "Cole"},                         "priority": 580},
+    {"layer": 15, "match": {"author_contains": "cole"},                         "priority": 580},
 
-    {"layer": 14, "match": {"author_contains": "Shoghi Effendi"},               "priority": 480},
+    {"layer": 16, "match": {"author_contains": "Shoghi Effendi"},               "priority": 550},
 
-    {"layer": 15, "match": {"author_contains": "buck"},                         "priority": 320},
-    {"layer": 16, "match": {"author_contains": "hatcher"},                      "priority": 320},
-    {"layer": 17, "match": {"author_contains": "Stockman"},                     "priority": 320},
-    {"layer": 18, "match": {"author_contains": "Hassall"},                      "priority": 320},
-    {"layer": 19, "match": {"author_contains": "hassall"},                      "priority": 320},
-    {"layer": 20, "match": {"author_contains": "Cole"},                         "priority": 300},
-    {"layer": 21, "match": {"author_contains": "cole"},                         "priority": 300},
+    {"layer": 17, "match": {"author_contains": "'Abdu'l-Bahá"},                 "priority": 530},
+    {"layer": 18, "match": {"author_contains": "abdul-baha"},                   "priority": 530},
 
-    {"layer": 22, "match": {"collection_contains": "Pilgrim Notes"},            "priority": 280},
+    {"layer": 19, "match": {"author_contains": "Bahá'u'lláh"},                  "priority": 510},
+    {"layer": 20, "match": {"author_contains": "bahaullah"},                    "priority": 510},
+
+    {"layer": 21, "match": {"author_contains": "Báb"},                          "priority": 500},
+    {"layer": 22, "match": {"author_contains": "bab"},                          "priority": 500},
 
     {"layer": 23, "match": {"author_contains": "Universal House of Justice"},   "priority": 80},
     {"layer": 24, "match": {"author_contains": "bic"},                          "priority": 80},
@@ -36,16 +38,17 @@
     {"layer": 25, "match": {"religion": "Baha'i"},                              "priority": 200}
   ],
 
-  "other_layers": [
-    {"layer": 30, "match": {"religion": "Judaism"},                             "priority": 440},
-    {"layer": 31, "match": {"religion": "Islam"},                               "priority": 440},
-    {"layer": 32, "match": {"religion": "Christian"},                           "priority": 440},
-    {"layer": 33, "match": {"religion": "Zoroastrian"},                         "priority": 440},
-    {"layer": 34, "match": {"religion": "Hindu"},                               "priority": 440},
-    {"layer": 35, "match": {"religion": "Buddhist"},                            "priority": 440},
-    {"layer": 36, "match": {"religion": "Tao"},                                 "priority": 440},
-    {"layer": 37, "match": {"religion": "Confucian"},                           "priority": 440},
-    {"layer": 38, "match": {"religion": "Sikh"},                                "priority": 440},
-    {"layer": 39, "match": {"religion": "Jain"},                                "priority": 440}
+  "_other_rationale": "Same backwards-chronological walk continues across dispensations (the Báb interprets the Qur'án, Bahá'u'lláh interprets all prior scripture): later revelation ranks above the earlier one it clarifies. All sit BELOW the Báb (500). Abrahamic chain is clear (Islam 470 > Christianity 460 > Judaism 440). The relative dating of the older/eastern Manifestations (Buddha/Zoroaster/Krishna) varies by source, and Sikh/Confucian/Tao/Jain sit outside the progressive-revelation interpretive chain — these placements are APPROXIMATE and flagged for user confirmation.",
+    "other_layers": [
+    {"layer": 30, "match": {"religion": "Islam"},                               "priority": 470},
+    {"layer": 31, "match": {"religion": "Christian"},                           "priority": 460},
+    {"layer": 32, "match": {"religion": "Buddhist"},                            "priority": 450},
+    {"layer": 33, "match": {"religion": "Zoroastrian"},                         "priority": 445},
+    {"layer": 34, "match": {"religion": "Judaism"},                             "priority": 440},
+    {"layer": 35, "match": {"religion": "Hindu"},                               "priority": 435},
+    {"layer": 36, "match": {"religion": "Sikh"},                                "priority": 420},
+    {"layer": 37, "match": {"religion": "Confucian"},                           "priority": 420},
+    {"layer": 38, "match": {"religion": "Tao"},                                 "priority": 420},
+    {"layer": 39, "match": {"religion": "Jain"},                                "priority": 420}
   ]
 }
