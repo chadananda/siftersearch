@@ -204,8 +204,9 @@ export async function mergeEntities(keeperId, mergedIds, { reason, evidence } = 
     await graphQuery(`DELETE FROM entity_aliases WHERE entity_id = ?`, [id]);
     await graphQuery(`UPDATE OR IGNORE entity_mentions SET entity_id = ? WHERE entity_id = ?`, [keeperId, id]);
     await graphQuery(`DELETE FROM entity_mentions WHERE entity_id = ?`, [id]);
-    await mainQuery(`UPDATE graph_relations SET source_entity_id = ? WHERE source_entity_id = ?`, [keeperId, id]);
-    await mainQuery(`UPDATE graph_relations SET target_entity_id = ? WHERE target_entity_id = ?`, [keeperId, id]);
+    await mainQuery(`UPDATE OR IGNORE graph_relations SET source_entity_id = ? WHERE source_entity_id = ?`, [keeperId, id]);
+    await mainQuery(`UPDATE OR IGNORE graph_relations SET target_entity_id = ? WHERE target_entity_id = ?`, [keeperId, id]);
+    await mainQuery(`DELETE FROM graph_relations WHERE source_entity_id = ? OR target_entity_id = ?`, [id, id]);
     // sifter.db ALSO carries stale-duplicate entity_mentions/entity_aliases + the migration-72
     // pipeline tables, all of which FK graph_entities(id) and would block the delete. Repoint
     // every such column to the keeper (OR IGNORE + drop leftovers where a UNIQUE applies).
