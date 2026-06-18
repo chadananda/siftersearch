@@ -31,7 +31,9 @@ const ment = await graphQueryAll(`SELECT entity_id, content_id FROM entity_menti
 const entParas = new Map();
 for (const m of ment) { const cid = parseInt(m.content_id, 10); if (gpbText.has(cid)) { if (!entParas.has(m.entity_id)) entParas.set(m.entity_id, new Set()); entParas.get(m.entity_id).add(cid); } }
 // 3. entities + aliases + existing descriptions
-const ents = await queryAll(`SELECT id, canonical_name, description FROM graph_entities`);
+// Persons + works (tablets) only — that's where GPB's adjectives/descriptors characterize the
+// subject. Places/concepts/events mostly appear in lists (no useful characterization) — skip them.
+const ents = await queryAll(`SELECT id, canonical_name, description FROM graph_entities WHERE entity_type IN ('person','work')`);
 const entById = new Map(ents.map(e => [Number(e.id), e]));
 const aliasMap = new Map();
 for (const a of await graphQueryAll(`SELECT entity_id, surface FROM entity_aliases`)) { if (!aliasMap.has(a.entity_id)) aliasMap.set(a.entity_id, []); aliasMap.get(a.entity_id).push(a.surface); }
