@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import EntityReview from '../../components/admin/EntityReview.svelte';
+---
+
+<AdminLayout title="Entity Review">
+  <EntityReview client:only="svelte" />
+</AdminLayout>
