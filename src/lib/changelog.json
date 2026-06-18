@@ -1,6 +1,76 @@
 {
-  "generated": "2026-06-18T04:20:37.944Z",
+  "generated": "2026-06-18T15:44:23.839Z",
   "entries": [
+    {
+      "hash": "3aec7ec2",
+      "date": "2026-06-18",
+      "type": "Docs",
+      "description": "Step3 merge done + GPB-description approach corrected (reading not matching)",
+      "scope": null
+    },
+    {
+      "hash": "6f62dbf4",
+      "date": "2026-06-18",
+      "type": "Other",
+      "description": "Rank GPB sentences by characterization texture (superlatives/station words)",
+      "scope": "step3"
+    },
+    {
+      "hash": "58fe48d5",
+      "date": "2026-06-18",
+      "type": "Other",
+      "description": "Restrict GPB gather to person+work entities",
+      "scope": "step3"
+    },
+    {
+      "hash": "f5fb7eff",
+      "date": "2026-06-18",
+      "type": "Other",
+      "description": "Gather verbatim GPB descriptors into entity descriptions",
+      "scope": "step3"
+    },
+    {
+      "hash": "34bdf386",
+      "date": "2026-06-18",
+      "type": "Fixed",
+      "description": "MergeEntities graph_relations OR IGNORE + drop leftover (UNIQUE on source,target,type)",
+      "scope": "graph-db"
+    },
+    {
+      "hash": "9cdf4a58",
+      "date": "2026-06-18",
+      "type": "Fixed",
+      "description": "MergeEntities repoints ALL sifter.db FK refs (pipeline tables + stale dups) before delete",
+      "scope": "graph-db"
+    },
+    {
+      "hash": "093ecc1a",
+      "date": "2026-06-18",
+      "type": "Fixed",
+      "description": "MergeEntities OR IGNORE + drop leftovers (avoid UNIQUE conflict on shared mentions/aliases)",
+      "scope": "graph-db"
+    },
+    {
+      "hash": "b0b1bfaa",
+      "date": "2026-06-18",
+      "type": "Other",
+      "description": "Entity merge executor (same-name compute + cross-name explicit)",
+      "scope": "step3"
+    },
+    {
+      "hash": "4607baf1",
+      "date": "2026-06-18",
+      "type": "Docs",
+      "description": "Entity merge plan for review (85 dup groups classified)",
+      "scope": null
+    },
+    {
+      "hash": "05d45c8c",
+      "date": "2026-06-17",
+      "type": "New",
+      "description": "Entity Review page in admin panel (auth-only, live-refresh, no key in URL)",
+      "scope": "admin"
+    },
     {
       "hash": "73977814",
       "date": "2026-06-17",
@@ -3430,80 +3500,82 @@
       "type": "Fixed",
       "description": "Search dedup per title per tradition + paragraph deeplinks",
       "scope": null
-    },
-    {
-      "hash": "d8f958c0",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Print CSS — hide all buttons/tags, fix padding, clean layout",
-      "scope": null
-    },
-    {
-      "hash": "8e88edca",
-      "date": "2026-05-14",
-      "type": "Other",
-      "description": "Comprehensive print CSS for research articles with QR codes",
-      "scope": null
-    },
-    {
-      "hash": "d20cb64e",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Retry overloaded API errors with backoff; cap rerank at 5 concurrent batches",
-      "scope": null
-    },
-    {
-      "hash": "56d4d274",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "LLM-generated unique hero prompts using article overview + section labels",
-      "scope": null
-    },
-    {
-      "hash": "1ef5e46d",
-      "date": "2026-05-14",
-      "type": "Performance",
-      "description": "Parallelize gap-check+diversity-sweep; all rerank batches concurrent",
-      "scope": null
-    },
-    {
-      "hash": "1fb6f18e",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Atomic queue claim prevents multiple workers racing on same task",
-      "scope": null
-    },
-    {
-      "hash": "619b02b3",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Cap clusterAndStructure input at 60 passages; raise max_tokens to 16k",
-      "scope": null
-    },
-    {
-      "hash": "9855d2f1",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Remove 'Not directly relevant' — irrelevant passages are filtered, not labeled",
-      "scope": null
-    },
-    {
-      "hash": "cc892693",
-      "date": "2026-05-14",
-      "type": "Other",
-      "description": "Attenborough — wonder, awe, direct insight for research summaries",
-      "scope": null
-    },
-    {
-      "hash": "83c9ea69",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Overview and section summaries start with the subject, not domain hedges",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-06-18": [
+      {
+        "hash": "3aec7ec2",
+        "date": "2026-06-18",
+        "type": "Docs",
+        "description": "Step3 merge done + GPB-description approach corrected (reading not matching)",
+        "scope": null
+      },
+      {
+        "hash": "6f62dbf4",
+        "date": "2026-06-18",
+        "type": "Other",
+        "description": "Rank GPB sentences by characterization texture (superlatives/station words)",
+        "scope": "step3"
+      },
+      {
+        "hash": "58fe48d5",
+        "date": "2026-06-18",
+        "type": "Other",
+        "description": "Restrict GPB gather to person+work entities",
+        "scope": "step3"
+      },
+      {
+        "hash": "f5fb7eff",
+        "date": "2026-06-18",
+        "type": "Other",
+        "description": "Gather verbatim GPB descriptors into entity descriptions",
+        "scope": "step3"
+      },
+      {
+        "hash": "34bdf386",
+        "date": "2026-06-18",
+        "type": "Fixed",
+        "description": "MergeEntities graph_relations OR IGNORE + drop leftover (UNIQUE on source,target,type)",
+        "scope": "graph-db"
+      },
+      {
+        "hash": "9cdf4a58",
+        "date": "2026-06-18",
+        "type": "Fixed",
+        "description": "MergeEntities repoints ALL sifter.db FK refs (pipeline tables + stale dups) before delete",
+        "scope": "graph-db"
+      },
+      {
+        "hash": "093ecc1a",
+        "date": "2026-06-18",
+        "type": "Fixed",
+        "description": "MergeEntities OR IGNORE + drop leftovers (avoid UNIQUE conflict on shared mentions/aliases)",
+        "scope": "graph-db"
+      },
+      {
+        "hash": "b0b1bfaa",
+        "date": "2026-06-18",
+        "type": "Other",
+        "description": "Entity merge executor (same-name compute + cross-name explicit)",
+        "scope": "step3"
+      },
+      {
+        "hash": "4607baf1",
+        "date": "2026-06-18",
+        "type": "Docs",
+        "description": "Entity merge plan for review (85 dup groups classified)",
+        "scope": null
+      }
+    ],
     "2026-06-17": [
+      {
+        "hash": "05d45c8c",
+        "date": "2026-06-17",
+        "type": "New",
+        "description": "Entity Review page in admin panel (auth-only, live-refresh, no key in URL)",
+        "scope": "admin"
+      },
       {
         "hash": "73977814",
         "date": "2026-06-17",
@@ -6976,76 +7048,6 @@
         "date": "2026-05-14",
         "type": "Fixed",
         "description": "Search dedup per title per tradition + paragraph deeplinks",
-        "scope": null
-      },
-      {
-        "hash": "d8f958c0",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Print CSS — hide all buttons/tags, fix padding, clean layout",
-        "scope": null
-      },
-      {
-        "hash": "8e88edca",
-        "date": "2026-05-14",
-        "type": "Other",
-        "description": "Comprehensive print CSS for research articles with QR codes",
-        "scope": null
-      },
-      {
-        "hash": "d20cb64e",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Retry overloaded API errors with backoff; cap rerank at 5 concurrent batches",
-        "scope": null
-      },
-      {
-        "hash": "56d4d274",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "LLM-generated unique hero prompts using article overview + section labels",
-        "scope": null
-      },
-      {
-        "hash": "1ef5e46d",
-        "date": "2026-05-14",
-        "type": "Performance",
-        "description": "Parallelize gap-check+diversity-sweep; all rerank batches concurrent",
-        "scope": null
-      },
-      {
-        "hash": "1fb6f18e",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Atomic queue claim prevents multiple workers racing on same task",
-        "scope": null
-      },
-      {
-        "hash": "619b02b3",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Cap clusterAndStructure input at 60 passages; raise max_tokens to 16k",
-        "scope": null
-      },
-      {
-        "hash": "9855d2f1",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Remove 'Not directly relevant' — irrelevant passages are filtered, not labeled",
-        "scope": null
-      },
-      {
-        "hash": "cc892693",
-        "date": "2026-05-14",
-        "type": "Other",
-        "description": "Attenborough — wonder, awe, direct insight for research summaries",
-        "scope": null
-      },
-      {
-        "hash": "83c9ea69",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Overview and section summaries start with the subject, not domain hedges",
         "scope": null
       }
     ]

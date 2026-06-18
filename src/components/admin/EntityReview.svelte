@@ -29,7 +29,32 @@
     loading = false;
   }
 
-  onMount(() => load());
+  // The review page (in the iframe) hands flag/note saves up to us — we hold the admin
+  // session, so we do the write and ack back so the iframe can show "saved ✓".
+  async function onFlagMessage(e) {
+    const d = e?.data;
+    if (!d || d.type !== 'er-flag') return;
+    const frame = document.querySelector('.er-frame');
+    let ok = false;
+    try {
+      const res = await authenticatedFetch(REVIEW_URL + '/flag', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          entityId: d.entityId, canonicalName: d.canonicalName, entityType: d.entityType,
+          comment: d.comment, flagged: d.flagged,
+        }),
+      });
+      ok = res.ok;
+    } catch { ok = false; }
+    frame?.contentWindow?.postMessage({ type: ok ? 'er-flag-ok' : 'er-flag-err', key: d.key }, '*');
+  }
+
+  onMount(() => {
+    load();
+    window.addEventListener('message', onFlagMessage);
+    return () => window.removeEventListener('message', onFlagMessage);
+  });
 </script>
 
 <div class="er-bar">
