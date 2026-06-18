@@ -206,6 +206,24 @@ export async function mergeEntities(keeperId, mergedIds, { reason, evidence } = 
     await graphQuery(`DELETE FROM entity_mentions WHERE entity_id = ?`, [id]);
     await mainQuery(`UPDATE graph_relations SET source_entity_id = ? WHERE source_entity_id = ?`, [keeperId, id]);
     await mainQuery(`UPDATE graph_relations SET target_entity_id = ? WHERE target_entity_id = ?`, [keeperId, id]);
+    // sifter.db ALSO carries stale-duplicate entity_mentions/entity_aliases + the migration-72
+    // pipeline tables, all of which FK graph_entities(id) and would block the delete. Repoint
+    // every such column to the keeper (OR IGNORE + drop leftovers where a UNIQUE applies).
+    await mainQuery(`UPDATE OR IGNORE entity_aliases SET entity_id = ? WHERE entity_id = ?`, [keeperId, id]);
+    await mainQuery(`DELETE FROM entity_aliases WHERE entity_id = ?`, [id]);
+    await mainQuery(`UPDATE OR IGNORE entity_mentions SET entity_id = ? WHERE entity_id = ?`, [keeperId, id]);
+    await mainQuery(`DELETE FROM entity_mentions WHERE entity_id = ?`, [id]);
+    await mainQuery(`UPDATE paragraph_roles SET speaker_entity_id = ? WHERE speaker_entity_id = ?`, [keeperId, id]);
+    await mainQuery(`UPDATE paragraph_roles SET narrator_entity_id = ? WHERE narrator_entity_id = ?`, [keeperId, id]);
+    await mainQuery(`UPDATE paragraph_roles SET addressee_entity_id = ? WHERE addressee_entity_id = ?`, [keeperId, id]);
+    await mainQuery(`UPDATE paragraph_roles SET setting_place_entity_id = ? WHERE setting_place_entity_id = ?`, [keeperId, id]);
+    await mainQuery(`UPDATE quote_instances SET speaker_entity_id = ? WHERE speaker_entity_id = ?`, [keeperId, id]);
+    await mainQuery(`UPDATE quote_clusters SET speaker_entity_id = ? WHERE speaker_entity_id = ?`, [keeperId, id]);
+    await mainQuery(`UPDATE OR IGNORE set_members SET entity_id = ? WHERE entity_id = ?`, [keeperId, id]);
+    await mainQuery(`DELETE FROM set_members WHERE entity_id = ?`, [id]);
+    await mainQuery(`UPDATE significance_markers SET subject_entity_id = ? WHERE subject_entity_id = ?`, [keeperId, id]);
+    await mainQuery(`UPDATE pending_bridge_relations SET subject_entity_id = ? WHERE subject_entity_id = ?`, [keeperId, id]);
+    await mainQuery(`UPDATE pending_bridge_relations SET target_entity_id = ? WHERE target_entity_id = ?`, [keeperId, id]);
     await mainQuery(`UPDATE graph_entities SET mention_count = mention_count + (SELECT COALESCE(mention_count,0) FROM graph_entities WHERE id = ?) WHERE id = ?`, [id, keeperId]);
     await mainQuery(`DELETE FROM graph_entities WHERE id = ?`, [id]);
   }
