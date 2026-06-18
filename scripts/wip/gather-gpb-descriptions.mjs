@@ -40,6 +40,12 @@ for (const a of await graphQueryAll(`SELECT entity_id, surface FROM entity_alias
 
 const splitSentences = (t) => t.replace(/\s+/g, ' ').split(/(?<=[.!?”])\s+(?=[A-Z“"‘'(])/).map(s => s.trim()).filter(Boolean);
 
+// "Texture" markers — Shoghi Effendi's characterizing language (superlatives, station/role words).
+// A sentence scoring high on these CHARACTERIZES the subject (e.g. "preeminent doctrinal work",
+// "the Most Holy Book", "the ethical…"), vs an incidental quote/reference. Used to rank, not filter.
+const MARKERS = ['most ', 'preeminent', 'foremost', 'greatest', 'weightiest', 'chief ', 'unique', 'peerless', 'supreme', 'mightiest', 'noblest', 'unrivalled', 'unequalled', 'matchless', 'immortal', 'principal', 'outstanding', 'distinguished', 'renowned', 'illustrious', 'consummate', 'crowning', 'holiest', 'mother-book', 'mother book', 'charter', 'repository', 'treasur', 'doctrinal', 'ethical', 'first ', 'last ', 'noted', 'celebrated', 'pre-eminent', 'most holy', 'station'];
+const charScore = (s) => { const sl = s.toLowerCase(); let n = 0; for (const m of MARKERS) if (sl.includes(m)) n++; return n; };
+
 const updates = [];
 let withDesc = 0;
 for (const [eid, paras] of entParas) {
@@ -48,16 +54,18 @@ for (const [eid, paras] of entParas) {
   const terms = [e.canonical_name, ...(aliasMap.get(eid) || [])]
     .map(n => normalizeSurface(n)).filter(n => n && n.length >= 4 && !['the','that','this','god'].includes(n));
   if (!terms.length) continue;
-  const found = []; const seen = new Set();
+  const cand = []; const seen = new Set(); let order = 0;
   for (const cid of paras) {
     for (const s of splitSentences(gpbText.get(cid))) {
       const sn = normalizeSurface(s);
-      if (terms.some(t => sn.includes(t))) { if (!seen.has(s) && s.length > 12) { seen.add(s); found.push(s); } }
+      if (terms.some(t => sn.includes(t)) && !seen.has(s) && s.length > 12) { seen.add(s); cand.push({ s, order: order++, score: charScore(s) }); }
     }
-    if (found.length >= MAX_SENT) break;
   }
-  if (!found.length) continue;
-  let body = found.slice(0, MAX_SENT).join(' … ');
+  if (!cand.length) continue;
+  // Pick the most CHARACTERIZING sentences (texture), tie-break by document order; then present
+  // the chosen ones back in document order for readability.
+  const top = cand.slice().sort((a, b) => b.score - a.score || a.order - b.order).slice(0, MAX_SENT).sort((a, b) => a.order - b.order);
+  let body = top.map(x => x.s).join(' … ');
   if (body.length > MAX_LEN) body = body.slice(0, MAX_LEN).replace(/\s+\S*$/, '') + '…';
   const prior = (e.description || '').trim();
   const priorNoGpb = prior.startsWith('GPB:') ? '' : prior;   // don't double-prefix on re-runs
