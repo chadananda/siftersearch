@@ -21,6 +21,27 @@ const GPB_CHAPTERS = [
   { ch: 3, title: 'Upheavals in Mázindarán, Nayríz and Zanján', start: 61, end: 81 },
   { ch: 4, title: 'The Execution of the Báb', start: 82, end: 98 },
   { ch: 5, title: 'The Attempt on the Life of the Sháh and its Consequences', start: 99, end: 131 },
+  { ch: 6, title: "The Birth of the Bahá'í Revelation", start: 132, end: 162 },
+  { ch: 7, title: "Bahá'u'lláh's Banishment to 'Iráq", start: 163, end: 210 },
+  { ch: 8, title: "Bahá'u'lláh's Banishment to 'Iráq (Continued)", start: 211, end: 256 },
+  { ch: 9, title: "The Declaration of Bahá'u'lláh's Mission and His Journey to Constantinople", start: 257, end: 280 },
+  { ch: 10, title: "The Rebellion of Mírzá Yaḥyá and the Proclamation of Bahá'u'lláh's Mission in Adrianople", start: 281, end: 317 },
+  { ch: 11, title: "Bahá'u'lláh's Incarceration in 'Akká", start: 318, end: 359 },
+  { ch: 12, title: "Bahá'u'lláh's Incarceration in 'Akká (Continued)", start: 360, end: 418 },
+  { ch: 13, title: 'Ascension of Bahá’u’lláh', start: 419, end: 449 },
+  { ch: 14, title: "The Covenant of Bahá'u'lláh", start: 450, end: 461 },
+  { ch: 15, title: "The Rebellion of Mírzá Muḥammad-'Alí", start: 462, end: 476 },
+  { ch: 16, title: 'The Rise and Establishment of the Faith in the West', start: 477, end: 496 },
+  { ch: 17, title: "Renewal of 'Abdu'l-Bahá's Incarceration", start: 497, end: 519 },
+  { ch: 18, title: "Entombment of the Báb's Remains on Mt. Carmel", start: 520, end: 532 },
+  { ch: 19, title: "'Abdu'l-Bahá's Travels in Europe and America", start: 533, end: 558 },
+  { ch: 20, title: 'Growth and Expansion of the Faith in East and West', start: 559, end: 586 },
+  { ch: 21, title: "The Passing of 'Abdu'l-Bahá", start: 587, end: 612 },
+  { ch: 22, title: 'The Rise and Establishment of the Administrative Order', start: 613, end: 663 },
+  { ch: 23, title: 'Attacks on Bahá’í Institutions', start: 664, end: 686 },
+  { ch: 24, title: 'Emancipation and Recognition of the Faith and its Institutions', start: 687, end: 713 },
+  { ch: 25, title: 'International Expansion of Teaching Activities', start: 714, end: 771 },
+  { ch: 26, title: 'Retrospect and Prospect', start: 772, end: 786, label: 'God Passes By · Retrospect and Prospect' },
 ];
 const gpbChapter = (idx) => GPB_CHAPTERS.find(c => idx >= c.start && idx <= c.end) || null;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -92,7 +113,7 @@ function render(ents) {
       if (e.firstDoc === 21310) {
         const ch = gpbChapter(e.firstIdx);
         key = ch ? 'g' + ch.ch : 'none';
-        label = !ch ? 'Not yet linked to a chapter' : (ch.ch === 0 ? 'God Passes By · Foreword' : `God Passes By · Chapter ${ch.ch} — ${ch.title}`);
+        label = !ch ? 'Not yet linked to a chapter' : (ch.label || (ch.ch === 0 ? 'God Passes By · Foreword' : `God Passes By · Chapter ${ch.ch} — ${ch.title}`));
         order = ch ? ch.start : 9e9;
       } else if (e.firstDoc === 21308) {
         key = 'db'; label = 'The Dawn-Breakers (not yet chapter-mapped)'; order = 8e9;
