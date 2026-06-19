@@ -197,14 +197,20 @@ function render(ents, { embed = false } = {}) {
     return `<div class="typesec" id="sec-${esc(t)}" style="display:${i === 0 ? 'block' : 'none'}">${body}</div>`;
   }).join('');
 
+  // When embedded in the admin SSR page the fragment's <style> is injected globally, so the GENERIC
+  // element selectors (body/header/main/h1) must be scoped to the #er-root container — otherwise they
+  // override the admin theme (e.g. repaint the page body white, restyle the navbar/main). ROOT is the
+  // base/background element; S prefixes the in-content element selectors.
+  const ROOT = embed ? '#er-root' : 'body';
+  const S = embed ? '#er-root ' : '';
   const STYLE = `
-body{font:15px/1.5 -apple-system,Segoe UI,sans-serif;margin:0;background:#f7f7f8;color:#1a1a1a}
-header{position:sticky;top:0;background:#fff;border-bottom:1px solid #ddd;padding:10px 16px;z-index:10}
-h1{font-size:18px;margin:0 0 8px}
+${ROOT}{font:15px/1.5 -apple-system,Segoe UI,sans-serif;margin:0;background:#f7f7f8;color:#1a1a1a}
+${S}header{position:sticky;top:0;background:#fff;border-bottom:1px solid #ddd;padding:10px 16px;z-index:10}
+${S}h1{font-size:18px;margin:0 0 8px}
 .tabs{display:flex;flex-wrap:wrap;gap:4px}
 .tab{padding:6px 12px;border:1px solid #ccc;background:#f0f0f0;border-radius:6px;cursor:pointer;font-size:13px}
 .tab.active{background:#2563eb;color:#fff;border-color:#2563eb}
-main{padding:16px;max-width:980px;margin:0 auto}
+${S}main{padding:16px;max-width:980px;margin:0 auto}
 .chap{margin:0 0 20px}
 .chap h3{font-size:14px;color:#444;border-bottom:2px solid #e5e5e5;padding-bottom:4px;margin:18px 0 8px}
 .cnt{color:#999;font-weight:normal}
@@ -220,6 +226,7 @@ main{padding:16px;max-width:980px;margin:0 auto}
 .bks{display:inline-flex;gap:3px;vertical-align:middle}
 .bk{display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:#e3edff;color:#1b4ea0;letter-spacing:.3px}
 .newc{font-weight:700;color:#1b4ea0}
+.bf.active .newc{color:#fff}
 .rec{padding:8px 4px 2px}
 .desc{margin:4px 0;color:#333}
 .nodesc{color:#bbb;font-style:italic;margin:4px 0}
@@ -232,10 +239,14 @@ main{padding:16px;max-width:980px;margin:0 auto}
      The active typesec is display:block (inline) and inactive ones display:none, so we leave
      .typesec display alone; likewise book-filtered entities already carry inline display:none. */
   header,.tabs,.bookfilter,.flagwrap,.id,.er-bar{display:none !important}
-  .ent>.rec{display:block !important}           /* force every printed entity's details open */
-  .printhead{display:block;column-span:all;font:bold 12px/1.3 Georgia,serif;color:#000;margin:0 0 8px;padding-bottom:4px;border-bottom:2px solid #000}
-  body{background:#fff;color:#000;font:9px/1.25 Georgia,serif}
-  main{max-width:none;margin:0;padding:0;column-count:2;column-gap:16px}
+  /* print each entity's full record (description, aliases, relationships, notes), not just the
+     title — details are forced open by beforeprint JS — but clamp to ~20 lines so one long entry
+     can't dominate a column. */
+  .ent>.rec{display:-webkit-box !important;-webkit-box-orient:vertical;-webkit-line-clamp:20;line-clamp:20;overflow:hidden}
+  .printhead{display:block;column-span:all;font:bold 12px/1.3 Georgia,serif;color:#000;margin:28px 0 10px;padding-bottom:4px;border-bottom:2px solid #000}
+  ${embed ? '#er-root' : 'html,body'}{background:#fff !important}
+  ${ROOT}{color:#000;font:9px/1.25 Georgia,serif}
+  ${S}main{max-width:none;margin:0;padding:0;column-count:2;column-gap:16px}
   .chap h3{font-size:10px;margin:6px 0 2px;break-after:avoid;color:#000;border-bottom:1px solid #999}
   .ent{border:none;background:none;margin:0 0 2px;padding:0;break-inside:avoid}
   .ent summary{font-weight:700;list-style:none}
@@ -290,6 +301,10 @@ function filterBook(code,btn){
   updatePrintHead();
 }
 updatePrintHead();
+// Open every entity record before printing so its content (not just the title) prints — Chrome won't
+// render a collapsed <details> from CSS alone. Restore the collapsed state afterward.
+window.addEventListener('beforeprint',function(){document.querySelectorAll('details.ent:not([open])').forEach(function(d){d.setAttribute('data-reclose','1');d.open=true;});});
+window.addEventListener('afterprint',function(){document.querySelectorAll('details.ent[data-reclose]').forEach(function(d){d.open=false;d.removeAttribute('data-reclose');});});
 function fbox(id){return document.getElementById('fb-'+id);}
 // reveal/hide the note box with the checkbox
 document.addEventListener('change',function(e){
