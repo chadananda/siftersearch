@@ -1,6 +1,24 @@
 # Dawn-Breakers Entity Extraction State
 last_update: 2026-06-18
-status: IN_PROGRESS — EXTRACTION DONE (18/18 merged), CONSOLIDATION underway
+status: EXTRACTION + DEDUP DONE; person-gloss normalization staged for review
+
+## FINAL STATE (2026-06-18 ~23:00)
+- entity_research 2361 total: person 1343 (779 DB-new), place 688 (113), work 195 (72), group 135 (29).
+- 0 orphan mentions, 0 orphan relations (verified). Review page filter: [All][GPB 564][DB ~779].
+- Consolidation applied: 96 dup clusters adjudicated -> 53 folds (18 work/place + 16 personB + 19 personA);
+  44 place/work gloss-strips; person nisba renames (personA/B: 5).
+- Person-gloss: 94 safe locale->nisba renames APPLIED (e.g. "Ḥájí Ḥasan (martyr of Míyámay)" ->
+  "Ḥájí Ḥasan-i-Míyámay'í"). 161 STAGED for owner review in tmp/entity-research/person-gloss-plan.json
+  `review` array (kinship "son of X", role "the chamberlain", and namesake-collision risks the agent
+  refused to nisba-ize, e.g. Nayríz marksman Mullá Ḥusayn, Rúḥu'lláh, two Siyyid Murtaḍás) + 1 nisba
+  collision deferred. These need the owner's eye — do NOT bulk-apply.
+- Remaining glossy canonicals: person 161 (staged), place 137, work 74, group 47 (place/work glosses
+  are mostly city-disambiguators on mosques/madrisihs — also judgment; left for review).
+
+## NEXT (for user, morning): (1) review tmp/entity-research/person-gloss-plan.json `review` array;
+## (2) optionally place/work/group gloss pass; (3) deferred DB enrichment (aliases/rels/era/research_notes)
+## if desired — DB was kept light intentionally. DB extraction itself is COMPLETE + integrated + deduped.
+- Backup: tmp/entity-research/backups/entity_research-pre-db-consolidation-20260618-223031.sql
 
 ## MILESTONE (2026-06-18 ~22:35): full Dawn-Breakers extraction complete + verified
 - All 18 chunks (idx 0-2081) gathered+merged. ER_total 1368 -> 2414 (+1046 new: person 814, place 121, work 82, group 29).
