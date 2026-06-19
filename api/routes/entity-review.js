@@ -83,7 +83,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<':
 
 async function buildModel() {
   // 1. all entities (sifter.db)
-  const entities = await queryAll(`SELECT id, canonical_name, entity_type, religion, era, description, name_meaning, significance, research_notes FROM graph_entities ORDER BY canonical_name`);
+  const entities = await queryAll(`SELECT id, canonical_name, entity_type, religion, era, description, name_meaning, significance, research_notes, summary, importance FROM graph_entities ORDER BY canonical_name`);
   const byId = new Map(entities.map(e => [Number(e.id), { ...e, id: Number(e.id), aliases: [], relations: [], mentions: 0, firstDoc: null, firstHeading: null, firstIdx: Infinity, books: new Set() }]));
 
   // 2. display aliases — from the CURATED entity_research.aliases (genuinely distinct names/titles +
@@ -175,9 +175,11 @@ function render(ents, { embed = false } = {}) {
     const ordered = [...groups.values()].sort((a, b) => a.order - b.order);
     const body = ordered.map(g => {
       const title = esc(g.label);
-      const items = g.list.sort((a, b) => a.canonical_name.localeCompare(b.canonical_name)).map(e => `
-        <details class="ent" data-books="${[...e.books].map(bookLabel).join(' ')}"><summary>${[...e.books].map(bookLabel).filter(b => b !== 'GPB').map(b => `<span class="bk">${esc(b)}</span> `).join('')}${esc(e.canonical_name)}${e.name_meaning ? ` <span class="meaning">— “${esc(e.name_meaning)}”</span>` : ''}${e.significance === 'incidental' ? ' <span class="incid">· incidental</span>' : ''} <span class="meta">· ${e.mentions} mention${e.mentions === 1 ? '' : 's'}${e.firstHeading ? ' · § ' + esc(e.firstHeading) : ''}${e.religion ? ' · ' + esc(e.religion) : ''}${e.era ? ' · ' + esc(e.era) : ''}</span></summary>
+      const items = g.list.sort((a, b) => (b.importance || 0) - (a.importance || 0) || a.canonical_name.localeCompare(b.canonical_name)).map(e => `
+        <details class="ent" data-books="${[...e.books].map(bookLabel).join(' ')}" data-imp="${e.importance != null ? e.importance : 0}"><summary>${e.importance != null ? `<span class="imp imp${e.importance >= 70 ? '-hi' : e.importance >= 45 ? '-md' : e.importance >= 20 ? '-lo' : '-xs'}">${e.importance}</span> ` : ''}${[...e.books].map(bookLabel).filter(b => b !== 'GPB').map(b => `<span class="bk">${esc(b)}</span> `).join('')}${esc(e.canonical_name)}${e.name_meaning ? ` <span class="meaning">— “${esc(e.name_meaning)}”</span>` : ''}${e.significance === 'incidental' ? ' <span class="incid">· incidental</span>' : ''} <span class="meta">· ${e.mentions} mention${e.mentions === 1 ? '' : 's'}${e.firstHeading ? ' · § ' + esc(e.firstHeading) : ''}${e.religion ? ' · ' + esc(e.religion) : ''}${e.era ? ' · ' + esc(e.era) : ''}</span></summary>
           <div class="rec">
+            ${e.summary ? `<p class="summ">${esc(e.summary)}</p>` : ''}
+            ${e.importance_reason ? '' : ''}
             ${e.description ? `<p class="desc">${esc(e.description)}</p>` : '<p class="nodesc">(no description yet)</p>'}
             ${e.aliases.length ? `<p class="al"><b>Aliases:</b> ${e.aliases.map(esc).join(' · ')}</p>` : ''}
             ${e.relations.length ? `<p class="rel"><b>Relationships:</b> ${e.relations.map(r => esc(r.type) + ' → ' + esc(r.target)).join(' · ')}</p>` : ''}
@@ -253,6 +255,11 @@ ${S}main{padding:16px;max-width:980px;margin:0 auto}
 .bk{display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:#e3edff;color:#1b4ea0;letter-spacing:.3px}
 .newc{font-weight:700;color:#1b4ea0}
 .bf.active .newc{color:#fff}
+.imp{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;color:#fff;min-width:18px;text-align:center;vertical-align:middle}
+.imp-hi{background:#b91c1c}.imp-md{background:#c2740a}.imp-lo{background:#2563eb}.imp-xs{background:#9ca3af}
+.summ{margin:4px 0 6px;color:#111;font-weight:500}
+.sortctl{margin-left:10px}.sb{padding:3px 9px;border:1px solid #ccc;background:#f5f5f5;border-radius:5px;cursor:pointer;font-size:12px}.sb.active{background:#444;color:#fff;border-color:#444}
+.byimp .chap h3{display:none}.byimp .chap{margin:0}
 .rec{padding:8px 4px 2px}
 .desc{margin:4px 0;color:#333}
 .nodesc{color:#bbb;font-style:italic;margin:4px 0}
@@ -293,6 +300,9 @@ ${S}main{padding:16px;max-width:980px;margin:0 auto}
   .ent summary{font-weight:700;list-style:none}
   .rec{padding:0 0 0 7px}
   .desc,.al,.rel,.notes{font-size:8.5px;margin:1px 0;color:#000}
+  .summ{font-size:8.5px;margin:1px 0;color:#000;font-weight:600}
+  .imp{font-size:7px;padding:0 3px;min-width:0}
+  .sortctl{display:none !important}
   .meta,.meaning,.incid{font-size:8px;color:#333}
   @page{margin:0;size:letter portrait}
 }
@@ -311,12 +321,26 @@ ${screenEmbed}
   const BODY = `
 <header><h1>Entity Review — Dawn-Breakers + God Passes By <span style="font-weight:normal;color:#888;font-size:13px">· ${ents.length} entities · ${ents.filter(e => e.flagged).length} flagged · live from DB · ${new Date().toISOString()}</span></h1>
 <div class="tabs">${tabBtns}</div>
-<div class="bookfilter">Book: <button class="bf active" onclick="filterBook('all',this)">All</button>${booksOrdered.map(b => `<button class="bf" onclick="filterBook('${esc(b)}',this)">${esc(b)} <span class="newc">${newByBook[b] || 0}</span></button>`).join('')} <span class="bfhint">— number = new people that book adds; the filtered view is what prints</span></div></header>
+<div class="bookfilter">Book: <button class="bf active" onclick="filterBook('all',this)">All</button>${booksOrdered.map(b => `<button class="bf" onclick="filterBook('${esc(b)}',this)">${esc(b)} <span class="newc">${newByBook[b] || 0}</span></button>`).join('')} <span class="bfhint">— number = new people that book adds; the filtered view is what prints</span><span class="sortctl">Sort: <button class="sb active" onclick="setSort('chapter',this)">Chapter</button><button class="sb" onclick="setSort('importance',this)">Importance ★</button></span></div></header>
 <main><table class="psheet"><thead><tr><td><div class="psp"></div></td></tr></thead><tbody><tr><td><div class="printhead" id="printhead"></div><div class="pcols">${sections}</div></td></tr></tbody><tfoot><tr><td><div class="psp"></div></td></tr></tfoot></table></main>`;
   const SCRIPT = `
 var BOOKNAMES={all:'God Passes By + The Dawn-Breakers',GPB:'God Passes By',DB:'The Dawn-Breakers'};
 var TYPEPLURAL={person:'persons',work:'works',place:'places',group:'groups',event:'events',organization:'organizations',concept:'concepts',title:'titles',period:'periods'};
 var currentBook='all';
+// Chapter mode = server order (chapters, importance-sorted within each). Importance mode = flatten
+// every entity in the active type into one list sorted by importance, ignoring chapters.
+function setSort(mode,btn){
+  document.querySelectorAll('.sortctl .sb').forEach(function(b){b.classList.remove('active');}); if(btn)btn.classList.add('active');
+  if(mode==='chapter'){ location.reload(); return; }
+  document.querySelectorAll('.typesec').forEach(function(sec){
+    sec.classList.add('byimp');
+    var host=sec.querySelector('.impflat'); if(!host){host=document.createElement('div');host.className='impflat';sec.insertBefore(host,sec.firstChild);}
+    var ents=[].slice.call(sec.querySelectorAll('.ent'));
+    ents.sort(function(a,b){return (parseInt(b.dataset.imp,10)||0)-(parseInt(a.dataset.imp,10)||0);});
+    ents.forEach(function(e){host.appendChild(e);});
+  });
+  if(typeof updatePrintHead==='function')updatePrintHead();
+}
 // Keep the print-only header in sync with what's actually selected on screen, e.g.
 // "God Passes By, 540 persons" — book name + count of currently-visible entities of the active type.
 function updatePrintHead(){
