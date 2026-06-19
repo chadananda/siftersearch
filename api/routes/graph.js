@@ -302,4 +302,59 @@ export default async function graphRoutes(server) {
       offset: Number(offset)
     };
   });
+
+  // GET /entity/:id/dossier — everything about one entity in a single call:
+  // canonical record + description, aliases, relations, and every alias-resolved
+  // mention in narrative order (doc -> paragraph) with citation. This is the unit
+  // that answers "who was X and what happened to them" with no text search — the
+  // primary entity-research call for Jafar (API-only).
+  server.get('/entity/:id/dossier', async (request) => {
+    const { id } = request.params;
+    const entity = await queryOne(
+      `SELECT id, name, canonical_name, entity_type, religion, era, description, mention_count
+       FROM graph_entities WHERE id = ?`, [id]
+    );
+    if (!entity) return server.httpErrors.notFound('Entity not found');
+    // Aliases live in the sidecar (graph.db)
+    const aliases = await graphQueryAll(
+      `SELECT surface, lang, confidence FROM entity_aliases WHERE entity_id = ? ORDER BY confidence DESC`, [id]
+    );
+    // Relations live in sifter.db — resolve the OTHER end's name/type
+    const relations = await queryAll(`
+      SELECT gr.relation_type, gr.weight,
+             ge.id AS other_id, ge.canonical_name AS other_name, ge.entity_type AS other_type
+      FROM graph_relations gr
+      JOIN graph_entities ge ON ge.id = CASE WHEN gr.source_entity_id = ? THEN gr.target_entity_id ELSE gr.source_entity_id END
+      WHERE gr.source_entity_id = ? OR gr.target_entity_id = ?
+      ORDER BY gr.weight DESC LIMIT 100
+    `, [id, id, id]);
+    // Mentions live in the sidecar (graph.db); join content+docs from sifter.db, narrative order
+    const mentionRows = await graphQueryAll(`SELECT content_id, role FROM entity_mentions WHERE entity_id = ?`, [id]);
+    let mentions = [];
+    if (mentionRows.length) {
+      const cids = [...new Set(mentionRows.map(m => m.content_id))];
+      const ph = cids.map(() => '?').join(',');
+      const contentRows = await queryAll(
+        `SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.external_para_id, d.title, d.author, d.source_url
+         FROM content c JOIN docs d ON d.id = c.doc_id
+         WHERE c.id IN (${ph}) AND c.deleted_at IS NULL
+         ORDER BY d.title, c.paragraph_index`, cids
+      );
+      const roleMap = new Map(mentionRows.map(m => [m.content_id, m.role]));
+      mentions = contentRows.map(r => ({
+        contentId: r.id, docId: r.doc_id, title: r.title, author: r.author,
+        position: r.paragraph_index, role: roleMap.get(r.id) || null,
+        citation: r.source_url ? `${r.source_url}?paraId=${r.external_para_id}` : null,
+        text: r.text
+      }));
+    }
+    return {
+      entity: {
+        id: Number(entity.id), name: entity.name, canonicalName: entity.canonical_name,
+        type: entity.entity_type, religion: entity.religion, era: entity.era,
+        description: entity.description, mentionCount: Number(entity.mention_count)
+      },
+      aliases, relations, mentions, mentionTotal: mentions.length
+    };
+  });
 }
