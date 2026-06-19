@@ -8,6 +8,20 @@ status: IN_PROGRESS — EXTRACTION DONE (18/18 merged), CONSOLIDATION underway
 - Backup before consolidation: tmp/entity-research/backups/entity_research-pre-db-consolidation-*.sql
 - NEXT: consolidation (gloss cleanup + namesake-aware dedup). WORKS/PLACES safe to auto-apply;
   PERSON merges are judgment-heavy (namesake risk) -> stage DRY-run plan for user review per stepwise doctrine.
+
+## Consolidation in progress (2026-06-18 ~22:45)
+- find-dups-db.mjs surfaced 96 candidate clusters / 230 members (74 person, 22 work/place). Tractable.
+- 3 adjudication agents running -> write dedup plans {folds:[], renames:[]} to server:
+    a99b1b5: db-dedup-workplace.json (work+place, low risk -> APPLY)
+    a453597: db-dedup-personA.json (person clusters idx 0-36)
+    a34d815: db-dedup-personB.json (person clusters idx 37+)
+- WHEN THEY RETURN: assemble plans. Apply work/place folds+renames (merge-dedup.mjs + clean-canonical.mjs).
+  For persons: DRY-run merge-dedup, eyeball for namesake errors, apply high-confidence folds + lossless
+  gloss renames; STAGE anything uncertain in a plan file + report for morning review.
+- Tooling ready: merge-dedup.mjs (folds, repoint-before-delete), clean-canonical.mjs (collision-guarded rename).
+- NOTE: ~543 entities carry parenthetical glosses; only the ~230 in dup-clusters get AI rename now.
+  Comprehensive gloss-normalization of the rest is a documented follow-up (judgment-heavy; user reviews).
+- Backup: tmp/entity-research/backups/entity_research-pre-db-consolidation-20260618-223031.sql
 project_dir: /Users/chad/Dropbox/Public/JS/Projects/siftersearch.com
 
 ## Goal
