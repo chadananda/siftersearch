@@ -7,36 +7,49 @@
 // DRY=1 prints. Usage: [DRY=1] node merge-enrich.mjs <records.json>
 import { readFileSync } from 'fs';
 import dotenv from 'dotenv'; dotenv.config({path:'.env-secrets'}); dotenv.config({path:'.env-public'});
-const {query, queryOne, graphQuery} = await import('../../../api/lib/db.js');
+const {query, queryOne, queryAll, graphQuery} = await import('../../../api/lib/db.js');
 const {normalizeSurface} = await import('../../../api/lib/graph-db.js');
 const DRY = process.env.DRY==='1';
 const nk = s=>String(s).replace(/[‘’'`]/g,"'").toLowerCase().replace(/\s+/g,' ').trim();
+// Normalized match (strip diacritics + transliteration macron-below artifacts e.g. S̱h→Sh, ḵh→kh; normalize apostrophes)
+const normName = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[‘’'`]/g,"'").toLowerCase().replace(/\s+/g,' ').trim();
+let _normMap=null;
+async function findCur(name){
+  let c = await queryOne("SELECT canonical_name, aliases, description, summary FROM entity_research WHERE canonical_name=? AND entity_type='person'", [name]);
+  if (c) return c;
+  if (!_normMap){ _normMap=new Map(); for(const row of await queryAll("SELECT canonical_name FROM entity_research WHERE entity_type='person'")){ const k=normName(row.canonical_name); if(!_normMap.has(k)) _normMap.set(k,[]); _normMap.get(k).push(row.canonical_name); } }
+  const hits=_normMap.get(normName(name))||[];   // unique normalized match only — never guess on ambiguity
+  if (hits.length===1) return await queryOne("SELECT canonical_name, aliases, description, summary FROM entity_research WHERE canonical_name=? AND entity_type='person'", [hits[0]]);
+  return null;
+}
 const recs = JSON.parse(readFileSync(process.argv[2],'utf8'));
 const clampImp = v => (v==null?null:Math.max(1,Math.min(100,Math.round(Number(v)))));
 const dedupFrags = d => { const seen=new Set(),out=[]; for(const p of String(d||'').split(' … ')){const k=p.trim();if(k&&!seen.has(k)){seen.add(k);out.push(p);}} return out.join(' … '); };
 let renamed=0,renameSkip=0,aliasAdds=0,summarized=0,scored=0,charAdds=0,missing=0;
 for (const r of recs){
-  const cur = await queryOne("SELECT canonical_name, aliases, description, summary FROM entity_research WHERE canonical_name=? AND entity_type='person'", [r.name]);
+  const cur = await findCur(r.name);
   if (!cur){ missing++; continue; }
-  let canonical = r.name;
-  const ge0 = await queryOne("SELECT id FROM graph_entities WHERE canonical_name=? AND entity_type='person' AND religion='' ORDER BY id LIMIT 1", [r.name]);
+  const dbName = cur.canonical_name;            // authoritative current name in DB (may carry transliteration artifacts)
+  let canonical = dbName;
+  const ge0 = await queryOne("SELECT id FROM graph_entities WHERE canonical_name=? AND entity_type='person' AND religion='' ORDER BY id LIMIT 1", [dbName]);
   const geid = ge0?.id;
-  // 1) most-common-name rename (collision-guarded; old name preserved as alias)
-  if (r.common_name && nk(r.common_name)!==nk(r.name)){
-    const clash = await queryOne("SELECT canonical_name FROM entity_research WHERE canonical_name=? AND entity_type='person'", [r.common_name]);
+  // 1) most-common-name rename (collision-guarded; old name preserved as alias). Also cleans artifact names: dbName→clean.
+  const wantName = r.common_name || r.name;     // desired most-used display name (clean form)
+  if (wantName && nk(wantName)!==nk(dbName)){
+    const clash = await queryOne("SELECT canonical_name FROM entity_research WHERE canonical_name=? AND entity_type='person'", [wantName]);
     if (clash){ renameSkip++; }
     else {
       if(!DRY){
-        if(geid) await graphQuery("INSERT OR IGNORE INTO entity_aliases (entity_id,surface,surface_norm,lang,source,confidence) VALUES (?,?,?, 'en','enrich-rename',1.0)", [geid, r.name, normalizeSurface(r.name)]);
-        await query("UPDATE entity_research SET canonical_name=?, updated_at=datetime('now') WHERE canonical_name=? AND entity_type='person'", [r.common_name, r.name]);
-        await query("UPDATE graph_entities SET canonical_name=?, name=? WHERE canonical_name=? AND entity_type='person' AND religion=''", [r.common_name, r.common_name, r.name]);
+        if(geid) await graphQuery("INSERT OR IGNORE INTO entity_aliases (entity_id,surface,surface_norm,lang,source,confidence) VALUES (?,?,?, 'en','enrich-rename',1.0)", [geid, dbName, normalizeSurface(dbName)]);
+        await query("UPDATE entity_research SET canonical_name=?, updated_at=datetime('now') WHERE canonical_name=? AND entity_type='person'", [wantName, dbName]);
+        await query("UPDATE graph_entities SET canonical_name=?, name=? WHERE canonical_name=? AND entity_type='person' AND religion=''", [wantName, wantName, dbName]);
       }
-      canonical = r.common_name; renamed++;
+      canonical = wantName; renamed++;
     }
   }
-  // 2) aliases + native script (always keep the old/full name as an alias)
+  // 2) aliases + native script (keep both the DB form and the record's name as aliases)
   let aliasSet=new Set(); try{ for(const a of JSON.parse(cur.aliases||'[]')) aliasSet.add(a); }catch{}
-  aliasSet.add(r.name);
+  aliasSet.add(dbName); aliasSet.add(r.name);
   for(const a of [...(r.aliases||[]), ...(r.native_script||[])]) if(a) aliasSet.add(a);
   aliasSet.delete(canonical);
   const aliasesJson = JSON.stringify([...aliasSet]);
