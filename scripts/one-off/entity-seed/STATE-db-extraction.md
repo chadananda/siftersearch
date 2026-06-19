@@ -1,6 +1,13 @@
 # Dawn-Breakers Entity Extraction State
 last_update: 2026-06-18
-status: IN_PROGRESS
+status: IN_PROGRESS — EXTRACTION DONE (18/18 merged), CONSOLIDATION underway
+
+## MILESTONE (2026-06-18 ~22:35): full Dawn-Breakers extraction complete + verified
+- All 18 chunks (idx 0-2081) gathered+merged. ER_total 1368 -> 2414 (+1046 new: person 814, place 121, work 82, group 29).
+- ~7,300 DB mentions recorded across ~1,270 entities. Review page filter renders: [All] [GPB 564] [DB 744].
+- Backup before consolidation: tmp/entity-research/backups/entity_research-pre-db-consolidation-*.sql
+- NEXT: consolidation (gloss cleanup + namesake-aware dedup). WORKS/PLACES safe to auto-apply;
+  PERSON merges are judgment-heavy (namesake risk) -> stage DRY-run plan for user review per stepwise doctrine.
 project_dir: /Users/chad/Dropbox/Public/JS/Projects/siftersearch.com
 
 ## Goal
