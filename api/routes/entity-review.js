@@ -272,7 +272,7 @@ ${S}main{padding:16px;max-width:980px;margin:0 auto}
   .printhead{display:block;column-span:all;font:bold 12px/1.3 Georgia,serif;color:#000;margin:28px 0 10px;padding-bottom:4px;border-bottom:2px solid #000}
   ${embed ? '#er-root' : 'html,body'}{background:#fff !important}
   ${ROOT}{color:#000;font:9px/1.25 Georgia,serif}
-  ${S}main{max-width:none;margin:0;padding:0 0.25in;column-count:2;column-gap:16px;box-sizing:border-box}
+  ${S}main{max-width:none;margin:0;padding:0 0.25in;box-sizing:border-box}
   .chap h3{font-size:10px;margin:6px 0 2px;break-after:avoid;color:#000;border-bottom:1px solid #999}
   .ent{border:none;background:none;margin:0 0 2px;padding:0;break-inside:avoid}
   .ent summary{font-weight:700;list-style:none}
