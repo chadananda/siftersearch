@@ -47,6 +47,9 @@ const gpbChapter = (idx) => GPB_CHAPTERS.find(c => idx >= c.start && idx <= c.en
 // Book provenance: which source each mention comes from. Grows as more books are processed.
 const BOOK_LABEL = { 21310: 'GPB', 21308: 'DB' };
 const bookLabel = (id) => BOOK_LABEL[id] || ('#' + id);
+// Processing order of books (GPB is the core seed, processed first; later books resolve against it).
+const BOOK_ORDER = { 21310: 1, 21308: 2 };
+const bookOrder = (id) => (BOOK_ORDER[id] != null ? BOOK_ORDER[id] : 99);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 async function buildModel() {
@@ -113,7 +116,10 @@ function render(ents) {
   });
   const tabBtns = types.map((t, i) => `<button class="tab${i === 0 ? ' active' : ''}" onclick="showTab('${esc(t)}')" id="tab-${esc(t)}">${esc(t)} (${ents.filter(e => (e.entity_type || 'unknown') === t).length})</button>`).join('');
 
-  const booksPresent = [...new Set(ents.flatMap(e => [...e.books].map(bookLabel)))].sort();
+  // Per book, count the NEW people it introduced (a person's "introducing book" = its lowest-order book).
+  const newByBook = {};
+  for (const e of ents) { if (e.entity_type !== 'person' || !e.books.size) continue; const lab = bookLabel([...e.books].sort((a, b) => bookOrder(a) - bookOrder(b))[0]); newByBook[lab] = (newByBook[lab] || 0) + 1; }
+  const booksOrdered = [...new Set(ents.flatMap(e => [...e.books]))].sort((a, b) => bookOrder(a) - bookOrder(b)).map(bookLabel);
   const sections = types.map((t, i) => {
     const te = ents.filter(e => (e.entity_type || 'unknown') === t);
     // group by CHAPTER (pre-mapped by paragraph range); the marginal section-heading
@@ -136,7 +142,7 @@ function render(ents) {
     const body = ordered.map(g => {
       const title = esc(g.label);
       const items = g.list.sort((a, b) => a.canonical_name.localeCompare(b.canonical_name)).map(e => `
-        <details class="ent" data-books="${[...e.books].map(bookLabel).join(' ')}"><summary><span class="bks">${[...e.books].map(b => `<span class="bk">${esc(bookLabel(b))}</span>`).join('')}${e.books.size > 1 ? '<span class="bk core">CORE</span>' : ''}</span> ${esc(e.canonical_name)}${e.name_meaning ? ` <span class="meaning">— “${esc(e.name_meaning)}”</span>` : ''}${e.significance === 'incidental' ? ' <span class="incid">· incidental</span>' : ''} <span class="meta">· ${e.mentions} mention${e.mentions === 1 ? '' : 's'}${e.firstHeading ? ' · § ' + esc(e.firstHeading) : ''}${e.religion ? ' · ' + esc(e.religion) : ''}${e.era ? ' · ' + esc(e.era) : ''}</span></summary>
+        <details class="ent" data-books="${[...e.books].map(bookLabel).join(' ')}"><summary>${[...e.books].map(bookLabel).filter(b => b !== 'GPB').map(b => `<span class="bk">${esc(b)}</span> `).join('')}${esc(e.canonical_name)}${e.name_meaning ? ` <span class="meaning">— “${esc(e.name_meaning)}”</span>` : ''}${e.significance === 'incidental' ? ' <span class="incid">· incidental</span>' : ''} <span class="meta">· ${e.mentions} mention${e.mentions === 1 ? '' : 's'}${e.firstHeading ? ' · § ' + esc(e.firstHeading) : ''}${e.religion ? ' · ' + esc(e.religion) : ''}${e.era ? ' · ' + esc(e.era) : ''}</span></summary>
           <div class="rec">
             ${e.description ? `<p class="desc">${esc(e.description)}</p>` : '<p class="nodesc">(no description yet)</p>'}
             ${e.aliases.length ? `<p class="al"><b>Aliases:</b> ${e.aliases.map(esc).join(' · ')}</p>` : ''}
@@ -180,7 +186,7 @@ main{padding:16px;max-width:980px;margin:0 auto}
 .bfhint{color:#aaa;font-size:11px;margin-left:6px}
 .bks{display:inline-flex;gap:3px;vertical-align:middle}
 .bk{display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:#e3edff;color:#1b4ea0;letter-spacing:.3px}
-.bk.core{background:#fde68a;color:#7a5b00}
+.newc{font-weight:700;color:#1b4ea0}
 .rec{padding:8px 4px 2px}
 .desc{margin:4px 0;color:#333}
 .nodesc{color:#bbb;font-style:italic;margin:4px 0}
@@ -213,7 +219,7 @@ main{padding:16px;max-width:980px;margin:0 auto}
 </style></head><body>
 <header><h1>Entity Review — Dawn-Breakers + God Passes By <span style="font-weight:normal;color:#888;font-size:13px">· ${ents.length} entities · ${ents.filter(e => e.flagged).length} flagged · live from DB · ${new Date().toISOString()}</span></h1>
 <div class="tabs">${tabBtns}</div>
-<div class="bookfilter">Filter by book: <button class="bf active" onclick="filterBook('all',this)">All</button>${booksPresent.map(b => `<button class="bf" onclick="filterBook('${esc(b)}',this)">${esc(b)}</button>`).join('')}<button class="bf" onclick="filterBook('CORE',this)">★ Core (multi-book)</button> <span class="bfhint">— filtered view also controls what prints</span></div></header>
+<div class="bookfilter">Book: <button class="bf active" onclick="filterBook('all',this)">All</button>${booksOrdered.map(b => `<button class="bf" onclick="filterBook('${esc(b)}',this)">${esc(b)} <span class="newc">${newByBook[b] || 0}</span></button>`).join('')} <span class="bfhint">— number = new people that book adds; the filtered view is what prints</span></div></header>
 <main>${sections}</main>
 <script>
 function showTab(t){document.querySelectorAll('.typesec').forEach(s=>s.style.display='none');document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('sec-'+t).style.display='block';document.getElementById('tab-'+t).classList.add('active');}
@@ -222,7 +228,7 @@ function filterBook(code,btn){
   if(btn)btn.classList.add('active');
   document.querySelectorAll('.ent').forEach(function(el){
     var bks=(el.getAttribute('data-books')||'').split(' ').filter(Boolean);
-    var show = code==='all' ? true : (code==='CORE' ? bks.length>1 : bks.indexOf(code)>=0);
+    var show = code==='all' ? true : bks.indexOf(code)>=0;
     el.style.display = show ? '' : 'none';
   });
   document.querySelectorAll('.chap').forEach(function(ch){
