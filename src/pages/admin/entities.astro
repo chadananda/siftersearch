@@ -46,3 +46,13 @@ try {
 <style>
   .er-error { color: #c0392b; font-size: 14px; padding: 12px; }
 </style>
+
+<!-- @page must live in the page's OWN stylesheet (parsed at load) to be honored — Chrome ignores
+     @page rules from the set:html-injected fragment, which is why only the fragment's content-padding
+     (side margins) was taking effect. This gives the per-page top/bottom gutter; sides stay on the
+     fragment's column padding so they survive even where @page is ignored. -->
+<style is:global>
+  @media print {
+    @page { margin: 0.45in 0; size: letter portrait; }
+  }
+</style>

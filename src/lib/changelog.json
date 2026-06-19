@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-19T13:02:14.868Z",
+  "generated": "2026-06-19T13:20:31.276Z",
   "entries": [
+    {
+      "hash": "ebe5815d",
+      "date": "2026-06-19",
+      "type": "Other",
+      "description": "Force white background in print (override dark theme)",
+      "scope": null
+    },
     {
       "hash": "6dd589ed",
       "date": "2026-06-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Cross-tradition slot limit and volume dedup in hybridSearch",
       "scope": null
-    },
-    {
-      "hash": "1b04da2f",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "TITLE_AUTHORITY checked before collection meta.yaml in authority.js",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-19": [
+      {
+        "hash": "ebe5815d",
+        "date": "2026-06-19",
+        "type": "Other",
+        "description": "Force white background in print (override dark theme)",
+        "scope": null
+      },
       {
         "hash": "6dd589ed",
         "date": "2026-06-19",
@@ -7043,13 +7050,6 @@
         "date": "2026-05-14",
         "type": "Fixed",
         "description": "Cross-tradition slot limit and volume dedup in hybridSearch",
-        "scope": null
-      },
-      {
-        "hash": "1b04da2f",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "TITLE_AUTHORITY checked before collection meta.yaml in authority.js",
         "scope": null
       }
     ]
