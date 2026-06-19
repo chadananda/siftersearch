@@ -203,6 +203,24 @@ function render(ents, { embed = false } = {}) {
   // base/background element; S prefixes the in-content element selectors.
   const ROOT = embed ? '#er-root' : 'body';
   const S = embed ? '#er-root ' : '';
+  // When embedded in the admin panel, follow the admin THEME on screen (it may be dark) via its CSS
+  // tokens — light values are only fallbacks for the standalone page. Print stays white (the @media
+  // print block, below, wins because this is @media screen).
+  const screenEmbed = embed ? `
+@media screen{
+  #er-root{background:transparent;color:var(--text-primary,#1a1a1a)}
+  #er-root header{background:var(--surface-1,#fff);border-bottom-color:var(--border-default,#ddd)}
+  #er-root h1{color:var(--text-primary,#1a1a1a)}
+  #er-root .chap h3{color:var(--text-secondary,#444);border-bottom-color:var(--border-default,#e5e5e5)}
+  #er-root .cnt,#er-root .bfhint,#er-root .meta,#er-root .nodesc{color:var(--text-muted,#888)}
+  #er-root .ent{background:var(--surface-1,#fff);border-color:var(--border-default,#e5e5e5)}
+  #er-root .ent summary{color:var(--text-primary,#1a1a1a)}
+  #er-root .desc{color:var(--text-primary,#333)}
+  #er-root .al{color:var(--text-secondary,#555)}
+  #er-root .tab{background:var(--surface-2,#f0f0f0);border-color:var(--border-default,#ccc);color:var(--text-secondary,#333)}
+  #er-root .bf{background:var(--surface-2,#f5f5f5);border-color:var(--border-default,#ccc);color:var(--text-secondary,#666)}
+  #er-root .flagbox textarea{background:var(--surface-0,#fffdf5);color:var(--text-primary,#1a1a1a)}
+}` : '';
   const STYLE = `
 ${ROOT}{font:15px/1.5 -apple-system,Segoe UI,sans-serif;margin:0;background:#f7f7f8;color:#1a1a1a}
 ${S}header{position:sticky;top:0;background:#fff;border-bottom:1px solid #ddd;padding:10px 16px;z-index:10}
@@ -265,6 +283,7 @@ ${S}main{padding:16px;max-width:980px;margin:0 auto}
 .flagact{display:flex;align-items:center;gap:10px;margin-top:5px}
 .flagact button{padding:4px 12px;border:1px solid #d4a72c;background:#fbf3da;border-radius:5px;cursor:pointer;font-size:12px;color:#7a5200}
 .saved{font-size:12px;color:#2e7d32}
+${screenEmbed}
 `;
   const BODY = `
 <header><h1>Entity Review — Dawn-Breakers + God Passes By <span style="font-weight:normal;color:#888;font-size:13px">· ${ents.length} entities · ${ents.filter(e => e.flagged).length} flagged · live from DB · ${new Date().toISOString()}</span></h1>
