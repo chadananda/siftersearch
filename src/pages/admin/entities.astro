@@ -1,8 +1,48 @@
 ---
+// Entity Review — plain SSR page. Access is gated server-side by src/middleware.js (admin session
+// cookie). Here we fetch the review fragment from the API at request time, forwarding the same
+// cookie so the API authorizes the read, and render it inline within the admin chrome. No iframe,
+// no client component, no JS refresh button — a normal browser reload re-runs this on the server.
+export const prerender = false;
+
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import EntityReview from '../../components/admin/EntityReview.svelte';
+
+const apiBase = import.meta.env.PUBLIC_API_URL || '';
+const cookie = Astro.request.headers.get('cookie') || '';
+
+let fragment = '';
+let error = '';
+try {
+  const res = await fetch(`${apiBase}/api/admin/entity-review?embed=1`, { headers: { cookie } });
+  if (res.ok) fragment = await res.text();
+  else error = `the entity-review API returned HTTP ${res.status}`;
+} catch (e) {
+  error = e?.message || 'could not reach the entity-review API';
+}
 ---
 
 <AdminLayout title="Entity Review">
-  <EntityReview client:only="svelte" />
+  {error
+    ? <p class="er-error">Could not load the entity review: {error}</p>
+    : <div id="er-root" set:html={fragment}></div>}
 </AdminLayout>
+
+<script define:vars={{ apiBase }}>
+  // The fragment was injected with set:html, so its inline <script> did NOT auto-run (innerHTML
+  // never executes scripts). Point it at the API origin, then re-create each <script> element so
+  // the browser executes it — restoring tabs / book filter / print header / flag saving.
+  window.__ER_API_BASE = apiBase;
+  const root = document.getElementById('er-root');
+  if (root) {
+    root.querySelectorAll('script').forEach((old) => {
+      const s = document.createElement('script');
+      s.textContent = old.textContent;
+      document.body.appendChild(s);
+      old.remove();
+    });
+  }
+</script>
+
+<style>
+  .er-error { color: #c0392b; font-size: 14px; padding: 12px; }
+</style>
