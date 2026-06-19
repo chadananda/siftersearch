@@ -208,18 +208,26 @@ function render(ents, { embed = false } = {}) {
   // print block, below, wins because this is @media screen).
   const screenEmbed = embed ? `
 @media screen{
+  /* text + surfaces use the admin theme tokens so contrast is whatever the theme guarantees
+     (readable in light OR dark); interactive controls get a BRIGHT accent when active so the
+     current selection is unmistakable, plus a hover state for affordance. */
   #er-root{background:transparent;color:var(--text-primary,#1a1a1a)}
-  #er-root header{background:var(--surface-1,#fff);border-bottom-color:var(--border-default,#ddd)}
+  #er-root header{background:var(--surface-1,#fff);border-bottom:1px solid var(--border-default,#ddd)}
   #er-root h1{color:var(--text-primary,#1a1a1a)}
-  #er-root .chap h3{color:var(--text-secondary,#444);border-bottom-color:var(--border-default,#e5e5e5)}
-  #er-root .cnt,#er-root .bfhint,#er-root .meta,#er-root .nodesc{color:var(--text-muted,#888)}
-  #er-root .ent{background:var(--surface-1,#fff);border-color:var(--border-default,#e5e5e5)}
+  #er-root .chap h3{color:var(--text-primary,#222);border-bottom-color:var(--border-default,#e5e5e5)}
+  #er-root .cnt,#er-root .bfhint,#er-root .meta,#er-root .nodesc,#er-root .incid{color:var(--text-muted,#888)}
+  #er-root .ent{background:var(--surface-2,#fff);border:1px solid var(--border-default,#e5e5e5)}
   #er-root .ent summary{color:var(--text-primary,#1a1a1a)}
-  #er-root .desc{color:var(--text-primary,#333)}
-  #er-root .al{color:var(--text-secondary,#555)}
-  #er-root .tab{background:var(--surface-2,#f0f0f0);border-color:var(--border-default,#ccc);color:var(--text-secondary,#333)}
-  #er-root .bf{background:var(--surface-2,#f5f5f5);border-color:var(--border-default,#ccc);color:var(--text-secondary,#666)}
-  #er-root .flagbox textarea{background:var(--surface-0,#fffdf5);color:var(--text-primary,#1a1a1a)}
+  #er-root .desc,#er-root .al,#er-root .rel,#er-root .notes{color:var(--text-secondary,#444)}
+  #er-root .meaning{color:var(--accent-primary,#a36)}
+  #er-root .tab{background:var(--surface-1,#f0f0f0);border:1px solid var(--border-default,#ccc);color:var(--text-secondary,#333)}
+  #er-root .tab:hover{background:var(--surface-3,#e8e8e8)}
+  #er-root .tab.active{background:var(--accent-primary,#2563eb);border-color:var(--accent-primary,#2563eb);color:#fff}
+  #er-root .bf{background:transparent;border:1px solid var(--border-default,#ccc);color:var(--text-secondary,#666)}
+  #er-root .bf:hover{background:var(--surface-2,#eee)}
+  #er-root .bf.active{background:var(--accent-primary,#2563eb);border-color:var(--accent-primary,#2563eb);color:#fff}
+  #er-root .bf.active .newc{color:#fff}
+  #er-root .flagbox textarea{background:var(--surface-0,#fffdf5);color:var(--text-primary,#1a1a1a);border-color:var(--border-default,#e0c98a)}
 }` : '';
   const STYLE = `
 ${ROOT}{font:15px/1.5 -apple-system,Segoe UI,sans-serif;margin:0;background:#f7f7f8;color:#1a1a1a}
@@ -264,14 +272,14 @@ ${S}main{padding:16px;max-width:980px;margin:0 auto}
   .printhead{display:block;column-span:all;font:bold 12px/1.3 Georgia,serif;color:#000;margin:28px 0 10px;padding-bottom:4px;border-bottom:2px solid #000}
   ${embed ? '#er-root' : 'html,body'}{background:#fff !important}
   ${ROOT}{color:#000;font:9px/1.25 Georgia,serif}
-  ${S}main{max-width:none;margin:0;padding:0;column-count:2;column-gap:16px}
+  ${S}main{max-width:none;margin:0;padding:0 0.25in;column-count:2;column-gap:16px;box-sizing:border-box}
   .chap h3{font-size:10px;margin:6px 0 2px;break-after:avoid;color:#000;border-bottom:1px solid #999}
   .ent{border:none;background:none;margin:0 0 2px;padding:0;break-inside:avoid}
   .ent summary{font-weight:700;list-style:none}
   .rec{padding:0 0 0 7px}
   .desc,.al,.rel,.notes{font-size:8.5px;margin:1px 0;color:#000}
   .meta,.meaning,.incid{font-size:8px;color:#333}
-  @page{margin:0.25in}
+  @page{margin:0.4in;size:letter portrait}
 }
 .id{font-size:11px;color:#bbb;margin:2px 0}
 .flagwrap{margin-top:6px;border-top:1px dashed #eee;padding-top:6px}
