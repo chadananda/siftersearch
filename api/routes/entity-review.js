@@ -48,7 +48,7 @@ const gpbChapter = (idx) => GPB_CHAPTERS.find(c => idx >= c.start && idx <= c.en
 // few survived as ALL-CAPS headings), so boundaries are anchored to the document's own structural
 // headings, aligned to Nabíl's published chapter sequence. Ranges are contiguous over idx 0–2081.
 const DB_CHAPTERS = [
-  { title: 'Introduction (Shoghi Effendi)', start: 0, end: 89 },
+  { title: 'Introduction by George Townshend', start: 0, end: 89 },
   { title: "Nabíl's Preface; the Mission of S̱hayḵh Aḥmad-i-Aḥsá'í", start: 90, end: 129 },
   { title: 'The Mission of Siyyid Káẓim-i-Rashtí', start: 130, end: 155 },
   { title: "The Declaration of the Báb's Mission", start: 156, end: 229 },
