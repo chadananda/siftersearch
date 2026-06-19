@@ -11,13 +11,20 @@ const {queryAll, graphQueryAll} = await import('../../../api/lib/db.js');
 const {normalizeSurface} = await import('../../../api/lib/graph-db.js');
 const TYPE = process.env.TYPE || 'person';
 
-const HON = /^(mirza|mulla|haji|hajji|siyyid|sayyid|aqa|shaykh|sheikh|mir|karbilai|karbila'i|mashhadi|ustad|navvab|nawab|prince|imam|mawlana|the|ibn|abu)\b[\s-]*/;
+// Tokens that don't identify a person: honorifics, connectors, gloss/relationship words.
+const STOP = new Set(['mirza','mulla','haji','hajji','siyyid','sayyid','aqa','shaykh','sheikh','mir',
+  'karbilai',"karbila'i",'mashhadi','ustad','navvab','nawab','prince','imam','mawlana','the','of','ibn',
+  'bin','son','brother','father','uncle','daughter','sister','wife','mother','and','his','her','a','an',
+  'governor','mujtahid','divine','martyr','khan','big','beg','effendi','pasha','pasa']);
+// Key = the SET of significant name tokens, sorted. Same set = same individual written differently
+// (e.g. "Abu'l-Qásim-i-Qá'im-Maqám" == "Abu'l-Qásim, the Qá'im-Maqám"); a different nisba/epithet
+// yields a different set, so genuine namesakes do NOT collide.
 function coreKey(name){
-  let s = normalizeSurface(name);          // diacritics + ayn/hamza folded, lowercased
-  s = s.split(/[,(]/)[0];                   // drop comma/paren appositives
-  s = s.split(/-i-|-yi-|-y-i-/)[0];         // drop nisba/title suffix after the "-i-" connector
-  for (let i=0;i<4;i++){ const t=s.replace(HON,''); if(t===s) break; s=t; }  // strip leading honorifics
-  return s.replace(/\s+/g,' ').trim();
+  let s = normalizeSurface(name);                 // diacritics + ayn/hamza folded, lowercased
+  s = s.replace(/[(),]/g, ' ');                    // appositive punctuation -> separators
+  s = s.replace(/-i-|-yi-|-y-i-/g, ' ');           // split the nisba/title "-i-" connector
+  const toks = s.split(/\s+/).map(t=>t.replace(/^[-']+|[-']+$/g,'')).filter(t=>t && !STOP.has(t));
+  return [...new Set(toks)].sort().join(' ');
 }
 
 const rows = await queryAll("SELECT canonical_name, entity_type, description, sources FROM entity_research WHERE entity_type=?", [TYPE]);
