@@ -222,10 +222,10 @@ function render(ents, { embed = false } = {}) {
   #er-root .meaning{color:var(--accent-primary,#a36)}
   #er-root .tab{background:var(--surface-1,#f0f0f0);border:1px solid var(--border-default,#ccc);color:var(--text-secondary,#333)}
   #er-root .tab:hover{background:var(--surface-3,#e8e8e8)}
-  #er-root .tab.active{background:var(--accent-primary,#2563eb);border-color:var(--accent-primary,#2563eb);color:#fff}
+  #er-root .tab.active{background:#2563eb;border-color:#2563eb;color:#fff}
   #er-root .bf{background:transparent;border:1px solid var(--border-default,#ccc);color:var(--text-secondary,#666)}
   #er-root .bf:hover{background:var(--surface-2,#eee)}
-  #er-root .bf.active{background:var(--accent-primary,#2563eb);border-color:var(--accent-primary,#2563eb);color:#fff}
+  #er-root .bf.active{background:#2563eb;border-color:#2563eb;color:#fff}
   #er-root .bf.active .newc{color:#fff}
   #er-root .flagbox textarea{background:var(--surface-0,#fffdf5);color:var(--text-primary,#1a1a1a);border-color:var(--border-default,#e0c98a)}
 }` : '';
