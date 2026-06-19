@@ -260,6 +260,11 @@ ${S}main{padding:16px;max-width:980px;margin:0 auto}
 .rel{font-size:13px;color:#3b6;margin:4px 0}
 .notes{font-size:13px;color:#615;margin:4px 0}
 .printhead{display:none}
+/* print-table wrapper: on screen it's transparent (plain block flow, header/footer spacers hidden);
+   in print it becomes a real table whose thead/tfoot repeat per page to form top/bottom margins. */
+.psheet{display:block;width:100%;border-collapse:collapse}
+.psheet>tbody,.psheet>tbody>tr,.psheet>tbody>tr>td{display:block}
+.psheet>thead,.psheet>tfoot,.psp{display:none}
 @media print{
   /* hide all page chrome — print ONLY the entity content for the active tab + book filter.
      The active typesec is display:block (inline) and inactive ones display:none, so we leave
@@ -272,14 +277,24 @@ ${S}main{padding:16px;max-width:980px;margin:0 auto}
   .printhead{display:block;column-span:all;font:bold 12px/1.3 Georgia,serif;color:#000;margin:28px 0 10px;padding-bottom:4px;border-bottom:2px solid #000}
   ${embed ? '#er-root' : 'html,body'}{background:#fff !important}
   ${ROOT}{color:#000;font:9px/1.25 Georgia,serif}
-  ${S}main{max-width:none;margin:0;padding:0 0.25in;box-sizing:border-box}
+  ${S}main{max-width:none;margin:0;padding:0;box-sizing:border-box}
+  /* repeating thead/tfoot spacers = per-page top/bottom margins (immune to the multicol page-top
+     bug, since the columns live in tbody below the header); cell padding = side margins. */
+  .psheet{display:table;width:100%;border-collapse:collapse}
+  .psheet>thead{display:table-header-group}
+  .psheet>tfoot{display:table-footer-group}
+  .psheet>tbody{display:table-row-group}
+  .psheet>thead>tr,.psheet>tbody>tr,.psheet>tfoot>tr{display:table-row}
+  .psheet td{display:table-cell;padding:0 0.3in}
+  .psp{display:block;height:0.4in}
+  .pcols{column-count:2;column-gap:16px}
   .chap h3{font-size:10px;margin:6px 0 2px;break-after:avoid;color:#000;border-bottom:1px solid #999}
   .ent{border:none;background:none;margin:0 0 2px;padding:0;break-inside:avoid}
   .ent summary{font-weight:700;list-style:none}
   .rec{padding:0 0 0 7px}
   .desc,.al,.rel,.notes{font-size:8.5px;margin:1px 0;color:#000}
   .meta,.meaning,.incid{font-size:8px;color:#333}
-  @page{margin:0.4in;size:letter portrait}
+  @page{margin:0;size:letter portrait}
 }
 .id{font-size:11px;color:#bbb;margin:2px 0}
 .flagwrap{margin-top:6px;border-top:1px dashed #eee;padding-top:6px}
@@ -297,7 +312,7 @@ ${screenEmbed}
 <header><h1>Entity Review — Dawn-Breakers + God Passes By <span style="font-weight:normal;color:#888;font-size:13px">· ${ents.length} entities · ${ents.filter(e => e.flagged).length} flagged · live from DB · ${new Date().toISOString()}</span></h1>
 <div class="tabs">${tabBtns}</div>
 <div class="bookfilter">Book: <button class="bf active" onclick="filterBook('all',this)">All</button>${booksOrdered.map(b => `<button class="bf" onclick="filterBook('${esc(b)}',this)">${esc(b)} <span class="newc">${newByBook[b] || 0}</span></button>`).join('')} <span class="bfhint">— number = new people that book adds; the filtered view is what prints</span></div></header>
-<main><div class="printhead" id="printhead"></div>${sections}</main>`;
+<main><table class="psheet"><thead><tr><td><div class="psp"></div></td></tr></thead><tbody><tr><td><div class="printhead" id="printhead"></div><div class="pcols">${sections}</div></td></tr></tbody><tfoot><tr><td><div class="psp"></div></td></tr></tfoot></table></main>`;
   const SCRIPT = `
 var BOOKNAMES={all:'God Passes By + The Dawn-Breakers',GPB:'God Passes By',DB:'The Dawn-Breakers'};
 var TYPEPLURAL={person:'persons',work:'works',place:'places',group:'groups',event:'events',organization:'organizations',concept:'concepts',title:'titles',period:'periods'};
