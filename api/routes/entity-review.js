@@ -214,7 +214,7 @@ function render(ents, { embed = false } = {}) {
      (readable in light OR dark); interactive controls get a BRIGHT accent when active so the
      current selection is unmistakable, plus a hover state for affordance. */
   #er-root{background:transparent;color:var(--text-primary,#1a1a1a)}
-  #er-root header{background:var(--surface-1,#fff);border-bottom:1px solid var(--border-default,#ddd)}
+  #er-root header{position:static;background:var(--surface-1,#fff);border-bottom:1px solid var(--border-default,#ddd)}
   #er-root h1{color:var(--text-primary,#1a1a1a)}
   #er-root .chap h3{color:var(--text-primary,#222);border-bottom-color:var(--border-default,#e5e5e5)}
   #er-root .cnt,#er-root .bfhint,#er-root .meta,#er-root .nodesc,#er-root .incid{color:var(--text-muted,#888)}
@@ -229,6 +229,9 @@ function render(ents, { embed = false } = {}) {
   #er-root .bf:hover{background:var(--surface-2,#eee)}
   #er-root .bf.active{background:#2563eb;border-color:#2563eb;color:#fff}
   #er-root .bf.active .newc{color:#fff}
+  #er-root .sb{background:var(--surface-2,#f5f5f5);border:1px solid var(--border-default,#ccc);color:var(--text-secondary,#333)}
+  #er-root .sb.active{background:var(--accent-primary,#444);border-color:var(--accent-primary,#444);color:#fff}
+  #er-root .bfhint{color:var(--text-muted,#aaa)}
   #er-root .flagbox textarea{background:var(--surface-0,#fffdf5);color:var(--text-primary,#1a1a1a);border-color:var(--border-default,#e0c98a)}
 }` : '';
   const STYLE = `
@@ -257,9 +260,10 @@ ${S}main{padding:16px;max-width:980px;margin:0 auto}
 .bf.active .newc{color:#fff}
 .imp{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;color:#fff;min-width:18px;text-align:center;vertical-align:middle}
 .imp-hi{background:#b91c1c}.imp-md{background:#c2740a}.imp-lo{background:#2563eb}.imp-xs{background:#9ca3af}
-.summ{margin:4px 0 6px;color:#111;font-weight:500}
+.summ{margin:4px 0 6px;color:var(--text-primary,#111);font-weight:500}
 .sortctl{margin-left:10px}.sb{padding:3px 9px;border:1px solid #ccc;background:#f5f5f5;border-radius:5px;cursor:pointer;font-size:12px}.sb.active{background:#444;color:#fff;border-color:#444}
 .byimp .chap h3{display:none}.byimp .chap{margin:0}
+.hidebk .bk{display:none}
 .rec{padding:8px 4px 2px}
 .desc{margin:4px 0;color:#333}
 .nodesc{color:#bbb;font-style:italic;margin:4px 0}
@@ -301,9 +305,9 @@ ${S}main{padding:16px;max-width:980px;margin:0 auto}
   .rec{padding:0 0 0 7px}
   .desc,.al,.rel,.notes{font-size:8.5px;margin:1px 0;color:#000}
   .summ{font-size:8.5px;margin:1px 0;color:#000;font-weight:600}
-  .imp{font-size:7px;padding:0 3px;min-width:0}
+  .imp{font-size:8px;color:#000 !important;background:none !important;font-weight:700;padding:0 4px 0 0;min-width:0}
   .sortctl{display:none !important}
-  .meta,.meaning,.incid{font-size:8px;color:#333}
+  .meta,.meaning,.incid,.cnt,.nodesc{font-size:8px;color:#1a1a1a !important}
   @page{margin:0;size:letter portrait}
 }
 .id{font-size:11px;color:#bbb;margin:2px 0}
@@ -327,18 +331,39 @@ ${screenEmbed}
 var BOOKNAMES={all:'God Passes By + The Dawn-Breakers',GPB:'God Passes By',DB:'The Dawn-Breakers'};
 var TYPEPLURAL={person:'persons',work:'works',place:'places',group:'groups',event:'events',organization:'organizations',concept:'concepts',title:'titles',period:'periods'};
 var currentBook='all';
-// Chapter mode = server order (chapters, importance-sorted within each). Importance mode = flatten
-// every entity in the active type into one list sorted by importance, ignoring chapters.
+// Apply the current book filter: show/hide entities, hide empty chapters, and drop the redundant
+// per-entity book tag when a single book is selected. Shared by filterBook + setSort.
+function applyBookFilter(code){
+  document.querySelectorAll('.ent').forEach(function(el){
+    var bks=(el.getAttribute('data-books')||'').split(' ').filter(Boolean);
+    el.style.display=(code==='all'||bks.indexOf(code)>=0)?'':'none';
+  });
+  document.querySelectorAll('.chap').forEach(function(ch){
+    var vis=false; ch.querySelectorAll('.ent').forEach(function(el){if(el.style.display!=='none')vis=true;});
+    ch.style.display=vis?'':'none';
+  });
+  var m=document.querySelector('main'); if(m)m.classList.toggle('hidebk', code!=='all');
+}
+// Chapter mode = chapters (each already importance-sorted server-side). Importance mode = flatten the
+// active type into one importance-sorted list, ignoring chapters. Pure client-side, no page reload.
 function setSort(mode,btn){
   document.querySelectorAll('.sortctl .sb').forEach(function(b){b.classList.remove('active');}); if(btn)btn.classList.add('active');
-  if(mode==='chapter'){ location.reload(); return; }
   document.querySelectorAll('.typesec').forEach(function(sec){
-    sec.classList.add('byimp');
-    var host=sec.querySelector('.impflat'); if(!host){host=document.createElement('div');host.className='impflat';sec.insertBefore(host,sec.firstChild);}
-    var ents=[].slice.call(sec.querySelectorAll('.ent'));
-    ents.sort(function(a,b){return (parseInt(b.dataset.imp,10)||0)-(parseInt(a.dataset.imp,10)||0);});
-    ents.forEach(function(e){host.appendChild(e);});
+    var chaps=[].slice.call(sec.querySelectorAll('.chap'));
+    if(mode==='importance'){
+      sec.classList.add('byimp');
+      var host=sec.querySelector('.impflat'); if(!host){host=document.createElement('div');host.className='impflat';sec.insertBefore(host,sec.firstChild);}
+      var ents=[].slice.call(sec.querySelectorAll('.ent'));
+      ents.forEach(function(e){ if(e.dataset.chapidx===undefined){var c=e.closest('.chap'); if(c)e.dataset.chapidx=chaps.indexOf(c);} });
+      ents.sort(function(a,b){return (parseInt(b.dataset.imp,10)||0)-(parseInt(a.dataset.imp,10)||0);});
+      ents.forEach(function(e){host.appendChild(e);});
+    } else {
+      sec.classList.remove('byimp');
+      var host=sec.querySelector('.impflat');
+      if(host){ [].slice.call(host.children).forEach(function(e){var i=parseInt(e.dataset.chapidx,10); var c=chaps[isNaN(i)?0:i]; if(c)c.appendChild(e);}); host.remove(); }
+    }
   });
+  applyBookFilter(currentBook);
   if(typeof updatePrintHead==='function')updatePrintHead();
 }
 // Keep the print-only header in sync with what's actually selected on screen, e.g.
@@ -355,15 +380,7 @@ function filterBook(code,btn){
   currentBook=code;
   document.querySelectorAll('.bookfilter .bf').forEach(function(b){b.classList.remove('active');});
   if(btn)btn.classList.add('active');
-  document.querySelectorAll('.ent').forEach(function(el){
-    var bks=(el.getAttribute('data-books')||'').split(' ').filter(Boolean);
-    var show = code==='all' ? true : bks.indexOf(code)>=0;
-    el.style.display = show ? '' : 'none';
-  });
-  document.querySelectorAll('.chap').forEach(function(ch){
-    var vis=false; ch.querySelectorAll('.ent').forEach(function(el){ if(el.style.display!=='none')vis=true; });
-    ch.style.display = vis ? '' : 'none';
-  });
+  applyBookFilter(code);
   updatePrintHead();
 }
 updatePrintHead();
