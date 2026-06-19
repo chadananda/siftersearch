@@ -242,7 +242,7 @@ main{padding:16px;max-width:980px;margin:0 auto}
   .rec{padding:0 0 0 7px}
   .desc,.al,.rel,.notes{font-size:8.5px;margin:1px 0;color:#000}
   .meta,.meaning,.incid{font-size:8px;color:#333}
-  @page{margin:12mm}
+  @page{margin:0.25in}
 }
 .id{font-size:11px;color:#bbb;margin:2px 0}
 .flagwrap{margin-top:6px;border-top:1px dashed #eee;padding-top:6px}
