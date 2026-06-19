@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-19T12:36:22.364Z",
+  "generated": "2026-06-19T13:02:14.868Z",
   "entries": [
+    {
+      "hash": "6dd589ed",
+      "date": "2026-06-19",
+      "type": "Other",
+      "description": "Plain SSR entity-review page + server-side /admin gating + print CSS",
+      "scope": null
+    },
     {
       "hash": "3aec7ec2",
       "date": "2026-06-18",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "TITLE_AUTHORITY checked before collection meta.yaml in authority.js",
       "scope": null
-    },
-    {
-      "hash": "8a7bb0c2",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Search dedup per title per tradition + paragraph deeplinks",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-06-19": [
+      {
+        "hash": "6dd589ed",
+        "date": "2026-06-19",
+        "type": "Other",
+        "description": "Plain SSR entity-review page + server-side /admin gating + print CSS",
+        "scope": null
+      }
+    ],
     "2026-06-18": [
       {
         "hash": "3aec7ec2",
@@ -7041,13 +7050,6 @@
         "date": "2026-05-14",
         "type": "Fixed",
         "description": "TITLE_AUTHORITY checked before collection meta.yaml in authority.js",
-        "scope": null
-      },
-      {
-        "hash": "8a7bb0c2",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Search dedup per title per tradition + paragraph deeplinks",
         "scope": null
       }
     ]

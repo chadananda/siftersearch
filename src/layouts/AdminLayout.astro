@@ -227,10 +227,11 @@ function isActive(href: string): boolean {
   /* Print: drop the admin chrome (top navbar + sidebar) so a normal Ctrl+P prints only the page
      content. The content's own print styles (e.g. the entity-review fragment) handle the rest. */
   @media print {
+    :global(html), :global(body) { background: #fff !important; }
     :global(.navbar) { display: none !important; }
     :global(footer) { display: none !important; }
     .sidebar { display: none !important; }
-    .admin-layout { display: block !important; min-height: 0; }
-    .main-content { padding: 0 !important; min-height: 0; column-count: 1 !important; }
+    .admin-layout { display: block !important; min-height: 0; background: #fff !important; }
+    .main-content { padding: 0 !important; min-height: 0; column-count: 1 !important; background: #fff !important; }
   }
 </style>
