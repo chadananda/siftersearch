@@ -7,8 +7,10 @@
 // Route: GET /api/admin/entity-review  →  served by api/server.js (prefix /api/admin)
 // Deps: db.js (query/queryAll = sifter.db; graphQueryAll = graph.db sidecar).
 
-import { query, queryAll, graphQueryAll } from '../lib/db.js';
-import { requireAdmin } from '../lib/auth.js';
+import { query, queryAll, graphQueryAll, userQueryOne } from '../lib/db.js';
+import { requireAdmin, verifyRefreshToken } from '../lib/auth.js';
+
+const REFRESH_COOKIE = 'refresh_token';
 
 const DOCS = { 21308: 'The Dawn-Breakers', 21310: 'God Passes By' };
 // GPB (21310) chapter map — pre-mapped by paragraph_index from GPB's actual TOC
@@ -136,7 +138,7 @@ async function buildModel() {
   return [...byId.values()];
 }
 
-function render(ents) {
+function render(ents, { embed = false } = {}) {
   const types = [...new Set(ents.map(e => e.entity_type || 'unknown'))].sort((a, b) => {
     const order = ['person', 'work', 'place', 'event', 'organization', 'concept', 'title', 'period'];
     return (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99);
@@ -195,8 +197,7 @@ function render(ents) {
     return `<div class="typesec" id="sec-${esc(t)}" style="display:${i === 0 ? 'block' : 'none'}">${body}</div>`;
   }).join('');
 
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Entity Review — Dawn-Breakers + GPB</title>
-<style>
+  const STYLE = `
 body{font:15px/1.5 -apple-system,Segoe UI,sans-serif;margin:0;background:#f7f7f8;color:#1a1a1a}
 header{position:sticky;top:0;background:#fff;border-bottom:1px solid #ddd;padding:10px 16px;z-index:10}
 h1{font-size:18px;margin:0 0 8px}
@@ -253,12 +254,13 @@ main{padding:16px;max-width:980px;margin:0 auto}
 .flagact{display:flex;align-items:center;gap:10px;margin-top:5px}
 .flagact button{padding:4px 12px;border:1px solid #d4a72c;background:#fbf3da;border-radius:5px;cursor:pointer;font-size:12px;color:#7a5200}
 .saved{font-size:12px;color:#2e7d32}
-</style></head><body>
+`;
+  const BODY = `
 <header><h1>Entity Review — Dawn-Breakers + God Passes By <span style="font-weight:normal;color:#888;font-size:13px">· ${ents.length} entities · ${ents.filter(e => e.flagged).length} flagged · live from DB · ${new Date().toISOString()}</span></h1>
 <div class="tabs">${tabBtns}</div>
 <div class="bookfilter">Book: <button class="bf active" onclick="filterBook('all',this)">All</button>${booksOrdered.map(b => `<button class="bf" onclick="filterBook('${esc(b)}',this)">${esc(b)} <span class="newc">${newByBook[b] || 0}</span></button>`).join('')} <span class="bfhint">— number = new people that book adds; the filtered view is what prints</span></div></header>
-<main><div class="printhead" id="printhead"></div>${sections}</main>
-<script>
+<main><div class="printhead" id="printhead"></div>${sections}</main>`;
+  const SCRIPT = `
 var BOOKNAMES={all:'God Passes By + The Dawn-Breakers',GPB:'God Passes By',DB:'The Dawn-Breakers'};
 var TYPEPLURAL={person:'persons',work:'works',place:'places',group:'groups',event:'events',organization:'organizations',concept:'concepts',title:'titles',period:'periods'};
 var currentBook='all';
@@ -294,19 +296,20 @@ document.addEventListener('change',function(e){
   if(!e.target.classList||!e.target.classList.contains('flagcb'))return;
   var id=e.target.dataset.id; var b=fbox(id); if(b)b.style.display=e.target.checked?'block':'none';
 });
-// Save → hand off to the parent admin app (it holds the session) to persist
+// Save the flag/note with a direct, credentialed POST. The refresh-token cookie authorizes the
+// write (same origin when served standalone from the API; cross-origin with CORS when embedded on
+// the edge — window.__ER_API_BASE is set by the host page in that case).
 document.addEventListener('click',function(e){
   var btn=e.target.closest&&e.target.closest('button.flagsave'); if(!btn)return;
   var id=btn.dataset.id, b=fbox(id), cb=document.getElementById('fc-'+id);
   var st=b.querySelector('.saved'); st.textContent='saving…';
-  window.parent.postMessage({type:'er-flag',key:String(id),entityId:Number(id),canonicalName:btn.dataset.name,entityType:btn.dataset.type,flagged:!!cb.checked,comment:b.querySelector('textarea').value},'*');
+  fetch((window.__ER_API_BASE||'')+'/api/admin/entity-review/flag',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({entityId:Number(id),canonicalName:btn.dataset.name,entityType:btn.dataset.type,flagged:!!cb.checked,comment:b.querySelector('textarea').value})})
+    .then(function(r){st.textContent=r.ok?'saved ✓':'error ✗';})
+    .catch(function(){st.textContent='error ✗';});
 });
-// ack from the parent after the write
-window.addEventListener('message',function(e){
-  var d=e.data||{}; if(d.type!=='er-flag-ok'&&d.type!=='er-flag-err')return;
-  var b=fbox(d.key); if(b)b.querySelector('.saved').textContent=d.type==='er-flag-ok'?'saved ✓':'error ✗';
-});
-</script></body></html>`;
+`;
+  if (embed) return `<style>${STYLE}</style>${BODY}<script>${SCRIPT}</script>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Entity Review — Dawn-Breakers + GPB</title><style>${STYLE}</style></head><body>${BODY}<script>${SCRIPT}</script></body></html>`;
 }
 
 const FLAG_DDL = `CREATE TABLE IF NOT EXISTS entity_review_flags (
@@ -322,12 +325,22 @@ const FLAG_DDL = `CREATE TABLE IF NOT EXISTS entity_review_flags (
 )`;
 
 export default async function entityReviewRoutes(server) {
-  // Auth: admin JWT (the auth-only admin panel uses this — no key needed) OR the
-  // internal key (for direct/cron access). Shared by the page + the flag write.
+  // Auth (any one): internal key (cron/direct) · a valid admin SESSION via the refresh-token
+  // cookie (forwarded by the SSR edge or sent by the browser with credentials) · admin Bearer JWT.
+  // The session-cookie path is what lets the plain SSR /admin/entities page render without the
+  // browser holding a token. Shared by the page + the flag write.
   const adminAuth = async (req, reply) => {
     const key = req.query?.key || req.headers['x-admin-key'];
     if (process.env.INTERNAL_API_KEY && key === process.env.INTERNAL_API_KEY) return;
-    await requireAdmin(req, reply); // sends 401 if not an admin
+    const tokenId = req.cookies?.[REFRESH_COOKIE];
+    if (tokenId) {
+      const token = await verifyRefreshToken(tokenId);
+      if (token) {
+        const u = await userQueryOne('SELECT tier FROM users WHERE id = ?', [token.user_id]);
+        if (u && u.tier === 'admin') return;
+      }
+    }
+    await requireAdmin(req, reply); // Bearer fallback; sends 401/403 otherwise
   };
 
   // Self-bootstrap the flag table at registration (write routes via the single-writer).
@@ -336,7 +349,8 @@ export default async function entityReviewRoutes(server) {
   server.get('/entity-review', { preHandler: adminAuth }, async (req, reply) => {
     const ents = await buildModel();
     reply.header('content-type', 'text/html; charset=utf-8').header('cache-control', 'no-store');
-    return render(ents);
+    const embed = req.query?.embed === '1' || req.query?.embed === 'true';
+    return render(ents, { embed });
   });
 
   // Set/clear a review flag + note. Keyed by canonical_name+entity_type (durable across

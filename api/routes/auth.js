@@ -35,12 +35,27 @@ import {
 } from '../services/verification.js';
 
 const REFRESH_COOKIE = 'refresh_token';
+// The refresh-token cookie is scoped to the whole site (path '/') and, in production, to the
+// parent domain '.siftersearch.com' — so it is sent to BOTH the API (api.siftersearch.com) AND
+// the SSR edge (siftersearch.com). That lets Astro middleware gate /admin server-side and lets
+// SSR pages forward the session to the API. Override the domain with AUTH_COOKIE_DOMAIN if needed.
+const COOKIE_DOMAIN = process.env.AUTH_COOKIE_DOMAIN
+  || (process.env.NODE_ENV === 'production' ? '.siftersearch.com' : undefined);
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax',
-  path: '/api/auth'
+  path: '/',
+  ...(COOKIE_DOMAIN ? { domain: COOKIE_DOMAIN } : {})
 };
+// Legacy scope of the cookie before it was widened (host-only api.siftersearch.com, /api/auth).
+// We clear it whenever we set the new cookie so a logged-in user migrates automatically on their
+// next login/refresh with no duplicate-cookie confusion and no forced manual re-login.
+const LEGACY_COOKIE_OPTIONS = { path: '/api/auth' };
+function setRefreshCookie(reply, refresh) {
+  reply.clearCookie(REFRESH_COOKIE, LEGACY_COOKIE_OPTIONS);
+  reply.setCookie(REFRESH_COOKIE, refresh.id, { ...COOKIE_OPTIONS, expires: refresh.expiresAt });
+}
 
 export default async function authRoutes(fastify) {
   // Signup - creates unverified account and sends verification code
@@ -175,11 +190,8 @@ export default async function authRoutes(fastify) {
     const accessToken = createAccessToken(user);
     const refresh = await createRefreshToken(user.id);
 
+    setRefreshCookie(reply, refresh);
     reply
-      .setCookie(REFRESH_COOKIE, refresh.id, {
-        ...COOKIE_OPTIONS,
-        expires: refresh.expiresAt
-      })
       .send({
         success: true,
         message: 'Email verified successfully',
@@ -279,12 +291,8 @@ export default async function authRoutes(fastify) {
     // Remove sensitive data
     const { password_hash, ...safeUser } = user;
 
-    reply
-      .setCookie(REFRESH_COOKIE, refresh.id, {
-        ...COOKIE_OPTIONS,
-        expires: refresh.expiresAt
-      })
-      .send({ user: safeUser, accessToken });
+    setRefreshCookie(reply, refresh);
+    reply.send({ user: safeUser, accessToken });
   });
 
   // Forgot password - request reset
@@ -389,12 +397,8 @@ export default async function authRoutes(fastify) {
       const newRefresh = await createRefreshToken(user.id);
       const accessToken = createAccessToken(user);
 
-      reply
-        .setCookie(REFRESH_COOKIE, newRefresh.id, {
-          ...COOKIE_OPTIONS,
-          expires: newRefresh.expiresAt
-        })
-        .send({ accessToken });
+      setRefreshCookie(reply, newRefresh);
+      reply.send({ accessToken });
     } catch (err) {
       // Log the actual error for debugging
       console.error('[AUTH REFRESH ERROR]', err.message, err.stack);
@@ -409,9 +413,22 @@ export default async function authRoutes(fastify) {
       await revokeRefreshToken(tokenId);
     }
 
-    reply
-      .clearCookie(REFRESH_COOKIE, COOKIE_OPTIONS)
-      .send({ success: true });
+    reply.clearCookie(REFRESH_COOKIE, COOKIE_OPTIONS);
+    reply.clearCookie(REFRESH_COOKIE, LEGACY_COOKIE_OPTIONS); // also drop any legacy-scoped cookie
+    reply.send({ success: true });
+  });
+
+  // Lightweight, READ-ONLY session check for server-side gating (Astro middleware). Validates the
+  // refresh-token cookie WITHOUT rotating it (so it's safe to call on every admin page request) and
+  // returns just enough to authorize: whether there's a valid session and the user's tier.
+  fastify.get('/session', async (request, reply) => {
+    const tokenId = request.cookies[REFRESH_COOKIE];
+    if (!tokenId) return reply.send({ authenticated: false });
+    const token = await verifyRefreshToken(tokenId);
+    if (!token) return reply.send({ authenticated: false });
+    const user = await queryOne('SELECT id, email, tier FROM users WHERE id = ?', [token.user_id]);
+    if (!user || user.tier === 'banned') return reply.send({ authenticated: false });
+    return reply.send({ authenticated: true, tier: user.tier, email: user.email });
   });
 
   // Get current user
