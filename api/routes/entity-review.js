@@ -225,10 +225,14 @@ main{padding:16px;max-width:980px;margin:0 auto}
 .al{font-size:13px;color:#555;margin:4px 0}
 .rel{font-size:13px;color:#3b6;margin:4px 0}
 .notes{font-size:13px;color:#615;margin:4px 0}
+.printhead{display:none}
 @media print{
-  header,.tabs,.flagwrap,.id,.er-bar{display:none !important}
-  .typesec{display:block !important}            /* print every type, not just the active tab */
-  .ent>.rec{display:block !important}           /* force every entity's details open */
+  /* hide all page chrome — print ONLY the entity content for the active tab + book filter.
+     The active typesec is display:block (inline) and inactive ones display:none, so we leave
+     .typesec display alone; likewise book-filtered entities already carry inline display:none. */
+  header,.tabs,.bookfilter,.flagwrap,.id,.er-bar{display:none !important}
+  .ent>.rec{display:block !important}           /* force every printed entity's details open */
+  .printhead{display:block;column-span:all;font:bold 12px/1.3 Georgia,serif;color:#000;margin:0 0 8px;padding-bottom:4px;border-bottom:2px solid #000}
   body{background:#fff;color:#000;font:9px/1.25 Georgia,serif}
   main{max-width:none;margin:0;padding:0;column-count:2;column-gap:16px}
   .chap h3{font-size:10px;margin:6px 0 2px;break-after:avoid;color:#000;border-bottom:1px solid #999}
@@ -237,6 +241,7 @@ main{padding:16px;max-width:980px;margin:0 auto}
   .rec{padding:0 0 0 7px}
   .desc,.al,.rel,.notes{font-size:8.5px;margin:1px 0;color:#000}
   .meta,.meaning,.incid{font-size:8px;color:#333}
+  @page{margin:12mm}
 }
 .id{font-size:11px;color:#bbb;margin:2px 0}
 .flagwrap{margin-top:6px;border-top:1px dashed #eee;padding-top:6px}
@@ -252,10 +257,23 @@ main{padding:16px;max-width:980px;margin:0 auto}
 <header><h1>Entity Review — Dawn-Breakers + God Passes By <span style="font-weight:normal;color:#888;font-size:13px">· ${ents.length} entities · ${ents.filter(e => e.flagged).length} flagged · live from DB · ${new Date().toISOString()}</span></h1>
 <div class="tabs">${tabBtns}</div>
 <div class="bookfilter">Book: <button class="bf active" onclick="filterBook('all',this)">All</button>${booksOrdered.map(b => `<button class="bf" onclick="filterBook('${esc(b)}',this)">${esc(b)} <span class="newc">${newByBook[b] || 0}</span></button>`).join('')} <span class="bfhint">— number = new people that book adds; the filtered view is what prints</span></div></header>
-<main>${sections}</main>
+<main><div class="printhead" id="printhead"></div>${sections}</main>
 <script>
-function showTab(t){document.querySelectorAll('.typesec').forEach(s=>s.style.display='none');document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('sec-'+t).style.display='block';document.getElementById('tab-'+t).classList.add('active');}
+var BOOKNAMES={all:'God Passes By + The Dawn-Breakers',GPB:'God Passes By',DB:'The Dawn-Breakers'};
+var TYPEPLURAL={person:'persons',work:'works',place:'places',group:'groups',event:'events',organization:'organizations',concept:'concepts',title:'titles',period:'periods'};
+var currentBook='all';
+// Keep the print-only header in sync with what's actually selected on screen, e.g.
+// "God Passes By, 540 persons" — book name + count of currently-visible entities of the active type.
+function updatePrintHead(){
+  var tab=document.querySelector('.tab.active'); var type=tab?tab.id.replace('tab-',''):'';
+  var sec=document.getElementById('sec-'+type); var n=0;
+  if(sec)sec.querySelectorAll('.ent').forEach(function(el){if(el.style.display!=='none')n++;});
+  var word=TYPEPLURAL[type]||(type+'s'); if(n===1)word=word.replace(/s$/,'');
+  document.getElementById('printhead').textContent=(BOOKNAMES[currentBook]||currentBook)+', '+n+' '+word;
+}
+function showTab(t){document.querySelectorAll('.typesec').forEach(s=>s.style.display='none');document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('sec-'+t).style.display='block';document.getElementById('tab-'+t).classList.add('active');updatePrintHead();}
 function filterBook(code,btn){
+  currentBook=code;
   document.querySelectorAll('.bookfilter .bf').forEach(function(b){b.classList.remove('active');});
   if(btn)btn.classList.add('active');
   document.querySelectorAll('.ent').forEach(function(el){
@@ -267,7 +285,9 @@ function filterBook(code,btn){
     var vis=false; ch.querySelectorAll('.ent').forEach(function(el){ if(el.style.display!=='none')vis=true; });
     ch.style.display = vis ? '' : 'none';
   });
+  updatePrintHead();
 }
+updatePrintHead();
 function fbox(id){return document.getElementById('fb-'+id);}
 // reveal/hide the note box with the checkbox
 document.addEventListener('change',function(e){
