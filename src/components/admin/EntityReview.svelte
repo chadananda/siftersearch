@@ -50,16 +50,63 @@
     frame?.contentWindow?.postMessage({ type: ok ? 'er-flag-ok' : 'er-flag-err', key: d.key }, '*');
   }
 
+  // Print the review CLEANLY. The content lives in an iframe inside the admin chrome (sidebar,
+  // navbar, toolbar) and the iframe is fixed-height with internal scroll — so a plain Ctrl+P would
+  // capture the chrome and clip the iframe to its visible slice. Instead we re-open the already
+  // fetched page HTML in its own window (no chrome, no clipping) and replicate the current
+  // tab + book selection so the printout matches what's on screen, then print.
+  function printView() {
+    const frame = document.querySelector('.er-frame');
+    let activeType = '', book = 'all';
+    try {
+      const d = frame.contentWindow.document;
+      const at = d.querySelector('.tab.active'); if (at) activeType = at.id.replace('tab-', '');
+      const ab = d.querySelector('.bookfilter .bf.active'); if (ab) book = (ab.textContent || '').trim().split(/\s+/)[0] || 'all';
+    } catch { /* cross-frame read may fail; fall back to defaults */ }
+    const w = window.open('', '_blank', 'width=1100,height=850');
+    if (!w) { alert('Pop-up blocked — allow pop-ups for this site to print the entity review.'); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+    setTimeout(() => {
+      try {
+        if (activeType && typeof w.showTab === 'function') w.showTab(activeType);
+        if (book && book !== 'All' && typeof w.filterBook === 'function') {
+          const btn = [...w.document.querySelectorAll('.bookfilter .bf')]
+            .find(b => (b.textContent || '').trim().split(/\s+/)[0] === book);
+          w.filterBook(book, btn);
+        }
+        w.focus(); w.print();
+      } catch { try { w.focus(); w.print(); } catch { /* ignore */ } }
+    }, 400);
+  }
+
+  // Best-effort fallback so a direct Ctrl+P from this page also prints clean: grow the iframe to
+  // its full content height first (browsers clip a fixed-height iframe otherwise), restore after.
+  function fitFrameForPrint() {
+    const f = document.querySelector('.er-frame'); if (!f) return;
+    try { f.dataset.h = f.style.height; f.style.height = f.contentWindow.document.documentElement.scrollHeight + 'px'; } catch { /* ignore */ }
+  }
+  function restoreFrame() {
+    const f = document.querySelector('.er-frame'); if (!f) return;
+    f.style.height = f.dataset.h || '';
+  }
+
   onMount(() => {
     load();
     window.addEventListener('message', onFlagMessage);
-    return () => window.removeEventListener('message', onFlagMessage);
+    window.addEventListener('beforeprint', fitFrameForPrint);
+    window.addEventListener('afterprint', restoreFrame);
+    return () => {
+      window.removeEventListener('message', onFlagMessage);
+      window.removeEventListener('beforeprint', fitFrameForPrint);
+      window.removeEventListener('afterprint', restoreFrame);
+    };
   });
 </script>
 
 <div class="er-bar">
   <h2>Entity Review</h2>
   <button onclick={() => load()} disabled={loading}>↻ Refresh</button>
+  <button class="print-btn" onclick={printView} disabled={!html || loading} title="Open a clean, chrome-free print view of the current tab + book selection">⎙ Print</button>
   {#if loading}<span class="muted">Loading entities…</span>{/if}
   {#if loadedAt && !loading && !error}<span class="muted">updated {loadedAt} · live from DB</span>{/if}
   {#if error}<span class="err">{error}</span>{/if}
@@ -77,4 +124,17 @@
   .muted { color: #888; font-size: 13px; }
   .err { color: #c0392b; font-size: 13px; }
   .er-frame { width: 100%; height: calc(100vh - 200px); min-height: 480px; border: 1px solid #e5e5e5; border-radius: 8px; background: #fff; }
+  .print-btn { background: #475569 !important; border-color: #475569 !important; }
+  .print-btn:hover:not(:disabled) { background: #334155 !important; border-color: #334155 !important; }
+
+  /* Ctrl+P fallback: strip the admin chrome so a direct print isn't full of sidebar/navbar.
+     (The ⎙ Print button is the primary, most reliable path — it re-renders the page chrome-free
+     in its own window.) The iframe height is expanded to content by fitFrameForPrint(). */
+  @media print {
+    :global(.navbar), :global(.sidebar) { display: none !important; }
+    :global(.admin-layout) { display: block !important; }
+    :global(.main-content) { padding: 0 !important; min-height: 0 !important; }
+    .er-bar { display: none !important; }
+    .er-frame { border: none !important; width: 100% !important; min-height: 0 !important; border-radius: 0 !important; }
+  }
 </style>
