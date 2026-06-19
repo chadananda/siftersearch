@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-19T18:27:20.023Z",
+  "generated": "2026-06-19T18:37:41.038Z",
   "entries": [
+    {
+      "hash": "4a5f1750",
+      "date": "2026-06-19",
+      "type": "Fixed",
+      "description": "Era from graph_entities in persons dump",
+      "scope": null
+    },
     {
       "hash": "ebe5815d",
       "date": "2026-06-19",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "No page breaks, add vertical margins",
       "scope": null
-    },
-    {
-      "hash": "6fd5dabb",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Cross-tradition slot limit and volume dedup in hybridSearch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-19": [
+      {
+        "hash": "4a5f1750",
+        "date": "2026-06-19",
+        "type": "Fixed",
+        "description": "Era from graph_entities in persons dump",
+        "scope": null
+      },
       {
         "hash": "ebe5815d",
         "date": "2026-06-19",
@@ -7043,13 +7050,6 @@
         "date": "2026-05-14",
         "type": "Other",
         "description": "No page breaks, add vertical margins",
-        "scope": null
-      },
-      {
-        "hash": "6fd5dabb",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Cross-tradition slot limit and volume dedup in hybridSearch",
         "scope": null
       }
     ]
