@@ -21,7 +21,7 @@ for (const c of plan) {
   let aliasSet = new Set(); try { for (const a of JSON.parse(keeperER.aliases||'[]')) aliasSet.add(a); } catch {}
   aliasSet.add(c.keeper);
   for (const M of c.merged) {
-    if (nk(M)===nk(c.keeper)) continue;
+    if (M===c.keeper) continue; // skip only an exact self-merge; nk-equal-but-byte-different (e.g. curly vs straight apostrophe) ARE distinct rows to fold
     const mER = await queryOne("SELECT canonical_name, description, aliases FROM entity_research WHERE canonical_name=? AND entity_type=?", [M, etype]);
     if (!mER) { console.log(`   . merged not found (already gone?): ${etype} :: ${M}`); continue; }
     if (mER.description && mER.description.trim()) desc = desc ? desc + ' … ' + mER.description : mER.description;
