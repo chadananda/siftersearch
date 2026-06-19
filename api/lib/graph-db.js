@@ -120,10 +120,12 @@ function getEntityWithRelations(db, entityId) {
 // Main-DB entity layer (migration 72 tables in sifter.db)
 // ---------------------------------------------------------------------------
 
-/** Normalize a surface form for fuzzy matching: NFD + strip combining marks + lowercase. */
+/** Normalize a surface form for fuzzy matching across transliteration styles: strip diacritics
+ * (NFD + combining marks \u2192 \u1e24usayn=Husayn, S\u00e1diq=Sadiq) AND the whole ayn/hamza apostrophe class
+ * (\u2018 = ' = \u02bb = \u02bc \u2026 \u2014 typographic, not a real difference), then lowercase. Real aliases differ by NAME. */
 export function normalizeSurface(text) {
   if (!text) return '';
-  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['`\u00b4\u2018\u2019\u201b\u02bb\u02bc\u02bd\u02b9\u2032]/g, '').toLowerCase().trim();
 }
 
 /**
