@@ -1,0 +1,19 @@
+[
+ {"entity_type":"person","keeper":"Siyyid Ḥasan (brother of Siyyid Ḥusayn-i-Yazdí)","merged":["Siyyid Ḥasan-i-Yazdí"],"reason":"same brother of the Báb's amanuensis"},
+ {"entity_type":"person","keeper":"Mírzá ‘Alíy-i-Sardár","merged":["‘Alíy-i-Sardár"],"reason":"same young man surnamed ‘Alíy-i-Sardár"},
+ {"entity_type":"person","keeper":"Áqá Mírzá Muḥammad-‘Alí, son of Siyyid Aḥmad","merged":["Mírzá Muḥammad-‘Alí, son of Siyyid Aḥmad"],"reason":"same son of Siyyid Aḥmad, slain at the fort"},
+ {"entity_type":"person","keeper":"Amír Arslán Khán, the Majdu’d-Dawlih","merged":["Amír Arslán Khán Majdu’d-Dawlih"],"reason":"same Sháh's uncle, Zanján governor / Majdu'd-Dawlih"},
+ {"entity_type":"person","keeper":"‘Abdu’lláh, brother of Ḥájí Muṣṭafá Khán","merged":["‘Abdu’lláh Ḵhán, brother of Ḥájí Muṣṭafá Ḵhán"],"reason":"same brother of Ḥájí Muṣṭafá Khán"},
+ {"entity_type":"person","keeper":"S̱hayḵh Sa‘íd-i-Hindí","merged":["Sa‘íd-i-Hindí"],"reason":"same Letter of the Living, Sa‘íd-i-Hindí"},
+ {"entity_type":"person","keeper":"Mullá Ḥusayn-‘Alí-i-Sangsarí","merged":["Ḥusayn-‘Alí-i-Sangsarí"],"reason":"same martyr of Sang-Sar (honorific variant)"},
+ {"entity_type":"person","keeper":"Mullá Muḥammad-Taqíy-i-Harátí","merged":["Mullá Muḥammad-Taqíy-i-Haraví"],"reason":"same Herat scholar (Harátí=Haraví)"},
+ {"entity_type":"person","keeper":"Ḥájí Mírzá Músáy-i-Qumí","merged":["Ḥájí Mírzá Músá-yi-Qumí"],"reason":"same Ḥájí Mírzá Músá of Qum (punctuation variant)"},
+ {"entity_type":"person","keeper":"Mullá ‘Abdu’l-Ḥusayn-i-Nayrízí","merged":["Áḵhúnd Mullá ‘Abdu’l-Ḥusayn-i-Nayrízí","Áḵhúnd Mullá ‘Abdu’l-Ḥusayn"],"reason":"same aged venerable Nayríz divine ‘Abdu'l-Ḥusayn"},
+ {"entity_type":"person","keeper":"Mullá Muḥammad-i-Mu‘allim-i-Núrí","merged":["Mullá Muḥammad-i-Mu‘allim"],"reason":"same teacher of Núr, Nabíl's informant"},
+ {"entity_type":"person","keeper":"Mihr-'Alí Khán-i-Núrí, Shujá'u'l-Mulk","merged":["Mihr-‘Alí Khán S̱hujá‘u’l-Mulk"],"reason":"same Mihr-‘Alí Khán Shujá‘u'l-Mulk"},
+ {"entity_type":"person","keeper":"Mírzá Muḥíṭ-i-Kirmání","merged":["Mírzá Muḥíṭ-i-S̱há‘ir-i-Kirmání"],"reason":"same Shaykhí leader Mírzá Muḥíṭ-i-Kirmání (S̱há‘ir epithet)"},
+ {"entity_type":"person","keeper":"Muḥammad Ḥasan Khán, the Sálár","merged":["Ḥasan Khán, the Sálár"],"reason":"same Khurásán rebel, the Sálár"},
+ {"entity_type":"person","keeper":"Muḥammad Khán, the Amír-Túmán","merged":["Muḥammad Khán, Biglíyirbigí, Amír-Túmán"],"reason":"same Muḥammad Khán Amír-Túmán (earlier rank Biglíyirbigí)"},
+ {"entity_type":"person","keeper":"Mas̱hhadí Mírzá Ḥusayn, called Quṭb","merged":["Mírzá Ḥusayn-i-Quṭb"],"reason":"same Mírzá Ḥusayn, surnamed Quṭb, kad-khudá of Bázár quarter"},
+ {"entity_type":"person","keeper":"Mírzá Muḥammad-Taqí-i-Sárí","merged":["Mírzá Muḥammad-Taqí, mujtahid of Sárí"],"reason":"same mujtahid of Sárí who confined Quddús"}
+]
