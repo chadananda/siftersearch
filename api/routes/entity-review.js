@@ -67,7 +67,7 @@ const DB_CHAPTERS = [
   { title: 'The Zanján Upheaval', start: 1171, end: 1287 },
   { title: "Bahá'u'lláh's Journey to Karbilá", start: 1288, end: 1312 },
   { title: "Attempt on the S̱háh's Life, and its Consequences", start: 1313, end: 1407 },
-  { title: 'Epilogue', start: 1408, end: 1475 },
+  { title: 'Epilogue by George Townshend', start: 1408, end: 1475 },
   { title: 'Notes and Appendices', start: 1476, end: 100000 },
 ];
 const dbChapter = (idx) => DB_CHAPTERS.find(c => idx >= c.start && idx <= c.end) || null;
