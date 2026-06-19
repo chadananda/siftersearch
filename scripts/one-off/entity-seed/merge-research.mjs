@@ -11,9 +11,14 @@ const {query, queryOne, queryAll, graphQuery} = await import('../../../api/lib/d
 const {normalizeSurface} = await import('../../../api/lib/graph-db.js');
 const nk = s => String(s).replace(/[‘’'`]/g,"'").toLowerCase().replace(/\s+/g,' ').trim();
 const all = JSON.parse(readFileSync(process.argv[2],'utf8'));
+const deep = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[‘’'`_]/g,"'").toLowerCase().replace(/\([^)]*\)/g,' ').replace(/[^a-z0-9' ]/g,' ').replace(/\s+/g,' ').trim();
 const ge = await queryAll("SELECT id, canonical_name, entity_type FROM graph_entities WHERE religion=''");
-const geByKey = new Map(); const geByName = new Map();
-for (const g of ge) { geByKey.set(nk(g.canonical_name)+'|'+g.entity_type, g.id); if (!geByName.has(nk(g.canonical_name))) geByName.set(nk(g.canonical_name), g.id); }
+const geByKey = new Map(); const geByName = new Map(); const geByDeep = new Map(); const deepCount = new Map();
+for (const g of ge) {
+  geByKey.set(nk(g.canonical_name)+'|'+g.entity_type, g.id);
+  if (!geByName.has(nk(g.canonical_name))) geByName.set(nk(g.canonical_name), g.id);
+  const dk = deep(g.canonical_name); deepCount.set(dk,(deepCount.get(dk)||0)+1); if (!geByDeep.has(dk)) geByDeep.set(dk, g.id);
+}
 let aliasAdded=0, relAdded=0, relUnresolved=0, eraSet=0, missing=0;
 for (const o of all) {
   const etype = o.entity_type;
@@ -27,7 +32,9 @@ for (const o of all) {
   await query("UPDATE entity_research SET aliases=?, updated_at=datetime('now') WHERE canonical_name=? AND entity_type=?", [JSON.stringify([...aset]), o.canonical_name, etype]);
   if (o.era && geId) { await query("UPDATE graph_entities SET era=? WHERE id=?", [String(o.era), geId]); eraSet++; }
   if (geId) for (const r of (o.relationships||[])) {
-    const tId = r && r.target ? geByName.get(nk(r.target)) : null;
+    let tId = r && r.target ? geByName.get(nk(r.target)) : null;
+    // fall back to transliteration-insensitive match, but ONLY when unambiguous (no namesake collision)
+    if (!tId && r && r.target) { const dk = deep(r.target); if ((deepCount.get(dk)||0) === 1) tId = geByDeep.get(dk); }
     if (!tId || tId===geId) { relUnresolved++; continue; }
     const exists = await queryOne("SELECT 1 FROM graph_relations WHERE source_entity_id=? AND target_entity_id=? AND relation_type=?", [geId, tId, r.type||'related']);
     if (!exists) { await query("INSERT INTO graph_relations (source_entity_id,target_entity_id,relation_type,weight,source_doc_id) VALUES (?,?,?,1,21310)", [geId, tId, r.type||'related']); relAdded++; }

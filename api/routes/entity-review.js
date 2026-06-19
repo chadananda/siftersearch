@@ -48,7 +48,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<':
 
 async function buildModel() {
   // 1. all entities (sifter.db)
-  const entities = await queryAll(`SELECT id, canonical_name, entity_type, religion, era, description FROM graph_entities ORDER BY canonical_name`);
+  const entities = await queryAll(`SELECT id, canonical_name, entity_type, religion, era, description, name_meaning FROM graph_entities ORDER BY canonical_name`);
   const byId = new Map(entities.map(e => [Number(e.id), { ...e, id: Number(e.id), aliases: [], relations: [], mentions: 0, firstDoc: null, firstHeading: null, firstIdx: Infinity }]));
 
   // 2. aliases (graph.db)
@@ -125,7 +125,7 @@ function render(ents) {
     const body = ordered.map(g => {
       const title = esc(g.label);
       const items = g.list.sort((a, b) => a.canonical_name.localeCompare(b.canonical_name)).map(e => `
-        <details class="ent"><summary>${esc(e.canonical_name)} <span class="meta">· ${e.mentions} mention${e.mentions === 1 ? '' : 's'}${e.firstHeading ? ' · § ' + esc(e.firstHeading) : ''}${e.religion ? ' · ' + esc(e.religion) : ''}${e.era ? ' · ' + esc(e.era) : ''}</span></summary>
+        <details class="ent"><summary>${esc(e.canonical_name)}${e.name_meaning ? ` <span class="meaning">— “${esc(e.name_meaning)}”</span>` : ''} <span class="meta">· ${e.mentions} mention${e.mentions === 1 ? '' : 's'}${e.firstHeading ? ' · § ' + esc(e.firstHeading) : ''}${e.religion ? ' · ' + esc(e.religion) : ''}${e.era ? ' · ' + esc(e.era) : ''}</span></summary>
           <div class="rec">
             ${e.description ? `<p class="desc">${esc(e.description)}</p>` : '<p class="nodesc">(no description yet)</p>'}
             ${e.aliases.length ? `<p class="al"><b>Aliases:</b> ${e.aliases.map(esc).join(' · ')}</p>` : ''}
@@ -160,6 +160,7 @@ main{padding:16px;max-width:980px;margin:0 auto}
 .ent{background:#fff;border:1px solid #e5e5e5;border-radius:6px;margin:4px 0;padding:6px 10px}
 .ent summary{cursor:pointer;font-weight:600}
 .meta{color:#888;font-weight:normal;font-size:13px}
+.meaning{color:#a36;font-weight:normal;font-size:14px;font-style:italic}
 .rec{padding:8px 4px 2px}
 .desc{margin:4px 0;color:#333}
 .nodesc{color:#bbb;font-style:italic;margin:4px 0}
