@@ -48,7 +48,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<':
 
 async function buildModel() {
   // 1. all entities (sifter.db)
-  const entities = await queryAll(`SELECT id, canonical_name, entity_type, religion, era, description, name_meaning, significance FROM graph_entities ORDER BY canonical_name`);
+  const entities = await queryAll(`SELECT id, canonical_name, entity_type, religion, era, description, name_meaning, significance, research_notes FROM graph_entities ORDER BY canonical_name`);
   const byId = new Map(entities.map(e => [Number(e.id), { ...e, id: Number(e.id), aliases: [], relations: [], mentions: 0, firstDoc: null, firstHeading: null, firstIdx: Infinity }]));
 
   // 2. display aliases — from the CURATED entity_research.aliases (genuinely distinct names/titles +
@@ -136,6 +136,7 @@ function render(ents) {
             ${e.description ? `<p class="desc">${esc(e.description)}</p>` : '<p class="nodesc">(no description yet)</p>'}
             ${e.aliases.length ? `<p class="al"><b>Aliases:</b> ${e.aliases.map(esc).join(' · ')}</p>` : ''}
             ${e.relations.length ? `<p class="rel"><b>Relationships:</b> ${e.relations.map(r => esc(r.type) + ' → ' + esc(r.target)).join(' · ')}</p>` : ''}
+            ${e.research_notes ? `<p class="notes"><b>Notes:</b> ${esc(e.research_notes)}</p>` : ''}
             <p class="id">entity #${e.id}</p>
             <div class="flagwrap${e.flagged ? ' on' : ''}">
               <label class="flag"><input type="checkbox" class="flagcb" id="fc-${e.id}" data-id="${e.id}"${e.flagged ? ' checked' : ''}> ⚑ Flag for review</label>
@@ -173,6 +174,20 @@ main{padding:16px;max-width:980px;margin:0 auto}
 .nodesc{color:#bbb;font-style:italic;margin:4px 0}
 .al{font-size:13px;color:#555;margin:4px 0}
 .rel{font-size:13px;color:#3b6;margin:4px 0}
+.notes{font-size:13px;color:#615;margin:4px 0}
+@media print{
+  header,.tabs,.flagwrap,.id,.er-bar{display:none !important}
+  .typesec{display:block !important}            /* print every type, not just the active tab */
+  .ent>.rec{display:block !important}           /* force every entity's details open */
+  body{background:#fff;color:#000;font:9px/1.25 Georgia,serif}
+  main{max-width:none;margin:0;padding:0;column-count:2;column-gap:16px}
+  .chap h3{font-size:10px;margin:6px 0 2px;break-after:avoid;color:#000;border-bottom:1px solid #999}
+  .ent{border:none;background:none;margin:0 0 2px;padding:0;break-inside:avoid}
+  .ent summary{font-weight:700;list-style:none}
+  .rec{padding:0 0 0 7px}
+  .desc,.al,.rel,.notes{font-size:8.5px;margin:1px 0;color:#000}
+  .meta,.meaning,.incid{font-size:8px;color:#333}
+}
 .id{font-size:11px;color:#bbb;margin:2px 0}
 .flagwrap{margin-top:6px;border-top:1px dashed #eee;padding-top:6px}
 .flagwrap.on{border-top-color:#f0c36d}
