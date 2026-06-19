@@ -50,7 +50,9 @@ for (const r of recs){
   // 2) aliases + native script (keep both the DB form and the record's name as aliases)
   let aliasSet=new Set(); try{ for(const a of JSON.parse(cur.aliases||'[]')) aliasSet.add(a); }catch{}
   aliasSet.add(dbName); aliasSet.add(r.name);
-  for(const a of [...(r.aliases||[]), ...(r.native_script||[])]) if(a) aliasSet.add(a);
+  const asArr = v => Array.isArray(v) ? v : (v==null||v==='' ? [] : [v]);  // never spread a STRING (would split into chars)
+  for(const a of [...asArr(r.aliases), ...asArr(r.native_script)]) if(a && String(a).trim()) aliasSet.add(a);
+  for(const a of [...aliasSet]) if(String(a).trim().length<=1) aliasSet.delete(a);  // strip single-char/whitespace pollution
   aliasSet.delete(canonical);
   const aliasesJson = JSON.stringify([...aliasSet]);
   // 3) characterizations appended to description (only new fragments)
