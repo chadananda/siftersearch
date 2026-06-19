@@ -44,6 +44,33 @@ const GPB_CHAPTERS = [
   { ch: 26, title: 'Retrospect and Prospect', start: 772, end: 786, label: 'God Passes By · Retrospect and Prospect' },
 ];
 const gpbChapter = (idx) => GPB_CHAPTERS.find(c => idx >= c.start && idx <= c.end) || null;
+// The Dawn-Breakers (doc 21308) chapter map. This edition doesn't mark chapters uniformly (only a
+// few survived as ALL-CAPS headings), so boundaries are anchored to the document's own structural
+// headings, aligned to Nabíl's published chapter sequence. Ranges are contiguous over idx 0–2081.
+const DB_CHAPTERS = [
+  { title: 'Introduction (Shoghi Effendi)', start: 0, end: 89 },
+  { title: "Nabíl's Preface; the Mission of S̱hayḵh Aḥmad-i-Aḥsá'í", start: 90, end: 129 },
+  { title: 'The Mission of Siyyid Káẓim-i-Rashtí', start: 130, end: 155 },
+  { title: "The Declaration of the Báb's Mission", start: 156, end: 229 },
+  { title: "Mullá Ḥusayn's Journey to Ṭihrán", start: 230, end: 284 },
+  { title: "The Báb's Pilgrimage to Mecca and Medina", start: 285, end: 346 },
+  { title: 'The Spread of the Faith; the Conversion of Vaḥíd and Ḥujjat', start: 347, end: 406 },
+  { title: "The Báb's Residence in Iṣfahán", start: 407, end: 430 },
+  { title: "The Báb's Journey to Ádhirbáyján and Confinement at Máh-Kú", start: 431, end: 501 },
+  { title: 'Ṭáhirih and the Conference of Badas̱ht', start: 502, end: 568 },
+  { title: "The Báb's Incarceration in the Castle of C̱hihríq", start: 569, end: 608 },
+  { title: 'The Mázindarán Upheaval (S̱hayḵh Ṭabarsí)', start: 609, end: 715 },
+  { title: 'The Mázindarán Upheaval (Continued)', start: 716, end: 976 },
+  { title: 'The Execution of the Seven Martyrs of Ṭihrán', start: 977, end: 1046 },
+  { title: 'The Nayríz Upheaval', start: 1047, end: 1123 },
+  { title: 'The Martyrdom of the Báb', start: 1124, end: 1170 },
+  { title: 'The Zanján Upheaval', start: 1171, end: 1287 },
+  { title: "Bahá'u'lláh's Journey to Karbilá", start: 1288, end: 1312 },
+  { title: "Attempt on the S̱háh's Life, and its Consequences", start: 1313, end: 1407 },
+  { title: 'Epilogue', start: 1408, end: 1475 },
+  { title: 'Notes and Appendices', start: 1476, end: 100000 },
+];
+const dbChapter = (idx) => DB_CHAPTERS.find(c => idx >= c.start && idx <= c.end) || null;
 // Book provenance: which source each mention comes from. Grows as more books are processed.
 const BOOK_LABEL = { 21310: 'GPB', 21308: 'DB' };
 const bookLabel = (id) => BOOK_LABEL[id] || ('#' + id);
@@ -133,7 +160,12 @@ function render(ents) {
         label = !ch ? 'Not yet linked to a chapter' : (ch.label || (ch.ch === 0 ? 'God Passes By · Foreword' : `God Passes By · Chapter ${ch.ch} — ${ch.title}`));
         order = ch ? ch.start : 9e9;
       } else if (e.firstDoc === 21308) {
-        key = 'db'; label = 'The Dawn-Breakers (not yet chapter-mapped)'; order = 8e9;
+        const ch = dbChapter(e.firstIdx);
+        key = ch ? 'd' + ch.start : 'dbnone';
+        label = ch ? `The Dawn-Breakers · ${ch.title}` : 'The Dawn-Breakers (not yet chapter-mapped)';
+        // offset DB chapters past all GPB chapters so the combined "All" view shows them as a block
+        // after GPB (in DB-paragraph order) rather than interleaving by raw paragraph number.
+        order = 1e6 + (ch ? ch.start : 9e5);
       } else { key = 'none'; label = 'Not yet linked to a chapter'; order = 9e9; }
       if (!groups.has(key)) groups.set(key, { label, order, list: [] });
       groups.get(key).list.push(e);
