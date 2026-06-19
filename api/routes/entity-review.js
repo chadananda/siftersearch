@@ -51,9 +51,15 @@ async function buildModel() {
   const entities = await queryAll(`SELECT id, canonical_name, entity_type, religion, era, description, name_meaning FROM graph_entities ORDER BY canonical_name`);
   const byId = new Map(entities.map(e => [Number(e.id), { ...e, id: Number(e.id), aliases: [], relations: [], mentions: 0, firstDoc: null, firstHeading: null, firstIdx: Infinity }]));
 
-  // 2. aliases (graph.db)
-  for (const a of await graphQueryAll(`SELECT entity_id, surface FROM entity_aliases`)) {
-    const e = byId.get(Number(a.entity_id)); if (e && a.surface && !e.aliases.includes(a.surface)) e.aliases.push(a.surface);
+  // 2. display aliases — from the CURATED entity_research.aliases (genuinely distinct names/titles +
+  // native-script spelling), NOT graph.db entity_aliases which holds ALL resolution surfaces
+  // (transliteration variants, honorific/nisba partials) kept rich for matching but not for display.
+  const erRows = await queryAll(`SELECT canonical_name, entity_type, aliases FROM entity_research`);
+  const erAliasMap = new Map(erRows.map(r => [`${r.canonical_name}|${r.entity_type}`, r.aliases]));
+  for (const e of byId.values()) {
+    const raw = erAliasMap.get(`${e.canonical_name}|${e.entity_type || 'unknown'}`);
+    if (!raw) continue;
+    try { for (const a of JSON.parse(raw)) if (a && a !== e.canonical_name && !e.aliases.includes(a)) e.aliases.push(a); } catch { /* skip */ }
   }
 
   // 3. mentions (graph.db) → content_ids; content (sifter.db) gives doc/heading/paragraph_index
