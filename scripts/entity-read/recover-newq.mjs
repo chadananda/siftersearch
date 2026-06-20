@@ -44,7 +44,9 @@ const nameCoreRecover = name => isRole(name) ? null : (((nameIdx.get(core(name))
 
 // Only DISTINCTIVE, hand-verified targets are auto-bound; common-given-name matches are HELD for per-entity
 // verification (they false-merge: "Mullá Ḥusayn slain 1852" ≠ THE Mullá Ḥusayn; two "Mírzá ‘Alí" ≠ one man).
-const SAFE = new Set([1247657, 1247712, 1247636, 1247616, 1249272, 1248214, 1247586, 1249846, 1250114, 1247643]);
+const SAFE = new Set([1247657, 1247712, 1247636, 1247616, 1249272, 1248214, 1247586, 1249846, 1250114, 1247643,
+  1247569, 1247602, 1247640, 1247579, 1247637]);   // +5 library/knowledge-verified this round
+const DENY = n => norm(n).includes('held quddus');  // "the Farrás̱h-Bás̱hí who held Quddús" ≠ Ḥájibu'd-Dawlih (1247640)
 const paraCid = new Map((await queryAll("SELECT paragraph_index, id FROM content WHERE doc_id=21308 AND deleted_at IS NULL")).map(r => [r.paragraph_index, String(r.id)]));
 const mentions = JSON.parse(readFileSync(`${dir}/all-mentions.json`, 'utf8'));
 const inserts = new Map(); const recovered = new Map(); const held = new Map();
