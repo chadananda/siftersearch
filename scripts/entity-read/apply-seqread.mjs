@@ -38,7 +38,9 @@ const regionFor = para => regions.find(R => para >= R.range[0] && para <= R.rang
 
 // cross-region bound-name map: a name bound (non-new) in ANY region -> ge.id
 const boundName = new Map();
+const nonEntityName = new Set();   // a label marked non-entity in ANY region (collectives/roles) -> propagate
 for (const R of regions) for (const rec of R.map) {
+  if (rec.confidence === 'non-entity') for (const n of [rec.canonical_name, rec.label, ...(rec.surfaces || [])]) if (n) nonEntityName.add(norm(n));
   if (rec.new) continue;
   const id = recToId(rec); if (!id) continue;
   for (const n of [rec.canonical_name, rec.label, ...(rec.surfaces || [])]) if (n) boundName.set(norm(n), id);
@@ -52,17 +54,22 @@ let amb = 0, non = 0, unmatched = 0, recovered = 0, nocid = 0;
 for (const m of mentions) {
   const R = regionFor(m.para); if (!R) { unmatched++; continue; }
   const rec = R.lm.get(norm(m.label)); if (!rec) { unmatched++; continue; }
-  if (rec.confidence === 'non-entity') { non++; continue; }
-  if (rec.confidence === 'ambiguous') { amb++; continue; }
+  // resolve first — a bind in ANY region wins over a non-entity/ambiguous mark elsewhere
   let id = rec.new ? null : recToId(rec);
-  if (!id) {                                   // recover: bound elsewhere, or unique DB name/alias match
+  if (!id) {
     id = boundName.get(norm(rec.canonical_name || m.label)) || uniqId(rec.canonical_name || m.label) || uniqId(m.label);
     if (id) recovered++;
   }
-  if (!id) { const k = norm(rec.canonical_name || m.label); if (!newq.has(k)) newq.set(k, { name: rec.canonical_name || m.label, count: 0 }); newq.get(k).count++; continue; }
-  const cid = paraCid.get(m.para); if (cid == null) { nocid++; continue; }
-  const key = id + '|' + cid;
-  if (!inserts.has(key)) inserts.set(key, { entity_id: id, content_id: cid, role: m.type || null, conf: conf[rec.confidence] ?? 0.8 });
+  if (id) {
+    const cid = paraCid.get(m.para); if (cid == null) { nocid++; continue; }
+    const key = id + '|' + cid;
+    if (!inserts.has(key)) inserts.set(key, { entity_id: id, content_id: cid, role: m.type || null, conf: conf[rec.confidence] ?? 0.8 });
+    continue;
+  }
+  // unresolved → classify
+  if (rec.confidence === 'non-entity' || nonEntityName.has(norm(m.label)) || nonEntityName.has(norm(rec.canonical_name || ''))) { non++; continue; }
+  if (rec.confidence === 'ambiguous') { amb++; continue; }
+  const k = norm(rec.canonical_name || m.label); if (!newq.has(k)) newq.set(k, { name: rec.canonical_name || m.label, count: 0 }); newq.get(k).count++;
 }
 const existing = new Set((await graphQueryAll("SELECT entity_id, content_id FROM entity_mentions")).map(r => r.entity_id + '|' + r.content_id));
 const toAdd = [...inserts.values()].filter(x => !existing.has(x.entity_id + '|' + x.content_id));
