@@ -42,23 +42,29 @@ const boundName = new Map();
 for (const R of regions) for (const rec of R.lm.values()) { if (rec.new) continue; const id = recToId(rec); if (!id) continue; for (const n of [rec.canonical_name, rec.label, ...(rec.surfaces || [])]) if (n) boundName.set(norm(n), id); }
 const nameCoreRecover = name => isRole(name) ? null : (((nameIdx.get(core(name)) || nameIdx.get(norm(name)))?.size === 1) ? [...(nameIdx.get(core(name)) || nameIdx.get(norm(name)))][0] : (boundName.get(norm(name)) || boundName.get(core(name)) || null));
 
+// Only DISTINCTIVE, hand-verified targets are auto-bound; common-given-name matches are HELD for per-entity
+// verification (they false-merge: "Mullá Ḥusayn slain 1852" ≠ THE Mullá Ḥusayn; two "Mírzá ‘Alí" ≠ one man).
+const SAFE = new Set([1247657, 1247712, 1247636, 1247616, 1249272, 1248214, 1247586, 1249846, 1250114, 1247643]);
 const paraCid = new Map((await queryAll("SELECT paragraph_index, id FROM content WHERE doc_id=21308 AND deleted_at IS NULL")).map(r => [r.paragraph_index, String(r.id)]));
 const mentions = JSON.parse(readFileSync(`${dir}/all-mentions.json`, 'utf8'));
-const inserts = new Map(); const recovered = new Map();
+const inserts = new Map(); const recovered = new Map(); const held = new Map();
 for (const m of mentions) {
   const R = regionFor(m.para); if (!R || !m.label || m.label === 'null') continue;
   const rec = R.lm.get(norm(m.label)); if (!rec || !rec.new) continue;          // only NEW-bucket mentions
   const nm = rec.canonical_name || m.label;
   if (nameCoreRecover(nm)) continue;                                            // already handled by apply
   const id = existingMatch(nm); if (!id) continue;                              // unique exact existing match
+  if (!SAFE.has(id)) { held.set(nm, { id, name: nameById.get(id), n: (held.get(nm)?.n || 0) + 1 }); continue; }
   const cid = paraCid.get(m.para); if (cid == null) continue;
   inserts.set(id + '|' + cid, { entity_id: id, content_id: cid, role: m.type || null });
   recovered.set(nm, { id, name: nameById.get(id), n: (recovered.get(nm)?.n || 0) + 1 });
 }
 const existing = new Set((await graphQueryAll("SELECT entity_id, content_id FROM entity_mentions")).map(r => r.entity_id + '|' + r.content_id));
 const toAdd = [...inserts.values()].filter(x => !existing.has(x.entity_id + '|' + x.content_id));
-console.log(`queue entries recovered to existing entities: ${recovered.size}`);
+console.log(`SAFE recoveries (distinctive, verified): ${recovered.size}`);
 for (const [qn, r] of [...recovered.entries()].sort((a, b) => b[1].n - a[1].n)) console.log(`  "${qn}"  ->  ${r.id} ${r.name}  (${r.n} mentions)`);
+console.log(`\nHELD for verification (common-name matches — NOT bound): ${held.size}`);
+for (const [qn, r] of [...held.entries()].sort((a, b) => b[1].n - a[1].n)) console.log(`  "${qn}"  -?-> ${r.id} ${r.name}  (${r.n})`);
 console.log(`\nNEW rows to add (after dedup vs ${existing.size}): ${toAdd.length}`);
 if (WRITE && toAdd.length) {
   for (let i = 0; i < toAdd.length; i += 2000) await graphTransaction(toAdd.slice(i, i + 2000).map(x => ({ sql: "INSERT INTO entity_mentions (entity_id, content_id, role, resolution_confidence, status, extractor_version) VALUES (?,?,?,?,'resolved','seqread-v1')", args: [x.entity_id, x.content_id, x.role, 0.9] })));
