@@ -27,15 +27,19 @@ const buildUser = (cast, paras) =>
   `RUNNING CAST (people already established earlier in the book — reuse these labels):\n${JSON.stringify(cast)}\n\nPARAGRAPHS (format "<paragraph_index> ⟶ <text>"). Capture every person-reference in every paragraph:\n` +
   paras.map(p => `${p.paragraph_index} ⟶ ${p.text.replace(/\s+/g, ' ').trim()}`).join('\n');
 
+const MODEL = process.env.SEQ_MODEL || 'deepseek-v4-flash';   // flash = fast bulk reader; pro reasoning starves content
 async function callDeepSeek(messages) {
   const res = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'deepseek-v4-pro', messages, temperature: 0, max_tokens: 8000, response_format: { type: 'json_object' } }),
+    body: JSON.stringify({ model: MODEL, messages, temperature: 0, max_tokens: 16000, response_format: { type: 'json_object' } }),
   });
   if (!res.ok) { console.log('  !! HTTP', res.status, (await res.text()).slice(0, 200)); return ''; }
   const j = await res.json();
-  return j.choices?.[0]?.message?.content || '';
+  const ch = j.choices?.[0];
+  const c = ch?.message?.content || '';
+  if (!c) console.log(`  .. empty content (finish=${ch?.finish_reason}, reasoning=${(ch?.message?.reasoning_content || '').length}c)`);
+  return c;
 }
 
 const paras = await queryAll(
