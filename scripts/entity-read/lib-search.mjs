@@ -5,16 +5,12 @@ import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.con
 const { queryAll } = await import('../../api/lib/db.js');
 const titles = new Map((await queryAll('SELECT id,title FROM docs')).map(d => [String(d.id), d.title]));
 const QUERIES = [
-  // role-queue
-  ['martyr@1947 — letter-from-prison', 'martyr who wrote a letter from prison to his brother Mullá ‘Abdu’lláh of Tabríz two days before his martyrdom'],
-  ['martyr@1947 — youth with the Báb', 'the youth Anís Mírzá Muḥammad-‘Alíy-i-Zunúzí who begged to be martyred at the side of the Báb'],
-  ['kad-khudá r4', 'the kadkhudá of Ṭihrán in whose house the companions of Ṭáhirih were imprisoned'],
-  ['governor of Qazvín r3', 'the governor of Qazvín after the murder of Mullá Taqí'],
-  // new-person queue — who are these?
-  ['warden of Máh-Kú', '‘Alí Khán the warden of the castle of Máh-Kú who guarded the Báb'],
-  ['Ṣáḥib-Iḵhtíyár', 'Ḥusayn Khán-i-Íravání the Ṣáḥib-Iḵhtíyár'],
-  ['Indian dervish Qahru’lláh', 'the Indian dervish surnamed Qahru’lláh who followed the Báb'],
-  ['messenger of Kand', 'the messenger sent from Ṭihrán to the village of Kand'],
+  ['Ḥusayn Khán Ṣáḥib-Iḵhtíyár vs Ájúdán-Báshí', 'Ḥusayn Khán the Ṣáḥib-Iḵhtíyár, governor; and Ḥusayn Khán Ájúdán-Báshí Niẓámu’d-Dawlih governor of Fárs who persecuted the Báb in Shíráz'],
+  ['Siyyid Ḥusayn-i-Yazdí amanuensis', 'Siyyid Ḥusayn-i-Yazdí the amanuensis of the Báb, slain in the Ṭihrán massacre by the adjutant-general'],
+  ['Mullá Muḥammad son of Mullá Taqí', 'Mullá Muḥammad son of the slain Mullá Taqí of Qazvín who sought vengeance on the Bábís'],
+  ['farrásh-báshí who held Quddús', 'the farrásh-báshí chief attendant who held Quddús at Bárfurúsh'],
+  ['Siyyid Yaḥyá son of Nahrí', 'Siyyid Yaḥyá son of Mírzá Muḥammad-‘Alíy-i-Nahrí of Iṣfahán'],
+  ['‘Alíy-i-Sardár', 'Mírzá ‘Alíy-i-Sardár'],
 ];
 for (const [label, q] of QUERIES) {
   console.log(`\n=== ${label}\n    q: ${q}`);
