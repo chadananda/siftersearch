@@ -145,3 +145,6 @@ But the project is paying attention. And the seed is ready.
 ---
 
 *— concept documentation, SifterSearch entity extraction project, 2026*
+
+*For the practical playbook — the proven methods for actually building the graph from this seed — see
+[building-entities-from-seed.md](building-entities-from-seed.md).*
