@@ -10,8 +10,8 @@ import { readFileSync, readdirSync } from 'fs';
 const { query, queryOne, queryAll, graphQuery, graphQueryAll } = await import('../../api/lib/db.js');
 const DRY = process.env.DRY === '1';
 const K = 1249228, M = 1249589;
-const TARGET_CANONS = new Set(["‘Abdu'l-Vahháb (son of Ḥájí ‘Abdu'l-Majíd)", "Mírzá ‘Abdu'l-Vahháb-i-Shírází"].map(s => s.normalize('NFC')));
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’'`]/g, "'").toLowerCase().replace(/\s+/g, ' ').trim();
+const TARGET_CANONS = new Set(["‘Abdu'l-Vahháb (son of Ḥájí ‘Abdu'l-Majíd)", "Mírzá ‘Abdu'l-Vahháb-i-Shírází"].map(norm));
 
 const kRow = await queryOne("SELECT canonical_name FROM graph_entities WHERE id=?", [K]);
 const mRow = await queryOne("SELECT canonical_name FROM graph_entities WHERE id=?", [M]);
@@ -31,7 +31,8 @@ const regions = [];
 for (const f of readdirSync(dir).filter(f => /^region-\d+\.json$/.test(f)).sort()) {
   const meta = JSON.parse(readFileSync(`${dir}/${f}`, 'utf8'));
   let map = []; try { map = JSON.parse(readFileSync(`${dir}/${f.replace('.json', '-map.json')}`, 'utf8')); } catch {}
-  const lm = new Map(); for (const rec of map) { const tgt = TARGET_CANONS.has(String(rec.canonical_name).normalize('NFC')); for (const n of [rec.label, ...(rec.surfaces || [])]) if (n && tgt) lm.set(norm(n), rec.canonical_name); }
+  // map ONLY distinctive "Vahháb" surfaces (never pronouns/"the youth"/"my son" — those coincide with other people)
+  const lm = new Map(); for (const rec of map) { if (!TARGET_CANONS.has(norm(rec.canonical_name))) continue; for (const n of [rec.label, ...(rec.surfaces || [])]) if (n && norm(n).includes('vahhab')) lm.set(norm(n), rec.canonical_name); }
   regions.push({ range: meta.range, lm });
 }
 const regionFor = p => regions.find(R => p >= R.range[0] && p <= R.range[1]);
