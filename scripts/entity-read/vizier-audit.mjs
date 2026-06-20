@@ -11,7 +11,7 @@ const regionFor = p => regions.find(R => p >= R.range[0] && p <= R.range[1]);
 const cmap = new Map((await queryAll('SELECT id,paragraph_index FROM content WHERE doc_id=21308')).map(r => [String(r.id), r.paragraph_index]));
 
 const mentions = JSON.parse(readFileSync(`${dir}/all-mentions.json`, 'utf8'));
-const VIZ = ['vazir', 'amir-niz', 'amir niz', 'amir kabir', 'taqi khan', 'sadr-i-azam', "sadr-i-a'zam", 'i'timadu'];
+const VIZ = ['vazir', 'amir-niz', 'amir niz', 'amir kabir', 'taqi khan', 'sadr-i-azam', "sadr-i-a'zam", 'itimadu', "i'timadu"];
 const groups = new Map();
 for (const m of mentions) {
   const c = norm(m.label); if (!VIZ.some(t => c.includes(t))) continue;
