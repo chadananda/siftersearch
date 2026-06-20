@@ -5,16 +5,22 @@ import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.con
 const { queryAll } = await import('../../api/lib/db.js');
 const titles = new Map((await queryAll('SELECT id,title FROM docs')).map(d => [String(d.id), d.title]));
 const QUERIES = [
-  ['martyr@1947 — identity', 'youth Mírzá Muḥammad-‘Alí Zunúzí Anís martyred with the Báb in Tabríz'],
-  ['martyr@1947 — brother detail', 'letter written from prison to his brother Mullá ‘Abdu’lláh of Tabríz before his martyrdom'],
-  ['kad-khudá r4 — Ṭihrán official', 'kadkhudá of Ṭihrán in whose house Ṭáhirih’s companions were imprisoned, Bahá’u’lláh intervened'],
-  ['governor of Qazvín r3', 'governor of Qazvín at the time of the murder of Mullá Taqí, failed to release the prisoners'],
+  // role-queue
+  ['martyr@1947 — letter-from-prison', 'martyr who wrote a letter from prison to his brother Mullá ‘Abdu’lláh of Tabríz two days before his martyrdom'],
+  ['martyr@1947 — youth with the Báb', 'the youth Anís Mírzá Muḥammad-‘Alíy-i-Zunúzí who begged to be martyred at the side of the Báb'],
+  ['kad-khudá r4', 'the kadkhudá of Ṭihrán in whose house the companions of Ṭáhirih were imprisoned'],
+  ['governor of Qazvín r3', 'the governor of Qazvín after the murder of Mullá Taqí'],
+  // new-person queue — who are these?
+  ['warden of Máh-Kú', '‘Alí Khán the warden of the castle of Máh-Kú who guarded the Báb'],
+  ['Ṣáḥib-Iḵhtíyár', 'Ḥusayn Khán-i-Íravání the Ṣáḥib-Iḵhtíyár'],
+  ['Indian dervish Qahru’lláh', 'the Indian dervish surnamed Qahru’lláh who followed the Báb'],
+  ['messenger of Kand', 'the messenger sent from Ṭihrán to the village of Kand'],
 ];
 for (const [label, q] of QUERIES) {
   console.log(`\n=== ${label}\n    q: ${q}`);
   let hits = [];
   try {
-    const res = await fetch('http://127.0.0.1:7839/api/search/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: q, limit: 6, mode: 'hybrid' }) });
+    const res = await fetch('http://127.0.0.1:7839/api/search/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: q, limit: 5, mode: 'hybrid', filters: { religion: "Baha'i" } }) });
     const j = await res.json(); hits = j.hits || j.results || [];
   } catch (e) { console.log('  fetch-err', e.message); continue; }
   for (const h of hits) {
