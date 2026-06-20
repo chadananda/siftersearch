@@ -1,0 +1,11 @@
+{
+ "_doc": "The Dawn-Breakers (21308). Context-resolved bindings for SHARED role-titles that name DIFFERENT people by period/place. Keyed regionIdx||normalized-label -> graph_entities.id. NEVER bind these by string; each was resolved by reading the passage + library. Add an entry here when context-resolution confirms a title; leave it out to keep it in the role-queue for review.",
+ "9||grand vazir": 1247946,
+ "4||grand vazir": 1247567,
+ "9||shah": 1247566,
+ "2||shah": 1247565,
+ "2||mu'tamid": 1247583,
+ "2||imam-jum'ih": 1247582,
+ "9||mother of the shah": 1247636,
+ "4||governor of amul": 1249896
+}
