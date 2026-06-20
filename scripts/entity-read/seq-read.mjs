@@ -29,17 +29,23 @@ const buildUser = (cast, paras) =>
 
 const MODEL = process.env.SEQ_MODEL || 'deepseek-chat';   // deepseek-chat = v4-flash NON-thinking (clean JSON; v4-pro/flash reasoning starves content)
 async function callDeepSeek(messages) {
-  const res = await fetch('https://api.deepseek.com/chat/completions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, messages, temperature: 0, max_tokens: 32000, response_format: { type: 'json_object' } }),
-  });
-  if (!res.ok) { console.log('  !! HTTP', res.status, (await res.text()).slice(0, 200)); return ''; }
-  const j = await res.json();
-  const ch = j.choices?.[0];
-  const c = ch?.message?.content || '';
-  if (!c) console.log(`  .. empty content (finish=${ch?.finish_reason}, reasoning=${(ch?.message?.reasoning_content || '').length}c)`);
-  return c;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 150000);   // hard cap so a throttled/hung request aborts + retries instead of stalling forever
+  try {
+    const res = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: MODEL, messages, temperature: 0, max_tokens: 32000, response_format: { type: 'json_object' } }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) { console.log('  !! HTTP', res.status, (await res.text()).slice(0, 160)); return ''; }
+    const j = await res.json();
+    const ch = j.choices?.[0];
+    const c = ch?.message?.content || '';
+    if (!c) console.log(`  .. empty content (finish=${ch?.finish_reason})`);
+    return c;
+  } catch (e) { console.log('  !! fetch error:', e.name, (e.message || '').slice(0, 120)); return ''; }
+  finally { clearTimeout(timer); }
 }
 
 const paras = await queryAll(
