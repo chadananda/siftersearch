@@ -24,6 +24,14 @@ for (const m of mentions) {
 }
 const list = [...unmatched.values()].sort((a, b) => b.count - a.count);
 const total = list.reduce((s, x) => s + x.count, 0);
+// bucket every unmatched occurrence: null-label | reconciler-dropped-cast-label (inCast) | reader-only label
+let bNull = 0, bDropped = 0, bReaderOnly = 0;
+for (const x of list) {
+  if (!x.label || x.label === 'null') bNull += x.count;
+  else if (x.inCast) bDropped += x.count;      // reader carried it in the region cast; reconciler omitted it from its map
+  else bReaderOnly += x.count;                 // label the reconciler never carried as a cast entry (collectives/epithets/out-of-scope)
+}
+console.log(`BUCKETS of ${total}: null-label=${bNull} | reconciler-dropped-cast-label=${bDropped} | reader-only-label=${bReaderOnly}`);
 console.log(`unmatched mention-occurrences: ${total} across ${list.length} distinct (region||label). inCast=label-was-in-region-cast-but-not-in-map`);
 console.log('TOP 20 unmatched labels:');
 for (const x of list.slice(0, 20)) console.log(`  r${x.region} x${x.count} inCast=${x.inCast}  "${x.label}"`);
