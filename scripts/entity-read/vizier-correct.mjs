@@ -26,15 +26,19 @@ console.log(`father (the Vazír) entity: ${FATHER ? FATHER + ' ' + nameById.get(
 const regions = readdirSync(dir).filter(f => /^region-\d+\.json$/.test(f)).sort().map(f => { const m = JSON.parse(readFileSync(`${dir}/${f}`, 'utf8')); return { idx: m.idx, range: m.range }; });
 const regionFor = p => regions.find(R => p >= R.range[0] && p <= R.range[1]);
 
+// Ṣadr-i-A‘ẓam = the Grand-Vizier OFFICE, held by 3 different men in this book — assign by period (read in context):
+//   1674 Máh-Kú/Muḥammad Sháh -> Áqásí | 1982 Zanján 1850 -> Amír Kabir | 2034 Aug-1852 -> Áqá Khán-i-Núrí
+const SADR = { 1674: AQASI, 1982: KABIR, 2034: NURI };
 // classify a vizier-ish label (at a given para) to the correct entity, else null (leave for review)
 function classify(label, para) {
   const c = norm(label);
   if (para === 2030) return null;                                   // ambiguous footnote — skip
+  if (c.includes('sadr') && c.includes('zam')) return SADR[para] ?? null;    // Ṣadr-i-A‘ẓam (NOT "Ṣadr-i-Ardibílí"): period-keyed
   if (para === 1986) return KABIR;                                  // quoted line names Amír-i-Kabír
   if (/abu'l-qasim|qa'im-maqam/.test(c)) return null;               // Qá'im-Maqám, different man
   if (c.includes('amir-niz') || c.includes('amir niz') || c.includes('vazir-niz') || c.includes('amir-i-kabir') || c.includes('amir kabir')) return KABIR;
   if (c.includes('taqi khan') || c.includes('taqi ḵhan')) return KABIR;       // Mírzá/Muḥammad-Taqí Khán (= Amír Kabir; Abu'l-Qásim excluded above)
-  if (c.includes("i'timadu") || c.includes('itimadu') || c.includes('sadr-i-a')) return NURI;
+  if (c.includes("i'timadu") || c.includes('itimadu')) return NURI;           // I‘timádu'd-Dawlih = Áqá Khán-i-Núrí (per para 269)
   if (c === 'grand vazir') { const R = regionFor(para); return R && R.idx <= 4 ? AQASI : NURI; }
   if ((c === 'the vazir' || c === 'vazir' || c === 'the late vazir') && para >= 214 && para <= 333) return FATHER;  // Bahá'u'lláh's father
   return null;                                                      // "Vazír of the city", "Dín-Muḥammad-Vazír", "‘Abbás (Vazír)" etc. — not handled here
@@ -42,11 +46,12 @@ function classify(label, para) {
 
 const cmap = new Map((await queryAll('SELECT id,paragraph_index FROM content WHERE doc_id=21308 AND deleted_at IS NULL')).map(r => [r.paragraph_index, String(r.id)]));
 const mentions = JSON.parse(readFileSync(`${dir}/all-mentions.json`, 'utf8'));
-const VIZ = ['vazir', 'amir-niz', 'amir niz', 'amir kabir', 'amir-i-kabir', 'taqi khan', "i'timadu", 'itimadu', 'sadr-i-a'];
+const VIZ = ['vazir', 'amir-niz', 'amir niz', 'amir kabir', 'amir-i-kabir', 'taqi khan', "i'timadu", 'itimadu'];
+const isViz = c => VIZ.some(t => c.includes(t)) || (c.includes('sadr') && c.includes('zam'));   // sadr+zam excludes "Ṣadr-i-Ardibílí"
 const correctByPara = new Map();   // para -> Set(entityId that SHOULD be bound)
 const vizierMentionParas = new Set();
 for (const m of mentions) {
-  const c = norm(m.label); if (!VIZ.some(t => c.includes(t))) continue;
+  const c = norm(m.label); if (!isViz(c)) continue;
   vizierMentionParas.add(m.para);
   const id = classify(m.label, m.para); if (!id) continue;
   if (!correctByPara.has(m.para)) correctByPara.set(m.para, new Set());
