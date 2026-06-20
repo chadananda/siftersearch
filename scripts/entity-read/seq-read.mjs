@@ -65,17 +65,25 @@ for (let i = 0; i < paras.length; i += WIN) {
   const wf = `${OUT}/${DOC}-${String(a).padStart(5, '0')}-${String(b).padStart(5, '0')}.json`;
   if (existsSync(wf)) { try { history.push(JSON.parse(readFileSync(wf, 'utf8')).windowCast || []); } catch {} console.log(`  window ${a}-${b}: cached`); continue; }
   const carried = dedupCast(history.slice(-K).flat());
-  let parsed = null, raw = '';
+  let parsed = null, raw = '', salvaged = false;
   for (let attempt = 0; attempt < 3 && !parsed; attempt++) {
     raw = await callDeepSeek([{ role: 'system', content: SYS }, { role: 'user', content: buildUser(carried, win) }]);
     try { parsed = JSON.parse(raw.replace(/^```json\s*|\s*```$/g, '').trim()); } catch { /* retry */ }
   }
-  if (!parsed) { console.log(`  !! window ${a}-${b}: JSON parse failed after retries (raw ${raw.length} chars)`); history.push([]); continue; }
+  if (!parsed && raw) {
+    // Salvage: mention/cast objects are flat (no nested braces), so extract complete ones even from
+    // truncated or slightly-malformed output — a bad window still contributes, never a total gap.
+    const mentions = [], cast = [];
+    for (const m of raw.match(/\{[^{}]*?"para"\s*:[^{}]*?\}/g) || []) { try { mentions.push(JSON.parse(m)); } catch {} }
+    for (const c of raw.match(/\{[^{}]*?"label"\s*:[^{}]*?\}/g) || []) { try { cast.push(JSON.parse(c)); } catch {} }
+    if (mentions.length || cast.length) { parsed = { mentions, cast }; salvaged = true; }
+  }
+  if (!parsed) { console.log(`  !! window ${a}-${b}: unparseable (raw ${raw.length} chars)`); try { writeFileSync(`${wf}.raw`, raw); } catch {} history.push([]); continue; }
   const windowCast = parsed.cast || [];
   writeFileSync(wf, JSON.stringify({ range: [a, b], mentions: parsed.mentions || [], windowCast }, null, 1));
   history.push(windowCast);
   totalMentions += (parsed.mentions || []).length;
-  console.log(`  window ${a}-${b}: ${(parsed.mentions || []).length} mentions, carried ${carried.length}`);
+  console.log(`  window ${a}-${b}: ${(parsed.mentions || []).length} mentions${salvaged ? ' (SALVAGED)' : ''}, carried ${carried.length}`);
 }
 console.log(`done: ${totalMentions} mentions this run`);
 process.exit(0);
