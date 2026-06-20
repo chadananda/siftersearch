@@ -48,30 +48,28 @@ const paras = await queryAll(
 );
 console.log(`paras: ${paras.length} (idx ${paras[0]?.paragraph_index}–${paras[paras.length - 1]?.paragraph_index}), windows of ${WIN}`);
 
-let cast = (!CAST_RESET && existsSync(CASTFILE)) ? JSON.parse(readFileSync(CASTFILE, 'utf8')) : [];
+// Carry only the last K windows of cast (bounded prompt; global identity is the reconciler's job, not the reader's).
+const K = Number(process.env.SEQ_CAST_WINDOWS || 2);
+const dedupCast = arr => { const m = new Map(); for (const c of arr) { const e = m.get(c.label); if (e) { e.aliases = [...new Set([...(e.aliases || []), ...(c.aliases || [])])]; } else m.set(c.label, { ...c }); } return [...m.values()]; };
+let history = [];        // per-window emitted casts, in order (for building the rolling carried cast)
 let totalMentions = 0;
 for (let i = 0; i < paras.length; i += WIN) {
   const win = paras.slice(i, i + WIN);
   const a = win[0].paragraph_index, b = win[win.length - 1].paragraph_index;
   const wf = `${OUT}/${DOC}-${String(a).padStart(5, '0')}-${String(b).padStart(5, '0')}.json`;
-  if (existsSync(wf)) { const prev = JSON.parse(readFileSync(wf, 'utf8')); cast = prev.cast || cast; console.log(`  window ${a}-${b}: cached`); continue; }
+  if (existsSync(wf)) { try { history.push(JSON.parse(readFileSync(wf, 'utf8')).windowCast || []); } catch {} console.log(`  window ${a}-${b}: cached`); continue; }
+  const carried = dedupCast(history.slice(-K).flat());
   let parsed = null, raw = '';
   for (let attempt = 0; attempt < 3 && !parsed; attempt++) {
-    raw = await callDeepSeek([{ role: 'system', content: SYS }, { role: 'user', content: buildUser(cast, win) }]);
+    raw = await callDeepSeek([{ role: 'system', content: SYS }, { role: 'user', content: buildUser(carried, win) }]);
     try { parsed = JSON.parse(raw.replace(/^```json\s*|\s*```$/g, '').trim()); } catch { /* retry */ }
   }
-  if (!parsed) { console.log(`  !! window ${a}-${b}: JSON parse failed after retries (raw ${raw.length} chars)`); continue; }
-  const byLabel = new Map(cast.map(c => [c.label, c]));
-  for (const c of parsed.cast || []) {
-    const ex = byLabel.get(c.label);
-    if (ex) { ex.description = c.description || ex.description; ex.aliases = [...new Set([...(ex.aliases || []), ...(c.aliases || [])])]; }
-    else byLabel.set(c.label, c);
-  }
-  cast = [...byLabel.values()];
-  writeFileSync(wf, JSON.stringify({ range: [a, b], mentions: parsed.mentions || [], cast }, null, 1));
-  writeFileSync(CASTFILE, JSON.stringify(cast, null, 1));
+  if (!parsed) { console.log(`  !! window ${a}-${b}: JSON parse failed after retries (raw ${raw.length} chars)`); history.push([]); continue; }
+  const windowCast = parsed.cast || [];
+  writeFileSync(wf, JSON.stringify({ range: [a, b], mentions: parsed.mentions || [], windowCast }, null, 1));
+  history.push(windowCast);
   totalMentions += (parsed.mentions || []).length;
-  console.log(`  window ${a}-${b}: ${(parsed.mentions || []).length} mentions, cast now ${cast.length}`);
+  console.log(`  window ${a}-${b}: ${(parsed.mentions || []).length} mentions, carried ${carried.length}`);
 }
-console.log(`done: ${totalMentions} mentions this run, cast ${cast.length}`);
+console.log(`done: ${totalMentions} mentions this run`);
 process.exit(0);
