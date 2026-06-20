@@ -27,7 +27,7 @@ const buildUser = (cast, paras) =>
   `RUNNING CAST (people already established earlier in the book — reuse these labels):\n${JSON.stringify(cast)}\n\nPARAGRAPHS (format "<paragraph_index> ⟶ <text>"). Capture every person-reference in every paragraph:\n` +
   paras.map(p => `${p.paragraph_index} ⟶ ${p.text.replace(/\s+/g, ' ').trim()}`).join('\n');
 
-const MODEL = process.env.SEQ_MODEL || 'deepseek-v4-flash';   // flash = fast bulk reader; pro reasoning starves content
+const MODEL = process.env.SEQ_MODEL || 'deepseek-chat';   // deepseek-chat = v4-flash NON-thinking (clean JSON; v4-pro/flash reasoning starves content)
 async function callDeepSeek(messages) {
   const res = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
