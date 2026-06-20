@@ -1,6 +1,7 @@
 # Building Entities from Seed — Best Practices
 
-> **Living playbook.** The *why* is in [divine-entity-seed.md](divine-entity-seed.md); this is the *how* —
+> **Living playbook.** The *why* is in [divine-entity-seed.md](divine-entity-seed.md); the current seed itself
+> is documented in [gpb-seed.md](gpb-seed.md); this is the *how* —
 > concrete practices proven in production, appended as we discover them. Methodology reference:
 > `.claude/skills/entity-research/SKILL.md`. Tooling: `scripts/entity-read/` (sequential read pipeline) and
 > `scripts/one-off/entity-seed/` (seed/enrich/dedup tools).
