@@ -6,15 +6,24 @@ const DOC = 21308;
 const WRITE = process.env.WRITE === '1';
 // {id, paras[]} — remove this entity's binding at these paragraphs (it's the wrong twin there)
 const REMOVALS = [
-  { id: 1247601, who: 'Siyyid Káẓim-i-Zanjání', paras: [338, 339, 340, 341, 342, 343, 362, 389] },
-  { id: 1249734, who: 'Siyyid Káẓim (merchant of Zanján)', paras: [931, 935] },
-  { id: 1247600, who: 'Siyyid Káẓim-i-Rashtí', paras: [938] },
-  { id: 1247564, who: 'Mullá Ḥusayn (first disciple, d.1849)', paras: [1112, 1694, 2046] },
-  { id: 1249188, who: 'Siyyid Ḥusayn (notable of Nayríz)', paras: [1134, 1135, 1136, 1142, 1145, 1147, 1151] },
-  { id: 1247648, who: 'Imám Ḥusayn', paras: [540, 542, 720] },
-  { id: 1249390, who: 'Mullá Muḥammad-i-Qazvíní', paras: [254, 255, 256, 261, 262, 263] },
-  { id: 1247634, who: 'Mullá Muḥammad of Núr', paras: [508, 511] },
-  { id: 1247801, who: 'Mullá Muḥammad-i-Furúghí', paras: [529] },
+  // batch 2
+  { id: 1249590, who: 'Ḥájí ‘Abdu’l-Majíd (Shíráz, father of ‘Abdu’l-Vahháb)', paras: [614, 621, 625] },
+  { id: 1249716, who: 'Mullá ‘Abdu’lláh (Mírzá Ṣáliḥ)', paras: [1947] },
+  { id: 1249452, who: 'Siyyid Aḥmad-i-Sang-Sárí', paras: [920] },
+  { id: 1249938, who: 'Siyyid Aḥmad-i-Yazdí', paras: [921] },
+  { id: 1247624, who: 'Mírzá Aḥmad (Ṭihrán)', paras: [1140] },
+  { id: 1247908, who: 'Mírzá Áqáy-i-Munír', paras: [1159] },
+  { id: 1250115, who: 'Mullá Báqir (generic)', paras: [1130, 1131] },
+  { id: 1250090, who: 'Ḥájí Siyyid Ismá‘íl', paras: [1022, 1023] },
+  { id: 1249378, who: 'Ja‘far-Qulí Khán-i-Námdár', paras: [1319, 1321, 1325, 1326] },
+  { id: 1249517, who: 'Karbilá’í ‘Alí-i-Míyámay’í', paras: [761, 825] },
+  { id: 1249574, who: 'Mírzá Muḥammad-‘Alíy-i-Qazvíní', paras: [235] },
+  { id: 1249585, who: 'Siyyid Muḥammad-Riḍá (other)', paras: [201] },
+  { id: 1247625, who: 'Ḥájí Sulaymán Khán (1852 martyr)', paras: [456, 962, 1820, 1826, 1937] },
+  { id: 1249479, who: 'Ḥasan (brother of Ḏhu’l-Faqár)', paras: [1055, 1068, 1069] },
+  { id: 1249216, who: 'Siyyid Ḥasan-i-Yazdí', paras: [470] },
+  { id: 1249504, who: 'Mullá Zaynu’l-‘Ábidín (martyr of Míyámay)', paras: [1745] },
+  { id: 1250013, who: 'Mullá Fatḥu’lláh of Qum', paras: [1336] },
 ];
 const cmap = new Map((await queryAll(`SELECT paragraph_index, id FROM content WHERE doc_id=${DOC} AND deleted_at IS NULL`)).map(r => [r.paragraph_index, String(r.id)]));
 let removed = 0, missing = 0;
