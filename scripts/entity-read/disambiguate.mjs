@@ -13,7 +13,7 @@ const work = JSON.parse(readFileSync(`${dir}/${process.argv[2] || 'namesake-work
 const SYSTEM = `You identify which historical person each reference in a Bahá'í-history text points to, for an entity index.
 RULE: a name is only a research lead — NEVER assume two people with the same name are the same person, and remember a different name, title, epithet, or pronoun may denote the SAME person. Decide each candidate by TRIANGULATING the evidence in the passage (place, period/date, role, kinship, deeds, the episode it belongs to) against that candidate's profile. A passage may legitimately refer to several of the candidates, or to none of them.
 WHY: the corpus is dense with namesakes (many "Muḥammad", "Ḥusayn", "‘Alí Khán"); matching by name alone both drops real references and fuses different people.
-Return ONLY a JSON array, one object per candidate: [{"id":<id>,"refers":true|false,"evidence":"<the specific words/attributes in THIS passage that decide it>"}]. Set refers=true only when the passage's evidence positively fits that specific person; otherwise false.`;
+Return ONLY a JSON object {"decisions":[{"id":<id>,"refers":true|false,"evidence":"<the specific words/attributes in THIS passage that decide it>"}, ...]} with one entry per candidate. Set refers=true only when the passage's evidence positively fits that specific person; otherwise false.`;
 
 const build = e => `PASSAGE (The Dawn-Breakers, paragraph ${e.para}):\n"${e.text}"\n\nCANDIDATES who share this name — decide for EACH whether THIS passage refers to them:\n` +
   e.candidates.map(c => `- id ${c.id}: ${c.canon}\n    profile: ${(c.summary || '(no profile)').slice(0, 180)}`).join('\n');
@@ -21,10 +21,10 @@ const build = e => `PASSAGE (The Dawn-Breakers, paragraph ${e.para}):\n"${e.text
 async function decide(e) {
   try {
     const res = await chatCompletion([{ role: 'system', content: SYSTEM }, { role: 'user', content: build(e) }],
-      { provider: 'anthropic', model: 'claude-sonnet-4-6', temperature: 0, maxTokens: 900 });
-    const m = (res.content || '').match(/\[[\s\S]*\]/);
-    if (!m) return { ...e, error: 'no-json', raw: (res.content || '').slice(0, 100) };
-    return { cluster: e.cluster, para: e.para, decisions: JSON.parse(m[0]) };
+      { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1500, responseFormat: { type: 'json_object' } });
+    const m = (res.content || '').match(/\{[\s\S]*\}/);
+    if (!m) return { ...e, error: `empty (finish=${res.finishReason})`, raw: (res.content || '').slice(0, 80) };
+    return { cluster: e.cluster, para: e.para, decisions: JSON.parse(m[0]).decisions || [] };
   } catch (err) { return { ...e, error: String(err).slice(0, 120) }; }
 }
 
