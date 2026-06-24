@@ -32,7 +32,7 @@ for (const c of creates) {
   console.log(`  CREATE ${id} "${canon}"`);
   if (WRITE) {
     await query("INSERT INTO entity_research (canonical_name, entity_type, summary, aliases, updated_at) VALUES (?,?,?,?,datetime('now'))", [canon, 'person', summary, JSON.stringify([c.name.replace(/,.*$/, '').trim()])]);
-    await query("INSERT INTO graph_entities (id, canonical_name, entity_type, religion, description) VALUES (?,?,?,?,?)", [id, canon, 'person', '', summary]);
+    await query("INSERT INTO graph_entities (id, name, canonical_name, entity_type, religion, description) VALUES (?,?,?,?,?,?)", [id, canon, canon, 'person', '', summary]);
     const cid = cmap.get(c.para); if (cid) await graphQuery("INSERT INTO entity_mentions (entity_id, content_id, role, resolution_confidence, status, extractor_version) VALUES (?,?,?,?,'resolved','disambig-v1')", [id, cid, 'subject', 0.9]);
   }
   created++;
