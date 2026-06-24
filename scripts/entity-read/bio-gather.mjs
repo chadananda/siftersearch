@@ -11,18 +11,19 @@ const MIN = +(process.env.MIN || 45), LIMIT = +(process.env.LIMIT || 0), OFFSET 
 const EXCL = new Set([1247562, 1247551, 1247647]);
 const ROOT = process.env.HOME + '/sifter/bio-assets';
 const API = 'https://en.wikipedia.org/w/api.php';
-// curated, verified Wikipedia titles for the famous figures (blind search mis-resolves these)
-const TITLES = {
-  1247563: "ʻAbdu'l-Bahá", 1248214: 'Shoghi Effendi', 1247564: 'Mullá Husayn', 1247552: 'Quddús',
-  1247554: 'Táhirih', 1247711: 'Bahíyyih Khánum', 1247566: 'Naser al-Din Shah Qajar', 1247674: 'Moses',
-  1247826: 'Ásíyih Khánum', 1247553: 'Yahya Darabi', 1247568: 'Amir Kabir', 1247676: 'Jesus',
-  1247679: 'Gautama Buddha', 1247946: 'Mirza Agha Khan Nuri', 1247580: 'Hujjat-i Zanjani', 1247675: 'Zoroaster',
-  1247678: 'Krishna', 1247683: 'Abraham', 1249921: 'Munírih Khánum', 1247565: 'Mohammad Shah Qajar',
-  1247567: 'Haji Mirza Aqasi', 1247583: 'Manuchehr Khan Gorji', 1247600: 'Kazim Rashti', 1247744: 'Abdulaziz',
-  1247599: 'Shaykh Ahmad', 1247926: 'Queen Victoria', 1248174: 'Martha Root', 1247931: 'Nabíl-i-Aʻzam',
-  1247598: 'Subh-i-Azal', 1247664: 'Arthur de Gobineau', 1247661: 'George Curzon, 1st Marquess Curzon of Kedleston',
-  1247794: 'Napoleon III', 1247825: 'Mírzá Mihdí (Purest Branch)', 1247648: 'Husayn ibn Ali', 1247677: 'Ali',
-  1247642: 'Mohammad Salih Baraghani', 1247554: 'Táhirih', 1247563: "ʻAbdu'l-Bahá",
+// curated SEARCH TERMS for figures whose canonical name doesn't search cleanly (search resolves apostrophes/
+// redirects; exact-title lookup was fragile). For these we trust the top non-group hit.
+const QUERIES = {
+  1247563: "Abdu'l-Baha", 1248214: 'Shoghi Effendi', 1247564: 'Mulla Husayn Bushrui', 1247552: 'Quddus Babi',
+  1247554: 'Tahirih', 1247711: 'Bahiyyih Khanum', 1247566: 'Naser al-Din Shah Qajar', 1247674: 'Moses',
+  1247826: 'Asiyih Khanum', 1247553: 'Yahya Darabi Vahid', 1247568: 'Amir Kabir', 1247676: 'Jesus',
+  1247679: 'Gautama Buddha', 1247946: 'Mirza Agha Khan Nuri', 1247580: 'Hujjat Zanjani', 1247675: 'Zoroaster',
+  1247678: 'Krishna', 1247683: 'Abraham', 1249921: 'Munirih Khanum', 1247565: 'Mohammad Shah Qajar',
+  1247567: 'Haji Mirza Aqasi', 1247583: 'Manuchehr Khan Gorji Motamed', 1247600: 'Kazim Rashti', 1247744: 'Abdulaziz Ottoman sultan',
+  1247599: 'Shaykh Ahmad Ahsai', 1247926: 'Queen Victoria', 1248174: 'Martha Root', 1247931: 'Nabil Zarandi',
+  1247598: 'Subh-i-Azal', 1247664: 'Arthur de Gobineau', 1247661: 'George Curzon 1st Marquess Curzon',
+  1247794: 'Napoleon III', 1247825: 'Mirza Mihdi Purest Branch', 1247648: 'Husayn ibn Ali', 1247677: 'Ali ibn Abi Talib',
+  1247675: 'Zoroaster',
 };
 const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40).toLowerCase();
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/gi, ' ').toLowerCase();
@@ -39,16 +40,18 @@ if (WRITE) mkdirSync(ROOT, { recursive: true });
 const manifestPath = ROOT + '/manifest.json';
 const manifest = (WRITE && existsSync(manifestPath)) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : {};
 
+const GROUP = /\b(timeline|split|list of|family|Letters of the Living|martyrs|Bahá|Babism|religion)\b/i;
 async function resolveTitle(p) {
-  if (TITLES[p.id]) return { title: TITLES[p.id], curated: true };
-  const base = p.cn.replace(/\s*\([^)]*\)\s*$/, '').trim();
-  const d = await j(`${API}?action=query&format=json&list=search&srlimit=4&srsearch=${enc(base)}`);
-  const want = new Set(tokens(p.cn));
-  for (const h of (d?.query?.search || [])) {
-    if (/\b(timeline|split|list of|family|Letters of the Living)\b/i.test(h.title)) continue;  // group/list articles
-    const ht = new Set(tokens(h.title));
-    if ([...want].some(t => ht.has(t))) return { title: h.title, curated: false };   // shares a name token
-  }
+  const curated = !!QUERIES[p.id];
+  const q = QUERIES[p.id] || p.cn.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  const d = await j(`${API}?action=query&format=json&list=search&srlimit=5&srsearch=${enc(q)}`);
+  const hits = (d?.query?.search || []).filter(h => !GROUP.test(h.title));
+  if (curated) return { title: hits[0]?.title || null, curated: true };       // trust my precise query
+  // non-curated: require the GIVEN-NAME token (first significant token) to appear in the title — avoids
+  // nisba-only false matches (Báqir-i-Tabrízí -> "Shams Tabrizi")
+  const given = tokens(p.cn)[0];
+  if (!given) return { title: null, curated: false };
+  for (const h of hits) if (new Set(tokens(h.title)).has(given)) return { title: h.title, curated: false };
   return { title: null, curated: false };
 }
 const parse = s => { try { return JSON.parse(s || '[]'); } catch { return []; } };
