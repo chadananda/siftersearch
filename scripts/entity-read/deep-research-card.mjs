@@ -10,10 +10,21 @@ const { chatCompletion } = await import('../../api/lib/ai.js');
 const { getMeili, INDEXES } = await import('../../api/lib/search.js');
 const meili = getMeili();
 const DOC = 21308;
-const IDS = (process.env.IDS || '').split(',').map(Number).filter(Boolean);
+let IDS = (process.env.IDS || '').split(',').map(Number).filter(Boolean);
+const LIMIT = +(process.env.LIMIT || 0), OFFSET = +(process.env.OFFSET || 0);
 const docTitle = new Map((await queryAll('SELECT id, substr(title,1,32) t FROM docs')).map(r => [r.id, r.t]));
-
-const ents = await queryAll(`SELECT ge.id, ge.canonical_name cn, er.summary s, er.side, er.aliases a FROM graph_entities ge JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE ge.id IN (${IDS.join(',')}) AND ge.entity_type='person'`);
+// DB-cast mention counts (for ordering + cursory-mode threshold)
+const cids0 = new Set((await queryAll(`SELECT id FROM content WHERE doc_id=${DOC} AND deleted_at IS NULL`)).map(r => String(r.id)));
+const dbCount = new Map();
+for (const m of await graphQueryAll('SELECT entity_id, content_id FROM entity_mentions')) if (cids0.has(String(m.content_id))) dbCount.set(m.entity_id, (dbCount.get(m.entity_id) || 0) + 1);
+// full-run mode: no IDS -> all DB-cast persons, most-mentioned first
+if (!IDS.length) {
+  IDS = [...dbCount.keys()].sort((a, b) => (dbCount.get(b) || 0) - (dbCount.get(a) || 0));
+  if (LIMIT) IDS = IDS.slice(OFFSET, OFFSET + LIMIT);
+}
+const ents = (await queryAll(`SELECT ge.id, ge.canonical_name cn, er.summary s, er.side, er.aliases a FROM graph_entities ge JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE ge.id IN (${IDS.join(',')}) AND ge.entity_type='person'`))
+  .sort((a, b) => (dbCount.get(b.id) || 0) - (dbCount.get(a.id) || 0));
+console.error(`cards to gather: ${ents.length}`);
 // DB discriminators = the entity's own DB mention snippets
 const mById = new Map();
 for (const m of await graphQueryAll(`SELECT entity_id, content_id FROM entity_mentions WHERE entity_id IN (${IDS.join(',')})`)) { if (!mById.has(m.entity_id)) mById.set(m.entity_id, []); mById.get(m.entity_id).push(String(m.content_id)); }
