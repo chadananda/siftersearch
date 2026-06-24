@@ -11,8 +11,31 @@ const WRITE = process.env.WRITE === '1';
 const ROOT = process.env.HOME + '/sifter/bio-assets';
 const M = 'https://bahai.media/api.php';
 const EXCL = new Set([1247562, 1247551, 1247647]);
-// curated File titles confirmed by review (id -> bahai.media File: title). Filled after the proposal pass.
-const FILES = JSON.parse(process.env.FILES || '{}');
+// curated File titles confirmed by review (id -> bahai.media File: title) — eyeball-verified portraits only
+const FILES = process.env.FILES ? JSON.parse(process.env.FILES) : {
+  1247583: 'File:Manuchihr-Khan of Isfahan.png',
+  1248174: 'File:Miss Martha L. Root.png',
+  1247852: 'File:Painting of Badi.png',
+  1247823: "File:Abu'l-Fadl.jpg",
+  1247841: 'File:Nabil-i-Akbar.jpg',
+  1248041: 'File:May Bolles Maxwell.png',
+  1248030: 'File:Lua Getsinger.jpg',
+  1247709: 'File:Tsar Alexander II.jpg',
+  1247802: 'File:Haji Akhund in Later Years.png',
+  1247827: 'File:Hájí Amín.jpg',
+  1248006: 'File:Dr Ibrahim Khayrullah 1894.png',
+  1248230: 'File:Portrait of Keith Ransom-Kehler.png',
+  1247670: 'File:John Esslemont.jpg',
+  1247574: 'File:Haji Muhammad-Karim Khan.png',
+  1247652: "File:Mirza Buzurg, father of Baha'u'llah.jpg",
+  1247807: 'File:Haji Mirza Haydar Ali.png',
+  1247864: "File:Sultanu'sh-Shuhada, the King of Martyrs.png",
+  1247865: "File:Mahbubu'sh-Shuhada, the Beloved of Martyrs.png",
+  1248015: "File:Mirza Muhammad-'Ali.png",
+  1248045: 'File:Robert Turner.png',
+  1248072: 'File:Lady Blomfield.jpg',
+  1247712: 'File:Áqáy-i-Kalím.jpg',
+};
 const NONPORTRAIT = /memorial|\bhouse\b|grave|school|calligraph|\bplan\b|\bmap\b|monument|temple|shrine|garden|document|letter|tablet|certificate|conference|assembly|delegates|group|building|room|\bsite\b|resting|mansion|prison|cell|barracks|seal|stamp|coin|banknote|facsimile|manuscript|signature/i;
 const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40).toLowerCase();
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/gi, ' ').toLowerCase();
