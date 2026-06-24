@@ -1,0 +1,13 @@
+---
+import Layout from '../layouts/Layout.astro';
+import NavBar from '../components/common/NavBar.svelte';
+import BiographyBrowser from '../components/BiographyBrowser.svelte';
+---
+
+<Layout
+  title="Biographical Archive — SifterSearch"
+  description="A searchable archive of the people of early Bábí and Bahá'í history — kings and martyrs, scholars and villagers — with portraits, relationships, and sources drawn from across the library."
+>
+  <NavBar client:only="svelte" currentPage="biography" />
+  <BiographyBrowser client:only="svelte" />
+</Layout>

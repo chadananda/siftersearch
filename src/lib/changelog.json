@@ -1,6 +1,181 @@
 {
-  "generated": "2026-06-19T21:48:28.852Z",
+  "generated": "2026-06-24T22:44:13.714Z",
   "entries": [
+    {
+      "hash": "53d1ccb9",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Full-run mode for card gatherer + card-apply (fields + anchor queue)",
+      "scope": null
+    },
+    {
+      "hash": "6a5117ed",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Deep disambiguation-prior card gatherer (sourced, contamination-guarded)",
+      "scope": null
+    },
+    {
+      "hash": "0f0fd6e8",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Nahrí brothers — proof-of-method for pre-extraction disambiguation prior",
+      "scope": null
+    },
+    {
+      "hash": "cd793b5d",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Apply enrichment drafts (reversible, writer-routed)",
+      "scope": null
+    },
+    {
+      "hash": "25e47dae",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Target bare-record persons; mine library, upgrade only verified-matching facts",
+      "scope": null
+    },
+    {
+      "hash": "bde870cb",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Enrichment drafter (dossier + cross-corpus -> faithful record, depth-calibrated)",
+      "scope": null
+    },
+    {
+      "hash": "e95e1e06",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Dossier dump for remaining open disambiguation pairs",
+      "scope": null
+    },
+    {
+      "hash": "2139110f",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Ḥájí Mullá Ismá‘íl tangle + ‘Abdu'l-Kháliq Badasht link",
+      "scope": null
+    },
+    {
+      "hash": "19c9b263",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Cross-corpus resolver (dossier + Meili discovery + episode/date pinning)",
+      "scope": null
+    },
+    {
+      "hash": "41beb75d",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Reverse wrong Muḥammad-Ḥusayn merge (p794 vs p808 = distinct martyrs)",
+      "scope": null
+    },
+    {
+      "hash": "b6849db2",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Apply 7 verification-confident cluster merges (reversible)",
+      "scope": null
+    },
+    {
+      "hash": "044b3ad0",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Deterministic verification of merge proposals (para-overlap/honorific/linking-clause)",
+      "scope": null
+    },
+    {
+      "hash": "50522fcf",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Conservative merge adjudication (enumeration/kin = hard distinct; flag when unsure)",
+      "scope": null
+    },
+    {
+      "hash": "891596aa",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Dossier-grounded cluster merge-adjudication engine (proposals only)",
+      "scope": null
+    },
+    {
+      "hash": "a3f5b3c6",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Cluster cast by name-core, flag fabricated-nisba artifacts",
+      "scope": null
+    },
+    {
+      "hash": "9dc58554",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Size the Dawn-Breakers cast for full identity+enrichment pass",
+      "scope": null
+    },
+    {
+      "hash": "72d24f95",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Meili evidence for held disambiguation",
+      "scope": null
+    },
+    {
+      "hash": "6b0a97ab",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Verify p781 Harátí bind + recovery targets",
+      "scope": null
+    },
+    {
+      "hash": "11d99065",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Show roster section place markers",
+      "scope": null
+    },
+    {
+      "hash": "810752f7",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Inspect roster new-martyr proposals before create",
+      "scope": null
+    },
+    {
+      "hash": "b850127a",
+      "date": "2026-06-23",
+      "type": "Other",
+      "description": "Per-input decision filenames, concurrency 8",
+      "scope": null
+    },
+    {
+      "hash": "57b7ae47",
+      "date": "2026-06-20",
+      "type": "Docs",
+      "description": "Rewrite entity-extraction as a terse PRD — Building Entities from Seed",
+      "scope": null
+    },
+    {
+      "hash": "2153d149",
+      "date": "2026-06-20",
+      "type": "Docs",
+      "description": "Consolidate entity docs into terse entity-extraction.md (why-GPB, pitfalls, two-pass + research pattern)",
+      "scope": null
+    },
+    {
+      "hash": "48fea851",
+      "date": "2026-06-20",
+      "type": "Docs",
+      "description": "Gpb-seed.md — reference for the GPB authority seed (state, structure, build, attach)",
+      "scope": null
+    },
+    {
+      "hash": "c07cbf4e",
+      "date": "2026-06-20",
+      "type": "Docs",
+      "description": "Building Entities from Seed — living best-practices playbook",
+      "scope": null
+    },
     {
       "hash": "4a5f1750",
       "date": "2026-06-19",
@@ -3325,184 +3500,190 @@
       "type": "Fixed",
       "description": "CRAFTER zero-count inline fragment format + sample title handling",
       "scope": null
-    },
-    {
-      "hash": "07723097",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Author extraction regex allows 'the' article and 'of' connectors",
-      "scope": null
-    },
-    {
-      "hash": "0d37fb20",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Catalog companion search + CRAFTER overrides for author lookups",
-      "scope": null
-    },
-    {
-      "hash": "6e56b0be",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Revert Bab/person-name from Bahai pattern - worsened biographical queries",
-      "scope": null
-    },
-    {
-      "hash": "5d9914c2",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Bab pattern, companion search query, crafter substantive-claim rule",
-      "scope": null
-    },
-    {
-      "hash": "ed81a7eb",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Author catalog companion search — add citable passages to author lookups",
-      "scope": null
-    },
-    {
-      "hash": "86325ed8",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Targeted Bhagavad Gita search for Hindu dharma/duty/karma queries",
-      "scope": null
-    },
-    {
-      "hash": "c9a2ff08",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Bible/Quran/Torah as broad references — null work_name + Sikh seva vocab expansion",
-      "scope": null
-    },
-    {
-      "hash": "a58805e3",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Christianity pattern bug — \\bchrist(?:ian)?\\b misses 'Christianity'",
-      "scope": null
-    },
-    {
-      "hash": "5b53380c",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Bahá'í single-tradition routing + Zoroastrian query expansion",
-      "scope": null
-    },
-    {
-      "hash": "a69409fa",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Explicit wrong-attribution example in citation format — prevent Bhagavad Gita/Atharva Veda swap",
-      "scope": null
-    },
-    {
-      "hash": "1e9423ef",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Stronger grounding rules — WORK-NAMING and no-general-knowledge-opening",
-      "scope": null
-    },
-    {
-      "hash": "d2185fb3",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Single-tradition search for major-tradition questions (Islam/Christian/Buddhist/Judaism)",
-      "scope": null
-    },
-    {
-      "hash": "7977de12",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Skip deep_research for single-tradition questions — use targeted search instead",
-      "scope": null
-    },
-    {
-      "hash": "1f0d767a",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Skip deep_research early-return when tradition-specific query lacks matching quotes",
-      "scope": null
-    },
-    {
-      "hash": "291effe7",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Crafter attribution + false-analogy guard + Anthropic judge fallback",
-      "scope": null
-    },
-    {
-      "hash": "7994ae01",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Minor tradition search + judge criticalEngagement field",
-      "scope": null
-    },
-    {
-      "hash": "27f9515e",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Add Meilisearch keyword fallback to checkDeepResearch — catches paraphrased questions that miss embedding threshold",
-      "scope": null
-    },
-    {
-      "hash": "55cdd12f",
-      "date": "2026-05-14",
-      "type": "Other",
-      "description": "Similarity threshold 0.82→0.78 for broader paraphrase matching",
-      "scope": null
-    },
-    {
-      "hash": "d256dc1b",
-      "date": "2026-05-14",
-      "type": "Other",
-      "description": "Lower deep research similarity threshold 0.88→0.82 — catch paraphrased questions",
-      "scope": null
-    },
-    {
-      "hash": "4e5d3863",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Wire deep research pre-fetch into deterministicResearch — was only in dead code path (runResearchPhaseInner)",
-      "scope": null
-    },
-    {
-      "hash": "a6d95e03",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Deep research pre-fetch — unwrap createEmbedding().embedding (was passing object not vector, causing NaN similarity)",
-      "scope": null
-    },
-    {
-      "hash": "cde6d219",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Share links use full quote text — platform-appropriate limits (Twitter 180, others unlimited)",
-      "scope": null
-    },
-    {
-      "hash": "f1f0896e",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Cross-tradition passTwo fill skips same-doc paragraphs — prevents duplicate passages from one volume",
-      "scope": null
-    },
-    {
-      "hash": "773659c2",
-      "date": "2026-05-14",
-      "type": "Other",
-      "description": "Flatten hero — override flex layout expanding intro to full page",
-      "scope": null
-    },
-    {
-      "hash": "4e2d70ce",
-      "date": "2026-05-14",
-      "type": "Other",
-      "description": "No page breaks, add vertical margins",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-06-24": [
+      {
+        "hash": "53d1ccb9",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Full-run mode for card gatherer + card-apply (fields + anchor queue)",
+        "scope": null
+      },
+      {
+        "hash": "6a5117ed",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Deep disambiguation-prior card gatherer (sourced, contamination-guarded)",
+        "scope": null
+      },
+      {
+        "hash": "0f0fd6e8",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Nahrí brothers — proof-of-method for pre-extraction disambiguation prior",
+        "scope": null
+      },
+      {
+        "hash": "cd793b5d",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Apply enrichment drafts (reversible, writer-routed)",
+        "scope": null
+      },
+      {
+        "hash": "25e47dae",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Target bare-record persons; mine library, upgrade only verified-matching facts",
+        "scope": null
+      },
+      {
+        "hash": "bde870cb",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Enrichment drafter (dossier + cross-corpus -> faithful record, depth-calibrated)",
+        "scope": null
+      }
+    ],
+    "2026-06-23": [
+      {
+        "hash": "e95e1e06",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Dossier dump for remaining open disambiguation pairs",
+        "scope": null
+      },
+      {
+        "hash": "2139110f",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Ḥájí Mullá Ismá‘íl tangle + ‘Abdu'l-Kháliq Badasht link",
+        "scope": null
+      },
+      {
+        "hash": "19c9b263",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Cross-corpus resolver (dossier + Meili discovery + episode/date pinning)",
+        "scope": null
+      },
+      {
+        "hash": "41beb75d",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Reverse wrong Muḥammad-Ḥusayn merge (p794 vs p808 = distinct martyrs)",
+        "scope": null
+      },
+      {
+        "hash": "b6849db2",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Apply 7 verification-confident cluster merges (reversible)",
+        "scope": null
+      },
+      {
+        "hash": "044b3ad0",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Deterministic verification of merge proposals (para-overlap/honorific/linking-clause)",
+        "scope": null
+      },
+      {
+        "hash": "50522fcf",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Conservative merge adjudication (enumeration/kin = hard distinct; flag when unsure)",
+        "scope": null
+      },
+      {
+        "hash": "891596aa",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Dossier-grounded cluster merge-adjudication engine (proposals only)",
+        "scope": null
+      },
+      {
+        "hash": "a3f5b3c6",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Cluster cast by name-core, flag fabricated-nisba artifacts",
+        "scope": null
+      },
+      {
+        "hash": "9dc58554",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Size the Dawn-Breakers cast for full identity+enrichment pass",
+        "scope": null
+      },
+      {
+        "hash": "72d24f95",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Meili evidence for held disambiguation",
+        "scope": null
+      },
+      {
+        "hash": "6b0a97ab",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Verify p781 Harátí bind + recovery targets",
+        "scope": null
+      },
+      {
+        "hash": "11d99065",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Show roster section place markers",
+        "scope": null
+      },
+      {
+        "hash": "810752f7",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Inspect roster new-martyr proposals before create",
+        "scope": null
+      },
+      {
+        "hash": "b850127a",
+        "date": "2026-06-23",
+        "type": "Other",
+        "description": "Per-input decision filenames, concurrency 8",
+        "scope": null
+      }
+    ],
+    "2026-06-20": [
+      {
+        "hash": "57b7ae47",
+        "date": "2026-06-20",
+        "type": "Docs",
+        "description": "Rewrite entity-extraction as a terse PRD — Building Entities from Seed",
+        "scope": null
+      },
+      {
+        "hash": "2153d149",
+        "date": "2026-06-20",
+        "type": "Docs",
+        "description": "Consolidate entity docs into terse entity-extraction.md (why-GPB, pitfalls, two-pass + research pattern)",
+        "scope": null
+      },
+      {
+        "hash": "48fea851",
+        "date": "2026-06-20",
+        "type": "Docs",
+        "description": "Gpb-seed.md — reference for the GPB authority seed (state, structure, build, attach)",
+        "scope": null
+      },
+      {
+        "hash": "c07cbf4e",
+        "date": "2026-06-20",
+        "type": "Docs",
+        "description": "Building Entities from Seed — living best-practices playbook",
+        "scope": null
+      }
+    ],
     "2026-06-19": [
       {
         "hash": "4a5f1750",
@@ -6873,183 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "CRAFTER zero-count inline fragment format + sample title handling",
-        "scope": null
-      },
-      {
-        "hash": "07723097",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Author extraction regex allows 'the' article and 'of' connectors",
-        "scope": null
-      },
-      {
-        "hash": "0d37fb20",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Catalog companion search + CRAFTER overrides for author lookups",
-        "scope": null
-      },
-      {
-        "hash": "6e56b0be",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Revert Bab/person-name from Bahai pattern - worsened biographical queries",
-        "scope": null
-      },
-      {
-        "hash": "5d9914c2",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Bab pattern, companion search query, crafter substantive-claim rule",
-        "scope": null
-      },
-      {
-        "hash": "ed81a7eb",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Author catalog companion search — add citable passages to author lookups",
-        "scope": null
-      },
-      {
-        "hash": "86325ed8",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Targeted Bhagavad Gita search for Hindu dharma/duty/karma queries",
-        "scope": null
-      },
-      {
-        "hash": "c9a2ff08",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Bible/Quran/Torah as broad references — null work_name + Sikh seva vocab expansion",
-        "scope": null
-      },
-      {
-        "hash": "a58805e3",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Christianity pattern bug — \\bchrist(?:ian)?\\b misses 'Christianity'",
-        "scope": null
-      },
-      {
-        "hash": "5b53380c",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Bahá'í single-tradition routing + Zoroastrian query expansion",
-        "scope": null
-      },
-      {
-        "hash": "a69409fa",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Explicit wrong-attribution example in citation format — prevent Bhagavad Gita/Atharva Veda swap",
-        "scope": null
-      },
-      {
-        "hash": "1e9423ef",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Stronger grounding rules — WORK-NAMING and no-general-knowledge-opening",
-        "scope": null
-      },
-      {
-        "hash": "d2185fb3",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Single-tradition search for major-tradition questions (Islam/Christian/Buddhist/Judaism)",
-        "scope": null
-      },
-      {
-        "hash": "7977de12",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Skip deep_research for single-tradition questions — use targeted search instead",
-        "scope": null
-      },
-      {
-        "hash": "1f0d767a",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Skip deep_research early-return when tradition-specific query lacks matching quotes",
-        "scope": null
-      },
-      {
-        "hash": "291effe7",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Crafter attribution + false-analogy guard + Anthropic judge fallback",
-        "scope": null
-      }
-    ],
-    "2026-05-14": [
-      {
-        "hash": "7994ae01",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Minor tradition search + judge criticalEngagement field",
-        "scope": null
-      },
-      {
-        "hash": "27f9515e",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Add Meilisearch keyword fallback to checkDeepResearch — catches paraphrased questions that miss embedding threshold",
-        "scope": null
-      },
-      {
-        "hash": "55cdd12f",
-        "date": "2026-05-14",
-        "type": "Other",
-        "description": "Similarity threshold 0.82→0.78 for broader paraphrase matching",
-        "scope": null
-      },
-      {
-        "hash": "d256dc1b",
-        "date": "2026-05-14",
-        "type": "Other",
-        "description": "Lower deep research similarity threshold 0.88→0.82 — catch paraphrased questions",
-        "scope": null
-      },
-      {
-        "hash": "4e5d3863",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Wire deep research pre-fetch into deterministicResearch — was only in dead code path (runResearchPhaseInner)",
-        "scope": null
-      },
-      {
-        "hash": "a6d95e03",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Deep research pre-fetch — unwrap createEmbedding().embedding (was passing object not vector, causing NaN similarity)",
-        "scope": null
-      },
-      {
-        "hash": "cde6d219",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Share links use full quote text — platform-appropriate limits (Twitter 180, others unlimited)",
-        "scope": null
-      },
-      {
-        "hash": "f1f0896e",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Cross-tradition passTwo fill skips same-doc paragraphs — prevents duplicate passages from one volume",
-        "scope": null
-      },
-      {
-        "hash": "773659c2",
-        "date": "2026-05-14",
-        "type": "Other",
-        "description": "Flatten hero — override flex layout expanding intro to full page",
-        "scope": null
-      },
-      {
-        "hash": "4e2d70ce",
-        "date": "2026-05-14",
-        "type": "Other",
-        "description": "No page breaks, add vertical margins",
         "scope": null
       }
     ]

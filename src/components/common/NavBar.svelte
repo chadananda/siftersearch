@@ -144,6 +144,13 @@
           </svg>
           <span class="nav-label">Dialogue</span>
         </a>
+        <a href="/biography" class="nav-link show-md" class:active={currentPage === 'biography'}>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/>
+            <circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.6A4.5 4.5 0 0 1 21 19"/>
+          </svg>
+          <span class="nav-label">Biography</span>
+        </a>
         <a href="/research" class="nav-link show-md" class:active={currentPage === 'research'}>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -208,6 +215,13 @@
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
               </svg>
               Library
+            </a>
+            <a href="/biography" class="nav-dropdown-item hide-above-md" class:active={currentPage === 'biography'} role="menuitem" onclick={closeNavMenu}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/>
+                <circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.6A4.5 4.5 0 0 1 21 19"/>
+              </svg>
+              Biography
             </a>
             <!-- Discuss tab hidden until multi-user launch -->
             <!--<a href="/community" class="nav-dropdown-item hide-above-md" class:active={currentPage === 'community'} role="menuitem" onclick={closeNavMenu}>

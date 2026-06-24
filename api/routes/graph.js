@@ -9,8 +9,82 @@
 
 import { queryAll, queryOne } from '../lib/db.js';
 import { graphQueryAll, graphQueryOne } from '../lib/db.js';
+import fs from 'fs';
+import path from 'path';
+
+const BIO_ROOT = path.join(process.env.HOME || '/home/chad', 'sifter', 'bio-assets');
+const readBioManifest = () => { try { return JSON.parse(fs.readFileSync(path.join(BIO_ROOT, 'manifest.json'), 'utf8')); } catch { return {}; } };
 
 export default async function graphRoutes(server) {
+
+  // GET /bio/persons — the biography browser dataset: every seed person with name, aliases, kinship,
+  // importance, side, summary, and whether a portrait was gathered (Wikipedia / bahai.media).
+  server.get('/bio/persons', async () => {
+    const man = readBioManifest();
+    const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, ge.importance,
+        er.side, er.summary, er.aliases, er.kinship, er.research_notes
+      FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name
+      WHERE ge.entity_type = 'person' AND ge.religion = ''
+      ORDER BY (ge.importance IS NULL), ge.importance DESC, ge.canonical_name`);
+    const persons = rows.map(r => {
+      let aliases = [], kinship = []; try { aliases = JSON.parse(r.aliases || '[]'); } catch {} try { kinship = JSON.parse(r.kinship || '[]'); } catch {}
+      const m = man[r.id]; const hasPortrait = !!(m && m.status === 'image');
+      return { id: r.id, name: r.name, importance: r.importance || 0, side: r.side || null,
+        summary: r.summary || null, aliases, kinship, hasPortrait,
+        portrait: hasPortrait ? `/api/graph/bio/portrait/${r.id}` : null,
+        wiki: m?.title ? `https://en.wikipedia.org/wiki/${encodeURIComponent(String(m.title).replace(/ /g, '_'))}` : null };
+    });
+    const sides = [...new Set(persons.map(p => p.side).filter(Boolean))].sort();
+    return { count: persons.length, withPortraits: persons.filter(p => p.hasPortrait).length, sides, persons };
+  });
+
+  // GET /bio/person/:id — full dossier for the detail drawer (DB record + gathered bio.json + cross-corpus reach)
+  server.get('/bio/person/:id', async (request, reply) => {
+    const id = String(request.params.id).replace(/[^0-9]/g, '');
+    const row = await queryOne(`SELECT ge.id, ge.canonical_name AS name, ge.importance, er.side, er.summary,
+        er.aliases, er.kinship, er.relations, er.research_notes, er.dates
+      FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.id = ?`, [id]);
+    if (!row) { reply.code(404); return { error: 'not found' }; }
+    const arr = s => { try { return JSON.parse(s || '[]'); } catch { return []; } };
+    const obj = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
+    let wiki = null, portrait = null, portraitFull = null, bahai = null;
+    try {
+      const d = fs.readdirSync(BIO_ROOT).find(x => x.startsWith(id + '-'));
+      if (d) { const bj = JSON.parse(fs.readFileSync(path.join(BIO_ROOT, d, 'bio.json'), 'utf8'));
+        wiki = bj.wikipedia || null; bahai = bj.bahai_media || null;
+        if (bj.portrait) { portrait = `/api/graph/bio/portrait/${id}`; portraitFull = bj.portrait_fullres || bj.wikipedia?.image_url || bahai?.full || null; } }
+    } catch { /* no bio.json */ }
+    // cross-corpus reach: distinct books this person appears in
+    let mentionCount = 0, books = [];
+    try {
+      const ms = await graphQueryAll('SELECT content_id FROM entity_mentions WHERE entity_id = ?', [id]);
+      mentionCount = ms.length;
+      const cids = [...new Set(ms.map(m => String(m.content_id)))].slice(0, 4000);
+      if (cids.length) books = (await queryAll(`SELECT DISTINCT d.title FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id IN (${cids.map(() => '?').join(',')}) AND d.title IS NOT NULL`, cids)).map(b => b.title);
+    } catch { /* graph optional */ }
+    const notes = obj(row.research_notes);
+    return { id: row.id, name: row.name, importance: row.importance || 0, side: row.side || null,
+      summary: row.summary || null, aliases: arr(row.aliases), kinship: arr(row.kinship), relations: arr(row.relations),
+      dates: arr(row.dates), facts: notes.facts || [], firewall: notes.firewall || [], contested: notes.contested || [],
+      possible_ids: notes.possible_ids || [], wiki, portrait, portraitFull, bahai, mentionCount, books };
+  });
+
+  // GET /bio/portrait/:id — serve a gathered portrait image file
+  server.get('/bio/portrait/:id', async (request, reply) => {
+    const id = String(request.params.id).replace(/[^0-9]/g, '');
+    try {
+      for (const d of fs.readdirSync(BIO_ROOT).filter(x => x.startsWith(id + '-'))) {
+        const files = fs.readdirSync(path.join(BIO_ROOT, d)).filter(f => /^portrait\./.test(f));
+        if (files.length) {
+          const ext = files[0].split('.').pop().toLowerCase();
+          const ct = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'svg' ? 'image/svg+xml' : 'image/jpeg';
+          reply.header('Content-Type', ct).header('Cache-Control', 'public, max-age=86400');
+          return reply.send(fs.readFileSync(path.join(BIO_ROOT, d, files[0])));
+        }
+      }
+    } catch { /* fall through */ }
+    reply.code(404); return { error: 'not found' };
+  });
 
   // GET /stats — overview of all religions in the graph
   server.get('/stats', async () => {
