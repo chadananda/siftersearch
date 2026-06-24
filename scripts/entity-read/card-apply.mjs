@@ -19,10 +19,13 @@ for (const o of cards) {
   const er = await queryOne("SELECT aliases FROM entity_research WHERE canonical_name=? AND entity_type='person'", [cn]);
   const aliases = new Set(); try { for (const a of JSON.parse(er?.aliases || '[]')) aliases.add(a); } catch {}
   for (const a of (c.aliases || [])) if (a && a !== cn) aliases.add(a);
-  const notes = { facts: c.supplemental_facts || [], possible_ids: c.possible_identifications || [], firewall: c.namesake_firewall || [], contested: c.contested || [], ambiguous: c.ambiguous || [], places: c.places || [] };
+  // RELIABLE (passage-grounded) fields apply now; kinship/relations are gathered-but-UNVERIFIED (DeepSeek
+  // inverts directions / misremembers genealogies), so they go into research_notes as *_gathered and the
+  // authoritative kinship/relations/dates COLUMNS are left for the verification pass to populate.
+  const notes = { facts: c.supplemental_facts || [], possible_ids: c.possible_identifications || [], firewall: c.namesake_firewall || [], contested: c.contested || [], ambiguous: c.ambiguous || [], places: c.places || [], kinship_gathered: c.kinship || [], relations_gathered: c.relationships || [], timeline_gathered: c.timeline || [], kinship_verified: false };
   if (!DRY) {
-    await query(`UPDATE entity_research SET aliases=?, kinship=?, relations=?, dates=?, research_notes=?, updated_at=datetime('now') WHERE canonical_name=? AND entity_type='person'`,
-      [JSON.stringify([...aliases]), JSON.stringify(c.kinship || []), JSON.stringify(c.relationships || []), JSON.stringify(c.timeline || []), JSON.stringify(notes), cn]);
+    await query(`UPDATE entity_research SET aliases=?, research_notes=?, updated_at=datetime('now') WHERE canonical_name=? AND entity_type='person'`,
+      [JSON.stringify([...aliases]), JSON.stringify(notes), cn]);
   }
   wrote++;
   // tally anchor candidates from kinship + relationships
