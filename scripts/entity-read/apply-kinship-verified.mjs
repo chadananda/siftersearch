@@ -99,6 +99,27 @@ const V = {
   1249281: [{ relation: 'father', who: 'the Báb' }],
   1249343: [{ relation: 'nephew', who: 'Mírzá Aḥmad-i-Azg̱handí (Siyyid Ḥusayn was his maternal uncle)' }],
   1249359: [{ relation: 'brother', who: 'Ḥájí Siyyid Muḥammad-Taqí Manshádí' }],
+  // tier 5 (imp 25-30), passage-verified 2026-06-24
+  1249390: [{ relation: 'father', who: 'Ḥájí Mullá Muḥammad-Taqí Baraghání' }, { relation: 'cousin', who: 'Ṭáhirih' }, { relation: 'husband', who: 'Ṭáhirih' }],
+  1249454: [{ relation: 'brother', who: 'Siyyid Aḥmad-i-Sang-Sárí' }, { relation: 'brother', who: 'Siyyid Abú-Ṭálib-i-Sang-Sárí' }],
+  1249607: [{ relation: 'son', who: 'Muḥammad-Mihdí (the Safíhu’l-‘Ulamá)' }],
+  1249832: [{ relation: 'wife', who: 'Khátún Ján' }],
+  1247854: [{ relation: 'father', who: 'Mír Jalíl (martyr of Zanján)' }, { relation: 'mother', who: 'Umm-i-As̱hraf' }],
+  1248153: [{ relation: 'father', who: 'Muẓaffari’d-Dín Sháh' }, { relation: 'son', who: 'Aḥmad Sháh' }],
+  1249331: [{ relation: 'brother', who: 'Mírzá Muḥammad-‘Alíy-i-Nahrí' }, { relation: 'brother', who: 'Mírzá Ibráhím' }, { relation: 'father', who: 'Ḥájí Siyyid Mihdíy-i-Nahrí' }],
+  1249590: [{ relation: 'son', who: '‘Abdu’l-Vahháb (the youth who met Bahá’u’lláh in Karbilá)' }],
+  1250091: [],
+  1247589: [{ relation: 'father', who: 'Fatḥ-‘Alí Sháh' }, { relation: 'nephew', who: 'Muḥammad Sháh (he was the Sháh’s uncle)' }],
+  1249457: [{ relation: 'father', who: 'Karbilá’í Abú-Muḥammad' }, { relation: 'brother', who: 'Muḥammad-‘Alí' }],
+  1249458: [{ relation: 'father', who: 'Karbilá’í Abú-Muḥammad' }, { relation: 'brother', who: 'Abu’l-Qásim' }],
+  1249460: [{ relation: 'brother', who: 'Siyyid Aḥmad-i-Sang-Sárí' }],
+  1247587: [],
+  1247842: [{ relation: 'father', who: 'Náṣiri’d-Dín Sháh' }, { relation: 'son', who: 'Muḥammad-‘Alí Sháh' }],
+  1247851: [{ relation: 'half-brother', who: "Bahá'u'lláh" }],
+  1249295: [{ relation: 'son', who: 'Vaḥíd (Siyyid Yaḥyáy-i-Dárábí)' }],
+  1249462: [],
+  1249907: [{ relation: 'father', who: 'Mírzá Ḥasan' }, { relation: 'son', who: 'Mírzá Ḥasan Khán-i-Mustawfí' }],
+  1250148: [{ relation: 'son', who: 'Mullá Ḥusayn' }, { relation: 'daughter', who: 'Varaqatu’l-Firdaws' }],
 };
 let n = 0;
 for (const [id, kin] of Object.entries(V)) {
