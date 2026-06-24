@@ -16,10 +16,10 @@ const API = 'https://en.wikipedia.org/w/api.php';
 const QUERIES = {
   1247563: "Abdu'l-Baha", 1248214: 'Shoghi Effendi', 1247564: 'Mulla Husayn Bushrui', 1247552: 'Quddus Babi',
   1247554: 'Tahirih', 1247711: 'Bahiyyih Khanum', 1247566: 'Naser al-Din Shah Qajar', 1247674: 'Moses',
-  1247826: 'Asiyih Khanum', 1247553: 'Yahya Darabi Vahid', 1247568: 'Amir Kabir', 1247676: 'Jesus',
-  1247679: 'Gautama Buddha', 1247946: 'Mirza Agha Khan Nuri', 1247580: 'Hujjat Zanjani', 1247675: 'Zoroaster',
+  1247826: 'Asiyih Khanum', 1247568: 'Amir Kabir', 1247676: 'Jesus',
+  1247679: 'Gautama Buddha', 1247946: 'Mirza Aqa Khan Nuri prime minister', 1247580: 'Hujjat Zanjani', 1247675: 'Zoroaster',
   1247678: 'Krishna', 1247683: 'Abraham', 1249921: 'Munirih Khanum', 1247565: 'Mohammad Shah Qajar',
-  1247567: 'Haji Mirza Aqasi', 1247583: 'Manuchehr Khan Gorji Motamed', 1247600: 'Kazim Rashti', 1247744: 'Abdulaziz Ottoman sultan',
+  1247567: 'Haji Mirza Aqasi', 1247583: "Manuchehr Khan Mo'tamed od-Dowleh", 1247600: 'Kazim Rashti', 1247744: 'Abdulaziz Ottoman sultan',
   1247599: 'Shaykh Ahmad Ahsai', 1247926: 'Queen Victoria', 1248174: 'Martha Root', 1247931: 'Nabil Zarandi',
   1247598: 'Subh-i-Azal', 1247664: 'Arthur de Gobineau', 1247661: 'George Curzon 1st Marquess Curzon',
   1247794: 'Napoleon III', 1247825: 'Mirza Mihdi Purest Branch', 1247648: 'Husayn ibn Ali', 1247677: 'Ali ibn Abi Talib',
@@ -70,10 +70,13 @@ for (let i = 0; i < people.length; i += CONC) {
       }
     } catch (e) { bio.wiki_error = String(e).slice(0, 80); }
     const hasImg = bio.wikipedia?.image_url;
-    bio.status = !bio.wikipedia ? 'no-article' : hasImg ? 'image' : 'no-image';
+    // download portraits ONLY for curated, eyeball-verified matches — never auto-download a search guess
+    // (avoids wrong-person portraits like Áqá-Khán→Subh-i-Azal / Báqir→al-Baqir)
+    const trust = hasImg && bio.wikipedia.curated;
+    bio.status = !bio.wikipedia ? 'no-article' : !hasImg ? 'no-image' : trust ? 'image' : 'image-candidate';
     if (WRITE) {
       const dir = `${ROOT}/${p.id}-${slug(p.cn)}`; mkdirSync(dir, { recursive: true });
-      if (hasImg) {
+      if (trust) {
         try { const ext = (bio.wikipedia.image_url.split('?')[0].split('.').pop() || 'jpg').slice(0, 4); const fr = await fetch(bio.wikipedia.image_url, { headers: { 'User-Agent': 'SifterSearch-bio/1.0 (chadananda@gmail.com)' } }); const buf = Buffer.from(await fr.arrayBuffer()); writeFileSync(`${dir}/portrait.${ext}`, buf); bio.portrait = `portrait.${ext}`; bio.portrait_bytes = buf.length; } catch (e) { bio.portrait_error = String(e).slice(0, 60); }
       }
       writeFileSync(`${dir}/bio.json`, JSON.stringify(bio, null, 1));
