@@ -17,9 +17,12 @@ const dbCount = new Map();
 for (const m of await graphQueryAll('SELECT entity_id, content_id FROM entity_mentions')) if (cids.has(String(m.content_id))) dbCount.set(m.entity_id, (dbCount.get(m.entity_id) || 0) + 1);
 const ids = [...dbCount.keys()];
 const rows = await queryAll(`SELECT ge.id, ge.canonical_name cn, ge.entity_type t, ge.description d, er.summary s, er.side, er.aliases a FROM graph_entities ge JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE ge.id IN (${ids.join(',')}) AND er.entity_type='person'`);
-const gap = rows.filter(r => !((r.s || '').trim())).filter(r => (dbCount.get(r.id) || 0) >= MIN)
+// "bare" = empty, a DB: stub, very short, or an explicit roster/minimal-detail note — these are the records to
+// upgrade by mining the rest of the library (the user's "find what we know about them in other books").
+const isBare = s => { s = (s || '').trim(); return !s || /^DB:/.test(s) || s.length < 45 || /named only in|bare-name roster|no further biographical|minimal detail|named with minimal|named once|martyr-list entry|no further detail|named in a list/i.test(s); };
+const gap = rows.filter(r => isBare(r.s)).filter(r => (dbCount.get(r.id) || 0) >= MIN)
   .sort((x, y) => (dbCount.get(y.id) || 0) - (dbCount.get(x.id) || 0)).slice(0, LIMIT);
-console.error(`un-enriched persons to draft: ${gap.length} (of gap; MIN=${MIN})`);
+console.error(`bare-record persons to enrich: ${gap.length} (MIN=${MIN})`);
 
 const docTitle = new Map((await queryAll('SELECT id, substr(title,1,30) t FROM docs')).map(r => [r.id, r.t]));
 const mById = new Map();
@@ -51,7 +54,7 @@ for (let i = 0; i < gap.length; i += CONC) {
     const ms = (mById.get(g.id) || []).map(c => ctext.get(c)).filter(Boolean).sort((a, b) => a.doc_id - b.doc_id || a.pi - b.pi);
     const dbm = ms.map(r => `[${docTitle.get(r.doc_id) || r.doc_id} ¶${r.pi}] ${r.t}`).join('\n');
     const corpus = await discover(g.cn);
-    const prompt = `ENTITY: "${g.cn}" (current side: ${g.side || '?'}, ${dbCount.get(g.id)} DB mentions)\nDB MENTIONS:\n${dbm || '(none)'}\n\nCROSS-CORPUS (other books):\n${corpus.join('\n') || '(none found)'}`;
+    const prompt = `ENTITY: "${g.cn}" (current side: ${g.side || '?'}, ${dbCount.get(g.id)} DB mentions)\nCURRENT SUMMARY: ${g.s || '(none)'}\nDB MENTIONS:\n${dbm || '(none)'}\n\nCROSS-CORPUS (other books — verify the name truly matches THIS person before using):\n${corpus.join('\n') || '(none found)'}\n\nUpgrade the record ONLY with facts the evidence supports for THIS person; if the cross-corpus passages are a different same-named person or add nothing, keep the light record and set notable=false.`;
     try {
       const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: prompt }], { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 500, responseFormat: { type: 'json_object' } });
       const m = (res.content || '').match(/\{[\s\S]*\}/); const j = m ? JSON.parse(m[0]) : {};
