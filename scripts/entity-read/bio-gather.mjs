@@ -23,7 +23,10 @@ const QUERIES = {
   1247599: 'Shaykh Ahmad Ahsai', 1247926: 'Queen Victoria', 1248174: 'Martha Root', 1247931: 'Nabil Zarandi',
   1247598: 'Subh-i-Azal', 1247664: 'Arthur de Gobineau', 1247661: 'George Curzon 1st Marquess Curzon',
   1247794: 'Napoleon III', 1247825: 'Mirza Mihdi Purest Branch', 1247648: 'Husayn ibn Ali', 1247677: 'Ali ibn Abi Talib',
-  1247675: 'Zoroaster',
+  // second curation pass — verified-correct candidates from the first run
+  1247662: 'Edward Granville Browne', 1247958: 'Pope Pius IX', 1248029: 'Thornton Chase',
+  1248067: 'Marie of Romania queen', 1248190: 'Abdulhamid II', 1247979: 'Wilhelm I German Emperor',
+  1247933: 'Mary mother of Jesus', 1247641: 'Fatimah daughter of Muhammad', 1247673: 'John the Apostle',
 };
 const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40).toLowerCase();
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/gi, ' ').toLowerCase();
@@ -62,7 +65,7 @@ for (let i = 0; i < people.length; i += CONC) {
     try {
       const { title, curated } = await resolveTitle(p);
       if (title) {
-        const d = await j(`${API}?action=query&format=json&prop=pageimages|extracts|pageprops&piprop=original|thumbnail|name&pithumbsize=500&exintro=1&explaintext=1&redirects=1&titles=${enc(title)}`);
+        const d = await j(`${API}?action=query&format=json&prop=pageimages|extracts|pageprops&piprop=original|thumbnail|name&pithumbsize=800&exintro=1&explaintext=1&redirects=1&titles=${enc(title)}`);
         const page = Object.values(d?.query?.pages || {})[0] || {};
         const w = { title, curated, url: 'https://en.wikipedia.org/wiki/' + enc(title.replace(/ /g, '_')), extract: (page.extract || '').slice(0, 600), image_url: page.original?.source || null, thumb_url: page.thumbnail?.source || null };
         if (page.pageimage) { const fi = await j(`${API}?action=query&format=json&prop=imageinfo&iiprop=extmetadata&titles=File:${enc(page.pageimage)}`); const m = Object.values(fi?.query?.pages || {})[0]?.imageinfo?.[0]?.extmetadata || {}; w.license = m.LicenseShortName?.value || null; w.credit = (m.Artist?.value || '').replace(/<[^>]+>/g, '').slice(0, 120) || null; }
@@ -77,7 +80,9 @@ for (let i = 0; i < people.length; i += CONC) {
     if (WRITE) {
       const dir = `${ROOT}/${p.id}-${slug(p.cn)}`; mkdirSync(dir, { recursive: true });
       if (trust) {
-        try { const ext = (bio.wikipedia.image_url.split('?')[0].split('.').pop() || 'jpg').slice(0, 4); const fr = await fetch(bio.wikipedia.image_url, { headers: { 'User-Agent': 'SifterSearch-bio/1.0 (chadananda@gmail.com)' } }); const buf = Buffer.from(await fr.arrayBuffer()); writeFileSync(`${dir}/portrait.${ext}`, buf); bio.portrait = `portrait.${ext}`; bio.portrait_bytes = buf.length; } catch (e) { bio.portrait_error = String(e).slice(0, 60); }
+        // download the ~800px THUMBNAIL (manageable size); keep the full-res original_url in bio.json
+        const src = bio.wikipedia.thumb_url || bio.wikipedia.image_url;
+        try { const ext = (src.split('?')[0].split('.').pop() || 'jpg').toLowerCase().slice(0, 4); const fr = await fetch(src, { headers: { 'User-Agent': 'SifterSearch-bio/1.0 (chadananda@gmail.com)' } }); const buf = Buffer.from(await fr.arrayBuffer()); writeFileSync(`${dir}/portrait.${ext}`, buf); bio.portrait = `portrait.${ext}`; bio.portrait_bytes = buf.length; bio.portrait_fullres = bio.wikipedia.image_url; } catch (e) { bio.portrait_error = String(e).slice(0, 60); }
       }
       writeFileSync(`${dir}/bio.json`, JSON.stringify(bio, null, 1));
     }
