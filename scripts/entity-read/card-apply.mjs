@@ -9,7 +9,7 @@ const { query, queryOne, queryAll } = await import('../../api/lib/db.js');
 const DRY = process.env.DRY === '1';
 const cards = JSON.parse(readFileSync('tmp/entity-research/seqread/research-cards.json', 'utf8')).filter(c => !c.error && c.card);
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’'`]/g, "'").toLowerCase().replace(/\s+/g, ' ').trim();
-const existing = await queryAll("SELECT id, canonical_name cn, aliases a FROM graph_entities WHERE entity_type='person'");
+const existing = await queryAll("SELECT ge.id, ge.canonical_name cn, er.aliases a FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE ge.entity_type='person'");
 const nameSet = new Set(); for (const e of existing) { nameSet.add(norm(e.cn)); try { for (const x of JSON.parse(e.a || '[]')) nameSet.add(norm(x)); } catch {} }
 
 let wrote = 0; const anchorVotes = new Map();   // norm(name) -> {name, rels:Set(relation), sources:Set, fromCards:[]}
