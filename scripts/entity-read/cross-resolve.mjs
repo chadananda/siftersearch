@@ -34,12 +34,13 @@ async function discover(e) {
   } catch { return []; }
 }
 
-const SYS = `You decide whether TWO entities from a Bábí/Bahá'í history are the SAME person or DISTINCT namesakes, using their DB context AND cross-corpus library evidence. Default DISTINCT; assert SAME only on positive evidence. RULES:
-- Shared given name is NORMAL and proves nothing. A COMMON name + ONE shared relation does NOT prove sameness (e.g. two different Sulaymán Kháns of Ádhirbáyján each had a military father named Yaḥyá Khán) — require pinning by EPISODE/DATE/place, not a single attribute.
+const SYS = `You decide whether TWO entities from a Bábí/Bahá'í history are the SAME person, DISTINCT namesakes, or UNCERTAIN, using their DB context AND cross-corpus library evidence. Default DISTINCT; assert SAME only on strong positive evidence; use UNCERTAIN whenever the call is genuinely close (it routes to a human). RULES:
+- Shared given name is NORMAL and proves nothing.
+- ONE shared RELATIONSHIP to a third person is NOT proof of sameness when names are common — e.g. there are TWO distinct Sulaymán Kháns of Ádhirbáyján, each with a military father named Yaḥyá Khán, so "father of Sulaymán Khán" is shared by two DIFFERENT Yaḥyá Kháns. HARD RULE: if the only evidence for SAME is a shared relation to a third party with a common name/title ("…Khán", a bare given name), and that third party is NOT uniquely pinned by a specific episode/date, you MUST answer "uncertain" (never "same").
 - HARD DISTINCT: enumeration markers ("(martyr of X)","second martyr of","idx N"), different stated kinship, different nisba/place, different fate/period of death, honorific CLASS change (Siyyid↔Mírzá↔Karbilá'í↔Mullá — an added Ḥájí/Áqá is NOT a class change).
-- SAME only when: an explicit linking clause ("better known as","surnamed","the same who"), OR identical confluence of nisba+role+kin+fate+period across BOTH the DB and corpus evidence.
-- Cite which corpus passage / which signal drove the call. If evidence is thin/conflicting, answer "distinct" with low confidence and note what to check.
-Return ONLY JSON: {"verdict":"same"|"distinct","confidence":0..1,"evidence":"...","keep":<id if same>}.`;
+- SAME requires EITHER an explicit linking clause ("better known as","surnamed","the same who","whose real name"), OR a confluence of ≥2 independent matching attributes (nisba AND role, or kin AND fate, etc.) consistent across BOTH DB and corpus — never a single attribute.
+- Cite which corpus passage / signal drove the call. Prefer "uncertain" over a shaky "same".
+Return ONLY JSON: {"verdict":"same"|"distinct"|"uncertain","confidence":0..1,"evidence":"...","keep":<id if same>}.`;
 
 const out = [];
 for (const [a, b] of pairs) {
