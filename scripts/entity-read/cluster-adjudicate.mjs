@@ -19,12 +19,18 @@ const ment = await graphQueryAll(`SELECT entity_id, content_id FROM entity_menti
 const snips = new Map();
 for (const m of ment) { const c = cidText.get(String(m.content_id)); if (!c) continue; if (!snips.has(m.entity_id)) snips.set(m.entity_id, []); const a = snips.get(m.entity_id); if (a.length < 3) a.push(c); }
 
-const SYS = `You clean up a Bábí/Bahá'í history entity list. You are given several entities that share a core given name. Decide which are the SAME PERSON wrongly split, and which are genuinely DISTINCT namesakes. DOCTRINE (follow exactly):
-- 19th-c. Persians had ~10 given names and NO surnames, so a shared given name is the NORMAL state — it is NOT evidence of sameness. Distinguish by the confluence of nisba (place), title, role, kinship, period, and fate.
-- BUT a BARE name (just the given name, no nisba/role) MERGES into a fuller-named member by default when the contexts are compatible (salience/recency coreference). A linking clause in a snippet — "better known as", "surnamed", "called", "the same who", "later named" — means MERGE.
-- SPLIT/keep-distinct is the default for members with DIFFERENT nisbas/roles/kin/fate. Only merge two FULLER-named members if the evidence positively shows one person (a name-change/abbreviation), and say why.
-- A martyr who fell in a dated event cannot be a same-named person active in a different place/decade — use fate/place to keep distinct.
-Return ONLY JSON: {"merges":[{"keep":<id of the best canonical, usually the fuller-named / higher-mention>,"absorb":[<id>,...],"evidence":"..."}],"distinct_note":"one line on the rest"}. Empty merges array if all are distinct.`;
+const SYS = `You clean up a Bábí/Bahá'í history entity list. You are given several entities that share a core given name. Your DEFAULT is that they are DISTINCT people — propose a MERGE only on POSITIVE evidence of sameness. DOCTRINE (follow exactly):
+- 19th-c. Persians had ~10 given names and NO surnames, so a shared given name is the NORMAL state and is NOT evidence of sameness.
+- HARD DISTINCTNESS SIGNALS — if ANY apply, the two are DIFFERENT people; NEVER merge them:
+  · ENUMERATION: both are separate entries in a martyr/roster list — markers like "(martyr of <place>)", "(second martyr of <place>)", an ordinal ("second", "third"), or a list number. A roster enumerates DISTINCT individuals; two same-name roster entries are TWO people.
+  · different stated KINSHIP ("son of A" vs "son of B"; "brother of X" vs "brother of Y").
+  · different nisba/place of origin, or different fate/place/period of death.
+- MERGE only when one of these POSITIVE conditions holds:
+  · a truly BARE name (just the given name, NO nisba/role/kin/enumeration marker) folds into exactly ONE fuller-named member whose context is compatible (salience/recency coreference); OR
+  · an explicit LINKING CLAUSE in a snippet — "better known as", "surnamed", "called", "the same who", "later named", "whose real name was"; OR
+  · IDENTICAL full attributes — same nisba AND role AND kin AND fate, with no enumeration marker separating them.
+- If two members MIGHT be one but the evidence is incomplete (no linking clause, attributes only partly overlap), do NOT merge — put them in "flags" for human review instead.
+Return ONLY JSON: {"merges":[{"keep":<id of the fuller-named/higher-mention>,"absorb":[<id>,...],"evidence":"which positive condition + quote the linking clause if any"}],"flags":[{"ids":[<id>,...],"why":"..."}],"distinct_note":"one line"}. Prefer flags over merges when unsure; empty arrays are fine.`;
 
 const out = []; const CONC = 4;
 for (let i = 0; i < work.length; i += CONC) {
@@ -34,7 +40,7 @@ for (let i = 0; i < work.length; i += CONC) {
     try {
       const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: prompt }], { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 700, responseFormat: { type: 'json_object' } });
       const mm = (res.content || '').match(/\{[\s\S]*\}/); const j = mm ? JSON.parse(mm[0]) : {};
-      return { core: c.core, n: c.members.length, merges: j.merges || [], note: j.distinct_note || '' };
+      return { core: c.core, n: c.members.length, merges: j.merges || [], flags: j.flags || [], note: j.distinct_note || '' };
     } catch (e) { return { core: c.core, error: String(e).slice(0, 80) }; }
   }));
   out.push(...batch); process.stderr.write(`  ${Math.min(i + CONC, work.length)}/${work.length}\n`);
@@ -42,7 +48,12 @@ for (let i = 0; i < work.length; i += CONC) {
 writeFileSync('tmp/entity-research/seqread/cluster-merge-proposals.json', JSON.stringify(out, null, 1));
 const withMerges = out.filter(o => o.merges && o.merges.length);
 const totalAbsorb = withMerges.reduce((n, o) => n + o.merges.reduce((k, m) => k + (m.absorb || []).length, 0), 0);
-console.log(`clusters adjudicated: ${out.length} | clusters with proposed merges: ${withMerges.length} | entities to absorb: ${totalAbsorb}\n`);
+const totalFlags = out.reduce((n, o) => n + (o.flags || []).length, 0);
+console.log(`clusters adjudicated: ${out.length} | with proposed merges: ${withMerges.length} | entities to absorb: ${totalAbsorb} | flagged for review: ${totalFlags}\n`);
 const nameById = new Map(work.flatMap(c => c.members).map(m => [m.id, m.cn]));
-for (const o of withMerges) for (const m of o.merges) console.log(`  [${o.core}] keep ${m.keep} "${nameById.get(m.keep) || '?'}" <= absorb ${(m.absorb || []).map(id => `${id} "${nameById.get(id) || '?'}"`).join(', ')}\n     ${(m.evidence || '').slice(0, 160)}`);
+const nm = id => nameById.get(id) || '?';
+console.log('=== MERGES (positive sameness evidence) ===');
+for (const o of withMerges) for (const m of o.merges) console.log(`  [${o.core}] keep ${m.keep} "${nm(m.keep)}" <= ${(m.absorb || []).map(id => `${id} "${nm(id)}"`).join(', ')}\n     ${(m.evidence || '').slice(0, 170)}`);
+console.log('\n=== FLAGS (review) ===');
+for (const o of out) for (const f of (o.flags || [])) console.log(`  [${o.core}] ${(f.ids || []).map(id => `${id} "${nm(id)}"`).join(' ~ ')}\n     ${(f.why || '').slice(0, 150)}`);
 process.exit(0);
