@@ -9,6 +9,7 @@
 
 import { queryAll, queryOne } from '../lib/db.js';
 import { graphQueryAll, graphQueryOne } from '../lib/db.js';
+import { chatCompletion } from '../lib/ai.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -28,14 +29,35 @@ export default async function graphRoutes(server) {
       ORDER BY (ge.importance IS NULL), ge.importance DESC, ge.canonical_name`);
     const persons = rows.map(r => {
       let aliases = [], kinship = []; try { aliases = JSON.parse(r.aliases || '[]'); } catch {} try { kinship = JSON.parse(r.kinship || '[]'); } catch {}
-      const m = man[r.id]; const hasPortrait = !!(m && m.status === 'image');
+      const m = man[r.id]; const hasPortrait = !!(m && m.cdn);   // m.cdn = "biography/<id>.<ext>" in R2/ImageKit
       return { id: r.id, name: r.name, importance: r.importance || 0, side: r.side || null,
         summary: r.summary || null, aliases, kinship, hasPortrait,
-        portrait: hasPortrait ? `/api/graph/bio/portrait/${r.id}` : null,
+        portrait: m?.cdn || null,
         wiki: m?.title ? `https://en.wikipedia.org/wiki/${encodeURIComponent(String(m.title).replace(/ /g, '_'))}` : null };
     });
     const sides = [...new Set(persons.map(p => p.side).filter(Boolean))].sort();
     return { count: persons.length, withPortraits: persons.filter(p => p.hasPortrait).length, sides, persons };
+  });
+
+  // GET /bio/search?q= — intelligent search (DeepSeek) over the meaningful cast, for descriptive / reasoning
+  // queries the token filter can't ("letters of the living who recognized Bahá'u'lláh", "seven martyrs of
+  // Ṭihrán", "martyred at Ṭabarsí"). Returns matching entity ids, most relevant first.
+  server.get('/bio/search', async (request) => {
+    const q = String(request.query?.q || '').trim().slice(0, 200);
+    if (!q) return { ids: [], q };
+    const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.summary
+      FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
+      WHERE ge.entity_type='person' AND ge.religion='' AND er.summary IS NOT NULL AND length(er.summary) > 20
+      ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 480`);
+    const catalog = rows.map(r => `${r.id}|${r.name}: ${String(r.summary).replace(/\s+/g, ' ').slice(0, 170)}`).join('\n');
+    const SYS = `You filter a biographical dictionary of early Bábí/Bahá'í history. Given a QUERY and a CATALOG (one person per line "id|name: summary"), return the ids whose record matches the query's MEANING — role, group (Letters of the Living, Seven Martyrs of Ṭihrán…), place, fate (martyred at Ṭabarsí…), period, or relationship/condition ("who recognized Bahá'u'lláh"). Judge from the summaries. Return ONLY JSON {"ids":[numbers]} — clear matches only, most relevant first.`;
+    try {
+      const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
+        { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 900, responseFormat: { type: 'json_object' } });
+      const m = (res.content || '').match(/\{[\s\S]*\}/);
+      const ids = m ? (JSON.parse(m[0]).ids || []).map(Number).filter(Boolean) : [];
+      return { ids, q };
+    } catch (e) { return { ids: [], q, error: String(e).slice(0, 80) }; }
   });
 
   // GET /bio/person/:id — full dossier for the detail drawer (DB record + gathered bio.json + cross-corpus reach)
@@ -48,11 +70,12 @@ export default async function graphRoutes(server) {
     const arr = s => { try { return JSON.parse(s || '[]'); } catch { return []; } };
     const obj = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
     let wiki = null, portrait = null, portraitFull = null, bahai = null;
+    portrait = readBioManifest()[id]?.cdn || null;   // "biography/<id>.<ext>" → ImageKit on the client
     try {
       const d = fs.readdirSync(BIO_ROOT).find(x => x.startsWith(id + '-'));
       if (d) { const bj = JSON.parse(fs.readFileSync(path.join(BIO_ROOT, d, 'bio.json'), 'utf8'));
         wiki = bj.wikipedia || null; bahai = bj.bahai_media || null;
-        if (bj.portrait) { portrait = `/api/graph/bio/portrait/${id}`; portraitFull = bj.portrait_fullres || bj.wikipedia?.image_url || bahai?.full || null; } }
+        portraitFull = bj.portrait_fullres || bj.wikipedia?.image_url || bahai?.full || null; }
     } catch { /* no bio.json */ }
     // cross-corpus reach: distinct books this person appears in
     let mentionCount = 0, books = [];
