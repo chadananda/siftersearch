@@ -35,7 +35,7 @@ async function discover(cn, aliases) {
   const rows = await queryAll(`SELECT id, doc_id, substr(replace(text,char(10),' '),1,300) t FROM content WHERE id IN (${ids.join(',')})`);
   return rows.map(r => `[${docTitle.get(r.doc_id) || r.doc_id}] ${r.t}`);
 }
-const SYS = `You build a DISAMBIGUATION PRIOR card for one Bábí/Bahá'í figure, to be used later when extracting OTHER books — so the facts must help bind/disambiguate, and must be TRUE of THIS person. You get the entity's known identity (canonical, side, DB mentions = the ground truth discriminators) and candidate passages from OTHER books. CONTAMINATION GUARD: attach a fact ONLY if the passage clearly concerns THIS person (matching nisba/place/kin/episode); if a passage is or might be a same-named different person, put it under "ambiguous" instead, with the discriminator that would settle it. Tag every fact's source (book) and basis (corpus-verified | sourced). Flag contradictions between sources under "contested". Return ONLY JSON:
+const SYS = `You build a DISAMBIGUATION PRIOR card for one Bábí/Bahá'í figure, to be used later when extracting OTHER books — so the facts must help bind/disambiguate, and must be TRUE of THIS person. You get the entity's known identity (canonical, side, DB mentions = the ground truth discriminators) and candidate passages from OTHER books. CONTAMINATION GUARD: attach a fact ONLY if the passage clearly concerns THIS person (matching nisba/place/kin/episode); if a passage is or might be a same-named different person, put it under "ambiguous" instead, with the discriminator that would settle it. TRANSLITERATION: some books (esp. Memorials of the Faithful, older works) use OLD/variant romanization — match names by consonant-skeleton and treat spelling variants as the SAME person; NEVER split on romanization alone; if a fact rests on a variant spelling, tag it and note the source's spelling. CONTESTED before convenient: if sources disagree on a kinship/identity (e.g. whose daughter/father), put it under "contested" with both versions — never assert one; note when a source's wording is about a RELATIVE (a "married to X" line may concern the mother, not the figure). Tag every fact's source (book) and basis (corpus-verified | sourced). Output STRICT minified JSON, escaping every interior quote. Return ONLY JSON:
 {"aliases":[name-forms seen],"kinship":[{"relation":"father|brother|son|uncle|wife|cousin|...","who":"name","source":"book"}],"relationships":[{"type":"teacher|student|companion|introduced-by|ally|opponent|met","who":"name","episode":"where/when","source":"book"}],"timeline":[{"when":"date/period","event":"...","source":"book"}],"places":["..."],"supplemental_facts":[{"fact":"...","source":"book","basis":"corpus-verified|sourced"}],"namesake_firewall":[{"not":"other same-named person","discriminator":"how to tell apart"}],"contested":[{"point":"...","versions":"source A says X; source B says Y"}],"ambiguous":[{"passage_gist":"...","why":"may be a different same-named person"}],"importance_suggest":N}`;
 
 const out = [];
@@ -44,11 +44,15 @@ for (const e of ents) {
   const dbm = (mById.get(e.id) || []).map(c => ctext.get(c)).filter(Boolean).sort((a, b) => a.doc_id - b.doc_id || a.pi - b.pi).map(r => `[¶${r.pi}] ${r.t}`).join('\n');
   const corpus = await discover(e.cn, aliases);
   const prompt = `ENTITY: "${e.cn}" (side ${e.side || '?'})\nKNOWN ALIASES: ${aliases.join(' | ')}\nDB GROUND TRUTH (The Dawn-Breakers):\n${dbm || '(none)'}\n\nCANDIDATE PASSAGES FROM OTHER BOOKS:\n${corpus.join('\n') || '(none)'}`;
-  try {
-    const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: prompt }], { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1100, responseFormat: { type: 'json_object' } });
-    const m = (res.content || '').match(/\{[\s\S]*\}/); const j = m ? JSON.parse(m[0]) : {};
-    out.push({ id: e.id, cn: e.cn, corpusN: corpus.length, card: j });
-  } catch (err) { out.push({ id: e.id, cn: e.cn, error: String(err).slice(0, 100) }); }
+  let j = null, lastErr = '';
+  for (let attempt = 0; attempt < 2 && !j; attempt++) {
+    try {
+      const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: prompt }], { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1100, responseFormat: { type: 'json_object' } });
+      const m = (res.content || '').match(/\{[\s\S]*\}/); j = JSON.parse(m ? m[0] : res.content);
+    } catch (err) { lastErr = String(err).slice(0, 100); }
+  }
+  if (j) out.push({ id: e.id, cn: e.cn, corpusN: corpus.length, card: j });
+  else out.push({ id: e.id, cn: e.cn, error: lastErr });
 }
 writeFileSync('tmp/entity-research/seqread/research-cards.json', JSON.stringify(out, null, 1));
 for (const o of out) {
