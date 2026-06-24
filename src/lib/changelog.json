@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-24T22:44:13.714Z",
+  "generated": "2026-06-24T23:45:53.515Z",
   "entries": [
+    {
+      "hash": "f39b3a41",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "R2 upload script (wrangler -> cdn-assets/siftersearch.com/biography)",
+      "scope": null
+    },
     {
       "hash": "53d1ccb9",
       "date": "2026-06-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Framing critique rule + catalog hyperlink prohibition",
       "scope": null
-    },
-    {
-      "hash": "ee308d04",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "CRAFTER zero-count inline fragment format + sample title handling",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "f39b3a41",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "R2 upload script (wrangler -> cdn-assets/siftersearch.com/biography)",
+        "scope": null
+      },
       {
         "hash": "53d1ccb9",
         "date": "2026-06-24",
@@ -7047,13 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Framing critique rule + catalog hyperlink prohibition",
-        "scope": null
-      },
-      {
-        "hash": "ee308d04",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "CRAFTER zero-count inline fragment format + sample title handling",
         "scope": null
       }
     ]

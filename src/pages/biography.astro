@@ -1,7 +1,20 @@
 ---
+// Prerendered (SSG) at build time: the cast data is baked in so the page paints instantly with static cards
+// + CSS animations; the search/filter island hydrates passively (client:idle). Rebuild to refresh the data.
+export const prerender = true;
+
 import Layout from '../layouts/Layout.astro';
 import NavBar from '../components/common/NavBar.svelte';
 import BiographyBrowser from '../components/BiographyBrowser.svelte';
+
+const API = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+let initialData = null;
+try {
+  const res = await fetch(`${API}/api/graph/bio/persons`);
+  if (res.ok) initialData = await res.json();
+} catch (e) {
+  // build-time fetch unavailable — the island will fetch client-side as a fallback
+}
 ---
 
 <Layout
@@ -9,5 +22,5 @@ import BiographyBrowser from '../components/BiographyBrowser.svelte';
   description="A searchable archive of the people of early Bábí and Bahá'í history — kings and martyrs, scholars and villagers — with portraits, relationships, and sources drawn from across the library."
 >
   <NavBar client:only="svelte" currentPage="biography" />
-  <BiographyBrowser client:only="svelte" />
+  <BiographyBrowser client:idle initialData={initialData} />
 </Layout>
