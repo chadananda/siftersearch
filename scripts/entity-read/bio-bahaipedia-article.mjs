@@ -35,15 +35,23 @@ for (let i = 0; i < people.length; i += CONC) {
       const hits = (s?.query?.search || []).filter((h) => !/\b(timeline|list of|martyrs of|disambiguation)\b/i.test(h.title));
       const title = hits.find((h) => new Set(toks(h.title)).size && [...want].some((t) => new Set(toks(h.title)).has(t)))?.title || hits[0]?.title;
       if (!title) return { id: p.id, cn: p.cn, status: 'no-article' };
-      const pr = await j(`${BP}?action=parse&format=json&page=${enc(title)}&prop=images`);
-      const imgs = (pr?.parse?.images || []).filter((f) => !NONPORTRAIT.test(f));
-      // prefer an image whose filename shares a name token (the portrait is usually named after the person)
-      const chosen = imgs.find((f) => { const ft = new Set(toks(f)); return [...want].some((t) => ft.has(t)); }) || null;
-      if (!chosen) return { id: p.id, cn: p.cn, status: 'no-match', title, imgs: imgs.slice(0, 4) };
+      // grab the first real infobox image from the rendered article HTML (that IS the portrait); skip icons
+      const pr = await j(`${BP}?action=parse&format=json&page=${enc(title)}&prop=text`);
+      const html = pr?.parse?.text?.['*'] || '';
+      let chosen = null, nameMatched = false;
+      for (const m of html.matchAll(/<img[^>]+>/g)) {
+        const tag = m[0]; const um = tag.match(/src="([^"]+)"/); if (!um) continue;
+        if (!/bahai\.media|\/upload\//i.test(um[1])) continue;
+        const w = (tag.match(/\bwidth="(\d+)"/) || [])[1]; if (w && +w < 70) continue;   // skip icons/sprites
+        const fname = decodeURIComponent((um[1].split('/').pop() || '').replace(/^\d+px-/, '')).replace(/_/g, ' ');
+        if (NONPORTRAIT.test(fname)) continue;
+        chosen = fname; nameMatched = [...want].some((t) => new Set(toks(fname)).has(t)); break;
+      }
+      if (!chosen) return { id: p.id, cn: p.cn, status: 'no-match', title };
       const fi = await j(`${MEDIA}?action=query&format=json&prop=imageinfo&iiprop=url&iiurlwidth=600&titles=File:${enc(chosen)}`);
       const ii = Object.values(fi?.query?.pages || {})[0]?.imageinfo?.[0];
       const url = ii?.thumburl || ii?.url;
-      const rec = { id: p.id, cn: p.cn, title, file: chosen, url, page: ii?.descriptionurl, status: url ? 'found' : 'no-url' };
+      const rec = { id: p.id, cn: p.cn, title, file: chosen, url, page: ii?.descriptionurl, nameMatched, status: url ? 'found' : 'no-url' };
       if (WRITE && url) {
         const dir = `${ROOT}/${p.id}-${slug(p.cn)}`; mkdirSync(dir, { recursive: true });
         const ext = (url.split('?')[0].split('.').pop() || 'jpg').toLowerCase().slice(0, 4);
@@ -63,5 +71,5 @@ for (let i = 0; i < people.length; i += CONC) {
 if (WRITE) writeFileSync(ROOT + '/manifest.json', JSON.stringify(manifest, null, 1));
 const f = out.filter((o) => o.status === 'found');
 console.log(`\nfound portraits: ${f.length} | downloaded: ${out.filter((o) => o.downloaded).length} | no-article: ${out.filter((o) => o.status === 'no-article').length} | no-match: ${out.filter((o) => o.status === 'no-match').length}\n`);
-for (const o of f) console.log(`  ${o.id} ${o.cn}  ←  ${o.file}${o.downloaded ? ' ✓' : ''}`);
+for (const o of f) console.log(`  ${o.id} ${o.cn}  ←  ${o.file}${o.nameMatched ? '' : '  ⚠unverified-name'}${o.downloaded ? ' ✓' : ''}`);
 process.exit(0);
