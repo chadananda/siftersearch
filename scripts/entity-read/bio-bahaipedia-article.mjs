@@ -35,19 +35,22 @@ for (let i = 0; i < people.length; i += CONC) {
       const hits = (s?.query?.search || []).filter((h) => !/\b(timeline|list of|martyrs of|disambiguation)\b/i.test(h.title));
       const title = hits.find((h) => new Set(toks(h.title)).size && [...want].some((t) => new Set(toks(h.title)).has(t)))?.title || hits[0]?.title;
       if (!title) return { id: p.id, cn: p.cn, status: 'no-article' };
-      // grab the first real infobox image from the rendered article HTML (that IS the portrait); skip icons
+      // take the first portrait-like image INSIDE the infobox (the subject's box); only trust it for download
+      // when the filename ALSO matches the subject's name (avoids leading relative images, e.g. Ásíyih→her son)
       const pr = await j(`${BP}?action=parse&format=json&page=${enc(title)}&prop=text`);
       const html = pr?.parse?.text?.['*'] || '';
+      const scope = (html.match(/<table[^>]*class="[^"]*infobox[^"]*"[\s\S]*?<\/table>/i) || [html.slice(0, 3500)])[0];
       let chosen = null, nameMatched = false;
-      for (const m of html.matchAll(/<img[^>]+>/g)) {
+      for (const m of scope.matchAll(/<img[^>]+>/g)) {
         const tag = m[0]; const um = tag.match(/src="([^"]+)"/); if (!um) continue;
         if (!/bahai\.media|\/upload\//i.test(um[1])) continue;
-        const w = (tag.match(/\bwidth="(\d+)"/) || [])[1]; if (w && +w < 70) continue;   // skip icons/sprites
+        const w = (tag.match(/\bwidth="(\d+)"/) || [])[1]; if (w && +w < 70) continue;
         const fname = decodeURIComponent((um[1].split('/').pop() || '').replace(/^\d+px-/, '')).replace(/_/g, ' ');
         if (NONPORTRAIT.test(fname)) continue;
         chosen = fname; nameMatched = [...want].some((t) => new Set(toks(fname)).has(t)); break;
       }
-      if (!chosen) return { id: p.id, cn: p.cn, status: 'no-match', title };
+      if (!chosen) return { id: p.id, cn: p.cn, status: 'no-image', title };
+      if (!nameMatched) return { id: p.id, cn: p.cn, title, file: chosen, status: 'candidate' };
       const fi = await j(`${MEDIA}?action=query&format=json&prop=imageinfo&iiprop=url&iiurlwidth=600&titles=File:${enc(chosen)}`);
       const ii = Object.values(fi?.query?.pages || {})[0]?.imageinfo?.[0];
       const url = ii?.thumburl || ii?.url;
