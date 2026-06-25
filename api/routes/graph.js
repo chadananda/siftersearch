@@ -59,14 +59,15 @@ export default async function graphRoutes(server) {
       const names = [g.name, ...(() => { try { return JSON.parse(g.aliases || '[]'); } catch { return []; } })()];
       for (const nm of names) {
         const gtok = norm(nm).split(/\s+/).filter(t => t.length > 2 && !STOP.has(t));
-        if (gtok.length && gtok.every(t => qtok.has(t)) && (!best || gtok.length > best.gtok)) best = { id: g.id, gtok: gtok.length };
+        const overlap = gtok.filter(t => qtok.has(t)).length;   // group-identifying tokens present in the query
+        if (overlap >= 2 && (!best || overlap > best.ov)) best = { id: g.id, ov: overlap };
       }
     }
     if (best) {
       const mem = await queryAll(`SELECT gr.source_entity_id AS id FROM graph_relations gr JOIN graph_entities ge ON ge.id = gr.source_entity_id
         WHERE gr.target_entity_id = ? AND ge.entity_type='person' ORDER BY (ge.importance IS NULL), ge.importance DESC`, [best.id]);
       memberIds = mem.map(r => r.id);
-      bareGroup = (qtok.size - best.gtok) <= 1;  // query ≈ just the group name (no extra condition words)
+      bareGroup = best.ov >= qtok.size;  // the query is made up entirely of group-identifying tokens (no extra condition)
     }
     // a bare group query is answered completely + deterministically from membership
     if (bareGroup && memberIds.length) return { ids: memberIds, q, group: best.id };
