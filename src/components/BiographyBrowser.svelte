@@ -47,14 +47,23 @@
   });
 
   // rotating decorative portrait band — a fresh random selection of portraits every few seconds, unrelated to search
-  function pickHero() {
+  function ensureHero() {
     const pool = persons.filter((p) => p.hasPortrait);
-    if (!pool.length) { heroSet = []; return; }
-    const n = Math.min(9, pool.length), idx = new Set();
-    while (idx.size < n) idx.add(Math.floor(Math.random() * pool.length));
-    heroSet = [...idx].map((i) => pool[i]);
+    const n = Math.min(9, pool.length); if (!pool.length || heroSet.length >= n) return;
+    const seen = new Set(heroSet.map((p) => p.id)); const out = [...heroSet];
+    while (out.length < n) { const p = pool[Math.floor(Math.random() * pool.length)]; if (!seen.has(p.id)) { seen.add(p.id); out.push(p); } }
+    heroSet = out;
   }
-  $effect(() => { if (!persons.length) return; pickHero(); const t = setInterval(pickHero, 5000); return () => clearInterval(t); });
+  function rotateOne() {        // swap a single slot for a fresh portrait — gentle, continuous, no reflow
+    const pool = persons.filter((p) => p.hasPortrait);
+    if (pool.length <= heroSet.length) return;
+    const shown = new Set(heroSet.map((p) => p.id));
+    const cand = pool.filter((p) => !shown.has(p.id)); if (!cand.length) return;
+    const copy = [...heroSet];
+    copy[Math.floor(Math.random() * copy.length)] = cand[Math.floor(Math.random() * cand.length)];
+    heroSet = copy;
+  }
+  $effect(() => { if (!persons.length) return; ensureHero(); const t = setInterval(rotateOne, 2600); return () => clearInterval(t); });
   $effect(() => { q; imagesOnly; page = 0; });
   const onType = () => { if (aiIds !== null) aiIds = null; };   // typing returns to instant token mode
 
@@ -108,9 +117,9 @@
   {:else}
     {#if heroSet.length}
       <div class="hero" aria-hidden="true">
-        {#each heroSet as p (p.id)}
-          <button class="orb" onclick={() => open(p)} title={p.name} transition:fade={{ duration: 700 }}>
-            <img src={heroImg(p.portrait)} alt={p.name} loading="lazy" />
+        {#each heroSet as p, idx (idx)}
+          <button class="orb" onclick={() => open(p)} title={p.name} aria-label={p.name}>
+            {#key p.id}<img src={heroImg(p.portrait)} alt={p.name} loading="lazy" transition:fade={{ duration: 600 }} />{/key}
           </button>
         {/each}
       </div>
@@ -234,7 +243,7 @@
   .orb:nth-child(even) { width: 5.25rem; height: 5.25rem; }
   .orb:nth-child(3n) { animation-duration: 7.4s; } .orb:nth-child(3n+1) { animation-duration: 5.3s; } .orb:nth-child(4n) { animation-delay: -2s; }
   .orb:hover { border-color: var(--accent); box-shadow: 0 10px 24px rgb(0 0 0 / .3); filter: brightness(1.06); animation-play-state: paused; z-index: 1; }
-  .orb img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s cubic-bezier(.2,.8,.2,1); }
+  .orb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .5s cubic-bezier(.2,.8,.2,1); }
   .orb:hover img { transform: scale(1.09); }
   @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
