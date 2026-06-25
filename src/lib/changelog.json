@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-25T05:18:16.091Z",
+  "generated": "2026-06-25T12:21:20.487Z",
   "entries": [
+    {
+      "hash": "7cfedceb",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Death line on cards + drawer (martyrs accented), sample-query buttons (teach the meaning-search)",
+      "scope": null
+    },
     {
       "hash": "be579bd2",
       "date": "2026-06-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Only inject governance quotes with citation URLs in compound catalog path",
       "scope": null
-    },
-    {
-      "hash": "a6a83a5a",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Filter deep research quotes by author in compound catalog queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "7cfedceb",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Death line on cards + drawer (martyrs accented), sample-query buttons (teach the meaning-search)",
+        "scope": null
+      },
       {
         "hash": "be579bd2",
         "date": "2026-06-24",
@@ -7047,13 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Only inject governance quotes with citation URLs in compound catalog path",
-        "scope": null
-      },
-      {
-        "hash": "a6a83a5a",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Filter deep research quotes by author in compound catalog queries",
         "scope": null
       }
     ]

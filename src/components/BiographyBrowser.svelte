@@ -43,6 +43,7 @@
   let aiIds = $state(null);     // null = token mode; array = AI meaning-search results (relevance order)
   let aiBusy = $state(false);
   let aiReasoning = $state(null);  // { summary, evidence: {id: why} } — the AI's answer + per-person evidence
+  let aiError = $state(null);      // surfaced when a meaning-search fetch fails (never silent)
   let selected = $state(null);
   // seeded deterministically for SSR (renders in static HTML); the client effect then rotates it randomly
   let heroSet = $state(peopleOf(initialData).filter((p) => p.hasPortrait).slice(0, 9));
@@ -76,8 +77,8 @@
   }
   $effect(() => { if (!persons.length) return; ensureHero(); const t = setInterval(rotateOne, 2600); return () => clearInterval(t); });
   $effect(() => { q; imagesOnly; bookFilter; page = 0; });
-  const onType = () => { if (aiIds !== null) { aiIds = null; aiReasoning = null; } };   // typing returns to instant token mode
-  const clearSearch = () => { q = ''; aiIds = null; aiReasoning = null; page = 0; };
+  const onType = () => { aiError = null; if (aiIds !== null) { aiIds = null; aiReasoning = null; } };   // typing returns to instant token mode
+  const clearSearch = () => { q = ''; aiIds = null; aiReasoning = null; aiError = null; page = 0; };
   // example queries that show off the meaning-search (each verified to return a strong, evidenced set)
   const SAMPLES = [
     'Letters of the Living who died at Shaykh Ṭabarsí',
@@ -87,7 +88,9 @@
     'officials who persecuted the Bábís',
     'Western believers who became Bahá’ís',
   ];
-  const runSample = (query) => { q = query; runAI(); };
+  // defer the search a tick so the click handler returns + Svelte settles before the async fetch (avoids any
+  // teardown race from the samples row hiding on the same click)
+  const runSample = (query) => { q = query; queueMicrotask(runAI); };
   const toggleBook = (k) => { bookFilter = bookFilter.includes(k) ? bookFilter.filter((x) => x !== k) : [...bookFilter, k]; };
   const inBooks = (p) => !bookFilter.length || bookFilter.some((k) => p.sources?.includes(k));
 
@@ -109,9 +112,15 @@
 
   async function runAI() {
     const query = q.trim(); if (!query) { aiIds = null; return; }
-    aiBusy = true;
-    try { const r = await fetch(`${API}/api/v1/people/search?q=${encodeURIComponent(query)}`); if (r.ok) { const d = await r.json(); aiIds = d.ids || []; aiReasoning = d.reasoning || null; } }
-    catch (_) { /* ignore */ } finally { aiBusy = false; page = 0; }
+    aiBusy = true; aiError = null;
+    try {
+      const r = await fetch(`${API}/api/v1/people/search?q=${encodeURIComponent(query)}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = await r.json();
+      aiIds = d.ids || []; aiReasoning = d.reasoning || null;
+      if (d.error) aiError = 'The archive is busy — try again in a moment.';
+    } catch (_) { aiError = 'Search is temporarily unavailable — please try again.'; aiIds = null; }
+    finally { aiBusy = false; page = 0; }
   }
   async function open(p) {
     selected = { ...p };
@@ -172,12 +181,11 @@
         <span class="resultline">{filtered.length.toLocaleString()} {filtered.length === 1 ? 'soul' : 'souls'}{#if q || imagesOnly || bookFilter.length || aiIds !== null}{` of ${persons.length.toLocaleString()}`}{/if}</span>
         {#if aiIds !== null}<button class="clearai" onclick={() => { aiIds = null; aiReasoning = null; }}>✦ meaning-search · show all</button>{/if}
       </div>
-      {#if !q.trim() && aiIds === null && !aiBusy}
-        <div class="samples">
-          <span class="samples-lead">✦ Ask the archive — try:</span>
-          {#each SAMPLES as s}<button class="sample" onclick={() => runSample(s)}>{s}</button>{/each}
-        </div>
-      {/if}
+      <div class="samples" class:hidden={!!q.trim() || aiIds !== null || aiBusy}>
+        <span class="samples-lead">✦ Ask the archive — try:</span>
+        {#each SAMPLES as s}<button class="sample" onclick={() => runSample(s)}>{s}</button>{/each}
+      </div>
+      {#if aiError}<p class="ai-error">{aiError}</p>{/if}
     </div>
 
     {#if aiIds !== null && aiReasoning?.summary}
@@ -362,6 +370,8 @@
   .sample { font-size: .8rem; color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface-1)); border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-subtle)); border-radius: 999px; padding: .42rem .85rem; cursor: pointer; transition: background .18s, border-color .18s, transform .1s; }
   .sample:hover { background: color-mix(in srgb, var(--accent) 16%, var(--surface-1)); border-color: var(--accent); }
   .sample:active { transform: scale(.97); }
+  .samples.hidden { display: none; }
+  .ai-error { margin: .75rem auto 0; max-width: 40rem; font-size: .85rem; color: var(--error); text-align: center; }
   /* death line — on cards and in the drawer (martyrs accented) */
   .death { font-size: .78rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: .15rem; }
   .death.martyr { color: var(--error); }
