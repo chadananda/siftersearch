@@ -57,7 +57,7 @@ async function one(p) {
   // Candidate set: GPB characterizations (authoritative, concise) + the actual DEATH-scene passage (strong death
   // words, and a death is usually LATE in the book → take the last matches), so fate is captured WITHOUT flooding
   // the set with Dawn-Breakers narrative. Then a few more Dawn-Breakers passages for deeds/relationships.
-  const DEATH = /\b(martyr|martyrdom|slain|slew|beheaded|strangled|put to death|fell a martyr|met his death|met her death|suffered martyrdom|was killed|were killed|executed|done to death)\b/i;
+  const DEATH = /\b(martyr|martyrdom|slain|slew|beheaded|strangled|put to death|met (his|her) death|suffered martyrdom|was killed|were killed|executed|done to death|breathed his last|breathed her last|yielded up (his|her)|laid down (his|her) life|shed (his|her) blood|gave (his|her) life|mortally|expired|\bwounded\b|fell (a martyr|beneath|in|at|fighting|defending|pierced|mortally)|wound which|fatal)\b/i;
   const death = all.filter((r) => DEATH.test(r.text)).slice(-3);
   const seenC = new Set(death.map((r) => r.id));
   const gpb = all.filter((r) => r.doc_id !== 21308 && !seenC.has(r.id)).slice(0, GMAX);
