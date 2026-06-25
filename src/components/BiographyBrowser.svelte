@@ -15,8 +15,10 @@
 
   // SSG: the page prerenders with initialData baked in (instant paint), then this island hydrates into search
   const { initialData = null } = $props();
-  const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ]/g, "'").toLowerCase();
-  const tokenize = (s) => fold(s).split(/[^a-z0-9']+/).filter((t) => t.length > 1);
+  // fold away diacritics AND apostrophes entirely so transliteration variants collapse to one skeleton:
+  // Ni'matu'lláh / Nimatu'lláh / Ni'matu'lláhi all → "nimatullah"(+i), then bidirectional prefix-match unifies them
+  const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ]/g, '').toLowerCase();
+  const tokenize = (s) => fold(s).split(/[^a-z0-9]+/).filter((t) => t.length > 1);
   const normalize = (list) => (list || []).map((p) => ({ ...p, _tok: [...new Set([
     ...tokenize(p.name), ...(p.aliases || []).flatMap(tokenize),
     ...(p.kinship || []).flatMap((k) => tokenize(k.who).concat(tokenize(k.relation))),

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-25T04:07:21.727Z",
+  "generated": "2026-06-25T04:09:34.035Z",
   "entries": [
+    {
+      "hash": "a10e29ee",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Bigger accent loupe, orbiting conic-halo AI-thinking animation, always-visible clear button, clearer Ask AI button (touch-friendly/responsive), extraction-approach docs link under methodology",
+      "scope": null
+    },
     {
       "hash": "d52ed3de",
       "date": "2026-06-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Catalog sample_documents include source_url for real hyperlinks",
       "scope": null
-    },
-    {
-      "hash": "b5d4bd66",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Catalog data payload — CATALOG-DATA label + CATALOG-COMPANION tag to prevent title/URL misattribution",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "a10e29ee",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Bigger accent loupe, orbiting conic-halo AI-thinking animation, always-visible clear button, clearer Ask AI button (touch-friendly/responsive), extraction-approach docs link under methodology",
+        "scope": null
+      },
       {
         "hash": "d52ed3de",
         "date": "2026-06-24",
@@ -7047,13 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Catalog sample_documents include source_url for real hyperlinks",
-        "scope": null
-      },
-      {
-        "hash": "b5d4bd66",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Catalog data payload — CATALOG-DATA label + CATALOG-COMPANION tag to prevent title/URL misattribution",
         "scope": null
       }
     ]
