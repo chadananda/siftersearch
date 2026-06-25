@@ -108,7 +108,7 @@
   {/if}
   <header class="header">
     <h1 class="title">The Cast of the Heroic Age</h1>
-    <p class="method"><b>Seed</b> God Passes By <i>→</i> <b>Foundation</b> The Dawn-Breakers <i>→</i> <b>Pillars</b> Balyuzi · Taherzadeh · Mázandarání · Momen · Saiedi <i>→</i> the wider histories</p>
+    <p class="method"><b>Seed</b> God Passes By <i>→</i> <b>Foundation</b> The Dawn-Breakers <i>→</i> <b>Pillars</b> Balyuzi · Taherzadeh · Mázandarání · Momen · Saiedi</p>
   </header>
 
   {#if loading}
@@ -117,12 +117,13 @@
     <p class="status error">The archive is unavailable ({error}).</p>
   {:else}
     <div class="searchwrap">
-      <div class="searchbar">
-        <span class="mag" aria-hidden="true">⌕</span>
+      <div class="searchbar" class:busy={aiBusy}>
+        <span class="mag" aria-hidden="true">{#if aiBusy}<span class="spin"></span>{:else}⌕{/if}</span>
         <input class="search" type="search" bind:value={q} oninput={onType}
           onkeydown={(e) => e.key === 'Enter' && runAI()}
           placeholder="Search a name — or ask “letters of the living”…" />
-        <button class="askbtn" onclick={runAI} disabled={aiBusy} title="Search by meaning (AI)">{aiBusy ? '·····' : '✦ Ask'}</button>
+        <button class="askbtn" onclick={runAI} disabled={aiBusy} title="Search by meaning (AI)">{#if aiBusy}<span class="dots"><i></i><i></i><i></i></span>{:else}✦ Ask{/if}</button>
+        {#if aiBusy}<span class="scan" aria-hidden="true"></span>{/if}
       </div>
       <div class="subrow">
         <label class="toggle"><input type="checkbox" bind:checked={imagesOnly} /> Portraits only</label>
@@ -238,12 +239,23 @@
 
   /* one large centred search; subrow holds toggle + count so the input never shifts on typing */
   .searchwrap { max-width: 40rem; margin: .25rem auto 1.5rem; }
-  .searchbar { display: flex; align-items: center; gap: .5rem; background: var(--surface-1); border: 1px solid var(--border); border-radius: 999px; padding: .35rem .35rem .35rem 1.1rem; box-shadow: 0 6px 20px rgb(0 0 0 / .08); transition: border-color .2s, box-shadow .2s; }
+  .searchbar { position: relative; overflow: hidden; display: flex; align-items: center; gap: .5rem; background: var(--surface-1); border: 1px solid var(--border); border-radius: 999px; padding: .35rem .35rem .35rem 1.1rem; box-shadow: 0 6px 20px rgb(0 0 0 / .08); transition: border-color .2s, box-shadow .2s; }
   .searchbar:focus-within { border-color: var(--accent); box-shadow: 0 8px 26px rgb(0 0 0 / .14); }
-  .mag { color: var(--text-muted); font-size: 1.25rem; }
+  .searchbar.busy { border-color: var(--accent); box-shadow: 0 8px 30px color-mix(in srgb, var(--accent) 28%, transparent); }
+  .mag { color: var(--text-muted); font-size: 1.25rem; display: inline-flex; width: 1.25rem; justify-content: center; }
   .search { flex: 1; border: none; background: none; color: var(--text-primary); font-size: 1.05rem; padding: .65rem .25rem; outline: none; }
-  .askbtn { flex: 0 0 auto; border: none; background: var(--accent); color: #fff; font-size: .85rem; font-weight: 600; padding: .6rem 1.1rem; border-radius: 999px; cursor: pointer; white-space: nowrap; }
-  .askbtn:disabled { opacity: .6; cursor: wait; }
+  .askbtn { flex: 0 0 auto; border: none; background: var(--accent); color: #fff; font-size: .85rem; font-weight: 600; padding: .6rem 1.1rem; border-radius: 999px; cursor: pointer; white-space: nowrap; min-width: 4.2rem; display: inline-flex; align-items: center; justify-content: center; }
+  .askbtn:disabled { opacity: 1; cursor: wait; }
+  /* AI-search activity: a spinner in the loupe, sweeping scan-line, pulsing dots on the button */
+  .spin { width: 1rem; height: 1rem; border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent); border-top-color: var(--accent); border-radius: 50%; animation: bio-spin .7s linear infinite; }
+  .scan { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 22%, transparent), transparent); width: 38%; animation: bio-scan 1.15s ease-in-out infinite; }
+  .dots { display: inline-flex; gap: .22rem; align-items: center; }
+  .dots i { width: .32rem; height: .32rem; border-radius: 50%; background: #fff; animation: bio-bounce 1s ease-in-out infinite; }
+  .dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes bio-spin { to { transform: rotate(360deg); } }
+  @keyframes bio-scan { 0% { transform: translateX(-110%); } 100% { transform: translateX(360%); } }
+  @keyframes bio-bounce { 0%, 80%, 100% { opacity: .35; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-.18rem); } }
+  @media (prefers-reduced-motion: reduce) { .spin, .scan, .dots i { animation: none; } }
   .subrow { display: flex; align-items: center; justify-content: center; gap: 1.25rem; margin-top: .85rem; flex-wrap: wrap; }
   .toggle { display: flex; gap: .4rem; align-items: center; font-size: .85rem; color: var(--text-secondary); cursor: pointer; }
   .resultline { font-size: .8rem; color: var(--text-muted); letter-spacing: .03em; }

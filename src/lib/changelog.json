@@ -1,6 +1,41 @@
 {
-  "generated": "2026-06-25T01:52:45.656Z",
+  "generated": "2026-06-25T02:32:20.240Z",
   "entries": [
+    {
+      "hash": "7c0faef4",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Wrangler-free R2 uploader via Cloudflare REST API",
+      "scope": null
+    },
+    {
+      "hash": "1412104f",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Bio-set-portrait helper (set one portrait from bahai.media file or local image)",
+      "scope": null
+    },
+    {
+      "hash": "dd4a01eb",
+      "date": "2026-06-24",
+      "type": "Fixed",
+      "description": "Drop invalid source_authority_tier from relation insert",
+      "scope": null
+    },
+    {
+      "hash": "5c6c3ed8",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Model 18 Letters of the Living (group relations + station floor) + group-membership search resolution",
+      "scope": null
+    },
+    {
+      "hash": "35b7ecd8",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Portraits-at-top hero, compact one-line methodology (drop eyebrow/lede), shorter search placeholder; +26 verified Bahaipedia portraits",
+      "scope": null
+    },
     {
       "hash": "7aa609fb",
       "date": "2026-06-24",
@@ -3465,45 +3500,45 @@
       "type": "Test",
       "description": "85% pass rate (93/110) — new high after deep research fixes",
       "scope": null
-    },
-    {
-      "hash": "3fa459c5",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Deep research quotes injected for comparative questions too",
-      "scope": null
-    },
-    {
-      "hash": "e84472b3",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Queue-research-topics script — remove non-existent updated_at column",
-      "scope": null
-    },
-    {
-      "hash": "4ac2b57c",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Deep_research_quotes gap — supplement from sections_json + persist going forward",
-      "scope": null
-    },
-    {
-      "hash": "b8c09d77",
-      "date": "2026-05-15",
-      "type": "Other",
-      "description": "CITE commitment device (caused regression 89→83)",
-      "scope": null
-    },
-    {
-      "hash": "ed2687a0",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "CITE commitment device + pure-count companion suppression",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "7c0faef4",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Wrangler-free R2 uploader via Cloudflare REST API",
+        "scope": null
+      },
+      {
+        "hash": "1412104f",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Bio-set-portrait helper (set one portrait from bahai.media file or local image)",
+        "scope": null
+      },
+      {
+        "hash": "dd4a01eb",
+        "date": "2026-06-24",
+        "type": "Fixed",
+        "description": "Drop invalid source_authority_tier from relation insert",
+        "scope": null
+      },
+      {
+        "hash": "5c6c3ed8",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Model 18 Letters of the Living (group relations + station floor) + group-membership search resolution",
+        "scope": null
+      },
+      {
+        "hash": "35b7ecd8",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Portraits-at-top hero, compact one-line methodology (drop eyebrow/lede), shorter search placeholder; +26 verified Bahaipedia portraits",
+        "scope": null
+      },
       {
         "hash": "7aa609fb",
         "date": "2026-06-24",
@@ -7019,41 +7054,6 @@
         "date": "2026-05-15",
         "type": "Test",
         "description": "85% pass rate (93/110) — new high after deep research fixes",
-        "scope": null
-      },
-      {
-        "hash": "3fa459c5",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Deep research quotes injected for comparative questions too",
-        "scope": null
-      },
-      {
-        "hash": "e84472b3",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Queue-research-topics script — remove non-existent updated_at column",
-        "scope": null
-      },
-      {
-        "hash": "4ac2b57c",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Deep_research_quotes gap — supplement from sections_json + persist going forward",
-        "scope": null
-      },
-      {
-        "hash": "b8c09d77",
-        "date": "2026-05-15",
-        "type": "Other",
-        "description": "CITE commitment device (caused regression 89→83)",
-        "scope": null
-      },
-      {
-        "hash": "ed2687a0",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "CITE commitment device + pure-count companion suppression",
         "scope": null
       }
     ]
