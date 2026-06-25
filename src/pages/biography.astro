@@ -7,13 +7,19 @@ import Layout from '../layouts/Layout.astro';
 import NavBar from '../components/common/NavBar.svelte';
 import BiographyBrowser from '../components/BiographyBrowser.svelte';
 
+// Prerender MUST bake the cast data so the static page paints full content (cards + hero) — the island then
+// hydrates interactivity onto that existing DOM. Never ship an empty shell that fills in client-side: retry,
+// and fail the build rather than deploy a page that reflows content in on load.
 const API = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 let initialData = null;
-try {
-  const res = await fetch(`${API}/api/graph/bio/persons`);
-  if (res.ok) initialData = await res.json();
-} catch (e) {
-  // build-time fetch unavailable — the island will fetch client-side as a fallback
+for (let attempt = 0; attempt < 4 && !initialData; attempt++) {
+  try {
+    const res = await fetch(`${API}/api/graph/bio/persons`, { signal: AbortSignal.timeout(20000) });
+    if (res.ok) initialData = await res.json();
+  } catch (e) { /* transient — retry */ }
+}
+if (!initialData?.persons?.length) {
+  throw new Error('biography prerender: /api/graph/bio/persons returned no data — refusing to ship an empty page (is tower-nas up?)');
 }
 ---
 

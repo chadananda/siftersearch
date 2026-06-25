@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-25T02:32:20.240Z",
+  "generated": "2026-06-25T02:40:38.708Z",
   "entries": [
+    {
+      "hash": "cc4bd048",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "AI-search activity animation (spinner + scan-line + dots), drop \"wider histories\" from methodology; bake corrected portraits + Letters-of-the-Living importances",
+      "scope": null
+    },
     {
       "hash": "7c0faef4",
       "date": "2026-06-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Catalog listing queries — suppress companion + compound topic extraction",
       "scope": null
-    },
-    {
-      "hash": "2fb64e57",
-      "date": "2026-05-15",
-      "type": "Test",
-      "description": "85% pass rate (93/110) — new high after deep research fixes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "cc4bd048",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "AI-search activity animation (spinner + scan-line + dots), drop \"wider histories\" from methodology; bake corrected portraits + Letters-of-the-Living importances",
+        "scope": null
+      },
       {
         "hash": "7c0faef4",
         "date": "2026-06-24",
@@ -7047,13 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Catalog listing queries — suppress companion + compound topic extraction",
-        "scope": null
-      },
-      {
-        "hash": "2fb64e57",
-        "date": "2026-05-15",
-        "type": "Test",
-        "description": "85% pass rate (93/110) — new high after deep research fixes",
         "scope": null
       }
     ]
