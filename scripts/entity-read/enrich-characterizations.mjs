@@ -16,7 +16,8 @@ const WRITE = process.env.WRITE === '1';
 const MIN = Number(process.env.MIN || 0);
 const LIMIT = Number(process.env.LIMIT || 0);
 const CONC = Number(process.env.CONC || 5);
-const MAXC = Number(process.env.MAXC || 16);     // max candidate passages per person
+const GMAX = Number(process.env.GMAX || 14);     // max GPB candidate passages per person
+const DMAX = Number(process.env.DMAX || 14);     // max Dawn-Breakers candidate passages per person
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',').map(Number)) : null;
 const CORE = '21310,57347,21308';
 const bookOf = (id) => (id === 21308 ? 'The Dawn-Breakers' : 'God Passes By');
@@ -38,6 +39,7 @@ const SYS = `You pull the USEFUL REFERENCES to ONE person from authoritative Bá
 DO extract (shortest exact verbatim span that carries the information): characterizations ("the iron-hearted Amír-Niẓám"), facts/fate ("martyred at fort of Shaykh Ṭabarsí"), relationships ("the mother of the Most Great Branch", "father of Badí‘"), connections ("directed by the Báb to Ṭihrán", "one of the first Western pilgrims to reach ‘Akká", "won to the Cause through Ṭáhirih").
 DO NOT extract: a bare name in a list or pure co-occurrence with NO information ("accompanied by Quddús", "Dr. and Mrs. Getsinger"), or trivial movement of no significance. If a passage only names the person without conveying any fact, relationship, connection, or characterization, SKIP it.
 CRUCIAL: the extracted span must be ABOUT this person — they must be its subject or the one it describes — NEVER a clause about a different individual who merely appears in the same passage. Quote EXACTLY from the passage.
+BE REASONABLY COMPREHENSIVE: besides epithets, make sure to capture the person's FATE (how/where they died or were martyred), their major DEEDS, and key RELATIONSHIPS when the passages state them — these matter as much as descriptions.
 Return ONLY JSON: {"items":[{"n":<passage number>,"quote":"<exact verbatim span>"}]}.`;
 
 let done = 0, withChars = 0, totalQuotes = 0;
@@ -50,9 +52,11 @@ async function one(p) {
   let cids = [];
   try { cids = [...new Set((await graphQueryAll('SELECT content_id FROM entity_mentions WHERE entity_id = ?', [p.id])).map((m) => String(m.content_id)))]; } catch {}
   if (!cids.length) return null;
-  const rows = (await queryAll(`SELECT c.id, c.external_para_id pid, c.text, c.doc_id, d.source_url url
-    FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id IN (${cids.slice(0, 400).map(() => '?').join(',')}) AND c.doc_id IN (${CORE})
-    ORDER BY (c.doc_id = 21308), c.id`, cids.slice(0, 400))).slice(0, MAXC);   // GPB first (characterization authority), then Dawn-Breakers
+  const all = await queryAll(`SELECT c.id, c.external_para_id pid, c.text, c.doc_id, d.source_url url
+    FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id IN (${cids.slice(0, 600).map(() => '?').join(',')}) AND c.doc_id IN (${CORE})
+    ORDER BY c.id`, cids.slice(0, 600));
+  // balance the candidate set across BOTH books so GPB characterizations AND Dawn-Breakers fate/deeds are seen
+  const rows = [...all.filter((r) => r.doc_id !== 21308).slice(0, GMAX), ...all.filter((r) => r.doc_id === 21308).slice(0, DMAX)];
   if (!rows.length) return null;
   const passages = rows.map((r, i) => ({ ...r, ct: clean(r.text), n: i + 1 }));
   const idLine = `PERSON: ${p.cn}${aliases.length ? ' (also: ' + aliases.slice(0, 6).join(', ') + ')' : ''}. ${clean(p.summary).slice(0, 320)}` +
@@ -60,7 +64,7 @@ async function one(p) {
   const body = passages.map((x) => `[${x.n}] ${x.ct.slice(0, 800)}`).join('\n\n');
   try {
     const res = await ai.chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `${idLine}\n\nPASSAGES:\n${body}` }],
-      { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1300, responseFormat: { type: 'json_object' } });
+      { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 2000, responseFormat: { type: 'json_object' } });
     let items = [];
     try { const m = (res.content || '').match(/\{[\s\S]*\}/); items = m ? (JSON.parse(m[0]).items || []) : []; }
     catch { for (const mm of (res.content || '').matchAll(/"n"\s*:\s*(\d+)\s*,\s*"quote"\s*:\s*"((?:[^"\\]|\\.)*)"/g)) items.push({ n: +mm[1], quote: mm[2].replace(/\\"/g, '"') }); }
