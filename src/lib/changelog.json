@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-25T02:40:38.708Z",
+  "generated": "2026-06-25T03:54:08.505Z",
   "entries": [
+    {
+      "hash": "ee058393",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "SSR-bake cast content at build (cards+hero in static HTML, instant paint, no client content-fill); fail build if API unreachable rather than ship empty shell",
+      "scope": null
+    },
     {
       "hash": "cc4bd048",
       "date": "2026-06-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Catalog companion — compound topic uses full query; revert listing suppression; fix misattribution instruction",
       "scope": null
-    },
-    {
-      "hash": "675d2d3d",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Catalog listing queries — suppress companion + compound topic extraction",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "ee058393",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "SSR-bake cast content at build (cards+hero in static HTML, instant paint, no client content-fill); fail build if API unreachable rather than ship empty shell",
+        "scope": null
+      },
       {
         "hash": "cc4bd048",
         "date": "2026-06-24",
@@ -7047,13 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Catalog companion — compound topic uses full query; revert listing suppression; fix misattribution instruction",
-        "scope": null
-      },
-      {
-        "hash": "675d2d3d",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Catalog listing queries — suppress companion + compound topic extraction",
         "scope": null
       }
     ]

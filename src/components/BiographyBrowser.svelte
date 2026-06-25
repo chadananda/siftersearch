@@ -239,8 +239,9 @@
 
   /* one large centred search; subrow holds toggle + count so the input never shifts on typing */
   .searchwrap { max-width: 40rem; margin: .25rem auto 1.5rem; }
-  .searchbar { position: relative; overflow: hidden; display: flex; align-items: center; gap: .5rem; background: var(--surface-1); border: 1px solid var(--border); border-radius: 999px; padding: .35rem .35rem .35rem 1.1rem; box-shadow: 0 6px 20px rgb(0 0 0 / .08); transition: border-color .2s, box-shadow .2s; }
-  .searchbar:focus-within { border-color: var(--accent); box-shadow: 0 8px 26px rgb(0 0 0 / .14); }
+  .searchbar { position: relative; overflow: hidden; display: flex; align-items: center; gap: .5rem; background: linear-gradient(var(--surface-1), color-mix(in srgb, var(--surface-1) 88%, var(--surface-2))); border: 1.5px solid color-mix(in srgb, var(--accent) 38%, var(--border)); border-radius: 999px; padding: .4rem .4rem .4rem 1.15rem; box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent), 0 1px 2px rgb(0 0 0 / .12), 0 12px 30px -10px color-mix(in srgb, var(--accent) 30%, transparent); transition: border-color .25s, box-shadow .25s, transform .25s; }
+  .searchbar:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+  .searchbar:focus-within { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent), 0 16px 38px -10px color-mix(in srgb, var(--accent) 45%, transparent), 0 2px 6px rgb(0 0 0 / .14); }
   .searchbar.busy { border-color: var(--accent); box-shadow: 0 8px 30px color-mix(in srgb, var(--accent) 28%, transparent); }
   .mag { color: var(--text-muted); font-size: 1.25rem; display: inline-flex; width: 1.25rem; justify-content: center; }
   .search { flex: 1; border: none; background: none; color: var(--text-primary); font-size: 1.05rem; padding: .65rem .25rem; outline: none; }
