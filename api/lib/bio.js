@@ -53,9 +53,13 @@ export async function listBioPersons() {
       portrait: m?.cdn || null,
       wiki: m?.title ? `https://en.wikipedia.org/wiki/${encodeURIComponent(String(m.title).replace(/ /g, '_'))}` : null };
   });
-  const sides = [...new Set(persons.map(p => p.side).filter(Boolean))].sort();
-  const books = SOURCE_BOOKS.map(b => ({ key: b.key, label: b.label, count: persons.filter(p => p.sources.includes(b.key)).length }));
-  _listCache = { count: persons.length, withPortraits: persons.filter(p => p.hasPortrait).length, sides, books, persons };
+  // QA scope: the browser shows the genuine cast of the core books — only persons grounded by a GPB/Dawn-Breakers
+  // mention. This excludes ungrounded artifacts (duplicate "Bahá'u'lláh", generic "Bahá'í pilgrim", out-of-corpus
+  // names) without deleting them. As the Pillars books are ingested, their mentions will admit more of the cast.
+  const grounded = persons.filter(p => p.sources.length);
+  const sides = [...new Set(grounded.map(p => p.side).filter(Boolean))].sort();
+  const books = SOURCE_BOOKS.map(b => ({ key: b.key, label: b.label, count: grounded.filter(p => p.sources.includes(b.key)).length }));
+  _listCache = { count: grounded.length, withPortraits: grounded.filter(p => p.hasPortrait).length, sides, books, persons: grounded };
   _listAt = Date.now();
   return _listCache;
 }
