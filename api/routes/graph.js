@@ -66,7 +66,7 @@ export default async function graphRoutes(server) {
     if (best) {
       const mem = await queryAll(`SELECT gr.source_entity_id AS id FROM graph_relations gr JOIN graph_entities ge ON ge.id = gr.source_entity_id
         WHERE gr.target_entity_id = ? AND ge.entity_type='person' ORDER BY (ge.importance IS NULL), ge.importance DESC`, [best.id]);
-      memberIds = mem.map(r => r.id);
+      memberIds = [...new Set(mem.map(r => r.id))];   // dedupe (a person may link to the group by >1 relation type)
       bareGroup = best.ov >= qtok.size;  // the query is made up entirely of group-identifying tokens (no extra condition)
     }
     // a bare group query is answered completely + deterministically from membership
