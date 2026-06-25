@@ -1,6 +1,20 @@
 {
-  "generated": "2026-06-25T12:21:20.487Z",
+  "generated": "2026-06-25T12:46:05.181Z",
   "entries": [
+    {
+      "hash": "72465833",
+      "date": "2026-06-25",
+      "type": "Test",
+      "description": "Standing search-quality battery (student-voice questions → coverage map)",
+      "scope": null
+    },
+    {
+      "hash": "eac4a924",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Sample buttons immune to teardown race (CSS-hide + microtask defer); surface AI-search errors instead of silent failure",
+      "scope": null
+    },
     {
       "hash": "7cfedceb",
       "date": "2026-06-24",
@@ -3486,23 +3500,25 @@
       "type": "Fixed",
       "description": "Increase companion search limit to 6 for compound catalog topic queries",
       "scope": null
-    },
-    {
-      "hash": "ef433cf2",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Emit debug_research_call event for companion search in catalog path",
-      "scope": null
-    },
-    {
-      "hash": "c30b9fa7",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Only inject governance quotes with citation URLs in compound catalog path",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-06-25": [
+      {
+        "hash": "72465833",
+        "date": "2026-06-25",
+        "type": "Test",
+        "description": "Standing search-quality battery (student-voice questions → coverage map)",
+        "scope": null
+      },
+      {
+        "hash": "eac4a924",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Sample buttons immune to teardown race (CSS-hide + microtask defer); surface AI-search errors instead of silent failure",
+        "scope": null
+      }
+    ],
     "2026-06-24": [
       {
         "hash": "7cfedceb",
@@ -7040,20 +7056,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Increase companion search limit to 6 for compound catalog topic queries",
-        "scope": null
-      },
-      {
-        "hash": "ef433cf2",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Emit debug_research_call event for companion search in catalog path",
-        "scope": null
-      },
-      {
-        "hash": "c30b9fa7",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Only inject governance quotes with citation URLs in compound catalog path",
         "scope": null
       }
     ]

@@ -209,7 +209,6 @@
               <span class="name">{p.name}</span>
               {#if p.side}<span class="side">{p.side}</span>{/if}
               {#if aiReasoning?.evidence?.[p.id]}<span class="evidence">✦ {aiReasoning.evidence[p.id]}</span>{/if}
-              {#if p.death?.cause}<span class="death" class:martyr={p.death.martyr}>{p.death.martyr ? '☠' : '†'} {p.death.cause}{#if p.death.place} · {p.death.place}{/if}{#if p.death.year} · {p.death.year}{/if}</span>{/if}
               {#if p.summary}<span class="bio">{p.summary}</span>{/if}
               {#if p.kinship?.length}<span class="rel">{p.kinship.slice(0, 2).map((k) => `${k.relation}: ${k.who}`).join('  ·  ')}</span>{/if}
             </span>
@@ -239,9 +238,6 @@
         {#if selected.side}<span class="side">{selected.side}</span>{/if}
         {#if selected.aliases?.length}<p class="d-aliases">{selected.aliases.filter((a) => a !== selected.name).slice(0, 8).join(' · ')}</p>{/if}
       </div>
-      {#if selected.death?.cause}
-        <p class="d-death" class:martyr={selected.death.martyr}>{selected.death.martyr ? '☠ Martyred' : '† Died'} — {selected.death.cause}{#if selected.death.place} at {selected.death.place}{/if}{#if selected.death.year}, {selected.death.year}{/if}{#if selected.death.source}<span class="src"> · {selected.death.source}</span>{/if}</p>
-      {/if}
       {#if selected.summary}<p class="d-summary">{selected.summary}</p>{/if}
       {#if selected.kinship?.length || selected.relations?.length}
         <section class="d-sec"><h3>Relationships</h3>
@@ -288,6 +284,11 @@
           {#if selected.wiki.extract}<p class="d-summary faint">{selected.wiki.extract}</p>{/if}
           <p><a href={selected.wiki.url} target="_blank" rel="noopener" class="link">Wikipedia →</a>
           {#if selected.wiki.license}<span class="cred">portrait: {selected.wiki.license}{#if selected.wiki.credit} · {selected.wiki.credit}{/if}</span>{/if}</p>
+        </section>
+      {/if}
+      {#if selected.death?.cause}
+        <section class="d-sec"><h3>Passing</h3>
+          <p class="d-death" class:martyr={selected.death.martyr}>{selected.death.martyr ? '☠ Martyred' : '†'} {selected.death.cause}{#if selected.death.place} at {selected.death.place}{/if}{#if selected.death.year}, {selected.death.year}{/if}{#if selected.death.source}<span class="src"> · {selected.death.source}</span>{/if}</p>
         </section>
       {/if}
     </aside>
