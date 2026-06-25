@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-25T04:09:34.035Z",
+  "generated": "2026-06-25T04:13:58.893Z",
   "entries": [
+    {
+      "hash": "1333dea7",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Transliteration-tolerant token filter (strip apostrophes → Ni'matu'lláh/Nimatu'lláh/Ni'matu'lláhi all match)",
+      "scope": null
+    },
     {
       "hash": "a10e29ee",
       "date": "2026-06-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Library_overview now includes dominant religion per collection",
       "scope": null
-    },
-    {
-      "hash": "b04d5032",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Catalog sample_documents include source_url for real hyperlinks",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "1333dea7",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Transliteration-tolerant token filter (strip apostrophes → Ni'matu'lláh/Nimatu'lláh/Ni'matu'lláhi all match)",
+        "scope": null
+      },
       {
         "hash": "a10e29ee",
         "date": "2026-06-24",
@@ -7047,13 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Library_overview now includes dominant religion per collection",
-        "scope": null
-      },
-      {
-        "hash": "b04d5032",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Catalog sample_documents include source_url for real hyperlinks",
         "scope": null
       }
     ]

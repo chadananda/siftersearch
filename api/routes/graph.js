@@ -52,7 +52,7 @@ export default async function graphRoutes(server) {
     // DETERMINISTIC GROUP RESOLUTION: if the query names a modeled group (e.g. "letters of the living"),
     // return its members from graph_relations — complete + ordered by significance, no LLM recall gaps.
     let memberIds = [], bareGroup = false;
-    const groups = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.aliases FROM graph_entities ge
+    const groups = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.aliases, er.summary FROM graph_entities ge
       LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.entity_type='group'`);
     let best = null;
     for (const g of groups) {
@@ -60,7 +60,7 @@ export default async function graphRoutes(server) {
       for (const nm of names) {
         const gtok = norm(nm).split(/\s+/).filter(t => t.length > 2 && !STOP.has(t));
         const overlap = gtok.filter(t => qtok.has(t)).length;   // group-identifying tokens present in the query
-        if (overlap >= 2 && (!best || overlap > best.ov)) best = { id: g.id, ov: overlap };
+        if (overlap >= 2 && (!best || overlap > best.ov)) best = { id: g.id, ov: overlap, name: g.name, summary: g.summary };
       }
     }
     if (best) {
@@ -70,19 +70,25 @@ export default async function graphRoutes(server) {
       bareGroup = best.ov >= qtok.size;  // the query is made up entirely of group-identifying tokens (no extra condition)
     }
     // a bare group query is answered completely + deterministically from membership
-    if (bareGroup && memberIds.length) return { ids: memberIds, q, group: best.id };
+    if (bareGroup && memberIds.length) return { ids: memberIds, q, group: best.id,
+      reasoning: { summary: best.summary || `${best.name} — ${memberIds.length} members.`, evidence: {} } };
 
     const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.summary
       FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
       WHERE ge.entity_type='person' AND ge.religion='' AND er.summary IS NOT NULL AND length(er.summary) > 20
       ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 480`);
     const catalog = rows.map(r => `${r.id}|${r.name}: ${String(r.summary).replace(/\s+/g, ' ').slice(0, 300)}`).join('\n');
-    const SYS = `You filter a biographical dictionary of early Bábí/Bahá'í history. Given a QUERY and a CATALOG (one person per line "id|name: summary"), return the ids whose record matches the query's MEANING — role, group (Letters of the Living, Seven Martyrs of Ṭihrán…), place, fate (martyred at Ṭabarsí…), period, or relationship/condition ("who recognized Bahá'u'lláh"). Judge from the summaries. Return ONLY JSON {"ids":[numbers]} — clear matches only, most relevant first.`;
+    const SYS = `You answer questions over a biographical dictionary of early Bábí/Bahá'í history. Given a QUERY and a CATALOG (one person per line "id|name: summary"), find the people whose record matches the query's MEANING — role, group, place, fate (martyred at Ṭabarsí…), period, or relationship/condition ("who recognized Bahá'u'lláh"). Judge ONLY from the summaries. Return ONLY JSON: {"summary":"one sentence directly answering the query","matches":[{"id":<number>,"why":"<=15-word evidence drawn from that person's summary>"}]} — clear matches only, most relevant first.`;
     try {
       const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
-        { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 900, responseFormat: { type: 'json_object' } });
+        { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1700, responseFormat: { type: 'json_object' } });
       const m = (res.content || '').match(/\{[\s\S]*\}/);
-      const aiIds = m ? (JSON.parse(m[0]).ids || []).map(Number).filter(Boolean) : [];
+      const parsed = m ? JSON.parse(m[0]) : {};
+      const evidence = {}; const aiIds = [];
+      for (const mm of (Array.isArray(parsed.matches) ? parsed.matches : [])) {
+        const id = Number(mm.id); if (!id || aiIds.includes(id)) continue;
+        aiIds.push(id); if (mm.why) evidence[id] = String(mm.why).slice(0, 160);
+      }
       // conditional group query ("letters of the living who recognized Bahá'u'lláh"): intersect the modeled
       // membership with the LLM's condition match when both exist; otherwise prefer whichever has results.
       let ids = aiIds;
@@ -90,7 +96,8 @@ export default async function graphRoutes(server) {
         const inter = aiIds.filter(id => memberIds.includes(id));
         ids = inter.length ? inter : (aiIds.length ? aiIds : memberIds);
       }
-      return { ids, q, ...(best ? { group: best.id } : {}) };
+      const ev = {}; for (const id of ids) if (evidence[id]) ev[id] = evidence[id];
+      return { ids, q, ...(best ? { group: best.id } : {}), reasoning: { summary: parsed.summary || '', evidence: ev } };
     } catch (e) { return { ids: memberIds, q, error: String(e).slice(0, 80) }; }
   });
 

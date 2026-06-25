@@ -34,6 +34,7 @@
   let page = $state(0);
   let aiIds = $state(null);     // null = token mode; array = AI meaning-search results (relevance order)
   let aiBusy = $state(false);
+  let aiReasoning = $state(null);  // { summary, evidence: {id: why} } — the AI's answer + per-person evidence
   let selected = $state(null);
   // seeded deterministically for SSR (renders in static HTML); the client effect then rotates it randomly
   let heroSet = $state((initialData?.persons || []).filter((p) => p.hasPortrait).slice(0, 9));
@@ -67,8 +68,8 @@
   }
   $effect(() => { if (!persons.length) return; ensureHero(); const t = setInterval(rotateOne, 2600); return () => clearInterval(t); });
   $effect(() => { q; imagesOnly; page = 0; });
-  const onType = () => { if (aiIds !== null) aiIds = null; };   // typing returns to instant token mode
-  const clearSearch = () => { q = ''; aiIds = null; page = 0; };
+  const onType = () => { if (aiIds !== null) { aiIds = null; aiReasoning = null; } };   // typing returns to instant token mode
+  const clearSearch = () => { q = ''; aiIds = null; aiReasoning = null; page = 0; };
 
   const matches = (p, qts) => qts.every((qt) => p._tok.some((ft) => ft.startsWith(qt) || qt.startsWith(ft)));
   const filtered = $derived.by(() => {
@@ -83,7 +84,7 @@
   async function runAI() {
     const query = q.trim(); if (!query) { aiIds = null; return; }
     aiBusy = true;
-    try { const r = await fetch(`${API}/api/graph/bio/search?q=${encodeURIComponent(query)}`); if (r.ok) { aiIds = (await r.json()).ids || []; } }
+    try { const r = await fetch(`${API}/api/graph/bio/search?q=${encodeURIComponent(query)}`); if (r.ok) { const d = await r.json(); aiIds = d.ids || []; aiReasoning = d.reasoning || null; } }
     catch (_) { /* ignore */ } finally { aiBusy = false; page = 0; }
   }
   async function open(p) {
@@ -139,6 +140,13 @@
       </div>
     </div>
 
+    {#if aiIds !== null && aiReasoning?.summary}
+      <div class="ai-answer" transition:fade={{ duration: 250 }}>
+        <span class="ai-spark" aria-hidden="true">✦</span>
+        <p>{aiReasoning.summary}</p>
+      </div>
+    {/if}
+
     {#if filtered.length === 0}
       <p class="status">{aiBusy ? 'Consulting the archive…' : 'No one in the archive matches that search.'}</p>
     {:else}
@@ -152,6 +160,7 @@
             <span class="card-body">
               <span class="name">{p.name}</span>
               {#if p.side}<span class="side">{p.side}</span>{/if}
+              {#if aiReasoning?.evidence?.[p.id]}<span class="evidence">✦ {aiReasoning.evidence[p.id]}</span>{/if}
               {#if p.summary}<span class="bio">{p.summary}</span>{/if}
               {#if p.kinship?.length}<span class="rel">{p.kinship.slice(0, 2).map((k) => `${k.relation}: ${k.who}`).join('  ·  ')}</span>{/if}
             </span>
@@ -282,6 +291,11 @@
   .toggle { display: flex; gap: .4rem; align-items: center; font-size: .85rem; color: var(--text-secondary); cursor: pointer; }
   .resultline { font-size: .8rem; color: var(--text-muted); letter-spacing: .03em; }
   .clearai { border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); background: none; color: var(--accent); font-size: .78rem; padding: .25rem .7rem; border-radius: 999px; cursor: pointer; }
+  /* AI answer banner (the reasoning) + per-card evidence chips */
+  .ai-answer { display: flex; gap: .7rem; align-items: flex-start; max-width: 52rem; margin: 0 auto 1.25rem; padding: .85rem 1.15rem; border-radius: .85rem; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 13%, var(--surface-1)), var(--surface-1)); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-subtle)); box-shadow: 0 8px 24px -12px color-mix(in srgb, var(--accent) 55%, transparent); }
+  .ai-answer .ai-spark { color: var(--accent); font-size: 1.2rem; line-height: 1.45; flex: 0 0 auto; }
+  .ai-answer p { margin: 0; font-size: .96rem; line-height: 1.5; color: var(--text-primary); }
+  .evidence { font-size: .8rem; line-height: 1.35; color: var(--accent); background: color-mix(in srgb, var(--accent) 11%, transparent); border-radius: .4rem; padding: .2rem .5rem; align-self: flex-start; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); gap: 1rem; }
   .card { display: flex; gap: 1rem; text-align: left; padding: .9rem; border: 1px solid var(--border-subtle); border-radius: .85rem; background: var(--surface-1); cursor: pointer; transition: transform .2s, border-color .2s, box-shadow .2s; opacity: 0; animation: rise .5s ease forwards; }
