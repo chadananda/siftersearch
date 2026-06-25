@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-25T03:54:08.505Z",
+  "generated": "2026-06-25T04:07:21.727Z",
   "entries": [
+    {
+      "hash": "d52ed3de",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Stronger search-bar styling (accent border, layered accent shadow, focus glow ring + lift)",
+      "scope": null
+    },
     {
       "hash": "ee058393",
       "date": "2026-06-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Catalog data payload — CATALOG-DATA label + CATALOG-COMPANION tag to prevent title/URL misattribution",
       "scope": null
-    },
-    {
-      "hash": "cbc9d4cf",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Catalog companion — compound topic uses full query; revert listing suppression; fix misattribution instruction",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "d52ed3de",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Stronger search-bar styling (accent border, layered accent shadow, focus glow ring + lift)",
+        "scope": null
+      },
       {
         "hash": "ee058393",
         "date": "2026-06-24",
@@ -7047,13 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Catalog data payload — CATALOG-DATA label + CATALOG-COMPANION tag to prevent title/URL misattribution",
-        "scope": null
-      },
-      {
-        "hash": "cbc9d4cf",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Catalog companion — compound topic uses full query; revert listing suppression; fix misattribution instruction",
         "scope": null
       }
     ]
