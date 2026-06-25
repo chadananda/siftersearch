@@ -11,7 +11,7 @@
   // ImageKit (webp by default); always an explicit width; fo-face centres the square crop on the face
   const cardImg = (p) => ikUrl(p, 'w-220,h-220,fo-face,q-80');
   const heroImg = (p) => ikUrl(p, 'w-260,h-260,fo-face,q-80');
-  const drawerImg = (p) => ikUrl(p, 'w-440,q-85');   // width-only: full portrait, no crop
+  const drawerImg = (p) => ikUrl(p, 'w-340,h-420,fo-face,q-85');   // fixed 3:4 face-crop → reserved box, no reflow
 
   // SSG: the page prerenders with initialData baked in (instant paint), then this island hydrates into search
   const { initialData = null } = $props();
@@ -100,14 +100,13 @@
   <header class="header">
     <p class="eyebrow">Entity Graph · Biographical Archive</p>
     <h1 class="title">The Cast of the Heroic Age</h1>
-    <p class="lede">Every soul named in the founding histories of the Bábí and Bahá'í Faiths — kings and martyrs, scholars and villagers — drawn from the sacred texts, cross-referenced across the whole library, and bound together by kinship, allegiance, and recorded word.</p>
+    <p class="lede">The people of early Bábí and Bahá'í history — drawn from the sacred texts, cross-referenced across the whole library, and bound by kinship and allegiance.</p>
     <div class="method" aria-label="How the archive is built">
       <span class="m"><b>Seed</b><i>God Passes By</i></span><span class="arr">→</span>
       <span class="m"><b>Foundation</b><i>The Dawn-Breakers</i></span><span class="arr">→</span>
       <span class="m"><b>Pillars</b><i>Balyuzi · Taherzadeh · Mázandarání · Momen · Saiedi</i></span><span class="arr">→</span>
       <span class="m"><b>Expansion</b><i>the wider histories</i></span>
     </div>
-    <p class="method-note">Each identity is first established from the authoritative <em>Seed</em>, given its narrative in the <em>Foundation</em>, then enriched and cross-checked against the scholarly <em>Pillars</em> — so that as the rest of the corpus is drawn in, every new mention docks onto a person already firmly known.</p>
   </header>
 
   {#if loading}
@@ -147,8 +146,8 @@
         {#each pageItems as p, i (p.id)}
           <button class="card" style={`animation-delay:${Math.min(i, 24) * 16}ms`} onclick={() => open(p)} animate:flip={{ duration: 260 }}>
             <span class="plate" class:empty={!p.portrait}>
-              {#if p.portrait}<img src={cardImg(p.portrait)} alt={p.name} loading="lazy" />
-              {:else}<span class="monogram">{initials(p.name)}</span>{/if}
+              <span class="monogram">{initials(p.name)}</span>
+              {#if p.portrait}<img src={cardImg(p.portrait)} alt={p.name} loading="lazy" />{/if}
             </span>
             <span class="card-body">
               <span class="name">{p.name}</span>
@@ -175,8 +174,8 @@
       <button class="x" onclick={close} aria-label="Close">×</button>
       <div class="d-head">
         <span class="plate lg" class:empty={!selected.portrait}>
-          {#if selected.portrait}<img src={drawerImg(selected.portrait)} alt={selected.name} />
-          {:else}<span class="monogram">{initials(selected.name)}</span>{/if}
+          <span class="monogram">{initials(selected.name)}</span>
+          {#if selected.portrait}<img src={drawerImg(selected.portrait)} alt={selected.name} />{/if}
         </span>
         <h2 class="d-name">{selected.name}</h2>
         {#if selected.side}<span class="side">{selected.side}</span>{/if}
@@ -223,12 +222,12 @@
 </div>
 
 <style>
-  .archive { max-width: 78rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
-  .header { text-align: center; max-width: 46rem; margin: 0 auto 1.5rem; }
-  .eyebrow { font-size: .72rem; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); margin: 0 0 .75rem; }
-  .title { font-family: 'Amiri', Georgia, serif; font-size: clamp(2.1rem, 5vw, 3.4rem); line-height: 1.05; color: var(--text-primary); margin: 0; font-weight: 700; }
-  .lede { color: var(--text-secondary); margin: 1rem auto 0; line-height: 1.7; max-width: 40rem; }
-  .method { display: flex; flex-wrap: wrap; gap: .5rem .75rem; justify-content: center; align-items: center; margin: 1.5rem auto 0; }
+  .archive { max-width: 78rem; margin: 0 auto; padding: 1.35rem 1.25rem 4rem; }
+  .header { text-align: center; max-width: 48rem; margin: 0 auto .75rem; }
+  .eyebrow { font-size: .68rem; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); margin: 0 0 .4rem; }
+  .title { font-family: 'Amiri', Georgia, serif; font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.05; color: var(--text-primary); margin: 0; font-weight: 700; }
+  .lede { color: var(--text-secondary); margin: .5rem auto 0; line-height: 1.5; max-width: 40rem; font-size: .9rem; }
+  .method { display: flex; flex-wrap: wrap; gap: .35rem .7rem; justify-content: center; align-items: center; margin: .8rem auto 0; }
   .method .m { display: flex; flex-direction: column; line-height: 1.15; }
   .method .m b { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
   .method .m i { font-style: normal; font-size: .8rem; color: var(--text-secondary); }
@@ -238,9 +237,9 @@
   .status { text-align: center; color: var(--text-muted); padding: 4rem 0; } .status.error { color: var(--error); }
 
   /* rotating decorative portrait band */
-  .hero { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; min-height: 4.5rem; margin: 1.5rem 0 1.75rem; }
-  .orb { position: relative; width: 4.25rem; height: 4.25rem; border-radius: 50%; overflow: hidden; padding: 0; border: 2px solid var(--surface-3); background: var(--surface-2); cursor: pointer; box-shadow: 0 4px 12px rgb(0 0 0 / .15); animation: floaty 6s ease-in-out infinite; transition: border-color .3s, box-shadow .3s, filter .3s; }
-  .orb:nth-child(even) { width: 5.25rem; height: 5.25rem; }
+  .hero { display: flex; gap: .8rem; justify-content: center; flex-wrap: wrap; margin: .75rem 0 .9rem; }
+  .orb { position: relative; width: 3.3rem; height: 3.3rem; border-radius: 50%; overflow: hidden; padding: 0; border: 2px solid var(--surface-3); background: var(--surface-2); cursor: pointer; box-shadow: 0 4px 12px rgb(0 0 0 / .15); animation: floaty 6s ease-in-out infinite; transition: border-color .3s, box-shadow .3s, filter .3s; }
+  .orb:nth-child(even) { width: 3.9rem; height: 3.9rem; }
   .orb:nth-child(3n) { animation-duration: 7.4s; } .orb:nth-child(3n+1) { animation-duration: 5.3s; } .orb:nth-child(4n) { animation-delay: -2s; }
   .orb:hover { border-color: var(--accent); box-shadow: 0 10px 24px rgb(0 0 0 / .3); filter: brightness(1.06); animation-play-state: paused; z-index: 1; }
   .orb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .5s cubic-bezier(.2,.8,.2,1); }
@@ -248,7 +247,7 @@
   @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
   /* one large centred search; subrow holds toggle + count so the input never shifts on typing */
-  .searchwrap { max-width: 40rem; margin: 0 auto 2rem; }
+  .searchwrap { max-width: 40rem; margin: .25rem auto 1.5rem; }
   .searchbar { display: flex; align-items: center; gap: .5rem; background: var(--surface-1); border: 1px solid var(--border); border-radius: 999px; padding: .35rem .35rem .35rem 1.1rem; box-shadow: 0 6px 20px rgb(0 0 0 / .08); transition: border-color .2s, box-shadow .2s; }
   .searchbar:focus-within { border-color: var(--accent); box-shadow: 0 8px 26px rgb(0 0 0 / .14); }
   .mag { color: var(--text-muted); font-size: 1.25rem; }
@@ -264,11 +263,12 @@
   .card { display: flex; gap: 1rem; text-align: left; padding: .9rem; border: 1px solid var(--border-subtle); border-radius: .85rem; background: var(--surface-1); cursor: pointer; transition: transform .2s, border-color .2s, box-shadow .2s; opacity: 0; animation: rise .5s ease forwards; }
   .card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 10px 28px rgb(0 0 0 / .14); }
   @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  .plate { flex: 0 0 auto; width: 5.25rem; height: 5.25rem; border-radius: .6rem; overflow: hidden; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border-subtle), inset 0 0 0 4px var(--surface-1); }
-  .plate img { width: 100%; height: 100%; object-fit: cover; }
-  .plate.empty { background: radial-gradient(circle at 30% 25%, var(--surface-3), var(--surface-2)); display: flex; align-items: center; justify-content: center; }
+  /* always a fixed, pre-sized box: monogram placeholder centred, image absolutely overlaid → never reflows */
+  .plate { position: relative; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 5.25rem; height: 5.25rem; border-radius: .6rem; overflow: hidden; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border-subtle), inset 0 0 0 4px var(--surface-1); }
+  .plate img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .plate.empty { background: radial-gradient(circle at 30% 25%, var(--surface-3), var(--surface-2)); }
   .monogram { font-family: 'Amiri', serif; font-size: 1.6rem; color: var(--text-muted); }
-  .plate.lg { width: 9rem; height: 9rem; border-radius: .8rem; }
+  .plate.lg { width: 9.5rem; height: 11.75rem; border-radius: .8rem; }
   .card-body { min-width: 0; display: flex; flex-direction: column; gap: .25rem; }
   .name { font-family: 'Amiri', serif; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
   .side { align-self: flex-start; font-size: .68rem; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); border-radius: 1rem; padding: .05rem .55rem; }
