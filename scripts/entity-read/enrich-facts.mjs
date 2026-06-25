@@ -17,6 +17,8 @@ const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',').map(Number))
 const DBID = 21308;
 const bookOf = (id) => (id === DBID ? 'The Dawn-Breakers' : 'God Passes By');
 const clean = (t) => String(t || '').replace(/\[\^[^\]]*\]/g, '').replace(/\[pg[^\]]*\]/g, '').replace(/\\/g, '').replace(/\s+/g, ' ').trim();
+const normq = (s) => clean(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, '').toLowerCase();
+const STOPCAP = new Set(['during', 'after', 'among', 'amongst', 'when', 'while', 'having', 'upon', 'this', 'that', 'these', 'those', 'both', 'some', 'many', 'several', 'from', 'with', 'their', 'they', 'then', 'though', 'although', 'before', 'because', 'through', 'which', 'where', 'what', 'here', 'there', 'later', 'meanwhile', 'thus', 'moreover', 'indeed', 'such', 'about', 'first', 'last', 'letter', 'letters', 'living']);
 const DEATH = /\b(martyr|martyrdom|slain|slew|beheaded|strangled|put to death|met (his|her) death|suffered martyrdom|was killed|were killed|executed|done to death|breathed his last|breathed her last|fell (a martyr|beneath|in|at|fighting|defending|pierced|mortally))\b/i;
 
 let people = await queryAll(`SELECT ge.id, ge.canonical_name cn, ge.importance imp, er.summary, er.aliases, er.kinship, er.research_notes
@@ -31,7 +33,7 @@ const SYS = `You build a CITED FACT CATALOG for ONE person from authoritative B�
 For each genuine, significant fact about this person, output: {"n": passage number it is drawn from, "relation": a short kebab tag, "statement": a clear factual sentence (you MAY paraphrase for clarity, but it must be supported by passage n; INCLUDE the PLACE where it happened when stated), "when": the time/period the passage gives — a year ("1848"), a date, or an era ("the Baghdád period") — or null if none}.
 Cover: identity/role/title; significant deeds and role in the upheavals; CONNECTIONS to other people — family ("father-of", "brother-of", "wife-of"), "converted-by"/"converted", "accompanied", "appointed-by", and especially whether and WHERE they "met"/"recognized" the Báb or Bahá'u'lláh (relations like "met-bahaullah", "recognized-bab", "letter-of-the-living"); and their FATE (e.g. "martyred-at-tabarsi", "executed", "died-in-exile").
 For any meeting, event, deed, or fate, the WHERE belongs in the statement and the WHEN in the "when" field whenever the passage gives them — these power who-met-whom-where-when analysis.
-RULES: Only assert a fact a passage actually supports — never infer beyond it (if no passage shows they met Bahá'u'lláh, do NOT claim it). The fact must be ABOUT this person, not someone else in the passage. Skip trivial narrative and bare co-mentions.
+RULES: Only assert a fact a passage actually supports — never infer beyond it (if no passage shows they met Bahá'u'lláh, do NOT claim it). COPY proper names and specifics EXACTLY as the passage gives them; NEVER substitute or conflate a different person or event — e.g. if the passage says the Báb grieved over the martyrdom of Quddús, do NOT write "death of Muḥammad Sháh." The fact must be ABOUT this person, not someone else in the passage. A person with a DIFFERENT NISBA (place-of-origin suffix — e.g. "-i-Yazdí" of Yazd vs "-i-Turshízí" of Turshíz) is a DIFFERENT individual; nisbas rarely vary, so never treat them as the same person. Skip trivial narrative and bare co-mentions.
 Return ONLY JSON: {"facts":[{"n":<num>,"relation":"<tag>","statement":"<clear fact incl. place>","when":"<period or null>"}]}.`;
 
 let done = 0, withF = 0, total = 0;
@@ -70,6 +72,11 @@ async function one(p) {
       const pass = passages.find((x) => x.n === Number(it.n)); if (!pass || !it.statement) continue;
       const st = clean(it.statement); if (st.length < 10) continue;
       const key = st.toLowerCase().slice(0, 60); if (seenS.has(key)) continue; seenS.add(key);
+      // conflation guard: every significant proper noun in the fact must appear in the cited passage — catches
+      // paraphrase that imports a different person/event (e.g. "death of Muḥammad Sháh" when the passage names Quddús)
+      const ptn = normq(pass.ct).replace(/[^a-z ]/g, ' ');
+      const propers = [...new Set((st.match(/[A-ZÁÉÍÓÚÀ-Ý][\wÀ-ÿ’'-]{3,}/g) || []).map((w) => normq(w).replace(/[^a-z]/g, '')).filter((w) => w.length >= 4 && !STOPCAP.has(w)))];
+      if (propers.some((w) => !ptn.includes(w.slice(0, Math.min(6, w.length))))) continue;
       const when = it.when && String(it.when).trim() && !/^(null|none|n\/a|unknown)$/i.test(String(it.when).trim()) ? String(it.when).trim().slice(0, 40) : null;
       facts.push({ statement: st, relation: String(it.relation || '').toLowerCase().replace(/[^a-z0-9:-]+/g, '-').slice(0, 40), when,
         source: bookOf(pass.doc_id), paraId: pass.pid, url: pass.url && pass.pid ? `${pass.url}?paraId=${pass.pid}` : null });
