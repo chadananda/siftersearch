@@ -11,7 +11,7 @@
 //     sort=importance|name             default importance
 //     limit=<1-200> (default 50)  offset=<n>
 //   GET /api/v1/people/:id             — full dossier (relationships, GPB citations, cross-corpus reach)
-import { listBioPersons, getBioPerson } from '../lib/bio.js';
+import { listBioPersons, getBioPerson, bioSearch } from '../lib/bio.js';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ]/g, '').toLowerCase();
 const toks = (s) => fold(s).split(/[^a-z0-9]+/).filter((t) => t.length > 1);
@@ -19,7 +19,7 @@ const toks = (s) => fold(s).split(/[^a-z0-9]+/).filter((t) => t.length > 1);
 export default async function peopleRoutes(server) {
   server.get('/people', async (request) => {
     const qs = request.query || {};
-    const limit = Math.min(200, Math.max(1, parseInt(qs.limit, 10) || 50));
+    const limit = Math.min(2000, Math.max(1, parseInt(qs.limit, 10) || 50));
     const offset = Math.max(0, parseInt(qs.offset, 10) || 0);
     const data = await listBioPersons();
     let people = data.persons;
@@ -38,10 +38,13 @@ export default async function peopleRoutes(server) {
     const total = people.length;
     const page = people.slice(offset, offset + limit).map((p) => ({
       id: p.id, name: p.name, importance: p.importance, side: p.side, summary: p.summary,
-      aliases: p.aliases, sources: p.sources, hasPortrait: p.hasPortrait, portrait: p.portrait,
+      aliases: p.aliases, kinship: p.kinship, sources: p.sources, hasPortrait: p.hasPortrait, portrait: p.portrait,
     }));
-    return { total, limit, offset, sides: data.sides, books: data.books, people: page };
+    return { total, limit, offset, withPortraits: data.withPortraits, sides: data.sides, books: data.books, people: page };
   });
+
+  // GET /api/v1/people/search?q=… — intelligent meaning-search; returns matching ids + per-person evidence + answer
+  server.get('/people/search', async (request) => await bioSearch(request.query?.q));
 
   server.get('/people/:id', async (request, reply) => {
     const person = await getBioPerson(request.params.id);

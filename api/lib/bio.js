@@ -1,6 +1,7 @@
 // Shared biography data layer — the single source of truth for person records (list + dossier) and source-book
 // facets, used by BOTH the internal /api/graph/bio/* routes and the official /api/v1/people API.
 import { queryAll, queryOne, graphQueryAll } from './db.js';
+import { chatCompletion } from './ai.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -91,4 +92,57 @@ export async function getBioPerson(rawId) {
     summary: row.summary || null, aliases: arr(row.aliases), kinship: arr(row.kinship), relations: arr(row.relations),
     dates: arr(row.dates), facts: notes.facts || [], firewall: notes.firewall || [], contested: notes.contested || [],
     possible_ids: notes.possible_ids || [], wiki, portrait, portraitFull, bahai, mentionCount, books, gpbRefs };
+}
+
+// Intelligent meaning-search over the cast (descriptive/reasoning queries the token filter can't do, e.g.
+// "letters of the living who died at Shaykh Ṭabarsí"). Resolves known groups deterministically from
+// graph_relations; otherwise asks DeepSeek to judge from summaries. Returns { ids, q, group?, reasoning }.
+export async function bioSearch(rawQ) {
+  const q = String(rawQ || '').trim().slice(0, 200);
+  if (!q) return { ids: [], q };
+  const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/gi, ' ').toLowerCase();
+  const STOP = new Set(['the', 'of', 'and', 'who', 'a', 'an', 'in', 'at', 'to', 'is', 'are', 'were', 'all', 'show', 'me', 'list', 'group']);
+  const qtok = new Set(norm(q).split(/\s+/).filter((t) => t.length > 2 && !STOP.has(t)));
+
+  // deterministic group resolution: if the query names a modeled group, return its members from graph_relations
+  let memberIds = [], bareGroup = false, best = null;
+  const groups = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.aliases, er.summary FROM graph_entities ge
+    LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.entity_type='group'`);
+  for (const g of groups) {
+    const names = [g.name, ...(() => { try { return JSON.parse(g.aliases || '[]'); } catch { return []; } })()];
+    for (const nm of names) {
+      const gtok = norm(nm).split(/\s+/).filter((t) => t.length > 2 && !STOP.has(t));
+      const overlap = gtok.filter((t) => qtok.has(t)).length;
+      if (overlap >= 2 && (!best || overlap > best.ov)) best = { id: g.id, ov: overlap, name: g.name, summary: g.summary };
+    }
+  }
+  if (best) {
+    const mem = await queryAll(`SELECT gr.source_entity_id AS id FROM graph_relations gr JOIN graph_entities ge ON ge.id = gr.source_entity_id
+      WHERE gr.target_entity_id = ? AND ge.entity_type='person' ORDER BY (ge.importance IS NULL), ge.importance DESC`, [best.id]);
+    memberIds = [...new Set(mem.map((r) => r.id))];
+    bareGroup = best.ov >= qtok.size;
+  }
+  if (bareGroup && memberIds.length) return { ids: memberIds, q, group: best.id, reasoning: { summary: best.summary || `${best.name} — ${memberIds.length} members.`, evidence: {} } };
+
+  const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.summary
+    FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
+    WHERE ge.entity_type='person' AND ge.religion='' AND er.summary IS NOT NULL AND length(er.summary) > 20
+    ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 480`);
+  const catalog = rows.map((r) => `${r.id}|${r.name}: ${String(r.summary).replace(/\s+/g, ' ').slice(0, 300)}`).join('\n');
+  const SYS = `You answer questions over a biographical dictionary of early Bábí/Bahá'í history. Given a QUERY and a CATALOG (one person per line "id|name: summary"), find the people whose record matches the query's MEANING — role, group, place, fate (martyred at Ṭabarsí…), period, or relationship/condition ("who recognized Bahá'u'lláh"). Judge ONLY from the summaries. Return ONLY JSON: {"summary":"one sentence directly answering the query","matches":[{"id":<number>,"why":"<=15-word evidence drawn from that person's summary>"}]} — clear matches only, most relevant first.`;
+  try {
+    const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
+      { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1700, responseFormat: { type: 'json_object' } });
+    const m = (res.content || '').match(/\{[\s\S]*\}/);
+    const parsed = m ? JSON.parse(m[0]) : {};
+    const evidence = {}; const aiIds = [];
+    for (const mm of (Array.isArray(parsed.matches) ? parsed.matches : [])) {
+      const id = Number(mm.id); if (!id || aiIds.includes(id)) continue;
+      aiIds.push(id); if (mm.why) evidence[id] = String(mm.why).slice(0, 160);
+    }
+    let ids = aiIds;
+    if (memberIds.length) { const inter = aiIds.filter((id) => memberIds.includes(id)); ids = inter.length ? inter : (aiIds.length ? aiIds : memberIds); }
+    const ev = {}; for (const id of ids) if (evidence[id]) ev[id] = evidence[id];
+    return { ids, q, ...(best ? { group: best.id } : {}), reasoning: { summary: parsed.summary || '', evidence: ev } };
+  } catch (e) { return { ids: memberIds, q, error: String(e).slice(0, 80) }; }
 }
