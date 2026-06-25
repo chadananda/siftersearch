@@ -12,56 +12,13 @@ import { graphQueryAll, graphQueryOne } from '../lib/db.js';
 import { chatCompletion } from '../lib/ai.js';
 import fs from 'fs';
 import path from 'path';
-
-const BIO_ROOT = path.join(process.env.HOME || '/home/chad', 'sifter', 'bio-assets');
-const readBioManifest = () => { try { return JSON.parse(fs.readFileSync(path.join(BIO_ROOT, 'manifest.json'), 'utf8')); } catch { return {}; } };
-
-// Source books with full person-mention coverage today. Add the Pillars (Balyuzi 462/466/467/3887,
-// Taherzadeh 429-432, Mázandarání 420/16564/12262/11322, Momen 11557) here as each is run through the
-// entity pipeline — their filter chips light up automatically once they appear in entity_mentions.
-const SOURCE_BOOKS = [
-  { key: 'gpb', label: 'God Passes By', docs: [21310, 57347] },
-  { key: 'dawn-breakers', label: 'The Dawn-Breakers', docs: [21308] },
-];
-// entity_id → Set(book keys), from graph.db mentions mapped through content→docs (chunked under SQLite's 999-param cap)
-async function computeBookSources() {
-  const bookOf = {};
-  for (const b of SOURCE_BOOKS) {
-    const cids = (await queryAll(`SELECT id FROM content WHERE doc_id IN (${b.docs.join(',')})`)).map(r => String(r.id));
-    for (let i = 0; i < cids.length; i += 800) {
-      const chunk = cids.slice(i, i + 800);
-      const ents = await graphQueryAll(`SELECT DISTINCT entity_id FROM entity_mentions WHERE content_id IN (${chunk.map(() => '?').join(',')})`, chunk);
-      for (const e of ents) (bookOf[e.entity_id] ||= new Set()).add(b.key);
-    }
-  }
-  return bookOf;
-}
+import { BIO_ROOT, listBioPersons, getBioPerson } from '../lib/bio.js';   // shared bio data layer (also powers /api/v1/people)
 
 export default async function graphRoutes(server) {
 
   // GET /bio/persons — the biography browser dataset: every seed person with name, aliases, kinship,
   // importance, side, summary, and whether a portrait was gathered (Wikipedia / bahai.media).
-  server.get('/bio/persons', async () => {
-    const man = readBioManifest();
-    const bookOf = await computeBookSources();
-    const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, ge.importance,
-        er.side, er.summary, er.aliases, er.kinship, er.research_notes
-      FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name
-      WHERE ge.entity_type = 'person' AND ge.religion = ''
-      ORDER BY (ge.importance IS NULL), ge.importance DESC, ge.canonical_name`);
-    const persons = rows.map(r => {
-      let aliases = [], kinship = []; try { aliases = JSON.parse(r.aliases || '[]'); } catch {} try { kinship = JSON.parse(r.kinship || '[]'); } catch {}
-      const m = man[r.id]; const hasPortrait = !!(m && m.cdn);   // m.cdn = "biography/<id>.<ext>" in R2/ImageKit
-      return { id: r.id, name: r.name, importance: r.importance || 0, side: r.side || null,
-        summary: r.summary || null, aliases, kinship, hasPortrait,
-        sources: [...(bookOf[r.id] || [])],
-        portrait: m?.cdn || null,
-        wiki: m?.title ? `https://en.wikipedia.org/wiki/${encodeURIComponent(String(m.title).replace(/ /g, '_'))}` : null };
-    });
-    const sides = [...new Set(persons.map(p => p.side).filter(Boolean))].sort();
-    const books = SOURCE_BOOKS.map(b => ({ key: b.key, label: b.label, count: persons.filter(p => p.sources.includes(b.key)).length }));
-    return { count: persons.length, withPortraits: persons.filter(p => p.hasPortrait).length, sides, books, persons };
-  });
+  server.get('/bio/persons', async () => await listBioPersons());
 
   // GET /bio/search?q= — intelligent search (DeepSeek) over the meaningful cast, for descriptive / reasoning
   // queries the token filter can't ("letters of the living who recognized Bahá'u'lláh", "seven martyrs of
@@ -127,41 +84,9 @@ export default async function graphRoutes(server) {
 
   // GET /bio/person/:id — full dossier for the detail drawer (DB record + gathered bio.json + cross-corpus reach)
   server.get('/bio/person/:id', async (request, reply) => {
-    const id = String(request.params.id).replace(/[^0-9]/g, '');
-    const row = await queryOne(`SELECT ge.id, ge.canonical_name AS name, ge.importance, er.side, er.summary,
-        er.aliases, er.kinship, er.relations, er.research_notes, er.dates
-      FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.id = ?`, [id]);
-    if (!row) { reply.code(404); return { error: 'not found' }; }
-    const arr = s => { try { return JSON.parse(s || '[]'); } catch { return []; } };
-    const obj = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
-    let wiki = null, portrait = null, portraitFull = null, bahai = null;
-    portrait = readBioManifest()[id]?.cdn || null;   // "biography/<id>.<ext>" → ImageKit on the client
-    try {
-      const d = fs.readdirSync(BIO_ROOT).find(x => x.startsWith(id + '-'));
-      if (d) { const bj = JSON.parse(fs.readFileSync(path.join(BIO_ROOT, d, 'bio.json'), 'utf8'));
-        wiki = bj.wikipedia || null; bahai = bj.bahai_media || null;
-        portraitFull = bj.portrait_fullres || bj.wikipedia?.image_url || bahai?.full || null; }
-    } catch { /* no bio.json */ }
-    // cross-corpus reach: distinct books this person appears in + the GPB paragraph citations
-    let mentionCount = 0, books = [], gpbRefs = [];
-    try {
-      const ms = await graphQueryAll('SELECT content_id FROM entity_mentions WHERE entity_id = ?', [id]);
-      mentionCount = ms.length;
-      const cids = [...new Set(ms.map(m => String(m.content_id)))].slice(0, 900);   // cap under SQLite's param limit
-      if (cids.length) {
-        const ph = cids.map(() => '?').join(',');
-        books = (await queryAll(`SELECT DISTINCT d.title FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id IN (${ph}) AND d.title IS NOT NULL`, cids)).map(b => b.title);
-        // God Passes By citations (docs 21310/57347): paragraph link = source_url?paraId=<external_para_id>
-        const gp = await queryAll(`SELECT c.external_para_id AS pid, c.text, c.heading, d.source_url AS url FROM content c JOIN docs d ON d.id = c.doc_id
-          WHERE c.id IN (${ph}) AND d.id IN (21310, 57347) AND c.external_para_id IS NOT NULL ORDER BY c.id LIMIT 24`, cids);
-        gpbRefs = gp.map(r => ({ paraId: r.pid, url: r.url ? `${r.url}?paraId=${r.pid}` : null, heading: r.heading || null, snippet: String(r.text || '').replace(/\s+/g, ' ').slice(0, 200) }));
-      }
-    } catch { /* graph optional */ }
-    const notes = obj(row.research_notes);
-    return { id: row.id, name: row.name, importance: row.importance || 0, side: row.side || null,
-      summary: row.summary || null, aliases: arr(row.aliases), kinship: arr(row.kinship), relations: arr(row.relations),
-      dates: arr(row.dates), facts: notes.facts || [], firewall: notes.firewall || [], contested: notes.contested || [],
-      possible_ids: notes.possible_ids || [], wiki, portrait, portraitFull, bahai, mentionCount, books, gpbRefs };
+    const r = await getBioPerson(request.params.id);
+    if (!r) { reply.code(404); return { error: 'not found' }; }
+    return r;
   });
 
   // GET /bio/portrait/:id — serve a gathered portrait image file

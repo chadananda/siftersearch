@@ -36,6 +36,7 @@ import apiKeyRoutes from './routes/api-keys.js';
 import libraryRoutes from './routes/library.js';
 import chatRoutes from './routes/chat.js';
 import graphRoutes from './routes/graph.js';
+import peopleRoutes from './routes/people.js';
 import deepResearchRoutes from './routes/deep-research.js';
 import { config } from './lib/config.js';
 
@@ -238,6 +239,7 @@ export async function createServer(opts = {}) {
   await server.register(libraryRoutes, { prefix: '/api/library' });
   await server.register(chatRoutes, { prefix: '/api/chat' });
   await server.register(graphRoutes, { prefix: '/api/graph' });
+  await server.register(peopleRoutes, { prefix: '/api/v1' });
   await server.register(deepResearchRoutes, { prefix: '/api/v1' });
 
   // Error handling
