@@ -97,8 +97,22 @@ export async function getBioPerson(rawId) {
   const notes = obj(row.research_notes);
   // prefer the cited fact catalog (facts2: relation-tagged, paragraph-cited); map to the {quote,...} shape the UI reads
   const characterizations = Array.isArray(notes.facts2) && notes.facts2.length
-    ? notes.facts2.map(f => ({ quote: f.statement, relation: f.relation || null, source: f.source, paraId: f.paraId, url: f.url || null }))
+    ? notes.facts2.map(f => ({ quote: f.statement, relation: f.relation || null, when: f.when || null, source: f.source, paraId: f.paraId, url: f.url || null }))
     : (notes.characterizations || []);
+  // compact citation label per fact: source abbrev + paragraph number (e.g. "GPB ¶72", "DB ¶467")
+  try {
+    const pids = [...new Set(characterizations.map(c => c.paraId).filter(Boolean))];
+    if (pids.length) {
+      const ixRows = await queryAll(`SELECT doc_id, external_para_id pid, paragraph_index pix FROM content WHERE external_para_id IN (${pids.map(() => '?').join(',')}) AND doc_id IN (21310,57347,21308)`, pids);
+      const ix = {}; for (const r of ixRows) ix[`${r.doc_id}:${r.pid}`] = r.pix;
+      for (const c of characterizations) {
+        const abbr = c.source === 'The Dawn-Breakers' ? 'DB' : 'GPB';
+        const docs = c.source === 'The Dawn-Breakers' ? [21308] : [21310, 57347];
+        let n = null; for (const d of docs) if (ix[`${d}:${c.paraId}`] != null) { n = ix[`${d}:${c.paraId}`]; break; }
+        c.cite = n != null ? `${abbr} ¶${n}` : abbr;
+      }
+    }
+  } catch { /* citation labels optional */ }
   return { id: row.id, name: row.name, importance: row.importance || 0, side: row.side || null,
     summary: row.summary || null, aliases: arr(row.aliases), kinship: arr(row.kinship), relations: arr(row.relations),
     dates: arr(row.dates), death: notes.death || null, characterizations,

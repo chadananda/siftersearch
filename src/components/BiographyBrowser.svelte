@@ -186,10 +186,22 @@
       {#if aiError}<p class="ai-error">{aiError}</p>{/if}
     </div>
 
-    {#if aiIds !== null && aiReasoning?.summary}
+    {#if aiIds !== null && aiReasoning}
       <div class="ai-answer" transition:fade={{ duration: 250 }}>
         <span class="ai-spark" aria-hidden="true">✦</span>
-        <p>{aiReasoning.summary}</p>
+        <div class="ai-body">
+          {#if aiReasoning.summary}<p class="ai-head">{aiReasoning.summary}</p>{/if}
+          <ul class="ai-evi">
+            {#each filtered as p (p.id)}
+              {#if aiReasoning.evidence?.[p.id]?.quote}
+                <li>
+                  <button class="ai-name" onclick={() => open(p)}>{p.name}</button> — {aiReasoning.evidence[p.id].quote}
+                  {#if aiReasoning.evidence[p.id].url}<a class="ai-cite" href={aiReasoning.evidence[p.id].url} target="_blank" rel="noopener" title={aiReasoning.evidence[p.id].source}>↗</a>{:else if aiReasoning.evidence[p.id].source}<span class="ai-src">[{aiReasoning.evidence[p.id].source}]</span>{/if}
+                </li>
+              {/if}
+            {/each}
+          </ul>
+        </div>
       </div>
     {/if}
 
@@ -206,7 +218,6 @@
             <span class="card-body">
               <span class="name">{p.name}</span>
               {#if p.side}<span class="side">{p.side}</span>{/if}
-              {#if aiReasoning?.evidence?.[p.id]?.quote}<span class="evidence">{aiReasoning.evidence[p.id].quote} <em class="evidence-src">— {aiReasoning.evidence[p.id].source}</em></span>{/if}
               {#if p.summary}<span class="bio">{p.summary}</span>{/if}
               {#if p.kinship?.length}<span class="rel">{p.kinship.slice(0, 2).map((k) => `${k.relation}: ${k.who}`).join('  ·  ')}</span>{/if}
             </span>
@@ -250,11 +261,9 @@
           <ul class="facts">{#each selected.facts as f}<li>{f.fact}{#if f.source}<span class="src">— {f.source}</span>{/if}</li>{/each}</ul>
         </section>
       {/if}
-      {#if selected.possible_ids?.length}
-        <section class="d-sec"><h3>Possible identifications</h3>
-          <ul class="facts faint">{#each selected.possible_ids as f}<li>possibly {f.maybe}{#if f.authority}<span class="src">— per {f.authority}</span>{/if}</li>{/each}</ul>
-        </section>
-      {/if}
+      <!-- 'Possible identifications' (possible_ids) removed from the public view: they were speculative same-name
+           guesses that ignored the nisba and produced absurd cross-nisba conflations (e.g. -i-Yazdí ≠ -i-Turshízí). -->
+
       {#if selected.contested?.length}
         <section class="d-sec"><h3>Contested</h3>
           <ul class="facts faint">{#each selected.contested as c}<li>{c.point}{#if c.versions} — {c.versions}{/if}</li>{/each}</ul>
@@ -270,12 +279,9 @@
            the links. To be replaced by disambiguation-aware, precisely-excerpted characterizations. -->
       {#if selected.characterizations?.length}
         <section class="d-sec"><h3>Facts &amp; connections <span class="muted">(cited)</span></h3>
-          <ul class="refs">
+          <ul class="facts2">
             {#each selected.characterizations as c}
-              <li>
-                <span class="ref-snip">{c.quote}</span>
-                {#if c.url}<a href={c.url} target="_blank" rel="noopener" class="ref-link">{c.source || 'source'} →</a>{:else if c.source}<span class="cred">— {c.source}</span>{/if}
-              </li>
+              <li>{c.quote}{#if c.url}<a class="f-cite" href={c.url} target="_blank" rel="noopener">{c.cite || c.source} →</a>{:else}<span class="f-cite">{c.cite || c.source}</span>{/if}</li>
             {/each}
           </ul>
         </section>
@@ -384,8 +390,19 @@
   .ai-answer { display: flex; gap: .7rem; align-items: flex-start; max-width: 52rem; margin: 0 auto 1.25rem; padding: .85rem 1.15rem; border-radius: .85rem; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 13%, var(--surface-1)), var(--surface-1)); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-subtle)); box-shadow: 0 8px 24px -12px color-mix(in srgb, var(--accent) 55%, transparent); }
   .ai-answer .ai-spark { color: var(--accent); font-size: 1.2rem; line-height: 1.45; flex: 0 0 auto; }
   .ai-answer p { margin: 0; font-size: .96rem; line-height: 1.5; color: var(--text-primary); }
-  .evidence { font-size: .8rem; line-height: 1.4; color: var(--accent); background: color-mix(in srgb, var(--accent) 11%, transparent); border-radius: .4rem; padding: .25rem .55rem; align-self: flex-start; }
-  .evidence-src { font-style: normal; opacity: .7; font-size: .72rem; }
+  .ai-body { flex: 1; min-width: 0; }
+  .ai-head { margin: 0 0 .55rem; font-size: .95rem; line-height: 1.5; color: var(--text-primary); font-weight: 600; }
+  .ai-evi { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .45rem; }
+  .ai-evi li { font-size: .86rem; line-height: 1.5; color: var(--text-secondary); }
+  .ai-name { border: none; background: none; padding: 0; color: var(--accent); font-weight: 600; cursor: pointer; font-size: inherit; }
+  .ai-name:hover { text-decoration: underline; }
+  .ai-cite { color: var(--accent); text-decoration: none; font-weight: 600; margin-left: .25rem; white-space: nowrap; }
+  .ai-cite:hover { text-decoration: underline; }
+  .ai-src { color: var(--text-muted); font-size: .72rem; margin-left: .25rem; }
+  .facts2 { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .7rem; }
+  .facts2 li { font-size: .85rem; line-height: 1.55; color: var(--text-secondary); }
+  .f-cite { float: right; margin-left: .6rem; color: var(--accent); text-decoration: none; font-size: .7rem; font-weight: 600; white-space: nowrap; }
+  .f-cite:hover { text-decoration: underline; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); gap: 1rem; }
   .card { display: flex; gap: 1rem; text-align: left; padding: .9rem; border: 1px solid var(--border-subtle); border-radius: .85rem; background: var(--surface-1); cursor: pointer; transition: transform .2s, border-color .2s, box-shadow .2s; opacity: 0; animation: rise .5s ease forwards; }
