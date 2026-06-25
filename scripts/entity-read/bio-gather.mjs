@@ -27,6 +27,8 @@ const QUERIES = {
   1247662: 'Edward Granville Browne', 1247958: 'Pope Pius IX', 1248029: 'Thornton Chase',
   1248067: 'Marie of Romania queen', 1248190: 'Abdulhamid II', 1247979: 'Wilhelm I German Emperor',
   1247933: 'Mary mother of Jesus', 1247641: 'Fatimah daughter of Muhammad', 1247673: 'John the Apostle',
+  // third pass — Western believers Bahaipedia lacks a portrait for, but Wikipedia/Commons has
+  1248039: 'Phoebe Hearst',
 };
 const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40).toLowerCase();
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/gi, ' ').toLowerCase();
@@ -35,13 +37,16 @@ const tokens = s => norm(s).split(/\s+/).filter(t => t.length > 3 && !STOP.has(t
 const j = async u => { const r = await fetch(u, { headers: { 'User-Agent': 'SifterSearch-bio/1.0 (chadananda@gmail.com)' } }); return r.json(); };
 const enc = encodeURIComponent;
 
+const CURATED_ONLY = process.env.CURATED_ONLY === '1', SKIP_EXISTING = process.env.SKIP_EXISTING === '1';
+const manifestPath = ROOT + '/manifest.json';
+const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : {};
 let people = (await queryAll(`SELECT ge.id, ge.canonical_name cn, ge.importance imp, er.side, er.summary, er.aliases, er.kinship, er.research_notes FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE ge.entity_type='person' AND ge.importance>=${MIN} ORDER BY ge.importance DESC`))
   .filter(p => !EXCL.has(p.id));
+if (CURATED_ONLY) people = people.filter(p => QUERIES[p.id]);                       // only the hand-verified queries
+if (SKIP_EXISTING) people = people.filter(p => !manifest[p.id]?.cdn && manifest[p.id]?.status !== 'image'); // fill gaps only
 if (LIMIT) people = people.slice(OFFSET, OFFSET + LIMIT);
-console.log(`bio-gather: ${people.length} people (imp>=${MIN})`);
+console.log(`bio-gather: ${people.length} people (imp>=${MIN})${CURATED_ONLY ? ' [curated-only]' : ''}`);
 if (WRITE) mkdirSync(ROOT, { recursive: true });
-const manifestPath = ROOT + '/manifest.json';
-const manifest = (WRITE && existsSync(manifestPath)) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : {};
 
 const GROUP = /\b(timeline|split|list of|family|Letters of the Living|martyrs|Bahá|Babism|religion)\b/i;
 async function resolveTitle(p) {

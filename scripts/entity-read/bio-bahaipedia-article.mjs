@@ -15,6 +15,11 @@ const slug = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z
 const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/gi, ' ').toLowerCase();
 const STOP = new Set(['mulla', 'mirza', 'siyyid', 'haji', 'aqa', 'shaykh', 'the', 'of', 'sultan', 'khan', 'shah', 'i', 'file', 'png', 'jpg', 'jpeg', 'portrait', 'photo', 'photograph', 'image', 'circa']);
 const toks = (s) => norm(s).split(/\s+/).filter((t) => t.length > 3 && !STOP.has(t));
+// descriptive (non-name) words seen in filenames — ignored when checking for an UNexpected extra name-token
+const DESC = new Set(['painting', 'portrait', 'photo', 'later', 'years', 'first', 'cropped', 'young', 'circa', 'english', 'french', 'american', 'persian', 'london', 'england', 'tehran', 'egypt', 'cairo', 'holy', 'land', 'knights', 'national', 'convention', 'regional', 'assembly', 'community', 'castle', 'house']);
+// a match is trusted only if every distinctive filename name-token is also in the subject's names (no foreign
+// person-token), and at least one is shared — blocks "Daniel"→"Daniel C. Jordan", "Aḥmad"→"Ahmad Sohrab", etc.
+const verifiedMatch = (fname, want) => { const ft = toks(fname).filter((t) => !DESC.has(t)); return ft.some((t) => want.has(t)) && ft.every((t) => want.has(t)); };
 const j = async (u) => { const r = await fetch(u, { headers: { 'User-Agent': 'SifterSearch-bio/1.0 (chadananda@gmail.com)' } }); return r.json(); };
 const enc = encodeURIComponent;
 const manifest = existsSync(ROOT + '/manifest.json') ? JSON.parse(readFileSync(ROOT + '/manifest.json', 'utf8')) : {};
