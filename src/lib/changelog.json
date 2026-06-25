@@ -1,6 +1,34 @@
 {
-  "generated": "2026-06-25T04:51:43.091Z",
+  "generated": "2026-06-25T05:18:16.091Z",
   "entries": [
+    {
+      "hash": "be579bd2",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Surface death in list/dossier + feed it into the search catalog (precise fate queries)",
+      "scope": null
+    },
+    {
+      "hash": "19bd896f",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Death-enrichment pass (faithful death extraction from summaries, source-attributed)",
+      "scope": null
+    },
+    {
+      "hash": "3a4816d0",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Reusable group-membership applier (graph_relations)",
+      "scope": null
+    },
+    {
+      "hash": "d8da167d",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Page now consumes the official /api/v1/people API (list, detail, meaning-search) — proof of concept on the public contract",
+      "scope": null
+    },
     {
       "hash": "e6175a7f",
       "date": "2026-06-24",
@@ -3472,38 +3500,38 @@
       "type": "Fixed",
       "description": "Filter deep research quotes by author in compound catalog queries",
       "scope": null
-    },
-    {
-      "hash": "c465ed37",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Use synthetic content query for deep research in compound catalog path",
-      "scope": null
-    },
-    {
-      "hash": "55ab11f2",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Extract topic component for companion search in compound catalog queries",
-      "scope": null
-    },
-    {
-      "hash": "3b8cebe9",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Normalize Unicode apostrophes in library_count author LIKE query",
-      "scope": null
-    },
-    {
-      "hash": "42e9af7a",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Normalize Unicode curly quotes in extractCatalogFilters for 'Abdu'l-Bahá author detection",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "be579bd2",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Surface death in list/dossier + feed it into the search catalog (precise fate queries)",
+        "scope": null
+      },
+      {
+        "hash": "19bd896f",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Death-enrichment pass (faithful death extraction from summaries, source-attributed)",
+        "scope": null
+      },
+      {
+        "hash": "3a4816d0",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Reusable group-membership applier (graph_relations)",
+        "scope": null
+      },
+      {
+        "hash": "d8da167d",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Page now consumes the official /api/v1/people API (list, detail, meaning-search) — proof of concept on the public contract",
+        "scope": null
+      },
       {
         "hash": "e6175a7f",
         "date": "2026-06-24",
@@ -7026,34 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Filter deep research quotes by author in compound catalog queries",
-        "scope": null
-      },
-      {
-        "hash": "c465ed37",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Use synthetic content query for deep research in compound catalog path",
-        "scope": null
-      },
-      {
-        "hash": "55ab11f2",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Extract topic component for companion search in compound catalog queries",
-        "scope": null
-      },
-      {
-        "hash": "3b8cebe9",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Normalize Unicode apostrophes in library_count author LIKE query",
-        "scope": null
-      },
-      {
-        "hash": "42e9af7a",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Normalize Unicode curly quotes in extractCatalogFilters for 'Abdu'l-Bahá author detection",
         "scope": null
       }
     ]

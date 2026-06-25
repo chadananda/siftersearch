@@ -78,6 +78,16 @@
   $effect(() => { q; imagesOnly; bookFilter; page = 0; });
   const onType = () => { if (aiIds !== null) { aiIds = null; aiReasoning = null; } };   // typing returns to instant token mode
   const clearSearch = () => { q = ''; aiIds = null; aiReasoning = null; page = 0; };
+  // example queries that show off the meaning-search (each verified to return a strong, evidenced set)
+  const SAMPLES = [
+    'Letters of the Living who died at Shaykh Ṭabarsí',
+    'Letters of the Living who met Bahá’u’lláh',
+    'the Seven Martyrs of Ṭihrán',
+    'kings who received Bahá’u’lláh’s tablets',
+    'officials who persecuted the Bábís',
+    'Western believers who became Bahá’ís',
+  ];
+  const runSample = (query) => { q = query; runAI(); };
   const toggleBook = (k) => { bookFilter = bookFilter.includes(k) ? bookFilter.filter((x) => x !== k) : [...bookFilter, k]; };
   const inBooks = (p) => !bookFilter.length || bookFilter.some((k) => p.sources?.includes(k));
 
@@ -162,6 +172,12 @@
         <span class="resultline">{filtered.length.toLocaleString()} {filtered.length === 1 ? 'soul' : 'souls'}{#if q || imagesOnly || bookFilter.length || aiIds !== null}{` of ${persons.length.toLocaleString()}`}{/if}</span>
         {#if aiIds !== null}<button class="clearai" onclick={() => { aiIds = null; aiReasoning = null; }}>✦ meaning-search · show all</button>{/if}
       </div>
+      {#if !q.trim() && aiIds === null && !aiBusy}
+        <div class="samples">
+          <span class="samples-lead">✦ Ask the archive — try:</span>
+          {#each SAMPLES as s}<button class="sample" onclick={() => runSample(s)}>{s}</button>{/each}
+        </div>
+      {/if}
     </div>
 
     {#if aiIds !== null && aiReasoning?.summary}
@@ -185,6 +201,7 @@
               <span class="name">{p.name}</span>
               {#if p.side}<span class="side">{p.side}</span>{/if}
               {#if aiReasoning?.evidence?.[p.id]}<span class="evidence">✦ {aiReasoning.evidence[p.id]}</span>{/if}
+              {#if p.death?.cause}<span class="death" class:martyr={p.death.martyr}>{p.death.martyr ? '☠' : '†'} {p.death.cause}{#if p.death.place} · {p.death.place}{/if}{#if p.death.year} · {p.death.year}{/if}</span>{/if}
               {#if p.summary}<span class="bio">{p.summary}</span>{/if}
               {#if p.kinship?.length}<span class="rel">{p.kinship.slice(0, 2).map((k) => `${k.relation}: ${k.who}`).join('  ·  ')}</span>{/if}
             </span>
@@ -214,6 +231,9 @@
         {#if selected.side}<span class="side">{selected.side}</span>{/if}
         {#if selected.aliases?.length}<p class="d-aliases">{selected.aliases.filter((a) => a !== selected.name).slice(0, 8).join(' · ')}</p>{/if}
       </div>
+      {#if selected.death?.cause}
+        <p class="d-death" class:martyr={selected.death.martyr}>{selected.death.martyr ? '☠ Martyred' : '† Died'} — {selected.death.cause}{#if selected.death.place} at {selected.death.place}{/if}{#if selected.death.year}, {selected.death.year}{/if}{#if selected.death.source}<span class="src"> · {selected.death.source}</span>{/if}</p>
+      {/if}
       {#if selected.summary}<p class="d-summary">{selected.summary}</p>{/if}
       {#if selected.kinship?.length || selected.relations?.length}
         <section class="d-sec"><h3>Relationships</h3>
@@ -336,6 +356,18 @@
   .chip-n { font-size: .7rem; opacity: .75; background: color-mix(in srgb, var(--text-muted) 20%, transparent); border-radius: 999px; padding: 0 .4rem; }
   .resultline { font-size: .8rem; color: var(--text-muted); letter-spacing: .03em; }
   .clearai { border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); background: none; color: var(--accent); font-size: .78rem; padding: .25rem .7rem; border-radius: 999px; cursor: pointer; }
+  /* sample-query chips (shown when idle) — teach users the meaning-search */
+  .samples { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .5rem; margin-top: 1rem; }
+  .samples-lead { font-size: .76rem; color: var(--text-muted); letter-spacing: .04em; width: 100%; text-align: center; margin-bottom: .15rem; }
+  .sample { font-size: .8rem; color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface-1)); border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-subtle)); border-radius: 999px; padding: .42rem .85rem; cursor: pointer; transition: background .18s, border-color .18s, transform .1s; }
+  .sample:hover { background: color-mix(in srgb, var(--accent) 16%, var(--surface-1)); border-color: var(--accent); }
+  .sample:active { transform: scale(.97); }
+  /* death line — on cards and in the drawer (martyrs accented) */
+  .death { font-size: .78rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: .15rem; }
+  .death.martyr { color: var(--error); }
+  .d-death { margin: 0 0 .6rem; font-size: .9rem; font-weight: 600; color: var(--text-secondary); }
+  .d-death.martyr { color: var(--error); }
+  .d-death .src { font-weight: 400; color: var(--text-muted); font-size: .8rem; }
   /* AI answer banner (the reasoning) + per-card evidence chips */
   .ai-answer { display: flex; gap: .7rem; align-items: flex-start; max-width: 52rem; margin: 0 auto 1.25rem; padding: .85rem 1.15rem; border-radius: .85rem; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 13%, var(--surface-1)), var(--surface-1)); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-subtle)); box-shadow: 0 8px 24px -12px color-mix(in srgb, var(--accent) 55%, transparent); }
   .ai-answer .ai-spark { color: var(--accent); font-size: 1.2rem; line-height: 1.45; flex: 0 0 auto; }
