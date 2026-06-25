@@ -43,10 +43,13 @@ export async function listBioPersons() {
     WHERE ge.entity_type = 'person' AND ge.religion = ''
     ORDER BY (ge.importance IS NULL), ge.importance DESC, ge.canonical_name`);
   const persons = rows.map(r => {
-    let aliases = [], kinship = []; try { aliases = JSON.parse(r.aliases || '[]'); } catch {} try { kinship = JSON.parse(r.kinship || '[]'); } catch {}
+    let aliases = [], kinship = [], death = null;
+    try { aliases = JSON.parse(r.aliases || '[]'); } catch {}
+    try { kinship = JSON.parse(r.kinship || '[]'); } catch {}
+    try { death = JSON.parse(r.research_notes || '{}').death || null; } catch {}
     const m = man[r.id]; const hasPortrait = !!(m && m.cdn);
     return { id: r.id, name: r.name, importance: r.importance || 0, side: r.side || null,
-      summary: r.summary || null, aliases, kinship, hasPortrait, sources: [...(bookOf[r.id] || [])],
+      summary: r.summary || null, aliases, kinship, death, hasPortrait, sources: [...(bookOf[r.id] || [])],
       portrait: m?.cdn || null,
       wiki: m?.title ? `https://en.wikipedia.org/wiki/${encodeURIComponent(String(m.title).replace(/ /g, '_'))}` : null };
   });
@@ -90,7 +93,7 @@ export async function getBioPerson(rawId) {
   const notes = obj(row.research_notes);
   return { id: row.id, name: row.name, importance: row.importance || 0, side: row.side || null,
     summary: row.summary || null, aliases: arr(row.aliases), kinship: arr(row.kinship), relations: arr(row.relations),
-    dates: arr(row.dates), facts: notes.facts || [], firewall: notes.firewall || [], contested: notes.contested || [],
+    dates: arr(row.dates), death: notes.death || null, facts: notes.facts || [], firewall: notes.firewall || [], contested: notes.contested || [],
     possible_ids: notes.possible_ids || [], wiki, portrait, portraitFull, bahai, mentionCount, books, gpbRefs };
 }
 
@@ -124,11 +127,15 @@ export async function bioSearch(rawQ) {
   }
   if (bareGroup && memberIds.length) return { ids: memberIds, q, group: best.id, reasoning: { summary: best.summary || `${best.name} — ${memberIds.length} members.`, evidence: {} } };
 
-  const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.summary
+  const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.summary, er.research_notes
     FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
     WHERE ge.entity_type='person' AND ge.religion='' AND er.summary IS NOT NULL AND length(er.summary) > 20
     ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 480`);
-  const catalog = rows.map((r) => `${r.id}|${r.name}: ${String(r.summary).replace(/\s+/g, ' ').slice(0, 300)}`).join('\n');
+  const catalog = rows.map((r) => {
+    let d = null; try { d = JSON.parse(r.research_notes || '{}').death; } catch {}
+    const dtag = d?.cause ? ` [died: ${d.cause}${d.place ? ' at ' + d.place : ''}${d.year ? ', ' + d.year : ''}]` : '';
+    return `${r.id}|${r.name}: ${String(r.summary).replace(/\s+/g, ' ').slice(0, 280)}${dtag}`;
+  }).join('\n');
   const SYS = `You answer questions over a biographical dictionary of early Bábí/Bahá'í history. Given a QUERY and a CATALOG (one person per line "id|name: summary"), find the people whose record matches the query's MEANING — role, group, place, fate (martyred at Ṭabarsí…), period, or relationship/condition ("who recognized Bahá'u'lláh"). Judge ONLY from the summaries. Return ONLY JSON: {"summary":"one sentence directly answering the query","matches":[{"id":<number>,"why":"<=15-word evidence drawn from that person's summary>"}]} — clear matches only, most relevant first.`;
   try {
     const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],

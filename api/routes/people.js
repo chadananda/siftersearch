@@ -38,7 +38,7 @@ export default async function peopleRoutes(server) {
     const total = people.length;
     const page = people.slice(offset, offset + limit).map((p) => ({
       id: p.id, name: p.name, importance: p.importance, side: p.side, summary: p.summary,
-      aliases: p.aliases, kinship: p.kinship, sources: p.sources, hasPortrait: p.hasPortrait, portrait: p.portrait,
+      aliases: p.aliases, kinship: p.kinship, death: p.death, sources: p.sources, hasPortrait: p.hasPortrait, portrait: p.portrait,
     }));
     return { total, limit, offset, withPortraits: data.withPortraits, sides: data.sides, books: data.books, people: page };
   });
