@@ -30,7 +30,8 @@
     return { ...p, _tok: allToks, _phon: phons(idToks) };   // phonetic only on identity tokens (names/aliases/kin), not summary
   });
 
-  let persons = $state(normalize(initialData?.persons));
+  const peopleOf = (d) => d?.people || d?.persons || [];   // official API returns {people}; tolerate legacy {persons}
+  let persons = $state(normalize(peopleOf(initialData)));
   let withPortraits = $state(initialData?.withPortraits || 0);
   let loading = $state(!initialData);
   let error = $state(null);
@@ -44,15 +45,15 @@
   let aiReasoning = $state(null);  // { summary, evidence: {id: why} } — the AI's answer + per-person evidence
   let selected = $state(null);
   // seeded deterministically for SSR (renders in static HTML); the client effect then rotates it randomly
-  let heroSet = $state((initialData?.persons || []).filter((p) => p.hasPortrait).slice(0, 9));
+  let heroSet = $state(peopleOf(initialData).filter((p) => p.hasPortrait).slice(0, 9));
   const byName = $derived(new Map(persons.map((p) => [fold(p.name), p])));
 
   // client-side fallback fetch only when the page wasn't prerendered with data
   $effect(() => {
     if (initialData) return;
-    fetch(`${API}/api/graph/bio/persons`)
+    fetch(`${API}/api/v1/people?limit=2000`)
       .then((r) => r.ok ? r.json() : Promise.reject(r.status))
-      .then((d) => { persons = normalize(d.persons); withPortraits = d.withPortraits || 0; books = d.books || []; loading = false; })
+      .then((d) => { persons = normalize(peopleOf(d)); withPortraits = d.withPortraits || 0; books = d.books || []; loading = false; })
       .catch((e) => { error = String(e); loading = false; });
   });
 
@@ -99,12 +100,12 @@
   async function runAI() {
     const query = q.trim(); if (!query) { aiIds = null; return; }
     aiBusy = true;
-    try { const r = await fetch(`${API}/api/graph/bio/search?q=${encodeURIComponent(query)}`); if (r.ok) { const d = await r.json(); aiIds = d.ids || []; aiReasoning = d.reasoning || null; } }
+    try { const r = await fetch(`${API}/api/v1/people/search?q=${encodeURIComponent(query)}`); if (r.ok) { const d = await r.json(); aiIds = d.ids || []; aiReasoning = d.reasoning || null; } }
     catch (_) { /* ignore */ } finally { aiBusy = false; page = 0; }
   }
   async function open(p) {
     selected = { ...p };
-    try { const r = await fetch(`${API}/api/graph/bio/person/${p.id}`); if (r.ok) selected = await r.json(); } catch (_) { /* keep light record */ }
+    try { const r = await fetch(`${API}/api/v1/people/${p.id}`); if (r.ok) selected = await r.json(); } catch (_) { /* keep light record */ }
   }
   function jumpTo(name) {
     const hit = byName.get(fold(name)) || persons.find((p) => fold(p.name).includes(fold(name)) || (p.aliases || []).some((a) => fold(a).includes(fold(name))));

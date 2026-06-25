@@ -1,6 +1,27 @@
 {
-  "generated": "2026-06-25T04:31:35.203Z",
+  "generated": "2026-06-25T04:51:43.091Z",
   "entries": [
+    {
+      "hash": "e6175a7f",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "BioSearch in shared layer + /api/v1/people/search; list includes kinship + raised limit; graph /bio/search delegates",
+      "scope": null
+    },
+    {
+      "hash": "c20d0e84",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Official /api/v1/people (criteria search + master/detail) on a shared bio data layer; graph.js /bio/* delegates to it (single source of truth)",
+      "scope": null
+    },
+    {
+      "hash": "4cc64a70",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Phonetic instant search (consonant-skeleton, tiered literal-first) + GPB paragraph citations in the detail drawer",
+      "scope": null
+    },
     {
       "hash": "d8040825",
       "date": "2026-06-24",
@@ -3479,31 +3500,31 @@
       "type": "Fixed",
       "description": "Normalize Unicode curly quotes in extractCatalogFilters for 'Abdu'l-Bahá author detection",
       "scope": null
-    },
-    {
-      "hash": "999dff97",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Catalog compound queries now check deep research cache",
-      "scope": null
-    },
-    {
-      "hash": "f0eefbf9",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Revert library_overview label regression; clarify CATALOG two-form distinction",
-      "scope": null
-    },
-    {
-      "hash": "530a3a3b",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Traditions warning fires for 2-tradition comparative questions",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "e6175a7f",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "BioSearch in shared layer + /api/v1/people/search; list includes kinship + raised limit; graph /bio/search delegates",
+        "scope": null
+      },
+      {
+        "hash": "c20d0e84",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Official /api/v1/people (criteria search + master/detail) on a shared bio data layer; graph.js /bio/* delegates to it (single source of truth)",
+        "scope": null
+      },
+      {
+        "hash": "4cc64a70",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Phonetic instant search (consonant-skeleton, tiered literal-first) + GPB paragraph citations in the detail drawer",
+        "scope": null
+      },
       {
         "hash": "d8040825",
         "date": "2026-06-24",
@@ -7033,27 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Normalize Unicode curly quotes in extractCatalogFilters for 'Abdu'l-Bahá author detection",
-        "scope": null
-      },
-      {
-        "hash": "999dff97",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Catalog compound queries now check deep research cache",
-        "scope": null
-      },
-      {
-        "hash": "f0eefbf9",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Revert library_overview label regression; clarify CATALOG two-form distinction",
-        "scope": null
-      },
-      {
-        "hash": "530a3a3b",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Traditions warning fires for 2-tradition comparative questions",
         "scope": null
       }
     ]
