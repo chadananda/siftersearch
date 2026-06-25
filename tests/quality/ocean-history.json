@@ -1,1 +1,28 @@
-[]
+[
+  {
+    "run_at": "2026-06-01T03:15:08.488Z",
+    "total": 491,
+    "passed": 36,
+    "pass_rate": 7,
+    "mrr": 1,
+    "latency_p50_ms": 5361,
+    "latency_p95_ms": 10743,
+    "categories": {
+      "concept-match": {
+        "passed": 25,
+        "total": 271,
+        "pass_rate": 9
+      },
+      "cross-tradition": {
+        "passed": 2,
+        "total": 52,
+        "pass_rate": 4
+      },
+      "phrase-match": {
+        "passed": 9,
+        "total": 168,
+        "pass_rate": 5
+      }
+    }
+  }
+]

@@ -200,9 +200,36 @@ function logSearch({ query, userId, anonymousUserId, apiKeyId, resultCount, dura
   ).catch(err => logger.warn({ err }, 'Failed to log search'));
 }
 
+// First-party gate. The website's search UI (anonymous visitors included) calls these
+// query endpoints from a browser, which sends a first-party Origin/Referer. Direct/script
+// callers (no first-party origin) are funneled to the keyed, tracked POST /api/v1/search,
+// so API usage is attributable. Kill-switch: SEARCH_FIRST_PARTY_ONLY=false disables the gate.
+const FIRST_PARTY_ORIGINS = config.server.corsOrigins.split(',').map((o) => o.trim()).filter(Boolean);
+const FIRST_PARTY_GATE_ENABLED = process.env.SEARCH_FIRST_PARTY_ONLY !== 'false';
+
+function isFirstPartyOrigin(value) {
+  if (!value) return false;
+  try {
+    const u = new URL(value);
+    return FIRST_PARTY_ORIGINS.includes(`${u.protocol}//${u.host}`) || u.host.endsWith('.pages.dev');
+  } catch {
+    return false;
+  }
+}
+
+async function requireFirstParty(request, reply) {
+  if (!FIRST_PARTY_GATE_ENABLED) return;
+  if (isFirstPartyOrigin(request.headers.origin) || isFirstPartyOrigin(request.headers.referer)) return;
+  reply.code(401).send({
+    error: 'first_party_only',
+    message: 'This search endpoint serves the SifterSearch website. For programmatic access, use POST /api/v1/search with an X-API-Key header (request a key at /api/api-keys) so usage can be tracked.'
+  });
+}
+
 export default async function searchRoutes(fastify) {
   // Main search endpoint
   fastify.post('/', {
+    preHandler: requireFirstParty,
     schema: {
       body: {
         type: 'object',
@@ -282,6 +309,7 @@ export default async function searchRoutes(fastify) {
   // Fast keyword-only search (no auth required, rate limited)
   // Supports pagination via offset parameter. Results are cached server-side.
   fastify.get('/quick', {
+    preHandler: requireFirstParty,
     schema: {
       querystring: {
         type: 'object',
@@ -530,6 +558,7 @@ export default async function searchRoutes(fastify) {
 
   // AI-powered analysis of search results
   fastify.post('/analyze', {
+    preHandler: requireFirstParty,
     schema: {
       body: {
         type: 'object',
@@ -667,7 +696,7 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
         }
       }
     },
-    preHandler: optionalAuthenticate
+    preHandler: [requireFirstParty, optionalAuthenticate]
   }, async (request, reply) => {
     const { query: rawQuery, limit = 10, mode = 'hybrid', useResearcher = true } = request.body;
 

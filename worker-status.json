@@ -1,16 +1,21 @@
 {
-  "status": "in_progress",
-  "timestamp": "2026-06-18",
-  "summary": "OVERNIGHT RUN. INFRA FIXED: root cause of all writer slowness was a failing Kingston A400 SATA SSD mirrored with the NVMe in pool 'fast' (8-52s write latency) — DETACHED (NVMe had full copy). Then VACUUM completed (16G->13G, freelist 0). Migrated sifter.db+graph.db to ZFS recordsize=16K dataset (fast/siftersearch-db) + synchronous=NORMAL (db.js 2.117.0). Result: writes 29x faster (10k random updates 705ms vs 20734ms). /tank backup verified at /tank/backups/siftersearch/pre-16k-migration-20260618T034508Z. Old files kept at /fast/siftersearch-data/. Entity DB: 4488 entities incl 138 new martyr-roll persons; graph mentions 17925.",
-  "overnight_sequence": "1) STEP 2 extract remaining 672 paras (654 footnotes idx 1424-2081 mostly definitions/translations/Quran-citations + few named entities; 13 DB narrative + 5 GPB narrative = high-value). Resolve mentions to EXISTING roster, queue new candidates (don't auto-create from footnotes), mark ALL enriched. 2) STEP 3 deep research every person(~1159)+work(~337): merge dupes (AI adjudication, never keyword), join aliases/kinship, gather cross-corpus. 3) STEP 4 live-build review page from DB (tabs per type, sections per DB chapter by first-introduction, collapsible records) — THE morning deliverable. Plan in scripts/wip/corrections/DB-ENTITY-ROADMAP.md (top).",
-  "operational_attention": "1) pool 'fast' now SINGLE NVMe, NO redundancy — re-attach a 2nd NVMe (zpool attach) + retire A400. 2) updater FROZEN (pm2 stop siftersearch-updater) — restart + re-park 4 graph workers when ready. 3) writer path FAST now — normal HTTP write path works, no worker-stop workaround needed.",
+  "status": "complete",
+  "timestamp": "2026-06-19",
+  "summary": "Built + ran the sequential coreference reading pipeline over the ENTIRE Dawn-Breakers (doc 21308). DeepSeek (deepseek-chat = v4-flash non-thinking) read all 1900 text paragraphs in windows carrying a running cast, capturing 20,504 person-references (name/title/epithet/role/kinship/pronoun — never just names). 14 Claude region-reconcilers bound labels to DB entities by ATTRIBUTE TRIANGULATION (never keyword). Applied 943 new entity_mention links (REVERSIBLE) + queued 127 new persons + 124 ambiguous + 7 duplicate-merge candidates for review. Both acceptance arcs validated.",
+  "seqread_pipeline": {
+    "read": "1900/1900 paragraphs, 0 gaps. scripts/entity-read/{seq-read,find-gaps,fill-gaps,aggregate}.mjs. Window overflow handled by salvage + smaller windows (20->8->4->2 for dense roster paras); fetch timeout added.",
+    "reconcile": "14 region-reconcilers (Claude triangulation) -> region-NN-map.json. ~1670 certain binds, ~278 new, ~124 ambiguous. Cross-window identity unified THROUGH shared DB entity ids.",
+    "apply": "scripts/entity-read/apply-seqread.mjs. 943 rows extractor_version='seqread-v1'. 407 query-miss majors recovered by normalized name. New persons NOT auto-created.",
+    "reversible": "DELETE FROM entity_mentions WHERE extractor_version='seqread-v1' (graph.db)",
+    "backup": "/tank/backups/siftersearch/graph-pre-seqread-*.db",
+    "validate": "Mutavalli + Abdul-Khaliq/Dhabih (paras 63-1674, Badasht+after) PASS; dreamer son-of-Abdul-Majid found-but-fragmented (merge queued)",
+    "review": "tmp/entity-research/seqread/FINDINGS.md + review-queue.json"
+  },
+  "review_needed": "127 new persons (Yar-Muhammad x89, Wife of the Bab, etc. — review before creating); 7 duplicate-merge candidates (the dreamer; 1249465->1249227 Mutavalli stub; 1249485->1249427; 1249734->1247601; Imam Hasan; the fourth Gate; Haji Muhammad-Karim Khan); DB-summary fix (Nayriz officers 1250104-6 mislabeled Tabarsi)",
+  "operational_attention": "STILL OPEN from 2026-06-18 overnight run: 1) pool 'fast' is SINGLE NVMe, NO redundancy — re-attach a 2nd NVMe + retire failing A400. 2) siftersearch-updater FROZEN (pm2 stop) — restart + re-park graph workers when ready. 3) writer path is fast; entity_mentions writes go direct to graph.db (busy_timeout), seqread merges route content writes via SIFTER_WRITER_URL.",
+  "prior_step3_remaining": "From overnight run (separate from seqread): reading-agent GPB-description pass for person+work entities; re-resolve 5 held bare-name buckets by context; deliberately create 644 footnote/narrative candidates (content-new-candidates.json).",
   "needs_attention": true,
   "tests_added": 0,
   "files_removed": 0,
-  "lines_removed": 0,
-  "step4_review_page": "LIVE. In admin panel: /admin/entities (bottom nav 'Entity Review', auth-only, no key, live-refresh). Also direct: /api/admin/entity-review?key=$INTERNAL_API_KEY. Route accepts admin JWT or key.",
-  "step2_status": "COMPLETE — two-books pending=0. Narrative 18 paras + 654 footnotes extracted. 1943 content-extraction mentions to existing entities. 644 new candidates queued (scripts/wip/corrections/content-new-candidates.json) for Step 3 deliberate creation.",
-  "step3_status": "IN PROGRESS. Merge/dedup DONE: 4488->4389 entities (99 merged: 93 same-name + 4 cross-name; central figures consolidated — Bahá'u'lláh/the Báb(924m)/'Abdu'l-Bahá/Jesus/Vaḥíd single). 5 bare-name buckets HELD (Aḥmad/Siyyid Muḥammad/Mírzá Mihdí/Muftí/Mujtahid) — re-resolve by reading, NOT matching. mergeEntities fixed (3 bugs: unique mentions, full FK web, unique relations). Backups: /tank/.../pre-merge-*.",
-  "step3_descriptions": "GPB-anchored descriptions. ABANDONED the mechanical/substring gather (it mis-attributes: a GPB sentence naming entity B while describing entity A via 'this Book'/pronoun got filed under B — e.g. the Íqán's 'unequalled...except the Aqdas' landed on the Aqdas). USER ABSOLUTE RULE: NEVER mechanical/keyword matching to disambiguate or attribute — always reading comprehension. Cleared all 853 mechanical descriptions (martyr provenance restored). Flagship works Íqán/Aqdas/Hidden Words set CORRECTLY by reading (verbatim, right subject). REMAINING: gather verbatim GPB descriptors for ~850 person+work entities via READING AGENTS (subagents comprehend which entity each characterization is about, quote verbatim, preserve Shoghi Effendi's adjectives/texture like 'preeminent doctrinal work'). NO string-matching.",
-  "remaining_step3": "1) Reading-agent GPB-description pass for person+work (verbatim, comprehension attribution). 2) Re-resolve 5 held bare-name buckets by context. 3) Create 644 footnote/narrative new-entity candidates (content-new-candidates.json) deliberately."
+  "lines_removed": 0
 }

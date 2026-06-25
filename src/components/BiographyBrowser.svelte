@@ -97,16 +97,18 @@
 <svelte:window onkeydown={(e) => e.key === 'Escape' && close()} />
 
 <div class="archive">
-  <header class="header">
-    <p class="eyebrow">Entity Graph · Biographical Archive</p>
-    <h1 class="title">The Cast of the Heroic Age</h1>
-    <p class="lede">The people of early Bábí and Bahá'í history — drawn from the sacred texts, cross-referenced across the whole library, and bound by kinship and allegiance.</p>
-    <div class="method" aria-label="How the archive is built">
-      <span class="m"><b>Seed</b><i>God Passes By</i></span><span class="arr">→</span>
-      <span class="m"><b>Foundation</b><i>The Dawn-Breakers</i></span><span class="arr">→</span>
-      <span class="m"><b>Pillars</b><i>Balyuzi · Taherzadeh · Mázandarání · Momen · Saiedi</i></span><span class="arr">→</span>
-      <span class="m"><b>Expansion</b><i>the wider histories</i></span>
+  {#if heroSet.length}
+    <div class="hero" aria-hidden="true">
+      {#each heroSet as p, idx (idx)}
+        <button class="orb" onclick={() => open(p)} title={p.name} aria-label={p.name}>
+          {#key p.id}<img src={heroImg(p.portrait)} alt={p.name} loading="lazy" transition:fade={{ duration: 600 }} />{/key}
+        </button>
+      {/each}
     </div>
+  {/if}
+  <header class="header">
+    <h1 class="title">The Cast of the Heroic Age</h1>
+    <p class="method"><b>Seed</b> God Passes By <i>→</i> <b>Foundation</b> The Dawn-Breakers <i>→</i> <b>Pillars</b> Balyuzi · Taherzadeh · Mázandarání · Momen · Saiedi <i>→</i> the wider histories</p>
   </header>
 
   {#if loading}
@@ -114,22 +116,12 @@
   {:else if error}
     <p class="status error">The archive is unavailable ({error}).</p>
   {:else}
-    {#if heroSet.length}
-      <div class="hero" aria-hidden="true">
-        {#each heroSet as p, idx (idx)}
-          <button class="orb" onclick={() => open(p)} title={p.name} aria-label={p.name}>
-            {#key p.id}<img src={heroImg(p.portrait)} alt={p.name} loading="lazy" transition:fade={{ duration: 600 }} />{/key}
-          </button>
-        {/each}
-      </div>
-    {/if}
-
     <div class="searchwrap">
       <div class="searchbar">
         <span class="mag" aria-hidden="true">⌕</span>
         <input class="search" type="search" bind:value={q} oninput={onType}
           onkeydown={(e) => e.key === 'Enter' && runAI()}
-          placeholder="Search a name, alias or relationship — or ask, e.g. “letters of the living who recognized Bahá'u'lláh”" />
+          placeholder="Search a name — or ask “letters of the living”…" />
         <button class="askbtn" onclick={runAI} disabled={aiBusy} title="Search by meaning (AI)">{aiBusy ? '·····' : '✦ Ask'}</button>
       </div>
       <div class="subrow">
@@ -227,11 +219,9 @@
   .eyebrow { font-size: .68rem; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); margin: 0 0 .4rem; }
   .title { font-family: 'Amiri', Georgia, serif; font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.05; color: var(--text-primary); margin: 0; font-weight: 700; }
   .lede { color: var(--text-secondary); margin: .5rem auto 0; line-height: 1.5; max-width: 40rem; font-size: .9rem; }
-  .method { display: flex; flex-wrap: wrap; gap: .35rem .7rem; justify-content: center; align-items: center; margin: .8rem auto 0; }
-  .method .m { display: flex; flex-direction: column; line-height: 1.15; }
-  .method .m b { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
-  .method .m i { font-style: normal; font-size: .8rem; color: var(--text-secondary); }
-  .method .arr { color: var(--text-muted); opacity: .5; }
+  .method { font-size: .76rem; color: var(--text-muted); margin: .35rem auto 0; max-width: 46rem; line-height: 1.6; }
+  .method b { color: var(--accent); font-weight: 600; }
+  .method i { font-style: normal; color: var(--text-muted); opacity: .45; padding: 0 .15rem; }
   .method-note { font-size: .82rem; color: var(--text-muted); line-height: 1.6; margin: 1rem auto 0; max-width: 42rem; }
   .method-note em { color: var(--text-secondary); font-style: normal; font-weight: 600; }
   .status { text-align: center; color: var(--text-muted); padding: 4rem 0; } .status.error { color: var(--error); }

@@ -1,6 +1,27 @@
 {
-  "generated": "2026-06-25T01:19:22.762Z",
+  "generated": "2026-06-25T01:52:45.656Z",
   "entries": [
+    {
+      "hash": "7aa609fb",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Subset-match hardening + curated-only/skip-existing gather modes",
+      "scope": null
+    },
+    {
+      "hash": "ae68503c",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Bahaipedia article-image scraper (infobox portraits, filename+name verified)",
+      "scope": null
+    },
+    {
+      "hash": "b5811631",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Pre-sized placeholder plates (never reflow on image load) + compressed header + fixed-crop drawer portrait",
+      "scope": null
+    },
     {
       "hash": "4331659d",
       "date": "2026-06-24",
@@ -3479,31 +3500,31 @@
       "type": "Fixed",
       "description": "CITE commitment device + pure-count companion suppression",
       "scope": null
-    },
-    {
-      "hash": "437f9af7",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Catalog collection listing — include collection names in sample output",
-      "scope": null
-    },
-    {
-      "hash": "5fb487d0",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Catalog religion-filter routing + crafter inline-quote enforcement",
-      "scope": null
-    },
-    {
-      "hash": "80ee236e",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Comparative questions skip shouldEarlyReturn to get inline-citable passages",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "7aa609fb",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Subset-match hardening + curated-only/skip-existing gather modes",
+        "scope": null
+      },
+      {
+        "hash": "ae68503c",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Bahaipedia article-image scraper (infobox portraits, filename+name verified)",
+        "scope": null
+      },
+      {
+        "hash": "b5811631",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Pre-sized placeholder plates (never reflow on image load) + compressed header + fixed-crop drawer portrait",
+        "scope": null
+      },
       {
         "hash": "4331659d",
         "date": "2026-06-24",
@@ -7033,27 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "CITE commitment device + pure-count companion suppression",
-        "scope": null
-      },
-      {
-        "hash": "437f9af7",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Catalog collection listing — include collection names in sample output",
-        "scope": null
-      },
-      {
-        "hash": "5fb487d0",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Catalog religion-filter routing + crafter inline-quote enforcement",
-        "scope": null
-      },
-      {
-        "hash": "80ee236e",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Comparative questions skip shouldEarlyReturn to get inline-citable passages",
         "scope": null
       }
     ]
