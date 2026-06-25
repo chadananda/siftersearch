@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-25T12:48:13.421Z",
+  "generated": "2026-06-25T12:51:02.975Z",
   "entries": [
+    {
+      "hash": "f090b85d",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Remove redundant meaning-search button; compact filter chips",
+      "scope": null
+    },
     {
       "hash": "2d3a02a7",
       "date": "2026-06-25",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Format instruction for compound catalog queries — name source documents",
       "scope": null
-    },
-    {
-      "hash": "c3fe1594",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "CRAFTER_SYSTEM — never cross-link sample titles with companion URLs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-25": [
+      {
+        "hash": "f090b85d",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Remove redundant meaning-search button; compact filter chips",
+        "scope": null
+      },
       {
         "hash": "2d3a02a7",
         "date": "2026-06-25",
@@ -7049,13 +7056,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Format instruction for compound catalog queries — name source documents",
-        "scope": null
-      },
-      {
-        "hash": "c3fe1594",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "CRAFTER_SYSTEM — never cross-link sample titles with companion URLs",
         "scope": null
       }
     ]

@@ -36,9 +36,8 @@
   let loading = $state(!initialData);
   let error = $state(null);
   let q = $state('');
-  let imagesOnly = $state(false);
-  let books = $state(initialData?.books || []);   // [{key,label,count}] — source-book filter facets
-  let bookFilter = $state([]);                     // selected book keys (OR within the facet)
+  let books = $state(initialData?.books || []);   // [{key,label,count}] — source-book facets
+  let filter = $state(null);                       // single active view filter: null | 'image' | <book key>
   let page = $state(0);
   let aiIds = $state(null);     // null = token mode; array = AI meaning-search results (relevance order)
   let aiBusy = $state(false);
@@ -76,7 +75,7 @@
     heroSet = copy;
   }
   $effect(() => { if (!persons.length) return; ensureHero(); const t = setInterval(rotateOne, 2600); return () => clearInterval(t); });
-  $effect(() => { q; imagesOnly; bookFilter; page = 0; });
+  $effect(() => { q; filter; page = 0; });
   const onType = () => { aiError = null; if (aiIds !== null) { aiIds = null; aiReasoning = null; } };   // typing returns to instant token mode
   const clearSearch = () => { q = ''; aiIds = null; aiReasoning = null; aiError = null; page = 0; };
   // example queries that show off the meaning-search (each verified to return a strong, evidenced set)
@@ -91,14 +90,14 @@
   // defer the search a tick so the click handler returns + Svelte settles before the async fetch (avoids any
   // teardown race from the samples row hiding on the same click)
   const runSample = (query) => { q = query; queueMicrotask(runAI); };
-  const toggleBook = (k) => { bookFilter = bookFilter.includes(k) ? bookFilter.filter((x) => x !== k) : [...bookFilter, k]; };
-  const inBooks = (p) => !bookFilter.length || bookFilter.some((k) => p.sources?.includes(k));
+  const setFilter = (f) => { filter = filter === f ? null : f; };   // single-select: choosing one clears the rest
+  const passesFilter = (p) => filter === null || (filter === 'image' ? p.hasPortrait : p.sources?.includes(filter));
 
   const litMatch = (p, qts) => qts.every((qt) => p._tok.some((ft) => ft.startsWith(qt) || qt.startsWith(ft)));
   const phonMatch = (p, qps) => qps.every((qp) => p._phon.some((fp) => fp.startsWith(qp) || qp.startsWith(fp)));
   const filtered = $derived.by(() => {
-    if (aiIds !== null) return aiIds.map((id) => persons.find((p) => p.id === id)).filter(Boolean).filter((p) => (!imagesOnly || p.hasPortrait) && inBooks(p));
-    const base = persons.filter((p) => (!imagesOnly || p.hasPortrait) && inBooks(p));
+    if (aiIds !== null) return aiIds.map((id) => persons.find((p) => p.id === id)).filter(Boolean).filter(passesFilter);
+    const base = persons.filter(passesFilter);
     const qts = tokenize(q);
     if (!qts.length) return base;
     const qps = qts.map(phon).filter((s) => s.length > 1);
@@ -168,17 +167,17 @@
           {#if aiBusy}<span class="dots"><i></i><i></i><i></i></span><span class="ask-tx">Thinking</span>{:else}<span class="ask-ico" aria-hidden="true">✦</span><span class="ask-tx">Ask&nbsp;AI</span>{/if}
         </button>
       </div>
-      <div class="filters">
-        <button class="chip" class:on={imagesOnly} onclick={() => (imagesOnly = !imagesOnly)} title="Only people with a portrait"><span class="dot" aria-hidden="true"></span>Image</button>
+      <div class="filters" role="group" aria-label="Filter the cast">
+        <button class="chip" class:on={filter === 'image'} onclick={() => setFilter('image')} title="Only people with a portrait"><span class="dot" aria-hidden="true"></span>With portrait</button>
         {#each books as b (b.key)}
-          <button class="chip" class:on={bookFilter.includes(b.key)} onclick={() => toggleBook(b.key)} disabled={!b.count}
+          <button class="chip" class:on={filter === b.key} onclick={() => setFilter(b.key)} disabled={!b.count}
             title={b.count ? `${b.count} people appear in ${b.label}` : `${b.label} — not yet processed`}>
             <span class="dot" aria-hidden="true"></span>{b.label}{#if b.count}<span class="chip-n">{b.count.toLocaleString()}</span>{/if}
           </button>
         {/each}
       </div>
       <div class="subrow">
-        <span class="resultline">{filtered.length.toLocaleString()} {filtered.length === 1 ? 'soul' : 'souls'}{#if q || imagesOnly || bookFilter.length || aiIds !== null}{` of ${persons.length.toLocaleString()}`}{/if}</span>
+        <span class="resultline">{filtered.length.toLocaleString()} {filtered.length === 1 ? 'soul' : 'souls'}{#if q || filter || aiIds !== null}{` of ${persons.length.toLocaleString()}`}{/if}</span>
       </div>
       <div class="samples" class:hidden={!!q.trim() || aiIds !== null || aiBusy}>
         <span class="samples-lead">✦ Ask the archive — try:</span>
