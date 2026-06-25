@@ -47,10 +47,16 @@ async function one(p) {
   const all = await queryAll(`SELECT c.id, c.external_para_id pid, c.text, d.source_url url FROM content c JOIN docs d ON d.id = c.doc_id
     WHERE c.id IN (${cids.slice(0, 600).map(() => '?').join(',')}) AND c.doc_id = ${DB} ORDER BY c.id`, cids.slice(0, 600));
   if (all.length < MINMENT) { skippedFew++; return null; }   // focus on multi-mention characters
+  // sample EVENLY across the whole narrative arc (early recognition → climactic deeds → martyrdom) so a prolific
+  // figure's important later events aren't crowded out by early-life passages; plus the death scene explicitly.
   const death = all.filter((r) => DEATH.test(r.text)).slice(-3);
   const seen = new Set(death.map((r) => r.id));
-  const rest = all.filter((r) => !seen.has(r.id)).slice(0, DBMAX - death.length);
-  const rows = [...rest, ...death];
+  const pool = all.filter((r) => !seen.has(r.id));
+  const want = Math.max(1, DBMAX - death.length);
+  const sampled = [];
+  const step = pool.length > want ? pool.length / want : 1;
+  for (let i = 0; i < pool.length && sampled.length < want; i += step) sampled.push(pool[Math.floor(i)]);
+  const rows = [...sampled, ...death];
   const passages = rows.map((r, i) => ({ ...r, ct: clean(r.text), n: i + 1 }));
   const idLine = `PERSON: ${p.cn}${aliases.length ? ' (also: ' + aliases.slice(0, 6).join(', ') + ')' : ''}. ${clean(p.summary).slice(0, 320)}` +
     (kin.length ? ' Kin: ' + kin.slice(0, 4).map((k) => `${k.relation} ${k.who}`).join('; ') + '.' : '');
