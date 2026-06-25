@@ -38,8 +38,7 @@ console.error(`characterizations: ${people.length} persons${WRITE ? ' [WRITE]' :
 const SYS = `You pull the USEFUL REFERENCES to ONE person from authoritative Bábí/Bahá'í histories — passages conveying important information about them: a CHARACTERIZATION (station, rank, title, qualities, role) OR a significant FACT, RELATIONSHIP, or CONNECTION (a defining deed, their fate, who they were related to, who converted/appointed/sent them, where they served). You are given the person's IDENTITY and numbered PASSAGES where a similar name or title appears. Names/titles are widely shared (e.g. "Ásíyih" may be the wife of Pharaoh; "Navváb" may be an adversary), so FIRST judge from the identity context whether each passage refers to THIS person — not a namesake.
 DO extract (shortest exact verbatim span that carries the information): characterizations ("the iron-hearted Amír-Niẓám"), facts/fate ("martyred at fort of Shaykh Ṭabarsí"), relationships ("the mother of the Most Great Branch", "father of Badí‘"), connections ("directed by the Báb to Ṭihrán", "one of the first Western pilgrims to reach ‘Akká", "won to the Cause through Ṭáhirih").
 DO NOT extract: a bare name in a list or pure co-occurrence with NO information ("accompanied by Quddús", "Dr. and Mrs. Getsinger"), or trivial movement of no significance. If a passage only names the person without conveying any fact, relationship, connection, or characterization, SKIP it.
-CRUCIAL: the extracted span must be ABOUT this person — they must be its subject or the one it describes — NEVER a clause about a different individual who merely appears in the same passage. Quote EXACTLY from the passage.
-BE REASONABLY COMPREHENSIVE: besides epithets, make sure to capture the person's FATE (how/where they died or were martyred), their major DEEDS, and key RELATIONSHIPS when the passages state them — these matter as much as descriptions.
+CRUCIAL: the extracted span must be ABOUT this person — they must be its subject or the one it describes — NEVER a clause about a different individual who merely appears in the same passage. When a passage states the person's FATE (how/where they died or were martyred), capture that — it is as important as any epithet. Quote EXACTLY from the passage.
 Return ONLY JSON: {"items":[{"n":<passage number>,"quote":"<exact verbatim span>"}]}.`;
 
 let done = 0, withChars = 0, totalQuotes = 0;
@@ -55,8 +54,15 @@ async function one(p) {
   const all = await queryAll(`SELECT c.id, c.external_para_id pid, c.text, c.doc_id, d.source_url url
     FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id IN (${cids.slice(0, 600).map(() => '?').join(',')}) AND c.doc_id IN (${CORE})
     ORDER BY c.id`, cids.slice(0, 600));
-  // balance the candidate set across BOTH books so GPB characterizations AND Dawn-Breakers fate/deeds are seen
-  const rows = [...all.filter((r) => r.doc_id !== 21308).slice(0, GMAX), ...all.filter((r) => r.doc_id === 21308).slice(0, DMAX)];
+  // Candidate set: prioritize fate/martyrdom passages (a prolific figure's death is one paragraph among many and
+  // is usually late in the book), then GPB characterizations, then other Dawn-Breakers passages. Dedup by id.
+  const FATE = /martyr|killed|slain|slew|\bdied\b|\bdeath\b|\bfell\b|executed|beheaded|strangled|perished|put to death/i;
+  const fate = all.filter((r) => FATE.test(r.text)).slice(0, 6);
+  const seenC = new Set(fate.map((r) => r.id));
+  const gpb = all.filter((r) => r.doc_id !== 21308 && !seenC.has(r.id)).slice(0, GMAX);
+  gpb.forEach((r) => seenC.add(r.id));
+  const db = all.filter((r) => r.doc_id === 21308 && !seenC.has(r.id)).slice(0, DMAX);
+  const rows = [...fate, ...gpb, ...db];
   if (!rows.length) return null;
   const passages = rows.map((r, i) => ({ ...r, ct: clean(r.text), n: i + 1 }));
   const idLine = `PERSON: ${p.cn}${aliases.length ? ' (also: ' + aliases.slice(0, 6).join(', ') + ')' : ''}. ${clean(p.summary).slice(0, 320)}` +
