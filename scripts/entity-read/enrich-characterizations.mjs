@@ -32,7 +32,10 @@ if (ONLY) people = people.filter((p) => ONLY.has(p.id));
 if (LIMIT) people = people.slice(0, LIMIT);
 console.error(`characterizations: ${people.length} persons${WRITE ? ' [WRITE]' : ' [dry]'}`);
 
-const SYS = `You extract precise, verbatim characterizations from authoritative Bábí/Bahá'í histories (God Passes By, The Dawn-Breakers). You are given ONE person's IDENTITY and several numbered PASSAGES in which a similar name or title appears. Names and titles are widely shared (e.g. "Ásíyih" may be the wife of Pharaoh; "Navváb" may be an adversary). For EACH passage you must: (1) judge from the identity context (role, relationships, era) whether it genuinely refers to THIS person — not a namesake; (2) if it does AND it characterizes them or states a significant fact, extract the SHORTEST verbatim span (a clause or phrase — never the whole sentence or paragraph) that conveys it, copied EXACTLY from the passage. Skip passages about a namesake, and passages where the person is only named in passing with no characterization. Return ONLY JSON: {"items":[{"n":<passage number>,"quote":"<exact verbatim span>"}]}.`;
+const SYS = `You extract the SIGNIFICANT CHARACTERIZATIONS and KEY FACTS about ONE person from authoritative Bábí/Bahá'í histories — statements that define who they were: their station, rank, title, qualities, role, significance, defining deed, or fate. You are given the person's IDENTITY and numbered PASSAGES where a similar name or title appears. Names/titles are widely shared (e.g. "Ásíyih" may be the wife of Pharaoh; "Navváb" may be an adversary), so FIRST judge from the identity context whether each passage refers to THIS person — not a namesake.
+DO extract (shortest exact verbatim span): epithets/descriptions ("His heroic and distinguished disciple", "the low-born and infamous Amír-Niẓám"), station/role/relationship ("the mother of the Most Great Branch", "declared one of the Letters of the Living"), and decisive facts (defining deed, fate, why they matter).
+DO NOT extract: narrative play-by-play ("came back to Karbilá", "sprang to his feet"), dialogue beats, travel/movement, or bare co-mentions ("accompanied by Quddús", "Dr. and Mrs. Getsinger"). If a passage merely names the person or narrates an action without characterizing them, SKIP it. Quote EXACTLY from the passage; prefer fewer, stronger characterizations over many weak ones.
+Return ONLY JSON: {"items":[{"n":<passage number>,"quote":"<exact verbatim span>"}]}.`;
 
 let done = 0, withChars = 0, totalQuotes = 0;
 async function one(p) {
@@ -45,7 +48,8 @@ async function one(p) {
   try { cids = [...new Set((await graphQueryAll('SELECT content_id FROM entity_mentions WHERE entity_id = ?', [p.id])).map((m) => String(m.content_id)))]; } catch {}
   if (!cids.length) return null;
   const rows = (await queryAll(`SELECT c.id, c.external_para_id pid, c.text, c.doc_id, d.source_url url
-    FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id IN (${cids.slice(0, 400).map(() => '?').join(',')}) AND c.doc_id IN (${CORE})`, cids.slice(0, 400))).slice(0, MAXC);
+    FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id IN (${cids.slice(0, 400).map(() => '?').join(',')}) AND c.doc_id IN (${CORE})
+    ORDER BY (c.doc_id = 21308), c.id`, cids.slice(0, 400))).slice(0, MAXC);   // GPB first (characterization authority), then Dawn-Breakers
   if (!rows.length) return null;
   const passages = rows.map((r, i) => ({ ...r, ct: clean(r.text), n: i + 1 }));
   const idLine = `PERSON: ${p.cn}${aliases.length ? ' (also: ' + aliases.slice(0, 6).join(', ') + ')' : ''}. ${clean(p.summary).slice(0, 320)}` +
