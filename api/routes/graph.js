@@ -45,19 +45,52 @@ export default async function graphRoutes(server) {
   server.get('/bio/search', async (request) => {
     const q = String(request.query?.q || '').trim().slice(0, 200);
     if (!q) return { ids: [], q };
+    const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/gi, ' ').toLowerCase();
+    const STOP = new Set(['the', 'of', 'and', 'who', 'a', 'an', 'in', 'at', 'to', 'is', 'are', 'were', 'all', 'show', 'me', 'list', 'group']);
+    const qtok = new Set(norm(q).split(/\s+/).filter(t => t.length > 2 && !STOP.has(t)));
+
+    // DETERMINISTIC GROUP RESOLUTION: if the query names a modeled group (e.g. "letters of the living"),
+    // return its members from graph_relations — complete + ordered by significance, no LLM recall gaps.
+    let memberIds = [], bareGroup = false;
+    const groups = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.aliases FROM graph_entities ge
+      LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.entity_type='group'`);
+    let best = null;
+    for (const g of groups) {
+      const names = [g.name, ...(() => { try { return JSON.parse(g.aliases || '[]'); } catch { return []; } })()];
+      for (const nm of names) {
+        const gtok = norm(nm).split(/\s+/).filter(t => t.length > 2 && !STOP.has(t));
+        if (gtok.length && gtok.every(t => qtok.has(t)) && (!best || gtok.length > best.gtok)) best = { id: g.id, gtok: gtok.length };
+      }
+    }
+    if (best) {
+      const mem = await queryAll(`SELECT gr.source_entity_id AS id FROM graph_relations gr JOIN graph_entities ge ON ge.id = gr.source_entity_id
+        WHERE gr.target_entity_id = ? AND ge.entity_type='person' ORDER BY (ge.importance IS NULL), ge.importance DESC`, [best.id]);
+      memberIds = mem.map(r => r.id);
+      bareGroup = (qtok.size - best.gtok) <= 1;  // query ≈ just the group name (no extra condition words)
+    }
+    // a bare group query is answered completely + deterministically from membership
+    if (bareGroup && memberIds.length) return { ids: memberIds, q, group: best.id };
+
     const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.summary
       FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
       WHERE ge.entity_type='person' AND ge.religion='' AND er.summary IS NOT NULL AND length(er.summary) > 20
       ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 480`);
-    const catalog = rows.map(r => `${r.id}|${r.name}: ${String(r.summary).replace(/\s+/g, ' ').slice(0, 170)}`).join('\n');
+    const catalog = rows.map(r => `${r.id}|${r.name}: ${String(r.summary).replace(/\s+/g, ' ').slice(0, 300)}`).join('\n');
     const SYS = `You filter a biographical dictionary of early Bábí/Bahá'í history. Given a QUERY and a CATALOG (one person per line "id|name: summary"), return the ids whose record matches the query's MEANING — role, group (Letters of the Living, Seven Martyrs of Ṭihrán…), place, fate (martyred at Ṭabarsí…), period, or relationship/condition ("who recognized Bahá'u'lláh"). Judge from the summaries. Return ONLY JSON {"ids":[numbers]} — clear matches only, most relevant first.`;
     try {
       const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
         { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 900, responseFormat: { type: 'json_object' } });
       const m = (res.content || '').match(/\{[\s\S]*\}/);
-      const ids = m ? (JSON.parse(m[0]).ids || []).map(Number).filter(Boolean) : [];
-      return { ids, q };
-    } catch (e) { return { ids: [], q, error: String(e).slice(0, 80) }; }
+      const aiIds = m ? (JSON.parse(m[0]).ids || []).map(Number).filter(Boolean) : [];
+      // conditional group query ("letters of the living who recognized Bahá'u'lláh"): intersect the modeled
+      // membership with the LLM's condition match when both exist; otherwise prefer whichever has results.
+      let ids = aiIds;
+      if (memberIds.length) {
+        const inter = aiIds.filter(id => memberIds.includes(id));
+        ids = inter.length ? inter : (aiIds.length ? aiIds : memberIds);
+      }
+      return { ids, q, ...(best ? { group: best.id } : {}) };
+    } catch (e) { return { ids: memberIds, q, error: String(e).slice(0, 80) }; }
   });
 
   // GET /bio/person/:id — full dossier for the detail drawer (DB record + gathered bio.json + cross-corpus reach)
