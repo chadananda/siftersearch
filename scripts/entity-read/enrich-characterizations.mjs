@@ -16,8 +16,8 @@ const WRITE = process.env.WRITE === '1';
 const MIN = Number(process.env.MIN || 0);
 const LIMIT = Number(process.env.LIMIT || 0);
 const CONC = Number(process.env.CONC || 5);
-const GMAX = Number(process.env.GMAX || 14);     // max GPB candidate passages per person
-const DMAX = Number(process.env.DMAX || 14);     // max Dawn-Breakers candidate passages per person
+const GMAX = Number(process.env.GMAX || 12);     // max GPB candidate passages per person (authoritative characterizations)
+const DMAX = Number(process.env.DMAX || 5);      // max extra Dawn-Breakers passages (beyond the death scene)
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',').map(Number)) : null;
 const CORE = '21310,57347,21308';
 const bookOf = (id) => (id === 21308 ? 'The Dawn-Breakers' : 'God Passes By');
@@ -54,15 +54,16 @@ async function one(p) {
   const all = await queryAll(`SELECT c.id, c.external_para_id pid, c.text, c.doc_id, d.source_url url
     FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id IN (${cids.slice(0, 600).map(() => '?').join(',')}) AND c.doc_id IN (${CORE})
     ORDER BY c.id`, cids.slice(0, 600));
-  // Candidate set: prioritize fate/martyrdom passages (a prolific figure's death is one paragraph among many and
-  // is usually late in the book), then GPB characterizations, then other Dawn-Breakers passages. Dedup by id.
-  const FATE = /martyr|killed|slain|slew|\bdied\b|\bdeath\b|\bfell\b|executed|beheaded|strangled|perished|put to death/i;
-  const fate = all.filter((r) => FATE.test(r.text)).slice(0, 6);
-  const seenC = new Set(fate.map((r) => r.id));
+  // Candidate set: GPB characterizations (authoritative, concise) + the actual DEATH-scene passage (strong death
+  // words, and a death is usually LATE in the book → take the last matches), so fate is captured WITHOUT flooding
+  // the set with Dawn-Breakers narrative. Then a few more Dawn-Breakers passages for deeds/relationships.
+  const DEATH = /\b(martyr|martyrdom|slain|slew|beheaded|strangled|put to death|fell a martyr|met his death|met her death|suffered martyrdom|was killed|were killed|executed|done to death)\b/i;
+  const death = all.filter((r) => DEATH.test(r.text)).slice(-3);
+  const seenC = new Set(death.map((r) => r.id));
   const gpb = all.filter((r) => r.doc_id !== 21308 && !seenC.has(r.id)).slice(0, GMAX);
   gpb.forEach((r) => seenC.add(r.id));
   const db = all.filter((r) => r.doc_id === 21308 && !seenC.has(r.id)).slice(0, DMAX);
-  const rows = [...fate, ...gpb, ...db];
+  const rows = [...gpb, ...death, ...db];
   if (!rows.length) return null;
   const passages = rows.map((r, i) => ({ ...r, ct: clean(r.text), n: i + 1 }));
   const idLine = `PERSON: ${p.cn}${aliases.length ? ' (also: ' + aliases.slice(0, 6).join(', ') + ')' : ''}. ${clean(p.summary).slice(0, 320)}` +
