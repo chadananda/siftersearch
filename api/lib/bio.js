@@ -93,7 +93,8 @@ export async function getBioPerson(rawId) {
   const notes = obj(row.research_notes);
   return { id: row.id, name: row.name, importance: row.importance || 0, side: row.side || null,
     summary: row.summary || null, aliases: arr(row.aliases), kinship: arr(row.kinship), relations: arr(row.relations),
-    dates: arr(row.dates), death: notes.death || null, facts: notes.facts || [], firewall: notes.firewall || [], contested: notes.contested || [],
+    dates: arr(row.dates), death: notes.death || null, characterizations: notes.characterizations || [],
+    facts: notes.facts || [], firewall: notes.firewall || [], contested: notes.contested || [],
     possible_ids: notes.possible_ids || [], wiki, portrait, portraitFull, bahai, mentionCount, books, gpbRefs };
 }
 
