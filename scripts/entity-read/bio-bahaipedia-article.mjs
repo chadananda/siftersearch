@@ -73,6 +73,8 @@ for (let i = 0; i < people.length; i += CONC) {
 }
 if (WRITE) writeFileSync(ROOT + '/manifest.json', JSON.stringify(manifest, null, 1));
 const f = out.filter((o) => o.status === 'found');
-console.log(`\nfound portraits: ${f.length} | downloaded: ${out.filter((o) => o.downloaded).length} | no-article: ${out.filter((o) => o.status === 'no-article').length} | no-match: ${out.filter((o) => o.status === 'no-match').length}\n`);
-for (const o of f) console.log(`  ${o.id} ${o.cn}  ←  ${o.file}${o.nameMatched ? '' : '  ⚠unverified-name'}${o.downloaded ? ' ✓' : ''}`);
+const cand = out.filter((o) => o.status === 'candidate');
+console.log(`\nfound: ${f.length} | downloaded: ${out.filter((o) => o.downloaded).length} | candidates(unverified, skipped): ${cand.length} | no-image: ${out.filter((o) => o.status === 'no-image').length} | no-article: ${out.filter((o) => o.status === 'no-article').length}\n`);
+for (const o of f) console.log(`  ✓ ${o.id} ${o.cn}  ←  ${o.file}${o.downloaded ? '' : '  (dry)'}`);
+if (cand.length) { console.log('\ncandidates (infobox image, name not matched — review):'); for (const o of cand) console.log(`  ? ${o.id} ${o.cn}  ←  ${o.file}  [${o.title}]`); }
 process.exit(0);
