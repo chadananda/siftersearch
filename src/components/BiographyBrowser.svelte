@@ -265,13 +265,16 @@
           <p class="books">{selected.books.slice(0, 14).join(' · ')}</p>
         </section>
       {/if}
-      {#if selected.gpbRefs?.length}
-        <section class="d-sec"><h3>In <i>God Passes By</i> <span class="muted">({selected.gpbRefs.length}{selected.gpbRefs.length === 24 ? '+' : ''})</span></h3>
+      <!-- Removed: mention→paragraph "In God Passes By" refs were unreliable — a mention does not mean the
+           paragraph is about the person, and shared names (Ásíyih→Pharaoh's wife, Navváb→an adversary) polluted
+           the links. To be replaced by disambiguation-aware, precisely-excerpted characterizations. -->
+      {#if selected.characterizations?.length}
+        <section class="d-sec"><h3>Characterizations from the sources</h3>
           <ul class="refs">
-            {#each selected.gpbRefs as r}
+            {#each selected.characterizations as c}
               <li>
-                {#if r.url}<a href={r.url} target="_blank" rel="noopener" class="ref-link">{r.heading || `¶ ${r.paraId}`}</a>{:else}<span class="ref-link">{r.heading || `¶ ${r.paraId}`}</span>{/if}
-                {#if r.snippet}<span class="ref-snip">“{r.snippet}…”</span>{/if}
+                <span class="ref-snip">“{c.quote}”</span>
+                {#if c.url}<a href={c.url} target="_blank" rel="noopener" class="ref-link">{c.source || 'source'} →</a>{:else if c.source}<span class="cred">— {c.source}</span>{/if}
               </li>
             {/each}
           </ul>

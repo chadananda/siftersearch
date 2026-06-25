@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-25T12:51:02.975Z",
+  "generated": "2026-06-25T16:10:12.789Z",
   "entries": [
+    {
+      "hash": "154a2ce5",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Single-select filter chips (radio: choosing one clears others), clearer labels",
+      "scope": null
+    },
     {
       "hash": "f090b85d",
       "date": "2026-06-25",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Strengthen no-fabricated-URLs ban in CRAFTER_SYSTEM for catalog responses",
       "scope": null
-    },
-    {
-      "hash": "ea0127cb",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Format instruction for compound catalog queries — name source documents",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-25": [
+      {
+        "hash": "154a2ce5",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Single-select filter chips (radio: choosing one clears others), clearer labels",
+        "scope": null
+      },
       {
         "hash": "f090b85d",
         "date": "2026-06-25",
@@ -7049,13 +7056,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Strengthen no-fabricated-URLs ban in CRAFTER_SYSTEM for catalog responses",
-        "scope": null
-      },
-      {
-        "hash": "ea0127cb",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Format instruction for compound catalog queries — name source documents",
         "scope": null
       }
     ]
