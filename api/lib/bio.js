@@ -149,11 +149,13 @@ export async function bioSearch(rawQ) {
     if (!fx.length) continue;
     exById[r.id] = fx;
     const al = (() => { try { return JSON.parse(r.aliases || '[]'); } catch { return []; } })().slice(0, 3);
-    const items = fx.slice(0, 9).map((f) => `• ${String(f.statement).replace(/\s+/g, ' ')}`).join(' ');
+    const items = fx.slice(0, 10).map((f) => `• ${String(f.statement).replace(/\s+/g, ' ')}${f.when ? ' [' + f.when + ']' : ''}`).join(' ');
     lines.push(`${r.id}|${r.name}${al.length ? ' (' + al.join('; ') + ')' : ''}: ${items}`);
   }
   const catalog = lines.join('\n');
-  const SYS = `You answer questions about people in early Bábí/Bahá'í history using ONLY a catalog of cited facts. You are given a QUERY and a CATALOG — one person per line: "id|name (aliases): • fact • fact …" drawn from God Passes By and The Dawn-Breakers. Return the people whose facts actually answer the query (role, group, place, fate, relationship, connection, condition). For each match, the evidence MUST be one of THAT person's listed facts that supports the answer — copied from their line, never invented or taken from another line. If no fact supports the query for a person, do not return them. Return ONLY JSON: {"summary":"one sentence answering the query","matches":[{"id":<number>,"fact":"<the supporting fact from that person's line>"}]} — clear matches only, most relevant first.`;
+  const SYS = `You answer questions about people in early Bábí/Bahá'í history using ONLY a catalog of cited facts. You are given a QUERY and a CATALOG — one person per line: "id|name (aliases): • fact [period] • fact …" drawn from God Passes By and The Dawn-Breakers. Facts may carry a [period/place].
+Return a person ONLY if one of their listed facts DIRECTLY answers the query — the fact itself must establish the answer (who/where/when), not merely be a fact about them. For "who met the Báb before his Declaration", require a fact stating they met or knew the Báb before 1844 (e.g. at Karbilá). For place/period queries, the fact must match that place/period. Do NOT include a person just because they belong to a relevant group.
+For each match, the evidence MUST be the specific listed fact that answers it — copied from THAT person's line, never invented or taken from another line. Return ONLY JSON: {"summary":"one sentence answering the query","matches":[{"id":<number>,"fact":"<the supporting fact from that person's line>"}]} — clear matches only, most relevant first.`;
   try {
     const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
       { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1800, responseFormat: { type: 'json_object' } });

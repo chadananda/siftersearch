@@ -28,10 +28,11 @@ if (LIMIT) people = people.slice(0, LIMIT);
 console.error(`fact catalog: ${people.length} persons${WRITE ? ' [WRITE]' : ' [dry]'}`);
 
 const SYS = `You build a CITED FACT CATALOG for ONE person from authoritative Bábí/Bahá'í histories (God Passes By = brief/authoritative; The Dawn-Breakers = detailed narrative with the relationships). You get the person's IDENTITY and numbered PASSAGES where a similar name/title appears. Names/titles are widely shared (e.g. "Ásíyih" = Pharaoh's wife; "Navváb" = an adversary), so FIRST judge from the identity context whether each passage is about THIS person — not a namesake.
-For each genuine, significant fact about this person, output: {"n": passage number it is drawn from, "relation": a short kebab tag, "statement": a clear factual sentence (you MAY paraphrase for clarity, but it must be supported by passage n)}.
-Cover: identity/role/title; significant deeds and role in the upheavals; CONNECTIONS to other people — family ("father-of", "brother-of", "wife-of"), "converted-by"/"converted", "accompanied", "appointed-by", and especially whether they "met"/"recognized" the Báb or Bahá'u'lláh (use relations like "met-bahaullah", "recognized-bab", "letter-of-the-living"); and their FATE (e.g. "martyred-at-tabarsi", "executed", "died-in-exile").
+For each genuine, significant fact about this person, output: {"n": passage number it is drawn from, "relation": a short kebab tag, "statement": a clear factual sentence (you MAY paraphrase for clarity, but it must be supported by passage n; INCLUDE the PLACE where it happened when stated), "when": the time/period the passage gives — a year ("1848"), a date, or an era ("the Baghdád period") — or null if none}.
+Cover: identity/role/title; significant deeds and role in the upheavals; CONNECTIONS to other people — family ("father-of", "brother-of", "wife-of"), "converted-by"/"converted", "accompanied", "appointed-by", and especially whether and WHERE they "met"/"recognized" the Báb or Bahá'u'lláh (relations like "met-bahaullah", "recognized-bab", "letter-of-the-living"); and their FATE (e.g. "martyred-at-tabarsi", "executed", "died-in-exile").
+For any meeting, event, deed, or fate, the WHERE belongs in the statement and the WHEN in the "when" field whenever the passage gives them — these power who-met-whom-where-when analysis.
 RULES: Only assert a fact a passage actually supports — never infer beyond it (if no passage shows they met Bahá'u'lláh, do NOT claim it). The fact must be ABOUT this person, not someone else in the passage. Skip trivial narrative and bare co-mentions.
-Return ONLY JSON: {"facts":[{"n":<num>,"relation":"<tag>","statement":"<clear fact>"}]}.`;
+Return ONLY JSON: {"facts":[{"n":<num>,"relation":"<tag>","statement":"<clear fact incl. place>","when":"<period or null>"}]}.`;
 
 let done = 0, withF = 0, total = 0;
 async function one(p) {
@@ -69,7 +70,8 @@ async function one(p) {
       const pass = passages.find((x) => x.n === Number(it.n)); if (!pass || !it.statement) continue;
       const st = clean(it.statement); if (st.length < 10) continue;
       const key = st.toLowerCase().slice(0, 60); if (seenS.has(key)) continue; seenS.add(key);
-      facts.push({ statement: st, relation: String(it.relation || '').toLowerCase().replace(/[^a-z0-9:-]+/g, '-').slice(0, 40),
+      const when = it.when && String(it.when).trim() && !/^(null|none|n\/a|unknown)$/i.test(String(it.when).trim()) ? String(it.when).trim().slice(0, 40) : null;
+      facts.push({ statement: st, relation: String(it.relation || '').toLowerCase().replace(/[^a-z0-9:-]+/g, '-').slice(0, 40), when,
         source: bookOf(pass.doc_id), paraId: pass.pid, url: pass.url && pass.pid ? `${pass.url}?paraId=${pass.pid}` : null });
     }
     if (!facts.length) return null;
