@@ -19,11 +19,16 @@
   // Ni'matu'lláh / Nimatu'lláh / Ni'matu'lláhi all → "nimatullah"(+i), then bidirectional prefix-match unifies them
   const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ]/g, '').toLowerCase();
   const tokenize = (s) => fold(s).split(/[^a-z0-9]+/).filter((t) => t.length > 1);
-  const normalize = (list) => (list || []).map((p) => ({ ...p, _tok: [...new Set([
-    ...tokenize(p.name), ...(p.aliases || []).flatMap(tokenize),
-    ...(p.kinship || []).flatMap((k) => tokenize(k.who).concat(tokenize(k.relation))),
-    ...tokenize(p.side || ''), ...tokenize(p.summary || ''),
-  ])] }));
+  // phonetic skeleton: collapse digraphs (sh/kh/gh…), drop vowels + semivowels, collapse doubled letters → so
+  // transliteration variants share a key (Sadiq/Sadeq→sdq, Muhammad/Mohammad→mhmd, Ṭáhirih/Tahereh→thrh,
+  // Ni'matu'lláh/Nimatu'lláh→nmtlh). Recall-first round for instant search; literal matches still rank above.
+  const phon = (t) => t.replace(/sh/g, '$').replace(/kh/g, 'k').replace(/gh/g, 'g').replace(/ch/g, 'c').replace(/zh/g, 'j').replace(/th/g, 't').replace(/dh/g, 'd').replace(/ph/g, 'f').replace(/[aeiouwy]/g, '').replace(/(.)\1+/g, '$1');
+  const phons = (toks) => [...new Set(toks.map(phon).filter((s) => s.length > 1))];
+  const normalize = (list) => (list || []).map((p) => {
+    const idToks = [...new Set([...tokenize(p.name), ...(p.aliases || []).flatMap(tokenize), ...(p.kinship || []).flatMap((k) => tokenize(k.who))])];
+    const allToks = [...new Set([...idToks, ...(p.kinship || []).flatMap((k) => tokenize(k.relation)), ...tokenize(p.side || ''), ...tokenize(p.summary || '')])];
+    return { ...p, _tok: allToks, _phon: phons(idToks) };   // phonetic only on identity tokens (names/aliases/kin), not summary
+  });
 
   let persons = $state(normalize(initialData?.persons));
   let withPortraits = $state(initialData?.withPortraits || 0);
@@ -75,11 +80,17 @@
   const toggleBook = (k) => { bookFilter = bookFilter.includes(k) ? bookFilter.filter((x) => x !== k) : [...bookFilter, k]; };
   const inBooks = (p) => !bookFilter.length || bookFilter.some((k) => p.sources?.includes(k));
 
-  const matches = (p, qts) => qts.every((qt) => p._tok.some((ft) => ft.startsWith(qt) || qt.startsWith(ft)));
+  const litMatch = (p, qts) => qts.every((qt) => p._tok.some((ft) => ft.startsWith(qt) || qt.startsWith(ft)));
+  const phonMatch = (p, qps) => qps.every((qp) => p._phon.some((fp) => fp.startsWith(qp) || qp.startsWith(fp)));
   const filtered = $derived.by(() => {
     if (aiIds !== null) return aiIds.map((id) => persons.find((p) => p.id === id)).filter(Boolean).filter((p) => (!imagesOnly || p.hasPortrait) && inBooks(p));
+    const base = persons.filter((p) => (!imagesOnly || p.hasPortrait) && inBooks(p));
     const qts = tokenize(q);
-    return persons.filter((p) => (!imagesOnly || p.hasPortrait) && inBooks(p) && matches(p, qts));
+    if (!qts.length) return base;
+    const qps = qts.map(phon).filter((s) => s.length > 1);
+    const lit = [], pho = [];   // literal matches first, phonetic-only variants after (each kept importance-sorted)
+    for (const p of base) { if (litMatch(p, qts)) lit.push(p); else if (qps.length && phonMatch(p, qps)) pho.push(p); }
+    return [...lit, ...pho];
   });
   const pageCount = $derived(Math.max(1, Math.ceil(filtered.length / PER_PAGE)));
   const pageItems = $derived(filtered.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE));
@@ -231,6 +242,18 @@
           <p class="books">{selected.books.slice(0, 14).join(' · ')}</p>
         </section>
       {/if}
+      {#if selected.gpbRefs?.length}
+        <section class="d-sec"><h3>In <i>God Passes By</i> <span class="muted">({selected.gpbRefs.length}{selected.gpbRefs.length === 24 ? '+' : ''})</span></h3>
+          <ul class="refs">
+            {#each selected.gpbRefs as r}
+              <li>
+                {#if r.url}<a href={r.url} target="_blank" rel="noopener" class="ref-link">{r.heading || `¶ ${r.paraId}`}</a>{:else}<span class="ref-link">{r.heading || `¶ ${r.paraId}`}</span>{/if}
+                {#if r.snippet}<span class="ref-snip">“{r.snippet}…”</span>{/if}
+              </li>
+            {/each}
+          </ul>
+        </section>
+      {/if}
       {#if selected.wiki}
         <section class="d-sec"><h3>Beyond the corpus</h3>
           {#if selected.wiki.extract}<p class="d-summary faint">{selected.wiki.extract}</p>{/if}
@@ -363,6 +386,11 @@
   .facts.faint li { color: var(--text-muted); }
   .src { color: var(--text-muted); font-size: .76rem; font-style: italic; }
   .books { font-size: .85rem; color: var(--text-secondary); line-height: 1.6; }
+  .refs { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .6rem; }
+  .refs li { display: flex; flex-direction: column; gap: .15rem; }
+  .ref-link { color: var(--accent); text-decoration: none; font-size: .82rem; font-weight: 600; align-self: flex-start; }
+  .ref-link:hover { text-decoration: underline; }
+  .ref-snip { color: var(--text-secondary); font-size: .8rem; line-height: 1.45; font-style: italic; }
   .link { color: var(--accent); font-size: .85rem; } .link:hover { color: var(--accent-hover); }
   .cred { display: block; font-size: .7rem; color: var(--text-muted); margin-top: .35rem; }
   @media (max-width: 640px) { .plate { width: 4.25rem; height: 4.25rem; } .search { font-size: .95rem; } }

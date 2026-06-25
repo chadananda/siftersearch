@@ -142,19 +142,26 @@ export default async function graphRoutes(server) {
         wiki = bj.wikipedia || null; bahai = bj.bahai_media || null;
         portraitFull = bj.portrait_fullres || bj.wikipedia?.image_url || bahai?.full || null; }
     } catch { /* no bio.json */ }
-    // cross-corpus reach: distinct books this person appears in
-    let mentionCount = 0, books = [];
+    // cross-corpus reach: distinct books this person appears in + the GPB paragraph citations
+    let mentionCount = 0, books = [], gpbRefs = [];
     try {
       const ms = await graphQueryAll('SELECT content_id FROM entity_mentions WHERE entity_id = ?', [id]);
       mentionCount = ms.length;
-      const cids = [...new Set(ms.map(m => String(m.content_id)))].slice(0, 4000);
-      if (cids.length) books = (await queryAll(`SELECT DISTINCT d.title FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id IN (${cids.map(() => '?').join(',')}) AND d.title IS NOT NULL`, cids)).map(b => b.title);
+      const cids = [...new Set(ms.map(m => String(m.content_id)))].slice(0, 900);   // cap under SQLite's param limit
+      if (cids.length) {
+        const ph = cids.map(() => '?').join(',');
+        books = (await queryAll(`SELECT DISTINCT d.title FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id IN (${ph}) AND d.title IS NOT NULL`, cids)).map(b => b.title);
+        // God Passes By citations (docs 21310/57347): paragraph link = source_url?paraId=<external_para_id>
+        const gp = await queryAll(`SELECT c.external_para_id AS pid, c.text, c.heading, d.source_url AS url FROM content c JOIN docs d ON d.id = c.doc_id
+          WHERE c.id IN (${ph}) AND d.id IN (21310, 57347) AND c.external_para_id IS NOT NULL ORDER BY c.id LIMIT 24`, cids);
+        gpbRefs = gp.map(r => ({ paraId: r.pid, url: r.url ? `${r.url}?paraId=${r.pid}` : null, heading: r.heading || null, snippet: String(r.text || '').replace(/\s+/g, ' ').slice(0, 200) }));
+      }
     } catch { /* graph optional */ }
     const notes = obj(row.research_notes);
     return { id: row.id, name: row.name, importance: row.importance || 0, side: row.side || null,
       summary: row.summary || null, aliases: arr(row.aliases), kinship: arr(row.kinship), relations: arr(row.relations),
       dates: arr(row.dates), facts: notes.facts || [], firewall: notes.firewall || [], contested: notes.contested || [],
-      possible_ids: notes.possible_ids || [], wiki, portrait, portraitFull, bahai, mentionCount, books };
+      possible_ids: notes.possible_ids || [], wiki, portrait, portraitFull, bahai, mentionCount, books, gpbRefs };
   });
 
   // GET /bio/portrait/:id — serve a gathered portrait image file

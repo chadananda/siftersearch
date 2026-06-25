@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-25T04:24:35.405Z",
+  "generated": "2026-06-25T04:31:35.203Z",
   "entries": [
+    {
+      "hash": "d8040825",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "Source-book filter chips (Image · GPB · Dawn-Breakers) — multi-select, counts, Pillars chips appear as books are processed",
+      "scope": null
+    },
     {
       "hash": "b0f40c81",
       "date": "2026-06-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Traditions warning fires for 2-tradition comparative questions",
       "scope": null
-    },
-    {
-      "hash": "823b7b11",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Clarify CATALOG-DATA vs CATALOG-COMPANION citation roles",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "d8040825",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "Source-book filter chips (Image · GPB · Dawn-Breakers) — multi-select, counts, Pillars chips appear as books are processed",
+        "scope": null
+      },
       {
         "hash": "b0f40c81",
         "date": "2026-06-24",
@@ -7047,13 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Traditions warning fires for 2-tradition comparative questions",
-        "scope": null
-      },
-      {
-        "hash": "823b7b11",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Clarify CATALOG-DATA vs CATALOG-COMPANION citation roles",
         "scope": null
       }
     ]
