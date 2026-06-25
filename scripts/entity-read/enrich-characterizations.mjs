@@ -22,6 +22,8 @@ const CORE = '21310,57347,21308';
 const bookOf = (id) => (id === 21308 ? 'The Dawn-Breakers' : 'God Passes By');
 const clean = (t) => String(t || '').replace(/\[\^[^\]]*\]/g, '').replace(/\[pg[^\]]*\]/g, '').replace(/\\/g, '').replace(/\s+/g, ' ').trim();
 const normq = (s) => clean(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, "'").toLowerCase();
+const toks = (s) => normq(s).replace(/[^a-z ]/g, ' ').split(/\s+/).filter((t) => t.length > 2);
+const TITLE = new Set(['the', 'and', 'his', 'her', 'was', 'who', 'son', 'sir', 'lady', 'haji', 'mirza', 'mulla', 'siyyid', 'shaykh', 'aqa', 'khan', 'khanum', 'jinab', 'that', 'this', 'same', 'with', 'for', 'from', 'had', 'has', 'its', 'one', 'mrs']);
 
 let people = await queryAll(`SELECT ge.id, ge.canonical_name cn, ge.importance imp, er.side, er.summary, er.aliases, er.kinship, er.research_notes
   FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
@@ -57,14 +59,19 @@ async function one(p) {
   const body = passages.map((x) => `[${x.n}] ${x.ct.slice(0, 800)}`).join('\n\n');
   try {
     const res = await ai.chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `${idLine}\n\nPASSAGES:\n${body}` }],
-      { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 900, responseFormat: { type: 'json_object' } });
-    const m = (res.content || '').match(/\{[\s\S]*\}/); const items = m ? (JSON.parse(m[0]).items || []) : [];
-    const chars = [];
+      { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1300, responseFormat: { type: 'json_object' } });
+    let items = [];
+    try { const m = (res.content || '').match(/\{[\s\S]*\}/); items = m ? (JSON.parse(m[0]).items || []) : []; }
+    catch { for (const mm of (res.content || '').matchAll(/"n"\s*:\s*(\d+)\s*,\s*"quote"\s*:\s*"((?:[^"\\]|\\.)*)"/g)) items.push({ n: +mm[1], quote: mm[2].replace(/\\"/g, '"') }); }
+    const nameToks = new Set([...toks(p.cn), ...aliases.flatMap(toks)]);
+    const chars = []; const seen = new Set();
     for (const it of items) {
       const pass = passages.find((x) => x.n === Number(it.n)); if (!pass || !it.quote) continue;
       const q = clean(it.quote).replace(/^["'“”]+|["'“”]+$/g, '');
       if (q.length < 8) continue;
       if (!normq(pass.ct).includes(normq(q))) continue;   // VERIFY: quote must occur verbatim in the source
+      if (toks(q).filter((t) => !nameToks.has(t) && !TITLE.has(t)).length < 2) continue;   // must add ≥2 descriptive words (drop bare name/title co-mentions)
+      const key = normq(q); if (seen.has(key)) continue; seen.add(key);
       chars.push({ quote: q, source: bookOf(pass.doc_id), paraId: pass.pid, url: pass.url && pass.pid ? `${pass.url}?paraId=${pass.pid}` : null });
     }
     if (!chars.length) return null;
