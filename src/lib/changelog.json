@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-25T12:46:05.181Z",
+  "generated": "2026-06-25T12:48:13.421Z",
   "entries": [
+    {
+      "hash": "2d3a02a7",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Move death off cards → end of detail popup (Passing section)",
+      "scope": null
+    },
     {
       "hash": "72465833",
       "date": "2026-06-25",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "CRAFTER_SYSTEM — never cross-link sample titles with companion URLs",
       "scope": null
-    },
-    {
-      "hash": "64957386",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Increase companion search limit to 6 for compound catalog topic queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-25": [
+      {
+        "hash": "2d3a02a7",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Move death off cards → end of detail popup (Passing section)",
+        "scope": null
+      },
       {
         "hash": "72465833",
         "date": "2026-06-25",
@@ -7049,13 +7056,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "CRAFTER_SYSTEM — never cross-link sample titles with companion URLs",
-        "scope": null
-      },
-      {
-        "hash": "64957386",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Increase companion search limit to 6 for compound catalog topic queries",
         "scope": null
       }
     ]

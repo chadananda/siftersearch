@@ -179,7 +179,6 @@
       </div>
       <div class="subrow">
         <span class="resultline">{filtered.length.toLocaleString()} {filtered.length === 1 ? 'soul' : 'souls'}{#if q || imagesOnly || bookFilter.length || aiIds !== null}{` of ${persons.length.toLocaleString()}`}{/if}</span>
-        {#if aiIds !== null}<button class="clearai" onclick={() => { aiIds = null; aiReasoning = null; }}>✦ meaning-search · show all</button>{/if}
       </div>
       <div class="samples" class:hidden={!!q.trim() || aiIds !== null || aiBusy}>
         <span class="samples-lead">✦ Ask the archive — try:</span>
@@ -355,14 +354,14 @@
   .subrow { display: flex; align-items: center; justify-content: center; gap: 1.25rem; margin-top: .85rem; flex-wrap: wrap; }
   .toggle { display: flex; gap: .4rem; align-items: center; font-size: .85rem; color: var(--text-secondary); cursor: pointer; }
   /* source-book / image filter chips */
-  .filters { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin-top: .9rem; }
-  .chip { display: inline-flex; align-items: center; gap: .45rem; min-height: 2.2rem; font-size: .8rem; font-weight: 500; color: var(--text-secondary); background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 999px; padding: .3rem .85rem; cursor: pointer; transition: background .18s, border-color .18s, color .18s; }
+  .filters { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem; margin-top: .7rem; }
+  .chip { display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 500; color: var(--text-secondary); background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 999px; padding: .22rem .6rem; cursor: pointer; transition: background .18s, border-color .18s, color .18s; }
   .chip:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); color: var(--text-primary); }
   .chip.on { background: color-mix(in srgb, var(--accent) 16%, var(--surface-1)); border-color: var(--accent); color: var(--accent); }
   .chip:disabled { opacity: .4; cursor: not-allowed; }
-  .chip .dot { width: .55rem; height: .55rem; border-radius: 50%; border: 1.5px solid currentColor; opacity: .5; flex: 0 0 auto; }
+  .chip .dot { width: .42rem; height: .42rem; border-radius: 50%; border: 1.5px solid currentColor; opacity: .5; flex: 0 0 auto; }
   .chip.on .dot { background: var(--accent); border-color: var(--accent); opacity: 1; }
-  .chip-n { font-size: .7rem; opacity: .75; background: color-mix(in srgb, var(--text-muted) 20%, transparent); border-radius: 999px; padding: 0 .4rem; }
+  .chip-n { font-size: .62rem; opacity: .75; background: color-mix(in srgb, var(--text-muted) 20%, transparent); border-radius: 999px; padding: 0 .3rem; }
   .resultline { font-size: .8rem; color: var(--text-muted); letter-spacing: .03em; }
   .clearai { border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); background: none; color: var(--accent); font-size: .78rem; padding: .25rem .7rem; border-radius: 999px; cursor: pointer; }
   /* sample-query chips (shown when idle) — teach users the meaning-search */
