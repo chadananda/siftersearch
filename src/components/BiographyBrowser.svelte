@@ -206,7 +206,7 @@
             <span class="card-body">
               <span class="name">{p.name}</span>
               {#if p.side}<span class="side">{p.side}</span>{/if}
-              {#if aiReasoning?.evidence?.[p.id]?.quote}<span class="evidence">“{aiReasoning.evidence[p.id].quote}” <em class="evidence-src">— {aiReasoning.evidence[p.id].source}</em></span>{/if}
+              {#if aiReasoning?.evidence?.[p.id]?.quote}<span class="evidence">{aiReasoning.evidence[p.id].quote} <em class="evidence-src">— {aiReasoning.evidence[p.id].source}</em></span>{/if}
               {#if p.summary}<span class="bio">{p.summary}</span>{/if}
               {#if p.kinship?.length}<span class="rel">{p.kinship.slice(0, 2).map((k) => `${k.relation}: ${k.who}`).join('  ·  ')}</span>{/if}
             </span>
@@ -269,11 +269,11 @@
            paragraph is about the person, and shared names (Ásíyih→Pharaoh's wife, Navváb→an adversary) polluted
            the links. To be replaced by disambiguation-aware, precisely-excerpted characterizations. -->
       {#if selected.characterizations?.length}
-        <section class="d-sec"><h3>Characterizations from the sources</h3>
+        <section class="d-sec"><h3>Facts &amp; connections <span class="muted">(cited)</span></h3>
           <ul class="refs">
             {#each selected.characterizations as c}
               <li>
-                <span class="ref-snip">“{c.quote}”</span>
+                <span class="ref-snip">{c.quote}</span>
                 {#if c.url}<a href={c.url} target="_blank" rel="noopener" class="ref-link">{c.source || 'source'} →</a>{:else if c.source}<span class="cred">— {c.source}</span>{/if}
               </li>
             {/each}

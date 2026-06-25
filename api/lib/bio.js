@@ -95,9 +95,13 @@ export async function getBioPerson(rawId) {
     }
   } catch { /* graph optional */ }
   const notes = obj(row.research_notes);
+  // prefer the cited fact catalog (facts2: relation-tagged, paragraph-cited); map to the {quote,...} shape the UI reads
+  const characterizations = Array.isArray(notes.facts2) && notes.facts2.length
+    ? notes.facts2.map(f => ({ quote: f.statement, relation: f.relation || null, source: f.source, paraId: f.paraId, url: f.url || null }))
+    : (notes.characterizations || []);
   return { id: row.id, name: row.name, importance: row.importance || 0, side: row.side || null,
     summary: row.summary || null, aliases: arr(row.aliases), kinship: arr(row.kinship), relations: arr(row.relations),
-    dates: arr(row.dates), death: notes.death || null, characterizations: notes.characterizations || [],
+    dates: arr(row.dates), death: notes.death || null, characterizations,
     facts: notes.facts || [], firewall: notes.firewall || [], contested: notes.contested || [],
     possible_ids: notes.possible_ids || [], wiki, portrait, portraitFull, bahai, mentionCount, books, gpbRefs };
 }
@@ -132,40 +136,41 @@ export async function bioSearch(rawQ) {
   }
   if (bareGroup && memberIds.length) return { ids: memberIds, q, group: best.id, reasoning: { summary: best.summary || `${best.name} — ${memberIds.length} members.`, evidence: {} } };
 
-  // Candidate catalog = each person's VERIFIED VERBATIM EXTRACTS from the core sources (the proof). NOT the
-  // summary — summaries are presentation and can be wrong; the source extracts are the evidence. A person with
-  // no verified extract cannot be evidenced, so cannot be returned by the meaning-search.
+  // Candidate catalog = each person's CITED FACT CATALOG (facts2: clear, paragraph-cited facts incl. connections).
+  // The meaning-search is a LOOKUP over these typed cited facts — the answer is what the facts say, and a person
+  // with no fact supporting the query is not returned (no guessing). Evidence = the matched fact + its citation.
   const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.aliases, er.research_notes
     FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
-    WHERE ge.entity_type='person' AND ge.religion='' AND er.research_notes LIKE '%"characterizations"%'
-    ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 700`);
+    WHERE ge.entity_type='person' AND ge.religion='' AND er.research_notes LIKE '%"facts2"%'
+    ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 900`);
   const exById = {}; const lines = [];
   for (const r of rows) {
-    let ch = []; try { ch = JSON.parse(r.research_notes || '{}').characterizations || []; } catch {}
-    if (!ch.length) continue;
-    exById[r.id] = ch;
+    let fx = []; try { fx = JSON.parse(r.research_notes || '{}').facts2 || []; } catch {}
+    if (!fx.length) continue;
+    exById[r.id] = fx;
     const al = (() => { try { return JSON.parse(r.aliases || '[]'); } catch { return []; } })().slice(0, 3);
-    const quotes = ch.slice(0, 5).map((c) => `"${String(c.quote).replace(/\s+/g, ' ')}"`).join(' ');
-    lines.push(`${r.id}|${r.name}${al.length ? ' (' + al.join('; ') + ')' : ''}: ${quotes}`);
+    const items = fx.slice(0, 9).map((f) => `• ${String(f.statement).replace(/\s+/g, ' ')}`).join(' ');
+    lines.push(`${r.id}|${r.name}${al.length ? ' (' + al.join('; ') + ')' : ''}: ${items}`);
   }
   const catalog = lines.join('\n');
-  const SYS = `You answer questions about people in early Bábí/Bahá'í history using ONLY verified source quotes. You are given a QUERY and a CATALOG — one person per line: "id|name (aliases): verbatim quotes from God Passes By / The Dawn-Breakers about that person." Return the people whose quotes actually answer the query (role, group, place, fate, relationship, condition). Your evidence for each match MUST be one of THAT person's provided quotes, copied EXACTLY — never invent, paraphrase, or use a quote from another line. Return ONLY JSON: {"summary":"one sentence answering the query","matches":[{"id":<number>,"quote":"<exact supporting quote from that person's line>"}]} — clear matches only, most relevant first.`;
+  const SYS = `You answer questions about people in early Bábí/Bahá'í history using ONLY a catalog of cited facts. You are given a QUERY and a CATALOG — one person per line: "id|name (aliases): • fact • fact …" drawn from God Passes By and The Dawn-Breakers. Return the people whose facts actually answer the query (role, group, place, fate, relationship, connection, condition). For each match, the evidence MUST be one of THAT person's listed facts that supports the answer — copied from their line, never invented or taken from another line. If no fact supports the query for a person, do not return them. Return ONLY JSON: {"summary":"one sentence answering the query","matches":[{"id":<number>,"fact":"<the supporting fact from that person's line>"}]} — clear matches only, most relevant first.`;
   try {
     const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
-      { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1700, responseFormat: { type: 'json_object' } });
+      { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1800, responseFormat: { type: 'json_object' } });
     const m = (res.content || '').match(/\{[\s\S]*\}/);
     const parsed = m ? JSON.parse(m[0]) : {};
     const nz = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, "'").replace(/\s+/g, ' ').toLowerCase().trim();
     const evidence = {}; const aiIds = [];
     for (const mm of (Array.isArray(parsed.matches) ? parsed.matches : [])) {
       const id = Number(mm.id); if (!id || aiIds.includes(id)) continue;
-      const ch = exById[id]; if (!ch) continue;   // only people with a verified extract can be evidenced
-      const want = nz(mm.quote);
-      const hit = ch.find((c) => want && (nz(c.quote).includes(want) || want.includes(nz(c.quote)))) || ch[0];  // bind to the STORED verbatim extract (+ citation)
-      aiIds.push(id); evidence[id] = { quote: hit.quote, source: hit.source, url: hit.url || null };
+      const fx = exById[id]; if (!fx) continue;   // only people with a cited fact can be evidenced
+      const want = nz(mm.fact);
+      const hit = fx.find((f) => want && (nz(f.statement).includes(want) || want.includes(nz(f.statement)))) || fx[0];  // bind to the STORED cited fact
+      aiIds.push(id); evidence[id] = { quote: hit.statement, source: hit.source, url: hit.url || null };
     }
+    // proof-backed only: never fall back to listing un-evidenced members
     let ids = aiIds;
-    if (memberIds.length) { const inter = aiIds.filter((id) => memberIds.includes(id)); ids = inter.length ? inter : (aiIds.length ? aiIds : memberIds); }
+    if (best && memberIds.length) { const inter = aiIds.filter((id) => memberIds.includes(id)); if (inter.length) ids = inter; }
     const ev = {}; for (const id of ids) if (evidence[id]) ev[id] = evidence[id];
     return { ids, q, ...(best ? { group: best.id } : {}), reasoning: { summary: parsed.summary || '', evidence: ev } };
   } catch (e) { return { ids: memberIds, q, error: String(e).slice(0, 80) }; }

@@ -1,6 +1,55 @@
 {
-  "generated": "2026-06-25T17:20:55.334Z",
+  "generated": "2026-06-25T23:15:10.972Z",
   "entries": [
+    {
+      "hash": "b4e11e54",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Cited FACT CATALOG extraction (relation-tagged, paraphrase-OK, paragraph-cited) — supersedes verbatim clauses for connection analysis",
+      "scope": null
+    },
+    {
+      "hash": "5753ddd1",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Dawn-Breakers facts pass (DB-heavy, important facts, merges into characterizations) for important multi-mention characters",
+      "scope": null
+    },
+    {
+      "hash": "db7eb856",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Broaden death vocabulary (fell/wounded/breathed his last/...)",
+      "scope": null
+    },
+    {
+      "hash": "3e88adfc",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Surgical death-scene injection (strong death words, late-in-book) + GPB-weighted, less DB narrative",
+      "scope": null
+    },
+    {
+      "hash": "3864f0f1",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Fate-prioritized candidate selection (surface the death passage); revert comprehensive loosening",
+      "scope": null
+    },
+    {
+      "hash": "a6190578",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Balance GPB+DB candidates + require fate/deeds/relationships (comprehensive), +tokens",
+      "scope": null
+    },
+    {
+      "hash": "f75a79c5",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Evidence is now the verified verbatim source extract (the proof) with citation, not the summary; reason over extracts not summaries",
+      "scope": null
+    },
     {
       "hash": "a6c99d1e",
       "date": "2026-06-25",
@@ -3451,59 +3500,59 @@
       "type": "Fixed",
       "description": "Pure count queries get 4 companion passages + request 2 inline citations",
       "scope": null
-    },
-    {
-      "hash": "8a4d7057",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Pure count queries now get 1 companion citation for citationPresence threshold",
-      "scope": null
-    },
-    {
-      "hash": "c8ed8fdd",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Remove fake /document/123 from examples + explicit search mention for zero-count",
-      "scope": null
-    },
-    {
-      "hash": "db9597e8",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Strip literal (url) placeholders + strengthen no-fabricated-url instruction",
-      "scope": null
-    },
-    {
-      "hash": "4ed71b1e",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Zero-count catalog — tradition-aware search + prose-fragment label",
-      "scope": null
-    },
-    {
-      "hash": "bac5b142",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "GetDeepResearchQuotes always populates source_url from doc_id fallback",
-      "scope": null
-    },
-    {
-      "hash": "093331cc",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "'show me a key passage' → woven fragments not block quote",
-      "scope": null
-    },
-    {
-      "hash": "4cd0ecd6",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Deep-research citation_url fallback to doc_id — enables citing Pali Canon and other local docs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-25": [
+      {
+        "hash": "b4e11e54",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Cited FACT CATALOG extraction (relation-tagged, paraphrase-OK, paragraph-cited) — supersedes verbatim clauses for connection analysis",
+        "scope": null
+      },
+      {
+        "hash": "5753ddd1",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Dawn-Breakers facts pass (DB-heavy, important facts, merges into characterizations) for important multi-mention characters",
+        "scope": null
+      },
+      {
+        "hash": "db7eb856",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Broaden death vocabulary (fell/wounded/breathed his last/...)",
+        "scope": null
+      },
+      {
+        "hash": "3e88adfc",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Surgical death-scene injection (strong death words, late-in-book) + GPB-weighted, less DB narrative",
+        "scope": null
+      },
+      {
+        "hash": "3864f0f1",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Fate-prioritized candidate selection (surface the death passage); revert comprehensive loosening",
+        "scope": null
+      },
+      {
+        "hash": "a6190578",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Balance GPB+DB candidates + require fate/deeds/relationships (comprehensive), +tokens",
+        "scope": null
+      },
+      {
+        "hash": "f75a79c5",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Evidence is now the verified verbatim source extract (the proof) with citation, not the summary; reason over extracts not summaries",
+        "scope": null
+      },
       {
         "hash": "a6c99d1e",
         "date": "2026-06-25",
@@ -7007,55 +7056,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Pure count queries get 4 companion passages + request 2 inline citations",
-        "scope": null
-      },
-      {
-        "hash": "8a4d7057",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Pure count queries now get 1 companion citation for citationPresence threshold",
-        "scope": null
-      },
-      {
-        "hash": "c8ed8fdd",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Remove fake /document/123 from examples + explicit search mention for zero-count",
-        "scope": null
-      },
-      {
-        "hash": "db9597e8",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Strip literal (url) placeholders + strengthen no-fabricated-url instruction",
-        "scope": null
-      },
-      {
-        "hash": "4ed71b1e",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Zero-count catalog — tradition-aware search + prose-fragment label",
-        "scope": null
-      },
-      {
-        "hash": "bac5b142",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "GetDeepResearchQuotes always populates source_url from doc_id fallback",
-        "scope": null
-      },
-      {
-        "hash": "093331cc",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "'show me a key passage' → woven fragments not block quote",
-        "scope": null
-      },
-      {
-        "hash": "4cd0ecd6",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Deep-research citation_url fallback to doc_id — enables citing Pali Canon and other local docs",
         "scope": null
       }
     ]
