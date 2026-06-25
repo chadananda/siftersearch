@@ -206,7 +206,7 @@
             <span class="card-body">
               <span class="name">{p.name}</span>
               {#if p.side}<span class="side">{p.side}</span>{/if}
-              {#if aiReasoning?.evidence?.[p.id]}<span class="evidence">✦ {aiReasoning.evidence[p.id]}</span>{/if}
+              {#if aiReasoning?.evidence?.[p.id]?.quote}<span class="evidence">“{aiReasoning.evidence[p.id].quote}” <em class="evidence-src">— {aiReasoning.evidence[p.id].source}</em></span>{/if}
               {#if p.summary}<span class="bio">{p.summary}</span>{/if}
               {#if p.kinship?.length}<span class="rel">{p.kinship.slice(0, 2).map((k) => `${k.relation}: ${k.who}`).join('  ·  ')}</span>{/if}
             </span>
@@ -384,7 +384,8 @@
   .ai-answer { display: flex; gap: .7rem; align-items: flex-start; max-width: 52rem; margin: 0 auto 1.25rem; padding: .85rem 1.15rem; border-radius: .85rem; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 13%, var(--surface-1)), var(--surface-1)); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-subtle)); box-shadow: 0 8px 24px -12px color-mix(in srgb, var(--accent) 55%, transparent); }
   .ai-answer .ai-spark { color: var(--accent); font-size: 1.2rem; line-height: 1.45; flex: 0 0 auto; }
   .ai-answer p { margin: 0; font-size: .96rem; line-height: 1.5; color: var(--text-primary); }
-  .evidence { font-size: .8rem; line-height: 1.35; color: var(--accent); background: color-mix(in srgb, var(--accent) 11%, transparent); border-radius: .4rem; padding: .2rem .5rem; align-self: flex-start; }
+  .evidence { font-size: .8rem; line-height: 1.4; color: var(--accent); background: color-mix(in srgb, var(--accent) 11%, transparent); border-radius: .4rem; padding: .25rem .55rem; align-self: flex-start; }
+  .evidence-src { font-style: normal; opacity: .7; font-size: .72rem; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); gap: 1rem; }
   .card { display: flex; gap: 1rem; text-align: left; padding: .9rem; border: 1px solid var(--border-subtle); border-radius: .85rem; background: var(--surface-1); cursor: pointer; transition: transform .2s, border-color .2s, box-shadow .2s; opacity: 0; animation: rise .5s ease forwards; }

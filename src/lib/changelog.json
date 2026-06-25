@@ -1,6 +1,48 @@
 {
-  "generated": "2026-06-25T16:10:12.789Z",
+  "generated": "2026-06-25T17:20:55.334Z",
   "entries": [
+    {
+      "hash": "a6c99d1e",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Require span be ABOUT the target (not a co-mentioned other)",
+      "scope": null
+    },
+    {
+      "hash": "e62e72ee",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Broaden to useful references (facts/relationships/connections, not only descriptions)",
+      "scope": null
+    },
+    {
+      "hash": "6f78242f",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Drop bare name/title co-mentions, dedup, salvage truncated JSON, +tokens",
+      "scope": null
+    },
+    {
+      "hash": "3ab62085",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Stricter characterization-vs-narrative prompt + GPB-first candidate priority",
+      "scope": null
+    },
+    {
+      "hash": "7c663f65",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Characterization extraction (disambiguation-aware, verbatim-verified, precise excerpts) + dossier returns characterizations",
+      "scope": null
+    },
+    {
+      "hash": "1526a458",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Remove unreliable mention→paragraph GPB refs (a mention ≠ about the person; shared names polluted links); wire a characterizations section for precise sourced excerpts",
+      "scope": null
+    },
     {
       "hash": "154a2ce5",
       "date": "2026-06-25",
@@ -3458,52 +3500,52 @@
       "type": "Fixed",
       "description": "Deep-research citation_url fallback to doc_id — enables citing Pali Canon and other local docs",
       "scope": null
-    },
-    {
-      "hash": "8168a358",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Zero-count CATALOG-DATA label — say 'not in library' not '0 documents'",
-      "scope": null
-    },
-    {
-      "hash": "806aa34f",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Correct fabricated-URL instruction to allow all retrieved_quotes with citation URLs",
-      "scope": null
-    },
-    {
-      "hash": "52586fd6",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Pure_count flag prevents any hyperlinks in total-count library queries",
-      "scope": null
-    },
-    {
-      "hash": "271ba919",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "CATALOG-DATA label now has explicit wrong/right examples to stop (url) placeholders",
-      "scope": null
-    },
-    {
-      "hash": "a3c2bbdb",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "CATALOG-DATA label explicitly bans hyperlinking numbers for [70] browsing",
-      "scope": null
-    },
-    {
-      "hash": "9b3f1c91",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Strengthen no-fabricated-URLs ban in CRAFTER_SYSTEM for catalog responses",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-25": [
+      {
+        "hash": "a6c99d1e",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Require span be ABOUT the target (not a co-mentioned other)",
+        "scope": null
+      },
+      {
+        "hash": "e62e72ee",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Broaden to useful references (facts/relationships/connections, not only descriptions)",
+        "scope": null
+      },
+      {
+        "hash": "6f78242f",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Drop bare name/title co-mentions, dedup, salvage truncated JSON, +tokens",
+        "scope": null
+      },
+      {
+        "hash": "3ab62085",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Stricter characterization-vs-narrative prompt + GPB-first candidate priority",
+        "scope": null
+      },
+      {
+        "hash": "7c663f65",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Characterization extraction (disambiguation-aware, verbatim-verified, precise excerpts) + dossier returns characterizations",
+        "scope": null
+      },
+      {
+        "hash": "1526a458",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Remove unreliable mention→paragraph GPB refs (a mention ≠ about the person; shared names polluted links); wire a characterizations section for precise sourced excerpts",
+        "scope": null
+      },
       {
         "hash": "154a2ce5",
         "date": "2026-06-25",
@@ -7014,48 +7056,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Deep-research citation_url fallback to doc_id — enables citing Pali Canon and other local docs",
-        "scope": null
-      },
-      {
-        "hash": "8168a358",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Zero-count CATALOG-DATA label — say 'not in library' not '0 documents'",
-        "scope": null
-      },
-      {
-        "hash": "806aa34f",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Correct fabricated-URL instruction to allow all retrieved_quotes with citation URLs",
-        "scope": null
-      },
-      {
-        "hash": "52586fd6",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Pure_count flag prevents any hyperlinks in total-count library queries",
-        "scope": null
-      },
-      {
-        "hash": "271ba919",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "CATALOG-DATA label now has explicit wrong/right examples to stop (url) placeholders",
-        "scope": null
-      },
-      {
-        "hash": "a3c2bbdb",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "CATALOG-DATA label explicitly bans hyperlinking numbers for [70] browsing",
-        "scope": null
-      },
-      {
-        "hash": "9b3f1c91",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Strengthen no-fabricated-URLs ban in CRAFTER_SYSTEM for catalog responses",
         "scope": null
       }
     ]

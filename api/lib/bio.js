@@ -132,25 +132,37 @@ export async function bioSearch(rawQ) {
   }
   if (bareGroup && memberIds.length) return { ids: memberIds, q, group: best.id, reasoning: { summary: best.summary || `${best.name} — ${memberIds.length} members.`, evidence: {} } };
 
-  const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.summary, er.research_notes
+  // Candidate catalog = each person's VERIFIED VERBATIM EXTRACTS from the core sources (the proof). NOT the
+  // summary — summaries are presentation and can be wrong; the source extracts are the evidence. A person with
+  // no verified extract cannot be evidenced, so cannot be returned by the meaning-search.
+  const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.aliases, er.research_notes
     FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
-    WHERE ge.entity_type='person' AND ge.religion='' AND er.summary IS NOT NULL AND length(er.summary) > 20
-    ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 480`);
-  const catalog = rows.map((r) => {
-    let d = null; try { d = JSON.parse(r.research_notes || '{}').death; } catch {}
-    const dtag = d?.cause ? ` [died: ${d.cause}${d.place ? ' at ' + d.place : ''}${d.year ? ', ' + d.year : ''}]` : '';
-    return `${r.id}|${r.name}: ${String(r.summary).replace(/\s+/g, ' ').slice(0, 280)}${dtag}`;
-  }).join('\n');
-  const SYS = `You answer questions over a biographical dictionary of early Bábí/Bahá'í history. Given a QUERY and a CATALOG (one person per line "id|name: summary"), find the people whose record matches the query's MEANING — role, group, place, fate (martyred at Ṭabarsí…), period, or relationship/condition ("who recognized Bahá'u'lláh"). Judge ONLY from the summaries. Return ONLY JSON: {"summary":"one sentence directly answering the query","matches":[{"id":<number>,"why":"<=15-word evidence drawn from that person's summary>"}]} — clear matches only, most relevant first.`;
+    WHERE ge.entity_type='person' AND ge.religion='' AND er.research_notes LIKE '%"characterizations"%'
+    ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 700`);
+  const exById = {}; const lines = [];
+  for (const r of rows) {
+    let ch = []; try { ch = JSON.parse(r.research_notes || '{}').characterizations || []; } catch {}
+    if (!ch.length) continue;
+    exById[r.id] = ch;
+    const al = (() => { try { return JSON.parse(r.aliases || '[]'); } catch { return []; } })().slice(0, 3);
+    const quotes = ch.slice(0, 5).map((c) => `"${String(c.quote).replace(/\s+/g, ' ')}"`).join(' ');
+    lines.push(`${r.id}|${r.name}${al.length ? ' (' + al.join('; ') + ')' : ''}: ${quotes}`);
+  }
+  const catalog = lines.join('\n');
+  const SYS = `You answer questions about people in early Bábí/Bahá'í history using ONLY verified source quotes. You are given a QUERY and a CATALOG — one person per line: "id|name (aliases): verbatim quotes from God Passes By / The Dawn-Breakers about that person." Return the people whose quotes actually answer the query (role, group, place, fate, relationship, condition). Your evidence for each match MUST be one of THAT person's provided quotes, copied EXACTLY — never invent, paraphrase, or use a quote from another line. Return ONLY JSON: {"summary":"one sentence answering the query","matches":[{"id":<number>,"quote":"<exact supporting quote from that person's line>"}]} — clear matches only, most relevant first.`;
   try {
     const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
       { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1700, responseFormat: { type: 'json_object' } });
     const m = (res.content || '').match(/\{[\s\S]*\}/);
     const parsed = m ? JSON.parse(m[0]) : {};
+    const nz = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, "'").replace(/\s+/g, ' ').toLowerCase().trim();
     const evidence = {}; const aiIds = [];
     for (const mm of (Array.isArray(parsed.matches) ? parsed.matches : [])) {
       const id = Number(mm.id); if (!id || aiIds.includes(id)) continue;
-      aiIds.push(id); if (mm.why) evidence[id] = String(mm.why).slice(0, 160);
+      const ch = exById[id]; if (!ch) continue;   // only people with a verified extract can be evidenced
+      const want = nz(mm.quote);
+      const hit = ch.find((c) => want && (nz(c.quote).includes(want) || want.includes(nz(c.quote)))) || ch[0];  // bind to the STORED verbatim extract (+ citation)
+      aiIds.push(id); evidence[id] = { quote: hit.quote, source: hit.source, url: hit.url || null };
     }
     let ids = aiIds;
     if (memberIds.length) { const inter = aiIds.filter((id) => memberIds.includes(id)); ids = inter.length ? inter : (aiIds.length ? aiIds : memberIds); }
