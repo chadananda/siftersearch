@@ -283,7 +283,8 @@
   @keyframes fade { from { opacity: 0; } }
   .drawer { position: fixed; top: 0; right: 0; height: 100dvh; width: min(34rem, 94vw); background: var(--surface-0); border-left: 1px solid var(--border); box-shadow: -20px 0 50px rgb(0 0 0 / .3); z-index: 999; overflow-y: auto; padding: 2rem 1.75rem 4rem; animation: slide .3s cubic-bezier(.2,.8,.2,1); }
   @keyframes slide { from { transform: translateX(100%); } }
-  .x { position: sticky; top: 0; float: right; width: 2rem; height: 2rem; border: none; background: var(--surface-2); border-radius: 50%; color: var(--text-secondary); font-size: 1.3rem; line-height: 1; cursor: pointer; }
+  .x { position: absolute; top: .9rem; right: .9rem; z-index: 5; width: 2.1rem; height: 2.1rem; border: none; background: var(--surface-2); border-radius: 50%; color: var(--text-secondary); font-size: 1.4rem; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgb(0 0 0 / .2); transition: background .2s, color .2s; }
+  .x:hover { background: var(--surface-3); color: var(--text-primary); }
   .d-head { text-align: center; margin-bottom: 1.5rem; }
   .d-head .plate { margin: 0 auto .9rem; }
   .d-name { font-family: 'Amiri', serif; font-size: 1.8rem; color: var(--text-primary); margin: 0 0 .5rem; line-height: 1.15; }
