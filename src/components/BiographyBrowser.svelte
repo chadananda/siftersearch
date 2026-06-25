@@ -31,6 +31,8 @@
   let error = $state(null);
   let q = $state('');
   let imagesOnly = $state(false);
+  let books = $state(initialData?.books || []);   // [{key,label,count}] — source-book filter facets
+  let bookFilter = $state([]);                     // selected book keys (OR within the facet)
   let page = $state(0);
   let aiIds = $state(null);     // null = token mode; array = AI meaning-search results (relevance order)
   let aiBusy = $state(false);
@@ -45,7 +47,7 @@
     if (initialData) return;
     fetch(`${API}/api/graph/bio/persons`)
       .then((r) => r.ok ? r.json() : Promise.reject(r.status))
-      .then((d) => { persons = normalize(d.persons); withPortraits = d.withPortraits || 0; loading = false; })
+      .then((d) => { persons = normalize(d.persons); withPortraits = d.withPortraits || 0; books = d.books || []; loading = false; })
       .catch((e) => { error = String(e); loading = false; });
   });
 
@@ -67,15 +69,17 @@
     heroSet = copy;
   }
   $effect(() => { if (!persons.length) return; ensureHero(); const t = setInterval(rotateOne, 2600); return () => clearInterval(t); });
-  $effect(() => { q; imagesOnly; page = 0; });
+  $effect(() => { q; imagesOnly; bookFilter; page = 0; });
   const onType = () => { if (aiIds !== null) { aiIds = null; aiReasoning = null; } };   // typing returns to instant token mode
   const clearSearch = () => { q = ''; aiIds = null; aiReasoning = null; page = 0; };
+  const toggleBook = (k) => { bookFilter = bookFilter.includes(k) ? bookFilter.filter((x) => x !== k) : [...bookFilter, k]; };
+  const inBooks = (p) => !bookFilter.length || bookFilter.some((k) => p.sources?.includes(k));
 
   const matches = (p, qts) => qts.every((qt) => p._tok.some((ft) => ft.startsWith(qt) || qt.startsWith(ft)));
   const filtered = $derived.by(() => {
-    if (aiIds !== null) return aiIds.map((id) => persons.find((p) => p.id === id)).filter(Boolean).filter((p) => !imagesOnly || p.hasPortrait);
+    if (aiIds !== null) return aiIds.map((id) => persons.find((p) => p.id === id)).filter(Boolean).filter((p) => (!imagesOnly || p.hasPortrait) && inBooks(p));
     const qts = tokenize(q);
-    return persons.filter((p) => (!imagesOnly || p.hasPortrait) && matches(p, qts));
+    return persons.filter((p) => (!imagesOnly || p.hasPortrait) && inBooks(p) && matches(p, qts));
   });
   const pageCount = $derived(Math.max(1, Math.ceil(filtered.length / PER_PAGE)));
   const pageItems = $derived(filtered.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE));
@@ -133,10 +137,18 @@
           {#if aiBusy}<span class="dots"><i></i><i></i><i></i></span><span class="ask-tx">Thinking</span>{:else}<span class="ask-ico" aria-hidden="true">✦</span><span class="ask-tx">Ask&nbsp;AI</span>{/if}
         </button>
       </div>
+      <div class="filters">
+        <button class="chip" class:on={imagesOnly} onclick={() => (imagesOnly = !imagesOnly)} title="Only people with a portrait"><span class="dot" aria-hidden="true"></span>Image</button>
+        {#each books as b (b.key)}
+          <button class="chip" class:on={bookFilter.includes(b.key)} onclick={() => toggleBook(b.key)} disabled={!b.count}
+            title={b.count ? `${b.count} people appear in ${b.label}` : `${b.label} — not yet processed`}>
+            <span class="dot" aria-hidden="true"></span>{b.label}{#if b.count}<span class="chip-n">{b.count.toLocaleString()}</span>{/if}
+          </button>
+        {/each}
+      </div>
       <div class="subrow">
-        <label class="toggle"><input type="checkbox" bind:checked={imagesOnly} /> Portraits only</label>
-        <span class="resultline">{filtered.length.toLocaleString()} {filtered.length === 1 ? 'soul' : 'souls'}{#if q || imagesOnly || aiIds !== null}{` of ${persons.length.toLocaleString()}`}{/if}</span>
-        {#if aiIds !== null}<button class="clearai" onclick={() => { aiIds = null; }}>✦ meaning-search · show all</button>{/if}
+        <span class="resultline">{filtered.length.toLocaleString()} {filtered.length === 1 ? 'soul' : 'souls'}{#if q || imagesOnly || bookFilter.length || aiIds !== null}{` of ${persons.length.toLocaleString()}`}{/if}</span>
+        {#if aiIds !== null}<button class="clearai" onclick={() => { aiIds = null; aiReasoning = null; }}>✦ meaning-search · show all</button>{/if}
       </div>
     </div>
 
@@ -289,6 +301,15 @@
   @media (max-width: 480px) { .ask-tx { display: none; } .askbtn { padding: 0 .85rem; min-height: 2.5rem; } .mag { font-size: 1.5rem; width: 1.8rem; } }
   .subrow { display: flex; align-items: center; justify-content: center; gap: 1.25rem; margin-top: .85rem; flex-wrap: wrap; }
   .toggle { display: flex; gap: .4rem; align-items: center; font-size: .85rem; color: var(--text-secondary); cursor: pointer; }
+  /* source-book / image filter chips */
+  .filters { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin-top: .9rem; }
+  .chip { display: inline-flex; align-items: center; gap: .45rem; min-height: 2.2rem; font-size: .8rem; font-weight: 500; color: var(--text-secondary); background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 999px; padding: .3rem .85rem; cursor: pointer; transition: background .18s, border-color .18s, color .18s; }
+  .chip:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); color: var(--text-primary); }
+  .chip.on { background: color-mix(in srgb, var(--accent) 16%, var(--surface-1)); border-color: var(--accent); color: var(--accent); }
+  .chip:disabled { opacity: .4; cursor: not-allowed; }
+  .chip .dot { width: .55rem; height: .55rem; border-radius: 50%; border: 1.5px solid currentColor; opacity: .5; flex: 0 0 auto; }
+  .chip.on .dot { background: var(--accent); border-color: var(--accent); opacity: 1; }
+  .chip-n { font-size: .7rem; opacity: .75; background: color-mix(in srgb, var(--text-muted) 20%, transparent); border-radius: 999px; padding: 0 .4rem; }
   .resultline { font-size: .8rem; color: var(--text-muted); letter-spacing: .03em; }
   .clearai { border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); background: none; color: var(--accent); font-size: .78rem; padding: .25rem .7rem; border-radius: 999px; cursor: pointer; }
   /* AI answer banner (the reasoning) + per-card evidence chips */

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-25T04:13:58.893Z",
+  "generated": "2026-06-25T04:24:35.405Z",
   "entries": [
+    {
+      "hash": "b0f40c81",
+      "date": "2026-06-24",
+      "type": "Other",
+      "description": "AI search returns reasoning — one-sentence answer banner + per-person evidence chips on result cards",
+      "scope": null
+    },
     {
       "hash": "1333dea7",
       "date": "2026-06-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Clarify CATALOG-DATA vs CATALOG-COMPANION citation roles",
       "scope": null
-    },
-    {
-      "hash": "8545de61",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Library_overview now includes dominant religion per collection",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-24": [
+      {
+        "hash": "b0f40c81",
+        "date": "2026-06-24",
+        "type": "Other",
+        "description": "AI search returns reasoning — one-sentence answer banner + per-person evidence chips on result cards",
+        "scope": null
+      },
       {
         "hash": "1333dea7",
         "date": "2026-06-24",
@@ -7047,13 +7054,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Clarify CATALOG-DATA vs CATALOG-COMPANION citation roles",
-        "scope": null
-      },
-      {
-        "hash": "8545de61",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Library_overview now includes dominant religion per collection",
         "scope": null
       }
     ]
