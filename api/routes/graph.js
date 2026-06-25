@@ -16,12 +16,34 @@ import path from 'path';
 const BIO_ROOT = path.join(process.env.HOME || '/home/chad', 'sifter', 'bio-assets');
 const readBioManifest = () => { try { return JSON.parse(fs.readFileSync(path.join(BIO_ROOT, 'manifest.json'), 'utf8')); } catch { return {}; } };
 
+// Source books with full person-mention coverage today. Add the Pillars (Balyuzi 462/466/467/3887,
+// Taherzadeh 429-432, Mázandarání 420/16564/12262/11322, Momen 11557) here as each is run through the
+// entity pipeline — their filter chips light up automatically once they appear in entity_mentions.
+const SOURCE_BOOKS = [
+  { key: 'gpb', label: 'God Passes By', docs: [21310, 57347] },
+  { key: 'dawn-breakers', label: 'The Dawn-Breakers', docs: [21308] },
+];
+// entity_id → Set(book keys), from graph.db mentions mapped through content→docs (chunked under SQLite's 999-param cap)
+async function computeBookSources() {
+  const bookOf = {};
+  for (const b of SOURCE_BOOKS) {
+    const cids = (await queryAll(`SELECT id FROM content WHERE doc_id IN (${b.docs.join(',')})`)).map(r => String(r.id));
+    for (let i = 0; i < cids.length; i += 800) {
+      const chunk = cids.slice(i, i + 800);
+      const ents = await graphQueryAll(`SELECT DISTINCT entity_id FROM entity_mentions WHERE content_id IN (${chunk.map(() => '?').join(',')})`, chunk);
+      for (const e of ents) (bookOf[e.entity_id] ||= new Set()).add(b.key);
+    }
+  }
+  return bookOf;
+}
+
 export default async function graphRoutes(server) {
 
   // GET /bio/persons — the biography browser dataset: every seed person with name, aliases, kinship,
   // importance, side, summary, and whether a portrait was gathered (Wikipedia / bahai.media).
   server.get('/bio/persons', async () => {
     const man = readBioManifest();
+    const bookOf = await computeBookSources();
     const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, ge.importance,
         er.side, er.summary, er.aliases, er.kinship, er.research_notes
       FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name
@@ -32,11 +54,13 @@ export default async function graphRoutes(server) {
       const m = man[r.id]; const hasPortrait = !!(m && m.cdn);   // m.cdn = "biography/<id>.<ext>" in R2/ImageKit
       return { id: r.id, name: r.name, importance: r.importance || 0, side: r.side || null,
         summary: r.summary || null, aliases, kinship, hasPortrait,
+        sources: [...(bookOf[r.id] || [])],
         portrait: m?.cdn || null,
         wiki: m?.title ? `https://en.wikipedia.org/wiki/${encodeURIComponent(String(m.title).replace(/ /g, '_'))}` : null };
     });
     const sides = [...new Set(persons.map(p => p.side).filter(Boolean))].sort();
-    return { count: persons.length, withPortraits: persons.filter(p => p.hasPortrait).length, sides, persons };
+    const books = SOURCE_BOOKS.map(b => ({ key: b.key, label: b.label, count: persons.filter(p => p.sources.includes(b.key)).length }));
+    return { count: persons.length, withPortraits: persons.filter(p => p.hasPortrait).length, sides, books, persons };
   });
 
   // GET /bio/search?q= — intelligent search (DeepSeek) over the meaningful cast, for descriptive / reasoning
