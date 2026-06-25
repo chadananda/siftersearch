@@ -53,8 +53,8 @@ for (const id of LETTERS) {
   console.log(`  ${id} ${r.name}  imp ${r.importance}→${newImp}${hasStation ? '' : '  +station-lead'}`);
   if (!WRITE) continue;
   // member relation (reversible: relation_type='letter-of-the-living')
-  await query(`INSERT OR IGNORE INTO graph_relations (source_entity_id, target_entity_id, relation_type, weight, source_authority_tier) VALUES (?,?,?,?,?)`,
-    [id, GROUP, 'letter-of-the-living', 100, 'gpb']);
+  await query(`INSERT OR IGNORE INTO graph_relations (source_entity_id, target_entity_id, relation_type, weight) VALUES (?,?,?,?)`,
+    [id, GROUP, 'letter-of-the-living', 100]);
   relAdded++;
   if (newImp !== r.importance) { await query(`UPDATE graph_entities SET importance=? WHERE id=?`, [newImp, id]); impRaised++; }
   if (!hasStation) { await query(`UPDATE entity_research SET summary=?, updated_at=CURRENT_TIMESTAMP WHERE canonical_name=?`, [newSummary, r.name]); sumLed++; }
