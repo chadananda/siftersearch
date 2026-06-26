@@ -20,19 +20,22 @@ const slugify = (s) => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 // build resolver: normalized name/alias -> set of entity ids (person, grounded cast)
 const people = await queryAll(`SELECT ge.id, ge.canonical_name cn, ge.importance imp, er.aliases, er.research_notes
   FROM graph_entities ge JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE ge.entity_type='person' AND ge.religion=''`);
-const idx = new Map(); const byId = new Map();
+const canonIdx = new Map(); const aliasIdx = new Map(); const byId = new Map();
 for (const p of people) {
   byId.set(p.id, p);
+  const ck = key(p.cn); if (ck.length >= 3) { if (!canonIdx.has(ck)) canonIdx.set(ck, new Set()); canonIdx.get(ck).add(p.id); }
   let aliases = []; try { aliases = JSON.parse(p.aliases || '[]'); } catch {}
-  for (const nm of [p.cn, ...aliases]) { const k = key(nm); if (!k || k.length < 3) continue; if (!idx.has(k)) idx.set(k, new Set()); idx.get(k).add(p.id); }
+  for (const a of aliases) { const k = key(a); if (k.length < 3) continue; if (!aliasIdx.has(k)) aliasIdx.set(k, new Set()); aliasIdx.get(k).add(p.id); }
 }
+const dominant = (ids) => { const r = ids.map((id) => ({ id, imp: byId.get(id)?.imp || 0 })).sort((a, b) => b.imp - a.imp); return r[0].imp > 0 && r[0].imp > (r[1]?.imp || 0) ? r[0].id : null; };
+// canonical match wins (multiple → DUPLICATE records of one person → importance-dominant). Otherwise an alias match,
+// but ONLY when unique: an alias shared by entities with DIFFERENT canonical names = genuine namesakes (e.g. the
+// LETTER "Mírzá Hádí…Qazvíní" vs "Mírzá Hádíy-i-Nahrí") → refuse to guess, skip. Precision over recall.
 const resolve = (name) => {
-  const s = idx.get(key(name)); if (!s) return null;
-  const ids = [...s]; if (ids.length === 1) return ids[0];
-  // ambiguous key — pick the clearly dominant entity by importance (handles duplicate records whose importance is null/0);
-  // if two real entities tie, it's a genuine namesake clash → skip for precision.
-  const ranked = ids.map((id) => ({ id, imp: byId.get(id)?.imp || 0 })).sort((a, b) => b.imp - a.imp);
-  return ranked[0].imp > 0 && ranked[0].imp > ranked[1].imp ? ranked[0].id : null;
+  const k = key(name);
+  const cs = canonIdx.get(k); if (cs) { const ids = [...cs]; return ids.length === 1 ? ids[0] : dominant(ids); }
+  const as = aliasIdx.get(k); if (as && as.size === 1) return [...as][0];
+  return null;
 };
 
 const eps = JSON.parse(readFileSync(IN, 'utf8'));
