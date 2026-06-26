@@ -32,11 +32,11 @@ if (LIMIT) people = people.slice(0, LIMIT);
 console.error(`fact catalog: ${people.length} persons${WRITE ? ' [WRITE]' : ' [dry]'}`);
 
 const SYS = `You build a CITED FACT CATALOG for ONE person from authoritative Bábí/Bahá'í histories (God Passes By = brief/authoritative; The Dawn-Breakers = detailed narrative with the relationships). You get the person's IDENTITY and numbered PASSAGES where a similar name/title appears. Names/titles are widely shared (e.g. "Ásíyih" = Pharaoh's wife; "Navváb" = an adversary), so FIRST judge from the identity context whether each passage is about THIS person — not a namesake.
-For each genuine, significant fact about this person, output: {"n": passage number it is drawn from, "relation": a short kebab tag, "statement": a clear factual sentence (you MAY paraphrase for clarity, but it must be supported by passage n; INCLUDE the PLACE where it happened when stated), "when": the time/period the passage gives — a year ("1848"), a date, or an era ("the Baghdád period") — or null if none}.
+For each genuine, significant fact about this person, output: {"n": passage number it is drawn from, "relation": a short kebab tag, "statement": a clear factual sentence (you MAY paraphrase for clarity, but it must be supported by passage n; INCLUDE the PLACE where it happened when stated), "quote": the SHORTEST exact verbatim span COPIED from passage n that proves this fact (this is the evidence — copy it character-for-character from the passage, do not paraphrase the quote), "when": the time/period the passage gives — a year ("1848"), a date, or an era ("the Baghdád period") — or null if none}.
 Cover: identity/role/title; significant deeds and role in the upheavals; CONNECTIONS to other people — family ("father-of", "brother-of", "wife-of"), "converted-by"/"converted", "accompanied", "appointed-by", and especially whether and WHERE they "met"/"recognized" the Báb or Bahá'u'lláh (relations like "met-bahaullah", "recognized-bab", "letter-of-the-living"); and their FATE (e.g. "martyred-at-tabarsi", "executed", "died-in-exile").
 For any meeting, event, deed, or fate, the WHERE belongs in the statement and the WHEN in the "when" field whenever the passage gives them — these power who-met-whom-where-when analysis.
 RULES: Only assert a fact a passage actually supports — never infer beyond it (if no passage shows they met Bahá'u'lláh, do NOT claim it). COPY proper names and specifics EXACTLY as the passage gives them; NEVER substitute or conflate a different person or event — e.g. if the passage says the Báb grieved over the martyrdom of Quddús, do NOT write "death of Muḥammad Sháh." The fact must be ABOUT this person, not someone else in the passage. A person with a DIFFERENT NISBA (place-of-origin suffix — e.g. "-i-Yazdí" of Yazd vs "-i-Turshízí" of Turshíz) is a DIFFERENT individual; nisbas rarely vary, so never treat them as the same person. Skip trivial narrative and bare co-mentions.
-Return ONLY JSON: {"facts":[{"n":<num>,"relation":"<tag>","statement":"<clear fact incl. place>","when":"<period or null>"}]}.`;
+Return ONLY JSON: {"facts":[{"n":<num>,"relation":"<tag>","statement":"<clear fact incl. place>","quote":"<exact verbatim span proving it>","when":"<period or null>"}]}.`;
 
 const VSYS = `You are a STRICT fact-checker whose ONLY job is to prevent NAMESAKE CONFUSION in a biography. You are given ONE person's verified IDENTITY, then a numbered list of CANDIDATE FACTS — each paired with the exact source PASSAGE it was drawn from. Common names and titles (e.g. "Siyyid Ḥusayn", "Aḥmad", "Mullá Muḥammad") are shared by MANY different people, so a passage that merely contains the person's name is frequently about a DIFFERENT person of the same name.
 For each candidate, decide keep=true ONLY if BOTH hold: (1) the subject of the passage is unmistakably THIS SAME person — consistent with the IDENTITY given (their NISBA / place of origin, their role, era, and known deeds) — and NOT a same-named individual of a different nisba, place, station, or period; and (2) the passage genuinely states the claim about this person (not about someone else who merely appears in it).
@@ -99,7 +99,10 @@ async function one(p) {
       const propers = [...new Set((st.match(/[A-ZÁÉÍÓÚÀ-Ý][\wÀ-ÿ’'-]{3,}/g) || []).map((w) => normq(w).replace(/[^a-z]/g, '')).filter((w) => w.length >= 4 && !STOPCAP.has(w)))];
       if (propers.some((w) => !ptn.includes(w.slice(0, Math.min(6, w.length))))) continue;
       const when = it.when && String(it.when).trim() && !/^(null|none|n\/a|unknown)$/i.test(String(it.when).trim()) ? String(it.when).trim().slice(0, 40) : null;
-      facts.push({ statement: st, relation: String(it.relation || '').toLowerCase().replace(/[^a-z0-9:-]+/g, '-').slice(0, 40), when,
+      // verbatim proof span — the evidence the user verifies against. Keep only if it really occurs in the passage.
+      let quote = clean(it.quote || '').replace(/^["'“”]+|["'“”]+$/g, '');
+      if (quote.length < 8 || !normq(pass.ct).includes(normq(quote))) quote = '';
+      facts.push({ statement: st, quote, relation: String(it.relation || '').toLowerCase().replace(/[^a-z0-9:-]+/g, '-').slice(0, 40), when,
         source: bookOf(pass.doc_id), paraId: pass.pid, url: pass.url && pass.pid ? `${pass.url}?paraId=${pass.pid}` : null, _ct: pass.ct });
     }
     if (!facts.length) return null;
@@ -124,7 +127,7 @@ async function one(p) {
     if (!facts.length) return null;
     notes.facts2 = facts; withF++; total += facts.length;
     if (WRITE) await query(`UPDATE entity_research SET research_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE canonical_name = ?`, [JSON.stringify(notes), p.cn]);
-    return `  ${p.id} ${p.cn} (${facts.length}): ${facts.slice(0, 6).map((f) => `[${f.relation}] ${f.statement.slice(0, 48)} (${f.source.replace('The ', '')})`).join('  ·  ')}`;
+    return `  ${p.id} ${p.cn} (${facts.length}): ${facts.slice(0, 6).map((f) => `[${f.relation}] ${f.statement.slice(0, 44)} ⟨${(f.quote || 'NO-QUOTE').slice(0, 38)}⟩`).join('  ·  ')}`;
   } catch (e) { return `  ERR ${p.id} ${String(e.message || e).slice(0, 60)}`; }
 }
 for (let i = 0; i < people.length; i += CONC) {
