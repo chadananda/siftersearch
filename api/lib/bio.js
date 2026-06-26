@@ -97,7 +97,7 @@ export async function getBioPerson(rawId) {
   const notes = obj(row.research_notes);
   // prefer the cited fact catalog (facts2: relation-tagged, paragraph-cited); map to the {quote,...} shape the UI reads
   const characterizations = Array.isArray(notes.facts2) && notes.facts2.length
-    ? notes.facts2.map(f => ({ quote: f.statement, relation: f.relation || null, when: f.when || null, source: f.source, paraId: f.paraId, url: f.url || null }))
+    ? notes.facts2.map(f => ({ quote: f.statement, proof: f.quote || null, relation: f.relation || null, when: f.when || null, source: f.source, paraId: f.paraId, url: f.url || null }))
     : (notes.characterizations || []);
   // compact citation label per fact: source abbrev + paragraph number (e.g. "GPB ¶72", "DB ¶467")
   try {
@@ -182,7 +182,7 @@ For each match, the evidence MUST be the specific listed fact that answers it �
       const fx = exById[id]; if (!fx) continue;   // only people with a cited fact can be evidenced
       const want = nz(mm.fact);
       const hit = fx.find((f) => want && (nz(f.statement).includes(want) || want.includes(nz(f.statement)))) || fx[0];  // bind to the STORED cited fact
-      aiIds.push(id); evidence[id] = { quote: hit.statement, source: hit.source, url: hit.url || null };
+      aiIds.push(id); evidence[id] = { quote: hit.statement, proof: hit.quote || null, source: hit.source, url: hit.url || null };
     }
     // proof-backed only: never fall back to listing un-evidenced members
     let ids = aiIds;

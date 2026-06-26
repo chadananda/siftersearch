@@ -1,6 +1,48 @@
 {
-  "generated": "2026-06-25T23:49:11.917Z",
+  "generated": "2026-06-26T00:19:01.545Z",
   "entries": [
+    {
+      "hash": "fb9e410c",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Store verbatim proof-span per fact (the evidence the user verifies against) + remove research probe",
+      "scope": null
+    },
+    {
+      "hash": "b9690c81",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Research Káshán/Mírzá Jání passage (throwaway)",
+      "scope": null
+    },
+    {
+      "hash": "98f36355",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Sibling-aware disambiguation — name the other modelled same-given-name people so extractor/verifier attribute shared-name passages to the correct person",
+      "scope": null
+    },
+    {
+      "hash": "927877a7",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Add strict namesake-verification stage (skeptical fact-checker confirms each fact is about THIS person by nisba/role/era; default-reject on doubt) + nisba-locked identity line",
+      "scope": null
+    },
+    {
+      "hash": "fd2034e8",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Nisba-conflation detector (flag entities with incompatible nisbas)",
+      "scope": null
+    },
+    {
+      "hash": "8498d7e8",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Faithfulness + nisba rule in prompt; conflation-guard (proper nouns must appear in the cited passage) — kills the Muḥammad-Sháh-type errors",
+      "scope": null
+    },
     {
       "hash": "b4e11e54",
       "date": "2026-06-25",
@@ -3458,52 +3500,52 @@
       "type": "Fixed",
       "description": "Framing critique — ban opening with 'It's true that X' elaboration pattern",
       "scope": null
-    },
-    {
-      "hash": "21375b1c",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Null paraId in citation URLs + show-me-everything catalog detection + verbatim Q-entry instruction",
-      "scope": null
-    },
-    {
-      "hash": "97cc03de",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Force crafter to use verbatim Q-entry text — ban substituting training-memory passages",
-      "scope": null
-    },
-    {
-      "hash": "e78f57c8",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Ban siftersearch.com/library/ URL format — hallucinated by crafter from training memory",
-      "scope": null
-    },
-    {
-      "hash": "0f8d2bcd",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Block quote threshold raised to 30+ words — short verses must be woven inline",
-      "scope": null
-    },
-    {
-      "hash": "c63db2e0",
-      "date": "2026-05-15",
-      "type": "Other",
-      "description": "Pure count queries — plain stats only, no companion (companion hurts more)",
-      "scope": null
-    },
-    {
-      "hash": "baad0495",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Pure count queries get 4 companion passages + request 2 inline citations",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-25": [
+      {
+        "hash": "fb9e410c",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Store verbatim proof-span per fact (the evidence the user verifies against) + remove research probe",
+        "scope": null
+      },
+      {
+        "hash": "b9690c81",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Research Káshán/Mírzá Jání passage (throwaway)",
+        "scope": null
+      },
+      {
+        "hash": "98f36355",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Sibling-aware disambiguation — name the other modelled same-given-name people so extractor/verifier attribute shared-name passages to the correct person",
+        "scope": null
+      },
+      {
+        "hash": "927877a7",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Add strict namesake-verification stage (skeptical fact-checker confirms each fact is about THIS person by nisba/role/era; default-reject on doubt) + nisba-locked identity line",
+        "scope": null
+      },
+      {
+        "hash": "fd2034e8",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Nisba-conflation detector (flag entities with incompatible nisbas)",
+        "scope": null
+      },
+      {
+        "hash": "8498d7e8",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Faithfulness + nisba rule in prompt; conflation-guard (proper nouns must appear in the cited passage) — kills the Muḥammad-Sháh-type errors",
+        "scope": null
+      },
       {
         "hash": "b4e11e54",
         "date": "2026-06-25",
@@ -7014,48 +7056,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Framing critique — ban opening with 'It's true that X' elaboration pattern",
-        "scope": null
-      },
-      {
-        "hash": "21375b1c",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Null paraId in citation URLs + show-me-everything catalog detection + verbatim Q-entry instruction",
-        "scope": null
-      },
-      {
-        "hash": "97cc03de",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Force crafter to use verbatim Q-entry text — ban substituting training-memory passages",
-        "scope": null
-      },
-      {
-        "hash": "e78f57c8",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Ban siftersearch.com/library/ URL format — hallucinated by crafter from training memory",
-        "scope": null
-      },
-      {
-        "hash": "0f8d2bcd",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Block quote threshold raised to 30+ words — short verses must be woven inline",
-        "scope": null
-      },
-      {
-        "hash": "c63db2e0",
-        "date": "2026-05-15",
-        "type": "Other",
-        "description": "Pure count queries — plain stats only, no companion (companion hurts more)",
-        "scope": null
-      },
-      {
-        "hash": "baad0495",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Pure count queries get 4 companion passages + request 2 inline citations",
         "scope": null
       }
     ]

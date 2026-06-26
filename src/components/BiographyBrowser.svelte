@@ -281,7 +281,10 @@
         <section class="d-sec"><h3>Facts &amp; connections <span class="muted">(cited)</span></h3>
           <ul class="facts2">
             {#each selected.characterizations as c}
-              <li>{c.quote}{#if c.url}<a class="f-cite" href={c.url} target="_blank" rel="noopener">{c.cite || c.source} →</a>{:else}<span class="f-cite">{c.cite || c.source}</span>{/if}</li>
+              <li>
+                <span class="f-stmt">{c.quote}</span>{#if c.url}<a class="f-cite" href={c.url} target="_blank" rel="noopener">{c.cite || c.source} →</a>{:else}<span class="f-cite">{c.cite || c.source}</span>{/if}
+                {#if c.proof}<span class="f-proof">“{c.proof}”</span>{/if}
+              </li>
             {/each}
           </ul>
         </section>
@@ -401,6 +404,8 @@
   .ai-src { color: var(--text-muted); font-size: .72rem; margin-left: .25rem; }
   .facts2 { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .7rem; }
   .facts2 li { font-size: .85rem; line-height: 1.55; color: var(--text-secondary); }
+  .f-stmt { color: var(--text-primary); }
+  .f-proof { display: block; margin-top: .25rem; padding-left: .6rem; border-left: 2px solid var(--border); color: var(--text-muted); font-size: .78rem; font-style: italic; line-height: 1.5; }
   .f-cite { float: right; margin-left: .6rem; color: var(--accent); text-decoration: none; font-size: .7rem; font-weight: 600; white-space: nowrap; }
   .f-cite:hover { text-decoration: underline; }
 
