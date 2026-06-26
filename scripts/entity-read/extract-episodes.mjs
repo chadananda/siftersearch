@@ -16,7 +16,7 @@ const FROM = process.env.FROM ? Number(process.env.FROM) : null, TO = process.en
 const clean = (t) => String(t || '').replace(/\[\^[^\]]*\]/g, '').replace(/\[pg[^\]]*\]/g, '').replace(/\\/g, '').replace(/\s+/g, ' ').trim();
 const bookOf = (id) => (id === 21308 ? 'The Dawn-Breakers' : 'God Passes By');
 // front-matter / non-narrative headings to skip (no event roster)
-const SKIP = /^(nabíl|shoghi|introduction|conclusion|preface|acknowledgment|extracts|distinguishing|genealogy|theory|key to|the qájár|a\.\s|b\.\s|c\.\s|d\.\s)/i;
+const SKIP = /^(foreword|nabíl|shoghi|introduction|conclusion|preface|acknowledgment|extracts|distinguishing|genealogy|theory|key to|the qájár|tributes|parallel|significance|highlights|outstanding|episodes associated|chapter|[\\\\\-\s]*chapter|[a-d]\.\s)/i;
 
 let rows = await queryAll(`SELECT external_para_id pid, paragraph_index pix, text, heading FROM content
   WHERE doc_id=? AND text IS NOT NULL ORDER BY paragraph_index`, [DOC]);
