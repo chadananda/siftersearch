@@ -8,7 +8,7 @@ import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.con
 import { readFileSync } from 'node:fs';
 const { query, queryAll } = await import('../../api/lib/db.js');
 const WRITE = process.env.WRITE === '1';
-const IN = process.env.IN || '/home/chad/sifter/episodes-db.json';
+const IN = (process.env.IN || '/home/chad/sifter/episodes-db.json').split(',').map((s) => s.trim()).filter(Boolean);  // merge episodes from multiple books
 const MAXROSTER = Number(process.env.MAXROSTER || 20);  // skip catch-all "episodes" with huge rosters (over-broad headings)
 const clean = (t) => String(t || '').replace(/\[\^[^\]]*\]/g, '').replace(/\[pg[^\]]*\]/g, '').replace(/\\/g, '').replace(/\s+/g, ' ').trim();
 const norm = (s) => clean(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"]/g, '').toLowerCase().replace(/[^a-z0-9 -]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -38,7 +38,7 @@ const resolve = (name) => {
   return null;
 };
 
-const eps = JSON.parse(readFileSync(IN, 'utf8'));
+const eps = IN.flatMap((f) => JSON.parse(readFileSync(f, 'utf8')));
 // fetch all episode paragraph texts (for verbatim proof spans)
 const allPids = [...new Set(eps.flatMap((e) => e.paraIds || []))];
 const txt = new Map();
