@@ -92,7 +92,7 @@
   ];
   // defer the search a tick so the click handler returns + Svelte settles before the async fetch (avoids any
   // teardown race from the samples row hiding on the same click)
-  const runSample = (query) => { q = query; queueMicrotask(runAI); };
+  const runSample = (query) => { q = query; aiBusy = true; queueMicrotask(runAI); };   // mark busy now so the grid never flashes literal matches before runAI
   const setFilter = (f) => { filter = filter === f ? null : f; };   // single-select: choosing one clears the rest
   const passesFilter = (p) => filter === null || (filter === 'image' ? p.hasPortrait : p.sources?.includes(filter));
 
@@ -100,6 +100,7 @@
   const phonMatch = (p, qps) => qps.every((qp) => p._phon.some((fp) => fp.startsWith(qp) || qp.startsWith(fp)));
   const filtered = $derived.by(() => {
     if (aiIds !== null) return aiIds.map((id) => persons.find((p) => p.id === id)).filter(Boolean).filter(passesFilter);
+    if (aiBusy) return [];   // AI search in flight — show the loader, not an intermediate flash of literal name-matches
     const base = persons.filter(passesFilter);
     const qts = tokenize(q);
     if (!qts.length) return base;

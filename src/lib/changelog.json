@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-26T21:40:00.994Z",
+  "generated": "2026-06-26T22:16:26.369Z",
   "entries": [
+    {
+      "hash": "a3b10f4a",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Replace too-broad 'Western believers who became Bahá'ís' sample with the specific, reliable 'first Western pilgrims to ‘Akká' (now 6/6 sample buttons return strong cited sets)",
+      "scope": null
+    },
     {
       "hash": "897ecab6",
       "date": "2026-06-26",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add alias sync trigger script + default model-routing config",
       "scope": null
-    },
-    {
-      "hash": "fe97f999",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Add entity pipeline workers to PM2 ecosystem + update CLAUDE.md",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-26": [
+      {
+        "hash": "a3b10f4a",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Replace too-broad 'Western believers who became Bahá'ís' sample with the specific, reliable 'first Western pilgrims to ‘Akká' (now 6/6 sample buttons return strong cited sets)",
+        "scope": null
+      },
       {
         "hash": "897ecab6",
         "date": "2026-06-26",
@@ -7049,13 +7056,6 @@
         "date": "2026-05-16",
         "type": "New",
         "description": "Add alias sync trigger script + default model-routing config",
-        "scope": null
-      },
-      {
-        "hash": "fe97f999",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Add entity pipeline workers to PM2 ecosystem + update CLAUDE.md",
         "scope": null
       }
     ]
