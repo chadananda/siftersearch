@@ -27,27 +27,34 @@ async function resolveDoc(source, docId) {
   const r = rows[0] || null; docCache.set(source, r); return r;
 }
 const fracIn = (text, qt) => { if (!qt.length) return 0; const t = nz(text); let s = 0; for (const w of qt) if (t.includes(w)) s++; return s / qt.length; };
+const HON = new Set('siyyid sayyid mirza mulla mullá haji hájí shaykh aqa áqá khan khán hájar'.split(' '));
+let NAME_TOKS = [];   // distinctive name tokens of the entity — a relocation target must actually mention the person
+const isFootnote = (pid) => /^(fn_|h\d)/i.test(String(pid));
 
-// returns {pid,pix,how,score,snip,curFrac} or null
+// returns {pid,pix,how,score,snip,curFrac,nameHit} or null
 async function locate(doc, item) {
   const rows = await docParas(doc.id); if (!rows.length) return null;
   const cur = item.paraId || null;
   const qt = toks(item.statement || item.quote || '');
   const curRow = cur ? rows.find((r) => r.pid === cur) : null;
   const curFrac = curRow ? fracIn(curRow.text, qt) : 0;
-  // 1. verbatim quote/extract
+  // 1. verbatim quote/extract — reliable enough to trust even a footnote target
   const verb = clean(item.quote || item.extract || '');
-  if (verb.length >= 16) { const slice = nz(verb).slice(verb.length > 40 ? 6 : 0).slice(0, 56); const hit = rows.find((r) => nz(r.text).includes(slice)); if (hit) return { pid: hit.pid, pix: hit.pix, how: 'verbatim', score: 1, snip: clean(hit.text).slice(0, 150), curFrac }; }
+  if (verb.length >= 16) { const slice = nz(verb).slice(verb.length > 40 ? 6 : 0).slice(0, 56); const hit = rows.find((r) => nz(r.text).includes(slice)); if (hit) return { pid: hit.pid, pix: hit.pix, how: 'verbatim', score: 1, snip: clean(hit.text).slice(0, 150), curFrac, nameHit: true }; }
   // 2. best distinctive-token overlap
   if (!qt.length) return null;
   let best = null; for (const r of rows) { const f = fracIn(r.text, qt); if (!best || f > best.score) best = { pid: r.pid, pix: r.pix, score: f, snip: clean(r.text).slice(0, 150) }; }
-  return best ? { ...best, how: 'overlap', curFrac } : null;
+  if (!best) return null;
+  const bestRow = rows.find((r) => r.pid === best.pid); const bt = nz(bestRow.text);
+  const nameHit = NAME_TOKS.length ? NAME_TOKS.some((nt) => bt.includes(nt)) : true;
+  return { ...best, how: 'overlap', curFrac, nameHit };
 }
 
 const row = await queryOne('SELECT ge.canonical_name cn, er.research_notes rn FROM graph_entities ge JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE ge.id=?', [ID]);
 if (!row) { console.log('entity not found:', ID); process.exit(1); }
 let notes = {}; try { notes = JSON.parse(row.rn || '{}'); } catch {}
-console.log(`Entity ${ID} = ${row.cn}\n`);
+NAME_TOKS = toks(row.cn).filter((t) => !HON.has(t));
+console.log(`Entity ${ID} = ${row.cn}  (name tokens: ${NAME_TOKS.join(', ')})\n`);
 
 let fixed = 0, ok = 0, weak = 0, nodoc = 0;
 async function pass(list, label) {
@@ -58,8 +65,11 @@ async function pass(list, label) {
     if (!doc) { nodoc++; console.log(`[${label}] NO-DOC  src="${item.source}"  ${clean(item.statement).slice(0, 70)}`); continue; }
     const loc = await locate(doc, item); const cur = item.paraId || null;
     if (!loc) { console.log(`[${label}] NOLOCATE ${doc.t}  ${clean(item.statement).slice(0, 70)}`); continue; }
-    // relocate only when clearly better: verbatim hit elsewhere, OR overlap beats current by a clear margin
-    const better = loc.pid !== cur && (loc.how === 'verbatim' || (loc.score >= 0.5 && loc.score >= loc.curFrac + 0.2));
+    // relocate only when clearly better: verbatim hit elsewhere, OR strong overlap that (a) beats current by a clear
+    // margin, (b) actually mentions the person, (c) isn't a footnote (those need verbatim to trust). Guards against the
+    // coincidental-token false match (e.g. a 3-token statement matching an unrelated footnote about executions).
+    const better = loc.pid !== cur && (loc.how === 'verbatim'
+      || (loc.score >= 0.6 && loc.nameHit && !isFootnote(loc.pid) && loc.score >= loc.curFrac + 0.2));
     if (loc.pid === cur) { ok++; console.log(`[${label}] OK   ${cur} (${loc.how} ${loc.score.toFixed(2)}) ${doc.t} ¶${loc.pix}`); continue; }
     if (!better) { weak++; console.log(`[${label}] KEEP ${cur || '-'} (cur ${loc.curFrac.toFixed(2)} vs best ${loc.pid} ${loc.score.toFixed(2)}) — not clearly better; left as-is`); console.log(`        stmt: ${clean(item.statement).slice(0, 90)}`); continue; }
     fixed++;
