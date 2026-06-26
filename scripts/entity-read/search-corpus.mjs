@@ -11,11 +11,13 @@ const HON = new Set(['mirza', 'mulla', 'siyyid', 'sayyid', 'haji', 'shaykh', 'aq
 const terms = [...new Set([NAME, ...ALIASES].flatMap((n) => n.split(/[\s-]+/)).map((w) => w.replace(/['‘’`ʻ]/g, '')).filter((w) => w.length >= 4 && !HON.has(w.toLowerCase())))].slice(0, 4);
 if (!terms.length) { process.stdout.write('[]'); process.exit(0); }
 const like = terms.map(() => 'c.text LIKE ?').join(' OR ');
-const params = terms.map((t) => `%${t}%`);
+// Phase B seeks NEW material — exclude the already-mined sources (GPB 21310/57347 + Dawn-Breakers 21308) by default
+const EXCLUDE = (process.env.EXCLUDE || '21308,21310,57347').split(',').map((s) => s.trim()).filter(Boolean);
+const params = [...terms.map((t) => `%${t}%`), ...EXCLUDE];
 const rows = await queryAll(`SELECT c.doc_id, c.external_para_id pid, c.paragraph_index pix, c.text, d.title book, COALESCE(d.doc_priority,0) prio
   FROM content c JOIN docs d ON d.id=c.doc_id
-  WHERE (${like}) AND c.deleted_at IS NULL AND length(c.text)>120
-  ORDER BY d.doc_priority DESC, c.doc_id, c.paragraph_index LIMIT 400`, params);
+  WHERE (${like}) AND c.deleted_at IS NULL AND length(c.text)>120 ${EXCLUDE.length ? 'AND c.doc_id NOT IN (' + EXCLUDE.map(() => '?').join(',') + ')' : ''}
+  ORDER BY d.doc_priority DESC, c.doc_id, c.paragraph_index LIMIT 600`, params);
 // keep passages that contain at least 2 of the distinctive terms (tighter than any-term), de-noise, cap per book
 const ntext = (s) => clean(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const hits = rows.filter((r) => { const t = ntext(r.text); return terms.filter((w) => t.includes(ntext(w))).length >= Math.min(2, terms.length); });
