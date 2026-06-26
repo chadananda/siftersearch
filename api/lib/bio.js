@@ -191,26 +191,36 @@ export async function bioSearch(rawQ) {
   if (best && memberIds.length) candidateIds = roster ? memberIds.filter((id) => roster.includes(id)) : memberIds.slice();   // group ∩ connection-roster (deterministic recall)
   else if (roster) candidateIds = roster;                                                    // pure connection query → the roster
   if (candidateIds && !candidateIds.length) candidateIds = best ? memberIds.slice() : null;   // fallback if intersection empties
-  // DETERMINISTIC connection answer: for a "who met/with X" query, the roster (people sharing an episode with X) IS
-  // the answer — recall is deterministic (we keep every roster member; the LLM may NOT prune it — it was dropping
-  // Ṭáhirih/Báqir). The LLM only writes a CONCISE clause per member; a missing clause falls back to a cleaned statement.
+  // DETERMINISTIC connection answer: for a "who met/with X" query, the roster (people sharing an episode with X) IS the
+  // answer — recall is deterministic (we keep every roster member; the LLM may NOT prune it — it was dropping Ṭáhirih).
+  // BUT a query that names a specific PLACE/EVENT ("imprisoned with the Báb at Máh-Kú", "in the Síyáh-Chál") must be
+  // narrowed to the shared episode matching those terms — otherwise it returns the target's whole roster (97 people).
   if (connTarget && roster && candidateIds && candidateIds.length) {
     const cl = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+    const tokOf = (s) => new Set(String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter((t) => t.length > 2 && !STOP.has(t)));
     const tName = nameById[connTarget.id] || 'them';
     const grp = best ? cl(best.name.replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+group$/i, '').replace(/^the\s+/i, '')) : '';
+    // query terms beyond the target's name, the resolved group, and generic connection verbs = the place/event constraint
+    const GEN = ['met', 'meet', 'with', 'accompan', 'knew', 'know', 'present', 'encounter', 'together', 'companion', 'compani', 'recogni', 'who', 'whom'];
+    const tnTok = tokOf(connTarget.nm); const grpTok = best ? tokOf(best.name) : new Set();
+    const specificToks = [...tokOf(q)].filter((t) => !tnTok.has(t) && !grpTok.has(t) && !GEN.some((g) => t.startsWith(g)));
+    const epHits = (e) => { const et = tokOf(`${e.name || ''} ${e.statement || ''} ${e.place || ''}`); return specificToks.some((t) => [...et].some((x) => x === t || (t.length >= 4 && (x.startsWith(t) || t.startsWith(x))))); };
     const members = [];
     for (const id of candidateIds) {
       const shared = (epById[id] || []).filter((e) => tSlugs.has(e.slug));
       if (!shared.length) continue;
-      const ev = shared.find((e) => nrm(e.statement).includes(connTarget.nm)) || shared[0];   // prefer the episode naming the target (better citation)
-      members.push({ id, name: nameById[id] || `#${id}`, ev, text: shared.map((e) => cl(e.statement)).join(' ').slice(0, 320) });
+      const matched = specificToks.length ? shared.filter(epHits) : shared;
+      if (specificToks.length && !matched.length) continue;                                   // place/event query + no matching shared episode → exclude
+      const use = matched.length ? matched : shared;
+      const ev = use.find((e) => nrm(e.statement).includes(connTarget.nm)) || use[0];          // prefer the episode naming the target (better citation)
+      members.push({ id, name: nameById[id] || `#${id}`, ev, text: use.map((e) => cl(e.statement)).join(' ').slice(0, 320) });
     }
     if (members.length) {
-      const CSYS = `For each person listed, write a SHORT clause (≤14 words, beginning with a verb) saying how they met or connected with ${tName}, drawn ONLY from the facts given for them. Include EVERY id — never omit anyone. Return ONLY JSON: {"lead":"<one short sentence stating the overall answer>","clauses":[{"id":<number>,"clause":"<verb phrase>"}]}.`;
+      const CSYS = `For each person listed, write a SHORT clause (≤14 words, beginning with a verb) that answers the QUESTION for that person, drawn ONLY from the facts given for them. Include EVERY id — never omit anyone. Return ONLY JSON: {"lead":"<one short sentence stating the overall answer>","clauses":[{"id":<number>,"clause":"<verb phrase>"}]}.`;
       const body = members.map((m) => `${m.id}|${m.name}: ${m.text}`).join('\n');
       let lead = ''; const byId = {};
       try {
-        const res = await chatCompletion([{ role: 'system', content: CSYS }, { role: 'user', content: body }],
+        const res = await chatCompletion([{ role: 'system', content: CSYS }, { role: 'user', content: `QUESTION: ${q}\n\n${body}` }],
           { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 700, responseFormat: { type: 'json_object' } });
         const mm = (res.content || '').match(/\{[\s\S]*\}/); const p = mm ? JSON.parse(mm[0]) : {};
         lead = cl(p.lead || '');
@@ -224,7 +234,7 @@ export async function bioSearch(rawQ) {
         parts.push(m.ev.url ? `${m.name} [${clause}](${m.ev.url})` : `${m.name} ${clause}`);
       }
       const ids = members.map((m) => m.id);
-      const summary = `${lead || `${ids.length}${grp ? ' of the ' + grp : ''} met ${tName}.`} ${parts.join('; ')}.`.replace(/\s+/g, ' ').trim();
+      const summary = `${lead || `${ids.length}${grp ? ' of the ' + grp : ''} connected to ${tName}.`} ${parts.join('; ')}.`.replace(/\s+/g, ' ').trim();
       return { ids, q, ...(best ? { group: best.id } : {}), reasoning: { summary, evidence } };
     }
   }
