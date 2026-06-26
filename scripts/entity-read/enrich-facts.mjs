@@ -28,6 +28,12 @@ let people = await queryAll(`SELECT ge.id, ge.canonical_name cn, ge.importance i
   WHERE ge.entity_type='person' AND ge.religion='' AND er.summary IS NOT NULL ORDER BY (ge.importance IS NULL), ge.importance DESC`);
 if (MIN) people = people.filter((p) => (p.imp || 0) >= MIN);
 if (ONLY) people = people.filter((p) => ONLY.has(p.id));
+// STALEONLY: only (re)process people whose facts2 is missing/empty or carries pre-QC facts lacking a proof span —
+// leaves the already-QC'd-with-proof people untouched (no wasted re-extraction).
+if (process.env.STALEONLY === '1') people = people.filter((p) => {
+  let f; try { f = JSON.parse(p.research_notes || '{}').facts2; } catch {}
+  return !Array.isArray(f) || f.length === 0 || f.some((x) => !x.quote);
+});
 if (LIMIT) people = people.slice(0, LIMIT);
 console.error(`fact catalog: ${people.length} persons${WRITE ? ' [WRITE]' : ' [dry]'}`);
 
@@ -114,7 +120,7 @@ async function one(p) {
       facts.push({ statement: st, quote, relation: String(it.relation || '').toLowerCase().replace(/[^a-z0-9:-]+/g, '-').slice(0, 40), when,
         source: bookOf(pass.doc_id), paraId: pass.pid, url: pass.url && pass.pid ? `${pass.url}?paraId=${pass.pid}` : null, _ct: pass.ct });
     }
-    if (!facts.length) return null;
+    if (!facts.length) { if (WRITE && Array.isArray(notes.facts2) && notes.facts2.length) { notes.facts2 = []; await query(`UPDATE entity_research SET research_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE canonical_name = ?`, [JSON.stringify(notes), p.cn]); } return null; }
     // QUALITY CONTROL — strict verification: an independent skeptical pass confirms each fact is about THIS person
     // (consistent with their nisba/role/era), not a same-named individual. The mention layer links by bare given
     // name, so passages about other "Siyyid Ḥusayn"s leak in; this is the gate that rejects them. Default: reject.
@@ -133,7 +139,7 @@ async function one(p) {
       } catch { /* verifier unavailable — keep extraction as-is rather than drop everything */ }
     }
     facts = facts.map(({ _ct, ...f }) => f);
-    if (!facts.length) return null;
+    if (!facts.length) { if (WRITE && Array.isArray(notes.facts2) && notes.facts2.length) { notes.facts2 = []; await query(`UPDATE entity_research SET research_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE canonical_name = ?`, [JSON.stringify(notes), p.cn]); } return null; }
     notes.facts2 = facts; withF++; total += facts.length;
     if (WRITE) await query(`UPDATE entity_research SET research_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE canonical_name = ?`, [JSON.stringify(notes), p.cn]);
     return `  ${p.id} ${p.cn} (${facts.length}): ${facts.slice(0, 6).map((f) => `[${f.relation}] ${f.statement.slice(0, 44)} ⟨${(f.quote || 'NO-QUOTE').slice(0, 38)}⟩`).join('  ·  ')}`;
