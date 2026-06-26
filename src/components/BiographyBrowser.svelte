@@ -88,7 +88,7 @@
     'the Seven Martyrs of Ṭihrán',
     'kings who received Bahá’u’lláh’s tablets',
     'officials who persecuted the Bábís',
-    'Western believers who became Bahá’ís',
+    'the first Western pilgrims to ‘Akká',
   ];
   // defer the search a tick so the click handler returns + Svelte settles before the async fetch (avoids any
   // teardown race from the samples row hiding on the same click)

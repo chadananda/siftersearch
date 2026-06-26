@@ -1,6 +1,118 @@
 {
-  "generated": "2026-06-26T05:03:27.093Z",
+  "generated": "2026-06-26T21:40:00.994Z",
   "entries": [
+    {
+      "hash": "897ecab6",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Tolerant JSON parse for the search LLM — salvage lead + complete match objects from malformed/truncated DeepSeek output instead of crashing the whole answer; raise maxTokens 1800→2600",
+      "scope": null
+    },
+    {
+      "hash": "32cd996f",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Deterministic roster only for broad 'met X' connection queries; route place/event-specific connection queries (imprisoned with X at Y) through the LLM precision path over roster candidates",
+      "scope": null
+    },
+    {
+      "hash": "f7915217",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Derive connection-target tokens from display name so name fragments (baha/llah) don't leak into the place/event filter and exclude valid roster members",
+      "scope": null
+    },
+    {
+      "hash": "0100c51b",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Narrow connection roster by query place/event terms — 'imprisoned with X at Máh-Kú' returns the co-prisoners, not X's whole episode-roster; broad 'met X' stays unfiltered",
+      "scope": null
+    },
+    {
+      "hash": "e9ae562c",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Connection answer keeps deterministic recall but LLM writes concise per-member clauses (≤14 words, verb-first); cleaned-statement fallback so no roster member is dropped",
+      "scope": null
+    },
+    {
+      "hash": "381a25eb",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Deterministic connection-roster answer — for 'who met X' return everyone sharing an episode with X (group-intersected), don't let the LLM prune the roster",
+      "scope": null
+    },
+    {
+      "hash": "bf2e7b3b",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Connection queries intersect group with target's episode-roster + float the shared episode to the front of each line — restores Badasht-three recall after cross-corpus facts diluted the catalog",
+      "scope": null
+    },
+    {
+      "hash": "34b7eb6a",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Dump-cast (importance-range cast batch, skips already-researched) for Phase-B scale-out",
+      "scope": null
+    },
+    {
+      "hash": "d5d879dd",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Search-corpus (cross-library passage search by person, authority-ranked) for Phase-B deep research",
+      "scope": null
+    },
+    {
+      "hash": "a1a28c81",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Dump-paras (JSON paragraph range) for the person-sweep workers",
+      "scope": null
+    },
+    {
+      "hash": "3a6fe200",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Remove throwaway probes",
+      "scope": null
+    },
+    {
+      "hash": "7b34fe1f",
+      "date": "2026-06-26",
+      "type": "Fixed",
+      "description": "Directly enrich Aḥmad-i-Ibdál Ṭabarsí martyrdom (DB ¶1303)",
+      "scope": null
+    },
+    {
+      "hash": "ed7caca1",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Ṭabarsí martyr-roster pass (mark all roster martyrs as died-at-Ṭabarsí with Nabíl's specific detail)",
+      "scope": null
+    },
+    {
+      "hash": "491c52ca",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Ṭabarsí martyr roster lookup (grounding)",
+      "scope": null
+    },
+    {
+      "hash": "c5d62c08",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Death fact first + citation borrowed from a martyrdom fact — 'died at X' queries see every death and can link it",
+      "scope": null
+    },
+    {
+      "hash": "2845f8f2",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Candidate-scoped predicate search + integrated explanation (query-matched evidence woven inline with source links); episodes+death as evidence; frontend renders the integrated answer (drops summary+list)",
+      "scope": null
+    },
     {
       "hash": "fae91ba4",
       "date": "2026-06-25",
@@ -3388,122 +3500,124 @@
       "type": "New",
       "description": "Add entity pipeline workers to PM2 ecosystem + update CLAUDE.md",
       "scope": null
-    },
-    {
-      "hash": "0dcb2bd3",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Auto-sync entity alias synonyms to Meilisearch every 10 minutes",
-      "scope": null
-    },
-    {
-      "hash": "f3e9567f",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Auto-sync entity mentions sidecar in unified worker (Step 22)",
-      "scope": null
-    },
-    {
-      "hash": "33af2691",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Grounded embedding generation in resolver worker",
-      "scope": null
-    },
-    {
-      "hash": "660f8d4e",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Grounded-text indexing pipeline (Step 15 + migration 73)",
-      "scope": null
-    },
-    {
-      "hash": "645cc3f6",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Authority-tier ranking utilities (Step 17B)",
-      "scope": null
-    },
-    {
-      "hash": "cfd7862c",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Jafar entity awareness + response register (Step 17)",
-      "scope": null
-    },
-    {
-      "hash": "3358dac2",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Entity-mentions Meilisearch sidecar + RRF integration (Step 16)",
-      "scope": null
-    },
-    {
-      "hash": "48dc8f29",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Entity pipeline workers — extractor, validator, resolver, promoter",
-      "scope": null
-    },
-    {
-      "hash": "ef0915d8",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Meilisearch synonym sync + extraction prompt v1",
-      "scope": null
-    },
-    {
-      "hash": "8bc4788c",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Entity pipeline calibration, orthography policy, doc-priority config",
-      "scope": null
-    },
-    {
-      "hash": "07be393e",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Entity layer foundation — migration 72, DeepSeek client, graph-db extension",
-      "scope": null
-    },
-    {
-      "hash": "c2483716",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "HyPE question search as parallel research track + retrieval architecture doc",
-      "scope": null
-    },
-    {
-      "hash": "178cee4b",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Suppress deep research early-return on follow-up turns; add dawn-breakers to carry-forward",
-      "scope": null
-    },
-    {
-      "hash": "2b5b9efe",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Route Bahai historical follow-ups to Dawn-Breakers + God Passes By",
-      "scope": null
-    },
-    {
-      "hash": "ada8c9ba",
-      "date": "2026-05-16",
-      "type": "Other",
-      "description": "Show strengths, deeper narrative (2-3 sentence fields), better section labels",
-      "scope": null
-    },
-    {
-      "hash": "d80db67d",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Stop generating fake #p{index} anchors for external document deeplinks",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-06-26": [
+      {
+        "hash": "897ecab6",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Tolerant JSON parse for the search LLM — salvage lead + complete match objects from malformed/truncated DeepSeek output instead of crashing the whole answer; raise maxTokens 1800→2600",
+        "scope": null
+      },
+      {
+        "hash": "32cd996f",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Deterministic roster only for broad 'met X' connection queries; route place/event-specific connection queries (imprisoned with X at Y) through the LLM precision path over roster candidates",
+        "scope": null
+      },
+      {
+        "hash": "f7915217",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Derive connection-target tokens from display name so name fragments (baha/llah) don't leak into the place/event filter and exclude valid roster members",
+        "scope": null
+      },
+      {
+        "hash": "0100c51b",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Narrow connection roster by query place/event terms — 'imprisoned with X at Máh-Kú' returns the co-prisoners, not X's whole episode-roster; broad 'met X' stays unfiltered",
+        "scope": null
+      },
+      {
+        "hash": "e9ae562c",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Connection answer keeps deterministic recall but LLM writes concise per-member clauses (≤14 words, verb-first); cleaned-statement fallback so no roster member is dropped",
+        "scope": null
+      },
+      {
+        "hash": "381a25eb",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Deterministic connection-roster answer — for 'who met X' return everyone sharing an episode with X (group-intersected), don't let the LLM prune the roster",
+        "scope": null
+      },
+      {
+        "hash": "bf2e7b3b",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Connection queries intersect group with target's episode-roster + float the shared episode to the front of each line — restores Badasht-three recall after cross-corpus facts diluted the catalog",
+        "scope": null
+      },
+      {
+        "hash": "34b7eb6a",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Dump-cast (importance-range cast batch, skips already-researched) for Phase-B scale-out",
+        "scope": null
+      },
+      {
+        "hash": "d5d879dd",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Search-corpus (cross-library passage search by person, authority-ranked) for Phase-B deep research",
+        "scope": null
+      },
+      {
+        "hash": "a1a28c81",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Dump-paras (JSON paragraph range) for the person-sweep workers",
+        "scope": null
+      },
+      {
+        "hash": "3a6fe200",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Remove throwaway probes",
+        "scope": null
+      },
+      {
+        "hash": "7b34fe1f",
+        "date": "2026-06-26",
+        "type": "Fixed",
+        "description": "Directly enrich Aḥmad-i-Ibdál Ṭabarsí martyrdom (DB ¶1303)",
+        "scope": null
+      },
+      {
+        "hash": "ed7caca1",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Ṭabarsí martyr-roster pass (mark all roster martyrs as died-at-Ṭabarsí with Nabíl's specific detail)",
+        "scope": null
+      },
+      {
+        "hash": "491c52ca",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Ṭabarsí martyr roster lookup (grounding)",
+        "scope": null
+      }
+    ],
     "2026-06-25": [
+      {
+        "hash": "c5d62c08",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Death fact first + citation borrowed from a martyrdom fact — 'died at X' queries see every death and can link it",
+        "scope": null
+      },
+      {
+        "hash": "2845f8f2",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Candidate-scoped predicate search + integrated explanation (query-matched evidence woven inline with source links); episodes+death as evidence; frontend renders the integrated answer (drops summary+list)",
+        "scope": null
+      },
       {
         "hash": "fae91ba4",
         "date": "2026-06-25",
@@ -6942,120 +7056,6 @@
         "date": "2026-05-16",
         "type": "New",
         "description": "Add entity pipeline workers to PM2 ecosystem + update CLAUDE.md",
-        "scope": null
-      },
-      {
-        "hash": "0dcb2bd3",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Auto-sync entity alias synonyms to Meilisearch every 10 minutes",
-        "scope": null
-      },
-      {
-        "hash": "f3e9567f",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Auto-sync entity mentions sidecar in unified worker (Step 22)",
-        "scope": null
-      },
-      {
-        "hash": "33af2691",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Grounded embedding generation in resolver worker",
-        "scope": null
-      },
-      {
-        "hash": "660f8d4e",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Grounded-text indexing pipeline (Step 15 + migration 73)",
-        "scope": null
-      },
-      {
-        "hash": "645cc3f6",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Authority-tier ranking utilities (Step 17B)",
-        "scope": null
-      },
-      {
-        "hash": "cfd7862c",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Jafar entity awareness + response register (Step 17)",
-        "scope": null
-      },
-      {
-        "hash": "3358dac2",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Entity-mentions Meilisearch sidecar + RRF integration (Step 16)",
-        "scope": null
-      },
-      {
-        "hash": "48dc8f29",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Entity pipeline workers — extractor, validator, resolver, promoter",
-        "scope": null
-      },
-      {
-        "hash": "ef0915d8",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Meilisearch synonym sync + extraction prompt v1",
-        "scope": null
-      },
-      {
-        "hash": "8bc4788c",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Entity pipeline calibration, orthography policy, doc-priority config",
-        "scope": null
-      },
-      {
-        "hash": "07be393e",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Entity layer foundation — migration 72, DeepSeek client, graph-db extension",
-        "scope": null
-      },
-      {
-        "hash": "c2483716",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "HyPE question search as parallel research track + retrieval architecture doc",
-        "scope": null
-      },
-      {
-        "hash": "178cee4b",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Suppress deep research early-return on follow-up turns; add dawn-breakers to carry-forward",
-        "scope": null
-      },
-      {
-        "hash": "2b5b9efe",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Route Bahai historical follow-ups to Dawn-Breakers + God Passes By",
-        "scope": null
-      },
-      {
-        "hash": "ada8c9ba",
-        "date": "2026-05-16",
-        "type": "Other",
-        "description": "Show strengths, deeper narrative (2-3 sentence fields), better section labels",
-        "scope": null
-      }
-    ],
-    "2026-05-15": [
-      {
-        "hash": "d80db67d",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Stop generating fake #p{index} anchors for external document deeplinks",
         "scope": null
       }
     ]

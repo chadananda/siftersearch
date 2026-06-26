@@ -1,21 +1,24 @@
 {
   "status": "complete",
-  "timestamp": "2026-06-19",
-  "summary": "Built + ran the sequential coreference reading pipeline over the ENTIRE Dawn-Breakers (doc 21308). DeepSeek (deepseek-chat = v4-flash non-thinking) read all 1900 text paragraphs in windows carrying a running cast, capturing 20,504 person-references (name/title/epithet/role/kinship/pronoun — never just names). 14 Claude region-reconcilers bound labels to DB entities by ATTRIBUTE TRIANGULATION (never keyword). Applied 943 new entity_mention links (REVERSIBLE) + queued 127 new persons + 124 ambiguous + 7 duplicate-merge candidates for review. Both acceptance arcs validated.",
-  "seqread_pipeline": {
-    "read": "1900/1900 paragraphs, 0 gaps. scripts/entity-read/{seq-read,find-gaps,fill-gaps,aggregate}.mjs. Window overflow handled by salvage + smaller windows (20->8->4->2 for dense roster paras); fetch timeout added.",
-    "reconcile": "14 region-reconcilers (Claude triangulation) -> region-NN-map.json. ~1670 certain binds, ~278 new, ~124 ambiguous. Cross-window identity unified THROUGH shared DB entity ids.",
-    "apply": "scripts/entity-read/apply-seqread.mjs. 943 rows extractor_version='seqread-v1'. 407 query-miss majors recovered by normalized name. New persons NOT auto-created.",
-    "reversible": "DELETE FROM entity_mentions WHERE extractor_version='seqread-v1' (graph.db)",
-    "backup": "/tank/backups/siftersearch/graph-pre-seqread-*.db",
-    "validate": "Mutavalli + Abdul-Khaliq/Dhabih (paras 63-1674, Badasht+after) PASS; dreamer son-of-Abdul-Majid found-but-fragmented (merge queued)",
-    "review": "tmp/entity-research/seqread/FINDINGS.md + review-queue.json"
+  "timestamp": "2026-06-26T13:35:00-07:00",
+  "summary": "Ran the acceptance gate on the person/connection biography search. Criteria 1 (API battery) & 2 (prose) PASS; criterion 3 (UI samples) is 5/6 reliable. Fixed a connection-query regression and a JSON-parse crash; reverted an unneeded keyword-pool change. One open decision: the 'Western believers who became Bahá'ís' sample is flaky (vague predicate not backed by a concrete cited fact).",
+  "done": [
+    "Connection-query fix: broad 'who met X' returns the deterministic shared-episode roster (recall — Badasht three restored: Mullá Ḥusayn/Quddús/Ṭáhirih/Báqir/Siyyid Ḥusayn-i-Yazdí=5); place/event-specific 'imprisoned with X at Y' routes through the LLM precision path (Síyáh-Chál=2 real prisoners not 97; Máh-Kú/Chihríq=1; exile from Baghdád=6 family). Target-name fragments no longer leak into the place filter.",
+    "JSON hardening: tolerant parse salvages lead + complete match objects from malformed/truncated DeepSeek output instead of crashing; maxTokens 1800->2600. Fixed ~4-5 queries that were returning SyntaxError/empty (Khurásán, prime ministers, royal blood, Báb's titles).",
+    "Reverted an unneeded broad-query keyword-pool change — the battery proved breadth is already covered by top-200-importance; the empties were JSON crashes, not a pool gap.",
+    "Battery 61q: ~57/61 strong, cited, no conflation. Connection queries all precise."
+  ],
+  "gate": {
+    "battery_61q": "PASS — ~57/61 strong/cited/no-conflation; remaining empties are data-coverage gaps not bugs",
+    "prose": "PASS — clear + concise; tight verb-first clauses with inline citations",
+    "ui_samples": "5/6 reliable (Ṭabarsí deaths 8, met-Bahá'u'lláh 5, Seven Martyrs 7, kings 6-7, officials 10-11); 6th 'Western believers who became Bahá'ís' flaky (0..16 across runs)"
   },
-  "review_needed": "127 new persons (Yar-Muhammad x89, Wife of the Bab, etc. — review before creating); 7 duplicate-merge candidates (the dreamer; 1249465->1249227 Mutavalli stub; 1249485->1249427; 1249734->1247601; Imam Hasan; the fourth Gate; Haji Muhammad-Karim Khan); DB-summary fix (Nayriz officers 1250104-6 mislabeled Tabarsi)",
-  "operational_attention": "STILL OPEN from 2026-06-18 overnight run: 1) pool 'fast' is SINGLE NVMe, NO redundancy — re-attach a 2nd NVMe + retire failing A400. 2) siftersearch-updater FROZEN (pm2 stop) — restart + re-park graph workers when ready. 3) writer path is fast; entity_mentions writes go direct to graph.db (busy_timeout), seqread merges route content writes via SIFTER_WRITER_URL.",
-  "prior_step3_remaining": "From overnight run (separate from seqread): reading-agent GPB-description pass for person+work entities; re-resolve 5 held bare-name buckets by context; deliberately create 644 footnote/narrative candidates (content-new-candidates.json).",
-  "needs_attention": true,
-  "tests_added": 0,
-  "files_removed": 0,
-  "lines_removed": 0
+  "issues_open": [
+    "DECISION NEEDED — 'Western believers who became Bahá'ís' sample is unreliable: the predicate 'became Bahá'ís' isn't a concrete cited fact for the Western figures (their facts say pilgrim/teacher). Options: (A) rephrase sample to 'first Western pilgrims to ‘Akká' (reliably 5); (B) build a 'Western believer' cohort group; (C) leave as known gap.",
+    "Data-coverage gaps (not bugs): child martyrs=0, Iṣfahán martyrs=0, American Disciples-of-‘Abdu'l-Bahá=0.",
+    "Minor over-inclusion: 'royal/princely blood' includes the Sháh (opponent, not a believer).",
+    "Duplicate entities (>=6 ‘Abdu'l-Bahá, multiple Quddús/Mullá Ḥusayn) still want merging."
+  ],
+  "commits": ["381a25eb", "e9ae562c", "0100c51b", "f7915217", "32cd996f", "897ecab6"],
+  "needs_attention": true
 }
