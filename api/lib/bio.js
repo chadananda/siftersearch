@@ -205,8 +205,9 @@ For each match, the evidence MUST be the specific listed fact that answers it â€
         const tSlugs = new Set((epById[target.id] || []).map((e) => e.slug).filter(Boolean));
         for (const [idStr, eps] of Object.entries(epById)) {
           const id = Number(idStr); if (id === target.id) continue;
-          const shared = eps.find((e) => tSlugs.has(e.slug));
-          if (shared && !aiIds.includes(id)) { aiIds.push(id); evidence[id] = { quote: shared.statement, proof: shared.quote || null, source: shared.source, url: shared.url || null }; }
+          // prefer a shared episode whose statement actually names the target (clearer evidence of the connection)
+          const shared = eps.find((e) => tSlugs.has(e.slug) && nrm(e.statement).includes(target.nm)) || eps.find((e) => tSlugs.has(e.slug));
+          if (shared && !aiIds.includes(id)) { aiIds.push(id); evidence[id] = { quote: `${shared.name}: ${shared.statement}`, proof: shared.quote || null, source: shared.source, url: shared.url || null }; }
         }
       }
     }
