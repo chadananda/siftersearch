@@ -1,13 +1,9 @@
-import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
-const { queryAll } = await import('../../api/lib/db.js');
-// what columns exist on content?
-const cols = await queryAll(`PRAGMA table_info(content)`);
-console.log('content cols:', cols.map((c) => c.name).join(', '));
-// sample heading + para_meta for Dawn-Breakers
-const s = await queryAll(`SELECT external_para_id pid, paragraph_index pix, heading, substr(para_meta,1,120) pm FROM content WHERE doc_id=21308 ORDER BY paragraph_index LIMIT 8`);
-for (const r of s) console.log(`¶${r.pix} [${r.pid}] heading=${JSON.stringify(r.heading)} meta=${r.pm || ''}`);
-// distinct headings + paragraph counts (the book's own episode/scene structure)
-const h = await queryAll(`SELECT heading, COUNT(*) n, MIN(paragraph_index) lo, MAX(paragraph_index) hi FROM content WHERE doc_id=21308 AND heading IS NOT NULL AND heading!='' GROUP BY heading ORDER BY lo`);
-console.log(`\n${h.length} distinct headings in Dawn-Breakers. First 30:`);
-for (const r of h.slice(0, 30)) console.log(`  ¶${r.lo}-${r.hi} (${r.n}p) — ${r.heading}`);
-process.exit(0);
+import { readFileSync } from 'node:fs';
+const eps = JSON.parse(readFileSync('/home/chad/sifter/episodes-db.json', 'utf8'));
+console.log(`${eps.length} episodes; ${eps.reduce((s, e) => s + e.participants.length, 0)} participant-roles`);
+const N = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const baha = eps.filter((e) => e.participants.some((p) => /baha.?u.?ll/i.test(N(p.name))));
+console.log(`\n${baha.length} episodes with Bahá'u'lláh as a participant:`);
+for (const e of baha) console.log(`  ■ ${e.name}${e.place ? ' @ ' + e.place : ''} — roster: ${e.participants.map((p) => p.name).join(', ')}`);
+console.log('\nSample of 6 other episodes:');
+for (const e of eps.filter((e) => !baha.includes(e)).slice(0, 6)) console.log(`  ■ ${e.name} (${e.participants.length}p): ${e.participants.slice(0, 6).map((p) => p.name).join(', ')}`);
