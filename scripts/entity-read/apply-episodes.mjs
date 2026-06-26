@@ -11,9 +11,10 @@ const WRITE = process.env.WRITE === '1';
 const IN = process.env.IN || '/home/chad/sifter/episodes-db.json';
 const MAXROSTER = Number(process.env.MAXROSTER || 20);  // skip catch-all "episodes" with huge rosters (over-broad headings)
 const clean = (t) => String(t || '').replace(/\[\^[^\]]*\]/g, '').replace(/\[pg[^\]]*\]/g, '').replace(/\\/g, '').replace(/\s+/g, ' ').trim();
-const HON = /\b(mírzá|mirza|mullá|mulla|siyyid|sayyid|ḥájí|haji|hájí|shaykh|s_hayḵh|sheikh|áqá|aqa|khán|khan|khánum|jináb|jinab|surnamed|the|mír|mir|ustád|hadrat|jenab|hájí)\b/gi;
 const norm = (s) => clean(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"]/g, '').toLowerCase().replace(/[^a-z0-9 -]/g, ' ').replace(/\s+/g, ' ').trim();
-const key = (s) => { let n = ' ' + norm(s) + ' '; n = n.replace(HON, ' ').replace(/\s+/g, ' ').trim(); return n; };
+// match on the FULL normalized name (honorifics kept — they disambiguate "Mullá Ḥusayn" from a "Siyyid Ḥusayn");
+// strip only a leading "the".
+const key = (s) => norm(s).replace(/^the /, '').trim();
 const slugify = (s) => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
 
 // build resolver: normalized name/alias -> set of entity ids (person, grounded cast)
@@ -25,7 +26,14 @@ for (const p of people) {
   let aliases = []; try { aliases = JSON.parse(p.aliases || '[]'); } catch {}
   for (const nm of [p.cn, ...aliases]) { const k = key(nm); if (!k || k.length < 3) continue; if (!idx.has(k)) idx.set(k, new Set()); idx.get(k).add(p.id); }
 }
-const resolve = (name) => { const k = key(name); const s = idx.get(k); if (s && s.size === 1) return [...s][0]; return null; };  // unique match only (precision)
+const resolve = (name) => {
+  const s = idx.get(key(name)); if (!s) return null;
+  const ids = [...s]; if (ids.length === 1) return ids[0];
+  // ambiguous key — pick the clearly dominant entity by importance (handles duplicate records whose importance is null/0);
+  // if two real entities tie, it's a genuine namesake clash → skip for precision.
+  const ranked = ids.map((id) => ({ id, imp: byId.get(id)?.imp || 0 })).sort((a, b) => b.imp - a.imp);
+  return ranked[0].imp > 0 && ranked[0].imp > ranked[1].imp ? ranked[0].id : null;
+};
 
 const eps = JSON.parse(readFileSync(IN, 'utf8'));
 // fetch all episode paragraph texts (for verbatim proof spans)
