@@ -97,6 +97,9 @@ async function one(p) {
     (siblings.length ? `\nDISTINCT OTHER PEOPLE who share the name "${stem}" — their deeds, places, and fate are NOT this person's; if a passage is about one of them, do NOT use it: ` +
       siblings.map((s) => `«${s.cn}»${nisbasOf(s.cn).length ? '' : ''} (${clean(s.summary).slice(0, 90)})`).join('; ') : '');
   const body = passages.map((x) => `[${x.n}] ${x.ct.slice(0, 750)}`).join('\n\n');
+  // the subject's OWN name/alias tokens — exempt from the conflation guard (GPB names ‘Abdu'l-Bahá as "the Master",
+  // so the model writing his canonical name must not be treated as importing a foreign entity).
+  const selfToks = new Set([p.cn, ...aliases].flatMap((s) => normq(s).split(/\s+/)).filter((w) => w.length >= 4).map((w) => w.slice(0, 6)));
   try {
     const res = await ai.chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `${idLine}\n\nPASSAGES:\n${body}` }],
       { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1800, responseFormat: { type: 'json_object' } });
@@ -112,7 +115,7 @@ async function one(p) {
       // paraphrase that imports a different person/event (e.g. "death of Muḥammad Sháh" when the passage names Quddús)
       const ptn = normq(pass.ct).replace(/[^a-z ]/g, ' ');
       const propers = [...new Set((st.match(/[A-ZÁÉÍÓÚÀ-Ý][\wÀ-ÿ’'-]{3,}/g) || []).map((w) => normq(w).replace(/[^a-z]/g, '')).filter((w) => w.length >= 4 && !STOPCAP.has(w)))];
-      if (propers.some((w) => !ptn.includes(w.slice(0, Math.min(6, w.length))))) continue;
+      if (propers.some((w) => !selfToks.has(w.slice(0, 6)) && !ptn.includes(w.slice(0, Math.min(6, w.length))))) continue;
       const when = it.when && String(it.when).trim() && !/^(null|none|n\/a|unknown)$/i.test(String(it.when).trim()) ? String(it.when).trim().slice(0, 40) : null;
       // verbatim proof span — the evidence the user verifies against. Keep only if it really occurs in the passage.
       let quote = clean(it.quote || '').replace(/^["'“”]+|["'“”]+$/g, '');
