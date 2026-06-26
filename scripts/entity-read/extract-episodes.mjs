@@ -16,7 +16,12 @@ const FROM = process.env.FROM ? Number(process.env.FROM) : null, TO = process.en
 const clean = (t) => String(t || '').replace(/\[\^[^\]]*\]/g, '').replace(/\[pg[^\]]*\]/g, '').replace(/\\/g, '').replace(/\s+/g, ' ').trim();
 const bookOf = (id) => (id === 21308 ? 'The Dawn-Breakers' : 'God Passes By');
 // front-matter / non-narrative headings to skip (no event roster)
-const SKIP = /^(foreword|nabíl|shoghi|introduction|conclusion|preface|acknowledgment|extracts|distinguishing|genealogy|theory|key to|the qájár|tributes|parallel|significance|highlights|outstanding|episodes associated|chapter|[\\\\\-\s]*chapter|[a-d]\.\s)/i;
+// skip ONLY unambiguous front-matter / chapter dividers. The model returns null for any non-event section, so do NOT
+// over-skip: a too-broad filter (it had matched lowercase "a./b./c." sub-headings) silently ate real narrative
+// sub-scenes like "b. His visit to Ṭihrán" — the explicit Mullá Ḥusayn↔Bahá'u'lláh meeting. Uppercase "A./B./C./D."
+// are the Introduction's sub-points (front matter); lowercase are narrative scenes.
+const SKIP_NAMED = /^(foreword|nabíl|shoghi effendi|introduction|preface|acknowledgment|genealogy|key to|the qájár dynasty|extracts from)/i;
+const isSkip = (h) => SKIP_NAMED.test(h || '') || /^[A-D]\.\s/.test(h || '') || /^[-\s\\]*chapter\b/i.test(h || '');
 
 let rows = await queryAll(`SELECT external_para_id pid, paragraph_index pix, text, heading FROM content
   WHERE doc_id=? AND text IS NOT NULL ORDER BY paragraph_index`, [DOC]);
@@ -29,7 +34,7 @@ for (const r of rows) {
   if (last && last.heading === r.heading) last.rows.push(r);
   else sections.push({ heading: r.heading || '(untitled)', rows: [r] });
 }
-const work = sections.filter((s) => !SKIP.test(s.heading || ''));
+const work = sections.filter((s) => !isSkip(s.heading));
 console.error(`episodes: ${rows.length} paragraphs → ${sections.length} heading-sections (${work.length} candidate after skipping front-matter) of doc ${DOC}${process.env.OUT ? ' [WRITE ' + process.env.OUT + ']' : ' [dry]'}`);
 
 const SYS = `You are given ONE titled section of an authoritative Bábí/Bahá'í history (its HEADING + paragraphs). The heading already names the scene. Extract the EPISODE this section recounts: a locatable event in which NAMED people take part together (a gathering/conference, journey, meeting, siege or battle, imprisonment, pilgrimage, martyrdom, declaration).
