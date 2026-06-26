@@ -251,9 +251,18 @@ Also output "lead": one short sentence stating the overall answer (e.g. "Several
 Return ONLY JSON: {"lead":"...","matches":[{"id","fact","clause"}]} — most relevant first, clear matches only.`;
   try {
     const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
-      { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1800, responseFormat: { type: 'json_object' } });
-    const m = (res.content || '').match(/\{[\s\S]*\}/);
-    const parsed = m ? JSON.parse(m[0]) : {};
+      { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 2600, responseFormat: { type: 'json_object' } });
+    // tolerant parse: DeepSeek occasionally emits malformed/truncated JSON (an unescaped quote, or the array cut off at
+    // maxTokens) — rather than lose the whole answer, salvage the lead + every COMPLETE {...} object from the text.
+    const looseParse = (txt) => {
+      const whole = (txt || '').match(/\{[\s\S]*\}/);
+      if (whole) { try { return JSON.parse(whole[0]); } catch { /* fall through to salvage */ } }
+      const out = {}; const lead = (String(txt).match(/"lead"\s*:\s*"((?:[^"\\]|\\.)*)"/) || [])[1]; if (lead) out.lead = lead;
+      const objs = []; const re = /\{[^{}]*\}/g; let o; while ((o = re.exec(String(txt)))) { try { objs.push(JSON.parse(o[0])); } catch { /* skip incomplete object */ } }
+      if (objs.length) out.matches = objs.filter((x) => x && x.id != null);
+      return out;
+    };
+    const parsed = looseParse(res.content);
     const nz = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, "'").replace(/\s+/g, ' ').toLowerCase().trim();
     const evidence = {}; const aiIds = []; const parts = [];
     for (const mm of (Array.isArray(parsed.matches) ? parsed.matches : [])) {
