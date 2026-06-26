@@ -50,38 +50,52 @@ async function locate(doc, item) {
   return { ...best, how: 'overlap', curFrac, nameHit };
 }
 
-const row = await queryOne('SELECT ge.canonical_name cn, er.research_notes rn FROM graph_entities ge JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE ge.id=?', [ID]);
-if (!row) { console.log('entity not found:', ID); process.exit(1); }
-let notes = {}; try { notes = JSON.parse(row.rn || '{}'); } catch {}
-NAME_TOKS = toks(row.cn).filter((t) => !HON.has(t));
-console.log(`Entity ${ID} = ${row.cn}  (name tokens: ${NAME_TOKS.join(', ')})\n`);
+// overlap relocation must clear these (verbatim is always trusted). Tighter than single-entity so a corpus-wide sweep
+// never moves a citation onto a coincidental-token paragraph.
+const V = Number(process.env.VERBOSE === '1');
+const OV_MIN = Number(process.env.OV_MIN || 0.7);     // min overlap fraction to relocate
+const OV_MARGIN = Number(process.env.OV_MARGIN || 0.25); // must beat the current paragraph by this much
 
-let fixed = 0, ok = 0, weak = 0, nodoc = 0;
-async function pass(list, label) {
-  if (!Array.isArray(list)) return;
-  for (const item of list) {
-    if (!item || (!item.statement && !item.quote)) continue;
-    const doc = await resolveDoc(item.source, item.docId);
-    if (!doc) { nodoc++; console.log(`[${label}] NO-DOC  src="${item.source}"  ${clean(item.statement).slice(0, 70)}`); continue; }
-    const loc = await locate(doc, item); const cur = item.paraId || null;
-    if (!loc) { console.log(`[${label}] NOLOCATE ${doc.t}  ${clean(item.statement).slice(0, 70)}`); continue; }
-    // relocate only when clearly better: verbatim hit elsewhere, OR strong overlap that (a) beats current by a clear
-    // margin, (b) actually mentions the person, (c) isn't a footnote (those need verbatim to trust). Guards against the
-    // coincidental-token false match (e.g. a 3-token statement matching an unrelated footnote about executions).
-    const better = loc.pid !== cur && (loc.how === 'verbatim'
-      || (loc.score >= 0.6 && loc.nameHit && !isFootnote(loc.pid) && loc.score >= loc.curFrac + 0.2));
-    if (loc.pid === cur) { ok++; console.log(`[${label}] OK   ${cur} (${loc.how} ${loc.score.toFixed(2)}) ${doc.t} ¶${loc.pix}`); continue; }
-    if (!better) { weak++; console.log(`[${label}] KEEP ${cur || '-'} (cur ${loc.curFrac.toFixed(2)} vs best ${loc.pid} ${loc.score.toFixed(2)}) — not clearly better; left as-is`); console.log(`        stmt: ${clean(item.statement).slice(0, 90)}`); continue; }
-    fixed++;
-    console.log(`[${label}] FIX  ${cur || '-'} => ${loc.pid} (${loc.how} ${loc.score.toFixed(2)}, cur ${loc.curFrac.toFixed(2)}) ${doc.t} ¶${loc.pix}`);
-    console.log(`        stmt: ${clean(item.statement).slice(0, 90)}`);
-    console.log(`        new : ${loc.snip}`);
-    item.paraId = loc.pid; item.url = doc.u ? `${doc.u}?paraId=${loc.pid}` : null; item.ref = `${(doc.t || '').slice(0, 30)} ¶${loc.pix}`;
-  }
+const tot = { fixedV: 0, fixedO: 0, ok: 0, kept: 0, nodoc: 0, entities: 0, changed: 0 };
+async function passEntity(cn, notes) {
+  NAME_TOKS = toks(cn).filter((t) => !HON.has(t));
+  let changed = 0;
+  const relog = [];
+  const pass = async (list, label) => {
+    if (!Array.isArray(list)) return;
+    for (const item of list) {
+      if (!item || (!item.statement && !item.quote)) continue;
+      const doc = await resolveDoc(item.source, item.docId);
+      if (!doc) { tot.nodoc++; continue; }
+      const loc = await locate(doc, item); const cur = item.paraId || null;
+      if (!loc) continue;
+      if (loc.pid === cur) { tot.ok++; continue; }
+      const better = loc.how === 'verbatim'
+        || (loc.score >= OV_MIN && loc.nameHit && !isFootnote(loc.pid) && loc.score >= loc.curFrac + OV_MARGIN);
+      if (!better) { tot.kept++; continue; }
+      if (loc.how === 'verbatim') tot.fixedV++; else tot.fixedO++;
+      changed++;
+      relog.push(`  [${label}] ${cur || '-'} => ${loc.pid} (${loc.how} ${loc.score.toFixed(2)}, cur ${loc.curFrac.toFixed(2)}) ${doc.t} ¶${loc.pix} :: ${clean(item.statement).slice(0, 70)}`);
+      item.paraId = loc.pid; item.url = doc.u ? `${doc.u}?paraId=${loc.pid}` : null; item.ref = `${(doc.t || '').slice(0, 30)} ¶${loc.pix}`;
+    }
+  };
+  await pass(notes.facts2, 'facts2');
+  await pass(notes.episodes, 'episode');
+  await pass(notes.characterizations, 'charz');
+  if (changed && (V || ID)) { console.log(`${cn} — ${changed} relocated`); relog.forEach((l) => console.log(l)); }
+  return changed;
 }
-await pass(notes.facts2, 'facts2');
-await pass(notes.episodes, 'episode');
-await pass(notes.characterizations, 'charz');
-console.log(`\n${WRITE ? 'WRITE' : 'DRY'} — ${fixed} relocated, ${ok} already-correct, ${weak} kept (not clearly better), ${nodoc} no-doc`);
-if (WRITE && fixed) { await query('UPDATE entity_research SET research_notes=?, updated_at=CURRENT_TIMESTAMP WHERE canonical_name=?', [JSON.stringify(notes), row.cn]); console.log('research_notes written.'); }
+
+const rows = ID
+  ? await queryAll('SELECT ge.canonical_name cn, er.research_notes rn FROM graph_entities ge JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE ge.id=?', [ID])
+  : await queryAll(`SELECT ge.canonical_name cn, er.research_notes rn FROM graph_entities ge JOIN entity_research er ON er.canonical_name=ge.canonical_name
+       WHERE ge.entity_type='person' AND (er.research_notes LIKE '%"paraId"%' OR er.research_notes LIKE '%"facts2"%' OR er.research_notes LIKE '%"episodes"%')`);
+console.log(`${ID ? 'entity ' + ID : 'ALL persons'} — ${rows.length} records · ${WRITE ? 'WRITE' : 'DRY'} (overlap>=${OV_MIN}, margin>=${OV_MARGIN})\n`);
+for (const r of rows) {
+  let notes = {}; try { notes = JSON.parse(r.rn || '{}'); } catch { continue; }
+  tot.entities++;
+  const changed = await passEntity(r.cn, notes);
+  if (changed) { tot.changed++; if (WRITE) await query('UPDATE entity_research SET research_notes=?, updated_at=CURRENT_TIMESTAMP WHERE canonical_name=?', [JSON.stringify(notes), r.cn]); }
+}
+console.log(`\n${WRITE ? 'WROTE' : 'DRY'} — ${tot.changed}/${tot.entities} entities changed · relocated ${tot.fixedV} verbatim + ${tot.fixedO} overlap · ${tot.ok} already-correct · ${tot.kept} kept · ${tot.nodoc} no-linkable-doc`);
 process.exit(0);
