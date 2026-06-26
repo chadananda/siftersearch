@@ -111,13 +111,11 @@ async function one(p) {
       const pass = passages.find((x) => x.n === Number(it.n)); if (!pass || !it.statement) continue;
       const st = clean(it.statement); if (st.length < 10) continue;
       const key = st.toLowerCase().slice(0, 60); if (seenS.has(key)) continue; seenS.add(key);
-      // conflation guard: every significant proper noun in the fact must appear in the cited passage — catches
-      // paraphrase that imports a different person/event (e.g. "death of Muḥammad Sháh" when the passage names Quddús)
-      const ptn = normq(pass.ct).replace(/[^a-z ]/g, ' ');
-      const propers = [...new Set((st.match(/[A-ZÁÉÍÓÚÀ-Ý][\wÀ-ÿ’'-]{3,}/g) || []).map((w) => normq(w).replace(/[^a-z]/g, '')).filter((w) => w.length >= 4 && !STOPCAP.has(w)))];
-      if (propers.some((w) => !selfToks.has(w.slice(0, 6)) && !ptn.includes(w.slice(0, Math.min(6, w.length))))) continue;
       const when = it.when && String(it.when).trim() && !/^(null|none|n\/a|unknown)$/i.test(String(it.when).trim()) ? String(it.when).trim().slice(0, 40) : null;
-      // verbatim proof span — the evidence the user verifies against. Keep only if it really occurs in the passage.
+      // VERBATIM PROOF SPAN — both the evidence shown to the user AND the support gate. A fact must be grounded in a
+      // real span of its passage; if none can be found it is unsupported (or imports a foreign entity) → drop, and
+      // the verifier then checks identity. (This replaced a blunt "every proper noun must appear" guard that wrongly
+      // dropped facts about figures the passage names by epithet — e.g. ‘Abdu'l-Bahá = "the Master".)
       let quote = clean(it.quote || '').replace(/^["'“”]+|["'“”]+$/g, '');
       if (quote.length < 8 || !normq(pass.ct).includes(normq(quote))) quote = '';
       if (!quote) {  // fallback: the model paraphrased instead of copying — pick the source sentence that best supports the statement
@@ -129,6 +127,7 @@ async function one(p) {
         }
         if (bestO >= 3 && bestS.trim().length >= 12) quote = clean(bestS).slice(0, 320);
       }
+      if (!quote) continue;  // no groundable evidence span in the passage → drop
       facts.push({ statement: st, quote, relation: String(it.relation || '').toLowerCase().replace(/[^a-z0-9:-]+/g, '-').slice(0, 40), when,
         source: bookOf(pass.doc_id), paraId: pass.pid, url: pass.url && pass.pid ? `${pass.url}?paraId=${pass.pid}` : null, _ct: pass.ct });
     }
