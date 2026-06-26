@@ -19,9 +19,10 @@ const docUrl = async (docId) => { if (urlCache.has(docId)) return urlCache.get(d
 async function locate(ex, preferDoc) {
   const e = clean(ex); if (e.length < 14) return null;
   const slice = e.slice(e.length > 38 ? 8 : 0).slice(0, 56).replace(/[%_]/g, ' ').trim(); if (slice.length < 12) return null;
-  // fast path: search WITHIN the cited doc (doc_id is indexed → scans one book, not 4M rows). Agents' docId is usually right.
-  let rows = preferDoc ? await queryAll(`SELECT doc_id, external_para_id pid, paragraph_index pix FROM content WHERE doc_id=? AND text LIKE ? AND deleted_at IS NULL LIMIT 3`, [preferDoc, `%${slice}%`]) : [];
-  if (!rows.length) rows = await queryAll(`SELECT doc_id, external_para_id pid, paragraph_index pix FROM content WHERE text LIKE ? AND deleted_at IS NULL LIMIT 5`, [`%${slice}%`]);   // fallback (rare): full scan
+  // validate WITHIN the cited doc only (doc_id indexed → scans one book, fast). No full-corpus scan (too slow over 4M
+  // rows). A fact whose extract isn't verbatim in its cited doc is dropped — precision over recall.
+  if (!preferDoc) return null;
+  const rows = await queryAll(`SELECT doc_id, external_para_id pid, paragraph_index pix FROM content WHERE doc_id=? AND text LIKE ? AND deleted_at IS NULL LIMIT 3`, [preferDoc, `%${slice}%`]);
   if (!rows.length) return null;
   const row = rows.find((r) => r.doc_id === preferDoc) || rows[0];
   const { u, t } = await docUrl(row.doc_id);
