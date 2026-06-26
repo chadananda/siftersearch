@@ -10,13 +10,13 @@ const B = {}; let withF = 0, empty = 0, totF = 0, q = 0, noq = 0;
 const emptyHigh = [];
 for (const r of rows) {
   let f = []; try { f = JSON.parse(r.rn || '{}').facts2 || []; } catch {}
-  const t = tierOf(r.imp || 0); B[t] ??= { n: 0, withf: 0, facts: 0 };
+  const t = tierOf(r.imp || 0); B[t] ??= { n: 0, withf: 0, facts: 0, q: 0, nq: 0 };
   B[t].n++;
-  if (f.length) { withF++; totF += f.length; B[t].withf++; B[t].facts += f.length; for (const x of f) (x.quote ? q++ : noq++); }
+  if (f.length) { withF++; totF += f.length; B[t].withf++; B[t].facts += f.length; for (const x of f) { if (x.quote) { q++; B[t].q++; } else { noq++; B[t].nq++; } } }
   else { empty++; if ((r.imp || 0) >= 40) emptyHigh.push(`${r.imp} ${r.cn}`); }
 }
 console.log(`TOTAL ${rows.length} persons · withFacts ${withF} · empty ${empty} · facts ${totF} · proof ${q}/${q + noq} (${Math.round(100 * q / (q + noq || 1))}%)`);
-for (const t of ['60+ ', '40-59', '20-39', '<20  ']) if (B[t]) console.log(`  ${t}: ${B[t].withf}/${B[t].n} have facts (${B[t].facts} facts)`);
+for (const t of ['60+ ', '40-59', '20-39', '<20  ']) if (B[t]) console.log(`  ${t}: ${B[t].withf}/${B[t].n} have facts (${B[t].facts} facts) · proof ${B[t].q}/${B[t].q + B[t].nq} (${Math.round(100 * B[t].q / (B[t].q + B[t].nq || 1))}% — low% = stale pre-QC facts)`);
 console.log(`\nHIGH-IMPORTANCE (>=40) with ZERO facts — ${emptyHigh.length}:`);
 for (const e of emptyHigh.slice(0, 40)) console.log('  ' + e);
 process.exit(0);
