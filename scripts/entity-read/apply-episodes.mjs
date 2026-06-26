@@ -76,14 +76,20 @@ console.error(`episodes: ${eps.length} (skipped ${skipped} over-broad) · resolv
 const topUn = [...unres.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15);
 console.error('top unresolved names: ' + topUn.map(([n, c]) => `${n}(${c})`).join(', '));
 
-let wrote = 0;
-for (const [id, conns] of add) {
-  const p = byId.get(id); let notes = {}; try { notes = JSON.parse(p.research_notes || '{}'); } catch {}
-  // dedup by slug
-  const bySlug = new Map(); for (const c of conns) if (!bySlug.has(c.slug)) bySlug.set(c.slug, c);
-  notes.episodes = [...bySlug.values()];
-  if (WRITE) { await query(`UPDATE entity_research SET research_notes=?, updated_at=CURRENT_TIMESTAMP WHERE canonical_name=?`, [JSON.stringify(notes), p.cn]); wrote++; }
+let wrote = 0, cleared = 0;
+for (const p of people) {
+  let notes = {}; try { notes = JSON.parse(p.research_notes || '{}'); } catch {}
+  const conns = add.get(p.id);
+  if (conns && conns.length) {
+    const bySlug = new Map(); for (const c of conns) if (!bySlug.has(c.slug)) bySlug.set(c.slug, c);  // dedup by slug
+    notes.episodes = [...bySlug.values()];
+    if (WRITE) { await query(`UPDATE entity_research SET research_notes=?, updated_at=CURRENT_TIMESTAMP WHERE canonical_name=?`, [JSON.stringify(notes), p.cn]); wrote++; }
+  } else if (Array.isArray(notes.episodes) && notes.episodes.length) {  // stale episodes from a prior run (person no longer resolved) → clear
+    delete notes.episodes;
+    if (WRITE) { await query(`UPDATE entity_research SET research_notes=?, updated_at=CURRENT_TIMESTAMP WHERE canonical_name=?`, [JSON.stringify(notes), p.cn]); cleared++; }
+  }
 }
+console.error(`wrote ${wrote} · cleared ${cleared} stale`);
 console.log(`${WRITE ? 'APPLIED' : 'DRY'} — ${add.size} persons given episode connections${WRITE ? ' (' + wrote + ' written)' : ''}`);
 // show the Bahá'u'lláh-connected Letters as a spot check
 for (const nm of ['Quddús', 'Ṭáhirih', 'Mullá Báqir-i-Tabrízí', 'Mullá Ḥusayn']) {
