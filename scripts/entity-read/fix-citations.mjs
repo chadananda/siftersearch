@@ -91,11 +91,13 @@ const rows = ID
   : await queryAll(`SELECT ge.canonical_name cn, er.research_notes rn FROM graph_entities ge JOIN entity_research er ON er.canonical_name=ge.canonical_name
        WHERE ge.entity_type='person' AND (er.research_notes LIKE '%"paraId"%' OR er.research_notes LIKE '%"facts2"%' OR er.research_notes LIKE '%"episodes"%')`);
 console.log(`${ID ? 'entity ' + ID : 'ALL persons'} — ${rows.length} records · ${WRITE ? 'WRITE' : 'DRY'} (overlap>=${OV_MIN}, margin>=${OV_MARGIN})\n`);
+const rollback = [];   // prior research_notes of every entity we change → trivially reversible
 for (const r of rows) {
   let notes = {}; try { notes = JSON.parse(r.rn || '{}'); } catch { continue; }
   tot.entities++;
   const changed = await passEntity(r.cn, notes);
-  if (changed) { tot.changed++; if (WRITE) await query('UPDATE entity_research SET research_notes=?, updated_at=CURRENT_TIMESTAMP WHERE canonical_name=?', [JSON.stringify(notes), r.cn]); }
+  if (changed) { tot.changed++; if (WRITE) { rollback.push({ cn: r.cn, rn: r.rn }); await query('UPDATE entity_research SET research_notes=?, updated_at=CURRENT_TIMESTAMP WHERE canonical_name=?', [JSON.stringify(notes), r.cn]); } }
 }
+if (WRITE && rollback.length) { const { writeFileSync } = await import('node:fs'); const f = process.env.BACKUP || `/home/chad/sifter/siftersearch/siftersearch-citation-rollback.json`; writeFileSync(f, JSON.stringify(rollback)); console.log(`rollback (${rollback.length} entities' prior research_notes) → ${f}`); }
 console.log(`\n${WRITE ? 'WROTE' : 'DRY'} — ${tot.changed}/${tot.entities} entities changed · relocated ${tot.fixedV} verbatim + ${tot.fixedO} overlap · ${tot.ok} already-correct · ${tot.kept} kept · ${tot.nodoc} no-linkable-doc`);
 process.exit(0);
