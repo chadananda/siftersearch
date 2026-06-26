@@ -65,11 +65,16 @@ async function one(p) {
   const dbAll = all.filter((r) => r.doc_id === DBID);
   const death = dbAll.filter((r) => DEATH.test(r.text)).slice(-3);
   const seen = new Set([...gpb.map((r) => r.id), ...death.map((r) => r.id)]);
+  // CONNECTION priority — passages naming Bahá'u'lláh or describing attaining a Manifestation's presence carry the
+  // who-met-whom evidence; even-spaced sampling alone misses them (e.g. Mullá Ḥusayn's visit to Bahá'u'lláh in Ṭihrán).
+  const CONNECT = /Bahá[’'`ʻ]?u[’'`ʻ]?lláh|Jamál-i-Mubárak|Blessed Beauty|attained .{0,20}presence|in the presence of|admitted to His presence|introduced .{0,20}presence|met Him|company of/i;
+  const connect = dbAll.filter((r) => !seen.has(r.id) && CONNECT.test(r.text)).slice(0, 6);
+  connect.forEach((r) => seen.add(r.id));
   const pool = dbAll.filter((r) => !seen.has(r.id));
-  const want = Math.max(1, DBMAX - death.length);
+  const want = Math.max(1, DBMAX - death.length - connect.length);
   const sampled = []; const step = pool.length > want ? pool.length / want : 1;
   for (let i = 0; i < pool.length && sampled.length < want; i += step) sampled.push(pool[Math.floor(i)]);
-  const rows = [...gpb, ...sampled, ...death];
+  const rows = [...gpb, ...connect, ...sampled, ...death];
   const passages = rows.map((r, i) => ({ ...r, ct: clean(r.text), n: i + 1 }));
   const myNisbas = [...new Set([...nisbasOf(p.cn), ...aliases.flatMap(nisbasOf)])];
   // sibling disambiguation: other modelled people who SHARE this given-name stem (different nisba) — the bare name
