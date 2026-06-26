@@ -22,7 +22,23 @@ const canonIdx = new Map(), aliasIdx = new Map(), byId = new Map();
 for (const p of people) { byId.set(p.id, p); const ck = key(p.cn); if (ck.length >= 3) (canonIdx.get(ck) || canonIdx.set(ck, new Set()).get(ck)).add(p.id);
   let al = []; try { al = JSON.parse(p.aliases || '[]'); } catch {} for (const a of al) { const k = key(a); if (k.length >= 4) (aliasIdx.get(k) || aliasIdx.set(k, new Set()).get(k)).add(p.id); } }
 const dom = (ids) => { const r = ids.map((id) => ({ id, imp: byId.get(id)?.imp || 0 })).sort((a, b) => b.imp - a.imp); return r[0].imp > 0 && r[0].imp > (r[1]?.imp || 0) ? r[0].id : null; };
-const resolve = (names) => { for (const nm of names) { const k = key(nm); const cs = canonIdx.get(k); if (cs) { const ids = [...cs]; return ids.length === 1 ? ids[0] : dom(ids); } } for (const nm of names) { const as = aliasIdx.get(key(nm)); if (as && as.size === 1) return [...as][0]; } return null; };
+// transliteration-tolerant token folding (Marághihí≈Marághi'í) + a token index for a unique-subset fallback
+const HON = new Set(['mirza', 'mulla', 'siyyid', 'sayyid', 'haji', 'shaykh', 'aqa', 'khan', 'khanum', 'mir', 'the', 'son', 'of', 'and', 'his', 'her']);
+const fold = (s) => key(s).replace(/(.)\1+/g, '$1').split(/[ -]/).map((w) => w.replace(/(ih|iy|i|y)$/, 'i')).join(' ');
+const toksOf = (s) => fold(s).split(' ').filter((w) => w.length >= 4 && !HON.has(w));
+const tokById = new Map();
+for (const p of people) { const t = new Set(); let al = []; try { al = JSON.parse(p.aliases || '[]'); } catch {} for (const nm of [p.cn, ...al]) for (const w of toksOf(nm)) t.add(w); tokById.set(p.id, t); }
+const resolve = (names) => {
+  for (const nm of names) { const cs = canonIdx.get(key(nm)); if (cs) { const ids = [...cs]; return ids.length === 1 ? ids[0] : dom(ids); } }
+  for (const nm of names) { const as = aliasIdx.get(key(nm)); if (as && as.size === 1) return [...as][0]; }
+  // unique-subset fallback: the roster name's distinctive tokens (≥2) are ALL contained in exactly ONE entity's tokens
+  for (const nm of names) {
+    const rt = toksOf(nm); if (rt.length < 2) continue;
+    const hits = [...tokById.entries()].filter(([, t]) => rt.every((w) => t.has(w))).map(([id]) => id);
+    if (hits.length === 1) return hits[0];
+  }
+  return null;
+};
 
 const rows = (await queryAll(`SELECT external_para_id pid, paragraph_index pix, text, (SELECT source_url FROM docs WHERE id=?) url FROM content
   WHERE doc_id=? AND heading LIKE ? AND paragraph_index BETWEEN ? AND ? ORDER BY paragraph_index`, [DOC, DOC, '%' + HEADING + '%', FROM, TO])).filter((r) => clean(r.text).length > 40);
@@ -30,7 +46,7 @@ console.error(`roster '${HEADING}' ${EVENT}: ${rows.length} paragraphs${WRITE ? 
 
 const SYS = `This is ONE paragraph from a roster of people connected to a single historic episode (a martyrdom/defence list). It usually describes ONE person: their name, where they were from, their kin, and their fate. Extract:
 {"canonicalName": the fullest identifying name the text gives (INCLUDE the nisba/town if stated, e.g. "Muḥammad-Ḥusayn-i-Ardistání", "Mírzá Muḥammad-Báqir, nephew of Mullá Ḥusayn"), "aliases": [other names/forms given], "origin": town/region or null, "kin": [{"relation":"…","who":"…"}], "detail": a short verbatim-grounded phrase on their distinction/fate, "diedThere": true unless the text says they did NOT reach or die at the place, "letter": true if it says they were a Letter of the Living}.
-If the paragraph names NO specific person (an intro, a section header like "From the town of X the following suffered martyrdom", or an aside), return {"canonicalName": null}.
+If the paragraph names NO specific person (an intro, a section header like "From the town of X the following suffered martyrdom", or an aside), OR identifies the person ONLY by a relationship with no proper name of their own (e.g. "the brother-in-law of Mullá Ḥusayn", "a son of Mullá Aḥmad"), return {"canonicalName": null}.
 Return ONLY JSON.`;
 
 const items = [];
