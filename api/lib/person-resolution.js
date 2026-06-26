@@ -42,7 +42,13 @@ export function learnAlias(idx, id, name) {
 const dominant = (idx, ids) => { const r = ids.map((id) => ({ id, imp: idx.byId.get(id)?.imp || 0 })).sort((a, b) => b.imp - a.imp); return r[0].imp > 0 && r[0].imp > (r[1]?.imp || 0) ? r[0].id : null; };
 const learn = (idx, id, names) => names.map(coreName).filter((n) => n && !idx.byId.get(id)?.aliasKeys.has(nkey(n)));
 // does this match's identity contradict the candidate (→ the match may be wrong OR the entity conflates two people)?
-const splitFlag = (rec, cand) => { const cn = (cand.nisba ? [nkey(cand.nisba)] : []).concat(cand.names.flatMap(NISBA)); if (cn.length && rec.nisbas.size && !cn.some((x) => rec.nisbas.has(x))) return `nisba mismatch: candidate ${cn.join('/')} vs entity ${[...rec.nisbas].join('/')}`; return null; };
+const foldw = (w) => String(w).replace(/(.)\1+/g, '$1').replace(/(ih|iy|i|y)$/, 'i');
+const splitFlag = (rec, cand) => {
+  const cn = [...new Set((cand.nisba ? [cand.nisba] : []).concat(cand.names.flatMap(NISBA)).map(foldw))];
+  const en = [...new Set([...rec.nisbas].map(foldw))];
+  if (cn.length && en.length && !cn.some((x) => en.some((y) => x === y || x.includes(y) || y.includes(x)))) return `nisba mismatch: candidate ${cn.join('/')} vs entity ${en.join('/')}`;
+  return null;
+};
 
 export function resolve(idx, cand) {
   const names = (cand.names || []).map((n) => n).filter(Boolean);
@@ -66,9 +72,20 @@ export function resolve(idx, cand) {
   return { action: 'create', confidence: 0 };
 }
 
-// reconciliation: entity pairs that share a strong alias OR ≥2 distinctive tokens + overlapping kin → likely same person
+// reconciliation: entity pairs that look like the SAME person — a DISTINCTIVE shared alias (≥2 content tokens, not a
+// bare common given-name) AND corroborating kin/origin overlap. Common-name collisions (many "Mihdí") are NOT merges.
 export function mergeCandidates(idx) {
   const pairs = []; const seen = new Set();
-  for (const [k, ids] of idx.alias) { if (ids.size > 1) { const a = [...ids]; for (let i = 0; i < a.length; i++) for (let j = i + 1; j < a.length; j++) { const key = a[i] + ':' + a[j]; if (!seen.has(key)) { seen.add(key); pairs.push({ a: a[i], b: a[j], shared: k, reason: 'shared alias' }); } } } }
+  for (const [k, ids] of idx.alias) {
+    if (ids.size < 2) continue;
+    if (k.split(/[ -]/).filter((w) => w.length >= 4 && !HON.has(w)).length < 2) continue;   // distinctive key only
+    const a = [...ids];
+    for (let i = 0; i < a.length; i++) for (let j = i + 1; j < a.length; j++) {
+      const ra = idx.byId.get(a[i]), rb = idx.byId.get(a[j]); const key = a[i] + ':' + a[j]; if (seen.has(key)) continue; seen.add(key);
+      const kinOverlap = ra.kin.some((x) => rb.kin.some((y) => nkey(x.who) === nkey(y.who)));
+      const originOverlap = ra.origin && rb.origin && (ra.origin.includes(rb.origin) || rb.origin.includes(ra.origin));
+      if (kinOverlap || originOverlap || k.split(/[ -]/).filter((w) => w.length >= 4 && !HON.has(w)).length >= 3) pairs.push({ a: a[i], b: a[j], shared: k });
+    }
+  }
   return pairs;
 }
