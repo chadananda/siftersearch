@@ -68,6 +68,6 @@ for (const e of all) {
 }
 merged.sort((a, b) => Math.min(...(a.paraIxs.length ? a.paraIxs : [1e9])) - Math.min(...(b.paraIxs.length ? b.paraIxs : [1e9])));
 for (const e of merged) console.log(`\n■ ${e.name}${e.place ? ' @ ' + e.place : ''}${e.when ? ' (' + e.when + ')' : ''}  [¶${e.paraIxs.slice(0, 6).join(',')}]\n   ${e.summary}\n   roster(${e.participants.length}): ${e.participants.slice(0, 14).map((p) => `${p.name}${p.role ? ' — ' + p.role.slice(0, 40) : ''}`).join(' · ')}`);
-console.log(`\n${merged.length} episodes (${all.length} raw) from ${windows.length} windows`);
+console.log(`\n${merged.length} episodes (${all.length} raw) from ${work.length} heading-sections`);
 if (process.env.OUT) { writeFileSync(process.env.OUT, JSON.stringify(merged, null, 2)); console.error(`wrote ${merged.length} episodes to ${process.env.OUT}`); }
 process.exit(0);
