@@ -202,7 +202,7 @@ export async function bioSearch(rawQ) {
     const grp = best ? cl(best.name.replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+group$/i, '').replace(/^the\s+/i, '')) : '';
     // query terms beyond the target's name, the resolved group, and generic connection verbs = the place/event constraint
     const GEN = ['met', 'meet', 'with', 'accompan', 'knew', 'know', 'present', 'encounter', 'together', 'companion', 'compani', 'recogni', 'who', 'whom'];
-    const tnTok = tokOf(connTarget.nm); const grpTok = best ? tokOf(best.name) : new Set();
+    const tnTok = tokOf(nameById[connTarget.id] || connTarget.nm); const grpTok = best ? tokOf(best.name) : new Set();   // display name → same tokenization as q (so "Bahá'u'lláh"→{baha,llah} fragments are removed, not treated as a place filter)
     const specificToks = [...tokOf(q)].filter((t) => !tnTok.has(t) && !grpTok.has(t) && !GEN.some((g) => t.startsWith(g)));
     const epHits = (e) => { const et = tokOf(`${e.name || ''} ${e.statement || ''} ${e.place || ''}`); return specificToks.some((t) => [...et].some((x) => x === t || (t.length >= 4 && (x.startsWith(t) || t.startsWith(x))))); };
     const members = [];
