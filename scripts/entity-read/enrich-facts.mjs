@@ -102,6 +102,15 @@ async function one(p) {
       // verbatim proof span — the evidence the user verifies against. Keep only if it really occurs in the passage.
       let quote = clean(it.quote || '').replace(/^["'“”]+|["'“”]+$/g, '');
       if (quote.length < 8 || !normq(pass.ct).includes(normq(quote))) quote = '';
+      if (!quote) {  // fallback: the model paraphrased instead of copying — pick the source sentence that best supports the statement
+        const stoks = new Set(normq(st).split(/\s+/).filter((w) => w.length > 3 && !STOPCAP.has(w)));
+        let bestS = '', bestO = 0;
+        for (const s of pass.ct.split(/(?<=[.!?”’])\s+/)) {
+          const o = normq(s).split(/\s+/).filter((w) => stoks.has(w)).length;
+          if (o > bestO) { bestO = o; bestS = s; }
+        }
+        if (bestO >= 3 && bestS.trim().length >= 12) quote = clean(bestS).slice(0, 320);
+      }
       facts.push({ statement: st, quote, relation: String(it.relation || '').toLowerCase().replace(/[^a-z0-9:-]+/g, '-').slice(0, 40), when,
         source: bookOf(pass.doc_id), paraId: pass.pid, url: pass.url && pass.pid ? `${pass.url}?paraId=${pass.pid}` : null, _ct: pass.ct });
     }
