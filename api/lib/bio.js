@@ -191,6 +191,24 @@ export async function bioSearch(rawQ) {
   if (best && memberIds.length) candidateIds = roster ? memberIds.filter((id) => roster.includes(id)) : memberIds.slice();   // group ∩ connection-roster (deterministic recall)
   else if (roster) candidateIds = roster;                                                    // pure connection query → the roster
   if (candidateIds && !candidateIds.length) candidateIds = best ? memberIds.slice() : null;   // fallback if intersection empties
+  // DETERMINISTIC connection answer: for a "who met/with X" query, the roster (people sharing an episode with X) IS
+  // the answer — don't let the LLM prune it (it was dropping Ṭáhirih/Báqir). Evidence = the shared episode itself.
+  if (connTarget && roster && candidateIds && candidateIds.length) {
+    const cl = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+    const tName = nameById[connTarget.id] || 'them';
+    const grp = best ? cl(best.name.replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+group$/i, '')) : '';
+    const ids = []; const evidence = {}; const parts = [];
+    for (const id of candidateIds) {
+      const eps = epById[id] || [];
+      const shared = eps.find((e) => tSlugs.has(e.slug) && nrm(e.statement).includes(connTarget.nm)) || eps.find((e) => tSlugs.has(e.slug));
+      if (!shared) continue;
+      ids.push(id); const clause = cl(shared.statement).slice(0, 130);
+      evidence[id] = { quote: cl(shared.statement), proof: shared.quote || null, source: shared.source, url: shared.url || null };
+      const nm = nameById[id] || `#${id}`;
+      parts.push(shared.url ? `${nm} [${clause}](${shared.url})` : `${nm} ${clause}`);
+    }
+    if (ids.length) return { ids, q, ...(best ? { group: best.id } : {}), reasoning: { summary: `${ids.length}${grp ? ' of the ' + grp : ''} met ${tName}: ${parts.join('; ')}.`, evidence } };
+  }
   const pool = (candidateIds ? rows.filter((r) => candidateIds.includes(r.id) && exById[r.id]) : rows.filter((r) => exById[r.id]).slice(0, 200));
   const aliasOf = (r) => { try { return JSON.parse(r.aliases || '[]').slice(0, 3); } catch { return []; } };
   const lines = pool.map((r) => {
