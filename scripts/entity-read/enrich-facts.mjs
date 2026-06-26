@@ -12,7 +12,7 @@ const ai = await import('../../api/lib/ai.js');
 const { query, queryAll, graphQueryAll } = await import('../../api/lib/db.js');
 const WRITE = process.env.WRITE === '1';
 const MIN = Number(process.env.MIN || 0), LIMIT = Number(process.env.LIMIT || 0), CONC = Number(process.env.CONC || 5);
-const GMAX = Number(process.env.GMAX || 8), DBMAX = Number(process.env.DBMAX || 18);
+const GMAX = Number(process.env.GMAX || 12), DBMAX = Number(process.env.DBMAX || 18);
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',').map(Number)) : null;
 const DBID = 21308;
 const bookOf = (id) => (id === DBID ? 'The Dawn-Breakers' : 'God Passes By');
@@ -45,8 +45,9 @@ RULES: Only assert a fact a passage actually supports — never infer beyond it 
 Return ONLY JSON: {"facts":[{"n":<num>,"relation":"<tag>","statement":"<clear fact incl. place>","quote":"<exact verbatim span proving it>","when":"<period or null>"}]}.`;
 
 const VSYS = `You are a STRICT fact-checker whose ONLY job is to prevent NAMESAKE CONFUSION in a biography. You are given ONE person's verified IDENTITY, then a numbered list of CANDIDATE FACTS — each paired with the exact source PASSAGE it was drawn from. Common names and titles (e.g. "Siyyid Ḥusayn", "Aḥmad", "Mullá Muḥammad") are shared by MANY different people, so a passage that merely contains the person's name is frequently about a DIFFERENT person of the same name.
-For each candidate, decide keep=true ONLY if BOTH hold: (1) the subject of the passage is unmistakably THIS SAME person — consistent with the IDENTITY given (their NISBA / place of origin, their role, era, and known deeds) — and NOT a same-named individual of a different nisba, place, station, or period; and (2) the passage genuinely states the claim about this person (not about someone else who merely appears in it).
-Set keep=false if the subject could be a different same-named person, if the claimed deed/place/era does not fit this person's established identity, or if the passage does not clearly support the claim. A different NISBA means a different person — reject. When in ANY doubt, keep=false: omitting a true fact is acceptable, asserting a fact about the wrong person is NOT.
+Your job is to catch NAMESAKE MIX-UPS, not to second-guess well-supported facts. Keep a fact unless the evidence points to a different person.
+Set keep=FALSE only when one of these is true: (a) the passage's subject is plausibly a DIFFERENT same-named person — a different NISBA/place of origin, a different role, station, or era than the IDENTITY given; or (b) the claim is actually about someone ELSE who merely appears in the passage, not this person; or (c) the passage does not support the claim at all. A different NISBA means a different person — reject.
+Otherwise set keep=TRUE. Do NOT reject a fact merely because it is minor, because the passage is brief, or because the person is named without their nisba — if the passage is plainly about this person and there is no competing same-named individual in view, keep it. Asserting a fact about the WRONG person is the error to prevent; dropping a correct fact about a uniquely-named person is also a failure.
 Return ONLY JSON: {"v":[{"i":<fact number>,"keep":true|false,"why":"<short reason>"}]}.`;
 
 let done = 0, withF = 0, total = 0;
@@ -61,7 +62,10 @@ async function one(p) {
   const all = await queryAll(`SELECT c.id, c.external_para_id pid, c.text, c.doc_id, d.source_url url FROM content c JOIN docs d ON d.id = c.doc_id
     WHERE c.id IN (${cids.slice(0, 600).map(() => '?').join(',')}) AND c.doc_id IN (21310,57347,${DBID}) ORDER BY c.id`, cids.slice(0, 600));
   if (!all.length) return null;
-  const gpb = all.filter((r) => r.doc_id !== DBID).slice(0, GMAX);
+  // sample GPB EVENLY across its arc, not just the first GMAX — later figures (‘Abdu'l-Bahá, Shoghi Effendi, the
+  // Western believers) appear only in GPB's later chapters and were starved by a first-N slice.
+  const gpbAll = all.filter((r) => r.doc_id !== DBID);
+  const gpb = []; { const step = gpbAll.length > GMAX ? gpbAll.length / GMAX : 1; for (let i = 0; i < gpbAll.length && gpb.length < GMAX; i += step) gpb.push(gpbAll[Math.floor(i)]); }
   const dbAll = all.filter((r) => r.doc_id === DBID);
   const death = dbAll.filter((r) => DEATH.test(r.text)).slice(-3);
   const seen = new Set([...gpb.map((r) => r.id), ...death.map((r) => r.id)]);
