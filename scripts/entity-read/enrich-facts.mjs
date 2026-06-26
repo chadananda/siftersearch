@@ -129,6 +129,7 @@ async function one(p) {
       facts.push({ statement: st, quote, relation: String(it.relation || '').toLowerCase().replace(/[^a-z0-9:-]+/g, '-').slice(0, 40), when,
         source: bookOf(pass.doc_id), paraId: pass.pid, url: pass.url && pass.pid ? `${pass.url}?paraId=${pass.pid}` : null, _ct: pass.ct });
     }
+    if (process.env.DBG) process.stderr.write(`\nDBG ${p.id} ${p.cn}: passages=${passages.length} items=${items.length} facts_pre_verify=${facts.length}\n` + facts.slice(0, 12).map((f) => `   • ${f.statement.slice(0, 70)}`).join('\n') + '\n');
     if (!facts.length) { if (WRITE && Array.isArray(notes.facts2) && notes.facts2.length) { notes.facts2 = []; await query(`UPDATE entity_research SET research_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE canonical_name = ?`, [JSON.stringify(notes), p.cn]); } return null; }
     // QUALITY CONTROL — strict verification: an independent skeptical pass confirms each fact is about THIS person
     // (consistent with their nisba/role/era), not a same-named individual. The mention layer links by bare given
@@ -141,11 +142,12 @@ async function one(p) {
         let verdicts = [];
         try { const m = (vr.content || '').match(/\{[\s\S]*\}/); verdicts = m ? (JSON.parse(m[0]).v || []) : []; }
         catch { for (const mm of (vr.content || '').matchAll(/"i"\s*:\s*(\d+)[\s\S]*?"keep"\s*:\s*(true|false)/g)) verdicts.push({ i: +mm[1], keep: mm[2] === 'true' }); }
+        if (process.env.DBG) process.stderr.write(`DBG ${p.id} verifier raw: ${(vr.content || '').slice(0, 400)}\n`);
         if (verdicts.length) {
           const keepSet = new Set(verdicts.filter((v) => v.keep === true || v.keep === 'true').map((v) => Number(v.i)));
           facts = facts.filter((_, i) => keepSet.has(i + 1));
         }
-      } catch { /* verifier unavailable — keep extraction as-is rather than drop everything */ }
+      } catch (e) { if (process.env.DBG) process.stderr.write(`DBG ${p.id} verifier ERROR: ${String(e.message || e).slice(0, 120)}\n`); /* verifier unavailable — keep extraction as-is */ }
     }
     facts = facts.map(({ _ct, ...f }) => f);
     if (!facts.length) { if (WRITE && Array.isArray(notes.facts2) && notes.facts2.length) { notes.facts2 = []; await query(`UPDATE entity_research SET research_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE canonical_name = ?`, [JSON.stringify(notes), p.cn]); } return null; }
