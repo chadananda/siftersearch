@@ -41,8 +41,11 @@
   let page = $state(0);
   let aiIds = $state(null);     // null = token mode; array = AI meaning-search results (relevance order)
   let aiBusy = $state(false);
-  let aiReasoning = $state(null);  // { summary, evidence: {id: why} } — the AI's answer + per-person evidence
+  let aiReasoning = $state(null);  // { summary (integrated markdown explanation), evidence: {id} } — the AI's answer
   let aiError = $state(null);      // surfaced when a meaning-search fetch fails (never silent)
+  // render the integrated explanation: escape HTML, then turn [text](url) into a source link (the evidence is woven inline)
+  const escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const mdLinks = (s) => escHtml(s).replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="ai-cite-in">$1</a>');
   let selected = $state(null);
   // seeded deterministically for SSR (renders in static HTML); the client effect then rotates it randomly
   let heroSet = $state(peopleOf(initialData).filter((p) => p.hasPortrait).slice(0, 9));
@@ -190,17 +193,7 @@
       <div class="ai-answer" transition:fade={{ duration: 250 }}>
         <span class="ai-spark" aria-hidden="true">✦</span>
         <div class="ai-body">
-          {#if aiReasoning.summary}<p class="ai-head">{aiReasoning.summary}</p>{/if}
-          <ul class="ai-evi">
-            {#each filtered as p (p.id)}
-              {#if aiReasoning.evidence?.[p.id]?.quote}
-                <li>
-                  <button class="ai-name" onclick={() => open(p)}>{p.name}</button> — {aiReasoning.evidence[p.id].quote}
-                  {#if aiReasoning.evidence[p.id].url}<a class="ai-cite" href={aiReasoning.evidence[p.id].url} target="_blank" rel="noopener" title={aiReasoning.evidence[p.id].source}>↗</a>{:else if aiReasoning.evidence[p.id].source}<span class="ai-src">[{aiReasoning.evidence[p.id].source}]</span>{/if}
-                </li>
-              {/if}
-            {/each}
-          </ul>
+          {#if aiReasoning.summary}<p class="ai-head">{@html mdLinks(aiReasoning.summary)}</p>{/if}
         </div>
       </div>
     {/if}
@@ -401,6 +394,8 @@
   .ai-name:hover { text-decoration: underline; }
   .ai-cite { color: var(--accent); text-decoration: none; font-weight: 600; margin-left: .25rem; white-space: nowrap; }
   .ai-cite:hover { text-decoration: underline; }
+  .ai-cite-in { color: var(--accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+  .ai-cite-in:hover { border-bottom-color: var(--accent); }
   .ai-src { color: var(--text-muted); font-size: .72rem; margin-left: .25rem; }
   .facts2 { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .7rem; }
   .facts2 li { font-size: .85rem; line-height: 1.55; color: var(--text-secondary); }

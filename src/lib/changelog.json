@@ -1,6 +1,237 @@
 {
-  "generated": "2026-06-26T00:19:01.545Z",
+  "generated": "2026-06-26T05:03:27.093Z",
   "entries": [
+    {
+      "hash": "fae91ba4",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Apply merges multiple books (IN=db,gpb); remove throwaway SQL probes — inspect entities via /api/v1/people/:id + /people/search, not ad-hoc SQL",
+      "scope": null
+    },
+    {
+      "hash": "642fc94d",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Stop over-skipping — front-matter filter was eating lowercase narrative sub-scenes (e.g. 'b. His visit to Ṭihrán', the explicit Mullá Ḥusayn↔Bahá'u'lláh meeting)",
+      "scope": null
+    },
+    {
+      "hash": "01e01911",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Mullá Ḥusayn Ṭihrán-meeting capture + GPB skip generalization",
+      "scope": null
+    },
+    {
+      "hash": "1ff95b87",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "GPB heading structure + Baghdad-period coverage",
+      "scope": null
+    },
+    {
+      "hash": "689a3018",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Clear stale episodes from persons no longer resolved (fixes Letter Hádí retaining the Badasht episode)",
+      "scope": null
+    },
+    {
+      "hash": "af022363",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Canonical-first resolution — dupes→importance-dominant, but different-nisba namesakes (Mírzá Hádí Letter vs Nahrí) are ambiguous→skip; stops namesake mis-resolution",
+      "scope": null
+    },
+    {
+      "hash": "4615bdec",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Mírzá Hádí source passages",
+      "scope": null
+    },
+    {
+      "hash": "d6f49fae",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Letters group membership + Mírzá Hádí",
+      "scope": null
+    },
+    {
+      "hash": "5aaf77a9",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Connection evidence prefers the shared episode that names the target + shows episode name",
+      "scope": null
+    },
+    {
+      "hash": "c60f7c66",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Deterministic shared-episode roster lookup for 'who met X' — guarantees the full roster (the Badasht three) instead of relying on the LLM to find every line",
+      "scope": null
+    },
+    {
+      "hash": "b82b1596",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Episodes first + wider catalog slice so shared-event evidence isn't truncated behind individual facts",
+      "scope": null
+    },
+    {
+      "hash": "4a35d985",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Wire shared episodes into search + dossier; reject promise/prophecy as evidence for 'met' queries (require an actual shared event)",
+      "scope": null
+    },
+    {
+      "hash": "9fedd41e",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Full-name matching + importance-dominant resolution (fixes Quddús/Mullá Ḥusayn vs duplicate entities)",
+      "scope": null
+    },
+    {
+      "hash": "bec5da74",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Inspect episode set",
+      "scope": null
+    },
+    {
+      "hash": "8c9709b1",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Fix leftover windows ref",
+      "scope": null
+    },
+    {
+      "hash": "b854596e",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Heading-section based extraction (use Dawn-Breakers' own scene headings as episode boundaries)",
+      "scope": null
+    },
+    {
+      "hash": "0b8a3333",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Inspect Dawn-Breakers heading structure + episode extractor v1",
+      "scope": null
+    },
+    {
+      "hash": "b9d9bbd3",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Confirm episode passages (throwaway)",
+      "scope": null
+    },
+    {
+      "hash": "06ab082d",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Read GPB para_78 context (throwaway)",
+      "scope": null
+    },
+    {
+      "hash": "bbda2f0f",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Remove throwaway id-probe",
+      "scope": null
+    },
+    {
+      "hash": "85da1085",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Remove dead selfToks var",
+      "scope": null
+    },
+    {
+      "hash": "7118270b",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Proof-span IS the support gate (drop facts with no groundable evidence) — replaces blunt proper-noun guard; restores ‘Abdu'l-Bahá's facts",
+      "scope": null
+    },
+    {
+      "hash": "86630c69",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Exempt the subject's own name/aliases from the conflation guard — fixes ‘Abdu'l-Bahá (named 'the Master' in GPB) losing all facts; the guard now only catches FOREIGN entity import",
+      "scope": null
+    },
+    {
+      "hash": "d738f7d7",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "DBG tracing (extraction/verifier) for diagnosing zero-fact figures",
+      "scope": null
+    },
+    {
+      "hash": "6f80d1bb",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Mention coverage diag (throwaway)",
+      "scope": null
+    },
+    {
+      "hash": "7f8ee20c",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Id lookup (throwaway)",
+      "scope": null
+    },
+    {
+      "hash": "962f5710",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Sample GPB across full arc (GMAX 8→12) for post-DB figures + recalibrate verifier to reject only namesake/identity-mismatch, not general doubt — fixes over-pruning of ‘Abdu'l-Bahá/Shoghi Effendi/Letters",
+      "scope": null
+    },
+    {
+      "hash": "22e42a62",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Prioritize connection-bearing passages (naming Bahá'u'lláh / attaining-presence) in sampling — captures who-met-whom evidence even-spacing misses (Mullá Ḥusayn↔Bahá'u'lláh in Ṭihrán)",
+      "scope": null
+    },
+    {
+      "hash": "15662da9",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Clear stale pre-QC facts2 on zero-verified + STALEONLY filter (refresh only people lacking proof spans) — makes the catalog uniformly QC'd",
+      "scope": null
+    },
+    {
+      "hash": "c0a651f3",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Proof coverage per tier (detects stale pre-QC facts)",
+      "scope": null
+    },
+    {
+      "hash": "f5bce31e",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Fact-catalog coverage + proof-coverage by importance tier",
+      "scope": null
+    },
+    {
+      "hash": "43ea1fda",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Deterministic proof-span fallback (best-overlap source sentence) when the model paraphrases the quote — ensures nearly every fact carries verbatim evidence",
+      "scope": null
+    },
+    {
+      "hash": "e7b71f5a",
+      "date": "2026-06-25",
+      "type": "Other",
+      "description": "Surface verbatim proof-span beneath each cited fact (statement → source quote → citation) — the evidence the user verifies against",
+      "scope": null
+    },
     {
       "hash": "fb9e410c",
       "date": "2026-06-25",
@@ -3269,241 +3500,241 @@
       "type": "Fixed",
       "description": "Stop generating fake #p{index} anchors for external document deeplinks",
       "scope": null
-    },
-    {
-      "hash": "906a27a9",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Assessment display schema, test failures, lint errors — unblock deploy pipeline",
-      "scope": null
-    },
-    {
-      "hash": "9bc1b020",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Bahá'í tradition regex — trailing \\b fails on Unicode í, use lookahead",
-      "scope": null
-    },
-    {
-      "hash": "501a9cdb",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "ProcessJob deletes is_duplicate paragraphs from Meili instead of upserting",
-      "scope": null
-    },
-    {
-      "hash": "88140654",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Search uses docs.source_url for canonical OceanLibrary links; purge duplicate paragraphs from Meili",
-      "scope": null
-    },
-    {
-      "hash": "f5e720e5",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Preserve Jafar citation links; add dialog assessment + rebuild tools",
-      "scope": null
-    },
-    {
-      "hash": "e462deef",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Language-listing catalog queries get companion passages — enables cite≥2 for browsing rubric",
-      "scope": null
-    },
-    {
-      "hash": "e873bd06",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Suppress DR early-return when specific work named — document subagent finds better work-specific passages than generic tradition set",
-      "scope": null
-    },
-    {
-      "hash": "a109851f",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Restrict INTERFAITH to named traditions for 2-tradition queries — prevents off-topic citation forcing for Bahá'í+Judaism covenant question",
-      "scope": null
-    },
-    {
-      "hash": "9153d62b",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Deep_research quotes reserved first in trimmer — not dropped by round-robin when per-tradition searches run",
-      "scope": null
-    },
-    {
-      "hash": "fe5b91ff",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Preserve cross-tradition deep research quotes for comparative questions — covenant query gets both Bahá'í and Judaism quotes",
-      "scope": null
-    },
-    {
-      "hash": "b39c0c42",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Deep research early return when tradition-filtered quotes ≥5 — prevents Atharva Veda contamination in Hindu dharma responses",
-      "scope": null
-    },
-    {
-      "hash": "cf42040e",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "BG author filter 'Bhagavad Gita'→'Vyāsa' — doc 21038 is authored by Vyāsa not title",
-      "scope": null
-    },
-    {
-      "hash": "28b36193",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Work-title placement rule — title AFTER fragment prevents Atharva Veda→BG misattribution",
-      "scope": null
-    },
-    {
-      "hash": "e8fdf73a",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Tradition-specific search isolation — filter deep research by requiredTradition; strengthen inline quote minimum fragment length (5w); forbid source misattribution in crafter",
-      "scope": null
-    },
-    {
-      "hash": "494db721",
-      "date": "2026-05-15",
-      "type": "Other",
-      "description": "Restore original LISTING QUERIES FORMAT (new version broke author queries)",
-      "scope": null
-    },
-    {
-      "hash": "d145becf",
-      "date": "2026-05-15",
-      "type": "Other",
-      "description": "Lower browsing topicCoverage and toolUsage thresholds to 3",
-      "scope": null
-    },
-    {
-      "hash": "918318e2",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "IsTraditionalListingQuery excludes author queries, crafter listing guidance",
-      "scope": null
-    },
-    {
-      "hash": "24c80d7b",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Revert isTraditionalListingQuery, lower browsing logicalCoherence threshold to 3",
-      "scope": null
-    },
-    {
-      "hash": "accfd623",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Suppress companion for tradition-listing queries in filtered catalog path",
-      "scope": null
-    },
-    {
-      "hash": "76d86cad",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Broaden isPureListQuery regex to match 'What Hindu scriptures do you carry?'",
-      "scope": null
-    },
-    {
-      "hash": "865f18ea",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Suppress companion quotes for pure listing queries (List Bahá'í collections)",
-      "scope": null
-    },
-    {
-      "hash": "3fb7f901",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Disable pure-count companion quotes, Torah note, stronger framing, lookup topicCoverage",
-      "scope": null
-    },
-    {
-      "hash": "6631edce",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "BEFORE WRITING tells crafter Q1-Q5 are highest-relevance curated passages (use first)",
-      "scope": null
-    },
-    {
-      "hash": "083bb3ed",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Remove over-strict QUICK CHECK from BEFORE WRITING (was causing link-removal regressions)",
-      "scope": null
-    },
-    {
-      "hash": "c58e3d0f",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Hard ban siftersearch.com/library/ URLs; BEFORE WRITING quick-check for URL origin",
-      "scope": null
-    },
-    {
-      "hash": "ae5c6301",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Simplify URL rule — crafter uses pre-computed citation_url exactly as given, no URL construction",
-      "scope": null
-    },
-    {
-      "hash": "4aada620",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Clarify siftersearch.com/document/ URLs are valid from Q-entries (not fabricated)",
-      "scope": null
-    },
-    {
-      "hash": "d706ce17",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Ban 'indeed' in framing responses + zero-count companion should match author themes",
-      "scope": null
-    },
-    {
-      "hash": "9c6ca82b",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Pure-count companion uses knowledge/books query for relevance; stronger CATALOG-DATA label",
-      "scope": null
-    },
-    {
-      "hash": "3e87d528",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Pure-count companion quotes enabled + listing title-URL must match same Q-entry",
-      "scope": null
-    },
-    {
-      "hash": "7c3083d0",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Attribution rule Dhammapada example + catalog general-overview companion cite exception",
-      "scope": null
-    },
-    {
-      "hash": "9272a4e0",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Reading-task CASE1, URL-transposition ban, language catalog, single-keyword BEFORE WRITING",
-      "scope": null
-    },
-    {
-      "hash": "8652a52d",
-      "date": "2026-05-15",
-      "type": "Fixed",
-      "description": "Framing critique — ban opening with 'It's true that X' elaboration pattern",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-25": [
+      {
+        "hash": "fae91ba4",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Apply merges multiple books (IN=db,gpb); remove throwaway SQL probes — inspect entities via /api/v1/people/:id + /people/search, not ad-hoc SQL",
+        "scope": null
+      },
+      {
+        "hash": "642fc94d",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Stop over-skipping — front-matter filter was eating lowercase narrative sub-scenes (e.g. 'b. His visit to Ṭihrán', the explicit Mullá Ḥusayn↔Bahá'u'lláh meeting)",
+        "scope": null
+      },
+      {
+        "hash": "01e01911",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Mullá Ḥusayn Ṭihrán-meeting capture + GPB skip generalization",
+        "scope": null
+      },
+      {
+        "hash": "1ff95b87",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "GPB heading structure + Baghdad-period coverage",
+        "scope": null
+      },
+      {
+        "hash": "689a3018",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Clear stale episodes from persons no longer resolved (fixes Letter Hádí retaining the Badasht episode)",
+        "scope": null
+      },
+      {
+        "hash": "af022363",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Canonical-first resolution — dupes→importance-dominant, but different-nisba namesakes (Mírzá Hádí Letter vs Nahrí) are ambiguous→skip; stops namesake mis-resolution",
+        "scope": null
+      },
+      {
+        "hash": "4615bdec",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Mírzá Hádí source passages",
+        "scope": null
+      },
+      {
+        "hash": "d6f49fae",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Letters group membership + Mírzá Hádí",
+        "scope": null
+      },
+      {
+        "hash": "5aaf77a9",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Connection evidence prefers the shared episode that names the target + shows episode name",
+        "scope": null
+      },
+      {
+        "hash": "c60f7c66",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Deterministic shared-episode roster lookup for 'who met X' — guarantees the full roster (the Badasht three) instead of relying on the LLM to find every line",
+        "scope": null
+      },
+      {
+        "hash": "b82b1596",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Episodes first + wider catalog slice so shared-event evidence isn't truncated behind individual facts",
+        "scope": null
+      },
+      {
+        "hash": "4a35d985",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Wire shared episodes into search + dossier; reject promise/prophecy as evidence for 'met' queries (require an actual shared event)",
+        "scope": null
+      },
+      {
+        "hash": "9fedd41e",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Full-name matching + importance-dominant resolution (fixes Quddús/Mullá Ḥusayn vs duplicate entities)",
+        "scope": null
+      },
+      {
+        "hash": "bec5da74",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Inspect episode set",
+        "scope": null
+      },
+      {
+        "hash": "8c9709b1",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Fix leftover windows ref",
+        "scope": null
+      },
+      {
+        "hash": "b854596e",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Heading-section based extraction (use Dawn-Breakers' own scene headings as episode boundaries)",
+        "scope": null
+      },
+      {
+        "hash": "0b8a3333",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Inspect Dawn-Breakers heading structure + episode extractor v1",
+        "scope": null
+      },
+      {
+        "hash": "b9d9bbd3",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Confirm episode passages (throwaway)",
+        "scope": null
+      },
+      {
+        "hash": "06ab082d",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Read GPB para_78 context (throwaway)",
+        "scope": null
+      },
+      {
+        "hash": "bbda2f0f",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Remove throwaway id-probe",
+        "scope": null
+      },
+      {
+        "hash": "85da1085",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Remove dead selfToks var",
+        "scope": null
+      },
+      {
+        "hash": "7118270b",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Proof-span IS the support gate (drop facts with no groundable evidence) — replaces blunt proper-noun guard; restores ‘Abdu'l-Bahá's facts",
+        "scope": null
+      },
+      {
+        "hash": "86630c69",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Exempt the subject's own name/aliases from the conflation guard — fixes ‘Abdu'l-Bahá (named 'the Master' in GPB) losing all facts; the guard now only catches FOREIGN entity import",
+        "scope": null
+      },
+      {
+        "hash": "d738f7d7",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "DBG tracing (extraction/verifier) for diagnosing zero-fact figures",
+        "scope": null
+      },
+      {
+        "hash": "6f80d1bb",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Mention coverage diag (throwaway)",
+        "scope": null
+      },
+      {
+        "hash": "7f8ee20c",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Id lookup (throwaway)",
+        "scope": null
+      },
+      {
+        "hash": "962f5710",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Sample GPB across full arc (GMAX 8→12) for post-DB figures + recalibrate verifier to reject only namesake/identity-mismatch, not general doubt — fixes over-pruning of ‘Abdu'l-Bahá/Shoghi Effendi/Letters",
+        "scope": null
+      },
+      {
+        "hash": "22e42a62",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Prioritize connection-bearing passages (naming Bahá'u'lláh / attaining-presence) in sampling — captures who-met-whom evidence even-spacing misses (Mullá Ḥusayn↔Bahá'u'lláh in Ṭihrán)",
+        "scope": null
+      },
+      {
+        "hash": "15662da9",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Clear stale pre-QC facts2 on zero-verified + STALEONLY filter (refresh only people lacking proof spans) — makes the catalog uniformly QC'd",
+        "scope": null
+      },
+      {
+        "hash": "c0a651f3",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Proof coverage per tier (detects stale pre-QC facts)",
+        "scope": null
+      },
+      {
+        "hash": "f5bce31e",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Fact-catalog coverage + proof-coverage by importance tier",
+        "scope": null
+      },
+      {
+        "hash": "43ea1fda",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Deterministic proof-span fallback (best-overlap source sentence) when the model paraphrases the quote — ensures nearly every fact carries verbatim evidence",
+        "scope": null
+      },
+      {
+        "hash": "e7b71f5a",
+        "date": "2026-06-25",
+        "type": "Other",
+        "description": "Surface verbatim proof-span beneath each cited fact (statement → source quote → citation) — the evidence the user verifies against",
+        "scope": null
+      },
       {
         "hash": "fb9e410c",
         "date": "2026-06-25",
@@ -6825,237 +7056,6 @@
         "date": "2026-05-15",
         "type": "Fixed",
         "description": "Stop generating fake #p{index} anchors for external document deeplinks",
-        "scope": null
-      },
-      {
-        "hash": "906a27a9",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Assessment display schema, test failures, lint errors — unblock deploy pipeline",
-        "scope": null
-      },
-      {
-        "hash": "9bc1b020",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Bahá'í tradition regex — trailing \\b fails on Unicode í, use lookahead",
-        "scope": null
-      },
-      {
-        "hash": "501a9cdb",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "ProcessJob deletes is_duplicate paragraphs from Meili instead of upserting",
-        "scope": null
-      },
-      {
-        "hash": "88140654",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Search uses docs.source_url for canonical OceanLibrary links; purge duplicate paragraphs from Meili",
-        "scope": null
-      },
-      {
-        "hash": "f5e720e5",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Preserve Jafar citation links; add dialog assessment + rebuild tools",
-        "scope": null
-      },
-      {
-        "hash": "e462deef",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Language-listing catalog queries get companion passages — enables cite≥2 for browsing rubric",
-        "scope": null
-      },
-      {
-        "hash": "e873bd06",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Suppress DR early-return when specific work named — document subagent finds better work-specific passages than generic tradition set",
-        "scope": null
-      },
-      {
-        "hash": "a109851f",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Restrict INTERFAITH to named traditions for 2-tradition queries — prevents off-topic citation forcing for Bahá'í+Judaism covenant question",
-        "scope": null
-      },
-      {
-        "hash": "9153d62b",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Deep_research quotes reserved first in trimmer — not dropped by round-robin when per-tradition searches run",
-        "scope": null
-      },
-      {
-        "hash": "fe5b91ff",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Preserve cross-tradition deep research quotes for comparative questions — covenant query gets both Bahá'í and Judaism quotes",
-        "scope": null
-      },
-      {
-        "hash": "b39c0c42",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Deep research early return when tradition-filtered quotes ≥5 — prevents Atharva Veda contamination in Hindu dharma responses",
-        "scope": null
-      },
-      {
-        "hash": "cf42040e",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "BG author filter 'Bhagavad Gita'→'Vyāsa' — doc 21038 is authored by Vyāsa not title",
-        "scope": null
-      },
-      {
-        "hash": "28b36193",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Work-title placement rule — title AFTER fragment prevents Atharva Veda→BG misattribution",
-        "scope": null
-      },
-      {
-        "hash": "e8fdf73a",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Tradition-specific search isolation — filter deep research by requiredTradition; strengthen inline quote minimum fragment length (5w); forbid source misattribution in crafter",
-        "scope": null
-      },
-      {
-        "hash": "494db721",
-        "date": "2026-05-15",
-        "type": "Other",
-        "description": "Restore original LISTING QUERIES FORMAT (new version broke author queries)",
-        "scope": null
-      },
-      {
-        "hash": "d145becf",
-        "date": "2026-05-15",
-        "type": "Other",
-        "description": "Lower browsing topicCoverage and toolUsage thresholds to 3",
-        "scope": null
-      },
-      {
-        "hash": "918318e2",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "IsTraditionalListingQuery excludes author queries, crafter listing guidance",
-        "scope": null
-      },
-      {
-        "hash": "24c80d7b",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Revert isTraditionalListingQuery, lower browsing logicalCoherence threshold to 3",
-        "scope": null
-      },
-      {
-        "hash": "accfd623",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Suppress companion for tradition-listing queries in filtered catalog path",
-        "scope": null
-      },
-      {
-        "hash": "76d86cad",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Broaden isPureListQuery regex to match 'What Hindu scriptures do you carry?'",
-        "scope": null
-      },
-      {
-        "hash": "865f18ea",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Suppress companion quotes for pure listing queries (List Bahá'í collections)",
-        "scope": null
-      },
-      {
-        "hash": "3fb7f901",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Disable pure-count companion quotes, Torah note, stronger framing, lookup topicCoverage",
-        "scope": null
-      },
-      {
-        "hash": "6631edce",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "BEFORE WRITING tells crafter Q1-Q5 are highest-relevance curated passages (use first)",
-        "scope": null
-      },
-      {
-        "hash": "083bb3ed",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Remove over-strict QUICK CHECK from BEFORE WRITING (was causing link-removal regressions)",
-        "scope": null
-      },
-      {
-        "hash": "c58e3d0f",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Hard ban siftersearch.com/library/ URLs; BEFORE WRITING quick-check for URL origin",
-        "scope": null
-      },
-      {
-        "hash": "ae5c6301",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Simplify URL rule — crafter uses pre-computed citation_url exactly as given, no URL construction",
-        "scope": null
-      },
-      {
-        "hash": "4aada620",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Clarify siftersearch.com/document/ URLs are valid from Q-entries (not fabricated)",
-        "scope": null
-      },
-      {
-        "hash": "d706ce17",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Ban 'indeed' in framing responses + zero-count companion should match author themes",
-        "scope": null
-      },
-      {
-        "hash": "9c6ca82b",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Pure-count companion uses knowledge/books query for relevance; stronger CATALOG-DATA label",
-        "scope": null
-      },
-      {
-        "hash": "3e87d528",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Pure-count companion quotes enabled + listing title-URL must match same Q-entry",
-        "scope": null
-      },
-      {
-        "hash": "7c3083d0",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Attribution rule Dhammapada example + catalog general-overview companion cite exception",
-        "scope": null
-      },
-      {
-        "hash": "9272a4e0",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Reading-task CASE1, URL-transposition ban, language catalog, single-keyword BEFORE WRITING",
-        "scope": null
-      },
-      {
-        "hash": "8652a52d",
-        "date": "2026-05-15",
-        "type": "Fixed",
-        "description": "Framing critique — ban opening with 'It's true that X' elaboration pattern",
         "scope": null
       }
     ]

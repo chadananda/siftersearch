@@ -159,62 +159,60 @@ export async function bioSearch(rawQ) {
     FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
     WHERE ge.entity_type='person' AND ge.religion='' AND (er.research_notes LIKE '%"facts2"%' OR er.research_notes LIKE '%"episodes"%')
     ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 900`);
-  const exById = {}; const epById = {}; const cand = []; const lines = [];
+  const exById = {}; const epById = {}; const cand = []; const nameById = {};
   const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”.]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
   for (const r of rows) {
+    nameById[r.id] = r.name;
     const rn = (() => { try { return JSON.parse(r.research_notes || '{}'); } catch { return {}; } })();
     if (Array.isArray(rn.episodes) && rn.episodes.length) { epById[r.id] = rn.episodes; const nm = nrm(r.name); if (nm.length >= 5) cand.push({ id: r.id, nm, n: rn.episodes.length }); }
-    // shared EPISODES (real events with a roster) are the evidence for connection queries — include them alongside the
-    // individual facts. An episode fact names the co-participants, so "who met Bahá'u'lláh" = people in a Bahá'u'lláh episode.
     const eps = (Array.isArray(rn.episodes) ? rn.episodes : []).map((e) => ({ statement: e.statement, quote: e.quote || null, when: e.when || null, source: e.source, url: e.url || null, episode: e.name }));
-    // episodes FIRST — they are the shared-event connection evidence; otherwise a person with many individual facts
-    // truncates their episodes out of the catalog line (e.g. Quddús's Badasht episodes lost behind 14 facts2).
-    const fx = [...eps, ...(Array.isArray(rn.facts2) ? rn.facts2 : [])];
+    // include a death fact (martyrdom/cause/place) so "who died at X" queries have citable death evidence
+    const d = rn.death;
+    const death = d && (d.cause || d.place) ? [{ statement: `Death: ${[d.cause, d.place, d.year].filter(Boolean).join(', ')}`, quote: null, source: d.source || null, url: d.url || null, when: d.year || null }] : [];
+    const fx = [...eps, ...death, ...(Array.isArray(rn.facts2) ? rn.facts2 : [])];   // episodes + death first — the connection/fate evidence
     if (!fx.length) continue;
     exById[r.id] = fx;
-    const al = (() => { try { return JSON.parse(r.aliases || '[]'); } catch { return []; } })().slice(0, 3);
-    const items = fx.slice(0, 24).map((f) => `• ${String(f.statement).replace(/\s+/g, ' ')}${f.when ? ' [' + f.when + ']' : ''}`).join(' ');
-    lines.push(`${r.id}|${r.name}${al.length ? ' (' + al.join('; ') + ')' : ''}: ${items}`);
   }
+
+  // ---- candidate scoping: judge the predicate over a SMALL relevant set, not 900 lines (which over/under-includes) ----
+  const connQ = /\b(met|meet|with|accompan|knew|know|present|encounter|together|companion|recogni)\b/i.test(q);
+  let connTarget = null;
+  if (connQ) { const nq = nrm(q); connTarget = cand.filter((c) => nq.includes(c.nm) && c.nm.length >= 5).sort((a, b) => (b.nm.length - a.nm.length) || (b.n - a.n))[0]; }
+  let candidateIds = null;
+  if (best && memberIds.length) candidateIds = memberIds.slice();                            // group query → its members
+  else if (connTarget) {                                                                     // connection query → the target's shared-episode roster
+    const tSlugs = new Set((epById[connTarget.id] || []).map((e) => e.slug).filter(Boolean));
+    candidateIds = Object.entries(epById).filter(([idStr, eps]) => Number(idStr) !== connTarget.id && eps.some((e) => tSlugs.has(e.slug))).map(([idStr]) => Number(idStr));
+  }
+  const pool = (candidateIds ? rows.filter((r) => candidateIds.includes(r.id) && exById[r.id]) : rows.filter((r) => exById[r.id]).slice(0, 200));
+  const aliasOf = (r) => { try { return JSON.parse(r.aliases || '[]').slice(0, 3); } catch { return []; } };
+  const lines = pool.map((r) => { const al = aliasOf(r); return `${r.id}|${r.name}${al.length ? ' (' + al.join('; ') + ')' : ''}: ${exById[r.id].slice(0, 20).map((f) => `• ${String(f.statement).replace(/\s+/g, ' ')}${f.when ? ' [' + f.when + ']' : ''}`).join(' ')}`; });
   const catalog = lines.join('\n');
-  const SYS = `You answer questions about people in early Bábí/Bahá'í history using ONLY a catalog of cited facts. You are given a QUERY and a CATALOG — one person per line: "id|name (aliases): • fact [period] • fact …" drawn from God Passes By and The Dawn-Breakers. Facts may carry a [period/place].
-Return a person ONLY if one of their listed facts DIRECTLY answers the query — the fact itself must establish the answer (who/where/when), not merely be a fact about them. For a "who MET / was WITH X" question, the supporting fact must describe an ACTUAL shared event or encounter (e.g. they were together at Badasht, accompanied X on a journey, were imprisoned together) — a fact that someone was merely PROMISED, prophesied, or expected to meet X does NOT qualify and must be rejected. For "who met the Báb before his Declaration", require a fact stating they actually met or knew the Báb before 1844 (e.g. at Karbilá). For place/period queries, the fact must match that place/period. Do NOT include a person just because they belong to a relevant group.
-For each match, the evidence MUST be the specific listed fact that answers it — copied from THAT person's line, never invented or taken from another line. Return ONLY JSON: {"summary":"one sentence answering the query","matches":[{"id":<number>,"fact":"<the supporting fact from that person's line>"}]} — clear matches only, most relevant first.`;
+
+  const SYS = `You answer a question about people in early Bábí/Bahá'í history from a CATALOG of cited facts — one person per line: "id|name (aliases): • fact [period] • fact …" (from God Passes By and The Dawn-Breakers).
+A person qualifies ONLY if one of their listed facts DIRECTLY satisfies the QUERY — the right event AND place AND period. Reject mere group membership. Reject "promised / prophesied / expected" when the query asks who actually MET or DID something. For a place/period query (e.g. "at Ṭabarsí", "during the Baghdád period") the supporting fact must match that place/period.
+For each qualifying person output {"id":<number>, "fact":"<the exact supporting fact copied from their line>", "clause":"<a SHORT phrase, beginning with a verb, that answers the query FOR THIS PERSON — drawn from that fact; e.g. 'was shot by ‘Abbás-Qulí Khán at the fort', 'was taken to Bárfurúsh and killed', 'attained His presence at Badasht'>"}.
+Also output "lead": one short sentence stating the overall answer (e.g. "Several Letters of the Living were martyred at Fort Ṭabarsí.").
+Return ONLY JSON: {"lead":"...","matches":[{"id","fact","clause"}]} — most relevant first, clear matches only.`;
   try {
     const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
       { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1800, responseFormat: { type: 'json_object' } });
     const m = (res.content || '').match(/\{[\s\S]*\}/);
     const parsed = m ? JSON.parse(m[0]) : {};
     const nz = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, "'").replace(/\s+/g, ' ').toLowerCase().trim();
-    const evidence = {}; const aiIds = [];
+    const evidence = {}; const aiIds = []; const parts = [];
     for (const mm of (Array.isArray(parsed.matches) ? parsed.matches : [])) {
-      const id = Number(mm.id); if (!id || aiIds.includes(id)) continue;
-      const fx = exById[id]; if (!fx) continue;   // only people with a cited fact can be evidenced
-      const want = nz(mm.fact);
-      const hit = fx.find((f) => want && (nz(f.statement).includes(want) || want.includes(nz(f.statement)))) || fx[0];  // bind to the STORED cited fact
-      aiIds.push(id); evidence[id] = { quote: hit.statement, proof: hit.quote || null, source: hit.source, url: hit.url || null };
+      const id = Number(mm.id); if (!id || aiIds.includes(id) || !exById[id]) continue;
+      if (candidateIds && !candidateIds.includes(id)) continue;                               // never escape the candidate scope
+      const fx = exById[id]; const want = nz(mm.fact);
+      const hit = fx.find((f) => want && (nz(f.statement).includes(want) || want.includes(nz(f.statement)))) || fx[0];   // bind to the STORED fact (for citation)
+      const clause = String(mm.clause || hit.statement).replace(/\s+/g, ' ').trim().slice(0, 160);
+      aiIds.push(id); evidence[id] = { quote: hit.statement, proof: hit.quote || null, source: hit.source, url: hit.url || null, clause };
+      const nm = nameById[id] || `#${id}`;
+      parts.push(hit.url ? `${nm} [${clause}](${hit.url})` : `${nm} ${clause}`);
     }
-    // DETERMINISTIC connection lookup — for "who met / was with X" queries, the answer is the shared-episode roster:
-    // everyone who appears in an episode that X also appears in. The episode model makes this exact, so we don't rely
-    // on the LLM to scan every line and never miss a roster member (it was dropping Ṭáhirih from the Badasht three).
-    const connQ = /\b(met|meet|with|accompan|knew|know|present|encounter|together|companion)\b/i.test(q);
-    if (connQ) {
-      const nq = nrm(q);
-      const target = cand.filter((c) => nq.includes(c.nm)).sort((a, b) => (b.nm.length - a.nm.length) || (b.n - a.n))[0];
-      if (target) {
-        const tSlugs = new Set((epById[target.id] || []).map((e) => e.slug).filter(Boolean));
-        for (const [idStr, eps] of Object.entries(epById)) {
-          const id = Number(idStr); if (id === target.id) continue;
-          // prefer a shared episode whose statement actually names the target (clearer evidence of the connection)
-          const shared = eps.find((e) => tSlugs.has(e.slug) && nrm(e.statement).includes(target.nm)) || eps.find((e) => tSlugs.has(e.slug));
-          if (shared && !aiIds.includes(id)) { aiIds.push(id); evidence[id] = { quote: `${shared.name}: ${shared.statement}`, proof: shared.quote || null, source: shared.source, url: shared.url || null }; }
-        }
-      }
-    }
-    // proof-backed only: never fall back to listing un-evidenced members
-    let ids = aiIds;
-    if (best && memberIds.length) { const inter = aiIds.filter((id) => memberIds.includes(id)); if (inter.length) ids = inter; }
-    const ev = {}; for (const id of ids) if (evidence[id]) ev[id] = evidence[id];
-    return { ids, q, ...(best ? { group: best.id } : {}), reasoning: { summary: parsed.summary || '', evidence: ev } };
+    // integrated explanation: lead sentence + each person's query-matched evidence woven in, inline-linked to its source
+    const explanation = `${(parsed.lead || '').trim()}${parts.length ? ' ' + parts.join('; ') + '.' : ''}`.trim();
+    return { ids: aiIds, q, ...(best ? { group: best.id } : {}), reasoning: { summary: explanation, evidence } };
   } catch (e) { return { ids: memberIds, q, error: String(e).slice(0, 80) }; }
 }
