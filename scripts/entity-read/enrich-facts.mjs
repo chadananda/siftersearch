@@ -19,6 +19,8 @@ const bookOf = (id) => (id === DBID ? 'The Dawn-Breakers' : 'God Passes By');
 const clean = (t) => String(t || '').replace(/\[\^[^\]]*\]/g, '').replace(/\[pg[^\]]*\]/g, '').replace(/\\/g, '').replace(/\s+/g, ' ').trim();
 const normq = (s) => clean(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, '').toLowerCase();
 const STOPCAP = new Set(['during', 'after', 'among', 'amongst', 'when', 'while', 'having', 'upon', 'this', 'that', 'these', 'those', 'both', 'some', 'many', 'several', 'from', 'with', 'their', 'they', 'then', 'though', 'although', 'before', 'because', 'through', 'which', 'where', 'what', 'here', 'there', 'later', 'meanwhile', 'thus', 'moreover', 'indeed', 'such', 'about', 'first', 'last', 'letter', 'letters', 'living']);
+// the place-of-origin nisba(s) in a name's "<name>-i-<Nisba>" construct — the strongest namesake discriminator
+const nisbasOf = (name) => { const out = new Set(); for (const m of String(name).matchAll(/[-y]i-([A-ZÁÉÍÓÚÀ-ÿ][A-Za-zÀ-ÿ’'-]{3,})/g)) out.add(m[1]); return [...out]; };
 const DEATH = /\b(martyr|martyrdom|slain|slew|beheaded|strangled|put to death|met (his|her) death|suffered martyrdom|was killed|were killed|executed|done to death|breathed his last|breathed her last|fell (a martyr|beneath|in|at|fighting|defending|pierced|mortally))\b/i;
 
 let people = await queryAll(`SELECT ge.id, ge.canonical_name cn, ge.importance imp, er.summary, er.aliases, er.kinship, er.research_notes
@@ -35,6 +37,11 @@ Cover: identity/role/title; significant deeds and role in the upheavals; CONNECT
 For any meeting, event, deed, or fate, the WHERE belongs in the statement and the WHEN in the "when" field whenever the passage gives them — these power who-met-whom-where-when analysis.
 RULES: Only assert a fact a passage actually supports — never infer beyond it (if no passage shows they met Bahá'u'lláh, do NOT claim it). COPY proper names and specifics EXACTLY as the passage gives them; NEVER substitute or conflate a different person or event — e.g. if the passage says the Báb grieved over the martyrdom of Quddús, do NOT write "death of Muḥammad Sháh." The fact must be ABOUT this person, not someone else in the passage. A person with a DIFFERENT NISBA (place-of-origin suffix — e.g. "-i-Yazdí" of Yazd vs "-i-Turshízí" of Turshíz) is a DIFFERENT individual; nisbas rarely vary, so never treat them as the same person. Skip trivial narrative and bare co-mentions.
 Return ONLY JSON: {"facts":[{"n":<num>,"relation":"<tag>","statement":"<clear fact incl. place>","when":"<period or null>"}]}.`;
+
+const VSYS = `You are a STRICT fact-checker whose ONLY job is to prevent NAMESAKE CONFUSION in a biography. You are given ONE person's verified IDENTITY, then a numbered list of CANDIDATE FACTS — each paired with the exact source PASSAGE it was drawn from. Common names and titles (e.g. "Siyyid Ḥusayn", "Aḥmad", "Mullá Muḥammad") are shared by MANY different people, so a passage that merely contains the person's name is frequently about a DIFFERENT person of the same name.
+For each candidate, decide keep=true ONLY if BOTH hold: (1) the subject of the passage is unmistakably THIS SAME person — consistent with the IDENTITY given (their NISBA / place of origin, their role, era, and known deeds) — and NOT a same-named individual of a different nisba, place, station, or period; and (2) the passage genuinely states the claim about this person (not about someone else who merely appears in it).
+Set keep=false if the subject could be a different same-named person, if the claimed deed/place/era does not fit this person's established identity, or if the passage does not clearly support the claim. A different NISBA means a different person — reject. When in ANY doubt, keep=false: omitting a true fact is acceptable, asserting a fact about the wrong person is NOT.
+Return ONLY JSON: {"v":[{"i":<fact number>,"keep":true|false,"why":"<short reason>"}]}.`;
 
 let done = 0, withF = 0, total = 0;
 async function one(p) {
@@ -58,8 +65,10 @@ async function one(p) {
   for (let i = 0; i < pool.length && sampled.length < want; i += step) sampled.push(pool[Math.floor(i)]);
   const rows = [...gpb, ...sampled, ...death];
   const passages = rows.map((r, i) => ({ ...r, ct: clean(r.text), n: i + 1 }));
+  const myNisbas = [...new Set([...nisbasOf(p.cn), ...aliases.flatMap(nisbasOf)])];
   const idLine = `PERSON: ${p.cn}${aliases.length ? ' (also: ' + aliases.slice(0, 6).join(', ') + ')' : ''}. ${clean(p.summary).slice(0, 320)}` +
-    (kin.length ? ' Kin: ' + kin.slice(0, 4).map((k) => `${k.relation} ${k.who}`).join('; ') + '.' : '');
+    (kin.length ? ' Kin: ' + kin.slice(0, 4).map((k) => `${k.relation} ${k.who}`).join('; ') + '.' : '') +
+    (myNisbas.length ? ` NISBA: ${myNisbas.join('/')} — a same-named person of a different nisba/place is a DIFFERENT individual.` : '');
   const body = passages.map((x) => `[${x.n}] ${x.ct.slice(0, 750)}`).join('\n\n');
   try {
     const res = await ai.chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `${idLine}\n\nPASSAGES:\n${body}` }],
@@ -67,7 +76,7 @@ async function one(p) {
     let items = [];
     try { const m = (res.content || '').match(/\{[\s\S]*\}/); items = m ? (JSON.parse(m[0]).facts || []) : []; }
     catch { for (const mm of (res.content || '').matchAll(/"n"\s*:\s*(\d+)[\s\S]*?"relation"\s*:\s*"([^"]*)"[\s\S]*?"statement"\s*:\s*"((?:[^"\\]|\\.)*)"/g)) items.push({ n: +mm[1], relation: mm[2], statement: mm[3].replace(/\\"/g, '"') }); }
-    const facts = []; const seenS = new Set();
+    let facts = []; const seenS = new Set();
     for (const it of items) {
       const pass = passages.find((x) => x.n === Number(it.n)); if (!pass || !it.statement) continue;
       const st = clean(it.statement); if (st.length < 10) continue;
@@ -79,8 +88,27 @@ async function one(p) {
       if (propers.some((w) => !ptn.includes(w.slice(0, Math.min(6, w.length))))) continue;
       const when = it.when && String(it.when).trim() && !/^(null|none|n\/a|unknown)$/i.test(String(it.when).trim()) ? String(it.when).trim().slice(0, 40) : null;
       facts.push({ statement: st, relation: String(it.relation || '').toLowerCase().replace(/[^a-z0-9:-]+/g, '-').slice(0, 40), when,
-        source: bookOf(pass.doc_id), paraId: pass.pid, url: pass.url && pass.pid ? `${pass.url}?paraId=${pass.pid}` : null });
+        source: bookOf(pass.doc_id), paraId: pass.pid, url: pass.url && pass.pid ? `${pass.url}?paraId=${pass.pid}` : null, _ct: pass.ct });
     }
+    if (!facts.length) return null;
+    // QUALITY CONTROL — strict verification: an independent skeptical pass confirms each fact is about THIS person
+    // (consistent with their nisba/role/era), not a same-named individual. The mention layer links by bare given
+    // name, so passages about other "Siyyid Ḥusayn"s leak in; this is the gate that rejects them. Default: reject.
+    if (facts.length) {
+      const vbody = facts.map((f, i) => `[${i + 1}] CLAIM: ${f.statement}\n    PASSAGE: ${f._ct.slice(0, 700)}`).join('\n\n');
+      try {
+        const vr = await ai.chatCompletion([{ role: 'system', content: VSYS }, { role: 'user', content: `${idLine}\n\nCANDIDATE FACTS (each with the passage it was drawn from):\n${vbody}` }],
+          { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1500, responseFormat: { type: 'json_object' } });
+        let verdicts = [];
+        try { const m = (vr.content || '').match(/\{[\s\S]*\}/); verdicts = m ? (JSON.parse(m[0]).v || []) : []; }
+        catch { for (const mm of (vr.content || '').matchAll(/"i"\s*:\s*(\d+)[\s\S]*?"keep"\s*:\s*(true|false)/g)) verdicts.push({ i: +mm[1], keep: mm[2] === 'true' }); }
+        if (verdicts.length) {
+          const keepSet = new Set(verdicts.filter((v) => v.keep === true || v.keep === 'true').map((v) => Number(v.i)));
+          facts = facts.filter((_, i) => keepSet.has(i + 1));
+        }
+      } catch { /* verifier unavailable — keep extraction as-is rather than drop everything */ }
+    }
+    facts = facts.map(({ _ct, ...f }) => f);
     if (!facts.length) return null;
     notes.facts2 = facts; withF++; total += facts.length;
     if (WRITE) await query(`UPDATE entity_research SET research_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE canonical_name = ?`, [JSON.stringify(notes), p.cn]);
