@@ -66,9 +66,21 @@ async function one(p) {
   const rows = [...gpb, ...sampled, ...death];
   const passages = rows.map((r, i) => ({ ...r, ct: clean(r.text), n: i + 1 }));
   const myNisbas = [...new Set([...nisbasOf(p.cn), ...aliases.flatMap(nisbasOf)])];
+  // sibling disambiguation: other modelled people who SHARE this given-name stem (different nisba) — the bare name
+  // in a passage may be one of THEM, so name them explicitly and let the extractor/verifier attribute deeds away.
+  const stem = p.cn.split(/[-y]i-/)[0].trim();
+  let siblings = [];
+  if (stem.length >= 5 && stem.split(/\s+/).length >= 2) {
+    try {
+      siblings = await queryAll(`SELECT ge.id, ge.canonical_name cn, er.summary FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
+        WHERE ge.entity_type='person' AND ge.religion='' AND ge.id != ? AND ge.canonical_name LIKE ? ORDER BY ge.importance DESC LIMIT 14`, [p.id, stem + '%']);
+    } catch {}
+  }
   const idLine = `PERSON: ${p.cn}${aliases.length ? ' (also: ' + aliases.slice(0, 6).join(', ') + ')' : ''}. ${clean(p.summary).slice(0, 320)}` +
     (kin.length ? ' Kin: ' + kin.slice(0, 4).map((k) => `${k.relation} ${k.who}`).join('; ') + '.' : '') +
-    (myNisbas.length ? ` NISBA: ${myNisbas.join('/')} — a same-named person of a different nisba/place is a DIFFERENT individual.` : '');
+    (myNisbas.length ? ` NISBA: ${myNisbas.join('/')} — a same-named person of a different nisba/place is a DIFFERENT individual.` : '') +
+    (siblings.length ? `\nDISTINCT OTHER PEOPLE who share the name "${stem}" — their deeds, places, and fate are NOT this person's; if a passage is about one of them, do NOT use it: ` +
+      siblings.map((s) => `«${s.cn}»${nisbasOf(s.cn).length ? '' : ''} (${clean(s.summary).slice(0, 90)})`).join('; ') : '');
   const body = passages.map((x) => `[${x.n}] ${x.ct.slice(0, 750)}`).join('\n\n');
   try {
     const res = await ai.chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `${idLine}\n\nPASSAGES:\n${body}` }],
