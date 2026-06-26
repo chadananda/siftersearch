@@ -159,9 +159,11 @@ export async function bioSearch(rawQ) {
     FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
     WHERE ge.entity_type='person' AND ge.religion='' AND (er.research_notes LIKE '%"facts2"%' OR er.research_notes LIKE '%"episodes"%')
     ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 900`);
-  const exById = {}; const lines = [];
+  const exById = {}; const epById = {}; const cand = []; const lines = [];
+  const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”.]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
   for (const r of rows) {
     const rn = (() => { try { return JSON.parse(r.research_notes || '{}'); } catch { return {}; } })();
+    if (Array.isArray(rn.episodes) && rn.episodes.length) { epById[r.id] = rn.episodes; const nm = nrm(r.name); if (nm.length >= 5) cand.push({ id: r.id, nm, n: rn.episodes.length }); }
     // shared EPISODES (real events with a roster) are the evidence for connection queries — include them alongside the
     // individual facts. An episode fact names the co-participants, so "who met Bahá'u'lláh" = people in a Bahá'u'lláh episode.
     const eps = (Array.isArray(rn.episodes) ? rn.episodes : []).map((e) => ({ statement: e.statement, quote: e.quote || null, when: e.when || null, source: e.source, url: e.url || null, episode: e.name }));
@@ -191,6 +193,22 @@ For each match, the evidence MUST be the specific listed fact that answers it �
       const want = nz(mm.fact);
       const hit = fx.find((f) => want && (nz(f.statement).includes(want) || want.includes(nz(f.statement)))) || fx[0];  // bind to the STORED cited fact
       aiIds.push(id); evidence[id] = { quote: hit.statement, proof: hit.quote || null, source: hit.source, url: hit.url || null };
+    }
+    // DETERMINISTIC connection lookup — for "who met / was with X" queries, the answer is the shared-episode roster:
+    // everyone who appears in an episode that X also appears in. The episode model makes this exact, so we don't rely
+    // on the LLM to scan every line and never miss a roster member (it was dropping Ṭáhirih from the Badasht three).
+    const connQ = /\b(met|meet|with|accompan|knew|know|present|encounter|together|companion)\b/i.test(q);
+    if (connQ) {
+      const nq = nrm(q);
+      const target = cand.filter((c) => nq.includes(c.nm)).sort((a, b) => (b.nm.length - a.nm.length) || (b.n - a.n))[0];
+      if (target) {
+        const tSlugs = new Set((epById[target.id] || []).map((e) => e.slug).filter(Boolean));
+        for (const [idStr, eps] of Object.entries(epById)) {
+          const id = Number(idStr); if (id === target.id) continue;
+          const shared = eps.find((e) => tSlugs.has(e.slug));
+          if (shared && !aiIds.includes(id)) { aiIds.push(id); evidence[id] = { quote: shared.statement, proof: shared.quote || null, source: shared.source, url: shared.url || null }; }
+        }
+      }
     }
     // proof-backed only: never fall back to listing un-evidenced members
     let ids = aiIds;
