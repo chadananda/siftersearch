@@ -91,13 +91,25 @@ const rows = ID
   : await queryAll(`SELECT ge.canonical_name cn, er.research_notes rn FROM graph_entities ge JOIN entity_research er ON er.canonical_name=ge.canonical_name
        WHERE ge.entity_type='person' AND (er.research_notes LIKE '%"paraId"%' OR er.research_notes LIKE '%"facts2"%' OR er.research_notes LIKE '%"episodes"%')`);
 console.log(`${ID ? 'entity ' + ID : 'ALL persons'} — ${rows.length} records · ${WRITE ? 'WRITE' : 'DRY'} (overlap>=${OV_MIN}, margin>=${OV_MARGIN})\n`);
-const rollback = [];   // prior research_notes of every entity we change → trivially reversible
+// PHASE 1 — compute all changes in memory (read-only). Collect each changed entity's prior + next research_notes.
+const changes = [];
 for (const r of rows) {
   let notes = {}; try { notes = JSON.parse(r.rn || '{}'); } catch { continue; }
   tot.entities++;
   const changed = await passEntity(r.cn, notes);
-  if (changed) { tot.changed++; if (WRITE) { rollback.push({ cn: r.cn, rn: r.rn }); await query('UPDATE entity_research SET research_notes=?, updated_at=CURRENT_TIMESTAMP WHERE canonical_name=?', [JSON.stringify(notes), r.cn]); } }
+  if (changed) { tot.changed++; changes.push({ cn: r.cn, prior: r.rn, next: JSON.stringify(notes) }); }
 }
-if (WRITE && rollback.length) { const { writeFileSync } = await import('node:fs'); const f = process.env.BACKUP || `/home/chad/sifter/siftersearch/siftersearch-citation-rollback.json`; writeFileSync(f, JSON.stringify(rollback)); console.log(`rollback (${rollback.length} entities' prior research_notes) → ${f}`); }
-console.log(`\n${WRITE ? 'WROTE' : 'DRY'} — ${tot.changed}/${tot.entities} entities changed · relocated ${tot.fixedV} verbatim + ${tot.fixedO} overlap · ${tot.ok} already-correct · ${tot.kept} kept · ${tot.nodoc} no-linkable-doc`);
+console.log(`\n${tot.changed}/${tot.entities} entities to change · relocated ${tot.fixedV} verbatim + ${tot.fixedO} overlap · ${tot.ok} already-correct · ${tot.kept} kept · ${tot.nodoc} no-linkable-doc`);
+if (WRITE && changes.length) {
+  const { writeFileSync } = await import('node:fs');
+  // rollback FIRST, before any DB write — so a mid-run socket error never leaves us without a restore point
+  const f = process.env.BACKUP || `/home/chad/sifter/siftersearch/siftersearch-citation-rollback.json`;
+  writeFileSync(f, JSON.stringify(changes.map((c) => ({ cn: c.cn, rn: c.prior }))));
+  console.log(`rollback (${changes.length} entities' prior research_notes) → ${f}`);
+  const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+  const writeRetry = async (sql, params) => { for (let i = 0; i < 4; i++) { try { return await query(sql, params); } catch (e) { if (i === 3) throw e; await sleep(500 * (i + 1)); } } };
+  let w = 0;
+  for (const c of changes) { await writeRetry('UPDATE entity_research SET research_notes=?, updated_at=CURRENT_TIMESTAMP WHERE canonical_name=?', [c.next, c.cn]); if (++w % 25 === 0) console.log(`  written ${w}/${changes.length}`); await sleep(40); }
+  console.log(`WROTE ${w}/${changes.length} entities.`);
+}
 process.exit(0);
