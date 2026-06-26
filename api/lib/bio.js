@@ -166,10 +166,16 @@ export async function bioSearch(rawQ) {
     const rn = (() => { try { return JSON.parse(r.research_notes || '{}'); } catch { return {}; } })();
     if (Array.isArray(rn.episodes) && rn.episodes.length) { epById[r.id] = rn.episodes; const nm = nrm(r.name); if (nm.length >= 5) cand.push({ id: r.id, nm, n: rn.episodes.length }); }
     const eps = (Array.isArray(rn.episodes) ? rn.episodes : []).map((e) => ({ statement: e.statement, quote: e.quote || null, when: e.when || null, source: e.source, url: e.url || null, episode: e.name }));
-    // include a death fact (martyrdom/cause/place) so "who died at X" queries have citable death evidence
+    const f2 = Array.isArray(rn.facts2) ? rn.facts2 : [];
+    // death fact FIRST so "who died at X" queries always see it (a long episode list would otherwise truncate it),
+    // and give it a citation borrowed from a martyrdom/fate fact so the death evidence is linkable
     const d = rn.death;
-    const death = d && (d.cause || d.place) ? [{ statement: `Death: ${[d.cause, d.place, d.year].filter(Boolean).join(', ')}`, quote: null, source: d.source || null, url: d.url || null, when: d.year || null }] : [];
-    const fx = [...eps, ...death, ...(Array.isArray(rn.facts2) ? rn.facts2 : [])];   // episodes + death first — the connection/fate evidence
+    let death = [];
+    if (d && (d.cause || d.place)) {
+      const dsrc = [...eps, ...f2].find((f) => f.url && /martyr|killed|slain|put to death|beheaded|strangled|died|execut|fell|perished/i.test(f.statement || ''));
+      death = [{ statement: `Died: ${[d.cause, d.place, d.year].filter(Boolean).join(', ')}`, quote: dsrc?.quote || null, source: d.source || dsrc?.source || null, url: d.url || dsrc?.url || null, when: d.year || null }];
+    }
+    const fx = [...death, ...eps, ...f2];   // death + episodes first — the fate/connection evidence the queries need
     if (!fx.length) continue;
     exById[r.id] = fx;
   }
