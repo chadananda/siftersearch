@@ -99,6 +99,8 @@ export async function getBioPerson(rawId) {
   const characterizations = Array.isArray(notes.facts2) && notes.facts2.length
     ? notes.facts2.map(f => ({ quote: f.statement, proof: f.quote || null, relation: f.relation || null, when: f.when || null, source: f.source, paraId: f.paraId, url: f.url || null }))
     : (notes.characterizations || []);
+  // shared EPISODES (real events with rosters) — the connection evidence; show them with the facts, tagged by episode
+  if (Array.isArray(notes.episodes)) for (const e of notes.episodes) characterizations.push({ quote: e.statement, proof: e.quote || null, relation: 'episode', episode: e.name, when: e.when || null, source: e.source, paraId: e.paraId, url: e.url || null });
   // compact citation label per fact: source abbrev + paragraph number (e.g. "GPB ¶72", "DB ¶467")
   try {
     const pids = [...new Set(characterizations.map(c => c.paraId).filter(Boolean))];
@@ -155,20 +157,24 @@ export async function bioSearch(rawQ) {
   // with no fact supporting the query is not returned (no guessing). Evidence = the matched fact + its citation.
   const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.aliases, er.research_notes
     FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
-    WHERE ge.entity_type='person' AND ge.religion='' AND er.research_notes LIKE '%"facts2"%'
+    WHERE ge.entity_type='person' AND ge.religion='' AND (er.research_notes LIKE '%"facts2"%' OR er.research_notes LIKE '%"episodes"%')
     ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 900`);
   const exById = {}; const lines = [];
   for (const r of rows) {
-    let fx = []; try { fx = JSON.parse(r.research_notes || '{}').facts2 || []; } catch {}
+    const rn = (() => { try { return JSON.parse(r.research_notes || '{}'); } catch { return {}; } })();
+    // shared EPISODES (real events with a roster) are the evidence for connection queries — include them alongside the
+    // individual facts. An episode fact names the co-participants, so "who met Bahá'u'lláh" = people in a Bahá'u'lláh episode.
+    const eps = (Array.isArray(rn.episodes) ? rn.episodes : []).map((e) => ({ statement: e.statement, quote: e.quote || null, when: e.when || null, source: e.source, url: e.url || null, episode: e.name }));
+    const fx = [...(Array.isArray(rn.facts2) ? rn.facts2 : []), ...eps];
     if (!fx.length) continue;
     exById[r.id] = fx;
     const al = (() => { try { return JSON.parse(r.aliases || '[]'); } catch { return []; } })().slice(0, 3);
-    const items = fx.slice(0, 10).map((f) => `• ${String(f.statement).replace(/\s+/g, ' ')}${f.when ? ' [' + f.when + ']' : ''}`).join(' ');
+    const items = fx.slice(0, 16).map((f) => `• ${String(f.statement).replace(/\s+/g, ' ')}${f.when ? ' [' + f.when + ']' : ''}`).join(' ');
     lines.push(`${r.id}|${r.name}${al.length ? ' (' + al.join('; ') + ')' : ''}: ${items}`);
   }
   const catalog = lines.join('\n');
   const SYS = `You answer questions about people in early Bábí/Bahá'í history using ONLY a catalog of cited facts. You are given a QUERY and a CATALOG — one person per line: "id|name (aliases): • fact [period] • fact …" drawn from God Passes By and The Dawn-Breakers. Facts may carry a [period/place].
-Return a person ONLY if one of their listed facts DIRECTLY answers the query — the fact itself must establish the answer (who/where/when), not merely be a fact about them. For "who met the Báb before his Declaration", require a fact stating they met or knew the Báb before 1844 (e.g. at Karbilá). For place/period queries, the fact must match that place/period. Do NOT include a person just because they belong to a relevant group.
+Return a person ONLY if one of their listed facts DIRECTLY answers the query — the fact itself must establish the answer (who/where/when), not merely be a fact about them. For a "who MET / was WITH X" question, the supporting fact must describe an ACTUAL shared event or encounter (e.g. they were together at Badasht, accompanied X on a journey, were imprisoned together) — a fact that someone was merely PROMISED, prophesied, or expected to meet X does NOT qualify and must be rejected. For "who met the Báb before his Declaration", require a fact stating they actually met or knew the Báb before 1844 (e.g. at Karbilá). For place/period queries, the fact must match that place/period. Do NOT include a person just because they belong to a relevant group.
 For each match, the evidence MUST be the specific listed fact that answers it — copied from THAT person's line, never invented or taken from another line. Return ONLY JSON: {"summary":"one sentence answering the query","matches":[{"id":<number>,"fact":"<the supporting fact from that person's line>"}]} — clear matches only, most relevant first.`;
   try {
     const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
