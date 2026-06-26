@@ -165,7 +165,7 @@ export async function bioSearch(rawQ) {
     nameById[r.id] = r.name;
     const rn = (() => { try { return JSON.parse(r.research_notes || '{}'); } catch { return {}; } })();
     if (Array.isArray(rn.episodes) && rn.episodes.length) { epById[r.id] = rn.episodes; const nm = nrm(r.name); if (nm.length >= 5) cand.push({ id: r.id, nm, n: rn.episodes.length }); }
-    const eps = (Array.isArray(rn.episodes) ? rn.episodes : []).map((e) => ({ statement: e.statement, quote: e.quote || null, when: e.when || null, source: e.source, url: e.url || null, episode: e.name }));
+    const eps = (Array.isArray(rn.episodes) ? rn.episodes : []).map((e) => ({ statement: e.statement, quote: e.quote || null, when: e.when || null, source: e.source, url: e.url || null, episode: e.name, slug: e.slug || null }));
     const f2 = Array.isArray(rn.facts2) ? rn.facts2 : [];
     // death fact FIRST so "who died at X" queries always see it (a long episode list would otherwise truncate it),
     // and give it a citation borrowed from a martyrdom/fate fact so the death evidence is linkable
@@ -184,15 +184,21 @@ export async function bioSearch(rawQ) {
   const connQ = /\b(met|meet|with|accompan|knew|know|present|encounter|together|companion|recogni)\b/i.test(q);
   let connTarget = null;
   if (connQ) { const nq = nrm(q); connTarget = cand.filter((c) => nq.includes(c.nm) && c.nm.length >= 5).sort((a, b) => (b.nm.length - a.nm.length) || (b.n - a.n))[0]; }
+  // the connection target's shared-episode roster — everyone who appears in an episode the target is also in
+  const tSlugs = connTarget ? new Set((epById[connTarget.id] || []).map((e) => e.slug).filter(Boolean)) : null;
+  const roster = (tSlugs && tSlugs.size) ? Object.keys(epById).map(Number).filter((id) => id !== connTarget.id && (epById[id] || []).some((e) => tSlugs.has(e.slug))) : null;
   let candidateIds = null;
-  if (best && memberIds.length) candidateIds = memberIds.slice();                            // group query → its members
-  else if (connTarget) {                                                                     // connection query → the target's shared-episode roster
-    const tSlugs = new Set((epById[connTarget.id] || []).map((e) => e.slug).filter(Boolean));
-    candidateIds = Object.entries(epById).filter(([idStr, eps]) => Number(idStr) !== connTarget.id && eps.some((e) => tSlugs.has(e.slug))).map(([idStr]) => Number(idStr));
-  }
+  if (best && memberIds.length) candidateIds = roster ? memberIds.filter((id) => roster.includes(id)) : memberIds.slice();   // group ∩ connection-roster (deterministic recall)
+  else if (roster) candidateIds = roster;                                                    // pure connection query → the roster
+  if (candidateIds && !candidateIds.length) candidateIds = best ? memberIds.slice() : null;   // fallback if intersection empties
   const pool = (candidateIds ? rows.filter((r) => candidateIds.includes(r.id) && exById[r.id]) : rows.filter((r) => exById[r.id]).slice(0, 200));
   const aliasOf = (r) => { try { return JSON.parse(r.aliases || '[]').slice(0, 3); } catch { return []; } };
-  const lines = pool.map((r) => { const al = aliasOf(r); return `${r.id}|${r.name}${al.length ? ' (' + al.join('; ') + ')' : ''}: ${exById[r.id].slice(0, 20).map((f) => `• ${String(f.statement).replace(/\s+/g, ' ')}${f.when ? ' [' + f.when + ']' : ''}`).join(' ')}`; });
+  const lines = pool.map((r) => {
+    const al = aliasOf(r);
+    // for connection queries, float the episode(s) shared with the target to the front so the LLM always sees the link
+    const fx = tSlugs ? [...exById[r.id]].sort((a, b) => (b.slug && tSlugs.has(b.slug) ? 1 : 0) - (a.slug && tSlugs.has(a.slug) ? 1 : 0)) : exById[r.id];
+    return `${r.id}|${r.name}${al.length ? ' (' + al.join('; ') + ')' : ''}: ${fx.slice(0, 20).map((f) => `• ${String(f.statement).replace(/\s+/g, ' ')}${f.when ? ' [' + f.when + ']' : ''}`).join(' ')}`;
+  });
   const catalog = lines.join('\n');
 
   const SYS = `You answer a question about people in early Bábí/Bahá'í history from a CATALOG of cited facts — one person per line: "id|name (aliases): • fact [period] • fact …" (from God Passes By and The Dawn-Breakers).
