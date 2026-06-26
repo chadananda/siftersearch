@@ -192,22 +192,41 @@ export async function bioSearch(rawQ) {
   else if (roster) candidateIds = roster;                                                    // pure connection query → the roster
   if (candidateIds && !candidateIds.length) candidateIds = best ? memberIds.slice() : null;   // fallback if intersection empties
   // DETERMINISTIC connection answer: for a "who met/with X" query, the roster (people sharing an episode with X) IS
-  // the answer — don't let the LLM prune it (it was dropping Ṭáhirih/Báqir). Evidence = the shared episode itself.
+  // the answer — recall is deterministic (we keep every roster member; the LLM may NOT prune it — it was dropping
+  // Ṭáhirih/Báqir). The LLM only writes a CONCISE clause per member; a missing clause falls back to a cleaned statement.
   if (connTarget && roster && candidateIds && candidateIds.length) {
     const cl = (s) => String(s || '').replace(/\s+/g, ' ').trim();
     const tName = nameById[connTarget.id] || 'them';
-    const grp = best ? cl(best.name.replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+group$/i, '')) : '';
-    const ids = []; const evidence = {}; const parts = [];
+    const grp = best ? cl(best.name.replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+group$/i, '').replace(/^the\s+/i, '')) : '';
+    const members = [];
     for (const id of candidateIds) {
-      const eps = epById[id] || [];
-      const shared = eps.find((e) => tSlugs.has(e.slug) && nrm(e.statement).includes(connTarget.nm)) || eps.find((e) => tSlugs.has(e.slug));
-      if (!shared) continue;
-      ids.push(id); const clause = cl(shared.statement).slice(0, 130);
-      evidence[id] = { quote: cl(shared.statement), proof: shared.quote || null, source: shared.source, url: shared.url || null };
-      const nm = nameById[id] || `#${id}`;
-      parts.push(shared.url ? `${nm} [${clause}](${shared.url})` : `${nm} ${clause}`);
+      const shared = (epById[id] || []).filter((e) => tSlugs.has(e.slug));
+      if (!shared.length) continue;
+      const ev = shared.find((e) => nrm(e.statement).includes(connTarget.nm)) || shared[0];   // prefer the episode naming the target (better citation)
+      members.push({ id, name: nameById[id] || `#${id}`, ev, text: shared.map((e) => cl(e.statement)).join(' ').slice(0, 320) });
     }
-    if (ids.length) return { ids, q, ...(best ? { group: best.id } : {}), reasoning: { summary: `${ids.length}${grp ? ' of the ' + grp : ''} met ${tName}: ${parts.join('; ')}.`, evidence } };
+    if (members.length) {
+      const CSYS = `For each person listed, write a SHORT clause (≤14 words, beginning with a verb) saying how they met or connected with ${tName}, drawn ONLY from the facts given for them. Include EVERY id — never omit anyone. Return ONLY JSON: {"lead":"<one short sentence stating the overall answer>","clauses":[{"id":<number>,"clause":"<verb phrase>"}]}.`;
+      const body = members.map((m) => `${m.id}|${m.name}: ${m.text}`).join('\n');
+      let lead = ''; const byId = {};
+      try {
+        const res = await chatCompletion([{ role: 'system', content: CSYS }, { role: 'user', content: body }],
+          { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 700, responseFormat: { type: 'json_object' } });
+        const mm = (res.content || '').match(/\{[\s\S]*\}/); const p = mm ? JSON.parse(mm[0]) : {};
+        lead = cl(p.lead || '');
+        for (const c of (Array.isArray(p.clauses) ? p.clauses : [])) if (c && c.id != null) byId[Number(c.id)] = cl(c.clause).slice(0, 120);
+      } catch { /* fall back to cleaned statements below */ }
+      const stripName = (id, s) => { const nm = nameById[id] || ''; const re = new RegExp('^(' + nm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')[\\s,;:]*', 'i'); return cl(s).replace(re, '').replace(/^[\s,;:]+/, ''); };
+      const evidence = {}; const parts = [];
+      for (const m of members) {
+        const clause = byId[m.id] || stripName(m.id, m.ev.statement).split(/[;.]/)[0].slice(0, 110);
+        evidence[m.id] = { quote: cl(m.ev.statement), proof: m.ev.quote || null, source: m.ev.source, url: m.ev.url || null };
+        parts.push(m.ev.url ? `${m.name} [${clause}](${m.ev.url})` : `${m.name} ${clause}`);
+      }
+      const ids = members.map((m) => m.id);
+      const summary = `${lead || `${ids.length}${grp ? ' of the ' + grp : ''} met ${tName}.`} ${parts.join('; ')}.`.replace(/\s+/g, ' ').trim();
+      return { ids, q, ...(best ? { group: best.id } : {}), reasoning: { summary, evidence } };
+    }
   }
   const pool = (candidateIds ? rows.filter((r) => candidateIds.includes(r.id) && exById[r.id]) : rows.filter((r) => exById[r.id]).slice(0, 200));
   const aliasOf = (r) => { try { return JSON.parse(r.aliases || '[]').slice(0, 3); } catch { return []; } };
