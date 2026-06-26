@@ -97,9 +97,6 @@ async function one(p) {
     (siblings.length ? `\nDISTINCT OTHER PEOPLE who share the name "${stem}" — their deeds, places, and fate are NOT this person's; if a passage is about one of them, do NOT use it: ` +
       siblings.map((s) => `«${s.cn}»${nisbasOf(s.cn).length ? '' : ''} (${clean(s.summary).slice(0, 90)})`).join('; ') : '');
   const body = passages.map((x) => `[${x.n}] ${x.ct.slice(0, 750)}`).join('\n\n');
-  // the subject's OWN name/alias tokens — exempt from the conflation guard (GPB names ‘Abdu'l-Bahá as "the Master",
-  // so the model writing his canonical name must not be treated as importing a foreign entity).
-  const selfToks = new Set([p.cn, ...aliases].flatMap((s) => normq(s).split(/\s+/)).filter((w) => w.length >= 4).map((w) => w.slice(0, 6)));
   try {
     const res = await ai.chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `${idLine}\n\nPASSAGES:\n${body}` }],
       { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1800, responseFormat: { type: 'json_object' } });
