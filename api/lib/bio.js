@@ -165,11 +165,13 @@ export async function bioSearch(rawQ) {
     // shared EPISODES (real events with a roster) are the evidence for connection queries — include them alongside the
     // individual facts. An episode fact names the co-participants, so "who met Bahá'u'lláh" = people in a Bahá'u'lláh episode.
     const eps = (Array.isArray(rn.episodes) ? rn.episodes : []).map((e) => ({ statement: e.statement, quote: e.quote || null, when: e.when || null, source: e.source, url: e.url || null, episode: e.name }));
-    const fx = [...(Array.isArray(rn.facts2) ? rn.facts2 : []), ...eps];
+    // episodes FIRST — they are the shared-event connection evidence; otherwise a person with many individual facts
+    // truncates their episodes out of the catalog line (e.g. Quddús's Badasht episodes lost behind 14 facts2).
+    const fx = [...eps, ...(Array.isArray(rn.facts2) ? rn.facts2 : [])];
     if (!fx.length) continue;
     exById[r.id] = fx;
     const al = (() => { try { return JSON.parse(r.aliases || '[]'); } catch { return []; } })().slice(0, 3);
-    const items = fx.slice(0, 16).map((f) => `• ${String(f.statement).replace(/\s+/g, ' ')}${f.when ? ' [' + f.when + ']' : ''}`).join(' ');
+    const items = fx.slice(0, 24).map((f) => `• ${String(f.statement).replace(/\s+/g, ' ')}${f.when ? ' [' + f.when + ']' : ''}`).join(' ');
     lines.push(`${r.id}|${r.name}${al.length ? ' (' + al.join('; ') + ')' : ''}: ${items}`);
   }
   const catalog = lines.join('\n');
