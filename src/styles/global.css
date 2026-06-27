@@ -48,6 +48,16 @@
   --error: light-dark(#dc2626, #ef4444);
   --info: light-dark(#0284c7, #38bdf8);
 
+  /* Convenience aliases — short names some components (esp. admin) reference. Keeping them as aliases of the canonical
+     tokens means those components inherit the site theme instead of resolving to nothing (transparent/unstyled). */
+  --border: var(--border-default);
+  --accent: var(--accent-primary);
+  --accent-hover: var(--accent-primary-hover);
+  --accent-primary-alpha: light-dark(rgba(7, 89, 133, 0.12), rgba(56, 189, 248, 0.16));
+  --error-text: var(--error);
+  --error-bg: light-dark(rgba(220, 38, 38, 0.10), rgba(239, 68, 68, 0.15));
+  --error-border: light-dark(rgba(220, 38, 38, 0.30), rgba(239, 68, 68, 0.35));
+
   /* Interactive states */
   --hover-overlay: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05));
   --active-overlay: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1));

@@ -118,7 +118,9 @@ function isActive(href: string): boolean {
 
     <!-- Main Content -->
     <main class="main-content">
-      <slot />
+      <div class="content-inner">
+        <slot />
+      </div>
     </main>
   </div>
 </Layout>
@@ -214,14 +216,24 @@ function isActive(href: string): boolean {
 
   .main-content {
     flex: 1;
-    padding: 2rem;
+    min-width: 0;            /* let it shrink so wide tables/grids don't overflow on small screens */
+    padding: 2rem clamp(1rem, 4vw, 2.5rem);
     min-height: 100vh;
+  }
+
+  /* center every admin page on a comfortable measure so content isn't stretched edge-to-edge on wide screens
+     and stays full-width (with responsive padding) on small ones */
+  .content-inner {
+    width: 100%;
+    max-width: 1200px;
+    margin-inline: auto;
   }
 
   @media (max-width: 768px) {
     .sidebar {
       display: none;
     }
+    .main-content { padding: 1.25rem 1rem; }
   }
 
   /* Print: drop the admin chrome (top navbar + sidebar) so a normal Ctrl+P prints only the page

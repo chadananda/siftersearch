@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-26T22:16:26.369Z",
+  "generated": "2026-06-27T00:59:35.536Z",
   "entries": [
+    {
+      "hash": "bfad7bab",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Sample-search jumps straight to AI — suppress the intermediate literal/phonetic grid filter while an AI search is in flight (set aiBusy synchronously on sample click; filtered returns [] during fetch so the loader shows, not a flash of name-matches)",
+      "scope": null
+    },
     {
       "hash": "a3b10f4a",
       "date": "2026-06-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Graph-extractor fetchBatch — drop slow correlated-subquery ORDER BY",
       "scope": null
-    },
-    {
-      "hash": "71bea98a",
-      "date": "2026-05-16",
-      "type": "New",
-      "description": "Add alias sync trigger script + default model-routing config",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-26": [
+      {
+        "hash": "bfad7bab",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Sample-search jumps straight to AI — suppress the intermediate literal/phonetic grid filter while an AI search is in flight (set aiBusy synchronously on sample click; filtered returns [] during fetch so the loader shows, not a flash of name-matches)",
+        "scope": null
+      },
       {
         "hash": "a3b10f4a",
         "date": "2026-06-26",
@@ -7049,13 +7056,6 @@
         "date": "2026-05-16",
         "type": "Fixed",
         "description": "Graph-extractor fetchBatch — drop slow correlated-subquery ORDER BY",
-        "scope": null
-      },
-      {
-        "hash": "71bea98a",
-        "date": "2026-05-16",
-        "type": "New",
-        "description": "Add alias sync trigger script + default model-routing config",
         "scope": null
       }
     ]
