@@ -1,6 +1,13 @@
 {
-  "generated": "2026-06-27T00:59:35.536Z",
+  "generated": "2026-07-07T18:18:31.512Z",
   "entries": [
+    {
+      "hash": "7f1375b5",
+      "date": "2026-06-26",
+      "type": "Other",
+      "description": "Theme continuity + centered responsive content — define alias tokens (--border/--accent/--accent-hover/--error-*) so admin components inherit the site palette instead of resolving transparent; center every admin page at 1200px with responsive padding",
+      "scope": null
+    },
     {
       "hash": "bfad7bab",
       "date": "2026-06-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add stderr diagnostics to graph-extractor startup",
       "scope": null
-    },
-    {
-      "hash": "7804ad87",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Graph-extractor fetchBatch — drop slow correlated-subquery ORDER BY",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-06-26": [
+      {
+        "hash": "7f1375b5",
+        "date": "2026-06-26",
+        "type": "Other",
+        "description": "Theme continuity + centered responsive content — define alias tokens (--border/--accent/--accent-hover/--error-*) so admin components inherit the site palette instead of resolving transparent; center every admin page at 1200px with responsive padding",
+        "scope": null
+      },
       {
         "hash": "bfad7bab",
         "date": "2026-06-26",
@@ -7049,13 +7056,6 @@
         "date": "2026-05-16",
         "type": "Other",
         "description": "Add stderr diagnostics to graph-extractor startup",
-        "scope": null
-      },
-      {
-        "hash": "7804ad87",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Graph-extractor fetchBatch — drop slow correlated-subquery ORDER BY",
         "scope": null
       }
     ]

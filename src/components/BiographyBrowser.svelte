@@ -332,7 +332,7 @@
   .searchbar:focus-within { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent), 0 16px 38px -10px color-mix(in srgb, var(--accent) 45%, transparent), 0 2px 6px rgb(0 0 0 / .14); }
   /* AI thinking: a conic-gradient halo orbiting the whole bar — the "radically cool" signal */
   .searchbar.busy { border-color: transparent; box-shadow: 0 0 26px -2px color-mix(in srgb, var(--accent) 45%, transparent); }
-  .searchbar.busy::before { content: ''; position: absolute; inset: -2.5px; border-radius: inherit; z-index: -1; background: conic-gradient(from 0deg, transparent 0deg, color-mix(in srgb, var(--accent) 25%, transparent) 35deg, var(--accent) 95deg, color-mix(in srgb, var(--accent) 55%, #fff) 140deg, var(--accent) 185deg, transparent 250deg, transparent 360deg); animation: bio-orbit 1.2s linear infinite; }
+  .searchbar.busy::before { content: ''; position: absolute; inset: -2.5px; border-radius: inherit; z-index: -1; background: conic-gradient(from var(--bio-angle), transparent 0deg, color-mix(in srgb, var(--accent) 25%, transparent) 35deg, var(--accent) 95deg, color-mix(in srgb, var(--accent) 55%, #fff) 140deg, var(--accent) 185deg, transparent 250deg, transparent 360deg); animation: bio-orbit 1.2s linear infinite; }
 
   .mag { color: var(--accent); font-size: 1.7rem; line-height: 1; display: inline-flex; width: 2rem; height: 2rem; align-items: center; justify-content: center; flex: 0 0 auto; }
   .mag.thinking { animation: bio-sparkle 1.5s ease-in-out infinite; filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent) 65%, transparent)); }
@@ -350,7 +350,10 @@
   .dots { display: inline-flex; gap: .22rem; align-items: center; }
   .dots i { width: .34rem; height: .34rem; border-radius: 50%; background: #fff; animation: bio-bounce 1s ease-in-out infinite; }
   .dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
-  @keyframes bio-orbit { to { transform: rotate(360deg); } }
+  /* spin the conic gradient's start angle, NOT the pseudo-element itself — rotating a pill-shaped
+     box sweeps a search-bar silhouette through the background; rotating the angle keeps the halo pinned */
+  @property --bio-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+  @keyframes bio-orbit { to { --bio-angle: 360deg; } }
   @keyframes bio-sparkle { 0%, 100% { transform: scale(1) rotate(0); opacity: .85; } 50% { transform: scale(1.28) rotate(18deg); opacity: 1; } }
   @keyframes bio-scan { 0% { transform: translateX(-110%); } 100% { transform: translateX(360%); } }
   @keyframes bio-bounce { 0%, 80%, 100% { opacity: .35; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-.18rem); } }
