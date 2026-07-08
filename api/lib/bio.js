@@ -306,8 +306,9 @@ Return ONLY JSON: {"lead":"...","matches":[{"id","fact","clause"}]} — most rel
       const nm = nameById[id] || `#${id}`;
       parts.push(hit.url ? `${nm} [${clause}](${hit.url})` : `${nm} ${clause}`);
     }
-    // integrated explanation: lead sentence + each person's query-matched evidence woven in, inline-linked to its source
-    const explanation = `${(parsed.lead || '').trim()}${parts.length ? ' ' + parts.join('; ') + '.' : ''}`.trim();
+    // integrated explanation: lead sentence + each person's query-matched evidence woven in, inline-linked to its source.
+    // If the target/consistency gates filtered every match, DROP the LLM's pre-filter lead — never name someone we excluded.
+    const explanation = parts.length ? `${(parsed.lead || '').trim()} ${parts.join('; ')}.`.trim() : '';
     return { ids: aiIds, q, ...(best ? { group: best.id } : {}), reasoning: { summary: explanation, evidence } };
   } catch (e) { return { ids: memberIds, q, error: String(e).slice(0, 80) }; }
 }
