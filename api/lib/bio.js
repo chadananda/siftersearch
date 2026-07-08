@@ -161,8 +161,26 @@ export async function bioSearch(rawQ) {
     ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 900`);
   const exById = {}; const epById = {}; const cand = []; const nameById = {};
   const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”.]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
+  // SUBJECT GATE — a facts2 roster artifact like "Muṣṭafá — dervish converted by Bahá'u'lláh" is a fact whose
+  // grammatical SUBJECT is a DIFFERENT named person that got mis-filed under this entity (a co-mention that leaked
+  // across the em-dash). If such a fact is the only one naming, say, "Bahá'u'lláh", the search will grab it to
+  // justify a "who met Bahá'u'lláh" clause and fabricate a narrative. So: any fact in the "<Subject> — description"
+  // roster form whose Subject shares NO significant name-token with this person is dropped before it can be cited.
+  // Only the spaced em/en-dash roster form is judged (prose facts like "Next to Mullá Ḥusayn, Vaḥíd was…" are left
+  // alone), and a hyphen inside a name (Qurbán-‘Alí) is never treated as the delimiter.
+  const HON = new Set('mirza haji hajji mulla siyyid sayyid aqa shaykh sheikh ustad karbilai karbala mashhadi hajj the of son daughter dervish native an outstanding figure community known as one'.split(' '));
+  const sigToks = (s) => new Set(nrm(s).replace(/\([^)]*\)/g, ' ').split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !HON.has(t)));
+  const factSubjectOk = (name, aliasArr, statement) => {
+    const m = String(statement || '').match(/^\s*([^—–]{2,60}?)\s+[—–]\s+\S/);   // "Subject — description" only
+    if (!m) return true;                                                          // not the roster form → don't judge
+    const subj = sigToks(m[1]); if (!subj.size) return true;                       // no name-like subject → keep
+    const mine = sigToks(name); for (const a of (aliasArr || [])) for (const t of sigToks(a)) mine.add(t);
+    for (const t of subj) if (mine.has(t)) return true;                            // subject overlaps this person → keep
+    return false;                                                                 // a DIFFERENT named subject → drop
+  };
   for (const r of rows) {
     nameById[r.id] = r.name;
+    const aliasArr = (() => { try { return JSON.parse(r.aliases || '[]'); } catch { return []; } })();
     const rn = (() => { try { return JSON.parse(r.research_notes || '{}'); } catch { return {}; } })();
     if (Array.isArray(rn.episodes) && rn.episodes.length) { epById[r.id] = rn.episodes; const nm = nrm(r.name); if (nm.length >= 5) cand.push({ id: r.id, nm, n: rn.episodes.length }); }
     const eps = (Array.isArray(rn.episodes) ? rn.episodes : []).map((e) => ({ statement: e.statement, quote: e.quote || null, when: e.when || null, source: e.source, url: e.url || null, episode: e.name, slug: e.slug || null }));
@@ -175,7 +193,7 @@ export async function bioSearch(rawQ) {
       const dsrc = [...eps, ...f2].find((f) => f.url && /martyr|killed|slain|put to death|beheaded|strangled|died|execut|fell|perished/i.test(f.statement || ''));
       death = [{ statement: `Died: ${[d.cause, d.place, d.year].filter(Boolean).join(', ')}`, quote: dsrc?.quote || null, source: d.source || dsrc?.source || null, url: d.url || dsrc?.url || null, when: d.year || null }];
     }
-    const fx = [...death, ...eps, ...f2];   // death + episodes first — the fate/connection evidence the queries need
+    const fx = [...death, ...eps, ...f2].filter((f) => factSubjectOk(r.name, aliasArr, f.statement));   // death + episodes first; drop cross-filed roster facts
     if (!fx.length) continue;
     exById[r.id] = fx;
   }
