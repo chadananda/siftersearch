@@ -1,6 +1,48 @@
 {
-  "generated": "2026-07-08T17:10:03.050Z",
+  "generated": "2026-07-08T17:45:55.674Z",
   "entries": [
+    {
+      "hash": "12d04140",
+      "date": "2026-07-08",
+      "type": "Docs",
+      "description": "Scale-aware entity schema — radical uniformity (everything is entity/name/claim), 4 tables, hot-cold split, split-readiness",
+      "scope": null
+    },
+    {
+      "hash": "7fe06d57",
+      "date": "2026-07-08",
+      "type": "Other",
+      "description": "Remove throwaway cross-db probe",
+      "scope": null
+    },
+    {
+      "hash": "6386e9f4",
+      "date": "2026-07-08",
+      "type": "Other",
+      "description": "Map entity layer across sifter.db + graph.db",
+      "scope": null
+    },
+    {
+      "hash": "03fd409e",
+      "date": "2026-07-08",
+      "type": "Other",
+      "description": "Drop stale LLM lead when target/consistency gates filter all matches (never name an excluded person)",
+      "scope": null
+    },
+    {
+      "hash": "a0305a94",
+      "date": "2026-07-08",
+      "type": "Docs",
+      "description": "Entity-architecture.md — cited-claim spine, evidence comparator, five-discipline industry audit synthesis",
+      "scope": null
+    },
+    {
+      "hash": "add667ac",
+      "date": "2026-07-08",
+      "type": "Other",
+      "description": "Connection-target precision — evidence must name the queried target",
+      "scope": null
+    },
     {
       "hash": "7edd9cfa",
       "date": "2026-07-08",
@@ -3458,52 +3500,52 @@
       "type": "Fixed",
       "description": "Raise cross-tradition relevance floor to 0.45 to filter semantic noise",
       "scope": null
-    },
-    {
-      "hash": "bc0aded8",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Relevance floor (0.35) in crossTraditionSearch prevents low-scoring tradition hits from gaming authority formula",
-      "scope": null
-    },
-    {
-      "hash": "d57dc672",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "HasAllTermMatches checks title+text so scripture book names match",
-      "scope": null
-    },
-    {
-      "hash": "abea5279",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Increase OL supplementary query limit 10→30 for better scripture recall",
-      "scope": null
-    },
-    {
-      "hash": "ea98e0c7",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Normalize smart quotes in author strings for AUTHOR_AUTHORITY lookup",
-      "scope": null
-    },
-    {
-      "hash": "58c4fb79",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Author authority precedes religion meta.yaml default",
-      "scope": null
-    },
-    {
-      "hash": "895b426d",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Cross-tradition search quality — Bahá'í slot cap + spelling normalization",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-08": [
+      {
+        "hash": "12d04140",
+        "date": "2026-07-08",
+        "type": "Docs",
+        "description": "Scale-aware entity schema — radical uniformity (everything is entity/name/claim), 4 tables, hot-cold split, split-readiness",
+        "scope": null
+      },
+      {
+        "hash": "7fe06d57",
+        "date": "2026-07-08",
+        "type": "Other",
+        "description": "Remove throwaway cross-db probe",
+        "scope": null
+      },
+      {
+        "hash": "6386e9f4",
+        "date": "2026-07-08",
+        "type": "Other",
+        "description": "Map entity layer across sifter.db + graph.db",
+        "scope": null
+      },
+      {
+        "hash": "03fd409e",
+        "date": "2026-07-08",
+        "type": "Other",
+        "description": "Drop stale LLM lead when target/consistency gates filter all matches (never name an excluded person)",
+        "scope": null
+      },
+      {
+        "hash": "a0305a94",
+        "date": "2026-07-08",
+        "type": "Docs",
+        "description": "Entity-architecture.md — cited-claim spine, evidence comparator, five-discipline industry audit synthesis",
+        "scope": null
+      },
+      {
+        "hash": "add667ac",
+        "date": "2026-07-08",
+        "type": "Other",
+        "description": "Connection-target precision — evidence must name the queried target",
+        "scope": null
+      },
       {
         "hash": "7edd9cfa",
         "date": "2026-07-08",
@@ -7018,48 +7060,6 @@
         "date": "2026-05-16",
         "type": "Fixed",
         "description": "Raise cross-tradition relevance floor to 0.45 to filter semantic noise",
-        "scope": null
-      },
-      {
-        "hash": "bc0aded8",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Relevance floor (0.35) in crossTraditionSearch prevents low-scoring tradition hits from gaming authority formula",
-        "scope": null
-      },
-      {
-        "hash": "d57dc672",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "HasAllTermMatches checks title+text so scripture book names match",
-        "scope": null
-      },
-      {
-        "hash": "abea5279",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Increase OL supplementary query limit 10→30 for better scripture recall",
-        "scope": null
-      },
-      {
-        "hash": "ea98e0c7",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Normalize smart quotes in author strings for AUTHOR_AUTHORITY lookup",
-        "scope": null
-      },
-      {
-        "hash": "58c4fb79",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Author authority precedes religion meta.yaml default",
-        "scope": null
-      },
-      {
-        "hash": "895b426d",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Cross-tradition search quality — Bahá'í slot cap + spelling normalization",
         "scope": null
       }
     ]

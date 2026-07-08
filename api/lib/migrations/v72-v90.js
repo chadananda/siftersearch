@@ -206,6 +206,49 @@ export const migrations = {
     await graphQuery(`UPDATE authority_tiers SET rank=50, description='Modern academic scholarship — historical and analytical value' WHERE tier='scholarly'`);
     logger.info('Migration 83 complete: corrected authority_tiers ranks (institutional 70→25, scholarly 40→50)');
   },
+
+  84: async () => {
+    // Entity-architecture spine (sifter.db) — see docs/entity-architecture.md. Additive, empty tables only.
+    // "Everything is an entity, a name, or a cited claim": events are entities; involvement + identity-equivalence
+    // are claims. Four new tables over existing graph_entities + entity_mentions. Reversible by DROP. entity_aliases_v2
+    // is named to sit alongside the legacy (empty) migration-72 entity_aliases until the cutover retires it.
+    await query(`CREATE TABLE IF NOT EXISTS relations (
+      key TEXT PRIMARY KEY, label TEXT NOT NULL, category TEXT, target_type TEXT, inverse_key TEXT, cardinality TEXT)`);
+
+    await query(`CREATE TABLE IF NOT EXISTS entity_aliases_v2 (
+      id INTEGER PRIMARY KEY, entity_id INTEGER NOT NULL,
+      surface TEXT NOT NULL, surface_norm TEXT NOT NULL, script_key TEXT, phonetic_key TEXT,
+      kind TEXT DEFAULT 'name', lang TEXT DEFAULT 'en', is_display INTEGER DEFAULT 0,
+      confidence REAL DEFAULT 1.0, source TEXT, source_para_id TEXT, import_batch TEXT,
+      created_at INTEGER DEFAULT (unixepoch()))`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_eav2_entity ON entity_aliases_v2(entity_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_eav2_norm   ON entity_aliases_v2(surface_norm)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_eav2_script ON entity_aliases_v2(script_key)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_eav2_phon   ON entity_aliases_v2(phonetic_key)`);
+    await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_eav2_uniq ON entity_aliases_v2(entity_id, surface_norm, lang, kind)`);
+
+    await query(`CREATE TABLE IF NOT EXISTS alias_priors (
+      surface_norm TEXT NOT NULL, entity_id INTEGER NOT NULL, count INTEGER DEFAULT 1,
+      PRIMARY KEY (surface_norm, entity_id))`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ap_surface ON alias_priors(surface_norm)`);
+
+    await query(`CREATE TABLE IF NOT EXISTS entity_claims (
+      id INTEGER PRIMARY KEY, claim_hash TEXT UNIQUE, claim_group TEXT,
+      entity_id INTEGER NOT NULL, relation TEXT NOT NULL, target_entity_id INTEGER,
+      statement TEXT NOT NULL, proof_verbatim TEXT, doc_id INTEGER, para_id TEXT,
+      valid_from TEXT, valid_to TEXT, asserted_at INTEGER DEFAULT (unixepoch()), superseded_at INTEGER,
+      rank TEXT DEFAULT 'normal', status TEXT DEFAULT 'supported',
+      proof_ok INTEGER, subject_ok INTEGER, consistency_ok INTEGER,
+      confidence REAL, provenance_tier INTEGER, extractor_version TEXT, import_batch TEXT)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_entity   ON entity_claims(entity_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_target   ON entity_claims(target_entity_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_relation ON entity_claims(relation)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_ent_rel  ON entity_claims(entity_id, relation)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_group    ON entity_claims(claim_group)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_para     ON entity_claims(para_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_batch    ON entity_claims(import_batch)`);
+    logger.info('Migration 84 complete: entity-architecture spine (relations, entity_aliases_v2, alias_priors, entity_claims)');
+  },
 };
 
 export const graphMigrations = {
