@@ -38,19 +38,23 @@ for (const r of jRows) {
   let arr = []; try { arr = JSON.parse(r.al); } catch { continue; }
   const g = gByEnt.get(r.entity_id) || new Set();
   const pool = sig(r.cn); for (const a of (gListByEnt.get(r.entity_id) || [])) for (const t of sig(a)) pool.add(t);
-  let summary = r.summary; if (!summary) { try { summary = (JSON.parse(r.rn || '{}').summary) || ''; } catch { /* */ } }
+  let rn = {}; try { rn = JSON.parse(r.rn || '{}'); } catch { /* */ }
+  const summary = r.summary || rn.summary || '';
+  // the record's cited facts — where a name appears here IS the context that tells us which person it is
+  const facts = []; for (const k of ['facts2', 'episodes', 'characterizations', 'facts']) if (Array.isArray(rn[k])) for (const f of rn[k]) if (f && f.statement) facts.push({ text: f.statement, quote: f.quote || null, url: f.url || null });
   for (const a of arr) {
     const n = nrm(a); if (!n || g.has(n)) continue;
     const toks = sig(a); const shares = [...toks].some((t) => pool.has(t));
     const isEpithet = EPI.test(a.trim()) || !toks.size;
-    // triage: variant/epithet → auto-KEEP; relative-in-summary → auto-REMOVE; otherwise → genuinely AMBIGUOUS (human)
     const level = shares ? 'variant' : isEpithet ? 'epithet' : relativeContext(summary, a) ? 'relative' : 'ambiguous';
-    rows.push({ entity_id: r.entity_id, cn: r.cn, alias: a, level, summary: (summary || '').slice(0, 300), gAliases: (gListByEnt.get(r.entity_id) || []).slice(0, 10) });
+    const at = [...toks].sort((x, y) => y.length - x.length)[0] || n;             // distinctive token to find in context
+    const ctx = facts.filter((f) => nrm(`${f.text} ${f.quote || ''}`).includes(at)).slice(0, 3);
+    rows.push({ entity_id: r.entity_id, cn: r.cn, alias: a, level, summary: (summary || '').slice(0, 300), gAliases: (gListByEnt.get(r.entity_id) || []).slice(0, 10), ctx });
   }
 }
 // ---- AI adjudication of the AMBIGUOUS set (world + corpus knowledge; suggests, human confirms) ----
 const keyOf = (r) => `${r.entity_id}|${nrm(r.alias)}`;
-const SYS = `You disambiguate ALIASES in a Bábí/Bahá'í historical entity database. Each item gives an ENTITY (canonical name + summary + its confirmed names) and a SUSPECT ALIAS attached to it. Using BOTH the evidence AND your world/historical knowledge, classify the alias's relation to the entity as exactly one of:
+const SYS = `You disambiguate ALIASES in a Bábí/Bahá'í historical entity database. Each item gives an ENTITY (canonical name + summary + confirmed names), a SUSPECT ALIAS attached to it, and CONTEXT (verbatim snippets from the record's cited sources where that name appears — this is the primary evidence). A bare name or title is NOT determinative on its own; DECIDE FROM THE CONTEXT — if the context shows the name refers to a brother/father/other individual, it is a different person; if it refers to the record themselves, it is the same. If the CONTEXT is empty, the alias has no textual basis here → strongly prefer "different" or "uncertain", never "same". Classify the alias's relation to the entity as exactly one of:
 - "same": another name/title/spelling/known equivalent of THIS SAME person (e.g. Temüjin = Genghis Khan = Chengíz Khán) → keep.
 - "different": a DIFFERENT person, e.g. a same-given-name namesake → remove.
 - "relative": a relative/associate/other role of the entity (father, son, secretary…), not the entity → remove.
@@ -70,7 +74,7 @@ if (ADJUDICATE) {
   console.error(`adjudicating ${todo.length} ambiguous (of ${amb.length}; ${amb.length - todo.length} cached)…`);
   for (let b = 0; b < todo.length; b += 12) {
     const batch = todo.slice(b, b + 12);
-    const items = batch.map((r, i) => ({ i, entity: r.cn, summary: r.summary, names: r.gAliases.slice(0, 6), alias: r.alias }));
+    const items = batch.map((r, i) => ({ i, entity: r.cn, summary: r.summary, names: r.gAliases.slice(0, 6), alias: r.alias, context: r.ctx.map((c) => c.text).slice(0, 3) }));
     try {
       const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: JSON.stringify(items) }],
         { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1400, responseFormat: { type: 'json_object' } });
@@ -102,6 +106,9 @@ const ev = (r) => {
   if (r.level === 'epithet') return { same: 'a descriptive epithet of the record, not a distinct name', diff: '—' };
   return { same: '', diff: '' };
 };
+const ctxHtml = (r) => (r.ctx && r.ctx.length)
+  ? `<div class="ctxs"><b>where “${esc(r.alias)}” appears in this record’s cited sources:</b>${r.ctx.map((c) => `<div class="ctxi">“${esc(c.text)}”${c.url ? ` <a href="${esc(c.url)}" target="_blank">¶</a>` : ''}</div>`).join('')}</div>`
+  : `<div class="ctxs nobasis">⚠ “${esc(r.alias)}” appears in NONE of this record’s cited facts — no textual basis for attaching it here.</div>`;
 const DEF = { 'ai-same': 'keep', variant: 'keep', epithet: 'keep', 'ai-diff': 'rm', relative: 'rm' };   // pre-selected verdict
 const GRP = (lvl) => (lvl === 'variant' || lvl === 'epithet') ? 'auto' : 'review';
 const BADGE = { ambiguous: '? AI unsure', 'ai-diff': 'AI: different', 'ai-same': 'AI: same', relative: 'relative', variant: 'variant', epithet: 'epithet' };
@@ -116,6 +123,7 @@ const rowHtml = (r) => { const e = ev(r); const def = DEF[r.level] || '';
   <td class="ev">
     <div class="ev-is"><span class="lbl is">IS — because</span>${esc(e.same)}</div>
     <div class="ev-isnt"><span class="lbl isnt">IS NOT — because</span>${esc(e.diff)}</div>
+    ${ctxHtml(r)}
     <div class="sum">${esc(r.summary)}</div>
     <div class="ga"><b>record’s confirmed names:</b> ${r.gAliases.map((x) => `<span>${esc(x)}</span>`).join(' · ') || '—'}</div>
   </td>
@@ -149,7 +157,10 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Alias dive
  .ev{max-width:44rem} .ev-is,.ev-isnt{margin-bottom:.35rem}
  .lbl{display:inline-block;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:.08rem .4rem;border-radius:4px;margin-right:.45rem}
  .lbl.is{background:rgba(34,197,94,.16);color:#4ade80} .lbl.isnt{background:rgba(239,68,68,.16);color:#f87171}
- .sum{color:var(--ink);margin-top:.4rem} .ga{color:var(--mut);font-size:.8rem;margin-top:.35rem} .ga span{color:#b8c6e0}
+ .ctxs{margin:.45rem 0;font-size:.85rem} .ctxs>b{color:var(--mut);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.03em}
+ .ctxi{color:#cdd9f0;border-left:2px solid #33507e;padding:.15rem .6rem;margin:.25rem 0} .ctxi a{color:#7dd3fc;text-decoration:none}
+ .nobasis{color:#fca5a5;border-left:2px solid var(--sus);padding-left:.6rem}
+ .sum{color:var(--mut);margin-top:.4rem;font-size:.85rem} .ga{color:var(--mut);font-size:.8rem;margin-top:.35rem} .ga span{color:#b8c6e0}
  #outwrap{display:none;padding:.75rem 1.5rem;background:#0d1526;border-bottom:1px solid var(--line)} #out{width:100%;height:8rem;background:#0b1220;color:#9ecbff;border:1px solid var(--line);border-radius:6px;font:12px/1.4 ui-monospace,Menlo,monospace;padding:.6rem}
 </style></head><body>
 <header>
