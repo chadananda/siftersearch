@@ -178,5 +178,5 @@ ${rows.map(rowHtml).join('\n')}
 </body></html>`;
 if (!existsSync('tmp')) mkdirSync('tmp', { recursive: true });
 writeFileSync(OUT, html);
-console.log(`wrote ${OUT} — ${rows.length} rows (suspicious ${counts.suspicious || 0}, epithet ${counts.epithet || 0}, variant ${counts.variant || 0})`);
+console.log(`wrote ${OUT} — ${rows.length} rows | NEEDS-JUDGMENT ${counts.ambiguous || 0} · AI-remove ${counts['ai-diff'] || 0} · AI-keep ${counts['ai-same'] || 0} · relatives ${counts.relative || 0} · variants ${counts.variant || 0} · epithets ${counts.epithet || 0}`);
 process.exit(0);
