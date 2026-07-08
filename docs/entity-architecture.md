@@ -17,6 +17,19 @@ seams between them are where bugs live (see case study).
 A claim with no citation is a **hypothesis**, not a fact. Identity itself (aliases,
 merges) is just another kind of cited claim.
 
+**Corollary — identity is mention-anchored; a bare name is not an entity.** "Aḥmad" is
+meaningless on its own — there are a hundred Aḥmads. It becomes a specific person only as
+*the Aḥmad referred to at this paragraph, in this context*. So the **mention** (a
+name/epithet/pronoun **at a text position**, read in context) is the atom of *identity*,
+exactly as the cited claim is the atom of *knowledge*. An **entity is the resolved cluster
+of its mentions**; the canonical name is only a label on that cluster. Therefore **every
+entity, alias, and claim must carry provenance — the text position(s) it came from** — and
+an entity with no cited mentions is not an entity but a hypothesis to quarantine. Resolution
+never matches bare name strings (the "hundred Aḥmads" trap); it resolves *positions in
+context* by evidence consistency (nisba, era, role, associates). Enforced structurally:
+`entity_aliases.source_para_id`, claims' `doc_id/para_id/proof_verbatim`, and the write-time
+`proof_ok` gate — nothing enters the graph without recording where it came from.
+
 ## The three phases
 
 1. **GATHER** — read source text (coreference-complete: name, title, epithet, role,
