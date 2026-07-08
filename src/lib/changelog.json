@@ -1,6 +1,20 @@
 {
-  "generated": "2026-07-08T05:50:08.591Z",
+  "generated": "2026-07-08T05:54:05.160Z",
   "entries": [
+    {
+      "hash": "99cc042f",
+      "date": "2026-07-07",
+      "type": "Other",
+      "description": "Throwaway misbound probe",
+      "scope": null
+    },
+    {
+      "hash": "705aa29b",
+      "date": "2026-07-07",
+      "type": "Other",
+      "description": "Broaden roster-dash match (any spaced dash) + pronoun-lead guard",
+      "scope": null
+    },
     {
       "hash": "52882616",
       "date": "2026-07-07",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Graph-extractor signal handling, API key loading, systemPrompt",
       "scope": null
-    },
-    {
-      "hash": "8d8e7d72",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Graph_entities column is entity_type not type",
-      "scope": null
-    },
-    {
-      "hash": "54f24d0c",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Graph-extractor crashes on missing docs.period_id column",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-07": [
+      {
+        "hash": "99cc042f",
+        "date": "2026-07-07",
+        "type": "Other",
+        "description": "Throwaway misbound probe",
+        "scope": null
+      },
+      {
+        "hash": "705aa29b",
+        "date": "2026-07-07",
+        "type": "Other",
+        "description": "Broaden roster-dash match (any spaced dash) + pronoun-lead guard",
+        "scope": null
+      },
       {
         "hash": "52882616",
         "date": "2026-07-07",
@@ -7044,20 +7058,6 @@
         "date": "2026-05-16",
         "type": "Fixed",
         "description": "Graph-extractor signal handling, API key loading, systemPrompt",
-        "scope": null
-      },
-      {
-        "hash": "8d8e7d72",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Graph_entities column is entity_type not type",
-        "scope": null
-      },
-      {
-        "hash": "54f24d0c",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Graph-extractor crashes on missing docs.period_id column",
         "scope": null
       }
     ]

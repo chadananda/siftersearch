@@ -17,10 +17,13 @@ const misSubject = (name, aliasArr, statement) => {
   if (!m) return null;
   if (/^\s*(he|she|they|it|his|her|their|its|who|whom|this|that|these|those|in|on|at|when|after|before|during|next|owing|because)\b/i.test(m[1])) return null;
   const subj = sigToks(m[1]); if (!subj.size) return null;
-  const mine = sigToks(name); for (const a of (aliasArr || [])) for (const t of sigToks(a)) mine.add(t);
+  const mine = sigToks(name); for (const a of (aliasArr || [])) { const at = sigToks(a); if (at.size >= 2) for (const t of at) mine.add(t); }   // canonical + MULTI-token aliases only
   const whole = allToks(statement);
   for (const t of mine) if (subj.has(t) || whole.has(t)) return null;   // subject or full statement names this person → fine
-  return m[1].trim();                                                    // a different named subject, entity absent
+  // contamination fingerprint: does the (rejected) subject equal a BARE single-token alias of this entity?
+  const bareAliases = new Set((aliasArr || []).map((a) => sigToks(a)).filter((s) => s.size === 1).flatMap((s) => [...s]));
+  const viaAlias = [...subj].some((t) => bareAliases.has(t));
+  return { subject: m[1].trim(), viaAlias };                             // a different named subject, entity absent
 };
 
 const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.aliases, er.research_notes
@@ -39,8 +42,8 @@ for (const r of rows) {
   let hit = false;
   for (const [arr, kind] of [[f2, 'facts2'], [eps, 'episodes']]) {
     for (const f of arr) {
-      const subj = misSubject(r.name, aliasArr, f.statement);
-      if (subj) { offenders.push({ id: r.id, entity: r.name, arr: kind, subject: subj, statement: f.statement, relation: f.relation || f.name || null, source: f.source || null, paraId: f.paraId || null }); hit = true; }
+      const res = misSubject(r.name, aliasArr, f.statement);
+      if (res) { offenders.push({ id: r.id, entity: r.name, arr: kind, subject: res.subject, viaAlias: res.viaAlias, statement: f.statement, relation: f.relation || f.name || null, source: f.source || null, paraId: f.paraId || null }); hit = true; }
     }
   }
   if (hit) personsHit++;
@@ -51,8 +54,9 @@ console.log(`persons w/ facts2 scanned : ${personsScanned}`);
 console.log(`facts2 statements scanned : ${factsScanned}`);
 console.log(`cross-filed roster facts  : ${offenders.length}`);
 console.log(`persons affected          : ${personsHit}`);
+console.log(`  of which via a bad ALIAS : ${offenders.filter((o) => o.viaAlias).length}  (the subject IS a bare alias of the entity — contaminated identity)`);
 console.log(`\n=== first 40 offenders (SUBJECT  ⟵ filed under ENTITY) ===`);
-for (const o of offenders.slice(0, 40)) console.log(`  [${o.id}] (${o.arr}) ${o.subject}  ⟵  ${o.entity}   ${o.paraId || ''}\n      "${String(o.statement).slice(0, 100)}"`);
+for (const o of offenders.slice(0, 40)) console.log(`  [${o.id}] (${o.arr})${o.viaAlias ? ' [ALIAS!]' : ''} ${o.subject}  ⟵  ${o.entity}   ${o.paraId || ''}\n      "${String(o.statement).slice(0, 100)}"`);
 
 const dir = 'tmp/entity-research'; if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 writeFileSync(`${dir}/misbound-facts.json`, JSON.stringify(offenders, null, 0));
