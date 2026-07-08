@@ -259,6 +259,135 @@ ClaimReview; CIDOC-CRM + CRMinf; SNAP:DRGN; Fellegi-Sunter 1969, Splink (MoJ), S
 Dedupe, Zingg; BLINK, ReFinED, GENRE/mGENRE, joint coref+EL; Microsoft GraphRAG, Zep/
 Graphiti (arXiv 2501.13956), FEVER, HippoRAG, GraphCheck.
 
+## Consolidation + scaling to thousands of books
+
+**Decision (2026-07-08):** one database — `sifter.db` — is the single home for the entity
+layer. Today the layer is split across two files: `sifter.db` holds `graph_entities` (36,447),
+`entity_research` (2,373; `er.aliases` JSON = 6,456 alias strings) and 145K mentions, while a
+separate `graph.db` holds a *richer, normalized* `entity_aliases` (**56,588** rows, id-keyed,
+with `source`/`confidence`/script forms) and 160K mentions — read only by `resolveAlias()` and
+written **outside** the single-writer. The two alias stores have diverged (the "Muṣṭafá"
+contamination lived only in the JSON). We consolidate the normalized tables into `sifter.db`,
+make typed `entity_aliases` the single source of truth, demote `er.aliases` JSON to a derived
+mirror, retire `graph.db`, and route every write through the single-writer.
+
+**Scale target: 2,000–3,000 books.** Extrapolating from the seed set: millions of entities,
+tens of millions of claims, hundreds of millions of mentions. The design that stays
+*scalable, lightweight, simple, accurate, and fast* at that size rests on one structural idea
+plus six rules.
+
+**The structural idea — radical uniformity: *everything is an entity, a name, or a cited
+claim.*** Events are entities (`type='event'`); involvement is a claim
+(`relation='participated-in'`, `target=event`) — so an episode roster is a claim pivot, and
+the episode tables vanish. Identity equivalence is a claim (`relation='same-as' |
+'probably-same' | 'distinct-from'`, `target=other entity`) — so a "merge" is a *derived
+cluster over preferred same-as claims*, reversible, and the identity-link table vanishes.
+Corroboration/refutation are just more claim rows grouped by `claim_group`, not child tables.
+Characterization, kinship, office, death are claims with different `relation` values. This
+collapses ~8 tables to **four new ones** and gives one uniform, index-friendly access pattern.
+(It is a *typed* claim table — `entity_id`/`relation`/`target_entity_id`/proof/citation are
+real indexed columns — **not** a generic subject-predicate-object EAV blob, which the audit
+warns against.)
+
+**Six rules that keep it fast at hundreds of millions of rows:**
+1. **Nothing queryable in JSON.** Every claim/alias is a normalized, indexed row. (A JSON-blob
+   scan-and-parse per query is the one thing that cannot scale — it's today's bottleneck.)
+2. **Integer id-keys + covering indexes on every pivot** (`entity_id`, `target_entity_id`,
+   `relation`, `surface_norm`, `script_key`, `phonetic_key`, `para_id`). Pivots are seeks, not
+   scans. Pivot on **IDs, never surface names** (namesake safety at the retrieval layer).
+3. **Per-import-batch provenance on every row** (`doc_id`, `import_batch`) → a book is
+   added/removed/re-run atomically and reversibly; **incremental** ingest, no global recompute.
+4. **Append-only + content-hash id** (`claim_hash`) → idempotent re-ingest (re-processing a
+   book 500× never duplicates), supersede-don't-rewrite (fewer single-writer conflicts), free
+   undo. Best-rank is computed per-entity at query time (small N per entity) — **no materialized
+   projection to maintain** until a cross-entity query proves it necessary.
+5. **Hot / cold split.** The hot working set — `entity_claims`, `entity_aliases`,
+   `alias_priors`, `graph_entities` — stays small and page-cache-resident. `entity_mentions`
+   (the largest, coldest table, hundreds of millions of rows) is an append-only log the hot
+   path never scans: candidate-generation reads the `alias_priors` **aggregate**, not raw
+   mentions. Mentions are a split-out-to-its-own-file candidate at scale.
+6. **Meili is the discovery lane; SQLite is truth.** Index only what needs fuzzy/semantic
+   recall — entity aliases (for resolution + search) and claim statements/proof spans (for
+   evidence discovery) — as lean id+text+filter docs; fetch full records from SQLite by id.
+   Structured pivots, provenance, and era-gating stay in SQLite. `bio.js`'s "load 900 rows and
+   JSON.parse" becomes an indexed SQL pivot + a Meili recall call.
+
+**Split-readiness (honoring "one DB now, scale later").** The entity-graph tables reference
+content only by `doc_id`/`para_id` **values** — no hard SQL foreign keys into the content
+tables — so the whole entity-graph can be lifted into its own file and `ATTACH`-ed later with
+**zero schema change** if `sifter.db` grows unwieldy. One DB now for simplicity; a clean seam
+for when it matters.
+
+**Proposed DDL — four new tables in `sifter.db` (`CREATE … IF NOT EXISTS`, additive, DROP-reversible):**
+
+```sql
+CREATE TABLE relations (            -- tiny controlled vocabulary — the guard against free-text chaos
+  key TEXT PRIMARY KEY, label TEXT NOT NULL,
+  category TEXT,          -- identity | kinship | event | office | death | characterization | connection
+  target_type TEXT,       -- entity | date | place | none
+  inverse_key TEXT, cardinality TEXT);
+
+CREATE TABLE entity_aliases (       -- typed appellations; canonical = is_display=1 (name is a VIEW, not a column)
+  id INTEGER PRIMARY KEY, entity_id INTEGER NOT NULL,
+  surface TEXT NOT NULL, surface_norm TEXT NOT NULL,
+  script_key TEXT, phonetic_key TEXT,  -- Arabic/Persian-script key = true match key; phonetic = romanization blocking
+  kind TEXT DEFAULT 'name',            -- name|title|epithet|translit
+  lang TEXT DEFAULT 'en', is_display INTEGER DEFAULT 0,
+  confidence REAL DEFAULT 1.0, source TEXT, source_para_id TEXT, import_batch TEXT,
+  created_at INTEGER DEFAULT (unixepoch()));
+CREATE INDEX idx_ea_entity ON entity_aliases(entity_id);
+CREATE INDEX idx_ea_norm   ON entity_aliases(surface_norm);
+CREATE INDEX idx_ea_script ON entity_aliases(script_key);
+CREATE INDEX idx_ea_phon   ON entity_aliases(phonetic_key);
+CREATE UNIQUE INDEX idx_ea_uniq ON entity_aliases(entity_id, surface_norm, lang, kind);
+
+CREATE TABLE alias_priors (         -- self-improving P(e|m) candidate-gen prior (aggregate of confirmed bindings)
+  surface_norm TEXT NOT NULL, entity_id INTEGER NOT NULL, count INTEGER DEFAULT 1,
+  PRIMARY KEY (surface_norm, entity_id));
+CREATE INDEX idx_ap_surface ON alias_priors(surface_norm);
+
+CREATE TABLE entity_claims (        -- THE atom: EVERY cited assertion — fact, kinship, participation, death,
+  id INTEGER PRIMARY KEY,           --   characterization, AND identity-equivalence. Typed statement table, NOT EAV.
+  claim_hash TEXT UNIQUE,           -- content hash → idempotent re-ingest / reversible apply
+  claim_group TEXT,                 -- clusters corroborating/conflicting assertions about the same (entity,relation,target)
+  entity_id INTEGER NOT NULL, relation TEXT NOT NULL,      -- relation → relations.key (controlled)
+  target_entity_id INTEGER,         -- connection/identity/event target as an ID (never a string)
+  statement TEXT NOT NULL, proof_verbatim TEXT,            -- the support-gate span
+  doc_id INTEGER, para_id TEXT,     -- citation
+  valid_from TEXT, valid_to TEXT,   -- world-time (era gating — cheap deterministic exclude)
+  asserted_at INTEGER DEFAULT (unixepoch()), superseded_at INTEGER,   -- system-time; append-only, supersede don't rewrite
+  rank TEXT DEFAULT 'normal',       -- preferred|normal|deprecated (conflicts coexist; never delete)
+  status TEXT DEFAULT 'supported',  -- supported|refuted|not-established|contested
+  proof_ok INTEGER, subject_ok INTEGER, consistency_ok INTEGER,       -- write-time verification gates
+  confidence REAL, provenance_tier INTEGER, extractor_version TEXT, import_batch TEXT);
+CREATE INDEX idx_ec_entity   ON entity_claims(entity_id);
+CREATE INDEX idx_ec_target   ON entity_claims(target_entity_id);
+CREATE INDEX idx_ec_relation ON entity_claims(relation);
+CREATE INDEX idx_ec_ent_rel  ON entity_claims(entity_id, relation);
+CREATE INDEX idx_ec_group    ON entity_claims(claim_group);
+CREATE INDEX idx_ec_para     ON entity_claims(para_id);
+CREATE INDEX idx_ec_batch    ON entity_claims(import_batch);
+```
+
+`graph_entities` (add `type='event'`) and `entity_mentions` already exist. Two belief layers
+(source-vs-system) and a materialized `claims_best` are deliberately **deferred** (YAGNI) —
+`status` + `provenance_tier` + per-entity query-time best-rank cover today's needs; add them
+only when a concrete case demands it.
+
+**Migration sequence (each reversible, dry-run first):**
+1. **DDL** — create the four tables (empty, additive) via a numbered migration.
+2. **Aliases** — union `graph.db.entity_aliases` (56,588) + `er.aliases` JSON (6,456) → typed
+   `entity_aliases`; dedup by `(entity_id, surface_norm, kind)`; derive `script_key`/`phonetic_key`,
+   infer `kind`, flag `is_display`; re-run the contamination scan against the unified store.
+3. **Claims** — backfill `facts`/`facts2`/`characterizations`/`episodes` JSON → `entity_claims`
+   (compute `claim_hash` + the three `_ok` gates + `provenance_tier`; events become entities,
+   participation becomes claims); seed `alias_priors` from confirmed mentions.
+4. **Mentions** — reconcile the `graph.db` + `sifter.db` mention tables into one (cold log).
+5. **Repoint** `bio.js` + entity-read to the normalized tables; keep `er.aliases`/`research_notes`
+   as a read-only fallback during dual-read, then stop reading them.
+6. **Meili** — build the lean `claims` + `aliases` discovery indexes.
+7. **Retire** `graph.db`.
+
 ## Implementation path
 
 **Quick wins (no migration):**
