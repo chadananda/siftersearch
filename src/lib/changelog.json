@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-08T05:44:24.085Z",
+  "generated": "2026-07-08T05:47:12.832Z",
   "entries": [
+    {
+      "hash": "3b891321",
+      "date": "2026-07-07",
+      "type": "Other",
+      "description": "Subject gate — drop cross-filed roster facts from search evidence",
+      "scope": null
+    },
     {
       "hash": "551d8455",
       "date": "2026-07-07",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Explicitly ignore SIGINT in graph workers — Node.js default kills on SIGINT",
       "scope": null
-    },
-    {
-      "hash": "2a390737",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Remove SIGINT handlers from graph workers — causes instant PM2 exit",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-07": [
+      {
+        "hash": "3b891321",
+        "date": "2026-07-07",
+        "type": "Other",
+        "description": "Subject gate — drop cross-filed roster facts from search evidence",
+        "scope": null
+      },
       {
         "hash": "551d8455",
         "date": "2026-07-07",
@@ -7051,13 +7058,6 @@
         "date": "2026-05-16",
         "type": "Fixed",
         "description": "Explicitly ignore SIGINT in graph workers — Node.js default kills on SIGINT",
-        "scope": null
-      },
-      {
-        "hash": "2a390737",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Remove SIGINT handlers from graph workers — causes instant PM2 exit",
         "scope": null
       }
     ]

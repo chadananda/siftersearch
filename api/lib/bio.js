@@ -170,13 +170,16 @@ export async function bioSearch(rawQ) {
   // alone), and a hyphen inside a name (Qurbán-‘Alí) is never treated as the delimiter.
   const HON = new Set('mirza haji hajji mulla siyyid sayyid aqa shaykh sheikh ustad karbilai karbala mashhadi hajj the of son daughter dervish native an outstanding figure community known as one'.split(' '));
   const sigToks = (s) => new Set(nrm(s).replace(/\([^)]*\)/g, ' ').split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !HON.has(t)));
+  const allToks = (s) => new Set(nrm(s).split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !HON.has(t)));   // keep parenthetical names
   const factSubjectOk = (name, aliasArr, statement) => {
-    const m = String(statement || '').match(/^\s*([^—–]{2,60}?)\s+[—–]\s+\S/);   // "Subject — description" only
+    const m = String(statement || '').match(/^\s*([^—–]{2,60}?)\s+[—–]\s+\S/);   // "Subject — description" roster form only
     if (!m) return true;                                                          // not the roster form → don't judge
+    if (/^\s*(his|her|their|its)\b/i.test(m[1])) return true;                      // possessive subject ("His sons —") → about the entity
     const subj = sigToks(m[1]); if (!subj.size) return true;                       // no name-like subject → keep
     const mine = sigToks(name); for (const a of (aliasArr || [])) for (const t of sigToks(a)) mine.add(t);
-    for (const t of subj) if (mine.has(t)) return true;                            // subject overlaps this person → keep
-    return false;                                                                 // a DIFFERENT named subject → drop
+    const whole = allToks(statement);                                             // entity named ANYWHERE (incl. "…not Peter…") → keep
+    for (const t of mine) if (subj.has(t) || whole.has(t)) return true;
+    return false;                                                                 // a DIFFERENT named subject, entity absent → drop
   };
   for (const r of rows) {
     nameById[r.id] = r.name;
