@@ -8,14 +8,14 @@ const { queryAll } = await import('../../api/lib/db.js');
 const { chatCompletion } = await import('../../api/lib/ai.js');
 const MAPFILE = 'tmp/siftersearch-relation-map.json';
 
-const CONTROLLED = `identity: also-known-as, letter-of-the-living, has-title, has-station
+const CONTROLLED = `identity: also-known-as, letter-of-the-living, has-title, has-station, surnamed-by
 kinship: father-of, mother-of, son-of, daughter-of, brother-of, sister-of, wife-of, husband-of, uncle-of, relative-of
-connection: met, accompanied, companion-of, knew, hosted, visited, corresponded-with, addressed-by, taught-by, converted-by, disciple-of, secretary-of, associated-with, prophesied
+connection: met, accompanied, companion-of, knew, hosted, host-of, visited, corresponded-with, addressed-by, recipient-of, interviewed-by, taught-by, teacher-of, converted-by, disciple-of, follower-of, secretary-of, member-of, associated-with, summoned, intervened-for, recognized
 event: participated-in
-office: held-office, appointed-by, ruler-of, cleric
-death: martyred, killed, executed, died, imprisoned, exiled
+office: held-office, appointed-by, ruler-of, governor-of, cleric, custodian-of, successor-of
+death: martyred, killed, executed, died, imprisoned, exiled, persecuted, buried-in
 allegiance: believer, covenant-breaker, opponent, pioneer
-characterization: characterized-as, testified-about, praised-by, condemned-by, significance`;
+characterization: characterized-as, testified-about, praised-by, condemned-by, prophesied, prophesied-by, mentioned-in, compared-to, decreed, honored-by, significance`;
 
 const SYS = `Map each RAW relation label from a Bábí/Bahá'í entity database to a CONTROLLED vocabulary key. Each label describes how a PERSON relates to something. Pick exactly one key, extract any embedded target person or place, and flag event/section titles.
 CONTROLLED KEYS:
@@ -45,6 +45,16 @@ for (let b = 0; b < todo.length; b += 40) {
   writeFileSync(MAPFILE, JSON.stringify(map, null, 0));
   console.error(`  ${Math.min(b + 40, todo.length)}/${todo.length}`);
 }
+
+// ENFORCE the controlled set: the AI invents rare keys instead of mapping to the nearest — collapse any
+// non-vocab key to characterized-as (specifics stay in the statement); events are always participated-in.
+const CTRL_SET = new Set(CONTROLLED.split('\n').flatMap((line) => (line.split(':')[1] || '').split(',').map((s) => s.trim())).filter(Boolean));
+let coercedClaims = 0; const claimsByRaw = Object.fromEntries(rc.map((r) => [r.relation, r.n]));
+for (const [raw, m] of Object.entries(map)) {
+  if (m.is_event) { m.key = 'participated-in'; continue; }
+  if (!CTRL_SET.has(m.key)) { m.key = 'characterized-as'; coercedClaims += claimsByRaw[raw] || 0; }
+}
+console.log(`\ncontrolled vocab size: ${CTRL_SET.size} keys · coerced ${coercedClaims} claims (non-vocab key → characterized-as)`);
 
 // distribution over CLAIMS
 const keyCount = {}; let events = 0, withTarget = 0, withPlace = 0, unmapped = 0; const eventNames = {};
