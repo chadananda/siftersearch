@@ -64,6 +64,19 @@ the fix for the contaminated entity set is not manual deletion but **rebuild fro
 coverage order** — the write-time `proof_ok` gate then makes an uncited entity/alias
 impossible to create in the first place.
 
+**But research DOES help with aliases — the line is create vs. describe.** An alias is not an
+entity; it is a claim *about* an already-source-born entity, so enriching one with research is
+allowed. Research plays two legitimate alias roles: **(1) resolution (the main one)** — it
+doesn't add names, it decides *which entity the source's names belong to*: "Temüjin" and
+"Genghis Khán" both occur in the text and research judges they co-refer → the two mentions
+cluster onto one entity (and conversely it splits same-named different people). **(2) external
+equivalence** — a real name the source didn't use (birth/regnal name, standard variant) may be
+recorded, but as a **provenanced, lower-tier alias claim** (`kind: research`, cited to its
+external source, auditable/removable), never a bare string. So every alias carries provenance +
+tier: `source` (a `source_para_id` text position — primary) or `research` (an external
+citation — secondary, ranked below source). Research may never (a) mint an entity, or (b) add a
+name with no provenance of either kind — the exact defect of the old `enrich`/`promoter` passes.
+
 ## Current state (2026-07) — what exists and its debts
 
 **Good foundations already in place (keep + extend):**
