@@ -60,7 +60,8 @@ Rules (Rule — Why — Example):
 - If ANY evidence conflicts (different nisba, era, role, or fate), answer "different" EVEN IF THE NAMES MATCH. Example: Fatḥu'lláh-i-Qumí (a boy, killed after the 1852 attempt on the Sháh) ≠ Fatḥu'lláh Big (a combatant at Fort Ṭabarsí, ~1849) → different.
 - Be CONFIDENT on world-historically famous figures — there is only ONE person with that set of names, so mark them "same" with high confidence and DO NOT answer "uncertain". Example: Temüjin = Chingíz/Chengíz Khán = Genghis Khan is a single Mongol conqueror → same.
 - Otherwise, with no positive proof of sameness for an obscure name: answer "different" if any distinguishing signal exists, else "uncertain". Never merge just to resolve the row.
-Return ONLY JSON: {"verdicts":[{"i":<index>,"relation":"same|different|relative|uncertain","confidence":0-1,"reason":"<=18 words"}]}.`;
+For EACH item give both sides so a human can review: the strongest case they ARE the same, and the strongest case they are DIFFERENT.
+Return ONLY JSON: {"verdicts":[{"i":<index>,"relation":"same|different|relative|uncertain","confidence":0-1,"for_same":"<=16 words, strongest case they are the SAME person>","for_diff":"<=16 words, strongest case they are DIFFERENT people>"}]}.`;
 
 if (ADJUDICATE) {
   const amb = rows.filter((r) => r.level === 'ambiguous');
@@ -74,16 +75,16 @@ if (ADJUDICATE) {
       const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: JSON.stringify(items) }],
         { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1400, responseFormat: { type: 'json_object' } });
       const p = JSON.parse((res.content || '').match(/\{[\s\S]*\}/)[0]);
-      for (const v of (p.verdicts || [])) { const r = batch[v.i]; if (r) cache[keyOf(r)] = { relation: v.relation, confidence: v.confidence, reason: v.reason }; }
+      for (const v of (p.verdicts || [])) { const r = batch[v.i]; if (r) cache[keyOf(r)] = { relation: v.relation, confidence: v.confidence, for_same: v.for_same, for_diff: v.for_diff }; }
     } catch (e) { console.error(`  batch ${b} failed: ${String(e.message).slice(0, 60)}`); }
     writeFileSync(VERDICTS, JSON.stringify(cache, null, 0));
     console.error(`  ${Math.min(b + 12, todo.length)}/${todo.length}`);
   }
-  for (const r of amb) { const v = cache[keyOf(r)]; if (!v) continue; r.aiReason = v.reason; r.aiRel = v.relation;
+  for (const r of amb) { const v = cache[keyOf(r)]; if (!v) continue; r.forSame = v.for_same; r.forDiff = v.for_diff; r.aiRel = v.relation;
     r.level = v.relation === 'same' ? 'ai-same' : (v.relation === 'different' || v.relation === 'relative') ? 'ai-diff' : 'ambiguous'; }
 } else if (existsSync(VERDICTS)) {   // reuse cached verdicts without re-calling the LLM
   let cache = {}; try { cache = JSON.parse(readFileSync(VERDICTS, 'utf8')); } catch { /* */ }
-  for (const r of rows) { if (r.level !== 'ambiguous') continue; const v = cache[keyOf(r)]; if (!v) continue; r.aiReason = v.reason; r.aiRel = v.relation;
+  for (const r of rows) { if (r.level !== 'ambiguous') continue; const v = cache[keyOf(r)]; if (!v) continue; r.forSame = v.for_same; r.forDiff = v.for_diff; r.aiRel = v.relation;
     r.level = v.relation === 'same' ? 'ai-same' : (v.relation === 'different' || v.relation === 'relative') ? 'ai-diff' : 'ambiguous'; }
 }
 
@@ -91,22 +92,34 @@ const order = { ambiguous: 0, 'ai-diff': 1, 'ai-same': 2, relative: 3, variant: 
 rows.sort((a, b) => order[a.level] - order[b.level] || a.cn.localeCompare(b.cn));
 const counts = rows.reduce((m, r) => (m[r.level] = (m[r.level] || 0) + 1, m), {});
 
-const ASK = {
-  ambiguous: (r) => `Is “<b>${esc(r.alias)}</b>” another name for <b>${esc(r.cn)}</b>, or a different person? Even the AI was unsure — your call. (no shared name, no relationship stated)`,
-  'ai-diff': (r) => `<b>AI:</b> “<b>${esc(r.alias)}</b>” is a DIFFERENT person/relative${r.aiReason ? ` — <i>${esc(r.aiReason)}</i>` : ''} → <b>removing</b> (untick to keep).`,
-  'ai-same': (r) => `<b>AI:</b> “<b>${esc(r.alias)}</b>” is the same person as <b>${esc(r.cn)}</b>${r.aiReason ? ` — <i>${esc(r.aiReason)}</i>` : ''} → <b>keeping</b> (tick remove to override).`,
-  relative: (r) => `Summary names “<b>${esc(r.alias)}</b>” as a relative / other role → a different person → <b>auto-removing</b> (untick to keep).`,
-  variant: () => `Spelling/token variant of the record’s own name → <b>keeping</b>.`,
-  epithet: () => `Descriptive epithet, not a distinct name → <b>keeping</b>.`,
+// per-row two-sided evidence + the pre-selected verdict (is=same/keep, isnt=different/remove)
+const ev = (r) => {
+  if (r.level === 'ai-same') return { same: r.forSame || 'AI judged these the same person.', diff: r.forDiff || '—' };
+  if (r.level === 'ai-diff') return { same: r.forSame || '—', diff: r.forDiff || 'AI judged these different people.' };
+  if (r.level === 'ambiguous') return { same: r.forSame || 'no shared name with the record', diff: r.forDiff || 'no relationship stated in the summary' };
+  if (r.level === 'relative') return { same: 'appears in the same summary text', diff: 'summary names this as a relative / other role — a different person' };
+  if (r.level === 'variant') return { same: 'shares name-tokens with the record — a spelling/transliteration variant', diff: '—' };
+  if (r.level === 'epithet') return { same: 'a descriptive epithet of the record, not a distinct name', diff: '—' };
+  return { same: '', diff: '' };
 };
-const BADGE = { ambiguous: '?', 'ai-diff': 'AI ✗', 'ai-same': 'AI ✓' };
-const rowHtml = (r) => `<tr class="lvl-${r.level}" data-level="${r.level}" data-eid="${r.entity_id}" data-alias="${esc(r.alias)}"${(r.level === 'relative' || r.level === 'ai-diff') ? ' data-default="rm"' : ''}>
-  <td class="decide"><button class="b-keep" title="this name really is this person — keep">keep</button><button class="b-rm" title="different person / mistake — remove">remove</button></td>
-  <td class="badge ${r.level}">${BADGE[r.level] || r.level}</td>
-  <td class="ent"><a href="https://siftersearch.com/biography#${r.entity_id}" target="_blank">${esc(r.cn)}</a><div class="eid">#${r.entity_id}</div></td>
-  <td class="alias">${esc(r.alias)}</td>
-  <td class="ctx"><div class="q">${ASK[r.level](r)}</div><div class="sum">${esc(r.summary)}</div><div class="ga"><b>clean names already on this record:</b> ${r.gAliases.map((x) => `<span>${esc(x)}</span>`).join(' · ') || '—'}</div></td>
-</tr>`;
+const DEF = { 'ai-same': 'keep', variant: 'keep', epithet: 'keep', 'ai-diff': 'rm', relative: 'rm' };   // pre-selected verdict
+const GRP = (lvl) => (lvl === 'variant' || lvl === 'epithet') ? 'auto' : 'review';
+const BADGE = { ambiguous: '? AI unsure', 'ai-diff': 'AI: different', 'ai-same': 'AI: same', relative: 'relative', variant: 'variant', epithet: 'epithet' };
+const rowHtml = (r) => { const e = ev(r); const def = DEF[r.level] || '';
+  return `<tr class="lvl-${r.level}" data-level="${r.level}" data-group="${GRP(r.level)}" data-eid="${r.entity_id}" data-alias="${esc(r.alias)}"${def ? ` data-default="${def}"` : ''}>
+  <td class="pair">
+    <div class="names"><span class="alias">${esc(r.alias)}</span>
+      <span class="tog"><button class="t-is" title="same person — keep this alias">IS</button><button class="t-isnt" title="different person — remove this alias">IS&nbsp;NOT</button></span>
+      <a class="entity" href="https://siftersearch.com/biography#${r.entity_id}" target="_blank">${esc(r.cn)}</a><span class="eid">#${r.entity_id}</span></div>
+    <div class="tags"><span class="badge ${r.level}">${BADGE[r.level] || r.level}</span></div>
+  </td>
+  <td class="ev">
+    <div class="ev-is"><span class="lbl is">IS — because</span>${esc(e.same)}</div>
+    <div class="ev-isnt"><span class="lbl isnt">IS NOT — because</span>${esc(e.diff)}</div>
+    <div class="sum">${esc(r.summary)}</div>
+    <div class="ga"><b>record’s confirmed names:</b> ${r.gAliases.map((x) => `<span>${esc(x)}</span>`).join(' · ') || '—'}</div>
+  </td>
+</tr>`; };
 
 const html = `<!doctype html><html><head><meta charset="utf-8"><title>Alias divergence review (${rows.length})</title>
 <style>
@@ -122,27 +135,35 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Alias dive
  .tool button.exp{background:#134e28;border-color:#1f7a3f;color:#dfffe9;font-weight:600}
  table{border-collapse:collapse;width:100%} th{position:sticky;top:0;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);background:#0d1526;border-bottom:1px solid var(--line);padding:.5rem .8rem}
  td{border-bottom:1px solid var(--line);padding:.6rem .8rem;vertical-align:top}
- .decide{white-space:nowrap} .decide button{border:1px solid var(--line);background:var(--card);color:var(--mut);border-radius:6px;padding:.2rem .5rem;margin-right:.25rem;cursor:pointer;font-size:.75rem}
- tr.mark-keep{opacity:.45} tr.mark-keep .b-keep{background:#14532d;border-color:#22c55e;color:#dcfce7}
- tr.mark-rm{background:rgba(239,68,68,.14)} tr.mark-rm .b-rm{background:#7f1d1d;border-color:#ef4444;color:#fee2e2}
- .badge{text-transform:uppercase;font-size:.68rem;font-weight:700;letter-spacing:.04em;white-space:nowrap}
- .badge.ambiguous{color:#f59e0b} .badge.ai-diff{color:var(--sus)} .badge.ai-same{color:var(--var)} .badge.relative{color:var(--sus)} .badge.epithet{color:var(--epi)} .badge.variant{color:var(--var)}
+ .pair{min-width:22rem} .names{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem;font-size:1.05rem}
+ .alias{font-weight:700} .entity{color:#7dd3fc;text-decoration:none;font-weight:600} .eid{color:var(--mut);font-size:.72rem;margin-left:.25rem}
+ .tog{display:inline-flex;margin:0 .5rem;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+ .tog button{border:1px solid #33507e;background:#1a2745;color:#cdd9f0;padding:.35rem .75rem;cursor:pointer;font-weight:800;font-size:.82rem;letter-spacing:.02em}
+ .tog .t-is{border-radius:7px 0 0 7px} .tog .t-isnt{border-radius:0 7px 7px 0;border-left:none}
+ .tog button:hover{background:#24345c}
+ tr.mark-keep .t-is{background:#15803d;border-color:#22c55e;color:#fff} tr.mark-keep{background:rgba(34,197,94,.05)}
+ tr.mark-rm .t-isnt{background:#b91c1c;border-color:#ef4444;color:#fff} tr.mark-rm{background:rgba(239,68,68,.09)}
+ .tags{margin-top:.4rem} .badge{font-size:.7rem;font-weight:700;letter-spacing:.03em;padding:.1rem .45rem;border-radius:5px;border:1px solid var(--line)}
+ .badge.ambiguous{color:#f59e0b;border-color:#f59e0b} .badge.ai-diff{color:var(--sus);border-color:#7f1d1d} .badge.ai-same{color:var(--var);border-color:#2f5122} .badge.relative{color:var(--sus)} .badge.epithet{color:var(--epi)} .badge.variant{color:var(--var)}
  tr.lvl-ambiguous:not(.mark-keep):not(.mark-rm){background:rgba(245,158,11,.09)}
- .ent a{color:#7dd3fc;text-decoration:none;font-weight:600} .eid{color:var(--mut);font-size:.72rem}
- .alias{font-weight:700;font-size:1.05rem} .ctx{max-width:42rem} .q{margin-bottom:.35rem} .sum{color:var(--ink)} .ga{color:var(--mut);font-size:.8rem;margin-top:.35rem} .ga span{color:#b8c6e0}
+ .ev{max-width:44rem} .ev-is,.ev-isnt{margin-bottom:.35rem}
+ .lbl{display:inline-block;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:.08rem .4rem;border-radius:4px;margin-right:.45rem}
+ .lbl.is{background:rgba(34,197,94,.16);color:#4ade80} .lbl.isnt{background:rgba(239,68,68,.16);color:#f87171}
+ .sum{color:var(--ink);margin-top:.4rem} .ga{color:var(--mut);font-size:.8rem;margin-top:.35rem} .ga span{color:#b8c6e0}
  #outwrap{display:none;padding:.75rem 1.5rem;background:#0d1526;border-bottom:1px solid var(--line)} #out{width:100%;height:8rem;background:#0b1220;color:#9ecbff;border:1px solid var(--line);border-radius:6px;font:12px/1.4 ui-monospace,Menlo,monospace;padding:.6rem}
 </style></head><body>
 <header>
- <h1>Alias divergence review — only <b>${counts.ambiguous || 0}</b> truly need your judgment</h1>
- <p class="lede">Two passes already resolved the clear cases: (1) heuristics keep token-sharing <b>variants</b> &amp; <b>epithets</b> and remove summary-named <b>relatives</b> ("father of X"); (2) an <b>AI pass</b> (world + corpus knowledge) judged the rest — <b>AI ✓ same</b> (e.g. Temüjin = Genghis Khan → keep) and <b>AI ✗ different</b> (e.g. Fatḥu'lláh-i-Qumí ≠ Fatḥu'lláh Big → remove), each with its reason. Only where <i>even the AI was unsure</i> stays in <b>Needs judgment</b>. Spot-check the AI tabs (untick/tick to override), work the Needs-judgment tab, then <b>Copy removals</b> and paste it back to me.</p>
+ <h1>Alias review — does each alias belong to its record?</h1>
+ <p class="lede">Each row: the <b>alias</b> on the left, the <b>record</b> on the right, and <b>IS</b> / <b>IS NOT</b> between them. An AI pre-picked an answer (green <b>IS</b> = same person, keep · red <b>IS NOT</b> = different person, remove) and gives its evidence for <i>each</i> side — <b>click IS or IS NOT to confirm or flip it.</b> The <b>To review</b> tab shows the ${(counts.ambiguous || 0) + (counts['ai-diff'] || 0) + (counts['ai-same'] || 0) + (counts.relative || 0)} cases actually judged; token-variants &amp; epithets are auto-kept (separate tabs). When done, hit <b>Copy removals</b> and paste the JSON back to me.</p>
  <div class="bar">
   <div class="filters">
-   <button data-f="ambiguous" class="on">❓ Needs judgment (${counts.ambiguous || 0})</button>
-   <button data-f="ai-diff">AI ✗ remove (${counts['ai-diff'] || 0})</button>
-   <button data-f="ai-same">AI ✓ keep (${counts['ai-same'] || 0})</button>
-   <button data-f="relative">relatives → remove (${counts.relative || 0})</button>
-   <button data-f="variant">variants → keep (${counts.variant || 0})</button>
-   <button data-f="epithet">epithets → keep (${counts.epithet || 0})</button>
+   <button data-f="review" class="on">✔ To review (${(counts.ambiguous || 0) + (counts['ai-diff'] || 0) + (counts['ai-same'] || 0) + (counts.relative || 0)})</button>
+   <button data-f="ai-diff">AI: different → remove (${counts['ai-diff'] || 0})</button>
+   <button data-f="ai-same">AI: same → keep (${counts['ai-same'] || 0})</button>
+   <button data-f="ambiguous">AI unsure (${counts.ambiguous || 0})</button>
+   <button data-f="relative">relatives (${counts.relative || 0})</button>
+   <button data-f="variant">variants (${counts.variant || 0})</button>
+   <button data-f="epithet">epithets (${counts.epithet || 0})</button>
    <button data-f="all">all (${rows.length})</button>
   </div>
   <div class="tool"><span><span id="n">0</span> marked remove</span><button class="exp" id="copy">Copy removals</button></div>
@@ -150,28 +171,29 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Alias dive
 </header>
 <div id="outwrap"><textarea id="out" readonly></textarea></div>
 <table>
- <thead><tr><th>Decision</th><th>Level</th><th>Entity (the record)</th><th>Suspect alias</th><th>Context — is the alias really THIS person?</th></tr></thead>
+ <thead><tr><th>Is this alias the same person as this record? &nbsp;(<span style="color:#4ade80">IS</span> = keep · <span style="color:#f87171">IS NOT</span> = remove)</th><th>Evidence for / against + context</th></tr></thead>
  <tbody>
 ${rows.map(rowHtml).join('\n')}
  </tbody>
 </table>
 <script>
- const KEY='sifter-div-decisions'; let dec=JSON.parse(localStorage.getItem(KEY)||'{}');
+ const KEY='sifter-div-v2'; let dec=JSON.parse(localStorage.getItem(KEY)||'{}');
  const trs=[...document.querySelectorAll('tbody tr')];
  const idOf=t=>t.dataset.eid+'|'+t.dataset.alias;
  const paint=t=>{const s=dec[idOf(t)];t.classList.toggle('mark-keep',s==='keep');t.classList.toggle('mark-rm',s==='rm');};
- const countN=()=>document.getElementById('n').textContent=Object.values(dec).filter(v=>v==='rm').length;
- trs.forEach(t=>{paint(t);
-   t.querySelector('.b-keep').onclick=()=>{dec[idOf(t)]=dec[idOf(t)]==='keep'?undefined:'keep';save(t);};
-   t.querySelector('.b-rm').onclick=()=>{dec[idOf(t)]=dec[idOf(t)]==='rm'?undefined:'rm';save(t);};});
- function save(t){if(!dec[idOf(t)])delete dec[idOf(t)];localStorage.setItem(KEY,JSON.stringify(dec));paint(t);countN();}
- countN();
+ const persist=()=>localStorage.setItem(KEY,JSON.stringify(dec));
+ const countN=()=>document.getElementById('n').textContent=trs.filter(t=>dec[idOf(t)]==='rm').length;
+ trs.forEach(t=>{ if(!(idOf(t) in dec) && t.dataset.default) dec[idOf(t)]=t.dataset.default; paint(t);
+   t.querySelector('.t-is').onclick=()=>{dec[idOf(t)]='keep';persist();paint(t);countN();};
+   t.querySelector('.t-isnt').onclick=()=>{dec[idOf(t)]='rm';persist();paint(t);countN();}; });
+ persist(); countN();
  const btns=[...document.querySelectorAll('.filters button')];
- btns.forEach(b=>b.onclick=()=>{btns.forEach(x=>x.classList.remove('on'));b.classList.add('on');const f=b.dataset.f;
-   trs.forEach(t=>t.style.display=(f==='all'||t.dataset.level===f)?'':'none');});
+ const applyF=f=>trs.forEach(t=>t.style.display=(f==='all'||t.dataset.level===f||t.dataset.group===f)?'':'none');
+ btns.forEach(b=>b.onclick=()=>{btns.forEach(x=>x.classList.remove('on'));b.classList.add('on');applyF(b.dataset.f);});
+ applyF('review');
  document.getElementById('copy').onclick=()=>{
    const out=trs.filter(t=>dec[idOf(t)]==='rm').map(t=>({entity_id:+t.dataset.eid,alias:t.dataset.alias}));
-   const txt=JSON.stringify(out,null,0); const ta=document.getElementById('out');
+   const txt=JSON.stringify(out); const ta=document.getElementById('out');
    document.getElementById('outwrap').style.display='block'; ta.value=txt; ta.select();
    try{navigator.clipboard.writeText(txt);}catch(e){} };
 </script>
