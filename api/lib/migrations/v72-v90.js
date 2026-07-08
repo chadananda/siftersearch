@@ -249,6 +249,14 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_ec_batch    ON entity_claims(import_batch)`);
     logger.info('Migration 84 complete: entity-architecture spine (relations, entity_aliases_v2, alias_priors, entity_claims)');
   },
+
+  85: async () => {
+    // Entity-facet indexes (found by scripts/entity-read/test-index-coverage.mjs). The person-list query
+    // (WHERE entity_type=? ORDER BY importance DESC) was doing a TEMP B-TREE sort of every entity on every
+    // search — fine at 36k, fatal at millions. Composite index serves the facet + ordered scan.
+    await query(`CREATE INDEX IF NOT EXISTS idx_ge_type_importance ON graph_entities(entity_type, importance)`);
+    logger.info('Migration 85 complete: idx_ge_type_importance (kills the person-list TEMP B-TREE sort)');
+  },
 };
 
 export const graphMigrations = {

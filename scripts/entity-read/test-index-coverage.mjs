@@ -32,8 +32,11 @@ const ANGLES = [
   // ---- graph_entities: entity-level facets ----
   ['entity: by type (facet)',                 `SELECT id FROM graph_entities WHERE entity_type=?`, ['person'], 'graph_entities'],
   ['entity: by canonical name',               `SELECT id FROM graph_entities WHERE canonical_name=?`, ['x'], 'graph_entities'],
-  ['entity: persons by side (facet)',         `SELECT id FROM graph_entities WHERE entity_type=? AND side=?`, ['person', 'Bábí'], 'graph_entities'],
+  ['entity: by religion (facet)',             `SELECT id FROM graph_entities WHERE entity_type=? AND religion=?`, ['person', ''], 'graph_entities'],
   ['entity: persons ranked by importance',    `SELECT id FROM graph_entities WHERE entity_type=? ORDER BY importance DESC`, ['person'], 'graph_entities'],
+  // NOTE: `side` (Bábí/Bahá'í/opponent) lives in entity_research, so it can't be faceted from graph_entities.
+  // The claims backfill denormalizes side onto the entity row (+ index) so "persons of side X" is an index seek.
+  ['entity: persons by side (via entity_research)', `SELECT ge.id FROM graph_entities ge JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE er.side=?`, ['Bábí'], 'entity_research'],
 ];
 
 const plan = async (sql, params) => (await queryAll(`EXPLAIN QUERY PLAN ${sql}`, params)).map((r) => r.detail || r.selectid + '' || JSON.stringify(r)).join(' | ');

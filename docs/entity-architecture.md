@@ -388,6 +388,24 @@ only when a concrete case demands it.
 6. **Meili** — build the lean `claims` + `aliases` discovery indexes.
 7. **Retire** `graph.db`.
 
+### Built + verified (2026-07-08)
+- **Migration 84** creates the spine (`relations`, `entity_aliases_v2`, `alias_priors`,
+  `entity_claims` + indexes) — additive, empty, reversible by DROP.
+- **`unify-aliases.mjs`** (dry-run) computes **57,390** unified typed alias rows from the 56,588
+  `graph.db` rows + 6,442 JSON strings + 2,215 canonicals; script-key on 2,616, phonetic-key on
+  53,659. It surfaces the **969 JSON-only aliases** (the store divergence / higher-risk set —
+  mostly legitimate coreference epithets like "the solace of mine eyes", but the place to scan
+  for contamination before cutover).
+- **`test-index-coverage.mjs`** runs `EXPLAIN QUERY PLAN` for **every pivot and facet** (each
+  claim-relationship direction, each alias-resolution key, the P(e|m) prior, mentions, and
+  entity facets) and fails on any full scan / temp-b-tree. It already caught two gaps on the
+  *existing* schema: (a) the person-list `ORDER BY importance` did a **TEMP B-TREE** sort of
+  every entity per search → fixed by **migration 85** (`idx_ge_type_importance`); (b) **`side`
+  is not on the entity row** (it's in `entity_research`) so it can't be faceted efficiently →
+  the claims backfill **denormalizes `side` (and any hot facet) onto `graph_entities` + indexes
+  it**, so "persons of side X" becomes an index seek. This test is the standing gate: every new
+  relation/facet must be added to it and must hit an index.
+
 ## Implementation path
 
 **Quick wins (no migration):**
