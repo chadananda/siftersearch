@@ -176,10 +176,12 @@ export async function bioSearch(rawQ) {
     if (!m) return true;                                                          // not the roster form → don't judge
     if (/^\s*(he|she|they|it|his|her|their|its|who|whom|this|that|these|those|in|on|at|when|after|before|during|next|owing|because)\b/i.test(m[1])) return true;   // pronoun/prose lead, never a roster name → about the entity
     const subj = sigToks(m[1]); if (!subj.size) return true;                       // no name-like subject → keep
-    // identity tokens = the CANONICAL name + only MULTI-token aliases. A bare single-name alias ("Muṣṭafá",
-    // "the dervish") must NOT vouch that a roster subject is this person — that lone-given-name contamination is
-    // exactly how a different person's fact ("Muṣṭafá — dervish converted by Bahá'u'lláh") got mis-filed here.
-    const mine = sigToks(name); for (const a of (aliasArr || [])) { const at = sigToks(a); if (at.size >= 2) for (const t of at) mine.add(t); }
+    // Identity tokens = canonical name + ALL aliases (single-token title-aliases like "Navváb"/"Mu‘tamid" are
+    // legitimate and must vouch for their person). This gate catches only roster facts whose subject is named
+    // NOWHERE in this person's identity — a non-alias different person mis-filed by a co-mention. It cannot catch
+    // the deeper case where a DIFFERENT person's name was wrongly ABSORBED as an alias (e.g. "Muṣṭafá" on
+    // Qurbán-‘Alí) — that is fixed at the data layer by evidence-consistency adjudication, not here.
+    const mine = sigToks(name); for (const a of (aliasArr || [])) for (const t of sigToks(a)) mine.add(t);
     const whole = allToks(statement);                                             // entity named ANYWHERE (incl. "…not Peter…") → keep
     for (const t of mine) if (subj.has(t) || whole.has(t)) return true;
     return false;                                                                 // a DIFFERENT named subject, entity absent → drop
