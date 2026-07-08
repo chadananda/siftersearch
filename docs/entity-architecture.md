@@ -43,6 +43,27 @@ context* by evidence consistency (nisba, era, role, associates). Enforced struct
 
 Each must be clean, efficient, effective, fast, and accurate.
 
+### Entity creation discipline — source-driven, coverage-ordered; research never creates
+
+**Only a mention in the source text may mint an entity.** Every entity is therefore born
+with a birth provenance (the paragraph where it first occurs). Coverage **expands book by
+book in a fixed order** — **GPB alone → GPB + Dawn-Breakers → + ROB → …** — each step adding
+only the entities its new source introduces, resolved against everything already seeded (see
+[[project_entity_extraction_order_gpb_seed]]).
+
+**Research (web/AI) is question-answering + enrichment ONLY — it must never create an entity
+or add an uncited alias.** It attaches *cited* facts to source-born entities and helps
+*disambiguate* existing ones. If research surfaces a person not yet in the ingested coverage,
+that is **not an entity** — it is a held note until the source that names them is ingested.
+The `promotion_queue` / `promoter` / `research` / `enrich` passes that minted names outside
+the source text are the root cause of the provenance-less aliases; that path is retired.
+
+**Consequence (self-correcting cleanup):** a source-first re-expansion re-derives every
+legitimate name *with* its citation; anything research invented simply doesn't reappear. So
+the fix for the contaminated entity set is not manual deletion but **rebuild from source in
+coverage order** — the write-time `proof_ok` gate then makes an uncited entity/alias
+impossible to create in the first place.
+
 ## Current state (2026-07) — what exists and its debts
 
 **Good foundations already in place (keep + extend):**
