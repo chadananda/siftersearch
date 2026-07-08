@@ -32,7 +32,7 @@ const HON = new Set('mirza haji hajji mulla siyyid sayyid aqa shaykh sheikh usta
 const kindOf = (surface, norm) => {
   if (isScript(surface)) return 'name';                                   // original-script name form (lang set separately)
   if (/^(the |known as )/i.test(surface) || /^(the )?(master|beloved|blessed|dervish|báb|bab)$/i.test(surface.trim())) return 'epithet';
-  const toks = norm.split(' ').filter(Boolean);
+  const toks = norm.split(/[ -]/).filter(Boolean);                        // split hyphens too (Qurbán-‘Alí = a NAME, not one token)
   if (toks.length === 1 && !HON.has(toks[0])) return 'title';             // lone non-honorific token → likely a title/epithet (Navváb, Mu'tamid)
   return 'name';
 };
