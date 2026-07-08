@@ -33,6 +33,15 @@ const relativeContext = (summary, alias) => {
   return KIN_RE.test(s.slice(Math.max(0, i - 48), i + a.length + 48));   // kinship/role word within ~48 chars of the alias
 };
 
+// --- source-text context: pull the actual sentence around each name from the record's own document(s) ---
+const docRows = await queryAll(`SELECT id, source_url u FROM docs WHERE source_url IS NOT NULL AND source_url<>''`);
+const docByUrl = new Map(docRows.map((d) => [d.u, d.id])); const urlById = new Map(docRows.map((d) => [d.id, d.u]));
+const paraCache = new Map();
+const docParas = async (id) => { if (paraCache.has(id)) return paraCache.get(id); let ps = [];
+  try { ps = await queryAll(`SELECT external_para_id pid, heading, text FROM content WHERE doc_id=? AND deleted_at IS NULL AND length(trim(text))>0`, [id]); } catch { /* */ }
+  const m = ps.map((p) => ({ pid: p.pid, heading: p.heading || '', text: String(p.text), tn: nrm(p.text) })); paraCache.set(id, m); return m; };
+const sentenceAround = (text, needle) => { const parts = String(text).split(/(?<=[.!?؟])\s+/); const hit = parts.find((p) => nrm(p).includes(needle)); return (hit || String(text)).replace(/\s+/g, ' ').trim().slice(0, 340); };
+
 const rows = [];
 for (const r of jRows) {
   let arr = []; try { arr = JSON.parse(r.al); } catch { continue; }
@@ -40,16 +49,26 @@ for (const r of jRows) {
   const pool = sig(r.cn); for (const a of (gListByEnt.get(r.entity_id) || [])) for (const t of sig(a)) pool.add(t);
   let rn = {}; try { rn = JSON.parse(r.rn || '{}'); } catch { /* */ }
   const summary = r.summary || rn.summary || '';
-  // the record's cited facts — where a name appears here IS the context that tells us which person it is
   const facts = []; for (const k of ['facts2', 'episodes', 'characterizations', 'facts']) if (Array.isArray(rn[k])) for (const f of rn[k]) if (f && f.statement) facts.push({ text: f.statement, quote: f.quote || null, url: f.url || null });
+  const eDocs = [...new Set(facts.map((f) => f.url).filter(Boolean).map((u) => docByUrl.get(String(u).split('?')[0])).filter(Boolean))];
+  const gather = async (tok) => { const out = []; if (!tok) return out;
+    for (const did of eDocs) { for (const p of await docParas(did)) { if (p.tn.includes(tok)) { out.push({ sentence: sentenceAround(p.text, tok), heading: p.heading, url: urlById.get(did) ? `${urlById.get(did)}?paraId=${p.pid}` : null }); if (out.length >= 3) break; } } if (out.length >= 3) break; } return out; };
+  const recTok = [...sig(r.cn)].sort((x, y) => y.length - x.length)[0] || nrm(r.cn);
+  let recCtx = null;                                                              // where the RECORD's own name appears (gathered once/entity)
   for (const a of arr) {
     const n = nrm(a); if (!n || g.has(n)) continue;
     const toks = sig(a); const shares = [...toks].some((t) => pool.has(t));
     const isEpithet = EPI.test(a.trim()) || !toks.size;
     const level = shares ? 'variant' : isEpithet ? 'epithet' : relativeContext(summary, a) ? 'relative' : 'ambiguous';
-    const at = [...toks].sort((x, y) => y.length - x.length)[0] || n;             // distinctive token to find in context
-    const ctx = facts.filter((f) => nrm(`${f.text} ${f.quote || ''}`).includes(at)).slice(0, 3);
-    rows.push({ entity_id: r.entity_id, cn: r.cn, alias: a, level, summary: (summary || '').slice(0, 300), gAliases: (gListByEnt.get(r.entity_id) || []).slice(0, 10), ctx });
+    const at = [...toks].sort((x, y) => y.length - x.length)[0] || n;             // distinctive token of the alias
+    let ctx = [], rc = [];
+    if (level === 'ambiguous' || level === 'relative') {                          // gather source sentences only for the review set
+      ctx = await gather(at);
+      if (!ctx.length) ctx = facts.filter((f) => nrm(`${f.text} ${f.quote || ''}`).includes(at)).slice(0, 2).map((f) => ({ sentence: f.text, heading: '', url: f.url }));
+      if (recCtx === null) recCtx = await gather(recTok);
+      rc = recCtx;
+    }
+    rows.push({ entity_id: r.entity_id, cn: r.cn, alias: a, level, summary: (summary || '').slice(0, 300), gAliases: (gListByEnt.get(r.entity_id) || []).slice(0, 10), ctx, recCtx: rc });
   }
 }
 // ---- AI adjudication of the AMBIGUOUS set (world + corpus knowledge; suggests, human confirms) ----
@@ -74,7 +93,7 @@ if (ADJUDICATE) {
   console.error(`adjudicating ${todo.length} ambiguous (of ${amb.length}; ${amb.length - todo.length} cached)…`);
   for (let b = 0; b < todo.length; b += 12) {
     const batch = todo.slice(b, b + 12);
-    const items = batch.map((r, i) => ({ i, entity: r.cn, summary: r.summary, names: r.gAliases.slice(0, 6), alias: r.alias, context: r.ctx.map((c) => c.text).slice(0, 3) }));
+    const items = batch.map((r, i) => ({ i, entity: r.cn, summary: r.summary, names: r.gAliases.slice(0, 6), alias: r.alias, context_alias: r.ctx.map((c) => c.sentence).slice(0, 3), context_record: (r.recCtx || []).map((c) => c.sentence).slice(0, 3) }));
     try {
       const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: JSON.stringify(items) }],
         { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1400, responseFormat: { type: 'json_object' } });
@@ -106,18 +125,19 @@ const ev = (r) => {
   if (r.level === 'epithet') return { same: 'a descriptive epithet of the record, not a distinct name', diff: '—' };
   return { same: '', diff: '' };
 };
-const ctxHtml = (r) => (r.ctx && r.ctx.length)
-  ? `<div class="ctxs"><b>where “${esc(r.alias)}” appears in this record’s cited sources:</b>${r.ctx.map((c) => `<div class="ctxi">“${esc(c.text)}”${c.url ? ` <a href="${esc(c.url)}" target="_blank">¶</a>` : ''}</div>`).join('')}</div>`
-  : `<div class="ctxs nobasis">⚠ “${esc(r.alias)}” appears in NONE of this record’s cited facts — no textual basis for attaching it here.</div>`;
+const ctxBlock = (label, items, cls) => (items && items.length)
+  ? `<div class="ctxs ${cls}"><b>where ${label} is mentioned:</b>${items.map((c) => `<div class="ctxi">${c.heading ? `<span class="ch">${esc(c.heading)}</span> ` : ''}“${esc(c.sentence)}”${c.url ? ` <a href="${esc(c.url)}" target="_blank">¶</a>` : ''}</div>`).join('')}</div>`
+  : `<div class="ctxs ${cls} nobasis">no source sentence found for ${label}</div>`;
+const ctxHtml = (r) => `${ctxBlock(`the record “${esc(r.cn)}”`, r.recCtx, 'rec')}${ctxBlock(`the alias “${esc(r.alias)}”`, r.ctx, 'ali')}`;
 const DEF = { 'ai-same': 'keep', variant: 'keep', epithet: 'keep', 'ai-diff': 'rm', relative: 'rm' };   // pre-selected verdict
 const GRP = (lvl) => (lvl === 'variant' || lvl === 'epithet') ? 'auto' : 'review';
 const BADGE = { ambiguous: '? AI unsure', 'ai-diff': 'AI: different', 'ai-same': 'AI: same', relative: 'relative', variant: 'variant', epithet: 'epithet' };
 const rowHtml = (r) => { const e = ev(r); const def = DEF[r.level] || '';
   return `<tr class="lvl-${r.level}" data-level="${r.level}" data-group="${GRP(r.level)}" data-eid="${r.entity_id}" data-alias="${esc(r.alias)}"${def ? ` data-default="${def}"` : ''}>
   <td class="pair">
-    <div class="names"><span class="alias">${esc(r.alias)}</span>
+    <div class="names"><span class="alias"${r.ctx && r.ctx[0] ? ` title="${esc(r.ctx[0].sentence)}"` : ''}>${esc(r.alias)}</span>
       <span class="tog"><button class="t-is" title="same person — keep this alias">IS</button><button class="t-isnt" title="different person — remove this alias">IS&nbsp;NOT</button></span>
-      <a class="entity" href="https://siftersearch.com/biography#${r.entity_id}" target="_blank">${esc(r.cn)}</a><span class="eid">#${r.entity_id}</span></div>
+      <a class="entity"${r.recCtx && r.recCtx[0] ? ` title="${esc(r.recCtx[0].sentence)}"` : ''} href="https://siftersearch.com/biography#${r.entity_id}" target="_blank">${esc(r.cn)}</a><span class="eid">#${r.entity_id}</span></div>
     <div class="tags"><span class="badge ${r.level}">${BADGE[r.level] || r.level}</span></div>
   </td>
   <td class="ev">
@@ -158,7 +178,9 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Alias dive
  .lbl{display:inline-block;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:.08rem .4rem;border-radius:4px;margin-right:.45rem}
  .lbl.is{background:rgba(34,197,94,.16);color:#4ade80} .lbl.isnt{background:rgba(239,68,68,.16);color:#f87171}
  .ctxs{margin:.45rem 0;font-size:.85rem} .ctxs>b{color:var(--mut);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.03em}
- .ctxi{color:#cdd9f0;border-left:2px solid #33507e;padding:.15rem .6rem;margin:.25rem 0} .ctxi a{color:#7dd3fc;text-decoration:none}
+ .ctxi{color:#cdd9f0;padding:.15rem .6rem;margin:.25rem 0;border-left:2px solid #33507e} .ctxi a{color:#7dd3fc;text-decoration:none}
+ .ctxs.rec .ctxi{border-left-color:#0ea5e9} .ctxs.ali .ctxi{border-left-color:#f59e0b}
+ .ch{display:inline-block;font-size:.66rem;text-transform:uppercase;letter-spacing:.03em;color:var(--mut);background:#0e1830;padding:.03rem .3rem;border-radius:3px;margin-right:.3rem}
  .nobasis{color:#fca5a5;border-left:2px solid var(--sus);padding-left:.6rem}
  .sum{color:var(--mut);margin-top:.4rem;font-size:.85rem} .ga{color:var(--mut);font-size:.8rem;margin-top:.35rem} .ga span{color:#b8c6e0}
  #outwrap{display:none;padding:.75rem 1.5rem;background:#0d1526;border-bottom:1px solid var(--line)} #out{width:100%;height:8rem;background:#0b1220;color:#9ecbff;border:1px solid var(--line);border-radius:6px;font:12px/1.4 ui-monospace,Menlo,monospace;padding:.6rem}
