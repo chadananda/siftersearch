@@ -6,6 +6,7 @@ import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.con
 import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs';
 const { queryAll, graphQueryAll } = await import('../../api/lib/db.js');
 const { chatCompletion } = await import('../../api/lib/ai.js');
+const { keywordSearch } = await import('../../api/lib/search.js');
 const OUT = process.env.OUT || 'tmp/siftersearch-divergence-review.html';
 const ADJUDICATE = process.env.ADJUDICATE === '1';            // run the AI pass over the ambiguous set
 const VERDICTS = 'tmp/siftersearch-alias-verdicts.json';
@@ -51,8 +52,13 @@ for (const r of jRows) {
   const summary = r.summary || rn.summary || '';
   const facts = []; for (const k of ['facts2', 'episodes', 'characterizations', 'facts']) if (Array.isArray(rn[k])) for (const f of rn[k]) if (f && f.statement) facts.push({ text: f.statement, quote: f.quote || null, url: f.url || null });
   const eDocs = [...new Set(facts.map((f) => f.url).filter(Boolean).map((u) => docByUrl.get(String(u).split('?')[0])).filter(Boolean))];
-  const gather = async (tok) => { const out = []; if (!tok) return out;
-    for (const did of eDocs) { for (const p of await docParas(did)) { if (p.tn.includes(tok)) { out.push({ sentence: sentenceAround(p.text, tok), heading: p.heading, url: urlById.get(did) ? `${urlById.get(did)}?paraId=${p.pid}` : null }); if (out.length >= 3) break; } } if (out.length >= 3) break; } return out; };
+  // whole-corpus search (Meili) for where a name actually occurs — with the book it's from
+  const gather = async (query, tok) => { if (!tok) return []; let hits = [];
+    try { hits = (await keywordSearch(query, { limit: 6 })).hits || []; } catch { return []; }
+    const out = [];
+    for (const h of hits) { const txt = h.text || ''; if (!nrm(txt).includes(tok)) continue; const did = h.doc_id || h.document_id;
+      out.push({ sentence: sentenceAround(txt, tok), heading: h.title || '', url: (h.external_para_id && urlById.get(did)) ? `${urlById.get(did)}?paraId=${h.external_para_id}` : null }); if (out.length >= 3) break; }
+    return out; };
   const recTok = [...sig(r.cn)].sort((x, y) => y.length - x.length)[0] || nrm(r.cn);
   let recCtx = null;                                                              // where the RECORD's own name appears (gathered once/entity)
   for (const a of arr) {
@@ -63,9 +69,9 @@ for (const r of jRows) {
     const at = [...toks].sort((x, y) => y.length - x.length)[0] || n;             // distinctive token of the alias
     let ctx = [], rc = [];
     if (level === 'ambiguous' || level === 'relative') {                          // gather source sentences only for the review set
-      ctx = await gather(at);
+      ctx = await gather(a, at);
       if (!ctx.length) ctx = facts.filter((f) => nrm(`${f.text} ${f.quote || ''}`).includes(at)).slice(0, 2).map((f) => ({ sentence: f.text, heading: '', url: f.url }));
-      if (recCtx === null) recCtx = await gather(recTok);
+      if (recCtx === null) recCtx = await gather(r.cn, recTok);
       rc = recCtx;
     }
     rows.push({ entity_id: r.entity_id, cn: r.cn, alias: a, level, summary: (summary || '').slice(0, 300), gAliases: (gListByEnt.get(r.entity_id) || []).slice(0, 10), ctx, recCtx: rc });
