@@ -3,9 +3,12 @@
 // by SUSPICION and has keep/remove buttons; "Copy removals" exports the decisions as JSON to paste back for quarantine.
 // Read-only. Run ON tower-nas; the HTML is written to tmp/. Pull it local and open.
 import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs';
 const { queryAll, graphQueryAll } = await import('../../api/lib/db.js');
+const { chatCompletion } = await import('../../api/lib/ai.js');
 const OUT = process.env.OUT || 'tmp/siftersearch-divergence-review.html';
+const ADJUDICATE = process.env.ADJUDICATE === '1';            // run the AI pass over the ambiguous set
+const VERDICTS = 'tmp/siftersearch-alias-verdicts.json';
 
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”.]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
 const HON = new Set('mirza haji hajji mulla siyyid sayyid aqa shaykh sheikh ustad karbilai hajj the of a an son daughter known as one'.split(' '));
@@ -20,6 +23,16 @@ const jRows = await queryAll(`SELECT ge.id entity_id, ge.canonical_name cn, er.s
   FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
   WHERE er.aliases IS NOT NULL AND er.aliases NOT IN ('','[]')`);
 
+// A relative/other-role named in the summary ("father of X", "X's brother", "secretary of X") is a DIFFERENT
+// person — machine-resolvable, auto-remove, don't ask the human. Detect the alias's core token near a kinship/role word.
+const KIN = 'father|mother|son|daughter|wife|husband|brother|sister|uncle|aunt|cousin|nephew|niece|grandfather|grandmother|grandson|granddaughter|widow|father-?in-?law|son-?in-?law|brother-?in-?law|mother-?in-?law|disciple|servant|secretary|attendant|amanuensis|steward|companion of|teacher of|pupil of';
+const KIN_RE = new RegExp(`\\b(${KIN})\\b`);
+const relativeContext = (summary, alias) => {
+  const s = nrm(summary); const toks = [...sig(alias)]; if (!toks.length || !s) return false;
+  const a = toks.sort((x, y) => y.length - x.length)[0]; const i = s.indexOf(a); if (i < 0) return false;
+  return KIN_RE.test(s.slice(Math.max(0, i - 48), i + a.length + 48));   // kinship/role word within ~48 chars of the alias
+};
+
 const rows = [];
 for (const r of jRows) {
   let arr = []; try { arr = JSON.parse(r.al); } catch { continue; }
@@ -30,20 +43,69 @@ for (const r of jRows) {
     const n = nrm(a); if (!n || g.has(n)) continue;
     const toks = sig(a); const shares = [...toks].some((t) => pool.has(t));
     const isEpithet = EPI.test(a.trim()) || !toks.size;
-    const level = shares ? 'variant' : (isEpithet ? 'epithet' : 'suspicious');
-    rows.push({ entity_id: r.entity_id, cn: r.cn, alias: a, level, summary: (summary || '').slice(0, 260), gAliases: (gListByEnt.get(r.entity_id) || []).slice(0, 10) });
+    // triage: variant/epithet → auto-KEEP; relative-in-summary → auto-REMOVE; otherwise → genuinely AMBIGUOUS (human)
+    const level = shares ? 'variant' : isEpithet ? 'epithet' : relativeContext(summary, a) ? 'relative' : 'ambiguous';
+    rows.push({ entity_id: r.entity_id, cn: r.cn, alias: a, level, summary: (summary || '').slice(0, 300), gAliases: (gListByEnt.get(r.entity_id) || []).slice(0, 10) });
   }
 }
-const order = { suspicious: 0, epithet: 1, variant: 2 };
+// ---- AI adjudication of the AMBIGUOUS set (world + corpus knowledge; suggests, human confirms) ----
+const keyOf = (r) => `${r.entity_id}|${nrm(r.alias)}`;
+const SYS = `You disambiguate ALIASES in a Bábí/Bahá'í historical entity database. Each item gives an ENTITY (canonical name + summary + its confirmed names) and a SUSPECT ALIAS attached to it. Using BOTH the evidence AND your world/historical knowledge, classify the alias's relation to the entity as exactly one of:
+- "same": another name/title/spelling/known equivalent of THIS SAME person (e.g. Temüjin = Genghis Khan = Chengíz Khán) → keep.
+- "different": a DIFFERENT person, e.g. a same-given-name namesake → remove.
+- "relative": a relative/associate/other role of the entity (father, son, secretary…), not the entity → remove.
+- "uncertain": evidence + knowledge do not clearly decide → escalate to a human.
+Rules (Rule — Why — Example):
+- A SHARED NAME IS NOT PROOF OF SAMENESS. "same" requires POSITIVE, CONSISTENT evidence across era, nisba, role, place, associates, and fate. A bare given name — ESPECIALLY WITHOUT A DISTINGUISHING NISBA — never justifies a merge on its own. Why: a common name causes false conflation, the worst error here. Example: two men both named "Fatḥu'lláh" are NOT the same absent corroboration.
+- If ANY evidence conflicts (different nisba, era, role, or fate), answer "different" EVEN IF THE NAMES MATCH. Example: Fatḥu'lláh-i-Qumí (a boy, killed after the 1852 attempt on the Sháh) ≠ Fatḥu'lláh Big (a combatant at Fort Ṭabarsí, ~1849) → different.
+- Be CONFIDENT on world-historically famous figures — there is only ONE person with that set of names, so mark them "same" with high confidence and DO NOT answer "uncertain". Example: Temüjin = Chingíz/Chengíz Khán = Genghis Khan is a single Mongol conqueror → same.
+- Otherwise, with no positive proof of sameness for an obscure name: answer "different" if any distinguishing signal exists, else "uncertain". Never merge just to resolve the row.
+Return ONLY JSON: {"verdicts":[{"i":<index>,"relation":"same|different|relative|uncertain","confidence":0-1,"reason":"<=18 words"}]}.`;
+
+if (ADJUDICATE) {
+  const amb = rows.filter((r) => r.level === 'ambiguous');
+  let cache = {}; try { cache = JSON.parse(readFileSync(VERDICTS, 'utf8')); } catch { /* fresh */ }
+  const todo = amb.filter((r) => !(keyOf(r) in cache));
+  console.error(`adjudicating ${todo.length} ambiguous (of ${amb.length}; ${amb.length - todo.length} cached)…`);
+  for (let b = 0; b < todo.length; b += 12) {
+    const batch = todo.slice(b, b + 12);
+    const items = batch.map((r, i) => ({ i, entity: r.cn, summary: r.summary, names: r.gAliases.slice(0, 6), alias: r.alias }));
+    try {
+      const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: JSON.stringify(items) }],
+        { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1400, responseFormat: { type: 'json_object' } });
+      const p = JSON.parse((res.content || '').match(/\{[\s\S]*\}/)[0]);
+      for (const v of (p.verdicts || [])) { const r = batch[v.i]; if (r) cache[keyOf(r)] = { relation: v.relation, confidence: v.confidence, reason: v.reason }; }
+    } catch (e) { console.error(`  batch ${b} failed: ${String(e.message).slice(0, 60)}`); }
+    writeFileSync(VERDICTS, JSON.stringify(cache, null, 0));
+    console.error(`  ${Math.min(b + 12, todo.length)}/${todo.length}`);
+  }
+  for (const r of amb) { const v = cache[keyOf(r)]; if (!v) continue; r.aiReason = v.reason; r.aiRel = v.relation;
+    r.level = v.relation === 'same' ? 'ai-same' : (v.relation === 'different' || v.relation === 'relative') ? 'ai-diff' : 'ambiguous'; }
+} else if (existsSync(VERDICTS)) {   // reuse cached verdicts without re-calling the LLM
+  let cache = {}; try { cache = JSON.parse(readFileSync(VERDICTS, 'utf8')); } catch { /* */ }
+  for (const r of rows) { if (r.level !== 'ambiguous') continue; const v = cache[keyOf(r)]; if (!v) continue; r.aiReason = v.reason; r.aiRel = v.relation;
+    r.level = v.relation === 'same' ? 'ai-same' : (v.relation === 'different' || v.relation === 'relative') ? 'ai-diff' : 'ambiguous'; }
+}
+
+const order = { ambiguous: 0, 'ai-diff': 1, 'ai-same': 2, relative: 3, variant: 4, epithet: 5 };
 rows.sort((a, b) => order[a.level] - order[b.level] || a.cn.localeCompare(b.cn));
 const counts = rows.reduce((m, r) => (m[r.level] = (m[r.level] || 0) + 1, m), {});
 
-const rowHtml = (r) => `<tr class="lvl-${r.level}" data-level="${r.level}" data-eid="${r.entity_id}" data-alias="${esc(r.alias)}">
-  <td class="decide"><button class="b-keep" title="legit — keep this alias">keep</button><button class="b-rm" title="wrong — remove this alias">remove</button></td>
-  <td class="badge ${r.level}">${r.level}</td>
+const ASK = {
+  ambiguous: (r) => `Is “<b>${esc(r.alias)}</b>” another name for <b>${esc(r.cn)}</b>, or a different person? Even the AI was unsure — your call. (no shared name, no relationship stated)`,
+  'ai-diff': (r) => `<b>AI:</b> “<b>${esc(r.alias)}</b>” is a DIFFERENT person/relative${r.aiReason ? ` — <i>${esc(r.aiReason)}</i>` : ''} → <b>removing</b> (untick to keep).`,
+  'ai-same': (r) => `<b>AI:</b> “<b>${esc(r.alias)}</b>” is the same person as <b>${esc(r.cn)}</b>${r.aiReason ? ` — <i>${esc(r.aiReason)}</i>` : ''} → <b>keeping</b> (tick remove to override).`,
+  relative: (r) => `Summary names “<b>${esc(r.alias)}</b>” as a relative / other role → a different person → <b>auto-removing</b> (untick to keep).`,
+  variant: () => `Spelling/token variant of the record’s own name → <b>keeping</b>.`,
+  epithet: () => `Descriptive epithet, not a distinct name → <b>keeping</b>.`,
+};
+const BADGE = { ambiguous: '?', 'ai-diff': 'AI ✗', 'ai-same': 'AI ✓' };
+const rowHtml = (r) => `<tr class="lvl-${r.level}" data-level="${r.level}" data-eid="${r.entity_id}" data-alias="${esc(r.alias)}"${(r.level === 'relative' || r.level === 'ai-diff') ? ' data-default="rm"' : ''}>
+  <td class="decide"><button class="b-keep" title="this name really is this person — keep">keep</button><button class="b-rm" title="different person / mistake — remove">remove</button></td>
+  <td class="badge ${r.level}">${BADGE[r.level] || r.level}</td>
   <td class="ent"><a href="https://siftersearch.com/biography#${r.entity_id}" target="_blank">${esc(r.cn)}</a><div class="eid">#${r.entity_id}</div></td>
   <td class="alias">${esc(r.alias)}</td>
-  <td class="ctx"><div class="sum">${esc(r.summary)}</div><div class="ga"><b>clean names already on this record:</b> ${r.gAliases.map((x) => `<span>${esc(x)}</span>`).join(' · ') || '—'}</div></td>
+  <td class="ctx"><div class="q">${ASK[r.level](r)}</div><div class="sum">${esc(r.summary)}</div><div class="ga"><b>clean names already on this record:</b> ${r.gAliases.map((x) => `<span>${esc(x)}</span>`).join(' · ') || '—'}</div></td>
 </tr>`;
 
 const html = `<!doctype html><html><head><meta charset="utf-8"><title>Alias divergence review (${rows.length})</title>
@@ -64,21 +126,24 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Alias dive
  tr.mark-keep{opacity:.45} tr.mark-keep .b-keep{background:#14532d;border-color:#22c55e;color:#dcfce7}
  tr.mark-rm{background:rgba(239,68,68,.14)} tr.mark-rm .b-rm{background:#7f1d1d;border-color:#ef4444;color:#fee2e2}
  .badge{text-transform:uppercase;font-size:.68rem;font-weight:700;letter-spacing:.04em;white-space:nowrap}
- .badge.suspicious{color:var(--sus)} .badge.epithet{color:var(--epi)} .badge.variant{color:var(--var)}
- tr.lvl-suspicious:not(.mark-keep):not(.mark-rm){background:rgba(239,68,68,.07)}
+ .badge.ambiguous{color:#f59e0b} .badge.ai-diff{color:var(--sus)} .badge.ai-same{color:var(--var)} .badge.relative{color:var(--sus)} .badge.epithet{color:var(--epi)} .badge.variant{color:var(--var)}
+ tr.lvl-ambiguous:not(.mark-keep):not(.mark-rm){background:rgba(245,158,11,.09)}
  .ent a{color:#7dd3fc;text-decoration:none;font-weight:600} .eid{color:var(--mut);font-size:.72rem}
- .alias{font-weight:700;font-size:1.05rem} .ctx{max-width:42rem} .sum{color:var(--ink)} .ga{color:var(--mut);font-size:.8rem;margin-top:.35rem} .ga span{color:#b8c6e0}
+ .alias{font-weight:700;font-size:1.05rem} .ctx{max-width:42rem} .q{margin-bottom:.35rem} .sum{color:var(--ink)} .ga{color:var(--mut);font-size:.8rem;margin-top:.35rem} .ga span{color:#b8c6e0}
  #outwrap{display:none;padding:.75rem 1.5rem;background:#0d1526;border-bottom:1px solid var(--line)} #out{width:100%;height:8rem;background:#0b1220;color:#9ecbff;border:1px solid var(--line);border-radius:6px;font:12px/1.4 ui-monospace,Menlo,monospace;padding:.6rem}
 </style></head><body>
 <header>
- <h1>Alias divergence review — ${rows.length} names to confirm</h1>
- <p class="lede">Each row is one <b>Suspect alias</b> — a name currently attached to that <b>Entity</b> in the old <code>er.aliases</code> list but missing from the clean <code>graph.db</code> store. The one question per row: <b>does this name really refer to this entity?</b> If yes → <b>keep</b>. If it's actually a different person / a relative / a mistake (e.g. "Ḥujjat" filed under Ḥujjat's <i>father</i>) → <b>remove</b>. Only the <b>suspicious</b> set is likely to contain errors; epithets & variants are almost all legit. Mark the errors, then hit <b>Copy removals</b> and paste the result back to me.</p>
+ <h1>Alias divergence review — only <b>${counts.ambiguous || 0}</b> truly need your judgment</h1>
+ <p class="lede">Two passes already resolved the clear cases: (1) heuristics keep token-sharing <b>variants</b> &amp; <b>epithets</b> and remove summary-named <b>relatives</b> ("father of X"); (2) an <b>AI pass</b> (world + corpus knowledge) judged the rest — <b>AI ✓ same</b> (e.g. Temüjin = Genghis Khan → keep) and <b>AI ✗ different</b> (e.g. Fatḥu'lláh-i-Qumí ≠ Fatḥu'lláh Big → remove), each with its reason. Only where <i>even the AI was unsure</i> stays in <b>Needs judgment</b>. Spot-check the AI tabs (untick/tick to override), work the Needs-judgment tab, then <b>Copy removals</b> and paste it back to me.</p>
  <div class="bar">
   <div class="filters">
-   <button data-f="all" class="on">All (${rows.length})</button>
-   <button data-f="suspicious">Suspicious (${counts.suspicious || 0})</button>
-   <button data-f="epithet">Epithet (${counts.epithet || 0})</button>
-   <button data-f="variant">Variant (${counts.variant || 0})</button>
+   <button data-f="ambiguous" class="on">❓ Needs judgment (${counts.ambiguous || 0})</button>
+   <button data-f="ai-diff">AI ✗ remove (${counts['ai-diff'] || 0})</button>
+   <button data-f="ai-same">AI ✓ keep (${counts['ai-same'] || 0})</button>
+   <button data-f="relative">relatives → remove (${counts.relative || 0})</button>
+   <button data-f="variant">variants → keep (${counts.variant || 0})</button>
+   <button data-f="epithet">epithets → keep (${counts.epithet || 0})</button>
+   <button data-f="all">all (${rows.length})</button>
   </div>
   <div class="tool"><span><span id="n">0</span> marked remove</span><button class="exp" id="copy">Copy removals</button></div>
  </div>
