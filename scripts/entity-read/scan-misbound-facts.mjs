@@ -13,9 +13,9 @@ const sigToks = (s) => new Set(nrm(s).replace(/\([^)]*\)/g, ' ').split(/[^a-z0-9
 const allToks = (s) => new Set(nrm(s).split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !HON.has(t)));
 // returns the offending subject string if the fact is a cross-filed roster fact, else null (mirrors bio.js factSubjectOk)
 const misSubject = (name, aliasArr, statement) => {
-  const m = String(statement || '').match(/^\s*([^—–]{2,60}?)\s+[—–]\s+\S/);
+  const m = String(statement || '').match(/^\s*(.{2,60}?)\s+[-–—―−]\s+\S/);
   if (!m) return null;
-  if (/^\s*(his|her|their|its)\b/i.test(m[1])) return null;
+  if (/^\s*(he|she|they|it|his|her|their|its|who|whom|this|that|these|those|in|on|at|when|after|before|during|next|owing|because)\b/i.test(m[1])) return null;
   const subj = sigToks(m[1]); if (!subj.size) return null;
   const mine = sigToks(name); for (const a of (aliasArr || [])) for (const t of sigToks(a)) mine.add(t);
   const whole = allToks(statement);

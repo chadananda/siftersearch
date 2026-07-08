@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-08T05:47:12.832Z",
+  "generated": "2026-07-08T05:50:08.591Z",
   "entries": [
+    {
+      "hash": "52882616",
+      "date": "2026-07-07",
+      "type": "Other",
+      "description": "Refine subject gate — keep facts that name the entity anywhere / possessive-subject",
+      "scope": null
+    },
     {
       "hash": "3b891321",
       "date": "2026-07-07",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Graph-extractor crashes on missing docs.period_id column",
       "scope": null
-    },
-    {
-      "hash": "a6bbced1",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Explicitly ignore SIGINT in graph workers — Node.js default kills on SIGINT",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-07": [
+      {
+        "hash": "52882616",
+        "date": "2026-07-07",
+        "type": "Other",
+        "description": "Refine subject gate — keep facts that name the entity anywhere / possessive-subject",
+        "scope": null
+      },
       {
         "hash": "3b891321",
         "date": "2026-07-07",
@@ -7051,13 +7058,6 @@
         "date": "2026-05-16",
         "type": "Fixed",
         "description": "Graph-extractor crashes on missing docs.period_id column",
-        "scope": null
-      },
-      {
-        "hash": "a6bbced1",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Explicitly ignore SIGINT in graph workers — Node.js default kills on SIGINT",
         "scope": null
       }
     ]

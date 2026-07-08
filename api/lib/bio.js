@@ -172,9 +172,9 @@ export async function bioSearch(rawQ) {
   const sigToks = (s) => new Set(nrm(s).replace(/\([^)]*\)/g, ' ').split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !HON.has(t)));
   const allToks = (s) => new Set(nrm(s).split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !HON.has(t)));   // keep parenthetical names
   const factSubjectOk = (name, aliasArr, statement) => {
-    const m = String(statement || '').match(/^\s*([^—–]{2,60}?)\s+[—–]\s+\S/);   // "Subject — description" roster form only
+    const m = String(statement || '').match(/^\s*(.{2,60}?)\s+[-–—―−]\s+\S/);   // "Subject — description" roster form (any spaced dash; intra-name hyphens have no spaces so are never split)
     if (!m) return true;                                                          // not the roster form → don't judge
-    if (/^\s*(his|her|their|its)\b/i.test(m[1])) return true;                      // possessive subject ("His sons —") → about the entity
+    if (/^\s*(he|she|they|it|his|her|their|its|who|whom|this|that|these|those|in|on|at|when|after|before|during|next|owing|because)\b/i.test(m[1])) return true;   // pronoun/prose lead, never a roster name → about the entity
     const subj = sigToks(m[1]); if (!subj.size) return true;                       // no name-like subject → keep
     const mine = sigToks(name); for (const a of (aliasArr || [])) for (const t of sigToks(a)) mine.add(t);
     const whole = allToks(statement);                                             // entity named ANYWHERE (incl. "…not Peter…") → keep
