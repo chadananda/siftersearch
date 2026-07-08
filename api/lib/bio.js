@@ -290,12 +290,17 @@ Return ONLY JSON: {"lead":"...","matches":[{"id","fact","clause"}]} — most rel
     };
     const parsed = looseParse(res.content);
     const nz = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, "'").replace(/\s+/g, ' ').toLowerCase().trim();
+    // connection-target precision: for "who met/knew X" the bound fact must actually NAME X. The target's
+    // significant name-tokens (honorifics stripped) must all appear in the evidence — never accept "met the Báb"
+    // as proof of "met Bahá'u'lláh". Recall for connection queries is carried by the deterministic roster path above.
+    const connTokens = connTarget ? [...tokOf(nameById[connTarget.id] || connTarget.nm)].filter((t) => !HON.has(t)) : [];
     const evidence = {}; const aiIds = []; const parts = [];
     for (const mm of (Array.isArray(parsed.matches) ? parsed.matches : [])) {
       const id = Number(mm.id); if (!id || aiIds.includes(id) || !exById[id]) continue;
       if (candidateIds && !candidateIds.includes(id)) continue;                               // never escape the candidate scope
       const fx = exById[id]; const want = nz(mm.fact);
       const hit = fx.find((f) => want && (nz(f.statement).includes(want) || want.includes(nz(f.statement)))) || fx[0];   // bind to the STORED fact (for citation)
+      if (connTokens.length && id !== connTarget.id) { const h = nz(`${hit.statement} ${hit.quote || ''}`); if (!connTokens.every((t) => h.includes(t))) continue; }   // evidence must name the connection target
       const clause = String(mm.clause || hit.statement).replace(/\s+/g, ' ').trim().slice(0, 160);
       aiIds.push(id); evidence[id] = { quote: hit.statement, proof: hit.quote || null, source: hit.source, url: hit.url || null, clause };
       const nm = nameById[id] || `#${id}`;
