@@ -19,7 +19,7 @@ const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</
 // persons + their name keys (canonical + aliases). Claims (top, by entity) for evidence.
 const persons = await queryAll(`SELECT ge.id, ge.canonical_name cn, ge.importance imp, er.side, er.summary, er.aliases
   FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE ge.entity_type='person'`);
-const claimRows = await queryAll(`SELECT entity_id, relation, statement FROM entity_claims WHERE import_batch IN ('gpb-v1','db-v1')`);
+const claimRows = await queryAll(`SELECT entity_id, relation, statement FROM entity_claims WHERE import_batch IN ('gpb-v1','db-v1') AND (status IS NULL OR status='supported')`);
 const claimsBy = new Map(); for (const c of claimRows) { if (!claimsBy.has(c.entity_id)) claimsBy.set(c.entity_id, []); const a = claimsBy.get(c.entity_id); if (a.length < 6) a.push(`(${c.relation}) ${c.statement}`); }
 const P = new Map();
 for (const p of persons) { let al = []; try { al = JSON.parse(p.aliases || '[]'); } catch { /* */ }

@@ -33,6 +33,7 @@ async function mapTarget(sub, subStmts, exclId) {
 }
 
 let ids = (process.env.IDS || '').split(',').map((s) => s.trim()).filter(Boolean);
+if (!ids.length) { try { const v = JSON.parse(readFileSync('tmp/siftersearch-sweep-verdicts.json', 'utf8')); ids = Object.entries(v).filter(([, x]) => x && x.nPeople > 1).map(([id]) => id); } catch { /* */ } }
 if (!ids.length) { try { const v = JSON.parse(readFileSync('tmp/siftersearch-conflation-verdicts.json', 'utf8')); ids = Object.entries(v).filter(([, x]) => x && x.coherent === false && (x.n_people || 0) >= 2).map(([id]) => id); } catch { /* */ } }
 console.error(`records to re-adjudicate: ${ids.length}`);
 const ents = ids.length ? await queryAll(`SELECT id, canonical_name cn FROM graph_entities WHERE id IN (${ids.map(() => '?').join(',')})`, ids) : [];
@@ -42,7 +43,7 @@ let records = [];
 if (!process.env.FORCE && existsSync(CACHE)) { records = JSON.parse(readFileSync(CACHE, 'utf8')); console.error(`loaded ${records.length} cached records (FORCE=1 to re-adjudicate)`); }
 else {
 for (const e of ents) {
-  const claims = await queryAll(`SELECT id, relation, statement, doc_id, para_id FROM entity_claims WHERE entity_id=? AND import_batch IN ('gpb-v1','db-v1') ORDER BY id`, [e.id]);
+  const claims = await queryAll(`SELECT id, relation, statement, doc_id, para_id FROM entity_claims WHERE entity_id=? AND import_batch IN ('gpb-v1','db-v1') AND (status IS NULL OR status='supported') ORDER BY id`, [e.id]);
   if (claims.length < 2) continue;
   const body = claims.map((c, i) => `${i}. (${c.relation}) ${c.statement}\n   SCENE: ${scene(c.doc_id, c.para_id)}`).join('\n');
   let r; try { const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `ENTITY: ${e.cn}\nCLAIMS:\n${body}` }], { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 1700, responseFormat: { type: 'json_object' } }); r = JSON.parse((res.content || '').match(/\{[\s\S]*\}/)[0]); } catch { continue; }
