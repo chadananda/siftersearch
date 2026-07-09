@@ -188,6 +188,12 @@ and returns `consistent | contradictory | insufficient` **with the axis**:
 - **nisba / place** (Yazdí ≠ Turshízí — near-definitive)
 - **role / station** (roadside dervish ≠ Ni‘matu'lláhí leader)
 - **converter-chain, kinship, connection-target**
+- **common-reference / prominence** (the P(e|m) prior) — a name/title used BARE, assuming
+  familiarity, denotes the **most commonly known bearer** (bare "Vaḥíd" → Siyyid Yaḥyá-i-Dárábí;
+  "Navváb" → Ásíyih Khánum). The *absence* of disambiguation is positive evidence for the default
+  referent, so a thin same-named record with no distinguishing detail resolves into the prominent
+  bearer; for the central figures a bare mention is unambiguous (no further evidence needed). An
+  explicit distinguishing nisba/era/role in the lesser record blocks the inference.
 
 Called by **Integrate** (staged entity vs candidate → merge / split / hold), **Search**
 (query predicate vs claim → qualify / reject), and **Verify** (claim vs profile → sets
