@@ -68,30 +68,36 @@ if (USE_TOC) {
 console.error(`disambiguate DOC=${DOC} · ${paras.length} paras · ${segs.length} segments (${USE_TOC ? 'TOC/chapter' : 'bounded-run'}) · WRITE=${WRITE} · model=${MODEL}`);
 
 const placeEraOf = (note) => { const m = String(note).match(/@[^—|]*/); return m ? m[0].replace(/^@/, '').trim() : ''; };
-const CONC = +(process.env.CONC || 6);   // chapters processed concurrently (each chapter stays sequential internally)
-let done = 0;
+const CONC = +(process.env.CONC || 5);   // chapters processed concurrently (each chapter stays sequential internally)
+const RESUME = process.env.RESUME === '1'; // skip paragraphs already disambiguated (idempotent restart)
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const retry = async (fn, n = 5) => { let err; for (let i = 0; i < n; i++) { try { return await fn(); } catch (e) { err = e; await sleep(700 * (i + 1)); } } throw err; };
+process.on('unhandledRejection', (e) => console.error(`unhandledRejection: ${String(e?.message || e).slice(0, 80)}`)); // never let a transient blip kill the run
+const doneSet = RESUME ? new Set((await queryAll(`SELECT external_para_id pid FROM content WHERE doc_id=? AND context_model='deepseek-disambig-v1' AND context IS NOT NULL`, [DOC])).map((r) => r.pid)) : new Set();
+let done = 0, failed = 0;
 // One segment (chapter) = one sequential growing cache. runPlaceEra is LOCAL so chapters can run in parallel.
 async function processSeg(seg, si) {
   const summaries = []; let runPlaceEra = '';
   const label = USE_TOC ? (seg[0].chapterNum || 'front-matter') : `${seg[0].pid}..${seg[seg.length - 1].pid}`;
   console.error(`== seg ${si + 1}/${segs.length} · ${label} (${seg.length} paras) start`);
   for (const p of seg) {
+    if (RESUME && doneSet.has(p.pid)) continue;
     const sceneLine = USE_TOC ? `${p.chapterNum || ''}${p.chapterTitle ? ' · ' + p.chapterTitle : ''}${p.scene ? ' · ' + p.scene : ''}`.trim() : (p.heading || '');
     const priorBlock = summaries.slice(-12).map((s) => s.line).join('\n');
     const user = `SCENE: ${sceneLine || '(none)'}\nRUNNING PLACE/ERA (inherit unless this paragraph moves): ${runPlaceEra || '(not yet established — infer from scene)'}\n\nNOTES FOR PRECEDING PARAGRAPHS (identity established here carries forward):\n${priorBlock || '(none — first paragraph of the chapter)'}\n\nCURRENT PARAGRAPH [${p.pid}]:\n${p.text}`;
     let out = '';
-    try { const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 400 }); out = (res.content || '').trim().replace(/^CTX:\s*/i, ''); }
-    catch (e) { console.error(`  [${p.pid}] FAIL ${String(e.message).slice(0, 50)}`); continue; }
+    try { const res = await retry(() => chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 400 })); out = (res.content || '').trim().replace(/^CTX:\s*/i, ''); }
+    catch (e) { console.error(`  [${p.pid}] AI FAIL ${String(e.message).slice(0, 50)}`); failed++; continue; }
+    if (!out) { failed++; continue; }
     summaries.push({ pid: p.pid, line: `[${p.pid}] ${out.replace(/\n/g, ' ')}` });
     const pe = placeEraOf(out); if (pe) runPlaceEra = pe;
-    done++;
-    if (!WRITE) console.log(`\n${p.pid} (${sceneLine}):\n${out}`);
-    else { await content.updateContextOnly(p.id, out, 'deepseek-disambig-v1'); if (done % 50 === 0) console.error(`  wrote ${done}`); }
+    if (!WRITE) { console.log(`\n${p.pid} (${sceneLine}):\n${out}`); done++; }
+    else { try { await retry(() => content.updateContextOnly(p.id, out, 'deepseek-disambig-v1')); done++; if (done % 50 === 0) console.error(`  wrote ${done}`); } catch (e) { console.error(`  [${p.pid}] WRITE FAIL ${String(e.message).slice(0, 50)}`); failed++; } }
   }
   console.error(`== seg ${si + 1}/${segs.length} · ${label} done`);
 }
 let next = 0;
-async function worker() { while (next < segs.length) { const i = next++; await processSeg(segs[i], i); } }
+async function worker() { while (next < segs.length) { const i = next++; try { await processSeg(segs[i], i); } catch (e) { console.error(`seg ${i + 1} crashed: ${String(e.message).slice(0, 60)}`); } } }
 await Promise.all(Array.from({ length: Math.min(CONC, segs.length) }, worker));
-console.error(`\nDONE — ${done} paragraphs disambiguated${WRITE ? ' → content.context (model=deepseek-disambig-v1)' : ' (dry run)'}`);
+console.error(`\nDONE — ${done} paragraphs disambiguated, ${failed} failed${WRITE ? ' → content.context (model=deepseek-disambig-v1)' : ' (dry run)'}`);
 process.exit(0);

@@ -8,9 +8,11 @@
 import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
 import { createHash } from 'crypto';
 const { queryAll, query } = await import('../../api/lib/db.js');
+const { assertDisambiguated } = await import('./_disambig-gate.mjs');
 const WRITE = process.env.WRITE === '1';
 const GPB = 21310;                                            // God Passes By — the seed of authority (coverage step 1)
 const BATCH = 'gpb-v1';
+await assertDisambiguated(GPB);   // pipeline invariant: never extract from an un-disambiguated book
 
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”.]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
 const HON = new Set('mirza haji hajji mulla siyyid sayyid aqa shaykh sheikh ustad karbilai hajj the of son daughter dervish native an outstanding figure community known as one'.split(' '));
