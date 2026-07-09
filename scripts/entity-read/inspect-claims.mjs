@@ -15,7 +15,9 @@ const win = (doc, pid, before = 8, after = 3) => { const arr = docParas.get(doc)
 const claims = await queryAll(`SELECT ec.id, ec.entity_id, ge.canonical_name cn, ec.relation, ec.statement, ec.doc_id, ec.para_id, ec.status
   FROM entity_claims ec JOIN graph_entities ge ON ge.id=ec.entity_id WHERE ec.id IN (${ids.map(() => '?').join(',')}) ORDER BY ec.doc_id, ec.para_id`, ids);
 for (const c of claims) {
-  console.log(`\n${'='.repeat(90)}\nCLAIM ${c.id}  entity=${c.entity_id} "${c.cn}"  status=${c.status || 'supported'}\n  relation: ${c.relation}\n  statement: ${c.statement}\n  cited: ${c.doc_id === 21310 ? 'GPB' : 'DB'} ${c.para_id}\n${'-'.repeat(90)}`);
+  const ctx = await queryAll(`SELECT context, context_model FROM content WHERE doc_id=? AND external_para_id=? AND deleted_at IS NULL LIMIT 1`, [c.doc_id, c.para_id]);
+  const cx = ctx[0] || {};
+  console.log(`\n${'='.repeat(90)}\nCLAIM ${c.id}  entity=${c.entity_id} "${c.cn}"  status=${c.status || 'supported'}\n  relation: ${c.relation}\n  statement: ${c.statement}\n  cited: ${c.doc_id === 21310 ? 'GPB' : 'DB'} ${c.para_id}\n  >> content.context [${cx.context_model || 'none'}]: ${cx.context == null ? '(NULL — never disambiguated)' : cx.context}\n${'-'.repeat(90)}`);
   console.log(win(c.doc_id, c.para_id));
 }
 console.log(`\n${'='.repeat(90)}\ndistinct entities in this set: ${[...new Set(claims.map((c) => c.entity_id + ':' + c.cn))].join(' | ')}`);
