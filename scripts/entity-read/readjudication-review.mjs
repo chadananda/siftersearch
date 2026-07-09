@@ -61,15 +61,21 @@ for (const e of ents) {
 writeFileSync(CACHE, JSON.stringify(records));
 }
 
+// source citation per claim — so each claim links to its exact paragraph (book + ¶) and can be verified
+const claimSrc = new Map((await queryAll(`SELECT id, doc_id, para_id FROM entity_claims WHERE import_batch IN ('gpb-v1','db-v1')`)).map((c) => [c.id, c]));
+const srcUrl = (id) => { const c = claimSrc.get(id); if (!c || !c.para_id) return null; const slug = c.doc_id === 21310 ? 'god-passes-by_shoghi-effendi' : c.doc_id === 21308 ? 'dawn-breakers_nabil' : null; return slug ? `https://oceanlibrary.com/${slug}?paraId=${c.para_id}` : null; };
+const srcLabel = (id) => { const c = claimSrc.get(id); return c ? `${c.doc_id === 21310 ? 'GPB' : c.doc_id === 21308 ? 'DB' : 'doc' + c.doc_id} ${c.para_id || ''}`.trim() : ''; };
+const srcTag = (id) => { const u = srcUrl(id); return u ? `<a class="src" href="${u}" target="_blank">${esc(srcLabel(id))} ¶</a>` : `<span class="src">${esc(srcLabel(id))}</span>`; };
+
 const opRow = (rec) => {
   const groups = rec.groups.filter((g) => g.claims.length);   // never show an empty proposed person
   const nPeople = groups.length;
   const grp = (g, i) => `<div class="grp ${g.keep ? 'keep' : 'move'}" data-op="${g.keep ? 'keep' : 'move'}" data-rec="${rec.id}" data-gi="${i}" data-target="${g.target ? g.target.id : ''}">
      <div class="ghead">${g.keep ? '<span class="klbl">KEEP as-is</span>' : `<span class="tog"><button class="y">SPLIT ✓</button><button class="n">no</button></span><span class="mlbl">→ ${g.target && g.target.id !== 'NEW' ? `[${g.target.id}] ${esc(g.target.cn)}` : 'a NEW person'}</span>`} <b class="desc">${esc(g.descriptor)}</b> <span class="cn">· ${g.claims.length} claim${g.claims.length > 1 ? 's' : ''}</span></div>
-     ${g.claims.map((c) => `<div class="ci" title="SCENE: ${esc(c.scene.slice(0, 380))}">[${c.id}] <span class="rel">${esc(c.relation)}</span> ${esc(String(c.statement).slice(0, 150))}</div>`).join('')}</div>`;
+     ${g.claims.map((c) => `<div class="ci" title="SCENE: ${esc(c.scene.slice(0, 380))}">[${c.id}] <span class="rel">${esc(c.relation)}</span> ${esc(String(c.statement).slice(0, 150))} ${srcTag(c.id)}</div>`).join('')}</div>`;
   return `<div class="rec"><div class="rh">[${rec.id}] <b>${esc(rec.cn)}</b> <span class="cn">— ${rec.nClaims} claims → ${nPeople} ${nPeople > 1 ? 'people' : 'person'}${rec.quarantines.length ? ` + ${rec.quarantines.length} to quarantine` : ''}</span></div>
    ${groups.map(grp).join('')}
-   ${rec.quarantines.length ? `<div class="grp q"><div class="ghead"><span class="klbl q">QUARANTINE — wrong-scene / hallucinated claims</span></div>${rec.quarantines.map((q) => `<div class="ci qrow" data-op="quarantine" data-rec="${rec.id}" data-cid="${q.id}"><span class="tog"><button class="y">remove ✓</button><button class="n">keep</button></span> [${q.id}] <span class="rel">${esc(q.relation)}</span> ${esc(String(q.statement).slice(0, 120))} <span class="why">— ${esc(q.reason)}: ${esc(String(q.issue).slice(0, 90))}</span></div>`).join('')}</div>` : ''}
+   ${rec.quarantines.length ? `<div class="grp q"><div class="ghead"><span class="klbl q">QUARANTINE — wrong-scene / hallucinated claims</span></div>${rec.quarantines.map((q) => `<div class="ci qrow" data-op="quarantine" data-rec="${rec.id}" data-cid="${q.id}"><span class="tog"><button class="y">remove ✓</button><button class="n">keep</button></span> [${q.id}] <span class="rel">${esc(q.relation)}</span> ${esc(String(q.statement).slice(0, 120))} ${srcTag(q.id)} <span class="why">— ${esc(q.reason)}: ${esc(String(q.issue).slice(0, 90))}</span></div>`).join('')}</div>` : ''}
   </div>`;
 };
 
@@ -87,6 +93,7 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Re-adjudic
  .on-y .y{background:#15803d;border-color:#22c55e;color:#fff}.qrow.on-y .y{background:#b91c1c;border-color:#ef4444}.on-n .n{background:#475569;color:#fff}
  .ci{font-size:.84rem;padding:.18rem .45rem;margin:.12rem 0;border-left:2px solid #22304d}.ci:hover{background:#0e1830}.rel{color:#7dd3fc;font-size:.72rem;text-transform:uppercase;letter-spacing:.02em;margin-right:.25rem}
  .qrow{border-left-color:var(--sus)}.why{color:var(--mut);font-size:.78rem}
+ .src{color:#8aa0c0;font-size:.72rem;text-decoration:none;margin-left:.35rem;white-space:nowrap}.src:hover{color:#7dd3fc;text-decoration:underline}
 </style></head><body>
 <header><h1>Claim re-adjudication — ${records.length} records proposed</h1>
 <p class="lede">The pipeline read each claim <b>with its source scene</b> and proposes: <b style="color:#7bb35e">KEEP</b> the coherent group, <b style="color:#f59e0b">SPLIT OUT</b> other people (→ an existing entity or NEW), and <b style="color:#ef4444">QUARANTINE</b> hallucinated / mis-attributed claims. <b>Nothing is pre-selected.</b> Click <b>✓</b> ONLY on the ops you've verified — a good split, or a claim that really should be quarantined. <b>Copy ops exports only your ✓s</b> (leave the rest undecided). Do a few, Copy, paste back — repeat at your pace. I apply only what you confirmed, reversibly.</p>
