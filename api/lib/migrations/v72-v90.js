@@ -306,6 +306,18 @@ export const migrations = {
 
     logger.info('Migration 86 complete: improvable substrate (entity_mentions_v2, entity_decisions, claim temporal+semantic_key, projection markers)');
   },
+
+  87: async () => {
+    // Fast AI-FREE entity LOOKUP index (sifter.db) — transliteration-invariant recall over the projected entities.
+    // skeleton_key = api/lib/translit-key.js skeletonKeys(surface); many keys per entity (canonical + aliases + variants).
+    // Rebuildable from the projection via scripts/entity-read/build-lookup-index.mjs. RECALL/lookup only — never determinative.
+    await query(`CREATE TABLE IF NOT EXISTS entity_lookup_keys (
+      id INTEGER PRIMARY KEY, skeleton_key TEXT NOT NULL, entity_id INTEGER NOT NULL,
+      surface TEXT, surface_norm TEXT, is_canonical INTEGER DEFAULT 0, entity_type TEXT, importance REAL)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_elk_key    ON entity_lookup_keys(skeleton_key)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_elk_entity ON entity_lookup_keys(entity_id)`);
+    logger.info('Migration 87 complete: entity_lookup_keys (fast transliteration-invariant lookup index)');
+  },
 };
 
 export const graphMigrations = {

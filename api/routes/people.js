@@ -12,6 +12,8 @@
 //     limit=<1-200> (default 50)  offset=<n>
 //   GET /api/v1/people/:id             — full dossier (relationships, GPB citations, cross-corpus reach)
 import { listBioPersons, getBioPerson, bioSearch } from '../lib/bio.js';
+import { queryAll } from '../lib/db.js';
+import { skeletonKeys } from '../lib/translit-key.js';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ]/g, '').toLowerCase();
 const toks = (s) => fold(s).split(/[^a-z0-9]+/).filter((t) => t.length > 1);
@@ -42,6 +44,39 @@ export default async function peopleRoutes(server) {
     }));
     return { total, limit, offset, withPortraits: data.withPortraits, sides: data.sides, books: data.books, people: page };
   });
+
+  // GET /api/v1/entities/lookup?q=… — FAST, AI-FREE transliteration-invariant candidate lookup over projected
+  // entities (any spelling → candidate set). RECALL only: returns candidates for a human/AI researcher to then bind
+  // by evidence — the lookup itself is never determinative. Indexed on entity_lookup_keys.skeleton_key.
+  //   q=<name any transliteration>  type=<person|place|work|group>  limit=<1-50, default 20>
+  const entityLookup = async (request) => {
+    const q = String(request.query?.q || '').trim();
+    const limit = Math.min(50, Math.max(1, parseInt(request.query?.limit, 10) || 20));
+    const keys = [...skeletonKeys(q)];
+    if (!q || !keys.length) return { query: q, keys: 0, candidates: [] };
+    const ph = keys.map(() => '?').join(',');
+    const typeSql = request.query?.type ? ' AND ge.entity_type=?' : '';
+    const params = [...keys, ...(request.query?.type ? [request.query.type] : []), limit];
+    const rows = await queryAll(
+      `SELECT lk.entity_id, ge.canonical_name, ge.entity_type, ge.importance,
+              COUNT(DISTINCT lk.skeleton_key) shared, MAX(lk.is_canonical) canon_hit,
+              GROUP_CONCAT(DISTINCT lk.surface) surfaces
+         FROM entity_lookup_keys lk JOIN graph_entities ge ON ge.id = lk.entity_id
+        WHERE lk.skeleton_key IN (${ph})${typeSql}
+        GROUP BY lk.entity_id
+        ORDER BY canon_hit DESC, shared DESC, (ge.importance IS NULL), ge.importance DESC
+        LIMIT ?`, params);
+    return {
+      query: q, keys: keys.length,
+      candidates: rows.map((r) => ({
+        id: r.entity_id, name: r.canonical_name, type: r.entity_type, importance: r.importance,
+        matched_surfaces: (r.surfaces || '').split(',').slice(0, 6), shared_keys: r.shared, canonical_match: !!r.canon_hit,
+      })),
+      note: 'RECALL candidates only — bind by evidence, not by this list',
+    };
+  };
+  server.get('/entities/lookup', entityLookup);
+  server.get('/people/lookup', entityLookup);
 
   // GET /api/v1/people/search?q=… — intelligent meaning-search; returns matching ids + per-person evidence + answer
   server.get('/people/search', async (request) => await bioSearch(request.query?.q));
