@@ -37,11 +37,13 @@ const sceneOf = async (paras) => {                 // representative disambiguat
   return rows.map((r) => `[${r.pid}] ${String(r.context).slice(0, 220)}`).join('\n');
 };
 
-const SYS = `You are an entity-resolution adjudicator for a Bábí-Bahá'í prosopography. Given a MENTION CLUSTER (a person as the source resolves them, with representative scenes) and CANDIDATE existing entities (found by transliteration-invariant name recall — candidates only, NOT matches), decide by EVIDENCE:
+const SYS = `You are an entity-resolution adjudicator for a Bábí-Bahá'í prosopography. Given a MENTION CLUSTER (an entity as the source resolves it, with representative scenes) and CANDIDATE existing PERSON entities (found by transliteration-invariant name recall — candidates only, NOT matches):
+FIRST classify the cluster's TYPE. If it is NOT an individual human — i.e. a PLACE (fort, city, house, shrine), a WORK (tablet/book), a CONCEPT/term, a RELIGION or COMMUNITY (the Bábí/Bahá'í Faith, "the people of the Bayán"), a GROUP, or an EVENT/upheaval, or a messianic/prophetic archetype (the Qá'im, the Imám-Mihdí) — return {"verdict":"other","type":"place|work|concept|community|group|event","canonical":"<the reference>","decisive":"not a person","confidence":1}.
+If it IS a person, decide by EVIDENCE:
 • "link" — the cluster IS one specific candidate (same person: compatible role, place, era, connections). Give its id.
-• "create" — the cluster is a person NOT among the candidates (or the only name-candidate is a contaminated/bare record whose evidence contradicts this cluster's role/era). Give a canonical name = the source's own resolved form.
-• "uncertain" — evidence is insufficient; route to human.
-Rules: name similarity ALONE never justifies "link" (namesakes abound); require role/place/era/connection agreement. A descriptor that contradicts a candidate (an "amanuensis" is not a "traditions-scholar") forbids linking them. Prefer "create" or "uncertain" over a wrong link (a false merge fabricates a person). Return ONLY JSON: {"verdict":"link|create|uncertain","entity_id":<id or null>,"canonical":"<name or null>","decisive":"<the axis that settled it, <=20 words>","confidence":0.0-1.0}`;
+• "create" — a person NOT among the candidates (or the only name-candidate is a contaminated/bare record whose evidence contradicts this cluster's role/era). Give canonical = the source's own resolved form.
+• "uncertain" — evidence insufficient; route to human.
+Rules: name similarity ALONE never justifies "link" (namesakes abound); require role/place/era/connection agreement. A descriptor that contradicts a candidate (an "amanuensis" is not a "traditions-scholar") forbids linking. Prefer "create"/"uncertain" over a wrong link (a false merge fabricates a person). Return ONLY JSON: {"verdict":"link|create|uncertain|other","type":"person|place|work|concept|community|group|event","entity_id":<id or null>,"canonical":"<name or null>","decisive":"<axis that settled it, <=20 words>","confidence":0.0-1.0}`;
 
 let done = 0, proposed = 0;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -63,14 +65,14 @@ async function processCluster(c) {
   try { const res = await retry(() => chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 400, responseFormat: { type: 'json_object' } })); v = JSON.parse((res.content || '').match(/\{[\s\S]*\}/)[0]); }
   catch (e) { console.error(`  ["${c.resolved_as.slice(0, 40)}"] FAIL ${String(e.message).slice(0, 40)}`); return; }
   done++;
-  const kind = v.verdict === 'link' ? 'link' : v.verdict === 'create' ? 'create' : 'uncertain';
-  console.log(`\n"${c.resolved_as.slice(0, 60)}" (${c.freq}×) → ${kind.toUpperCase()}${v.entity_id ? ' #' + v.entity_id : ''}${v.canonical ? ' “' + v.canonical + '”' : ''}  · ${v.decisive || ''}`);
+  const kind = v.verdict === 'other' ? 'other-type' : v.verdict === 'link' ? 'link' : v.verdict === 'create' ? 'create' : 'uncertain';
+  console.log(`\n"${c.resolved_as.slice(0, 60)}" (${c.freq}×) → ${kind.toUpperCase()}${v.type && v.type !== 'person' ? '(' + v.type + ')' : ''}${v.entity_id ? ' #' + v.entity_id : ''}${v.canonical ? ' “' + v.canonical + '”' : ''}  · ${v.decisive || ''}`);
   if (WRITE) {
-    const payload = JSON.stringify({ resolved_as: c.resolved_as, verdict: v.verdict, entity_id: v.entity_id || null, canonical: v.canonical || null, freq: c.freq });
+    const payload = JSON.stringify({ resolved_as: c.resolved_as, verdict: v.verdict, type: v.type || 'person', entity_id: v.entity_id || null, canonical: v.canonical || null, freq: c.freq });
     const evidence = JSON.stringify({ scenes: c.paras.split(',').slice(0, 6), candidates: cand.map((x) => x.id) });
     await query(`INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, confidence, status, valid_time)
       VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-      [kind === 'link' ? 'link' : kind === 'create' ? 'create' : 'uncertain', 'mention-cluster',
+      [kind, 'mention-cluster',
        JSON.stringify(c.paras.split(',').slice(0, 20)), payload, evidence, v.decisive || null,
        `model:${MODEL}`, 2, v.confidence ?? null, 'proposed', null]); proposed++;
   }
