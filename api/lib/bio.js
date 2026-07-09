@@ -242,12 +242,21 @@ export async function bioSearch(rawQ) {
     const cl = (s) => String(s || '').replace(/\s+/g, ' ').trim();
     const tName = nameById[connTarget.id] || 'them';
     const grp = best ? cl(best.name.replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+group$/i, '').replace(/^the\s+/i, '')) : '';
+    // evidence for "did X meet TARGET" is not only the shared episode — a cited FACT that names the target is often the
+    // real proof (e.g. Siyyid Ḥusayn-i-Yazdí's imprisonment WITH Bahá'u'lláh in the Síyáh-Chál, a GPB fact). Pull those
+    // target-naming facts into each member's pool and PREFER them, so the clause cites the actual connection, not a thin
+    // co-occurrence that reads as "no explicit meeting".
+    const cTok = [...tokOf(nameById[connTarget.id] || connTarget.nm)].filter((t) => !HON.has(t));
+    const namesTarget = (f) => { const h = nrm(`${f.statement || ''} ${f.quote || ''}`); return cTok.length ? cTok.every((t) => h.includes(t)) : nrm(f.statement || '').includes(connTarget.nm); };
     const members = [];
     for (const id of candidateIds) {
       const shared = (epById[id] || []).filter((e) => tSlugs.has(e.slug));
-      if (!shared.length) continue;
-      const ev = shared.find((e) => nrm(e.statement).includes(connTarget.nm)) || shared[0];    // prefer the episode naming the target (better citation)
-      members.push({ id, name: nameById[id] || `#${id}`, ev, text: shared.map((e) => cl(e.statement)).join(' ').slice(0, 320) });
+      const targetFacts = (exById[id] || []).filter(namesTarget);   // cited facts naming the target (prison, meeting, accompaniment…)
+      if (!shared.length && !targetFacts.length) continue;
+      const ev = targetFacts.find((f) => f.url) || targetFacts[0]
+              || shared.find((e) => nrm(e.statement).includes(connTarget.nm)) || shared[0];   // prefer a linkable target-naming fact
+      const pool = [...targetFacts, ...shared];
+      members.push({ id, name: nameById[id] || `#${id}`, ev, text: pool.slice(0, 4).map((e) => cl(e.statement)).join(' ').slice(0, 340) });
     }
     if (members.length) {
       const CSYS = `For each person listed, write a SHORT clause (≤14 words, beginning with a verb) that answers the QUESTION for that person, drawn ONLY from the facts given for them. Include EVERY id — never omit anyone. Return ONLY JSON: {"lead":"<one short sentence stating the overall answer>","clauses":[{"id":<number>,"clause":"<verb phrase>"}]}.`;
@@ -261,13 +270,19 @@ export async function bioSearch(rawQ) {
         for (const c of (Array.isArray(p.clauses) ? p.clauses : [])) if (c && c.id != null) byId[Number(c.id)] = cl(c.clause).slice(0, 120);
       } catch { /* fall back to cleaned statements below */ }
       const stripName = (id, s) => { const nm = nameById[id] || ''; const re = new RegExp('^(' + nm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')[\\s,;:]*', 'i'); return cl(s).replace(re, '').replace(/^[\s,;:]+/, ''); };
-      const evidence = {}; const parts = [];
+      // roster recall is deterministic (people who share an episode with the target) — the LLM may NOT prune it. But a
+      // clause that explicitly DISCLAIMS the connection ("no mention of meeting X") is an evidence signal, not a prune:
+      // drop that member rather than assert a link the evidence denies. And every kept point must carry a source link.
+      const NEGC = /\bno mention\b|\bno explicit\b|\bnot (?:mention|meet|met|present|clearly|established|recorded)\b|\bunclear\b|\bno (?:evidence|record|meeting)\b|\bdid not\b/i;
+      const evidence = {}; const parts = []; const ids = [];
       for (const m of members) {
-        const clause = byId[m.id] || stripName(m.id, m.ev.statement).split(/[;.]/)[0].slice(0, 110);
-        evidence[m.id] = { quote: cl(m.ev.statement), proof: m.ev.quote || null, source: m.ev.source, url: m.ev.url || null };
-        parts.push(m.ev.url ? `${m.name} [${clause}](${m.ev.url})` : `${m.name} ${clause}`);
+        const clause = (byId[m.id] || stripName(m.id, m.ev.statement).split(/[;.]/)[0].slice(0, 110)).replace(/[\s.;,]+$/, '');   // trim trailing punctuation → no "clause.;" doubling
+        if (NEGC.test(clause)) continue;
+        const url = m.ev.url || ((epById[m.id] || []).find((e) => tSlugs.has(e.slug) && e.url) || {}).url || null;
+        evidence[m.id] = { quote: cl(m.ev.statement), proof: m.ev.quote || null, source: m.ev.source, url };
+        parts.push(url ? `${m.name} [${clause}](${url})` : `${m.name} ${clause}`);
+        ids.push(m.id);
       }
-      const ids = members.map((m) => m.id);
       const summary = `${lead || `${ids.length}${grp ? ' of the ' + grp : ''} connected to ${tName}.`} ${parts.join('; ')}.`.replace(/\s+/g, ' ').trim();
       return { ids, q, ...(best ? { group: best.id } : {}), reasoning: { summary, evidence } };
     }
@@ -313,10 +328,13 @@ Return ONLY JSON: {"lead":"...","matches":[{"id","fact","clause"}]} — most rel
       const fx = exById[id]; const want = nz(mm.fact);
       const hit = fx.find((f) => want && (nz(f.statement).includes(want) || want.includes(nz(f.statement)))) || fx[0];   // bind to the STORED fact (for citation)
       if (connTokens.length && id !== connTarget.id) { const h = nz(`${hit.statement} ${hit.quote || ''}`); if (!connTokens.every((t) => h.includes(t))) continue; }   // evidence must name the connection target
-      const clause = String(mm.clause || hit.statement).replace(/\s+/g, ' ').trim().slice(0, 160);
-      aiIds.push(id); evidence[id] = { quote: hit.statement, proof: hit.quote || null, source: hit.source, url: hit.url || null, clause };
+      const clause = String(mm.clause || hit.statement).replace(/\s+/g, ' ').trim().slice(0, 160).replace(/[\s.;,]+$/, '');
+      // every point must link: if the cited fact has no URL (e.g. sourced from a Pillars book outside the
+      // GPB/Dawn-Breakers citation scheme), borrow a source link from another of this person's cited facts.
+      const citeUrl = hit.url || (fx.find((f) => f.url) || {}).url || null;
+      aiIds.push(id); evidence[id] = { quote: hit.statement, proof: hit.quote || null, source: hit.source, url: citeUrl, clause };
       const nm = nameById[id] || `#${id}`;
-      parts.push(hit.url ? `${nm} [${clause}](${hit.url})` : `${nm} ${clause}`);
+      parts.push(citeUrl ? `${nm} [${clause}](${citeUrl})` : `${nm} ${clause}`);
     }
     // integrated explanation: lead sentence + each person's query-matched evidence woven in, inline-linked to its source.
     // If the target/consistency gates filtered every match, DROP the LLM's pre-filter lead — never name someone we excluded.
