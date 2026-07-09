@@ -50,7 +50,8 @@ Rules:
 • object = the other entity (a person/place/work name) or a short literal value.
 • proof = a span copied VERBATIM and EXACTLY from the paragraph (<=200 chars) that supports the claim. If you cannot copy an exact supporting span, OMIT the claim.
 • when = copy the note's era for this scene (keep its "[pin: …]" / "[est: …]" tag); use a more specific date only if the paragraph states one.
-• ONLY what the paragraph states — NO outside knowledge. Skip generic/among-many claims.
+• ONLY what the paragraph states — NO outside knowledge.
+• Capture LOAD-BEARING biographical facts (birth, death/martyrdom w/ place+cause, kinship, conversion, teacher/disciple, office/title, participation in an episode, authorship, meetings, journeys), NOT narrative color. The object must be a CONCRETE named entity (person/place/work) or a substantive value — SKIP vague or anaphoric objects ("that book", "his request", "the matter"). At most ONE characterized-as per person (their essential role), never one per descriptive phrase. Avoid the catch-all "related-to" unless nothing specific fits.
 RELATIONS: ${relList}
 Return ONLY JSON: {"claims":[{"subject":"..","relation":"..","object":"..","proof":"..","when":".."}]}`;
 
