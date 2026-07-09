@@ -30,6 +30,9 @@ const pnum = (pid) => +String(pid).replace(/\D/g, '');
 
 const meta = (await queryAll(`SELECT title, author, religion, collection, year, description FROM docs WHERE id=?`, [DOC]))[0] || {};
 const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, meta.collection].filter(Boolean).join(' / '), meta.year ? `Year ${meta.year}` : '', meta.description ? `About: ${String(meta.description).slice(0, 240)}` : ''].filter(Boolean).join('\n');
+// Pass 2 → Pass 3: the book-level MAIN CAST seed gives every chapter book-wide identity, so chapters disambiguate
+// independently without losing a figure introduced elsewhere (fixes cross-chapter identity).
+const castSeed = process.env.NO_CAST === '1' ? '' : await (async () => { try { return (await (await import('./cast-seed.mjs')).buildCastSeed(DOC)).seed; } catch (e) { console.error(`cast-seed unavailable: ${e.message}`); return ''; } })();
 
 const SYS = `You write a MINIMAL disambiguation note for ONE paragraph of a historical narrative. An AI (not a parser) will read your note alongside the paragraph so it can identify the people and place without having read the earlier text. Write ONLY what that reader could NOT work out from this paragraph by itself — nothing more.
 
@@ -45,7 +48,8 @@ Do NOT restate a name already written in full; do NOT resolve what is already cl
 Format (compact prose for an AI reader — no rigid syntax): "@<place>, ~<era> — <only the resolutions actually needed>". Example: "@Yazd, ~1845 — "Mírzá Aḥmad" = Mírzá Aḥmad-i-Azghandí; "Siyyid Ḥusayn" = Siyyid Ḥusayn-i-Azghandí (his uncle)."
 
 BOOK:
-${bookMeta}`;
+${bookMeta}
+${castSeed ? `\nMAIN CAST (book-wide who's-who — resolve a bare or variant name to the right PRINCIPAL figure even when they were introduced in a DIFFERENT chapter; honour each "≠ (not to be confused with)" distinction; a bare name = the most-prominent matching figure UNLESS the paragraph's role/place/era fits a listed alternative):\n${castSeed}` : ''}`;
 
 // Load main-text paragraphs (+ chapter/scene labels for the TOC fast-path)
 let paras = await queryAll(`SELECT id, external_para_id pid, paragraph_index pidx, heading, text FROM content WHERE doc_id=? AND deleted_at IS NULL AND blocktype='paragraph' AND external_para_id IS NOT NULL ORDER BY paragraph_index`, [DOC]);
