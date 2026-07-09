@@ -31,17 +31,18 @@ const pnum = (pid) => +String(pid).replace(/\D/g, '');
 const meta = (await queryAll(`SELECT title, author, religion, collection, year, description FROM docs WHERE id=?`, [DOC]))[0] || {};
 const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, meta.collection].filter(Boolean).join(' / '), meta.year ? `Year ${meta.year}` : '', meta.description ? `About: ${String(meta.description).slice(0, 240)}` : ''].filter(Boolean).join('\n');
 
-const SYS = `You build a ROLLING DISAMBIGUATION INDEX for a historical narrative, one paragraph at a time. Given the BOOK metadata, the current SCENE (chapter/section heading = your place/period anchor), and the headers of all preceding paragraphs this chapter (established context), write ONE compact header that makes the CURRENT paragraph standalone. The narrative drops a person's titles/nisba once a scene has introduced them, so you MUST carry identity forward.
-Resolve every reference THAT APPEARS in the current paragraph — names, titles, epithets, pronouns, and definite-noun bridges ("the fort"→Ṭabarsí) — to the person/place's MOST-USED canonical handle. Rules:
-• KEEP honorifics/titles (Mírzá, Mullá, Siyyid, Ḥájí, Karbilá'í, Mashhadí, Ustád, Áqá) — they discriminate when nisbas match or are absent, and are sometimes the ENTIRE handle (Karbilá'í-‘Alí). NEVER strip titles. Use the short conventional handle when one exists (Quddús, Vaḥíd, the Báb), else the title-bearing form (Mullá Ḥusayn).
-• A bare, heavily title-dropped name resolves by COMMON REFERENCE to the most-prominent bearer established in context (heavy ellipsis = a very familiar figure). One person may carry two names (e.g. bare "Mírzá Aḥmad" in the Bábí-scribe context ≡ "Mullá ‘Abdu'l-Karím-i-Qazvíní") — resolve variants to the SAME canonical.
-• Pronouns inside quoted/reported speech (I, We, My, Our) refer to the SPEAKER, not the narrator (e.g. Bahá'u'lláh relating His own history: "We" = Bahá'u'lláh).
-• Central figures (the Báb, Bahá'u'lláh, ‘Abdu'l-Bahá, Quddús) use their fixed short handle; don't expand.
-• PLACE and PERIOD: inherit from the SCENE and prior context; PERIOD is when the events occurred (a flashback keeps its own time).
-• Use ONLY the book text, scene, and prior context — NO outside knowledge. If a reference cannot be resolved from context, write surface→? — do NOT guess.
-• List ONLY TRANSFORMING resolutions: a short/bare/variant name→its fuller canonical, a pronoun/epithet→its person, a definite-NP bridge→its referent. NEVER emit X→X for a name already in canonical form (drop it — it needs no resolution). List each DISTINCT resolution ONCE (never repeat a pronoun per occurrence). Map a pronoun ONLY where its referent is ambiguous (several people present); otherwise omit pronouns.
-Output EXACTLY ONE terse line (it is prepended to every paragraph); if nothing needs resolving, the middle section is empty:
-CTX: @<place> ~<period> | <transforming resolutions only, honorifics kept> | <≤12-word resolved event>
+const SYS = `You write a MINIMAL disambiguation note for ONE paragraph of a historical narrative. An AI (not a parser) will read your note alongside the paragraph so it can identify the people and place without having read the earlier text. Write ONLY what that reader could NOT work out from this paragraph by itself — nothing more.
+
+You get the BOOK metadata, the SCENE (chapter + section heading), the running PLACE/ERA, and the notes for preceding paragraphs (identity established earlier carries forward, because the narrative drops a person's titles/nisba once a scene has introduced them).
+
+Include, and only include:
+• PLACE and ERA in force. Inherit from the running context; change only when THIS paragraph moves location or time. The chapter fixes the era — give an approximate time (a year or short range), NOT the heading text.
+• Any bare / elided / variant name or ambiguous epithet the paragraph uses, resolved to the full canonical handle established earlier — this is the main job (e.g. bare "Mírzá Aḥmad" here = Mírzá Aḥmad-i-Azghandí). KEEP honorifics/titles (Mírzá, Mullá, Siyyid, Ḥájí, Karbilá'í, Mashhadí, Ustád, Áqá) — they discriminate when nisbas match or are absent and are sometimes the whole handle (Karbilá'í-‘Alí); never strip them. Use the most-used handle (Quddús, Vaḥíd, the Báb). A heavily title-dropped bare name resolves by COMMON REFERENCE to the most-prominent bearer; one person may carry two names (bare "Mírzá Aḥmad" in the Bábí-scribe context = Mullá ‘Abdu'l-Karím-i-Qazvíní).
+• A pronoun ONLY when its referent is genuinely unclear from this paragraph (several people in play). Skip pronouns that are obvious. Inside quoted speech, I/We/Our = the speaker.
+
+Do NOT restate a name already written in full; do NOT resolve what is already clear; do NOT map generic phrases ("the Cause", "the Faith"); do NOT add outside knowledge. If a reference truly cannot be resolved from context, mark it "?". If nothing beyond place/era needs saying, give just the place/era.
+
+Format (compact prose for an AI reader — no rigid syntax): "@<place>, ~<era> — <only the resolutions actually needed>". Example: "@Yazd, ~1845 — "Mírzá Aḥmad" = Mírzá Aḥmad-i-Azghandí; "Siyyid Ḥusayn" = Siyyid Ḥusayn-i-Azghandí (his uncle)."
 
 BOOK:
 ${bookMeta}`;
@@ -66,20 +67,21 @@ if (USE_TOC) {
 }
 console.error(`disambiguate DOC=${DOC} · ${paras.length} paras · ${segs.length} segments (${USE_TOC ? 'TOC/chapter' : 'bounded-run'}) · WRITE=${WRITE} · model=${MODEL}`);
 
-let carried = ''; let done = 0;
+const placeEraOf = (note) => { const m = String(note).match(/@[^—|]*/); return m ? m[0].replace(/^@/, '').trim() : ''; };
+let runPlaceEra = ''; let done = 0;
 for (const [si, seg] of segs.entries()) {
   const summaries = [];
   const label = USE_TOC ? (seg[0].chapterNum || 'front-matter') : `${seg[0].pid}..${seg[seg.length - 1].pid}`;
   console.error(`\n== segment ${si + 1}/${segs.length} · ${label} (${seg.length} paras) ==`);
   for (const p of seg) {
     const sceneLine = USE_TOC ? `${p.chapterNum || ''}${p.chapterTitle ? ' · ' + p.chapterTitle : ''}${p.scene ? ' · ' + p.scene : ''}`.trim() : (p.heading || '');
-    const priorBlock = (carried ? `ENTERING — carried context: ${carried}\n` : '') + summaries.map((s) => s.line).join('\n');
-    const user = `SCENE: ${sceneLine || '(none)'}\n\nESTABLISHED CONTEXT (prior paragraph summaries this chapter):\n${priorBlock || '(none — first paragraph)'}\n\nCURRENT PARAGRAPH [${p.pid}]:\n${p.text}`;
+    const priorBlock = summaries.slice(-12).map((s) => s.line).join('\n');
+    const user = `SCENE: ${sceneLine || '(none)'}\nRUNNING PLACE/ERA (inherit unless this paragraph moves): ${runPlaceEra || '(not yet established — infer from scene)'}\n\nNOTES FOR PRECEDING PARAGRAPHS (identity established here carries forward):\n${priorBlock || '(none — first paragraph of the chapter)'}\n\nCURRENT PARAGRAPH [${p.pid}]:\n${p.text}`;
     let out = '';
-    try { const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 220 }); out = (res.content || '').trim().replace(/^CTX:\s*/i, ''); }
+    try { const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 200 }); out = (res.content || '').trim().replace(/^CTX:\s*/i, ''); }
     catch (e) { console.error(`  [${p.pid}] FAIL ${String(e.message).slice(0, 50)}`); continue; }
     summaries.push({ pid: p.pid, line: `[${p.pid}] ${out.replace(/\n/g, ' ')}` });
-    carried = out.split('|').slice(0, 2).join('|').slice(0, 300);  // @place ~period + resolutions become the entering digest
+    const pe = placeEraOf(out); if (pe) runPlaceEra = pe;
     done++;
     if (!WRITE) console.log(`\n${p.pid} (${sceneLine}):\n${out}`);
     else { await content.updateContextOnly(p.id, out, 'deepseek-disambig-v1'); if (done % 25 === 0) console.error(`  wrote ${done}`); }
