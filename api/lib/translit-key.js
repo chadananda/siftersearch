@@ -31,7 +31,12 @@ export function skeletonKeys(name) {
   const toks = String(name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/[^a-z\s-]/g, ' ').split(/[\s-]+/).filter((t) => t.length > 1 && !HON.has(t));
   const keys = new Set();
-  for (const t of toks) for (const k of tokenSkeletons(t)) keys.add(k);
+  for (const t of toks) {
+    for (const k of tokenSkeletons(t)) keys.add(k);
+    // Short/title names (Báb, Alí, Vaḥíd) collapse to a <2-char skeleton and would be UNFINDABLE. Add a
+    // vowel-kept fallback key ("~bab", "~ali") so they still bucket (exact short-name recall; over-gen is fine).
+    if (t.length <= 4) keys.add(`~${t}`);
+  }
   return keys;
 }
 export const shareKey = (a, b) => { const B = skeletonKeys(b); for (const k of skeletonKeys(a)) if (B.has(k)) return true; return false; };
