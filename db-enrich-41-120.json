@@ -1,0 +1,802 @@
+[
+  {
+    "name": "Anne Apperson",
+    "common_name": "Anne Apperson",
+    "aliases": ["Ann Apperson"],
+    "native_script": [],
+    "summary": "An early American Bahá'í, a niece of Phoebe Hearst, who was among Mrs. Hearst's party of pilgrims connected with the first Western visits to 'Akká.",
+    "importance": 14,
+    "importance_reason": "Single GPB mention as one of Mrs. Hearst's nieces; an incidental early Western name.",
+    "characterizations": []
+  },
+  {
+    "name": "Annie Besant",
+    "common_name": "Annie Besant",
+    "aliases": ["Mrs. Annie Besant", "President of the Theosophical Society"],
+    "native_script": [],
+    "summary": "British socialist, theosophist and reformer, President of the Theosophical Society, mentioned in passing among prominent contemporaries of the period.",
+    "importance": 12,
+    "importance_reason": "One GPB mention as a notable contemporary; no role in Bahá'í events.",
+    "characterizations": []
+  },
+  {
+    "name": "Anvar Effendi",
+    "common_name": "Anvar Effendi",
+    "aliases": ["Enver Effendi"],
+    "native_script": [],
+    "summary": "The Turkish (Ottoman) delegate involved in border-commission dealings, described as courteous and conciliatory in The Dawn-Breakers.",
+    "importance": 10,
+    "importance_reason": "Single DB mention as a minor Ottoman delegate; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Ardishír Mírzá",
+    "common_name": "Ardishír Mírzá",
+    "aliases": ["Rukni'd-Dawlih", "Rukni’d-Dawlih", "Rukn ud-Dawla", "Ardashir Mirza"],
+    "native_script": ["اردشیر میرزا"],
+    "summary": "Qájár prince (son of 'Abbás Mírzá) and governor of Ṭihrán who, in the panic following the 1852 attempt on Náṣiri'd-Dín Sháh's life, sealed the capital and unleashed the wholesale persecution and slaughter of the Bábís.",
+    "importance": 42,
+    "importance_reason": "7 mentions across GPB and DB; governor of Ṭihrán who directly drove the savage 1852 reprisals against the Bábís.",
+    "characterizations": ["Wikipedia: Ardashir Mirza Rokn ed-Dowleh (1805/06 – 1866) was a Qajar prince who held the governorship of several Iranian provinces during the reigns of Fath-Ali Shah, Mohammad Shah and Naser al-Din Shah. He was the ninth son of Abbas Mirza."]
+  },
+  {
+    "name": "Arslán Khán, major",
+    "common_name": "Arslán Khán",
+    "aliases": ["Major Arslán Khán"],
+    "native_script": [],
+    "summary": "A major who brought cavalry from Khirghán among the enemy forces, named once in The Dawn-Breakers.",
+    "importance": 7,
+    "importance_reason": "Single DB mention as a minor military officer.",
+    "characterizations": []
+  },
+  {
+    "name": "Artaxerxes",
+    "common_name": "Artaxerxes",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Ancient Achaemenid Persian king invoked rhetorically in The Dawn-Breakers as an emblem of imperial pride.",
+    "importance": 8,
+    "importance_reason": "Single DB mention used only as a historical illustration; no Bábí/Bahá'í role.",
+    "characterizations": []
+  },
+  {
+    "name": "Arthur Henderson",
+    "common_name": "Arthur Henderson",
+    "aliases": ["Mr. Arthur Henderson"],
+    "native_script": [],
+    "summary": "British Foreign Secretary (Labour) whose 1931 communication to the League of Nations Secretariat is cited regarding the 'Iráq house question.",
+    "importance": 13,
+    "importance_reason": "One GPB mention in connection with the Baghdád House League petition; peripheral official.",
+    "characterizations": []
+  },
+  {
+    "name": "Arthur James Balfour, 1st Earl of Balfour",
+    "common_name": "Lord Balfour",
+    "aliases": ["Arthur James Balfour", "Earl of Balfour", "A.J. Balfour", "Arthur James Balfour, 1st Earl of Balfour"],
+    "native_script": [],
+    "summary": "British Foreign Secretary who, on receiving word of danger to 'Abdu'l-Bahá, dispatched orders to General Allenby to extend every protection to the Master and His family during the First World War.",
+    "importance": 28,
+    "importance_reason": "One GPB mention but with a consequential act — securing 'Abdu'l-Bahá's protection via Allenby.",
+    "characterizations": []
+  },
+  {
+    "name": "Arthur Pillsbury Dodge",
+    "common_name": "Arthur Pillsbury Dodge",
+    "aliases": ["Arthur P. Dodge"],
+    "native_script": [],
+    "summary": "An early American Bahá'í whose name is associated with the first stirrings of the Faith in the United States.",
+    "importance": 17,
+    "importance_reason": "Single GPB mention among the earliest American believers.",
+    "characterizations": []
+  },
+  {
+    "name": "Asadu’lláh Khán, the grand equerry",
+    "common_name": "Asadu’lláh Khán",
+    "aliases": ["Asadu'lláh Khán the grand equerry"],
+    "native_script": [],
+    "summary": "The royal grand equerry who, with a nomad rider, helped cut down one of the would-be assassins of Náṣiri'd-Dín Sháh in 1852.",
+    "importance": 9,
+    "importance_reason": "Single DB mention in the assassination-attempt scene; incidental court figure.",
+    "characterizations": []
+  },
+  {
+    "name": "Auguste-Henri Forel",
+    "common_name": "Auguste Forel",
+    "aliases": ["Dr. Forel", "Prof. Auguste Forel", "August Forel", "Auguste-Henri Forel"],
+    "native_script": [],
+    "summary": "Eminent Swiss psychiatrist, neuroanatomist and entomologist (myrmecologist) who became a Bahá'í in 1921 in response to 'Abdu'l-Bahá's celebrated Tablet to Dr. Forel — one of the weightiest the Master ever wrote.",
+    "importance": 45,
+    "importance_reason": "3 GPB mentions; a world-renowned scientist whose conversion and the Tablet addressed to him are repeatedly cited as evidence of the Faith's progress.",
+    "characterizations": ["Wikipedia: Auguste Forel (1 September 1848 – 27 July 1931) was a Swiss psychiatrist, neuroanatomist, and myrmecologist who became a member of the Bahá'í Faith in 1921.", "Wikipedia: Known as the Tablet to Dr. Auguste Forel, 'Abdu'l-Bahá's grandson, Shoghi Effendi, later referred to it as being 'one of the most weighty' that 'Abdu'l-Bahá had ever written."]
+  },
+  {
+    "name": "Aḥmad (son of the Báb)",
+    "common_name": "Aḥmad",
+    "aliases": ["Aḥmad, son of the Báb"],
+    "native_script": ["أحمد"],
+    "summary": "The infant son of the Báb, born to Khadíjih-Bagum, who died in 1259 A.H., the year before the Báb's declaration; the Báb foretold his exalted heavenly station.",
+    "importance": 22,
+    "importance_reason": "3 DB mentions; the Báb's own son, of devotional significance though he died in infancy.",
+    "characterizations": []
+  },
+  {
+    "name": "Aḥmad Big Tawfíq",
+    "common_name": "Aḥmad Big Tawfíq",
+    "aliases": ["Ahmad Big Tawfiq", "Aḥmad Big Tawfíq Páshá"],
+    "native_script": ["احمد بیگ توفیق"],
+    "summary": "An able and humane Ottoman governor of 'Akká whose association with 'Abdu'l-Bahá so transformed him that he showed the Master profound reverence, in contrast to his hostile predecessor.",
+    "importance": 24,
+    "importance_reason": "2 GPB mentions; a secondary but memorable figure illustrating 'Abdu'l-Bahá's influence over officialdom in 'Akká.",
+    "characterizations": []
+  },
+  {
+    "name": "Aḥmad Mírzá",
+    "common_name": "Aḥmad Mírzá",
+    "aliases": ["Prince Aḥmad Mírzá"],
+    "native_script": ["احمد میرزا"],
+    "summary": "A Qájár prince in whose presence the general 'Abbás-Qulí Khán gave his famous testimony to the heroism of the Bábí defenders at Shaykh Ṭabarsí.",
+    "importance": 20,
+    "importance_reason": "3 mentions across GPB/DB; minor royal figure notable mainly as the audience for 'Abbás-Qulí Khán's testimony.",
+    "characterizations": []
+  },
+  {
+    "name": "Aḥmad Sháh Qájár, last Qájár monarch",
+    "common_name": "Aḥmad Sháh",
+    "aliases": ["Ahmad Shah", "Aḥmad Sháh Qájár", "last Qájár monarch"],
+    "native_script": ["احمد شاه"],
+    "summary": "The last reigning Qájár monarch (r. 1909–1925), whose dissipated and ineffectual rule led to the eclipse and fall of the Qájár dynasty.",
+    "importance": 38,
+    "importance_reason": "4 mentions across DB/GPB; the final Qájár sovereign whose downfall fulfilled the dynasty's decline, though no direct role driving Bábí/Bahá'í events.",
+    "characterizations": []
+  },
+  {
+    "name": "Aḥmad-i-Payvandí",
+    "common_name": "Aḥmad-i-Payvandí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí named once in The Dawn-Breakers with no further detail given.",
+    "importance": 6,
+    "importance_reason": "Single bare DB mention with no description; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Badrí Pás̱há",
+    "common_name": "Badrí Páshá",
+    "aliases": ["Badri Pasha"],
+    "native_script": [],
+    "summary": "An official whose intervention saved the Amír-Niẓám in an incident recounted in The Dawn-Breakers.",
+    "importance": 8,
+    "importance_reason": "Single DB mention as a minor intervening official.",
+    "characterizations": []
+  },
+  {
+    "name": "Bahíyyih Khánum",
+    "common_name": "Bahíyyih Khánum",
+    "aliases": ["the Greatest Holy Leaf", "Waraqatu'l-'Ulyá", "the Most Exalted Leaf", "Khánum", "بهیّه خانم"],
+    "native_script": ["بهیّه خانم"],
+    "summary": "The eldest daughter of Bahá'u'lláh and devoted sister of 'Abdu'l-Bahá, known as the Greatest Holy Leaf; she shared the exiles' hardships from childhood, never married, and served the Cause for over eighty years, even heading the affairs of the Faith during Shoghi Effendi's absences.",
+    "importance": 84,
+    "importance_reason": "5 mentions across DB/GPB; member of the Holy Family and the outstanding heroine of the Bahá'í Dispensation.",
+    "characterizations": ["Bahaipedia: Bahíyyih Khánum was the eldest daughter of Bahá'u'lláh and the faithful and beloved sister of 'Abdu'l-Bahá. She chose never to marry, rather to devote her life to the Cause.", "Bahaipedia: After the passing of 'Abdu'l-Bahá in 1921, she helped the then 24-year-old Shoghi Effendi with his obligations."]
+  },
+  {
+    "name": "Bakhsh-‘Alí the carpenter",
+    "common_name": "Bakhsh-‘Alí",
+    "aliases": ["Bakhsh-‘Alí the carpenter"],
+    "native_script": [],
+    "summary": "A Bábí carpenter counted among the defenders deemed indispensable to victory at the fort, named once in The Dawn-Breakers.",
+    "importance": 9,
+    "importance_reason": "Single DB mention in a list of fort defenders; incidental named participant.",
+    "characterizations": []
+  },
+  {
+    "name": "Baron Yoshirō Sakatani",
+    "common_name": "Baron Sakatani",
+    "aliases": ["Yoshiro Sakatani", "Sakatani Yoshirō", "Baron Yoshirō Sakatani"],
+    "native_script": ["阪谷芳郎"],
+    "summary": "Japanese statesman and member of the House of Peers, mentioned as a distinguished contemporary figure.",
+    "importance": 11,
+    "importance_reason": "Single GPB mention as a notable Japanese dignitary; no Bahá'í role.",
+    "characterizations": []
+  },
+  {
+    "name": "Baroness Barnekow",
+    "common_name": "Baroness Barnekow",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An early-twentieth-century baroness named once among notable contemporaries.",
+    "importance": 8,
+    "importance_reason": "Single bare GPB mention; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Benjamin Jowett",
+    "common_name": "Benjamin Jowett",
+    "aliases": ["Master of Balliol", "Prof. Jowett of Balliol", "Dr. Benjamin Jowett"],
+    "native_script": [],
+    "summary": "Renowned Oxford classicist and Master of Balliol College who privately hailed the Faith to his pupil Lewis Campbell as the greatest light to come into the world since Christ.",
+    "importance": 22,
+    "importance_reason": "2 GPB mentions; a celebrated scholar cited for his striking private testimony to the Faith.",
+    "characterizations": []
+  },
+  {
+    "name": "Bogdan Popović",
+    "common_name": "Bogdan Popović",
+    "aliases": ["Bogdan Popovitch"],
+    "native_script": [],
+    "summary": "Eminent scholar at the University of Belgrade who translated a Bahá'í booklet into Serbian.",
+    "importance": 12,
+    "importance_reason": "2 GPB mentions as a scholarly translator; peripheral.",
+    "characterizations": []
+  },
+  {
+    "name": "Boris Andreyevich Dorn",
+    "common_name": "Boris Dorn",
+    "aliases": ["Bernhard Dorn", "B. Dorn"],
+    "native_script": [],
+    "summary": "An Orientalist whose testimony is cited in The Dawn-Breakers concerning a manuscript of the Báb's Commentary on the Names of God received directly from the Báb's secretary.",
+    "importance": 12,
+    "importance_reason": "Single DB mention as a cited scholarly authority on a manuscript.",
+    "characterizations": []
+  },
+  {
+    "name": "Buzurg-Mihr",
+    "common_name": "Buzurg-Mihr",
+    "aliases": ["Bozorgmehr"],
+    "native_script": [],
+    "summary": "The legendary sage-vizier of the Sasanian king Núshíraván the Just, invoked in The Dawn-Breakers as an example of a wise minister who was disgraced and cast into a pit.",
+    "importance": 9,
+    "importance_reason": "Single DB mention used as a historical/illustrative parallel; no Bábí/Bahá'í role.",
+    "characterizations": []
+  },
+  {
+    "name": "Bábá-i-Mázindarání",
+    "common_name": "Bábá-i-Mázindarání",
+    "aliases": ["Bábá (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of Mázindarán named once in The Dawn-Breakers.",
+    "importance": 8,
+    "importance_reason": "Single DB mention as a martyr-list entry; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Búyúk-Áqá",
+    "common_name": "Búyúk-Áqá",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A siyyid of distinguished merit who, with his brother Mírzá Muḥammad-‘Alí, rose with fervor to proclaim the Bábí Faith.",
+    "importance": 12,
+    "importance_reason": "Single DB mention as a devoted siyyid believer.",
+    "characterizations": []
+  },
+  {
+    "name": "Cain",
+    "common_name": "Cain",
+    "aliases": ["Qábíl", "قابيل"],
+    "native_script": ["قابيل"],
+    "summary": "The biblical first murderer, invoked in GPB as the archetype of fratricidal envy when describing the enmity of Bahá'u'lláh's half-brother.",
+    "importance": 10,
+    "importance_reason": "2 GPB mentions but only as a scriptural simile for envy/fratricide; no historical role.",
+    "characterizations": []
+  },
+  {
+    "name": "Captain Alfred von Goumoëns",
+    "common_name": "Captain von Goumoëns",
+    "aliases": ["Andreas von Gumoens", "Baron Alfred de Goumoëns", "Captain Von Goumoens", "Captain Alfred von Goumoëns"],
+    "native_script": [],
+    "summary": "An Austrian officer in the Sháh's service whose published letter, expressing horror at the 1852 tortures of the Bábís, provided an important European eyewitness record and prompted his resignation.",
+    "importance": 30,
+    "importance_reason": "3 mentions across GPB/DB; a key Western eyewitness whose account of the 1852 persecutions is repeatedly cited.",
+    "characterizations": []
+  },
+  {
+    "name": "Charles Cochrane-Baillie, 2nd Baron Lamington",
+    "common_name": "Lord Lamington",
+    "aliases": ["Governor of Bombay", "Charles Cochrane-Baillie", "Charles Cochrane-Baillie, 2nd Baron Lamington"],
+    "native_script": [],
+    "summary": "British peer and former Governor of Bombay who called on 'Abdu'l-Bahá in Haifa and intervened with the Foreign Office to stress the importance of His position and safety.",
+    "importance": 26,
+    "importance_reason": "4 GPB mentions; a friendly British official who personally aided 'Abdu'l-Bahá's protection.",
+    "characterizations": []
+  },
+  {
+    "name": "Charles Mason Remey",
+    "common_name": "Mason Remey",
+    "aliases": ["Charles Mason Remey"],
+    "native_script": [],
+    "summary": "An early American Bahá'í who, with Howard Struven, made the first circumnavigation of the globe in Bahá'í history teaching the Faith; later (after the period of GPB) he became a Covenant-breaker.",
+    "importance": 28,
+    "importance_reason": "Single GPB mention but historically notable as a globe-circling early teacher (and later notorious as a Covenant-breaker).",
+    "characterizations": []
+  },
+  {
+    "name": "Charles-Louis Napoléon Bonaparte",
+    "common_name": "Napoleon III",
+    "aliases": ["Louis-Napoléon Bonaparte", "Emperor of the French", "Chief of Sovereigns", "Charles-Louis Napoléon Bonaparte"],
+    "native_script": [],
+    "summary": "Emperor of the French (r. 1852–1870), the most prominent monarch of his day, to whom Bahá'u'lláh addressed two Tablets; his dismissive response drew Bahá'u'lláh's prophecy of the downfall of his empire, fulfilled in 1870.",
+    "importance": 58,
+    "importance_reason": "10 GPB mentions; a foremost sovereign addressed by Bahá'u'lláh whose rebuff and prophesied fall are a major theme of the proclamation to the kings.",
+    "characterizations": []
+  },
+  {
+    "name": "Chester Ira Thacher",
+    "common_name": "Chester Ira Thacher",
+    "aliases": ["Chester I. Thacher"],
+    "native_script": [],
+    "summary": "An early American Bahá'í whose name is associated with the first stirrings of the Faith in the United States.",
+    "importance": 15,
+    "importance_reason": "Single GPB mention among the earliest American believers.",
+    "characterizations": []
+  },
+  {
+    "name": "Chiang Kai-shek",
+    "common_name": "Chiang Kai-shek",
+    "aliases": ["Jiang Jieshi", "General Chiang Kaishek", "蔣介石"],
+    "native_script": ["蔣介石"],
+    "summary": "Chinese Nationalist leader and statesman, mentioned once as a recipient of correspondence/contact in the global outreach of the Faith.",
+    "importance": 11,
+    "importance_reason": "Single GPB mention as a world figure contacted; no Bahá'í role.",
+    "characterizations": []
+  },
+  {
+    "name": "Chingíz Khán",
+    "common_name": "Chingíz Khán",
+    "aliases": ["Genghis Khan", "Changíz Khán"],
+    "native_script": [],
+    "summary": "The Mongol conqueror, cited in The Dawn-Breakers only in connection with the Qájár tribe's first appearance in Persia within his invading army.",
+    "importance": 9,
+    "importance_reason": "Single DB mention as historical background for the Qájár origins; no Bábí role.",
+    "characterizations": []
+  },
+  {
+    "name": "Clements Robert Markham",
+    "common_name": "Clements Markham",
+    "aliases": ["C. R. Markham", "Sir Clements Markham"],
+    "native_script": [],
+    "summary": "British geographer and historian whose 'A General Sketch of the History of Persia' is repeatedly quoted as a source in The Dawn-Breakers.",
+    "importance": 12,
+    "importance_reason": "7 DB mentions but only as a cited historical-source author; not a participant.",
+    "characterizations": []
+  },
+  {
+    "name": "Clément Huart",
+    "common_name": "Clément Huart",
+    "aliases": ["M.C. Huart"],
+    "native_script": [],
+    "summary": "French Orientalist whose 'La Religion du Báb' is cited as a source in The Dawn-Breakers.",
+    "importance": 11,
+    "importance_reason": "2 DB mentions as a cited scholarly source; not a participant.",
+    "characterizations": []
+  },
+  {
+    "name": "Colonel Drouville",
+    "common_name": "Colonel Drouville",
+    "aliases": ["Gaspard Drouville"],
+    "native_script": [],
+    "summary": "A traveler/officer whose 1813 figures for Fatḥ-‘Alí Sháh's wives and children are cited in The Dawn-Breakers.",
+    "importance": 7,
+    "importance_reason": "Single DB mention as a cited statistical source; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Colonel Sir Arnold Burrows Kemball",
+    "common_name": "Sir Arnold Kemball",
+    "aliases": ["Colonel Sir Arnold Burrows Kemball", "Arnold Burrows Kemball"],
+    "native_script": [],
+    "summary": "British consul-general in Baghdád who befriended Bahá'u'lláh during the Iraq period, offered Him British citizenship and protection, and undertook to convey His communications to Queen Victoria.",
+    "importance": 28,
+    "importance_reason": "Single GPB mention but a substantive episode — a British official's offer of protection to Bahá'u'lláh in Baghdád.",
+    "characterizations": []
+  },
+  {
+    "name": "Colonel Stuart",
+    "common_name": "Colonel Stuart",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A British officer in Persia cited in The Dawn-Breakers for his figures on Fatḥ-‘Alí Sháh's wives and children.",
+    "importance": 7,
+    "importance_reason": "Single DB mention as a cited statistical source; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Constance Elizabeth Maud",
+    "common_name": "Constance Maud",
+    "aliases": ["Miss Constance Maud", "author of No Surrender"],
+    "native_script": [],
+    "summary": "English novelist (author of 'No Surrender') named once among contemporaries.",
+    "importance": 9,
+    "importance_reason": "Single GPB mention as a notable contemporary; no Bahá'í role.",
+    "characterizations": []
+  },
+  {
+    "name": "Count Albert Apponyi",
+    "common_name": "Count Apponyi",
+    "aliases": ["Gróf Apponyi Albert", "Hungarian statesman", "Count Albert Apponyi"],
+    "native_script": [],
+    "summary": "Eminent Hungarian statesman who was among the distinguished visitors received by 'Abdu'l-Bahá.",
+    "importance": 12,
+    "importance_reason": "Single GPB mention as a notable visitor of 'Abdu'l-Bahá.",
+    "characterizations": []
+  },
+  {
+    "name": "Countess Estelle Bernadotte of Wisborg",
+    "common_name": "Countess Estelle Bernadotte",
+    "aliases": ["Estelle Manville", "Princess Estelle Bernadotte", "Countess Estelle Bernadotte of Wisborg"],
+    "native_script": [],
+    "summary": "American-born wife of Count Folke Bernadotte, named once among recipients of contact/correspondence.",
+    "importance": 9,
+    "importance_reason": "Single GPB mention as a dignitary contacted; no Bahá'í role.",
+    "characterizations": []
+  },
+  {
+    "name": "Czar Alexander II Nicolaevitch of Russia",
+    "common_name": "Czar Alexander II",
+    "aliases": ["Alexander II", "Tsar Alexander II", "Alexander the Liberator", "the Tsar-Liberator", "Czar Alexander II Nicolaevitch of Russia"],
+    "native_script": ["Александр II"],
+    "summary": "Emperor of Russia (r. 1855–1881), addressed by Bahá'u'lláh in a Tablet; Shoghi Effendi notes that one of the Czar's ministers (the Russian envoy) extended aid to Bahá'u'lláh at a time of grave danger, for which the Czar is told a high station was ordained.",
+    "importance": 50,
+    "importance_reason": "5 GPB mentions; a sovereign addressed by Bahá'u'lláh whose minister aided Him — part of the proclamation to the kings.",
+    "characterizations": []
+  },
+  {
+    "name": "Daniel the Prophet",
+    "common_name": "Daniel",
+    "aliases": ["Dani'el", "the Prophet Daniel"],
+    "native_script": ["دانيال"],
+    "summary": "The Hebrew prophet whose prophecies of the 'day of the Lord' and the durations of the 'abomination that maketh desolate' are interpreted in GPB as foretelling the advent of the Báb and Bahá'u'lláh.",
+    "importance": 24,
+    "importance_reason": "3 GPB mentions; an ancient prophet cited prominently for prophecies fulfilled by the Manifestation, but no role in events.",
+    "characterizations": []
+  },
+  {
+    "name": "Darius",
+    "common_name": "Darius",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Ancient Achaemenid Persian king invoked rhetorically in The Dawn-Breakers as an emblem of imperial pride.",
+    "importance": 8,
+    "importance_reason": "Single DB mention used only as a historical illustration; no Bábí/Bahá'í role.",
+    "characterizations": []
+  },
+  {
+    "name": "Darvís̱h-Ṣaláḥ",
+    "common_name": "Darvísh-Ṣaláḥ",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A tall, white-bearded and greatly esteemed Bábí who renounced his honors after conversion and, though aged, joined the defenders of the fort, marching before them carrying the sealed Qur'án.",
+    "importance": 20,
+    "importance_reason": "3 DB mentions with a vivid, memorable portrait of a venerable fort defender.",
+    "characterizations": []
+  },
+  {
+    "name": "David Graham Pole",
+    "common_name": "David Graham Pole",
+    "aliases": ["D. Graham Pole"],
+    "native_script": [],
+    "summary": "British figure named once among contemporaries connected with the Faith's public reception.",
+    "importance": 9,
+    "importance_reason": "Single bare GPB mention; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "David Starr Jordan",
+    "common_name": "David Starr Jordan",
+    "aliases": ["Dr. David Starr Jordan", "Dr. D. S. Jordan"],
+    "native_script": [],
+    "summary": "President of Leland Stanford University and noted ichthyologist who hosted 'Abdu'l-Bahá and is cited among eminent figures attesting the progress of the Faith.",
+    "importance": 16,
+    "importance_reason": "2 GPB mentions as a prominent academic who received 'Abdu'l-Bahá; peripheral.",
+    "characterizations": []
+  },
+  {
+    "name": "Dawúd Mírzá, son of Ẓillu’s-Sulṭán",
+    "common_name": "Dawúd Mírzá",
+    "aliases": ["Dawúd Mírzá, son of Ẓillu’s-Sulṭán"],
+    "native_script": [],
+    "summary": "A Qájár prince, son of Ẓillu's-Sulṭán and nephew of the Sháh, named once in The Dawn-Breakers.",
+    "importance": 8,
+    "importance_reason": "Single DB mention as a minor royal; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Dr. Chúpán",
+    "common_name": "Dr. Chúpán",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A reliable physician whom the doctor Shíshmán recommended be called in his stead; mentioned once in GPB.",
+    "importance": 8,
+    "importance_reason": "Single GPB mention as a minor physician; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Dr. Cloquet",
+    "common_name": "Dr. Cloquet",
+    "aliases": ["Doctor Cloquet"],
+    "native_script": [],
+    "summary": "The French court physician to Náṣiri'd-Dín Sháh, mentioned in The Dawn-Breakers in connection with the king.",
+    "importance": 10,
+    "importance_reason": "2 DB mentions as the Sháh's court physician; minor court figure.",
+    "characterizations": []
+  },
+  {
+    "name": "Dr. Cormick",
+    "common_name": "Dr. Cormick",
+    "aliases": ["William Cormick"],
+    "native_script": [],
+    "summary": "An English physician resident in Tabríz called by the Persian authorities to examine the Báb's mental condition — a noted Western eyewitness to the Báb.",
+    "importance": 22,
+    "importance_reason": "2 DB mentions; the only Western physician to examine the Báb, a frequently cited eyewitness detail.",
+    "characterizations": []
+  },
+  {
+    "name": "Dr. Edward Christopher Getsinger",
+    "common_name": "Edward Getsinger",
+    "aliases": ["Dr. Edward Getsinger", "Dr. Edward Christopher Getsinger"],
+    "native_script": [],
+    "summary": "An early American Bahá'í who, with his wife Lua Getsinger, was among the first Western pilgrims to reach 'Akká in 1898.",
+    "importance": 24,
+    "importance_reason": "3 GPB mentions; among the very first Western pilgrims to the Holy Land.",
+    "characterizations": []
+  },
+  {
+    "name": "Dr. Ibráhím Ḵhayru’lláh",
+    "common_name": "Ibráhím Khayru'lláh",
+    "aliases": ["Ibrahim George Kheiralla", "Bahá’s Peter", "The Second Columbus", "Conqueror of America", "Dr. Ibráhím Ḵhayru’lláh", "ابراهيم خير الله"],
+    "native_script": ["ابراهيم خير الله"],
+    "summary": "A Syrian-born physician who carried the Bahá'í Faith to America in 1892 and raised up the first U.S. community — once honored by 'Abdu'l-Bahá as 'Bahá's Peter' and 'Conqueror of America' — but who later sided with Mírzá Muḥammad-‘Alí and was declared a Covenant-breaker.",
+    "importance": 50,
+    "importance_reason": "7 GPB mentions; the first to establish the Faith in America, whose later defection makes him a major secondary figure.",
+    "characterizations": ["Wikipedia: In the conflict between 'Abdu'l-Bahá and Mírzá Muhammad 'Alí, Kheiralla sided with the latter, for which he was declared a Covenant-breaker.", "bahai-library/Haddad: Kheiralla learned of the Bahá'í faith in Cairo, then went to America in 1892 to teach the new faith, settling in Chicago, raising up a community of a few hundred souls before breaking with 'Abdu'l-Bahá."]
+  },
+  {
+    "name": "Dr. K. E. Fisher",
+    "common_name": "Dr. K. E. Fisher",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An early believer associated with the planting of the Faith in Germany.",
+    "importance": 12,
+    "importance_reason": "Single GPB mention connected with early German teaching work.",
+    "characterizations": []
+  },
+  {
+    "name": "Dr. Polak",
+    "common_name": "Dr. Polak",
+    "aliases": ["Jakob Eduard Polak"],
+    "native_script": [],
+    "summary": "An Austrian physician to Náṣiri'd-Dín Sháh and author of works on Persia, cited as a source in The Dawn-Breakers.",
+    "importance": 12,
+    "importance_reason": "Single DB mention as a court physician and cited author; peripheral.",
+    "characterizations": []
+  },
+  {
+    "name": "Dr. Sarah A. Clock",
+    "common_name": "Sarah Clock",
+    "aliases": ["Dr. Sarah Clock", "Dr. Sarah A. Clock"],
+    "native_script": [],
+    "summary": "An American Bahá'í physician who moved to Ṭihrán to serve the Faith and is buried there.",
+    "importance": 18,
+    "importance_reason": "Single GPB mention; an early American believer who gave pioneer service in Persia.",
+    "characterizations": []
+  },
+  {
+    "name": "Dr. Shishmán",
+    "common_name": "Dr. Shíshmán",
+    "aliases": ["Shíshmán"],
+    "native_script": [],
+    "summary": "A foreign doctor called to attend an ailing Bahá'u'lláh who, appalled, deemed the case hopeless; Bahá'u'lláh later intimated that the doctor, who soon died, had sacrificed his life for Him.",
+    "importance": 18,
+    "importance_reason": "Single GPB mention but a memorable devotional anecdote about a doctor who attended Bahá'u'lláh.",
+    "characterizations": []
+  },
+  {
+    "name": "Dr. Susan I. Moody",
+    "common_name": "Susan Moody",
+    "aliases": ["Dr. Susan Moody", "Dr. Susan I. Moody"],
+    "native_script": [],
+    "summary": "An American Bahá'í physician who pioneered to Ṭihrán to serve the Faith's interests and is buried there alongside her associates.",
+    "importance": 20,
+    "importance_reason": "2 GPB mentions; a notable early American pioneer to Persia, honored by Shoghi Effendi.",
+    "characterizations": []
+  },
+  {
+    "name": "Dín-Muḥammad-Vazír",
+    "common_name": "Dín-Muḥammad-Vazír",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí companion who, with Mír Riḍáy-i-Sardár, secretly buried a fallen leader's remains in his own room before the enemy learned of the death.",
+    "importance": 12,
+    "importance_reason": "Single DB mention with a specific memorable act (the secret burial).",
+    "characterizations": []
+  },
+  {
+    "name": "Edmund Henry Hynman Allenby, 1st Viscount Allenby",
+    "common_name": "General Allenby",
+    "aliases": ["Viscount Allenby", "Edmund Henry Hynman Allenby", "Edmund Henry Hynman Allenby, 1st Viscount Allenby"],
+    "native_script": [],
+    "summary": "British general who captured Palestine in WWI and, on orders from Lord Balfour, ensured the protection of 'Abdu'l-Bahá, afterward cabling London that the Master was safe.",
+    "importance": 30,
+    "importance_reason": "3 GPB mentions; the commander who personally safeguarded 'Abdu'l-Bahá during the liberation of Haifa.",
+    "characterizations": []
+  },
+  {
+    "name": "Edvard Beneš",
+    "common_name": "Edvard Beneš",
+    "aliases": ["Eduard Benes", "President Eduard Benes"],
+    "native_script": [],
+    "summary": "President of Czechoslovakia, named once among heads of state contacted regarding the Faith.",
+    "importance": 11,
+    "importance_reason": "Single GPB mention as a head of state contacted; no Bahá'í role.",
+    "characterizations": []
+  },
+  {
+    "name": "Edward Granville Browne",
+    "common_name": "E. G. Browne",
+    "aliases": ["Edward Granville Browne", "Prof. E. G. Browne", "Edward G. Browne"],
+    "native_script": [],
+    "summary": "The eminent Cambridge Orientalist and the only Western scholar to meet Bahá'u'lláh (Bahjí, 1890); his published accounts, translations and praise of Ṭáhirih and the Bábí movement are repeatedly quoted as authoritative Western testimony.",
+    "importance": 62,
+    "importance_reason": "23 mentions across DB/GPB — the foremost Western scholarly witness, quoted extensively for his eyewitness account of Bahá'u'lláh and his histories.",
+    "characterizations": ["Wikipedia: In April 1890 Professor Edward Granville Browne of Cambridge University met Bahá'u'lláh in four successive interviews during five days as a guest at Bahjí.", "Browne: 'The face of Him on Whom I gazed I can never forget, though I cannot describe it.'", "'Abdu'l-Bahá to Browne: 'Of all the historians of Europe none attained the holy Threshold but you.'"]
+  },
+  {
+    "name": "Elijah",
+    "common_name": "Elijah",
+    "aliases": ["Ilyás", "Elias", "the Prophet Elijah", "إلياس"],
+    "native_script": ["إلياس"],
+    "summary": "The Hebrew prophet associated with Mt. Carmel, cited in GPB because the Báb's advent marks the return of Elijah and His remains were interred on the mountain near the Cave of Elijah.",
+    "importance": 18,
+    "importance_reason": "2 GPB mentions; an ancient prophet invoked typologically (Carmel, return of Elijah), no role in events.",
+    "characterizations": []
+  },
+  {
+    "name": "Elizabeth Stewart",
+    "common_name": "Elizabeth Stewart",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An American Bahá'í who moved to Ṭihrán with fellow pioneers to serve the Faith in collaboration with the Persian believers.",
+    "importance": 16,
+    "importance_reason": "Single GPB mention; an early American pioneer to Persia.",
+    "characterizations": []
+  },
+  {
+    "name": "Emmeline Pankhurst",
+    "common_name": "Emmeline Pankhurst",
+    "aliases": ["Mrs. Pankhurst", "leader of the WSPU", "suffragette leader"],
+    "native_script": [],
+    "summary": "The British suffragette leader, named once among notable contemporaries.",
+    "importance": 11,
+    "importance_reason": "Single GPB mention as a famous contemporary; no Bahá'í role.",
+    "characterizations": []
+  },
+  {
+    "name": "Erling Eidem",
+    "common_name": "Erling Eidem",
+    "aliases": ["Dr. Erling Eidem", "Archbishop of Sweden"],
+    "native_script": [],
+    "summary": "Archbishop of Sweden, named once among religious dignitaries contacted.",
+    "importance": 10,
+    "importance_reason": "Single GPB mention as a churchman contacted; no Bahá'í role.",
+    "characterizations": []
+  },
+  {
+    "name": "Ethel Jenner Rosenberg",
+    "common_name": "Ethel Rosenberg",
+    "aliases": ["Ethel J. Rosenberg", "Ethel Jenner Rosenberg"],
+    "native_script": [],
+    "summary": "One of the earliest English Bahá'ís (converted 1899) who helped lay the foundations of the administrative institutions in the British Isles.",
+    "importance": 24,
+    "importance_reason": "Single GPB mention but historically a foremost early British believer and pillar of the UK community.",
+    "characterizations": []
+  },
+  {
+    "name": "Ezekiel the Prophet",
+    "common_name": "Ezekiel",
+    "aliases": ["Yeḥezqel", "Ezekiel the son of Buzi", "the Prophet Ezekiel"],
+    "native_script": ["يحزقيل"],
+    "summary": "The Hebrew prophet whose visions of the 'day of the Lord' and the glory of God coming 'from the way of the East' are interpreted in GPB as foretelling Bahá'u'lláh.",
+    "importance": 18,
+    "importance_reason": "2 GPB mentions; an ancient prophet cited for prophecies fulfilled by Bahá'u'lláh, no role in events.",
+    "characterizations": []
+  },
+  {
+    "name": "Farruḵh Khán (son of Yaḥyá Khán)",
+    "common_name": "Farruḵh Khán",
+    "aliases": ["Farruḵh Khán, son of Yaḥyá Khán"],
+    "native_script": [],
+    "summary": "A son of Yaḥyá Khán and brother of Ḥájí Sulaymán Khán, an enemy general whose death stirred the indignation of the Amír-Niẓám; named once in The Dawn-Breakers.",
+    "importance": 9,
+    "importance_reason": "Single DB mention as a slain enemy officer; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Fatḥ-'Alí Sháh Qájár",
+    "common_name": "Fatḥ-'Alí Sháh",
+    "aliases": ["Fath-Ali Shah", "the second Qájár king", "Fatḥ-'Alí Sháh Qájár", "فتحعلی شاه"],
+    "native_script": ["فتحعلی شاه"],
+    "summary": "The second Qájár monarch of Persia (r. 1797–1834), famed for his immense harem and progeny, whose reign and court form the dynastic backdrop to the early Bábí narrative.",
+    "importance": 30,
+    "importance_reason": "15 mentions across DB/GPB, but chiefly as dynastic/genealogical backdrop predating the Báb's mission rather than as an actor in Bábí events.",
+    "characterizations": []
+  },
+  {
+    "name": "Fatḥu'lláh-i-Qumí",
+    "common_name": "Fatḥu'lláh-i-Qumí",
+    "aliases": ["Fatḥu'lláh Qumí"],
+    "native_script": ["فتح‌الله قمی"],
+    "summary": "An obscure youth who, with Ṣádiq-i-Tabrízí, was implicated in the 1852 attempt on Náṣiri'd-Dín Sháh's life and was tortured to death with red-hot pincers and molten lead — an episode that triggered the great persecution of the Bábís.",
+    "importance": 26,
+    "importance_reason": "7 mentions across DB/GPB; a participant in the pivotal 1852 assassination attempt, though portrayed as a deranged minor conspirator whose act unleashed the massacre.",
+    "characterizations": []
+  },
+  {
+    "name": "Fatḥu’lláh Big",
+    "common_name": "Fatḥu’lláh Big",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí counted among the fort defenders deemed indispensable to victory, named once in The Dawn-Breakers.",
+    "importance": 8,
+    "importance_reason": "Single DB mention in a list of fort defenders; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Fayṣal ibn Ḥusayn (King Feisal I of ‘Iráq)",
+    "common_name": "King Feisal I",
+    "aliases": ["Faisal I", "Faisal ibn Husayn", "Fayṣal ibn Ḥusayn", "الملك فیصل الأوّل"],
+    "native_script": ["الملك فیصل الأوّل"],
+    "summary": "First King of Iraq (r. 1921–1933), leader of the Arab Revolt, who met 'Abdu'l-Bahá in Haifa and was petitioned regarding the security of the House of Bahá'u'lláh in Baghdád.",
+    "importance": 24,
+    "importance_reason": "4 GPB mentions; a sovereign connected with the Baghdád House case and a visitor of 'Abdu'l-Bahá.",
+    "characterizations": []
+  },
+  {
+    "name": "Faḍlu’lláh-i-Mázindarání",
+    "common_name": "Faḍlu’lláh-i-Mázindarání",
+    "aliases": ["Faḍlu’lláh (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of Mázindarán named once in The Dawn-Breakers.",
+    "importance": 8,
+    "importance_reason": "Single DB mention as a martyr-list entry; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Faḵhru’d-Dín ‘Abdu’ṣ-Ṣamad-i-Hamadání",
+    "common_name": "Faḵhru’d-Dín ‘Abdu’ṣ-Ṣamad-i-Hamadání",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A teacher in Karbilá under whom 'Abbás-‘Alí studied, named once in The Dawn-Breakers.",
+    "importance": 7,
+    "importance_reason": "Single DB mention as a teacher of another figure; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Faṭimiy-i-Ma‘ṣúmih",
+    "common_name": "Faṭimih-i-Ma‘ṣúmih",
+    "aliases": ["Fatimih the Immaculate", "Ma‘ṣúmih"],
+    "native_script": ["فاطمه معصومه"],
+    "summary": "The revered sister of Imám Riḍá, buried at Qum, mentioned in The Dawn-Breakers in describing the holy city of Qum.",
+    "importance": 12,
+    "importance_reason": "Single DB mention as a venerated Shí'ih figure providing geographic/religious context for Qum.",
+    "characterizations": []
+  },
+  {
+    "name": "Francis Joseph I, Emperor of Austria and King of Hungary",
+    "common_name": "Francis Joseph I",
+    "aliases": ["Franz Joseph I", "Kaiser Franz Joseph", "King of Hungary", "Francis-Joseph", "Francis Joseph I, Emperor of Austria and King of Hungary"],
+    "native_script": [],
+    "summary": "Emperor of Austria and King of Hungary (r. 1848–1916), addressed by Bahá'u'lláh in the Kitáb-i-Aqdas, which reproves him for neglecting to seek out Bahá'u'lláh during his pilgrimage to Jerusalem.",
+    "importance": 46,
+    "importance_reason": "4 GPB mentions; a sovereign explicitly addressed and reproved by Bahá'u'lláh in the proclamation to the kings.",
+    "characterizations": []
+  },
+  {
+    "name": "Franklin Delano Roosevelt",
+    "common_name": "Franklin D. Roosevelt",
+    "aliases": ["FDR", "President Franklin D. Roosevelt", "Franklin Delano Roosevelt"],
+    "native_script": [],
+    "summary": "U.S. President (1933–1945) to whom a communication was addressed acquainting him with Bahá'u'lláh's summons in the Kitáb-i-Aqdas to the Presidents of the American Republics.",
+    "importance": 16,
+    "importance_reason": "2 GPB mentions; a head of state contacted in connection with Bahá'u'lláh's summons to the American rulers.",
+    "characterizations": []
+  }
+]

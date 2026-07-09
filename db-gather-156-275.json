@@ -1,0 +1,997 @@
+[
+  {
+    "canonical_name": "Siyyid Káẓim-i-Rashtí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [156, 157, 159, 161, 172, 197, 198, 201, 204, 213, 215, 217, 231, 235, 239]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-Ḥusayn-i-Bus̱hrú’í",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [156, 157, 160, 161, 162, 163, 165, 166, 171, 180, 182, 185, 186, 187, 189, 190, 191, 192, 194, 196, 197, 213, 218, 228, 229, 231, 232, 233, 234, 235, 236, 237, 239, 241, 244, 245, 246, 273]
+  },
+  {
+    "canonical_name": "S̱hayḵh Aḥmad ibn Zaynu’d-Dín al-Aḥsá’í",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [161, 172, 173, 186, 197, 204, 215, 231, 235, 239]
+  },
+  {
+    "canonical_name": "Muḥammad ibn 'Abd'lláh",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [159, 175, 198, 204, 225, 227]
+  },
+  {
+    "canonical_name": "Imám Ḥusayn ibn 'Alí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [211, 217, 235]
+  },
+  {
+    "canonical_name": "'Alí ibn Abí Ṭálib",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [159, 201, 222]
+  },
+  {
+    "canonical_name": "Siyyid ‘Alí-Muḥammad, the Báb",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [166, 182, 187, 192, 193, 194, 196, 197, 198, 201, 202, 204, 207, 208, 209, 210, 211, 212, 218, 221, 225, 227, 228, 229, 234, 235, 247, 256, 272, 273]
+  },
+  {
+    "canonical_name": "Mullá ‘Alíy-i-Basṭámí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [161, 189, 190, 191, 192, 193, 194, 221, 222, 223, 224, 225, 226, 227]
+  },
+  {
+    "canonical_name": "Mírzá Ḥusayn-‘Alíy-i-Núrí, Bahá'u'lláh",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [197, 224, 237, 239, 241, 244, 245, 247, 250, 251, 252, 254, 255, 256, 261, 262, 263, 264, 265, 266, 268, 269, 270, 271]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-‘Alíy-i-Bárfurús̱hí, Quddús",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [197, 198, 213, 218, 228, 229]
+  },
+  {
+    "canonical_name": "Fáṭimih Baraghání, Ṭáhirih",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [213, 214, 215]
+  },
+  {
+    "canonical_name": "Ḥájí Mírzá Siyyid ‘Alí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [201, 204, 210, 272]
+  },
+  {
+    "canonical_name": "Siyyid Ḥusayn-i-Yazdí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [213]
+  },
+  {
+    "canonical_name": "Mullá Báqir-i-Tabrízí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [213]
+  },
+  {
+    "canonical_name": "Mullá Ṣádiq-i-Ḵhurásání",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [235]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-‘Alíy-i-Nahrí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [235]
+  },
+  {
+    "canonical_name": "Ḥájí Muḥammad-Karím Khán-i-Kirmání",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [235]
+  },
+  {
+    "canonical_name": "Ḥájí Siyyid Javád-i-Karbilá'í",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [210]
+  },
+  {
+    "canonical_name": "Mírzá Muḥíṭ-i-Kirmání",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [157]
+  },
+  {
+    "canonical_name": "Manúc̱hihr Khán, the Mu‘tamidu’d-Dawlih",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [233]
+  },
+  {
+    "canonical_name": "Ḥájí Mírzá ‘Abbás-i-Íravání, Ḥájí Mírzá Áqásí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [269, 270]
+  },
+  {
+    "canonical_name": "Mírzá Áqá Khán-i-Núrí, the I‘timádu’d-Dawlih (Grand Vizir)",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [269]
+  },
+  {
+    "canonical_name": "Mírzá 'Abbás-i-Núrí, known as Mírzá Buzurg",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [241, 247, 250, 253, 266, 267, 268, 269, 270]
+  },
+  {
+    "canonical_name": "Mírzá Músá",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [240, 241, 244]
+  },
+  {
+    "canonical_name": "Muḥammad Sháh Qájár",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [269, 270]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [254, 255, 256, 261, 262, 263]
+  },
+  {
+    "canonical_name": "Shaykh Muḥyi’d-Dín Ibn al-‘Arabí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [159]
+  },
+  {
+    "canonical_name": "Ḥájí Mullá Ṣáliḥ-i-Baraqání",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [215]
+  },
+  {
+    "canonical_name": "Muḥammad-Báqir",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [160, 163, 213]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-‘Alíy-i-Qazvíní",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [214, 215, 235]
+  },
+
+  {
+    "canonical_name": "Imám Ja‘far, son of Muḥammad",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Imám Ja‘far, son of Muḥammad, when questioned concerning the year in which the Qá’im was to be made manifest, replied as follows: “Verily, in the year sixty His Cause shall be revealed, and His name shall be noised abroad.”"
+    ],
+    "mention_idxs": [159]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-i-Aḵhbárí",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Mírzá Muḥammad-i-Aḵhbárí, in his poems relating to the year of the Manifestation, makes the following prediction: “In the year G̱hars … the earth shall be illumined by His light…”"
+    ],
+    "mention_idxs": [159]
+  },
+  {
+    "canonical_name": "Muḥammad-Ḥasan",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "With him were Muḥammad-Ḥasan, his brother, and Muḥammad-Báqir, his nephew, both of whom had accompanied him ever since his visit to his native town of Bus̱hrúyih."
+    ],
+    "mention_idxs": [160, 163, 186, 213]
+  },
+  {
+    "canonical_name": "Mírzá Aḥmad-i-Qazvíní",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Mírzá Aḥmad-i-Qazvíní, the martyr, who on several occasions had heard Mullá Ḥusayn recount to the early believers the story of his moving and historic interview with the Báb, related to me the following."
+    ],
+    "mention_idxs": [166]
+  },
+  {
+    "canonical_name": "Mullá Ḵhudá-Baḵhs̱h-i-Qúc̱hání",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Mullá Ḵhudá-Baḵhs̱h-i-Qúc̱hání, later named Mullá ‘Alí"
+    ],
+    "mention_idxs": [213]
+  },
+  {
+    "canonical_name": "Mullá Ḥasan-i-Bajistání",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Their names are as follows: … Mullá Ḥasan-i-Bajistání"
+    ],
+    "mention_idxs": [213]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad Rawḍih-Ḵhán-i-Yazdí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Their names are as follows: … Mírzá Muḥammad Rawḍih-Ḵhán-i-Yazdí"
+    ],
+    "mention_idxs": [213]
+  },
+  {
+    "canonical_name": "Sa‘íd-i-Hindí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Their names are as follows: … Sa‘íd-i-Hindí"
+    ],
+    "mention_idxs": [213]
+  },
+  {
+    "canonical_name": "Mullá Maḥmúd-i-Ḵhu’í",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Their names are as follows: … Mullá Maḥmúd-i-Ḵhu’í"
+    ],
+    "mention_idxs": [213]
+  },
+  {
+    "canonical_name": "Mullá Jalíl-i-Urúmí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Their names are as follows: … Mullá Jalíl-i-Urúmí"
+    ],
+    "mention_idxs": [213]
+  },
+  {
+    "canonical_name": "Mullá Aḥmad-i-Ibdál-i-Marág̱hi’í",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Their names are as follows: … Mullá Aḥmad-i-Ibdál-i-Marág̱hi’í"
+    ],
+    "mention_idxs": [213]
+  },
+  {
+    "canonical_name": "Mullá Yúsuf-i-Ardibílí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Their names are as follows: … Mullá Yúsuf-i-Ardibílí"
+    ],
+    "mention_idxs": [213]
+  },
+  {
+    "canonical_name": "Mírzá Hádí, son of Mullá ‘Abdu’l-Vahháb-i-Qazvíní",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Their names are as follows: … Mírzá Hádí, son of Mullá ‘Abdu’l-Vahháb-i-Qazvíní"
+    ],
+    "mention_idxs": [213]
+  },
+  {
+    "canonical_name": "S̱hayḵh ‘Ábid",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "placed Him, while still a child, under the care of a tutor named S̱hayḵh ‘Ábid.",
+      "S̱hayḵh ‘Ábid, known by his pupils as S̱hayḵhuná, was a man of piety and learning. He had been a disciple of both S̱hayḵh Aḥmad and Siyyid Káẓim."
+    ],
+    "mention_idxs": [201, 204]
+  },
+  {
+    "canonical_name": "Siyyid Muḥammad-Riḍá",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "In His early childhood He lost His father, Siyyid Muḥammad-Riḍá, a man who was known throughout the province of Fárs for his piety and virtue."
+    ],
+    "mention_idxs": [201]
+  },
+  {
+    "canonical_name": "Aḥmad",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "The child which resulted from this union, He named Aḥmad. He died in the year 1259 A.H., the year preceding the declaration of the Faith by the Báb."
+    ],
+    "mention_idxs": [207]
+  },
+  {
+    "canonical_name": "Mírzá Siyyid Ḥasan",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Some years later the Báb was united in wedlock with the sister of Mírzá Siyyid Ḥasan and Mírzá Abu’l-Qásim."
+    ],
+    "mention_idxs": [207]
+  },
+  {
+    "canonical_name": "Mírzá Abu’l-Qásim (brother of the Báb’s wife)",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "the Báb was united in wedlock with the sister of Mírzá Siyyid Ḥasan and Mírzá Abu’l-Qásim."
+    ],
+    "mention_idxs": [207]
+  },
+  {
+    "canonical_name": "‘Abdu’l-Vahháb",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "he was overtaken by a youth … His name was ‘Abdu’l-Vahháb. “I beseech you,” he tearfully entreated Mullá ‘Alí, “to allow me to accompany you on your journey.”",
+      "when my son had suffered martyrdom in Ṭihrán"
+    ],
+    "mention_idxs": [222, 223, 224]
+  },
+  {
+    "canonical_name": "Ḥájí ‘Abdu’l-Majíd (father of ‘Abdu’l-Vahháb)",
+    "entity_type": "person",
+    "side": "Bahá'í",
+    "is_new": true,
+    "db_statements": [
+      "Ḥájí ‘Abdu’l-Majíd, the father of ‘Abdu’l-Vahháb, has often been heard to recount, with eyes filled with tears, this story.",
+      "I was one among the favoured in the court of the sons of the Farmán-Farmá, the governor of the province of Fárs."
+    ],
+    "mention_idxs": [223, 224]
+  },
+  {
+    "canonical_name": "S̱hayḵh Muḥammad-Ḥasan (ecclesiastic of Najaf)",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "In the presence of S̱hayḵh Muḥammad-Ḥasan, one of the most celebrated ecclesiastics of s̱hí‘ah Islám … Mullá ‘Alí announced fearlessly the manifestation of the Báb.",
+      "That proud and fanatic leader … forthwith pronounced Mullá ‘Alí a heretic and expelled him from the assembly."
+    ],
+    "mention_idxs": [225]
+  },
+  {
+    "canonical_name": "Ḥájí Hás̱him, surnamed ‘Aṭṭár",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Ḥájí Hás̱him, surnamed ‘Aṭṭár, a prominent merchant, who was well versed in the Scriptures of Islám, recounted the following: “I was present at Government House on one occasion when Mullá ‘Alí was summoned…”"
+    ],
+    "mention_idxs": [226]
+  },
+  {
+    "canonical_name": "the sifter of wheat of Iṣfahán",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The first to embrace the Cause of the Báb in that city was a man, a sifter of wheat, who, as soon as the Call reached his ears, unreservedly accepted the Message.",
+      "only one person, a sifter of wheat, was found to recognise the Truth, and was invested with the robe of Divine virtue!"
+    ],
+    "mention_idxs": [234]
+  },
+  {
+    "canonical_name": "Mírzá Hádí (brother of Mírzá Muḥammad-‘Alíy-i-Nahrí)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "a few, such as Mírzá Muḥammad-‘Alíy-i-Nahrí … Mírzá Hádí, the brother of Mírzá Muḥammad-‘Alí … recognised the truth of the Cause."
+    ],
+    "mention_idxs": [235]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-Riḍáy-i-Pá-Qal‘iyí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "a few … such as Mírzá Muḥammad-‘Alíy-i-Nahrí … and Mírzá Muḥammad-Riḍáy-i-Pá-Qal‘iyí, recognised the truth of the Cause."
+    ],
+    "mention_idxs": [235]
+  },
+  {
+    "canonical_name": "Ḥájí Mírzá Jání, surnamed Par-Pá",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The first to be enrolled in that city among the company of the faithful was a certain Ḥájí Mírzá Jání, surnamed Par-Pá, who was a merchant of note."
+    ],
+    "mention_idxs": [236]
+  },
+  {
+    "canonical_name": "Siyyid ‘Abdu’l-Báqí",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "a well-known divine, Siyyid ‘Abdu’l-Báqí, a resident of Kás̱hán and a member of the s̱hayḵhí community … felt unable to sacrifice rank and leadership for the Message which his friend had brought him."
+    ],
+    "mention_idxs": [236]
+  },
+  {
+    "canonical_name": "Ḥájí Mírzá Músá-yi-Qumí",
+    "entity_type": "person",
+    "side": "Bahá'í",
+    "is_new": true,
+    "db_statements": [
+      "In those days Ḥájí Mírzá Músá, a native of Qum, embraced the Faith, journeyed to Bag̱hdád, and there met Bahá’u’lláh. He eventually quaffed the cup of martyrdom in His path."
+    ],
+    "mention_idxs": [237]
+  },
+  {
+    "canonical_name": "Ḥájí Mírzá Muḥammad-i-Ḵhurásání",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Ḥájí Mírzá Muḥammad-i-Ḵhurásání, the leader of the s̱hayḵhí community of Ṭihrán, who acted as an instructor in that institution, was approached by Mullá Ḥusayn but failed to respond to his invitation to accept the Message."
+    ],
+    "mention_idxs": [239, 241]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-i-Mu‘allim-i-Núrí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "I have heard Mullá Muḥammad-i-Mu‘allim, a native of Núr, in the province of Mázindarán, who was a fervent admirer of both S̱hayḵh Aḥmad and Siyyid Káẓim, relate this story.",
+      "“My name,” I replied, “is Mullá Muḥammad, and my surname Mu‘allim. My home is Núr, in the province of Mázindarán.”"
+    ],
+    "mention_idxs": [241, 244, 245, 246]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-Taqíy-i-Núrí",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Bahá’u’lláh had already, prior to the declaration of the Báb, visited the district of Núr, at a time when the celebrated mujtahid Mírzá Muḥammad-Taqíy-i-Núrí was at the height of his authority and influence."
+    ],
+    "mention_idxs": [250, 256]
+  },
+  {
+    "canonical_name": "‘Azíz (uncle of Bahá'u'lláh)",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "None dared to contend with His views except His uncle ‘Azíz, who ventured to oppose Him, challenging His statements and aspersing their truth.",
+      "Alarmed, he sought the aid of the mujtahid of Núr, Mullá Muḥammad."
+    ],
+    "mention_idxs": [255]
+  },
+  {
+    "canonical_name": "Mullá ‘Abbás (son-in-law of Mírzá Muḥammad-Taqí of Núr)",
+    "entity_type": "person",
+    "side": "Bahá'í",
+    "is_new": true,
+    "db_statements": [
+      "two of his eminent lieutenants, Mullá ‘Abbás and Mírzá Abu’l-Qásim, both sons-in-law and trusted disciples of the late mujtahid, Mírzá Muḥammad-Taqí.",
+      "Tell him from me that ‘Abbás can never again return to him. He can no longer forsake this threshold."
+    ],
+    "mention_idxs": [256, 261]
+  },
+  {
+    "canonical_name": "Mírzá Abu’l-Qásim (son-in-law of Mírzá Muḥammad-Taqí of Núr)",
+    "entity_type": "person",
+    "side": "Bahá'í",
+    "is_new": true,
+    "db_statements": [
+      "Mírzá Abu’l-Qásim was likewise moved to follow the example of his companion. “I have ceased to recognise my teacher,” was his reply.",
+      "This very moment, I have vowed to God to dedicate the remaining days of my life to the service of Bahá’u’lláh, my true and only Master."
+    ],
+    "mention_idxs": [256, 261]
+  },
+  {
+    "canonical_name": "Muṣṭafá Big-i-Sanandají, surnamed Majḏhúb",
+    "entity_type": "person",
+    "side": "Bahá'í",
+    "is_new": true,
+    "db_statements": [
+      "That dervish, whose name was Muṣṭafá, became so enamoured with the teachings … straightway arose and followed Bahá’u’lláh.",
+      "a certain dervish, surnamed Majḏhúb, and whose name was Muṣṭafá Big-i-Sanandají, had, without premeditation, composed it in praise of his Beloved."
+    ],
+    "mention_idxs": [264]
+  },
+  {
+    "canonical_name": "Ḥájí Siyyid Muḥammad-Báqir (mujtahid of Iṣfahán)",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "those who on his previous visit to that city had known him as the favoured messenger of Siyyid Káẓim to the eminent mujtahid, Ḥájí Siyyid Muḥammad-Báqir. He, being now dead, had been succeeded by his son."
+    ],
+    "mention_idxs": [231, 235]
+  },
+  {
+    "canonical_name": "Ḥájí Siyyid Asadu’lláh (son of Ḥájí Siyyid Muḥammad-Báqir)",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "vehemently denounced him to Ḥájí Siyyid Asadu’lláh, the son of the late Ḥájí Siyyid Muḥammad-Báqir.",
+      "“Do you not yourselves admit that Mullá Ḥusayn has, by his eloquence … silenced a man no less great than my illustrious father?”"
+    ],
+    "mention_idxs": [231, 232, 233]
+  },
+  {
+    "canonical_name": "Ḥájí Muḥammad-Ibráhím-i-Kalbásí",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Ḥájí Muḥammad-Ibráhím-i-Kalbásí had also fallen seriously ill, and was on the verge of death.",
+      "“Mullá Ḥusayn is not the person to be duped by anyone, nor can he fall a victim to dangerous heresies.”"
+    ],
+    "mention_idxs": [231, 232, 233]
+  },
+  {
+    "canonical_name": "Mullá Taqí (uncle and father-in-law of Ṭáhirih)",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Her father, Ḥájí Mullá Ṣáliḥ-i-Qazvíní, and his brother, Mullá Taqí, were both mujtahids of great renown.",
+      "She was married to Mullá Muḥammad, son of Mullá Taqí, her uncle."
+    ],
+    "mention_idxs": [215]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad, son of Mullá Taqí, S̱hahíd-i-Ṯháliṯh",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "She was married to Mullá Muḥammad, son of Mullá Taqí, her uncle, whom the s̱hí‘ahs styled S̱hahíd-i-Ṯháliṯh."
+    ],
+    "mention_idxs": [215]
+  },
+  {
+    "canonical_name": "the Ethiopian servant of the Báb",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "He knocked at the door, which was soon opened by an Ethiopian servant.",
+      "I could not but marvel at the manners and the devoted attentions of that Ethiopian servant whose very life seemed to have been transformed by the regenerating influence of his Master."
+    ],
+    "mention_idxs": [168, 175, 187, 192, 229]
+  },
+
+  {
+    "canonical_name": "Qayyúmu'l-Asmá' (Tafsír-i-Súrih-i-Yúsuf)",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [172, 173, 181, 197]
+  },
+  {
+    "canonical_name": "al-Qur'án",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [204, 225, 231, 244, 261, 263]
+  },
+  {
+    "canonical_name": "the Bayán-i-Fársí (Persian Bayán)",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [234]
+  },
+  {
+    "canonical_name": "Quddús's commentary on the Ṣád of Ṣamad",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [197]
+  },
+  {
+    "canonical_name": "the Gospel (the Evangel)",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [227]
+  },
+  {
+    "canonical_name": "the treatise composed by Mullá Ḥusayn on the teachings of S̱hayḵh Aḥmad and Siyyid Káẓim",
+    "entity_type": "work",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The first was a treatise which I had myself composed, bearing upon the abstruse and hidden teachings propounded by S̱hayḵh Aḥmad and Siyyid Káẓim. Whoever seemed to me capable of unravelling the mysterious allusions made in that treatise…"
+    ],
+    "mention_idxs": [172, 173]
+  },
+  {
+    "canonical_name": "Bahá'u'lláh's commentary on the Súrih of the Fátiḥah (“The Seven Verses of Repetition”)",
+    "entity_type": "work",
+    "side": "Bahá'í",
+    "is_new": true,
+    "db_statements": [
+      "they found Bahá’u’lláh engaged in revealing a commentary on the opening Súrih of the Qur’án, entitled “The Seven Verses of Repetition.”"
+    ],
+    "mention_idxs": [261]
+  },
+
+  {
+    "canonical_name": "the Letters of the Living (Ḥurúf-i-Ḥayy)",
+    "entity_type": "group",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [194, 196, 212, 214, 227, 228, 235, 272]
+  },
+  {
+    "canonical_name": "the S̱hayḵhí school",
+    "entity_type": "group",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [225, 236, 239]
+  },
+  {
+    "canonical_name": "the twelve Imáms",
+    "entity_type": "group",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [159, 173, 250]
+  },
+  {
+    "canonical_name": "the Bálá-Sarí",
+    "entity_type": "group",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Although her family belonged to the Bálá-Sarí, Ṭáhirih alone showed, from the very beginning, a marked sympathy and devotion to Siyyid Káẓim.",
+      "whereas other worshippers, the Bálá-Sarí, recited their prayers in the upper section of that shrine."
+    ],
+    "mention_idxs": [215, 217]
+  },
+
+  {
+    "canonical_name": "Karbilá",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [157, 160, 162, 197, 217, 218, 229, 235, 236]
+  },
+  {
+    "canonical_name": "Najaf",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [160, 162, 218, 221, 225, 229, 231, 236]
+  },
+  {
+    "canonical_name": "Bús̱hihr (Bushire)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [162, 163, 208, 210]
+  },
+  {
+    "canonical_name": "S̱híráz",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [163, 165, 166, 168, 182, 196, 198, 201, 218, 222, 223, 224, 228, 229, 235, 265, 272]
+  },
+  {
+    "canonical_name": "Mecca",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [182, 218, 229]
+  },
+  {
+    "canonical_name": "Medina",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [182, 218, 229]
+  },
+  {
+    "canonical_name": "Ḥijáz (the Hijaz)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [182, 218, 229]
+  },
+  {
+    "canonical_name": "Iṣfahán",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [218, 229, 231, 234, 235, 236, 273]
+  },
+  {
+    "canonical_name": "Kás̱hán",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [218, 229, 236]
+  },
+  {
+    "canonical_name": "Qum",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [218, 237, 239]
+  },
+  {
+    "canonical_name": "Ṭihrán (Tehran)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [208, 215, 218, 224, 229, 239, 241, 247, 273]
+  },
+  {
+    "canonical_name": "Ḵhurásán (Khorasan)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [160, 218, 229, 246, 273]
+  },
+  {
+    "canonical_name": "‘Iráq",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [224, 229]
+  },
+  {
+    "canonical_name": "Bárfurús̱h (Bábul)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [198]
+  },
+  {
+    "canonical_name": "Mázindarán (the province; the Ṭabarsí upheaval)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [198, 241, 247, 250, 265]
+  },
+  {
+    "canonical_name": "Núr (district of Mázindarán)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [241, 247, 250, 254, 255, 256, 262, 265]
+  },
+  {
+    "canonical_name": "Tákur, Mázindarán",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [247, 255, 256, 261]
+  },
+  {
+    "canonical_name": "Baghdád (Madínatu’s-Salám)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [224, 225, 226, 236, 237]
+  },
+  {
+    "canonical_name": "Káẓimayn",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [224]
+  },
+  {
+    "canonical_name": "Kirmán (Kerman)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [235]
+  },
+  {
+    "canonical_name": "Fárs (Fars Province)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [201, 223, 224, 229]
+  },
+  {
+    "canonical_name": "the Fort of S̱hayḵh Ṭabarsí",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [197, 234]
+  },
+  {
+    "canonical_name": "Constantinople (Istanbul)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [226]
+  },
+  {
+    "canonical_name": "Persia (Iran)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [172, 215, 225, 265]
+  },
+  {
+    "canonical_name": "the Masjid-i-Kúfih",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Arriving at the Masjid-i-Kúfih, Mullá Ḥusayn decided to spend forty days in that place, where he led a life of retirement and prayer."
+    ],
+    "mention_idxs": [160, 161, 182]
+  },
+  {
+    "canonical_name": "the Masjid-i-Ílḵhání (S̱híráz)",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "he instructed his brother and his nephew to proceed directly to the Masjid-i-Ílḵhání, and there to remain until his arrival.",
+      "Mullá ‘Alíy-i-Basṭámí … arrived at the Masjid-i-Ílḵhání."
+    ],
+    "mention_idxs": [163, 171, 182, 186, 189]
+  },
+  {
+    "canonical_name": "Bus̱hrúyih (Ḵhurásán)",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "both of whom had accompanied him ever since his visit to his native town of Bus̱hrúyih, in the province of Ḵhurásán."
+    ],
+    "mention_idxs": [160]
+  },
+  {
+    "canonical_name": "Kúfih",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "I then shall return to Kúfih, where again, in the Masjid of that holy city, I shall manifest His Cause.",
+      "God willing, I shall return hither by the way of Kúfih, in which place I hope to meet you."
+    ],
+    "mention_idxs": [182, 229]
+  },
+  {
+    "canonical_name": "the village of Tákur (Bahá'u'lláh's father's estate)",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "He set out for the village of Tákur, the personal estate of His father, where He owned a vast mansion."
+    ],
+    "mention_idxs": [247, 255, 261]
+  },
+  {
+    "canonical_name": "Sa‘ádat-Ábád (village near Núr)",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Mullá Muḥammad, I am told, lives in Sa‘ádat-Ábád, a village not far distant from this place."
+    ],
+    "mention_idxs": [262, 263]
+  },
+  {
+    "canonical_name": "the village of Qúc̱h-Ḥiṣár",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "as he was passing through the village of Qúc̱h-Ḥiṣár, which belonged to Bahá’u’lláh, he was so impressed by the charm and beauty of that place and the abundance of its water that he conceived the idea of becoming its owner."
+    ],
+    "mention_idxs": [270]
+  },
+  {
+    "canonical_name": "the madrisih of Ním-Ávard (Iṣfahán)",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Arriving in Iṣfahán, he established himself in the madrisih of Ním-Ávard."
+    ],
+    "mention_idxs": [231]
+  },
+  {
+    "canonical_name": "the madrisih of Mírzá Ṣáliḥ (Páy-i-Minár, Ṭihrán)",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "He lived, during his stay in the capital, in one of the rooms which belonged to the madrisih of Mírzá Ṣáliḥ, better known as the madrisih of Páy-i-Minár."
+    ],
+    "mention_idxs": [239]
+  },
+  {
+    "canonical_name": "the Mosque of Gawhar-S̱hád (Mas̱hhad)",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "VIEWS OF THE MOSQUE OF GAWHAR-SHÁD IN MASHHAD SHOWING PULPIT WHERE MULLÁ ḤUSAYN PREACHED"
+    ],
+    "mention_idxs": [275]
+  }
+]

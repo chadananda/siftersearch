@@ -1,0 +1,410 @@
+[
+  {
+    "name": "'Abbás",
+    "common_name": "'Abbás",
+    "aliases": ["عباس"],
+    "native_script": ["عباس"],
+    "summary": "A youth and former servant who, under threat of torture, was coerced into walking the streets of Ṭihrán to identify Bábís for arrest and extortion during the 1852 persecution.",
+    "importance": 16,
+    "importance_reason": "One-episode informer in the Ṭihrán persecution; memorable anecdote but incidental and one-named.",
+    "characterizations": []
+  },
+  {
+    "name": "'Abbás Mírzá",
+    "common_name": "'Abbás Mírzá Mulk-Árá",
+    "aliases": ["عباس میرزا", "Mulk-Árá", "'Abbás Mírzá Mulk-Árá", "'Abbás Mírzá"],
+    "native_script": ["عباس میرزا ملک‌آرا"],
+    "summary": "A son of Muḥammad Sháh and half-brother of Náṣiri'd-Dín Sháh who, ambitious for power, sought Bahá'u'lláh's support for his political designs in Baghdád — overtures Bahá'u'lláh firmly condemned.",
+    "importance": 24,
+    "importance_reason": "Qájár prince whose self-serving approach to Bahá'u'lláh is a named but minor episode.",
+    "characterizations": []
+  },
+  {
+    "name": "'Alí ibn Abí Ṭálib",
+    "common_name": "Imám 'Alí",
+    "aliases": ["the Commander of the Faithful", "Amíru'l-Mu'minín", "امام علی", "Imám 'Alí", "the first Imám", "Asadu'lláh (Lion of God)", "'Alí ibn Abí Ṭálib"],
+    "native_script": ["علي بن أبي طالب", "علی"],
+    "summary": "Cousin and son-in-law of the Prophet Muḥammad, first male believer in Islam, fourth Caliph and the first Imám of the Shí'ah; in Bahá'í writings He is one of the 'two witnesses' and His sayings are cited as foretelling Bahá'u'lláh.",
+    "importance": 58,
+    "importance_reason": "Foundational Shí'ah holy figure, frequently invoked (30 mentions) in GPB as prophetic 'witness' to Bahá'u'lláh, but external to Bahá'í history proper.",
+    "characterizations": [
+      "Al-Islam.org: 'Amir al-Mu'minin' (the Commander of the Faithful) is a title which is, according to Shiite belief, exclusively reserved for Imam Ali.",
+      "Al-Islam.org: He was the first of the family of the House and of the Companions to believe in God and His Apostle."
+    ]
+  },
+  {
+    "name": "'Azíz Khán-i-Mukrí, Sardár-i-Kull",
+    "common_name": "'Azíz Khán-i-Mukrí",
+    "aliases": ["the Sardár", "Sardár-i-Kull", "عزیز خان سردار", "Aziz Khan Mokri", "'Azíz Khán-i-Sardár", "'Azíz Khán-i-Mukrí, Sardár-i-Kull"],
+    "native_script": ["عزیز خان مکری"],
+    "summary": "Qájár commander-in-chief (Sardár-i-Kull) under Náṣiri'd-Dín Sháh who, during a drunken revel, ordered the strangling of Ṭáhirih and her secret burial in the Ílkhání garden in 1852.",
+    "importance": 44,
+    "importance_reason": "The official who ordered Ṭáhirih's execution — a recurring (13 mentions), historically taught antagonist of early Bábí history.",
+    "characterizations": [
+      "Wikipedia: Aziz Khan Mokri was an Iranian military officer and grandee who occupied high offices under Naser al-Din Shah, serving as commander-in-chief of the army from 1853 to 1857."
+    ]
+  },
+  {
+    "name": "A. L. M. Nicolas",
+    "common_name": "A. L. M. Nicolas",
+    "aliases": ["Louis Alphonse Daniel Nicolas", "A.-L.-M. Nicolas"],
+    "native_script": [],
+    "summary": "French orientalist and diplomat whose studies and translations of the Báb's writings (e.g. the 'Seven Proofs') and of Shaykhism are repeatedly cited as scholarly sources in The Dawn-Breakers.",
+    "importance": 30,
+    "importance_reason": "Frequently cited (95 mentions) but purely as a bibliographic/scholarly source, not a historical participant.",
+    "characterizations": []
+  },
+  {
+    "name": "Abel",
+    "common_name": "Abel",
+    "aliases": ["Hábíl", "هابيل"],
+    "native_script": ["هابيل"],
+    "summary": "The biblical son of Adam slain by his brother Cain, invoked in GPB as a byword for primal fratricide when characterizing Covenant-breaking betrayals.",
+    "importance": 8,
+    "importance_reason": "Scriptural figure used only as a rhetorical comparison; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Abraham",
+    "common_name": "Abraham",
+    "aliases": ["Ibráhím", "the Father of the Faithful", "the Friend of God", "ابراهیم", "Khalílu'lláh", "Avraham"],
+    "native_script": ["إبراهيم", "ابراهیم"],
+    "summary": "The patriarch and Manifestation of God revered in Judaism, Christianity, and Islam; in Bahá'í history He is honored as a forebear of Bahá'u'lláh (through Katurah) and His banishment from Ur is cited as the historical prototype of Bahá'u'lláh's own exiles.",
+    "importance": 55,
+    "importance_reason": "A Manifestation in the prophetic lineage and a literal ancestor of Bahá'u'lláh, though His role in this corpus is genealogical/typological rather than narrative.",
+    "characterizations": []
+  },
+  {
+    "name": "Abraham Valentine Williams Jackson",
+    "common_name": "A. V. Williams Jackson",
+    "aliases": ["A. V. Williams Jackson", "Columbia Orientalist", "Abraham Valentine Williams Jackson"],
+    "native_script": [],
+    "summary": "American orientalist and professor at Columbia University, cited in GPB among Western scholars whose attention attests the Faith's growing recognition.",
+    "importance": 9,
+    "importance_reason": "One-mention Western academic listed as evidence of the Faith's progress.",
+    "characterizations": []
+  },
+  {
+    "name": "Abram Simon",
+    "common_name": "Rabbi Abram Simon",
+    "aliases": ["Rabbi Abram Simon", "Abram Simon"],
+    "native_script": [],
+    "summary": "American Reform rabbi cited in GPB among notable figures whose recognition attests the spread of the Faith.",
+    "importance": 7,
+    "importance_reason": "One-mention name listed as evidence of growing recognition.",
+    "characterizations": []
+  },
+  {
+    "name": "Abu'l-Qásim-i-Hamadání",
+    "common_name": "Abu'l-Qásim-i-Hamadání",
+    "aliases": ["ابوالقاسم همدانی"],
+    "native_script": ["ابوالقاسم همدانی"],
+    "summary": "A Muḥammadan attendant who accompanied Bahá'u'lláh on His 1854 departure to the wilderness of Sulaymáníyyih; given money to act as a merchant, he was soon killed by thieves, leaving Bahá'u'lláh alone.",
+    "importance": 22,
+    "importance_reason": "Named companion in the singular episode of Bahá'u'lláh's two-year retirement — a small but memorable narrative role.",
+    "characterizations": []
+  },
+  {
+    "name": "Abu’l-Qásim (son of Karbilá’í Abú-Muḥammad)",
+    "common_name": "Abu’l-Qásim (son of Karbilá’í Abú-Muḥammad)",
+    "aliases": ["Abu'l-Qásim, brother of Muḥammad-‘Alí"],
+    "native_script": [],
+    "summary": "A Bábí, one of two sons of Karbilá'í Abú-Muḥammad, who together with Siyyid Aḥmad was brought before the prince during the Bábí episodes recounted in The Dawn-Breakers.",
+    "importance": 11,
+    "importance_reason": "Minor named Bábí participant appearing in a single episode.",
+    "characterizations": []
+  },
+  {
+    "name": "Abu’l-Qásim ‘Abdu’l-‘Aẓím",
+    "common_name": "Abu’l-Qásim ‘Abdu’l-‘Aẓím",
+    "aliases": ["'Abdu'l-'Aẓím"],
+    "native_script": [],
+    "summary": "A holy personage who, fleeing the Caliph Mutavakkil, lived in concealment at Rayy until his death c. 861 AD — mentioned for historical/geographic context in The Dawn-Breakers.",
+    "importance": 6,
+    "importance_reason": "One-mention historical figure cited for background context, predating Bábí history.",
+    "characterizations": []
+  },
+  {
+    "name": "Abu’l-Qásim, brother of Ḥusayn",
+    "common_name": "Abu’l-Qásim, brother of Ḥusayn",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí named once in The Dawn-Breakers, identified only as the brother of Ḥusayn.",
+    "importance": 5,
+    "importance_reason": "Bare one-mention name with no narrative detail.",
+    "characterizations": []
+  },
+  {
+    "name": "Abu’l-Qásim-i-Ḵhurásání (keeper of the Tomb of Bahá’u’lláh)",
+    "common_name": "Abu'l-Qásim-i-Khurásání",
+    "aliases": ["ابوالقاسم خراسانی", "Abu'l-Qasim Khurasani", "Abu’l-Qásim-i-Ḵhurásání (keeper of the Tomb of Bahá’u’lláh)"],
+    "native_script": ["ابوالقاسم خراسانی"],
+    "summary": "The 'brave-souled' keeper of the Shrine of Bahá'u'lláh at Bahjí who was forcibly expelled by Covenant-breakers c. 1921–22; on 'Abdu'l-Bahá's intervention British authorities restored the keys to him.",
+    "importance": 21,
+    "importance_reason": "Named figure in the post-1921 struggle over the Holy Shrine — a small but specific role in the keys episode.",
+    "characterizations": []
+  },
+  {
+    "name": "Abu’l-Qásim-ibn-i-Ḥájí-Zayná",
+    "common_name": "Abu’l-Qásim-ibn-i-Ḥájí-Zayná",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí who, with Akbar-ibn-i-'Ábid and others, died for his faith during the persecutions recounted in The Dawn-Breakers.",
+    "importance": 7,
+    "importance_reason": "Martyr-list entry named once with no further detail.",
+    "characterizations": []
+  },
+  {
+    "name": "Abu’l-Ḥasan ‘Alí ibn-i-Muḥammad Símarí",
+    "common_name": "Abu’l-Ḥasan ‘Alí Símarí",
+    "aliases": ["the fourth Gate", "Abu'l-Ḥasan-'Alí", "Abu’l-Ḥasan ‘Alí ibn-i-Muḥammad Símarí"],
+    "native_script": [],
+    "summary": "The fourth and last of the 'Gates' (Abváb) who served as intermediaries to the Hidden Imám; he refused to name a successor, inaugurating the Greater Occultation — cited in The Dawn-Breakers as background to Bábí prophecy.",
+    "importance": 14,
+    "importance_reason": "Shí'ah-history figure cited for context on the Gates of the Hidden Imám; appears to be the same person as the next record.",
+    "characterizations": []
+  },
+  {
+    "name": "Abu’l-Ḥasan-‘Alí, the fourth Gate of the Hidden Imám",
+    "common_name": "Abu’l-Ḥasan-‘Alí (the fourth Gate)",
+    "aliases": ["the fourth Gate", "Abu’l-Ḥasan-‘Alí, the fourth Gate of the Hidden Imám"],
+    "native_script": [],
+    "summary": "The fourth Gate of the Hidden Imám who, asked before his death to name a successor, declined — ending the line of Gates; cited in The Dawn-Breakers as background to Shí'ah expectation.",
+    "importance": 14,
+    "importance_reason": "Context figure for the Gates of the Hidden Imám; very likely the same person as 'Abu'l-Ḥasan ‘Alí ibn-i-Muḥammad Símarí' (possible duplicate to merge).",
+    "characterizations": []
+  },
+  {
+    "name": "Abá-Baṣír",
+    "common_name": "Abá-Baṣír",
+    "aliases": ["ابا بصیر", "Áqá Naqd-'Alí"],
+    "native_script": ["ابا بصیر"],
+    "summary": "A Bábí of Zanján, son of a fallen defender, who with Siyyid Ashraf was decapitated in that city; while kneeling in prayer he reportedly instructed his executioner how best to strike the blow.",
+    "importance": 28,
+    "importance_reason": "Martyr with a memorable, often-recounted anecdote of fearless devotion, though appearing in few mentions.",
+    "characterizations": []
+  },
+  {
+    "name": "Abú-Bakr",
+    "common_name": "Abú-Bakr",
+    "aliases": [],
+    "native_script": ["أبو بكر"],
+    "summary": "The first Caliph of Islam, whose election in 632 AD began the Caliphate — cited in The Dawn-Breakers for historical background.",
+    "importance": 13,
+    "importance_reason": "Major Islamic figure but cited only once here for chronological context, external to Bábí-Bahá'í history.",
+    "characterizations": []
+  },
+  {
+    "name": "Abú-Jahl ‘Amr ibn Hishám",
+    "common_name": "Abú-Jahl",
+    "aliases": ["Abú'l-Ḥakam", "أبو جهل", "Abú-Jahl ‘Amr ibn Hishám"],
+    "native_script": ["أبو جهل", "عمرو بن هشام"],
+    "summary": "A Meccan kinsman and arch-opponent of the Prophet Muḥammad (d. Battle of Badr, 624), invoked in GPB as the prototypical relative-turned-persecutor in a comparison to the Faith's enemies.",
+    "importance": 12,
+    "importance_reason": "Islamic-history figure used once as a rhetorical comparison for hostility.",
+    "characterizations": []
+  },
+  {
+    "name": "Abú-Ja‘far Muḥammad ibn-i-‘Uṯhmán",
+    "common_name": "Abú-Ja‘far Muḥammad ibn-i-‘Uṯhmán",
+    "aliases": ["the second Gate"],
+    "native_script": [],
+    "summary": "The second of the four 'Gates' of the Hidden Imám, son of the first Gate — cited in The Dawn-Breakers as background to Shí'ah occultation doctrine.",
+    "importance": 8,
+    "importance_reason": "One-mention context figure in the list of the Gates of the Hidden Imám.",
+    "characterizations": []
+  },
+  {
+    "name": "Abú-Muslim al-Khurásání",
+    "common_name": "Abú-Muslim al-Khurásání",
+    "aliases": ["Abú-Muslim"],
+    "native_script": ["أبو مسلم الخراساني"],
+    "summary": "The 8th-century general whose Khurásání army overthrew the Umayyads and placed the 'Abbásids on the caliphal throne — cited in The Dawn-Breakers for the historical significance of Khurásán.",
+    "importance": 10,
+    "importance_reason": "Major Islamic-history figure cited once for regional/historical background.",
+    "characterizations": []
+  },
+  {
+    "name": "Abú-Muḥammad-i-Míyámay’í",
+    "common_name": "Abú-Muḥammad-i-Míyámay’í",
+    "aliases": ["Abú-Muḥammad (martyr of Míyámay)"],
+    "native_script": [],
+    "summary": "A Bábí from the village of Míyámay, named once in The Dawn-Breakers as a martyr.",
+    "importance": 6,
+    "importance_reason": "One-mention martyr identified only by village.",
+    "characterizations": []
+  },
+  {
+    "name": "Abú-‘Uṯhmán ‘Umar ibn-i-Sa‘íd al-‘Umarí",
+    "common_name": "Abú-‘Uṯhmán ‘Umar ibn-i-Sa‘íd al-‘Umarí",
+    "aliases": ["the first Gate", "Abú-‘Umar-‘Uṯhmán ibn-i-Sa‘íd ‘Umarí"],
+    "native_script": [],
+    "summary": "The first of the four 'Gates' of the Hidden Imám, appointed by the eleventh Imám Ḥasan al-'Askarí — cited in The Dawn-Breakers as background to Shí'ah occultation doctrine.",
+    "importance": 8,
+    "importance_reason": "One-mention context figure heading the list of the Gates of the Hidden Imám.",
+    "characterizations": []
+  },
+  {
+    "name": "Adam",
+    "common_name": "Adam",
+    "aliases": ["Ádam", "آدم"],
+    "native_script": ["آدم"],
+    "summary": "The first man of biblical/Qur'ánic tradition, invoked in The Dawn-Breakers only as a temporal benchmark ('since the days of Adam') for the magnitude of the Bábí commotion.",
+    "importance": 9,
+    "importance_reason": "Scriptural figure used once as a rhetorical time-marker.",
+    "characterizations": []
+  },
+  {
+    "name": "Adham Bey",
+    "common_name": "Adham Bey",
+    "aliases": ["ادهم بک"],
+    "native_script": ["ادهم بک"],
+    "summary": "An opponent of the Faith who fled to Egypt, was robbed en route, and ultimately had to beg assistance from the very Bahá'ís of Cairo — aid 'Abdu'l-Bahá directed them to give him.",
+    "importance": 13,
+    "importance_reason": "One-episode adversary remembered chiefly for an illustrative anecdote of 'Abdu'l-Bahá's magnanimity.",
+    "characterizations": []
+  },
+  {
+    "name": "Ahmed Djemal Pasha",
+    "common_name": "Jamál Páshá",
+    "aliases": ["Cemal Pasha", "جمال پاشا", "Jamál Páshá", "Djemal Pasha", "Ahmed Cemal", "Ahmed Djemal Pasha"],
+    "native_script": ["جمال پاشا", "Ahmed Cemal Paşa"],
+    "summary": "Ottoman military governor of Syria and member of the wartime Three Pashas triumvirate who threatened to crucify 'Abdu'l-Bahá and destroy Bahá'í properties in Palestine during WWI; the British Megiddo offensive under Allenby swept his forces away before harm came.",
+    "importance": 48,
+    "importance_reason": "The last and gravest external threat to 'Abdu'l-Bahá at the World Centre — a recurring, historically taught antagonist (6 mentions).",
+    "characterizations": [
+      "Wikipedia: ʻAbdu'l-Bahá was under threats from Cemal Paşa, the Ottoman military chief who at one point expressed his desire to crucify him and destroy Baháʼí properties in Palestine.",
+      "Wikipedia: An autocratic triumvirate of CUP Central Committee members led the Ottoman Empire, consisting of Talaat, Enver, and Ahmed Cemal (known as the Three Pashas)."
+    ]
+  },
+  {
+    "name": "Ahmed Şefik Midhat Pasha",
+    "common_name": "Midḥat Páshá",
+    "aliases": ["Midḥat Páshá", "مدحت پاشا", "Ahmed Şefik Midhat Pasha", "Midhat Pasha"],
+    "native_script": ["مدحت پاشا", "Ahmed Şefik Midhat Paşa"],
+    "summary": "A reformist former Grand Vizier of the Ottoman Empire who invited 'Abdu'l-Bahá to Beirut; their contact is cited in GPB among the signs of the Faith's growing prestige.",
+    "importance": 20,
+    "importance_reason": "Notable Ottoman statesman whose cordial contact with 'Abdu'l-Bahá is a recurring but minor point of recognition (3 mentions).",
+    "characterizations": []
+  },
+  {
+    "name": "Ahriman",
+    "common_name": "Ahriman",
+    "aliases": ["Angra Mainyu", "اهریمن", "the Destructive Spirit"],
+    "native_script": ["اهریمن"],
+    "summary": "The principle of evil (Destructive Spirit) in Zoroastrian cosmology, referenced in GPB in connection with the awaited savior who would triumph over him and usher in an age of peace.",
+    "importance": 7,
+    "importance_reason": "Mythological/cosmological figure cited once for prophetic context.",
+    "characterizations": []
+  },
+  {
+    "name": "Akbar-ibn-i-‘Ábid",
+    "common_name": "Akbar-ibn-i-‘Ábid",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí who died for his faith alongside Abu'l-Qásim-ibn-i-Ḥájí-Zayná and others during the persecutions recounted in The Dawn-Breakers.",
+    "importance": 6,
+    "importance_reason": "Martyr-list entry named once with no further detail.",
+    "characterizations": []
+  },
+  {
+    "name": "Albert Basil Orme Wilberforce",
+    "common_name": "Archdeacon Wilberforce",
+    "aliases": ["Archdeacon Wilberforce", "Basil Wilberforce", "Albert Basil Orme Wilberforce"],
+    "native_script": [],
+    "summary": "Anglican Archdeacon of Westminster who invited 'Abdu'l-Bahá to address the congregation of St. John the Divine and seated Him in the bishop's chair — cited in GPB as a mark of the Faith's recognition in the West.",
+    "importance": 17,
+    "importance_reason": "Western cleric whose hosting of 'Abdu'l-Bahá is a small recurring detail (4 mentions) of His Western journeys.",
+    "characterizations": []
+  },
+  {
+    "name": "Albert Dawson",
+    "common_name": "Albert Dawson",
+    "aliases": ["editor of the Christian Commonwealth"],
+    "native_script": [],
+    "summary": "Editor of the Christian Commonwealth, cited once in GPB among Western figures associated with publicizing 'Abdu'l-Bahá's Western journeys.",
+    "importance": 7,
+    "importance_reason": "One-mention Western editor named as evidence of recognition.",
+    "characterizations": []
+  },
+  {
+    "name": "Aleksey Nikolayevich Kuropatkin",
+    "common_name": "General Kuropatkin",
+    "aliases": ["General Kuropatkin", "General Krupatkin", "Aleksey Nikolayevich Kuropatkin"],
+    "native_script": ["Алексей Николаевич Куропаткин"],
+    "summary": "Russian general and governor-general of Turkistán who, delegated by the Czar, attended the laying of the foundation stone of the Mashriqu'l-Adhkár of 'Ishqábád — cited once in GPB.",
+    "importance": 10,
+    "importance_reason": "One-mention official noted for his ceremonial presence at the 'Ishqábád temple foundation.",
+    "characterizations": []
+  },
+  {
+    "name": "Alexander Graham Bell",
+    "common_name": "Alexander Graham Bell",
+    "aliases": ["inventor of the telephone"],
+    "native_script": [],
+    "summary": "The inventor of the telephone, named once in GPB among the eminent Western figures who met or honored 'Abdu'l-Bahá.",
+    "importance": 8,
+    "importance_reason": "One-mention famous Westerner cited as evidence of recognition.",
+    "characterizations": []
+  },
+  {
+    "name": "Alexander III",
+    "common_name": "Alexander III",
+    "aliases": ["the Czar", "Alexander III of Russia"],
+    "native_script": ["Александр III"],
+    "summary": "Emperor of Russia (1881–1894), referenced in GPB in connection with the 'Ishqábád military court that punished the murderers of a Bahá'í and with his harsh domestic repression.",
+    "importance": 11,
+    "importance_reason": "Sovereign mentioned (3×) for contextual political backdrop rather than direct involvement with the Faith.",
+    "characterizations": []
+  },
+  {
+    "name": "Alma S. Knobloch",
+    "common_name": "Alma Knobloch",
+    "aliases": ["Alma S. Knobloch"],
+    "native_script": [],
+    "summary": "An early American Bahá'í teacher who, following Dr. K. E. Fisher, established the Faith in Germany and carried it to Austria.",
+    "importance": 19,
+    "importance_reason": "Pioneer who opened German-speaking Europe to the Faith — a meaningful but briefly noted teaching role (1 mention).",
+    "characterizations": []
+  },
+  {
+    "name": "Amos",
+    "common_name": "Amos",
+    "aliases": ["‘Ámús"],
+    "native_script": ["עמוס", "عاموس"],
+    "summary": "The Hebrew prophet whose words ('The Lord will roar from Zion... the top of Carmel shall wither') are cited in GPB as foretelling the coming of Bahá'u'lláh.",
+    "importance": 13,
+    "importance_reason": "Biblical prophet cited once for a prophecy applied to Bahá'u'lláh and Mount Carmel.",
+    "characterizations": []
+  },
+  {
+    "name": "Amír Arslán Khán, son of the Sálár",
+    "common_name": "Amír Arslán Khán (son of the Sálár)",
+    "aliases": ["Amír Arslán Khán, son of the Sálár"],
+    "native_script": [],
+    "summary": "A commander who, with Ja'far-Qulí Khán-i-Námdár, conducted operations against the Bábí defenders and displayed great cruelty — named once in The Dawn-Breakers; distinct from Amír Arslán Khán the Majdu'd-Dawlih.",
+    "importance": 9,
+    "importance_reason": "One-mention military officer; a namesake distinct from the Majdu'd-Dawlih, kept separate by side/timeframe.",
+    "characterizations": []
+  },
+  {
+    "name": "Amír Arslán Khán, the Majdu’d-Dawlih",
+    "common_name": "Amír Arslán Khán, the Majdu’d-Dawlih",
+    "aliases": ["the Majdu'd-Dawlih", "امیر ارسلان خان", "Amír Arslán Khán Majdu’d-Dawlih"],
+    "native_script": ["امیر ارسلان خان مجدالدوله"],
+    "summary": "A maternal uncle of Náṣiri'd-Dín Sháh and governor of Zanján, described as 'envious and hypocritical' and named as a chief figure responsible for the 1852 Ṭihrán massacre of the Bábís.",
+    "importance": 30,
+    "importance_reason": "Royal-kinsman official among those chiefly responsible for the great Ṭihrán persecution — recurring (7 mentions) named antagonist.",
+    "characterizations": []
+  },
+  {
+    "name": "Andrew Carnegie",
+    "common_name": "Andrew Carnegie",
+    "aliases": ["the steel magnate"],
+    "native_script": [],
+    "summary": "The American steel industrialist and philanthropist, named once in GPB among eminent Western figures associated with 'Abdu'l-Bahá's journeys.",
+    "importance": 8,
+    "importance_reason": "One-mention famous Westerner cited as evidence of recognition.",
+    "characterizations": []
+  }
+]

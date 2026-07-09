@@ -1,0 +1,760 @@
+[
+  {
+    "name": "Mír Mihdí (martyr of Sang-Sar, uncle of Siyyid Aḥmad)",
+    "common_name": "Mír Mihdí (martyr of Sang-Sar, uncle of Siyyid Aḥmad)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Paternal uncle of Siyyid Aḥmad of Sang-Sar, mentioned in passing in The Dawn-Breakers.",
+    "importance": 8,
+    "importance_reason": "Single-mention incidental relative named only to situate Siyyid Aḥmad."
+  },
+  {
+    "name": "Mír Muḥammad-i-Shírází",
+    "common_name": "Mír Muḥammad-i-Shírází",
+    "aliases": ["میر محمد", "Mír Muḥammad"],
+    "native_script": ["میر محمد"],
+    "summary": "A Bábí of Shíráz who, resenting Mírzá Yaḥyá's claims and seclusion in Adrianople, pressed Siyyid Muḥammad to arrange the famous face-to-face confrontation Bahá'u'lláh proposed to discriminate truth from falsehood.",
+    "importance": 28,
+    "importance_reason": "Named agent in the pivotal Adrianople challenge to Mírzá Yaḥyá, though only twice mentioned."
+  },
+  {
+    "name": "Mír Muḥammad-Ḥusayn",
+    "common_name": "Mír Muḥammad-Ḥusayn, the Imám-Jum‘ih of Iṣfahán",
+    "aliases": ["the She-Serpent", "Raqs̱há’", "Imám-Jum‘ih of Iṣfahán", "میر محمد حسین"],
+    "native_script": ["میر محمد حسین"],
+    "summary": "The Imám-Jum‘ih of Iṣfahán who, with Shaykh Muḥammad-Báqir, instigated the 1879 martyrdom of the King and Beloved of Martyrs to escape a debt he owed them; stigmatized by Bahá'u'lláh as the 'She-Serpent' (Raqshá).",
+    "importance": 55,
+    "importance_reason": "A foremost secondary antagonist whose treachery produced two of the Faith's most celebrated martyrdoms.",
+    "characterizations": [
+      "GPB: stigmatized by Bahá’u’lláh as the 'she-serpent,' who, in view of a large debt he had incurred in his transactions with them, schemed to nullify his obligations by denouncing them as Bábís",
+      "Wikipedia: Mír Muḥammad Ḥusayn, the Imám Jum'ih of Iṣfahán, was surnamed the 'She-Serpent', and was Shaykh Muḥammad Báqir's accomplice in the persecution of the Bahá'ís."
+    ]
+  },
+  {
+    "name": "Mír Muḥammad-‘Alí (father of Siyyid Aḥmad of Sang-Sar)",
+    "common_name": "Mír Muḥammad-‘Alí (father of Siyyid Aḥmad of Sang-Sar)",
+    "aliases": ["Mír Muḥammad-‘Alí (father of Siyyid Abú-Ṭálib-i-Sang-Sárí)"],
+    "native_script": [],
+    "summary": "A learned admirer of Shaykh Aḥmad-i-Aḥsá’í who took his two sons to Karbilá to study under Siyyid Káẓim, and exhorted his son to arise in service of the Cause.",
+    "importance": 12,
+    "importance_reason": "Incidental Shaykhí father figure recalled in a companion's recollection."
+  },
+  {
+    "name": "Mír Riḍá",
+    "common_name": "Mír Riḍá",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A siyyid of exceptional courage among the Ṭabarsí defenders who volunteered to capture the governor and bring him prisoner to the fort.",
+    "importance": 14,
+    "importance_reason": "Single-mention fort defender remembered for one bold offer."
+  },
+  {
+    "name": "Mír Riḍáy-i-Sardár",
+    "common_name": "Mír Riḍáy-i-Sardár",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí who, with Dín-Muḥammad-Vazír, secretly buried a fallen leader's remains before the enemy learned of his death.",
+    "importance": 12,
+    "importance_reason": "Single-mention episode participant in a clandestine burial."
+  },
+  {
+    "name": "Mír Siyyid Ḥusayn Khán of Fírúz-Kúh",
+    "common_name": "Mír Siyyid Ḥusayn Khán of Fírúz-Kúh",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An official dismissed and disgraced by the Amír (Mírzá Taqí Khán) once his sympathies became known.",
+    "importance": 10,
+    "importance_reason": "Single-mention official noted only for his dismissal."
+  },
+  {
+    "name": "Mír Ṣaláḥ",
+    "common_name": "Mír Ṣaláḥ",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A formidable Bábí supporter who, with armed companions, opposed an advance and urged a leader to move his residence to the fort of ‘Alí-Mardán Khán.",
+    "importance": 15,
+    "importance_reason": "Minor recurring episode participant (three mentions) in the Dawn-Breakers narrative."
+  },
+  {
+    "name": "Mírzá 'Abbás-i-Núrí, known as Mírzá Buzurg",
+    "common_name": "Mírzá Buzurg",
+    "aliases": ["the Vazír", "Mírzá 'Abbás-i-Núrí", "میرزا بزرگ نوری", "Mírzá ‘Abbás", "Mírzá Buzurg Núrí"],
+    "native_script": ["میرزا بزرگ نوری"],
+    "summary": "The father of Bahá'u'lláh, a nobleman of Núr and celebrated calligrapher who served as vizier in the court of Fatḥ-‘Alí Sháh; titled 'Buzurg' (the Great) by royal decree.",
+    "importance": 62,
+    "importance_reason": "Father of Bahá'u'lláh and member of the Holy Family, a prominent figure of the Qájár court.",
+    "characterizations": [
+      "GPB: belonged, through His father, Mírzá ‘Abbás, better known as Mírzá Buzurg — a nobleman closely associated with the ministerial circles of the Court of Fatḥ-‘Alí Sháh — to one of the most ancient and renowned families of Mázindarán",
+      "Wikipedia: Buzurg came to prominence in the aristocracy of Iran due to his talent for calligraphy when Fath-Ali Shah... summoned him to Tehran. A royal decree bestowed upon Mirza 'Abbas the name Mirza Buzurg [the 'Great']."
+    ]
+  },
+  {
+    "name": "Mírzá Abu'l-Qásim, the Imám-Jum‘ih of Ṭihrán",
+    "common_name": "Mírzá Abu'l-Qásim, the Imám-Jum‘ih of Ṭihrán",
+    "aliases": [],
+    "native_script": [],
+    "summary": "The Imám-Jum‘ih of Ṭihrán whose hesitancy and refusal to consent delayed the execution of the Bábí ‘Aẓím.",
+    "importance": 18,
+    "importance_reason": "Minor cleric noted for one act of hesitation in an execution."
+  },
+  {
+    "name": "Mírzá Abu’l-Faḍl-i-Gulpáygání",
+    "common_name": "Mírzá Abu'l-Faḍl",
+    "aliases": ["Abu’l-Faḍá’il", "میرزا ابوالفضل", "Mírzá Abu'l-Faḍl Gulpáygání", "Mirza Abu'l-Fadl"],
+    "native_script": ["میرزا ابوالفضل"],
+    "summary": "The foremost scholar and apologist of the Bahá'í Faith and an Apostle of Bahá'u'lláh; author of the Fará'id and The Brilliant Proof, he taught across Persia, Central Asia, Egypt, and the United States.",
+    "importance": 78,
+    "importance_reason": "Pre-eminent Bahá'í scholar and one of the 19 Apostles of Bahá'u'lláh; foundational to Bahá'í apologetics.",
+    "characterizations": [
+      "Wikipedia: a Persian Bahá'í named an Apostle of Bahá'u'lláh by Shoghi Effendi... came to be the pre-eminent scholar of the Bahá'í Faith.",
+      "Bahaipedia: The Fará'id (The Peerless Gems) is generally considered Gulpaygani's greatest work, completed in February 1898 — his magisterial apologetic in response to the Shaykhu'l-Islam of Tiflis."
+    ]
+  },
+  {
+    "name": "Mírzá Abu’l-Qásim (brother of the Báb’s wife)",
+    "common_name": "Mírzá Abu’l-Qásim (brother of the Báb’s wife)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A brother of Khadíjih Bagum, the Báb's wife, named only to identify the Báb's wedlock connection.",
+    "importance": 10,
+    "importance_reason": "Single-mention relative named only for genealogy."
+  },
+  {
+    "name": "Mírzá Abu’l-Qásim (relative of the governor of Nayríz)",
+    "common_name": "Mírzá Abu’l-Qásim (relative of the governor of Nayríz)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A relative of the governor of Nayríz, described as a man of distinguished merit.",
+    "importance": 10,
+    "importance_reason": "Minor Nayríz-episode name with no developed story."
+  },
+  {
+    "name": "Mírzá Abu’l-Qásim (son-in-law of Mírzá Muḥammad-Taqí of Núr)",
+    "common_name": "Mírzá Abu’l-Qásim (son-in-law of Mírzá Muḥammad-Taqí of Núr)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A believer who renounced his former teacher and vowed to dedicate his remaining life to the service of Bahá'u'lláh.",
+    "importance": 14,
+    "importance_reason": "Minor episode participant remembered for a single declaration of devotion."
+  },
+  {
+    "name": "Mírzá Abu’l-Qásim, the Qá’im-Maqám",
+    "common_name": "Mírzá Abu’l-Qásim, the Qá’im-Maqám",
+    "aliases": ["Mírzá Abu’l-Qásim-i-Qá’im-Maqám", "Qá'im-Maqám Farahání", "Abol-Qasem Qa'em-Maqam"],
+    "native_script": [],
+    "summary": "Grand Vazír of Muḥammad Sháh and a celebrated Persian statesman and prose writer; strangled in 1835 at the instigation of Ḥájí Mírzá Áqásí, appearing in The Dawn-Breakers as a marker of Qájár ministerial history.",
+    "importance": 30,
+    "importance_reason": "Notable Qájár grand vizier of independent historical fame, but peripheral to the Bábí-Bahá'í narrative.",
+    "characterizations": [
+      "Wikipedia: Mirza Abol-Qasem Qa'em-Maqam Farahani (1779–1835) was an Iranian official and prose writer who played a central role in Iranian politics... strangled in the crypt of the Negarestan palace on 26 June 1835."
+    ]
+  },
+  {
+    "name": "Mírzá Abu’l-Qásim, the mujtahid of Zanján",
+    "common_name": "Mírzá Abu’l-Qásim, the mujtahid of Zanján",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A greedy mujtahid of Zanján in whose house Bábí women were held in hope of recanting, and who seized their belongings.",
+    "importance": 16,
+    "importance_reason": "Minor antagonist cleric in the Zanján aftermath."
+  },
+  {
+    "name": "Mírzá Abu’l-Ḥasan (son of the brother-in-law of Mullá Ḥusayn)",
+    "common_name": "Mírzá Abu’l-Ḥasan (son of the brother-in-law of Mullá Ḥusayn)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A firm and devoted believer of Bushrúyih, son of Mullá Ḥusayn's brother-in-law.",
+    "importance": 8,
+    "importance_reason": "Single-mention relative noted only for steadfastness."
+  },
+  {
+    "name": "Mírzá Abú-Ṭálib Khán",
+    "common_name": "Mírzá Abú-Ṭálib Khán",
+    "aliases": ["میرزا ابوطالب خان"],
+    "native_script": ["میرزا ابوطالب خان"],
+    "summary": "A haughty Qájár official who ordered the plunder and burning of Tákur and the destruction of Bahá'u'lláh's house, and who perished of plague a year later.",
+    "importance": 26,
+    "importance_reason": "Named antagonist behind the destruction of Bahá'u'lláh's Tákur residence, with a noted retributive end."
+  },
+  {
+    "name": "Mírzá Asadu’lláh-i-Iṣfahání",
+    "common_name": "Mírzá Asadu’lláh-i-Iṣfahání",
+    "aliases": ["ميرزا اسد الله اصفهاني", "میرزا اسدالله", "Mírzá Asadu’lláh"],
+    "native_script": ["ميرزا اسد الله اصفهاني", "میرزا اسدالله"],
+    "summary": "The believer entrusted by Bahá'u'lláh to safeguard and transport the remains of the Báb, concealing them in Ṭihrán and helping convey them onward toward the Holy Land.",
+    "importance": 38,
+    "importance_reason": "Custodian of the Báb's remains during their long concealment, a key role in a sacred history."
+  },
+  {
+    "name": "Mírzá Asadu’lláh-i-Khúy, Dayyán",
+    "common_name": "Dayyán",
+    "aliases": ["Mírzá Asadu’lláh", "Mírzá Asadu’lláh-i-Khúy", "the third Letter to believe in Him Whom God shall make manifest", "دیّان", "ميرزا اسدالله خویی"],
+    "native_script": ["دیّان", "ميرزا اسدالله خویی"],
+    "summary": "A prominent official of high literary repute surnamed Dayyán by the Báb and named the 'third Letter to believe in Him Whom God shall make manifest'; he recognized Bahá'u'lláh and was murdered in 1856 by Mírzá Yaḥyá's agents.",
+    "importance": 58,
+    "importance_reason": "Eminent early figure singled out by the Báb, an early recognizer of Bahá'u'lláh martyred by the Azalís.",
+    "characterizations": [
+      "GPB: the zealous, the famous Mírzá Asadu’lláh, surnamed Dayyán, a prominent official of high literary repute, who was endowed by the Báb with the 'hidden and preserved knowledge,' and extolled as the 'repository of the trust of the one true God'",
+      "Wikipedia: The Báb conferred upon Dayyán the title of 'the third Letter to believe in Him Whom God shall make manifest'... Dayyán was murdered for refuting the claims of successorship made by Mirza Yahya."
+    ]
+  },
+  {
+    "name": "Mírzá Asadu’lláh-i-Ṣabbág̱h",
+    "common_name": "Mírzá Asadu’lláh-i-Ṣabbág̱h",
+    "aliases": ["ميرزا اسدالله صباغ"],
+    "native_script": ["ميرزا اسدالله صباغ"],
+    "summary": "A believer whose property was plundered and fought over by persecutors, cited in passing in God Passes By.",
+    "importance": 9,
+    "importance_reason": "Single-mention victim named only as an example of plunder."
+  },
+  {
+    "name": "Mírzá As̱hraf-i-Ábádih'í",
+    "common_name": "Mírzá Ashraf-i-Ábádih'í",
+    "aliases": ["Mírzá Ashraf"],
+    "native_script": [],
+    "summary": "A believer martyred in Iṣfahán in 1888, his body trampled by Shaykh Muḥammad-Taqíy-i-Najafí (the 'son of the wolf') and his pupils, mutilated, burnt, and buried beneath a ruined wall.",
+    "importance": 33,
+    "importance_reason": "A remembered martyr whose brutal death is recounted, though only thrice mentioned."
+  },
+  {
+    "name": "Mírzá Aḥmad (mujtahid of Tabríz)",
+    "common_name": "Mírzá Aḥmad (mujtahid of Tabríz)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A mujtahid of Tabríz, father of Mírzá Báqir, who pronounced a death sentence later upheld by his son.",
+    "importance": 12,
+    "importance_reason": "Minor cleric noted only for a sentence in the Báb's interrogation episode."
+  },
+  {
+    "name": "Mírzá Aḥmad Sohráb",
+    "common_name": "Ahmad Sohrab",
+    "aliases": ["the former secretary of ‘Abdu’l-Bahá", "Mirza Ahmad Sohrab", "Mírzá Aḥmad Sohráb"],
+    "native_script": [],
+    "summary": "Persian-American who served as ‘Abdu'l-Bahá's secretary and interpreter (1912–1919); later a Covenant-breaker, co-founder of the New History Society, excommunicated by Shoghi Effendi in 1939.",
+    "importance": 42,
+    "importance_reason": "A notable, named Covenant-breaker whose opposition Shoghi Effendi addresses directly in God Passes By.",
+    "characterizations": [
+      "Wikipedia: Mírzá Aḥmad Sohráb (1890–1958) was a Persian-American author and Baháʼí who served as 'Abdu'l-Bahá's secretary and interpreter from 1912 to 1919... excommunicated from the Baháʼí Faith in 1939 by Shoghi Effendi.",
+      "GPB: the infamous and insidious machinations of a former secretary of ‘Abdu’l-Bahá... has arisen, and is still exerting himself, to pervert the purpose and nullify the essential provisions of the immortal Document."
+    ]
+  },
+  {
+    "name": "Mírzá Aḥmad, relator of the Mázindarán narrative",
+    "common_name": "Mírzá Aḥmad, relator of the Mázindarán narrative",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A believer who related the circumstances of a Mázindarán incident before assembled believers in Ṭihrán in 1265 A.H.",
+    "importance": 9,
+    "importance_reason": "Single-mention oral source for a narrated incident."
+  },
+  {
+    "name": "Mírzá Aḥmad, son of Muḥsin",
+    "common_name": "Mírzá Aḥmad, son of Muḥsin",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí named in a list with no further detail.",
+    "importance": 6,
+    "importance_reason": "Bare list-entry name."
+  },
+  {
+    "name": "Mírzá Aḥmad, uncle of ‘Alíy-i-Sardár",
+    "common_name": "Mírzá Aḥmad, uncle of ‘Alíy-i-Sardár",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí appointed officer in charge of the mill-tower known as Chinár during a fort defense.",
+    "importance": 9,
+    "importance_reason": "Single-mention episode participant given a minor command."
+  },
+  {
+    "name": "Mírzá Aḥmad-i-Azg̱handí",
+    "common_name": "Mírzá Aḥmad-i-Azghandí",
+    "aliases": ["میرزا احمد ازغندی"],
+    "native_script": ["میرزا احمد ازغندی"],
+    "summary": "An eminent scholar, the most learned among the ‘ulamás of Khurásán, who compiled over twelve thousand traditions and prophecies of the promised Revelation; converted by Mullá Ḥusayn and later wrote in support of Bahá'u'lláh.",
+    "importance": 44,
+    "importance_reason": "A leading Bábí scholar whose prophetic compilation armed the early believers; defended Bahá'u'lláh after 1866.",
+    "characterizations": [
+      "GPB: the most learned, the wisest and the most outstanding among the ‘ulamás of Khurásán, who... had compiled above twelve thousand traditions and prophecies concerning the time and character of the expected Revelation.",
+      "Bahaipedia: When Mírzá Yaḥyá and Bahá'u'lláh split in 1866, Azghandí wrote literature supporting Bahá'u'lláh's claims."
+    ]
+  },
+  {
+    "name": "Mírzá Aḥmad-i-Qazvíní",
+    "common_name": "Mírzá Aḥmad-i-Qazvíní",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A martyr who had heard Mullá Ḥusayn recount his historic first interview with the Báb and transmitted the account.",
+    "importance": 12,
+    "importance_reason": "Single-mention martyr-narrator of a transmitted account."
+  },
+  {
+    "name": "Mírzá Badí‘u’lláh",
+    "common_name": "Mírzá Badí‘u’lláh",
+    "aliases": ["ميرزا بديع الله", "Badí'u'lláh"],
+    "native_script": ["ميرزا بديع الله"],
+    "summary": "A son of Bahá'u'lláh and chief accomplice of the arch-breaker Mírzá Muḥammad-‘Alí; he briefly reconciled with ‘Abdu'l-Bahá and signed a published confession of the breakers' plots before relapsing.",
+    "importance": 40,
+    "importance_reason": "A named son of Bahá'u'lláh central to the Covenant-breaking, whose confession is historically significant.",
+    "characterizations": [
+      "GPB: This very brother, Mírzá Muḥammad-‘Alí’s chief accomplice, in a written confession signed, sealed and published by him, on the occasion of his reconciliation with ‘Abdu’l-Bahá, has borne testimony to the wicked plots that had been devised."
+    ]
+  },
+  {
+    "name": "Mírzá Buzurg Khán-i-Qazvíní, Persian Consul-General in Baghdád",
+    "common_name": "Mírzá Buzurg Khán-i-Qazvíní",
+    "aliases": ["Mírzá Buzurg Khán", "ميرزا بزرگ خان"],
+    "native_script": ["ميرزا بزرگ خان"],
+    "summary": "The Persian Consul-General in Baghdád who, allied with Shaykh ‘Abdu'l-Ḥusayn, intrigued against Bahá'u'lláh during the ‘Iráq period; described by Shoghi Effendi as a mean-spirited, dishonorable drunkard.",
+    "importance": 30,
+    "importance_reason": "Named state antagonist who actively plotted against Bahá'u'lláh in Baghdád."
+  },
+  {
+    "name": "Mírzá Báqir (mujtahid of Tabríz, son of Mírzá Aḥmad)",
+    "common_name": "Mírzá Báqir (mujtahid of Tabríz)",
+    "aliases": ["Mírzá Báqir, son of Mírzá Aḥmad"],
+    "native_script": [],
+    "summary": "Mujtahid of Tabríz who succeeded his father and to whose house the Báb was conducted; he upheld his father's death sentence.",
+    "importance": 13,
+    "importance_reason": "Minor cleric in the Báb's Tabríz interrogation."
+  },
+  {
+    "name": "Mírzá Báqir-i-Shírází",
+    "common_name": "Mírzá Báqir-i-Shírází",
+    "aliases": ["میرزا باقر شیرازی"],
+    "native_script": ["میرزا باقر شیرازی"],
+    "summary": "A devoted scribe who transcribed up to two thousand verses daily of Bahá'u'lláh's Writings, leaving some twenty volumes in his fine penmanship; later slain in Kirmán.",
+    "importance": 24,
+    "importance_reason": "Remembered for prodigious transcription of the Writings and his martyrdom, though twice mentioned."
+  },
+  {
+    "name": "Mírzá Fatḥ-‘Alí Ḵhán, the Ṣáḥib-i-Díván",
+    "common_name": "Mírzá Fatḥ-‘Alí Khán, the Ṣáḥib-i-Díván",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An official party to a dispute involving the Ẓillu's-Sulṭán, named in passing.",
+    "importance": 8,
+    "importance_reason": "Single-mention official in a property dispute."
+  },
+  {
+    "name": "Mírzá Fatḥu’lláh-i-Ḥakkák",
+    "common_name": "Mírzá Fatḥu’lláh-i-Ḥakkák",
+    "aliases": ["Mírzá Fatḥu’lláh"],
+    "native_script": [],
+    "summary": "A young convert who was arrested and martyred in 1268 A.H. following the attempt on the Sháh's life.",
+    "importance": 14,
+    "importance_reason": "Minor named martyr of the 1852 reprisals."
+  },
+  {
+    "name": "Mírzá Faḍlu’lláh (reader of the records)",
+    "common_name": "Mírzá Faḍlu’lláh (reader of the records)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Named as the reader of certain records, with no further detail.",
+    "importance": 6,
+    "importance_reason": "Single-mention functional reference."
+  },
+  {
+    "name": "Mírzá Hádí",
+    "common_name": "Mírzá Hádíy-i-Nahrí",
+    "aliases": ["Mírzá Hádí (brother of Mírzá Muḥammad-‘Alíy-i-Nahrí)", "Mírzá Hádí (brother of Siyyid-i-Nahrí)", "Mírzá Hádíy-i-Nahrí", "Mírzá Hádí"],
+    "native_script": [],
+    "summary": "Brother of Mírzá Muḥammad-‘Alíy-i-Nahrí of Iṣfahán, among the early companions who recognized the Cause despite the doubts spread by detractors.",
+    "importance": 16,
+    "importance_reason": "Minor early Iṣfahán believer of the Nahrí family with recurring presence."
+  },
+  {
+    "name": "Mírzá Hádí, son of Mullá ‘Abdu’l-Vahháb-i-Qazvíní",
+    "common_name": "Mírzá Hádí, son of Mullá ‘Abdu’l-Vahháb-i-Qazvíní",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí named only in a list of companions.",
+    "importance": 6,
+    "importance_reason": "Bare list-entry name."
+  },
+  {
+    "name": "Mírzá Ibráhím",
+    "common_name": "Mírzá Ibráhím",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Father of the Sulṭánu'sh-Shuhadá and elder brother of Mírzá Muḥammad-‘Alíy-i-Nahrí, who hosted the Báb one night.",
+    "importance": 14,
+    "importance_reason": "Minor relative of the Nahrí family who hosted the Báb once."
+  },
+  {
+    "name": "Mírzá Ibráhím-i-S̱hírází",
+    "common_name": "Mírzá Ibráhím-i-Shírází",
+    "aliases": [],
+    "native_script": [],
+    "summary": "One of the first group to reach Iṣfahán and meet the Báb, named in a list of companions.",
+    "importance": 9,
+    "importance_reason": "Single-mention companion in a list."
+  },
+  {
+    "name": "Mírzá Ismá‘íl (uncle of ‘Abdu’l-Bahá)",
+    "common_name": "Mírzá Ismá‘íl (uncle of ‘Abdu’l-Bahá)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A paternal uncle in whose house the Holy Family took shelter, recalled in ‘Abdu'l-Bahá's reminiscence.",
+    "importance": 12,
+    "importance_reason": "Single-mention relative named in a family recollection."
+  },
+  {
+    "name": "Mírzá Ja‘far (schoolmaster of Mas̱hhad)",
+    "common_name": "Mírzá Ja‘far (schoolmaster of Mashhad)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "The schoolmaster in Mashhad in whose school Quddús studied as a boy.",
+    "importance": 10,
+    "importance_reason": "Single-mention figure noted only as Quddús's teacher."
+  },
+  {
+    "name": "Mírzá Ja‘far Ḵhán Mus̱híru’d-Dawlih",
+    "common_name": "Mírzá Ja‘far Khán Mushíru’d-Dawlih",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Persian diplomat sent to Erzeroum after his Constantinople ambassadorship to meet the English, Russian, and Ottoman delegates.",
+    "importance": 12,
+    "importance_reason": "Minor diplomatic figure named for a single mission."
+  },
+  {
+    "name": "Mírzá Luṭf-‘Alí",
+    "common_name": "Mírzá Luṭf-‘Alí, the chamberlain",
+    "aliases": ["Mírzá Luṭf-‘Alí, the chamberlain", "Master of Ceremonies to the Sháh"],
+    "native_script": [],
+    "summary": "The Sháh's Master of Ceremonies in whose Ṭihrán house Siyyid Yaḥyá (Vaḥíd) lodged and to whom Vaḥíd reported his findings about the Báb for the king.",
+    "importance": 18,
+    "importance_reason": "Court chamberlain who served as the conduit for Vaḥíd's report to the Sháh."
+  },
+  {
+    "name": "Mírzá Majdi’d-Dín",
+    "common_name": "Mírzá Majdi’d-Dín",
+    "aliases": ["ميرزا مجد الدين", "Majd ad-Dín"],
+    "native_script": ["ميرزا مجد الدين"],
+    "summary": "Brother-in-law of the arch-breaker Mírzá Muḥammad-‘Alí and his active accomplice, dispatched to seek the Válí of Damascus's assistance against ‘Abdu'l-Bahá.",
+    "importance": 28,
+    "importance_reason": "Named secondary Covenant-breaker active against ‘Abdu'l-Bahá."
+  },
+  {
+    "name": "Mírzá Majíd-i-Áhí",
+    "common_name": "Mírzá Majíd-i-Áhí",
+    "aliases": ["Mírzá Majíd", "میرزا مجید"],
+    "native_script": ["میرزا مجید"],
+    "summary": "Bahá'u'lláh's brother-in-law who served as secretary to the Russian Minister Prince Dolgorouki and whose adjoining house Bahá'u'lláh was conducted to at Zarkandih.",
+    "importance": 22,
+    "importance_reason": "A family connection whose post linked Bahá'u'lláh to Russian diplomatic protection in 1852."
+  },
+  {
+    "name": "Mírzá Malkam Ḵhán",
+    "common_name": "Mírzá Malkam Khán",
+    "aliases": ["Náẓimu'd-Dawlih", "میرزا ملکم خان", "Malkom Khan", "Prince Malkom Khan"],
+    "native_script": ["میرزا ملکم خان"],
+    "summary": "A prominent Qájár-era reformer and diplomat (1833–1908) who, with others, vainly attempted to secure Bahá'u'lláh's support; a notable figure of Iranian modernization independent of the Faith.",
+    "importance": 25,
+    "importance_reason": "Historically notable reformer of independent fame, but a single passing mention in the corpus."
+  },
+  {
+    "name": "Mírzá Maḥmúd-i-Qamṣarí",
+    "common_name": "Mírzá Maḥmúd-i-Qamṣarí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A beloved and revered believer of over ninety, met in Káshán, who related a story to the historian.",
+    "importance": 10,
+    "importance_reason": "Minor oral source named for a single related story."
+  },
+  {
+    "name": "Mírzá Ma‘ṣúm-i-Ṭabíb",
+    "common_name": "Mírzá Ma‘ṣúm-i-Ṭabíb",
+    "aliases": ["Mírzá Ma‘ṣúm"],
+    "native_script": [],
+    "summary": "Former owner of a caravanserai and father of Mírzá Muḥammad-‘Alíy-i-Ṭabíb, named in passing.",
+    "importance": 8,
+    "importance_reason": "Incidental name tied to a caravanserai location."
+  },
+  {
+    "name": "Mírzá Mihdí-i-Iṣfahání",
+    "common_name": "Mírzá Mihdí-i-Iṣfahání",
+    "aliases": ["Mírzá Mihdí (martyr of Iṣfahán)"],
+    "native_script": [],
+    "summary": "A martyr of Iṣfahán named with minimal detail.",
+    "importance": 8,
+    "importance_reason": "Bare-mention martyr-list name."
+  },
+  {
+    "name": "Mírzá Mihdí-i-Qazvíní",
+    "common_name": "Mírzá Mihdí-i-Qazvíní",
+    "aliases": ["Mírzá Mihdí (martyr of Qazvín)"],
+    "native_script": [],
+    "summary": "A martyr of Qazvín named with minimal detail.",
+    "importance": 8,
+    "importance_reason": "Bare-mention martyr-list name."
+  },
+  {
+    "name": "Mírzá Mihdíy-i-Núrí",
+    "common_name": "Mírzá Mihdí, the Purest Branch",
+    "aliases": ["The Purest Branch", "Ghuṣn-i-Aṭhar", "میرزا مهدی", "Mírzá Mihdí"],
+    "native_script": ["میرزا مهدی"],
+    "summary": "The youngest son of Bahá'u'lláh and a brother of ‘Abdu'l-Bahá, an amanuensis and companion of His exile; he died at age 22 in 1870 after falling through a skylight in the ‘Akká barracks, offering his life as a ransom.",
+    "importance": 68,
+    "importance_reason": "A member of the Holy Family, the Purest Branch, whose sacrificial death is a central episode of Bahá'í history.",
+    "characterizations": [
+      "GPB: the premature loss of the noble, the pious Mírzá Mihdí, the Purest Branch, ‘Abdu’l-Bahá’s twenty-two year old brother, an amanuensis of Bahá’u’lláh and a companion of His exile.",
+      "Bahaipedia: he fell through an unguarded skylight onto a wooden crate below, which pierced his ribs, causing his death twenty-two hours later on June 23, 1870; his dying supplication was that his life be accepted as a ransom."
+    ]
+  },
+  {
+    "name": "Mírzá Mihdíy-i-Rashtí",
+    "common_name": "Mírzá Mihdíy-i-Rashtí",
+    "aliases": ["میرزا مهدی رشتی"],
+    "native_script": ["میرزا مهدی رشتی"],
+    "summary": "A detractor whose accusations against Bahá'u'lláh prompted the revelation of the Kitáb-i-Badí‘, His apologia.",
+    "importance": 20,
+    "importance_reason": "An opponent whose attack occasioned a major Tablet, though singly mentioned."
+  },
+  {
+    "name": "Mírzá Muslim",
+    "common_name": "Mírzá Muslim",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A well-known divine of Íraván, named only as a father.",
+    "importance": 7,
+    "importance_reason": "Single-mention parent named for identification."
+  },
+  {
+    "name": "Mírzá Muḥammad Rawḍih-Ḵhán-i-Yazdí",
+    "common_name": "Mírzá Muḥammad Rawḍih-Khán-i-Yazdí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí named only in a list.",
+    "importance": 6,
+    "importance_reason": "Bare list-entry name."
+  },
+  {
+    "name": "Mírzá Muḥammad Ṣádiq-i-Ḵhurásání",
+    "common_name": "Mírzá Muḥammad Ṣádiq-i-Khurásání",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A captive listed among those bound in chains.",
+    "importance": 7,
+    "importance_reason": "Bare captive-list name."
+  },
+  {
+    "name": "Mírzá Muḥammad, son of Mír Muḥammad-Taqí",
+    "common_name": "Mírzá Muḥammad, son of Mír Muḥammad-Taqí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí named with no further detail.",
+    "importance": 6,
+    "importance_reason": "Bare-mention name."
+  },
+  {
+    "name": "Mírzá Muḥammad-'Alíy-i-Nahrí",
+    "common_name": "Mírzá Muḥammad-‘Alíy-i-Nahrí",
+    "aliases": ["میرزا محمدعلی نهری", "Mírzá Muḥammad-‘Alíy-i-Nahrí"],
+    "native_script": ["میرزا محمدعلی نهری"],
+    "summary": "A notable Iṣfahán believer whose daughter Munírih Khánum later married ‘Abdu'l-Bahá, making him a connection of the Holy Family.",
+    "importance": 32,
+    "importance_reason": "Early believer whose daughter became the wife of ‘Abdu'l-Bahá; recurring presence in the narrative."
+  },
+  {
+    "name": "Mírzá Muḥammad-Báqir (builder of the Bábíyyih; lieutenant of Quddús)",
+    "common_name": "Mírzá Muḥammad-Báqir-i-Qá’iní",
+    "aliases": ["Mírzá Muḥammad-Báqir-i-Ḵhurásáníy-i-Qá’iní", "Mírzá Muḥammad-Báqir-i-Harátí", "Mírzá Muḥammad-Báqir-i-Qá’iní", "Mírzá Muḥammad Báqir-i-Qá’iní"],
+    "native_script": [],
+    "summary": "The Bábí who built the Bábíyyih and, instructed by Mullá Ḥusayn, designed the fort of Shaykh Ṭabarsí for the believers' defence; a close companion in the final days of Quddús.",
+    "importance": 36,
+    "importance_reason": "Frequently mentioned (22×) Ṭabarsí figure remembered as architect of the fort and intimate of Quddús."
+  },
+  {
+    "name": "Mírzá Muḥammad-Báqir (nephew of Mullá Ḥusayn)",
+    "common_name": "Mírzá Muḥammad-Báqir (nephew of Mullá Ḥusayn)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A nephew of Mullá Ḥusayn who accompanied him from Bushrúyih to Karbilá and Shíráz and was enrolled among the Letters of the Living.",
+    "importance": 18,
+    "importance_reason": "Early companion of Mullá Ḥusayn linked to the Letters of the Living, but singly mentioned."
+  },
+  {
+    "name": "Mírzá Muḥammad-Javád-i-Qazvíní",
+    "common_name": "Mírzá Muḥammad-Javád-i-Qazvíní",
+    "aliases": ["محمد جواد قزوینی", "Muḥammad-Javád-i-Qazvíní"],
+    "native_script": ["محمد جواد قزوینی"],
+    "summary": "A transcriber of Bahá'u'lláh's Tablets since the Adrianople days who, with his family, defected to the Covenant-breakers and 'perished miserably.'",
+    "importance": 22,
+    "importance_reason": "Named Covenant-breaker once trusted as a scribe of the Writings."
+  },
+  {
+    "name": "Mírzá Muḥammad-Ja‘far (cousin of Zaynu’l-‘Ábidín Khán)",
+    "common_name": "Mírzá Muḥammad-Ja‘far (cousin of Zaynu’l-‘Ábidín Khán)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí, cousin of the chronicler Zaynu'l-‘Ábidín Khán, named in passing.",
+    "importance": 7,
+    "importance_reason": "Bare-mention name identified by kinship to a chronicler."
+  },
+  {
+    "name": "Mírzá Muḥammad-Káẓim (child of Mírzá Muḥammad-Báqir-i-Harátí)",
+    "common_name": "Mírzá Muḥammad-Káẓim (child of Mírzá Muḥammad-Báqir-i-Harátí)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A child who went with his father to Mázindarán, was saved, and grew into an active supporter of the Faith in Mashhad.",
+    "importance": 11,
+    "importance_reason": "Single-mention survivor of Ṭabarsí remembered for his later service."
+  },
+  {
+    "name": "Mírzá Muḥammad-Qulí",
+    "common_name": "Mírzá Muḥammad-Qulí",
+    "aliases": ["میرزا محمد قلی"],
+    "native_script": ["میرزا محمد قلی"],
+    "summary": "A loyal half-brother of Bahá'u'lláh who, unlike some relatives, remained faithful to the end and shared His exile to ‘Akká.",
+    "importance": 30,
+    "importance_reason": "A steadfast member of the Holy Family who accompanied Bahá'u'lláh into His final exile."
+  },
+  {
+    "name": "Mírzá Muḥammad-Qulíy-i-Sabzivárí",
+    "common_name": "Mírzá Muḥammad-Qulíy-i-Sabzivárí",
+    "aliases": ["میرزا محمد قلی سبزواری"],
+    "native_script": ["میرزا محمد قلی سبزواری"],
+    "summary": "A believer addressed in a Tablet of Bahá'u'lláh, referred to as 'the Gulf that hath branched out of this Ocean.'",
+    "importance": 18,
+    "importance_reason": "Recipient of a notable Tablet, though singly mentioned."
+  },
+  {
+    "name": "Mírzá Muḥammad-Riḍá-i-Iṣfahání",
+    "common_name": "Mírzá Muḥammad-Riḍá-i-Iṣfahání",
+    "aliases": ["Mírzá Muḥammad-Riḍá (martyr of Iṣfahán)"],
+    "native_script": [],
+    "summary": "A martyr of Iṣfahán, brother of Mullá Ḥaydar, named with little detail.",
+    "importance": 10,
+    "importance_reason": "Minor martyr identified mainly by kinship."
+  },
+  {
+    "name": "Mírzá Muḥammad-Riḍáy-i-Pá-Qal‘iyí",
+    "common_name": "Mírzá Muḥammad-Riḍáy-i-Pá-Qal‘iyí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "One of the few who recognized the truth of the Cause amid the doubts spread by detractors.",
+    "importance": 10,
+    "importance_reason": "Single-mention early believer in a list of the steadfast."
+  },
+  {
+    "name": "Mírzá Muḥammad-Taqí-i-Sárí",
+    "common_name": "Mírzá Muḥammad-Taqí, mujtahid of Sárí",
+    "aliases": ["Mírzá Muḥammad-Taqí (of Sárí)", "Mírzá Muḥammad-Taqí, mujtahid of Sárí"],
+    "native_script": [],
+    "summary": "A mujtahid of Sárí who, with seven ‘ulamás, set out to share in killing the companions of Quddús and personally took part in cutting a victim to pieces.",
+    "importance": 22,
+    "importance_reason": "Named cleric-antagonist active in the slaughter following Shaykh Ṭabarsí."
+  },
+  {
+    "name": "Mírzá Muḥammad-Taqíy-i-Juvayní",
+    "common_name": "Mírzá Muḥammad-Taqíy-i-Juvayní",
+    "aliases": ["میرزا محمد تقی جوینی"],
+    "native_script": ["میرزا محمد تقی جوینی"],
+    "summary": "A Ṭabarsí participant cited by Shoghi Effendi as an exemplar of renunciation, having cast away a fortune in silver and gold.",
+    "importance": 18,
+    "importance_reason": "Cited as a model of detachment among the Ṭabarsí defenders."
+  },
+  {
+    "name": "Mírzá Muḥammad-Taqíy-i-Núrí",
+    "common_name": "Mírzá Muḥammad-Taqíy-i-Núrí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A celebrated mujtahid of Núr at the height of his authority when Bahá'u'lláh visited the district before the Báb's declaration.",
+    "importance": 14,
+    "importance_reason": "Minor cleric noted as a backdrop to Bahá'u'lláh's pre-declaration visit to Núr."
+  },
+  {
+    "name": "Mírzá Muḥammad-i-Aḵhbárí",
+    "common_name": "Mírzá Muḥammad-i-Akhbárí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A figure who, at Káẓimayn, asked the venerable Siyyid when the Imám would manifest himself.",
+    "importance": 10,
+    "importance_reason": "Minor figure in an anecdote about expectation of the Imám."
+  },
+  {
+    "name": "Mírzá Muḥammad-i-Mans̱hádí",
+    "common_name": "Mírzá Muḥammad-i-Manshádí",
+    "aliases": ["ميرزا محمد", "Mírzá Muḥammad (of Manshád)"],
+    "native_script": ["ميرزا محمد"],
+    "summary": "A believer of Manshád tied to a tree, riddled with bullets, and burned in an early-20th-century persecution.",
+    "importance": 14,
+    "importance_reason": "A named martyr whose brutal death is briefly recounted."
+  },
+  {
+    "name": "Mírzá Muḥammad-i-Mázindarání",
+    "common_name": "Mírzá Muḥammad-i-Mázindarání",
+    "aliases": ["میرزا محمد مازندرانی"],
+    "native_script": ["میرزا محمد مازندرانی"],
+    "summary": "A supporter dispatched by Mírzá Yaḥyá to Ádhirbáyján expressly to murder Dayyán.",
+    "importance": 18,
+    "importance_reason": "Named Azalí agent in the assassination of Dayyán."
+  },
+  {
+    "name": "Mírzá Muḥammad-i-Qá’iní",
+    "common_name": "Mírzá Muḥammad-i-Qá’iní",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A figure named in The Dawn-Breakers without accompanying description.",
+    "importance": 6,
+    "importance_reason": "Bare-mention name with no descriptive context."
+  },
+  {
+    "name": "Mírzá Muḥammad-i-S̱hírází",
+    "common_name": "Mírzá Muḥammad-i-Shírází",
+    "aliases": ["Mírzá Muḥammad (martyr of Shíráz)"],
+    "native_script": [],
+    "summary": "A martyr of Shíráz named with minimal detail.",
+    "importance": 7,
+    "importance_reason": "Bare-mention martyr name."
+  },
+  {
+    "name": "Mírzá Muḥammad-Ḥasan (brother of Mullá Ḥusayn)",
+    "common_name": "Mírzá Muḥammad-Ḥasan (brother of Mullá Ḥusayn)",
+    "aliases": ["Mírzá Muḥammad-Ḥasan"],
+    "native_script": [],
+    "summary": "The younger brother of Mullá Ḥusayn who accompanied him from Bushrúyih to Karbilá and Shíráz, embraced the Báb's Message, and was enrolled among the Letters of the Living.",
+    "importance": 22,
+    "importance_reason": "A Letter of the Living and brother of Mullá Ḥusayn, though sparsely detailed."
+  },
+  {
+    "name": "Mírzá Muḥammad-Ḥasan (philosopher of the school of Mullá Ṣadrá)",
+    "common_name": "Mírzá Muḥammad-Ḥasan (philosopher of the school of Mullá Ṣadrá)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A philosopher of the school of Mullá Ṣadrá who questioned the Báb about three miracles.",
+    "importance": 11,
+    "importance_reason": "Minor interlocutor in a single recorded exchange with the Báb."
+  },
+  {
+    "name": "Mírzá Muḥammad-Ḥasan Khán, brother of the Bábu’l-Báb",
+    "common_name": "Mírzá Muḥammad-Ḥasan Khán, brother of the Bábu’l-Báb",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Brother of the Bábu'l-Báb (Mullá Ḥusayn), listed among the captives paraded in chains after the fall of the fort.",
+    "importance": 12,
+    "importance_reason": "Captive-list name identified by kinship to Mullá Ḥusayn."
+  },
+  {
+    "name": "Mírzá Muḥammad-Ḥasan-i-Nahrí",
+    "common_name": "Sulṭánu'sh-Shuhadá (King of Martyrs)",
+    "aliases": ["Sulṭánu'sh-Shuhadá (King of Martyrs)", "Núrayn-i-Nayyirayn (Twin Shining Lights)", "Núrayn-i-Nayyirayn (one of the Twin Shining Lights)", "Mírzá Muḥammad-Ḥasan", "Mírzá Muḥammad-Ḥasan-i-Nahrí"],
+    "native_script": [],
+    "summary": "One of the celebrated 'twin shining lights' of Iṣfahán, surnamed Sulṭánu'sh-Shuhadá (King of Martyrs); a merchant renowned for generosity and piety, martyred in 1879 with his brother (Beloved of Martyrs) at the instigation of the Imám-Jum‘ih.",
+    "importance": 60,
+    "importance_reason": "One of the foremost martyrs of the Faith, the King of Martyrs, whose death is a central taught episode.",
+    "characterizations": [
+      "GPB: the two famous brothers Mírzá Muḥammad-Ḥasan and Mírzá Muḥammad-Ḥusayn, the 'twin shining lights,' respectively surnamed 'Sulṭánu’sh-Shuhadá' (King of Martyrs)... celebrated for their generosity, trustworthiness, kindliness and piety.",
+      "Wikipedia: Mírzá Muhammad-Hasan, given the title Sultánu'sh-Shuhadáʼ (King of Martyrs), and his brother... given the title Mahbúbu'sh-Shuhadáʼ (Beloved of Martyrs)."
+    ]
+  },
+  {
+    "name": "Mírzá Muḥammad-Ḥusayn (son of the brother-in-law of Mullá Ḥusayn)",
+    "common_name": "Mírzá Muḥammad-Ḥusayn (son of the brother-in-law of Mullá Ḥusayn)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A firm and devoted believer of Bushrúyih, son of Mullá Ḥusayn's brother-in-law and brother of Mírzá Abu'l-Ḥasan.",
+    "importance": 8,
+    "importance_reason": "Single-mention relative noted only for steadfastness."
+  }
+]

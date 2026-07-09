@@ -1,0 +1,1329 @@
+[
+  {
+    "canonical_name": "Mullá Muḥammad-‘Alíy-i-Bárfurús̱hí, Quddús",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [756, 757, 760, 765, 766, 767, 768, 769, 770, 773, 775, 781]
+  },
+  {
+    "canonical_name": "Prince Mihdí-Qulí Mírzá Qájár",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [756, 757, 758, 759, 763, 764, 765, 766, 767, 768, 769, 787]
+  },
+  {
+    "canonical_name": "the defenders of the Fort of S̱hayḵh Ṭabarsí",
+    "entity_type": "group",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [756, 758, 770, 774]
+  },
+  {
+    "canonical_name": "the Fort of S̱hayḵh Ṭabarsí",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [756, 758, 770, 774, 778, 825]
+  },
+  {
+    "canonical_name": "Ḥájí ‘Abdu’l-Majíd-i-Níshápúrí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [759]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-i-Furúghí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [759, 780]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-Ḥusayn-i-Bus̱hrú’í",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [760, 762, 776, 777, 778, 779, 781, 782, 783, 784, 785, 788, 822]
+  },
+  {
+    "canonical_name": "S̱hayḵh Aḥmad ibn Zaynu’d-Dín al-Aḥsá’í",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [760]
+  },
+  {
+    "canonical_name": "Siyyid Káẓim-i-Rashtí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [760, 775, 776]
+  },
+  {
+    "canonical_name": "Siyyid ‘Alí-Muḥammad, the Báb",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [760, 761, 762, 764, 770, 775, 776]
+  },
+  {
+    "canonical_name": "Muḥammad ibn 'Abd'lláh",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [760, 762, 764, 767, 776]
+  },
+  {
+    "canonical_name": "'Alí ibn Abí Ṭálib",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [760]
+  },
+  {
+    "canonical_name": "S̱hayḵh Muḥammad Ḥasan an-Najafí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [762]
+  },
+  {
+    "canonical_name": "al-Qur'án",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [762, 767, 776, 787]
+  },
+  {
+    "canonical_name": "S̱hayḵh Murtaḍáy-i-Anṣárí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [767]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-Sa‘íd-i-Bárfurús̱hí, Sa‘ídu’l-‘Ulamá",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [765, 766, 767, 768, 769]
+  },
+  {
+    "canonical_name": "Mírzá Ḥusayn-‘Alíy-i-Núrí, Bahá'u'lláh",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [766, 769, 775, 776]
+  },
+  {
+    "canonical_name": "Jesus Christ",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [769]
+  },
+  {
+    "canonical_name": "Quddús's commentary on the Ṣád of Ṣamad",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [766]
+  },
+  {
+    "canonical_name": "Kitáb-i-Íqán",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [776]
+  },
+  {
+    "canonical_name": "Lawḥ-i-Kullu'ṭ-Ṭa'ám (Tablet of All Food)",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [775]
+  },
+  {
+    "canonical_name": "the Letters of the Living (Ḥurúf-i-Ḥayy)",
+    "entity_type": "group",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [775, 778]
+  },
+  {
+    "canonical_name": "Mullá Ṣádiq-i-Ḵhurásání",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [775, 786]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-i-Qá’iní",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [781]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-Taqíy-i-Juvayní",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [782]
+  },
+  {
+    "canonical_name": "Ḵhurásán (Khorasan)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [761, 762, 776, 781, 787, 788]
+  },
+  {
+    "canonical_name": "Mázindarán (the province; the Ṭabarsí upheaval)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [761, 764, 766, 781, 842]
+  },
+  {
+    "canonical_name": "Karbilá",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [760, 775, 776, 778]
+  },
+  {
+    "canonical_name": "Najaf",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [760, 762]
+  },
+  {
+    "canonical_name": "Mecca",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [775]
+  },
+  {
+    "canonical_name": "Medina",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [775]
+  },
+  {
+    "canonical_name": "Bárfurús̱h (Bábul)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [765, 766, 769, 770, 773, 775, 782, 786]
+  },
+  {
+    "canonical_name": "Sárí",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [763, 764, 768, 821]
+  },
+  {
+    "canonical_name": "Sangsar",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [760, 761, 762, 764, 820, 825]
+  },
+  {
+    "canonical_name": "Mas̱hhad",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [776, 781, 785]
+  },
+  {
+    "canonical_name": "S̱hahmírzád",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [839]
+  },
+  {
+    "canonical_name": "the fortress of Máh-Kú",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [778, 783]
+  },
+  {
+    "canonical_name": "the fortress of C̱hihríq",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [770]
+  },
+  {
+    "canonical_name": "S̱híráz",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [775, 778]
+  },
+  {
+    "canonical_name": "‘Iráq",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [762]
+  },
+  {
+    "canonical_name": "Iṣfahán",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [776]
+  },
+  {
+    "canonical_name": "Ṭihrán (Tehran)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [759, 765]
+  },
+  {
+    "canonical_name": "the Sabzih-Maydán of Bárfurúsh",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [773, 775]
+  },
+  {
+    "canonical_name": "Baghdád (Madínatu’s-Salám)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [775]
+  },
+
+  {
+    "canonical_name": "Mullá Yúsuf-i-Ardibílí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Soon after, the prince’s attendants brought pressure to bear upon Mullá Yúsuf to inform the remainder of his companions of the desire of Quddús that they immediately disarm.", "Siyyid Riḍá, who, with Mullá Yúsuf-i-Ardibílí, was commissioned by Quddús to meet the prince"],
+    "mention_idxs": [757, 787]
+  },
+  {
+    "canonical_name": "Ḥájí Náṣir-i-Qazvíní",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Those among them who were men of recognised standing, such as the father of Badí‘, Mullá Mírzá Muḥammad-i-Furúg̱hí, and Ḥájí Náṣir-i-Qazvíní, he charged his attendants to conduct to Ṭihrán"],
+    "mention_idxs": [759]
+  },
+  {
+    "canonical_name": "Siyyid Aḥmad-i-Sang-Sarí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["three of the companions of Quddús, who were residents of Sang-Sar, were ushered into the presence of the prince. One of them was Siyyid Aḥmad, whose father, Mír Muḥammad-‘Alí, a devoted admirer of S̱hayḵh Aḥmad-i-Aḥsá’í, had been a man of great learning", "Siyyid Aḥmad, whose body was cut to pieces by Mírzá Muḥammad-Taqí and the seven ‘ulamás of Sárí. He was a noted divine and greatly esteemed for his eloquence and piety."],
+    "mention_idxs": [760, 762, 763, 764, 821, 823, 824]
+  },
+  {
+    "canonical_name": "Mír Muḥammad-‘Alí (father of Siyyid Aḥmad of Sang-Sar)",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["whose father, Mír Muḥammad-‘Alí, a devoted admirer of S̱hayḵh Aḥmad-i-Aḥsá’í, had been a man of great learning and distinguished merit", "had departed for Karbilá in the year preceding the declaration of the Báb, with the intention of introducing his two sons to Siyyid Káẓim"],
+    "mention_idxs": [760]
+  },
+  {
+    "canonical_name": "Mír Abu’l-Qásim (brother of Siyyid Aḥmad of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["accompanied by this same Siyyid Aḥmad and his brother, Mír Abu’l-Qásim, who met his death the very night on which Mullá Ḥusayn was slain", "Mír Abu’l-Qásim, Siyyid Aḥmad’s brother, who won the crown of martyrdom on the very night on which Mullá Ḥusayn met his death."],
+    "mention_idxs": [760, 822]
+  },
+  {
+    "canonical_name": "Karbilá’í ‘Alí (of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["In Sang-Sar two other persons, Karbilá’í ‘Alí and Karbilá’í Abú-Muḥammad, both known for their piety and spiritual insight, strove to prepare the people for the acceptance of the promised Revelation", "Both Karbilá’í Abú-Muḥammad and Karbilá’í ‘Alí died in the spring of that same year."],
+    "mention_idxs": [761, 825]
+  },
+  {
+    "canonical_name": "Karbilá’í Abú-Muḥammad (of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Karbilá’í Abú-Muḥammad urged his two sons, Abu’l-Qásim and Muḥammad-‘Alí, to arise for the triumph of the new Revelation", "in the year 1264 A.H. they publicly announced that in that very year a man named Siyyid ‘Alí would, preceded by a Black Standard ... set forth from Ḵhurásán and proceed to Mázindarán."],
+    "mention_idxs": [761, 762]
+  },
+  {
+    "canonical_name": "Abu’l-Qásim (son of Karbilá’í Abú-Muḥammad)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["These two sons of Karbilá’í Abú-Muḥammad were the two companions who had been ushered, together with Siyyid Aḥmad, into the presence of the prince.", "Abu’l-Qásim, the brother of Muḥammad-‘Alí"],
+    "mention_idxs": [761, 762, 827]
+  },
+  {
+    "canonical_name": "Muḥammad-‘Alí (son of Karbilá’í Abú-Muḥammad)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Karbilá’í Abú-Muḥammad urged his two sons, Abu’l-Qásim and Muḥammad-‘Alí, to arise for the triumph of the new Revelation", "Muḥammad-‘Alí, the son of Karbilá’í Abú-Muḥammad"],
+    "mention_idxs": [761, 762, 826]
+  },
+  {
+    "canonical_name": "Mullá Zaynu’l-‘Ábidín-i-S̱hahmírzádí",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["Mullá Zaynu’l-‘Ábidín-i-S̱hahmírzádí, one of the trusted and learned counsellors of the government, acquainted the prince with their story", "He, with his brother Siyyid Abú-Ṭálib, was delivered into the hands of Mullá Zaynu’l-‘Ábidín, who was instructed to conduct them to Sang-Sar."],
+    "mention_idxs": [762, 764]
+  },
+  {
+    "canonical_name": "Siyyid Abú-Ṭálib (brother of Siyyid Aḥmad of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["He, with his brother Siyyid Abú-Ṭálib, was delivered into the hands of Mullá Zaynu’l-‘Ábidín, who was instructed to conduct them to Sang-Sar.", "As to his brother Siyyid Abú-Ṭálib, he was safely conducted to Sang-Sar by Mullá Zaynu’l-‘Ábidín, and to this day resides with his brother Siyyid Muḥammad-Riḍá in Mázindarán."],
+    "mention_idxs": [762, 764]
+  },
+  {
+    "canonical_name": "Siyyid Muḥammad-Riḍá (brother of Siyyid Aḥmad of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["to this day resides with his brother Siyyid Muḥammad-Riḍá in Mázindarán. Both are engaged in the service of the Cause and are accounted among its active supporters."],
+    "mention_idxs": [764]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-Taqí (of Sárí)",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["Meanwhile Mírzá Muḥammad-Taqí, accompanied by seven of the ‘ulamás of Sárí, set out from that town to share in the meritorious act of inflicting the punishment of death upon the companions of Quddús.", "Roused to a burst of fury, Mírzá Muḥammad-Taqí, together with his seven companions, drew their swords and cut his body to pieces."],
+    "mention_idxs": [763, 764, 821]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-i-Ḥamzih",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["All those who had been invited responded with the exception of Mullá Muḥammad-i-Ḥamzih, who pleaded to be excused from attending that meeting. He had previously, on several occasions, endeavoured, during the siege of the fort, to persuade the people to refrain from violence.", "To him Quddús, a few days before his abandonment of the fort, had committed ... a locked saddlebag containing the text of his own interpretation of the Ṣád of Ṣamad as well as all his other writings"],
+    "mention_idxs": [766]
+  },
+  {
+    "canonical_name": "the Imám Ḥasan ibn ‘Alí",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["since my mother was always recognised by the inhabitants of this town as a lineal descendant of the Imám Ḥasan? Was she not, because of her descent, honoured, nay venerated, by every one of you?"],
+    "mention_idxs": [767, 768]
+  },
+  {
+    "canonical_name": "the Siyyid-i-Qumí",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["the Siyyid-i-Qumí, who had so treacherously deserted the fort, was seen passing by his side. Observing his helplessness, he smote him in the face."],
+    "mention_idxs": [773]
+  },
+  {
+    "canonical_name": "Ismu’lláhu’l-Mím",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Such names as I have been able to collect from various sources, and for which I am particularly indebted to Ismu’lláhu’l-Mím, Ismu’lláhu’l-Javád, and Ismu’lláhu’l-Asad, I now proceed to enumerate"],
+    "mention_idxs": [774]
+  },
+  {
+    "canonical_name": "Ismu’lláhu’l-Javád",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["for which I am particularly indebted to Ismu’lláhu’l-Mím, Ismu’lláhu’l-Javád, and Ismu’lláhu’l-Asad, I now proceed to enumerate"],
+    "mention_idxs": [774]
+  },
+  {
+    "canonical_name": "Ismu’lláhu’l-Asad",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["for which I am particularly indebted to Ismu’lláhu’l-Mím, Ismu’lláhu’l-Javád, and Ismu’lláhu’l-Asad, I now proceed to enumerate"],
+    "mention_idxs": [774]
+  },
+  {
+    "canonical_name": "Mullá ‘Alí-Akbar-i-Ardistání",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["He ... was, together with Mullá Ṣádiq and Mullá ‘Alí-Akbar-i-Ardistání, the first to suffer persecution on Persian soil for the sake of the Cause of God."],
+    "mention_idxs": [775]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-Ḥasan (brother of Mullá Ḥusayn)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mírzá Muḥammad-Ḥasan, the brother of Mullá Ḥusayn.", "He, as well as Mírzá Muḥammad-Báqir, accompanied Mullá Ḥusayn from Bus̱hrúyih to Karbilá and from thence to S̱híráz, where they embraced the Message of the Báb and were enrolled among the Letters of the Living."],
+    "mention_idxs": [777, 778]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-Báqir (nephew of Mullá Ḥusayn)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mírzá Muḥammad-Báqir, the nephew of Mullá Ḥusayn. He, as well as Mírzá Muḥammad-Ḥasan, accompanied Mullá Ḥusayn from Bus̱hrúyih to Karbilá and from thence to S̱híráz, where they embraced the Message of the Báb and were enrolled among the Letters of the Living."],
+    "mention_idxs": [778]
+  },
+  {
+    "canonical_name": "the Varaqatu’l-Firdaws (sister of Mullá Ḥusayn)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["into whose hands the care of the Varaqatu’l-Firdaws, Mullá Ḥusayn’s sister, is committed."],
+    "mention_idxs": [779]
+  },
+  {
+    "canonical_name": "Mírzá Abu’l-Ḥasan (son of the brother-in-law of Mullá Ḥusayn)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["The brother-in-law of Mullá Ḥusayn, the father of Mírzá Abu’l-Ḥasan and Mírzá Muḥammad-Ḥusayn, both of whom are now in Bus̱hrúyih ... Both are firm and devoted adherents of the Faith."],
+    "mention_idxs": [779]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-Ḥusayn (son of the brother-in-law of Mullá Ḥusayn)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["The brother-in-law of Mullá Ḥusayn, the father of Mírzá Abu’l-Ḥasan and Mírzá Muḥammad-Ḥusayn, both of whom are now in Bus̱hrúyih ... Both are firm and devoted adherents of the Faith."],
+    "mention_idxs": [779]
+  },
+  {
+    "canonical_name": "Mullá Aḥmad (father of the martyr son and of Mullá Mírzá Muḥammad-i-Furúghí)",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["The son of Mullá Aḥmad, the elder brother of Mullá Mírzá Muḥammad-i-Furúg̱hí."],
+    "mention_idxs": [780]
+  },
+  {
+    "canonical_name": "Mullá Mírzá Muḥammad (uncle, brother of Mullá Aḥmad)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["He, unlike his uncle, Mullá Mírzá Muḥammad, suffered martyrdom and was, as testified by the latter, a youth of great piety and distinguished for his learning and his integrity of character."],
+    "mention_idxs": [780]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-Báqir-i-Harátí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mírzá Muḥammad-Báqir, known as Harátí, though originally a resident of Qáyin. He was a close relative of the father of Nabíl-i-Akbar, and was the first in Mas̱hhad to embrace the Cause. It was he who built the Bábíyyih", "It was Mírzá Muḥammad-Báqir who acted as the standard-bearer of the company, who designed the plan of the fort ... who succeeded Mullá Ḥusayn in organising the forces of his companions"],
+    "mention_idxs": [781, 782]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-Káẓim (child of Mírzá Muḥammad-Báqir-i-Harátí)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["he, together with his child, Mírzá Muḥammad-Káẓim, eagerly enrolled under his banner and went forth with him to Mázindarán. That child was saved eventually, and has now grown up into a fervent and active supporter of the Faith in Mas̱hhad."],
+    "mention_idxs": [781]
+  },
+  {
+    "canonical_name": "Qambar-‘Alí (servant of Mullá Ḥusayn)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Qambar-‘Alí, the fearless and faithful servant of Mullá Ḥusayn, who accompanied him on his journey to Máh-Kú and who suffered martyrdom on the very night on which his master fell a victim to the bullets of the enemy."],
+    "mention_idxs": [783]
+  },
+  {
+    "canonical_name": "Ḥasan (bearer of the body of Mullá Ḥusayn)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Ḥasan and Qulí, who, together with a man named Iskandar, a native of Zanján, bore the body of Mullá Ḥusayn to the fort on the night of his martyrdom and placed it at the feet of Quddús.", "He it was, the same Ḥasan, who, by the orders of the chief constable of Mas̱hhad, was led by a halter through the streets of that city."],
+    "mention_idxs": [784, 785]
+  },
+  {
+    "canonical_name": "Qulí (bearer of the body of Mullá Ḥusayn)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Qulí, who, together with a man named Iskandar, a native of Zanján, bore the body of Mullá Ḥusayn to the fort on the night of his martyrdom and placed it at the feet of Quddús."],
+    "mention_idxs": [785]
+  },
+  {
+    "canonical_name": "Iskandar (of Zanján)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["a man named Iskandar, a native of Zanján, bore the body of Mullá Ḥusayn to the fort on the night of his martyrdom and placed it at the feet of Quddús."],
+    "mention_idxs": [785]
+  },
+  {
+    "canonical_name": "Muḥammad-Ḥasan (brother of Mullá Ṣádiq)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Muḥammad-Ḥasan, the brother of Mullá Ṣádiq, whom the comrades of Ḵhusraw slew on the way between Bárfurús̱h and the fort of Ṭabarsí. He distinguished himself by his unwavering constancy, and had been one of the servants of the shrine of the Imám Riḍá."],
+    "mention_idxs": [786]
+  },
+  {
+    "canonical_name": "Ḵhusraw",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["Muḥammad-Ḥasan, the brother of Mullá Ṣádiq, whom the comrades of Ḵhusraw slew on the way between Bárfurús̱h and the fort of Ṭabarsí."],
+    "mention_idxs": [786]
+  },
+  {
+    "canonical_name": "‘Alí ar-Riḍá, the eighth Imám",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["had been one of the servants of the shrine of the Imám Riḍá."],
+    "mention_idxs": [786]
+  },
+  {
+    "canonical_name": "Siyyid Riḍá (companion of Quddús, envoy to the prince)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Siyyid Riḍá, who, with Mullá Yúsuf-i-Ardibílí, was commissioned by Quddús to meet the prince, and who brought back with him the sealed copy of the Qur’án bearing the oath which the prince had written. He was one of the well-known siyyids of Ḵhurásán."],
+    "mention_idxs": [787]
+  },
+  {
+    "canonical_name": "Mullá Mardán-‘Alí (of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Mardán-‘Alí, one of the noted companions from Ḵhurásán, a resident of the village of Míyámay ... He, together with thirty-three companions, enlisted under the banner of Mullá Ḥusayn on the day of the latter’s passage through that village."],
+    "mention_idxs": [788]
+  },
+  {
+    "canonical_name": "Mullá ‘Ísá (of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Only one of those thirty-three companions, a Mullá ‘Ísá, survived, whose sons are at present in the village of Míyámay, actively engaged in the service of the Cause."],
+    "mention_idxs": [788]
+  },
+
+  {
+    "canonical_name": "Bus̱hrúyih",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["At the age of eighteen, he, too, departed from his native town of Bus̱hrúyih in Ḵhurásán for Karbilá", "accompanied Mullá Ḥusayn from Bus̱hrúyih to Karbilá"],
+    "mention_idxs": [776, 778, 779]
+  },
+  {
+    "canonical_name": "Qáyin",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["Mírzá Muḥammad-Báqir, known as Harátí, though originally a resident of Qáyin."],
+    "mention_idxs": [781]
+  },
+  {
+    "canonical_name": "Sabzivár",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["Mírzá Muḥammad-Taqíy-i-Juvayní, a native of Sabzihvar", "the village of Míyámay, the site of a well-fortified fortress situated between Sabzihvar and S̱háh-Rúd."],
+    "mention_idxs": [782, 788]
+  },
+  {
+    "canonical_name": "Míyámay",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["a resident of the village of Míyámay, the site of a well-fortified fortress situated between Sabzihvar and S̱háh-Rúd.", "It was in the masjid of Míyámay, to which Mullá Ḥusayn had repaired in order to offer the Friday congregational prayer, that he delivered his soul-stirring appeal"],
+    "mention_idxs": [788]
+  },
+  {
+    "canonical_name": "S̱háh-Rúd",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["the village of Míyámay, the site of a well-fortified fortress situated between Sabzihvar and S̱háh-Rúd."],
+    "mention_idxs": [788]
+  },
+  {
+    "canonical_name": "Simnán",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["Of the companions of the village of Sang-Sar, which forms part of the district of Simnán, eighteen were martyred."],
+    "mention_idxs": [820]
+  },
+  {
+    "canonical_name": "Savád-Kúh",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": ["Of the believers of Savád-Kúh, the five following names have thus far been ascertained:"],
+    "mention_idxs": [870]
+  },
+  {
+    "canonical_name": "Zanján",
+    "entity_type": "place",
+    "side": "",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [785]
+  },
+
+  {
+    "canonical_name": "Mullá Muḥammad-Mihdí (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["The names of the martyred companions of that village are as follows: Mullá Muḥammad-Mihdí"],
+    "mention_idxs": [789]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-Ja‘far (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["The names of the martyred companions of that village are as follows: ... Mullá Muḥammad-Ja‘far"],
+    "mention_idxs": [790]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad ibn Mullá Muḥammad (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Muḥammad-ibn-i-Mullá Muḥammad"],
+    "mention_idxs": [791]
+  },
+  {
+    "canonical_name": "Mullá Raḥím (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Raḥím"],
+    "mention_idxs": [792]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-Riḍá (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Muḥammad-Riḍá"],
+    "mention_idxs": [793]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-Ḥusayn (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Muḥammad-Ḥusayn"],
+    "mention_idxs": [794]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Muḥammad (martyr of the village of Míyámay)"],
+    "mention_idxs": [795]
+  },
+  {
+    "canonical_name": "Mullá Yúsuf (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Yúsuf (martyr of the village of Míyámay)"],
+    "mention_idxs": [796]
+  },
+  {
+    "canonical_name": "Mullá Ya‘qúb (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Ya‘qúb"],
+    "mention_idxs": [797]
+  },
+  {
+    "canonical_name": "Mullá ‘Alí (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá ‘Alí (martyr of the village of Míyámay)"],
+    "mention_idxs": [798]
+  },
+  {
+    "canonical_name": "Mullá Zaynu’l-‘Ábidín (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Zaynu’l-‘Ábidín (martyr of the village of Míyámay)"],
+    "mention_idxs": [799]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad, son of Mullá Zaynu’l-‘Ábidín (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Muḥammad, son of Mullá Zaynu’l-‘Ábidín"],
+    "mention_idxs": [800]
+  },
+  {
+    "canonical_name": "Mullá Báqir (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Báqir (martyr of the village of Míyámay)"],
+    "mention_idxs": [801]
+  },
+  {
+    "canonical_name": "Mullá ‘Abdu’l-Muḥammad (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá ‘Abdu’l-Muḥammad"],
+    "mention_idxs": [802]
+  },
+  {
+    "canonical_name": "Mullá Abu’l-Ḥasan (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Abu’l-Ḥasan (martyr of the village of Míyámay)"],
+    "mention_idxs": [803]
+  },
+  {
+    "canonical_name": "Mullá Ismá‘íl (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Ismá‘íl (martyr of the village of Míyámay)"],
+    "mention_idxs": [804]
+  },
+  {
+    "canonical_name": "Mullá ‘Abdu’l-‘Alí (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá ‘Abdu’l-‘Alí"],
+    "mention_idxs": [805]
+  },
+  {
+    "canonical_name": "Mullá Áqá-Bábá (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Áqá-Bábá"],
+    "mention_idxs": [806]
+  },
+  {
+    "canonical_name": "Mullá ‘Abdu’l-Javád (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá ‘Abdu’l-Javád"],
+    "mention_idxs": [807]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-Ḥusayn (second martyr of Míyámay, idx 808)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Muḥammad-Ḥusayn (martyr of the village of Míyámay)"],
+    "mention_idxs": [808]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-Báqir (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Muḥammad-Báqir (martyr of the village of Míyámay)"],
+    "mention_idxs": [809]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad (second martyr of Míyámay, idx 810)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Muḥammad (martyr of the village of Míyámay)"],
+    "mention_idxs": [810]
+  },
+  {
+    "canonical_name": "Ḥájí Ḥasan (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Ḥájí Ḥasan (martyr of the village of Míyámay)"],
+    "mention_idxs": [811]
+  },
+  {
+    "canonical_name": "Karbilá’í ‘Alí (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Karbilá’í ‘Alí (martyr of the village of Míyámay)"],
+    "mention_idxs": [812]
+  },
+  {
+    "canonical_name": "Mullá Karbilá’í ‘Alí (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Karbilá’í ‘Alí"],
+    "mention_idxs": [813]
+  },
+  {
+    "canonical_name": "Karbilá’í Núr-Muḥammad (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Karbilá’í Núr-Muḥammad"],
+    "mention_idxs": [814]
+  },
+  {
+    "canonical_name": "Muḥammad-Ibráhím (martyr of Míyámay, idx 815)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Muḥammad-Ibráhím (martyr of the village of Míyámay)"],
+    "mention_idxs": [815]
+  },
+  {
+    "canonical_name": "Muḥammad-Ṣá’im (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Muḥammad-Ṣá’im"],
+    "mention_idxs": [816]
+  },
+  {
+    "canonical_name": "Muḥammad-Hádí (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Muḥammad-Hádí (martyr of the village of Míyámay)"],
+    "mention_idxs": [817]
+  },
+  {
+    "canonical_name": "Siyyid Mihdí (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Siyyid Mihdí (martyr of the village of Míyámay)"],
+    "mention_idxs": [818]
+  },
+  {
+    "canonical_name": "Abú-Muḥammad (martyr of Míyámay)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Abú-Muḥammad (martyr of the village of Míyámay)"],
+    "mention_idxs": [819]
+  },
+  {
+    "canonical_name": "Mír Mihdí (martyr of Sang-Sar, uncle of Siyyid Aḥmad)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mír Mihdí, the paternal uncle of Siyyid Aḥmad"],
+    "mention_idxs": [823]
+  },
+  {
+    "canonical_name": "Mír Ibráhím (martyr of Sang-Sar, brother-in-law of Siyyid Aḥmad)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mír Ibráhím, the brother-in-law of Siyyid Aḥmad"],
+    "mention_idxs": [824]
+  },
+  {
+    "canonical_name": "Ṣafar-‘Alí (martyr of Sang-Sar, son of Karbilá’í ‘Alí)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Ṣafar-‘Alí, the son of Karbilá’í ‘Alí, who, together with Karbilá’í Muḥammad, had so strenuously endeavoured to awaken the people of Sang-Sar from their sleep of heedlessness."],
+    "mention_idxs": [825]
+  },
+  {
+    "canonical_name": "Karbilá’í Muḥammad (of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Ṣafar-‘Alí, the son of Karbilá’í ‘Alí, who, together with Karbilá’í Muḥammad, had so strenuously endeavoured to awaken the people of Sang-Sar from their sleep of heedlessness. Both of them, owing to their infirmities, were unable to proceed to the fort of Ṭabarsí."],
+    "mention_idxs": [825]
+  },
+  {
+    "canonical_name": "Karbilá’í Ibráhím (martyr of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Karbilá’í Ibráhím (martyr of Sang-Sar)"],
+    "mention_idxs": [828]
+  },
+  {
+    "canonical_name": "‘Alí-Aḥmad (martyr of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["‘Alí-Aḥmad (martyr of Sang-Sar)"],
+    "mention_idxs": [829]
+  },
+  {
+    "canonical_name": "Mullá ‘Alí-Akbar (martyr of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá ‘Alí-Akbar (martyr of Sang-Sar)"],
+    "mention_idxs": [830]
+  },
+  {
+    "canonical_name": "Mullá Ḥusayn-‘Alí (martyr of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Ḥusayn-‘Alí (martyr of Sang-Sar)"],
+    "mention_idxs": [831]
+  },
+  {
+    "canonical_name": "‘Abbás-‘Alí (martyr of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["‘Abbás-‘Alí (martyr of Sang-Sar)"],
+    "mention_idxs": [832]
+  },
+  {
+    "canonical_name": "Ḥusayn-‘Alí (martyr of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Ḥusayn-‘Alí (martyr of Sang-Sar)"],
+    "mention_idxs": [833]
+  },
+  {
+    "canonical_name": "Mullá ‘Alí-Aṣg̱har (martyr of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá ‘Alí-Aṣg̱har (martyr of Sang-Sar)"],
+    "mention_idxs": [834]
+  },
+  {
+    "canonical_name": "Karbilá’í Ismá‘íl (martyr of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Karbilá’í Ismá‘íl (martyr of Sang-Sar)"],
+    "mention_idxs": [835]
+  },
+  {
+    "canonical_name": "‘Alí Ḵhán (martyr of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["‘Alí Ḵhán (martyr of Sang-Sar)"],
+    "mention_idxs": [836]
+  },
+  {
+    "canonical_name": "Muḥammad-Ibráhím (martyr of Sang-Sar, idx 837)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Muḥammad-Ibráhím (martyr of Sang-Sar)"],
+    "mention_idxs": [837]
+  },
+  {
+    "canonical_name": "‘Abdu’l-‘Aẓím (martyr of Sang-Sar)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["‘Abdu’l-‘Aẓím (martyr of Sang-Sar)"],
+    "mention_idxs": [838]
+  },
+  {
+    "canonical_name": "Mullá Abú-Raḥím (martyr of S̱hah-Mírzád)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["From the village of S̱hah-Mírzád, two fell in defending the fort: Mullá Abú-Raḥím"],
+    "mention_idxs": [840]
+  },
+  {
+    "canonical_name": "Karbilá’í Káẓim (martyr of S̱hah-Mírzád)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["From the village of S̱hah-Mírzád, two fell in defending the fort: ... Karbilá’í Káẓim."],
+    "mention_idxs": [841]
+  },
+  {
+    "canonical_name": "Mullá Riḍáy-i-S̱háh (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["As to the adherents of the Faith in Mázindarán, twenty-seven martyrs have thus far been recorded: Mullá Riḍáy-i-S̱háh"],
+    "mention_idxs": [843]
+  },
+  {
+    "canonical_name": "‘Aẓím (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["‘Aẓím (martyr of Mázindarán)"],
+    "mention_idxs": [844]
+  },
+  {
+    "canonical_name": "Karbilá’í Muḥammad-Ja‘far (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Karbilá’í Muḥammad-Ja‘far"],
+    "mention_idxs": [845]
+  },
+  {
+    "canonical_name": "Siyyid Ḥusayn (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Siyyid Ḥusayn (martyr of Mázindarán)"],
+    "mention_idxs": [846]
+  },
+  {
+    "canonical_name": "Muḥammad-Báqir (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Muḥammad-Báqir (martyr of Mázindarán)"],
+    "mention_idxs": [847]
+  },
+  {
+    "canonical_name": "Siyyid Razzáq (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Siyyid Razzáq (martyr of Mázindarán)"],
+    "mention_idxs": [848]
+  },
+  {
+    "canonical_name": "Ustád Ibráhím (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Ustád Ibráhím (martyr of Mázindarán)"],
+    "mention_idxs": [849]
+  },
+  {
+    "canonical_name": "Mullá Sa‘íd-i-Zirih-Kinárí (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Sa‘íd-i-Zirih-Kinárí"],
+    "mention_idxs": [850]
+  },
+  {
+    "canonical_name": "Riḍáy-i-‘Arab (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Riḍáy-i-‘Arab (martyr of Mázindarán)"],
+    "mention_idxs": [851]
+  },
+  {
+    "canonical_name": "Rasúl-i-Bahnimírí (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Rasúl-i-Bahnimírí", "Muḥammad-Ḥusayn, the brother of Rasúl-i-Bahnimírí"],
+    "mention_idxs": [852, 853]
+  },
+  {
+    "canonical_name": "Muḥammad-Ḥusayn (brother of Rasúl-i-Bahnimírí, martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Muḥammad-Ḥusayn, the brother of Rasúl-i-Bahnimírí"],
+    "mention_idxs": [853]
+  },
+  {
+    "canonical_name": "Ṭáhir (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Ṭáhir (martyr of Mázindarán)"],
+    "mention_idxs": [854]
+  },
+  {
+    "canonical_name": "S̱hafí‘ (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["S̱hafí‘ (martyr of Mázindarán)"],
+    "mention_idxs": [855]
+  },
+  {
+    "canonical_name": "Qásim (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Qásim (martyr of Mázindarán)"],
+    "mention_idxs": [856]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-Ján (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Muḥammad-Ján", "Masíḥ, the brother of Mullá Muḥammad-Ján"],
+    "mention_idxs": [857, 858]
+  },
+  {
+    "canonical_name": "Masíḥ (brother of Mullá Muḥammad-Ján, martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Masíḥ, the brother of Mullá Muḥammad-Ján"],
+    "mention_idxs": [858]
+  },
+  {
+    "canonical_name": "Iṭá-Bábá (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Iṭá-Bábá (martyr of Mázindarán)"],
+    "mention_idxs": [859]
+  },
+  {
+    "canonical_name": "Yúsuf (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Yúsuf (martyr of Mázindarán)"],
+    "mention_idxs": [860]
+  },
+  {
+    "canonical_name": "Faḍlu’lláh (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Faḍlu’lláh (martyr of Mázindarán)"],
+    "mention_idxs": [861]
+  },
+  {
+    "canonical_name": "Bábá (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Bábá (martyr of Mázindarán)"],
+    "mention_idxs": [862]
+  },
+  {
+    "canonical_name": "Ṣafí-Qulí (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Ṣafí-Qulí (martyr of Mázindarán)"],
+    "mention_idxs": [863]
+  },
+  {
+    "canonical_name": "Niẓám (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Niẓám (martyr of Mázindarán)"],
+    "mention_idxs": [864]
+  },
+  {
+    "canonical_name": "Rúḥu’lláh (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Rúḥu’lláh (martyr of Mázindarán, defender of Shaykh Ṭabarsí)"],
+    "mention_idxs": [865]
+  },
+  {
+    "canonical_name": "‘Alí-Qulí (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["‘Alí-Qulí (martyr of Mázindarán)"],
+    "mention_idxs": [866]
+  },
+  {
+    "canonical_name": "Sulṭán (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Sulṭán (martyr of Mázindarán)"],
+    "mention_idxs": [867]
+  },
+  {
+    "canonical_name": "Ja‘far (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Ja‘far (martyr of Mázindarán)"],
+    "mention_idxs": [868]
+  },
+  {
+    "canonical_name": "Ḵhalíl (martyr of Mázindarán)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Ḵhalíl (martyr of Mázindarán)"],
+    "mention_idxs": [869]
+  },
+  {
+    "canonical_name": "Karbilá’í Qambar-Kális̱h (martyr of Savád-Kúh)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Of the believers of Savád-Kúh, the five following names have thus far been ascertained: Karbilá’í Qambar-Kális̱h"],
+    "mention_idxs": [871]
+  },
+  {
+    "canonical_name": "Mullá Nád-‘Alíy-i-Mutavallí (martyr of Savád-Kúh)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Mullá Nád-‘Alíy-i-Mutavallí"],
+    "mention_idxs": [872]
+  },
+  {
+    "canonical_name": "‘Abdu’l-Ḥaqq (martyr of Savád-Kúh)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["‘Abdu’l-Ḥaqq (martyr of Savád-Kúh)"],
+    "mention_idxs": [873]
+  },
+  {
+    "canonical_name": "Íṭábakí-C̱húpán (martyr of Savád-Kúh)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Íṭábakí-C̱húpán", "Son of Íṭábakí-C̱húpán"],
+    "mention_idxs": [874, 875]
+  },
+  {
+    "canonical_name": "Son of Íṭábakí-C̱húpán (martyr of Savád-Kúh)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": ["Son of Íṭábakí-C̱húpán"],
+    "mention_idxs": [875]
+  }
+]

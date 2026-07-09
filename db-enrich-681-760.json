@@ -1,0 +1,762 @@
+[
+  {
+    "name": "Najíb Páshá, governor of Baghdád",
+    "common_name": "Najíb Páshá",
+    "aliases": ["Najíb Pás̱há", "Necib Pasha", "Najib Pasha", "governor of Baghdád"],
+    "native_script": ["نجيب باشا"],
+    "summary": "Ottoman governor of Baghdád in the 1840s, reputed in Bábí accounts to have poisoned Siyyid Káẓim-i-Rashtí; he imprisoned Bábís and led the armies of Baghdád.",
+    "importance": 30,
+    "importance_reason": "Recurring antagonist (3 mentions) tied to the death of Siyyid Káẓim and persecution of early believers, though a secondary official.",
+    "characterizations": ["DB: this infamous Najíb Pás̱há who … gave him a potion to drink which caused such intense thirst that it brought about the death of Siyyid Káẓim"]
+  },
+  {
+    "name": "Napoleon Bonaparte",
+    "common_name": "Napoleon",
+    "aliases": ["Napoleon I", "Emperor of the French", "Napoléon Bonaparte"],
+    "native_script": ["نابليون بونابرت"],
+    "summary": "French emperor and military commander whose 1799 siege of ‘Akká failed; cited in GPB for the fortress that later became Bahá'u'lláh's prison.",
+    "importance": 22,
+    "importance_reason": "Single GPB mention used only to evoke the history of ‘Akká's fortress; globally famous but incidental to the Faith.",
+    "characterizations": ["GPB: the St. Jean d’Acre of the Crusaders, that had successfully defied the siege of Napoleon"]
+  },
+  {
+    "name": "Nargis-Ḵhátún",
+    "common_name": "Nargis-Khátún",
+    "aliases": ["Narjis Khátún", "Nargis Khatun"],
+    "native_script": ["نرجس خاتون"],
+    "summary": "In Shí‘ah tradition, the mother of the Twelfth Imám (Muḥammad, the Hidden Imám), son of Imám Ḥasan-i-‘Askarí; mentioned in DB in passing.",
+    "importance": 8,
+    "importance_reason": "One-mention reference establishing Shí‘ah lineage of the Hidden Imám; incidental.",
+    "characterizations": ["DB: Muḥammad, son of Imám Ḥasan-i-‘Askarí and Nargis-Ḵhátún, called by the S̱hí‘ahs ‘Imám-Mihdí.’"]
+  },
+  {
+    "name": "Navváb-i-Raḍaví",
+    "common_name": "Navváb-i-Raḍaví",
+    "aliases": ["the Navváb", "Navváb-i-Raḍaví (of Mas̱hhad)"],
+    "native_script": ["نواب رضوی"],
+    "summary": "Prominent clerical adversary in Mas̱hhad who incited the populace against the Bábís and stirred a general upheaval; a notable local antagonist.",
+    "importance": 28,
+    "importance_reason": "Eight DB mentions as a leading local opponent who provoked mob action; recurring but regional.",
+    "characterizations": ["DB: Navváb-i-Raḍaví, the meanest and most prominent among his adversaries"]
+  },
+  {
+    "name": "Naw-Rúz-‘Alí (maternal uncle of Nabíl)",
+    "common_name": "Naw-Rúz-‘Alí",
+    "aliases": ["Naw-Rúz-‘Alí (maternal uncle of Nabíl-i-A‘ẓam)"],
+    "native_script": [],
+    "summary": "Maternal uncle of Nabíl-i-A‘ẓam (the chronicler), mentioned once in DB when he came to fetch the young Nabíl.",
+    "importance": 4,
+    "importance_reason": "One-mention incidental family member of the narrator with no historical role."
+  },
+  {
+    "name": "Naṣru’lláh Khán-i-Bandibí",
+    "common_name": "Naṣru’lláh Khán-i-Bandibí",
+    "aliases": ["Naṣru’lláh Ḵhán-i-Bandibí"],
+    "native_script": [],
+    "summary": "A chieftain named once in passing in DB.",
+    "importance": 3,
+    "importance_reason": "One-mention incidental local chieftain with no developed role."
+  },
+  {
+    "name": "Naẓar Ḵhán",
+    "common_name": "Naẓar Khán",
+    "aliases": ["Nazar Khan"],
+    "native_script": ["نظر خان"],
+    "summary": "A village landowner who, after his mother was killed, pledged his undying loyalty to Mullá Ḥusayn and joined the Bábí cause.",
+    "importance": 24,
+    "importance_reason": "Seven DB mentions as a believer with a memorable conversion anecdote tied to Mullá Ḥusayn.",
+    "characterizations": ["DB: He pledged, that very moment, his undying loyalty to Mullá Ḥusayn"]
+  },
+  {
+    "name": "Nicholas I, Emperor of Russia",
+    "common_name": "Nicholas I of Russia",
+    "aliases": ["Nikolai I", "Tsar Nicholas I", "Nicholas Romanov"],
+    "native_script": ["Николай I"],
+    "summary": "Tsar of Russia (reigned 1825–1855) who, per Ḥájí Mírzá Jání as cited in DB, instructed the Russian consul at Tabríz to investigate and report on the Báb.",
+    "importance": 18,
+    "importance_reason": "Single DB mention; a sovereign with marginal documentary connection to the Báb's case.",
+    "characterizations": ["DB: ‘The Emperor of Russia’ … sent to the Russian consul at Tabríz, bidding him fully investigate and report the circumstances of His Holiness the Báb"]
+  },
+  {
+    "name": "Nicholas II, Czar of Russia, last of the Romanoffs",
+    "common_name": "Nicholas II of Russia",
+    "aliases": ["last of the Romanoffs", "Nikolai II", "Nicholas Romanov", "Tsar Nicholas II"],
+    "native_script": ["Николай II"],
+    "summary": "Last Tsar of Russia (reigned 1894–1917), executed with his family in 1918; cited in GPB as the sovereign in whose reign revolution swept away the empire of the Czars, illustrating the fate of monarchs Bahá'u'lláh had addressed.",
+    "importance": 24,
+    "importance_reason": "Two GPB mentions used to illustrate the collapse of dynasties; globally famous but peripheral to the Faith.",
+    "characterizations": ["GPB: executed the Czar with his consort and his family, and extinguished the dynasty of the Romanoffs"]
+  },
+  {
+    "name": "Nicholas Murray Butler",
+    "common_name": "Nicholas Murray Butler",
+    "aliases": ["Dr. Nicholas Murray Butler"],
+    "native_script": [],
+    "summary": "President of Columbia University and Nobel Peace laureate, mentioned once in GPB.",
+    "importance": 10,
+    "importance_reason": "One-mention notable academic with no developed connection to the Faith."
+  },
+  {
+    "name": "Nimrod",
+    "common_name": "Nimrod",
+    "aliases": ["Namrúd", "Nimrúd"],
+    "native_script": ["نمرود"],
+    "summary": "The biblical/Qur'ánic tyrant of the days of Abraham, cited in GPB as an archetype of impiety opposing a Manifestation of God.",
+    "importance": 14,
+    "importance_reason": "Two mentions as a scriptural archetype of opposition to Abraham; symbolic rather than historical to the Faith.",
+    "characterizations": ["GPB: the “impiety” of Nimrod in the days of Abraham"]
+  },
+  {
+    "name": "Niẓám-i-Mázindarání",
+    "common_name": "Niẓám-i-Mázindarání",
+    "aliases": ["Niẓám (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of Mázindarán, named once in DB in a martyr listing.",
+    "importance": 6,
+    "importance_reason": "One-mention martyr-list entry from the Mázindarán (Shaykh Ṭabarsí) struggle."
+  },
+  {
+    "name": "Noah",
+    "common_name": "Noah",
+    "aliases": ["Núḥ", "نوح"],
+    "native_script": ["نوح"],
+    "summary": "The antediluvian prophet of the Flood; invoked in GPB through Bahá'u'lláh's own words comparing His suffering to Noah's flood.",
+    "importance": 16,
+    "importance_reason": "Two mentions as a prior Manifestation invoked symbolically by Bahá'u'lláh; foundational in scripture but incidental as a named entity here.",
+    "characterizations": ["GPB: “Noah’s flood is but the measure of the tears I [Bahá'u'lláh] have shed”"]
+  },
+  {
+    "name": "Norman de Mattos Bentwich",
+    "common_name": "Norman Bentwich",
+    "aliases": ["Norman de Mattos Bentwich", "Prof. Norman Bentwitch"],
+    "native_script": [],
+    "summary": "British jurist and former Attorney-General of the Palestine Government, quoted in GPB testifying that the Bahá'í Faith had made Palestine a land of four faiths.",
+    "importance": 14,
+    "importance_reason": "One-mention non-Bahá'í scholar whose quoted testimony lends external recognition to the Faith.",
+    "characterizations": ["GPB: Palestine may indeed be now regarded as the land not of three but of four Faiths, because the Bahá’í creed … is attaining to the character of a world religion"]
+  },
+  {
+    "name": "Nádir S̱háh",
+    "common_name": "Nádir Sháh",
+    "aliases": ["Nader Shah", "Nádir Sháh Afshár"],
+    "native_script": ["نادر شاه"],
+    "summary": "Eighteenth-century Persian conqueror and founder of the Afsharid dynasty, cited in DB for abolishing a clerical office in his anti-clerical campaign.",
+    "importance": 16,
+    "importance_reason": "Two DB mentions for historical-background context; a famous monarch but tangential to Bábí/Bahá'í events.",
+    "characterizations": ["DB: this office was abolished in his anti-clerical campaign by Nádir S̱háh"]
+  },
+  {
+    "name": "Náṣir, surnamed Ḥájí ‘Abbás",
+    "common_name": "Náṣir (Ḥájí ‘Abbás)",
+    "aliases": ["Ḥájí ‘Abbás"],
+    "native_script": [],
+    "summary": "Son of ‘Ábid, later given the name Ḥájí ‘Abbás; a Bábí mentioned once in DB.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental believer identified only by parentage and a renaming."
+  },
+  {
+    "name": "Náṣiri’d-Dín Sháh Qájár",
+    "common_name": "Náṣiri’d-Dín Sháh",
+    "aliases": ["the Valí-‘Ahd", "Náṣiri’d-Dín Mírzá", "Naser al-Din Shah", "Nasser al-Din Shah Qajar", "the Sháh"],
+    "native_script": ["ناصرالدین شاه قاجار", "ناصرالدین شاه"],
+    "summary": "Qájár king of Persia (reigned 1848–1896) who as a youth assented to the Báb's execution and presided over decades of persecution of the Bábís and Bahá'ís; following the 1852 attempt on his life he unleashed a horrific massacre of the Bábí community.",
+    "importance": 82,
+    "importance_reason": "By far the most-cited figure in the slice (126 mentions, both books, rel_degree 39): the reigning sovereign across the entire Bábí–early-Bahá'í persecution and a central antagonist of the Heroic Age.",
+    "characterizations": ["GPB: the youthful and inexperienced Náṣiri’d-Dín S̱háh, who gave his ready assent to the sentence of his Captive’s death", "Wikipedia: Naser al-Din Shah Qajar … was the Shah of Iran from 1848 to 1896, the third-longest reigning monarch in Iranian history; he was assassinated in 1896."]
+  },
+  {
+    "name": "Náẓim Pás̱há, Válí (governor) of Damascus",
+    "common_name": "Náẓim Páshá",
+    "aliases": ["ناظم باشا", "Nazım Pasha", "Válí of Damascus"],
+    "native_script": ["ناظم باشا"],
+    "summary": "Ottoman Válí (governor) of Damascus around the turn of the 20th century who was approached, via Mírzá Majdi'd-Dín, in connection with intrigues against ‘Abdu'l-Bahá in ‘Akká.",
+    "importance": 18,
+    "importance_reason": "Single GPB mention as an Ottoman official entangled in the Covenant-breakers' machinations; peripheral.",
+    "characterizations": ["GPB: a man who came to ‘Akká from Damascus stated to outsiders that Náẓim Pás̱há had been the cause of the incar[ceration]"]
+  },
+  {
+    "name": "Núr-‘Alí the hunter",
+    "common_name": "Núr-‘Alí the hunter",
+    "aliases": ["Núr-‘Alí"],
+    "native_script": [],
+    "summary": "A Bábí hunter counted among the indispensable defenders who fell at the fort (Shaykh Ṭabarsí), named once in DB.",
+    "importance": 10,
+    "importance_reason": "One-mention fort defender listed among fallen leaders; a memorable but incidental name."
+  },
+  {
+    "name": "Núru’lláh Ḵhán-i-Afg̱hán",
+    "common_name": "Núru’lláh Khán-i-Afghán",
+    "aliases": ["Núru’lláh Khán"],
+    "native_script": [],
+    "summary": "An officer of ‘Abdu’lláh Ḵhán-i-Turkamán who perished, named in passing in DB.",
+    "importance": 5,
+    "importance_reason": "Two-mention incidental officer with no developed role."
+  },
+  {
+    "name": "Núshíraván-i-‘Ádil",
+    "common_name": "Núshíraván the Just",
+    "aliases": ["Anúshíraván", "Khusraw I", "Anushirvan the Just"],
+    "native_script": ["نوشیروان عادل"],
+    "summary": "The Sasanian king Khusraw I, proverbial in Persia for justice; cited once in DB in connection with his vizier Buzurg-Mihr.",
+    "importance": 8,
+    "importance_reason": "One-mention historical-proverbial reference for background; tangential to the Faith."
+  },
+  {
+    "name": "Pahlaván Asadu’lláh",
+    "common_name": "Pahlaván Asadu’lláh",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A strongman notorious for brutality who volunteered to seize Ḥujjat; named in DB.",
+    "importance": 9,
+    "importance_reason": "Two-mention minor antagonist tied to the Zanján episode."
+  },
+  {
+    "name": "Pahlaván Ṣafar-‘Alí",
+    "common_name": "Pahlaván Ṣafar-‘Alí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A strongman, with Pahlaván Asadu’lláh, who volunteered to seize Ḥujjat; named once in DB.",
+    "importance": 7,
+    "importance_reason": "One-mention minor antagonist paired with Asadu’lláh in the Ḥujjat episode."
+  },
+  {
+    "name": "Pamela Tennant, Lady Glenconner",
+    "common_name": "Lady Glenconner",
+    "aliases": ["Pamela Tennant", "Pamela Wyndham", "Pamela Grey", "Pamela Tennant, Lady Glenconner"],
+    "native_script": [],
+    "summary": "British aristocrat and author, mentioned once in GPB among notable persons connected with the Faith's spread.",
+    "importance": 8,
+    "importance_reason": "One-mention incidental notable; minimal developed role."
+  },
+  {
+    "name": "Paul Kingston Dealy",
+    "common_name": "Paul K. Dealy",
+    "aliases": ["Paul K. Dealy", "Paul Kingston Dealy"],
+    "native_script": [],
+    "summary": "An early American believer whose name is associated with the first stirrings of the Faith in the West.",
+    "importance": 20,
+    "importance_reason": "One GPB mention, but as one of the earliest Western Bahá'ís he carries pioneer significance.",
+    "characterizations": ["GPB: Paul K. Dealy … whose names will ever remain associated with the first stirrings of the Faith"]
+  },
+  {
+    "name": "Paul Ludwig Hans Anton von Beneckendorff und von Hindenburg",
+    "common_name": "Paul von Hindenburg",
+    "aliases": ["President von Hindenburg", "Paul von Hindenburg"],
+    "native_script": [],
+    "summary": "German field marshal and President of Germany (1925–1934) to whom Martha Root presented Bahá'í literature, as noted in GPB.",
+    "importance": 14,
+    "importance_reason": "Two GPB mentions as a head of state contacted by Martha Root; peripheral recipient.",
+    "characterizations": ["GPB: Martha Root’s letters to the late President Von Hindenburg"]
+  },
+  {
+    "name": "Paul the Apostle",
+    "common_name": "Saint Paul",
+    "aliases": ["Saul of Tarsus", "Παῦλος", "the Apostle to the Gentiles", "Paul the Apostle"],
+    "native_script": ["Παῦλος", "بولس الرسول"],
+    "summary": "The Apostle Paul, foremost spreader of early Christianity; cited in GPB for his allusion to the “last trump,” interpreted as foretelling Bahá'u'lláh's advent.",
+    "importance": 20,
+    "importance_reason": "One GPB mention; a towering scriptural figure invoked typologically rather than as a historical actor in the Faith.",
+    "characterizations": ["GPB: To the hour of His [Bahá'u'lláh's] advent St. Paul had alluded as the hour of the “last trump,” the “trump of God”"]
+  },
+  {
+    "name": "Percy Molesworth Sykes",
+    "common_name": "P. M. Sykes",
+    "aliases": ["Sir Percy Sykes", "Lieut.-Col. P. M. Sykes", "Percy Molesworth Sykes"],
+    "native_script": [],
+    "summary": "British officer and historian, author of “A History of Persia,” quoted in DB on the Twelfth Imám and Persian history.",
+    "importance": 14,
+    "importance_reason": "Three DB mentions as a cited external historian; a source rather than a participant.",
+    "characterizations": ["DB: It is believed, writes Lieut.-Col. P. M. Sykes, that the twelfth Imám never died"]
+  },
+  {
+    "name": "Peter Z. Easton",
+    "common_name": "Peter Z. Easton",
+    "aliases": ["Peter Zaccheus Easton", "Rev. Peter Z. Easton"],
+    "native_script": [],
+    "summary": "A Christian clergyman named in GPB among ecclesiastical opponents who arose to stem the Faith's progress.",
+    "importance": 9,
+    "importance_reason": "One-mention opponent grouped with other missionaries; incidental."
+  },
+  {
+    "name": "Pharaoh",
+    "common_name": "Pharaoh",
+    "aliases": ["Fir‘awn"],
+    "native_script": ["فرعون"],
+    "summary": "The scriptural tyrant of the days of Moses, cited in GPB as an archetype of transgression against a Manifestation of God.",
+    "importance": 13,
+    "importance_reason": "One mention as a scriptural archetype of opposition; symbolic rather than historical to the Faith.",
+    "characterizations": ["GPB: the “transgression” of Pharaoh in the days of Moses"]
+  },
+  {
+    "name": "Phoebe Apperson Hearst",
+    "common_name": "Phoebe Hearst",
+    "aliases": ["Mrs. Phoebe Hearst", "Phoebe Apperson Hearst"],
+    "native_script": [],
+    "summary": "American philanthropist (wife of Senator George Hearst) who, attracted to the Faith by Lua Getsinger, organized and funded the first Western pilgrimage to ‘Abdu'l-Bahá in 1898 — a pivotal moment in the Faith's spread to the West.",
+    "importance": 48,
+    "importance_reason": "Three mentions but rel_degree 19 and a taught story: her pilgrimage opened the door for American believers to meet ‘Abdu'l-Bahá.",
+    "characterizations": ["GPB: Mrs. Phoebe Hearst, the well-known philanthropist … had expressed her intention of visiting ‘Abdu’l-Bahá in the Holy Land", "GPB: “Those three days,” Mrs. Hearst herself has … testified, “were the most memorable days of my life”"]
+  },
+  {
+    "name": "Pope Pius IX (Giovanni Maria Mastai-Ferretti)",
+    "common_name": "Pope Pius IX",
+    "aliases": ["Pio Nono", "the Sovereign Pontiff", "Giovanni Maria Mastai-Ferretti"],
+    "native_script": [],
+    "summary": "The longest-reigning Pope (1846–1878) and head of the Catholic Church, to whom Bahá'u'lláh addressed a weighty Epistle from His ‘Akká imprisonment announcing His advent.",
+    "importance": 40,
+    "importance_reason": "Five mentions, rel_degree 6: a recipient of one of Bahá'u'lláh's most significant Tablets to the kings and ecclesiastics, a frequently taught episode.",
+    "characterizations": ["GPB: To Pope Pius IX … He [Bahá'u'lláh] … addressed a most weighty Epistle, in which He announces that “He Who is the Lord of Lords is come overshadowed with clouds”"]
+  },
+  {
+    "name": "Prince Alfred, Duke of Edinburgh",
+    "common_name": "Prince Alfred, Duke of Edinburgh",
+    "aliases": ["Alfred, Duke of Saxe-Coburg and Gotha", "Prince Alfred"],
+    "native_script": [],
+    "summary": "Second son of Queen Victoria and father of Queen Marie of Romania; mentioned once in GPB to establish Queen Marie's royal lineage.",
+    "importance": 8,
+    "importance_reason": "One-mention genealogical reference linking Queen Marie to Queen Victoria."
+  },
+  {
+    "name": "Prince Dimitri Ivanovich Dolgorukov",
+    "common_name": "Prince Dolgorukov",
+    "aliases": ["the Russian Minister", "Dolgorouki", "Dimitri Ivanovich Dolgorukov", "Dolgoruki"],
+    "native_script": ["Долгоруков"],
+    "summary": "Russian Minister to Persia (1845–1854) who intervened to protect Bahá'u'lláh, requesting He be moved to the Grand Vizir's home and helping secure His release from the Síyáh-Chál episode.",
+    "importance": 46,
+    "importance_reason": "Thirteen mentions across both books, rel_degree 3: the foreign diplomat whose protection of Bahá'u'lláh is a regularly taught turning point.",
+    "characterizations": ["GPB: the Russian Minister, Prince Dolgorouki … requested Bahá'u'lláh to proceed to the home of the Grand Vizir"]
+  },
+  {
+    "name": "Prince Edward, Duke of Windsor",
+    "common_name": "Edward VIII",
+    "aliases": ["King Edward VIII", "the Duke of Windsor", "Prince Edward"],
+    "native_script": [],
+    "summary": "British king who reigned briefly in 1936 before abdicating; mentioned once in GPB as a recipient of Bahá'í outreach.",
+    "importance": 9,
+    "importance_reason": "One-mention royal recipient; incidental despite fame."
+  },
+  {
+    "name": "Prince Farhád Mírzá",
+    "common_name": "Farhád Mírzá",
+    "aliases": ["Farhád Mírzá Mu‘tamadu’d-Dawlih"],
+    "native_script": ["فرهاد میرزا"],
+    "summary": "A young Qájár prince, pupil of Ḥájí Mírzá Áqásí, mentioned once in DB.",
+    "importance": 7,
+    "importance_reason": "One-mention incidental prince noted only for his tutelage."
+  },
+  {
+    "name": "Prince Fírúz Mírzá Qájár",
+    "common_name": "Fírúz Mírzá",
+    "aliases": ["the governor of S̱híráz", "فیروز میرزا", "Nuṣratu’d-Dawlih", "Prince Fírúz Mírzá"],
+    "native_script": ["فیروز میرزا"],
+    "summary": "Qájár governor of Shíráz/Fárs who reinforced the forces against Vaḥíd at Nayríz and to whom Vaḥíd's severed head was sent as a trophy.",
+    "importance": 30,
+    "importance_reason": "Eleven mentions across both books, rel_degree 4: a regional antagonist in the Nayríz upheaval and the Vaḥíd episode.",
+    "characterizations": ["GPB: his [Vaḥíd's] head … was sent as a trophy to the feasting Prince in S̱híráz"]
+  },
+  {
+    "name": "Prince Malik Qásim Mírzá Qájár",
+    "common_name": "Malik Qásim Mírzá",
+    "aliases": ["ملک قاسم میرزا", "Prince Malik Qásim Mírzá"],
+    "native_script": ["ملک قاسم میرزا"],
+    "summary": "A Qájár prince who, contrary to most officials, ceremoniously and respectfully received the Báb, even accompanying Him on foot.",
+    "importance": 28,
+    "importance_reason": "Five mentions across both books with a memorable, sympathetic anecdote toward the Báb.",
+    "characterizations": ["GPB: Prince Malik Qásim Mírzá ceremoniously received Him [the Báb], and was even seen … to accompany Him on foot"]
+  },
+  {
+    "name": "Prince Mihdí-Qulí Mírzá Qájár",
+    "common_name": "Mihdí-Qulí Mírzá",
+    "aliases": ["the commander of the army of Mázindarán", "مهدی‌قلی میرزا", "Prince Mihdí-Qulí Mírzá"],
+    "native_script": ["مهدی‌قلی میرزا"],
+    "summary": "Brother of Muḥammad Sháh and commander of the army of Mázindarán besieging the Bábís at Fort Shaykh Ṭabarsí (1848–49); notorious for his flight from camp and for violating his sworn, Qur'án-sealed oath of safe-conduct that lured the defenders to their massacre.",
+    "importance": 52,
+    "importance_reason": "Fifty mentions across both books, rel_degree 9: the chief military antagonist of the pivotal Shaykh Ṭabarsí struggle and his treacherous broken oath is a centrally taught episode.",
+    "characterizations": ["GPB: the demoralized and shame-laden Prince Mihdí-Qulí Mírzá … his violation of his so-called irrevocable oath, inscribed and sealed by him on the margin of the opening súrih of the Qur'án"]
+  },
+  {
+    "name": "Prince Muḥammad-‘Alí Mírzá Qájár, governor of Kirmáns̱háh",
+    "common_name": "Muḥammad-‘Alí Mírzá (governor of Kirmáns̱háh)",
+    "aliases": ["Dawlatsháh", "Muḥammad-‘Alí Mírzá Dawlatsháh"],
+    "native_script": ["محمدعلی میرزا دولتشاه"],
+    "summary": "Eldest son of Fatḥ-‘Alí Sháh and governor of Kirmáns̱háh, who sought to host and serve Shaykh Aḥmad-i-Aḥsá'í; named in DB.",
+    "importance": 16,
+    "importance_reason": "Three DB mentions tied to Shaykh Aḥmad's reception; background figure of the precursor era.",
+    "characterizations": ["DB: the S̱háh’s eldest son and the ablest member of his house, had already begged permission … to entertain and serve in person S̱hayḵh Aḥmad"]
+  },
+  {
+    "name": "Prince Muḥammad-‘Alí Tawfíq of Egypt",
+    "common_name": "Prince Muḥammad-‘Alí of Egypt",
+    "aliases": ["Muhammad Ali Tewfik", "محمد علي", "Prince Mohammed Ali", "محمد علي توفيق", "Prince Muḥammad-‘Alí Tawfíq"],
+    "native_script": ["محمد علي توفيق"],
+    "summary": "Egyptian prince (the Khedive's brother) cited in GPB among notable persons whose interest attested to the Faith's progress.",
+    "importance": 12,
+    "importance_reason": "Three GPB mentions but only as a name attesting the Faith's reach; minimal developed role."
+  },
+  {
+    "name": "Prince Paul Karađorđević",
+    "common_name": "Prince Paul of Yugoslavia",
+    "aliases": ["Prince Regent Paul", "Prince Paul Karadjordjevic", "Prince Paul of Yugoslavia"],
+    "native_script": ["Павле Карађорђевић"],
+    "summary": "Prince Regent of Yugoslavia (1934–1941) whom Martha Root visited at the Royal Palace in Belgrade, as noted in GPB.",
+    "importance": 9,
+    "importance_reason": "One-mention royal contact of Martha Root; peripheral."
+  },
+  {
+    "name": "Prince Tahmásp Mírzá, Mu’ayyadu’d-Dawlih",
+    "common_name": "Tahmásp Mírzá",
+    "aliases": ["Mu’ayyadu’d-Dawlih", "Tahmásp Mírzá Mu’ayyadu’d-Dawlih"],
+    "native_script": ["تهماسب میرزا"],
+    "summary": "A Qájár prince (grandson of Fatḥ-‘Alí Sháh) who regularly hosted a believer, named once in DB.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental prince noted only as a host."
+  },
+  {
+    "name": "Prince Ḥamzih Mírzá Qájár, the Ḥishmatu’d-Dawlih",
+    "common_name": "Ḥamzih Mírzá",
+    "aliases": ["the Ḥishmatu’d-Dawlih", "the governor of Áḏhirbáyján", "حمزه میرزا", "Prince Ḥamzih Mírzá", "Ḥishmatu’d-Dawlih"],
+    "native_script": ["حمزه میرزا"],
+    "summary": "Qájár governor of Ádhirbáyján who, when ordered by the Amír-Niẓám to execute the Báb, indignantly refused to perform what he regarded as a flagitious crime — leaving the task to others.",
+    "importance": 34,
+    "importance_reason": "Twelve mentions across both books, rel_degree 5: his principled refusal to execute the Báb is a recurring, morally significant detail.",
+    "characterizations": ["GPB: Confronted with a flat refusal by the indignant Prince to perform what he regarded as a flagitious crime"]
+  },
+  {
+    "name": "Prince Ḵhanlan Mírzá",
+    "common_name": "Khanlan Mírzá",
+    "aliases": ["Khánlar Mírzá"],
+    "native_script": [],
+    "summary": "A provincial governor who ignored a grievance brought before him, named once in DB.",
+    "importance": 5,
+    "importance_reason": "One-mention incidental official with no developed role."
+  },
+  {
+    "name": "Prince ‘Alí-Naqí Mírzá, Ruknu’d-Dawlih",
+    "common_name": "‘Alí-Naqí Mírzá (Ruknu’d-Dawlih)",
+    "aliases": ["Ruknu’d-Dawlih", "‘Alí-Naqí Mírzá Ruknu’d-Dawlih"],
+    "native_script": ["علی‌نقی میرزا"],
+    "summary": "Governor who, mindful of the standing of those involved, convened the ‘ulamá to a banquet to resolve a controversy; named once in DB.",
+    "importance": 7,
+    "importance_reason": "One-mention incidental governor noted for a single mediating episode."
+  },
+  {
+    "name": "Princess Elizabeth of Greece and Denmark",
+    "common_name": "Princess Elizabeth of Greece",
+    "aliases": ["Countess Elizabeth of Törring-Jettenbach", "Princess Elizabeth of Greece and Denmark"],
+    "native_script": [],
+    "summary": "A Greek-Danish princess mentioned once in GPB among royalty contacted in the course of the Faith's spread.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental royal."
+  },
+  {
+    "name": "Princess Ileana of Romania, Archduchess Anton of Austria",
+    "common_name": "Princess Ileana of Romania",
+    "aliases": ["Archduchess Anton of Austria", "Mother Alexandra", "Princess Ileana"],
+    "native_script": [],
+    "summary": "Daughter of Queen Marie of Romania who offered to translate a Bahá'í pamphlet into Romanian and met Martha Root with her mother; the most engaged of the Romanian royal contacts after Queen Marie.",
+    "importance": 22,
+    "importance_reason": "Six GPB mentions, rel_degree 5: a royal who actively assisted by translating Bahá'í literature.",
+    "characterizations": ["GPB: the offer spontaneously made by Princess Ileana of Rumania … to render into her own native language a Bahá’í pamphlet written in English"]
+  },
+  {
+    "name": "Princess Kadria of Egypt",
+    "common_name": "Princess Kadria of Egypt",
+    "aliases": ["قدرية", "Kadria Hussein", "Princess Kadria Hussein"],
+    "native_script": ["قدرية حسين"],
+    "summary": "An Egyptian princess mentioned once in GPB among royalty connected to the Faith's outreach.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental royal."
+  },
+  {
+    "name": "Princess Marina of Greece and Denmark, Duchess of Kent",
+    "common_name": "Princess Marina, Duchess of Kent",
+    "aliases": ["Duchess of Kent", "Princess Marina of Greece"],
+    "native_script": [],
+    "summary": "Greek-Danish princess who married into the British royal family as Duchess of Kent; mentioned in GPB as a recipient of Bahá'í condolences and outreach.",
+    "importance": 10,
+    "importance_reason": "Three GPB mentions as a royal recipient; peripheral."
+  },
+  {
+    "name": "Princess Mary Karadja",
+    "common_name": "Princess Mary Karadja",
+    "aliases": ["Mary Karadja", "Marie Louise Karadja", "Despina Karadja", "Marie Louise Smith", "the White Cross Union founder"],
+    "native_script": [],
+    "summary": "Swedish-born princess (by marriage) and spiritualist author, founder of the White Cross Union; mentioned once in GPB.",
+    "importance": 7,
+    "importance_reason": "One-mention incidental notable."
+  },
+  {
+    "name": "Princess Olga of Greece and Denmark",
+    "common_name": "Princess Olga of Yugoslavia",
+    "aliases": ["Princess Olga of Greece", "Princess Olga of Greece and Denmark"],
+    "native_script": [],
+    "summary": "Wife of Prince Paul of Yugoslavia who received Martha Root at the Royal Palace in Belgrade and paid a warm tribute to Root's memory; quoted in GPB.",
+    "importance": 14,
+    "importance_reason": "Three GPB mentions, rel_degree 9, with a quoted personal tribute to Martha Root; still a peripheral royal contact.",
+    "characterizations": ["GPB: “I am deeply distressed to hear of the death of good Miss Martha Root,” is the royal tribute paid to her … memory by Princess Olga of Yugoslavia"]
+  },
+  {
+    "name": "Qahru'lláh",
+    "common_name": "Qahru'lláh",
+    "aliases": ["the dervish from India", "درویش", "the dervish (former navváb)"],
+    "native_script": ["قهرالله"],
+    "summary": "A former navváb (Indian nobleman) whom the Báb in a vision bade renounce his wealth and travel on foot to meet Him in Ádhirbáyján; he became a devoted dervish-follower, his story a memorable conversion episode.",
+    "importance": 26,
+    "importance_reason": "Four mentions across both books with a vivid, often-told conversion narrative tied to the Báb.",
+    "characterizations": ["GPB: a dervish, a former navváb, from India, whom the Báb in a vision had bidden renounce wealth and position, and hasten on foot to meet Him in Áḏhirbáyján"]
+  },
+  {
+    "name": "Qambar-‘Alí",
+    "common_name": "Qambar-‘Alí",
+    "aliases": ["Qambar-‘Alí (servant of Mullá Ḥusayn)"],
+    "native_script": ["قنبرعلی"],
+    "summary": "The fearless and faithful servant of Mullá Ḥusayn who accompanied him to Máh-Kú and on his final journey, and who was martyred the same night his master fell at Shaykh Ṭabarsí.",
+    "importance": 26,
+    "importance_reason": "Seven DB mentions as the devoted attendant of Mullá Ḥusayn with a poignant shared martyrdom.",
+    "characterizations": ["DB: Qambar-‘Alí, the fearless and faithful servant of Mullá Ḥusayn … who suffered martyrdom on the very night on which his master fell"]
+  },
+  {
+    "name": "Qilíj Khán",
+    "common_name": "Qilíj Khán",
+    "aliases": ["Qilíj Ḵhán"],
+    "native_script": ["قلیج خان"],
+    "summary": "A Kurd commissioned by the Sháh to deliver the royal summons to Ḥujjat; named in DB.",
+    "importance": 8,
+    "importance_reason": "Two-mention incidental messenger in the Zanján episode."
+  },
+  {
+    "name": "Qásim-i-Mázindarání",
+    "common_name": "Qásim-i-Mázindarání",
+    "aliases": ["Qásim (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of Mázindarán, named once in DB in a martyr listing.",
+    "importance": 6,
+    "importance_reason": "One-mention martyr-list entry from the Shaykh Ṭabarsí struggle."
+  },
+  {
+    "name": "Queen Marie of Romania",
+    "common_name": "Queen Marie of Romania",
+    "aliases": ["Marie of Edinburgh", "Marie Alexandra Victoria", "the royal convert", "Queen Marie of Rumania"],
+    "native_script": [],
+    "summary": "Queen of Romania and granddaughter of Queen Victoria, the first and only reigning monarch to openly embrace and repeatedly proclaim her recognition of Bahá'u'lláh's Revelation in written testimonies — a landmark in the Faith's history.",
+    "importance": 58,
+    "importance_reason": "Twenty-eight GPB mentions: the sole royal convert whose public written testimonies to the Faith are a singular, frequently taught milestone.",
+    "characterizations": ["GPB: the spontaneous allegiance of Royalty to the Faith of Bahá’u’lláh has been secured and unmistakably proclaimed in several testimonies transmitted to posterity by the pen of the royal convert herself"]
+  },
+  {
+    "name": "Queen Victoria of England, Empress of India",
+    "common_name": "Queen Victoria",
+    "aliases": ["Empress of India", "Alexandrina Victoria", "Queen Victoria of England"],
+    "native_script": [],
+    "summary": "Queen of the United Kingdom and Empress of India (reigned 1837–1901), recipient of one of Bahá'u'lláh's Tablets to the Kings, in which He commended her and called her to the Lesser Peace.",
+    "importance": 42,
+    "importance_reason": "Seven GPB mentions, rel_degree 5: a principal addressee among Bahá'u'lláh's Tablets to the Kings, a regularly taught episode.",
+    "characterizations": ["GPB: In His [Bahá'u'lláh's] Tablet to Queen Victoria He … invites these kings to hold fast to “the Lesser Peace,” since they had refused “the Most Great Peace”"]
+  },
+  {
+    "name": "Qulí (bearer of the body of Mullá Ḥusayn)",
+    "common_name": "Qulí",
+    "aliases": ["Qulí (bearer of Mullá Ḥusayn's body)", "Qulí (companion of Ḵhurásán, wounded at Ṭabarsí)"],
+    "native_script": ["قلی"],
+    "summary": "A Bábí from Khurásán who, with Iskandar, bore the body of Mullá Ḥusayn to the fort and laid it at the feet of Quddús; later badly wounded at Shaykh Ṭabarsí.",
+    "importance": 16,
+    "importance_reason": "Four DB mentions with a memorable act of devotion (bearing Mullá Ḥusayn's body), though a minor defender.",
+    "characterizations": ["DB: Qulí, who, together with a man named Iskandar … bore the body of Mullá Ḥusayn to the fort on the night of his martyrdom and placed it at the feet of Quddús"]
+  },
+  {
+    "name": "Qánitih",
+    "common_name": "Qánitih",
+    "aliases": ["Qánitih (attendant of Ṭáhirih)"],
+    "native_script": ["قانتة"],
+    "summary": "The woman attendant of Ṭáhirih, ordered removed with her to a place outside the capital; named once in DB.",
+    "importance": 10,
+    "importance_reason": "One-mention incidental, but notable as Ṭáhirih's personal attendant."
+  },
+  {
+    "name": "Qásim Khán",
+    "common_name": "Qásim Khán",
+    "aliases": ["Qásim Ḵhán"],
+    "native_script": ["قاسم خان"],
+    "summary": "A figure who arrived from the frontier of Karabágh and entered Zanján during the upheaval; named once in DB.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental participant in the Zanján episode."
+  },
+  {
+    "name": "Rasúl-i-Bahnimírí",
+    "common_name": "Rasúl-i-Bahnimírí",
+    "aliases": ["Rasúl-i-Bahnimírí (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A Bábí defender at Shaykh Ṭabarsí who, complaining of intercepted bread, led a small group out of the fort and was instantly slain; brother of Muḥammad-Ḥusayn.",
+    "importance": 16,
+    "importance_reason": "Five DB mentions with a specific, memorable episode of his death at the fort.",
+    "characterizations": ["DB: Rasúl-i-Bahnimírí and a few other of his companions … separated themselves from their friends. No sooner had they stepped out of the fort than they were all instantly slain"]
+  },
+  {
+    "name": "Ras̱híd Pás̱há",
+    "common_name": "Rashíd Páshá",
+    "aliases": ["رشيد پاشا", "Turkish Ambassador in Paris", "ex-Válí of Beirut", "Rashid Pasha"],
+    "native_script": ["رشيد باشا"],
+    "summary": "Ottoman official, Turkish Ambassador in Paris and former Válí of Beirut, named once in GPB.",
+    "importance": 7,
+    "importance_reason": "One-mention incidental Ottoman official."
+  },
+  {
+    "name": "Raḥmán (infant son of Mullá Mihdíy-i-Kandí)",
+    "common_name": "Raḥmán",
+    "aliases": [],
+    "native_script": ["رحمان"],
+    "summary": "The infant son of Mullá Mihdíy-i-Kandí, left behind in the village; remembered through a lullaby his father composed, in a touching DB anecdote.",
+    "importance": 5,
+    "importance_reason": "One-mention incidental infant appearing only in a sentimental aside."
+  },
+  {
+    "name": "Rev. Benjamin Labaree",
+    "common_name": "Rev. Benjamin Labaree",
+    "aliases": ["Benjamin Labaree, D.D."],
+    "native_script": [],
+    "summary": "American missionary clergyman in Persia, recipient of Dr. Cormick's letters describing his impressions of the Báb; named once in DB.",
+    "importance": 9,
+    "importance_reason": "One-mention figure relevant only as the recipient of a notable account of the Báb."
+  },
+  {
+    "name": "Rev. George Aaron Ford",
+    "common_name": "George A. Ford",
+    "aliases": ["George A. Ford", "Rev. George Aaron Ford"],
+    "native_script": [],
+    "summary": "A missionary of Syria who read a paper (Jessup's) referring to Bahá'u'lláh at the 1893 World Parliament of Religions in Chicago; named once in GPB.",
+    "importance": 10,
+    "importance_reason": "One-mention figure tied to the first public mention of the Faith in America."
+  },
+  {
+    "name": "Rev. Henry Harris Jessup",
+    "common_name": "Henry H. Jessup",
+    "aliases": ["Henry H. Jessup, D.D.", "Rev. Henry Harris Jessup"],
+    "native_script": [],
+    "summary": "Director of Presbyterian missionary operations in North Syria, author of the paper read at the 1893 World Parliament of Religions that contained the first public reference to Bahá'u'lláh in America.",
+    "importance": 16,
+    "importance_reason": "One GPB mention but historically significant as author of the first American public mention of the Faith.",
+    "characterizations": ["GPB: a paper written by Rev. Henry H. Jessup, D.D., Director of Presbyterian Missionary Operations in North Syria"]
+  },
+  {
+    "name": "Rev. J. H. Shedd",
+    "common_name": "Rev. J. H. Shedd",
+    "aliases": ["J. H. Shedd, D.D."],
+    "native_script": [],
+    "summary": "Clergyman of the American Mission at Urúmíyyih, Persia, named once in DB in connection with the same mission as Benjamin Labaree.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental missionary providing source context."
+  },
+  {
+    "name": "Reverend Reginald John Campbell",
+    "common_name": "R. J. Campbell",
+    "aliases": ["R. J. Campbell", "exponent of the New Theology", "Reverend Reginald John Campbell"],
+    "native_script": [],
+    "summary": "Minister of the City Temple in London (1903–1915) who introduced ‘Abdu'l-Bahá when He proclaimed the unity of God from that pulpit during His Western travels.",
+    "importance": 16,
+    "importance_reason": "Two GPB mentions tied to ‘Abdu'l-Bahá's notable address at the City Temple.",
+    "characterizations": ["GPB: Introduced by the Pastor, the Reverend R. J. Campbell, He [‘Abdu’l-Bahá] … proclaimed the unity of God"]
+  },
+  {
+    "name": "Reverend Roland Corbet",
+    "common_name": "Rev. Roland Corbet",
+    "aliases": ["Roland Corbet"],
+    "native_script": [],
+    "summary": "An English clergyman named once in passing in GPB.",
+    "importance": 5,
+    "importance_reason": "One-mention incidental clergyman."
+  },
+  {
+    "name": "Reverend Thomas Rhondda Williams",
+    "common_name": "T. Rhondda Williams",
+    "aliases": ["T. Rhondda Williams", "Reverend Rhondda Williams"],
+    "native_script": [],
+    "summary": "A British (Welsh) Free Church minister named once in GPB.",
+    "importance": 5,
+    "importance_reason": "One-mention incidental clergyman."
+  },
+  {
+    "name": "Rexford Newcomb",
+    "common_name": "Rexford Newcomb",
+    "aliases": ["Dr. Rexford Newcomb"],
+    "native_script": [],
+    "summary": "Dean of the College of Fine and Applied Arts at the University of Illinois, quoted in GPB praising the architecture of the Wilmette House of Worship.",
+    "importance": 9,
+    "importance_reason": "One-mention external authority offering a tribute to the Temple; incidental.",
+    "characterizations": ["GPB: This ‘Temple of Light’ opens upon the terrain of human experience nine great doorways which beckon men and women of every race and clime"]
+  },
+  {
+    "name": "Richard Wainwright",
+    "common_name": "Admiral Wainwright",
+    "aliases": ["Admiral Wainwright", "Richard Wainwright"],
+    "native_script": [],
+    "summary": "An American naval admiral named once in GPB.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental notable."
+  },
+  {
+    "name": "Riḍá (the hired assassin)",
+    "common_name": "Riḍá (the hired assassin)",
+    "aliases": ["رضا", "Riḍá the Turk"],
+    "native_script": ["رضا"],
+    "summary": "A Turkish ruffian hired by the Persian consul-general in Baghdád for a hundred túmáns to assassinate Bahá'u'lláh, but who lost his nerve when he confronted Him at the public bath.",
+    "importance": 22,
+    "importance_reason": "One GPB mention, rel_degree 3, but with a vivid and often-recounted episode of the failed plot against Bahá'u'lláh.",
+    "characterizations": ["GPB: The consul-general had even gone so far as to hire a ruffian, a Turk, named Riḍá … and order him to seek out and kill Bahá'u'lláh"]
+  },
+  {
+    "name": "Riḍá Big",
+    "common_name": "Riḍá Big",
+    "aliases": ["رضا بیگ", "Rida Beg"],
+    "native_script": ["رضا بیگ"],
+    "summary": "Owner of a house in Adrianople rented for Bahá'u'lláh, where He stayed about a year during the Adrianople period; named in GPB.",
+    "importance": 12,
+    "importance_reason": "Two GPB mentions tied to a residence of Bahá'u'lláh during the Adrianople period.",
+    "characterizations": ["GPB: Bahá’u’lláh withdrew with His family to the house of Riḍá Big … which was rented by His order"]
+  },
+  {
+    "name": "Riḍá Khán, son of Muḥammad Khán the Turkamán",
+    "common_name": "Riḍá Khán (son of Muḥammad Khán the Turkamán)",
+    "aliases": ["Riḍá Ḵhán"],
+    "native_script": [],
+    "summary": "A graceful, gifted Bábí youth, son of the Master of the Horse to Muḥammad Sháh, who was ordered hewn in pieces out of the prince's hatred; named once in DB.",
+    "importance": 12,
+    "importance_reason": "One DB mention but a vivid, memorable martyrdom anecdote.",
+    "characterizations": ["DB: the prince, because of the exceeding hatred he bore Riḍá Ḵhán ordered him to be hewn in pieces"]
+  },
+  {
+    "name": "Riḍá Ḵhán-i-Sardár",
+    "common_name": "Riḍá Khán-i-Sardár",
+    "aliases": ["Riḍá Khán"],
+    "native_script": [],
+    "summary": "A man, brother-in-law of the Sipah-Sálár, who sheltered a fugitive and later followed him to Mázindarán, eventually attaining martyrdom; named once in DB.",
+    "importance": 9,
+    "importance_reason": "One-mention believer with a martyrdom noted only in passing."
+  },
+  {
+    "name": "Riḍá-Qulí Ḵhán-i-Lalih-Bás̱hí",
+    "common_name": "Riḍá-Qulí Khán-i-Lalih-Báshí",
+    "aliases": ["Riḍá-Qulí Khán Hidáyat"],
+    "native_script": ["رضاقلی خان لله‌باشی"],
+    "summary": "A court figure and author of the “Táríkh-i-Náṣirí” who praised Mullá Ḥusayn's prodigious strength and skill in arms; named once in DB.",
+    "importance": 10,
+    "importance_reason": "One-mention external chronicler whose tribute to Mullá Ḥusayn is cited."
+  },
+  {
+    "name": "Riḍáy-i-‘Arab-i-Mázindarání",
+    "common_name": "Riḍáy-i-‘Arab-i-Mázindarání",
+    "aliases": ["Riḍáy-i-‘Arab (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of Mázindarán, named once in DB in a martyr listing.",
+    "importance": 6,
+    "importance_reason": "One-mention martyr-list entry from the Shaykh Ṭabarsí struggle."
+  },
+  {
+    "name": "Riḍá’r-Rúḥ",
+    "common_name": "Riḍá’r-Rúḥ",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An intimate companion of Vaḥíd and a source of information on Vaḥíd's life and deeds in Yazd; named once in DB.",
+    "importance": 9,
+    "importance_reason": "One-mention companion serving chiefly as a source on Vaḥíd."
+  }
+]

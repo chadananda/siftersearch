@@ -1,0 +1,754 @@
+[
+  {
+    "name": "Siyyid Mihdí-i-Míyámay’í",
+    "common_name": "Siyyid Mihdí-i-Míyámay’í",
+    "aliases": ["Siyyid Mihdí (martyr of Míyámay)"],
+    "native_script": [],
+    "summary": "A Bábí from the village of Míyámay who was martyred for his faith.",
+    "importance": 8,
+    "importance_reason": "Single-mention martyr-list entry with no recorded role beyond his death."
+  },
+  {
+    "name": "Siyyid Mihdíy-i-Dahají",
+    "common_name": "Siyyid Mihdíy-i-Dahají",
+    "aliases": ["سیّد مهدی دهجی", "Sayyid Mihdí Dahají"],
+    "native_script": ["سیّد مهدی دهجی"],
+    "summary": "A once-prominent believer who betrayed ‘Abdu’l-Bahá and became a leading arch-breaker of the Covenant in Persia, India and Egypt; he died in obscurity and poverty, his wife and two sons following him.",
+    "importance": 42,
+    "importance_reason": "A named, GPB-cited Covenant-breaker whose defection is a recurring object lesson, though only briefly treated.",
+    "characterizations": ["GPB: Siyyid Mihdíy-i-Dahají, who, betraying ‘Abdu’l-Bahá, joined the Covenant-breakers, died in obscurity and poverty, followed by his wife and his two sons"]
+  },
+  {
+    "name": "Siyyid Murtaḍá (Seven Martyrs of Ṭihrán)",
+    "common_name": "Siyyid Murtaḍá",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Brother of Siyyid Káẓim-i-Zanjání and one of the Seven Martyrs of Ṭihrán, an early group of Bábís executed in 1850 whose steadfast deaths became a celebrated episode.",
+    "importance": 38,
+    "importance_reason": "A named member of the famed Seven Martyrs of Ṭihrán, though only mentioned in passing as a brother."
+  },
+  {
+    "name": "Siyyid Murtaḍá-i-Zanjání",
+    "common_name": "Siyyid Murtaḍá-i-Zanjání",
+    "aliases": ["Siyyid Murtaḍá (martyr of Zanján)"],
+    "native_script": [],
+    "summary": "A noted merchant of Zanján who eagerly took precedence among his companions in martyrdom, invoking the memory of his martyred brother who had fought beside Mullá Ḥusayn.",
+    "importance": 16,
+    "importance_reason": "Episode participant in the Zanján struggle with a memorable but brief anecdote."
+  },
+  {
+    "name": "Siyyid Muḥammad-Riḍá",
+    "common_name": "Siyyid Muḥammad-Riḍá",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Father (of a figure who lost him in early childhood), known throughout Fárs for his piety and virtue.",
+    "importance": 7,
+    "importance_reason": "Single-mention incidental named only as a pious father; likely the Báb's father (see flagged duplicates)."
+  },
+  {
+    "name": "Siyyid Muḥammad-Riḍá (brother of Siyyid Aḥmad of Sang-Sar)",
+    "common_name": "Siyyid Muḥammad-Riḍá (brother of Siyyid Aḥmad of Sang-Sar)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A believer of Mázindarán, brother of Siyyid Aḥmad of Sang-Sar, counted among the active supporters of the Cause.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental named only as an active local supporter."
+  },
+  {
+    "name": "Siyyid Muḥammad-Riḍá (father of the Báb)",
+    "common_name": "Siyyid Muḥammad-Riḍá (father of the Báb)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Father of the Báb, a siyyid of recognised standing descended from the Prophet; he died during the Báb's childhood, who was then raised by His maternal uncle.",
+    "importance": 22,
+    "importance_reason": "Incidental single mention, but notable as the father of the Báb."
+  },
+  {
+    "name": "Siyyid Muḥammad-Riḍáy-i-Pá-Qal‘iyí",
+    "common_name": "Siyyid Muḥammad-Riḍáy-i-Pá-Qal‘iyí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A distinguished and esteemed siyyid divine whose declared intention to join Mullá Ḥusayn caused a great tumult among the ‘ulamás of Iṣfahán.",
+    "importance": 12,
+    "importance_reason": "One-mention figure with a single notable episode of public defection toward the Báb's cause."
+  },
+  {
+    "name": "Siyyid Muḥammad-i-Báyigání",
+    "common_name": "Siyyid Muḥammad-i-Báyigání",
+    "aliases": [],
+    "native_script": [],
+    "summary": "One of the believers who accompanied Ṭáhirih from Ḵhániqín to Kirmánsháh.",
+    "importance": 6,
+    "importance_reason": "One-mention name in a travel-companion list."
+  },
+  {
+    "name": "Siyyid Muḥammad-i-Gulpáygání, Ṭá’ir",
+    "common_name": "Ṭá’ir",
+    "aliases": ["Siyyid Muḥammad-i-Gulpáygání", "Siyyid Muḥammad, Fatá’l-Malíḥ", "Fatá’l-Malíḥ"],
+    "native_script": [],
+    "summary": "A Bábí poet whose pen-name was Ṭá’ir and whom Ṭáhirih styled Fatá’l-Malíḥ; he preserved verses penned by Ṭáhirih in her own hand.",
+    "importance": 18,
+    "importance_reason": "Twice-cited minor figure with a memorable link to Ṭáhirih's writings."
+  },
+  {
+    "name": "Siyyid Muḥammad-i-Iṣfahání",
+    "common_name": "Siyyid Muḥammad-i-Iṣfahání",
+    "aliases": ["the Antichrist of the Bahá'í Revelation", "سیّد محمد اصفهانی"],
+    "native_script": ["سیّد محمد اصفهانی"],
+    "summary": "The scheming companion who manipulated Mírzá Yaḥyá against Bahá’u’lláh and is denounced as the Antichrist of the Bahá’í Revelation; he was slain at ‘Akká in 1872.",
+    "importance": 66,
+    "importance_reason": "Major antagonist of the Adrianople/‘Akká period (19 mentions, both books), the chief instigator against Bahá’u’lláh.",
+    "characterizations": [
+      "GPB: The black-hearted scoundrel who befooled and manipulated this vain and flaccid man [Mírzá Yaḥyá] with consummate skill and unyielding persistence was a certain Siyyid Muḥammad, a native of Iṣfahán, notorious for his inordinate ambition, his blind obstinacy and uncontrollable jealousy."
+    ]
+  },
+  {
+    "name": "Siyyid Muḥammad-i-Iṣfahání (Ṭabarsí companion)",
+    "common_name": "Siyyid Muḥammad-i-Iṣfahání (Ṭabarsí companion)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A believer numbered among the companions at the fort of Shaykh Ṭabarsí.",
+    "importance": 5,
+    "importance_reason": "One-mention name in a list of Ṭabarsí defenders (distinct from the Antichrist of the same name)."
+  },
+  {
+    "name": "Siyyid Muḥsin-i-Káẓimí",
+    "common_name": "Siyyid Muḥsin-i-Káẓimí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "One of the believers who accompanied Ṭáhirih from Ḵhániqín to Kirmánsháh.",
+    "importance": 6,
+    "importance_reason": "One-mention name in a travel-companion list."
+  },
+  {
+    "name": "Siyyid Mírzá (martyr of Mans̱hád)",
+    "common_name": "Siyyid Mírzá (martyr of Mans̱hád)",
+    "aliases": ["سيد ميرزا"],
+    "native_script": ["سيد ميرزا"],
+    "summary": "An eighty-year-old Bahá’í of Mans̱hád killed in his sleep by two heavy stones thrown upon him during persecution.",
+    "importance": 8,
+    "importance_reason": "Single-mention martyr with one vivid but brief detail."
+  },
+  {
+    "name": "Siyyid Razzáq-i-Mázindarání",
+    "common_name": "Siyyid Razzáq-i-Mázindarání",
+    "aliases": ["Siyyid Razzáq (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of Mázindarán.",
+    "importance": 5,
+    "importance_reason": "One-mention martyr-list entry."
+  },
+  {
+    "name": "Siyyid Riḍá",
+    "common_name": "Siyyid Riḍá",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí of pure and simple ways and sincere conviction, shot dead in the chest; out of respect for his master he always walked alongside his horse.",
+    "importance": 9,
+    "importance_reason": "One-mention figure with a single touching characterization."
+  },
+  {
+    "name": "Siyyid Riḍá (companion of Quddús, envoy to the prince)",
+    "common_name": "Siyyid Riḍá (companion of Quddús, envoy to the prince)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A well-known siyyid of Ḵhurásán, commissioned with Mullá Yúsuf-i-Ardibílí by Quddús to meet the prince, returning with the sealed Qur’án bearing the prince's oath.",
+    "importance": 12,
+    "importance_reason": "One-mention episode participant in the Ṭabarsí negotiations (likely same as Siyyid Riḍáy-i-Ḵhurásání — see flagged duplicates)."
+  },
+  {
+    "name": "Siyyid Riḍáy-i-Ḵhurásání",
+    "common_name": "Siyyid Riḍáy-i-Ḵhurásání",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí instructed by Quddús, with Mullá Yúsuf-i-Ardibílí, to act as his representative and inform the prince of his readiness to accede to his wish.",
+    "importance": 11,
+    "importance_reason": "One-mention envoy of Quddús (likely identical to the preceding Siyyid Riḍá envoy — flagged)."
+  },
+  {
+    "name": "Siyyid Yaḥyáy-i-Dárábí, Vaḥíd",
+    "common_name": "Vaḥíd",
+    "aliases": ["Siyyid Yaḥyáy-i-Dárábí", "وحید", "Vahid"],
+    "native_script": ["وحید"],
+    "summary": "One of the most learned and influential men of Persia, surnamed Vaḥíd, sent by the Sháh to investigate the Báb and instead became His devoted disciple; he led the Bábí uprising at Nayríz and was martyred there in 1850.",
+    "importance": 82,
+    "importance_reason": "Foremost Bábí hero, leader of the Nayríz upheaval, one of the most cited and eminent disciples (95 mentions, both books).",
+    "characterizations": [
+      "GPB: the trusted Siyyid Yaḥyáy-i-Dárábí, surnamed Vaḥíd, one of the most erudite, eloquent and influential of his subjects — a man who had committed to memory no less than thirty thousand traditions"
+    ]
+  },
+  {
+    "name": "Siyyid Áqá Ján",
+    "common_name": "Siyyid Áqá Ján",
+    "aliases": ["سید آقاجان"],
+    "native_script": ["سید آقاجان"],
+    "summary": "A Bahá’í persecuted in the late 19th century, who had his ears cut off and was led by a halter through the streets and bazaars.",
+    "importance": 9,
+    "importance_reason": "Single-mention persecution victim with one vivid detail."
+  },
+  {
+    "name": "Siyyid Ḥasan (brother of Siyyid Ḥusayn-i-Yazdí)",
+    "common_name": "Siyyid Ḥasan",
+    "aliases": ["Siyyid Ḥasan, brother of Siyyid Ḥusayn-i-‘Azíz", "Siyyid Ḥasan-i-Yazdí"],
+    "native_script": [],
+    "summary": "Brother of Siyyid Ḥusayn-i-Yazdí, the Báb's amanuensis; he attended the Báb in confinement and carried the news of the Báb's martyrdom to the defenders of the fort.",
+    "importance": 30,
+    "importance_reason": "Recurring presence (10 mentions) as the amanuensis's brother and a messenger of the Báb's martyrdom."
+  },
+  {
+    "name": "Siyyid Ḥasan of Ḵhurásán",
+    "common_name": "Siyyid Ḥasan of Ḵhurásán",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A man of noted profligacy from Ḵhurásán, slain by the princes with pistol-shots, swords and daggers.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental named in a killing."
+  },
+  {
+    "name": "Siyyid Ḥusayn (notable of Nayríz)",
+    "common_name": "Siyyid Ḥusayn (notable of Nayríz)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "One of the notables of Nayríz subjected, with others, to exposure and abominable cruelties during the town's persecution.",
+    "importance": 7,
+    "importance_reason": "One-mention episode victim at Nayríz."
+  },
+  {
+    "name": "Siyyid Ḥusayn (‘ulamá of Káshán)",
+    "common_name": "Siyyid Ḥusayn (‘ulamá of Káshán)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A divine of Káshán to whom the names and addresses of about fifty Ṭihrán believers were betrayed, which he passed to Maḥmúd Khán-i-Kalántar.",
+    "importance": 10,
+    "importance_reason": "One-mention secondary persecutor in the Ṭihrán betrayal episode."
+  },
+  {
+    "name": "Siyyid Ḥusayn-i-Azg̱handí",
+    "common_name": "Siyyid Ḥusayn-i-Azg̱handí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "The foremost mujtahid of his city and maternal uncle of Mírzá Aḥmad, whom he urged to combat the influence of Ḥájí Mírzá Khán.",
+    "importance": 13,
+    "importance_reason": "Eight mentions but as a peripheral clerical relative directing events at one remove."
+  },
+  {
+    "name": "Siyyid Ḥusayn-i-Kuláh-Dúz",
+    "common_name": "Siyyid Ḥusayn-i-Kuláh-Dúz",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí of Bárfurúsh whose head was impaled on a lance and paraded through the streets.",
+    "importance": 7,
+    "importance_reason": "One-mention martyr with a single grim detail."
+  },
+  {
+    "name": "Siyyid Ḥusayn-i-Káshání",
+    "common_name": "Siyyid Ḥusayn-i-Káshání",
+    "aliases": ["سیّد حسین کاشانی"],
+    "native_script": ["سیّد حسین کاشانی"],
+    "summary": "An early believer who, with Ḥájí Báqir-i-Káshání, established the first Egyptian center of the Faith by taking up residence there.",
+    "importance": 18,
+    "importance_reason": "One-mention figure but credited with founding the Faith's first presence in Egypt."
+  },
+  {
+    "name": "Siyyid Ḥusayn-i-Mázindarání",
+    "common_name": "Siyyid Ḥusayn-i-Mázindarání",
+    "aliases": ["Siyyid Ḥusayn (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of Mázindarán.",
+    "importance": 5,
+    "importance_reason": "One-mention martyr-list entry."
+  },
+  {
+    "name": "Siyyid Ḥusayn-i-Turshízí",
+    "common_name": "Siyyid Ḥusayn-i-Turshízí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A mujtahid native to Turshíz in Ḵhurásán, martyred for his faith, who declared at the block that he was a descendant of the Siyyidu’sh-Shuhadá whose name he bore.",
+    "importance": 14,
+    "importance_reason": "Twice-mentioned martyred mujtahid with a memorable declaration at his death."
+  },
+  {
+    "name": "Siyyid Ḥusayn-i-Yazdí",
+    "common_name": "Siyyid Ḥusayn-i-Yazdí",
+    "aliases": ["‘Azíz", "the amanuensis of the Báb", "سید حسین یزدی", "Siyyid Ḥusayn-i-‘Azíz"],
+    "native_script": ["سید حسین یزدی"],
+    "summary": "The Báb's amanuensis and trusted companion of His exile, one of the few permitted to be with Him at Máh-Kú; the repository of His last wishes and witness to His martyrdom, he was himself martyred in 1852.",
+    "importance": 64,
+    "importance_reason": "The Báb's amanuensis and closest companion of His captivity, heavily cited (43 mentions, both books).",
+    "characterizations": [
+      "GPB: His [the Báb's] amanuensis Siyyid Ḥusayn; the companion of His exile, the trusted repository of His last wishes, and the witness of the prodigies attendant upon His martyrdom"
+    ]
+  },
+  {
+    "name": "Siyyid Ḥusayn-i-Zavári’í",
+    "common_name": "Siyyid Ḥusayn-i-Zavári’í",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí who arrived at Zarand and related a story that allayed the narrator's agitation on a subject that had become his ruling passion.",
+    "importance": 8,
+    "importance_reason": "Twice-mentioned but purely as the teller of a personal anecdote."
+  },
+  {
+    "name": "Siyyid Ṣádiq-i-Ṭabáṭabá’í",
+    "common_name": "Siyyid Ṣádiq-i-Ṭabáṭabá’í",
+    "aliases": ["Siyyid Ṣádiq-i-Sangilají", "the Liar of Ṭihrán", "Ḥujjatu’l-Islám", "سیّد صادق طباطبائی"],
+    "native_script": ["سیّد صادق طباطبائی"],
+    "summary": "A leading mujtahid of Ṭihrán, denounced by Bahá’u’lláh as 'the Liar of Ṭihrán,' author of the monstrous decree condemning every male Bahá’í in Persia to death.",
+    "importance": 40,
+    "importance_reason": "A named, GPB-cited clerical antagonist responsible for a notorious death-decree against the community.",
+    "characterizations": [
+      "GPB: The notorious Mujtahid Siyyid Ṣádiq-i-Ṭabáṭabá’í, denounced by Bahá’u’lláh as “the Liar of Ṭihrán,” the author of the monstrous decree condemning every male member of the Bahá’í community in Persia, young or old, high or low, to be put to death"
+    ]
+  },
+  {
+    "name": "Siyyid ‘Abdu’l-Báqí",
+    "common_name": "Siyyid ‘Abdu’l-Báqí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A divine noted in Káshán for his learning who listened to the Báb yet failed to be moved by the majesty of His words.",
+    "importance": 9,
+    "importance_reason": "Thrice-mentioned but as an unmoved listener in a single episode."
+  },
+  {
+    "name": "Siyyid ‘Abdu’l-Hádí",
+    "common_name": "Siyyid ‘Abdu’l-Hádí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Betrothed to a daughter of a woman with whom he travelled from Karbilá to Qazvín.",
+    "importance": 5,
+    "importance_reason": "One-mention incidental named only by a familial connection."
+  },
+  {
+    "name": "Siyyid ‘Abdu’l-Vahháb-i-S̱ha‘rání",
+    "common_name": "Siyyid ‘Abdu’l-Vahháb-i-S̱ha‘rání",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A scholar cited as the author of the work 'Kitábu’l-Yaváqít va’l-Javáhir,' referenced for an authentic utterance of the Prophet.",
+    "importance": 8,
+    "importance_reason": "One-mention citation of an earlier author, not a participant in events."
+  },
+  {
+    "name": "Siyyid ‘Abdu’l-‘Aẓím-i-Ḵhu’í, the Siyyid-i-Ḵhál-Dár",
+    "common_name": "Siyyid-i-Ḵhál-Dár",
+    "aliases": ["Siyyid ‘Abdu’l-‘Aẓím-i-Ḵhu’í", "Áqá Siyyid ‘Abdu’l-‘Aẓím-i-Ḵhu’í"],
+    "native_script": [],
+    "summary": "A Bábí surnamed the Siyyid-i-Ḵhál-Dár who took part in the defence of the fort of Shaykh Ṭabarsí and carried out sorties on behalf of Quddús.",
+    "importance": 18,
+    "importance_reason": "Four mentions as a named, active Ṭabarsí defender with a distinctive epithet."
+  },
+  {
+    "name": "Siyyid ‘Alí",
+    "common_name": "Siyyid ‘Alí",
+    "aliases": ["سیّد علی", "Siyyid ‘Alí Afnán"],
+    "native_script": ["سیّد علی"],
+    "summary": "A kinsman of the Báb, husband of Furúghíyyih, infamous for his association with the Covenant-breakers; he died of a heart attack.",
+    "importance": 20,
+    "importance_reason": "Twice-cited Afnán who allied with Covenant-breakers, notable mainly through family ties."
+  },
+  {
+    "name": "Siyyid ‘Alí Khán (host of ‘Azíz Khán at Zanján)",
+    "common_name": "Siyyid ‘Alí Khán (host of ‘Azíz Khán at Zanján)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Host of ‘Azíz Khán-i-Mukrí at Zanján, through whom ‘Azíz Khán met Ḥujjat; he was later arrested and conducted to the capital.",
+    "importance": 8,
+    "importance_reason": "One-mention figure incidental to the Zanján episode."
+  },
+  {
+    "name": "Siyyid ‘Alí Khán, Lieutenant-Colonel of Fírúz-Kúh",
+    "common_name": "Siyyid ‘Alí Khán, Lieutenant-Colonel of Fírúz-Kúh",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A lieutenant-colonel of Fírúz-Kúh ordered by royal command to march on Zanján, where he laid siege to the citadel.",
+    "importance": 11,
+    "importance_reason": "Twice-mentioned military officer in the Zanján siege."
+  },
+  {
+    "name": "Siyyid ‘Alí-Muḥammad (son of Vaḥíd)",
+    "common_name": "Siyyid ‘Alí-Muḥammad (son of Vaḥíd)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A son of Vaḥíd, left with his brother Siyyid Ismá‘íl in their mother's care.",
+    "importance": 6,
+    "importance_reason": "One-mention name as a son of Vaḥíd."
+  },
+  {
+    "name": "Siyyid ‘Alí-Muḥammad, the Báb",
+    "common_name": "the Báb",
+    "aliases": ["Siyyid ‘Alí-Muḥammad", "the Primal Point", "the Gate", "the Forerunner", "the Qá’im", "the Ṣáḥibu’z-Zamán", "the Mihdí", "Jabal-i-Básiṭ", "the Exalted One", "Ḥaḍrat-i-A‘lá", "الباب", "Ḥaḍrat-i-Rabb-i-A‘lá", "the Bāb"],
+    "native_script": ["الباب", "سید علی‌محمد"],
+    "summary": "The Báb (1819–1850), the Prophet-Herald of the Bahá’í Faith who declared His mission in Shíráz in 1844 as the Qá’im, founded the Bábí religion, and was martyred at Tabríz in 1850; Bahá’u’lláh acclaimed Him as the 'Point round Whom the realities of the Prophets revolve.'",
+    "importance": 99,
+    "importance_reason": "A central figure and independent Manifestation of God; by far the most-cited person in the corpus (796 mentions).",
+    "characterizations": [
+      "GPB: The Báb, acclaimed by Bahá'u'lláh as the 'Essence of Essences,' the 'Sea of Seas,' the 'Point round Whom the realities of the Prophets and Messengers revolve'"
+    ]
+  },
+  {
+    "name": "Siyyid ‘Alíy-i-Zargar",
+    "common_name": "Siyyid ‘Alíy-i-Zargar",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí who stole out of the fort of Ṭabarsí at midnight to deliver a sealed letter from Quddús to ‘Abbás-Qulí Khán.",
+    "importance": 8,
+    "importance_reason": "One-mention courier in the Ṭabarsí episode."
+  },
+  {
+    "name": "Siyyid ‘Alíy-i-Zunúzí",
+    "common_name": "Siyyid ‘Alíy-i-Zunúzí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Stepfather of a young believer (Anís) who, despite his stepfather's position, was repeatedly urged to recant his faith.",
+    "importance": 9,
+    "importance_reason": "Thrice-mentioned but only as the stepfather of a martyr."
+  },
+  {
+    "name": "Siyyid-i-S̱his̱h-Parí",
+    "common_name": "Siyyid-i-S̱his̱h-Parí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A siyyid whose function was to carry the mace before the Imám-Jum‘ih and who insolently interrupted proceedings, shouting 'Enough of this idle chatter!'",
+    "importance": 7,
+    "importance_reason": "One-mention incidental with a single piece of dialogue."
+  },
+  {
+    "name": "Siyyid-i-‘Uluvv",
+    "common_name": "Siyyid-i-‘Uluvv",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A figure the narrator at one time imagined to be the person to whom the Báb had referred, later believed to be Ṭáhirih.",
+    "importance": 7,
+    "importance_reason": "Twice-mentioned but only as a mistaken conjecture in a personal reflection."
+  },
+  {
+    "name": "Son of Íṭábakí-C̱húpán (martyr of Savád-Kúh)",
+    "common_name": "Son of Íṭábakí-C̱húpán (martyr of Savád-Kúh)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí martyr of Savád-Kúh, recorded only as the son of Íṭábakí-C̱húpán.",
+    "importance": 4,
+    "importance_reason": "One-mention martyr-list entry, unnamed except by paternity."
+  },
+  {
+    "name": "St. John the Divine",
+    "common_name": "St. John the Divine",
+    "aliases": ["John the Apostle", "John the Evangelist", "the Author of the Apocalypse", "John of Patmos", "the Beloved Disciple"],
+    "native_script": [],
+    "summary": "The 1st-century author of the Book of Revelation, whose prophecies of the 'third woe' and the 'Glory of God' Shoghi Effendi interprets as foretelling the successive Revelations of the Báb and Bahá’u’lláh.",
+    "importance": 33,
+    "importance_reason": "A scriptural prophet cited as prophesying the Faith, though external to its own history."
+  },
+  {
+    "name": "Stephen Samuel Wise",
+    "common_name": "Stephen Samuel Wise",
+    "aliases": ["Rabbi Stephen Wise", "founder of the Free Synagogue"],
+    "native_script": [],
+    "summary": "A prominent American Reform rabbi (1874–1949), founder of the Free Synagogue of New York, cited among notable figures attesting the progress of the Faith.",
+    "importance": 12,
+    "importance_reason": "A notable outsider named only in a list of public figures acknowledging the Faith."
+  },
+  {
+    "name": "Stjepan Radić",
+    "common_name": "Stjepan Radić",
+    "aliases": ["Stephen Raditch"],
+    "native_script": [],
+    "summary": "A Croatian statesman (1871–1928), leader of the Croatian Peasant Party, named in passing in the corpus.",
+    "importance": 8,
+    "importance_reason": "One-mention external public figure with no developed Bahá'í connection."
+  },
+  {
+    "name": "Stoyan Krstoff Vatralsky",
+    "common_name": "Stoyan Krstoff Vatralsky",
+    "aliases": ["Stoyan Vatralsky", "Stoian Krŭstov Vatralski"],
+    "native_script": [],
+    "summary": "A Bulgarian-American Christian writer (1860–1935) named among ecclesiastical opponents who arose to oppose the advance of the Faith in Christian lands.",
+    "importance": 9,
+    "importance_reason": "One-mention named opponent grouped with other critics."
+  },
+  {
+    "name": "Sulaymán Khán-i-Tanakábuní",
+    "common_name": "Jamál Effendi",
+    "aliases": ["Sulaymán Khán-i-Tanakábuní", "سلیمان خان تنکابنی (جمال افندی)"],
+    "native_script": ["سلیمان خان تنکابنی"],
+    "summary": "Known as Jamál Effendi, entrusted by Bahá’u’lláh with initiating a systematic teaching campaign in India and Burma.",
+    "importance": 28,
+    "importance_reason": "One-mention but a pioneering teacher commissioned by Bahá’u’lláh to open India and Burma."
+  },
+  {
+    "name": "Sulaymán Náẓim Bey (Süleyman Nazif)",
+    "common_name": "Süleyman Nazif",
+    "aliases": ["Sulaymán Náẓim Bey", "سلیمان نظیم بیگ"],
+    "native_script": ["سلیمان نظیم بیگ"],
+    "summary": "A celebrated Turkish author and poet (1870–1927) who in his book on the Bábís extolled Ṭáhirih, declaring her worth a thousand Náṣiri’d-Dín Sháhs.",
+    "importance": 14,
+    "importance_reason": "One-mention literary observer with a memorable tribute to Ṭáhirih."
+  },
+  {
+    "name": "Sulaymán Páshá",
+    "common_name": "Sulaymán Páshá",
+    "aliases": ["سلیمان پاشا"],
+    "native_script": ["سلیمان پاشا"],
+    "summary": "A leader of the Qádiríyyih Order named as a successor in a Sufi lineage referenced in the corpus.",
+    "importance": 7,
+    "importance_reason": "One-mention name in a lineage of Sufi figures."
+  },
+  {
+    "name": "Sulaymán the shoemaker",
+    "common_name": "Sulaymán the shoemaker",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí leader who, with Ḥájí Káẓim Giltúghí, was blown to pieces from the mouths of mortars.",
+    "importance": 7,
+    "importance_reason": "One-mention martyr with a single grim detail."
+  },
+  {
+    "name": "Sulaymán Ḵhán-i-Afs̱hár-i-S̱hahríyárí",
+    "common_name": "Sulaymán Ḵhán-i-Afs̱hár-i-S̱hahríyárí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A military commander who, with ‘Abbás-Qulí Khán-i-Láríjání, led reinforcements of infantry and cavalry against the Bábís (at Ṭabarsí).",
+    "importance": 10,
+    "importance_reason": "Four mentions as a named officer in the Ṭabarsí campaign."
+  },
+  {
+    "name": "Sulaymán-i-Ghannám",
+    "common_name": "Sulaymán-i-Ghannám",
+    "aliases": ["سليمان الغنّام", "Sulaymán al-Ghannám"],
+    "native_script": ["سليمان الغنّام"],
+    "summary": "Owner of the modest Baghdád residence later designated the Bayt-i-A‘ẓam (the Most Great House) where Bahá’u’lláh dwelt, situated in the Karkh quarter.",
+    "importance": 16,
+    "importance_reason": "One-mention figure notable only because his house became the sacred Most Great House."
+  },
+  {
+    "name": "Sulṭán 'Abdu'l-Majíd I",
+    "common_name": "Sulṭán ‘Abdu’l-Majíd I",
+    "aliases": ["السلطان عبد المجيد", "Abdülmecid I"],
+    "native_script": ["السلطان عبد المجيد"],
+    "summary": "Ottoman Sultan (reigned 1839–1861) who, impressed by favorable reports of Bahá’u’lláh from successive Baghdád governors, refused Persian demands to surrender or expel Him.",
+    "importance": 30,
+    "importance_reason": "One-mention but a reigning sovereign whose protection of Bahá’u’lláh in Iraq is historically consequential."
+  },
+  {
+    "name": "Sulṭán Salím the Osmanli",
+    "common_name": "Sulṭán Salím the Osmanli",
+    "aliases": ["Selim I"],
+    "native_script": [],
+    "summary": "Ottoman Sultan Selim I, who in 1517 conquered the Mamluk dynasty and induced the Caliph to transfer to him the title and insignia of the caliphate.",
+    "importance": 10,
+    "importance_reason": "One-mention historical reference establishing the transfer of the caliphate, external to Bahá’í events."
+  },
+  {
+    "name": "Sulṭán ‘Abdu’l-Ḥamíd II",
+    "common_name": "Sulṭán ‘Abdu’l-Ḥamíd II",
+    "aliases": ["سلطان عبدالحمید ثانی", "Abdülhamid II", "Abd-ul-Hamid II", "the Red Sultan"],
+    "native_script": ["سلطان عبدالحمید ثانی"],
+    "summary": "Ottoman Sultan (reigned 1876–1909) under whose rule ‘Abdu’l-Bahá was held a prisoner in ‘Akká; his deposition in 1909 brought about ‘Abdu’l-Bahá's release, after which the deposed Sultan himself fell into obscurity and humiliation.",
+    "importance": 44,
+    "importance_reason": "The reigning sovereign during ‘Abdu’l-Bahá's imprisonment; his fall freed ‘Abdu’l-Bahá (17 mentions).",
+    "characterizations": [
+      "GPB: Sulṭán ‘Abdu’l-Ḥamíd, after his deposition, was made a prisoner of state and condemned to a life of complete obscurity and humiliation, scorned by his fellow-rulers and vilified by his subjects"
+    ]
+  },
+  {
+    "name": "Sulṭán ‘Abdu’l-‘Azíz",
+    "common_name": "Sulṭán ‘Abdu’l-‘Azíz",
+    "aliases": ["Abdülaziz", "سلطان عبدالعزیز"],
+    "native_script": ["سلطان عبدالعزیز"],
+    "summary": "Ottoman Sultan (reigned 1861–1876) who sanctioned the banishments of Bahá’u’lláh to Constantinople, Adrianople and finally the prison-city of ‘Akká, and to whom Bahá’u’lláh addressed a weighty Tablet of warning.",
+    "importance": 48,
+    "importance_reason": "The despotic sovereign who exiled Bahá’u’lláh to ‘Akká and was addressed in His Proclamation (21 mentions).",
+    "characterizations": [
+      "GPB: succeeded in securing the sanction of the Sulṭán for the transfer of Bahá’u’lláh and His [Bahá'u'lláh's] companions to Constantinople"
+    ]
+  },
+  {
+    "name": "Sulṭán-i-Mázindarání",
+    "common_name": "Sulṭán-i-Mázindarání",
+    "aliases": ["Sulṭán (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of Mázindarán.",
+    "importance": 5,
+    "importance_reason": "One-mention martyr-list entry."
+  },
+  {
+    "name": "Sulṭán-Ḥusayn Mírzá, son of Fatḥ-‘Alí Sháh",
+    "common_name": "Sulṭán-Ḥusayn Mírzá, son of Fatḥ-‘Alí Sháh",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Qájár prince, son of Fatḥ-‘Alí Sháh, killed in the fighting at Shaykh Ṭabarsí.",
+    "importance": 9,
+    "importance_reason": "One-mention royal who died in the Ṭabarsí conflict."
+  },
+  {
+    "name": "Sulṭán-Ḥusayn Mírzá, the Jalálu’d-Dawlih",
+    "common_name": "Jalálu’d-Dawlih",
+    "aliases": ["Sulṭán-Ḥusayn Mírzá", "جلال‌الدوله", "Jalálu'd-Dawlih", "Sultan-Husayn Mirza"],
+    "native_script": ["جلال‌الدوله"],
+    "summary": "A Qájár prince, son of the Ẓillu’s-Sulṭán, who persecuted the Bahá’ís but later fell prostrate at ‘Abdu’l-Bahá's feet imploring forgiveness, then sank into obscurity.",
+    "importance": 20,
+    "importance_reason": "Thrice-cited persecuting prince with a notable reversal before ‘Abdu’l-Bahá."
+  },
+  {
+    "name": "Sun Yat-sen",
+    "common_name": "Sun Yat-sen",
+    "aliases": ["Sun Zhongshan", "Sun Wen", "孫中山", "Dr. Sun Yat Sen"],
+    "native_script": ["孫中山"],
+    "summary": "The founding father of the Republic of China (1866–1925), named in passing in the corpus.",
+    "importance": 8,
+    "importance_reason": "One-mention external world figure with no developed Bahá'í connection."
+  },
+  {
+    "name": "Sydney Sprague",
+    "common_name": "Sydney Sprague",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An American Bahá’í (1875–1943) who, after pilgrimage, was sent by ‘Abdu’l-Bahá on a travel-teaching tour of India and Burma and later transferred his residence to Ṭihrán to further the interests of the Faith.",
+    "importance": 22,
+    "importance_reason": "One-mention but an early Western travel-teacher who served in the East and authored an account of his journey.",
+    "characterizations": ["Bahaipedia: Sydney Sprague (1875–1943), an American Bahá'í who traveled the East; sent by 'Abdu'l-Bahá on a teaching tour to India and Burma with a group of Persian Bahá'ís."]
+  },
+  {
+    "name": "Sálár, son of the Áṣifu’d-Dawlih",
+    "common_name": "Sálár, son of the Áṣifu’d-Dawlih",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Son of the Áṣifu’d-Dawlih (maternal uncle of the Sháh) and governor of the province, who led a revolt repudiating the central government.",
+    "importance": 9,
+    "importance_reason": "Twice-mentioned provincial rebel, contextual to the period's turmoil."
+  },
+  {
+    "name": "Sám Khán",
+    "common_name": "Sám Khán",
+    "aliases": ["the colonel of the Armenian regiment", "سام خان"],
+    "native_script": ["سام خان"],
+    "summary": "The Christian colonel of the Armenian regiment ordered to execute the Báb at Tabríz in 1850; when his first volley left the Báb unharmed (the bullets severing only the ropes), he refused to fire again and withdrew his men.",
+    "importance": 50,
+    "importance_reason": "Central figure of the celebrated martyrdom miracle of the Báb (19 mentions, both books).",
+    "characterizations": [
+      "GPB: the Christian Sám Khán — the colonel of the Armenian regiment ordered to carry out the execution — who, seized with fear lest his act should provoke the wrath of God, had begged to be released from the duty imposed upon him"
+    ]
+  },
+  {
+    "name": "Sándor Giesswein",
+    "common_name": "Sándor Giesswein",
+    "aliases": ["Alexander Giesswein", "Prelate Giesswein"],
+    "native_script": [],
+    "summary": "A Hungarian Catholic prelate, scholar and politician (1856–1923) named among public figures who acknowledged the Faith.",
+    "importance": 8,
+    "importance_reason": "One-mention external figure in a list of notables."
+  },
+  {
+    "name": "S̱hafí‘-i-Mázindarání",
+    "common_name": "S̱hafí‘-i-Mázindarání",
+    "aliases": ["S̱hafí‘ (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of Mázindarán.",
+    "importance": 5,
+    "importance_reason": "One-mention martyr-list entry."
+  },
+  {
+    "name": "S̱harífu’l-‘Ulamáy-i-Mázindarání",
+    "common_name": "S̱harífu’l-‘Ulamáy-i-Mázindarání",
+    "aliases": ["S̱harífu’l-‘Ulamá"],
+    "native_script": [],
+    "summary": "A celebrated master at Karbilá under whom Ḥujjat (and others) studied, dignified with the title Sharífu’l-‘Ulamá.",
+    "importance": 12,
+    "importance_reason": "Twice-mentioned eminent teacher whose significance is as a master of later Bábí figures."
+  },
+  {
+    "name": "S̱hayḵh Abu’l-Hudá aṣ-Ṣayyádí",
+    "common_name": "S̱hayḵh Abu’l-Hudá",
+    "aliases": ["شيخ أبو الهدى", "Abu'l-Hudá", "Abū al-Hudā al-Ṣayyādī"],
+    "native_script": ["شيخ أبو الهدى"],
+    "summary": "An influential Sufi shaykh held in profound esteem by Sulṭán ‘Abdu’l-Ḥamíd, approached and urged to assist in the schemes against ‘Abdu’l-Bahá.",
+    "importance": 16,
+    "importance_reason": "One-mention but an influential court figure solicited against ‘Abdu’l-Bahá."
+  },
+  {
+    "name": "S̱hayḵh Abu’l-Qásim-i-Mázkání",
+    "common_name": "S̱hayḵh Abu’l-Qásim-i-Mázkání",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bahá’í martyred at Káshán who refused a drink of water before his death, saying he thirsted for the cup of martyrdom, and was struck down while prostrate in prayer.",
+    "importance": 11,
+    "importance_reason": "One-mention martyr with a memorable detail of his final moments."
+  },
+  {
+    "name": "S̱hayḵh Abú-Turáb of Qazvín",
+    "common_name": "S̱hayḵh Abú-Turáb of Qazvín",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A scholar and philosopher of rare attainment, married to the sister of a believer, who embraced the Faith with the utmost sincerity.",
+    "importance": 10,
+    "importance_reason": "One-mention learned believer praised for sincerity."
+  },
+  {
+    "name": "S̱hayḵh Abú-Turáb, the Imám-Jum‘ih of S̱híráz",
+    "common_name": "S̱hayḵh Abú-Turáb, the Imám-Jum‘ih of S̱híráz",
+    "aliases": ["امام جمعه شیراز", "the Imám-Jum‘ih of Shíráz"],
+    "native_script": ["امام جمعه شیراز"],
+    "summary": "The Imám-Jum‘ih of Shíráz upon whose intervention the Báb was released on parole.",
+    "importance": 24,
+    "importance_reason": "Recurring figure (15 mentions, both books) pivotal in the Báb's early release at Shíráz."
+  },
+  {
+    "name": "S̱hayḵh Abú-Turáb-i-Ishtihárdí",
+    "common_name": "S̱hayḵh Abú-Turáb-i-Ishtihárdí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A well-informed witness of the developments at Badasht, appointed to watch over and ensure the protection and safety of Ṭáhirih.",
+    "importance": 14,
+    "importance_reason": "Twice-mentioned trusted attendant of Ṭáhirih and source on the Badasht episode."
+  },
+  {
+    "name": "S̱hayḵh Aḥmad ibn Zaynu’d-Dín al-Aḥsá’í",
+    "common_name": "S̱hayḵh Aḥmad-i-Aḥsá’í",
+    "aliases": ["S̱hayḵh Aḥmad ibn Zaynu’d-Dín al-Aḥsá’í", "شیخ احمد احسائی", "Shaykh Ahmad al-Ahsa'i"],
+    "native_script": ["شیخ احمد احسائی"],
+    "summary": "The founder of the Shaykhí school (1753–1826) whose teachings, foretelling the imminent advent of the Promised One, prepared the ground for the Bábí Revelation; Bahá’u’lláh refers to his stress on the first letter of the Súrih of Va’l-‘Aṣr.",
+    "importance": 60,
+    "importance_reason": "Founder of the Shaykhí school that directly heralded the Báb; heavily cited (75 mentions, both books).",
+    "characterizations": [
+      "GPB: S̱hayḵh Aḥmad-i-Aḥsá’í, that luminous star of Divine guidance who had so clearly perceived, before the year sixty, the approach [of the Promised One]"
+    ]
+  },
+  {
+    "name": "S̱hayḵh Hádí, son of S̱hayḵh Muḥsin",
+    "common_name": "S̱hayḵh Hádí, son of S̱hayḵh Muḥsin",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Appointed leader of a band, son of Shaykh Muḥsin.",
+    "importance": 5,
+    "importance_reason": "One-mention name with a single organizational role."
+  },
+  {
+    "name": "S̱hayḵh Murtaḍáy-i-Anṣárí",
+    "common_name": "S̱hayḵh Murtaḍáy-i-Anṣárí",
+    "aliases": ["the seal of seekers after truth", "شيخ مرتضى الأنصاري", "Shaykh Murtaḍá Anṣárí", "al-Shaykh al-A'ẓam"],
+    "native_script": ["شيخ مرتضى الأنصاري"],
+    "summary": "The leading mujtahid of his age (1781–1864), renowned for tolerance, wisdom and justice, who refused to pronounce sentence against the Bábís and was later extolled by Bahá’u’lláh in the Lawḥ-i-Sulṭán.",
+    "importance": 32,
+    "importance_reason": "Twice-mentioned but a famed jurist praised by Bahá’u’lláh for his refusal to condemn the Bábís.",
+    "characterizations": [
+      "GPB: the leading mujtahid amongst them, the celebrated S̱hayḵh Murtaḍáy-i-Anṣárí, a man renowned for his tolerance, his wisdom, his undeviating justice, his piety and nobility of character, refused, when apprized of their designs, to pronounce the necessary sentence against the Bábís"
+    ]
+  },
+  {
+    "name": "S̱hayḵh Muḥammad Baḵhít al-Muṭí‘í",
+    "common_name": "S̱hayḵh Muḥammad Baḵhít",
+    "aliases": ["شیخ محمد بخیت", "Muhammad Bakhit al-Muti'i", "Mufti of Egypt"],
+    "native_script": ["شیخ محمد بخیت"],
+    "summary": "The Grand Mufti of Egypt (1854–1935; Mufti 1914–1920), met in the course of the Faith's affairs in Egypt.",
+    "importance": 10,
+    "importance_reason": "One-mention Egyptian religious official named in passing."
+  },
+  {
+    "name": "S̱hayḵh Muḥammad Rás̱hid",
+    "common_name": "S̱hayḵh Muḥammad Rás̱hid",
+    "aliases": ["شیخ محمد راشد", "the Khedive's Imám"],
+    "native_script": ["شیخ محمد راشد"],
+    "summary": "The Khedive's Imám in early-20th-century Egypt, named in passing in the corpus.",
+    "importance": 8,
+    "importance_reason": "One-mention Egyptian cleric identified only by his court role."
+  }
+]

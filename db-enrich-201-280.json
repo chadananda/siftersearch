@@ -1,0 +1,735 @@
+[
+  {
+    "name": "Jesus Christ",
+    "common_name": "Jesus Christ",
+    "aliases": ["the Son of Man", "the Spirit of God", "'Ísá", "the Word", "the Messiah", "the Christ", "Jesus"],
+    "native_script": ["عيسى المسيح", "عیسی مسیح"],
+    "summary": "The Manifestation of God for the Christian dispensation; in Bahá'í teaching He is venerated as the Spirit of God whose return 'in the glory of the Father' is fulfilled in Bahá'u'lláh.",
+    "importance": 90,
+    "importance_reason": "An independent Manifestation of God whose prophecies of return Shoghi Effendi cites as fulfilled in Bahá'u'lláh.",
+    "characterizations": ["GPB: the descent of the 'Spirit of God' (Jesus Christ)", "GPB: To Him [Bahá'u'lláh] Jesus Christ had referred as the 'Prince of this world,' as the 'Comforter' Who will 'reprove the world of sin'"]
+  },
+  {
+    "name": "Job",
+    "common_name": "Job",
+    "aliases": ["Ayyúb"],
+    "native_script": ["أيّوب"],
+    "summary": "The patriarch of the Book of Job, proverbial for patience under affliction; cited by Bahá'u'lláh as a comparison whose sufferings were but a fraction of His own.",
+    "importance": 14,
+    "importance_reason": "A scriptural patriarch invoked once as a measure of suffering; no Bábí/Bahá'í-era role."
+  },
+  {
+    "name": "Joel the Prophet",
+    "common_name": "Joel",
+    "aliases": ["Yo'el", "Joel son of Pethuel"],
+    "native_script": ["יוֹאֵל"],
+    "summary": "Hebrew minor prophet who foretold 'the day of Jehovah,' read by Shoghi Effendi as a prophecy of the day of Bahá'u'lláh.",
+    "importance": 12,
+    "importance_reason": "Single-mention Old Testament prophet cited only for a prophecy of the Day of God."
+  },
+  {
+    "name": "John Ebenezer Esslemont",
+    "common_name": "John Esslemont",
+    "aliases": ["J. E. Esslemont", "Dr. J. E. Esslemont", "Hand of the Cause Esslemont"],
+    "native_script": [],
+    "summary": "Scottish physician and Bahá'í, author of the foremost introductory book 'Bahá'u'lláh and the New Era' (1923); named by Shoghi Effendi as the first of his appointed Hands of the Cause and a Disciple of 'Abdu'l-Bahá.",
+    "importance": 60,
+    "importance_reason": "First-appointed Hand of the Cause and author of the most widely used introduction to the Faith.",
+    "characterizations": ["Bahaipedia: named posthumously by Shoghi Effendi as the first Hand of the Cause he appointed, and one of the Disciples of 'Abdu'l-Bahá", "GPB: that pure-hearted and immortal promoter of the Faith, J. E. Esslemont"]
+  },
+  {
+    "name": "John Henry Hyde Dunn",
+    "common_name": "Hyde Dunn",
+    "aliases": ["Father Dunn", "John Henry Hyde Dunn", "Hand of the Cause Hyde Dunn"],
+    "native_script": [],
+    "summary": "British-American Bahá'í who, at sixty-two, pioneered with his wife Clara to Australia in 1920, carrying the Faith to hundreds of towns; eulogized by Shoghi Effendi as 'Australia's spiritual conqueror' and posthumously named a Hand of the Cause in 1952.",
+    "importance": 50,
+    "importance_reason": "Apostle of the Faith to Australia and posthumously named Hand of the Cause.",
+    "characterizations": ["GPB: the great-hearted and heroic Hyde Dunn, at the advanced age of sixty-two, promptly forsook his home in California ... settled as a pioneer in Australia", "Shoghi Effendi: 'BELOVED FATHER DUNN ... Australia's spiritual conqueror'"]
+  },
+  {
+    "name": "John Medows Rodwell",
+    "common_name": "J. M. Rodwell",
+    "aliases": ["John Medows Rodwell"],
+    "native_script": [],
+    "summary": "English clergyman and Orientalist whose translation of the Qur'án is cited in a Dawn-Breakers footnote.",
+    "importance": 6,
+    "importance_reason": "Cited once only as the translator of a Qur'ánic passage."
+  },
+  {
+    "name": "John the Baptist",
+    "common_name": "John the Baptist",
+    "aliases": ["Yaḥyá", "the Herald of Christ"],
+    "native_script": ["يحيى"],
+    "summary": "The forerunner who heralded Jesus Christ; used in the Dawn-Breakers as the type for the Báb, who stood as Herald and Gate to Bahá'u'lláh as John did to Christ.",
+    "importance": 30,
+    "importance_reason": "A single mention, but a theologically load-bearing analogy for the Báb's herald station."
+  },
+  {
+    "name": "Joseph (son of Jacob)",
+    "common_name": "Joseph",
+    "aliases": ["Yúsuf"],
+    "native_script": ["يوسف"],
+    "summary": "The Hebrew patriarch betrayed by his brothers and cast into a pit; invoked repeatedly as a type of Bahá'u'lláh's suffering at the hands of His own half-brother.",
+    "importance": 20,
+    "importance_reason": "Recurring scriptural type for Bahá'u'lláh's betrayal, but only a typological reference."
+  },
+  {
+    "name": "Joseph Arthur, Comte de Gobineau",
+    "common_name": "Comte de Gobineau",
+    "aliases": ["Arthur de Gobineau", "Joseph Arthur de Gobineau", "Gobineau"],
+    "native_script": [],
+    "summary": "French diplomat and writer, France's envoy to Persia, whose 'Les Religions et les Philosophies dans l'Asie Centrale' (1865) gave Europe its first extensive account of the Bábí Faith and famous tributes to Ṭáhirih.",
+    "importance": 48,
+    "importance_reason": "The principal Western source who carried the Bábí story to European intellectuals; heavily cited (63 mentions).",
+    "characterizations": ["GPB: the noted French diplomat and brilliant writer, Comte de Gobineau", "Bahai-library: his book ... was the most influential volume in carrying the story [of the Báb] to Western minds"]
+  },
+  {
+    "name": "Joseph Ernest Renan",
+    "common_name": "Ernest Renan",
+    "aliases": ["Renan", "Joseph Ernest Renan"],
+    "native_script": [],
+    "summary": "French philologist and historian whose 'Les Apôtres' described the great massacre of Bábís in Ṭihrán as 'a day perhaps unparalleled in the history of the world.'",
+    "importance": 30,
+    "importance_reason": "Notable Western intellectual cited for a memorable testimony to Bábí martyrdom, but a passing observer."
+  },
+  {
+    "name": "Joseph Estlin Carpenter",
+    "common_name": "J. Estlin Carpenter",
+    "aliases": ["Dr. Estlin Carpenter", "Principal of Manchester College", "Joseph Estlin Carpenter"],
+    "native_script": [],
+    "summary": "Unitarian scholar and Principal of Manchester College, Oxford, who presided over an address by 'Abdu'l-Bahá and whose name attests the Faith's progress in the West.",
+    "importance": 16,
+    "importance_reason": "Academic host cited a few times as a Western dignitary who received 'Abdu'l-Bahá."
+  },
+  {
+    "name": "Joseph Leonard Levy",
+    "common_name": "Rabbi Joseph L. Levy",
+    "aliases": ["Joseph Leonard Levy"],
+    "native_script": [],
+    "summary": "American Reform rabbi listed among Western figures whose attention attests the Faith's progress under 'Abdu'l-Bahá.",
+    "importance": 6,
+    "importance_reason": "Single-mention name in a list of Western notables."
+  },
+  {
+    "name": "Judas Iscariot",
+    "common_name": "Judas Iscariot",
+    "aliases": ["Judas"],
+    "native_script": ["Ἰούδας"],
+    "summary": "The disciple who betrayed Jesus Christ, invoked as the archetype of betrayal against which an even worse treachery is measured.",
+    "importance": 12,
+    "importance_reason": "Single-mention scriptural archetype used only for comparison."
+  },
+  {
+    "name": "Kalb-‘Alí (maternal grandfather of Nabíl)",
+    "common_name": "Kalb-‘Alí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Maternal grandfather of Nabíl-i-A‘ẓam, mentioned once in a genealogical note.",
+    "importance": 3,
+    "importance_reason": "Incidental genealogical mention with no role of his own."
+  },
+  {
+    "name": "Karbilá’í Abu’l-Ḥasan (dealer in crockery)",
+    "common_name": "Karbilá’í Abu’l-Ḥasan",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí crockery dealer who died for his faith, named once among a group of martyrs.",
+    "importance": 5,
+    "importance_reason": "One-mention martyr-list entry."
+  },
+  {
+    "name": "Karbilá’í Abú-Muḥammad-i-Sangsarí",
+    "common_name": "Karbilá’í Abú-Muḥammad-i-Sangsarí",
+    "aliases": ["Karbilá’í Abú-Muḥammad (of Sang-Sar)"],
+    "native_script": [],
+    "summary": "A pious Bábí of Sang-Sar who urged his two sons to arise for the new Revelation and proclaimed the coming of the promised Standard from Khurásán; died in the spring of that year.",
+    "importance": 14,
+    "importance_reason": "Local Sang-Sar believer with a small recurring teaching anecdote, but a minor figure."
+  },
+  {
+    "name": "Karbilá’í Ibráhím-i-Sangsarí",
+    "common_name": "Karbilá’í Ibráhím-i-Sangsarí",
+    "aliases": ["Karbilá’í Ibráhím (martyr of Sang-Sar)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of Sang-Sar, named once in a roster of those who fell.",
+    "importance": 4,
+    "importance_reason": "One-mention Sang-Sar martyr-list entry."
+  },
+  {
+    "name": "Karbilá’í Ismá‘íl-i-Sangsarí",
+    "common_name": "Karbilá’í Ismá‘íl-i-Sangsarí",
+    "aliases": ["Karbilá’í Ismá‘íl (martyr of Sang-Sar)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of Sang-Sar, named once in a roster of those who fell.",
+    "importance": 4,
+    "importance_reason": "One-mention Sang-Sar martyr-list entry."
+  },
+  {
+    "name": "Karbilá’í Káẓim-i-S̱hah-Mírzádí",
+    "common_name": "Karbilá’í Káẓim-i-S̱hah-Mírzádí",
+    "aliases": ["Karbilá’í Káẓim (martyr of S̱hah-Mírzád)"],
+    "native_script": [],
+    "summary": "One of two believers of the village of S̱hah-Mírzád who fell defending the fort of Ṭabarsí.",
+    "importance": 5,
+    "importance_reason": "One-mention fort-defender martyr from S̱hah-Mírzád."
+  },
+  {
+    "name": "Karbilá’í Mawlá-Qulí-Áqá-Dádás̱h",
+    "common_name": "Karbilá’í Mawlá-Qulí-Áqá-Dádás̱h",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí named once among a small group of believers.",
+    "importance": 3,
+    "importance_reason": "One-mention name in a group list."
+  },
+  {
+    "name": "Karbilá’í Muḥammad, son of S̱hamsu’d-Dín",
+    "common_name": "Karbilá’í Muḥammad, son of S̱hamsu’d-Dín",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Superintendent of the gardens adjoining the fort of Ṭabarsí and its barricades, named once.",
+    "importance": 5,
+    "importance_reason": "One-mention fort-associated figure with a single duty noted."
+  },
+  {
+    "name": "Karbilá’í Muḥammad-Ja‘far-i-Mázindarání",
+    "common_name": "Karbilá’í Muḥammad-Ja‘far-i-Mázindarání",
+    "aliases": ["Karbilá’í Muḥammad-Ja‘far (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of Mázindarán, named once in a roster.",
+    "importance": 4,
+    "importance_reason": "One-mention martyr-list entry."
+  },
+  {
+    "name": "Karbilá’í Muḥammad-i-Sangsarí",
+    "common_name": "Karbilá’í Muḥammad-i-Sangsarí",
+    "aliases": ["Karbilá’í Muḥammad (of Sang-Sar)"],
+    "native_script": [],
+    "summary": "A Bábí of Sang-Sar who, with Karbilá’í ‘Alí, strove to awaken his townsfolk to the Revelation but, owing to infirmity, could not reach the fort of Ṭabarsí.",
+    "importance": 8,
+    "importance_reason": "Minor Sang-Sar believer with a brief teaching anecdote."
+  },
+  {
+    "name": "Karbilá’í Mírzá Muḥammad (gatekeeper of the fort)",
+    "common_name": "Karbilá’í Mírzá Muḥammad",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Made gatekeeper of the fort of Ṭabarsí, named once for that office.",
+    "importance": 5,
+    "importance_reason": "One-mention fort role with no further story."
+  },
+  {
+    "name": "Karbilá’í Núr-Muḥammad-i-Míyámay’í",
+    "common_name": "Karbilá’í Núr-Muḥammad-i-Míyámay’í",
+    "aliases": ["Karbilá’í Núr-Muḥammad (martyr of Míyámay)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of the village of Míyámay, named once in a roster.",
+    "importance": 4,
+    "importance_reason": "One-mention martyr-list entry."
+  },
+  {
+    "name": "Karbilá’í Qambar-Kális̱h-i-Savád-Kúhí",
+    "common_name": "Karbilá’í Qambar-Kális̱h-i-Savád-Kúhí",
+    "aliases": ["Karbilá’í Qambar-Kális̱h (martyr of Savád-Kúh)"],
+    "native_script": [],
+    "summary": "One of the believers of Savád-Kúh whose names were ascertained among the fort's defenders.",
+    "importance": 4,
+    "importance_reason": "One-mention regional believer in a name roster."
+  },
+  {
+    "name": "Karbilá’í Valí",
+    "common_name": "Karbilá’í Valí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí whose tongue was ordered cut out by an enemy of the Faith, named once.",
+    "importance": 6,
+    "importance_reason": "One-mention sufferer with a brief atrocity anecdote."
+  },
+  {
+    "name": "Karbilá’í Valí-‘Aṭṭár",
+    "common_name": "Karbilá’í Valí-‘Aṭṭár",
+    "aliases": ["Karbilá’í Valí the druggist"],
+    "native_script": [],
+    "summary": "A Bábí who announced an arrival to his companions and whose tongue was ordered cut out in an enemy's fury.",
+    "importance": 6,
+    "importance_reason": "One-mention figure with a brief persecution anecdote."
+  },
+  {
+    "name": "Karbilá’í ‘Abdu’l-Báqí",
+    "common_name": "Karbilá’í ‘Abdu’l-Báqí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí companion at Zanján, father of seven sons, five of whom Ḥujjat joined in wedlock; named once.",
+    "importance": 6,
+    "importance_reason": "One-mention companion with a small domestic anecdote."
+  },
+  {
+    "name": "Karbilá’í ‘Abdu’l-‘Alí-i-Zanjání",
+    "common_name": "Karbilá’í ‘Abdu’l-‘Alí-i-Zanjání",
+    "aliases": ["Karbilá’í ‘Abdu’l-‘Alí (of Zanján)"],
+    "native_script": [],
+    "summary": "A Bábí of Zanján, named once in a list.",
+    "importance": 3,
+    "importance_reason": "One-mention name in a Zanján roster."
+  },
+  {
+    "name": "Karbilá’í ‘Alí-Ján, the kad-ḵhudá",
+    "common_name": "Karbilá’í ‘Alí-Ján",
+    "aliases": ["Karbilá’í ‘Alí-Ján the kad-ḵhudá (village headman)"],
+    "native_script": [],
+    "summary": "Headman (kad-ḵhudá) of a village near the fort of Ṭabarsí who hosted the narrator, named once.",
+    "importance": 5,
+    "importance_reason": "One-mention village headman and host."
+  },
+  {
+    "name": "Karbilá’í ‘Alí-i-Míyámay’í",
+    "common_name": "Karbilá’í ‘Alí-i-Míyámay’í",
+    "aliases": ["Karbilá’í ‘Alí (martyr of Míyámay)"],
+    "native_script": [],
+    "summary": "A Bábí martyr of the village of Míyámay, named once.",
+    "importance": 4,
+    "importance_reason": "One-mention martyr-list entry."
+  },
+  {
+    "name": "Karbilá’í ‘Alíy-i-Sang-Sárí",
+    "common_name": "Karbilá’í ‘Alíy-i-Sang-Sárí",
+    "aliases": ["Karbilá’í ‘Alí (of Sang-Sar)"],
+    "native_script": [],
+    "summary": "A pious Bábí of Sang-Sar who, with Karbilá’í Abú-Muḥammad, strove to prepare the people for the promised Revelation; both died in the spring of that year.",
+    "importance": 10,
+    "importance_reason": "Local Sang-Sar teacher with a small paired anecdote."
+  },
+  {
+    "name": "Keith Bean Ransom-Kehler",
+    "common_name": "Keith Ransom-Kehler",
+    "aliases": ["Keith Ransom-Kehler", "Hand of the Cause Keith Ransom-Kehler"],
+    "native_script": [],
+    "summary": "American Bahá'í teacher who carried seven petitions to the Sháh of Persia on behalf of the persecuted Iranian community; died of smallpox at Iṣfahán in 1933, the first American Bahá'í martyr and posthumously the first woman named Hand of the Cause.",
+    "importance": 55,
+    "importance_reason": "First American Bahá'í martyr and first woman appointed Hand of the Cause.",
+    "characterizations": ["GPB: the tenacity and self-sacrifice of the fearless and brilliant Keith Ransom-Kehler", "Bahaipedia: regarded as the first American martyr of the Faith ... the first female Hand of the Cause of God"]
+  },
+  {
+    "name": "Keturah",
+    "common_name": "Keturah",
+    "aliases": ["Katurah", "Qaṭúrá"],
+    "native_script": ["קְטוּרָה"],
+    "summary": "Wife of Abraham through whom Shoghi Effendi traces a lineage of the Faith; mentioned once.",
+    "importance": 10,
+    "importance_reason": "Single-mention biblical figure cited only for the lineage of Bahá'u'lláh from Abraham."
+  },
+  {
+    "name": "Keçecizade Mehmed Fuad Pasha",
+    "common_name": "Fu’ád Páshá",
+    "aliases": ["Fu’ád Páshá", "Mehmed Fuad Pasha", "Keçecizade Mehmed Fuad Pasha"],
+    "native_script": ["فؤاد پاشا", "فؤاد باشا"],
+    "summary": "Ottoman foreign minister (later Grand Vizier) whose exaggerated reports helped bring about Bahá'u'lláh's banishment from Adrianople; addressed by Bahá'u'lláh in the Lawḥ-i-Fu’ád, which foretold his downfall.",
+    "importance": 42,
+    "importance_reason": "Ottoman minister who drove the exile to ‘Akká and was the subject of a prophetic Tablet (Lawḥ-i-Fu’ád).",
+    "characterizations": ["GPB: by the exaggerated reports of Fu’ád Pás̱há, who had recently passed through on a tour of inspection", "GPB: In the Lawḥ-i-Fu’ád ... His [Bahá’u’lláh’s] reference to [his fate]"]
+  },
+  {
+    "name": "Khadíjah bint Khuwaylid",
+    "common_name": "Khadíjih",
+    "aliases": ["Khadíjah bint Khuwaylid", "Mother of the Believers"],
+    "native_script": ["خديجة"],
+    "summary": "First wife of the Prophet Muḥammad and first to believe in Him; mentioned once enveloping Him in His mantle.",
+    "importance": 14,
+    "importance_reason": "Major Islamic figure but only a single, incidental mention in a Bahá'í-history context."
+  },
+  {
+    "name": "Khedive ‘Abbás Ḥilmí Pás̱há II",
+    "common_name": "Khedive ‘Abbás Ḥilmí II",
+    "aliases": ["Abbas Hilmi II", "Abbas II of Egypt", "last Khedive of Egypt"],
+    "native_script": ["عباس حلمي باشا الثاني", "عباس حلمی پاشا الثانی"],
+    "summary": "Last Khedive of Egypt, who received 'Abdu'l-Bahá in audience with marked deference during the Master's stay in Egypt.",
+    "importance": 18,
+    "importance_reason": "Reigning Khedive who honored 'Abdu'l-Bahá, but only a brief two-mention encounter."
+  },
+  {
+    "name": "Khurshíd Páshá",
+    "common_name": "Khurshíd Páshá",
+    "aliases": ["governor of Adrianople"],
+    "native_script": ["خورشید پاشا"],
+    "summary": "Governor of Adrianople who openly admired Bahá'u'lláh, frequented His house and hosted Him during Ramaḍán, even as Mírzá Yaḥyá addressed obsequious petitions to him.",
+    "importance": 28,
+    "importance_reason": "Local governor whose friendliness frames the Adrianople period, but a secondary official."
+  },
+  {
+    "name": "Khán Bábá Khán",
+    "common_name": "Khán Bábá Khán",
+    "aliases": [],
+    "native_script": ["خان بابا خان"],
+    "summary": "Commander-in-chief of the Persian army ordered to send a thousand men against the Bábí defenders; named once.",
+    "importance": 12,
+    "importance_reason": "Single-mention army commander tied to the campaign against the Bábís."
+  },
+  {
+    "name": "King Carol II of Romania",
+    "common_name": "King Carol II",
+    "aliases": ["Carol II"],
+    "native_script": [],
+    "summary": "King of Romania and son of Queen Marie, recipient of a Bahá'í message of sympathy on his mother's passing; mentioned once.",
+    "importance": 8,
+    "importance_reason": "One-mention monarch addressed only as Queen Marie's son."
+  },
+  {
+    "name": "King David",
+    "common_name": "King David",
+    "aliases": ["Dawúd", "David the Psalmist", "King of Israel"],
+    "native_script": ["داوود", "דָּוִד"],
+    "summary": "Prophet-king of Israel whose Psalms—'the King of Glory shall come in'—Shoghi Effendi reads as prophecies of Bahá'u'lláh and of ‘Akká, 'the Strong City.'",
+    "importance": 18,
+    "importance_reason": "Major scriptural prophet, but cited only for Psalm prophecies of Bahá'u'lláh."
+  },
+  {
+    "name": "King Ferdinand I of Bulgaria",
+    "common_name": "King Ferdinand of Bulgaria",
+    "aliases": ["Ferdinand of Saxe-Coburg and Gotha", "Tsar Ferdinand"],
+    "native_script": [],
+    "summary": "Tsar of Bulgaria named once among monarchs in connection with the Faith's outreach.",
+    "importance": 6,
+    "importance_reason": "One-mention monarch in a list."
+  },
+  {
+    "name": "King Ferdinand I of Romania",
+    "common_name": "King Ferdinand of Romania",
+    "aliases": ["Ferdinand of Hohenzollern-Sigmaringen", "Ferdinand the Unifier"],
+    "native_script": [],
+    "summary": "King of Romania and husband of Queen Marie; mentioned once in connection with an audience granted to a Bahá'í after his passing.",
+    "importance": 8,
+    "importance_reason": "One-mention monarch noted only as Queen Marie's late husband."
+  },
+  {
+    "name": "King Haakon VII of Norway",
+    "common_name": "King Haakon VII",
+    "aliases": ["Prince Carl of Denmark", "King Haakon of Norway"],
+    "native_script": [],
+    "summary": "King of Norway named once among royal personages addressed in the Faith's outreach.",
+    "importance": 6,
+    "importance_reason": "One-mention monarch in a list of royalty."
+  },
+  {
+    "name": "King Zog I of Albania",
+    "common_name": "King Zog I",
+    "aliases": ["Ahmet Zogu", "Ahmed Bey Zogu", "King Zog of Albania"],
+    "native_script": [],
+    "summary": "King of Albania named among monarchs to whom the Faith's message was conveyed.",
+    "importance": 7,
+    "importance_reason": "Two-mention monarch in lists of royalty contacted."
+  },
+  {
+    "name": "Kitokurō Ichiki",
+    "common_name": "Kitokurō Ichiki",
+    "aliases": ["Dr. K. Ichiki"],
+    "native_script": ["一木喜徳郎"],
+    "summary": "Minister of the Japanese Imperial Household, named once as a dignitary who showed interest in the Faith.",
+    "importance": 6,
+    "importance_reason": "One-mention Japanese official."
+  },
+  {
+    "name": "Krishna",
+    "common_name": "Krishna",
+    "aliases": ["the Tenth Avatar", "Krṣṇa", "the Blessed Lord"],
+    "native_script": ["कृष्ण", "کریشنا"],
+    "summary": "The Manifestation of God for the Hindu dispensation; the Bhagavad-Gítá's prophecy of the 'Most Great Spirit' and 'Tenth Avatar' read as fulfilled in Bahá'u'lláh.",
+    "importance": 20,
+    "importance_reason": "An independent Manifestation, but appears only in a brief progressive-revelation reference."
+  },
+  {
+    "name": "Kumayl ibn Zíyád",
+    "common_name": "Kumayl ibn Zíyád",
+    "aliases": ["Kumayl-ibn-i-Zíyád"],
+    "native_script": ["كميل بن زياد"],
+    "summary": "Companion of Imám ‘Alí to whom the Imám addressed his celebrated discourse (the Du‘á-yi-Kumayl); mentioned once.",
+    "importance": 10,
+    "importance_reason": "Single-mention Islamic figure cited only as the recipient of Imám ‘Alí's words."
+  },
+  {
+    "name": "Kámrán Mírzá",
+    "common_name": "Kámrán Mírzá",
+    "aliases": ["Náyibu’s-Salṭanih", "Náyibu’s-Salṭanih (Kámrán Mírzá)"],
+    "native_script": ["کامران میرزا", "نایب‌السّلطنه"],
+    "summary": "Favorite son of Náṣiri’d-Dín Sháh, titled Náyibu’s-Salṭanih, governor of Ṭihrán and minister of war who took part in suppressing the Bábí/Bahá'í community.",
+    "importance": 22,
+    "importance_reason": "High Qájár prince and war minister involved in persecution, with recurring presence."
+  },
+  {
+    "name": "Kıbrıslı Mehmed Emin Pasha",
+    "common_name": "Muḥammad Pásháy-i-Qibrisí",
+    "aliases": ["Kıbrıslı Mehmed Emin Pasha", "Muḥammad Pás̱háy-i-Qibrisí"],
+    "native_script": ["محمد پاشای قبرسی"],
+    "summary": "Former Ottoman Grand Vizier serving as a provincial governor, whose esteem for Bahá'u'lláh incensed the authorities in the capital; named once.",
+    "importance": 14,
+    "importance_reason": "Former Grand Vizier whose regard for Bahá'u'lláh is noted once."
+  },
+  {
+    "name": "Lady Agnew",
+    "common_name": "Lady Agnew",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An English lady named once among figures associated with 'Abdu'l-Bahá's Western contacts.",
+    "importance": 4,
+    "importance_reason": "One-mention name with no role given."
+  },
+  {
+    "name": "Lady Sara Louisa Blomfield",
+    "common_name": "Lady Blomfield",
+    "aliases": ["Sitárih Khánum", "Sara Louisa Ryan", "Sara Louisa Blomfield", "author of The Chosen Highway"],
+    "native_script": [],
+    "summary": "Prominent early British Bahá'í and London society hostess (named 'Sitárih Khánum' by 'Abdu'l-Bahá) who hosted the Master during His London visits and authored the history 'The Chosen Highway.'",
+    "importance": 42,
+    "importance_reason": "'Abdu'l-Bahá's devoted London hostess and author of a primary-source Bahá'í history.",
+    "characterizations": ["GPB: His [‘Abdu’l-Bahá] devoted hostess during the time He spent in London", "Bahaipedia: Given the name 'Sitarih Khanum' by 'Abdu'l-Baha ... compiler of Paris Talks and author of The Chosen Highway"]
+  },
+  {
+    "name": "Laura Clifford Barney",
+    "common_name": "Laura Barney",
+    "aliases": ["Laura Dreyfus-Barney", "Laura Clifford Barney"],
+    "native_script": [],
+    "summary": "American Bahá'í who collected and transmitted to posterity 'Abdu'l-Bahá's table-talks as the book 'Some Answered Questions.'",
+    "importance": 45,
+    "importance_reason": "Compiler of 'Some Answered Questions,' a foundational Bahá'í text—an imperishable service.",
+    "characterizations": ["GPB: Laura Barney, whose imperishable service was to collect and transmit to posterity in the form of a book, entitled 'Some Answered Questions,' ‘Abdu’l-Bahá’s priceless explanations"]
+  },
+  {
+    "name": "Lev Nikolayevich Tolstoy",
+    "common_name": "Leo Tolstoy",
+    "aliases": ["Count Leo Tolstoy", "Lev Nikolayevich Tolstoy"],
+    "native_script": ["Лев Николаевич Толстой"],
+    "summary": "Russian novelist named among Western notables whose attention to the Faith attests its progress under 'Abdu'l-Bahá.",
+    "importance": 14,
+    "importance_reason": "World-famous author, but appears only once in a list of Western figures who took note of the Faith."
+  },
+  {
+    "name": "Lewis Campbell",
+    "common_name": "Lewis Campbell",
+    "aliases": ["Prof. Lewis Campbell"],
+    "native_script": [],
+    "summary": "Classical scholar and pupil of Benjamin Jowett, cited once relaying Jowett's tribute calling the movement 'the greatest light' since Christ.",
+    "importance": 6,
+    "importance_reason": "One-mention figure cited only as the conduit of another's tribute."
+  },
+  {
+    "name": "Lidia Zamenhof",
+    "common_name": "Lidia Zamenhof",
+    "aliases": ["Lidja Zamenhof"],
+    "native_script": [],
+    "summary": "Daughter of Esperanto's creator and a convert to the Faith who translated several Bahá'í works, including writings of Bahá'u'lláh and 'Abdu'l-Bahá, into Esperanto.",
+    "importance": 18,
+    "importance_reason": "Notable convert and Esperanto translator of Bahá'í scripture, but a single mention."
+  },
+  {
+    "name": "Lillian F. Kappes",
+    "common_name": "Lillian Kappes",
+    "aliases": ["Lillian Frances Kappes", "Lillian F. Kappes"],
+    "native_script": [],
+    "summary": "American Bahá'í who pioneered to Ṭihrán and directed the Tarbíyat Girls' School; named a Disciple of 'Abdu'l-Bahá by Shoghi Effendi, she died of typhus in Ṭihrán in 1920.",
+    "importance": 32,
+    "importance_reason": "Pioneering educator and Disciple of 'Abdu'l-Bahá whose work founded Bahá'í girls' education in Iran.",
+    "characterizations": ["GPB: Lillian F. Kappes ... whose names will ever remain associated with the first stirrings of the Faith [in Persia]", "Bahaipedia: named a Disciple of 'Abdu'l-Bahá ... Director of the Tarbiyat Girls School"]
+  },
+  {
+    "name": "Lisánu’l-Mulk Mírzá Muḥammad-Taqí Sipihr",
+    "common_name": "Lisánu’l-Mulk Sipihr",
+    "aliases": ["Mírzá Muḥammad-Taqí Sipihr", "author of the Násiḵhu’t-Taváríkh"],
+    "native_script": [],
+    "summary": "Persian court historian, author of the chronicle 'Násiḵhu’t-Taváríkh,' cited once on the imperial troops in the Bábí campaigns.",
+    "importance": 10,
+    "importance_reason": "Single-mention chronicler cited as a historical source."
+  },
+  {
+    "name": "Louise Aurora Moore",
+    "common_name": "Lua Getsinger",
+    "aliases": ["Lua Getsinger", "Livá (Banner)", "the mother teacher of the West", "Herald of the Covenant", "Louisa A. Moore", "Lua Moore Getsinger", "Mrs. Edward Getsinger", "the Flame"],
+    "native_script": ["لواء"],
+    "summary": "One of the first Western Bahá'ís and a disciple of 'Abdu'l-Bahá, surnamed 'Livá' (Banner) and 'Herald of the Covenant'; the 'mother teacher of the West' who taught the Faith across America, Europe and India until her death in Cairo in 1916.",
+    "importance": 50,
+    "importance_reason": "Foremost early Western teacher, Disciple of 'Abdu'l-Bahá, titled 'mother teacher of the West.'",
+    "characterizations": ["GPB: the immortal Louisa A. Moore, the mother teacher of the West, surnamed Livá (Banner) by ‘Abdu’l-Bahá", "Bahaipedia: 'Abdu'l-Bahá named her 'Herald of the Covenant'"]
+  },
+  {
+    "name": "Ludwik Lejzer Zamenhof",
+    "common_name": "L. L. Zamenhof",
+    "aliases": ["Ludovic Lazarus Zamenhof", "Doktoro Esperanto", "Ludwik Lejzer Zamenhof"],
+    "native_script": [],
+    "summary": "Polish-Jewish creator of Esperanto, referenced once as the famous father of the Bahá'í convert Lidia Zamenhof.",
+    "importance": 10,
+    "importance_reason": "Notable historical figure but mentioned only as Lidia Zamenhof's father."
+  },
+  {
+    "name": "Luigi Quaglino",
+    "common_name": "Luigi Quaglino",
+    "aliases": ["Prof. Luigi Quaglino"],
+    "native_script": [],
+    "summary": "Former professor of architecture from Turin who, viewing the model of the Mas̱hriqu’l-Aḏhkár, hailed it as a revolutionary 'revelation from another world.'",
+    "importance": 6,
+    "importance_reason": "One-mention figure cited for a single architectural tribute."
+  },
+  {
+    "name": "M. H. Phelps",
+    "common_name": "M. H. Phelps",
+    "aliases": ["author of Life and Teachings of 'Abbás Effendi"],
+    "native_script": [],
+    "summary": "Author of 'Life and Teachings of ‘Abbás Effendi,' cited in a Dawn-Breakers footnote.",
+    "importance": 6,
+    "importance_reason": "Cited only as a source in a footnote."
+  },
+  {
+    "name": "M. J. Balteau",
+    "common_name": "M. J. Balteau",
+    "aliases": ["author of Le Bábisme"],
+    "native_script": [],
+    "summary": "Author of 'Le Bábisme,' cited once in a Dawn-Breakers footnote.",
+    "importance": 5,
+    "importance_reason": "Cited only as a source in a footnote."
+  },
+  {
+    "name": "Madame Dieulafoy",
+    "common_name": "Madame Dieulafoy",
+    "aliases": ["Jane Dieulafoy"],
+    "native_script": [],
+    "summary": "French traveler and writer cited once for her account of descendants of a historical group in Persia.",
+    "importance": 6,
+    "importance_reason": "Cited once only as a travel-account source."
+  },
+  {
+    "name": "Mahd-i-'Ulyá (Jahán Khánum)",
+    "common_name": "Mahd-i-'Ulyá",
+    "aliases": ["Jahán Khánum", "mother of Náṣiri’d-Dín Sháh"],
+    "native_script": ["مهد علیا", "مادر ناصرالدین شاه"],
+    "summary": "Mother of Náṣiri’d-Dín Sháh, Bahá'u'lláh's most implacable foe after the 1852 attempt on the Sháh, who openly denounced Him as the would-be murderer of her son and inflamed the persecution.",
+    "importance": 38,
+    "importance_reason": "Driving antagonist of the 1852 persecution—Bahá'u'lláh's 'most implacable foe'—with recurring presence.",
+    "characterizations": ["GPB: the mother of the youthful sovereign ... openly ... denouncing Him [Bahá'u'lláh] as the would-be murderer of her son ... His most implacable foe"]
+  },
+  {
+    "name": "Maitreya",
+    "common_name": "Maitreya",
+    "aliases": ["the Buddha of universal fellowship", "Metteyya", "the future Buddha"],
+    "native_script": ["मैत्रेय"],
+    "summary": "The prophesied future Buddha of Buddhist tradition, 'the Buddha of universal fellowship,' referenced once as a promised one.",
+    "importance": 14,
+    "importance_reason": "Prophesied figure cited once in a progressive-revelation context."
+  },
+  {
+    "name": "Major Nabí Big",
+    "common_name": "Nabí Big",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A major who led cavalry and a troop of Zanján citizens, named once.",
+    "importance": 6,
+    "importance_reason": "One-mention military figure in the Zanján conflict."
+  },
+  {
+    "name": "Malachi",
+    "common_name": "Malachi",
+    "aliases": ["Malachias", "Mal'akhi"],
+    "native_script": ["מַלְאָכִי"],
+    "summary": "Hebrew minor prophet who foretold 'the great and dreadful day of the Lord,' read by Shoghi Effendi as a prophecy of the day of Bahá'u'lláh.",
+    "importance": 12,
+    "importance_reason": "Single-mention prophet cited only for a Day-of-the-Lord prophecy."
+  },
+  {
+    "name": "Manúc̱hihr Khán, the Mu‘tamidu’d-Dawlih",
+    "common_name": "Manúchihr Khán",
+    "aliases": ["the Mu‘tamidu’d-Dawlih", "Gurjí", "Manúchihr Khán Gurjí", "the governor of Iṣfahán"],
+    "native_script": ["منوچهر خان", "منوچهر خان معتمدالدوله"],
+    "summary": "Georgian-born governor of Iṣfahán who extended his powerful protection to the Báb, sheltered Him in his residence, and professed faith in Him; his death in 1847 left the Báb without a patron and exposed to His enemies.",
+    "importance": 52,
+    "importance_reason": "The Báb's most powerful protector, whose patronage and death shaped a pivotal phase; heavily cited (32 mentions).",
+    "characterizations": ["GPB: The wise and judicious Manúc̱hihr Ḵhán... a Georgian by origin and a Christian by birth, who declared ... his faith in the Prophet of Islám", "Wikipedia: an influential Georgian eunuch who became the Mu‘tamid al-Dawla, Governor of Isfahan ... housing [the Báb] at his residence"]
+  },
+  {
+    "name": "Manṣúr, the ‘Abbáside Ḵhalífih",
+    "common_name": "Manṣúr",
+    "aliases": ["al-Manṣúr", "the ‘Abbáside Caliph al-Manṣúr"],
+    "native_script": ["المنصور"],
+    "summary": "The ‘Abbásid Caliph by whose order Imám Ja‘far-i-Ṣádiq was poisoned; named once.",
+    "importance": 10,
+    "importance_reason": "Single-mention historical Caliph cited only for an Imám's death."
+  },
+  {
+    "name": "Margaret Brooke, Ranee of Sarawak",
+    "common_name": "the Ranee of Sarawak",
+    "aliases": ["Margaret Brooke", "Margaret Alice Lili de Windt", "author of My Life in Sarawak"],
+    "native_script": [],
+    "summary": "British-born Ranee of Sarawak, named once among notable figures associated with the Faith's outreach.",
+    "importance": 6,
+    "importance_reason": "One-mention titled figure with no role given."
+  },
+  {
+    "name": "Maria Karađorđević, Queen of Yugoslavia",
+    "common_name": "Queen Marie of Yugoslavia",
+    "aliases": ["the Queen of Yugoslavia", "Maria of Romania", "Marija Karađorđević", "Mignon"],
+    "native_script": [],
+    "summary": "Daughter of Queen Marie of Romania and Queen of Yugoslavia, recipient of Bahá'í messages of sympathy and host to her mother during a notable meeting; mentioned a few times.",
+    "importance": 10,
+    "importance_reason": "Royal figure tied to the Queen Marie of Romania episode, but a peripheral mention."
+  },
+  {
+    "name": "Marianne Hainisch",
+    "common_name": "Marianne Hainisch",
+    "aliases": ["Marianna Hainisch", "mother of an Austrian President"],
+    "native_script": [],
+    "summary": "Austrian women's-rights leader and mother of a President of Austria, who paid Ṭáhirih the tribute that she was 'the greatest ideal of womanhood.'",
+    "importance": 12,
+    "importance_reason": "Notable observer cited once for a memorable tribute to Ṭáhirih."
+  },
+  {
+    "name": "Martha Louise Root",
+    "common_name": "Martha Root",
+    "aliases": ["Leading Ambassadress of His Faith", "Pride of Bahá’", "herald of the Kingdom", "harbinger of the Covenant", "Martha Louise Root"],
+    "native_script": [],
+    "summary": "American journalist and the foremost traveling teacher of the Faith, who circled the globe for twenty years winning royalty and notables (including Queen Marie of Romania) to the Cause; designated by Shoghi Effendi 'Leading Ambassadress of His Faith' and posthumously a Hand of the Cause.",
+    "importance": 62,
+    "importance_reason": "The pre-eminent international teacher of the early Faith, 'Leading Ambassadress' and posthumous Hand of the Cause; heavily cited (22 mentions).",
+    "characterizations": ["GPB: that star-servant of Bahá’u’lláh, the indomitable and immortal Martha Root, designated by her Master 'herald of the Kingdom' and 'harbinger of the Covenant'", "GPB: which ended only with her death far from home and in the active service of the Cause"]
+  },
+  {
+    "name": "Martin Abraham Meyer",
+    "common_name": "Dr. Martin A. Meyer",
+    "aliases": ["Martin Abraham Meyer"],
+    "native_script": [],
+    "summary": "American Reform rabbi and scholar named once among Western figures who noted the Faith.",
+    "importance": 5,
+    "importance_reason": "One-mention name with no role given."
+  },
+  {
+    "name": "Mary Baird Bryan",
+    "common_name": "Mary Baird Bryan",
+    "aliases": ["Mrs. William Jennings Bryan"],
+    "native_script": [],
+    "summary": "Wife of American statesman William Jennings Bryan, named once among Western notables.",
+    "importance": 5,
+    "importance_reason": "One-mention name identified only by her husband."
+  },
+  {
+    "name": "Mary Leonora Woulfe Sheil, Lady Sheil",
+    "common_name": "Lady Sheil",
+    "aliases": ["Mary Leonora Woulfe Sheil", "author of Glimpses of Life and Manners in Persia"],
+    "native_script": [],
+    "summary": "Wife of the British minister in Tehran whose memoir 'Glimpses of Life and Manners in Persia' supplies an eyewitness Western description of the Báb and the Bábí movement, repeatedly cited in the Dawn-Breakers.",
+    "importance": 16,
+    "importance_reason": "A repeatedly cited contemporary Western source on the Báb, but an outside observer."
+  },
+  {
+    "name": "Mary Virginia Thornburgh-Cropper",
+    "common_name": "Mrs. Thornburgh-Cropper",
+    "aliases": ["Maud Thornburgh-Cropper", "Maryam", "Mary Virginia Thornburgh-Cropper"],
+    "native_script": [],
+    "summary": "First Bahá'í in England, who after pilgrimage initiated Bahá'í activities in London; mentioned once.",
+    "importance": 22,
+    "importance_reason": "Pioneer first British believer who began the London community, though only a single mention."
+  },
+  {
+    "name": "Maryam",
+    "common_name": "Maryam",
+    "aliases": ["kinswoman of Bahá'u'lláh"],
+    "native_script": ["مریم"],
+    "summary": "A kinswoman of Bahá'u'lláh to whom He addressed Tablets recalling His departure from Ṭihrán and His refuge in a cave; mentioned twice.",
+    "importance": 16,
+    "importance_reason": "Recipient of Tablets of Bahá'u'lláh and a family member, but a minor figure with brief mention."
+  }
+]

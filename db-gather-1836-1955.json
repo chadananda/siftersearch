@@ -1,0 +1,920 @@
+[
+  {
+    "canonical_name": "Mullá Muḥammad-Sa‘íd-i-Bárfurús̱hí, Sa‘ídu’l-‘Ulamá",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1837, 1838]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-‘Alíy-i-Bárfurús̱hí, Quddús",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1838, 1839]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-Ḥusayn-i-Bus̱hrú’í",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1839]
+  },
+  {
+    "canonical_name": "Siyyid ‘Alí-Muḥammad, the Báb",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1837, 1854, 1859, 1885, 1888, 1894, 1902, 1907, 1923, 1930, 1935, 1936, 1937, 1939, 1941, 1944, 1946, 1949, 1951, 1953]
+  },
+  {
+    "canonical_name": "Mírzá Ḥusayn-‘Alíy-i-Núrí, Bahá'u'lláh",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1854, 1859, 1899, 1930, 1940, 1941, 1951]
+  },
+  {
+    "canonical_name": "Mírzá Yaḥyáy-i-Núrí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1857, 1858, 1859, 1860, 1941]
+  },
+  {
+    "canonical_name": "Siyyid Yaḥyáy-i-Dárábí, Vaḥíd",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1903, 1905, 1916, 1919, 1928, 1929, 1930, 1931, 1934]
+  },
+  {
+    "canonical_name": "‘Abbás-Qulí Khán-i-Láríjání",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1839]
+  },
+  {
+    "canonical_name": "Aḥmad Mírzá",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1839]
+  },
+  {
+    "canonical_name": "Shimr ibn Dhi'l-Jawshan",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1839]
+  },
+  {
+    "canonical_name": "Imám Ḥusayn ibn 'Alí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1839, 1853, 1893, 1908, 1909, 1951]
+  },
+  {
+    "canonical_name": "Mírzá Qurbán-‘Alíy-i-Astarábádí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1885, 1887, 1889, 1890]
+  },
+  {
+    "canonical_name": "Mahd-i-'Ulyá (Jahán Khánum)",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1887]
+  },
+  {
+    "canonical_name": "Fáṭimatu'z-Zahrá bint Muḥammad",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1896]
+  },
+  {
+    "canonical_name": "Muḥammad ibn 'Abd'lláh",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1896, 1919]
+  },
+  {
+    "canonical_name": "Mírzá Áqá Khán-i-Núrí, the I‘timádu’d-Dawlih (Grand Vizir)",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1897]
+  },
+  {
+    "canonical_name": "Mírzá Taqí Khán-i-Farahání, Amír-Niẓám",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1897, 1935, 1936]
+  },
+  {
+    "canonical_name": "Náṣiri’d-Dín Sháh Qájár",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1894, 1897]
+  },
+  {
+    "canonical_name": "Mírzá Músá",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1898]
+  },
+  {
+    "canonical_name": "Siyyid Ḥusayn-i-Yazdí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1899, 1953]
+  },
+  {
+    "canonical_name": "Mírzá Muḥammad-'Alíy-i-Nahrí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1900]
+  },
+  {
+    "canonical_name": "Ḥájí Muḥammad-Taqí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1916]
+  },
+  {
+    "canonical_name": "Ḥájí Sulaymán Khán-i-Tabrízí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1937]
+  },
+  {
+    "canonical_name": "Prince Ḥamzih Mírzá Qájár, the Ḥishmatu’d-Dawlih",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1937, 1946]
+  },
+  {
+    "canonical_name": "Zaynu’l-‘Ábidín Khán",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1906, 1913, 1928, 1932, 1934]
+  },
+  {
+    "canonical_name": "Prince Fírúz Mírzá Qájár",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1931]
+  },
+  {
+    "canonical_name": "Mihr-'Alí Khán-i-Núrí, Shujá'u'l-Mulk",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1931]
+  },
+  {
+    "canonical_name": "Mírzá Na'ím",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1931]
+  },
+  {
+    "canonical_name": "S̱hayḵh Abú-Turáb, the Imám-Jum‘ih of S̱híráz",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1934]
+  },
+  {
+    "canonical_name": "‘Abbás Effendi, ‘Abdu’l-Bahá",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1929, 1951]
+  },
+  {
+    "canonical_name": "Ḥájí Mírzá ‘Abbás-i-Íravání, Ḥájí Mírzá Áqásí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1880, 1935, 1936]
+  },
+  {
+    "canonical_name": "Jesus Christ",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1944, 1951]
+  },
+  {
+    "canonical_name": "Edward Granville Browne",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1859, 1951]
+  },
+  {
+    "canonical_name": "Thomas Kelly Cheyne",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1859, 1941, 1944, 1951]
+  },
+  {
+    "canonical_name": "Joseph Arthur, Comte de Gobineau",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1894, 1935, 1936, 1937, 1946, 1951, 1955]
+  },
+  {
+    "canonical_name": "Sir Ignatius Valentine Chirol",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1951]
+  },
+  {
+    "canonical_name": "Ḥájí Muḥammad-‘Alíy-i-Ḥamzih",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "a pious divine Ḥájí Muḥammad-‘Alíy-i-Ḥamzih by name, whose skill in exegesis and spiritual gifts was recognised by all, secretly sent several persons to bury the mutilated remains in the ruined college already mentioned",
+      "he deemed it prudent to be silent and shut himself up in his house"
+    ],
+    "mention_idxs": [1838]
+  },
+  {
+    "canonical_name": "Ḥájí Mírzá Jání",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The late Ḥájí Mírzá Jání writes: ‘About two years after the disaster of S̱hayḵh Ṭabarsí, I heard one, who, though not a believer, was honest, truthful, and worthy of credit, relate as follows'",
+      "When, after the lapse of some time, writes Mírzá Jání, I again had the honour of meeting Áqá Siyyid Yaḥyá in Ṭihrán"
+    ],
+    "mention_idxs": [1839, 1903, 1953]
+  },
+  {
+    "canonical_name": "Mírzá ‘Alíy-i-Sayyáḥ-i-Marág̱hih’í",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "his full name was Mírzá ‘Alíy-i-Sayyáḥ-i-Marág̱hih’í. He had acted as the servant of the Báb in Máh-Kú, ranked among His leading companions, and subsequently embraced the Message of Bahá’u’lláh"
+    ],
+    "mention_idxs": [1854]
+  },
+  {
+    "canonical_name": "Mírzá Abu'l-Qásim, the Qá'im-Maqám",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "He was the son of Qurbán, the head cook of the Qá’im-Maqám, the predecessor of Ḥájí Mírzá Áqásí"
+    ],
+    "mention_idxs": [1880]
+  },
+  {
+    "canonical_name": "Ḥájí Mu‘ínu’s-Salṭanih",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "According to Ḥájí Mu‘ínu’s-Salṭanih’s narrative (p. 131), Mírzá Qurbán-‘Alí the dervish, met the Báb in the village of Ḵhánliq"
+    ],
+    "mention_idxs": [1885]
+  },
+  {
+    "canonical_name": "Ḥájí Mullá Ismá‘íl",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "when they were ready to begin their work of decapitation and slaughter, it was Ḥájí Mullá Ismá‘íl’s turn to die",
+      "He replied: ‘Were I willing to recant, even without money none would touch me.’"
+    ],
+    "mention_idxs": [1891]
+  },
+  {
+    "canonical_name": "Ḥájí S̱hayḵh ‘Abdu’l-‘Alí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "their chief Ḥájí S̱hayḵh ‘Abdu’l-‘Alí, father of the wife of Siyyid Yaḥyá"
+    ],
+    "mention_idxs": [1916]
+  },
+  {
+    "canonical_name": "Áḵhúnd Mullá ‘Abdu’l-Ḥusayn",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "the late Áḵhúnd Mullá ‘Abdu’l-Ḥusayn, an aged gentleman well versed in religious literature"
+    ],
+    "mention_idxs": [1916]
+  },
+  {
+    "canonical_name": "Áḵhúnd Mullá Báqir",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Áḵhúnd Mullá Báqir, Pis̱h-namáz of the district"
+    ],
+    "mention_idxs": [1916]
+  },
+  {
+    "canonical_name": "Mullá ‘Alí Katib",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Mullá ‘Alí Katib, another Mullá ‘Alí with his four brothers"
+    ],
+    "mention_idxs": [1916]
+  },
+  {
+    "canonical_name": "Mas̱hhadí Mírzá Ḥusayn, called Quṭb",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "the late Mas̱hhadí Mírzá Ḥusayn called Quṭb, with all of his family and his relatives"
+    ],
+    "mention_idxs": [1916]
+  },
+  {
+    "canonical_name": "Ṣafar",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "then came Ṣafar whose brother S̱ha‘bán had fallen during the war",
+      "He took hold of the green belt of Yaḥyá... and began to drag him on the ground. Then came Ṣafar"
+    ],
+    "mention_idxs": [1928]
+  },
+  {
+    "canonical_name": "S̱ha‘bán",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Ṣafar whose brother S̱ha‘bán had fallen during the war"
+    ],
+    "mention_idxs": [1928]
+  },
+  {
+    "canonical_name": "Áqá Ján, son of ‘Alí-Aṣg̱har Ḵhán",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "then Áqá Ján, son of ‘Alí-Aṣg̱har Ḵhán, brother of Zaynu’l-‘Ábidín Ḵhán, and the Muḥammadans... stoned and beat to death the unfortunate man"
+    ],
+    "mention_idxs": [1928]
+  },
+  {
+    "canonical_name": "‘Alí-Aṣg̱har Ḵhán (brother of Zaynu’l-‘Ábidín Ḵhán)",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Áqá Ján, son of ‘Alí-Aṣg̱har Ḵhán, brother of Zaynu’l-‘Ábidín Ḵhán"
+    ],
+    "mention_idxs": [1928]
+  },
+  {
+    "canonical_name": "Áqá Siyyid Ja‘far-i-Yazdí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Áqá Siyyid Ja‘far-i-Yazdí saw the executioners burn his turban and then they took him from door to door making him beg for money"
+    ],
+    "mention_idxs": [1933]
+  },
+  {
+    "canonical_name": "Áqá Siyyid Abú-Ṭálib",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Áqá Siyyid Abú-Ṭálib, who was very wealthy, was bound with chains and sent by the governor of Nayríz to Ma‘dan, and there poisoned by Ḥájí Mírzá Náṣir"
+    ],
+    "mention_idxs": [1934]
+  },
+  {
+    "canonical_name": "Ḥájí Mírzá Náṣir",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "poisoned by Ḥájí Mírzá Náṣir, the same man who had ordered the Báb to kiss the hand of S̱hayḵh Abú-Turáb"
+    ],
+    "mention_idxs": [1934]
+  },
+  {
+    "canonical_name": "Karbilá’í Abu’l-Ḥasan (dealer in crockery)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "these men, Karbilá’í Abu’l-Ḥasan, a dealer in crockery... all died for their faith at this time"
+    ],
+    "mention_idxs": [1934]
+  },
+  {
+    "canonical_name": "Áqá S̱hayḵh Hádí (uncle of the wife of Vaḥíd)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Áqá S̱hayḵh Hádí, uncle of the wife of Vaḥíd"
+    ],
+    "mention_idxs": [1934]
+  },
+  {
+    "canonical_name": "Abu’l-Qásim-ibn-i-Ḥájí-Zayná",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Mírzá ‘Alí and Abu’l-Qásim-ibn-i-Ḥájí-Zayná, Akbar-ibn-i-‘Ábid... all died for their faith at this time"
+    ],
+    "mention_idxs": [1934]
+  },
+  {
+    "canonical_name": "Akbar-ibn-i-‘Ábid",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Abu’l-Qásim-ibn-i-Ḥájí-Zayná, Akbar-ibn-i-‘Ábid, Mírzá Ḥasan and his brother Mírzá Bábá all died for their faith at this time"
+    ],
+    "mention_idxs": [1934]
+  },
+  {
+    "canonical_name": "Mullá ‘Abdu’lláh (brother of a Martyr of Tabríz)",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "a letter in his own blessed writing which was in the possession of his brother Mullá ‘Abdu’lláh, who still lives in Tabríz"
+    ],
+    "mention_idxs": [1947]
+  },
+  {
+    "canonical_name": "Clément Huart",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(M.C. Huart’s “La Religion du Báb,” pp. 3–4.)"
+    ],
+    "mention_idxs": [1949]
+  },
+  {
+    "canonical_name": "A. L. M. Nicolas",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(A. L. M. Nicolas’ “Siyyid ‘Alí-Muḥammad dit le Báb,” p. 330.)",
+      "“Le Livre des Sept Preuves,” translated by A. L. M. Nicolas, pp. 54–55."
+    ],
+    "mention_idxs": [1837, 1902, 1905, 1913, 1916, 1919, 1924, 1926, 1928, 1930, 1931, 1933, 1949, 1951, 1955]
+  },
+  {
+    "canonical_name": "Lady Mary Leonora Woulfe Sheil",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Lady Sheil’s “Glimpses of Life and Manners in Persia,” p. 181."
+    ],
+    "mention_idxs": [1951]
+  },
+  {
+    "canonical_name": "Sir Francis Younghusband",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Sir Francis Younghusband’s “The Gleam,” pp. 183–4.)"
+    ],
+    "mention_idxs": [1951]
+  },
+  {
+    "canonical_name": "Lisánu’l-Mulk Mírzá Muḥammad-Taqí Sipihr",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "The author of Násiḵhu’t-Taváríkh affirms without the least sorrow that the imperial troops were poorly trained and not at all eager to fight"
+    ],
+    "mention_idxs": [1924]
+  },
+  {
+    "canonical_name": "Boris Andreyevich Dorn",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "proved by the testimony of Dorn, who, in describing a M.S. of one of the Báb’s ‘Commentaries on the Names of God’... says... that it was ‘received directly from the Báb’s own secretary'"
+    ],
+    "mention_idxs": [1953]
+  },
+  {
+    "canonical_name": "Nicholas I, Emperor of Russia",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "‘The Emperor of Russia,’ he [Ḥájí Mírzá Jání] says, ‘sent to the Russian consul at Tabríz, bidding him fully investigate and report the circumstances of His Holiness the Báb."
+    ],
+    "mention_idxs": [1953]
+  },
+  {
+    "canonical_name": "the Bábí community",
+    "entity_type": "group",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1837, 1838, 1894, 1913, 1932, 1934, 1935, 1946, 1951]
+  },
+  {
+    "canonical_name": "the Azalís (followers of Mírzá Yaḥyá)",
+    "entity_type": "group",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1858, 1941]
+  },
+  {
+    "canonical_name": "the Seven Martyrs of Ṭihrán",
+    "entity_type": "group",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1894]
+  },
+  {
+    "canonical_name": "the S̱hí‘ah ecclesiastical hierarchy / S̱hí‘ah Islám",
+    "entity_type": "group",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1894]
+  },
+  {
+    "canonical_name": "the mujtahids and ‘ulamás (Muslim divines of Persia)",
+    "entity_type": "group",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1902, 1905, 1951]
+  },
+  {
+    "canonical_name": "the defenders of the Fort of S̱hayḵh Ṭabarsí",
+    "entity_type": "group",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1894]
+  },
+  {
+    "canonical_name": "Mázindarán (the province; the Ṭabarsí upheaval)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1837, 1838, 1839]
+  },
+  {
+    "canonical_name": "Bárfurús̱h (Bábul)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1838]
+  },
+  {
+    "canonical_name": "the Fort of S̱hayḵh Ṭabarsí",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1839, 1894]
+  },
+  {
+    "canonical_name": "Karbilá",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1839]
+  },
+  {
+    "canonical_name": "the fortress of Máh-Kú",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1854]
+  },
+  {
+    "canonical_name": "Ṭihrán (Tehran)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1887, 1903, 1934, 1936]
+  },
+  {
+    "canonical_name": "Zanján",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1894]
+  },
+  {
+    "canonical_name": "the shrine of Sháh ‘Abdu’l-‘Aẓím",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1901]
+  },
+  {
+    "canonical_name": "Nayríz",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1916, 1931, 1932, 1934]
+  },
+  {
+    "canonical_name": "the C̱hinár-Súḵhtih quarter (Nayríz)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1916]
+  },
+  {
+    "canonical_name": "S̱híráz",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1928, 1931, 1932, 1934]
+  },
+  {
+    "canonical_name": "the fortress of C̱hihríq",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1936, 1937]
+  },
+  {
+    "canonical_name": "Tabríz",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1937, 1946, 1947, 1953]
+  },
+  {
+    "canonical_name": "Áḏhirbáyján",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1937]
+  },
+  {
+    "canonical_name": "Ma‘dan-Nuqrih",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1934]
+  },
+  {
+    "canonical_name": "Persia (Iran)",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1902, 1905, 1935, 1936, 1951]
+  },
+  {
+    "canonical_name": "Ḵhánliq",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Mírzá Qurbán-‘Alí the dervish, met the Báb in the village of Ḵhánliq"
+    ],
+    "mention_idxs": [1885]
+  },
+  {
+    "canonical_name": "Kuláh-i-Farangí (summer-house, S̱híráz)",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "brought before Prince Fírúz Mírzá, who was feasting in a summer-house called Kuláh-i-Farangí",
+      "he had gathered in his kiosk (called Kuláh-i-Farangí) the rich, the eminent citizens of S̱híráz"
+    ],
+    "mention_idxs": [1931]
+  },
+  {
+    "canonical_name": "A Traveller's Narrative (Maqálih-i-S̱haḵhṣí Sayyáḥ)",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1883, 1894, 1901, 1931, 1939, 1950]
+  },
+  {
+    "canonical_name": "al-Qur'án",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1844, 1849, 1865, 1930]
+  },
+  {
+    "canonical_name": "Kitáb-i-Íqán",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1930, 1951]
+  },
+  {
+    "canonical_name": "Dalá’il-i-Sab‘ih (Seven Proofs)",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1930]
+  },
+  {
+    "canonical_name": "the Báb’s commentary on the Súrih of Kawṯhar (Tafsír-i-Súriy-i-Kawthar)",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1930]
+  },
+  {
+    "canonical_name": "Epistle to the Son of the Wolf (Lawḥ-i-Ibn-i-Ḏhi’b)",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1860]
+  },
+  {
+    "canonical_name": "Ishráqát",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1951]
+  },
+  {
+    "canonical_name": "Some Answered Questions",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1951]
+  },
+  {
+    "canonical_name": "the Bayán-i-Fársí (Persian Bayán)",
+    "entity_type": "work",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1839, 1951]
+  },
+  {
+    "canonical_name": "the Táríḵh-i-Jadíd (New History)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(The “Táríḵh-i-Jadíd,” p. 92.)",
+      "a Bábí history repeatedly cited for the events of S̱hayḵh Ṭabarsí, the Seven Martyrs, and the martyrdom of the Báb"
+    ],
+    "mention_idxs": [1838, 1839, 1883, 1887, 1890, 1891, 1903, 1912, 1947, 1953]
+  },
+  {
+    "canonical_name": "Siyyid ‘Alí-Muḥammad dit le Báb (by A. L. M. Nicolas)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "A. L. M. Nicolas’ “Siyyid ‘Alí-Muḥammad dit le Báb”, a French biographical study of the Báb repeatedly cited in the footnotes"
+    ],
+    "mention_idxs": [1837, 1902, 1905, 1913, 1916, 1919, 1924, 1926, 1928, 1931, 1933, 1949, 1951, 1955]
+  },
+  {
+    "canonical_name": "Les Religions et les Philosophies dans l’Asie Centrale (by Comte de Gobineau)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Comte de Gobineau’s “Les Religions et les Philosophies dans l’Asie Centrale,” pp. 210–11.",
+      "cited for the prime minister Mírzá Taqí Khán's decision to put the Báb to death"
+    ],
+    "mention_idxs": [1935, 1936, 1937, 1946, 1951, 1955]
+  },
+  {
+    "canonical_name": "The Reconciliation of Races and Religions (by T. K. Cheyne)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Dr. T. K. Cheyne’s “The Reconciliation of Races and Religions,” pp. 118–19.",
+      "Such a prophet, writes the Rev. Dr. T. K. Cheyne, was the Báb"
+    ],
+    "mention_idxs": [1859, 1941, 1944, 1951]
+  },
+  {
+    "canonical_name": "La Religion du Báb (by Clément Huart)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(M.C. Huart’s “La Religion du Báb,” pp. 3–4.)"
+    ],
+    "mention_idxs": [1949]
+  },
+  {
+    "canonical_name": "The Gleam (by Sir Francis Younghusband)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Sir Francis Younghusband’s “The Gleam,” pp. 183–4.)"
+    ],
+    "mention_idxs": [1951]
+  },
+  {
+    "canonical_name": "Glimpses of Life and Manners in Persia (by Lady Sheil)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Lady Sheil’s “Glimpses of Life and Manners in Persia,” p. 181."
+    ],
+    "mention_idxs": [1951]
+  },
+  {
+    "canonical_name": "The Middle Eastern Question (by Valentine Chirol)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Valentine Chirol’s “The Middle Eastern Question,” p. 120.)"
+    ],
+    "mention_idxs": [1951]
+  },
+  {
+    "canonical_name": "Násiḵhu’t-Taváríkh",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "The author of Násiḵhu’t-Taváríkh affirms without the least sorrow that the imperial troops were poorly trained"
+    ],
+    "mention_idxs": [1924]
+  },
+  {
+    "canonical_name": "Kas̱hfu’l-G̱hiṭá’",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "According to the “Kas̱hfu’l-G̱hiṭá’” (p. 241) his full name was Mírzá ‘Alíy-i-Sayyáḥ-i-Marág̱hih’í"
+    ],
+    "mention_idxs": [1854]
+  },
+  {
+    "canonical_name": "the Fárs-Námih",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Barely two days after his arrival, a large number came to see him by night out of fear of the government, says the Fárs-Námih"
+    ],
+    "mention_idxs": [1916]
+  },
+  {
+    "canonical_name": "the Maṯhnaví (of Jalálu’d-Dín Rúmí)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Maṯhnaví, Book 6, p. 649, 1, 2; ed. ‘Alá’u’d-Dawlih.)"
+    ],
+    "mention_idxs": [1883]
+  }
+]

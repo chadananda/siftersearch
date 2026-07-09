@@ -1,0 +1,761 @@
+[
+  {
+    "name": "Marḍíyyih (sister of Ṭáhirih)",
+    "common_name": "Marḍíyyih",
+    "aliases": ["Marḍíyyih (sister of Ṭáhirih)"],
+    "native_script": [],
+    "summary": "Sister of Ṭáhirih and wife of Mírzá Muḥammad-‘Alí (a Letter of the Living); she recognised and embraced the Báb's Cause.",
+    "importance": 22,
+    "importance_reason": "Family of Ṭáhirih and an early believer, but only a single passing mention with no independent story."
+  },
+  {
+    "name": "Masíḥ (brother of Mullá Muḥammad-Ján, martyr of Mázindarán)",
+    "common_name": "Masíḥ (brother of Mullá Muḥammad-Ján, martyr of Mázindarán)",
+    "aliases": ["Masíḥ"],
+    "native_script": [],
+    "summary": "A Bábí of Mázindarán, brother of the martyr Mullá Muḥammad-Ján.",
+    "importance": 8,
+    "importance_reason": "One-mention incidental name identified only as another martyr's brother."
+  },
+  {
+    "name": "Mas̱hhadí Aḥmad",
+    "common_name": "Mas̱hhadí Aḥmad",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Trusted envoy whom Ḥujjat confidentially despatched to Shíráz with a petition and gifts for the Báb, returning with a sealed letter from Him.",
+    "importance": 18,
+    "importance_reason": "Recurs briefly (2 mentions) as a courier in the Zanján narrative but has no story of his own."
+  },
+  {
+    "name": "Mas̱hhadí Báqir the dyer",
+    "common_name": "Mas̱hhadí Báqir the dyer",
+    "aliases": ["Mas̱hhadí Báqir, a dyer"],
+    "native_script": [],
+    "summary": "A Bábí of Nayríz, a dyer, killed by ‘Alí Big, captain of the Nayrízí soldiers, who severed his head.",
+    "importance": 10,
+    "importance_reason": "One-mention Nayríz martyr; remembered only by trade and manner of death."
+  },
+  {
+    "name": "Mas̱hhadí Mírzá Ḥusayn, called Quṭb",
+    "common_name": "Mírzá Ḥusayn-i-Quṭb",
+    "aliases": ["Mírzá Ḥusayn-i-Quṭb", "Mas̱hhadí Mírzá Ḥusayn, called Quṭb"],
+    "native_script": [],
+    "summary": "Kad-ḵhudá (headman) of the Bázár quarter who, with his family and relatives, was killed in the Bábí persecutions.",
+    "importance": 14,
+    "importance_reason": "Twice-mentioned local notable martyred with his household; no extended narrative."
+  },
+  {
+    "name": "Mas̱hhadí Nabí",
+    "common_name": "Mas̱hhadí Nabí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A believer of Shíráz strangled in the dead of night by order of the local mujtahid, together with Mírzá Áqáy-i-Rikáb-Sáz and Mírzá Rafí‘-i-Ḵhayyáṭ.",
+    "importance": 14,
+    "importance_reason": "One-mention Shíráz martyr named only as one of three strangled together."
+  },
+  {
+    "name": "Mas̱hhadí Taqí-Baqqál",
+    "common_name": "Mas̱hhadí Taqí-Baqqál",
+    "aliases": ["Mas̱hhadí Taqí, the grocer"],
+    "native_script": [],
+    "summary": "A grocer appointed as gaoler in the Bábí narrative.",
+    "importance": 6,
+    "importance_reason": "Single fragmentary mention naming him merely as a jailer."
+  },
+  {
+    "name": "Mas‘úd Mírzá",
+    "common_name": "Ẓillu's-Sulṭán",
+    "aliases": ["Ẓillu's-Sulṭán", "Mas‘úd Mírzá", "the Infernal Tree", "Sulṭán-Mas‘úd Mírzá"],
+    "native_script": ["مسعود میرزا", "ظلّ‌السّلطان"],
+    "summary": "Eldest surviving son of Náṣiri'd-Dín Sháh and powerful governor of Iṣfahán and over two-fifths of Persia; he ratified the death sentences of the King and Beloved of Martyrs (1879) and is a major secondary antagonist of Bahá'í history.",
+    "importance": 52,
+    "importance_reason": "Prince-governor who drove a notorious persecution; the one who confirmed the execution of the King and Beloved of Martyrs.",
+    "characterizations": [
+      "GPB: To the stern and savage rule of the astute Mas‘úd Mírzá, commonly known as Ẓillu's-Sulṭán, his eldest surviving son, whose mother had been of plebeian origin, he had committed over two-fifths of his kingdom.",
+      "Academia.edu (Persecution and Resilience): Sultán-Mas'úd Mírzá, son of Násiri'd-Dín Sháh, governed Isfahan (ruling the province 1874–1907) and ratified the death-sentence pronounced by the clerics on the King and Beloved of Martyrs."
+    ]
+  },
+  {
+    "name": "Mawláná Khálid-i-Shahrazúrí",
+    "common_name": "Mawláná Khálid",
+    "aliases": ["Khálid al-Baghdádí", "Ḍiyá'u'd-Dín", "Mawláná Khálid-i-Shahrazúrí"],
+    "native_script": ["خالد"],
+    "summary": "Kurdish founder of the Khálidí branch of the Naqshbandí Sufi order, venerated by his followers; mentioned in connection with Shaykh Ismá‘íl whom adherents held co-equal with him.",
+    "importance": 24,
+    "importance_reason": "Notable Sufi order-founder providing context, but only a single mention in the Bahá'í narrative."
+  },
+  {
+    "name": "May Ellis Bolles",
+    "common_name": "May Maxwell",
+    "aliases": ["May Maxwell", "May Bolles", "May Ellis Bolles", "May Bolles Maxwell"],
+    "native_script": [],
+    "summary": "One of the earliest Western Bahá'ís, won to the Faith in Paris, where she founded the first Bahá'í centre on the European continent; later, married to William Sutherland Maxwell, she introduced the Faith to Canada and was mother of Rúḥíyyih Khánum.",
+    "importance": 58,
+    "importance_reason": "Pioneering Western believer who established the first European Bahá'í community and seeded the Faith in Canada; named in the Tablets of the Divine Plan.",
+    "characterizations": [
+      "GPB: one of these pilgrims, the afore-mentioned May Bolles, returned to Paris [where] she succeeded ... in establishing in that city the first Bahá'í center to be formed on the European continent.",
+      "Brilliant Star / Bahá'í Heroes: 'Abdu'l-Bahá's 'beloved handmaid' and 'distinguished disciple'; taught by Lua Getsinger, married William Sutherland Maxwell in 1902, and made Canada the Faith's first centre there."
+    ]
+  },
+  {
+    "name": "Maḥmúd Khán-i-Kalantar",
+    "common_name": "Maḥmúd Khán-i-Kalantar",
+    "aliases": ["the Kalantar of Ṭihrán", "Maḥmúd Khán, Kalantar of Ṭihrán"],
+    "native_script": ["محمود خان کلانتر"],
+    "summary": "Mayor (kalántar) of Ṭihrán into whose custody Ṭáhirih was delivered before her martyrdom; an enforcer of the persecutions who, nine years later, fell from favour and was dragged through the bazaars and hanged.",
+    "importance": 50,
+    "importance_reason": "Custodian of Ṭáhirih at her martyrdom and a recurring (20-mention) Qájár-court antagonist whose own downfall is recounted.",
+    "characterizations": [
+      "GPB: The false-hearted and ambitious Maḥmúd Ḵhán-i-Kalantar, into whose custody Ṭáhirih had been delivered before her martyrdom, incurred, nine years later, the wrath of his royal master, was dragged feet first by ropes through the bazaars ... and there hung on the gallows."
+    ]
+  },
+  {
+    "name": "Maḥmúd Mírzá, Jalálu'd-Dawlih",
+    "common_name": "Jalálu'd-Dawlih",
+    "aliases": ["Jalálu'd-Dawlih", "Prince Jalálu'd-Dawlih", "the tyrant of Yazd", "Maḥmúd Mírzá"],
+    "native_script": ["محمود میرزا (جلال‌الدوله)"],
+    "summary": "Qájár prince, son of Ẓillu's-Sulṭán and governor of Yazd, who put seven believers to death in a single day; branded by Bahá'u'lláh as 'the tyrant of Yazd'.",
+    "importance": 42,
+    "importance_reason": "Governor responsible for the 1903 Yazd martyrdoms and condemned by name by Bahá'u'lláh, though with limited corpus presence.",
+    "characterizations": [
+      "GPB: by order of the callous Maḥmúd Mírzá, the Jalálu'd-Dawlih, the governor, a son of Ẓillu's-Sulṭán, seven were done to death in a single day in horrible circumstances.",
+      "GPB: The rapacious Prince Jalálu'd-Dawlih, branded by the Supreme Pen as 'the tyrant of Yazd'."
+    ]
+  },
+  {
+    "name": "Maḥmúd Áqá",
+    "common_name": "Maḥmúd Áqá",
+    "aliases": [],
+    "native_script": ["محمود آقا"],
+    "summary": "Lieutenant of ‘Abdu'lláh Páshá in the Baghdád region who came into contact with Bahá'u'lláh and helped spread word of His growing fame.",
+    "importance": 12,
+    "importance_reason": "One-mention minor Ottoman official noted only for noising abroad Bahá'u'lláh's fame."
+  },
+  {
+    "name": "Maḥmúd-i-Muqári’í",
+    "common_name": "Maḥmúd-i-Muqári’í",
+    "aliases": ["Maḥmúd, the cloth dealer of Muqári"],
+    "native_script": [],
+    "summary": "A noted cloth dealer, newly married, who attained the Báb's presence at Chihríq and, aflame with love of the Cause, set out to join Quddús.",
+    "importance": 16,
+    "importance_reason": "Single mention with a memorable saying but no sustained role."
+  },
+  {
+    "name": "Ma’mún, the ‘Abbáside Ḵhalífih",
+    "common_name": "Ma'mún",
+    "aliases": ["al-Ma'mún", "Ma’mún, the ‘Abbáside Ḵhalífih"],
+    "native_script": ["المأمون"],
+    "summary": "‘Abbásid Caliph (r. 813–833) cited in connection with the poisoning of the Imám Riḍá near Ṭús in A.H. 203.",
+    "importance": 12,
+    "importance_reason": "Historical caliph appearing in a single contextual aside, peripheral to Bábí–Bahá'í history."
+  },
+  {
+    "name": "Mehmed Emin Námiq Páshá",
+    "common_name": "Námiq Páshá",
+    "aliases": ["Námiq Páshá", "Mehmed Emin Námiq Páshá", "the Governor of Baghdád"],
+    "native_script": ["نامق پاشا"],
+    "summary": "Ottoman governor of Baghdád who conveyed to Bahá'u'lláh the government's invitation to proceed to Constantinople and dealt with Him during the final Baghdád period.",
+    "importance": 40,
+    "importance_reason": "Recurring Ottoman governor who personally interacted with Bahá'u'lláh and delivered the summons to Constantinople.",
+    "characterizations": [
+      "GPB: an emissary of Námiq Pás̱há arrived and delivered into His hands a communication requesting an interview between Him and the governor.",
+      "GPB: ‘Alí Pás̱há's letter, addressed to Námiq Pás̱há, couched in courteous language, inviting Bahá'u'lláh to proceed, as a guest of the Ottoman government, to Constantinople."
+    ]
+  },
+  {
+    "name": "Mehmed Emin ‘Álí Páshá",
+    "common_name": "‘Álí Páshá",
+    "aliases": ["‘Álí Páshá", "the Grand Vizir", "Mehmed Emin ‘Álí Páshá", "Aali Pasha"],
+    "native_script": ["عالی پاشا"],
+    "summary": "Grand Vizier of the Ottoman Empire who, with Sulṭán ‘Abdu'l-‘Azíz and Fu’ád Páshá, ordered Bahá'u'lláh's successive banishments to Constantinople, Adrianople and finally ‘Akká; a chief adversary among the Faith's persecutors.",
+    "importance": 55,
+    "importance_reason": "Ottoman Grand Vizier who drove the exiles of Bahá'u'lláh; a principal state antagonist, frequently mentioned (10×).",
+    "characterizations": [
+      "GPB: That fateful and ignominious decision, arrived at by the Sulṭán and his chief ministers, ‘Alí Páshá and Fu’ád Páshá [banishing Bahá'u'lláh to ‘Akká]."
+    ]
+  },
+  {
+    "name": "Mehmed Fuad Köprülü",
+    "common_name": "Mehmed Fuad Köprülü",
+    "aliases": ["Köprülüzade Mehmed Fuad", "Fuad Köprülü"],
+    "native_script": ["محمد فؤاد كوپریلی", "محمد فؤاد"],
+    "summary": "Turkish scholar and statesman (1890–1966), Doyen of the Faculty of Letters and President of the Institute of Turkish history, cited in passing.",
+    "importance": 10,
+    "importance_reason": "One-mention modern academic referenced for context, outside the historical narrative."
+  },
+  {
+    "name": "Mihdí (martyr of Ṭihrán, 1268 A.H.)",
+    "common_name": "Mihdí (martyr of Ṭihrán, 1268 A.H.)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí destined to suffer martyrdom in Ṭihrán in A.H. 1268 (c. 1852).",
+    "importance": 8,
+    "importance_reason": "One-mention foreshadowed martyr with no further detail."
+  },
+  {
+    "name": "Mihdí (youngest son of Ḥujjat)",
+    "common_name": "Mihdí (youngest son of Ḥujjat)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Youngest son of Ḥujjat-i-Zanjání, who died of the privations inflicted on his family and was buried amid the ruins that had sheltered them.",
+    "importance": 16,
+    "importance_reason": "Son of a major hero with a poignant single mention but no role of his own."
+  },
+  {
+    "name": "Mihr-'Alí Khán-i-Núrí, Shujá'u'l-Mulk",
+    "common_name": "Shujá'u'l-Mulk",
+    "aliases": ["Shujá'u'l-Mulk", "Mihr-‘Alí Khán-i-Núrí", "Mihr-‘Alí Khán S̱hujá‘u'l-Mulk"],
+    "native_script": ["مهرعلی خان"],
+    "summary": "Qájár commander who savagely persecuted the remnants of the Bábí community in Nayríz after the attempt on the Sháh's life, and was later stricken with illness and dumbness.",
+    "importance": 30,
+    "importance_reason": "Named secondary persecutor of Nayríz with a recurring (4-mention) presence and a recounted retribution.",
+    "characterizations": [
+      "GPB: Mihr-‘Alí Ḵhán, the S̱hujá‘u'l-Mulk, who, after the attempt on the S̱háh's life, so savagely persecuted the remnants of the Bábí community in Nayríz, fell ill ... and was stricken with dumbness."
+    ]
+  },
+  {
+    "name": "Miss Pearson",
+    "common_name": "Miss Pearson",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A niece of Mrs. Phoebe Hearst, member of the first group of Western pilgrims to ‘Abdu'l-Bahá.",
+    "importance": 12,
+    "importance_reason": "One-mention early Western pilgrim named only as Mrs. Hearst's niece."
+  },
+  {
+    "name": "Mochenin",
+    "common_name": "Mochenin",
+    "aliases": ["M. Mochenin"],
+    "native_script": [],
+    "summary": "A European who, on duty at Chihríq in June 1850, left a memoir recording his sight of the Báb teaching from the Bálá-Ḵhánih.",
+    "importance": 12,
+    "importance_reason": "One-mention Western eyewitness cited as a contemporary source, not a participant."
+  },
+  {
+    "name": "Mohandas Karamchand Gandhi",
+    "common_name": "Mahatma Gandhi",
+    "aliases": ["Mahatma Gandhi", "Mohandas Karamchand Gandhi"],
+    "native_script": ["महात्मा गांधी", "موہن داس کرم چند گاندھی"],
+    "summary": "Leader of the Indian independence movement (1869–1948), mentioned only in passing.",
+    "importance": 10,
+    "importance_reason": "World figure named in a single incidental reference, peripheral to Bahá'í history."
+  },
+  {
+    "name": "Moses",
+    "common_name": "Moses",
+    "aliases": ["Músá", "the Interlocutor", "the Speaker", "Kalímu'lláh", "He Who conversed with God"],
+    "native_script": ["موسی"],
+    "summary": "Prophet-founder of Judaism (the 'Interlocutor' / Kalímu'lláh), repeatedly invoked as a Manifestation of God whose experiences at the Burning Bush and on Sinai prefigure those of the Báb and Bahá'u'lláh.",
+    "importance": 88,
+    "importance_reason": "An independent Manifestation of God; central to the prophetic typology of the Writings, though peripheral to the 19th-century narrative itself.",
+    "characterizations": [
+      "GPB: recall, and indeed surpass in poignancy the soul-shaking experience of Moses when confronted by the Burning Bush in the wilderness of Sinai."
+    ]
+  },
+  {
+    "name": "Mr. Watson",
+    "common_name": "Mr. Watson",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A writer/historian cited for an observation on an untranslatable Persian word.",
+    "importance": 8,
+    "importance_reason": "Twice-cited source reference, not a participant in events."
+  },
+  {
+    "name": "Mrs. Thornburgh",
+    "common_name": "Mrs. Thornburgh",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An early Western believer who, with her daughter, joined the party of pilgrims to ‘Abdu'l-Bahá.",
+    "importance": 10,
+    "importance_reason": "One-mention early pilgrim with no individual narrative."
+  },
+  {
+    "name": "Mufaḍḍal ibn ‘Umar al-Ju‘fí",
+    "common_name": "Mufaḍḍal ibn ‘Umar",
+    "aliases": ["Mufaḍḍal", "Mufaḍḍal ibn ‘Umar al-Ju‘fí"],
+    "native_script": ["المفضل بن عمر الجعفي"],
+    "summary": "Early companion of Imám Ja‘far Ṣádiq, transmitter of the celebrated ḥadíth on the signs of the coming of the Mihdí, cited as evidence for the truth of the Báb's mission.",
+    "importance": 14,
+    "importance_reason": "Early Islamic figure invoked once for a prophetic ḥadíth, not part of the Bábí narrative."
+  },
+  {
+    "name": "Mullá Abu’l-Ḥasan-i-Míyámay’í",
+    "common_name": "Mullá Abu’l-Ḥasan-i-Míyámay’í",
+    "aliases": ["Mullá Abu’l-Ḥasan (martyr of Míyámay)"],
+    "native_script": [],
+    "summary": "A Bábí of the village of Míyámay, martyred for the Faith.",
+    "importance": 7,
+    "importance_reason": "One-mention entry in the Míyámay martyr roster."
+  },
+  {
+    "name": "Mullá Abú-Raḥím-i-S̱hah-Mírzádí",
+    "common_name": "Mullá Abú-Raḥím-i-S̱hah-Mírzádí",
+    "aliases": ["Mullá Abú-Raḥím (martyr of S̱hah-Mírzád)"],
+    "native_script": [],
+    "summary": "One of two men of the village of Shah-Mírzád who fell defending the fort of Shaykh Ṭabarsí.",
+    "importance": 10,
+    "importance_reason": "One-mention Ṭabarsí fort defender named in a roster."
+  },
+  {
+    "name": "Mullá Abú-Ṭálib",
+    "common_name": "Mullá Abú-Ṭálib",
+    "aliases": [],
+    "native_script": ["ملا ابو طالب"],
+    "summary": "A believer, converted by Nabíl, who helped permanently plant the banner of the Faith in the Caucasus.",
+    "importance": 14,
+    "importance_reason": "One-mention teacher credited with spreading the Faith to the Caucasus."
+  },
+  {
+    "name": "Mullá Aḥmad (father of the martyr son and of Mullá Mírzá Muḥammad-i-Furúghí)",
+    "common_name": "Mullá Aḥmad (father of Mullá Mírzá Muḥammad-i-Furúghí)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Father of a martyred son and of Mullá Mírzá Muḥammad-i-Furúghí.",
+    "importance": 5,
+    "importance_reason": "One-mention name identified only through his sons."
+  },
+  {
+    "name": "Mullá Aḥmad-i-Ibdál-i-Marág̱hi’í",
+    "common_name": "Mullá Aḥmad-i-Ibdál",
+    "aliases": ["Ḥájí Mullá Aḥmad-i-Ibdál", "Mullá Aḥmad-i-Marághi’í", "Mullá Aḥmad-i-Ibdál-i-Marág̱hi’í"],
+    "native_script": [],
+    "summary": "A Letter of the Living, resident of Marághih and distinguished disciple of Siyyid Káẓim, who conveyed Tablets of the Báb to their recipients.",
+    "importance": 38,
+    "importance_reason": "A Letter of the Living (the foremost rank of early disciples), though with a thin 4-mention corpus presence."
+  },
+  {
+    "name": "Mullá Aḥmad-i-Mu‘allim",
+    "common_name": "Mullá Aḥmad-i-Mu‘allim",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Shaykhí of Khurásán, former instructor of Siyyid Káẓim's children in Karbilá, among the early to embrace the Faith there.",
+    "importance": 14,
+    "importance_reason": "One-mention early Khurásání believer with a brief biographical note."
+  },
+  {
+    "name": "Mullá Aḥmad-i-Saffár",
+    "common_name": "Mullá Aḥmad-i-Saffár",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí named in the narrative with no further detail.",
+    "importance": 5,
+    "importance_reason": "Bare one-mention name."
+  },
+  {
+    "name": "Mullá Báqir (Imám of the C̱hinár-Súḵhtih quarter)",
+    "common_name": "Mullá Báqir (Imám of the Chinár-Súḵhtih quarter)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Imám of the Chinár-Súḵhtih quarter, mentioned once.",
+    "importance": 6,
+    "importance_reason": "One-mention local cleric named only by office."
+  },
+  {
+    "name": "Mullá Báqir (envoy of Zaynu’l-‘Ábidín Khán)",
+    "common_name": "Mullá Báqir (envoy of Zaynu’l-‘Ábidín Khán)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An intimate friend and envoy entrusted to carry a letter in person to the prince; later captured by the Shaykhu'l-Islám of Bavánát.",
+    "importance": 10,
+    "importance_reason": "Minor courier figure with a few brief mentions and no sustained role."
+  },
+  {
+    "name": "Mullá Báqir, brother of Mullá Mihdíy-i-Kandí",
+    "common_name": "Mullá Báqir-i-Kandí",
+    "aliases": ["Mullá Báqir-i-Kandí", "Mullá Báqir, brother of Mullá Mihdíy-i-Kandí"],
+    "native_script": [],
+    "summary": "A learned Bábí of Kand, brother of Mullá Mihdí, both praised by Bahá'u'lláh in the Kitáb-i-Íqán for their great attainments.",
+    "importance": 20,
+    "importance_reason": "Twice-mentioned believer notable for being lauded in the Kitáb-i-Íqán, though without his own narrative."
+  },
+  {
+    "name": "Mullá Báqir-i-Basṭámí",
+    "common_name": "Mullá Báqir-i-Basṭámí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí in whose room Bahá'u'lláh was to be found, mentioned in passing.",
+    "importance": 7,
+    "importance_reason": "One-mention incidental name used as a locating reference."
+  },
+  {
+    "name": "Mullá Báqir-i-Míyámay’í",
+    "common_name": "Mullá Báqir-i-Míyámay’í",
+    "aliases": ["Mullá Báqir (martyr of Míyámay)"],
+    "native_script": [],
+    "summary": "A Bábí of the village of Míyámay, martyred for the Faith.",
+    "importance": 7,
+    "importance_reason": "One-mention entry in the Míyámay martyr roster."
+  },
+  {
+    "name": "Mullá Báqir-i-Tabrízí",
+    "common_name": "Mullá Báqir-i-Tabrízí",
+    "aliases": ["Mullá Báqir", "Mullá Báqir, Letter of the Living"],
+    "native_script": ["ملا باقر"],
+    "summary": "One of the Letters of the Living, to whom the Báb prophesied in a Tablet that he would meet the Promised One face to face; long-lived (d. c. 1881) and trusted with safeguarding the Báb's relics and Writings.",
+    "importance": 72,
+    "importance_reason": "A Letter of the Living singled out by the Báb's own prophecy and entrusted with His remains/Writings; richly attested (14×).",
+    "characterizations": [
+      "GPB: Mullá Báqir, one of the Letters of the Living, to whom the Báb prophesied, in a Tablet addressed to him, that he would meet the Promised One face to face.",
+      "GPB: Mullá Báqir, a Letter of the Living, whom He instructed to entrust them to Mullá ‘Abdu'l-Karím-i-Qazvíní."
+    ]
+  },
+  {
+    "name": "Mullá Dúst-Muḥammad",
+    "common_name": "Mullá Dúst-Muḥammad",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A cleric mentioned for blessing temporary unions at a particular place.",
+    "importance": 5,
+    "importance_reason": "One-mention incidental cleric outside the main narrative."
+  },
+  {
+    "name": "Mullá Fatḥu’lláh of Qum",
+    "common_name": "Mullá Fatḥu’lláh of Qum",
+    "aliases": ["Mullá Fatḥu’lláh-i-Qumí"],
+    "native_script": [],
+    "summary": "The Bábí who fired the shot that wounded Náṣiri'd-Dín Sháh in the 1852 attempt on his life, and was tortured to death in retribution.",
+    "importance": 28,
+    "importance_reason": "A direct actor in the pivotal 1852 attempt on the Sháh's life, though with a single grim mention."
+  },
+  {
+    "name": "Mullá Ibráhím, Mullá-Bás̱hí",
+    "common_name": "Mullá Ibráhím, Mullá-Bás̱hí",
+    "aliases": ["Mullá-Báshí"],
+    "native_script": [],
+    "summary": "A believer surnamed Mullá-Báshí, martyred in Sulṭán-Ábád, who recounted his impression of Siyyid Baṣír.",
+    "importance": 10,
+    "importance_reason": "One-mention martyr cited as the source of an anecdote."
+  },
+  {
+    "name": "Mullá Ibráhím-i-Gulpáygání",
+    "common_name": "Mullá Ibráhím-i-Gulpáygání",
+    "aliases": [],
+    "native_script": [],
+    "summary": "One of Ṭáhirih's last remaining companions; he quaffed the cup of martyrdom in Qazvín.",
+    "importance": 14,
+    "importance_reason": "One-mention martyr notable for his closeness to Ṭáhirih at the end."
+  },
+  {
+    "name": "Mullá Ibráhím-i-Maḥallatí",
+    "common_name": "Mullá Ibráhím-i-Maḥallatí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A believer esteemed for learning and character, savagely put to death at Qazvín with Mullá Ṭáhir-i-Shírází.",
+    "importance": 12,
+    "importance_reason": "Briefly mentioned Qazvín martyr (3×) noted for learning but no extended story."
+  },
+  {
+    "name": "Mullá Imám-Vardíy-i-Urúmí",
+    "common_name": "Mullá Imám-Vardíy-i-Urúmí",
+    "aliases": ["Mullá Imám-Vardí"],
+    "native_script": [],
+    "summary": "A tenacious believer of Urúmíyyih who later attained the presence of Bahá'u'lláh and laboured for the Faith past the age of eighty.",
+    "importance": 16,
+    "importance_reason": "One-mention believer with a notable note of lifelong, late-life service."
+  },
+  {
+    "name": "Mullá Iskandar",
+    "common_name": "Mullá Iskandar",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Trusted messenger whom Ḥujjat despatched to enquire into the claims of the new Revelation.",
+    "importance": 18,
+    "importance_reason": "Recurring (6×) courier in the Zanján narrative but without a distinct personal story."
+  },
+  {
+    "name": "Mullá Ismá‘íl-i-Míyámay’í",
+    "common_name": "Mullá Ismá‘íl-i-Míyámay’í",
+    "aliases": ["Mullá Ismá‘íl (martyr of Míyámay)"],
+    "native_script": [],
+    "summary": "A Bábí of the village of Míyámay, martyred for the Faith.",
+    "importance": 7,
+    "importance_reason": "One-mention entry in the Míyámay martyr roster."
+  },
+  {
+    "name": "Mullá Jalíl-i-Urúmí",
+    "common_name": "Mullá Jalíl-i-Urúmí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An early disciple named among the believers; noted as one whose faith was hard to surpass.",
+    "importance": 18,
+    "importance_reason": "Named several times among early believers and praised for tenacity of faith, but with no developed narrative."
+  },
+  {
+    "name": "Mullá Javád-i-Barag̱hání",
+    "common_name": "Mullá Javád-i-Barag̱hání",
+    "aliases": ["one of the 'twin idols'"],
+    "native_script": [],
+    "summary": "An early Bábí who, with Mullá ‘Abdu'l-‘Alíy-i-Harátí, feigned submission to the Báb out of ambition for leadership and was condemned by the Báb as one of the 'twin idols' (Jibt and Ṭághút).",
+    "importance": 22,
+    "importance_reason": "Recurring (4×) apostate-antagonist named and denounced by the Báb, giving him modest narrative weight."
+  },
+  {
+    "name": "Mullá Ja‘far, the sifter of wheat",
+    "common_name": "Mullá Ja‘far, the sifter of wheat",
+    "aliases": ["Mullá Ja‘far-i-Gandum-Pák-Kun"],
+    "native_script": [],
+    "summary": "An aged believer, the 'sifter of wheat,' whose name the Báb mentions in the Persian Bayán — the namesake of the SifterSearch project.",
+    "importance": 24,
+    "importance_reason": "One mention, but distinguished by being named by the Báb in the Persian Bayán."
+  },
+  {
+    "name": "Mullá Ja‘far-i-Naráqí",
+    "common_name": "Mullá Ja‘far-i-Naráqí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A haughty and eloquent cleric who nonetheless could not resist the force of a Bábí's argument.",
+    "importance": 9,
+    "importance_reason": "One-mention opposing cleric used to illustrate a disputation."
+  },
+  {
+    "name": "Mullá Ja‘far-i-Va‘íẓ-i-Qazvíní",
+    "common_name": "Mullá Ja‘far-i-Va‘íẓ-i-Qazvíní",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Qazvíní cited as a source reporting Mullá Ḥusayn's meeting with Ṭáhirih.",
+    "importance": 9,
+    "importance_reason": "One-mention figure cited as a narrative source."
+  },
+  {
+    "name": "Mullá Karbilá’í ‘Alí-i-Míyámay’í",
+    "common_name": "Mullá Karbilá’í ‘Alí-i-Míyámay’í",
+    "aliases": ["Mullá Karbilá’í ‘Alí (martyr of Míyámay)"],
+    "native_script": [],
+    "summary": "A Bábí of the village of Míyámay, martyred for the Faith.",
+    "importance": 7,
+    "importance_reason": "One-mention entry in the Míyámay martyr roster."
+  },
+  {
+    "name": "Mullá Káẓim-i-Iṣfahání",
+    "common_name": "Mullá Káẓim-i-Iṣfahání",
+    "aliases": ["Mullá Káẓim"],
+    "native_script": ["ملا کاظم"],
+    "summary": "A believer of Iṣfahán beheaded by order of Shaykh Muḥammad-Báqir, his corpse trampled by a horse and then burned.",
+    "importance": 12,
+    "importance_reason": "One-mention Iṣfahán martyr remembered for the brutality of his death."
+  },
+  {
+    "name": "Mullá Mardán-‘Alí-i-Míyámay’í",
+    "common_name": "Mullá Mardán-‘Alí-i-Míyámay’í",
+    "aliases": ["Mullá Mardán-‘Alí (of Míyámay)"],
+    "native_script": [],
+    "summary": "A noted Khurásání companion of Míyámay who, with thirty-three others, enlisted under Mullá Ḥusayn's banner as he passed through the village.",
+    "importance": 14,
+    "importance_reason": "One-mention believer tied to the memorable Míyámay enlistment under Mullá Ḥusayn."
+  },
+  {
+    "name": "Mullá Maḥmúd-i-Ḵhu’í",
+    "common_name": "Mullá Maḥmúd-i-Ḵhu’í",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An early believer named in a roster of companions.",
+    "importance": 9,
+    "importance_reason": "Bare twice-mentioned roster name with no detail."
+  },
+  {
+    "name": "Mullá Mihdí",
+    "common_name": "Mullá Mihdí",
+    "aliases": [],
+    "native_script": ["ملا مهدی"],
+    "summary": "An eighty-five-year-old believer beheaded near the Telegraph Office and dragged through Yazd during the 1891 persecution.",
+    "importance": 14,
+    "importance_reason": "One-mention Yazd martyr remembered for his age and brutal death."
+  },
+  {
+    "name": "Mullá Mihdíy-i-Khúy, Sayyáḥ",
+    "common_name": "Sayyáḥ",
+    "aliases": ["Sayyáḥ", "Mullá Ádí-Guzal", "Mullá Mihdíy-i-Khúy"],
+    "native_script": ["سیّاح"],
+    "summary": "A disciple known as Sayyáḥ ('the Traveller'), used as a trusted courier between the Báb and the believers and given a verbal assurance by the Báb.",
+    "importance": 32,
+    "importance_reason": "Recurring (12×) trusted messenger of the Báb with a known epithet, though a supporting rather than central figure."
+  },
+  {
+    "name": "Mullá Mihdíy-i-Ḵhú’í",
+    "common_name": "Mullá Mihdíy-i-Ḵhú’í",
+    "aliases": ["Mullá Mihdí (martyr of Ḵhuy)"],
+    "native_script": [],
+    "summary": "A distinguished divine and esteemed disciple of Siyyid Káẓim, noted for learning, eloquence and steadfast faith.",
+    "importance": 14,
+    "importance_reason": "Twice-mentioned learned disciple of Siyyid Káẓim with a brief characterisation; distinct from Sayyáḥ (Mullá Mihdíy-i-Khúy) — possible confusion to watch."
+  },
+  {
+    "name": "Mullá Murtaḍá-Qulí",
+    "common_name": "Mullá Murtaḍá-Qulí",
+    "aliases": [],
+    "native_script": ["ملا مرتضی‌قلی"],
+    "summary": "A Tabríz mujtahid who, with another, refused even to meet the Báb face to face when He was led to his house before His examination.",
+    "importance": 26,
+    "importance_reason": "Named Tabríz cleric (4×) connected to the Báb's final examination, but a peripheral antagonist."
+  },
+  {
+    "name": "Mullá Muḥammad",
+    "common_name": "Mullá Muḥammad (mujtahid of Núr)",
+    "aliases": ["the mujtahid of Núr", "Mullá Muḥammad of Núr"],
+    "native_script": ["ملا محمد"],
+    "summary": "The illustrious mujtahid of Núr whom Bahá'u'lláh challenged in a memorable interview, winning over the mujtahid's own representatives and securing the loyalty of many in Núr to the new Faith.",
+    "importance": 30,
+    "importance_reason": "Recurring (8×) cleric who is the foil of a celebrated early teaching episode by Bahá'u'lláh in Núr.",
+    "characterizations": [
+      "GPB: the illustrious mujtahid, Mullá Muḥammad [of Núr]; [Bahá'u'lláh] succeeded in challenging, in the course of a memorable interview, the mujtahid himself."
+    ]
+  },
+  {
+    "name": "Mullá Muḥammad (second martyr of Míyámay, idx 810)",
+    "common_name": "Mullá Muḥammad (second martyr of Míyámay)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí of the village of Míyámay, martyred for the Faith.",
+    "importance": 7,
+    "importance_reason": "One-mention entry in the Míyámay martyr roster."
+  },
+  {
+    "name": "Mullá Muḥammad ibn Mullá Muḥammad (martyr of Míyámay)",
+    "common_name": "Mullá Muḥammad ibn Mullá Muḥammad (martyr of Míyámay)",
+    "aliases": ["Mullá Muḥammad-ibn-i-Mullá Muḥammad"],
+    "native_script": [],
+    "summary": "A Bábí of the village of Míyámay, martyred for the Faith.",
+    "importance": 7,
+    "importance_reason": "One-mention entry in the Míyámay martyr roster."
+  },
+  {
+    "name": "Mullá Muḥammad, son of Mullá Taqí",
+    "common_name": "Mullá Muḥammad, son of Mullá Taqí",
+    "aliases": ["Mullá Muḥammad, son of Mullá Taqí, S̱hahíd-i-Ṯháliṯh", "Muḥammad-i-Qazvíní, the Imám-Jum‘ih", "Mullá Muḥammad, Imám-Jum‘ih of Qazvín", "the third martyr"],
+    "native_script": [],
+    "summary": "Cousin and husband of Ṭáhirih, a haughty Qazvíní mujtahid (later styled Shahíd-i-Ṯháliṯh, 'the Third Martyr' by the Shí‘ihs) whose conflict with her marked her break with her family.",
+    "importance": 34,
+    "importance_reason": "Husband and antagonist of Ṭáhirih central to her rupture with family, though not a believer himself (5×)."
+  },
+  {
+    "name": "Mullá Muḥammad, son of Mullá Zaynu’l-‘Ábidín (martyr of Míyámay)",
+    "common_name": "Mullá Muḥammad, son of Mullá Zaynu’l-‘Ábidín (martyr of Míyámay)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí of the village of Míyámay, martyred for the Faith.",
+    "importance": 7,
+    "importance_reason": "One-mention entry in the Míyámay martyr roster."
+  },
+  {
+    "name": "Mullá Muḥammad-Báqir-i-Míyámay’í",
+    "common_name": "Mullá Muḥammad-Báqir-i-Míyámay’í",
+    "aliases": ["Mullá Muḥammad-Báqir (martyr of Míyámay)"],
+    "native_script": [],
+    "summary": "A Bábí of the village of Míyámay, martyred for the Faith.",
+    "importance": 7,
+    "importance_reason": "One-mention entry in the Míyámay martyr roster."
+  },
+  {
+    "name": "Mullá Muḥammad-Ja‘far-i-Míyámay’í",
+    "common_name": "Mullá Muḥammad-Ja‘far-i-Míyámay’í",
+    "aliases": ["Mullá Muḥammad-Ja‘far (martyr of Míyámay)"],
+    "native_script": [],
+    "summary": "A Bábí of the village of Míyámay, martyred for the Faith.",
+    "importance": 7,
+    "importance_reason": "One-mention entry in the Míyámay martyr roster."
+  },
+  {
+    "name": "Mullá Muḥammad-Ján-i-Mázindarání",
+    "common_name": "Mullá Muḥammad-Ján-i-Mázindarání",
+    "aliases": ["Mullá Muḥammad-Ján (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A Bábí of Mázindarán, martyred for the Faith; brother of Masíḥ.",
+    "importance": 9,
+    "importance_reason": "One/twice-mentioned Mázindarán martyr with no extended story."
+  },
+  {
+    "name": "Mullá Muḥammad-Mihdí-i-Míyámay’í",
+    "common_name": "Mullá Muḥammad-Mihdí-i-Míyámay’í",
+    "aliases": ["Mullá Muḥammad-Mihdí (martyr of Míyámay)"],
+    "native_script": [],
+    "summary": "A Bábí of the village of Míyámay, martyred for the Faith.",
+    "importance": 7,
+    "importance_reason": "One-mention entry in the Míyámay martyr roster."
+  },
+  {
+    "name": "Mullá Muḥammad-Mihdíy-i-Kandí",
+    "common_name": "Mullá Muḥammad-Mihdíy-i-Kandí",
+    "aliases": ["Mullá Mihdíy-i-Kandí"],
+    "native_script": ["ملا محمد مهدی کندی"],
+    "summary": "Bábí entrusted by Bahá'u'lláh with the written message delivered to the Báb near Kulayn, which lifted the Báb's spirits on His way to Máh-Kú.",
+    "importance": 26,
+    "importance_reason": "Recurring (9×) courier tied to a significant episode (the Kulayn message), though a supporting figure."
+  },
+  {
+    "name": "Mullá Muḥammad-Músá the fuller",
+    "common_name": "Mullá Muḥammad-Músá the fuller",
+    "aliases": ["Mullá Muḥammad-Músá, a fuller"],
+    "native_script": [],
+    "summary": "An aged Nayrízí believer, a fuller too feeble to fight, who was murdered with the dyer Mas̱hhadí Báqir.",
+    "importance": 10,
+    "importance_reason": "One-mention Nayríz martyr remembered by trade and the poignancy of his killing."
+  },
+  {
+    "name": "Mullá Muḥammad-Riḍá, brother of ‘Abdu’ṣ-Ṣáliḥ",
+    "common_name": "Mullá Muḥammad-Riḍá, brother of ‘Abdu’ṣ-Ṣáliḥ",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Brother of ‘Abdu'ṣ-Ṣáliḥ, the gardener of the Riḍván at ‘Akká.",
+    "importance": 7,
+    "importance_reason": "One-mention name identified only through his more notable brother."
+  },
+  {
+    "name": "Mullá Muḥammad-Riḍá-i-Míyámay’í",
+    "common_name": "Mullá Muḥammad-Riḍá-i-Míyámay’í",
+    "aliases": ["Mullá Muḥammad-Riḍá (martyr of Míyámay)"],
+    "native_script": [],
+    "summary": "A Bábí of the village of Míyámay, martyred for the Faith.",
+    "importance": 7,
+    "importance_reason": "One-mention entry in the Míyámay martyr roster."
+  },
+  {
+    "name": "Mullá Muḥammad-Riḍáy-i-Mans̱hádí, Raḍa’r-Rúḥ",
+    "common_name": "Raḍa’r-Rúḥ",
+    "aliases": ["Raḍa’r-Rúḥ", "Mullá Muḥammad-Riḍáy-i-Mans̱hádí"],
+    "native_script": [],
+    "summary": "One of the most enlightened ‘ulamás of Manshád who discarded his turban to serve as doorkeeper, and whom Bahá'u'lláh named Raḍa'r-Rúḥ.",
+    "importance": 18,
+    "importance_reason": "Twice-mentioned learned believer given a title by Bahá'u'lláh, but without sustained narrative."
+  },
+  {
+    "name": "Mullá Muḥammad-Sa‘íd-i-Bárfurús̱hí, Sa‘ídu’l-‘Ulamá",
+    "common_name": "Sa‘ídu'l-‘Ulamá",
+    "aliases": ["Sa‘ídu'l-‘Ulamá", "the mujtahid of Bárfurúsh", "the arch-villain of Bárfurúsh", "Mullá Muḥammad-Sa‘íd-i-Bárfurús̱hí"],
+    "native_script": ["سعیدالعلماء"],
+    "summary": "The fanatical mujtahid of Bárfurúsh whose unrelenting hostility incited the assaults on the Bábís at Shaykh Ṭabarsí; one of the chief clerical antagonists of the Bábí period.",
+    "importance": 58,
+    "importance_reason": "Principal clerical instigator of the Shaykh Ṭabarsí persecution; heavily attested (30×) as a central antagonist.",
+    "characterizations": [
+      "GPB: that arch-villain, the hysterical, the cruel and overbearing Sa'ídu'l-'Ulamá, who ... flung ... his turban to the ground, tore open the neck of his shirt ... implored his congregation to fly to arms.",
+      "GPB: The Sa‘ídu'l-‘Ulamá, the fanatical, the ferocious and shameless mujtahid of Bárfurúsh, whose unquenchable hostility had heaped such insults upon [the Bábís]."
+    ]
+  },
+  {
+    "name": "Mullá Muḥammad-Taqí of Núr",
+    "common_name": "Mullá Muḥammad-Taqí of Núr",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A learned man of Núr whose kindred put questions on divination and astrology to Quddús in writing.",
+    "importance": 8,
+    "importance_reason": "One-mention contextual figure named only via his relatives' inquiry."
+  },
+  {
+    "name": "Mullá Muḥammad-Taqí, brother of ‘Abdu’ṣ-Ṣáliḥ",
+    "common_name": "Mullá Muḥammad-Taqí, brother of ‘Abdu’ṣ-Ṣáliḥ",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Brother of ‘Abdu'ṣ-Ṣáliḥ, the gardener of the Riḍván at ‘Akká.",
+    "importance": 7,
+    "importance_reason": "One/twice-mentioned name identified only through his more notable brother."
+  },
+  {
+    "name": "Mullá Muḥammad-Taqíy-i-Harátí",
+    "common_name": "Mullá Muḥammad-Taqíy-i-Harátí",
+    "aliases": ["Mullá Muḥammad-Taqíy-i-Haraví"],
+    "native_script": ["ملا محمد تقی هراتی"],
+    "summary": "A believer who rendered the Báb's Risáliy-i-Furú‘-i-‘Adlíyyih into Persian.",
+    "importance": 20,
+    "importance_reason": "Recurring (7×) believer notable specifically for translating one of the Báb's works into Persian."
+  }
+]

@@ -31,11 +31,16 @@ const pnum = (pid) => +String(pid).replace(/\D/g, '');
 const meta = (await queryAll(`SELECT title, author, religion, collection, year, description FROM docs WHERE id=?`, [DOC]))[0] || {};
 const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, meta.collection].filter(Boolean).join(' / '), meta.year ? `Year ${meta.year}` : '', meta.description ? `About: ${String(meta.description).slice(0, 240)}` : ''].filter(Boolean).join('\n');
 
-const SYS = `You build a ROLLING DISAMBIGUATION INDEX for a historical narrative, one paragraph at a time. You are given the BOOK metadata, the current SCENE (chapter/section heading — your anchor for place and period), and the SUMMARIES of all preceding paragraphs in this chapter (the established context). For the CURRENT paragraph, write a compact standalone summary that RESOLVES every reference using that context — the narrative drops a person's nisba/full name once a scene has introduced them, so you MUST carry it forward.
-Rules: (1) Resolve every bare name, title, epithet and pronoun to the FULL canonical name already established in the prior summaries, scene, or metadata (e.g. bare "Mírzá Aḥmad" → "Mírzá Aḥmad-i-Azghandí"). (2) State the PLACE and PERIOD in force — inherit from the SCENE heading and prior context when the paragraph doesn't restate them; the chapter title usually fixes the era/locale. (3) Use ONLY the book text, scene, and prior summaries — NO outside knowledge. (4) If a referent is genuinely NEW (not in prior context), keep the name as written and mark it (new).
-Output EXACTLY two lines:
-CAST: <bare/short>=<full canonical> ; <...> | PLACE: <place> | PERIOD: <period/date>
-GLOSS: <1-2 sentences: what this paragraph asserts, every reference resolved to full names>
+const SYS = `You build a ROLLING DISAMBIGUATION INDEX for a historical narrative, one paragraph at a time. Given the BOOK metadata, the current SCENE (chapter/section heading = your place/period anchor), and the headers of all preceding paragraphs this chapter (established context), write ONE compact header that makes the CURRENT paragraph standalone. The narrative drops a person's titles/nisba once a scene has introduced them, so you MUST carry identity forward.
+Resolve every reference THAT APPEARS in the current paragraph — names, titles, epithets, pronouns, and definite-noun bridges ("the fort"→Ṭabarsí) — to the person/place's MOST-USED canonical handle. Rules:
+• KEEP honorifics/titles (Mírzá, Mullá, Siyyid, Ḥájí, Karbilá'í, Mashhadí, Ustád, Áqá) — they discriminate when nisbas match or are absent, and are sometimes the ENTIRE handle (Karbilá'í-‘Alí). NEVER strip titles. Use the short conventional handle when one exists (Quddús, Vaḥíd, the Báb), else the title-bearing form (Mullá Ḥusayn).
+• A bare, heavily title-dropped name resolves by COMMON REFERENCE to the most-prominent bearer established in context (heavy ellipsis = a very familiar figure). One person may carry two names (e.g. bare "Mírzá Aḥmad" in the Bábí-scribe context ≡ "Mullá ‘Abdu'l-Karím-i-Qazvíní") — resolve variants to the SAME canonical.
+• Pronouns inside quoted/reported speech (I, We, My, Our) refer to the SPEAKER, not the narrator (e.g. Bahá'u'lláh relating His own history: "We" = Bahá'u'lláh).
+• Central figures (the Báb, Bahá'u'lláh, ‘Abdu'l-Bahá, Quddús) use their fixed short handle; don't expand.
+• PLACE and PERIOD: inherit from the SCENE and prior context; PERIOD is when the events occurred (a flashback keeps its own time).
+• Use ONLY the book text, scene, and prior context — NO outside knowledge. If a reference cannot be resolved from context, write surface→? — do NOT guess.
+Output EXACTLY ONE terse line (it is prepended to every paragraph):
+CTX: @<place> ~<period> | <surface→canonical ; only mentions present, honorifics kept> | <≤12-word resolved event>
 
 BOOK:
 ${bookMeta}`;
@@ -70,11 +75,10 @@ for (const [si, seg] of segs.entries()) {
     const priorBlock = (carried ? `ENTERING — carried context: ${carried}\n` : '') + summaries.map((s) => s.line).join('\n');
     const user = `SCENE: ${sceneLine || '(none)'}\n\nESTABLISHED CONTEXT (prior paragraph summaries this chapter):\n${priorBlock || '(none — first paragraph)'}\n\nCURRENT PARAGRAPH [${p.pid}]:\n${p.text}`;
     let out = '';
-    try { const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 320 }); out = (res.content || '').trim(); }
+    try { const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 220 }); out = (res.content || '').trim().replace(/^CTX:\s*/i, ''); }
     catch (e) { console.error(`  [${p.pid}] FAIL ${String(e.message).slice(0, 50)}`); continue; }
-    const castLine = (out.match(/CAST:.*/i) || [''])[0];
     summaries.push({ pid: p.pid, line: `[${p.pid}] ${out.replace(/\n/g, ' ')}` });
-    carried = castLine.replace(/^CAST:\s*/i, '').slice(0, 400);
+    carried = out.split('|').slice(0, 2).join('|').slice(0, 300);  // @place ~period + resolutions become the entering digest
     done++;
     if (!WRITE) console.log(`\n${p.pid} (${sceneLine}):\n${out}`);
     else { await content.updateContextOnly(p.id, out, 'deepseek-disambig-v1'); if (done % 25 === 0) console.error(`  wrote ${done}`); }

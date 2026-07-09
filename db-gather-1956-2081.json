@@ -1,0 +1,1334 @@
+[
+  {
+    "canonical_name": "Siyyid ‘Alí-Muḥammad, the Báb",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1956, 1973, 2024, 2035, 2042, 2046, 2055, 2067, 2073, 2075, 2077, 2078, 2079]
+  },
+  {
+    "canonical_name": "Mírzá Ḥusayn-‘Alíy-i-Núrí, Bahá'u'lláh",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2038, 2042, 2043, 2057, 2066, 2072, 2073, 2076, 2079]
+  },
+  {
+    "canonical_name": "‘Abbás Effendi, ‘Abdu’l-Bahá",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2021, 2043, 2050, 2069]
+  },
+  {
+    "canonical_name": "Fáṭimih Baraghání, Ṭáhirih",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2057, 2058, 2059, 2061, 2066]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-‘Alíy-i-Zanjání, Ḥujjat",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1963, 1965, 1968, 1970, 1971, 1974, 1976, 1977, 1982, 1984, 1986, 2014]
+  },
+  {
+    "canonical_name": "Náṣiri’d-Dín Sháh Qájár",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1959, 1970, 1975, 1982, 2034, 2035, 2039, 2042, 2046, 2055, 2067]
+  },
+  {
+    "canonical_name": "Muḥammad Sháh Qájár",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1975]
+  },
+  {
+    "canonical_name": "Mírzá Taqí Khán-i-Farahání, Amír-Niẓám",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1959, 1960, 1986, 2014, 2029, 2030]
+  },
+  {
+    "canonical_name": "Mírzá Áqá Khán-i-Núrí, the I‘timádu’d-Dawlih (Grand Vizir)",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1960, 2045, 2046, 2057]
+  },
+  {
+    "canonical_name": "Ḥájí Sulaymán Khán-i-Tabrízí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2046, 2047, 2048, 2055]
+  },
+  {
+    "canonical_name": "Mullá S̱hayḵh ‘Alíy-i-Turs̱hízí, ‘Aẓím",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "'Azíz Khán-i-Mukrí, Sardár-i-Kull",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1996, 2018]
+  },
+  {
+    "canonical_name": "Ardishír Mírzá",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2034, 2039, 2044]
+  },
+  {
+    "canonical_name": "Mírzá Músá",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2070]
+  },
+  {
+    "canonical_name": "Mírzá Abu’l-Faḍl-i-Gulpáygání",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2071]
+  },
+  {
+    "canonical_name": "Maḥmúd Khán-i-Kalantar",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2058, 2059]
+  },
+  {
+    "canonical_name": "'Alí ibn Abí Ṭálib",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2053]
+  },
+  {
+    "canonical_name": "Imám Ḥusayn ibn 'Alí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2041]
+  },
+  {
+    "canonical_name": "Shaykh Muḥyi’d-Dín Ibn al-‘Arabí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2071]
+  },
+  {
+    "canonical_name": "Joseph Arthur, Comte de Gobineau",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1956, 1960, 1963, 1976, 1985, 1987, 1988, 1996, 1998, 2011, 2012, 2014, 2034, 2039, 2044, 2046, 2066, 2077, 2078, 2079]
+  },
+  {
+    "canonical_name": "Edward Granville Browne",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2006, 2039, 2046, 2064, 2073, 2077, 2079]
+  },
+  {
+    "canonical_name": "George Nathaniel Curzon, 1st Marquess Curzon of Kedleston",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1957, 1959, 2029, 2035, 2042, 2045, 2056, 2066, 2077, 2079]
+  },
+  {
+    "canonical_name": "Joseph Ernest Renan",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2039]
+  },
+  {
+    "canonical_name": "Thomas Kelly Cheyne",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2066, 2074]
+  },
+  {
+    "canonical_name": "Sir Ignatius Valentine Chirol",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2066]
+  },
+  {
+    "canonical_name": "James Darmesteter",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2077]
+  },
+  {
+    "canonical_name": "Joseph Estlin Carpenter",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2079]
+  },
+  {
+    "canonical_name": "John Ebenezer Esslemont",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2043]
+  },
+  {
+    "canonical_name": "Prince Dimitri Ivanovich Dolgorukov",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2037]
+  },
+  {
+    "canonical_name": "A. L. M. Nicolas",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(A. L. M. Nicolas' \"Siyyid ‘Alí-Muḥammad dit le Báb,\" p. 332.)"
+    ],
+    "mention_idxs": [1965, 1966, 1970, 1975, 1976, 1980, 1983, 2007, 2017, 2018, 2057, 2058, 2061, 2067]
+  },
+  {
+    "canonical_name": "Sir Francis Younghusband",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Sir Francis Younghusband's \"The Gleam,\" pp. 202-3.)"
+    ],
+    "mention_idxs": [2066, 2075]
+  },
+  {
+    "canonical_name": "Mary Leonora Woulfe Sheil, Lady Sheil",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Lady Sheil's \"Glimpses of Life and Manners in Persia,\" pp. 251-2.)"
+    ],
+    "mention_idxs": [2029, 2030, 2046]
+  },
+  {
+    "canonical_name": "M. H. Phelps",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(M. H. Phelps' \"Life and Teachings of ‘Abbás Effendi,\" introduction, p. 36.)"
+    ],
+    "mention_idxs": [2039, 2079]
+  },
+  {
+    "canonical_name": "Percy Molesworth Sykes",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(P. M. Sykes' \"A History of Persia,\" vol. 2, p. 25.)"
+    ],
+    "mention_idxs": [2081]
+  },
+  {
+    "canonical_name": "M. J. Balteau",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(M. J. Balteau's \"Le Bábisme,\" p. 28.)"
+    ],
+    "mention_idxs": [2079]
+  },
+  {
+    "canonical_name": "Dr. Polak",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "the late Dr. Polak, an Austrian doctor, who was a physician to Náṣiri'd-Dín S̱háh at the beginning of his reign, and who is the author of a valuable book and several smaller treatises on Persia"
+    ],
+    "mention_idxs": [2039]
+  },
+  {
+    "canonical_name": "Captain von Goumoens",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "a letter written on August 29, 1852, by an Austrian officer, Captain von Goumoens, who was in the S̱háh's service, but who was so disgusted, and horrified at the cruelties he was compelled to witness that he sent in his resignation."
+    ],
+    "mention_idxs": [2039]
+  },
+  {
+    "canonical_name": "Dr. Cloquet",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Doctor Cloquet, the court physician, had the king brought quickly into the garden of Muḥammad-Ḥasan",
+      "the S̱háh's admirable French physician, the late lamented Dr. Cloquet"
+    ],
+    "mention_idxs": [2034, 2046]
+  },
+  {
+    "canonical_name": "Henry Martyn",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "since the day when Henry Martyn set foot in S̱híráz up till the present moment, half a dozen Persian Muḥammadans have genuinely embraced the Christian creed."
+    ],
+    "mention_idxs": [2077]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-‘Alíy-i-Zanjání, Áḵhúnd Mullá ‘Abdu’r-Raḥím",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Among the 'Ulamás of the city was a man called Áḵhúnd Mullá ‘Abdu’r-Raḥím renowned for his piety. He had a son who lived in Najaf and at Karbilá",
+      "father of Ḥujjat"
+    ],
+    "mention_idxs": [1965]
+  },
+  {
+    "canonical_name": "S̱harífu’l-‘Ulamáy-i-Mázindarání",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Dignified with the title of S̱harífu’l-‘Ulamá’... he attended the lectures of the celebrated S̱harífu’l-‘Ulamáy-i-Mázindarání",
+      "a celebrated master under whom Ḥujjat studied at Karbilá"
+    ],
+    "mention_idxs": [1963, 1965]
+  },
+  {
+    "canonical_name": "Mullá Dúst-Muḥammad",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "a certain Mullá Dúst-Muḥammad who made his residence there, would bless the transitory union between the male visitors to the place and the inmates."
+    ],
+    "mention_idxs": [1968]
+  },
+  {
+    "canonical_name": "Amír Arslán Khán Majdu’d-Dawlih",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "appointed as governor of Zanján, one of his uncles, Amír Arslán Ḵhán Majdu’d-Dawlih, who was Is̱híq Ág̱hásí of the palace.",
+      "Majdu’d-Dawlih, governor of the city, a cruel, heartless and severe man"
+    ],
+    "mention_idxs": [1975, 1977, 2014]
+  },
+  {
+    "canonical_name": "Muḥammad Big",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "ordered that Muḥammad Big be whipped and that the tongue of Karbilá’í Valí be cut out."
+    ],
+    "mention_idxs": [1977]
+  },
+  {
+    "canonical_name": "Karbilá’í Valí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "ordered that Muḥammad Big be whipped and that the tongue of Karbilá’í Valí be cut out."
+    ],
+    "mention_idxs": [1977]
+  },
+  {
+    "canonical_name": "Mír Ṣaláḥ",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "the wounded man was cared for the aunt of Mír Ṣaláḥ in her own house."
+    ],
+    "mention_idxs": [1980]
+  },
+  {
+    "canonical_name": "Siyyid ‘Alí Khán, Lieutenant-Colonel of Fírúz-Kúh",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Siyyid ‘Alí Ḵhán Lieutenant-Colonel of Fírúz-Kúh received the royal command to proceed with a numerous body of horse and foot to Zanján",
+      "Siyyid ‘Alí Ḵhán laid siege to the citadel"
+    ],
+    "mention_idxs": [1986, 1988]
+  },
+  {
+    "canonical_name": "Ja‘far-Qulí Khán",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "The government wished to send Ja‘far-Qulí Ḵhán, Lieutenant-Colonel, the brother of I‘timádu’d-Dawlih, but he excused himself"
+    ],
+    "mention_idxs": [1986]
+  },
+  {
+    "canonical_name": "Mír Siyyid Ḥusayn Khán of Fírúz-Kúh",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Mír Siyyid Ḥusayn Ḵhán of Fírúz-Kúh, whom Mírzá Taqí Ḵhán the Amír dismissed and disgraced as soon as he became acquainted with his sentiments."
+    ],
+    "mention_idxs": [1986]
+  },
+  {
+    "canonical_name": "Ḥájí Muḥammad Ḥusayn Khán-i-Iṣfahání",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "he was the grandson of Ḥájí Muḥammad Ḥusayn Ḵhán-i-Iṣfahání."
+    ],
+    "mention_idxs": [1987, 1988]
+  },
+  {
+    "canonical_name": "Ṣadru’d-Dawlih",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Ṣadru’d-Dawlih, grandson of Ḥájí Muḥammad-Ḥusayn Ḵhán of Iṣfahán, enter their section of the city coming from Sulṭáníyyih, at the head of the tribe of Ḵhamsih."
+    ],
+    "mention_idxs": [1988]
+  },
+  {
+    "canonical_name": "S̱háhbár Khán",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Siyyid ‘Alí Ḵhán and S̱háhbár Ḵhán, one from Fírúz-Kúh, the other from Marág̱hih, with two hundred horsemen"
+    ],
+    "mention_idxs": [1988]
+  },
+  {
+    "canonical_name": "Muḥammad-‘Alí Khán-i-S̱háh-Sún",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Muḥammad-‘Alí Ḵhán-i-S̱háh-Sún with two hundred mounted afs̱hars"
+    ],
+    "mention_idxs": [1988]
+  },
+  {
+    "canonical_name": "Muṣṭafá Khán, Qájár",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Muṣṭafá Ḵhán, Qájár, with the fifteenth regiment of S̱higág̱hí"
+    ],
+    "mention_idxs": [1988]
+  },
+  {
+    "canonical_name": "Muḥammad Áqá, colonel of the royal regiment of Náṣir",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Muḥammad Áqá, colonel, with the regiment of Náṣir called the royal regiment"
+    ],
+    "mention_idxs": [1988]
+  },
+  {
+    "canonical_name": "Major Nabí Big",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Major Nabí Big with his cavalry and a troop made up of loyal citizens of Zanján"
+    ],
+    "mention_idxs": [1988]
+  },
+  {
+    "canonical_name": "Núr-‘Alí the hunter",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "They saw their best leaders fall... Núr-‘Alí the hunter; Bakhsh-‘Alí the carpenter; Ḵhudádád and Fatḥu’lláh Big, all indispensable to the attainment of victory."
+    ],
+    "mention_idxs": [1988]
+  },
+  {
+    "canonical_name": "Bakhsh-‘Alí the carpenter",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Núr-‘Alí the hunter; Bakhsh-‘Alí the carpenter; Ḵhudádád and Fatḥu’lláh Big, all indispensable to the attainment of victory."
+    ],
+    "mention_idxs": [1988]
+  },
+  {
+    "canonical_name": "Ḵhudádád",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Núr-‘Alí the hunter; Bakhsh-‘Alí the carpenter; Ḵhudádád and Fatḥu’lláh Big, all indispensable to the attainment of victory."
+    ],
+    "mention_idxs": [1988]
+  },
+  {
+    "canonical_name": "Fatḥu’lláh Big",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Núr-‘Alí the hunter; Bakhsh-‘Alí the carpenter; Ḵhudádád and Fatḥu’lláh Big, all indispensable to the attainment of victory."
+    ],
+    "mention_idxs": [1988]
+  },
+  {
+    "canonical_name": "Muḥammad Khán, Biglíyirbigí, Amír-Túmán",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Muḥammad Ḵhán, then Biglíyirbigí and Mír-panj, or general of the division, today become Amír-Túmán, joined the troops already engaged in this city; he brought them three thousand men",
+      "Then Muḥammad Ḵhán Biglíyirbigí, Amír Arslán Ḵhán and the other commanders, although they had guaranteed on their honor to spare the lives of the Bábís"
+    ],
+    "mention_idxs": [1998, 2014, 2017]
+  },
+  {
+    "canonical_name": "Qásim Khán",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Qásim Ḵhán arrived from the frontier of Karabág̱h, entering Zanján from another quarter"
+    ],
+    "mention_idxs": [1998]
+  },
+  {
+    "canonical_name": "Arslán Khán, major",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "the major Arslán Ḵhán with cavalry from Ḵhirg̱hán"
+    ],
+    "mention_idxs": [1998]
+  },
+  {
+    "canonical_name": "‘Alí-Akbar, captain of Ḵhuy",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "‘Alí-Akbar, captain of Ḵhuy, arrived with infantry."
+    ],
+    "mention_idxs": [1998]
+  },
+  {
+    "canonical_name": "Ḥasan-‘Alí Khán",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "The regiment of Karrus under the command of the chief of the tribe, Ḥasan-‘Alí Ḵhán (today minister to Paris), took the fort of ‘Alí-Mardán Ḵhán"
+    ],
+    "mention_idxs": [2012]
+  },
+  {
+    "canonical_name": "Áqá ‘Azíz",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "the fourth regiment broke into the house of Áqá ‘Azíz, one of the strongholds of the city, and burnt it to the ground"
+    ],
+    "mention_idxs": [2012]
+  },
+  {
+    "canonical_name": "‘Alí-Mardán Khán",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "In the midst of these rose a formidable citadel called 'House of ‘Alí-Mardán Ḵhán.'"
+    ],
+    "mention_idxs": [1985, 2012]
+  },
+  {
+    "canonical_name": "Mírzá Riḍá, lieutenant of Mullá Muḥammad-‘Alí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "it happened precisely... as the martyrs of Zanján, Mírzá Riḍá, Ḥájí Muḥammad-‘Alí and Ḥájí Muḥsin had announced.",
+      "They set aside Mírzá Riḍá, lieutenant of Mullá Muḥammad-‘Alí... Mírzá Riḍá, Ḥájí Muḥammad-‘Alí and Ḥájí Muḥsin were condemned to have their veins slashed open."
+    ],
+    "mention_idxs": [1960, 2014, 2017]
+  },
+  {
+    "canonical_name": "Ḥájí Muḥammad-‘Alí, martyr of Zanján",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "the martyrs of Zanján, Mírzá Riḍá, Ḥájí Muḥammad-‘Alí and Ḥájí Muḥsin had announced.",
+      "Mírzá Riḍá, Ḥájí Muḥammad-‘Alí and Ḥájí Muḥsin were condemned to have their veins slashed open."
+    ],
+    "mention_idxs": [1960, 2014, 2017]
+  },
+  {
+    "canonical_name": "Ḥájí Muḥsin, the surgeon, martyr of Zanján",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "the martyrs of Zanján, Mírzá Riḍá, Ḥájí Muḥammad-‘Alí and Ḥájí Muḥsin had announced.",
+      "the son of Mírzá Riḍá, Ḥájí Muḥammad-‘Alí and Ḥájí Muḥsin the surgeon. These three were put to death after their arrival"
+    ],
+    "mention_idxs": [1960, 2014, 2017]
+  },
+  {
+    "canonical_name": "Sulaymán the shoemaker",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "the leaders of the Bábís, Sulaymán the shoemaker and Ḥájí Káẓim Giltúg̱hí were blown to pieces from the mouths of mortars."
+    ],
+    "mention_idxs": [2014]
+  },
+  {
+    "canonical_name": "Ḥájí Káẓim Giltúg̱hí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Sulaymán the shoemaker and Ḥájí Káẓim Giltúg̱hí were blown to pieces from the mouths of mortars."
+    ],
+    "mention_idxs": [2014]
+  },
+  {
+    "canonical_name": "Valí-Muḥammad",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "a Muḥammadan, named Valí-Muḥammad, came upon the body of one of his neighbours and, noticing that he was not quite dead... he crushed his head with the stone."
+    ],
+    "mention_idxs": [2017]
+  },
+  {
+    "canonical_name": "Áqá Dín-Muḥammad",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "They poured boiling oil upon the head of Áqá Dín-Muḥammad, but he remained silent."
+    ],
+    "mention_idxs": [2018]
+  },
+  {
+    "canonical_name": "Áqá Ḥusayn, son of the deceased chief",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "the Sardár had the son of the deceased chief brought before him. This child was but seven years of age, his name was Áqá Ḥusayn"
+    ],
+    "mention_idxs": [2018]
+  },
+  {
+    "canonical_name": "Siyyid Baṣír",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "From his childhood, Siyyid Baṣír showed signs of the wonderful faculties... For seven years he enjoyed the blessings of sight, but then... a veil of darkness fell on his outward eyes.",
+      "he had much wealth in India... he set out with great pomp and state to perform the pilgrimage"
+    ],
+    "mention_idxs": [2025]
+  },
+  {
+    "canonical_name": "Siyyid Káẓim-i-Rashtí",
+    "entity_type": "person",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [2025]
+  },
+  {
+    "canonical_name": "Asadu’lláh Khán, the grand equerry",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Asadu’lláh Ḵhán, the grand equerry, and one of the nomad riders killed the man on the right with their swords."
+    ],
+    "mention_idxs": [2034]
+  },
+  {
+    "canonical_name": "Ḥusayn-i-Mílán",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The soldiers bayoneted Siyyid Ḥusayn, of Mílán, and sent him to hell."
+    ],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "Siyyid Ḥasan of Ḵhurásán",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The princes slew Siyyid Ḥasan, of Ḵhurásán, a man of noted profligacy, with pistol-shots, swords, and daggers."
+    ],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "Mullá Zaynu’l-‘Ábidín of Yazd",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The Minister of Foreign Affairs... took the first shot at Mullá Zaynu’l-‘Ábidín of Yazd, and the secretaries of his department finished him and cut him in pieces."
+    ],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "Mírzá ‘Abdu’l-Vahháb of S̱híráz",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Mírzá ‘Abdu’l-Vahháb, of S̱híráz, who was one of the twelve assassins, was slain by the brother and the sons of the Prime Minister"
+    ],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "Mullá Fatḥu’lláh of Qum",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Mullá Fatḥu’lláh, of Qum, who fired the shot which wounded the royal person, was killed thus: In the midst of the royal camp candles were placed in the body"
+    ],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "S̱hayḵh ‘Abbás of Ṭihrán",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The nobles of the court sent S̱hayḵh ‘Abbás of Ṭihrán to hell."
+    ],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "Muḥammad-Báqir, one of the twelve",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The S̱háh's personal attendants put to death Muḥammad-Báqir, one of the twelve."
+    ],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "Muḥammad-Taqí of S̱híráz",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The S̱háh's master of the horse and the servants of the stable horse-shod Muḥammad-Taqí of S̱híráz, and then sent him to join his companions."
+    ],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "Muḥammad of Najaf-Ábád",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The masters of the ceremonies and other nobles, with their deputies, slew Muḥammad of Najaf-Ábád with hatchets and maces"
+    ],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "Muḥammad-‘Alí of Najaf-Ábád",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The artillerymen first dug out the eye of Muḥammad-‘Alí of Najaf-Ábád and then blew him away from a mortar."
+    ],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "Mírzá Ráfi‘",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "The cavalry slew Mírzá Ráfi‘."
+    ],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "Ḥájí Yaḥyá Khán of Tabríz",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Ḥájí Sulaymán Ḵhán, son of the late Yaḥyá Ḵhán of Tabríz."
+    ],
+    "mention_idxs": [2046]
+  },
+  {
+    "canonical_name": "Ḥájí Mullá Mírzá Muḥammad Andirmání",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "The premier ordered Ḥájí Mullá Mírzá Muḥammad Andirmání and Ḥájí Mullá ‘Alí Kiní to call on her in order to examine into her belief."
+    ],
+    "mention_idxs": [2057]
+  },
+  {
+    "canonical_name": "Ḥájí Mullá ‘Alí Kiní",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "The premier ordered Ḥájí Mullá Mírzá Muḥammad Andirmání and Ḥájí Mullá ‘Alí Kiní to call on her",
+      "Ḥájí Mullá ‘Alí rose up and led his friend away saying, 'Why prolong our discussion with an infidel?'"
+    ],
+    "mention_idxs": [2057]
+  },
+  {
+    "canonical_name": "Mihr-‘Alí Khán S̱hujá‘u’l-Mulk",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "My maternal grandfather Mihr-‘Alí Ḵhán S̱hujá‘u’l-Mulk... was instructed to take command of the expedition sent for that purpose",
+      "those who stood round him... heard him murmur faintly 'Bábí! Bábí! Bábí!' three times. Then he fell back dead."
+    ],
+    "mention_idxs": [2067]
+  },
+  {
+    "canonical_name": "Mírzá Na‘ím",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "led her to Mírzá Na‘ím, who was then on Mount Bíyábán seated upon a stone in a garden",
+      "My great-uncle Mírzá Na‘ím fell into disgrace with the government and was twice fined ten thousand túmáns"
+    ],
+    "mention_idxs": [2067]
+  },
+  {
+    "canonical_name": "Mullá Muḥammad-Músá the fuller",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "two old men too feeble to fight, Mullá Muḥammad-Músá, a fuller, and Mas̱hhadí Báqir, a dyer. These were murdered."
+    ],
+    "mention_idxs": [2067]
+  },
+  {
+    "canonical_name": "Mas̱hhadí Báqir the dyer",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Mas̱hhadí Báqir was killed by ‘Alí Big, captain of the Nayrízí soldiers, who severed the head from the body of his victim"
+    ],
+    "mention_idxs": [2067]
+  },
+  {
+    "canonical_name": "‘Alí Big, captain of the Nayrízí soldiers",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Mas̱hhadí Báqir was killed by ‘Alí Big, captain of the Nayrízí soldiers, who severed the head from the body of his victim and gave it to a child"
+    ],
+    "mention_idxs": [2067]
+  },
+  {
+    "canonical_name": "Áḵhúnd Mullá ‘Abdu’l-Ḥusayn-i-Nayrízí",
+    "entity_type": "person",
+    "side": "Bábí",
+    "is_new": true,
+    "db_statements": [
+      "Áḵhúnd Mullá ‘Abdu’l-Ḥusayn ordered that the mouth of Mírzá Na‘ím be stuffed with dirt",
+      "The first one to appear was Mullá ‘Abdu’l-Ḥusayn, who was commanded to curse the Báb. He refused and his head rolled on the ground."
+    ],
+    "mention_idxs": [2067]
+  },
+  {
+    "canonical_name": "Jalál the Nayrízí, called Bulbul",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "A Nayrízí called Jalál, whom Na‘ím had nicknamed 'Bulbul,' revealed the names of his fellow-citizens."
+    ],
+    "mention_idxs": [2067]
+  },
+  {
+    "canonical_name": "Mu‘taṣim-Bi’lláh",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "in A.D. 1258, when Húlágú Ḵhán sacked Bag̱hdád and put Mu‘taṣim-Bi’lláh to death."
+    ],
+    "mention_idxs": [2081]
+  },
+  {
+    "canonical_name": "Húlágú Khán",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "in A.D. 1258, when Húlágú Ḵhán sacked Bag̱hdád and put Mu‘taṣim-Bi’lláh to death."
+    ],
+    "mention_idxs": [2081]
+  },
+  {
+    "canonical_name": "Sulṭán Salím the Osmanli",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "in A.D. 1517 Sulṭán Salím, the Osmanli, having conquered the Mameluke dynasty induced the helpless Caliph to transfer to him the title and insignia."
+    ],
+    "mention_idxs": [2081]
+  },
+  {
+    "canonical_name": "Abú-Bakr",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "The Caliphate began with the election of Abú-Bakr in A.D. 632"
+    ],
+    "mention_idxs": [2081]
+  },
+  {
+    "canonical_name": "Imám Músá-Káẓim, the seventh Imám",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "here was interred Imám-Zádih Ḥamzih, the son of the seventh Imám, Músá-Káẓim"
+    ],
+    "mention_idxs": [1957]
+  },
+  {
+    "canonical_name": "Imám-Zádih Ḥamzih",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "here, after the Musulmán conquest, was interred Imám-Zádih Ḥamzih, the son of the seventh Imám, Músá-Káẓim"
+    ],
+    "mention_idxs": [1957]
+  },
+  {
+    "canonical_name": "Abu’l-Qásim ‘Abdu’l-‘Aẓím",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "here, flying from the Ḵhalíf Mutavakkil, came a holy personage named Abu’l-Qásim ‘Abdu’l-‘Aẓím, who lived in concealment at Rayy till his death in about 861 A.D."
+    ],
+    "mention_idxs": [1957]
+  },
+  {
+    "canonical_name": "Mutavakkil, the Khalíf",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "here, flying from the Ḵhalíf Mutavakkil, came a holy personage named Abu’l-Qásim ‘Abdu’l-‘Aẓím"
+    ],
+    "mention_idxs": [1957]
+  },
+  {
+    "canonical_name": "Siyyid ‘Abdu’l-Vahháb-i-S̱ha‘rání",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "an authentic utterance of the Prophet and to which Siyyid ‘Abdu’l-Vahháb-i-S̱ha‘rání refers in his work entitled \"Kitábu’l-Yaváqít-i-va’l-Javáhir\""
+    ],
+    "mention_idxs": [2071]
+  },
+  {
+    "canonical_name": "Mírzá Sa‘íd Khán",
+    "entity_type": "person",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Extract from letter addressed by Mírzá Sa‘íd Ḵhán, ex-foreign minister of Persia; to the Persian ambassador in Constantinople"
+    ],
+    "mention_idxs": [2073]
+  },
+  {
+    "canonical_name": "Násiḵhu’t-Taváríḵh",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "the authors of the Násiḵhu’t-Taváríḵh, of Rawḍatu’ṣ-Ṣafá, of Mir’átu’l-Buldán... all the official historians, relates that after the execution the body of the Báb was thrown in a moat"
+    ],
+    "mention_idxs": [1956, 1976]
+  },
+  {
+    "canonical_name": "Rawḍatu’ṣ-Ṣafá",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "the authors of the Násiḵhu’t-Taváríḵh, of Rawḍatu’ṣ-Ṣafá, of Mir’átu’l-Buldán... all the official historians"
+    ],
+    "mention_idxs": [1956]
+  },
+  {
+    "canonical_name": "Mir’átu’l-Buldán",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "the authors of the Násiḵhu’t-Taváríḵh, of Rawḍatu’ṣ-Ṣafá, of Mir’átu’l-Buldán... all the official historians"
+    ],
+    "mention_idxs": [1956]
+  },
+  {
+    "canonical_name": "Táríḵh-i-Jadíd (The New History)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(The \"Táríḵh-i-Jadíd,\" pp. 138-43.)"
+    ],
+    "mention_idxs": [1986, 2025, 2055, 2067]
+  },
+  {
+    "canonical_name": "Kitáb-i-Majlisí",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "This is the account given by the Persian Kitáb-i-Majlisí, quoting S̱hayḵh Najás̱hí, quoting Barkí."
+    ],
+    "mention_idxs": [1957]
+  },
+  {
+    "canonical_name": "Kitábu’l-Yaváqít-i-va’l-Javáhir",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Siyyid ‘Abdu’l-Vahháb-i-S̱ha‘rání refers in his work entitled \"Kitábu’l-Yaváqít-i-va’l-Javáhir\""
+    ],
+    "mention_idxs": [2071]
+  },
+  {
+    "canonical_name": "al-Káfí",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "This tradition, called Ḥadíṯh-i-Jábir, is also quoted from the \"Káfí,\" one of the principal compilations of s̱hí‘ite traditions, in the \"Íqán.\""
+    ],
+    "mention_idxs": [2067]
+  },
+  {
+    "canonical_name": "Les Religions et les Philosophies dans l’Asie Centrale (by Comte de Gobineau)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Comte de Gobineau's \"Les Religions et les Philosophies dans l'Asie Centrale,\" p. 230.)"
+    ],
+    "mention_idxs": [1960, 1961, 1963, 1976, 1985, 1988, 1989, 1996, 1998, 2011, 2012, 2014, 2034, 2039, 2044, 2066, 2077, 2078, 2079]
+  },
+  {
+    "canonical_name": "Siyyid ‘Alí-Muḥammad dit le Báb (by A. L. M. Nicolas)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(A. L. M. Nicolas' \"Siyyid ‘Alí-Muḥammad dit le Báb,\" p. 332.)"
+    ],
+    "mention_idxs": [1965, 1966, 1970, 1975, 1976, 1980, 1983, 2007, 2017, 2018, 2057, 2058, 2061, 2067]
+  },
+  {
+    "canonical_name": "Persia and the Persian Question (by Lord Curzon)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Lord Curzon's \"Persia and the Persian Question,\" pp. 345-7.)"
+    ],
+    "mention_idxs": [1957, 1959, 2029, 2035, 2042, 2045, 2056, 2077, 2079]
+  },
+  {
+    "canonical_name": "A Year amongst the Persians (by E. G. Browne)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(E. G. Browne's \"A Year amongst the Persians,\" p. 74.)"
+    ],
+    "mention_idxs": [2006, 2046]
+  },
+  {
+    "canonical_name": "Materials for the Study of the Bábí Religion (by E. G. Browne)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(E. G. Browne's \"Materials for the Study of the Bábí Religion,\" pp. 267-71.)"
+    ],
+    "mention_idxs": [2039, 2073]
+  },
+  {
+    "canonical_name": "Glimpses of Life and Manners in Persia (by Lady Sheil)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Lady Sheil's \"Glimpses of Life and Manners in Persia,\" pp. 251-2.)"
+    ],
+    "mention_idxs": [2029, 2030, 2046]
+  },
+  {
+    "canonical_name": "The Gleam (by Sir Francis Younghusband)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Sir Francis Younghusband's \"The Gleam,\" pp. 202-3.)"
+    ],
+    "mention_idxs": [2066, 2075]
+  },
+  {
+    "canonical_name": "The Reconciliation of Races and Religions (by Dr. T. K. Cheyne)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Dr. T. K. Cheyne's \"The Reconciliation of Races and Religions,\" pp. 114, 115.)"
+    ],
+    "mention_idxs": [2066, 2074]
+  },
+  {
+    "canonical_name": "The Middle Eastern Question (by Valentine Chirol)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Valentine Chirol's \"The Middle Eastern Question,\" p. 124.)"
+    ],
+    "mention_idxs": [2066]
+  },
+  {
+    "canonical_name": "Life and Teachings of ‘Abbás Effendi (by M. H. Phelps)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(M. H. Phelps' \"Life and Teachings of ‘Abbás Effendi,\" introduction, p. 36.)"
+    ],
+    "mention_idxs": [2039, 2079]
+  },
+  {
+    "canonical_name": "A History of Persia (by P. M. Sykes)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(P. M. Sykes' \"A History of Persia,\" vol. 2, p. 25.)"
+    ],
+    "mention_idxs": [2081]
+  },
+  {
+    "canonical_name": "Le Bábisme (by M. J. Balteau)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(M. J. Balteau's \"Le Bábisme,\" p. 28.)"
+    ],
+    "mention_idxs": [2079]
+  },
+  {
+    "canonical_name": "Comparative Religion (by Dr. J. Estlin Carpenter)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(\"Comparative Religion,\" pp. 70, 71.)"
+    ],
+    "mention_idxs": [2079]
+  },
+  {
+    "canonical_name": "Persia: A Historical and Literary Sketch (by James Darmesteter)",
+    "entity_type": "work",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "(Extract from \"Persia: A Historical and Literary Sketch,\" translated by G. K. Nariman.)"
+    ],
+    "mention_idxs": [2077]
+  },
+  {
+    "canonical_name": "the Baní-Umayyih (the Umayyad dynasty)",
+    "entity_type": "group",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "He had recourse to the ḥadíṯh and to the Qur’án to show how shameful was such a practice which had originated with the Baní-Umayyih."
+    ],
+    "mention_idxs": [1970]
+  },
+  {
+    "canonical_name": "the House of ‘Abbás (the ‘Abbásid Caliphs)",
+    "entity_type": "group",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "the title of Caliph was perpetuated in Egypt by descendants of the House of ‘Abbás who lived under the protection of its Mameluke rulers"
+    ],
+    "mention_idxs": [2081]
+  },
+  {
+    "canonical_name": "the Mameluke dynasty",
+    "entity_type": "group",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "descendants of the House of ‘Abbás who lived under the protection of its Mameluke rulers, until in A.D. 1517 Sulṭán Salím, the Osmanli, having conquered the Mameluke dynasty"
+    ],
+    "mention_idxs": [2081]
+  },
+  {
+    "canonical_name": "Mount Bíyábán (Nayríz)",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "they respected the women whom they gathered and led to Mount Bíyábán.",
+      "Mírzá Na‘ím, who was then on Mount Bíyábán seated upon a stone in a garden"
+    ],
+    "mention_idxs": [2067]
+  },
+  {
+    "canonical_name": "Sulṭáníyyih",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Ṣadru’d-Dawlih... enter their section of the city coming from Sulṭáníyyih, at the head of the tribe of Ḵhamsih."
+    ],
+    "mention_idxs": [1988]
+  },
+  {
+    "canonical_name": "Tiflís",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "He was passing through Zanján, on his way to Tiflís, to congratulate the grand duke, heir apparent of Russia"
+    ],
+    "mention_idxs": [1996]
+  },
+  {
+    "canonical_name": "Marág̱hih",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Siyyid ‘Alí Ḵhán and S̱háhbár Ḵhán, one from Fírúz-Kúh, the other from Marág̱hih"
+    ],
+    "mention_idxs": [1988]
+  },
+  {
+    "canonical_name": "Khúy",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "‘Alí-Akbar, captain of Ḵhuy, arrived with infantry."
+    ],
+    "mention_idxs": [1998]
+  },
+  {
+    "canonical_name": "Karabág̱h",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Qásim Ḵhán arrived from the frontier of Karabág̱h"
+    ],
+    "mention_idxs": [1998]
+  },
+  {
+    "canonical_name": "Fírúz-Kúh",
+    "entity_type": "place",
+    "side": "",
+    "is_new": true,
+    "db_statements": [
+      "Siyyid ‘Alí Ḵhán Lieutenant-Colonel of Fírúz-Kúh received the royal command to proceed... to Zanján"
+    ],
+    "mention_idxs": [1986, 1988]
+  },
+  {
+    "canonical_name": "the shrine of Sháh ‘Abdu’l-‘Aẓím",
+    "entity_type": "place",
+    "is_new": false,
+    "db_statements": [],
+    "mention_idxs": [1957]
+  }
+]

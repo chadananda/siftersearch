@@ -1,0 +1,802 @@
+[
+  {
+    "name": "S̱hayḵh Muḥammad Ḥasan an-Najafí",
+    "common_name": "Ṣáḥib-i-Jawáhir",
+    "aliases": ["S̱hayḵh Muḥammad Ḥasan an-Najafí", "Muḥammad Ḥasan al-Najafí", "Shaykh Muhammad Hasan al-Najafi", "Author of Jawáhir al-Kalám", "Shaykh al-Fuqahá"],
+    "native_script": ["شیخ محمد حسن النجفی", "صاحب الجواهر"],
+    "summary": "The foremost Shí'ih jurist of his age in Najaf, author of the monumental fiqh work Jawáhir al-Kalám (hence 'Ṣáḥib-i-Jawáhir'). In his presence the Báb's emissary Mullá ‘Alíy-i-Basṭámí proclaimed the new Revelation, and he stood among the leading clergy who set their faces against the Faith.",
+    "importance": 48,
+    "importance_reason": "Pre-eminent grand mujtahid of Najaf before whom the first public proclamation episode unfolded; externally notable as Ṣáḥib-i-Jawáhir.",
+    "characterizations": ["GPB: one of the leading exponents of S̱hí‘ah Islám, the far-famed S̱hayḵh Muḥammad Ḥasan", "Wikishia: Muhammad Hasan al-Najafi (c.1787–1850), Usuli Shiite jurist of Najaf, known as 'Sahib al-Jawahir' for his work Jawahir al-kalam; titled 'Shaykh al-fuqaha,' the Master of jurists; died Sha'ban 1, 1266 / June 12, 1850."]
+  },
+  {
+    "name": "S̱hayḵh Muḥammad-Taqíy-i-Najafí",
+    "common_name": "Ibn-i-Ḏhi’b",
+    "aliases": ["S̱hayḵh Muḥammad-Taqíy-i-Najafí", "Ibn-i-Ḏhi’b (Son of the Wolf)", "Son of the Wolf", "Áqá Najafí", "S̱hayḵh Muḥammad-Taqí"],
+    "native_script": ["شیخ محمد تقی نجفی", "ابن الذئب", "آقا نجفی"],
+    "summary": "A rapacious mujtahid of Iṣfahán, notorious persecutor of the Bahá'ís (he had Mírzá As̱hraf slain and his corpse trampled), to whom Bahá'u'lláh addressed His last major work, the Epistle to the Son of the Wolf (Lawḥ-i-Ibn-i-Ḏhi'b), calling on him to repent.",
+    "importance": 55,
+    "importance_reason": "Named recipient of one of Bahá'u'lláh's most important tablets (Epistle to the Son of the Wolf) and a principal antagonist whose story is taught.",
+    "characterizations": ["GPB: His [Bahá’u’lláh's] Epistle to S̱hayḵh Muḥammad-Taqí, surnamed “Ibn-i-Ḏhi’b” (Son of the Wolf) … in which He calls upon that rapacious priest to repent of his acts"]
+  },
+  {
+    "name": "S̱hayḵh Muḥammad-i-S̱hibl",
+    "common_name": "S̱hayḵh Muḥammad-i-S̱hibl",
+    "aliases": ["Father of Muḥammad-Muṣṭafá al-Bag̱hdádí"],
+    "native_script": [],
+    "summary": "An Arab ‘álim of Bag̱hdád who ranked high among its ‘ulamás and became an admirer of the Báb; father of the Bábí Muḥammad-Muṣṭafá.",
+    "importance": 17,
+    "importance_reason": "Minor early Iraqi adherent, two mentions, notable mainly as a learned admirer and father of a Bábí.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh Muḥammad-i-Túb-C̱hí",
+    "common_name": "S̱hayḵh Muḥammad-i-Túb-C̱hí",
+    "aliases": ["Túb-C̱hí (the gunner)"],
+    "native_script": [],
+    "summary": "A believer of Zanján and reportedly the first there to lay down his life in the path of the Cause during the Zanján upheaval.",
+    "importance": 14,
+    "importance_reason": "Single-mention martyr of Zanján with a brief memorable line; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh Muḥammad-ibn-i-S̱hiblu’l-‘Aráqí",
+    "common_name": "S̱hayḵh Muḥammad-ibn-i-S̱hiblu’l-‘Aráqí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí host whose house in Kirmánsháh sheltered Ṭáhirih and her companions during their journey from Khániqín.",
+    "importance": 13,
+    "importance_reason": "Two-mention episode participant (host of Ṭáhirih's party); incidental. Possibly the same person as S̱hayḵh Muḥammad-i-S̱hibl.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh Muḥammad-Ḥasan (ecclesiastic of Najaf)",
+    "common_name": "S̱hayḵh Muḥammad-Ḥasan (ecclesiastic of Najaf)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "The celebrated Najaf ecclesiastic before whom Mullá ‘Alíy-i-Basṭámí fearlessly announced the Báb's manifestation, and who pronounced Mullá ‘Alí a heretic — almost certainly Ṣáḥib-i-Jawáhir under a DB descriptor.",
+    "importance": 18,
+    "importance_reason": "Single DB mention; very likely a duplicate of S̱hayḵh Muḥammad Ḥasan an-Najafí (Ṣáḥib-i-Jawáhir).",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh Muḥyi'd-Dín, the Qáḍí of Ḵhániqayn",
+    "common_name": "S̱hayḵh Muḥyi'd-Dín, the Qáḍí of Ḵhániqayn",
+    "aliases": ["the Qáḍí of Ḵhániqayn"],
+    "native_script": ["شيخ محيي الدين"],
+    "summary": "Sunní judge (qáḍí) of Khániqayn whose questions prompted Bahá'u'lláh to reveal a tablet in reply during the Baghdád period.",
+    "importance": 16,
+    "importance_reason": "Single-mention recipient/questioner tied to a revealed tablet; incidental but tablet-linked.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh Ni‘matu’lláh-i-Ámulí",
+    "common_name": "S̱hayḵh Ni‘matu’lláh-i-Ámulí",
+    "aliases": ["Mullá Ni‘matu’lláh"],
+    "native_script": [],
+    "summary": "A Bábí who was bound in chains and tortured with great ferocity on his arrival at Ámul.",
+    "importance": 13,
+    "importance_reason": "Two-mention persecuted believer; incidental episode participant.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh Sa‘íd-i-Hindí",
+    "common_name": "S̱hayḵh Sa‘íd-i-Hindí",
+    "aliases": ["Sa‘íd-i-Hindí"],
+    "native_script": [],
+    "summary": "One of the Báb's foremost disciples (a Letter-of-the-Living-era figure), sent to carry the Faith to India, where his teaching's only fruit was the conversion of a single siyyid.",
+    "importance": 30,
+    "importance_reason": "Three mentions; an early disciple charged with the first mission to India — recurring presence, modest significance.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh S̱hahíd-i-Mázkán",
+    "common_name": "S̱hayḵh S̱hahíd-i-Mázkán",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A narrator who related an account of meeting Siyyid Baṣír during his passage through Qamṣar.",
+    "importance": 8,
+    "importance_reason": "Single-mention transmitter of an anecdote; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh Yúsuf (custodian of the funds)",
+    "common_name": "S̱hayḵh Yúsuf (custodian of the funds)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bábí who served as custodian of the funds.",
+    "importance": 7,
+    "importance_reason": "One-mention incidental functionary.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh Ḥasan-i-Zunúzí",
+    "common_name": "S̱hayḵh Ḥasan-i-Zunúzí",
+    "aliases": ["Shaykh Hasan-i-Zunuzi"],
+    "native_script": ["شیخ حسن زنوزی"],
+    "summary": "A devoted Bábí and amanuensis-scribe who, during the Báb's nine months in Máh-Kú, transcribed the verses dictated by the Báb; the Báb foretold he would behold the 'promised Ḥusayn' in Karbilá — fulfilled when he recognized Bahá'u'lláh there.",
+    "importance": 50,
+    "importance_reason": "17 mentions, rel_degree 4; the scribe of the Báb's Máh-Kú revelation and recipient of a fulfilled prophecy — a story actively taught.",
+    "characterizations": ["GPB: (S̱hayḵh Ḥasan-i-Zunúzí) who transcribed during those nine months the verses dictated by the Báb to His amanuensis; to whom He declared while in Máh-Kú that he would behold in Karbilá the countenance of the promised Ḥusayn", "Bahaipedia: an early Bábí (d. c. 1868) who, with Mullá ‘Abd al-Karím and Siyyid Ḥusayn Yazdí, made fair copies of the Báb's writings; recognized Bahá'u'lláh as the Promised One in Karbilá in 1851."]
+  },
+  {
+    "name": "S̱hayḵh Ṣafí’u’d-Dín Isḥáq",
+    "common_name": "S̱hayḵh Ṣafí’u’d-Dín Isḥáq",
+    "aliases": ["Safi al-Din Ardabili", "Shaykh Safi"],
+    "native_script": ["شیخ صفی‌الدین اسحاق اردبیلی"],
+    "summary": "Medieval Sufi shaykh of Ardabíl, descendant of the Imám Músá Káẓim and eponymous ancestor of the Ṣafaví (Safavid) dynasty; mentioned only as the saint whose tomb a figure lived near.",
+    "importance": 12,
+    "importance_reason": "Historical-context reference (Safavid ancestor), single mention, outside the Bábí–Bahá'í narrative proper.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh Ṣáliḥ",
+    "common_name": "S̱hayḵh Ṣáliḥ",
+    "aliases": [],
+    "native_script": [],
+    "summary": "An Arab resident, recorded as the first to shed his blood in the path of the Faith on Persian soil, martyred in Ṭihrán — generally identified with S̱hayḵh Ṣáliḥ-i-Karímí.",
+    "importance": 25,
+    "importance_reason": "Honored as the first martyr on Persian soil; two mentions; likely identical to S̱hayḵh Ṣáliḥ-i-Karímí.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh Ṣáliḥ of S̱híráz",
+    "common_name": "S̱hayḵh Ṣáliḥ of S̱híráz",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A defender killed by a bullet to the head while trying to extinguish a fire during a Bábí siege.",
+    "importance": 9,
+    "importance_reason": "Single-mention fort-defender death; incidental (distinct from the Ṭihrán martyr).",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh Ṣáliḥ-i-Karímí",
+    "common_name": "S̱hayḵh Ṣáliḥ-i-Karímí",
+    "aliases": ["S̱hayḵh Ṣáliḥ"],
+    "native_script": [],
+    "summary": "An Arab companion of Ṭáhirih, distinguished as the first to shed his blood on Persian soil in the path of the Cause — the first of the company of martyrs — put to death in Ṭihrán.",
+    "importance": 28,
+    "importance_reason": "Four mentions; honored as the very first martyr on Persian soil and a companion of Ṭáhirih.",
+    "characterizations": ["DB: He was the first to shed his blood on Persian soil in the path of the Cause of God; the first of that glorious company destined to seal with their life-blood the triumph of God’s holy Faith."]
+  },
+  {
+    "name": "S̱hayḵh ‘Abbás of Ṭihrán",
+    "common_name": "S̱hayḵh ‘Abbás of Ṭihrán",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A figure of Ṭihrán dispatched by court nobles, mentioned once in passing.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental name.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh ‘Abdu’l-Qádir",
+    "common_name": "S̱hayḵh ‘Abdu’l-Qádir",
+    "aliases": [],
+    "native_script": ["شیخ عبدالقادر"],
+    "summary": "A Sunní shaykh of Baghdád who, with Shaykh ‘Abdu's-Salám and Siyyid Dáwúdí, sought Bahá'u'lláh's presence and enrolled among His earliest admirers.",
+    "importance": 14,
+    "importance_reason": "Single-mention early Baghdád admirer; incidental though personally drawn to Bahá'u'lláh.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh ‘Abdu’l-Ḥusayn-i-Ṭihrání",
+    "common_name": "S̱hayḵh ‘Abdu’l-Ḥusayn-i-Ṭihrání",
+    "aliases": ["Shaykh ‘Abdu'l-Husayn-i-Tihrani", "the scoundrel", "the schemer", "the wicked one"],
+    "native_script": ["شيخ عبد الحسين طهراني"],
+    "summary": "A crafty, jealous Shí'ah priest commissioned to repair the holy shrines, who became Bahá'u'lláh's implacable enemy in Baghdád, inciting plots against His life; Bahá'u'lláh stigmatized him in His Tablets as 'the scoundrel,' 'the schemer,' and 'the wicked one.'",
+    "importance": 45,
+    "importance_reason": "Principal Baghdád-period antagonist (rel_degree 7) who instigated attempts on Bahá'u'lláh's life and is named/condemned in the Writings.",
+    "characterizations": ["GPB: a crafty and obstinate priest, whose consuming jealousy of Bahá'u'lláh was surpassed only by his capacity to stir up mischief … whom Bahá'u'lláh had stigmatized in His Tablets by such epithets as the \"scoundrel,\" the \"schemer,\" the \"wicked one\"", "Bahá'í histories: commissioned by the Sháh to supervise repairs to the holy shrines, he incited various persons to attempt Bahá'u'lláh's murder during the Baghdád years."]
+  },
+  {
+    "name": "S̱hayḵh ‘Abdu’l-‘Alí (divine of Nayríz)",
+    "common_name": "S̱hayḵh ‘Abdu’l-‘Alí (divine of Nayríz)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "The leading divine and a reputed judge of Nayríz, and father-in-law of Vaḥíd (Siyyid Yaḥyáy-i-Dárábí).",
+    "importance": 16,
+    "importance_reason": "Single mention; notable only through his tie to Vaḥíd and Nayríz.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh ‘Abdu’r-Raḥmán-i-Karkútí",
+    "common_name": "S̱hayḵh ‘Abdu’r-Raḥmán-i-Karkútí",
+    "aliases": ["Shaykh ‘Abdu'r-Rahmán of Karkúk"],
+    "native_script": ["شيخ عبد الرحمٰن الكركوتي"],
+    "summary": "A learned Sunní shaykh of Karkúk to whom Bahá'u'lláh addressed the mystical epistle the 'Four Valleys' (Chahár Vádí).",
+    "importance": 24,
+    "importance_reason": "Single mention but the named recipient of a major mystical work of Bahá'u'lláh (the Four Valleys).",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh ‘Abdu’s-Salám",
+    "common_name": "S̱hayḵh ‘Abdu’s-Salám",
+    "aliases": [],
+    "native_script": ["شیخ عبدالسلام"],
+    "summary": "A Sunní shaykh of Baghdád who, with Shaykh ‘Abdu'l-Qádir and Siyyid Dáwúdí, sought Bahá'u'lláh's presence and enrolled among His earliest admirers.",
+    "importance": 13,
+    "importance_reason": "Single-mention early Baghdád admirer; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh ‘Alí (son of S̱hayḵh Aḥmad-i-Aḥsá’í)",
+    "common_name": "S̱hayḵh ‘Alí (son of S̱hayḵh Aḥmad-i-Aḥsá’í)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Son of Shaykh Aḥmad-i-Aḥsá'í, founder of the Shaykhí school, who died in the year the Báb was born; his father offered him as a sacrifice 'for the ‘Alí whose advent we all await.'",
+    "importance": 14,
+    "importance_reason": "Single mention; memorable prophetic anecdote but otherwise incidental, notable through his father.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh ‘Alí Mírzá",
+    "common_name": "S̱hayḵh ‘Alí Mírzá",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A young nephew of the Imám-Jum‘ih who, on reaching maturity, was privileged to meet Bahá'u'lláh in ‘Iráq in 1267 A.H.",
+    "importance": 11,
+    "importance_reason": "Single-mention young believer; incidental though he attained Bahá'u'lláh's presence.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh ‘Alí, son of S̱hayḵh ‘Abdu’l-Ḵháliq-i-Yazdí",
+    "common_name": "S̱hayḵh ‘Alí, son of S̱hayḵh ‘Abdu’l-Ḵháliq-i-Yazdí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A youth of Mas̱hhad whose enthusiasm and energy were praised by Mullá Ḥusayn and Quddús.",
+    "importance": 12,
+    "importance_reason": "Single mention; incidental young believer praised by the leaders.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh ‘Alí-Akbar-i-Qúc̱hání",
+    "common_name": "S̱hayḵh ‘Alí-Akbar-i-Qúc̱hání",
+    "aliases": [],
+    "native_script": ["شیخ علی‌اکبر قوچانی"],
+    "summary": "A learned and pious Bahá'í of Mas̱hhad who was shot to death for his faith during ‘Abdu'l-Bahá's ministry.",
+    "importance": 12,
+    "importance_reason": "Single-mention martyr of Mas̱hhad; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh ‘Alí-Mírzáy-i-S̱hírází",
+    "common_name": "S̱hayḵh ‘Alí-Mírzáy-i-S̱hírází",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A staunch and devoted supporter of the Cause from Shíráz who served it selflessly to his last breath.",
+    "importance": 10,
+    "importance_reason": "Single-mention devoted believer; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh ‘Ábid",
+    "common_name": "S̱hayḵh ‘Ábid",
+    "aliases": ["Shaykh Mu'allim", "the Báb's schoolteacher"],
+    "native_script": ["شیخ عابد"],
+    "summary": "The schoolmaster of the Qahviyih-Awlíyá school in Shíráz who taught the Báb as a child of six or seven and was struck by His extraordinary nature.",
+    "importance": 26,
+    "importance_reason": "Three mentions; memorable as the Báb's childhood teacher, a story commonly retold.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵh-i-Kulayní, Muḥammad-ibn-i-Ya‘qúb",
+    "common_name": "S̱hayḵh-i-Kulayní",
+    "aliases": ["Muḥammad-ibn-i-Ya‘qúb al-Kulayní", "al-Kulayni"],
+    "native_script": ["شیخ کلینی", "محمد بن یعقوب الکلینی"],
+    "summary": "Tenth-century author of the Uṣúl-i-Káfí, a foundational Shí'ah ḥadíth compilation; mentioned only as the scholar buried at Kulayn.",
+    "importance": 12,
+    "importance_reason": "Historical-context reference (early Shí'ah authority), single mention; outside the Bábí–Bahá'í narrative.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hayḵháy-i-S̱hívih-Kas̱h",
+    "common_name": "S̱hayḵháy-i-S̱hívih-Kas̱h",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Mentioned once as appointed executioner.",
+    "importance": 5,
+    "importance_reason": "One-mention incidental name (fragmentary).",
+    "characterizations": []
+  },
+  {
+    "name": "S̱ha‘bán",
+    "common_name": "S̱ha‘bán",
+    "aliases": ["S̱ha‘bán (brother of Ṣafar)"],
+    "native_script": ["شعبان"],
+    "summary": "Brother of a man named Ṣafar; he fell during the warfare, a fact that motivated his brother's later actions.",
+    "importance": 6,
+    "importance_reason": "Two passing mentions as a brother who died in the fighting; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hukru’lláh-i-Núrí",
+    "common_name": "S̱hukru’lláh-i-Núrí",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A kinsman (of the Núrí family) who, with Mírzá Muḥammad-i-Mázindarání, was chosen as a companion on a journey to Karbilá.",
+    "importance": 9,
+    "importance_reason": "Single-mention companion; incidental Núrí relation.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱hu‘á‘u’lláh",
+    "common_name": "S̱hu‘á‘u’lláh",
+    "aliases": ["Shu'a'u'llah"],
+    "native_script": ["شعاع‌الله"],
+    "summary": "A son of Mírzá Muḥammad-‘Alí (the arch-Covenant-breaker) and grandson of Bahá'u'lláh; dispatched to America to abet Ibráhím Khayru'lláh's defection, his Covenant-breaking is documented in ‘Abdu'l-Bahá's Will.",
+    "importance": 34,
+    "importance_reason": "Four mentions, rel_degree 4; an active Covenant-breaker named in the Will and in the American schism narrative.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱háhbár Khán",
+    "common_name": "S̱háhbár Khán",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A commander from Marághih who, with Siyyid ‘Alí Khán, led two hundred horsemen against the Bábís.",
+    "importance": 8,
+    "importance_reason": "Single-mention regional military officer; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "S̱háṭir-Ḥasan",
+    "common_name": "S̱háṭir-Ḥasan",
+    "aliases": [],
+    "native_script": ["شاطر حسن"],
+    "summary": "A Bahá'í martyred at Mans̱hád who, before his death, calmly distributed candy and his own clothing among his executioners.",
+    "importance": 17,
+    "importance_reason": "Single mention but with a strikingly memorable martyrdom anecdote.",
+    "characterizations": []
+  },
+  {
+    "name": "Tawfíq Rushdí Bey",
+    "common_name": "Tawfíq Rushdí Bey",
+    "aliases": ["Tevfik Rüştü Aras", "Tevfik Rüştü"],
+    "native_script": ["توفيق رشدي بك"],
+    "summary": "Foreign Minister of the Turkish Republic (1925–1938), mentioned in GPB in the context of Turkey's affairs; no direct Bahá'í role.",
+    "importance": 11,
+    "importance_reason": "Single-mention external statesman cited for historical context.",
+    "characterizations": []
+  },
+  {
+    "name": "Tetsujirō Inoue",
+    "common_name": "Tetsujirō Inoue",
+    "aliases": ["Tetsujiro Inouye", "Prof. Inouye"],
+    "native_script": ["井上哲次郎"],
+    "summary": "Japanese philosopher and Professor Emeritus of the Imperial University of Tokyo, cited in GPB among notable figures; no Bahá'í role.",
+    "importance": 9,
+    "importance_reason": "Single-mention external academic; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Theodore Roosevelt",
+    "common_name": "Theodore Roosevelt",
+    "aliases": ["President Roosevelt", "T.R.", "Mr. Roosevelt"],
+    "native_script": [],
+    "summary": "26th President of the United States (1901–1909), referenced in GPB as a figure of his era; no direct Bahá'í role.",
+    "importance": 13,
+    "importance_reason": "Single passing mention; globally notable statesman but incidental to the narrative.",
+    "characterizations": []
+  },
+  {
+    "name": "Thomas Breakwell",
+    "common_name": "Thomas Breakwell",
+    "aliases": ["the first English believer"],
+    "native_script": [],
+    "summary": "The first English Bahá'í (1872–1902), whose brief, radiant devotion so moved ‘Abdu'l-Bahá that He revealed a fervent eulogy in his memory upon his early death.",
+    "importance": 42,
+    "importance_reason": "First English believer immortalized by ‘Abdu'l-Bahá's eulogy; a much-taught early Western figure despite a single GPB mention.",
+    "characterizations": ["GPB: the illumined Thomas Breakwell, the first English believer, immortalized by ‘Abdu'l-Bahá's fervent eulogy revealed in his memory"]
+  },
+  {
+    "name": "Thomas Kelly Cheyne",
+    "common_name": "T. K. Cheyne",
+    "aliases": ["Thomas Kelly Cheyne", "Dr. T. K. Cheyne"],
+    "native_script": [],
+    "summary": "Renowned English biblical scholar and Oriel Professor (1841–1915) who wrote admiringly of Ṭáhirih and the Bábí movement (in 'The Reconciliation of Races and Religions') and hosted ‘Abdu'l-Bahá in his Oxford home.",
+    "importance": 32,
+    "importance_reason": "16 mentions; an eminent Western scholar whose published praise of Ṭáhirih is frequently quoted and who received ‘Abdu'l-Bahá.",
+    "characterizations": ["GPB: the renowned English divine, Dr. T. K. Cheyne … 'The harvest sown in Islamic lands by Qurratu'l-‘Ayn [Ṭáhirih] … has the credit of opening the catalogue of social reforms in Persia'"]
+  },
+  {
+    "name": "Thomas Lee McClung",
+    "common_name": "Lee McClung",
+    "aliases": ["Lee \"Bum\" McClung", "Treasurer McClung", "Thomas Lee McClung"],
+    "native_script": [],
+    "summary": "Treasurer of the United States (1909–1912), referenced in GPB; no Bahá'í role.",
+    "importance": 7,
+    "importance_reason": "Single passing mention of a US official; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Thomas Seaton",
+    "common_name": "Thomas Seaton",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A figure mentioned once by name in GPB with no elaborated role.",
+    "importance": 5,
+    "importance_reason": "One-mention incidental name with no context.",
+    "characterizations": []
+  },
+  {
+    "name": "Thornton Chase",
+    "common_name": "Thornton Chase",
+    "aliases": ["Ṯhábit (Steadfast)", "Thábit (Steadfast)", "the first American believer"],
+    "native_script": ["ثابت"],
+    "summary": "The first American Bahá'í (1847–1912), surnamed Ṯhábit ('Steadfast') by ‘Abdu'l-Bahá, who enrolled in 1894–95 through Ibráhím Khayru'lláh, made an early Western pilgrimage to ‘Akká, and authored 'The Bahai Revelation'; ‘Abdu'l-Bahá made a special pilgrimage to his grave.",
+    "importance": 44,
+    "importance_reason": "First believer of the Western world, given an honorific by ‘Abdu'l-Bahá and honored at his grave — a foundational, much-taught figure of American Bahá'í history.",
+    "characterizations": ["GPB: The stout-hearted Thornton Chase, surnamed Ṯhábit (Steadfast) by ‘Abdu'l-Bahá and designated by Him “the first American believer,” who became a convert to the Faith in 1894", "Bahaipedia/Wikipedia: born Feb 22, 1847, died Sept 30, 1912; enrolled in 1895 via Ibrahim Kheiralla; authored 'The Bahai Revelation' (1909); among the earliest Western pilgrims to ‘Akká (1907)."]
+  },
+  {
+    "name": "Théophile Cart",
+    "common_name": "Théophile Cart",
+    "aliases": ["President of the French Esperanto Society"],
+    "native_script": [],
+    "summary": "French Esperantist leader (1855–1931) associated with the European Esperanto movement that hosted ‘Abdu'l-Bahá; referenced once.",
+    "importance": 8,
+    "importance_reason": "Single-mention external figure tied to the Esperanto meetings; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Tomáš Garrigue Masaryk",
+    "common_name": "Tomáš Garrigue Masaryk",
+    "aliases": ["Thomas G. Masaryk", "T. G. Masaryk", "President Masaryk"],
+    "native_script": [],
+    "summary": "First President of Czechoslovakia (1918–1935), referenced in GPB as one of the world leaders of his era; no direct Bahá'í role.",
+    "importance": 11,
+    "importance_reason": "Two passing mentions of a notable statesman; incidental to the narrative.",
+    "characterizations": []
+  },
+  {
+    "name": "Táju’d-Dín-i-Nayrízí",
+    "common_name": "Táju’d-Dín-i-Nayrízí",
+    "aliases": ["Táju’d-Dín (martyr of Nayríz)"],
+    "native_script": [],
+    "summary": "A fearless believer of Nayríz, a maker of woollen caps (kuláh), counted among the martyrs of the Nayríz upheaval.",
+    "importance": 11,
+    "importance_reason": "Single-mention Nayríz martyr with a brief characterizing note; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Umm-i-As̱hraf",
+    "common_name": "Umm-i-As̱hraf",
+    "aliases": ["Mother of As̱hraf"],
+    "native_script": [],
+    "summary": "A steadfast woman believer who gave birth to her son Ashraf within the fort during the Zanján upheaval and later urged him to choose martyrdom rather than recant — famously declaring she would disown him if he wavered.",
+    "importance": 24,
+    "importance_reason": "Single mention but a memorable, frequently-told story of a heroic Bábí mother.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád Ibráhím-i-Mázindarání",
+    "common_name": "Ustád Ibráhím-i-Mázindarání",
+    "aliases": ["Ustád Ibráhím (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A craftsman counted among the martyrs of Mázindarán.",
+    "importance": 7,
+    "importance_reason": "One-mention martyr-list entry; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád Ismá‘íl-i-Káshí",
+    "common_name": "Ustád Ismá‘íl-i-Káshí",
+    "aliases": ["Ustád Ismá‘íl-i-Kás̱hí"],
+    "native_script": ["استاد اسماعیل کاشی"],
+    "summary": "A devoted pilgrim who came from Mosul to ‘Akká and gazed for hours toward Bahá'u'lláh's window but, owing to failing eyesight, could not discern His face — an episode that moved Bahá'u'lláh to tears; he dwelt in a cave on Mt. Carmel.",
+    "importance": 22,
+    "importance_reason": "Single mention but a poignant, frequently-cited story of devotion that touched Bahá'u'lláh.",
+    "characterizations": ["GPB: gazing for hours, in rapt adoration, at the window of his Beloved, failed in the end, owing to the feebleness of his sight, to discern His face … an episode that moved to tears the Holy [Family]"]
+  },
+  {
+    "name": "Ustád Ja‘far, brother of Muḥammad-Ḥusayn",
+    "common_name": "Ustád Ja‘far, brother of Muḥammad-Ḥusayn",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A younger brother of Muḥammad-Ḥusayn who was sold several times by enemies before returning to his native city.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental name.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád Mihr-‘Alíy-i-Ḥaddád",
+    "common_name": "Ustád Mihr-‘Alíy-i-Ḥaddád",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A blacksmith (ḥaddád) who survived the massacre of Zanján and, as a child of the delegation sent to the Amír-Túmán, related his recollections.",
+    "importance": 9,
+    "importance_reason": "Single-mention survivor and narrator; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád Muḥammad, son of Ustád Áqá",
+    "common_name": "Ustád Muḥammad, son of Ustád Áqá",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A son of Ustád Áqá (Buzurg-Banná), one of a family of mason-believers; named once.",
+    "importance": 6,
+    "importance_reason": "One-mention name within a family list; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád Muḥammad-‘Alíy-i-Salmání",
+    "common_name": "Ustád Muḥammad-‘Alíy-i-Salmání",
+    "aliases": ["Salmání the barber"],
+    "native_script": ["استاد محمد علی سلمانی"],
+    "summary": "Bahá'u'lláh's barber and devoted companion, whom Mírzá Yaḥyá tried to incite to assassinate Bahá'u'lláh; so enraged was he by the proposition that he himself wished to kill Mírzá Yaḥyá. Author of a noted memoir.",
+    "importance": 30,
+    "importance_reason": "Single GPB mention but pivotal as the loyal companion who exposed Mírzá Yaḥyá's assassination plot — a much-cited episode.",
+    "characterizations": ["GPB: [Mírzá Yaḥyá] disclosed to one of the companions, Ustád Muḥammad-‘Alíy-i-Salmání, the barber … his wish that he should assassinate Him [Bahá'u'lláh] … 'So enraged was Ustád Muḥammad-‘Alí … that he felt a strong desire to kill Mírzá Yaḥyá'"]
+  },
+  {
+    "name": "Ustád Qurbán-‘Alíy-i-Banná",
+    "common_name": "Ustád Qurbán-‘Alíy-i-Banná",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A mason (banná) and Bábí, named among the believers of the upheavals.",
+    "importance": 8,
+    "importance_reason": "Three brief mentions, no elaboration; incidental episode participant.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád Qásim, son of Ustád Zaynu’l-‘Ábidín",
+    "common_name": "Ustád Qásim, son of Ustád Zaynu’l-‘Ábidín",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A son of Ustád Zaynu'l-‘Ábidín within the family of mason-believers of Kirmán; named once.",
+    "importance": 6,
+    "importance_reason": "One-mention name within a family list; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád Riḍáy-i-Ṣaffár",
+    "common_name": "Ustád Riḍáy-i-Ṣaffár",
+    "aliases": [],
+    "native_script": ["استاد رضای صفار"],
+    "summary": "A Bahá'í martyred at Mans̱hád who kissed the hand of his murderer before being shot.",
+    "importance": 13,
+    "importance_reason": "Single mention with a memorable martyrdom detail; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád Zaynu’l-‘Ábidín (mason of Kirmán)",
+    "common_name": "Ustád Zaynu’l-‘Ábidín (mason of Kirmán)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A mason of Kirmán resident in Qáyin (Khurásán), patriarch of a family of believers who shared his trade.",
+    "importance": 9,
+    "importance_reason": "Four brief mentions as head of a mason-believer family; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád Áqá, surnamed Buzurg-Banná",
+    "common_name": "Ustád Áqá, surnamed Buzurg-Banná",
+    "aliases": ["Buzurg-Banná"],
+    "native_script": [],
+    "summary": "A master mason ('the great builder') and Bábí, father of several believer-sons named in the chronicle.",
+    "importance": 9,
+    "importance_reason": "Four brief mentions as head of a mason-believer family; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád Ḥasan, son of Ustád Áqá",
+    "common_name": "Ustád Ḥasan, son of Ustád Áqá",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A son of Ustád Áqá (Buzurg-Banná); named once within the family list.",
+    "importance": 6,
+    "importance_reason": "One-mention name within a family list; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád Ḥájí Muḥammad-i-Banná",
+    "common_name": "Ustád Ḥájí Muḥammad-i-Banná",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A mason (banná) believer named once in the chronicle.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental name.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád ‘Alí-Akbar, brother of Ustád Zaynu’l-‘Ábidín",
+    "common_name": "Ustád ‘Alí-Akbar, brother of Ustád Zaynu’l-‘Ábidín",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A brother of Ustád Zaynu'l-‘Ábidín within the family of mason-believers; named once.",
+    "importance": 6,
+    "importance_reason": "One-mention name within a family list; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Ustád ‘Alí-Akbar-i-Ábádih'í",
+    "common_name": "Ustád ‘Alí-Akbar-i-Ábádih'í",
+    "aliases": ["Ustád ‘Alí-Akbar of Ábádih"],
+    "native_script": ["استاد علی‌اکبر آباده‌ای"],
+    "summary": "A Bahá'í of Ábádih who, at a local Siyyid's instigation, was apprehended and so brutally thrashed that he was covered head to foot in his own blood.",
+    "importance": 12,
+    "importance_reason": "Single-mention persecuted believer with a vivid detail; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Valí-Muḥammad",
+    "common_name": "Valí-Muḥammad",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Muḥammadan who came upon a wounded neighbour and crushed his head with a stone — a perpetrator named once in an atrocity account.",
+    "importance": 6,
+    "importance_reason": "One-mention incidental perpetrator.",
+    "characterizations": []
+  },
+  {
+    "name": "Varaqatu'r-Riḍván",
+    "common_name": "Varaqatu'r-Riḍván",
+    "aliases": ["Leaf of Paradise"],
+    "native_script": ["ورقة الرضوان"],
+    "summary": "A granddaughter of Fatḥ-‘Alí Sháh and fervent admirer of Ṭáhirih, surnamed Varaqatu'r-Riḍván ('Leaf of Paradise').",
+    "importance": 15,
+    "importance_reason": "Single mention; a royal woman drawn to Ṭáhirih, notable as an early high-born sympathizer.",
+    "characterizations": []
+  },
+  {
+    "name": "Victor Emmanuel II, King of Italy",
+    "common_name": "Victor Emmanuel II",
+    "aliases": ["Vittorio Emanuele II", "King of Italy", "Padre della Patria"],
+    "native_script": [],
+    "summary": "First king of a unified Italy (r. 1861–1878), whose forces took Rome and the Papal States, dispossessing Pope Pius IX — an event GPB reads as fulfilling Bahá'u'lláh's warnings to the Pope.",
+    "importance": 18,
+    "importance_reason": "Two mentions; a sovereign whose acts figure in GPB's narrative of prophecy fulfilled against the Papacy.",
+    "characterizations": []
+  },
+  {
+    "name": "Viscount Arakawa Minoji",
+    "common_name": "Viscount Arakawa",
+    "aliases": ["Arakawa Minoji", "Japanese Minister to Spain"],
+    "native_script": ["荒川巳次"],
+    "summary": "Japanese Viscount and Minister to the Court of Spain who attained ‘Abdu'l-Bahá's presence.",
+    "importance": 10,
+    "importance_reason": "Single-mention diplomat who met ‘Abdu'l-Bahá; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Wilhelm Herrigel",
+    "common_name": "Wilhelm Herrigel",
+    "aliases": ["Dr. Wilhelm Herrigel", "the defecting pioneer of Germany"],
+    "native_script": [],
+    "summary": "One of the earliest pioneers and founders of the Faith in Germany who later defected, misled by a deceiving woman — though his defection, GPB notes, had no lasting effect on the community.",
+    "importance": 18,
+    "importance_reason": "Single mention but notable as a named founding-era German pioneer whose defection is recorded.",
+    "characterizations": []
+  },
+  {
+    "name": "Willard Hatch",
+    "common_name": "Willard Hatch",
+    "aliases": [],
+    "native_script": [],
+    "summary": "A Bahá'í of Los Angeles who purchased an exquisite brooch and, in 1931, took it to Haifa and placed it in the Archives on Mt. Carmel.",
+    "importance": 9,
+    "importance_reason": "Single-mention American believer tied to one archival anecdote; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "William A. Shedd",
+    "common_name": "William A. Shedd",
+    "aliases": ["W. A. Shedd"],
+    "native_script": [],
+    "summary": "Son of the Rev. J. H. Shedd of the American Mission at Urúmíyyih, who communicated a historical document to Professor E. G. Browne.",
+    "importance": 8,
+    "importance_reason": "Single-mention conduit of a document to E. G. Browne; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "William I (Wilhelm I), Emperor of Germany, King of Prussia",
+    "common_name": "Wilhelm I",
+    "aliases": ["William I", "King of Prussia", "Kaiser Wilhelm I", "Emperor of Germany"],
+    "native_script": ["Wilhelm I."],
+    "summary": "Prussian king proclaimed Emperor of a unified Germany at Versailles (1871); addressed and admonished by Bahá'u'lláh in the Kitáb-i-Aqdas, warned to ponder Napoleon III's fate and that 'the lamentations of Berlin' would be raised.",
+    "importance": 38,
+    "importance_reason": "Six mentions, rel_degree 5; one of the kings directly addressed in the Kitáb-i-Aqdas — a frequently-taught prophecy.",
+    "characterizations": ["GPB: William I … admonished in the Kitáb-i-Aqdas and bidden to ponder the fate that had overtaken “one whose power transcended” his own, warned … that the “lamentations of Berlin” would be raised"]
+  },
+  {
+    "name": "William II (Wilhelm II), Emperor of Germany",
+    "common_name": "Wilhelm II",
+    "aliases": ["William II", "Kaiser Wilhelm II", "the Kaiser"],
+    "native_script": ["Wilhelm II."],
+    "summary": "Last German Emperor (r. 1888–1918), whose pride GPB reads as precipitating his downfall; revolution broke out in Berlin and he fled to Holland, abdicating — seen as fulfilling the warnings to the German throne.",
+    "importance": 26,
+    "importance_reason": "Two mentions; successor to the throne addressed in the Aqdas and an exemplar of the warned-of downfall.",
+    "characterizations": []
+  },
+  {
+    "name": "William Thomas Stead",
+    "common_name": "W. T. Stead",
+    "aliases": ["William Thomas Stead", "editor of the Review of Reviews"],
+    "native_script": [],
+    "summary": "Prominent English journalist (1849–1912), editor of the Review of Reviews, who had long and earnest conversations with ‘Abdu'l-Bahá; he later died aboard the Titanic.",
+    "importance": 14,
+    "importance_reason": "Single mention; a notable Westerner who conversed with ‘Abdu'l-Bahá, incidental but of public interest.",
+    "characterizations": []
+  },
+  {
+    "name": "Winston Leonard Spencer-Churchill",
+    "common_name": "Winston Churchill",
+    "aliases": ["Sir Winston Churchill", "Winston Leonard Spencer-Churchill"],
+    "native_script": [],
+    "summary": "British Secretary of State for the Colonies (later Prime Minister), who, on ‘Abdu'l-Bahá's passing, telegraphed the High Commissioner for Palestine to convey His Majesty's Government's sympathy and condolence to the Bahá'í community.",
+    "importance": 16,
+    "importance_reason": "Single mention but a globally notable figure tied to an official act of recognition at ‘Abdu'l-Bahá's passing.",
+    "characterizations": []
+  },
+  {
+    "name": "Yazdigird III",
+    "common_name": "Yazdigird III",
+    "aliases": ["Yazdegerd III", "the last Sásánian king"],
+    "native_script": ["یزدگرد سوم"],
+    "summary": "The last king of the Sásánian dynasty of Persia (r. 632–651 AD), referenced as a historical-genealogical and chronological marker.",
+    "importance": 12,
+    "importance_reason": "Two mentions as a historical reference point; outside the Bábí–Bahá'í narrative proper.",
+    "characterizations": []
+  },
+  {
+    "name": "Yaḥyá Bey (Chief of Police of ‘Akká)",
+    "common_name": "Yaḥyá Bey",
+    "aliases": ["the Chief of Police of ‘Akká"],
+    "native_script": ["یحیی بک"],
+    "summary": "The notorious Chief of Police of ‘Akká, a willing tool of the Covenant-breaker Mírzá Muḥammad-‘Alí against ‘Abdu'l-Bahá; he lost his position and eventually had to beg ‘Abdu'l-Bahá for financial help.",
+    "importance": 21,
+    "importance_reason": "Two mentions; a recurring local antagonist in the ‘Akká-period intrigues whose reversal of fortune is recounted.",
+    "characterizations": ["GPB: The notorious Yaḥyá Bey … a willing and powerful tool in the hand of Mírzá Muḥammad-‘Alí … witnessed the frustration of all the hopes he had cherished, lost his position, and had eventually to beg for pecuniary assistance from ‘Abdu'l-Bahá"]
+  },
+  {
+    "name": "Yaḥyá Khán (father of Ḥájí Sulaymán Khán)",
+    "common_name": "Yaḥyá Khán (father of Ḥájí Sulaymán Khán)",
+    "aliases": [],
+    "native_script": [],
+    "summary": "Father of the celebrated martyr Ḥájí Sulaymán Khán and of Farrukh Khán; named only in genealogical context.",
+    "importance": 9,
+    "importance_reason": "Three mentions but only as a relational marker for his sons; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Yaḥyá Khán-i-Kurd",
+    "common_name": "Yaḥyá Khán-i-Kurd",
+    "aliases": ["Yaḥyá Khán", "the warden of C̱hihríq"],
+    "native_script": ["یحیی خان"],
+    "summary": "A Kurdish brother-in-law of Muḥammad Sháh and warden of the Báb's imprisonment at Chihríq; though severe at first, he was eventually compelled to yield to the fascination of his Prisoner.",
+    "importance": 24,
+    "importance_reason": "Five mentions; the Báb's jailer at Chihríq whose reluctant softening is a taught episode.",
+    "characterizations": ["GPB: There He [the Báb] was consigned to the keeping of Yaḥyá Ḵhán, a brother-in-law of Muḥammad S̱háh. Though at the outset he acted with the utmost severity, he was eventually compelled to yield to the fascination of his Prisoner"]
+  },
+  {
+    "name": "Yúsuf Ḍíyá Pás̱há",
+    "common_name": "Yúsuf Ḍíyá Pás̱há",
+    "aliases": ["Yusuf Ziya Pasha", "the Turkish Ambassador"],
+    "native_script": ["يوسف ضياء پاشا"],
+    "summary": "Ottoman/Turkish ambassador (1849–1929) mentioned once in GPB; no direct Bahá'í role.",
+    "importance": 8,
+    "importance_reason": "Single-mention diplomat cited in context; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Yúsuf-i-Mázindarání",
+    "common_name": "Yúsuf-i-Mázindarání",
+    "aliases": ["Yúsuf (martyr of Mázindarán)"],
+    "native_script": [],
+    "summary": "A believer counted among the martyrs of Mázindarán.",
+    "importance": 6,
+    "importance_reason": "One-mention martyr-list entry; incidental.",
+    "characterizations": []
+  },
+  {
+    "name": "Zakaríyyáy-i-Qádí-Kalá’í",
+    "common_name": "Zakaríyyáy-i-Qádí-Kalá’í",
+    "aliases": [],
+    "native_script": [],
+    "summary": "One of the enemy's most valiant officers at the Fort of Shaykh Ṭabarsí, defending the barricade that Mullá Ḥusayn first charged.",
+    "importance": 11,
+    "importance_reason": "Two mentions; a named opposing officer in the Ṭabarsí fighting; incidental.",
+    "characterizations": []
+  }
+]
