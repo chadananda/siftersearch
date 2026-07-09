@@ -12,6 +12,7 @@ const { queryAll, query } = await import('../../api/lib/db.js');
 const WRITE = process.env.WRITE === '1';
 const AUTO = process.env.AUTO === '1';
 const HICONF = +(process.env.HICONF || 0.85);
+const KINDS = (process.env.KINDS || 'link,create').split(',');   // apply only these decision kinds (e.g. KINDS=link)
 
 const all = await queryAll(`SELECT id, kind, payload, evidence, confidence, status, rationale FROM entity_decisions WHERE target_kind='mention-cluster'`);
 const parsed = all.map((d) => { let p = {}; try { p = JSON.parse(d.payload || '{}'); } catch { /* */ } return { ...d, p }; });
@@ -31,7 +32,7 @@ console.log(`\n--- uncertain (→ human): ${uncertain.length} ---`);
 uncertain.slice(0, 6).forEach((d) => console.log(`  ${d.p.freq}× “${d.p.resolved_as?.slice(0, 55)}”`));
 
 if (WRITE) {
-  const toApply = parsed.filter((d) => (d.kind === 'link' || d.kind === 'create') && d.status !== 'applied'
+  const toApply = parsed.filter((d) => KINDS.includes(d.kind) && d.status !== 'applied'
     && (d.status === 'approved' || (AUTO && d.status === 'proposed' && (d.confidence || 0) >= HICONF)));
   console.error(`\napplying ${toApply.length} decisions (${AUTO ? `AUTO conf≥${HICONF}` : 'approved only'})…`);
   let created = 0, linked = 0, mentions = 0;
