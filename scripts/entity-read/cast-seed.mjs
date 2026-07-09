@@ -10,7 +10,15 @@ const BATCH = { 21308: 'db-v1', 21310: 'gpb-v1' };
 const HON = new Set('mirza haji hajji mulla siyyid sayyid aqa aqay shaykh sheikh ustad karbilai mashhadi hajj jinab khan mir the of son daughter dervish native known as one his her'.split(' '));
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ".]/g, '').toLowerCase();
 const toks = (s) => [...new Set(nrm(s).split(/[^a-z0-9]+/).filter((t) => t.length > 3 && !HON.has(t)))];
-const shortRole = (summary, desc, n = 90) => { const s = String(summary || desc || '').replace(/\s+/g, ' ').trim(); return (s.split(/(?<=[.;])\s/)[0] || '').slice(0, n); };
+const shortRole = (summary, desc, n = 90) => { let s = String(summary || desc || '').replace(/\s+/g, ' ').trim(); if (s.length > n) s = s.slice(0, n).replace(/\s+\S*$/, '') + '…'; return s; };
+// A "confusable" is a genuine NAMESAKE (different person, shared name) — NOT a variant-entity of the same person.
+// Exclude alias-variants of the main figure (Pass-4 merge candidates) and bare title/fragment dups.
+const sameOrVariant = (m, o) => {
+  const mn = nrm(m.cn), on = nrm(o.cn);
+  if (m.al.some((a) => nrm(a) === on) || o.al.some((a) => nrm(a) === mn)) return true;      // one is the other's alias
+  if (o.imp == null && (mn.includes(on) || on.includes(mn))) return true;                     // bare title/fragment dup
+  return false;
+};
 
 export async function buildCastSeed(doc, { main = 80 } = {}) {
   const batch = BATCH[doc];
@@ -33,6 +41,7 @@ export async function buildCastSeed(doc, { main = 80 } = {}) {
     const shared = new Map();
     for (const t of m.tk) for (const o of (byTok.get(t) || [])) if (o.id !== m.id) shared.set(o.id, (shared.get(o.id) || 0) + 1);
     const conf = [...shared.entries()].map(([id, n]) => ({ p: parsed.find((x) => x.id === id), n }))
+      .filter((c) => c.p && !sameOrVariant(m, c.p))
       .sort((a, b) => (b.n - a.n) || ((b.p.imp || 0) - (a.p.imp || 0))).slice(0, 3);
     let line = `• ${m.cn}`;
     if (alias.length) line += ` [aka ${alias.join('; ')}]`;
