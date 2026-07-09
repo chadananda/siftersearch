@@ -57,13 +57,14 @@ for (const e of ents) {
 }
 
 const opRow = (rec) => {
-  const splitGroups = rec.groups.filter((g) => !g.keep);
+  const groups = rec.groups.filter((g) => g.claims.length);   // never show an empty proposed person
+  const nPeople = groups.length;
   const grp = (g, i) => `<div class="grp ${g.keep ? 'keep' : 'move'}" data-op="${g.keep ? 'keep' : 'move'}" data-rec="${rec.id}" data-gi="${i}" data-target="${g.target ? g.target.id : ''}">
-     <div class="ghead">${g.keep ? '<b>KEEP on this record</b>' : `<span class="tog"><button class="y">SPLIT OUT ✓</button><button class="n">no</button></span> <b>→ ${g.target && g.target.id !== 'NEW' ? `existing [${g.target.id}] ${esc(g.target.cn)}` : 'NEW entity'}</b>${g.target && g.target.reason ? ` <i>(${esc(g.target.reason)})</i>` : ''}`} — ${esc(g.descriptor)}</div>
-     ${g.claims.map((c) => `<div class="ci">[${c.id}] (${esc(c.relation)}) ${esc(String(c.statement).slice(0, 130))}<div class="sc">${esc(c.scene.slice(0, 300))}</div></div>`).join('')}</div>`;
-  return `<div class="rec"><div class="rh">[${rec.id}] <b>${esc(rec.cn)}</b> — ${rec.nClaims} claims → ${rec.groups.length} people${rec.quarantines.length ? `, ${rec.quarantines.length} to quarantine` : ''}</div>
-   ${rec.groups.map(grp).join('')}
-   ${rec.quarantines.map((q) => `<div class="grp q" data-op="quarantine" data-rec="${rec.id}" data-cid="${q.id}"><div class="ghead"><span class="tog"><button class="y">QUARANTINE ✓</button><button class="n">keep</button></span> <b>${esc(q.reason)}</b> — ${esc(q.issue)}</div><div class="ci">[${q.id}] (${esc(q.relation)}) ${esc(String(q.statement).slice(0, 130))}</div></div>`).join('')}
+     <div class="ghead">${g.keep ? '<span class="klbl">KEEP as-is</span>' : `<span class="tog"><button class="y">SPLIT ✓</button><button class="n">no</button></span><span class="mlbl">→ ${g.target && g.target.id !== 'NEW' ? `[${g.target.id}] ${esc(g.target.cn)}` : 'a NEW person'}</span>`} <b class="desc">${esc(g.descriptor)}</b> <span class="cn">· ${g.claims.length} claim${g.claims.length > 1 ? 's' : ''}</span></div>
+     ${g.claims.map((c) => `<div class="ci" title="SCENE: ${esc(c.scene.slice(0, 380))}">[${c.id}] <span class="rel">${esc(c.relation)}</span> ${esc(String(c.statement).slice(0, 150))}</div>`).join('')}</div>`;
+  return `<div class="rec"><div class="rh">[${rec.id}] <b>${esc(rec.cn)}</b> <span class="cn">— ${rec.nClaims} claims → ${nPeople} ${nPeople > 1 ? 'people' : 'person'}${rec.quarantines.length ? ` + ${rec.quarantines.length} to quarantine` : ''}</span></div>
+   ${groups.map(grp).join('')}
+   ${rec.quarantines.length ? `<div class="grp q"><div class="ghead"><span class="klbl q">QUARANTINE — wrong-scene / hallucinated claims</span></div>${rec.quarantines.map((q) => `<div class="ci qrow" data-op="quarantine" data-rec="${rec.id}" data-cid="${q.id}"><span class="tog"><button class="y">remove ✓</button><button class="n">keep</button></span> [${q.id}] <span class="rel">${esc(q.relation)}</span> ${esc(String(q.statement).slice(0, 120))} <span class="why">— ${esc(q.reason)}: ${esc(String(q.issue).slice(0, 90))}</span></div>`).join('')}</div>` : ''}
   </div>`;
 };
 
@@ -73,10 +74,14 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Re-adjudic
  header{position:sticky;top:0;background:linear-gradient(#0b1220,rgba(11,18,32,.94));backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:1rem 1.5rem;z-index:6}
  h1{margin:0 0 .3rem;font-size:1.1rem}.lede{color:var(--mut);margin:0 0 .5rem;max-width:60rem}.tool{float:right}.tool #n{color:var(--var);font-weight:700}.tool button{background:#134e28;border:1px solid #1f7a3f;color:#dfffe9;border-radius:999px;padding:.35rem .85rem;cursor:pointer;font-weight:600}
  .rec{border:1px solid var(--line);border-radius:10px;margin:1rem 1.5rem;padding:.6rem .8rem;background:#0d1526}.rh{font-size:1rem;margin-bottom:.4rem;padding-bottom:.3rem;border-bottom:1px solid var(--line)}
- .grp{border-left:3px solid #33507e;padding:.35rem .6rem;margin:.4rem 0;border-radius:6px;background:#111a2e}.grp.keep{border-left-color:var(--var)}.grp.move{border-left-color:#f59e0b}.grp.q{border-left-color:var(--sus)}
- .ghead{margin-bottom:.25rem}.tog{display:inline-flex;margin-right:.4rem}.tog button{border:1px solid #33507e;background:#1a2745;color:#cdd9f0;padding:.15rem .5rem;cursor:pointer;font-weight:700;font-size:.75rem}.tog .y{border-radius:5px 0 0 5px}.tog .n{border-radius:0 5px 5px 0;border-left:none}
- .grp.on-y .y{background:#15803d;border-color:#22c55e;color:#fff}.grp.q.on-y .y{background:#b91c1c;border-color:#ef4444}.grp.on-n .n{background:#334155;color:#fff}
- .ci{font-size:.82rem;padding:.15rem .4rem;margin:.15rem 0;border-left:2px solid #22304d}.sc{color:var(--mut);font-size:.76rem;margin-top:.15rem}
+ .grp{border-left:3px solid #33507e;padding:.4rem .7rem;margin:.5rem 0;border-radius:6px;background:#111a2e}.grp.keep{border-left-color:var(--var)}.grp.move{border-left-color:#f59e0b}.grp.q{border-left-color:var(--sus);background:#160f14}
+ .ghead{margin-bottom:.3rem;font-size:.92rem}.desc{color:#dbe6f7}.cn{color:var(--mut);font-weight:400;font-size:.8rem}
+ .klbl{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;background:rgba(34,197,94,.16);color:#4ade80;padding:.1rem .45rem;border-radius:5px;margin-right:.45rem}.klbl.q{background:rgba(239,68,68,.14);color:#f87171}
+ .mlbl{color:#fbbf24;font-weight:700;margin:0 .45rem}
+ .tog{display:inline-flex;margin-right:.5rem}.tog button{border:1px solid #33507e;background:#1a2745;color:#cdd9f0;padding:.18rem .55rem;cursor:pointer;font-weight:800;font-size:.74rem}.tog .y{border-radius:5px 0 0 5px}.tog .n{border-radius:0 5px 5px 0;border-left:none}
+ .on-y .y{background:#15803d;border-color:#22c55e;color:#fff}.qrow.on-y .y{background:#b91c1c;border-color:#ef4444}.on-n .n{background:#475569;color:#fff}
+ .ci{font-size:.84rem;padding:.18rem .45rem;margin:.12rem 0;border-left:2px solid #22304d}.ci:hover{background:#0e1830}.rel{color:#7dd3fc;font-size:.72rem;text-transform:uppercase;letter-spacing:.02em;margin-right:.25rem}
+ .qrow{border-left-color:var(--sus)}.why{color:var(--mut);font-size:.78rem}
 </style></head><body>
 <header><h1>Claim re-adjudication — ${records.length} records proposed</h1>
 <p class="lede">The pipeline read each claim <b>with its source scene</b> and proposes: <b style="color:#7bb35e">KEEP</b> the coherent group, <b style="color:#f59e0b">SPLIT OUT</b> other people (→ an existing entity or NEW), and <b style="color:#ef4444">QUARANTINE</b> hallucinated / mis-attributed claims. Nothing is applied — <b>confirm (✓) or reject (no)</b> each proposed op (splits default ✓, quarantines default ✓). Then <b>Copy ops</b> and paste back; I apply only what you confirmed, reversibly.</p>
@@ -84,8 +89,8 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Re-adjudic
 <div id="outwrap" style="display:none;padding:.6rem 1.5rem;background:#0d1526"><textarea id="out" readonly style="width:100%;height:8rem;background:#0b1220;color:#9ecbff;border:1px solid var(--line);border-radius:6px;font:12px ui-monospace,monospace;padding:.6rem"></textarea></div>
 ${records.map(opRow).join('\n')}
 <script>
- const KEY='sifter-readj-v1';let dec=JSON.parse(localStorage.getItem(KEY)||'{}');const ops=[...document.querySelectorAll('.grp.move,.grp.q')];
- const idOf=g=>g.dataset.op==='quarantine'?('q|'+g.dataset.cid):('m|'+g.dataset.rec+'|'+g.dataset.gi);
+ const KEY='sifter-readj-v2';let dec=JSON.parse(localStorage.getItem(KEY)||'{}');const ops=[...document.querySelectorAll('.grp.move,.qrow')];
+ const idOf=g=>g.classList.contains('qrow')?('q|'+g.dataset.cid):('m|'+g.dataset.rec+'|'+g.dataset.gi);
  const paint=g=>{const s=dec[idOf(g)];g.classList.toggle('on-y',s==='y');g.classList.toggle('on-n',s==='n');};
  const persist=()=>localStorage.setItem(KEY,JSON.stringify(dec));const countN=()=>document.getElementById('n').textContent=ops.filter(g=>dec[idOf(g)]==='y').length;
  ops.forEach(g=>{if(!(idOf(g) in dec))dec[idOf(g)]='y';paint(g);g.querySelector('.y').onclick=()=>{dec[idOf(g)]='y';persist();paint(g);countN();};g.querySelector('.n').onclick=()=>{dec[idOf(g)]='n';persist();paint(g);countN();};});
