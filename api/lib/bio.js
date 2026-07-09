@@ -41,6 +41,7 @@ export async function listBioPersons() {
       er.side, er.summary, er.aliases, er.kinship, er.research_notes
     FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name
     WHERE ge.entity_type = 'person' AND ge.religion = ''
+      AND (ge.last_assessed_version IS NULL OR ge.last_assessed_version NOT LIKE 'merged-into-%')
     ORDER BY (ge.importance IS NULL), ge.importance DESC, ge.canonical_name`);
   const persons = rows.map(r => {
     let aliases = [], kinship = [], death = null;
@@ -67,10 +68,10 @@ export async function listBioPersons() {
 // Full dossier for one person: DB record + gathered portrait/bio.json + cross-corpus reach + GPB citations.
 export async function getBioPerson(rawId) {
   const id = String(rawId).replace(/[^0-9]/g, '');
-  const row = await queryOne(`SELECT ge.id, ge.canonical_name AS name, ge.importance, er.side, er.summary,
+  const row = await queryOne(`SELECT ge.id, ge.canonical_name AS name, ge.importance, ge.last_assessed_version AS lav, er.side, er.summary,
       er.aliases, er.kinship, er.relations, er.research_notes, er.dates
     FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.id = ?`, [id]);
-  if (!row) return null;
+  if (!row || /^merged-into-/.test(row.lav || '')) return null;   // merged duplicate → gone (references live on the survivor)
   const arr = s => { try { return JSON.parse(s || '[]'); } catch { return []; } };
   const obj = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
   let wiki = null, portrait = null, portraitFull = null, bahai = null;
@@ -95,12 +96,23 @@ export async function getBioPerson(rawId) {
     }
   } catch { /* graph optional */ }
   const notes = obj(row.research_notes);
-  // prefer the cited fact catalog (facts2: relation-tagged, paragraph-cited); map to the {quote,...} shape the UI reads
-  const characterizations = Array.isArray(notes.facts2) && notes.facts2.length
-    ? notes.facts2.map(f => ({ quote: f.statement, proof: f.quote || null, relation: f.relation || null, when: f.when || null, source: f.source, paraId: f.paraId, url: f.url || null }))
-    : (notes.characterizations || []);
-  // shared EPISODES (real events with rosters) — the connection evidence; show them with the facts, tagged by episode
-  if (Array.isArray(notes.episodes)) for (const e of notes.episodes) characterizations.push({ quote: e.statement, proof: e.quote || null, relation: 'episode', episode: e.name, when: e.when || null, source: e.source, paraId: e.paraId, url: e.url || null });
+  // NEW substrate first: cited claims (proof-gated, temporal, source-linked) from entity_claims — the reconciled
+  // evidence base. Fall back to legacy facts2/episodes only for entities the pipeline hasn't covered. Same UI shape.
+  const SRCNAME = { 21308: 'The Dawn-Breakers', 21310: 'God Passes By', 57347: 'God Passes By' };
+  const SRCSLUG = { 21308: 'dawn-breakers_nabil', 21310: 'god-passes-by_shoghi-effendi', 57347: 'god-passes-by_shoghi-effendi' };
+  const claimRows = await queryAll(`SELECT relation, statement, proof_verbatim AS proof, doc_id, para_id, time_value AS tv, time_basis AS tb
+     FROM entity_claims WHERE entity_id = ? AND (status IS NULL OR status = 'supported') ORDER BY (tv IS NULL), tv`, [id]);
+  let characterizations;
+  if (claimRows.length) {
+    characterizations = claimRows.map(c => ({ quote: c.statement, proof: c.proof || null, relation: c.relation || null,
+      when: c.tv ? `${c.tv}${c.tb ? ' [' + c.tb + ']' : ''}` : null, source: SRCNAME[c.doc_id] || null, paraId: c.para_id,
+      url: SRCSLUG[c.doc_id] && c.para_id ? `https://oceanlibrary.com/${SRCSLUG[c.doc_id]}?paraId=${c.para_id}` : null }));
+  } else {  // fallback: legacy fact catalog for entities not yet re-extracted
+    characterizations = Array.isArray(notes.facts2) && notes.facts2.length
+      ? notes.facts2.map(f => ({ quote: f.statement, proof: f.quote || null, relation: f.relation || null, when: f.when || null, source: f.source, paraId: f.paraId, url: f.url || null }))
+      : (notes.characterizations || []);
+    if (Array.isArray(notes.episodes)) for (const e of notes.episodes) characterizations.push({ quote: e.statement, proof: e.quote || null, relation: 'episode', episode: e.name, when: e.when || null, source: e.source, paraId: e.paraId, url: e.url || null });
+  }
   // compact citation label per fact: source abbrev + paragraph number (e.g. "GPB ¶72", "DB ¶467")
   try {
     const pids = [...new Set(characterizations.map(c => c.paraId).filter(Boolean))];
