@@ -30,6 +30,19 @@ context* by evidence consistency (nisba, era, role, associates). Enforced struct
 `entity_aliases.source_para_id`, claims' `doc_id/para_id/proof_verbatim`, and the write-time
 `proof_ok` gate — nothing enters the graph without recording where it came from.
 
+**THE RESOLUTION INVARIANT — name nominates, evidence binds (enforced, not remembered).** Every
+recurring mess (conflations, intermixed claims) traces to one equation: `bind = nameMatch`. Forbid
+it structurally. Resolution is two stages that MUST NOT collapse: (1) **candidate generation** —
+name / alias / phonetic / script / prominence propose a *set* (the only use of a name); (2)
+**binding** — a claim attaches to an entity ONLY via an **evidence-consistency verdict against its
+own source paragraph** (subject's nisba/role/associates/era/fate vs each candidate's profile); if no
+candidate is consistent, **mint a new entity (NIL)** — never force the name match. Enforcement so it
+can't be shortcut: there is **no `resolveByName(surface)→entity` API** (`resolve(mention)` requires
+`mention.paragraph`); a **write-time gate rejects any bind lacking a recorded context-adjudication**
+(same shape as `proof_ok`, applied to identity); and every claim keeps its `(surface, paragraph)` so
+a bad bind is always re-adjudicable from context, never re-guessed. The go-forward extraction pipeline
+and the legacy re-adjudication pass call the **same gated resolver**, so new books can't reintroduce it.
+
 ## The three phases
 
 1. **GATHER** — read source text (coreference-complete: name, title, epithet, role,
