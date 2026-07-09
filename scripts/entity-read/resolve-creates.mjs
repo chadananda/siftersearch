@@ -10,7 +10,7 @@ const { queryAll, query } = await import('../../api/lib/db.js');
 const { skeletonKeys } = await import('../../api/lib/translit-key.js');
 const WRITE = process.env.WRITE === '1';
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
-const stripP = (s) => String(s || '').replace(/\([^)]*\)/g, '').replace(/,.*$/, '').trim();   // drop paren + descriptor tail
+const stripP = (s) => String(s || '').replace(/\([^)]*\)/g, '').trim();   // strip ONLY parens — NEVER the descriptor ("the Báb's amanuensis" distinguishes people; dropping it re-conflates)
 const GROUP_RE = /\b(companions|supporters|the sons|the heirs|the people|followers of|brothers of|and others|group of|band of|kindred|relatives of|inhabitants|disciples of)\b/i;
 
 const creates = await queryAll(`SELECT id, payload, confidence FROM entity_decisions WHERE kind='create' AND target_kind='mention-cluster' AND status='proposed'`);
