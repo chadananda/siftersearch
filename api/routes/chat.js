@@ -12,6 +12,7 @@
 
 import OpenAI from 'openai';
 import { hybridSearch, keywordSearch, multiIndexSearch } from '../lib/search.js';
+import { entityLookup, entityDossier, entitySearch } from '../lib/entity-api.js';
 import { optionalAuthenticate } from '../lib/auth.js';
 import { getAnonymousUserId } from '../lib/anonymous.js';
 import { logger } from '../lib/logger.js';
@@ -426,6 +427,30 @@ For an unfiltered total of the whole library, use library_overview instead.`,
         work_context: { type: 'string', description: 'Optional — e.g. "from Bahá\'u\'lláh\'s Tablet of Wisdom" — helps the translator match register.' }
       },
       required: ['text']
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'entity_lookup',
+      description: 'Resolve a PERSON/place/work NAME (any transliteration — Sadeq=Ṣádiq, Rezvan=Riḍván, Ghoddus=Quddús) to candidate entities in the Bábí-Bahá\'í prosopography. Fast; returns candidate ids + names. Use to get an entity id before entity_dossier, or to disambiguate which person a name refers to. RECALL only — candidates are possibilities to confirm by evidence.',
+      parameters: { type: 'object', properties: { q: { type: 'string', description: 'the name, any spelling' }, type: { type: 'string', enum: ['person', 'place', 'work', 'group'], description: 'optional entity-type filter' } }, required: ['q'] }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'entity_dossier',
+      description: 'Get a person\'s CITED biographical facts from the evidence-reconciled entity database: each claim carries a relation, object, verbatim proof span, time (pin/estimate), source book, and a paragraph link. Use for "who was X", "when/where did X do Y", kinship/relationship questions. Pass the entity id from entity_lookup.',
+      parameters: { type: 'object', properties: { id: { type: 'integer', description: 'entity id (from entity_lookup)' } }, required: ['id'] }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'entity_search',
+      description: 'Find PEOPLE whose cited facts match a description, role, or event (e.g. "amanuensis of the Báb", "died at Fort Ṭabarsí", "governor of Fárs"). Returns candidate people each with their matching cited claims as evidence. Use for descriptive/relational person questions a name lookup can\'t answer.',
+      parameters: { type: 'object', properties: { q: { type: 'string', description: 'the description / role / event to match' } }, required: ['q'] }
     }
   }
 ];
@@ -1175,6 +1200,9 @@ export async function executeTool(name, args, ctx = {}) {
     case 'find_document_for_citation': return executeFindDocumentForCitation(args);
     case 'read_document_for_question': return executeReadDocumentForQuestion(args);
     case 'translate_passage': return executeTranslatePassage(args);
+    case 'entity_lookup': return { candidates: await entityLookup(args.q, { type: args.type, limit: 12 }) };
+    case 'entity_dossier': return (await entityDossier(args.id)) || { error: 'entity not found or merged' };
+    case 'entity_search': return await entitySearch(args.q, { limit: 12 });
     default: return { error: `Unknown tool: ${name}` };
   }
 }
