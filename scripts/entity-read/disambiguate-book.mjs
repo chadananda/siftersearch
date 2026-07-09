@@ -39,8 +39,9 @@ Resolve every reference THAT APPEARS in the current paragraph — names, titles,
 • Central figures (the Báb, Bahá'u'lláh, ‘Abdu'l-Bahá, Quddús) use their fixed short handle; don't expand.
 • PLACE and PERIOD: inherit from the SCENE and prior context; PERIOD is when the events occurred (a flashback keeps its own time).
 • Use ONLY the book text, scene, and prior context — NO outside knowledge. If a reference cannot be resolved from context, write surface→? — do NOT guess.
-Output EXACTLY ONE terse line (it is prepended to every paragraph):
-CTX: @<place> ~<period> | <surface→canonical ; only mentions present, honorifics kept> | <≤12-word resolved event>
+• List ONLY TRANSFORMING resolutions: a short/bare/variant name→its fuller canonical, a pronoun/epithet→its person, a definite-NP bridge→its referent. NEVER emit X→X for a name already in canonical form (drop it — it needs no resolution). List each DISTINCT resolution ONCE (never repeat a pronoun per occurrence). Map a pronoun ONLY where its referent is ambiguous (several people present); otherwise omit pronouns.
+Output EXACTLY ONE terse line (it is prepended to every paragraph); if nothing needs resolving, the middle section is empty:
+CTX: @<place> ~<period> | <transforming resolutions only, honorifics kept> | <≤12-word resolved event>
 
 BOOK:
 ${bookMeta}`;
