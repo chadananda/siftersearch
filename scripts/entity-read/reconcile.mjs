@@ -19,7 +19,7 @@ const CONC = +(process.env.CONC || 5);
 const MODEL = process.env.MODEL || 'deepseek-chat';
 const MV = 'deepseek-disambig-v1';
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
-const coreName = (rs) => String(rs).replace(/\([^)]*\)/g, '').split(/[,;—-]| the | who | a /)[0].trim();  // drop the descriptor tail for lookup
+const coreName = (rs) => String(rs).replace(/\([^)]*\)/g, '').split(/[,;—]| the | who | a /)[0].trim();  // drop the descriptor tail (NOT on hyphen — it connects Persian nisbas: Khán-i-Núrí)
 
 // clusters = distinct resolved_as within the book (skip unresolved '?' and generic roster non-IDs)
 let clauses = `doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%not given%' AND resolved_as NOT LIKE '%?%'`;
