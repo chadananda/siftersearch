@@ -15,32 +15,27 @@ const MV = process.env.MV || 'deepseek-disambig-v1';
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
 const anchorOf = (doc, para, sn, occ) => createHash('sha1').update(`${doc}|${para}|${sn}|${occ}`).digest('hex').slice(0, 16);
 
-// canonical/alias → entity_id index for best-effort binding (person + place + work + group)
-const ents = await queryAll(`SELECT ge.id, ge.canonical_name cn, ge.entity_type et, er.aliases
-  FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type`);
-const nameIx = new Map();
-for (const e of ents) { const keys = [e.cn]; try { const a = JSON.parse(e.aliases || '[]'); if (Array.isArray(a)) keys.push(...a); } catch { /* */ }
-  for (const k of keys) { const n = nrm(k); if (!n) continue; if (!nameIx.has(n)) nameIx.set(n, new Set()); nameIx.get(n).add(e.id); } }
-const bind = (canon) => { const core = canon.replace(/\([^)]*\)/g, '').split(/[,;]/)[0]; const s = nameIx.get(nrm(core)); return s && s.size === 1 ? [...s][0] : null; };
-
+// NO literal name binding here. entity_id is a PROJECTION set by evidence-based reconcile (Pass 4), never by a
+// romanization string-match — that fails on per-book transliteration (Ṣádiq/Sadeq), misspellings, and namesakes.
+// This layer records the surface + the disambiguation's resolved_as descriptor; reconcile does fuzzy candidate-gen
+// (consonantal-skeleton/phonetic recall) + evidence adjudication, then assigns entity_id.
 const rows = await queryAll(`SELECT external_para_id pid, context FROM content WHERE doc_id=? AND deleted_at IS NULL AND context IS NOT NULL AND context_model=? ORDER BY paragraph_index`, [DOC, MV]);
-const RES = /[""“”]([^""“”]{1,70})[""“”]\s*=\s*([^;]+?)(?=\s*;|\s*$)/g;   // "surface" = canonical (straight or curly quotes)
-let n = 0, bound = 0, unbound = 0; const seen = new Set();
+const RES = /[""“”]([^""“”]{1,70})[""“”]\s*=\s*([^;]+?)(?=\s*;|\s*$)/g;   // "surface" = resolved_as (straight or curly quotes)
+let n = 0; const seen = new Set();
 for (const r of rows) {
   const body = String(r.context).split('—').slice(1).join('—');        // drop the "@place, ~era" prefix
   let m;
   while ((m = RES.exec(body))) {
     const surface = m[1].trim(); const canon = m[2].trim();
     if (!surface || !canon || /^\?+$/.test(canon)) continue;            // skip abstentions
-    const sn = nrm(surface); if (!sn) continue;
+    const sn = nrm(surface); if (!sn) continue;                          // nrm only to de-dup identical mentions in a para
     const anchor = anchorOf(DOC, r.pid, sn, 0);
-    if (seen.has(anchor)) continue; seen.add(anchor);
-    const eid = bind(canon); if (eid) bound++; else unbound++; n++;
+    if (seen.has(anchor)) continue; seen.add(anchor); n++;
     if (WRITE) await query(`INSERT OR IGNORE INTO entity_mentions_v2
       (anchor,doc_id,para_id,occurrence,surface,surface_norm,entity_id,resolved_as,resolution_basis,resolution_conf,method_version,model)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [anchor, DOC, r.pid, 0, surface, sn, eid, canon.slice(0, 120), eid ? 'name-match' : 'unbound', eid ? 0.9 : 0.5, MV, MV]);
+      [anchor, DOC, r.pid, 0, surface, sn, null, canon.slice(0, 120), 'note-deferred', null, MV, MV]);
   }
 }
-console.log(`${WRITE ? 'WROTE' : 'DRY'} doc ${DOC}: ${n} mentions (${bound} name-bound, ${unbound} unbound) from ${rows.length} disambiguated paragraphs`);
+console.log(`${WRITE ? 'WROTE' : 'DRY'} doc ${DOC}: ${n} mentions (entity_id DEFERRED to evidence-based reconcile) from ${rows.length} disambiguated paragraphs`);
 process.exit(0);

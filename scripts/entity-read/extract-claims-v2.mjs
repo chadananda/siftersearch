@@ -29,13 +29,9 @@ const sha = (s) => createHash('sha1').update(s).digest('hex').slice(0, 16);
 const relations = await queryAll(`SELECT key, label FROM relations ORDER BY category, key`);
 const relKeys = new Set(relations.map((r) => r.key));
 const relList = relations.map((r) => `${r.key}`).join(', ') || 'born, died, martyred, converted-by, father-of, son-of, brother-of, wife-of, teacher-of, disciple-of, met, accompanied, participated-in, resided-in, appointed, wrote, titled, related-to';
-const ents = await queryAll(`SELECT id, canonical_name cn, entity_type et FROM graph_entities`);
-const aliasRows = await queryAll(`SELECT canonical_name cn, aliases FROM entity_research`);
-const aliasByCn = new Map(aliasRows.map((r) => [r.cn, r.aliases]));
-const nameIx = new Map();
-for (const e of ents) { const keys = [e.cn]; try { const a = JSON.parse(aliasByCn.get(e.cn) || '[]'); if (Array.isArray(a)) keys.push(...a); } catch { /* */ }
-  for (const k of keys) { const n = nrm(k); if (!n) continue; if (!nameIx.has(n)) nameIx.set(n, new Set()); nameIx.get(n).add(e.id); } }
-const bind = (name) => { if (!name) return null; const core = String(name).replace(/\([^)]*\)/g, '').split(/[,;]/)[0]; const s = nameIx.get(nrm(core)); return s && s.size === 1 ? [...s][0] : null; };
+// NO literal subject/object binding — entity_id/target_entity_id are a PROJECTION set by evidence-based reconcile.
+// The claim records the disambiguation's RESOLVED names (in statement + semantic_key); reconcile links them by
+// fuzzy candidate-gen (transliteration-invariant recall) + evidence, never by romanization string-match.
 const eraOf = (ctx) => { const m = String(ctx).match(/@[^—]*—/); return m ? m[0].replace(/^@/, '').replace(/—$/, '').trim() : ''; };
 
 let paras = await queryAll(`SELECT id, external_para_id pid, text, context FROM content WHERE doc_id=? AND blocktype='paragraph' AND deleted_at IS NULL AND context IS NOT NULL AND context_model=? ORDER BY paragraph_index`, [DOC, MV]);
@@ -73,7 +69,7 @@ async function processPara(p) {
     const proofOk = proofNrm(c.proof).length > 8 && textN.includes(proofNrm(c.proof).slice(0, 120));
     if (!proofOk) { dropped++; continue; }                                   // verbatim-proof gate
     const rel = relKeys.has(c.relation) ? c.relation : 'related-to';
-    const subjId = bind(c.subject), objId = bind(c.object);
+    const subjId = null, objId = null;   // entity binding DEFERRED to evidence-based reconcile (never literal)
     const when = c.when || era;
     const basis = /\[pin/i.test(when) ? 'pin' : /\[est/i.test(when) ? 'estimate' : (era ? (/\[pin/i.test(era) ? 'pin' : 'estimate') : null);
     const yr = (when.match(/\b(1[678]\d{2})\b/) || [])[1] || null;
@@ -88,7 +84,7 @@ async function processPara(p) {
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [claimHash, subjId, rel, objId, statement, String(c.proof).slice(0, 240), DOC, p.pid,
          yr, yr ? 'year' : null, basis, String(when).slice(0, 160), semKey, MV, EV,
-         subjId ? 0.8 : 0.6, 'supported', 1, BATCH])); written++; }
+         0.7, 'supported', 1, BATCH])); written++; }
       catch (e) { console.error(`  [${p.pid}] WRITE FAIL ${String(e.message).slice(0, 40)}`); }
     } else if (LIMIT) console.log(`  ${p.pid} · ${c.subject} —[${rel}]→ ${c.object || ''}  {when:${basis || '?'} ${yr || ''}}  ⟨${String(c.proof).slice(0, 50)}…⟩`);
   }
