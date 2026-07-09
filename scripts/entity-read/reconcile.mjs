@@ -14,6 +14,8 @@ const DOC = Number(process.env.DOC || 21308);
 const WRITE = process.env.WRITE === '1';
 const FILTER = process.env.FILTER || null;         // resolved_as LIKE %FILTER% (proof runs)
 const LIMIT = process.env.LIMIT ? +process.env.LIMIT : 0;
+const MINFREQ = +(process.env.MINFREQ || 1);       // skip clusters mentioned < MINFREQ times (full run: 2)
+const CONC = +(process.env.CONC || 5);
 const MODEL = process.env.MODEL || 'deepseek-chat';
 const MV = 'deepseek-disambig-v1';
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
@@ -25,8 +27,9 @@ const params = [DOC];
 if (FILTER) { clauses += ` AND resolved_as LIKE ?`; params.push(`%${FILTER}%`); }
 let clusters = await queryAll(`SELECT resolved_as, COUNT(*) freq, GROUP_CONCAT(DISTINCT para_id) paras
   FROM entity_mentions_v2 WHERE ${clauses} GROUP BY resolved_as ORDER BY freq DESC`, params);
+clusters = clusters.filter((c) => c.freq >= MINFREQ);
 if (LIMIT) clusters = clusters.slice(0, LIMIT);
-console.error(`reconcile DOC=${DOC}${FILTER ? ` FILTER=${FILTER}` : ''} · ${clusters.length} resolved_as clusters · WRITE=${WRITE}`);
+console.error(`reconcile DOC=${DOC}${FILTER ? ` FILTER=${FILTER}` : ''} · ${clusters.length} resolved_as clusters (freq≥${MINFREQ}) · CONC=${CONC} · WRITE=${WRITE}`);
 
 const sceneOf = async (paras) => {                 // representative disambiguation notes for the cluster
   const ps = paras.split(',').slice(0, 4);
@@ -41,7 +44,10 @@ const SYS = `You are an entity-resolution adjudicator for a Bábí-Bahá'í pros
 Rules: name similarity ALONE never justifies "link" (namesakes abound); require role/place/era/connection agreement. A descriptor that contradicts a candidate (an "amanuensis" is not a "traditions-scholar") forbids linking them. Prefer "create" or "uncertain" over a wrong link (a false merge fabricates a person). Return ONLY JSON: {"verdict":"link|create|uncertain","entity_id":<id or null>,"canonical":"<name or null>","decisive":"<the axis that settled it, <=20 words>","confidence":0.0-1.0}`;
 
 let done = 0, proposed = 0;
-for (const c of clusters) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const retry = async (fn, n = 4) => { let e; for (let i = 0; i < n; i++) { try { return await fn(); } catch (x) { e = x; await sleep(600 * (i + 1)); } } throw e; };
+process.on('unhandledRejection', (e) => console.error(`unhandledRejection: ${String(e?.message || e).slice(0, 60)}`));
+async function processCluster(c) {
   const keys = [...skeletonKeys(coreName(c.resolved_as))];
   const cand = keys.length ? await queryAll(
     `SELECT lk.entity_id id, ge.canonical_name cn, ge.entity_type et, ge.importance imp, er.summary,
@@ -54,8 +60,8 @@ for (const c of clusters) {
   const candBlock = cand.map((x) => `  #${x.id} "${x.cn}" (imp ${x.imp ?? '?'}) — ${String(x.summary || '').slice(0, 90)}`).join('\n') || '  (no name-candidates found)';
   const user = `MENTION CLUSTER — resolved as: "${c.resolved_as}" (${c.freq} mentions)\nSCENES:\n${scenes}\n\nCANDIDATE entities (name-recall only, verify by evidence):\n${candBlock}`;
   let v;
-  try { const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 400, responseFormat: { type: 'json_object' } }); v = JSON.parse((res.content || '').match(/\{[\s\S]*\}/)[0]); }
-  catch (e) { console.error(`  ["${c.resolved_as.slice(0, 40)}"] FAIL ${String(e.message).slice(0, 40)}`); continue; }
+  try { const res = await retry(() => chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 400, responseFormat: { type: 'json_object' } })); v = JSON.parse((res.content || '').match(/\{[\s\S]*\}/)[0]); }
+  catch (e) { console.error(`  ["${c.resolved_as.slice(0, 40)}"] FAIL ${String(e.message).slice(0, 40)}`); return; }
   done++;
   const kind = v.verdict === 'link' ? 'link' : v.verdict === 'create' ? 'create' : 'uncertain';
   console.log(`\n"${c.resolved_as.slice(0, 60)}" (${c.freq}×) → ${kind.toUpperCase()}${v.entity_id ? ' #' + v.entity_id : ''}${v.canonical ? ' “' + v.canonical + '”' : ''}  · ${v.decisive || ''}`);
@@ -69,5 +75,8 @@ for (const c of clusters) {
        `model:${MODEL}`, 2, v.confidence ?? null, 'proposed', null]); proposed++;
   }
 }
+let next = 0;
+async function worker() { while (next < clusters.length) { const i = next++; try { await processCluster(clusters[i]); } catch (e) { console.error(`cluster ${i} crash ${String(e.message).slice(0, 40)}`); } if (WRITE && proposed && proposed % 100 === 0) console.error(`  proposed ${proposed}`); } }
+await Promise.all(Array.from({ length: Math.min(CONC, clusters.length) }, worker));
 console.error(`\nDONE — ${done} clusters adjudicated · ${proposed} proposed decisions written (status=proposed, actor_tier 2)`);
 process.exit(0);
