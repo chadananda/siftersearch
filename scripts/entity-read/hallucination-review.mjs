@@ -32,7 +32,11 @@ for (let b = 0; b < items.length; b += 8) { const batch = items.slice(b, b + 8);
     for (const v of (JSON.parse((res.content || '').match(/\{[\s\S]*\}/)[0]).items || [])) verd[v.i] = v; } catch (e) { console.error(`  batch ${b} fail ${e.message}`); }
   console.error(`  ${Math.min(b + 8, items.length)}/${items.length}`); }
 
-const rows = flags.map((f, i) => { const c = claims.get(f.claim_id); const v = verd[i] || {}; const u = c ? srcUrl(c.doc_id, c.para_id) : null;
+// Only keep ACTIONABLE corrections — a concrete scene-established value. "unclear" = the AI couldn't verify a
+// wrong→right fix, i.e. almost always a FALSE FLAG (e.g. a pronoun the sweep mis-resolved). Drop those entirely.
+const actionable = flags.map((f, i) => ({ f, v: verd[i] })).filter(({ v }) => v && v.correct && !/^unclear$|unclear/i.test(String(v.correct).trim()) && String(v.correct).trim().toLowerCase() !== String(v.wrong || '').trim().toLowerCase());
+console.error(`actionable corrections: ${actionable.length} (dropped ${flags.length - actionable.length} unclear/false-flags)`);
+const rows = actionable.map(({ f, v }) => { const c = claims.get(f.claim_id); const u = c ? srcUrl(c.doc_id, c.para_id) : null;
   return `<tr data-cid="${f.claim_id}" data-correct="${esc(v.correct || '')}"><td class="dec"><button class="y">fix ✓</button><button class="n">no</button></td>
    <td><div class="cn">${esc(f.cn)} <span class="eid">[claim ${f.claim_id}]</span> ${u ? `<a class="src" href="${u}" target="_blank">${esc(srcLabel(c.doc_id, c.para_id))} ¶</a>` : ''}</div>
    <div class="st">${esc(String(c ? c.statement : '').slice(0, 200))}</div>
