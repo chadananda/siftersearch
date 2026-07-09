@@ -37,7 +37,10 @@ if (!ids.length) { try { const v = JSON.parse(readFileSync('tmp/siftersearch-con
 console.error(`records to re-adjudicate: ${ids.length}`);
 const ents = ids.length ? await queryAll(`SELECT id, canonical_name cn FROM graph_entities WHERE id IN (${ids.map(() => '?').join(',')})`, ids) : [];
 
-const records = [];
+const CACHE = 'tmp/siftersearch-readjudication-cache.json';
+let records = [];
+if (!process.env.FORCE && existsSync(CACHE)) { records = JSON.parse(readFileSync(CACHE, 'utf8')); console.error(`loaded ${records.length} cached records (FORCE=1 to re-adjudicate)`); }
+else {
 for (const e of ents) {
   const claims = await queryAll(`SELECT id, relation, statement, doc_id, para_id FROM entity_claims WHERE entity_id=? AND import_batch IN ('gpb-v1','db-v1') ORDER BY id`, [e.id]);
   if (claims.length < 2) continue;
@@ -54,6 +57,8 @@ for (const e of ents) {
   const quarantines = (r.drop || []).map((d) => ({ ...claims[d.claim], reason: d.reason, issue: d.issue })).filter((q) => q.id);
   if (groups.length > 1 || quarantines.length) records.push({ id: e.id, cn: e.cn, nClaims: claims.length, groups, quarantines });
   console.error(`  [${e.id}] ${e.cn}: ${groups.length} people, ${quarantines.length} quarantine`);
+}
+writeFileSync(CACHE, JSON.stringify(records));
 }
 
 const opRow = (rec) => {
@@ -84,17 +89,19 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Re-adjudic
  .qrow{border-left-color:var(--sus)}.why{color:var(--mut);font-size:.78rem}
 </style></head><body>
 <header><h1>Claim re-adjudication — ${records.length} records proposed</h1>
-<p class="lede">The pipeline read each claim <b>with its source scene</b> and proposes: <b style="color:#7bb35e">KEEP</b> the coherent group, <b style="color:#f59e0b">SPLIT OUT</b> other people (→ an existing entity or NEW), and <b style="color:#ef4444">QUARANTINE</b> hallucinated / mis-attributed claims. Nothing is applied — <b>confirm (✓) or reject (no)</b> each proposed op (splits default ✓, quarantines default ✓). Then <b>Copy ops</b> and paste back; I apply only what you confirmed, reversibly.</p>
+<p class="lede">The pipeline read each claim <b>with its source scene</b> and proposes: <b style="color:#7bb35e">KEEP</b> the coherent group, <b style="color:#f59e0b">SPLIT OUT</b> other people (→ an existing entity or NEW), and <b style="color:#ef4444">QUARANTINE</b> hallucinated / mis-attributed claims. <b>Nothing is pre-selected.</b> Click <b>✓</b> ONLY on the ops you've verified — a good split, or a claim that really should be quarantined. <b>Copy ops exports only your ✓s</b> (leave the rest undecided). Do a few, Copy, paste back — repeat at your pace. I apply only what you confirmed, reversibly.</p>
 <div class="tool"><span id="n">0</span> ops confirmed <button id="copy">Copy ops</button></div></header>
 <div id="outwrap" style="display:none;padding:.6rem 1.5rem;background:#0d1526"><textarea id="out" readonly style="width:100%;height:8rem;background:#0b1220;color:#9ecbff;border:1px solid var(--line);border-radius:6px;font:12px ui-monospace,monospace;padding:.6rem"></textarea></div>
 ${records.map(opRow).join('\n')}
 <script>
- const KEY='sifter-readj-v2';let dec=JSON.parse(localStorage.getItem(KEY)||'{}');const ops=[...document.querySelectorAll('.grp.move,.qrow')];
+ const KEY='sifter-readj-v3';let dec=JSON.parse(localStorage.getItem(KEY)||'{}');const ops=[...document.querySelectorAll('.grp.move,.qrow')];
  const idOf=g=>g.classList.contains('qrow')?('q|'+g.dataset.cid):('m|'+g.dataset.rec+'|'+g.dataset.gi);
  const paint=g=>{const s=dec[idOf(g)];g.classList.toggle('on-y',s==='y');g.classList.toggle('on-n',s==='n');};
  const persist=()=>localStorage.setItem(KEY,JSON.stringify(dec));const countN=()=>document.getElementById('n').textContent=ops.filter(g=>dec[idOf(g)]==='y').length;
- ops.forEach(g=>{if(!(idOf(g) in dec))dec[idOf(g)]='y';paint(g);g.querySelector('.y').onclick=()=>{dec[idOf(g)]='y';persist();paint(g);countN();};g.querySelector('.n').onclick=()=>{dec[idOf(g)]='n';persist();paint(g);countN();};});
- persist();countN();
+ ops.forEach(g=>{paint(g);   // DEFAULT OFF — nothing confirmed until you click; only ✓ is exported
+   g.querySelector('.y').onclick=()=>{dec[idOf(g)]=dec[idOf(g)]==='y'?undefined:'y';if(!dec[idOf(g)])delete dec[idOf(g)];persist();paint(g);countN();};
+   g.querySelector('.n').onclick=()=>{dec[idOf(g)]=dec[idOf(g)]==='n'?undefined:'n';if(!dec[idOf(g)])delete dec[idOf(g)];persist();paint(g);countN();};});
+ countN();
  document.getElementById('copy').onclick=()=>{const out=ops.filter(g=>dec[idOf(g)]==='y').map(g=>g.dataset.op==='quarantine'?{op:'quarantine',claim:+g.dataset.cid}:{op:'move',from:+g.dataset.rec,gi:+g.dataset.gi,target:g.dataset.target||'NEW'});
    const ta=document.getElementById('out');document.getElementById('outwrap').style.display='block';ta.value=JSON.stringify(out);ta.select();try{navigator.clipboard.writeText(ta.value);}catch(e){}};
 </script></body></html>`;
