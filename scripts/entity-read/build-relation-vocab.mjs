@@ -27,7 +27,8 @@ Rules (Rule — Example):
 - Closest key; if none fits, "characterized-as".
 Return ONLY JSON: {"map":[{"i":<index>,"key":"<controlled>","is_event":<true|false>,"target":"<name or null>","place":"<place or null>"}]}.`;
 
-const rc = await queryAll(`SELECT relation, COUNT(*) n FROM entity_claims WHERE import_batch='gpb-v1' GROUP BY relation ORDER BY n DESC`);
+const BATCH = process.env.BATCH || 'gpb-v1';
+const rc = await queryAll(`SELECT relation, COUNT(*) n FROM entity_claims WHERE import_batch=? GROUP BY relation ORDER BY n DESC`, [BATCH]);
 console.log(`distinct raw relations: ${rc.length}  (over ${rc.reduce((s, r) => s + r.n, 0)} claims)`);
 
 let map = {}; try { map = JSON.parse(readFileSync(MAPFILE, 'utf8')); } catch { /* fresh */ }

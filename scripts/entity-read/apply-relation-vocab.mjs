@@ -6,6 +6,7 @@ import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.con
 import { readFileSync, writeFileSync } from 'fs';
 const { queryAll, query } = await import('../../api/lib/db.js');
 const WRITE = process.env.WRITE === '1';
+const BATCH = process.env.BATCH || 'gpb-v1';
 const map = JSON.parse(readFileSync('tmp/siftersearch-relation-map.json', 'utf8'));
 
 const VOCAB = { // key → category (the controlled relations table)
@@ -29,7 +30,7 @@ const byName = new Map();
 for (const e of ents) { const add = (s) => { const k = nrm(s); if (k && !byName.has(k)) byName.set(k, e.id); }; add(e.cn); try { for (const a of JSON.parse(e.aliases || '[]')) add(a); } catch { /* */ } }
 const resolve = (name) => name ? (byName.get(nrm(name)) || null) : null;
 
-const claims = await queryAll(`SELECT id, relation, statement FROM entity_claims WHERE import_batch='gpb-v1'`);
+const claims = await queryAll(`SELECT id, relation, statement FROM entity_claims WHERE import_batch=?`, [BATCH]);
 let tgtResolved = 0, tgtUnresolved = 0, evented = 0; const unresolvedNames = {};
 const updates = [];
 for (const c of claims) {
@@ -50,7 +51,7 @@ console.log(`  relations vocab to seed: ${CTRL.size} keys`);
 if (!WRITE) { console.log(`\nDRY — set WRITE=1 (with SIFTER_WRITER_URL) to apply.`); process.exit(0); }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const wr = async (sql, p) => { for (let i = 0; i < 4; i++) { try { return await query(sql, p); } catch (e) { if (i === 3) throw e; await sleep(500 * (i + 1)); } } };
-writeFileSync('/home/chad/sifter/siftersearch/siftersearch-relation-rollback.json', JSON.stringify(updates.map((u) => ({ id: u.id, rawRel: u.rawRel }))));
+writeFileSync(`/home/chad/sifter/siftersearch/siftersearch-relation-rollback-${BATCH}.json`, JSON.stringify(updates.map((u) => ({ id: u.id, rawRel: u.rawRel }))));
 console.log('rollback written.');
 for (const cat of Object.keys(VOCAB)) for (const k of VOCAB[cat].split(' ')) await wr(`INSERT OR IGNORE INTO relations (key,label,category) VALUES (?,?,?)`, [k, k.replace(/-/g, ' '), cat]);
 let w = 0;
