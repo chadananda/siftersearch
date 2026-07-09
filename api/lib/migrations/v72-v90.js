@@ -318,6 +318,34 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_elk_entity ON entity_lookup_keys(entity_id)`);
     logger.info('Migration 87 complete: entity_lookup_keys (fast transliteration-invariant lookup index)');
   },
+
+  88: async () => {
+    // Make entity_claims.entity_id NULLABLE (was NOT NULL from migration 84, predating deferred binding). NOT NULL +
+    // INSERT OR IGNORE was SILENTLY DROPPING every claim whose subject didn't literal-match at extraction. SQLite
+    // can't ALTER NOT NULL off → rebuild. Preserves all rows (column order = migration-84 defs then migration-86 adds).
+    await query(`ALTER TABLE entity_claims RENAME TO entity_claims_pre88`);
+    await query(`CREATE TABLE entity_claims (
+      id INTEGER PRIMARY KEY, claim_hash TEXT UNIQUE, claim_group TEXT,
+      entity_id INTEGER, relation TEXT NOT NULL, target_entity_id INTEGER,
+      statement TEXT NOT NULL, proof_verbatim TEXT, doc_id INTEGER, para_id TEXT,
+      valid_from TEXT, valid_to TEXT, asserted_at INTEGER DEFAULT (unixepoch()), superseded_at INTEGER,
+      rank TEXT DEFAULT 'normal', status TEXT DEFAULT 'supported',
+      proof_ok INTEGER, subject_ok INTEGER, consistency_ok INTEGER,
+      confidence REAL, provenance_tier INTEGER, extractor_version TEXT, import_batch TEXT,
+      time_value TEXT, time_precision TEXT, time_basis TEXT, time_anchor TEXT, method_version TEXT, semantic_key TEXT)`);
+    await query(`INSERT INTO entity_claims SELECT * FROM entity_claims_pre88`);
+    await query(`DROP TABLE entity_claims_pre88`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_entity   ON entity_claims(entity_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_target   ON entity_claims(target_entity_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_relation ON entity_claims(relation)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_ent_rel  ON entity_claims(entity_id, relation)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_group    ON entity_claims(claim_group)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_para     ON entity_claims(para_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_batch    ON entity_claims(import_batch)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_time     ON entity_claims(time_value)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_semkey   ON entity_claims(semantic_key)`);
+    logger.info('Migration 88 complete: entity_claims.entity_id now NULLABLE (rebuilt; deferred binding)');
+  },
 };
 
 export const graphMigrations = {

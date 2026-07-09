@@ -15,7 +15,7 @@ import { userMigrations, USER_DB_CURRENT_VERSION } from './user.js';
 
 // Combined dispatch table — version => async () => void
 export const migrations = { ...v1to25, ...v26to45, ...v46to58, ...v72to90 };
-export const CURRENT_VERSION = 87;
+export const CURRENT_VERSION = 88;
 export const GRAPH_DB_CURRENT_VERSION = 1;
 export { USER_DB_CURRENT_VERSION, userMigrations, getMigration44SQL, graphMigrations };
 
