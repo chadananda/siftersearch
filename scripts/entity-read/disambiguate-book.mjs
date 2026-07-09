@@ -78,7 +78,7 @@ for (const [si, seg] of segs.entries()) {
     const priorBlock = summaries.slice(-12).map((s) => s.line).join('\n');
     const user = `SCENE: ${sceneLine || '(none)'}\nRUNNING PLACE/ERA (inherit unless this paragraph moves): ${runPlaceEra || '(not yet established — infer from scene)'}\n\nNOTES FOR PRECEDING PARAGRAPHS (identity established here carries forward):\n${priorBlock || '(none — first paragraph of the chapter)'}\n\nCURRENT PARAGRAPH [${p.pid}]:\n${p.text}`;
     let out = '';
-    try { const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 200 }); out = (res.content || '').trim().replace(/^CTX:\s*/i, ''); }
+    try { const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 400 }); out = (res.content || '').trim().replace(/^CTX:\s*/i, ''); }
     catch (e) { console.error(`  [${p.pid}] FAIL ${String(e.message).slice(0, 50)}`); continue; }
     summaries.push({ pid: p.pid, line: `[${p.pid}] ${out.replace(/\n/g, ' ')}` });
     const pe = placeEraOf(out); if (pe) runPlaceEra = pe;
