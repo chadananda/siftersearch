@@ -64,18 +64,21 @@ if (ADJ) {
   }
 }
 
-// bucket + render
-for (const p of pairs) { const v = verd[`${p.a}|${p.b}`]; p.rel = v ? v.relation : 'uncertain'; p.fs = v?.for_same; p.fd = v?.for_diff; }
+// bucket + render — a verdict below the confidence bar becomes UNCERTAIN (human decides), never auto-applied
+const CONF = Number(process.env.CONF || 0.8);
+for (const p of pairs) { const v = verd[`${p.a}|${p.b}`]; p.rel = v ? v.relation : 'uncertain'; p.conf = v?.confidence ?? null; p.fs = v?.for_same; p.fd = v?.for_diff;
+  p.eff = (p.rel !== 'uncertain' && p.conf != null && p.conf >= CONF) ? p.rel : 'uncertain'; }
 const lvl = { same: 'ai-same', different: 'ai-diff', uncertain: 'uncertain' };
-const cnt = pairs.reduce((m, p) => (m[p.rel] = (m[p.rel] || 0) + 1, m), {});
+const cnt = pairs.reduce((m, p) => (m[p.eff] = (m[p.eff] || 0) + 1, m), {});
 const claimList = (id) => { const c = P.get(id).claims; return c.length ? c.slice(0, 5).map((x) => `<div class="ci">${esc(x)}</div>`).join('') : '<div class="ci none">— no cited claims —</div>'; };
-const row = (p) => { const A = P.get(p.a), B = P.get(p.b); const def = p.rel === 'same' ? 'merge' : 'keep';
-  return `<tr data-a="${p.a}" data-b="${p.b}" data-level="${lvl[p.rel]}" data-default="${def}">
+const row = (p) => { const A = P.get(p.a), B = P.get(p.b); const def = p.eff === 'same' ? 'merge' : p.eff === 'different' ? 'keep' : '';
+  const badge = p.eff === 'same' ? 'AI: same → merge' : p.eff === 'different' ? 'AI: different → keep' : `? uncertain — YOUR CALL${p.conf != null ? ` (AI conf ${p.conf}${p.rel !== 'uncertain' ? `, leaned ${p.rel}` : ''})` : ''}`;
+  return `<tr data-a="${p.a}" data-b="${p.b}" data-level="${lvl[p.eff]}"${def ? ` data-default="${def}"` : ''}>
    <td class="pair">
      <div class="names"><span class="ent">${esc(A.cn)}<span class="eid">#${A.id} · ${esc(A.side)}</span></span>
        <span class="tog"><button class="t-same" title="same person — MERGE">MERGE</button><button class="t-diff" title="different people — keep separate">KEEP&nbsp;SEPARATE</button></span>
        <span class="ent">${esc(B.cn)}<span class="eid">#${B.id} · ${esc(B.side)}</span></span></div>
-     <div class="tags"><span class="badge ${lvl[p.rel]}">${p.rel === 'same' ? 'AI: same → merge' : p.rel === 'different' ? 'AI: different → keep' : '? uncertain'}</span></div>
+     <div class="tags"><span class="badge ${lvl[p.eff]}">${badge}</span></div>
    </td>
    <td class="ev">
      ${p.fs ? `<div class="ev-is"><span class="lbl is">SAME — because</span>${esc(p.fs)}</div>` : ''}
@@ -83,8 +86,8 @@ const row = (p) => { const A = P.get(p.a), B = P.get(p.b); const def = p.rel ===
      <div class="cols"><div class="col"><b>${esc(A.cn)}</b><div class="sum">${esc(A.summary)}</div>${claimList(A.id)}</div>
        <div class="col"><b>${esc(B.cn)}</b><div class="sum">${esc(B.summary)}</div>${claimList(B.id)}</div></div>
    </td></tr>`; };
-const order = { 'ai-same': 0, uncertain: 1, 'ai-diff': 2 };
-pairs.sort((x, y) => order[lvl[x.rel]] - order[lvl[y.rel]]);
+const order = { uncertain: 0, 'ai-same': 1, 'ai-diff': 2 };
+pairs.sort((x, y) => (order[lvl[x.eff]] - order[lvl[y.eff]]) || ((P.get(y.a).imp + P.get(y.b).imp) - (P.get(x.a).imp + P.get(x.b).imp)));
 const html = `<!doctype html><html><head><meta charset="utf-8"><title>Dubious merges (${pairs.length})</title><style>
  :root{--bg:#0b1220;--card:#111a2e;--line:#22304d;--ink:#e6edf7;--mut:#93a4c3;--sus:#ef4444;--var:#7bb35e}
  *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
@@ -105,13 +108,13 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Dubious me
  .cols{display:flex;gap:1rem;margin-top:.4rem}.col{flex:1;min-width:0;background:#0d1526;border:1px solid var(--line);border-radius:8px;padding:.5rem .7rem}.col>b{color:#7dd3fc}
  .sum{color:var(--mut);font-size:.82rem;margin:.25rem 0 .4rem}.ci{font-size:.8rem;border-left:2px solid #33507e;padding:.1rem .5rem;margin:.15rem 0}.ci.none{color:var(--mut);border-color:var(--sus)}
 </style></head><body>
-<header><h1>Dubious merges — ${pairs.length} same-name entity pairs</h1>
-<p class="lede">Two records that share a name. <b>MERGE</b> = the same person under variant names → combine. <b>KEEP SEPARATE</b> = a namesake (same name, different person). The AI pre-picked from evidence (era, nisba, role, kinship, fate) — a shared name is never proof. Confirm/flip each, then <b>Copy merges</b> and paste back. Start with <b>uncertain</b>, then spot-check the AI calls.</p>
+<header><h1>Dubious merges — ${pairs.length} same-name pairs · <b>${cnt.uncertain || 0}</b> need your call</h1>
+<p class="lede">Two records that share a name. <b>MERGE</b> = same person under variant names → combine · <b>KEEP SEPARATE</b> = a namesake. The <b>uncertain</b> tab (default) is where the AI's confidence was below ${CONF} — <b>those are yours to decide</b> (nothing pre-marked). The <b>AI: merge</b> / <b>AI: keep</b> tabs are its high-confidence calls — skim to spot-check, flip any wrong. Each pair shows both records' cited claims so you can verify the link (shared events/kin/arc) or the familiarity default (a bare name defaults to the prominent bearer). When done, <b>Copy merges</b> → paste back.</p>
 <div class="bar"><span class="filters">
- <button data-f="all" class="on">all (${pairs.length})</button>
+ <button data-f="uncertain" class="on">❓ your call (${cnt.uncertain || 0})</button>
  <button data-f="ai-same">AI: merge (${cnt.same || 0})</button>
- <button data-f="uncertain">uncertain (${cnt.uncertain || 0})</button>
  <button data-f="ai-diff">AI: keep separate (${cnt.different || 0})</button>
+ <button data-f="all">all (${pairs.length})</button>
 </span><span class="tool"><span id="n">0</span> marked merge <button class="exp" id="copy">Copy merges</button></span></div>
 <div id="outwrap" style="display:none;padding:.6rem 1.5rem;background:#0d1526"><textarea id="out" readonly style="width:100%;height:7rem;background:#0b1220;color:#9ecbff;border:1px solid var(--line);border-radius:6px;font:12px ui-monospace,monospace;padding:.6rem"></textarea></div>
 <table><thead><tr><th>Same person? MERGE / KEEP SEPARATE</th><th>Evidence + each record's cited claims</th></tr></thead><tbody>
@@ -125,7 +128,8 @@ ${pairs.map(row).join('\n')}
    t.querySelector('.t-same').onclick=()=>{dec[idOf(t)]='merge';persist();paint(t);countN();};
    t.querySelector('.t-diff').onclick=()=>{dec[idOf(t)]='keep';persist();paint(t);countN();};});
  persist();countN();
- const btns=[...document.querySelectorAll('.filters button')];btns.forEach(b=>b.onclick=()=>{btns.forEach(x=>x.classList.remove('on'));b.classList.add('on');const f=b.dataset.f;trs.forEach(t=>t.style.display=(f==='all'||t.dataset.level===f)?'':'none');});
+ const btns=[...document.querySelectorAll('.filters button')];const applyF=f=>trs.forEach(t=>t.style.display=(f==='all'||t.dataset.level===f)?'':'none');
+ btns.forEach(b=>b.onclick=()=>{btns.forEach(x=>x.classList.remove('on'));b.classList.add('on');applyF(b.dataset.f);});applyF('uncertain');
  document.getElementById('copy').onclick=()=>{const out=trs.filter(t=>dec[idOf(t)]==='merge').map(t=>({merge:[+t.dataset.a,+t.dataset.b]}));const ta=document.getElementById('out');document.getElementById('outwrap').style.display='block';ta.value=JSON.stringify(out);ta.select();try{navigator.clipboard.writeText(ta.value);}catch(e){}};
 </script></body></html>`;
 if (!existsSync('tmp')) mkdirSync('tmp', { recursive: true });
