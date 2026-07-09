@@ -19,7 +19,13 @@ const CONC = +(process.env.CONC || 5);
 const MODEL = process.env.MODEL || 'deepseek-chat';
 const MV = 'deepseek-disambig-v1';
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
-const coreName = (rs) => String(rs).replace(/\([^)]*\)/g, '').split(/[,;—]| the | who | a /)[0].trim();  // drop the descriptor tail (NOT on hyphen — it connects Persian nisbas: Khán-i-Núrí)
+const coreName = (rs) => String(rs).replace(/\([^)]*\)/g, '').split(/[,;—]| the | who | a /)[0].trim();  // (kept for the create-canonical; candidate recall uses the full name)
+
+if (process.env.CLEAR === '1' && WRITE) {   // clean slate: drop prior mention-cluster decisions + mention bindings
+  await query(`DELETE FROM entity_decisions WHERE target_kind='mention-cluster'`);
+  await query(`UPDATE entity_mentions_v2 SET entity_id=NULL, resolution_basis=NULL, resolution_conf=NULL`);
+  console.error('CLEARED prior mention-cluster decisions + mention bindings');
+}
 
 // clusters = distinct resolved_as within the book (skip unresolved '?' and generic roster non-IDs)
 let clauses = `doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%not given%' AND resolved_as NOT LIKE '%?%'`;
@@ -50,7 +56,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const retry = async (fn, n = 4) => { let e; for (let i = 0; i < n; i++) { try { return await fn(); } catch (x) { e = x; await sleep(600 * (i + 1)); } } throw e; };
 process.on('unhandledRejection', (e) => console.error(`unhandledRejection: ${String(e?.message || e).slice(0, 60)}`));
 async function processCluster(c) {
-  const keys = [...skeletonKeys(coreName(c.resolved_as))];
+  const keys = [...skeletonKeys(c.resolved_as)];   // FULL resolved name (incl. parenthetical alias) → max recall; AI filters by evidence
   const cand = keys.length ? await queryAll(
     `SELECT lk.entity_id id, ge.canonical_name cn, ge.entity_type et, ge.importance imp, er.summary,
             COUNT(DISTINCT lk.skeleton_key) shared
