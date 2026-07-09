@@ -164,102 +164,86 @@ export async function bioSearch(rawQ) {
   }
   if (bareGroup && memberIds.length) return { ids: memberIds, q, group: best.id, reasoning: { summary: best.summary || `${best.name} — ${memberIds.length} members.`, evidence: {} } };
 
-  // Candidate catalog = each person's CITED FACT CATALOG (facts2: clear, paragraph-cited facts incl. connections).
-  // The meaning-search is a LOOKUP over these typed cited facts — the answer is what the facts say, and a person
-  // with no fact supporting the query is not returned (no guessing). Evidence = the matched fact + its citation.
-  const rows = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.aliases, er.research_notes
-    FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name
-    WHERE ge.entity_type='person' AND ge.religion='' AND (er.research_notes LIKE '%"facts2"%' OR er.research_notes LIKE '%"episodes"%')
-    ORDER BY (ge.importance IS NULL), ge.importance DESC LIMIT 900`);
-  const exById = {}; const epById = {}; const cand = []; const nameById = {};
-  const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”.]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
-  // SUBJECT GATE — a facts2 roster artifact like "Muṣṭafá — dervish converted by Bahá'u'lláh" is a fact whose
-  // grammatical SUBJECT is a DIFFERENT named person that got mis-filed under this entity (a co-mention that leaked
-  // across the em-dash). If such a fact is the only one naming, say, "Bahá'u'lláh", the search will grab it to
-  // justify a "who met Bahá'u'lláh" clause and fabricate a narrative. So: any fact in the "<Subject> — description"
-  // roster form whose Subject shares NO significant name-token with this person is dropped before it can be cited.
-  // Only the spaced em/en-dash roster form is judged (prose facts like "Next to Mullá Ḥusayn, Vaḥíd was…" are left
-  // alone), and a hyphen inside a name (Qurbán-‘Alí) is never treated as the delimiter.
-  const HON = new Set('mirza haji hajji mulla siyyid sayyid aqa shaykh sheikh ustad karbilai karbala mashhadi hajj the of son daughter dervish native an outstanding figure community known as one'.split(' '));
-  const sigToks = (s) => new Set(nrm(s).replace(/\([^)]*\)/g, ' ').split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !HON.has(t)));
-  const allToks = (s) => new Set(nrm(s).split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !HON.has(t)));   // keep parenthetical names
-  const factSubjectOk = (name, aliasArr, statement) => {
-    const m = String(statement || '').match(/^\s*(.{2,60}?)\s+[-–—―−]\s+\S/);   // "Subject — description" roster form (any spaced dash; intra-name hyphens have no spaces so are never split)
-    if (!m) return true;                                                          // not the roster form → don't judge
-    if (/^\s*(he|she|they|it|his|her|their|its|who|whom|this|that|these|those|in|on|at|when|after|before|during|next|owing|because)\b/i.test(m[1])) return true;   // pronoun/prose lead, never a roster name → about the entity
-    const subj = sigToks(m[1]); if (!subj.size) return true;                       // no name-like subject → keep
-    // Identity tokens = canonical name + ALL aliases (single-token title-aliases like "Navváb"/"Mu‘tamid" are
-    // legitimate and must vouch for their person). This gate catches only roster facts whose subject is named
-    // NOWHERE in this person's identity — a non-alias different person mis-filed by a co-mention. It cannot catch
-    // the deeper case where a DIFFERENT person's name was wrongly ABSORBED as an alias (e.g. "Muṣṭafá" on
-    // Qurbán-‘Alí) — that is fixed at the data layer by evidence-consistency adjudication, not here.
-    const mine = sigToks(name); for (const a of (aliasArr || [])) for (const t of sigToks(a)) mine.add(t);
-    const whole = allToks(statement);                                             // entity named ANYWHERE (incl. "…not Peter…") → keep
-    for (const t of mine) if (subj.has(t) || whole.has(t)) return true;
-    return false;                                                                 // a DIFFERENT named subject, entity absent → drop
-  };
-  for (const r of rows) {
-    nameById[r.id] = r.name;
-    const aliasArr = (() => { try { return JSON.parse(r.aliases || '[]'); } catch { return []; } })();
-    const rn = (() => { try { return JSON.parse(r.research_notes || '{}'); } catch { return {}; } })();
-    if (Array.isArray(rn.episodes) && rn.episodes.length) { epById[r.id] = rn.episodes; const nm = nrm(r.name); if (nm.length >= 5) cand.push({ id: r.id, nm, n: rn.episodes.length }); }
-    const eps = (Array.isArray(rn.episodes) ? rn.episodes : []).map((e) => ({ statement: e.statement, quote: e.quote || null, when: e.when || null, source: e.source, url: e.url || null, episode: e.name, slug: e.slug || null }));
-    const f2 = Array.isArray(rn.facts2) ? rn.facts2 : [];
-    // death fact FIRST so "who died at X" queries always see it (a long episode list would otherwise truncate it),
-    // and give it a citation borrowed from a martyrdom/fate fact so the death evidence is linkable
-    const d = rn.death;
-    let death = [];
-    if (d && (d.cause || d.place)) {
-      const dsrc = [...eps, ...f2].find((f) => f.url && /martyr|killed|slain|put to death|beheaded|strangled|died|execut|fell|perished/i.test(f.statement || ''));
-      death = [{ statement: `Died: ${[d.cause, d.place, d.year].filter(Boolean).join(', ')}`, quote: dsrc?.quote || null, source: d.source || dsrc?.source || null, url: d.url || dsrc?.url || null, when: d.year || null }];
-    }
-    const fx = [...death, ...eps, ...f2].filter((f) => factSubjectOk(r.name, aliasArr, f.statement));   // death + episodes first; drop cross-filed roster facts
-    if (!fx.length) continue;
-    exById[r.id] = fx;
+  // ── Candidate catalog = each person's PROOF-GATED CLAIMS (entity_claims): every fact carries a verbatim proof span
+  //    AND a source-paragraph citation, and connections are TYPED (relation + target-entity id). This replaces the
+  //    legacy facts2/episodes catalog, whose uncited research-minted facts produced fabrications — e.g. a "genuine
+  //    dervish who embraced the Faith under Bahá'u'lláh" fact miscited to GPB ¶369 (actually the Azal-poisoning
+  //    paragraph) wrongly filed on the 1850 martyr Mírzá Qurbán-‘Alí. A claim with no proof span is not evidence.
+  const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
+  const SRCN = { 21308: 'The Dawn-Breakers', 21310: 'God Passes By', 57347: 'God Passes By' };
+  const SRCS = { 21308: 'dawn-breakers_nabil', 21310: 'god-passes-by_shoghi-effendi', 57347: 'god-passes-by_shoghi-effendi' };
+  const linkOf = (doc, pid) => (SRCS[doc] && pid ? `https://oceanlibrary.com/${SRCS[doc]}?paraId=${pid}` : null);
+  const HON = new Set('mirza haji hajji mulla siyyid sayyid aqa shaykh sheikh ustad karbilai karbala mashhadi hajj the of son daughter dervish native known as'.split(' '));
+  const tokize = (s) => [...new Set(fold(s).split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !STOP.has(t) && !HON.has(t)))];
+
+  const claimRows = await queryAll(`SELECT ec.entity_id eid, ge.canonical_name name, ge.importance imp, ec.relation, ec.target_entity_id tid,
+      ec.statement, ec.proof_verbatim proof, ec.doc_id doc, ec.para_id pid, ec.time_value tv, ec.time_basis tb
+    FROM entity_claims ec JOIN graph_entities ge ON ge.id = ec.entity_id
+    WHERE ge.entity_type = 'person' AND ge.religion = '' AND (ec.status IS NULL OR ec.status = 'supported')
+      AND ec.proof_verbatim IS NOT NULL AND TRIM(ec.proof_verbatim) <> ''
+      AND (ge.last_assessed_version IS NULL OR ge.last_assessed_version NOT LIKE 'merged-into-%')`);
+  // resolve target-entity display names so typed connections read naturally
+  const tids = [...new Set(claimRows.map((c) => c.tid).filter(Boolean))];
+  const tname = new Map();
+  for (let i = 0; i < tids.length; i += 800) { const ch = tids.slice(i, i + 800); (await queryAll(`SELECT id, canonical_name cn FROM graph_entities WHERE id IN (${ch.map(() => '?').join(',')})`, ch)).forEach((r) => tname.set(r.id, r.cn)); }
+  const exById = {}; const nameById = {}; const impById = {};
+  for (const c of claimRows) {
+    nameById[c.eid] = c.name; impById[c.eid] = c.imp || 0;
+    const target = c.tid ? (tname.get(c.tid) || null) : null;
+    const claim = { relation: c.relation || null, tid: c.tid || null, target,
+      statement: c.statement, proof: c.proof, when: c.tv ? `${c.tv}${c.tb ? ' [' + c.tb + ']' : ''}` : null,
+      source: SRCN[c.doc] || null, url: linkOf(c.doc, c.pid),
+      hay: fold(`${c.statement} ${c.proof} ${target || ''}`) };
+    (exById[c.eid] || (exById[c.eid] = [])).push(claim);
   }
 
-  // ---- candidate scoping: judge the predicate over a SMALL relevant set, not 900 lines (which over/under-includes) ----
-  const connQ = /\b(met|meet|with|accompan|knew|know|present|encounter|together|companion|recogni)\b/i.test(q);
+  // ── Connection target: does the query name a person the subjects must be CONNECTED to? Resolve to an ENTITY so the
+  //    match is on the TYPED claim (claim.tid === target.id) — cited, not string-inferred. This is what prevents the
+  //    old "who met X" fabrications: only a claim whose TARGET is X counts, never a fact that merely mentions X.
+  const connQ = /\b(met|meet|with|accompan|knew|know|present|encounter|together|companion|recogni|imprison|attain|visit|serv|correspond)\b/i.test(q);
   let connTarget = null;
-  if (connQ) { const nq = nrm(q); connTarget = cand.filter((c) => nq.includes(c.nm) && c.nm.length >= 5).sort((a, b) => (b.nm.length - a.nm.length) || (b.n - a.n))[0]; }
-  // the connection target's shared-episode roster — everyone who appears in an episode the target is also in
-  const tSlugs = connTarget ? new Set((epById[connTarget.id] || []).map((e) => e.slug).filter(Boolean)) : null;
-  const roster = (tSlugs && tSlugs.size) ? Object.keys(epById).map(Number).filter((id) => id !== connTarget.id && (epById[id] || []).some((e) => tSlugs.has(e.slug))) : null;
+  if (connQ) {
+    const persons = await queryAll(`SELECT id, canonical_name cn FROM graph_entities WHERE entity_type = 'person'
+      AND (last_assessed_version IS NULL OR last_assessed_version NOT LIKE 'merged-into-%')`);
+    const qf = ' ' + fold(q) + ' ';
+    for (const p of persons) {
+      const pt = tokize(p.cn); if (!pt.length) continue;
+      if (pt.every((t) => qf.includes(t))) { const score = pt.join('').length; if (!connTarget || score > connTarget.score) connTarget = { id: p.id, name: p.cn, score }; }
+    }
+  }
+
+  // candidate scoping: the cited-connected set (deterministic), intersected with a resolved group
+  const cl = (s) => String(s || '').replace(/\s+/g, ' ').trim();
   let candidateIds = null;
-  if (best && memberIds.length) candidateIds = roster ? memberIds.filter((id) => roster.includes(id)) : memberIds.slice();   // group ∩ connection-roster (deterministic recall)
-  else if (roster) candidateIds = roster;                                                    // pure connection query → the roster
-  if (candidateIds && !candidateIds.length) candidateIds = best ? memberIds.slice() : null;   // fallback if intersection empties
-  // Does the query name a specific PLACE/EVENT beyond the target's name, the resolved group, and generic connection
-  // verbs? ("imprisoned with the Báb at Máh-Kú" → {imprisoned,mahku,chihriq}; "who met Bahá'u'lláh" → {}). The display
-  // name is tokenized the same way as q so name fragments ("Bahá'u'lláh"→{baha,llah}) are removed, not mistaken for a place.
-  const tokOf = (s) => new Set(String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter((t) => t.length > 2 && !STOP.has(t)));
-  const GEN = ['met', 'meet', 'with', 'accompan', 'knew', 'know', 'present', 'encounter', 'together', 'companion', 'compani', 'recogni', 'who', 'whom'];
-  const specificToks = connTarget ? [...tokOf(q)].filter((t) => !tokOf(nameById[connTarget.id] || connTarget.nm).has(t) && !(best ? tokOf(best.name) : new Set()).has(t) && !GEN.some((g) => t.startsWith(g))) : [];
-  // DETERMINISTIC broad-connection answer (NO specific place/event): the roster (people sharing an episode with X) IS the
-  // answer — recall is deterministic; the LLM only writes a concise clause per member and may NOT prune the set (it kept
-  // dropping Ṭáhirih/Báqir). Place/event-specific queries skip this and fall through to the LLM precision path below.
-  if (connTarget && roster && candidateIds && candidateIds.length && !specificToks.length) {
-    const cl = (s) => String(s || '').replace(/\s+/g, ' ').trim();
-    const tName = nameById[connTarget.id] || 'them';
+  if (connTarget) {
+    const connected = Object.keys(exById).map(Number).filter((eid) => eid !== connTarget.id && exById[eid].some((c) => c.tid === connTarget.id));
+    candidateIds = best ? connected.filter((id) => memberIds.includes(id)) : connected;
+    // A group was named but NONE of its members has a cited connection to the target → the honest answer is "none",
+    // never a fabricated match (this is the "Seven Martyrs of Ṭihrán who met Bahá'u'lláh" case).
+    if (best && !candidateIds.length) {
+      const grpName = cl(best.name.replace(/\s*\(.*?\)\s*/g, ' ').replace(/^the\s+/i, ''));
+      return { ids: [], q, group: best.id, reasoning: { summary: `No cited connection between the ${grpName} and ${connTarget.name} is recorded in God Passes By or The Dawn-Breakers.`, evidence: {} } };
+    }
+  }
+  // place/event tokens beyond the target name, the group name, and generic connection verbs
+  const GEN = new Set(['met', 'meet', 'with', 'accompanied', 'accompany', 'knew', 'know', 'present', 'encounter', 'together', 'companion', 'recognized', 'recognize', 'imprisoned', 'attained', 'visited', 'served', 'who', 'whom', 'did']);
+  const nameTokens = new Set([...(connTarget ? tokize(connTarget.name) : []), ...(best ? tokize(best.name) : [])]);
+  const specificToks = [...tokize(q)].filter((t) => !nameTokens.has(t) && !GEN.has(t));
+
+  // ── DETERMINISTIC broad-connection answer (a target, no extra place/event token): the cited-connected set IS the
+  //    recall; the LLM only writes a clause per member from their connecting claim(s), and may drop one only if its
+  //    proof does not actually bear the connection (SKIP). Place/event queries fall through to the precision path.
+  if (connTarget && candidateIds && candidateIds.length && !specificToks.length) {
     const grp = best ? cl(best.name.replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+group$/i, '').replace(/^the\s+/i, '')) : '';
-    // evidence for "did X meet TARGET" is not only the shared episode — a cited FACT that names the target is often the
-    // real proof (e.g. Siyyid Ḥusayn-i-Yazdí's imprisonment WITH Bahá'u'lláh in the Síyáh-Chál, a GPB fact). Pull those
-    // target-naming facts into each member's pool and PREFER them, so the clause cites the actual connection, not a thin
-    // co-occurrence that reads as "no explicit meeting".
-    const cTok = [...tokOf(nameById[connTarget.id] || connTarget.nm)].filter((t) => !HON.has(t));
-    const namesTarget = (f) => { const h = nrm(`${f.statement || ''} ${f.quote || ''}`); return cTok.length ? cTok.every((t) => h.includes(t)) : nrm(f.statement || '').includes(connTarget.nm); };
     const members = [];
     for (const id of candidateIds) {
-      const shared = (epById[id] || []).filter((e) => tSlugs.has(e.slug));
-      const targetFacts = (exById[id] || []).filter(namesTarget);   // cited facts naming the target (prison, meeting, accompaniment…)
-      if (!shared.length && !targetFacts.length) continue;
-      const ev = targetFacts.find((f) => f.url) || targetFacts[0]
-              || shared.find((e) => nrm(e.statement).includes(connTarget.nm)) || shared[0];   // prefer a linkable target-naming fact
-      const pool = [...targetFacts, ...shared];
-      members.push({ id, name: nameById[id] || `#${id}`, ev, text: pool.slice(0, 4).map((e) => cl(e.statement)).join(' ').slice(0, 340) });
+      const conn = (exById[id] || []).filter((c) => c.tid === connTarget.id);
+      if (!conn.length) continue;
+      const ev = conn.find((c) => c.url) || conn[0];
+      members.push({ id, name: nameById[id] || `#${id}`, ev, text: conn.slice(0, 4).map((c) => `${cl(c.statement)} « ${cl(c.proof)} »`).join(' | ').slice(0, 420) });
     }
     if (members.length) {
-      const CSYS = `For each person listed, write a SHORT clause (≤14 words, beginning with a verb) that answers the QUESTION for that person, drawn ONLY from the facts given for them. Include EVERY id — never omit anyone. Return ONLY JSON: {"lead":"<one short sentence stating the overall answer>","clauses":[{"id":<number>,"clause":"<verb phrase>"}]}.`;
+      const CSYS = `For each person, write ONE short clause (≤14 words, begin with a verb) that answers the QUESTION for them, drawn ONLY from their given facts. Each fact is "statement « verbatim proof »" — the clause must be supported by the proof. If the proof does NOT actually establish the connection asked about, set that person's clause to "SKIP". Return ONLY JSON: {"lead":"<one sentence overall answer>","clauses":[{"id":<number>,"clause":"<verb phrase or SKIP>"}]}.`;
       const body = members.map((m) => `${m.id}|${m.name}: ${m.text}`).join('\n');
       let lead = ''; const byId = {};
       try {
@@ -268,76 +252,68 @@ export async function bioSearch(rawQ) {
         const mm = (res.content || '').match(/\{[\s\S]*\}/); const p = mm ? JSON.parse(mm[0]) : {};
         lead = cl(p.lead || '');
         for (const c of (Array.isArray(p.clauses) ? p.clauses : [])) if (c && c.id != null) byId[Number(c.id)] = cl(c.clause).slice(0, 120);
-      } catch { /* fall back to cleaned statements below */ }
-      const stripName = (id, s) => { const nm = nameById[id] || ''; const re = new RegExp('^(' + nm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')[\\s,;:]*', 'i'); return cl(s).replace(re, '').replace(/^[\s,;:]+/, ''); };
-      // roster recall is deterministic (people who share an episode with the target) — the LLM may NOT prune it. But a
-      // clause that explicitly DISCLAIMS the connection ("no mention of meeting X") is an evidence signal, not a prune:
-      // drop that member rather than assert a link the evidence denies. And every kept point must carry a source link.
-      const NEGC = /\bno mention\b|\bno explicit\b|\bnot (?:mention|meet|met|present|clearly|established|recorded)\b|\bunclear\b|\bno (?:evidence|record|meeting)\b|\bdid not\b/i;
+      } catch { /* fall back to statements below */ }
+      const stripName = (id, s) => { const nm = nameById[id] || ''; const re = new RegExp('^(' + nm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')[\\s,;:—-]*', 'i'); return cl(s).replace(re, '').replace(/^[\s,;:—-]+/, ''); };
+      const SKIP = /^\s*skip\s*$|\bno mention\b|\bno explicit\b|\bnot (?:mention|meet|met|present|clearly|established|recorded)\b|\bunclear\b|\bno (?:evidence|record|meeting)\b|\bdid not\b/i;
       const evidence = {}; const parts = []; const ids = [];
       for (const m of members) {
-        const clause = (byId[m.id] || stripName(m.id, m.ev.statement).split(/[;.]/)[0].slice(0, 110)).replace(/[\s.;,]+$/, '');   // trim trailing punctuation → no "clause.;" doubling
-        if (NEGC.test(clause)) continue;
-        const url = m.ev.url || ((epById[m.id] || []).find((e) => tSlugs.has(e.slug) && e.url) || {}).url || null;
-        evidence[m.id] = { quote: cl(m.ev.statement), proof: m.ev.quote || null, source: m.ev.source, url };
-        parts.push(url ? `${m.name} [${clause}](${url})` : `${m.name} ${clause}`);
+        const clause = (byId[m.id] || stripName(m.id, m.ev.statement).split(/[;.]/)[0].slice(0, 110)).replace(/[\s.;,]+$/, '');
+        if (SKIP.test(clause)) continue;   // proof doesn't bear the connection → drop, never assert
+        evidence[m.id] = { quote: cl(m.ev.statement), proof: cl(m.ev.proof) || null, source: m.ev.source, url: m.ev.url || null, clause };
+        parts.push(m.ev.url ? `${m.name} [${clause}](${m.ev.url})` : `${m.name} ${clause}`);
         ids.push(m.id);
       }
-      const summary = `${lead || `${ids.length}${grp ? ' of the ' + grp : ''} connected to ${tName}.`} ${parts.join('; ')}.`.replace(/\s+/g, ' ').trim();
-      return { ids, q, ...(best ? { group: best.id } : {}), reasoning: { summary, evidence } };
+      if (ids.length) {
+        const summary = `${lead || `${ids.length}${grp ? ' of the ' + grp : ''} connected to ${connTarget.name}.`} ${parts.join('; ')}.`.replace(/\s+/g, ' ').trim();
+        return { ids, q, ...(best ? { group: best.id } : {}), reasoning: { summary, evidence } };
+      }
+      if (best) return { ids: [], q, group: best.id, reasoning: { summary: `No cited connection between the ${grp} and ${connTarget.name} is borne out by the sources.`, evidence: {} } };
     }
   }
-  const pool = (candidateIds ? rows.filter((r) => candidateIds.includes(r.id) && exById[r.id]) : rows.filter((r) => exById[r.id]).slice(0, 200));
-  const aliasOf = (r) => { try { return JSON.parse(r.aliases || '[]').slice(0, 3); } catch { return []; } };
-  const lines = pool.map((r) => {
-    const al = aliasOf(r);
-    // for connection queries, float the episode(s) shared with the target to the front so the LLM always sees the link
-    const fx = tSlugs ? [...exById[r.id]].sort((a, b) => (b.slug && tSlugs.has(b.slug) ? 1 : 0) - (a.slug && tSlugs.has(a.slug) ? 1 : 0)) : exById[r.id];
-    return `${r.id}|${r.name}${al.length ? ' (' + al.join('; ') + ')' : ''}: ${fx.slice(0, 20).map((f) => `• ${String(f.statement).replace(/\s+/g, ' ')}${f.when ? ' [' + f.when + ']' : ''}`).join(' ')}`;
+  // ── Precision path (place/event/meaning, incl. connection+place): judge the query over each candidate's cited claims.
+  //    Pool = the cited-connected set (if a target was named) else entities whose claim proof/statement matches the query
+  //    terms. Every candidate line carries the claim's VERBATIM PROOF so the model judges on evidence, not paraphrase.
+  const qterms = tokize(q);
+  const matchScore = (eid) => exById[eid].reduce((s, c) => s + qterms.filter((t) => c.hay.includes(t)).length, 0);
+  let poolIds = candidateIds || Object.keys(exById).map(Number).filter((eid) => matchScore(eid) > 0);
+  poolIds = poolIds.filter((id) => exById[id]).sort((a, b) => matchScore(b) - matchScore(a) || (impById[b] - impById[a])).slice(0, 60);
+  const lines = poolIds.map((id) => {
+    const fx = [...exById[id]].sort((a, b) => qterms.filter((t) => b.hay.includes(t)).length - qterms.filter((t) => a.hay.includes(t)).length);
+    return `${id}|${nameById[id]}: ${fx.slice(0, 14).map((c) => `• ${cl(c.statement)} « ${cl(c.proof).slice(0, 160)} »${c.when ? ' [' + c.when + ']' : ''}`).join(' ')}`;
   });
   const catalog = lines.join('\n');
 
-  const SYS = `You answer a question about people in early Bábí/Bahá'í history from a CATALOG of cited facts — one person per line: "id|name (aliases): • fact [period] • fact …" (from God Passes By and The Dawn-Breakers).
-A person qualifies ONLY if one of their listed facts DIRECTLY satisfies the QUERY — the right event AND place AND period. Reject mere group membership. Reject "promised / prophesied / expected" when the query asks who actually MET or DID something. For a place/period query (e.g. "at Ṭabarsí", "during the Baghdád period") the supporting fact must match that place/period.
-For each qualifying person output {"id":<number>, "fact":"<the exact supporting fact copied from their line>", "clause":"<a SHORT phrase, beginning with a verb, that answers the query FOR THIS PERSON — drawn from that fact; e.g. 'was shot by ‘Abbás-Qulí Khán at the fort', 'was taken to Bárfurúsh and killed', 'attained His presence at Badasht'>"}.
-Also output "lead": one short sentence stating the overall answer (e.g. "Several Letters of the Living were martyred at Fort Ṭabarsí.").
-Return ONLY JSON: {"lead":"...","matches":[{"id","fact","clause"}]} — most relevant first, clear matches only.`;
+  const SYS = `You answer a question about people in early Bábí/Bahá'í history from a CATALOG of cited claims — one person per line: "id|name: • statement « verbatim proof » [period] • …" (from God Passes By and The Dawn-Breakers).
+A person qualifies ONLY if one of their claims, AS SHOWN BY ITS VERBATIM PROOF, DIRECTLY satisfies the QUERY — the right act AND place AND period. Reject mere group membership. Reject "promised/prophesied/expected" when the query asks who actually DID or MET something. For a place/period query the proof must name that place/period.
+For each qualifying person output {"id":<number>, "clause":"<a SHORT verb phrase answering the query for this person, supported by their proof; e.g. 'was shot at the fort of Ṭabarsí', 'attained Bahá'u'lláh's presence in Baghdád'>"}.
+Also output "lead": one short sentence stating the overall answer.
+Return ONLY JSON: {"lead":"...","matches":[{"id","clause"}]} — most relevant first, clear matches only.`;
   try {
     const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
       { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 2600, responseFormat: { type: 'json_object' } });
-    // tolerant parse: DeepSeek occasionally emits malformed/truncated JSON (an unescaped quote, or the array cut off at
-    // maxTokens) — rather than lose the whole answer, salvage the lead + every COMPLETE {...} object from the text.
+    // tolerant parse: DeepSeek occasionally emits malformed/truncated JSON — salvage the lead + every COMPLETE {...}.
     const looseParse = (txt) => {
       const whole = (txt || '').match(/\{[\s\S]*\}/);
       if (whole) { try { return JSON.parse(whole[0]); } catch { /* fall through to salvage */ } }
       const out = {}; const lead = (String(txt).match(/"lead"\s*:\s*"((?:[^"\\]|\\.)*)"/) || [])[1]; if (lead) out.lead = lead;
-      const objs = []; const re = /\{[^{}]*\}/g; let o; while ((o = re.exec(String(txt)))) { try { objs.push(JSON.parse(o[0])); } catch { /* skip incomplete object */ } }
+      const objs = []; const re = /\{[^{}]*\}/g; let o; while ((o = re.exec(String(txt)))) { try { objs.push(JSON.parse(o[0])); } catch { /* skip */ } }
       if (objs.length) out.matches = objs.filter((x) => x && x.id != null);
       return out;
     };
     const parsed = looseParse(res.content);
-    const nz = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, "'").replace(/\s+/g, ' ').toLowerCase().trim();
-    // connection-target precision: for "who met/knew X" the bound fact must actually NAME X. The target's
-    // significant name-tokens (honorifics stripped) must all appear in the evidence — never accept "met the Báb"
-    // as proof of "met Bahá'u'lláh". Recall for connection queries is carried by the deterministic roster path above.
-    const connTokens = connTarget ? [...tokOf(nameById[connTarget.id] || connTarget.nm)].filter((t) => !HON.has(t)) : [];
     const evidence = {}; const aiIds = []; const parts = [];
     for (const mm of (Array.isArray(parsed.matches) ? parsed.matches : [])) {
       const id = Number(mm.id); if (!id || aiIds.includes(id) || !exById[id]) continue;
-      if (candidateIds && !candidateIds.includes(id)) continue;                               // never escape the candidate scope
-      const fx = exById[id]; const want = nz(mm.fact);
-      const hit = fx.find((f) => want && (nz(f.statement).includes(want) || want.includes(nz(f.statement)))) || fx[0];   // bind to the STORED fact (for citation)
-      if (connTokens.length && id !== connTarget.id) { const h = nz(`${hit.statement} ${hit.quote || ''}`); if (!connTokens.every((t) => h.includes(t))) continue; }   // evidence must name the connection target
+      if (candidateIds && !candidateIds.includes(id)) continue;                       // never escape the candidate scope
+      const fx = exById[id];
+      // bind to the claim best matching the query (term overlap), preferring one that names the connection target
+      const ranked = [...fx].sort((a, b) => qterms.filter((t) => b.hay.includes(t)).length - qterms.filter((t) => a.hay.includes(t)).length);
+      const hit = (connTarget ? ranked.find((c) => c.tid === connTarget.id) : null) || ranked[0];
       const clause = String(mm.clause || hit.statement).replace(/\s+/g, ' ').trim().slice(0, 160).replace(/[\s.;,]+$/, '');
-      // every point must link: if the cited fact has no URL (e.g. sourced from a Pillars book outside the
-      // GPB/Dawn-Breakers citation scheme), borrow a source link from another of this person's cited facts.
-      const citeUrl = hit.url || (fx.find((f) => f.url) || {}).url || null;
-      aiIds.push(id); evidence[id] = { quote: hit.statement, proof: hit.quote || null, source: hit.source, url: citeUrl, clause };
+      aiIds.push(id); evidence[id] = { quote: cl(hit.statement), proof: cl(hit.proof) || null, source: hit.source, url: hit.url || null, clause };
       const nm = nameById[id] || `#${id}`;
-      parts.push(citeUrl ? `${nm} [${clause}](${citeUrl})` : `${nm} ${clause}`);
+      parts.push(hit.url ? `${nm} [${clause}](${hit.url})` : `${nm} ${clause}`);
     }
-    // integrated explanation: lead sentence + each person's query-matched evidence woven in, inline-linked to its source.
-    // If the target/consistency gates filtered every match, DROP the LLM's pre-filter lead — never name someone we excluded.
     const explanation = parts.length ? `${(parsed.lead || '').trim()} ${parts.join('; ')}.`.trim() : '';
     return { ids: aiIds, q, ...(best ? { group: best.id } : {}), reasoning: { summary: explanation, evidence } };
   } catch (e) { return { ids: memberIds, q, error: String(e).slice(0, 80) }; }
