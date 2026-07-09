@@ -22,17 +22,17 @@ const rows = await queryAll(`SELECT ge.id, ge.canonical_name cn, er.aliases FROM
 const claimRows = await queryAll(`SELECT id, entity_id, relation, statement, para_id FROM entity_claims WHERE import_batch IN ('gpb-v1','db-v1')`);
 const claimsBy = new Map(); for (const c of claimRows) { if (!claimsBy.has(c.entity_id)) claimsBy.set(c.entity_id, []); claimsBy.get(c.entity_id).push(c); }
 
-// (1) recall prefilter
+// (1) recall prefilter — NOT nisba-gated (nisbas are soft/absent; gating on them misses same-town & no-nisba fusions).
+// Send every entity with enough claims to plausibly conflate to the holistic AI judge.
+const MINC = Number(process.env.MINC || 3);
 const flagged = [];
-for (const r of rows) { let al = []; try { al = JSON.parse(r.aliases || '[]'); } catch { /* */ }
-  const cs = claimsBy.get(r.id) || []; const nameTexts = [r.cn, ...al, ...cs.map((c) => rosterSubj(c.statement)).filter(Boolean)];
-  const nis = new Set(); for (const t of nameTexts) for (const n of nisbasOf(t)) nis.add(n);
-  if (nis.size >= 2 && cs.length >= 2) flagged.push({ id: r.id, cn: r.cn, claims: cs }); }
-console.log(`prefiltered (≥2 name-nisbas, ≥2 claims): ${flagged.length}`);
+for (const r of rows) { const cs = claimsBy.get(r.id) || []; if (cs.length >= MINC) flagged.push({ id: r.id, cn: r.cn, claims: cs }); }
+console.log(`prefiltered (≥${MINC} claims — no nisba gate): ${flagged.length}`);
 
 // (2) AI coherence
 const SYS = `You are given ONE entity record from a Bábí/Bahá'í history database — a canonical name and its cited claims (each numbered). Because bare-name matching can FUSE several different people who share a name into one record, decide: do these claims describe ONE coherent person, or MULTIPLE people conflated?
-Judge by internal consistency — a single person has ONE era, ONE nisba/place of origin, a consistent role and a single death/fate. Contradictions prove conflation: e.g. a martyr at Fort Ṭabarsí (1849) cannot also be active at ‘Akká (post-1868); nisba Iṣfahán vs Mans̱hád are different men. Places merely visited or associates' origins are NOT contradictions — only the person's OWN origin/era/fate.
+Judge by the WEIGHT of internal consistency, holistically — NOTHING is deterministic. The strongest conflation signals are INCOMPATIBLE LIFE FACTS: two different deaths/fates (martyred at Fort Ṭabarsí 1849 AND at Iṣfahán), incompatible eras (a Ṭabarsí martyr, 1849, cannot also be active at ‘Akká post-1868), or two clearly distinct roles/arcs.
+NISBAS ARE SOFT EVIDENCE, NOT KEYS — do NOT split on a nisba difference alone: the SAME person may be named by different nisbas (a village vs its province, e.g. Ishtihárdí and Qazvíní are one man), nisbas are often absent, and TWO different people can share one town. Weigh nisba only alongside era/role/fate. Places merely visited or associates' origins are never contradictions — only the person's OWN incompatible life-facts. When the evidence is genuinely one coherent life, answer coherent even if names/nisbas vary.
 If conflated, PARTITION the claim numbers into sub-people and label each (name+nisba/role/era).
 Return ONLY JSON: {"coherent":<bool>,"n_people":<int>,"groups":[{"label":"<name / nisba / role / era>","claims":[<numbers>]}],"note":"<=20 words"}.`;
 let verd = {}; try { verd = JSON.parse(readFileSync(VERD, 'utf8')); } catch { /* */ }
