@@ -17,16 +17,20 @@ export async function buildSceneMap(doc) {
   const found = execSync(`find "$HOME/Dropbox" /tank/dropbox -name ${JSON.stringify(base)} 2>/dev/null | head -1`, { encoding: 'utf8' }).trim();
   if (!found) throw new Error(`source markdown not found for ${base}`);
   const lines = readFileSync(found, 'utf8').split('\n');
-  const scenes = []; let chapterNum = '', chapterTitle = '';
+  const scenes = []; let chapterNum = '', chapterTitle = '', period = '';
+  // Chapter markers differ by book: DB uses `# CHAPTER I` (h1, section-header); GPB uses `### \- Chapter I -`
+  // (h3) grouped under `## First Period …` headings. Detect a chapter by the heading TEXT, not its level/class.
+  const chapRe = /^-?\s*chapter\s+[ivxlcdm\d]+\s*-?$/i;   // whole heading is just "Chapter N" (either book)
+  const periodRe = /\bperiod\b.*\d{4}/i;                  // GPB grouping: "First Period - The Ministry… - 1844–1853"
   for (const ln of lines) {
     const m = ln.match(/^(#{1,4})\s+(.*?)\s*(\{[^}]*\})?\s*$/);
     if (!m) continue;
-    const level = m[1].length; const text = m[2].replace(/<br\s*\/?>/gi, ' ').replace(/\s+/g, ' ').trim(); const attrs = m[3] || '';
+    const level = m[1].length; const text = m[2].replace(/<br\s*\/?>/gi, ' ').replace(/\\/g, '').replace(/\s+/g, ' ').trim(); const attrs = m[3] || '';
     if (!text) continue;
-    if (level === 1 && /toc1|section header/i.test(attrs)) { chapterNum = text; chapterTitle = ''; continue; }
-    if (level === 2 && /chapter header/i.test(attrs)) { chapterTitle = text; continue; }
-    // h3/h4 (and other h2/h3 subheaders) = scenes
-    scenes.push({ chapterNum, chapterTitle, scene: text, level, key: nrm(text) });
+    if (chapRe.test(text) || (level === 1 && /toc1|section header/i.test(attrs))) { chapterNum = text.replace(/^-\s*/, '').replace(/\s*-$/, '').trim(); chapterTitle = period || ''; continue; }
+    if (periodRe.test(text)) { period = text; chapterTitle = text; continue; }          // GPB period → chapter title context
+    if (level === 2 && /chapter header/i.test(attrs)) { chapterTitle = text; continue; } // DB chapter title
+    scenes.push({ chapterNum, chapterTitle, scene: text, level, key: nrm(text) });        // h3/h4 subheaders = scenes
   }
   return { file: found, scenes };
 }
