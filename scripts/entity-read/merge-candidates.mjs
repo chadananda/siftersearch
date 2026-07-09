@@ -40,8 +40,9 @@ pairs.sort((x, y) => (P.get(y.a).imp + P.get(y.b).imp) - (P.get(x.a).imp + P.get
 console.log(`persons ${P.size} · shared-name candidate pairs ${pairs.length}`);
 
 // AI adjudication
-const SYS = `You decide whether two ENTITY RECORDS from a Bábí/Bahá'í history database are the SAME person (should merge) or DIFFERENT people who happen to share a name (keep separate). You get each record's canonical name, side (dispensation/allegiance), summary, and cited claims. Decide from EVIDENCE CONSISTENCY — a shared name is NOT proof; require consistent era, nisba/place, role, kinship, associates, fate. Any real contradiction ⇒ different. Use world knowledge for famous figures.
-Return ONLY JSON: {"verdicts":[{"i":<index>,"relation":"same|different|uncertain","confidence":0-1,"for_same":"<=16 words","for_diff":"<=16 words","keep":"<which canonical to keep if same, else null>"}]}.`;
+const SYS = `You decide whether two ENTITY RECORDS from a Bábí/Bahá'í history database are the SAME person (merge) or DIFFERENT people who merely share a name (keep separate). You get each record's canonical name, side (dispensation/allegiance), summary, and cited claims.
+THE BAR FOR "same" IS POSITIVE PROOF, NOT ABSENCE OF CONTRADICTION. Answer "same" ONLY when there is POSITIVE CONNECTING EVIDENCE that these are one person: shared specific events, shared kin/associates, a continuous life-arc, matching nisba+role+era, or an explicit identity statement. A shared name plus merely "nothing contradicts" is NOT enough — with no positive link, the two are NAMESAKES: answer "different". A real contradiction (different nisba/era/role/fate) is also "different". Reserve "uncertain" only for when the evidence is genuinely, closely balanced. Use world knowledge for famous figures.
+Return ONLY JSON: {"verdicts":[{"i":<index>,"relation":"same|different|uncertain","confidence":0-1,"for_same":"<=16 words: the POSITIVE link, or 'none'","for_diff":"<=16 words","keep":"<which canonical to keep if same, else null>"}]}.`;
 let verd = {}; try { verd = JSON.parse(readFileSync(VERD, 'utf8')); } catch { /* */ }
 if (ADJ) {
   const todo = pairs.filter((p) => !(`${p.a}|${p.b}` in verd));
