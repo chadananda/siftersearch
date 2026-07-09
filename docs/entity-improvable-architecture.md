@@ -88,5 +88,23 @@ trusted; it cannot silently undo them.
 - **`graph_entities`** (redefined as projection) — `+ last_assessed_version, projection_rev, book_prominence`.
 
 Pass 4 (reconcile), the review pages, and every future model write **decisions**, not edits. We never
-regenerate the graph — we replay the log over the substrate. See also
-[entity-architecture.md](entity-architecture.md) and [disambiguation-methodology.md](disambiguation-methodology.md).
+regenerate the graph — we replay the log over the substrate.
+
+## Fast lookup layer (recall, never determinative)
+
+`entity_lookup_keys` (migration 87) is a rebuildable index of **transliteration-invariant** keys
+(`api/lib/translit-key.js` `skeletonKeys`, folding Arabic↔Persian shifts th↔s / ḍ↔z / w↔v / q↔gh) over
+every projected entity's canonical + aliases. It powers **`GET /api/v1/entities/lookup?q=<any spelling>`**
+— an AI-free, indexed candidate lookup for human and AI researchers (Sadeq→Ṣádiq, Rezvan→Riḍván,
+Ghoddus→Quddús). It returns **RECALL candidates only** ("bind by evidence, not by this list"); the
+canonical is a lookup handle + display label, **never** determinative of identity. Rebuild with
+`scripts/entity-read/build-lookup-index.mjs` after any entity-projection change — deterministic, no LLM.
+
+## Pipeline passes & tooling
+
+DISAMBIGUATE → EXTRACT → INTEGRATE → SEARCH, as four passes: (1) Structure `chapter-map`, (2) Main
+Characters `cast-seed`, (3) Disambiguate `disambiguate-book` → Mentions `build-mentions` → Claims
+`extract-claims-v2`, (4) Reconcile `reconcile` (candidate-gen recall → evidence adjudication →
+`entity_decisions`). Full script index + the legacy (pre-substrate) tooling to retire: see
+`scripts/entity-read/CLAUDE.md`. Also [entity-architecture.md](entity-architecture.md),
+[disambiguation-methodology.md](disambiguation-methodology.md).
