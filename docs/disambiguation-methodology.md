@@ -54,36 +54,66 @@ disambiguate scholars sharing ism+nasab. Name morphology (ism/kunya/nasab/laqab/
 ## Compact output format (written to `content.context`)
 
 One header, honorifics kept, only the mentions **present in this paragraph**, place/period inherited
-from the scene unless shifted:
+unless the paragraph moves. **The consumer is an AI extractor, not a parser** — so the note is minimal
+natural language, not a rigid map, and resolves *only what a careful reader could not work out from the
+paragraph alone*. Skip pronouns obvious from the sentence, names already written in full, and generic
+phrases ("the Cause"). If only place/era needs stating, that is the whole note. Unresolvable → `?`.
 
 ```
-@<place> ~<period> | <surface→canonical handle; …present mentions only> | <≤12-word resolved event>
+@<place>, ~<era> — <only the resolutions actually needed>
 ```
 
 Example (DB para_536):
 ```
-@Yazd ~1845 | Mírzá Aḥmad→Mírzá Aḥmad-i-Azghandí; his nephew→Mírzá Aḥmad-i-Azghandí; Siyyid Ḥusayn→Siyyid Ḥusayn-i-Azghandí | Mullá Ṣádiq ascends the Yazd masjid pulpit uninvited
+@Yazd, ~1845 — "Mírzá Aḥmad" = Mírzá Aḥmad-i-Azghandí; "Siyyid Ḥusayn" = Siyyid Ḥusayn-i-Azghandí; "his nephew" = Mírzá Aḥmad-i-Azghandí.
 ```
+And where nothing is elided (DB para_529): `@Yazd, ~1845 — "Mullá Ṣádiq" = Mullá Ṣádiq-i-Khurásání; "Mírzá Aḥmad-i-Azghandí" is already written in full.`
 
-Compaction levers (in priority): (1) resolve only mentions present; (2) store the header, not a prose
-gloss — the extractor already has the paragraph text; (3) inherit place/period from the scene;
-(4) use the conventional short handle as canonical. Titles are **never** cut for length.
+Compaction levers (in priority): (1) resolve only mentions genuinely unclear; (2) store the note, not a
+prose gloss — the extractor already has the paragraph text; (3) inherit place/era, restating only on a
+move; (4) conventional short handle as canonical. Titles are **never** cut for length, and the format is
+NOT regex-cleaned — the model does the judgment, an AI reads the result. (~290 chars/note typical.)
 
 ## Generation mechanism — one growing cache per segment
 
-System prompt (instructions + book metadata) is stable across the whole book; the user prompt carries
-a **growing** list of prior-paragraph headers this chapter + the one new paragraph. Successive calls
-share the entire prior prefix → DeepSeek KV/prefix cache pays only for the new tail. A salience-bounded
-CAST/place/period digest is carried across every segment boundary so no referent is dropped at a cut.
+System prompt (instructions + book metadata) is stable across the whole book; the user prompt carries a
+**growing** list of prior-paragraph notes this chapter + the running place/era + the one new paragraph.
+Successive calls share the entire prior prefix → DeepSeek KV/prefix cache pays only for the new tail. The
+running place/era is carried across paragraphs (and seeded fresh per chapter) so identity/scope never drops.
 
 - **GPB/DB fast-path** (`chapter-map.mjs`): parse the source markdown `<h>` TOC into chapter(h1/h2) +
-  scene(h3/h4); **chapter = the growing-cache segment**; scene heading = the place/period anchor fed to
-  the prompt. Do **not** assume this structure for other books.
-- **General books**: bounded runs (~60 paras, cut at a heading edge) + carried cast digest.
+  scene(h3/h4); **chapter = the growing-cache segment**; scene heading = the place/era anchor fed to the
+  prompt; the chapter fixes the era (never guess a bare year from a single paragraph). Do **not** assume
+  this `<h>` structure for other books — it is verified only for GPB (21310) and DB (21308).
+- **General books**: bounded runs (~60 paras, cut at a heading edge) + carried digest (`USE_TOC=0`).
 
-## Reversibility & ops
+**Concurrency & resilience.** Chapters are independent segments, so they run concurrently (`CONC`, default
+5) while each chapter stays strictly sequential internally (the growing cache requires order). Both the AI
+call and the write are wrapped in retry-with-backoff; each worker is isolated and an `unhandledRejection`
+guard ensures one transient `ECONNRESET` can never abort the run. `RESUME=1` skips paragraphs already
+carrying `deepseek-disambig-v1` context, so an interrupted run restarts idempotently.
 
-Writes `content.context` + `context_model='deepseek-disambig-v1'`. Reverse:
+## Enforcement — extraction is gated on disambiguation
+
+The invariant is enforced in code, not by convention. `scripts/entity-read/_disambig-gate.mjs` exports
+`assertDisambiguated(doc)`, called at the top of every extractor (`build-claims-gpb.mjs`,
+`build-claims-source.mjs`). It aborts (exit 2) unless ≥99% of the book's main-text paragraphs carry
+`context_model='deepseek-disambig-v1'`, printing the exact disambiguation command to run first. Testing
+override: `SKIP_DISAMBIG_GATE=1` (never in a real build).
+
+## Running it & reversibility
+
+```bash
+# disambiguate a book (writes content.context; GPB/DB auto-use the TOC fast-path)
+SIFTER_WRITER_URL=http://127.0.0.1:7849 WRITE=1 CONC=5 DOC=21308 node scripts/entity-read/disambiguate-book.mjs
+#   add RESUME=1 to continue an interrupted run · DRY (no WRITE) prints notes without writing
+# check coverage
+node scripts/entity-read/context-coverage.mjs
+# only then extract (the gate will refuse otherwise)
+SIFTER_WRITER_URL=http://127.0.0.1:7839 WRITE=1 DOC=21308 SRCFRAG=dawn-breakers BATCH=db-v1 node scripts/entity-read/build-claims-source.mjs
+```
+
+Reverse a disambiguation pass:
 `UPDATE content SET context=NULL, context_model=NULL WHERE context_model='deepseek-disambig-v1' AND doc_id=?`.
-Writes route via the single-writer API. Scripts: `disambiguate-book.mjs`, `chapter-map.mjs` in
-`scripts/entity-read/`.
+All writes route via the single-writer API. Scripts live in `scripts/entity-read/`
+(`disambiguate-book.mjs`, `chapter-map.mjs`, `_disambig-gate.mjs`, `context-coverage.mjs`).
