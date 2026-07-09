@@ -68,11 +68,13 @@ if (USE_TOC) {
 console.error(`disambiguate DOC=${DOC} · ${paras.length} paras · ${segs.length} segments (${USE_TOC ? 'TOC/chapter' : 'bounded-run'}) · WRITE=${WRITE} · model=${MODEL}`);
 
 const placeEraOf = (note) => { const m = String(note).match(/@[^—|]*/); return m ? m[0].replace(/^@/, '').trim() : ''; };
-let runPlaceEra = ''; let done = 0;
-for (const [si, seg] of segs.entries()) {
-  const summaries = [];
+const CONC = +(process.env.CONC || 6);   // chapters processed concurrently (each chapter stays sequential internally)
+let done = 0;
+// One segment (chapter) = one sequential growing cache. runPlaceEra is LOCAL so chapters can run in parallel.
+async function processSeg(seg, si) {
+  const summaries = []; let runPlaceEra = '';
   const label = USE_TOC ? (seg[0].chapterNum || 'front-matter') : `${seg[0].pid}..${seg[seg.length - 1].pid}`;
-  console.error(`\n== segment ${si + 1}/${segs.length} · ${label} (${seg.length} paras) ==`);
+  console.error(`== seg ${si + 1}/${segs.length} · ${label} (${seg.length} paras) start`);
   for (const p of seg) {
     const sceneLine = USE_TOC ? `${p.chapterNum || ''}${p.chapterTitle ? ' · ' + p.chapterTitle : ''}${p.scene ? ' · ' + p.scene : ''}`.trim() : (p.heading || '');
     const priorBlock = summaries.slice(-12).map((s) => s.line).join('\n');
@@ -84,8 +86,12 @@ for (const [si, seg] of segs.entries()) {
     const pe = placeEraOf(out); if (pe) runPlaceEra = pe;
     done++;
     if (!WRITE) console.log(`\n${p.pid} (${sceneLine}):\n${out}`);
-    else { await content.updateContextOnly(p.id, out, 'deepseek-disambig-v1'); if (done % 25 === 0) console.error(`  wrote ${done}`); }
+    else { await content.updateContextOnly(p.id, out, 'deepseek-disambig-v1'); if (done % 50 === 0) console.error(`  wrote ${done}`); }
   }
+  console.error(`== seg ${si + 1}/${segs.length} · ${label} done`);
 }
+let next = 0;
+async function worker() { while (next < segs.length) { const i = next++; await processSeg(segs[i], i); } }
+await Promise.all(Array.from({ length: Math.min(CONC, segs.length) }, worker));
 console.error(`\nDONE — ${done} paragraphs disambiguated${WRITE ? ' → content.context (model=deepseek-disambig-v1)' : ' (dry run)'}`);
 process.exit(0);
