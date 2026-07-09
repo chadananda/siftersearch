@@ -65,3 +65,8 @@ data/meilisearch-dev/
 
 .claude/
 tests/chat/runs/results-*.json
+
+# Entity-pipeline scratch / research data dumps (regenerable; never commit)
+/db-*.json
+/person-gloss-plan.json
+.work/
