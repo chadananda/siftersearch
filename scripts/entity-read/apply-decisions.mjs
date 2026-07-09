@@ -43,7 +43,7 @@ if (WRITE) {
     let eid = d.p.entity_id;
     if (d.kind === 'create') {
       if (!d.p.canonical) continue;
-      await query(`INSERT INTO graph_entities (canonical_name, entity_type, last_assessed_version) VALUES (?,?,?)`, [d.p.canonical, 'person', 'reconcile-v1']);
+      await query(`INSERT INTO graph_entities (name, canonical_name, entity_type, last_assessed_version) VALUES (?,?,?,?)`, [d.p.canonical, d.p.canonical, 'person', 'reconcile-v1']);
       const r = await queryAll(`SELECT id FROM graph_entities WHERE canonical_name=? ORDER BY id DESC LIMIT 1`, [d.p.canonical]);
       eid = r[0]?.id; if (eid) created++;
     } else linked++;
