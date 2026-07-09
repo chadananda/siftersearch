@@ -16,12 +16,15 @@ const nisbasOf = (text) => { const out = new Set();
 const rows = await queryAll(`SELECT ge.id, ge.canonical_name cn, er.aliases FROM graph_entities ge JOIN entity_research er ON er.canonical_name=ge.canonical_name WHERE ge.entity_type='person'`);
 const claimRows = await queryAll(`SELECT entity_id, statement FROM entity_claims WHERE import_batch IN ('gpb-v1','db-v1')`);
 const stmtBy = new Map(); for (const c of claimRows) { if (!stmtBy.has(c.entity_id)) stmtBy.set(c.entity_id, []); stmtBy.get(c.entity_id).push(c.statement); }
+// a nisba only counts if it is attached to the PERSON'S NAME — i.e. from an alias, or from the SUBJECT of a
+// roster-form claim ("<Name (of X)> — description"). Places mentioned in life-prose (travels, associates) do NOT count.
+const rosterSubj = (s) => { const m = String(s).match(/^\s*(.{2,70}?)\s+[-–—―−]\s+\S/); return m ? m[1] : null; };
 
 const flagged = [];
 for (const r of rows) {
   let al = []; try { al = JSON.parse(r.aliases || '[]'); } catch { /* */ }
-  const texts = [r.cn, ...al, ...(stmtBy.get(r.id) || [])];
-  const nis = new Set(); for (const t of texts) for (const n of nisbasOf(t)) nis.add(n);
+  const nameTexts = [r.cn, ...al, ...(stmtBy.get(r.id) || []).map(rosterSubj).filter(Boolean)];
+  const nis = new Set(); for (const t of nameTexts) for (const n of nisbasOf(t)) nis.add(n);
   if (nis.size >= 2) flagged.push({ id: r.id, cn: r.cn, nisbas: [...nis], nAlias: al.length, nClaims: (stmtBy.get(r.id) || []).length });
 }
 flagged.sort((a, b) => b.nisbas.length - a.nisbas.length || b.nClaims - a.nClaims);
