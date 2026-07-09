@@ -398,8 +398,14 @@
   .ai-name:hover { text-decoration: underline; }
   .ai-cite { color: var(--accent); text-decoration: none; font-weight: 600; margin-left: .25rem; white-space: nowrap; }
   .ai-cite:hover { text-decoration: underline; }
-  .ai-cite-in { color: var(--accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
-  .ai-cite-in:hover { border-bottom-color: var(--accent); }
+  /* Citation links are injected via {@html mdLinks()}; Svelte can't add its scope-hash to injected nodes, so a plain
+     scoped `.ai-cite-in` rule never matches them and they render as unstyled (invisible) text. Target them with
+     :global under the scoped .ai-head so they read clearly as links. */
+  .ai-head :global(.ai-cite-in) { color: var(--accent); font-weight: 500; text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent); text-underline-offset: 2px;
+    border-radius: .2rem; padding: 0 .1rem; transition: background-color .15s, text-decoration-color .15s; }
+  .ai-head :global(.ai-cite-in:hover) { text-decoration-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 13%, transparent); }
   .ai-src { color: var(--text-muted); font-size: .72rem; margin-left: .25rem; }
   .facts2 { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .7rem; }
   .facts2 li { font-size: .85rem; line-height: 1.55; color: var(--text-secondary); }

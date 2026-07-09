@@ -1,6 +1,167 @@
 {
-  "generated": "2026-07-08T17:45:55.674Z",
+  "generated": "2026-07-09T23:35:33.807Z",
   "entries": [
+    {
+      "hash": "07ba5a4e",
+      "date": "2026-07-09",
+      "type": "Test",
+      "description": "Bio-search quality battery (node, npm run test:bio-search)",
+      "scope": null
+    },
+    {
+      "hash": "efbc7e01",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Connection-search cites the real meeting fact, drop double-punctuation",
+      "scope": null
+    },
+    {
+      "hash": "54dbd053",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Cut person-detail facts to the reconciled entity_claims substrate",
+      "scope": null
+    },
+    {
+      "hash": "1349c097",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Rederive-seed-books.sh — one clean re-derive of GPB+DB downstream on the matured pipeline (collapses mixed-version strata)",
+      "scope": null
+    },
+    {
+      "hash": "d317cf5d",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Process-book.sh driver (canonical sequence) + propagate-bindings (deterministic variant/singleton binding) + migration 88 (entity_claims.entity_id nullable — was silently dropping unmatched claims)",
+      "scope": null
+    },
+    {
+      "hash": "c0d117ba",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Candidate recall uses FULL resolved name (was coreName-stripped → missed existing entities → 71/72 creates were dups); + CLEAR flag for clean re-run",
+      "scope": null
+    },
+    {
+      "hash": "99547d51",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "CoreName no longer splits on hyphen (it connects Persian nisbas Khán-i-Núrí) — was truncating names → recall miss → spurious duplicate creates",
+      "scope": null
+    },
+    {
+      "hash": "440937f9",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Type-awareness — classify cluster type first; non-persons (place/work/concept/community/group/event) → 'other-type', not a person create",
+      "scope": null
+    },
+    {
+      "hash": "a099f607",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Concurrency pool + MINFREQ floor + retry for full-book runs",
+      "scope": null
+    },
+    {
+      "hash": "d272ab89",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Archive 101 legacy pre-substrate entity scripts → scripts/entity-legacy/ (keep current pipeline + diagnostics + portrait tooling)",
+      "scope": null
+    },
+    {
+      "hash": "f23f80af",
+      "date": "2026-07-09",
+      "type": "Docs",
+      "description": "Entity-read pipeline index (current vs legacy tooling) + lookup layer + passes in improvable-architecture doc",
+      "scope": null
+    },
+    {
+      "hash": "1966283d",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Fast AI-free lookup API — /api/v1/entities/lookup (transliteration-invariant recall over projected entities). migration 87 (entity_lookup_keys), shared api/lib/translit-key.js, build-lookup-index.mjs",
+      "scope": null
+    },
+    {
+      "hash": "9ed18c2a",
+      "date": "2026-07-09",
+      "type": "Docs",
+      "description": "Full disambiguation process — final minimal-note format, concurrency/resume/retry, extraction gate, run + reversal",
+      "scope": null
+    },
+    {
+      "hash": "0fa5be95",
+      "date": "2026-07-09",
+      "type": "Chore",
+      "description": "Un-track scratch/research dumps swept in by git add -A; keep only disambiguation-methodology doc",
+      "scope": null
+    },
+    {
+      "hash": "dcba88e8",
+      "date": "2026-07-08",
+      "type": "Other",
+      "description": "Give the AI the SCENE (cited paragraph + neighbours) — place/era/subject often established earlier and not repeated; flag only contradictions, not omissions",
+      "scope": null
+    },
+    {
+      "hash": "8bef4a23",
+      "date": "2026-07-08",
+      "type": "Other",
+      "description": "Tabriz claim diagnosis",
+      "scope": null
+    },
+    {
+      "hash": "73ccb39e",
+      "date": "2026-07-08",
+      "type": "Docs",
+      "description": "Common-reference/prominence evidence axis (P(e",
+      "scope": null
+    },
+    {
+      "hash": "a1d393d3",
+      "date": "2026-07-08",
+      "type": "Other",
+      "description": "Remove verify-claims",
+      "scope": null
+    },
+    {
+      "hash": "adcd0359",
+      "date": "2026-07-08",
+      "type": "Other",
+      "description": "Verify GPB claims",
+      "scope": null
+    },
+    {
+      "hash": "f5453e78",
+      "date": "2026-07-08",
+      "type": "Docs",
+      "description": "Research + aliases — create vs describe; research resolves (which entity a name belongs to) + cited external-equivalence, never mints entities or unattributed names",
+      "scope": null
+    },
+    {
+      "hash": "b95a4a31",
+      "date": "2026-07-08",
+      "type": "Docs",
+      "description": "Entity-creation discipline — source-driven, coverage-ordered (GPB→+DB→…); research enriches, never creates",
+      "scope": null
+    },
+    {
+      "hash": "714a5019",
+      "date": "2026-07-08",
+      "type": "Docs",
+      "description": "Identity is mention-anchored — a bare name is not an entity; provenance mandatory, enforced by write-time proof gate",
+      "scope": null
+    },
+    {
+      "hash": "964da2c0",
+      "date": "2026-07-08",
+      "type": "Other",
+      "description": "Provenance/context diagnosis",
+      "scope": null
+    },
     {
       "hash": "12d04140",
       "date": "2026-07-08",
@@ -3339,171 +3500,173 @@
       "type": "Fixed",
       "description": "GetDirtyParagraphsBatch — ORDER BY updated_at DESC + text_grounded",
       "scope": null
-    },
-    {
-      "hash": "73ea0f92",
-      "date": "2026-05-17",
-      "type": "Other",
-      "description": "Skip duplicate docs in graph extractor",
-      "scope": null
-    },
-    {
-      "hash": "b21255b6",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "GPB_DOC_ID 8635 to 21310 — target canonical not duplicate",
-      "scope": null
-    },
-    {
-      "hash": "e01d2602",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Mark paragraphs unprocessable after 3 consecutive parse failures",
-      "scope": null
-    },
-    {
-      "hash": "e558daf6",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Raise non-GPB maxTokens 4096->8192 — extraction JSON consistently >4K tokens",
-      "scope": null
-    },
-    {
-      "hash": "9fbb943a",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "GPB maxTokens 8192->16384 — Bahai transliteration inflates token count",
-      "scope": null
-    },
-    {
-      "hash": "cc9def92",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Deepseek-chat for all extractions — reasoner exhausts token budget on reasoning",
-      "scope": null
-    },
-    {
-      "hash": "fc9b0895",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Deepseek-reasoner omit responseFormat, raise maxTokens, non-zero temp",
-      "scope": null
-    },
-    {
-      "hash": "5ec66806",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "GPB doc ID as integer + strip think/markdown from deepseek-reasoner output",
-      "scope": null
-    },
-    {
-      "hash": "1c5496c0",
-      "date": "2026-05-17",
-      "type": "Performance",
-      "description": "Skip alias dictionary scan when no aliases exist yet (saves 400ms/para)",
-      "scope": null
-    },
-    {
-      "hash": "b648fbcd",
-      "date": "2026-05-17",
-      "type": "New",
-      "description": "GPB-first extraction with deepseek-reasoner and thorough seed prompt",
-      "scope": null
-    },
-    {
-      "hash": "b46b5fae",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Drop title/tags from image prompt entirely — symbols only prevents figure generation",
-      "scope": null
-    },
-    {
-      "hash": "344a1dc3",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Redesign hero image prompts — symbol-based not scene-based to prevent figure depictions",
-      "scope": null
-    },
-    {
-      "hash": "20a5d13c",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Allow Buddha statues in image prompts — Buddhism permits and encourages them",
-      "scope": null
-    },
-    {
-      "hash": "39095807",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Prohibit depictions of prophets and central religious figures in hero images",
-      "scope": null
-    },
-    {
-      "hash": "0b18c541",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Gen-dialog-images-db.mjs falls back to npx wrangler when local binary missing",
-      "scope": null
-    },
-    {
-      "hash": "42083046",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Auto-trigger hero image generation on every conversation save",
-      "scope": null
-    },
-    {
-      "hash": "e765bded",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Tradition supplementary search always fetches ≥3 hits",
-      "scope": null
-    },
-    {
-      "hash": "631c938e",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Supplementary tradition search guarantees tradition hits reach LLM analysis",
-      "scope": null
-    },
-    {
-      "hash": "9fcf83c2",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Tradition-specific queries now sort tradition matches first",
-      "scope": null
-    },
-    {
-      "hash": "9c7cc37f",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Deeplinks #pundefined — pass paragraph_index + doc_id through analyzer",
-      "scope": null
-    },
-    {
-      "hash": "f325c41a",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Programmatic tradition boost (15%) post-LLM analysis for tradition-indicator queries",
-      "scope": null
-    },
-    {
-      "hash": "f7ede021",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Raise relevance floor to 0.55; add tradition context to LLM scoring prompt",
-      "scope": null
-    },
-    {
-      "hash": "052384e2",
-      "date": "2026-05-16",
-      "type": "Fixed",
-      "description": "Raise cross-tradition relevance floor to 0.45 to filter semantic noise",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-07-09": [
+      {
+        "hash": "07ba5a4e",
+        "date": "2026-07-09",
+        "type": "Test",
+        "description": "Bio-search quality battery (node, npm run test:bio-search)",
+        "scope": null
+      },
+      {
+        "hash": "efbc7e01",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Connection-search cites the real meeting fact, drop double-punctuation",
+        "scope": null
+      },
+      {
+        "hash": "54dbd053",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Cut person-detail facts to the reconciled entity_claims substrate",
+        "scope": null
+      },
+      {
+        "hash": "1349c097",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Rederive-seed-books.sh — one clean re-derive of GPB+DB downstream on the matured pipeline (collapses mixed-version strata)",
+        "scope": null
+      },
+      {
+        "hash": "d317cf5d",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Process-book.sh driver (canonical sequence) + propagate-bindings (deterministic variant/singleton binding) + migration 88 (entity_claims.entity_id nullable — was silently dropping unmatched claims)",
+        "scope": null
+      },
+      {
+        "hash": "c0d117ba",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Candidate recall uses FULL resolved name (was coreName-stripped → missed existing entities → 71/72 creates were dups); + CLEAR flag for clean re-run",
+        "scope": null
+      },
+      {
+        "hash": "99547d51",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "CoreName no longer splits on hyphen (it connects Persian nisbas Khán-i-Núrí) — was truncating names → recall miss → spurious duplicate creates",
+        "scope": null
+      },
+      {
+        "hash": "440937f9",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Type-awareness — classify cluster type first; non-persons (place/work/concept/community/group/event) → 'other-type', not a person create",
+        "scope": null
+      },
+      {
+        "hash": "a099f607",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Concurrency pool + MINFREQ floor + retry for full-book runs",
+        "scope": null
+      },
+      {
+        "hash": "d272ab89",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Archive 101 legacy pre-substrate entity scripts → scripts/entity-legacy/ (keep current pipeline + diagnostics + portrait tooling)",
+        "scope": null
+      },
+      {
+        "hash": "f23f80af",
+        "date": "2026-07-09",
+        "type": "Docs",
+        "description": "Entity-read pipeline index (current vs legacy tooling) + lookup layer + passes in improvable-architecture doc",
+        "scope": null
+      },
+      {
+        "hash": "1966283d",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Fast AI-free lookup API — /api/v1/entities/lookup (transliteration-invariant recall over projected entities). migration 87 (entity_lookup_keys), shared api/lib/translit-key.js, build-lookup-index.mjs",
+        "scope": null
+      },
+      {
+        "hash": "9ed18c2a",
+        "date": "2026-07-09",
+        "type": "Docs",
+        "description": "Full disambiguation process — final minimal-note format, concurrency/resume/retry, extraction gate, run + reversal",
+        "scope": null
+      },
+      {
+        "hash": "0fa5be95",
+        "date": "2026-07-09",
+        "type": "Chore",
+        "description": "Un-track scratch/research dumps swept in by git add -A; keep only disambiguation-methodology doc",
+        "scope": null
+      }
+    ],
     "2026-07-08": [
+      {
+        "hash": "dcba88e8",
+        "date": "2026-07-08",
+        "type": "Other",
+        "description": "Give the AI the SCENE (cited paragraph + neighbours) — place/era/subject often established earlier and not repeated; flag only contradictions, not omissions",
+        "scope": null
+      },
+      {
+        "hash": "8bef4a23",
+        "date": "2026-07-08",
+        "type": "Other",
+        "description": "Tabriz claim diagnosis",
+        "scope": null
+      },
+      {
+        "hash": "73ccb39e",
+        "date": "2026-07-08",
+        "type": "Docs",
+        "description": "Common-reference/prominence evidence axis (P(e",
+        "scope": null
+      },
+      {
+        "hash": "a1d393d3",
+        "date": "2026-07-08",
+        "type": "Other",
+        "description": "Remove verify-claims",
+        "scope": null
+      },
+      {
+        "hash": "adcd0359",
+        "date": "2026-07-08",
+        "type": "Other",
+        "description": "Verify GPB claims",
+        "scope": null
+      },
+      {
+        "hash": "f5453e78",
+        "date": "2026-07-08",
+        "type": "Docs",
+        "description": "Research + aliases — create vs describe; research resolves (which entity a name belongs to) + cited external-equivalence, never mints entities or unattributed names",
+        "scope": null
+      },
+      {
+        "hash": "b95a4a31",
+        "date": "2026-07-08",
+        "type": "Docs",
+        "description": "Entity-creation discipline — source-driven, coverage-ordered (GPB→+DB→…); research enriches, never creates",
+        "scope": null
+      },
+      {
+        "hash": "714a5019",
+        "date": "2026-07-08",
+        "type": "Docs",
+        "description": "Identity is mention-anchored — a bare name is not an entity; provenance mandatory, enforced by write-time proof gate",
+        "scope": null
+      },
+      {
+        "hash": "964da2c0",
+        "date": "2026-07-08",
+        "type": "Other",
+        "description": "Provenance/context diagnosis",
+        "scope": null
+      },
       {
         "hash": "12d04140",
         "date": "2026-07-08",
@@ -6897,169 +7060,6 @@
         "date": "2026-05-17",
         "type": "Fixed",
         "description": "GetDirtyParagraphsBatch — ORDER BY updated_at DESC + text_grounded",
-        "scope": null
-      },
-      {
-        "hash": "73ea0f92",
-        "date": "2026-05-17",
-        "type": "Other",
-        "description": "Skip duplicate docs in graph extractor",
-        "scope": null
-      },
-      {
-        "hash": "b21255b6",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "GPB_DOC_ID 8635 to 21310 — target canonical not duplicate",
-        "scope": null
-      },
-      {
-        "hash": "e01d2602",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Mark paragraphs unprocessable after 3 consecutive parse failures",
-        "scope": null
-      },
-      {
-        "hash": "e558daf6",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Raise non-GPB maxTokens 4096->8192 — extraction JSON consistently >4K tokens",
-        "scope": null
-      },
-      {
-        "hash": "9fbb943a",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "GPB maxTokens 8192->16384 — Bahai transliteration inflates token count",
-        "scope": null
-      },
-      {
-        "hash": "cc9def92",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Deepseek-chat for all extractions — reasoner exhausts token budget on reasoning",
-        "scope": null
-      },
-      {
-        "hash": "fc9b0895",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Deepseek-reasoner omit responseFormat, raise maxTokens, non-zero temp",
-        "scope": null
-      },
-      {
-        "hash": "5ec66806",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "GPB doc ID as integer + strip think/markdown from deepseek-reasoner output",
-        "scope": null
-      },
-      {
-        "hash": "1c5496c0",
-        "date": "2026-05-17",
-        "type": "Performance",
-        "description": "Skip alias dictionary scan when no aliases exist yet (saves 400ms/para)",
-        "scope": null
-      },
-      {
-        "hash": "b648fbcd",
-        "date": "2026-05-17",
-        "type": "New",
-        "description": "GPB-first extraction with deepseek-reasoner and thorough seed prompt",
-        "scope": null
-      },
-      {
-        "hash": "b46b5fae",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Drop title/tags from image prompt entirely — symbols only prevents figure generation",
-        "scope": null
-      },
-      {
-        "hash": "344a1dc3",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Redesign hero image prompts — symbol-based not scene-based to prevent figure depictions",
-        "scope": null
-      },
-      {
-        "hash": "20a5d13c",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Allow Buddha statues in image prompts — Buddhism permits and encourages them",
-        "scope": null
-      },
-      {
-        "hash": "39095807",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Prohibit depictions of prophets and central religious figures in hero images",
-        "scope": null
-      },
-      {
-        "hash": "0b18c541",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Gen-dialog-images-db.mjs falls back to npx wrangler when local binary missing",
-        "scope": null
-      },
-      {
-        "hash": "42083046",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Auto-trigger hero image generation on every conversation save",
-        "scope": null
-      },
-      {
-        "hash": "e765bded",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Tradition supplementary search always fetches ≥3 hits",
-        "scope": null
-      },
-      {
-        "hash": "631c938e",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Supplementary tradition search guarantees tradition hits reach LLM analysis",
-        "scope": null
-      },
-      {
-        "hash": "9fcf83c2",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Tradition-specific queries now sort tradition matches first",
-        "scope": null
-      }
-    ],
-    "2026-05-16": [
-      {
-        "hash": "9c7cc37f",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Deeplinks #pundefined — pass paragraph_index + doc_id through analyzer",
-        "scope": null
-      },
-      {
-        "hash": "f325c41a",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Programmatic tradition boost (15%) post-LLM analysis for tradition-indicator queries",
-        "scope": null
-      },
-      {
-        "hash": "f7ede021",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Raise relevance floor to 0.55; add tradition context to LLM scoring prompt",
-        "scope": null
-      },
-      {
-        "hash": "052384e2",
-        "date": "2026-05-16",
-        "type": "Fixed",
-        "description": "Raise cross-tradition relevance floor to 0.45 to filter semantic noise",
         "scope": null
       }
     ]
