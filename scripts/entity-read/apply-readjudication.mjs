@@ -19,8 +19,29 @@ for (const doc of [21308, 21310]) { const ps = await queryAll(`SELECT external_p
 const scene = (doc, pid) => { const arr = docParas.get(doc); const pos = pidPos.get(`${doc}|${pid}`); if (pos == null) return '(n/a)';
   return arr.slice(Math.max(0, pos - 3), pos + 2).map((p) => `${p.pid === pid ? '»CITED« ' : ''}[${p.heading || ''}] ${p.text.slice(0, p.pid === pid ? 300 : 160)}`).join(' ‖ '); };
 
-const SYS = `Repairing a database where bare-name matching fused several people under one record. Given the entity's claims (each with its SCENE = cited paragraph + neighbours, since place/era/subject are often established earlier), PARTITION the claims into the REAL distinct people (judge by the WEIGHT of nisba/role/associates/era/fate in the scenes, not the shared name; places/nisbas are soft). For each person give a short descriptor and the best short NAME to search for. Flag claims whose statement asserts a detail the scene contradicts or nowhere supports (hallucination), and claims whose scene is about a DIFFERENT person entirely (misattributed).
+const SYS = `Repairing a database where bare-name matching fused several people under one record. Given the entity's claims (each with its SCENE = cited paragraph + neighbours, since place/era/subject are often established earlier), PARTITION the claims into the REAL distinct people.
+DEFAULT TO ONE PERSON. Create a second person ONLY when the scenes show an INCOMPATIBLE LIFE — two different deaths/fates, incompatible eras, or the text explicitly names them as separate individuals. Descriptive FACETS of one life — uncle, guardian, merchant, martyr, host, custodian — are the SAME person; NEVER split those. Nisbas/places are SOFT (a village vs its province, a governor of a province vs its city, are one man; two people can share a town) — never split on place alone. When in doubt, keep together.
+Judge by the WEIGHT of evidence in the scenes, not the shared name. For each person give a short descriptor and the best short NAME to search for. Separately, flag claims whose statement asserts a detail the scene CONTRADICTS or nowhere supports (hallucination), and claims whose scene is about a DIFFERENT person entirely (misattributed).
 Return ONLY JSON: {"people":[{"descriptor":"..","search_name":"..","claims":[idx]}],"drop":[{"claim":idx,"reason":"hallucination|misattributed","issue":".."}]}.`;
+
+// evidence-GATED target mapping: name only generates candidates; an evidence-consistency verdict binds (or NEW).
+const claimText = async (eid, n = 3) => (await queryAll(`SELECT relation, statement FROM entity_claims WHERE entity_id=? AND import_batch IN ('gpb-v1','db-v1') LIMIT ?`, [eid, n])).map((c) => `(${c.relation}) ${String(c.statement).slice(0, 90)}`);
+const MSYS = `A SUB-PERSON was split out of a conflated record. Given its descriptor + claims and a list of CANDIDATE entities (name + sample claims), decide which candidate is the SAME person — by EVIDENCE CONSISTENCY (era, role, nisba/place [soft], associates, fate), NOT by name similarity. A shared name or nisba is NOT sufficient. If no candidate is evidently the same person, answer "NEW". Return ONLY JSON: {"match": <candidate id number or "NEW">, "reason":"<=14 words"}.`;
+async function mapTarget(sub, subStmts, exclId) {
+  const toks = [...sig(`${sub.search_name || ''} ${sub.descriptor || ''}`)];
+  if (!toks.length) return { id: 'NEW', cn: sub.search_name || sub.descriptor };
+  const cands = new Map();                                    // candidate GENERATION by name-token (recall only)
+  for (const t of toks.slice(0, 4)) for (const c of await queryAll(`SELECT id, canonical_name cn, importance imp FROM graph_entities WHERE entity_type='person' AND id<>? AND canonical_name LIKE ? LIMIT 15`, [exclId, `%${t}%`])) cands.set(c.id, c);
+  const list = [...cands.values()].sort((a, b) => (b.imp || 0) - (a.imp || 0)).slice(0, 8);
+  if (!list.length) return { id: 'NEW', cn: sub.search_name || sub.descriptor };
+  const profiles = []; for (const c of list) profiles.push({ id: c.id, name: c.cn, claims: await claimText(c.id, 3) });
+  try {                                                       // the DECISION — evidence adjudication, never name
+    const res = await chatCompletion([{ role: 'system', content: MSYS }, { role: 'user', content: `SUB: ${sub.descriptor}\nSUB CLAIMS:\n${subStmts.join('\n')}\n\nCANDIDATES:\n${profiles.map((p) => `#${p.id} ${p.name}\n  ${p.claims.join('\n  ') || '(no claims)'}`).join('\n')}` }], { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 300, responseFormat: { type: 'json_object' } });
+    const m = JSON.parse((res.content || '').match(/\{[\s\S]*\}/)[0]);
+    if (m.match && String(m.match) !== 'NEW') { const hit = list.find((c) => c.id === Number(m.match)); if (hit) return { id: hit.id, cn: hit.cn, reason: m.reason }; }
+  } catch { /* fall through to NEW */ }
+  return { id: 'NEW', cn: sub.search_name || sub.descriptor };
+}
 
 const ents = await queryAll(`SELECT id, canonical_name cn FROM graph_entities WHERE id IN (${IDS.map(() => '?').join(',')})`, IDS);
 const plan = [];
@@ -37,9 +58,9 @@ for (const e of ents) {
   console.log(`\n=== [${e.id}] ${e.cn} — ${claims.length} claims → ${people.length} people, ${drop.size} to quarantine ===`);
   for (let gi = 0; gi < people.length; gi++) { const g = people[gi]; const keep = gi === 0;
     let target = null;
-    if (!keep) { const cand = await queryAll(`SELECT id, canonical_name cn, importance imp FROM graph_entities WHERE entity_type='person' AND canonical_name LIKE ? AND id<>? ORDER BY (importance IS NULL), importance DESC LIMIT 3`, [`%${(g.search_name || g.descriptor).split(/[ ,]/)[0].slice(0, 12)}%`, e.id]);
-      target = cand[0] ? { id: cand[0].id, cn: cand[0].cn } : { id: 'NEW', cn: g.search_name || g.descriptor }; }
-    console.log(`  ${keep ? 'KEEP on record' : `MOVE → ${target.id === 'NEW' ? 'NEW entity' : `[${target.id}] ${target.cn}`}`}  :: ${g.descriptor}`);
+    if (!keep) { const subStmts = (g.claims || []).map((ci) => claims[ci]).filter(Boolean).map((c) => `(${c.relation}) ${String(c.statement).slice(0, 100)}`);
+      target = await mapTarget(g, subStmts, e.id); }
+    console.log(`  ${keep ? 'KEEP on record' : `MOVE → ${target.id === 'NEW' ? 'NEW entity' : `[${target.id}] ${target.cn}`}${target.reason ? ` (${target.reason})` : ''}`}  :: ${g.descriptor}`);
     for (const ci of (g.claims || [])) { const c = claims[ci]; if (!c || drop.has(ci)) continue; if (!keep) plan.push({ claim_id: c.id, from: e.id, to: target.id, kind: 'move', target_name: target.cn });
       console.log(`       [${c.id}] ${keep ? '(stay)' : '→move'} ${String(c.statement).slice(0, 70)}`); } }
   for (const d of (r.drop || [])) { const c = claims[d.claim]; if (!c) continue; plan.push({ claim_id: c.id, from: e.id, to: 'QUARANTINE', kind: d.reason, issue: d.issue });
