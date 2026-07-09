@@ -40,16 +40,23 @@ pairs.sort((x, y) => (P.get(y.a).imp + P.get(y.b).imp) - (P.get(x.a).imp + P.get
 console.log(`persons ${P.size} · shared-name candidate pairs ${pairs.length}`);
 
 // AI adjudication
-const SYS = `You decide whether two ENTITY RECORDS from a Bábí/Bahá'í history database are the SAME person (merge) or DIFFERENT people who merely share a name (keep separate). You get each record's canonical name, side (dispensation/allegiance), summary, and cited claims.
-THE BAR FOR "same" IS POSITIVE PROOF, NOT ABSENCE OF CONTRADICTION. Answer "same" ONLY when there is POSITIVE CONNECTING EVIDENCE that these are one person: shared specific events, shared kin/associates, a continuous life-arc, matching nisba+role+era, or an explicit identity statement. A shared name plus merely "nothing contradicts" is NOT enough — with no positive link, the two are NAMESAKES: answer "different". A real contradiction (different nisba/era/role/fate) is also "different". Reserve "uncertain" only for when the evidence is genuinely, closely balanced. Use world knowledge for famous figures.
-Return ONLY JSON: {"verdicts":[{"i":<index>,"relation":"same|different|uncertain","confidence":0-1,"for_same":"<=16 words: the POSITIVE link, or 'none'","for_diff":"<=16 words","keep":"<which canonical to keep if same, else null>"}]}.`;
+const SYS = `You decide whether two ENTITY RECORDS from a Bábí/Bahá'í history database are the SAME person (merge) or DIFFERENT people who merely share a name (keep separate). You get each record's canonical name, side, summary, cited claims, and PROMINENCE (importance + how many claims — a proxy for how well-known that bearer is), plus which record is the more prominent bearer.
+Two kinds of POSITIVE evidence can justify "same":
+1. CONNECTING evidence — shared specific events, shared kin/associates, a continuous life-arc, matching nisba+role+era, or an explicit identity statement.
+2. COMMON-REFERENCE / FAMILIARITY evidence — a name or title used BARE, assuming familiarity, normally denotes the MOST COMMONLY KNOWN bearer (bare "Vaḥíd" → Siyyid Yaḥyá-i-Dárábí; bare "Navváb" → Ásíyih Khánum). So if one record is the clearly PROMINENT bearer and the other is a THIN record whose references carry NO distinguishing detail, the thin record is most likely an under-specified duplicate of the prominent one → "same". The absence of disambiguation is itself evidence for the default referent.
+For the CENTRAL FIGURES and extremely prominent bearers (Bahá'u'lláh, the Báb, ‘Abdu'l-Bahá, Shoghi Effendi, and other household names), a bare mention is UNAMBIGUOUS — a thin same-named record merges into them with NO further evidence required (only an explicit distinguishing detail could block it). You never need extra proof that "Bahá'u'lláh" means Bahá'u'lláh.
+BUT the bar for "same" is still POSITIVE evidence, not mere absence of contradiction between two SUBSTANTIAL records. And any EXPLICIT distinguishing detail in the lesser record — a different nisba, era, role, or fate — BLOCKS the familiarity inference and makes them "different" (a genuine namesake). A real contradiction ⇒ "different". Reserve "uncertain" only for genuinely balanced evidence. Use world knowledge for famous figures.
+Return ONLY JSON: {"verdicts":[{"i":<index>,"relation":"same|different|uncertain","confidence":0-1,"for_same":"<=18 words: the connecting OR familiarity link, or 'none'","for_diff":"<=16 words","keep":"<which canonical to keep if same, else null>"}]}.`;
 let verd = {}; try { verd = JSON.parse(readFileSync(VERD, 'utf8')); } catch { /* */ }
 if (ADJ) {
   const todo = pairs.filter((p) => !(`${p.a}|${p.b}` in verd));
   console.error(`adjudicating ${todo.length} pairs (of ${pairs.length})…`);
   for (let b = 0; b < todo.length; b += 8) {
     const batch = todo.slice(b, b + 8);
-    const items = batch.map((p, i) => ({ i, A: { name: P.get(p.a).cn, side: P.get(p.a).side, summary: P.get(p.a).summary, claims: P.get(p.a).claims.slice(0, 5) }, B: { name: P.get(p.b).cn, side: P.get(p.b).side, summary: P.get(p.b).summary, claims: P.get(p.b).claims.slice(0, 5) } }));
+    const prom = (e) => (e.claims.length * 2) + (e.imp || 0);
+    const items = batch.map((p, i) => { const A = P.get(p.a), B = P.get(p.b); const pA = prom(A), pB = prom(B);
+      const side = (e, pr) => ({ name: e.cn, side: e.side, importance: e.imp || 0, n_claims: e.claims.length, prominence: pr, summary: e.summary, claims: e.claims.slice(0, 5) });
+      return { i, prominent: pA === pB ? 'equal' : (pA > pB ? 'A' : 'B'), A: side(A, pA), B: side(B, pB) }; });
     try { const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: JSON.stringify(items) }], { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 2000, responseFormat: { type: 'json_object' } });
       const pj = JSON.parse((res.content || '').match(/\{[\s\S]*\}/)[0]); for (const v of (pj.verdicts || [])) { const p = batch[v.i]; if (p) verd[`${p.a}|${p.b}`] = v; }
     } catch (e) { console.error(`  batch ${b} fail: ${String(e.message).slice(0, 50)}`); }
