@@ -66,13 +66,20 @@ if (ADJ) {
 
 // bucket + render — a verdict below the confidence bar becomes UNCERTAIN (human decides), never auto-applied
 const CONF = Number(process.env.CONF || 0.8);
+const SUB = Number(process.env.SUB || 3);   // "substantial" = at least this many cited claims
 for (const p of pairs) { const v = verd[`${p.a}|${p.b}`]; p.rel = v ? v.relation : 'uncertain'; p.conf = v?.confidence ?? null; p.fs = v?.for_same; p.fd = v?.for_diff;
-  p.eff = (p.rel !== 'uncertain' && p.conf != null && p.conf >= CONF) ? p.rel : 'uncertain'; }
+  p.minClaims = Math.min(P.get(p.a).claims.length, P.get(p.b).claims.length);
+  const lowConf = p.conf == null || p.conf < CONF;
+  // Route the CONSEQUENTIAL merges to the human: merging two SUBSTANTIAL same-named records (both well-documented)
+  // is the error-prone call; a thin record folding into a prominent one (familiarity default) + confident keeps are
+  // safe to auto-apply. DeepSeek's self-rated confidence is nearly always high, so this structural test is the real signal.
+  p.eff = (p.rel === 'same' && (p.minClaims >= SUB || lowConf)) ? 'uncertain'
+    : (p.rel !== 'uncertain' && lowConf) ? 'uncertain' : p.rel; }
 const lvl = { same: 'ai-same', different: 'ai-diff', uncertain: 'uncertain' };
 const cnt = pairs.reduce((m, p) => (m[p.eff] = (m[p.eff] || 0) + 1, m), {});
 const claimList = (id) => { const c = P.get(id).claims; return c.length ? c.slice(0, 5).map((x) => `<div class="ci">${esc(x)}</div>`).join('') : '<div class="ci none">— no cited claims —</div>'; };
 const row = (p) => { const A = P.get(p.a), B = P.get(p.b); const def = p.eff === 'same' ? 'merge' : p.eff === 'different' ? 'keep' : '';
-  const badge = p.eff === 'same' ? 'AI: same → merge' : p.eff === 'different' ? 'AI: different → keep' : `? uncertain — YOUR CALL${p.conf != null ? ` (AI conf ${p.conf}${p.rel !== 'uncertain' ? `, leaned ${p.rel}` : ''})` : ''}`;
+  const badge = p.eff === 'same' ? 'AI: same → merge' : p.eff === 'different' ? 'AI: different → keep' : `? YOUR CALL${p.minClaims >= SUB ? ' — both records well-documented' : ' — AI unsure'}${p.rel !== 'uncertain' ? ` (AI leaned ${p.rel})` : ''}`;
   return `<tr data-a="${p.a}" data-b="${p.b}" data-level="${lvl[p.eff]}"${def ? ` data-default="${def}"` : ''}>
    <td class="pair">
      <div class="names"><span class="ent">${esc(A.cn)}<span class="eid">#${A.id} · ${esc(A.side)}</span></span>
@@ -109,7 +116,7 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Dubious me
  .sum{color:var(--mut);font-size:.82rem;margin:.25rem 0 .4rem}.ci{font-size:.8rem;border-left:2px solid #33507e;padding:.1rem .5rem;margin:.15rem 0}.ci.none{color:var(--mut);border-color:var(--sus)}
 </style></head><body>
 <header><h1>Dubious merges — ${pairs.length} same-name pairs · <b>${cnt.uncertain || 0}</b> need your call</h1>
-<p class="lede">Two records that share a name. <b>MERGE</b> = same person under variant names → combine · <b>KEEP SEPARATE</b> = a namesake. The <b>uncertain</b> tab (default) is where the AI's confidence was below ${CONF} — <b>those are yours to decide</b> (nothing pre-marked). The <b>AI: merge</b> / <b>AI: keep</b> tabs are its high-confidence calls — skim to spot-check, flip any wrong. Each pair shows both records' cited claims so you can verify the link (shared events/kin/arc) or the familiarity default (a bare name defaults to the prominent bearer). When done, <b>Copy merges</b> → paste back.</p>
+<p class="lede">Two records that share a name. <b>MERGE</b> = same person under variant names → combine · <b>KEEP SEPARATE</b> = a namesake. The <b>your call</b> tab (default) = merges of <b>two well-documented records</b> — the consequential calls where a wrong merge does real damage — plus anything the AI was unsure about. <b>Those are yours to decide</b> (nothing pre-marked). The safe thin→prominent (familiarity) merges and confident keeps are auto-decided in the other tabs. The <b>AI: merge</b> / <b>AI: keep</b> tabs are its high-confidence calls — skim to spot-check, flip any wrong. Each pair shows both records' cited claims so you can verify the link (shared events/kin/arc) or the familiarity default (a bare name defaults to the prominent bearer). When done, <b>Copy merges</b> → paste back.</p>
 <div class="bar"><span class="filters">
  <button data-f="uncertain" class="on">❓ your call (${cnt.uncertain || 0})</button>
  <button data-f="ai-same">AI: merge (${cnt.same || 0})</button>
