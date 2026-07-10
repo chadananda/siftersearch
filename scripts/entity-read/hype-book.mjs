@@ -75,8 +75,11 @@ if (USE_TOC) {
   for (const p of paras) { if (cur.length && p.chapterNum !== cur[cur.length - 1].chapterNum) { segs.push(cur); cur = []; } cur.push(p); }
   if (cur.length) segs.push(cur);
 } else {
+  // Cut at a heading edge past SEGMAX; force a cut at SEGMAX*3 even without a heading change so
+  // headingless books (ROB/Gate) still split into CONC-parallel segments instead of one giant
+  // sequential run. Sequential-within-segment still warms the prefix cache between paragraphs.
   segs = []; let cur = [];
-  for (const p of paras) { const headChange = cur.length && p.heading !== cur[cur.length - 1].heading; if (cur.length >= SEGMAX && headChange) { segs.push(cur); cur = []; } cur.push(p); }
+  for (const p of paras) { const headChange = cur.length && p.heading !== cur[cur.length - 1].heading; if ((cur.length >= SEGMAX && headChange) || cur.length >= SEGMAX * 3) { segs.push(cur); cur = []; } cur.push(p); }
   if (cur.length) segs.push(cur);
 }
 console.error(`hype DOC=${DOC} · ${paras.length} paras · ${segs.length} segments (${USE_TOC ? 'TOC/chapter' : 'bounded-run'}) · WRITE=${WRITE} · model=${MODEL} · maxTok=${MAXTOK}`);

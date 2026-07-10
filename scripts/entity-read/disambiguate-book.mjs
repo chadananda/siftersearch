@@ -70,8 +70,13 @@ if (USE_TOC) {
   for (const p of paras) { if (cur.length && p.chapterNum !== cur[cur.length - 1].chapterNum) { segs.push(cur); cur = []; } cur.push(p); }
   if (cur.length) segs.push(cur);
 } else {
+  // Prefer cutting at a heading edge once past SEGMAX. But books ingested without headings
+  // (ROB, Gate: heading uniform/empty) would otherwise never cut → ONE giant sequential segment
+  // → CONC does nothing (the throughput killer). Force a cut at SEGMAX*3 even without a heading
+  // change so headingless books still split into CONC-parallel segments. priorBlock only looks
+  // back 12 paras, so a boundary every ~180 paras costs ~nothing in coreference quality.
   segs = []; let cur = [];
-  for (const p of paras) { const headChange = cur.length && p.heading !== cur[cur.length - 1].heading; if (cur.length >= SEGMAX && headChange) { segs.push(cur); cur = []; } cur.push(p); }
+  for (const p of paras) { const headChange = cur.length && p.heading !== cur[cur.length - 1].heading; if ((cur.length >= SEGMAX && headChange) || cur.length >= SEGMAX * 3) { segs.push(cur); cur = []; } cur.push(p); }
   if (cur.length) segs.push(cur);
 }
 console.error(`disambiguate DOC=${DOC} · ${paras.length} paras · ${segs.length} segments (${USE_TOC ? 'TOC/chapter' : 'bounded-run'}) · WRITE=${WRITE} · model=${MODEL}`);
