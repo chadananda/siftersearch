@@ -423,6 +423,28 @@ export default async function publicApiRoutes(fastify) {
     // (Voyage reranking removed — it was disabled and never ran; result ordering comes
     // from Meili hybrid + authority ranking, then the LLM analysis scores/reranks the pool.)
 
+    // Deterministic near-duplicate collapse BEFORE AI analysis. ~38.8% of the corpus is duplicate
+    // content (the same passage quoted across many compilations), so result sets are full of
+    // redundant hits. Collapsing them removes repeated results AND cuts the number of LLM analysis
+    // calls (fewer passages → fewer/one wave). Key on the fully-normalized text (exact-dup only, no
+    // false merges); keep the highest-authority copy, then highest Meili ranking score.
+    const _hitsBeforeDedup = searchResults.hits.length;
+    {
+      const normKey = (t) => (t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      const bestByKey = new Map();
+      for (const hit of searchResults.hits) {
+        const k = normKey(hit.text);
+        if (!k) continue;
+        const prev = bestByKey.get(k);
+        if (!prev) { bestByKey.set(k, hit); continue; }
+        const better = (hit.authority || 0) !== (prev.authority || 0)
+          ? (hit.authority || 0) > (prev.authority || 0)
+          : (hit._rankingScore || 0) > (prev._rankingScore || 0);
+        if (better) bestByKey.set(k, hit);
+      }
+      if (bestByKey.size < searchResults.hits.length) searchResults.hits = [...bestByKey.values()];
+    }
+
     // Prepare passages for analysis — include all fields needed for URL building and authority scoring.
     // Meilisearch stores "doc_id" (not "document_id") so we map both names for compat.
     const passages = searchResults.hits.map(hit => ({
@@ -515,6 +537,7 @@ export default async function publicApiRoutes(fastify) {
         retrieval_ms: retrievalMs,
         analysis_ms: analysisMs,
         passages: passages.length,
+        deduped_removed: _hitsBeforeDedup - searchResults.hits.length,
         meili_ms: searchResults.processingTimeMs ?? null,
       }
     };
