@@ -59,7 +59,9 @@ BOOK:
 ${bookMeta}
 ${castSeed ? `\nBOOK CAST (who's-who — use to resolve a name to the right figure; do not ask about people not in the paragraph):\n${castSeed}` : ''}`;
 
-let paras = await queryAll(`SELECT id, external_para_id pid, paragraph_index pidx, heading, text, context FROM content WHERE doc_id=? AND deleted_at IS NULL AND blocktype='paragraph' AND external_para_id IS NOT NULL ORDER BY paragraph_index`, [DOC]);
+// pid = external_para_id when present (OceanLibrary docs like GPB/DB), else the content id (books ingested
+// without para_NNNN ids, e.g. ROB). Include 'quote' blocks too — in ROB most content is quoted tablet text.
+let paras = await queryAll(`SELECT id, COALESCE(external_para_id, 'p' || id) pid, paragraph_index pidx, heading, text, context FROM content WHERE doc_id=? AND deleted_at IS NULL AND blocktype IN ('paragraph','quote') ORDER BY paragraph_index`, [DOC]);
 paras = paras.map((p) => ({ ...p, text: String(p.text).replace(/\s+/g, ' ').trim() }));
 if (LIMIT) paras = paras.slice(0, LIMIT);
 let segs;
