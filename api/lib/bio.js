@@ -240,9 +240,10 @@ export async function bioSearch(rawQ) {
     }
   } else if (connTarget) {
     candidateIds = connected;
-  } else if (best) {
-    candidateIds = memberIds.slice();   // group query (± place): restrict to members; the LLM filters by place/event
   }
+  // NB: a group named WITHOUT a connection target (e.g. "Letters who died at Ṭabarsí") is left unscoped — the modeled
+  // graph_relations membership is sparser than the claim data, so restricting to it under-returns; the term-matched
+  // claim pool + the LLM's place/event judgement recovers the right people with better recall.
 
   // ── DETERMINISTIC broad-connection answer (a target, no extra place/event token): the cited-connected set IS the
   //    recall; the LLM only writes a clause per member from their connecting claim(s), and may drop one only if its
