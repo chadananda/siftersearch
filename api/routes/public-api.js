@@ -574,7 +574,21 @@ export default async function publicApiRoutes(fastify) {
 
   /**
    * GET /api/v1/paragraph/:id
-   *
+  // TEMP diagnostic: why is the semantic Meili search slow? Reports task backlog + whether the paragraphs index is
+  // actively indexing (which would starve queries / force brute-force vector scans).
+  fastify.get('/search/meili-diag', async () => {
+    const meili = getMeili();
+    const taskCount = async (status) => { try { const r = await meili.getTasks({ statuses: [status], limit: 1 }); return r.total ?? r.results?.length ?? 0; } catch (e) { return 'err:' + e.message; } };
+    const [enqueued, processing, pstats] = await Promise.all([
+      taskCount('enqueued'), taskCount('processing'),
+      meili.index(INDEXES.PARAGRAPHS).getStats().catch((e) => ({ error: e.message })),
+    ]);
+    let embedder = null;
+    try { const s = await meili.index(INDEXES.PARAGRAPHS).getSettings(); embedder = s.embedders?.default || null; } catch (e) { embedder = 'err:' + e.message; }
+    return { enqueuedTasks: enqueued, processingTasks: processing, paragraphs: pstats, embedder };
+  });
+
+  /*
    * Get a specific paragraph by content ID.
    */
   fastify.get('/paragraph/:id', async (request) => {
