@@ -106,7 +106,7 @@ async function processSeg(seg, si) {
     catch (e) { console.error(`  [${p.pid}] AI FAIL ${String(e.message).slice(0, 50)}`); failed++; continue; }
     if (res.usage) { cacheHit += res.usage.cachedTokens || res.usage.prompt_cache_hit_tokens || 0; cacheTot += res.usage.promptTokens || res.usage.prompt_tokens || 0; }
     const parsed = parseOut(res.content || '');
-    if (!parsed) { console.error(`  [${p.pid}] unparseable`); failed++; continue; }
+    if (!parsed) { console.error(`  [${p.pid}] unparseable [finish=${res.finishReason || '?'}]: ${String(res.content || '').replace(/\s+/g, ' ').slice(0, 140)}`); failed++; continue; }
     if (!WRITE) { console.log(`\n${p.pid}:\n  THESIS: ${parsed.thesis}\n  ${parsed.questions.join('\n  ')}`); done++; }
     else { try { await retry(() => content.updateHype(p.id, parsed.questions, parsed.thesis)); done++; if (done % 50 === 0) console.error(`  wrote ${done} (cache ${cacheTot ? Math.round(100 * cacheHit / cacheTot) : 0}%)`); } catch (e) { console.error(`  [${p.pid}] WRITE FAIL ${String(e.message).slice(0, 50)}`); failed++; } }
   }
