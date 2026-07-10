@@ -462,7 +462,9 @@ function getClient(provider) {
         throw new Error('GROQ_API_KEY required for Groq provider');
       }
       // OpenAI-compatible endpoint. LPU inference — sub-second even under concurrency.
-      clients.groq = new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: 'https://api.groq.com/openai/v1' });
+      // maxRetries:0 so a rate-limit (429) fails FAST → immediate OpenAI fallback (see chatGroq),
+      // instead of the SDK's multi-second backoff-retry that balloons latency under throttling.
+      clients.groq = new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: 'https://api.groq.com/openai/v1', maxRetries: 0 });
       break;
 
     default:
@@ -503,6 +505,7 @@ async function chatOpenAI(messages, opts) {
 // Groq (OpenAI-compatible endpoint). LPU inference — sub-second even under concurrency, so it is the
 // user-facing fast path for search analysis (filter/score/summarize). Model id is passed through literally
 // (e.g. llama-3.3-70b-versatile). Forwards response_format + abort signal for JSON extraction under a timeout.
+const GROQ_FALLBACK_MODEL = 'gpt-4.1-mini';  // OpenAI fast model used when Groq is rate-limited/unavailable
 async function chatGroq(messages, opts) {
   const client = getClient('groq');
   const reqOpts = opts.signal ? { signal: opts.signal } : {};
@@ -511,17 +514,26 @@ async function chatGroq(messages, opts) {
     temperature: opts.temperature, max_tokens: opts.maxTokens, stream: opts.stream || false
   };
   if (opts.responseFormat) params.response_format = opts.responseFormat;
-  const response = await client.chat.completions.create(params, reqOpts);
-  if (opts.stream) return response;
-  return {
-    content: response.choices[0].message.content,
-    usage: {
-      promptTokens: response.usage?.prompt_tokens,
-      completionTokens: response.usage?.completion_tokens,
-      totalTokens: response.usage?.total_tokens
-    },
-    model: response.model
-  };
+  try {
+    const response = await client.chat.completions.create(params, reqOpts);
+    if (opts.stream) return response;
+    return {
+      content: response.choices[0].message.content,
+      usage: {
+        promptTokens: response.usage?.prompt_tokens,
+        completionTokens: response.usage?.completion_tokens,
+        totalTokens: response.usage?.total_tokens
+      },
+      model: response.model
+    };
+  } catch (err) {
+    // Don't fall back if the caller aborted (search timeout) — propagate the cancellation.
+    if (opts.signal?.aborted || err?.name === 'AbortError') throw err;
+    // Groq rate-limited (429) or unavailable → fall back to OpenAI so search never breaks.
+    // With Groq maxRetries:0 this failover is immediate, not after multi-second backoff.
+    logger.warn({ err: err.message, status: err.status, fallback: GROQ_FALLBACK_MODEL }, 'Groq chat failed — falling back to OpenAI');
+    return chatOpenAI(messages, { ...opts, model: GROQ_FALLBACK_MODEL });
+  }
 }
 
 // DeepSeek (OpenAI-compatible endpoint). Registry keys (deepseek-v4-flash / -pro) resolve to the live API id via the
