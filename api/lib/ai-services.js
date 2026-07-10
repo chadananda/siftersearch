@@ -306,8 +306,8 @@ const SERVICE_CONFIG = {
       maxTokens: 500
     },
     remote: {
-      provider: 'deepseek',
-      model: 'deepseek-v4-flash',  // DeepSeek V3 non-thinking — fast + cheap (was gpt-3.5-turbo)
+      provider: 'openai',
+      model: 'gpt-3.5-turbo',      // USER-FACING fast path — low latency. DeepSeek is reserved for backend/parallel.
       temperature: 0.3,
       maxTokens: 500
     }
@@ -323,8 +323,8 @@ const SERVICE_CONFIG = {
       maxTokens: 1000
     },
     remote: {
-      provider: 'deepseek',
-      model: 'deepseek-v4-flash',  // DeepSeek V3 non-thinking (was gpt-4o-mini)
+      provider: 'openai',
+      model: 'gpt-3.5-turbo',      // USER-FACING fast path
       temperature: 0.3,
       maxTokens: 1000
     }
@@ -340,8 +340,8 @@ const SERVICE_CONFIG = {
       maxTokens: 2000
     },
     remote: {
-      provider: 'deepseek',
-      model: 'deepseek-v4-pro',    // DeepSeek reasoning tier for complex analysis (was gpt-4o)
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5-20251001',  // USER-FACING quality path — Haiku: fast + capable
       temperature: 0.7,
       maxTokens: 2000
     }
@@ -357,8 +357,8 @@ const SERVICE_CONFIG = {
       maxTokens: 500
     },
     remote: {
-      provider: 'deepseek',
-      model: 'deepseek-v4-flash',  // DeepSeek V3 non-thinking (was claude-3-haiku)
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5-20251001',  // USER-FACING conversational path — Haiku
       temperature: 0.8,
       maxTokens: 500
     }
