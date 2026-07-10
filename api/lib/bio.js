@@ -264,10 +264,15 @@ export async function bioSearch(rawQ) {
       // Every claim is cited, so choose for VIVIDNESS: drop claims whose proof merely "describes / refers to / extols"
       // the connection when a concrete sibling exists (one that shows the actual encounter — the embrace, the place),
       // prefer linkable, then the proof-richest. This is what lifts "met Bahá'u'lláh" → "…entered His presence in Ṭihrán".
-      const vague = (c) => /\b(describ|referr|mention|account of|extol|prais|letter)\b/i.test(c.proof || '');
-      const concrete = conn.filter((c) => !vague(c));   // every claim is cited; choose for vividness, prefer clickable
-      conn = (concrete.length ? concrete : conn)
-        .sort((a, b) => (b.url ? 1 : 0) - (a.url ? 1 : 0) || (b.proof || '').length - (a.proof || '').length).slice(0, 6);
+      // vividness + support ranking. `vague` = a proof that only TALKS ABOUT the connection ("described/referred to/
+      // mentioned/account of…") rather than showing it — PREFIX match so "described"/"mentioned" are caught. `pNames` =
+      // the proof itself names the target (strong support), vs a claim that qualified only by its typed target_id with a
+      // proof that names neither party (the inaccurate Ṭáhirih ¶754 case). Prefer proof-names-target, then non-vague,
+      // then clickable, then proof-rich.
+      const vague = (c) => /\b(describ|referr|mention|account|recount|allud|extol|prais|letter)/i.test(c.proof || '');
+      const pNames = (c) => connTarget.tok.length > 0 && connTarget.tok.every((t) => fold(c.proof || '').includes(t));
+      conn = [...conn].sort((a, b) => (pNames(b) ? 1 : 0) - (pNames(a) ? 1 : 0) || (vague(a) ? 1 : 0) - (vague(b) ? 1 : 0)
+        || (b.url ? 1 : 0) - (a.url ? 1 : 0) || (b.proof || '').length - (a.proof || '').length).slice(0, 6);
       members.push({ id, name: nameById[id] || `#${id}`, conn });
     }
     if (members.length) {
@@ -296,7 +301,9 @@ export async function bioSearch(rawQ) {
         ids.push(m.id);
       }
       if (ids.length) {
-        const summary = `${lead || `${ids.length}${grp ? ' of the ' + grp : ''} connected to ${connTarget.name}.`} ${parts.join('; ')}.`.replace(/\s+/g, ' ').trim();
+        // the per-person clauses ARE the answer (each: name + book-worded evidence + link) — no enumerating lead that
+        // just repeats the names. `lead`/`grp` are computed above but deliberately not prepended.
+        const summary = `${parts.join('; ')}.`.replace(/\s+/g, ' ').trim();
         return { ids, q, ...(best ? { group: best.id } : {}), reasoning: { summary, evidence } };
       }
       if (best) return { ids: [], q, group: best.id, reasoning: { summary: `No cited connection between the ${grp} and ${connTarget.name} is borne out by the sources.`, evidence: {} } };
@@ -349,7 +356,7 @@ Return ONLY JSON: {"lead":"...","matches":[{"id","clause"}]} — most relevant f
     // no qualifying match: say so plainly rather than return a blank banner — especially for a connection query, where
     // the honest answer ("no cited connection with X") is itself the useful result (e.g. Seven Martyrs met Bahá'u'lláh).
     const explanation = parts.length
-      ? `${(parsed.lead || '').trim()} ${parts.join('; ')}.`.trim()
+      ? `${parts.join('; ')}.`.trim()   // per-person clauses are the answer; no enumerating lead
       : (connTarget ? `No cited connection with ${connTarget.name} is recorded for anyone matching this query in God Passes By or The Dawn-Breakers.` : '');
     return { ids: aiIds, q, ...(best ? { group: best.id } : {}), reasoning: { summary: explanation, evidence } };
   } catch (e) { return { ids: memberIds, q, error: String(e).slice(0, 80) }; }
