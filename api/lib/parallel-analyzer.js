@@ -111,6 +111,7 @@ OUTPUT FORMAT:
       temperature: 0.1,  // Lower temperature for more precise copying
       maxTokens: hasVoyageReranking ? 400 : 600, // Less work when Voyage handles ranking
       caller: 'search:summarize',
+      responseFormat: { type: 'json_object' },  // enforce valid JSON — DeepSeek returns prose otherwise → 0 parsed
       signal,
     });
 
