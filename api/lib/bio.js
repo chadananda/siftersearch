@@ -329,7 +329,11 @@ Return ONLY JSON: {"lead":"...","matches":[{"id","clause"}]} — most relevant f
       const nm = nameById[id] || `#${id}`;
       parts.push(hit.url ? `${nm} [${clause}](${hit.url})` : `${nm} ${clause}`);
     }
-    const explanation = parts.length ? `${(parsed.lead || '').trim()} ${parts.join('; ')}.`.trim() : '';
+    // no qualifying match: say so plainly rather than return a blank banner — especially for a connection query, where
+    // the honest answer ("no cited connection with X") is itself the useful result (e.g. Seven Martyrs met Bahá'u'lláh).
+    const explanation = parts.length
+      ? `${(parsed.lead || '').trim()} ${parts.join('; ')}.`.trim()
+      : (connTarget ? `No cited connection with ${connTarget.name} is recorded for anyone matching this query in God Passes By or The Dawn-Breakers.` : '');
     return { ids: aiIds, q, ...(best ? { group: best.id } : {}), reasoning: { summary: explanation, evidence } };
   } catch (e) { return { ids: memberIds, q, error: String(e).slice(0, 80) }; }
 }
