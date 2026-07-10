@@ -305,8 +305,8 @@ const SERVICE_CONFIG = {
       maxTokens: 500
     },
     remote: {
-      provider: 'openai',
-      model: 'gpt-3.5-turbo',     // Fastest OpenAI model
+      provider: 'deepseek',
+      model: 'deepseek-v4-flash',  // DeepSeek V3 non-thinking — fast + cheap (was gpt-3.5-turbo)
       temperature: 0.3,
       maxTokens: 500
     }
@@ -322,8 +322,8 @@ const SERVICE_CONFIG = {
       maxTokens: 1000
     },
     remote: {
-      provider: 'openai',
-      model: 'gpt-4o-mini',       // Good quality, reasonable cost
+      provider: 'deepseek',
+      model: 'deepseek-v4-flash',  // DeepSeek V3 non-thinking (was gpt-4o-mini)
       temperature: 0.3,
       maxTokens: 1000
     }
@@ -339,8 +339,8 @@ const SERVICE_CONFIG = {
       maxTokens: 2000
     },
     remote: {
-      provider: 'openai',
-      model: 'gpt-4o',            // Best OpenAI model
+      provider: 'deepseek',
+      model: 'deepseek-v4-pro',    // DeepSeek reasoning tier for complex analysis (was gpt-4o)
       temperature: 0.7,
       maxTokens: 2000
     }
@@ -356,8 +356,8 @@ const SERVICE_CONFIG = {
       maxTokens: 500
     },
     remote: {
-      provider: 'anthropic',
-      model: 'claude-3-haiku-20240307',  // Good at natural language
+      provider: 'deepseek',
+      model: 'deepseek-v4-flash',  // DeepSeek V3 non-thinking (was claude-3-haiku)
       temperature: 0.8,
       maxTokens: 500
     }

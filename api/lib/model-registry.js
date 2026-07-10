@@ -282,6 +282,7 @@ export const MODEL_REGISTRY = {
   // If IDs differ, update these two keys — they are the single source of truth.
   'deepseek-v4-flash': {
     provider: 'deepseek',
+    apiModel: 'deepseek-chat',        // real DeepSeek API id (V3, non-thinking) — the id bioSearch already uses
     name: 'DeepSeek V4 Flash (non-thinking)',
     type: 'chat',
     pricing: { input: 0.00027, output: 0.0011 },
@@ -296,6 +297,7 @@ export const MODEL_REGISTRY = {
 
   'deepseek-v4-pro': {
     provider: 'deepseek',
+    apiModel: 'deepseek-reasoner',    // real DeepSeek API id (thinking) for reasoning/adjudication tiers
     name: 'DeepSeek V4 Pro (thinking)',
     type: 'chat',
     pricing: { input: 0.00055, output: 0.0022 },

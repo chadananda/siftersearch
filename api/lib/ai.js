@@ -11,6 +11,7 @@ import { Ollama } from 'ollama';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { logAIUsage } from './ai-services.js';
+import { getModel } from './model-registry.js';
 
 // Lazy-initialized clients
 let openaiClient = null;
@@ -191,7 +192,9 @@ async function chatLocal(messages, { model, temperature, maxTokens, stream, resp
 
 async function chatDeepSeek(messages, { model, temperature, maxTokens, stream, responseFormat, thinking = false }) {
   const client = getDeepSeek();
-  const params = { model, messages, temperature, max_tokens: maxTokens, stream };
+  // translate a registry key (e.g. 'deepseek-v4-flash') to the real DeepSeek API id ('deepseek-chat'); pass raw ids through
+  const apiModel = getModel(model)?.apiModel || model;
+  const params = { model: apiModel, messages, temperature, max_tokens: maxTokens, stream };
   if (responseFormat) params.response_format = responseFormat;
   // Explicitly control thinking mode — never rely on model defaults.
   // deepseek-v4-flash: thinking disabled (fast extraction/classification)
