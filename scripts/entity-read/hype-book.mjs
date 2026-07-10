@@ -25,7 +25,7 @@ const { assignChapters } = await import('./chapter-map.mjs');
 const DOC = +(process.env.DOC || 429);
 const MODEL = process.env.MODEL || 'deepseek-v4-flash';
 const IS_PRO = /pro/.test(MODEL);
-const MAXTOK = +(process.env.MAXTOK || (IS_PRO ? 2400 : 1500));  // headroom: flash occasionally rambles past 900 on some paras (finish=length); output tokens are ~$0.28/M so this is nearly free
+const MAXTOK = +(process.env.MAXTOK || (IS_PRO ? 6000 : 1500));  // pro (reasoning) burns most tokens on THINKING before the JSON — 2400 truncated ~20% (finish=length); 6000 leaves room. flash: 1500.
 const MINLEN = +(process.env.MINLEN || 60);                       // skip headers/fragments (titles, publisher lines) not worth HyPE
 const SEGMAX = +(process.env.SEGMAX || 60);
 const CONC = +(process.env.CONC || 5);
