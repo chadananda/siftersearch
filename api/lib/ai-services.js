@@ -628,41 +628,32 @@ async function chatLmstudio(messages, opts) {
 // We batch conservatively: 50 chunks per batch (assuming ~1500 chars/chunk = 75k chars = ~19k tokens)
 const EMBEDDING_BATCH_SIZE = 50;
 
+// Bulletproof against the three OpenAI embedding-request failures that caused infinite ingest-retry loops:
+//   (1) a single input > 8192 tokens, (2) a batch > 300K tokens/request, (3) an empty input.
+// Every input is capped + made non-empty, and batches are bounded by BOTH count and char-budget. Worst case is
+// ~1 token/char (Arabic/CJK), so 8000 chars/input < 8192 tokens and 200K chars/batch < 300K tokens — safe for any script.
+const MAX_EMBED_CHARS = 8000;
+const MAX_BATCH_CHARS = 200000;
 async function embedOpenAI(text, opts) {
   const client = getClient('openai');
-  const inputs = Array.isArray(text) ? text : [text];
+  const raw = Array.isArray(text) ? text : [text];
+  const inputs = raw.map((t) => { let s = String(t ?? ''); if (!s.trim()) s = ' '; return s.length > MAX_EMBED_CHARS ? s.slice(0, MAX_EMBED_CHARS) : s; });
 
-  // Process in batches to avoid token limits
   const allEmbeddings = [];
   let totalTokens = 0;
-
-  for (let i = 0; i < inputs.length; i += EMBEDDING_BATCH_SIZE) {
-    const batch = inputs.slice(i, i + EMBEDDING_BATCH_SIZE);
-
-    const response = await client.embeddings.create({
-      model: opts.model,
-      input: batch,
-      dimensions: opts.dimensions
-    });
-
+  let i = 0;
+  while (i < inputs.length) {
+    const batch = [];
+    let chars = 0;
+    while (i < inputs.length && batch.length < EMBEDDING_BATCH_SIZE && (batch.length === 0 || chars + inputs[i].length <= MAX_BATCH_CHARS)) {
+      chars += inputs[i].length; batch.push(inputs[i]); i++;
+    }
+    const response = await client.embeddings.create({ model: opts.model, input: batch, dimensions: opts.dimensions });
     allEmbeddings.push(...response.data.map(d => d.embedding));
     totalTokens += response.usage?.total_tokens || 0;
-
-    // Log progress for large batches
-    if (inputs.length > EMBEDDING_BATCH_SIZE) {
-      logger.debug({
-        batch: Math.floor(i / EMBEDDING_BATCH_SIZE) + 1,
-        total: Math.ceil(inputs.length / EMBEDDING_BATCH_SIZE),
-        processed: Math.min(i + EMBEDDING_BATCH_SIZE, inputs.length),
-        of: inputs.length
-      }, 'Embedding batch progress');
-    }
   }
 
-  return {
-    embeddings: allEmbeddings,
-    usage: { totalTokens }
-  };
+  return { embeddings: allEmbeddings, usage: { totalTokens } };
 }
 
 async function embedOllama(text, opts) {
