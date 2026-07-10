@@ -25,7 +25,8 @@ const { assignChapters } = await import('./chapter-map.mjs');
 const DOC = +(process.env.DOC || 429);
 const MODEL = process.env.MODEL || 'deepseek-v4-flash';
 const IS_PRO = /pro/.test(MODEL);
-const MAXTOK = +(process.env.MAXTOK || (IS_PRO ? 2200 : 600));   // reasoning models need headroom for think tokens
+const MAXTOK = +(process.env.MAXTOK || (IS_PRO ? 2400 : 900));   // reasoning models need headroom for think tokens; flash needs room for 5 questions + thesis JSON
+const MINLEN = +(process.env.MINLEN || 60);                       // skip headers/fragments (titles, publisher lines) not worth HyPE
 const SEGMAX = +(process.env.SEGMAX || 60);
 const CONC = +(process.env.CONC || 5);
 const WRITE = process.env.WRITE === '1';
@@ -62,7 +63,7 @@ ${castSeed ? `\nBOOK CAST (who's-who — use to resolve a name to the right figu
 // pid = external_para_id when present (OceanLibrary docs like GPB/DB), else the content id (books ingested
 // without para_NNNN ids, e.g. ROB). Include 'quote' blocks too — in ROB most content is quoted tablet text.
 let paras = await queryAll(`SELECT id, COALESCE(external_para_id, 'p' || id) pid, paragraph_index pidx, heading, text, context FROM content WHERE doc_id=? AND deleted_at IS NULL AND blocktype IN ('paragraph','quote') ORDER BY paragraph_index`, [DOC]);
-paras = paras.map((p) => ({ ...p, text: String(p.text).replace(/\s+/g, ' ').trim() }));
+paras = paras.map((p) => ({ ...p, text: String(p.text).replace(/\s+/g, ' ').trim() })).filter((p) => p.text.length >= MINLEN);
 if (LIMIT) paras = paras.slice(0, LIMIT);
 let segs;
 if (USE_TOC) {
