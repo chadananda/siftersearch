@@ -1,8 +1,18 @@
 # Unified Ingestion + Enrichment Pipeline (v2)
 
-Status: DESIGN (2026-07-10). Replaces the six always-on legacy workers (enrichment,
+Status: BUILDING (2026-07-10). Replaces the six always-on legacy workers (enrichment,
 enrichment-api, graph-extractor/promoter/resolver/validator) with one coherent,
 ordered, idempotent pipeline.
+
+BUILT + DEPLOYED + VERIFIED: P0 state substrate (migration 89 `doc_pipeline`, api/lib/pipeline/
+state.js + profile.js, scripts/pipeline/pipeline.mjs status/backfill — backfilled 121,227 docs,
+9 released) and P2 orchestrator (api/lib/pipeline/orchestrator.js subprocess stages + gate,
+scripts/pipeline/run-pipeline.mjs). `--dry` confirms gating: GPB/DB complete, Gate→hype,
+ROB/Taherzadeh→disambig. Runs live via `--drain` once the current manual disambig jobs finish.
+REMAINING: P1 profile auto-detect polish; P3 ingester markDirty hook + cascade delete-on-remove;
+reconcile stage (reconcile.mjs still to build); disambiguate-book skip-vs-fail (caption lists);
+P4 automation (scheduled/always-on) — DEFERRED, user wants manual through the seed phase, then
+priority-processing after a few hundred books, then auto-release new/changed docs.
 
 ## 1. Goals
 
