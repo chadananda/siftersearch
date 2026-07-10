@@ -197,26 +197,31 @@ export async function bioSearch(rawQ) {
     (exById[c.eid] || (exById[c.eid] = [])).push(claim);
   }
 
-  // ── Connection target: does the query name a person the subjects must be CONNECTED to? Resolve to an ENTITY so the
-  //    match is on the TYPED claim (claim.tid === target.id) — cited, not string-inferred. This is what prevents the
-  //    old "who met X" fabrications: only a claim whose TARGET is X counts, never a fact that merely mentions X.
+  // ── Connection target: does the query name a person the subjects must be CONNECTED to? Resolve to an ENTITY. The
+  //    group's own name tokens are excluded so the SUBJECT group ("Seven Martyrs") can't be mistaken for the OBJECT
+  //    ("Bahá'u'lláh"). A connection then counts when a claim's TARGET is that entity OR the claim's verbatim proof
+  //    NAMES it — object_id binding is incomplete, so the proof text carries the cited connection ("visited Bahá'u'lláh").
+  const cl = (s) => String(s || '').replace(/\s+/g, ' ').trim();
   const connQ = /\b(met|meet|with|accompan|knew|know|present|encounter|together|companion|recogni|imprison|attain|visit|serv|correspond)\b/i.test(q);
   let connTarget = null;
   if (connQ) {
+    const gtoks = new Set(best ? tokize(best.name) : []);
     const persons = await queryAll(`SELECT id, canonical_name cn FROM graph_entities WHERE entity_type = 'person'
       AND (last_assessed_version IS NULL OR last_assessed_version NOT LIKE 'merged-into-%')`);
     const qf = ' ' + fold(q) + ' ';
     for (const p of persons) {
-      const pt = tokize(p.cn); if (!pt.length) continue;
-      if (pt.every((t) => qf.includes(t))) { const score = pt.join('').length; if (!connTarget || score > connTarget.score) connTarget = { id: p.id, name: p.cn, score }; }
+      if (best && p.id === best.id) continue;
+      const pt = tokize(p.cn).filter((t) => !gtoks.has(t)); if (!pt.length) continue;   // ignore tokens shared with the subject group
+      if (pt.every((t) => qf.includes(t))) { const score = pt.join('').length; if (!connTarget || score > connTarget.score) connTarget = { id: p.id, name: p.cn, tok: pt, score }; }
     }
   }
+  // a claim connects a subject to the target if it's typed to the target OR its proof/statement names the target
+  const namesTarget = (c) => connTarget && (c.tid === connTarget.id || (connTarget.tok.length && connTarget.tok.every((t) => c.hay.includes(t))));
 
-  // candidate scoping: the cited-connected set (deterministic), intersected with a resolved group
-  const cl = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+  // candidate scoping: the cited-connected set, intersected with a resolved group
   let candidateIds = null;
   if (connTarget) {
-    const connected = Object.keys(exById).map(Number).filter((eid) => eid !== connTarget.id && exById[eid].some((c) => c.tid === connTarget.id));
+    const connected = Object.keys(exById).map(Number).filter((eid) => eid !== connTarget.id && exById[eid].some(namesTarget));
     candidateIds = best ? connected.filter((id) => memberIds.includes(id)) : connected;
     // A group was named but NONE of its members has a cited connection to the target → the honest answer is "none",
     // never a fabricated match (this is the "Seven Martyrs of Ṭihrán who met Bahá'u'lláh" case).
@@ -237,7 +242,7 @@ export async function bioSearch(rawQ) {
     const grp = best ? cl(best.name.replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+group$/i, '').replace(/^the\s+/i, '')) : '';
     const members = [];
     for (const id of candidateIds) {
-      const conn = (exById[id] || []).filter((c) => c.tid === connTarget.id);
+      const conn = (exById[id] || []).filter(namesTarget);
       if (!conn.length) continue;
       const ev = conn.find((c) => c.url) || conn[0];
       members.push({ id, name: nameById[id] || `#${id}`, ev, text: conn.slice(0, 4).map((c) => `${cl(c.statement)} « ${cl(c.proof)} »`).join(' | ').slice(0, 420) });
@@ -308,7 +313,7 @@ Return ONLY JSON: {"lead":"...","matches":[{"id","clause"}]} — most relevant f
       const fx = exById[id];
       // bind to the claim best matching the query (term overlap), preferring one that names the connection target
       const ranked = [...fx].sort((a, b) => qterms.filter((t) => b.hay.includes(t)).length - qterms.filter((t) => a.hay.includes(t)).length);
-      const hit = (connTarget ? ranked.find((c) => c.tid === connTarget.id) : null) || ranked[0];
+      const hit = (connTarget ? ranked.find(namesTarget) : null) || ranked[0];
       const clause = String(mm.clause || hit.statement).replace(/\s+/g, ' ').trim().slice(0, 160).replace(/[\s.;,]+$/, '');
       aiIds.push(id); evidence[id] = { quote: cl(hit.statement), proof: cl(hit.proof) || null, source: hit.source, url: hit.url || null, clause };
       const nm = nameById[id] || `#${id}`;
