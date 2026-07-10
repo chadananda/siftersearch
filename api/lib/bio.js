@@ -252,30 +252,34 @@ export async function bioSearch(rawQ) {
     const grp = best ? cl(best.name.replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+group$/i, '').replace(/^the\s+/i, '')) : '';
     const members = [];
     for (const id of candidateIds) {
-      const conn = (exById[id] || []).filter(namesTarget);
+      let conn = (exById[id] || []).filter(namesTarget);
       if (!conn.length) continue;
-      const ev = conn.find((c) => c.url) || conn[0];
-      members.push({ id, name: nameById[id] || `#${id}`, ev, text: conn.slice(0, 4).map((c) => `${cl(c.statement)} « ${cl(c.proof)} »`).join(' | ').slice(0, 420) });
+      // prefer linkable, proof-rich claims — the concrete ones carry the place/circumstance the clause should name
+      conn = [...conn].sort((a, b) => (b.url ? 1 : 0) - (a.url ? 1 : 0) || (b.proof || '').length - (a.proof || '').length).slice(0, 6);
+      members.push({ id, name: nameById[id] || `#${id}`, conn });
     }
     if (members.length) {
-      const CSYS = `For each person, write ONE short clause (≤14 words, begin with a verb) that answers the QUESTION for them, drawn ONLY from their given facts. Each fact is "statement « verbatim proof »" — the clause must be supported by the proof. If the proof does NOT actually establish the connection asked about, set that person's clause to "SKIP". Return ONLY JSON: {"lead":"<one sentence overall answer>","clauses":[{"id":<number>,"clause":"<verb phrase or SKIP>"}]}.`;
-      const body = members.map((m) => `${m.id}|${m.name}: ${m.text}`).join('\n');
+      const CSYS = `For each person, choose the ONE fact that most CONCRETELY shows the connection the QUESTION asks about, and write a SPECIFIC clause (≤16 words, begin with a verb) that names the PLACE, TIME, or CIRCUMSTANCE of the connection. PREFER THE BOOK'S OWN WORDING taken verbatim from that fact's « proof » — lightly trimmed to a clean phrase — rather than paraphrasing (e.g. "was privileged to enter the presence of Bahá'u'lláh in Ṭihrán", "walked with Bahá'u'lláh in the streets of Badasht", "tenderly embraced Him and conducted Him to the place of honour"). NEVER write a bare "met X". Each fact is indexed "[i] statement « verbatim proof »". If NO fact actually shows the connection, use clause "SKIP". Return ONLY JSON: {"lead":"<one short sentence>","clauses":[{"id":<number>,"i":<chosen fact index>,"clause":"<specific book-worded verb phrase or SKIP>"}]}.`;
+      const body = members.map((m) => `${m.id}|${m.name}:\n` + m.conn.map((c, i) => `  [${i}] ${cl(c.statement)} « ${cl(c.proof)} »`).join('\n')).join('\n');
       let lead = ''; const byId = {};
       try {
         const res = await chatCompletion([{ role: 'system', content: CSYS }, { role: 'user', content: `QUESTION: ${q}\n\n${body}` }],
-          { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 700, responseFormat: { type: 'json_object' } });
+          { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 900, responseFormat: { type: 'json_object' } });
         const mm = (res.content || '').match(/\{[\s\S]*\}/); const p = mm ? JSON.parse(mm[0]) : {};
         lead = cl(p.lead || '');
-        for (const c of (Array.isArray(p.clauses) ? p.clauses : [])) if (c && c.id != null) byId[Number(c.id)] = cl(c.clause).slice(0, 120);
+        for (const c of (Array.isArray(p.clauses) ? p.clauses : [])) if (c && c.id != null) byId[Number(c.id)] = { i: Number.isInteger(+c.i) ? +c.i : 0, clause: cl(c.clause).slice(0, 140) };
       } catch { /* fall back to statements below */ }
       const stripName = (id, s) => { const nm = nameById[id] || ''; const re = new RegExp('^(' + nm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')[\\s,;:—-]*', 'i'); return cl(s).replace(re, '').replace(/^[\s,;:—-]+/, ''); };
       const SKIP = /^\s*skip\s*$|\bno mention\b|\bno explicit\b|\bnot (?:mention|meet|met|present|clearly|established|recorded)\b|\bunclear\b|\bno (?:evidence|record|meeting)\b|\bdid not\b/i;
       const evidence = {}; const parts = []; const ids = [];
       for (const m of members) {
-        const clause = (byId[m.id] || stripName(m.id, m.ev.statement).split(/[;.]/)[0].slice(0, 110)).replace(/[\s.;,]+$/, '');
+        const pick = byId[m.id] || {};
+        const claim = m.conn[pick.i] || m.conn.find((c) => c.url) || m.conn[0];   // the claim the clause is drawn from → link to IT
+        const clause = (pick.clause || stripName(m.id, claim.statement).split(/[;.]/)[0].slice(0, 120)).replace(/[\s.;,]+$/, '');
         if (SKIP.test(clause)) continue;   // proof doesn't bear the connection → drop, never assert
-        evidence[m.id] = { quote: cl(m.ev.statement), proof: cl(m.ev.proof) || null, source: m.ev.source, url: m.ev.url || null, clause };
-        parts.push(m.ev.url ? `${m.name} [${clause}](${m.ev.url})` : `${m.name} ${clause}`);
+        const url = claim.url || (m.conn.find((c) => c.url) || {}).url || null;
+        evidence[m.id] = { quote: cl(claim.statement), proof: cl(claim.proof) || null, source: claim.source, url, clause };
+        parts.push(url ? `${m.name} [${clause}](${url})` : `${m.name} ${clause}`);
         ids.push(m.id);
       }
       if (ids.length) {
@@ -300,7 +304,7 @@ export async function bioSearch(rawQ) {
 
   const SYS = `You answer a question about people in early Bábí/Bahá'í history from a CATALOG of cited claims — one person per line: "id|name: • statement « verbatim proof » [period] • …" (from God Passes By and The Dawn-Breakers).
 A person qualifies ONLY if one of their claims, AS SHOWN BY ITS VERBATIM PROOF, DIRECTLY satisfies the QUERY — the right act AND place AND period. Reject mere group membership. Reject "promised/prophesied/expected" when the query asks who actually DID or MET something. For a place/period query the proof must name that place/period.
-For each qualifying person output {"id":<number>, "clause":"<a SHORT verb phrase answering the query for this person, supported by their proof; e.g. 'was shot at the fort of Ṭabarsí', 'attained Bahá'u'lláh's presence in Baghdád'>"}.
+For each qualifying person output {"id":<number>, "clause":"<a SHORT phrase answering the query for this person — PREFER the book's OWN wording taken verbatim from their « proof », lightly trimmed to a clean phrase, rather than paraphrasing; e.g. 'fell a martyr at the fort of Shaykh Ṭabarsí', 'was admitted into the presence of Bahá'u'lláh in Baghdád'>"}.
 Also output "lead": one short sentence stating the overall answer.
 Return ONLY JSON: {"lead":"...","matches":[{"id","clause"}]} — most relevant first, clear matches only.`;
   try {
