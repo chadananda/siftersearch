@@ -18,6 +18,7 @@ import { Ollama } from 'ollama';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { query, telemetryQuery } from './db.js';
+import { getModel } from './model-registry.js';
 
 // =============================================================================
 // MODEL PRICING (per 1K tokens, Jan 2025)
@@ -449,6 +450,13 @@ function getClient(provider) {
       });
       break;
 
+    case 'deepseek':
+      if (!process.env.DEEPSEEK_API_KEY) {
+        throw new Error('DEEPSEEK_API_KEY required for DeepSeek provider');
+      }
+      clients.deepseek = new OpenAI({ apiKey: process.env.DEEPSEEK_API_KEY, baseURL: 'https://api.deepseek.com/v1' });
+      break;
+
     default:
       throw new Error(`Unknown provider: ${provider}`);
   }
@@ -478,6 +486,33 @@ async function chatOpenAI(messages, opts) {
     usage: {
       promptTokens: response.usage?.prompt_tokens,
       completionTokens: response.usage?.completion_tokens,
+      totalTokens: response.usage?.total_tokens
+    },
+    model: response.model
+  };
+}
+
+// DeepSeek (OpenAI-compatible endpoint). Registry keys (deepseek-v4-flash / -pro) resolve to the live API id via the
+// registry; thinking mode is explicit (v4-flash serves both — non-thinking by default, replacing the deprecated
+// deepseek-chat). See https://api-docs.deepseek.com — deepseek-chat/deepseek-reasoner deprecate 2026-07-24.
+async function chatDeepSeek(messages, opts) {
+  const client = getClient('deepseek');
+  const apiModel = getModel(opts.model)?.apiModel || opts.model;
+  const reqOpts = opts.signal ? { signal: opts.signal } : {};
+  const params = {
+    model: apiModel, messages,
+    temperature: opts.temperature, max_tokens: opts.maxTokens, stream: opts.stream || false,
+    extra_body: { thinking: { type: opts.thinking ? 'enabled' : 'disabled' } }
+  };
+  if (opts.responseFormat) params.response_format = opts.responseFormat;
+  const response = await client.chat.completions.create(params, reqOpts);
+  if (opts.stream) return response;
+  return {
+    content: response.choices[0].message.content,
+    usage: {
+      promptTokens: response.usage?.prompt_tokens,
+      completionTokens: response.usage?.completion_tokens,
+      cachedTokens: response.usage?.prompt_cache_hit_tokens || 0,
       totalTokens: response.usage?.total_tokens
     },
     model: response.model
@@ -721,6 +756,9 @@ export function aiService(serviceType, options = {}) {
             break;
           case 'lmstudio':
             response = await chatLmstudio(messages, opts);
+            break;
+          case 'deepseek':
+            response = await chatDeepSeek(messages, opts);
             break;
           default:
             throw new Error(`Unknown provider: ${opts.provider}`);
