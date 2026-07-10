@@ -666,6 +666,7 @@ export async function hybridSearch(query, options = {}) {
 
   // Generate embedding for semantic search — cap at 5s to prevent hanging under load
   let vector = null;
+  const _tEmbed = Date.now();
   if (semanticRatio > 0) {
     try {
       const embeddingTimeout = new Promise((_, reject) =>
@@ -680,6 +681,8 @@ export async function hybridSearch(query, options = {}) {
       logger.warn({ err: err.message }, 'Failed to generate embedding, falling back to keyword search');
     }
   }
+  const _embedMs = Date.now() - _tEmbed;   // TEMP timing: query-embed latency
+  const _tMeili = Date.now();              // TEMP timing: Meili search start
 
   // Over-fetch so authority reranking can pull canonical sources up from just
   // outside the requested window. Capped at maxResults to keep latency bounded.
@@ -795,6 +798,8 @@ export async function hybridSearch(query, options = {}) {
       }
     }
   }
+
+  logger.info({ query: query.slice(0, 50), embedMs: _embedMs, meiliMs: Date.now() - _tMeili, crossTradition: isCrossTradition, hits: allHits.length }, 'SEARCH-TIMING hybridSearch');   // TEMP
 
   // Sort by Meili ranking score before authority rerank.
   allHits.sort((a, b) => (b._rankingScore || 0) - (a._rankingScore || 0));
