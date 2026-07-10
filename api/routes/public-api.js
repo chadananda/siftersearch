@@ -572,8 +572,6 @@ export default async function publicApiRoutes(fastify) {
     return { results, query, processingTimeMs: durationMs };
   });
 
-  /**
-   * GET /api/v1/paragraph/:id
   // TEMP diagnostic: why is the semantic Meili search slow? Reports task backlog + whether the paragraphs index is
   // actively indexing (which would starve queries / force brute-force vector scans).
   fastify.get('/search/meili-diag', async () => {
@@ -588,7 +586,8 @@ export default async function publicApiRoutes(fastify) {
     return { enqueuedTasks: enqueued, processingTasks: processing, paragraphs: pstats, embedder };
   });
 
-  /*
+  /**
+   * GET /api/v1/paragraph/:id
    * Get a specific paragraph by content ID.
    */
   fastify.get('/paragraph/:id', async (request) => {
