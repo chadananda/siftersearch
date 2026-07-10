@@ -522,7 +522,12 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
 
   let newEmbeddings = [];
   if (missIndices.length > 0) {
-    const missTexts = missIndices.map(i => cleanForEmbedding(paragraphs[i].text));
+    // Cap each embedding input under the 8192-token limit (worst case ~1 token/char for Arabic/CJK). Oversized
+    // "paragraphs" from unchunked site markdown would otherwise 400 the WHOLE batch → the file throws → its file_hash
+    // is never recorded → it's re-ingested + re-failed every pass forever (the library-watcher 100%-CPU runaway).
+    // The full paragraph text is still stored (below); only the embedding basis is capped.
+    const EMBED_MAX_CHARS = 8000;
+    const missTexts = missIndices.map(i => cleanForEmbedding(paragraphs[i].text).slice(0, EMBED_MAX_CHARS));
     newEmbeddings = await aiService('embedding').embed(missTexts, { caller: 'sites-ingester' });
   }
 
