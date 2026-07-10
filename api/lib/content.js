@@ -581,6 +581,18 @@ async function updateHypQuestions(id, questions) {
 }
 
 /**
+ * Update HyPE questions + thesis together (from the book-level generator hype-book.mjs).
+ * Does NOT touch synced/embedding; sets enhanced_synced=0 so Meili re-indexes the sidecar.
+ */
+async function updateHype(id, questions, thesis) {
+  const ts = now();
+  const q = Array.isArray(questions) ? JSON.stringify(questions) : (questions || null);
+  return query(`
+    UPDATE content SET hyp_questions = ?, hyp_thesis = ?, enhanced_synced = 0, updated_at = ? WHERE id = ?
+  `, [q, thesis || null, ts, id]);
+}
+
+/**
  * Mark enhanced content as synced after Meilisearch confirms indexing.
  */
 async function markEnhancedSynced(ids) {
@@ -1143,6 +1155,7 @@ export const content = {
   clearAllTranslations,
   updateContext,
   updateContextOnly,
+  updateHype,
   updateHypQuestions,
   markEnhancedSynced,
   updatePosition,

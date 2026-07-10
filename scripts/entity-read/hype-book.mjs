@@ -1,0 +1,116 @@
+// HyPE GENERATION PASS (run AFTER disambiguation — needs content.context; see project_scene_context_layer).
+// Generates 5 hypothetical questions + a thesis per paragraph, from the DISAMBIGUATED text (context resolves refs).
+//
+// CACHE-FRIENDLY BY CONSTRUCTION: the SYSTEM prompt (HyPE instructions + book metadata + book CAST) is IDENTICAL
+// for every paragraph in the book → DeepSeek's prefix cache serves it at ~95% after the first call. The catch
+// (measured): the cache is populated ASYNCHRONOUSLY after a request completes, so BACK-TO-BACK concurrent calls
+// on the same prefix MISS — only SEQUENTIAL calls (each taking seconds) hit. So we process each SEGMENT
+// sequentially (cache warms between paragraphs) and run SEGMENTS concurrently (each its own warm prefix).
+//
+// MODEL: deepseek-v4-flash for the bulk of HISTORY books (fast + cheap; caches ~95%). deepseek-v4-pro (reasoning)
+// only for a couple of flagship/doctrinal books where nuance matters — MODEL=deepseek-v4-pro (needs big maxTokens
+// headroom for the reasoning tokens). Doctrinal books will later want idea-focused rolling summaries + idea-focused
+// questions — a separate variant; this script is tuned for history (person/scene/fact).
+//
+// Writes content.hyp_questions (JSON array) + content.hyp_thesis, enhanced_synced=0 (Meili re-indexes the sidecar).
+// Reverse: UPDATE content SET hyp_questions=NULL,hyp_thesis=NULL WHERE doc_id=? ...   (or restore from backup)
+//   DRY:   DOC=429 CHAP="..." node scripts/entity-read/hype-book.mjs                 (prints, no write)
+//   WRITE: SIFTER_WRITER_URL=http://127.0.0.1:7849 WRITE=1 DOC=429 node scripts/entity-read/hype-book.mjs
+import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
+const { queryAll } = await import('../../api/lib/db.js');
+const content = (await import('../../api/lib/content.js')).default;
+const { chatCompletion } = await import('../../api/lib/ai.js');
+const { assignChapters } = await import('./chapter-map.mjs');
+
+const DOC = +(process.env.DOC || 429);
+const MODEL = process.env.MODEL || 'deepseek-v4-flash';
+const IS_PRO = /pro/.test(MODEL);
+const MAXTOK = +(process.env.MAXTOK || (IS_PRO ? 2200 : 600));   // reasoning models need headroom for think tokens
+const SEGMAX = +(process.env.SEGMAX || 60);
+const CONC = +(process.env.CONC || 5);
+const WRITE = process.env.WRITE === '1';
+const RESUME = process.env.RESUME === '1';
+const CHAP = process.env.CHAP || null;
+const LIMIT = +(process.env.LIMIT || 0);   // cap total paragraphs (for dry-run testing)
+const USE_TOC = process.env.USE_TOC ? process.env.USE_TOC === '1' : [21308, 21310].includes(DOC);
+
+const meta = (await queryAll(`SELECT title, author, religion, collection, year, description FROM docs WHERE id=?`, [DOC]))[0] || {};
+const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, meta.collection].filter(Boolean).join(' / '), meta.year ? `Year ${meta.year}` : '', meta.description ? `About: ${String(meta.description).slice(0, 240)}` : ''].filter(Boolean).join('\n');
+// The book CAST (who's-who) makes the stable system prefix LARGE (better cache) AND grounds the questions in real
+// identities. Same seed the disambiguation pass uses.
+const castSeed = process.env.NO_CAST === '1' ? '' : await (async () => { try { return (await (await import('./cast-seed.mjs')).buildCastSeed(DOC)).seed; } catch (e) { console.error(`cast-seed unavailable: ${e.message}`); return ''; } })();
+
+// STABLE PREFIX (identical for every paragraph → cached): instructions + book meta + cast.
+const SYS = `You generate Hypothetical Prompt Embeddings (HyPE) for ONE paragraph of a book, to power semantic search. A reader searches with a QUESTION; your job is to write the questions THIS paragraph answers, so the paragraph is retrievable by anyone asking about its content in their own words. Output JSON ONLY.
+
+Produce, from the paragraph (use the disambiguation CONTEXT only to resolve who/what/where — do NOT ask about the context):
+- "questions": EXACTLY 5, each a real question ending in "?", max 15 words, covering these registers, one each:
+  1. factual — a concrete who/what/when this paragraph states
+  2. factual — a second distinct concrete fact
+  3. definitional — the concept/term/role this paragraph explains
+  4. implication — what follows from, or is significant about, this passage
+  5. conversational — how a thoughtful lay reader would ask about this, casual wording
+  Vary the phrasing; do NOT repeat the same question reworded. Ground every question in what the paragraph ACTUALLY says — never invent facts.
+- "thesis": ONE sentence (20-45 words) stating what this paragraph teaches/recounts as a proposition (not a question, not "this paragraph describes…" — state the claim directly).
+
+Return exactly: {"questions":["…?","…?","…?","…?","…?"],"thesis":"…"}
+
+BOOK:
+${bookMeta}
+${castSeed ? `\nBOOK CAST (who's-who — use to resolve a name to the right figure; do not ask about people not in the paragraph):\n${castSeed}` : ''}`;
+
+let paras = await queryAll(`SELECT id, external_para_id pid, paragraph_index pidx, heading, text, context FROM content WHERE doc_id=? AND deleted_at IS NULL AND blocktype='paragraph' AND external_para_id IS NOT NULL ORDER BY paragraph_index`, [DOC]);
+paras = paras.map((p) => ({ ...p, text: String(p.text).replace(/\s+/g, ' ').trim() }));
+if (LIMIT) paras = paras.slice(0, LIMIT);
+let segs;
+if (USE_TOC) {
+  const { paras: mapped } = await assignChapters(DOC);
+  const byPid = new Map(mapped.map((m) => [m.pid, m]));
+  paras = paras.map((p) => ({ ...p, ...(byPid.get(p.pid) || {}) }));
+  if (CHAP) paras = paras.filter((p) => (p.chapterNum || '') === CHAP);
+  segs = []; let cur = [];
+  for (const p of paras) { if (cur.length && p.chapterNum !== cur[cur.length - 1].chapterNum) { segs.push(cur); cur = []; } cur.push(p); }
+  if (cur.length) segs.push(cur);
+} else {
+  segs = []; let cur = [];
+  for (const p of paras) { const headChange = cur.length && p.heading !== cur[cur.length - 1].heading; if (cur.length >= SEGMAX && headChange) { segs.push(cur); cur = []; } cur.push(p); }
+  if (cur.length) segs.push(cur);
+}
+console.error(`hype DOC=${DOC} · ${paras.length} paras · ${segs.length} segments (${USE_TOC ? 'TOC/chapter' : 'bounded-run'}) · WRITE=${WRITE} · model=${MODEL} · maxTok=${MAXTOK}`);
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const retry = async (fn, n = 5) => { let err; for (let i = 0; i < n; i++) { try { return await fn(); } catch (e) { err = e; await sleep(700 * (i + 1)); } } throw err; };
+process.on('unhandledRejection', (e) => console.error(`unhandledRejection: ${String(e?.message || e).slice(0, 80)}`));
+
+// RESUME: a paragraph is "done" only if it has a NEW-FORMAT hyp (a JSON array of >=4 questions) AND a thesis.
+// The old garbage HyPE (3 newline-joined noun-phrases, no thesis) does NOT match → gets replaced.
+const isNewFormat = (hq, th) => { if (!th) return false; try { const a = JSON.parse(hq); return Array.isArray(a) && a.length >= 4; } catch { return false; } };
+const doneSet = RESUME ? new Set((await queryAll(`SELECT external_para_id pid, hyp_questions hq, hyp_thesis th FROM content WHERE doc_id=?`, [DOC])).filter((r) => isNewFormat(r.hq, r.th)).map((r) => r.pid)) : new Set();
+
+let done = 0, failed = 0, cacheHit = 0, cacheTot = 0;
+function parseOut(raw) {
+  const m = String(raw).match(/\{[\s\S]*\}/); if (!m) return null;
+  try { const j = JSON.parse(m[0]); const q = (j.questions || []).filter((x) => typeof x === 'string' && x.trim()); if (q.length < 4) return null; return { questions: q.slice(0, 5), thesis: (j.thesis || '').trim() }; } catch { return null; }
+}
+async function processSeg(seg, si) {
+  const label = USE_TOC ? (seg[0].chapterNum || 'front-matter') : `${seg[0].pid}..${seg[seg.length - 1].pid}`;
+  console.error(`== seg ${si + 1}/${segs.length} · ${label} (${seg.length} paras) start`);
+  for (const p of seg) {                       // SEQUENTIAL within a segment → prefix cache warms between calls
+    if (RESUME && doneSet.has(p.pid)) continue;
+    const user = `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
+    let res;
+    try { res = await retry(() => chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0.3, maxTokens: MAXTOK, responseFormat: { type: 'json_object' }, ...(IS_PRO ? { thinking: true } : {}) })); }
+    catch (e) { console.error(`  [${p.pid}] AI FAIL ${String(e.message).slice(0, 50)}`); failed++; continue; }
+    if (res.usage) { cacheHit += res.usage.cachedTokens || res.usage.prompt_cache_hit_tokens || 0; cacheTot += res.usage.promptTokens || res.usage.prompt_tokens || 0; }
+    const parsed = parseOut(res.content || '');
+    if (!parsed) { console.error(`  [${p.pid}] unparseable`); failed++; continue; }
+    if (!WRITE) { console.log(`\n${p.pid}:\n  THESIS: ${parsed.thesis}\n  ${parsed.questions.join('\n  ')}`); done++; }
+    else { try { await retry(() => content.updateHype(p.id, parsed.questions, parsed.thesis)); done++; if (done % 50 === 0) console.error(`  wrote ${done} (cache ${cacheTot ? Math.round(100 * cacheHit / cacheTot) : 0}%)`); } catch (e) { console.error(`  [${p.pid}] WRITE FAIL ${String(e.message).slice(0, 50)}`); failed++; } }
+  }
+  console.error(`== seg ${si + 1}/${segs.length} · ${label} done`);
+}
+let next = 0;
+async function worker() { while (next < segs.length) { const i = next++; try { await processSeg(segs[i], i); } catch (e) { console.error(`seg ${i + 1} crashed: ${String(e.message).slice(0, 60)}`); } } }
+await Promise.all(Array.from({ length: Math.min(CONC, segs.length) }, worker));
+console.error(`\nDONE — ${done} paragraphs HyPE'd, ${failed} failed · prefix-cache ${cacheTot ? Math.round(100 * cacheHit / cacheTot) : 0}% (${cacheHit}/${cacheTot})${WRITE ? ' → content.hyp_questions+hyp_thesis' : ' (dry run)'}`);
+process.exit(0);
