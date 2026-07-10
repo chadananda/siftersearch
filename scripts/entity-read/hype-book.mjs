@@ -101,12 +101,19 @@ async function processSeg(seg, si) {
   for (const p of seg) {                       // SEQUENTIAL within a segment → prefix cache warms between calls
     if (RESUME && doneSet.has(p.pid)) continue;
     const user = `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
-    let res;
-    try { res = await retry(() => chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0.3, maxTokens: MAXTOK, responseFormat: { type: 'json_object' }, ...(IS_PRO ? { thinking: true } : {}) })); }
-    catch (e) { console.error(`  [${p.pid}] AI FAIL ${String(e.message).slice(0, 50)}`); failed++; continue; }
-    if (res.usage) { cacheHit += res.usage.cachedTokens || res.usage.prompt_cache_hit_tokens || 0; cacheTot += res.usage.promptTokens || res.usage.prompt_tokens || 0; }
-    const parsed = parseOut(res.content || '');
-    if (!parsed) { console.error(`  [${p.pid}] unparseable [finish=${res.finishReason || '?'}]: ${String(res.content || '').replace(/\s+/g, ' ').slice(0, 140)}`); failed++; continue; }
+    // Call + parse, retrying up to 3x: v4-flash is non-deterministic, so an unparseable/truncated
+    // (finish=length) reply almost always parses on a re-call. The 3rd try nudges toward brevity.
+    let parsed = null, lastRes = null;
+    for (let attempt = 0; attempt < 3 && !parsed; attempt++) {
+      const sys = attempt < 2 ? SYS : SYS + '\n\nIMPORTANT: keep each question short; output ONLY the compact JSON object, nothing else.';
+      let res;
+      try { res = await retry(() => chatCompletion([{ role: 'system', content: sys }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0.3, maxTokens: MAXTOK, responseFormat: { type: 'json_object' }, ...(IS_PRO ? { thinking: true } : {}) })); }
+      catch (e) { console.error(`  [${p.pid}] AI FAIL ${String(e.message).slice(0, 50)}`); break; }
+      lastRes = res;
+      if (res.usage) { cacheHit += res.usage.cachedTokens || res.usage.prompt_cache_hit_tokens || 0; cacheTot += res.usage.promptTokens || res.usage.prompt_tokens || 0; }
+      parsed = parseOut(res.content || '');
+    }
+    if (!parsed) { console.error(`  [${p.pid}] unparseable after retries [finish=${lastRes?.finishReason || '?'}]: ${String(lastRes?.content || '').replace(/\s+/g, ' ').slice(0, 120)}`); failed++; continue; }
     if (!WRITE) { console.log(`\n${p.pid}:\n  THESIS: ${parsed.thesis}\n  ${parsed.questions.join('\n  ')}`); done++; }
     else { try { await retry(() => content.updateHype(p.id, parsed.questions, parsed.thesis)); done++; if (done % 50 === 0) console.error(`  wrote ${done} (cache ${cacheTot ? Math.round(100 * cacheHit / cacheTot) : 0}%)`); } catch (e) { console.error(`  [${p.pid}] WRITE FAIL ${String(e.message).slice(0, 50)}`); failed++; } }
   }
