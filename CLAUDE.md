@@ -61,7 +61,9 @@ The system runs across **two surfaces** — keep this distinction in mind for ev
 **Surface 1: tower-nas (origin / data plane)**
 - Fastify API at `localhost:7839`, exposed publicly via Cloudflare Tunnel as `api.siftersearch.com`
 - SQLite content DB at `~/sifter/siftersearch/data/sifter.db` (the source of truth — no D1, no Turso for content)
-- PM2 processes: `siftersearch-api`, `siftersearch-worker`, `siftersearch-enrichment`, `siftersearch-enrichment-api`, `siftersearch-library-watcher`, `siftersearch-updater`, `cloudflared-tunnel`
+- PM2 processes (live): `siftersearch-api`, `siftersearch-worker` (single writer, hosts `/write` :7849), `siftersearch-embedding`, `siftersearch-deep-research`, `siftersearch-library-watcher`, `siftersearch-updater`, `cloudflared-tunnel`
+- RETIRED 2026-07-10 (pm2-stopped, superseded by the unified enrichment pipeline — see below): `siftersearch-enrichment`, `siftersearch-enrichment-api`, `siftersearch-graph-extractor/promoter/resolver/validator`. Do not restart.
+- **Enrichment pipeline (v2):** ONE gated, ordered, idempotent orchestrator (DISAMBIGUATE→{HyPE∥EXTRACT}→RECONCILE, per-book, DeepSeek) replaces the six retired pollers. State in `doc_pipeline`; code in `api/lib/pipeline/` + `scripts/pipeline/`. Full design: `docs/architecture/unified-enrichment-pipeline.md`.
 - Meilisearch + Dropbox + boss vLLM (boss is a separate machine for local LLM inference)
 - **Deploy path:** push to GitHub → `siftersearch-updater` polls, pulls, restarts PM2 within ~5 min. No build step; runs raw JS.
 
@@ -117,11 +119,16 @@ pm2 logs siftersearch-api --lines 50 --nostream
 pm2 list
 ```
 
-**PM2 Process Names:**
+**PM2 Process Names (live):**
 - `siftersearch-api` - Main API server (read-only DB access)
-- `siftersearch-worker` - Unified worker (single writer: sync + jobs + indexing)
-- `siftersearch-updater` - Auto-update service
+- `siftersearch-worker` - Unified worker (`unified-worker.js`; single writer + all Meili sync cycles; hosts `/write` :7849)
+- `siftersearch-embedding` - Embedding generation + propagation
+- `siftersearch-deep-research` - Deep-research worker
+- `siftersearch-library-watcher` - Library file watcher + ingest
+- `siftersearch-updater` - Auto-update service (won't revive pm2-stopped workers)
 - `cloudflared-tunnel` - Cloudflare tunnel
+
+**Retired 2026-07-10 (pm2-stopped; superseded by the unified enrichment pipeline — do not restart):** `siftersearch-enrichment`, `siftersearch-enrichment-api`, `siftersearch-graph-extractor`, `siftersearch-graph-promoter`, `siftersearch-graph-resolver`, `siftersearch-graph-validator`. (`sync-processor.js` is a dead duplicate of `unified-worker.js`; `siftersearch-db` is defined in ecosystem but not running.)
 
 **External Services:**
 - `meilisearch` - Runs as systemd user service (not PM2)

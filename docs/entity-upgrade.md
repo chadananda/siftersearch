@@ -1,5 +1,28 @@
 # SifterSearch Entity Layer — Execution Plan
 
+> **SUPERSEDED (2026-07-10). Historical plan — do not execute as written.**
+> This document proposed a **six-worker** entity pipeline (`siftersearch-graph-extractor`,
+> `-validator`, `-resolver`, `-promoter`, plus the two `siftersearch-enrichment*` workers) that
+> extracted entities from **raw, un-disambiguated** text. Those always-on workers have been
+> **pm2-stopped and retired**. They violated the disambiguation-first invariant (extraction ran
+> before disambiguation — "built on sand"), had no ordering gate, scanned the whole `content` table
+> on scattered flags, and thrashed the DB/Meili.
+>
+> The current architecture is **one ordered, idempotent, gated orchestrator** driven by a
+> `doc_pipeline` state table (migration 89), enforcing **DISAMBIGUATE → {HyPE ∥ EXTRACT} → RECONCILE**
+> in code (`assertDisambiguated` precondition), processed per-BOOK in authority order
+> (GPB → DB → ROB → history), cumulative on the prior books' entity seed. Code lives in
+> `api/lib/pipeline/` (state.js, profile.js, orchestrator.js) and `scripts/pipeline/`; stages are
+> `disambiguate-book.mjs → hype-book.mjs` and `build-mentions.mjs → extract-claims-v2.mjs`, on
+> DeepSeek v4-flash (bulk) / v4-pro (flagship + doctrinal). The live entity tables are
+> `entity_mentions_v2` / `entity_claims` / `entity_lookup_keys` (read via `api/lib/entity-api.js`);
+> the legacy `graph_entities` / `entity_research` projection still read-serves the bio browser
+> (`api/lib/bio.js`) until the reconcile cutover.
+>
+> **Read [architecture/unified-enrichment-pipeline.md](architecture/unified-enrichment-pipeline.md)
+> for the current design.** The migration-72 schema, authority-tier vocabulary, cross-tradition seed
+> strategies, and cost model below remain useful reference; the *worker topology and run order* do not.
+
 **Audience:** Claude Code. Terse. Each step: action, files, test, success-gate, rollback. Stop on test failure.
 
 ## 0. Constants

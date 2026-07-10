@@ -30,10 +30,10 @@ One-line index for AI navigation. Open the file for full documentation.
 - `ai.js` — base OpenAI / Anthropic clients.
 - `ai-services.js` — `aiService(name).embed/chat/segment` — provider-routed AI calls with usage logging.
 - `model-registry.js` — `MODEL_REGISTRY` of all models with pricing + capabilities; helpers like `getModel`, `getModelsByType`.
-- `enhancement-ai.js` — disambiguation + HyPE prompt builders for the local Qwen path.
-- `enrichment-prompts.js` — prompt strings used by the enrichment workers.
-- `enrichment-runner.js` — kicks the enrichment pipeline.
-- `sonnet-enrichment.js` — Anthropic batch API path for tier 1-7 paragraphs (Sonnet 4.6).
+- `enhancement-ai.js` — **LEGACY** (local-Qwen disambig+HyPE prompt builders; old newline HyPE format). Retired 2026-07-10.
+- `enrichment-prompts.js` — **LEGACY** prompts for the retired enrichment workers.
+- `enrichment-runner.js` — **LEGACY** enrichment kicker.
+- `sonnet-enrichment.js` — **LEGACY** Sonnet batch path (wrote old newline-joined HyPE). Retired 2026-07-10; superseded by `pipeline/` + `scripts/entity-read/hype-book.mjs` (JSON-array HyPE).
 - `jafar-pipeline.js` — three-stage Jafar chat pipeline (research → craft → reflect). **Mega-file (1100+ lines).**
 - `document-subagent.js` — single-document QA sub-agent for Jafar.
 - `translation-subagent.js` — JAFAR-grounded translation via CTAI API + LLM polish.
@@ -59,5 +59,6 @@ One-line index for AI navigation. Open the file for full documentation.
 - `storage.js` — R2 / S3 file storage.
 
 ## Subdirectories
+- `pipeline/` — **unified enrichment pipeline v2** (the ONE gated orchestrator replacing the six legacy pollers): `state.js` (doc_pipeline), `profile.js`, `orchestrator.js`. Design: `docs/architecture/unified-enrichment-pipeline.md`. See `pipeline/CLAUDE.md`.
 - `constants/` — shared enums + lookups (one file per concern).
-- `migrations/` — `v1-v25.js`, `v26-v45.js`, `v46-v58.js`, `user.js`, `runner.js`. Combined dispatch via runner.
+- `migrations/` — `v1-v25.js`, `v26-v45.js`, `v46-v58.js`, `v72-v90.js` (latest; migration 89 = doc_pipeline), `user.js`, `runner.js`. Combined dispatch via runner.

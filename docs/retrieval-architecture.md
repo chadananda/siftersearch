@@ -23,9 +23,10 @@ SifterSearch is a comparative-religion document corpus platform. It ingests docu
 ### Execution Topology
 
 - **API Server** (read-only): `api/index.js` → Fastify listener. Executes search, chat, document read.
-- **Worker** (write-only): `api/workers/sync-processor.js`. Single SQLite writer. Processes enrichment, HyPE sync, deep research.
+- **Worker** (write-only): `api/workers/unified-worker.js` (= PM2 `siftersearch-worker`). Single SQLite writer. Processes Meili/HyPE sync, indexing, and jobs. (`api/workers/sync-processor.js` is a **dead duplicate** — not the live process.)
 - **Library Watcher** (write): `scripts/index-library.js --watch`. Watches filesystem for new/deleted documents.
-- **PM2 Processes**: All three run as persistent daemons on tower-nas.
+- **Enrichment** (write): the unified gated pipeline (`api/lib/pipeline/`, run via `scripts/pipeline/run-pipeline.mjs`) — **replaced the six always-on enrichment/entity workers on 2026-07-10** (see [architecture/unified-enrichment-pipeline.md](architecture/unified-enrichment-pipeline.md)).
+- **PM2 Processes**: The ingestion daemons run persistently on tower-nas.
 
 ---
 
@@ -81,8 +82,8 @@ Paragraphs. One row per markdown block (heading, prose, list, etc.).
 | `enhanced_synced` | BOOLEAN | HyPE enriched? | 1 = questions/thesis indexed; 0 = pending |
 | `is_duplicate` | BOOLEAN | Dupe of another doc? | Set by sites-ingester dedupe logic |
 | `deleted_at` | TEXT | Soft-delete | Null = active |
-| `hyp_questions` | TEXT | Hypothetical questions | Newline-separated Q's for HyPE sidecar; NULL if not enriched |
-| `hyp_thesis` | TEXT | One-line doctrinal claim | Sonnet-tier enrichment; also indexed as virtual question |
+| `hyp_questions` | TEXT | Hypothetical questions | **JSON array** of Q's for HyPE sidecar (new format as of 2026-07-10); NULL if not enriched. The old newline-joined format is retired — 589,926 old rows were purged corpus-wide. |
+| `hyp_thesis` | TEXT | One-line doctrinal claim | Separate thesis (new format); also indexed as virtual question |
 | `para_meta` | JSON | Paragraph-level metadata | `{author, is_attribution_line, ...}` — used for compilation authority override |
 | `external_para_id` | TEXT | OceanLibrary paragraph ID | For deeplinks in OL paragraphs |
 | `external_id` | TEXT | OceanLibrary doc ID | OL internal reference |
@@ -126,10 +127,10 @@ Generated hypothetical questions per paragraph. Indexed semantically in Meilisea
 | `is_thesis` | BOOLEAN | 1 = doctrinal thesis, 0 = generated question |
 | `_vectors.default` | float32[3072] | Embedding of question_text |
 
-**Generation Pipeline:**
-1. Enrichment worker extracts paragraphs where `enhanced_synced = 0` and `content.hyp_questions IS NOT NULL`.
+**Generation Pipeline** (as of 2026-07-10 — HyPE is generated per-book by `hype-book.mjs`, gated behind disambiguation; see [architecture/04-hype.md](architecture/04-hype.md)):
+1. Worker (`unified-worker.js`) extracts paragraphs where `enhanced_synced = 0` and `content.hyp_questions IS NOT NULL`.
 2. Calls `syncHypeBatch` (search/hype.js).
-3. Parses `content.hyp_questions` text (newline-separated) + thesis.
+3. Parses `content.hyp_questions` (**JSON array**, new format) + thesis.
 4. Embeds each question separately.
 5. Upserts to Meilisearch `hype_questions` index.
 6. Marks source paragraph `enhanced_synced = 1`.
@@ -198,17 +199,17 @@ Edges between entities.
 | `source_content_id` | INTEGER | content.id containing the relation |
 | `created_at` | INTEGER | Unix timestamp |
 
-##### `doc_entities` (from content enrichment pipeline)
-Per-document entity extraction. Populated during HyPE/Sonnet enrichment; schema includes paragraph references for entity-aware retrieval.
+##### `doc_entities` (legacy)
+Per-document entity extraction from the old enrichment workers. **Legacy** — the new entity layer uses `entity_mentions_v2` / `entity_claims` / `entity_lookup_keys` (read-served by `api/lib/entity-api.js`); the legacy `graph_entities` / `entity_research` tables still read-serve the live bio browser (`api/lib/bio.js`) until the reconcile cutover.
 
-**Status**: Exists in schema (migration 50+), populated sporadically by enrichment workers. **NOT YET USED** for retrieval. Currently read-only for analytics.
+**Status**: Exists in schema (migration 50+), populated sporadically by the now-retired enrichment workers. **NOT USED** for retrieval.
 
 ---
 
 ## 3. Document Ingestion Pipeline
 
 ### Overview
-Files → Library watcher → Segmenter → Ingester → Meilisearch + HyPE queue → Enrichment worker → HyPE/Deep Research
+Files → Library watcher → Segmenter → Ingester → Meilisearch (base index) → unified enrichment pipeline (disambiguate → HyPE ∥ extract → reconcile) → HyPE sidecar / entity layer / Deep Research
 
 ### Step 1: Library Watcher (`api/services/library-watcher.js`)
 - Watches `$LIBRARY_PATH/{Religion}/{Collection}/` directories.
@@ -231,13 +232,15 @@ Files → Library watcher → Segmenter → Ingester → Meilisearch + HyPE queu
 - Marks `synced = 1`.
 - Calls Meilisearch to index paragraphs + document metadata.
 
-### Step 4: Enrichment Worker
-- Pulls tier 1-7 docs (Bahá'í primary sources, non-English doctrinal).
-- Generates HyPE questions via local Qwen or Anthropic Sonnet.
-- Stores questions in `content.hyp_questions` (newline-separated).
-- Generates thesis via Sonnet (one-liner doctrinal claim).
-- Marks `hyp_questions_generated = 1`.
-- Signals sync worker to pull and index questions.
+### Step 4: Enrichment (unified gated pipeline — as of 2026-07-10)
+Replaced the six always-on enrichment/entity workers. One ordered, idempotent orchestrator (`api/lib/pipeline/`, run via `scripts/pipeline/run-pipeline.mjs`) processes documents per-BOOK in authority order (GPB → DB → ROB → history), cumulatively, with a `doc_pipeline` state table (migration 89) as the single source of truth.
+- Order enforced in code: **DISAMBIGUATE → {HyPE ∥ EXTRACT} → RECONCILE** (`assertDisambiguated` precondition — entities are never extracted from un-disambiguated text).
+- Disambiguation: `disambiguate-book.mjs`; HyPE: `hype-book.mjs`; extraction: `build-mentions.mjs` → `extract-claims-v2.mjs`.
+- Models: DeepSeek v4-flash (bulk) / v4-pro (flagship + doctrinal), prefix-cache-friendly.
+- Stores HyPE as a **JSON array** in `content.hyp_questions` + a separate `content.hyp_thesis`.
+- Writes SQLite, sets `enhanced_synced = 0` on changed rows; the worker sync cycle indexes incrementally.
+
+See [architecture/unified-enrichment-pipeline.md](architecture/unified-enrichment-pipeline.md) for the full design.
 
 ### Step 5: HyPE Sync Worker
 - Pulls paragraphs where `enhanced_synced = 0` and (`hyp_questions IS NOT NULL` or `hyp_thesis IS NOT NULL`).
@@ -505,7 +508,17 @@ Bypasses LLM orchestrator entirely when entities are extracted. Faster (1-2s vs 
 
 ## 6. Entity & Graph Layer
 
-### Current State
+> **As of 2026-07-10 — much of this section describes the *old* graph tables and a since-superseded plan.**
+> The live entity layer now runs on `entity_mentions_v2` / `entity_claims` / `entity_lookup_keys`
+> (mention = name@position, cited claims with a verbatim proof span), populated by the unified
+> pipeline's extract stage after disambiguation, and read via `api/lib/entity-api.js`. The legacy
+> `graph_entities` / `entity_research` tables (and the Meili `entity_mentions_idx`) still read-serve
+> the live bio browser (`api/lib/bio.js`) until the reconcile cutover. The legacy graph-extraction
+> workers that filled `doc_entities`/`graph_relations` from un-disambiguated text are **retired**.
+> For the current schema see [architecture/09-appendix-schema-and-config.md](architecture/09-appendix-schema-and-config.md);
+> for the entity design see [architecture/05-entity-knowledge-layer.md](architecture/05-entity-knowledge-layer.md).
+
+### Current State (historical — see note above)
 
 #### `graph_entities` (Populated)
 - 15K+ entities extracted from documents via NER.
@@ -777,12 +790,16 @@ This ensures:
 ### PM2 Processes on tower-nas
 ```
 siftersearch-api              → api/index.js (read-only, Fastify listener)
-siftersearch-worker           → api/workers/sync-processor.js (Meili/HyPE sync)
+siftersearch-worker           → api/workers/unified-worker.js (single writer: Meili/HyPE sync + indexing + jobs)
 siftersearch-library-watcher  → scripts/index-library.js --watch (file monitor)
-siftersearch-enrichment       → local Qwen disambig + HyPE (tier 8-9)
-siftersearch-enrichment-api   → Sonnet batch API (tier 1-7)
 siftersearch-updater          → git pull + restart loop
+cloudflared-tunnel            → exposes the API as api.siftersearch.com
 ```
+**Retired 2026-07-10** (pm2-stopped): `siftersearch-enrichment` (local Qwen), `siftersearch-enrichment-api`
+(Sonnet batch), and `siftersearch-graph-extractor/promoter/resolver/validator`. Enrichment now runs
+as the unified gated pipeline (`scripts/pipeline/run-pipeline.mjs`) — manual through the seed phase,
+then priority-processing, then auto-release. See
+[architecture/unified-enrichment-pipeline.md](architecture/unified-enrichment-pipeline.md).
 
 ### Database Tuning
 - `PRAGMA cache_size = -524288` — 512MB page cache (critical for 50M+ row indexes)

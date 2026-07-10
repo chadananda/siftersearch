@@ -20,9 +20,9 @@ These are the I/O-heavy / multi-step services. Routes call them; workers run the
 - `translation.js` — translation jobs queue + LLM segmentation. **Mega-file (2,652 lines) — split deferred.** Tested at `tests/api/translation.test.js`.
 
 ## Workers + jobs
-- `embedding-worker.js` — generate + persist embeddings for unembedded paragraphs.
-- `enhancement-worker.js` — disambiguation + HyPE generation pump.
-- `sync-worker.js` — Meili sync helpers shared by sync-processor.
+- `embedding-worker.js` — generate + persist embeddings for unembedded paragraphs (+ 10-min embedding propagation across normalized-hash dups). NOTE: its legacy HyPE propagation was removed 2026-07-10.
+- `enhancement-worker.js` — DEAD/unwired (old disambiguation+HyPE pump; nothing calls `startEnhancementWorker`). Superseded by the gated per-book pipeline (`api/lib/pipeline/`, design: `docs/architecture/unified-enrichment-pipeline.md`).
+- `sync-worker.js` — Meili sync helpers (shared by the live `unified-worker.js`; `sync-processor.js` is a dead duplicate).
 - `jobs.js` — generic job queue (translation, enrichment, etc.).
 - `progress.js` — import-batch progress tracking visible to the API.
 

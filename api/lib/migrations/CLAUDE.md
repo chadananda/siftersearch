@@ -13,8 +13,8 @@ combines them on import.
 
 ## Adding a new migration
 
-1. Increment `CURRENT_VERSION` in `runner.js`.
-2. Add the new migration object to `v46-v58.js` (or create `v59+.js` and import in runner).
+1. Increment `CURRENT_VERSION` in `runner.js` (currently 89).
+2. Add the new migration object to `v72-v90.js` (the latest bucket; e.g. migration 89 = `doc_pipeline`). Create `v91+.js` + import in runner once v90 is used.
 3. Each migration is a single `async () => { ... }` keyed by version number.
 4. Use idempotent ALTER (try/catch on `duplicate column`) for column additions.
 5. ANALYZE the table after creating new high-impact indexes — see migration 58 for the pattern (+ note about needing manual ANALYZE on tower-nas after deploy).

@@ -3,6 +3,10 @@
 Heterogeneous: actively-used pipeline drivers, one-off migration tools,
 and `wip/` experimental scripts.
 
+## Enrichment / entity pipeline (v2 — the CURRENT path)
+- `pipeline/` — unified enrichment pipeline drivers (`pipeline.mjs` status/backfill, `run-pipeline.mjs`). The ONE gated orchestrator over `api/lib/pipeline/`. Design: `docs/architecture/unified-enrichment-pipeline.md`.
+- `entity-read/` — the per-book stage drivers the orchestrator spawns (`disambiguate-book.mjs` → `hype-book.mjs`; `build-mentions.mjs` → `extract-claims-v2.mjs`). See `entity-read/CLAUDE.md`.
+
 ## Actively-used (referenced by package.json or PM2)
 - `index-library.js` — `siftersearch-library-watcher` PM2 entry. Wraps `api/services/library-watcher.js`. Used by `npm run index:watch`.
 - `sites-ingest.mjs` — manual sites ingester driver. `node scripts/sites-ingest.mjs --site oceanlibrary.com [--force] [--limit N]`.
@@ -21,7 +25,7 @@ and `wip/` experimental scripts.
 - `resegment-oversized.js` — re-segment paragraphs that exceed embedder context.
 - `fix-corrupt-descriptions.js` — clean up legacy corrupt frontmatter.
 - `sync-frontmatter-metadata.js`, `sync-meili.js`, `sync-library-nodes.js`, `sync-metadata.js` — full re-sync drivers.
-- `run-enhancement.js`, `run-enrichment.js`, `run-backup-once.mjs`, `run-lightrag.js` — pipeline manual triggers.
+- `run-enhancement.js`, `run-enrichment.js` — **LEGACY/RETIRED** (old Qwen/Sonnet enrichment triggers; wrote old-format HyPE on raw text). Superseded by `pipeline/` + `entity-read/`. `run-backup-once.mjs`, `run-lightrag.js` — misc manual triggers.
 - `rewrite-descriptions.js`, `scrub-tech-references.js` — content cleanup.
 - `segment-document.js`, `segment-calibrate.js` — segmenter manual runs.
 - `verify-deployment.js` — post-deploy smoke checks.
