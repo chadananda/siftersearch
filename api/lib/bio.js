@@ -98,32 +98,35 @@ export async function getBioPerson(rawId) {
   const notes = obj(row.research_notes);
   // NEW substrate first: cited claims (proof-gated, temporal, source-linked) from entity_claims — the reconciled
   // evidence base. Fall back to legacy facts2/episodes only for entities the pipeline hasn't covered. Same UI shape.
-  const SRCNAME = { 21308: 'The Dawn-Breakers', 21310: 'God Passes By', 57347: 'God Passes By' };
-  const SRCSLUG = { 21308: 'dawn-breakers_nabil', 21310: 'god-passes-by_shoghi-effendi', 57347: 'god-passes-by_shoghi-effendi' };
   const claimRows = await queryAll(`SELECT relation, statement, proof_verbatim AS proof, doc_id, para_id, time_value AS tv, time_basis AS tb
      FROM entity_claims WHERE entity_id = ? AND (status IS NULL OR status = 'supported') ORDER BY (tv IS NULL), tv`, [id]);
   let characterizations;
   if (claimRows.length) {
-    characterizations = claimRows.map(c => ({ quote: c.statement, proof: c.proof || null, relation: c.relation || null,
-      when: c.tv ? `${c.tv}${c.tb ? ' [' + c.tb + ']' : ''}` : null, source: SRCNAME[c.doc_id] || null, paraId: c.para_id,
-      url: SRCSLUG[c.doc_id] && c.para_id ? `https://oceanlibrary.com/${SRCSLUG[c.doc_id]}?paraId=${c.para_id}` : null }));
+    // Resolve each cited claim's source document (title + public url) from the docs table — NOT a hardcoded book list.
+    // Every claim carries doc_id + para_id, so every fact shows its book + paragraph citation, clickable when online.
+    const dids = [...new Set(claimRows.map(c => c.doc_id).filter(Boolean))];
+    const dmap = new Map();
+    if (dids.length) (await queryAll(`SELECT id, title, source_url FROM docs WHERE id IN (${dids.map(() => '?').join(',')})`, dids)).forEach(r => dmap.set(r.id, { title: r.title || null, url: r.source_url || null }));
+    characterizations = claimRows.map(c => { const d = dmap.get(c.doc_id) || {}; return { quote: c.statement, proof: c.proof || null, relation: c.relation || null,
+      when: c.tv ? `${c.tv}${c.tb ? ' [' + c.tb + ']' : ''}` : null, source: d.title || null, paraId: c.para_id, _doc: c.doc_id,
+      url: d.url && c.para_id ? `${d.url}?paraId=${c.para_id}` : null }; });
   } else {  // fallback: legacy fact catalog for entities not yet re-extracted
     characterizations = Array.isArray(notes.facts2) && notes.facts2.length
       ? notes.facts2.map(f => ({ quote: f.statement, proof: f.quote || null, relation: f.relation || null, when: f.when || null, source: f.source, paraId: f.paraId, url: f.url || null }))
       : (notes.characterizations || []);
     if (Array.isArray(notes.episodes)) for (const e of notes.episodes) characterizations.push({ quote: e.statement, proof: e.quote || null, relation: 'episode', episode: e.name, when: e.when || null, source: e.source, paraId: e.paraId, url: e.url || null });
   }
-  // compact citation label per fact: source abbrev + paragraph number (e.g. "GPB ¶72", "DB ¶467")
+  // compact citation label per fact: short source + paragraph number (e.g. "GPB ¶72", "DB ¶467"); works for any book.
   try {
     const pids = [...new Set(characterizations.map(c => c.paraId).filter(Boolean))];
     if (pids.length) {
-      const ixRows = await queryAll(`SELECT doc_id, external_para_id pid, paragraph_index pix FROM content WHERE external_para_id IN (${pids.map(() => '?').join(',')}) AND doc_id IN (21310,57347,21308)`, pids);
+      const ixRows = await queryAll(`SELECT doc_id, external_para_id pid, paragraph_index pix FROM content WHERE external_para_id IN (${pids.map(() => '?').join(',')})`, pids);
       const ix = {}; for (const r of ixRows) ix[`${r.doc_id}:${r.pid}`] = r.pix;
+      const abbrOf = (s) => s === 'The Dawn-Breakers' ? 'DB' : s === 'God Passes By' ? 'GPB' : (String(s || '').split(/\s+/).filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 4) || 'SRC');
       for (const c of characterizations) {
-        const abbr = c.source === 'The Dawn-Breakers' ? 'DB' : 'GPB';
-        const docs = c.source === 'The Dawn-Breakers' ? [21308] : [21310, 57347];
-        let n = null; for (const d of docs) if (ix[`${d}:${c.paraId}`] != null) { n = ix[`${d}:${c.paraId}`]; break; }
-        c.cite = n != null ? `${abbr} ¶${n}` : abbr;
+        const n = c._doc != null ? ix[`${c._doc}:${c.paraId}`] : null;
+        c.cite = n != null ? `${abbrOf(c.source)} ¶${n}` : abbrOf(c.source);
+        delete c._doc;
       }
     }
   } catch { /* citation labels optional */ }
@@ -170,9 +173,6 @@ export async function bioSearch(rawQ) {
   //    dervish who embraced the Faith under Bahá'u'lláh" fact miscited to GPB ¶369 (actually the Azal-poisoning
   //    paragraph) wrongly filed on the 1850 martyr Mírzá Qurbán-‘Alí. A claim with no proof span is not evidence.
   const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
-  const SRCN = { 21308: 'The Dawn-Breakers', 21310: 'God Passes By', 57347: 'God Passes By' };
-  const SRCS = { 21308: 'dawn-breakers_nabil', 21310: 'god-passes-by_shoghi-effendi', 57347: 'god-passes-by_shoghi-effendi' };
-  const linkOf = (doc, pid) => (SRCS[doc] && pid ? `https://oceanlibrary.com/${SRCS[doc]}?paraId=${pid}` : null);
   const HON = new Set('mirza haji hajji mulla siyyid sayyid aqa shaykh sheikh ustad karbilai karbala mashhadi hajj the of son daughter dervish native known as'.split(' '));
   const tokize = (s) => [...new Set(fold(s).split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !STOP.has(t) && !HON.has(t)))];
 
@@ -182,6 +182,12 @@ export async function bioSearch(rawQ) {
     WHERE ge.entity_type = 'person' AND ge.religion = '' AND (ec.status IS NULL OR ec.status = 'supported')
       AND ec.proof_verbatim IS NOT NULL AND TRIM(ec.proof_verbatim) <> ''
       AND (ge.last_assessed_version IS NULL OR ge.last_assessed_version NOT LIKE 'merged-into-%')`);
+  // Resolve the SOURCE DOCUMENT for every cited claim from the docs table (NOT a hardcoded book list). Every claim
+  // carries doc_id + para_id by construction, so every fact shows its book + paragraph citation; the clickable
+  // oceanlibrary link is added when the book has a source_url. A fact without a citation cannot exist here.
+  const docIds = [...new Set(claimRows.map((c) => c.doc).filter(Boolean))];
+  const docMap = new Map();
+  for (let i = 0; i < docIds.length; i += 800) { const ch = docIds.slice(i, i + 800); (await queryAll(`SELECT id, title, source_url FROM docs WHERE id IN (${ch.map(() => '?').join(',')})`, ch)).forEach((r) => docMap.set(r.id, { title: r.title || null, url: r.source_url || null })); }
   // resolve target-entity display names so typed connections read naturally
   const tids = [...new Set(claimRows.map((c) => c.tid).filter(Boolean))];
   const tname = new Map();
@@ -190,9 +196,10 @@ export async function bioSearch(rawQ) {
   for (const c of claimRows) {
     nameById[c.eid] = c.name; impById[c.eid] = c.imp || 0;
     const target = c.tid ? (tname.get(c.tid) || null) : null;
+    const d = docMap.get(c.doc) || {};
     const claim = { relation: c.relation || null, tid: c.tid || null, target,
       statement: c.statement, proof: c.proof, when: c.tv ? `${c.tv}${c.tb ? ' [' + c.tb + ']' : ''}` : null,
-      source: SRCN[c.doc] || null, url: linkOf(c.doc, c.pid),
+      source: d.title || null, paraId: c.pid || null, url: d.url && c.pid ? `${d.url}?paraId=${c.pid}` : null,
       hay: fold(`${c.statement} ${c.proof} ${target || ''}`) };
     (exById[c.eid] || (exById[c.eid] = [])).push(claim);
   }
@@ -254,10 +261,13 @@ export async function bioSearch(rawQ) {
     for (const id of candidateIds) {
       let conn = (exById[id] || []).filter(namesTarget);
       if (!conn.length) continue;
-      // rank the connecting claims so the LLM sees the most concrete first: linkable, then NOT a vague "described /
-      // referred to / account of" proof (those don't show the actual encounter), then the proof-richest.
-      const vague = (c) => (/\b(describ|referr|mention|account of|extol|prais|letter)\b/i.test(c.proof || '') ? 1 : 0);
-      conn = [...conn].sort((a, b) => (b.url ? 1 : 0) - (a.url ? 1 : 0) || vague(a) - vague(b) || (b.proof || '').length - (a.proof || '').length).slice(0, 6);
+      // Every claim is cited, so choose for VIVIDNESS: drop claims whose proof merely "describes / refers to / extols"
+      // the connection when a concrete sibling exists (one that shows the actual encounter — the embrace, the place),
+      // prefer linkable, then the proof-richest. This is what lifts "met Bahá'u'lláh" → "…entered His presence in Ṭihrán".
+      const vague = (c) => /\b(describ|referr|mention|account of|extol|prais|letter)\b/i.test(c.proof || '');
+      const concrete = conn.filter((c) => !vague(c));   // every claim is cited; choose for vividness, prefer clickable
+      conn = (concrete.length ? concrete : conn)
+        .sort((a, b) => (b.url ? 1 : 0) - (a.url ? 1 : 0) || (b.proof || '').length - (a.proof || '').length).slice(0, 6);
       members.push({ id, name: nameById[id] || `#${id}`, conn });
     }
     if (members.length) {
@@ -279,9 +289,10 @@ export async function bioSearch(rawQ) {
         const claim = m.conn[pick.i] || m.conn.find((c) => c.url) || m.conn[0];   // the claim the clause is drawn from → link to IT
         const clause = (pick.clause || stripName(m.id, claim.statement).split(/[;.]/)[0].slice(0, 120)).replace(/[\s.;,]+$/, '');
         if (SKIP.test(clause)) continue;   // proof doesn't bear the connection → drop, never assert
-        const url = claim.url || (m.conn.find((c) => c.url) || {}).url || null;
-        evidence[m.id] = { quote: cl(claim.statement), proof: cl(claim.proof) || null, source: claim.source, url, clause };
-        parts.push(url ? `${m.name} [${clause}](${url})` : `${m.name} ${clause}`);
+        // link ONLY to this claim's own citation (never borrow another's — that would miscite); show the book as text
+        // when the source has no public URL, so the citation is ALWAYS visible.
+        evidence[m.id] = { quote: cl(claim.statement), proof: cl(claim.proof) || null, source: claim.source, paraId: claim.paraId, url: claim.url || null, clause };
+        parts.push(claim.url ? `${m.name} [${clause}](${claim.url})` : `${m.name} ${clause}${claim.source ? ' — ' + claim.source : ''}`);
         ids.push(m.id);
       }
       if (ids.length) {
@@ -331,9 +342,9 @@ Return ONLY JSON: {"lead":"...","matches":[{"id","clause"}]} — most relevant f
       const ranked = [...fx].sort((a, b) => qterms.filter((t) => b.hay.includes(t)).length - qterms.filter((t) => a.hay.includes(t)).length);
       const hit = (connTarget ? ranked.find(namesTarget) : null) || ranked[0];
       const clause = String(mm.clause || hit.statement).replace(/\s+/g, ' ').trim().slice(0, 160).replace(/[\s.;,]+$/, '');
-      aiIds.push(id); evidence[id] = { quote: cl(hit.statement), proof: cl(hit.proof) || null, source: hit.source, url: hit.url || null, clause };
+      aiIds.push(id); evidence[id] = { quote: cl(hit.statement), proof: cl(hit.proof) || null, source: hit.source, paraId: hit.paraId, url: hit.url || null, clause };
       const nm = nameById[id] || `#${id}`;
-      parts.push(hit.url ? `${nm} [${clause}](${hit.url})` : `${nm} ${clause}`);
+      parts.push(hit.url ? `${nm} [${clause}](${hit.url})` : `${nm} ${clause}${hit.source ? ' — ' + hit.source : ''}`);
     }
     // no qualifying match: say so plainly rather than return a blank banner — especially for a connection query, where
     // the honest answer ("no cited connection with X") is itself the useful result (e.g. Seven Martyrs met Bahá'u'lláh).
