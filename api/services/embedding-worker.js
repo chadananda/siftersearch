@@ -14,7 +14,6 @@ import { logger } from '../lib/logger.js';
 import { createEmbeddings } from '../lib/ai.js';
 import { config } from '../lib/config.js';
 import { content } from '../lib/content.js';
-import { propagateHypeFromNormalizedHash } from '../lib/sonnet-enrichment.js';
 import { cleanForEmbedding } from '../lib/text-normalize.js';
 
 // Configuration - tuned for throughput while yielding event loop
@@ -189,11 +188,12 @@ function schedulePropagation() {
     } catch (err) {
       logger.warn({ err: err.message }, 'Embedding propagation failed (non-fatal)');
     }
-    try {
-      await propagateHypeFromNormalizedHash();
-    } catch (err) {
-      logger.warn({ err: err.message }, 'HyPE propagation failed (non-fatal)');
-    }
+    // RETIRED 2026-07-10: HyPE propagation (propagateHypeFromNormalizedHash, sonnet-enrichment.js)
+    // is legacy blanket-enrichment machinery — it re-spread HyPE across normalized-hash duplicates
+    // and reset enhanced_synced=0 (the slow-read/write-lock query from a prior incident). The new
+    // per-book pipeline (scripts/entity-read/hype-book.mjs) generates HyPE per book explicitly, and
+    // ingest-time carry-forward (content.insertParagraph) already copies sidecars on identical hash.
+    // Do NOT re-enable blanket HyPE propagation.
     // Reschedule
     if (embeddingInterval) {
       schedulePropagation();
