@@ -54,7 +54,9 @@ ${bookMeta}
 ${castSeed ? `\nMAIN CAST (book-wide who's-who — resolve a bare or variant name to the right PRINCIPAL figure even when they were introduced in a DIFFERENT chapter; honour each "≠ (not to be confused with)" distinction; a bare name = the most-prominent matching figure UNLESS the paragraph's role/place/era fits a listed alternative):\n${castSeed}` : ''}`;
 
 // Load main-text paragraphs (+ chapter/scene labels for the TOC fast-path)
-let paras = await queryAll(`SELECT id, external_para_id pid, paragraph_index pidx, heading, text FROM content WHERE doc_id=? AND deleted_at IS NULL AND blocktype='paragraph' AND external_para_id IS NOT NULL ORDER BY paragraph_index`, [DOC]);
+// pid = external_para_id (OceanLibrary docs, e.g. GPB/DB) else content id (books ingested without para_NNNN
+// ids, e.g. ROB, Gate of the Heart). Include 'quote' blocks — in many books the substance is quoted scripture.
+let paras = await queryAll(`SELECT id, COALESCE(external_para_id, 'p' || id) pid, paragraph_index pidx, heading, text FROM content WHERE doc_id=? AND deleted_at IS NULL AND blocktype IN ('paragraph','quote') ORDER BY paragraph_index`, [DOC]);
 paras = paras.map((p) => ({ ...p, text: String(p.text).replace(/\s+/g, ' ').trim() }));
 let segs;
 if (USE_TOC) {
@@ -79,7 +81,7 @@ const RESUME = process.env.RESUME === '1'; // skip paragraphs already disambigua
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const retry = async (fn, n = 5) => { let err; for (let i = 0; i < n; i++) { try { return await fn(); } catch (e) { err = e; await sleep(700 * (i + 1)); } } throw err; };
 process.on('unhandledRejection', (e) => console.error(`unhandledRejection: ${String(e?.message || e).slice(0, 80)}`)); // never let a transient blip kill the run
-const doneSet = RESUME ? new Set((await queryAll(`SELECT external_para_id pid FROM content WHERE doc_id=? AND context_model='deepseek-disambig-v1' AND context IS NOT NULL`, [DOC])).map((r) => r.pid)) : new Set();
+const doneSet = RESUME ? new Set((await queryAll(`SELECT COALESCE(external_para_id, 'p' || id) pid FROM content WHERE doc_id=? AND context_model='deepseek-disambig-v1' AND context IS NOT NULL`, [DOC])).map((r) => r.pid)) : new Set();
 let done = 0, failed = 0;
 // One segment (chapter) = one sequential growing cache. runPlaceEra is LOCAL so chapters can run in parallel.
 async function processSeg(seg, si) {
