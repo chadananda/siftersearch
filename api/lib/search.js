@@ -470,7 +470,9 @@ export async function initializeIndexes() {
     rankingRules: buildRankingRules(),
     pagination: { maxTotalHits: 50000 },
     embedders: {
-      default: { source: 'userProvided', dimensions: expectedDimensions }
+      // binaryQuantized: 1 bit/dim instead of float32 → ~32× smaller vector index, ~10–40× faster ANN. Irreversible;
+      // enabling it triggers a one-time re-quantization of existing vectors. THE fix for slow semantic search.
+      default: { source: 'userProvided', dimensions: expectedDimensions, binaryQuantized: true }
     }
   };
 
@@ -493,7 +495,7 @@ export async function initializeIndexes() {
     rankingRules: buildRankingRules(),
     pagination: { maxTotalHits: 50000 },
     embedders: {
-      default: { source: 'userProvided', dimensions: expectedDimensions }
+      default: { source: 'userProvided', dimensions: expectedDimensions, binaryQuantized: true }
     }
   };
 
@@ -585,13 +587,17 @@ export async function initializeIndexes() {
       try {
         const res = await fetch(`${meiliUrl}/indexes/${indexUid}/settings/embedders`, { headers });
         const embedders = await res.json();
-        if (!embedders?.default) {
-          logger.error({ index: indexUid }, 'CRITICAL: Meilisearch embedder config is MISSING. Re-applying...');
+        // Apply the embedder config if it's MISSING, or if binaryQuantized isn't enabled yet (one-time re-quantize).
+        // The task-processing guard above ensures we never PATCH mid-rebuild (which would restart it in a loop).
+        const needsBQ = embedders?.default && embedders.default.binaryQuantized !== true;
+        if (!embedders?.default || needsBQ) {
+          const reason = !embedders?.default ? 'MISSING' : 'enabling binaryQuantized (one-time re-quantization → faster ANN)';
+          logger.warn({ index: indexUid, reason }, 'Applying embedder config');
           await fetch(`${meiliUrl}/indexes/${indexUid}/settings`, {
             method: 'PATCH', headers,
-            body: JSON.stringify({ embedders: { default: { source: 'userProvided', dimensions: expectedDimensions } } })
+            body: JSON.stringify({ embedders: { default: { source: 'userProvided', dimensions: expectedDimensions, binaryQuantized: true } } })
           });
-          logger.info({ index: indexUid }, 'Embedder config re-applied');
+          logger.info({ index: indexUid }, 'Embedder config applied (binaryQuantized enabled)');
           continue;
         }
         const dims = embedders.default.dimensions;
