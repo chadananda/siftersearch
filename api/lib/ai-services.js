@@ -307,7 +307,7 @@ const SERVICE_CONFIG = {
     },
     remote: {
       provider: 'openai',
-      model: 'gpt-3.5-turbo',      // USER-FACING fast path — low latency. DeepSeek is reserved for backend/parallel.
+      model: 'gpt-4.1-mini',       // USER-FACING fast path — low latency + better than 3.5-turbo (not legacy). DeepSeek reserved for backend/parallel.
       temperature: 0.3,
       maxTokens: 500
     }

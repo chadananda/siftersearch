@@ -30,7 +30,6 @@
 import { hybridSearch, keywordSearch, getStats, getMeili, INDEXES } from '../lib/search.js';
 import { executeSearch, executeLibraryOverview, executeFindDocumentForCitation, executeTool, SYSTEM_PROMPT, TOOLS } from './chat.js';
 import { analyzePassagesParallel } from '../lib/parallel-analyzer.js';
-import { rerank } from '../lib/reranker.js';
 import { logger } from '../lib/logger.js';
 import { ApiError } from '../lib/errors.js';
 import { validateApiKey } from '../lib/api-keys.js';
@@ -421,16 +420,8 @@ export default async function publicApiRoutes(fastify) {
       return { results: [], query, totalFound: 0, processingTimeMs: Date.now() - startTime };
     }
 
-    // Voyage reranking before LLM analysis
-    const voyageKey = process.env.VOYAGE_API_KEY;
-    if (voyageKey && searchResults.hits.length > 3) {
-      try {
-        const reranked = await rerank(query, searchResults.hits, {
-          provider: 'voyage', apiKey: voyageKey, timeout: 3000
-        });
-        if (reranked[0]?.rerank_score !== undefined) searchResults.hits = reranked;
-      } catch { /* fallback to original order */ }
-    }
+    // (Voyage reranking removed — it was disabled and never ran; result ordering comes
+    // from Meili hybrid + authority ranking, then the LLM analysis scores/reranks the pool.)
 
     // Prepare passages for analysis — include all fields needed for URL building and authority scoring.
     // Meilisearch stores "doc_id" (not "document_id") so we map both names for compat.
@@ -466,7 +457,10 @@ export default async function publicApiRoutes(fastify) {
       }, 10000)
     );
     const analysis = await Promise.race([
-      analyzePassagesParallel(query, passages, { batchSize: 2, maxConcurrent: 10, signal: analysisAc.signal }),
+      // batchSize 3 (was 2): ~24 passages → 8 batches ≤ maxConcurrent, so all analysis runs
+      // in ONE concurrent wave instead of two — roughly halves LLM wall-clock. Ordering still
+      // comes from the LLM per-passage scoring (no reranker), preserving result quality.
+      analyzePassagesParallel(query, passages, { batchSize: 3, maxConcurrent: 10, signal: analysisAc.signal }),
       analysisTimeout
     ]);
 
