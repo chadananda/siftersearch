@@ -254,8 +254,10 @@ export async function bioSearch(rawQ) {
     for (const id of candidateIds) {
       let conn = (exById[id] || []).filter(namesTarget);
       if (!conn.length) continue;
-      // prefer linkable, proof-rich claims — the concrete ones carry the place/circumstance the clause should name
-      conn = [...conn].sort((a, b) => (b.url ? 1 : 0) - (a.url ? 1 : 0) || (b.proof || '').length - (a.proof || '').length).slice(0, 6);
+      // rank the connecting claims so the LLM sees the most concrete first: linkable, then NOT a vague "described /
+      // referred to / account of" proof (those don't show the actual encounter), then the proof-richest.
+      const vague = (c) => (/\b(describ|referr|mention|account of|extol|prais|letter)\b/i.test(c.proof || '') ? 1 : 0);
+      conn = [...conn].sort((a, b) => (b.url ? 1 : 0) - (a.url ? 1 : 0) || vague(a) - vague(b) || (b.proof || '').length - (a.proof || '').length).slice(0, 6);
       members.push({ id, name: nameById[id] || `#${id}`, conn });
     }
     if (members.length) {
