@@ -340,6 +340,22 @@ async function verifyNewCode() {
 }
 
 /**
+ * Is a PM2 process currently online? Used to avoid reviving deliberately-stopped
+ * background workers on deploy (startOrReload would otherwise start a stopped one).
+ */
+async function isProcessRunning(name) {
+  const res = await run('pm2 jlist');
+  if (!res.success) return false;
+  try {
+    const procs = JSON.parse(res.stdout);
+    const p = procs.find(x => x.name === name);
+    return p?.pm2_env?.status === 'online';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Swap a PM2 process using graceful reload for zero-downtime deploys.
  * For the API (wait_ready=true), PM2 starts the new process, waits for
  * process.send('ready'), then kills the old one — no gap in service.
@@ -448,16 +464,18 @@ async function applyUpdates() {
   if (!await swapPm2Process('siftersearch-api')) failed = true;
   if (!await swapPm2Process('siftersearch-worker')) failed = true;
   if (!await swapPm2Process('siftersearch-deep-research')) failed = true;
-  // Library-watcher and enrichment workers — restart after API/worker to
-  // avoid SQLite write contention during the deploy window.
-  await swapPm2Process('siftersearch-library-watcher');
-  await swapPm2Process('siftersearch-enrichment');
-  await swapPm2Process('siftersearch-enrichment-api');
-  // Graph pipeline workers — crash-resistance fixes must propagate on deploy.
-  await swapPm2Process('siftersearch-graph-extractor');
-  await swapPm2Process('siftersearch-graph-validator');
-  await swapPm2Process('siftersearch-graph-resolver');
-  await swapPm2Process('siftersearch-graph-promoter');
+  // Library-watcher — restart after API/worker to avoid SQLite write contention.
+  // NOTE: only swap it if it's currently running; swapPm2Process uses startOrReload
+  // which would otherwise REVIVE a deliberately-stopped process on every deploy.
+  if (await isProcessRunning('siftersearch-library-watcher')) await swapPm2Process('siftersearch-library-watcher');
+  // RETIRED 2026-07-10 (superseded by the per-book deepseek entity pipeline): the old
+  // blanket Sonnet/Qwen enrichment (wrote garbage old-format HyPE) and the legacy graph-*
+  // entity pipeline (extracted from un-disambiguated text) are pm2-stopped. Do NOT swap
+  // them here — startOrReload would restart them on deploy. To re-enable, `pm2 start <name>`
+  // manually. Left in ecosystem.config.cjs so they remain referenceable.
+  for (const name of ['siftersearch-enrichment', 'siftersearch-enrichment-api', 'siftersearch-graph-extractor', 'siftersearch-graph-validator', 'siftersearch-graph-resolver', 'siftersearch-graph-promoter']) {
+    if (await isProcessRunning(name)) await swapPm2Process(name);
+  }
 
   if (failed) {
     log('error', 'Some processes failed to start');
