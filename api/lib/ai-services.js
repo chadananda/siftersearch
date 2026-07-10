@@ -306,8 +306,8 @@ const SERVICE_CONFIG = {
       maxTokens: 500
     },
     remote: {
-      provider: 'openai',
-      model: 'gpt-4.1-mini',       // USER-FACING fast path — low latency + better than 3.5-turbo (not legacy). DeepSeek reserved for backend/parallel.
+      provider: 'groq',
+      model: 'llama-3.3-70b-versatile',  // USER-FACING fast path — Groq LPU: ~1.3s even at 7-way concurrency vs 5-7s for OpenAI. Drives search analysis/filter/score.
       temperature: 0.3,
       maxTokens: 500
     }
@@ -457,6 +457,14 @@ function getClient(provider) {
       clients.deepseek = new OpenAI({ apiKey: process.env.DEEPSEEK_API_KEY, baseURL: 'https://api.deepseek.com/v1' });
       break;
 
+    case 'groq':
+      if (!process.env.GROQ_API_KEY) {
+        throw new Error('GROQ_API_KEY required for Groq provider');
+      }
+      // OpenAI-compatible endpoint. LPU inference — sub-second even under concurrency.
+      clients.groq = new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: 'https://api.groq.com/openai/v1' });
+      break;
+
     default:
       throw new Error(`Unknown provider: ${provider}`);
   }
@@ -481,6 +489,30 @@ async function chatOpenAI(messages, opts) {
 
   if (opts.stream) return response;
 
+  return {
+    content: response.choices[0].message.content,
+    usage: {
+      promptTokens: response.usage?.prompt_tokens,
+      completionTokens: response.usage?.completion_tokens,
+      totalTokens: response.usage?.total_tokens
+    },
+    model: response.model
+  };
+}
+
+// Groq (OpenAI-compatible endpoint). LPU inference — sub-second even under concurrency, so it is the
+// user-facing fast path for search analysis (filter/score/summarize). Model id is passed through literally
+// (e.g. llama-3.3-70b-versatile). Forwards response_format + abort signal for JSON extraction under a timeout.
+async function chatGroq(messages, opts) {
+  const client = getClient('groq');
+  const reqOpts = opts.signal ? { signal: opts.signal } : {};
+  const params = {
+    model: opts.model, messages,
+    temperature: opts.temperature, max_tokens: opts.maxTokens, stream: opts.stream || false
+  };
+  if (opts.responseFormat) params.response_format = opts.responseFormat;
+  const response = await client.chat.completions.create(params, reqOpts);
+  if (opts.stream) return response;
   return {
     content: response.choices[0].message.content,
     usage: {
@@ -750,6 +782,9 @@ export function aiService(serviceType, options = {}) {
             break;
           case 'deepseek':
             response = await chatDeepSeek(messages, opts);
+            break;
+          case 'groq':
+            response = await chatGroq(messages, opts);
             break;
           default:
             throw new Error(`Unknown provider: ${opts.provider}`);
