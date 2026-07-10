@@ -346,6 +346,36 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_ec_semkey   ON entity_claims(semantic_key)`);
     logger.info('Migration 88 complete: entity_claims.entity_id now NULLABLE (rebuilt; deferred binding)');
   },
+
+  89: async () => {
+    // Unified enrichment pipeline v2 (docs/architecture/unified-enrichment-pipeline.md): ONE ordered,
+    // idempotent, gated orchestrator replaces the six always-on legacy pollers. doc_pipeline is the
+    // single source of truth for per-document pipeline STATE (the small worklist the orchestrator walks),
+    // replacing the scattered content booleans (context IS NULL / graph_enriched=0 / hyp_thesis IS NULL).
+    logger.info('Starting migration 89: doc_pipeline orchestration state');
+    await query(`CREATE TABLE IF NOT EXISTS doc_pipeline (
+      doc_id           INTEGER PRIMARY KEY,
+      priority         INTEGER NOT NULL DEFAULT 1000,    -- lower = earlier (GPB=0, DB=10, ROB=20, history=100)
+      profile          TEXT,                             -- resolved profile (segmentation/prompt/model/lang)
+      lang             TEXT,
+      enabled          INTEGER NOT NULL DEFAULT 0,       -- 0 = ingested+base-indexed only; 1 = released into enrichment
+      disambig_status  TEXT NOT NULL DEFAULT 'pending',  -- pending|running|done|error|partial
+      disambig_version TEXT,
+      disambig_fp      TEXT,                             -- content fingerprint disambiguation was computed over
+      hype_status      TEXT NOT NULL DEFAULT 'pending',
+      hype_version     TEXT,
+      extract_status   TEXT NOT NULL DEFAULT 'pending',
+      extract_version  TEXT,
+      reconcile_status TEXT NOT NULL DEFAULT 'pending',
+      dirty_paras      TEXT,                             -- JSON array of changed para ids (partial re-enrich)
+      cost_tokens      INTEGER DEFAULT 0,
+      error_detail     TEXT,
+      updated_at       INTEGER
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_doc_pipeline_worklist ON doc_pipeline(enabled, priority, disambig_status)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_doc_pipeline_stages ON doc_pipeline(enabled, priority, hype_status, extract_status)`);
+    logger.info('Migration 89 complete: doc_pipeline table (backfill via scripts/pipeline/pipeline-backfill.mjs)');
+  },
 };
 
 export const graphMigrations = {
