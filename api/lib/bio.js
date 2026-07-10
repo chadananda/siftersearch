@@ -218,22 +218,31 @@ export async function bioSearch(rawQ) {
   // a claim connects a subject to the target if it's typed to the target OR its proof/statement names the target
   const namesTarget = (c) => connTarget && (c.tid === connTarget.id || (connTarget.tok.length && connTarget.tok.every((t) => c.hay.includes(t))));
 
-  // candidate scoping: the cited-connected set, intersected with a resolved group
-  let candidateIds = null;
-  if (connTarget) {
-    const connected = Object.keys(exById).map(Number).filter((eid) => eid !== connTarget.id && exById[eid].some(namesTarget));
-    candidateIds = best ? connected.filter((id) => memberIds.includes(id)) : connected;
-    // A group was named but NONE of its members has a cited connection to the target → the honest answer is "none",
-    // never a fabricated match (this is the "Seven Martyrs of Ṭihrán who met Bahá'u'lláh" case).
-    if (best && !candidateIds.length) {
-      const grpName = cl(best.name.replace(/\s*\(.*?\)\s*/g, ' ').replace(/^the\s+/i, ''));
-      return { ids: [], q, group: best.id, reasoning: { summary: `No cited connection between the ${grpName} and ${connTarget.name} is recorded in God Passes By or The Dawn-Breakers.`, evidence: {} } };
-    }
-  }
-  // place/event tokens beyond the target name, the group name, and generic connection verbs
-  const GEN = new Set(['met', 'meet', 'with', 'accompanied', 'accompany', 'knew', 'know', 'present', 'encounter', 'together', 'companion', 'recognized', 'recognize', 'imprisoned', 'attained', 'visited', 'served', 'who', 'whom', 'did']);
+  // place/event tokens beyond the target name, the group name, and generic connection verbs — these reveal whether a
+  // matched group is the query's SUBJECT ("Seven Martyrs who met X" → specificToks empty) or just an incidental
+  // name-token overlap ("companions imprisoned with X in the Síyáh-Chál" matching a "…of Bahá'u'lláh" group).
+  const GEN = new Set(['met', 'meet', 'with', 'accompanied', 'accompany', 'knew', 'know', 'present', 'encounter', 'together', 'companion', 'companions', 'recognized', 'recognize', 'imprisoned', 'attained', 'visited', 'served', 'who', 'whom', 'did']);
   const nameTokens = new Set([...(connTarget ? tokize(connTarget.name) : []), ...(best ? tokize(best.name) : [])]);
   const specificToks = [...tokize(q)].filter((t) => !nameTokens.has(t) && !GEN.has(t));
+
+  // candidate scoping
+  let candidateIds = null;
+  const connected = connTarget ? Object.keys(exById).map(Number).filter((eid) => eid !== connTarget.id && exById[eid].some(namesTarget)) : null;
+  if (best && connTarget) {
+    candidateIds = memberIds.filter((id) => connected.includes(id));   // group ∩ cited connection
+    if (!candidateIds.length) {
+      // group IS the query's subject (no extra place/event token) and none of its members connect → honest "none".
+      if (!specificToks.length) {
+        const grpName = cl(best.name.replace(/\s*\(.*?\)\s*/g, ' ').replace(/^the\s+/i, ''));
+        return { ids: [], q, group: best.id, reasoning: { summary: `No cited connection between the ${grpName} and ${connTarget.name} is recorded in God Passes By or The Dawn-Breakers.`, evidence: {} } };
+      }
+      candidateIds = connected;   // group was an incidental name-overlap → search the general cited-connected set
+    }
+  } else if (connTarget) {
+    candidateIds = connected;
+  } else if (best) {
+    candidateIds = memberIds.slice();   // group query (± place): restrict to members; the LLM filters by place/event
+  }
 
   // ── DETERMINISTIC broad-connection answer (a target, no extra place/event token): the cited-connected set IS the
   //    recall; the LLM only writes a clause per member from their connecting claim(s), and may drop one only if its
