@@ -446,9 +446,13 @@ export default async function publicApiRoutes(fastify) {
       rerank_score: hit.rerank_score,
     }));
 
+    // Retrieval (search + rerank + excerpt prep) is everything up to here.
+    const retrievalMs = Date.now() - startTime;
+
     // Run AI analysis with a 10-second timeout; fall back to score-ordered results.
     // AbortController cancels remaining batch groups when timeout fires — prevents
     // background AI call accumulation that degrades server performance under load.
+    const _tAnalysis = Date.now();
     const analysisAc = new AbortController();
     const analysisTimeout = new Promise(resolve =>
       setTimeout(() => {
@@ -463,6 +467,7 @@ export default async function publicApiRoutes(fastify) {
       analyzePassagesParallel(query, passages, { batchSize: 3, maxConcurrent: 10, signal: analysisAc.signal }),
       analysisTimeout
     ]);
+    const analysisMs = Date.now() - _tAnalysis;
 
     // When the query names a tradition (e.g. "Quran", "Buddhist"), results from that
     // tradition sort before all others regardless of LLM score. Within each group,
@@ -507,6 +512,9 @@ export default async function publicApiRoutes(fastify) {
       processingTimeMs: durationMs,
       _timing: {
         total_ms: durationMs,
+        retrieval_ms: retrievalMs,
+        analysis_ms: analysisMs,
+        passages: passages.length,
         meili_ms: searchResults.processingTimeMs ?? null,
       }
     };
