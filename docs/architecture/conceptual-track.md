@@ -41,13 +41,29 @@ concept bridges are therefore drawn by the **Manifestations themselves**, not ju
 
 ## Seed order (top-down by interpretive authority)
 
-1. **Shoghi Effendi's complete works — the foundational tier, seeded first, as one tier.** Within it, the
-   **Dispensation of Bahá'u'lláh (in *The World Order of Bahá'u'lláh*) is processed FIRST** — it is the
-   **ontology keystone** (see below). Then GPB, *The Promised Day Is Come*, *The Advent of Divine Justice*, and
-   his **translations** (his renderings fix the canonical English concept names → authority-bearing).
+**1a. Shoghi Effendi's LETTERS — the foundational tier, seeded first, and ALL of them before any translation.**
+The **Dispensation of Bahá'u'lláh (in *The World Order of Bahá'u'lláh*) is processed FIRST** — the **ontology
+keystone** (see below). Then GPB, *The Promised Day Is Come*, *The Advent of Divine Justice*, and the full body of
+his administrative + teaching guidance letters. Those letters are, abstractly, **interpretive applications of the
+three cornerstone charters he was given**:
+  - **teaching** → the **Tablets of the Divine Plan** ('Abdu'l-Bahá)
+  - **administration** → the **Will and Testament of 'Abdu'l-Bahá**
+  - **(to a lesser degree) the World Centre** → the **Tablet of Carmel** (Bahá'u'lláh)
+
+So his letters model the *application* of those charters — which is why they must be understood as a body before
+his translations.
+
+**1b. Shoghi Effendi's TRANSLATIONS — after all his letters, and before any secondary-translator translation.**
+His renderings (the Íqán, *Gleanings*, the *Hidden Words*, *Prayers and Meditations*, the *Dawn-Breakers*, the
+*Epistle to the Son of the Wolf*…) are authoritative interpretation in themselves — his word-choice fixes which
+sense a term carries — and **often carry the doctrinally most important passages**. They are therefore the
+**canonical English** for the Manifestations' works, outranking any secondary translation of the same text.
+
 2. **'Abdu'l-Bahá's authoritative works** — *Some Answered Questions* (authoritative for prophetic-symbol
-   interpretation), the Will and Testament, tablets.
-3. **Bahá'u'lláh** — Kitáb-i-Íqán (the *primary* doctrinal work, per GPB's ranking), Kitáb-i-Aqdas, tablets.
+   interpretation); the cornerstone charters his Guardianship rests on (the **Will and Testament**, the **Tablets
+   of the Divine Plan**); tablets.
+3. **Bahá'u'lláh** — Kitáb-i-Íqán (the *primary* doctrinal work, per GPB's ranking), Kitáb-i-Aqdas, the **Tablet of
+   Carmel** (the World-Centre charter), tablets — read in Shoghi Effendi's translations where they exist.
 4. **The Báb** — the Bayán, tablets.
 5. **Antecedents, backward** — Shaykhí → Imáms → Qur'án → New Testament → Tanakh.
 
