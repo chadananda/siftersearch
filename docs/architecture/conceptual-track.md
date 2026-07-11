@@ -14,16 +14,30 @@ aims, ordering, and quality gates are genuinely different.
 
 ## The governing principle: authoritative interpretation, backwards-facing
 
-Interpreting the Faith's elements is the authorized interpreters' exclusive role, and **the latest one governs,
-looking back**. Shoghi Effendi is the last authorized interpreter, so his reading supersedes 'Abdu'l-Bahá's,
-Bahá'u'lláh's own words, and ours — **for interpretation, not station** (Bahá'u'lláh's Revelation is supreme
-*as Revelation*; interpreting it was the Guardian's designated function). So the ordering is top-down:
+Authoritative interpretation is **backwards-facing** — a later authorized figure interprets what came before,
+and the latest governs. But interpretation is **not the exclusive function of the designated Interpreters**
+('Abdu'l-Bahá, Shoghi Effendi). It runs through the *whole* chain, in two forms, both authoritative:
+
+- **A Manifestation interpreting past scripture** — a *major category of revelation itself*. The Kitáb-i-Íqán is
+  largely Bahá'u'lláh's authoritative reinterpretation of Qur'anic and Biblical scripture (the Day of Resurrection,
+  the "return," the "seal of the prophets"); Christ reinterprets the Torah ("but I say unto you"); the Qur'án
+  reinterprets Biblical narrative. The Manifestation's reading of an earlier concept *is* revelation, and it
+  supersedes the earlier tradition's own reading of it.
+- **A designated Interpreter interpreting the Manifestation's revelation** — 'Abdu'l-Bahá and Shoghi Effendi
+  interpreting Bahá'u'lláh's writings. Shoghi Effendi, being last, governs the reading of everything below —
+  **for interpretation, not station** (Bahá'u'lláh's Revelation is supreme *as Revelation*).
+
+Both are backwards-facing, so the ordering is still top-down:
 
 **Shoghi Effendi → 'Abdu'l-Bahá → Bahá'u'lláh → the Báb → Shaykhí → Imáms → Qur'án → Christianity → Judaism**
 
 Each earlier layer's concepts resolve *against* the later, backwards-facing interpretation that has authority
-over them. Extracting a concept from a lower layer before the layer above it is seeded = interpretively
-building on sand (the concept-level equivalent of extracting entities before disambiguation).
+over them. Extracting a concept from a lower layer before the layer above it is seeded = interpretively building
+on sand (the concept-level equivalent of extracting entities before disambiguation). Consequence for extraction:
+**interpretation is a first-class, authoritative relationship at every level** — "Bahá'u'lláh (in the Íqán)
+reinterprets ⟨the Qur'anic Day of Resurrection⟩ as ⟨the advent of a new Manifestation⟩" is an authoritative
+concept-claim *because a Manifestation made it*, not only when a designated Interpreter does. Many cross-tradition
+concept bridges are therefore drawn by the **Manifestations themselves**, not just by the Guardian.
 
 ## Seed order (top-down by interpretive authority)
 
@@ -64,9 +78,11 @@ GPB's characterization (skeleton, supreme)
 ```
 
 Retrieval and synthesis about a concept flow outward from GPB+Íqán, weighted by each source-work's GPB authority.
-Cross-tradition concepts stay **distinct entities, linked** (the graph's bridge relations) — and GPB itself
-*seeds some links* (Shoghi Effendi relating "the Day of Resurrection," the "return" of the Imám Ḥusayn, to their
-antecedents).
+Cross-tradition concepts stay **distinct entities, linked** (the graph's bridge relations) — and many of those
+bridges are drawn by the **Manifestations themselves**: Bahá'u'lláh's Íqán *is* an authoritative reinterpretation
+of Qur'anic/Biblical concepts, so it lays down bridge after bridge (the "Day of Resurrection," the "return" of the
+Imám Ḥusayn, the "seal of the prophets" → their Bahá'í meaning). The designated Interpreters (GPB) add and confirm
+more. Both kinds of bridge are authoritative; a scholarly comparison is not.
 
 ## How this makes HyPE + context better (the concept-seed)
 
