@@ -23,9 +23,7 @@ const { chatCompletion } = await import('../../api/lib/ai.js');
 const { assignChapters } = await import('./chapter-map.mjs');
 
 const DOC = +(process.env.DOC || 429);
-const MODEL = process.env.MODEL || 'deepseek-v4-flash';
-const IS_PRO = /pro/.test(MODEL);
-const MAXTOK = +(process.env.MAXTOK || (IS_PRO ? 6000 : 1500));  // pro (reasoning) burns most tokens on THINKING before the JSON — 2400 truncated ~20% (finish=length); 6000 leaves room. flash: 1500.
+const { detectProfile, providerOf } = await import('../../api/lib/pipeline/profile.js');
 const MINLEN = +(process.env.MINLEN || 60);                       // skip headers/fragments (titles, publisher lines) not worth HyPE
 const SEGMAX = +(process.env.SEGMAX || 60);
 const CONC = +(process.env.CONC || 5);
@@ -35,15 +33,28 @@ const CHAP = process.env.CHAP || null;
 const LIMIT = +(process.env.LIMIT || 0);   // cap total paragraphs (for dry-run testing)
 const USE_TOC = process.env.USE_TOC ? process.env.USE_TOC === '1' : [21308, 21310].includes(DOC);
 
-const meta = (await queryAll(`SELECT title, author, religion, collection, year, description FROM docs WHERE id=?`, [DOC]))[0] || {};
+const meta = (await queryAll(`SELECT id, title, author, religion, collection, year, description FROM docs WHERE id=?`, [DOC]))[0] || { id: DOC };
+const sampleText = (await queryAll(`SELECT text FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(text)>200 ORDER BY paragraph_index LIMIT 1`, [DOC]))[0]?.text || '';
+const profile = detectProfile(meta, sampleText);
+// HyPE questions are ALWAYS in ENGLISH — the cross-lingual retrieval bridge: an English query embedding matches
+// the English HyPE questions of a Persian/Arabic/Hebrew passage, so one unified English index retrieves the whole
+// corpus. Routing is only about whether the model can READ the source: flash (En/Ar/He), haiku (Persian). Escalate.
+const MODEL = process.env.MODEL || profile.models.hype;
+const PROVIDER = providerOf(MODEL);
+const FALLBACK = process.env.FALLBACK || profile.fallback;
+const FALLBACK_PROVIDER = providerOf(FALLBACK);
+const isPro = (m) => /pro/.test(m);
+const maxTokFor = (m) => +(process.env.MAXTOK || (isPro(m) ? 6000 : 1500));  // reasoning models need headroom before the JSON
+const LANG_NAME = { en: 'English', fa: 'Persian', ar: 'Arabic', he: 'Hebrew' };
 const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, meta.collection].filter(Boolean).join(' / '), meta.year ? `Year ${meta.year}` : '', meta.description ? `About: ${String(meta.description).slice(0, 240)}` : ''].filter(Boolean).join('\n');
 // The book CAST (who's-who) makes the stable system prefix LARGE (better cache) AND grounds the questions in real
 // identities. Same seed the disambiguation pass uses.
 const castSeed = process.env.NO_CAST === '1' ? '' : await (async () => { try { return (await (await import('./cast-seed.mjs')).buildCastSeed(DOC)).seed; } catch (e) { console.error(`cast-seed unavailable: ${e.message}`); return ''; } })();
+console.error(`profile: lang=${profile.lang} genre=${profile.genre} · HyPE model=${MODEL} (${PROVIDER}) → fallback=${FALLBACK} · questions in ENGLISH`);
 
 // STABLE PREFIX (identical for every paragraph → cached): instructions + book meta + cast.
 const SYS = `You generate Hypothetical Prompt Embeddings (HyPE) for ONE paragraph of a book, to power semantic search. A reader searches with a QUESTION; your job is to write the questions THIS paragraph answers, so the paragraph is retrievable by anyone asking about its content in their own words. Output JSON ONLY.
-
+${profile.lang !== 'en' ? `\nThe paragraph is in ${LANG_NAME[profile.lang] || profile.lang} (${profile.script} script) — READ it, but write ALL questions and the thesis in ENGLISH. They feed a unified English search index, so an English query can retrieve this ${LANG_NAME[profile.lang] || profile.lang} passage.\n` : ''}
 Produce, from the paragraph (use the disambiguation CONTEXT only to resolve who/what/where — do NOT ask about the context):
 - "questions": EXACTLY 5, each a real question ending in "?", max 15 words, covering these registers, one each:
   1. factual — a concrete who/what/when this paragraph states
@@ -93,7 +104,12 @@ process.on('unhandledRejection', (e) => console.error(`unhandledRejection: ${Str
 const isNewFormat = (hq, th) => { if (!th) return false; try { const a = JSON.parse(hq); return Array.isArray(a) && a.length >= 4; } catch { return false; } };
 const doneSet = RESUME ? new Set((await queryAll(`SELECT external_para_id pid, hyp_questions hq, hyp_thesis th FROM content WHERE doc_id=?`, [DOC])).filter((r) => isNewFormat(r.hq, r.th)).map((r) => r.pid)) : new Set();
 
-let done = 0, failed = 0, cacheHit = 0, cacheTot = 0;
+let done = 0, failed = 0, cacheHit = 0, cacheTot = 0, escalations = 0;
+async function callModel(model, provider, sys, user) {
+  const opts = { provider, model, temperature: 0.3, maxTokens: maxTokFor(model) };
+  if (provider === 'deepseek') { opts.responseFormat = { type: 'json_object' }; if (isPro(model)) opts.thinking = true; }
+  return chatCompletion([{ role: 'system', content: sys }, { role: 'user', content: user }], opts);
+}
 function parseOut(raw) {
   const m = String(raw).match(/\{[\s\S]*\}/); if (!m) return null;
   try { const j = JSON.parse(m[0]); const q = (j.questions || []).filter((x) => typeof x === 'string' && x.trim()); if (q.length < 4) return null; return { questions: q.slice(0, 5), thesis: (j.thesis || '').trim() }; } catch { return null; }
@@ -104,17 +120,22 @@ async function processSeg(seg, si) {
   for (const p of seg) {                       // SEQUENTIAL within a segment → prefix cache warms between calls
     if (RESUME && doneSet.has(p.pid)) continue;
     const user = `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
-    // Call + parse, retrying up to 3x: v4-flash is non-deterministic, so an unparseable/truncated
-    // (finish=length) reply almost always parses on a re-call. The 3rd try nudges toward brevity.
+    // Escalation ladder: primary model (3 tries) → fallback model (2 tries) — self-heals a passage the cheap
+    // model can't parse (e.g. Persian on flash). JSON is non-deterministic; an unparseable/truncated reply
+    // usually parses on re-call. Later tries nudge toward brevity.
+    const ladder = MODEL === FALLBACK ? [[MODEL, PROVIDER, 4]] : [[MODEL, PROVIDER, 3], [FALLBACK, FALLBACK_PROVIDER, 2]];
     let parsed = null, lastRes = null;
-    for (let attempt = 0; attempt < 3 && !parsed; attempt++) {
-      const sys = attempt < 2 ? SYS : SYS + '\n\nIMPORTANT: keep each question short; output ONLY the compact JSON object, nothing else.';
-      let res;
-      try { res = await retry(() => chatCompletion([{ role: 'system', content: sys }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0.3, maxTokens: MAXTOK, responseFormat: { type: 'json_object' }, ...(IS_PRO ? { thinking: true } : {}) })); }
-      catch (e) { console.error(`  [${p.pid}] AI FAIL ${String(e.message).slice(0, 50)}`); break; }
-      lastRes = res;
-      if (res.usage) { cacheHit += res.usage.cachedTokens || res.usage.prompt_cache_hit_tokens || 0; cacheTot += res.usage.promptTokens || res.usage.prompt_tokens || 0; }
-      parsed = parseOut(res.content || '');
+    for (const [m, prov, tries] of ladder) {
+      for (let attempt = 0; attempt < tries && !parsed; attempt++) {
+        const sys = attempt < 2 && m === MODEL ? SYS : SYS + '\n\nIMPORTANT: keep each question short; output ONLY the compact JSON object, nothing else.';
+        let res;
+        try { res = await retry(() => callModel(m, prov, sys, user)); }
+        catch (e) { console.error(`  [${p.pid}] AI FAIL ${m} ${String(e.message).slice(0, 40)}`); break; }
+        lastRes = res;
+        if (res.usage) { cacheHit += res.usage.cachedTokens || res.usage.prompt_cache_hit_tokens || 0; cacheTot += res.usage.promptTokens || res.usage.prompt_tokens || 0; }
+        parsed = parseOut(res.content || '');
+      }
+      if (parsed) { if (m !== MODEL) escalations++; break; }
     }
     if (!parsed) { console.error(`  [${p.pid}] unparseable after retries [finish=${lastRes?.finishReason || '?'}]: ${String(lastRes?.content || '').replace(/\s+/g, ' ').slice(0, 120)}`); failed++; continue; }
     if (!WRITE) { console.log(`\n${p.pid}:\n  THESIS: ${parsed.thesis}\n  ${parsed.questions.join('\n  ')}`); done++; }
@@ -125,5 +146,5 @@ async function processSeg(seg, si) {
 let next = 0;
 async function worker() { while (next < segs.length) { const i = next++; try { await processSeg(segs[i], i); } catch (e) { console.error(`seg ${i + 1} crashed: ${String(e.message).slice(0, 60)}`); } } }
 await Promise.all(Array.from({ length: Math.min(CONC, segs.length) }, worker));
-console.error(`\nDONE — ${done} paragraphs HyPE'd, ${failed} failed · prefix-cache ${cacheTot ? Math.round(100 * cacheHit / cacheTot) : 0}% (${cacheHit}/${cacheTot})${WRITE ? ' → content.hyp_questions+hyp_thesis' : ' (dry run)'}`);
+console.error(`\nDONE — ${done} paragraphs HyPE'd, ${failed} failed · ${escalations} escalated to ${FALLBACK} · prefix-cache ${cacheTot ? Math.round(100 * cacheHit / cacheTot) : 0}% (${cacheHit}/${cacheTot})${WRITE ? ' → content.hyp_questions+hyp_thesis' : ' (dry run)'}`);
 process.exit(0);
