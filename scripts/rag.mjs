@@ -7,9 +7,12 @@
 import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
 const { rag } = await import('../api/lib/rag-adapter/index.js');
 
-const [, , stage, arg, ...rest] = process.argv;
+const argv = process.argv.slice(2);
+const stage = argv[0];
 const coerce = (v) => (v === undefined ? true : v === 'true' ? true : v === 'false' ? false : /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : v.includes(',') ? v.split(',') : v);
-const opts = Object.fromEntries(rest.map((a) => { const [k, v] = a.replace(/^--/, '').split('='); return [k, coerce(v)]; }));
+// Separate --flags from positionals wherever they appear (a flag-only stage like `project` has no docId).
+const arg = argv.slice(1).find((a) => !a.startsWith('--'));
+const opts = Object.fromEntries(argv.slice(1).filter((a) => a.startsWith('--')).map((a) => { const [k, v] = a.replace(/^--/, '').split('='); return [k, coerce(v)]; }));
 const doc = Number(arg);
 
 const stages = {
