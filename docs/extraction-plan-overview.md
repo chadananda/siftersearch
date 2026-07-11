@@ -44,11 +44,13 @@ everything before him. So the seed runs **top-down**:
 
 **Shoghi Effendi → 'Abdu'l-Bahá → Bahá'u'lláh → the Báb → Shaykhí → Imáms → Qur'án → Christianity → Judaism**
 
-- The **Dispensation of Bahá'u'lláh** (in *The World Order of Bahá'u'lláh*) is the **ontology keystone** —
-  it defines the Manifestation-vs-Interpreter distinction, the stations, the Covenant. Seeded *first*.
-- **God Passes By** is the **concept skeleton** — its breakdown of a work into specific assertions becomes cited
-  claims linking work → concept → teaching.
-- Concepts become first-class entities whose development aggregates across the whole corpus, authority-weighted.
+- Within the Guardian tier the internal order is: **God Passes By** (his only *book* — the concept skeleton,
+  breaking a work into specific cited assertions) → the **Dispensation of Bahá'u'lláh** (his *testament*, the
+  **ontology keystone**: Manifestation-vs-Interpreter, the stations, the Covenant) → the general letters (ADJ,
+  PDC, WOB…) → his other letters → his **translations** (before any secondary translation).
+- Concepts become first-class entities whose development aggregates across the whole corpus, authority-weighted —
+  bound to their authoritative meaning through a cumulative, cited **interpretive lexicon** (so a Biblical
+  metaphor like "clouds" carries its authoritative conceptual meaning, not just the literal story).
 
 ---
 
