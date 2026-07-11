@@ -27,7 +27,7 @@ const SEGMAX = +(process.env.SEGMAX || 60);
 const WRITE = process.env.WRITE === '1';
 const MODEL = process.env.MODEL || 'deepseek-v4-flash';
 const IS_PRO = /pro/.test(MODEL);
-const MAXTOK = +(process.env.MAXTOK || (IS_PRO ? 4000 : 600));  // pro (reasoning) burns tokens on THINKING before the JSON — 400 truncated to EMPTY (finish=length); flash-with-JSON: 600.
+const MAXTOK = +(process.env.MAXTOK || (IS_PRO ? 4000 : 1000)); // pro (reasoning) burns tokens on THINKING before the JSON; flash-with-JSON: 1000 (600 truncated ~9% to finish=length → unparseable).
 const CHAP = process.env.CHAP || null;                 // restrict to one chapter (proof runs)
 const USE_TOC = process.env.USE_TOC ? process.env.USE_TOC === '1' : [21308, 21310].includes(DOC);
 const pnum = (pid) => +String(pid).replace(/\D/g, '');
@@ -110,8 +110,9 @@ async function processSeg(seg, si) {
     // parses on a re-call. `idea` is required in the schema → a valid parse is structurally non-empty.
     let parsed = null, lastRes = null;
     for (let attempt = 0; attempt < 3 && !parsed; attempt++) {
+      const sys = attempt < 1 ? SYS : SYS + '\n\nIMPORTANT: keep "idea" to one short clause; output ONLY the compact JSON object, nothing else.';
       let res;
-      try { res = await retry(() => chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: MAXTOK, responseFormat: { type: 'json_object' }, ...(IS_PRO ? { thinking: true } : {}) })); }
+      try { res = await retry(() => chatCompletion([{ role: 'system', content: sys }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: MAXTOK, responseFormat: { type: 'json_object' }, ...(IS_PRO ? { thinking: true } : {}) })); }
       catch (e) { console.error(`  [${p.pid}] AI FAIL ${String(e.message).slice(0, 50)}`); break; }
       lastRes = res; parsed = parseNote(res.content || '');
     }
