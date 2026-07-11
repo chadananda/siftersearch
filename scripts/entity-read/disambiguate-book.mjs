@@ -1,9 +1,11 @@
 // DISAMBIGUATION PASS (must run BEFORE any entity/claim extraction — see project_scene_context_layer).
-// One GROWING cache per SEGMENT (not a staggered window): the SYSTEM prompt (instructions + book meta) is stable
-// across the whole book; the USER prompt carries an ever-growing list of PRIOR PARAGRAPH SUMMARIES + the one new
-// paragraph. Successive calls share the entire prior prefix → DeepSeek KV/prefix cache pays only for the new tail.
-// The summaries ARE the rolling scene-state (bare name → full name, place, period), so identity established many
-// paragraphs back is still present.
+// STABLE-PREFIX-HEAVY, VARIABLE-TAIL-LIGHT (KV-cache optimal + reliable): the big, byte-identical SYSTEM prefix
+// (lean guard rules + book meta + the cumulative CAST who's-who) is cached ~95%+ across the whole book; the USER
+// message is trimmed to SCENE + a tiny STATE (place · era · a few recently-resolved names) + the one paragraph —
+// so within a scene consecutive calls share SYSTEM+SCENE+STATE and only the paragraph text varies. Identity comes
+// from the rich cached cast (not a fragile per-paragraph sliding window). Output is JSON with REQUIRED fields
+// {place,era,idea,resolve[]} → structurally NEVER empty (the old free-form/minimal prompt made flash collapse to
+// empty on ~67% of prose). The JSON is rendered to the same "@place, ~era — idea · resolves" string for storage.
 //
 // SEGMENT = the growing-cache unit:
 //   • GPB/DB fast-path (USE_TOC, auto for 21308/21310): segment by the book's real CHAPTER (parsed from the source
@@ -23,7 +25,9 @@ const { assignChapters } = await import('./chapter-map.mjs');
 const DOC = +(process.env.DOC || 21308);
 const SEGMAX = +(process.env.SEGMAX || 60);
 const WRITE = process.env.WRITE === '1';
-const MODEL = process.env.MODEL || 'deepseek-chat';
+const MODEL = process.env.MODEL || 'deepseek-v4-flash';
+const IS_PRO = /pro/.test(MODEL);
+const MAXTOK = +(process.env.MAXTOK || (IS_PRO ? 4000 : 600));  // pro (reasoning) burns tokens on THINKING before the JSON — 400 truncated to EMPTY (finish=length); flash-with-JSON: 600.
 const CHAP = process.env.CHAP || null;                 // restrict to one chapter (proof runs)
 const USE_TOC = process.env.USE_TOC ? process.env.USE_TOC === '1' : [21308, 21310].includes(DOC);
 const pnum = (pid) => +String(pid).replace(/\D/g, '');
@@ -34,25 +38,18 @@ const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, me
 // independently without losing a figure introduced elsewhere (fixes cross-chapter identity).
 const castSeed = process.env.NO_CAST === '1' ? '' : await (async () => { try { return (await (await import('./cast-seed.mjs')).buildCastSeed(DOC)).seed; } catch (e) { console.error(`cast-seed unavailable: ${e.message}`); return ''; } })();
 
-const SYS = `You write a MINIMAL disambiguation note for ONE paragraph of a historical narrative. An AI (not a parser) will read your note alongside the paragraph so it can identify the people and place without having read the earlier text. Write ONLY what that reader could NOT work out from this paragraph by itself — nothing more.
+const SYS = `You output a compact disambiguation note as JSON for ONE paragraph of a historical narrative, so a later reader — an AI that has NOT read the earlier text — can place the passage and tell who is meant. Output JSON ONLY.
 
-You get the BOOK metadata, the SCENE (chapter + section heading), the running PLACE/ERA, and the notes for preceding paragraphs (identity established earlier carries forward, because the narrative drops a person's titles/nisba once a scene has introduced them).
+Return exactly: {"place":"…","era":"… [pin|est]","idea":"…","resolve":["<name as written> = <fuller handle>", …]}
 
-FAITHFULNESS IS THE FIRST RULE. Resolve using ONLY what the text and its scene actually supply. NEVER add a nisba, surname, or fuller name the text/scene does not itself give — do not "upgrade" a name to a prominent namesake's full form. The text's OWN qualifier wins: if the paragraph or a nearby paragraph gives an appositive, role, relationship, or descriptor for a name ("Mírzá Aḥmad, the Báb's amanuensis"), THAT is the resolution — carry the name plus that descriptor verbatim, and let it OVERRIDE any prominence guess. A local descriptor that contradicts a prominent bearer (an "amanuensis" is not the traditions-scholar Mírzá Aḥmad-i-Azghandí) means it is a DIFFERENT person — resolve to what the text says, not to the famous namesake. When you cannot pin the fuller canonical from the text/scene/cast with confidence, keep the name as written plus the text's descriptor and STOP; mark uncertain identity with "?". Under-resolve rather than mis-resolve.
-
-Include, and only include:
-• PLACE and ERA in force. Inherit from the running context; change only when THIS paragraph moves location or time. Mark the era as a PIN or an EST: a PIN is explicitly derivable — a stated date, a SOLAR/seasonal anchor (Naw-Rúz = spring equinox ~21 March; a named season), or "N years after a known epoch" (Báb's Declaration = May 1844; His martyrdom = July 1850) — write it like "spring 1851 [pin: 7th Naw-Rúz]"; an EST is inferred from the chapter/context or a drifting lunar Hijri (A.H.) date — write it like "~1845 [est: chapter era]". Compute pins, don't discard them (e.g. "the seventh Naw-Rúz after the Declaration" = spring 1851 = 1844 + 7). NOT the heading text.
-• Any bare / elided / variant name or ambiguous epithet the paragraph uses, resolved to the fuller handle THE TEXT SUPPORTS (established earlier in this scene, in the cast, or by the paragraph's own qualifier). KEEP honorifics/titles (Mírzá, Mullá, Siyyid, Ḥájí, Karbilá'í, Mashhadí, Ustád, Áqá) — they discriminate when nisbas match or are absent and are sometimes the whole handle (Karbilá'í-‘Alí); never strip them. Use the most-used handle (Quddús, Vaḥíd, the Báb). The COMMON-REFERENCE / prominence prior applies ONLY to a truly BARE name with NO qualifier anywhere in the scene, and only when consistent with the scene's facts; a local role/appositive always overrides it.
-• A pronoun ONLY when its referent is genuinely unclear from this paragraph (several people in play). Skip pronouns that are obvious. Inside quoted speech, I/We/Our = the speaker.
-• THE RUNNING IDEA — the subject, argument, or theme this passage develops, in a few words, carried forward across paragraphs. There is ALWAYS a thread to carry: for a scripture QUOTE or a doctrinal passage with no names to resolve, say what it is (whose words / which tablet, if the scene gives it) and the idea it expresses or advances, so the passage is understandable and retrievable standing alone. NEVER return an empty note — when identity and place add nothing, the running idea still does.
-
-Do NOT restate a name already written in full; do NOT resolve what is already clear; do NOT map generic phrases ("the Cause", "the Faith") as an identity; do NOT add outside knowledge or an unsupported nisba. If a reference truly cannot be resolved from context, mark it "?". Always carry at least the place/era AND the running idea.
-
-Format (compact prose for an AI reader — no rigid syntax): "@<place>, ~<era> — <only the resolutions actually needed>". Example (illustrates format only — resolve each case from ITS OWN text, never by analogy to this example): "@S̱híráz, ~1845 — "Siyyid Yaḥyá" = Siyyid Yaḥyáy-i-Dárábí (Vaḥíd); "I" (in quoted speech) = Siyyid Yaḥyáy-i-Dárábí."
+ALWAYS fill place, era, and idea — never blank; there is always a location, a time, and a thread. "resolve" MAY be [] when no name needs it.
+• place / era — the location and time in force. Inherit from STATE; change only when THIS paragraph moves. Mark era "[pin]" when stated or anchored (Báb's Declaration May 1844; His martyrdom July 1850; Naw-Rúz ≈ 21 Mar; "N years after" an epoch — compute it, e.g. 7th Naw-Rúz after the Declaration = spring 1851), else "[est]".
+• idea — the subject / argument / thread this passage develops, in a few words (whose words or which tablet, if given, plus the point). This alone makes the note useful when no name needs resolving.
+• resolve — for each bare, elided, variant, or ambiguous name/epithet, "<name> = <fuller handle>". Use ONLY a handle the paragraph, scene, or CAST supports — never invent a nisba or upgrade a name to a famous namesake. The text's own qualifier beats prominence: an "amanuensis Mírzá Aḥmad" is NOT the scholar Mírzá Aḥmad-i-Azghandí. Keep honorifics (Mírzá, Mullá, Siyyid, Ḥájí, Karbilá'í, Ustád, Áqá) — they discriminate and are sometimes the whole handle. Use the most-used handle (Quddús, Vaḥíd, the Báb). Unsure → keep as written + "?"; under-resolve rather than mis-resolve. Skip names already in full and obvious pronouns; in quoted speech I/We = the speaker.
 
 BOOK:
 ${bookMeta}
-${castSeed ? `\nMAIN CAST (book-wide who's-who — resolve a bare or variant name to the right PRINCIPAL figure even when they were introduced in a DIFFERENT chapter; honour each "≠ (not to be confused with)" distinction; a bare name = the most-prominent matching figure UNLESS the paragraph's role/place/era fits a listed alternative):\n${castSeed}` : ''}`;
+${castSeed ? `\nCAST (who's-who — resolve a bare/variant name to the right PRINCIPAL even if introduced in another chapter; honour each "≠ (not to be confused with)" distinction; a bare name = the most-prominent match UNLESS the paragraph's role/place/era fits a listed alternative):\n${castSeed}` : ''}`;
 
 // Load main-text paragraphs (+ chapter/scene labels for the TOC fast-path)
 // pid = external_para_id (OceanLibrary docs, e.g. GPB/DB) else content id (books ingested without para_NNNN
@@ -81,7 +78,16 @@ if (USE_TOC) {
 }
 console.error(`disambiguate DOC=${DOC} · ${paras.length} paras · ${segs.length} segments (${USE_TOC ? 'TOC/chapter' : 'bounded-run'}) · WRITE=${WRITE} · model=${MODEL}`);
 
-const placeEraOf = (note) => { const m = String(note).match(/@[^—|]*/); return m ? m[0].replace(/^@/, '').trim() : ''; };
+// Parse the model's JSON note; null if no valid object or no idea (→ retry). idea is required, so a
+// well-formed reply is structurally non-empty.
+function parseNote(raw) {
+  const m = String(raw).match(/\{[\s\S]*\}/); if (!m) return null;
+  try {
+    const j = JSON.parse(m[0]); if (!j.idea || !String(j.idea).trim()) return null;
+    const resolve = Array.isArray(j.resolve) ? j.resolve.filter((s) => typeof s === 'string' && s.includes('=')).map((s) => s.trim()) : [];
+    return { place: String(j.place || '').trim(), era: String(j.era || '').trim(), idea: String(j.idea).trim(), resolve };
+  } catch { return null; }
+}
 const CONC = +(process.env.CONC || 5);   // chapters processed concurrently (each chapter stays sequential internally)
 const RESUME = process.env.RESUME === '1'; // skip paragraphs already disambiguated (idempotent restart)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -89,22 +95,31 @@ const retry = async (fn, n = 5) => { let err; for (let i = 0; i < n; i++) { try 
 process.on('unhandledRejection', (e) => console.error(`unhandledRejection: ${String(e?.message || e).slice(0, 80)}`)); // never let a transient blip kill the run
 const doneSet = RESUME ? new Set((await queryAll(`SELECT COALESCE(external_para_id, 'p' || id) pid FROM content WHERE doc_id=? AND context_model='deepseek-disambig-v1' AND context IS NOT NULL`, [DOC])).map((r) => r.pid)) : new Set();
 let done = 0, failed = 0;
-// One segment (chapter) = one sequential growing cache. runPlaceEra is LOCAL so chapters can run in parallel.
+// One segment = one warm cache. STATE (place/era + a few recent name-resolves) is LOCAL and tiny, so segments run
+// in parallel AND consecutive same-scene calls share SYSTEM+SCENE+STATE (only the paragraph text varies → max cache).
 async function processSeg(seg, si) {
-  const summaries = []; let runPlaceEra = '';
+  let place = '', era = ''; const known = [];   // known = last few "name = handle" resolves (local coref, tiny → cache-cheap)
   const label = USE_TOC ? (seg[0].chapterNum || 'front-matter') : `${seg[0].pid}..${seg[seg.length - 1].pid}`;
   console.error(`== seg ${si + 1}/${segs.length} · ${label} (${seg.length} paras) start`);
   for (const p of seg) {
     if (RESUME && doneSet.has(p.pid)) continue;
     const sceneLine = USE_TOC ? `${p.chapterNum || ''}${p.chapterTitle ? ' · ' + p.chapterTitle : ''}${p.scene ? ' · ' + p.scene : ''}`.trim() : (p.heading || '');
-    const priorBlock = summaries.slice(-12).map((s) => s.line).join('\n');
-    const user = `SCENE: ${sceneLine || '(none)'}\nRUNNING PLACE/ERA (inherit unless this paragraph moves): ${runPlaceEra || '(not yet established — infer from scene)'}\n\nNOTES FOR PRECEDING PARAGRAPHS (identity established here carries forward):\n${priorBlock || '(none — first paragraph of the chapter)'}\n\nCURRENT PARAGRAPH [${p.pid}]:\n${p.text}`;
-    let out = '';
-    try { const res = await retry(() => chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 400 })); out = (res.content || '').trim().replace(/^CTX:\s*/i, ''); }
-    catch (e) { console.error(`  [${p.pid}] AI FAIL ${String(e.message).slice(0, 50)}`); failed++; continue; }
-    if (!out) { failed++; continue; }
-    summaries.push({ pid: p.pid, line: `[${p.pid}] ${out.replace(/\n/g, ' ')}` });
-    const pe = placeEraOf(out); if (pe) runPlaceEra = pe;
+    const state = `place=${place || '(open)'} · era=${era || '(open)'}${known.length ? ` · known: ${known.join('; ')}` : ''}`;
+    const user = `SCENE: ${sceneLine || '(none)'}\nSTATE (inherit place/era unless this paragraph moves): ${state}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
+    // Call + parse, retrying up to 3x: JSON is non-deterministic, so an unparseable/truncated reply almost always
+    // parses on a re-call. `idea` is required in the schema → a valid parse is structurally non-empty.
+    let parsed = null, lastRes = null;
+    for (let attempt = 0; attempt < 3 && !parsed; attempt++) {
+      let res;
+      try { res = await retry(() => chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: MAXTOK, responseFormat: { type: 'json_object' }, ...(IS_PRO ? { thinking: true } : {}) })); }
+      catch (e) { console.error(`  [${p.pid}] AI FAIL ${String(e.message).slice(0, 50)}`); break; }
+      lastRes = res; parsed = parseNote(res.content || '');
+    }
+    if (!parsed) { console.error(`  [${p.pid}] unparseable after retries [finish=${lastRes?.finishReason || '?'}]`); failed++; continue; }
+    if (parsed.place) place = parsed.place;
+    if (parsed.era) era = parsed.era;
+    if (parsed.resolve.length) { known.push(...parsed.resolve); while (known.length > 5) known.shift(); }
+    const out = `@${parsed.place || '?'}, ~${parsed.era || '?'} — ${parsed.idea}${parsed.resolve.length ? ` · ${parsed.resolve.join('; ')}` : ''}`;
     if (!WRITE) { console.log(`\n${p.pid} (${sceneLine}):\n${out}`); done++; }
     else { try { await retry(() => content.updateContextOnly(p.id, out, 'deepseek-disambig-v1')); done++; if (done % 50 === 0) console.error(`  wrote ${done}`); } catch (e) { console.error(`  [${p.pid}] WRITE FAIL ${String(e.message).slice(0, 50)}`); failed++; } }
   }
