@@ -100,6 +100,52 @@ of Qur'anic/Biblical concepts, so it lays down bridge after bridge (the "Day of 
 Imám Ḥusayn, the "seal of the prophets" → their Bahá'í meaning). The designated Interpreters (GPB) add and confirm
 more. Both kinds of bridge are authoritative; a scholarly comparison is not.
 
+## Cumulative interpretive authority — the interpretive lexicon + concept-reconcile
+
+This is the concept-level twin of the **person seed + evidence-based reconciliation**. For people we build a
+cumulative seed in authority order, then bind each mention to an entity by evidence, authority-weighted. Concepts
+work the same way, one level up — the cumulative artifact is an **interpretive lexicon**: an authority-ranked,
+*cited* map of *symbol / concept → its authoritative interpretation(s)*.
+
+| Person pipeline | Concept pipeline |
+|---|---|
+| a name mention | a symbol/metaphor occurrence (a Biblical "cloud") |
+| fuzzy candidate entities | candidate authoritative interpretations (from the lexicon) |
+| evidence = place/era/role fit | evidence = the passage's *context* fit (eschatological? about recognizing a Prophet?) |
+| authority-weighted binding (GPB > scholars) | authority-weighted binding (later/higher interpretation governs) |
+| proof span | the cited interpretation (Íqán ¶X) + the occurrence (verse Y) |
+
+**The lexicon is self-feeding, top-down.** The higher texts don't just sit above the chain — *they are
+interpretation.* The Kitáb-i-Íqán is a sustained authoritative interpretation of clouds, water, fire, resurrection,
+the "return." So **extracting concepts from the Íqán *populates* the lexicon**; *Some Answered Questions* and the
+Guardian's works add and refine. The lexicon **grows top-down and is spent bottom-up** — exactly as the person seed
+grows as books are processed. This is *why the top-down order is load-bearing*: it is not only "authority governs,"
+it is **the lexicon must accumulate before the symbols that draw on it are extracted.** Read the Bible first and the
+lexicon is empty — you get only the literal story.
+
+**Worked example — "clouds."** Processing the Íqán yields a lexicon entry: *"Bahá'u'lláh (Íqán ¶X) interprets 'the
+clouds of heaven' = that which veils people from recognizing the Manifestation — the abrogation of former laws,
+human limitations, the denials of literalist clergy"* (top authority, proof-gated). Much later, processing Matthew
+24 ("the Son of Man coming on the clouds of heaven"), the extractor — lexicon in its cached prefix — **recalls** that
+interpretation, checks the **context** (eschatological, the advent of the awaited One — it fits), and **binds** the
+occurrence to the authoritative metaphorical meaning, cited both ways. The literal cloud is kept; the conceptual
+layer is *added*, attributed to Bahá'u'lláh — and the Biblical, Qur'anic, and Bahá'í occurrences of "the clouds"
+connect through one concept.
+
+**Guards (the concept-namesake discipline — same failure mode as person over-binding):**
+- **Context-fit, not surface-match.** A weather "cloud," or "a cloud of witnesses," is NOT the eschatological "clouds." Local evidence overrides, exactly as "Mírzá Aḥmad the amanuensis" overrides the famous scholar.
+- **Cited interpretation only.** A lexicon entry must be a *real*, proof-backed interpretation from an actual authority — never AI-invented meaning (the proof-span gate, for interpretation).
+- **Literal + metaphorical are distinct, attributed layers.** Never overwrite the story; *add* the interpretive layer, labeled with its authority. A literal reader still gets the plain text.
+- **"Possible," not forced — under-bind.** The metaphor should have *possible* conceptual power: the binding is a candidate the authority *opens*, surfaced when the evidence fits, left un-bound when ambiguous. Under-bind rather than mis-bind.
+
+**New stages this implies** (the twins of `cast-seed` + `reconcile.mjs`):
+1. an **interpretive-lexicon seed** — cumulative, authority-ranked, cited, in the stable cached prefix — *populated by* extracting the higher texts;
+2. a **concept-reconcile** step that binds symbol-occurrences in lower texts to lexicon interpretations by evidence + authority, proof-gated, keeping literal and metaphorical as separate layers.
+
+Most lexicon entries come from the **Manifestations themselves** (the Íqán is the single richest source of symbol
+interpretations); the designated Interpreters layer on top. This is what lets a Bahá'í-centric interfaith library
+read Genesis and Isaiah *in the light of* the authoritative interpretation, not merely as literal story.
+
 ## How this makes HyPE + context better (the concept-seed)
 
 The disambiguation *context* is the carrier that per-paragraph HyPE reads. Today it carries place/era/who; for
@@ -121,5 +167,8 @@ cast-seed): a first pass yields (a) the concept glossary → the stable cached p
 
 Not yet built — a deliberate separate effort. Prerequisites before any concept extraction: the Guardian's
 interpretive works (Dispensation/World Order first) must be in the corpus and seeded, since they head the chain.
-Next groundwork: inventory which of Shoghi Effendi's and 'Abdu'l-Bahá's authoritative works are present, then
-build the concept-seed pass + concept-carrying disambiguation variant + concept reconciliation, in authority order.
+Components to build, in authority order:
+1. the **interpretive-lexicon seed** — cumulative, authority-ranked, cited (the concept twin of `cast-seed`);
+2. the **concept-carrying disambiguation** variant (carries the running argument + the lexicon so concept back-references resolve);
+3. **concept extraction** — concept entities + interpretation-claims (this is what *populates* the lexicon from the higher texts);
+4. **concept-reconcile** — evidence-based, authority-weighted binding of symbol-occurrences to lexicon interpretations, proof-gated, literal + metaphorical kept as separate layers (the concept twin of `reconcile.mjs`).
