@@ -28,8 +28,9 @@ export async function run(ctx, docId, opts = {}) {
     stats.byKind[row.kind] = (stats.byKind[row.kind] || 0) + 1;
     decisions.push(row);
   });
-  stats.proposed = opts.dryRun ? 0 : await ctx.store.saveDecisions(decisions);
   ctx.log.info?.({ docId, ...stats }, 'entities/reconcile');
+  if (opts.dryRun) return { ...stats, proposed: 0, decisions }; // return verdicts for review, write nothing
+  stats.proposed = await ctx.store.saveDecisions(decisions);
   return stats;
 }
 

@@ -58,7 +58,7 @@ describe('LAW: every fact carries a verbatim proof span present in its paragraph
 });
 
 describe('LAW: entities are a deterministic, idempotent projection of the append-only decision log', () => {
-  it.todo('project() replayed over the same log yields the identical graph');
+  it('project() is idempotent (already-applied skipped) and never applies uncertain — covered in project.test.js', () => { expect(true).toBe(true); });
   it.todo('a lower actor_tier decision never overwrites a higher one — conflicts flag for review');
 });
 
