@@ -100,6 +100,14 @@ export function makeStore() {
       catch { return ''; }
     },
 
+    // Resolved names that already carry a reconcile decision — so a resumed batch skips them (idempotent).
+    async getDecidedClusterNames() {
+      const rows = await db.queryAll(`SELECT payload FROM entity_decisions WHERE target_kind='mention-cluster'`);
+      const s = new Set();
+      for (const r of rows) { try { const p = JSON.parse(r.payload || '{}'); const n = p.resolvedAs ?? p.resolved_as; if (n) s.add(n); } catch { /* */ } }
+      return s;
+    },
+
     // Mention-clusters for reconcile: distinct resolved names in the book with frequency + the paragraphs
     // they occur in. Skips unresolved '?' and non-id roster markers.
     async getMentionClusters(docId, { minFreq = 1, filter, limit } = {}) {

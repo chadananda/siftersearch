@@ -54,6 +54,7 @@ export function memStore(seed = {}) {
     saveClaims: async (rows) => { claims.push(...rows); return rows.length; },
     getDisambigCoverage: async (id) => seed.coverage?.[id] ?? 1,
     getMentionClusters: async (id) => seed.clusters?.[id] || [],
+    getDecidedClusterNames: async () => new Set(seed.decided || []),
     findCandidateEntities: async (name) => (typeof seed.candidates === 'function' ? seed.candidates(name) : seed.candidates || []),
     getScenes: async (id, paraIds) => seed.scenes || paraIds.map((pid) => ({ pid, context: '' })),
     saveDecisions: async (rows) => { decisions.push(...rows); return rows.length; },

@@ -12,7 +12,12 @@ import { pool } from '../kernel/run.js';
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
   const profile = await profileFor(ctx, docId);
-  const clusters = await ctx.store.getMentionClusters(docId, { minFreq: opts.minFreq ?? 1, filter: opts.filter, limit: opts.limit });
+  let clusters = await ctx.store.getMentionClusters(docId, { minFreq: opts.minFreq ?? 1, filter: opts.filter });
+  if (opts.resume) {                              // skip clusters that already have a decision (idempotent batches)
+    const decided = await ctx.store.getDecidedClusterNames(docId);
+    clusters = clusters.filter((c) => !decided.has(c.resolvedAs));
+  }
+  if (opts.limit) clusters = clusters.slice(0, opts.limit);   // apply the batch cap AFTER resume-filtering
   const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };
   const stats = { clusters: clusters.length, adjudicated: 0, failed: 0, escalated: 0, proposed: 0, byKind: {} };
 
