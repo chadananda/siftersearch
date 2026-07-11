@@ -141,8 +141,9 @@ async function processSeg(seg, si) {
     }
     if (!parsed) { console.error(`  [${p.pid}] unparseable after ladder [finish=${lastRes?.finishReason || '?'}]`); failed++; continue; }
     // Validation gate (your proof_ok doctrine): a resolved name's LHS must appear verbatim in the passage,
-    // else the model invented it → drop that resolution. Language-agnostic (LHS is the source-script name).
-    if (parsed.resolve.length) {
+    // else the model invented it → drop that resolution. ONLY for Latin-script docs: on non-Latin source the
+    // model often transliterates the LHS to Latin (legit), which wouldn't match the source script → false drop.
+    if (parsed.resolve.length && profile.script === 'latin') {
       const kept = parsed.resolve.filter((r) => { const lhs = r.split('=')[0].trim().replace(/^["'“”]+|["'“”]+$/g, ''); return lhs.length < 2 || p.text.includes(lhs); });
       invalidDropped += parsed.resolve.length - kept.length; parsed.resolve = kept;
     }
