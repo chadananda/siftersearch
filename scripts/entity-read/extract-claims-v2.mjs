@@ -16,10 +16,21 @@ const BATCH = process.env.BATCH || (DOC === 21310 ? 'gpb-v2' : 'db-v2');
 const WRITE = process.env.WRITE === '1';
 const CONC = +(process.env.CONC || 5);
 const LIMIT = process.env.LIMIT ? +process.env.LIMIT : 0;
-const MODEL = process.env.MODEL || 'deepseek-chat';
 const MV = 'deepseek-disambig-v1';
 const EV = 'extract-v2';
 await assertDisambiguated(DOC);
+// Multilingual model routing (flash En/Ar/He, haiku Farsi) + escalation ladder, same as disambig/hype.
+const { detectProfile, providerOf } = await import('../../api/lib/pipeline/profile.js');
+const _meta = (await queryAll(`SELECT id, title, author, religion, collection FROM docs WHERE id=?`, [DOC]))[0] || { id: DOC };
+const _sample = (await queryAll(`SELECT text FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(text)>200 ORDER BY paragraph_index LIMIT 1`, [DOC]))[0]?.text || '';
+const profile = detectProfile(_meta, _sample);
+const MODEL = process.env.MODEL || profile.models.extract;
+const PROVIDER = providerOf(MODEL);
+const FALLBACK = process.env.FALLBACK || profile.fallback;
+const FALLBACK_PROVIDER = providerOf(FALLBACK);
+const isPro = (m) => /pro/.test(m);
+const maxTokFor = (m) => +(process.env.MAXTOK || (isPro(m) ? 6000 : 3000)); // extraction output is large; continuation handles any overflow beyond this
+console.error(`extract profile: lang=${profile.lang} genre=${profile.genre} · model=${MODEL} (${PROVIDER}) → fallback=${FALLBACK}`);
 
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
 const proofNrm = (s) => String(s || '').replace(/\s+/g, ' ').toLowerCase().trim();
@@ -39,7 +50,8 @@ if (process.env.PIDMIN) { const lo = +process.env.PIDMIN, hi = +(process.env.PID
 if (LIMIT) paras = paras.slice(0, LIMIT);
 console.error(`extract-claims DOC=${DOC} BATCH=${BATCH} · ${paras.length} disambiguated paras · WRITE=${WRITE}`);
 
-const SYS = `Extract cited biographical CLAIMS from ONE paragraph of a historical narrative. You get the paragraph and a NOTE that resolves who-is-who and the place/era. For each NAMED PERSON, list the factual claims the paragraph ASSERTS about them.
+const LANG_NAME = { en: 'English', fa: 'Persian', ar: 'Arabic', he: 'Hebrew' };
+const SYS = `Extract cited biographical CLAIMS from ONE paragraph of a historical narrative. You get the paragraph and a NOTE that resolves who-is-who and the place/era. For each NAMED PERSON, list the factual claims the paragraph ASSERTS about them.${profile.lang !== 'en' ? `\nThe paragraph is in ${LANG_NAME[profile.lang] || profile.lang}; the NOTE is English. Write subject / relation / object / statement in ENGLISH (canonical names from the NOTE) — but the "proof" span must be copied VERBATIM from the ${LANG_NAME[profile.lang] || profile.lang} paragraph (it stays in ${LANG_NAME[profile.lang] || profile.lang}).` : ''}
 Rules:
 • subject = the person's resolved canonical name FROM THE NOTE (never a bare pronoun).
 • relation = the single best-fitting key from RELATIONS (below); if none fits well use "related-to".
@@ -51,19 +63,49 @@ Rules:
 RELATIONS: ${relList}
 Return ONLY JSON: {"claims":[{"subject":"..","relation":"..","object":"..","proof":"..","when":".."}]}`;
 
-let done = 0, written = 0, dropped = 0, failed = 0;
+let done = 0, written = 0, dropped = 0, failed = 0, escalations = 0, continued = 0;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const retry = async (fn, n = 4) => { let e; for (let i = 0; i < n; i++) { try { return await fn(); } catch (x) { e = x; await sleep(600 * (i + 1)); } } throw e; };
 process.on('unhandledRejection', (e) => console.error(`unhandledRejection: ${String(e?.message || e).slice(0, 80)}`));
 
+async function callExtract(model, provider, user) {
+  const opts = { provider, model, temperature: 0, maxTokens: maxTokFor(model) };
+  if (provider === 'deepseek') { opts.responseFormat = { type: 'json_object' }; if (isPro(model)) opts.thinking = true; }
+  return chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], opts);
+}
+// Tolerant parse: pull COMPLETE flat claim objects even out of a JSON array truncated mid-stream (finish=length).
+function parseClaims(raw) {
+  const out = []; for (const o of (String(raw).match(/\{[^{}]*\}/g) || [])) { try { const j = JSON.parse(o); if (j && (j.subject || j.proof)) out.push(j); } catch { /* partial */ } }
+  return out;
+}
+// Extract with CONTINUATION-ON-TRUNCATION (dense genealogies emit more claims than one call can hold → keep going
+// until the model finishes cleanly) + escalation to the fallback model. Captures arbitrarily dense paragraphs.
+async function extractAll(baseUser) {
+  const ladder = MODEL === FALLBACK ? [[MODEL, PROVIDER]] : [[MODEL, PROVIDER], [FALLBACK, FALLBACK_PROVIDER]];
+  for (const [m, prov] of ladder) {
+    const claims = [], seen = new Set(); let user = baseUser, complete = false;
+    for (let cont = 0; cont < 5; cont++) {
+      let res; try { res = await retry(() => callExtract(m, prov, user)); } catch (e) { break; }
+      let added = 0;
+      for (const c of parseClaims(res.content || '')) { const k = `${c.subject}|${c.relation}|${c.object}`; if (!seen.has(k)) { seen.add(k); claims.push(c); added++; } }
+      if (res.finishReason !== 'length') { complete = true; break; }   // model closed the JSON → done
+      if (added === 0) break;                                          // truncated but no new claims → give up
+      continued++;                                                     // truncated with progress → ask for the rest
+      user = baseUser + `\n\nYou already listed these (do NOT repeat them): ${[...seen].slice(-50).join(' ; ')}\nContinue with the REMAINING claims ONLY, as JSON {"claims":[...]}.`;
+    }
+    if (complete || claims.length) return { claims, escalated: m !== MODEL };
+  }
+  return { claims: [], escalated: false };
+}
+
 async function processPara(p) {
   const era = eraOf(p.context);
-  const user = `NOTE: ${p.context}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
-  let r;
-  try { const res = await retry(() => chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 900, responseFormat: { type: 'json_object' } })); r = JSON.parse((res.content || '').match(/\{[\s\S]*\}/)[0]); }
-  catch (e) { console.error(`  [${p.pid}] FAIL ${String(e.message).slice(0, 40)}`); failed++; return; }
+  const baseUser = `NOTE: ${p.context}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
+  const { claims, escalated } = await extractAll(baseUser);
+  if (!claims.length) { failed++; return; }
+  if (escalated) escalations++;
   const textN = proofNrm(p.text);
-  for (const c of (r.claims || [])) {
+  for (const c of claims) {
     done++;
     if (!c.subject || !c.relation || !c.proof) { dropped++; continue; }
     const proofOk = proofNrm(c.proof).length > 8 && textN.includes(proofNrm(c.proof).slice(0, 120));
@@ -92,5 +134,5 @@ async function processPara(p) {
 let next = 0;
 async function worker() { while (next < paras.length) { const i = next++; try { await processPara(paras[i]); } catch (e) { console.error(`para ${i} crash ${String(e.message).slice(0, 50)}`); } if (WRITE && written && written % 200 === 0) console.error(`  written ${written}`); } }
 await Promise.all(Array.from({ length: Math.min(CONC, paras.length) }, worker));
-console.error(`\nDONE — ${done} candidate claims · ${written} written · ${dropped} dropped (no/failed proof) · ${failed} para-fails`);
+console.error(`\nDONE — ${done} candidate claims · ${written} written · ${dropped} dropped (no/failed proof) · ${failed} para-fails · ${continued} continuation calls (dense paras) · ${escalations} escalated to ${FALLBACK}`);
 process.exit(0);

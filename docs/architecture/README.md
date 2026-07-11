@@ -203,6 +203,8 @@ Jafar chat agent wraps all of this in a tool-using research loop. → [06](06-re
 | [08 — Operations & stability](08-operations-and-stability.md) | Convergent pipelines, the failure modes and their fixes, tiered AI providers, monitoring and proof, deployment. |
 | [09 — Appendix: schema & config](09-appendix-schema-and-config.md) | Full table schemas, the model registry, thresholds, environment configuration. |
 | [Unified enrichment pipeline (v2)](unified-enrichment-pipeline.md) | **New 2026-07-10.** The one gated orchestrator (`doc_pipeline` state, migration 89) that replaced the six always-on enrichment/entity workers — enforces DISAMBIGUATE → {HyPE ∥ EXTRACT} → RECONCILE per book, in authority order. |
+| [Historical Track](history-track.md) | **New 2026-07-11.** One of the two extraction pipelines: the *factual* layer (person/tablet/event, cited + proof-gated), ordered by source authority (primary/eyewitness before 3rd-party), multilingual + continuation-robust (Momen's genealogies). |
+| [Conceptual Track](conceptual-track.md) | **New 2026-07-11 (design).** The parallel pipeline: *organizing doctrine* — a concept ontology (keystone: the Dispensation) + `concept` entities, seeded top-down by interpretive authority (Shoghi Effendi → 'Abdu'l-Bahá → Bahá'u'lláh → …). |
 
 ### Going deeper
 
