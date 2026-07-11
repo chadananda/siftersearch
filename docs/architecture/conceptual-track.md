@@ -53,8 +53,8 @@ that draw on it are extracted. Read the Bible first and the lexicon is empty —
 ## 4. The seed order (top-down by interpretive authority)
 
 The order exists to build the lexicon correctly — highest authority first, so every lower layer resolves against
-the interpretation that governs it. Priorities beyond this doctrinal spine (the histories, other traditions at
-scale) are set in `api/lib/pipeline/profile.js`.
+the interpretation that governs it. Beyond this doctrinal spine, the histories and the other traditions at scale
+follow the same authority principle.
 
 **Shoghi Effendi → 'Abdu'l-Bahá → Bahá'u'lláh → the Báb → Shaykhí → Imáms → Qur'án → New Testament → Tanakh**
 
@@ -95,13 +95,13 @@ the concept-level equivalent of extracting entities before disambiguation.
   `Interpreter` (only gettable from the Dispensation); concepts get their canonical meaning fixed at the top.
 - **GPB = the concept skeleton, at cited-claim granularity.** GPB breaking the Íqán into *N specific assertions*
   (not "the Íqán is about faith") sets the bar: concepts live at the specificity of a **cited doctrinal
-  assertion**. Those assertions become **`entity_claims`**, each linking a `work` → a `concept` → a specific
-  teaching, proof-gated. **The concepts are the entities; the assertions are the claims** — the existing
-  claim/entity model applied to the `concept` type.
+  assertion**. Each assertion becomes a **cited claim** linking a work → a concept → a specific teaching,
+  proof-gated. **The concepts are the entities; the assertions are the claims** — the same claim-and-entity
+  model, applied to concepts.
 
-## 6. Binding the lower texts: concept-reconcile
+## 6. Binding the lower texts: concept reconciliation
 
-The lexicon is *spent* here — the twin of `reconcile.mjs`. A symbol/metaphor occurrence in a lower text is
+The lexicon is *spent* here — the concept twin of person reconciliation. A symbol/metaphor occurrence in a lower text is
 bound to its authoritative meaning by evidence + authority, proof-gated.
 
 **Worked example — "clouds."** Extracting the Íqán yields a lexicon entry: *"Bahá'u'lláh (Íqán ¶X) interprets
@@ -115,9 +115,21 @@ occurrences of "the clouds" connect through one concept.
 
 A concept accumulates an **authority-ranked set of developments**, radiating from the authoritative core (GPB's
 characterization → the Íqán's development → other tablets → secondary works → antecedents, each weighted by
-source authority; lower ones fill gaps and link, never override). Cross-tradition concepts stay **distinct
-entities, linked** — and many bridges are drawn by the **Manifestations themselves** (the Íqán *is* a
-reinterpretation of Qur'anic/Biblical concepts). Both kinds of bridge are authoritative; a scholarly comparison is not.
+source authority; lower ones fill gaps and link, never override).
+
+**Interfaith linking — connect the analogous, not just the identical.** Because this is an interfaith library,
+concept entities should reference their **analogues across traditions even when the terminology is completely
+different** — the Primal Will / the Logos / the First Intellect / the Breath of the Merciful; *faná'* / dying to
+self; the living waters / the water of life. Two kinds of link serve this, and they are typed differently:
+- **Authoritative bridges** — an authority *explicitly* connects them (the Íqán *is* a reinterpretation of
+  Qur'anic/Biblical concepts, so the Manifestations themselves draw most of these), proof-gated.
+- **Analogical links** — a family resemblance across traditions, marked *similar/analogous*, **never asserting
+  exact identity**: the entities stay **distinct**, each keeping its own tradition's meaning, but connected for
+  discovery.
+
+The payoff is the point of an interfaith library: a reader can **query one concept across religions** — ask about
+"the Word," "grace," or "the Covenant" and reach the corresponding concept in each tradition, in that tradition's
+own terms. (English-canonical concept naming makes this query natural across the whole multilingual corpus.)
 
 **Guards (the concept-namesake discipline — same failure mode as person over-binding):**
 - **Context-fit, not surface-match.** A weather "cloud," or "a cloud of witnesses," is NOT the eschatological "clouds." Local evidence overrides.
@@ -145,8 +157,8 @@ enumeration, not an AI guess.
 
 Not yet built — a deliberate separate effort. Prerequisite: the Guardian's works (in the §4 internal order) must
 be in the corpus and seeded, since they head the chain. Components, in authority order:
-1. the **interpretive-lexicon seed** — cumulative, authority-ranked, cited (the concept twin of `cast-seed`);
+1. the **interpretive-lexicon seed** — cumulative, authority-ranked, cited (the concept twin of the person seed);
 2. the **concept-carrying disambiguation** variant (carries the running argument + the lexicon);
 3. **concept extraction** — concept entities + interpretation-claims (this *populates* the lexicon from the higher texts);
-4. **concept-reconcile** — evidence-based, authority-weighted binding of symbol-occurrences to lexicon
-   interpretations, proof-gated, literal + metaphorical kept as separate layers (the twin of `reconcile.mjs`).
+4. **concept reconciliation** — evidence-based, authority-weighted binding of symbol-occurrences to lexicon
+   interpretations, proof-gated, literal + metaphorical kept as separate layers (the concept twin of person reconciliation).

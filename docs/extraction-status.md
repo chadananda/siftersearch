@@ -8,11 +8,11 @@
 
 | Stage | Status |
 |---|---|
-| **Pipeline infrastructure** | ✅ Built — the six legacy always-on workers retired; one gated orchestrator (`doc_pipeline` state) replaces them. Multilingual model routing + escalation + continuation-robustness in place. |
+| **Pipeline infrastructure** | ✅ Built — the six legacy always-on workers retired; one gated, ordered orchestrator replaces them. Multilingual model routing + escalation + continuation-robustness in place. |
 | **Disambiguation (wave-1)** | ✅ Done — GPB, Dawn-Breakers, all 4 Revelation of Bahá'u'lláh volumes, Gate of the Heart, Child of the Covenant, The Covenant. ~99% coverage after the JSON-prompt + dense-paragraph fixes. |
 | **HyPE (wave-1)** | 🔄 Running — English questions generated per paragraph for search. |
 | **Historical extraction** | ⏳ Upgraded, not yet validated — multilingual + escalation + continuation + English-canonical output. Next: validate on an English book, then the Persian Ẓuhúru'l-Ḥaqq. |
-| **`reconcile.mjs`** | ⏳ To build — evidence-based person resolution (merge/split). |
+| **Reconciliation** | ⏳ To build — evidence-based person resolution (merge/split). |
 | **Conceptual track** | ⏳ Not started — design complete; prerequisite is seeding the Guardian's interpretive works (Dispensation first). |
 
 ---
@@ -42,5 +42,5 @@
 
 1. Validate the upgraded historical extractor on an English wave-1 book (confirm continuation + proof-gating).
 2. Then run it on the Persian Ẓuhúru'l-Ḥaqq (confirm haiku routing + English claims + verbatim Persian proof).
-3. Build `reconcile.mjs` and resolve the wave-1 person graph.
+3. Build the reconciliation stage and resolve the wave-1 person graph.
 4. Roll the historical track outward through the priority tiers.

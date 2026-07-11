@@ -18,7 +18,7 @@ criterion, deliberately distinct from the *interpretive* authority that governs 
 'Abdu'l-Bahá's authority is supreme, but *Memorials of the Faithful* as a **text** is Sohrab's notes from oral
 story-telling rendered into English — it can carry transcription, translation, and memory errors — so for
 *fact* extraction it ranks *below* the rigorously-edited scholars. The graph is anchored by the most reliable
-texts first; looser ones resolve *against* them. Priorities live in `api/lib/pipeline/profile.js` `PROFILE_OVERRIDES`.
+texts first; looser ones resolve *against* them.
 
 | Tier | Works (doc_id) | why |
 |---|---|---|
@@ -33,31 +33,33 @@ one canonical per work before running.
 ## Pipeline
 
 ```
-disambiguate-book.mjs   →  build-mentions.mjs  →  extract-claims-v2.mjs  →  reconcile.mjs (to build)
-(place/era/who, multiling)  (mentions, entity_id     (cited biographical claims,      (evidence-based
-                             DEFERRED)                 proof-gated, English-canonical)   person resolution)
+Disambiguate   →   Extract mentions   →   Extract cited claims    →   Reconcile
+(place/era/who,     (each reference to      (cited biographical claims,   (evidence-based person
+ multilingual)       a person/work, its      proof-gated,                  resolution; to build)
+                     identity left deferred)  English-canonical)
 ```
 
-Gated: extraction requires `assertDisambiguated`. Runs in priority order; `person`-heavy books get the full
-pass, doctrinal books (Gate of the Heart) drop out (they belong to the Conceptual Track).
+Gated: extraction runs only on text that has already been disambiguated. Processed in priority order;
+person-heavy books get the full pass, doctrinal books (Gate of the Heart) drop out — they belong to the
+Conceptual Track.
 
-## Key mechanisms (all live in the stage scripts)
+## Key mechanisms
 
 - **Multilingual model routing** — flash for English/Arabic/Hebrew (proven, cheapest); **haiku for Persian**
   (flash fails silently on it). Escalation ladder primary→fallback self-heals a passage the cheap model can't parse.
 - **Continuation-on-truncation** — the answer to Momen's biblical-genealogy paragraphs: when a single extraction
-  call returns `finish=length`, the extractor issues continuation calls ("continue with the remaining claims,
+  call's output is truncated, the extractor issues continuation calls ("continue with the remaining claims,
   don't repeat") until the model closes cleanly. Captures *arbitrarily* dense paragraphs without shrinking output.
-- **English-canonical output over source text** — subject/relation/object/statement are English (unifying the
-  multilingual corpus into ONE entity graph: Persian وحید → "Vaḥíd"); the **proof span stays verbatim in the
-  source language** (the proof-gate checks it against the source paragraph).
+- **English-canonical output over source text** — a claim's subject, relation, and object are written in English
+  (unifying the multilingual corpus into ONE entity graph: Persian وحید → "Vaḥíd"); the **proof span stays
+  verbatim in the source language** (the proof gate checks it against the source paragraph).
 - **Proof gate** — every claim carries a verbatim proof-span present in the paragraph, else dropped (no anonymous facts).
-- **Deferred binding** — `entity_id`/`target_entity_id` are a projection set by evidence-based reconcile, never
-  by literal romanization match (per the no-literal-name-binding doctrine).
+- **Deferred binding** — a claim's subject/object identities are assigned later by evidence-based reconciliation,
+  never by literal romanization match (per the no-literal-name-binding doctrine).
 
 ## Status
 
 - Disambiguation: done + hardened (multilingual, dense-para truncation fixed, ~99% coverage on wave-1).
-- Extraction (`build-mentions` + `extract-claims-v2`): upgraded with multilingual routing + escalation +
+- Extraction (the mention + cited-claim stages): upgraded with multilingual routing + escalation +
   continuation-robustness + English output. To validate on English wave-1, then the Persian Ẓuhúru'l-Ḥaqq.
-- `reconcile.mjs`: still to build (evidence-based person resolution / merge-split).
+- Reconciliation: still to build (evidence-based person resolution / merge-split).

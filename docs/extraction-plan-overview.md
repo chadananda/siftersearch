@@ -51,6 +51,8 @@ everything before him. So the seed runs **top-down**:
 - Concepts become first-class entities whose development aggregates across the whole corpus, authority-weighted —
   bound to their authoritative meaning through a cumulative, cited **interpretive lexicon** (so a Biblical
   metaphor like "clouds" carries its authoritative conceptual meaning, not just the literal story).
+- **Interfaith by design:** concepts link to their *analogues* across traditions even when the terminology differs
+  entirely (the Primal Will / the Logos / the First Intellect), so a reader can query one idea across religions.
 
 ---
 
