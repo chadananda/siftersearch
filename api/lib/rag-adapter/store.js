@@ -13,7 +13,7 @@ export function makeStore() {
     // Document metadata for profiling. Maps DB columns → the port's neutral DocMeta shape.
     async getDocMeta(docId) {
       return (await db.queryAll(
-        `SELECT id, title, author, religion, collection, year, description, lang FROM docs WHERE id=?`, [docId]
+        `SELECT id, title, author, religion, collection, year, description FROM docs WHERE id=?`, [docId]
       ))[0] || { id: docId };
     },
 

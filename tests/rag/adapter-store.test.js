@@ -33,7 +33,7 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
   });
 
   it('getDocMeta maps columns to the DocMeta shape', async () => {
-    expect(await store.getDocMeta(7)).toMatchObject({ id: 7, title: 'God Passes By', author: 'Shoghi Effendi', lang: 'en' });
+    expect(await store.getDocMeta(7)).toMatchObject({ id: 7, title: 'God Passes By', author: 'Shoghi Effendi' });
   });
 
   it('getSampleText returns a substantial, non-deleted paragraph', async () => {
