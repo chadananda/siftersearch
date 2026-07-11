@@ -65,22 +65,22 @@ const fmtShort = (n) => {
       <!-- Arrow 1 -->
       <path d="M120 60 L148 60" class="arrow-line"/>
       <polygon points="148,55 158,60 148,65" class="arrow-head"/>
-      <!-- Entity Extraction box -->
+      <!-- Disambiguation box (FIRST — gates every stage downstream) -->
       <rect x="158" y="30" width="130" height="60" rx="8" class="node-box node-step"/>
-      <text x="223" y="53" text-anchor="middle" class="node-label">Entity</text>
-      <text x="223" y="69" text-anchor="middle" class="node-label">Extraction</text>
-      <text x="223" y="84" text-anchor="middle" class="node-sublabel">(32B model)</text>
+      <text x="223" y="57" text-anchor="middle" class="node-label">Disambiguation</text>
+      <text x="223" y="76" text-anchor="middle" class="node-sublabel">(AI model)</text>
       <!-- Arrow 2 -->
       <path d="M288 60 L316 60" class="arrow-line"/>
       <polygon points="316,55 326,60 316,65" class="arrow-head"/>
-      <!-- Disambiguation box -->
+      <!-- Entity Extraction box (consumes disambiguated text) -->
       <rect x="326" y="30" width="140" height="60" rx="8" class="node-box node-step"/>
-      <text x="396" y="53" text-anchor="middle" class="node-label">Disambiguation</text>
+      <text x="396" y="53" text-anchor="middle" class="node-label">Entity</text>
+      <text x="396" y="69" text-anchor="middle" class="node-label">Extraction</text>
       <text x="396" y="84" text-anchor="middle" class="node-sublabel">(AI model)</text>
-      <!-- Arrow 3 -->
+      <!-- Arrow 3 (extraction and HyPE both build on disambiguation — shown in series for space) -->
       <path d="M466 60 L494 60" class="arrow-line"/>
       <polygon points="494,55 504,60 494,65" class="arrow-head"/>
-      <!-- HyPE box -->
+      <!-- HyPE box (also consumes disambiguated text) -->
       <rect x="504" y="30" width="140" height="60" rx="8" class="node-box node-step"/>
       <text x="574" y="53" text-anchor="middle" class="node-label">HyPE</text>
       <text x="574" y="69" text-anchor="middle" class="node-label">Questions</text>
@@ -94,8 +94,36 @@ const fmtShort = (n) => {
       <text x="766" y="69" text-anchor="middle" class="node-label">Index</text>
       <text x="766" y="84" text-anchor="middle" class="node-sublabel">(Meilisearch)</text>
     </svg>
-    <p class="diagram-caption">Figure 1. The SifterSearch enhancement pipeline. Each passage passes through entity extraction, contextual disambiguation, and hypothetical question generation before entering the enriched search index.</p>
+    <p class="diagram-caption">Figure 1. The SifterSearch enhancement pipeline. <strong>Disambiguation runs first</strong> and makes each passage self-contained; entity extraction and HyPE question generation then build on the disambiguated text — never on the raw passage — before it enters the enriched search index.</p>
   </div>
+
+  <h2>Two Passes: the Historical Record and the Conceptual Teaching</h2>
+
+  <p>
+    Disambiguation always comes first — but the enrichment that follows serves two very different kinds
+    of study, so it runs as <strong>two complementary passes over the same disambiguated text</strong>.
+    They never mix: the aims, and the order in which sources earn authority, are genuinely different.
+  </p>
+  <p>
+    <strong>The historical pass</strong> builds the factual record — who existed, who did what, when and
+    where, which texts were written. Here sources are ranked by <em>textual rigor</em>: carefully collected
+    and edited histories anchor the graph, and looser accounts (oral notes, personal diaries) are resolved
+    <em>against</em> them. It extracts people, works, and events as cited, evidence-checked entities —
+    identity is never assigned by name-matching, only by agreement of role, place, era, and connection.
+  </p>
+  <p>
+    <strong>The conceptual pass</strong> organizes the teaching — how a symbol or idea is authoritatively
+    interpreted. Here sources are ranked <em>top-down by interpretive authority</em>: the latest authorized
+    interpretation governs the reading of everything before it. It lifts concepts to first-class entities and
+    binds a metaphor (a Biblical "cloud," a "water of life") to its authoritative meaning, and — because this
+    is an interfaith library — links analogous concepts <em>across</em> traditions even when the wording is
+    completely different, so one question can reach the same idea in each tradition's own terms.
+  </p>
+  <p>
+    Both passes read the same disambiguated text, both defer identity until the evidence decides it, and both
+    are cited and proof-gated. They meet only at the end — in a shared knowledge graph where a doctrinal claim
+    can reference the very person or text the historical pass established.
+  </p>
 
   <h2>Problem 1: Context Collapses When You Index at Passage Level</h2>
 

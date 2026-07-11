@@ -1,6 +1,195 @@
 {
-  "generated": "2026-07-09T23:35:33.807Z",
+  "generated": "2026-07-11T18:15:30.455Z",
   "entries": [
+    {
+      "hash": "58f2f481",
+      "date": "2026-07-11",
+      "type": "Docs",
+      "description": "Conceptual, not plumbing — strip code filenames/tables/paths; add interfaith cross-tradition concept linking",
+      "scope": null
+    },
+    {
+      "hash": "43618d32",
+      "date": "2026-07-11",
+      "type": "Docs",
+      "description": "Human-viewable extraction plan overview + status pages",
+      "scope": null
+    },
+    {
+      "hash": "beba586f",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Multilingual + continuation-robust historical extractor; externalize history + conceptual track docs",
+      "scope": null
+    },
+    {
+      "hash": "452400ad",
+      "date": "2026-07-10",
+      "type": "Docs",
+      "description": "Adjust to unified enrichment pipeline v2 architecture",
+      "scope": null
+    },
+    {
+      "hash": "67bc84cf",
+      "date": "2026-07-10",
+      "type": "Other",
+      "description": "Don't revive deliberately-stopped background workers on deploy",
+      "scope": null
+    },
+    {
+      "hash": "24e00e33",
+      "date": "2026-07-10",
+      "type": "Other",
+      "description": "Deterministic near-dup collapse before AI analysis (+ router/pattern design doc)",
+      "scope": null
+    },
+    {
+      "hash": "15a6da2d",
+      "date": "2026-07-10",
+      "type": "Other",
+      "description": "Add retrieval_ms/analysis_ms phase timing to _timing telemetry",
+      "scope": null
+    },
+    {
+      "hash": "06c47577",
+      "date": "2026-07-10",
+      "type": "Other",
+      "description": "Halve LLM-analysis latency (one wave, faster model, drop dead Voyage path)",
+      "scope": null
+    },
+    {
+      "hash": "69bd492a",
+      "date": "2026-07-10",
+      "type": "Other",
+      "description": "Remove temp stabilization instrumentation",
+      "scope": null
+    },
+    {
+      "hash": "f79d99b1",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Provable Meili stability check (enqueued not growing + synced=0 flat + search fast → STABLE)",
+      "scope": null
+    },
+    {
+      "hash": "fb750440",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "One-time enable-binary-quantization (deliberate PATCH past the startup guard)",
+      "scope": null
+    },
+    {
+      "hash": "8c732884",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Enable Meili binaryQuantized on the vector embedders (fix slow semantic search)",
+      "scope": null
+    },
+    {
+      "hash": "ae384976",
+      "date": "2026-07-09",
+      "type": "Fixed",
+      "description": "Meili-diag route was inside a JSDoc comment (never registered)",
+      "scope": null
+    },
+    {
+      "hash": "ef996301",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "/search/meili-diag — report Meili task backlog + paragraphs index state",
+      "scope": null
+    },
+    {
+      "hash": "5599d3be",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "TEMP timing log — split hybridSearch into embed vs Meili latency",
+      "scope": null
+    },
+    {
+      "hash": "c9d2fd2e",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Deepseek-v4-flash/pro API ids are v4 (deepseek-chat V3 deprecated)",
+      "scope": null
+    },
+    {
+      "hash": "23ea288d",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Wire deepseek-v4-flash→deepseek-chat mapping + switch service tiers off OpenAI",
+      "scope": null
+    },
+    {
+      "hash": "60d248cc",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Fix vividness regex (prefix), prefer proof that names target, drop enumerating lead",
+      "scope": null
+    },
+    {
+      "hash": "780667eb",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Rank connection claims by concreteness (deprioritise vague proofs)",
+      "scope": null
+    },
+    {
+      "hash": "974cdcf9",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Steer connection-clause pick away from vague 'described/referred-to' proofs",
+      "scope": null
+    },
+    {
+      "hash": "683d5d54",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Specific, book-worded connection clauses linked to the exact cited claim",
+      "scope": null
+    },
+    {
+      "hash": "853f92ef",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Explain empty connection results instead of a blank banner",
+      "scope": null
+    },
+    {
+      "hash": "8e4643f6",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Leave group-without-target queries unscoped (sparse membership under-returns)",
+      "scope": null
+    },
+    {
+      "hash": "e3423fda",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Honest-none only when the group is the query subject; restore group scoping",
+      "scope": null
+    },
+    {
+      "hash": "a7884048",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Connection = typed target OR proof names target (object-binding is sparse)",
+      "scope": null
+    },
+    {
+      "hash": "9b078497",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Drive meaning-search off the proof-gated entity_claims substrate",
+      "scope": null
+    },
+    {
+      "hash": "46e14f50",
+      "date": "2026-07-09",
+      "type": "Other",
+      "description": "Style AI-answer citation links (:global; were invisible)",
+      "scope": null
+    },
     {
       "hash": "07ba5a4e",
       "date": "2026-07-09",
@@ -3311,199 +3500,203 @@
       "type": "Fixed",
       "description": "Extend vague-query pattern to match 'thing with the stuff' variant",
       "scope": null
-    },
-    {
-      "hash": "c1d840ec",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Vague query clarification + stronger anti-block-quote rule for inline integration",
-      "scope": null
-    },
-    {
-      "hash": "6b42c7d0",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Author companion fallback uses SQLite query instead of Meilisearch empty-title lookup",
-      "scope": null
-    },
-    {
-      "hash": "462d7563",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Prohibit formulaic tradition-listing; require thesis-first for passage queries",
-      "scope": null
-    },
-    {
-      "hash": "5808108c",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Use find_document + read_document fallback when author companion search returns empty",
-      "scope": null
-    },
-    {
-      "hash": "77e97ee8",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Semantic fallback for author catalog companion search when author filter returns empty",
-      "scope": null
-    },
-    {
-      "hash": "1c74182d",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Route 'find passages about X' as evidence query (inline fragments, not block quotes) + dual search",
-      "scope": null
-    },
-    {
-      "hash": "6e46a5b3",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Narrow multi-tradition routing rule to explicit comparison queries only",
-      "scope": null
-    },
-    {
-      "hash": "95261ca8",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Route 'show me books by X' through catalog path + multi-tradition routing rule",
-      "scope": null
-    },
-    {
-      "hash": "bc1de1b8",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Avoid linking catalog titles when all share same collection URL (e.g. UHJ letters)",
-      "scope": null
-    },
-    {
-      "hash": "6dbf1e9c",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Force catalog companion quote via Q-entry directive and mandatory step reminder",
-      "scope": null
-    },
-    {
-      "hash": "41a5d243",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Catalog companion quote mandatory; bare-name author routing; reading framing",
-      "scope": null
-    },
-    {
-      "hash": "34aaf76d",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Author catalog crafter must quote prose, not just list titles",
-      "scope": null
-    },
-    {
-      "hash": "3ab4e562",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Jain religion filter — dont substitute other traditions; strengthen browsing rule",
-      "scope": null
-    },
-    {
-      "hash": "7b4a9c4e",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Author catalog + browsing must include passages, not just catalog listing",
-      "scope": null
-    },
-    {
-      "hash": "41217641",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Revert vague-query crafter rule — ruins citation scores; keep Buddhism fix",
-      "scope": null
-    },
-    {
-      "hash": "f9162bea",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Broad tradition overview + vague query clarification + backfill-slugs script",
-      "scope": null
-    },
-    {
-      "hash": "10a998ce",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Remove siftersearch.com/document fallback URLs — data quality, not a fallback",
-      "scope": null
-    },
-    {
-      "hash": "b9f9e7cd",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "HarvestExcerpts fallback URL now includes #p{paragraph_index} anchor",
-      "scope": null
-    },
-    {
-      "hash": "afd9c32b",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Research phase uses multiple searches for broad tradition overview queries",
-      "scope": null
-    },
-    {
-      "hash": "eacd453c",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Reading requests use search(mode=read) not read_document_for_question",
-      "scope": null
-    },
-    {
-      "hash": "2395b1d4",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Crafter inline quote quality — CASE 1 block quotes override 20-word rule",
-      "scope": null
-    },
-    {
-      "hash": "7411afee",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Religion/author/collection filters now pass through keywordSearch to Meilisearch",
-      "scope": null
-    },
-    {
-      "hash": "473200c2",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Fuzzy matching — strip Latin diacritics + include text_grounded in hasAllTermMatches",
-      "scope": null
-    },
-    {
-      "hash": "fca15446",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Add text_grounded to unified-worker meiliDoc payload",
-      "scope": null
-    },
-    {
-      "hash": "7c101be0",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "PARA_BATCH_SIZE 100→1000 — process all doc rows in one inner loop pass",
-      "scope": null
-    },
-    {
-      "hash": "99dcf11a",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "GetDocsWithDirtyParagraphs — ORDER BY max updated_at DESC",
-      "scope": null
-    },
-    {
-      "hash": "90a90ee5",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "GetDirtyParagraphsBatch — ORDER BY updated_at DESC + text_grounded",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-07-11": [
+      {
+        "hash": "58f2f481",
+        "date": "2026-07-11",
+        "type": "Docs",
+        "description": "Conceptual, not plumbing — strip code filenames/tables/paths; add interfaith cross-tradition concept linking",
+        "scope": null
+      },
+      {
+        "hash": "43618d32",
+        "date": "2026-07-11",
+        "type": "Docs",
+        "description": "Human-viewable extraction plan overview + status pages",
+        "scope": null
+      },
+      {
+        "hash": "beba586f",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Multilingual + continuation-robust historical extractor; externalize history + conceptual track docs",
+        "scope": null
+      }
+    ],
+    "2026-07-10": [
+      {
+        "hash": "452400ad",
+        "date": "2026-07-10",
+        "type": "Docs",
+        "description": "Adjust to unified enrichment pipeline v2 architecture",
+        "scope": null
+      },
+      {
+        "hash": "67bc84cf",
+        "date": "2026-07-10",
+        "type": "Other",
+        "description": "Don't revive deliberately-stopped background workers on deploy",
+        "scope": null
+      },
+      {
+        "hash": "24e00e33",
+        "date": "2026-07-10",
+        "type": "Other",
+        "description": "Deterministic near-dup collapse before AI analysis (+ router/pattern design doc)",
+        "scope": null
+      },
+      {
+        "hash": "15a6da2d",
+        "date": "2026-07-10",
+        "type": "Other",
+        "description": "Add retrieval_ms/analysis_ms phase timing to _timing telemetry",
+        "scope": null
+      },
+      {
+        "hash": "06c47577",
+        "date": "2026-07-10",
+        "type": "Other",
+        "description": "Halve LLM-analysis latency (one wave, faster model, drop dead Voyage path)",
+        "scope": null
+      },
+      {
+        "hash": "69bd492a",
+        "date": "2026-07-10",
+        "type": "Other",
+        "description": "Remove temp stabilization instrumentation",
+        "scope": null
+      }
+    ],
     "2026-07-09": [
+      {
+        "hash": "f79d99b1",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Provable Meili stability check (enqueued not growing + synced=0 flat + search fast → STABLE)",
+        "scope": null
+      },
+      {
+        "hash": "fb750440",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "One-time enable-binary-quantization (deliberate PATCH past the startup guard)",
+        "scope": null
+      },
+      {
+        "hash": "8c732884",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Enable Meili binaryQuantized on the vector embedders (fix slow semantic search)",
+        "scope": null
+      },
+      {
+        "hash": "ae384976",
+        "date": "2026-07-09",
+        "type": "Fixed",
+        "description": "Meili-diag route was inside a JSDoc comment (never registered)",
+        "scope": null
+      },
+      {
+        "hash": "ef996301",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "/search/meili-diag — report Meili task backlog + paragraphs index state",
+        "scope": null
+      },
+      {
+        "hash": "5599d3be",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "TEMP timing log — split hybridSearch into embed vs Meili latency",
+        "scope": null
+      },
+      {
+        "hash": "c9d2fd2e",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Deepseek-v4-flash/pro API ids are v4 (deepseek-chat V3 deprecated)",
+        "scope": null
+      },
+      {
+        "hash": "23ea288d",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Wire deepseek-v4-flash→deepseek-chat mapping + switch service tiers off OpenAI",
+        "scope": null
+      },
+      {
+        "hash": "60d248cc",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Fix vividness regex (prefix), prefer proof that names target, drop enumerating lead",
+        "scope": null
+      },
+      {
+        "hash": "780667eb",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Rank connection claims by concreteness (deprioritise vague proofs)",
+        "scope": null
+      },
+      {
+        "hash": "974cdcf9",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Steer connection-clause pick away from vague 'described/referred-to' proofs",
+        "scope": null
+      },
+      {
+        "hash": "683d5d54",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Specific, book-worded connection clauses linked to the exact cited claim",
+        "scope": null
+      },
+      {
+        "hash": "853f92ef",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Explain empty connection results instead of a blank banner",
+        "scope": null
+      },
+      {
+        "hash": "8e4643f6",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Leave group-without-target queries unscoped (sparse membership under-returns)",
+        "scope": null
+      },
+      {
+        "hash": "e3423fda",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Honest-none only when the group is the query subject; restore group scoping",
+        "scope": null
+      },
+      {
+        "hash": "a7884048",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Connection = typed target OR proof names target (object-binding is sparse)",
+        "scope": null
+      },
+      {
+        "hash": "9b078497",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Drive meaning-search off the proof-gated entity_claims substrate",
+        "scope": null
+      },
+      {
+        "hash": "46e14f50",
+        "date": "2026-07-09",
+        "type": "Other",
+        "description": "Style AI-answer citation links (:global; were invisible)",
+        "scope": null
+      },
       {
         "hash": "07ba5a4e",
         "date": "2026-07-09",
@@ -6871,195 +7064,6 @@
         "date": "2026-05-17",
         "type": "Fixed",
         "description": "Extend vague-query pattern to match 'thing with the stuff' variant",
-        "scope": null
-      },
-      {
-        "hash": "c1d840ec",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Vague query clarification + stronger anti-block-quote rule for inline integration",
-        "scope": null
-      },
-      {
-        "hash": "6b42c7d0",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Author companion fallback uses SQLite query instead of Meilisearch empty-title lookup",
-        "scope": null
-      },
-      {
-        "hash": "462d7563",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Prohibit formulaic tradition-listing; require thesis-first for passage queries",
-        "scope": null
-      },
-      {
-        "hash": "5808108c",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Use find_document + read_document fallback when author companion search returns empty",
-        "scope": null
-      },
-      {
-        "hash": "77e97ee8",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Semantic fallback for author catalog companion search when author filter returns empty",
-        "scope": null
-      },
-      {
-        "hash": "1c74182d",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Route 'find passages about X' as evidence query (inline fragments, not block quotes) + dual search",
-        "scope": null
-      },
-      {
-        "hash": "6e46a5b3",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Narrow multi-tradition routing rule to explicit comparison queries only",
-        "scope": null
-      },
-      {
-        "hash": "95261ca8",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Route 'show me books by X' through catalog path + multi-tradition routing rule",
-        "scope": null
-      },
-      {
-        "hash": "bc1de1b8",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Avoid linking catalog titles when all share same collection URL (e.g. UHJ letters)",
-        "scope": null
-      },
-      {
-        "hash": "6dbf1e9c",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Force catalog companion quote via Q-entry directive and mandatory step reminder",
-        "scope": null
-      },
-      {
-        "hash": "41a5d243",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Catalog companion quote mandatory; bare-name author routing; reading framing",
-        "scope": null
-      },
-      {
-        "hash": "34aaf76d",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Author catalog crafter must quote prose, not just list titles",
-        "scope": null
-      },
-      {
-        "hash": "3ab4e562",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Jain religion filter — dont substitute other traditions; strengthen browsing rule",
-        "scope": null
-      },
-      {
-        "hash": "7b4a9c4e",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Author catalog + browsing must include passages, not just catalog listing",
-        "scope": null
-      },
-      {
-        "hash": "41217641",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Revert vague-query crafter rule — ruins citation scores; keep Buddhism fix",
-        "scope": null
-      },
-      {
-        "hash": "f9162bea",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Broad tradition overview + vague query clarification + backfill-slugs script",
-        "scope": null
-      },
-      {
-        "hash": "10a998ce",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Remove siftersearch.com/document fallback URLs — data quality, not a fallback",
-        "scope": null
-      },
-      {
-        "hash": "b9f9e7cd",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "HarvestExcerpts fallback URL now includes #p{paragraph_index} anchor",
-        "scope": null
-      },
-      {
-        "hash": "afd9c32b",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Research phase uses multiple searches for broad tradition overview queries",
-        "scope": null
-      },
-      {
-        "hash": "eacd453c",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Reading requests use search(mode=read) not read_document_for_question",
-        "scope": null
-      },
-      {
-        "hash": "2395b1d4",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Crafter inline quote quality — CASE 1 block quotes override 20-word rule",
-        "scope": null
-      },
-      {
-        "hash": "7411afee",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Religion/author/collection filters now pass through keywordSearch to Meilisearch",
-        "scope": null
-      },
-      {
-        "hash": "473200c2",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Fuzzy matching — strip Latin diacritics + include text_grounded in hasAllTermMatches",
-        "scope": null
-      },
-      {
-        "hash": "fca15446",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Add text_grounded to unified-worker meiliDoc payload",
-        "scope": null
-      },
-      {
-        "hash": "7c101be0",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "PARA_BATCH_SIZE 100→1000 — process all doc rows in one inner loop pass",
-        "scope": null
-      },
-      {
-        "hash": "99dcf11a",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "GetDocsWithDirtyParagraphs — ORDER BY max updated_at DESC",
-        "scope": null
-      },
-      {
-        "hash": "90a90ee5",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "GetDirtyParagraphsBatch — ORDER BY updated_at DESC + text_grounded",
         "scope": null
       }
     ]
