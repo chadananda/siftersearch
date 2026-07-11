@@ -138,9 +138,11 @@ fair-mindedness, equity) through *‘adl* (عدل — law and order, societal ju
 English label (exactly as a *person's* identity is the Arabic-script name, not the romanization). Each concept
 entity therefore carries its **root** (Arabic/Persian), the **authoritative rendering** (the Guardian's
 word-choice), and the **spectrum** of renderings used across the corpus, so an inquirer asking about "justice" is
-*shown the spectrum* and can reach *insáf* and *‘adl* as distinct concepts. An authoritative term concordance
-(per-word root + the Guardian's rendering + the corpus spectrum) already exists for the Bahá'í corpus; for
-translations we pair the rendering with its original text and anchor each concept-occurrence to its root.
+*shown the spectrum* and can reach *insáf* and *‘adl* as distinct concepts. A term concordance of **Shoghi
+Effendi's major translations** already exists (per-word root + his rendering + the spectrum) — an *authoritative
+sampler*: a quick query exposes the underlying original word **when the rendering is his** (the Guardian-translated
+tier we process first anyway). It doesn't replace judgment — the original itself uses several words for "justice"
+flexibly, so **context is still king** — but it's a fast, authoritative anchor where his rendering is known.
 
 **Guards (the concept-namesake discipline — same failure mode as person over-binding):**
 - **Context-fit, not surface-match.** A weather "cloud," or "a cloud of witnesses," is NOT the eschatological "clouds." Local evidence overrides.
