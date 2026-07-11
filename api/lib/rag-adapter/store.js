@@ -2,8 +2,9 @@
 // application's SQLite schema. THIS is where every table and column name lives; the library core sees only
 // the neutral domain shapes returned here. Writes go through db.js, which auto-routes them to the single
 // writer when SIFTER_WRITER_URL is set. Grown method-by-method as stages need data.
-import * as db from '../db.js';        // shared SQLite wrapper (reads direct, writes routed to the single writer)
-import content from '../content.js';   // paragraph write helpers (updateContextOnly routes through the writer)
+import * as db from '../db.js';           // shared SQLite wrapper (reads direct, writes routed to the single writer)
+import content from '../content.js';      // paragraph write helpers (updateContextOnly routes through the writer)
+import { skeletonKeys } from '../translit-key.js'; // transliteration-invariant recall keys (Sadeq→Ṣádiq…)
 
 // Blocktypes that carry readable prose we enrich (skip figures, nav, etc.). App-specific → stays here.
 const PROSE = "blocktype IN ('paragraph','quote')";
@@ -97,6 +98,56 @@ export function makeStore() {
     async getCastSeed(docId) {
       try { const { buildCastSeed } = await import('../../../scripts/entity-read/cast-seed.mjs'); return (await buildCastSeed(docId)).seed || ''; }
       catch { return ''; }
+    },
+
+    // Mention-clusters for reconcile: distinct resolved names in the book with frequency + the paragraphs
+    // they occur in. Skips unresolved '?' and non-id roster markers.
+    async getMentionClusters(docId, { minFreq = 1, filter, limit } = {}) {
+      const params = [docId];
+      let where = `doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%not given%' AND resolved_as NOT LIKE '%?%'`;
+      if (filter) { where += ` AND resolved_as LIKE ?`; params.push(`%${filter}%`); }
+      let rows = await db.queryAll(`SELECT resolved_as, COUNT(*) freq, GROUP_CONCAT(DISTINCT para_id) paras
+        FROM entity_mentions_v2 WHERE ${where} GROUP BY resolved_as ORDER BY freq DESC`, params);
+      rows = rows.filter((r) => r.freq >= minFreq);
+      if (limit) rows = rows.slice(0, limit);
+      return rows.map((r) => ({ resolvedAs: r.resolved_as, freq: r.freq, paraIds: String(r.paras).split(',') }));
+    },
+
+    // Candidate entities by transliteration-invariant name recall (RECALL ONLY — the caller binds by
+    // evidence, never by this list).
+    async findCandidateEntities(name, { type = 'person', limit = 6 } = {}) {
+      const keys = [...skeletonKeys(name)];
+      if (!keys.length) return [];
+      const rows = await db.queryAll(
+        `SELECT lk.entity_id id, ge.canonical_name canonical, ge.entity_type type, ge.importance importance,
+                er.summary, COUNT(DISTINCT lk.skeleton_key) shared
+           FROM entity_lookup_keys lk JOIN graph_entities ge ON ge.id=lk.entity_id
+           LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type
+          WHERE lk.skeleton_key IN (${keys.map(() => '?').join(',')})${type ? ' AND ge.entity_type=?' : ''}
+          GROUP BY lk.entity_id ORDER BY shared DESC, (ge.importance IS NULL), ge.importance DESC LIMIT ?`,
+        [...keys, ...(type ? [type] : []), limit]);
+      return rows;
+    },
+
+    // Representative disambiguation notes for a set of paragraphs (the reconcile dossier).
+    async getScenes(docId, paraIds) {
+      if (!paraIds.length) return [];
+      const rows = await db.queryAll(
+        `SELECT external_para_id pid, context FROM content WHERE doc_id=? AND external_para_id IN (${paraIds.map(() => '?').join(',')})`,
+        [docId, ...paraIds]);
+      return rows;
+    },
+
+    // Append proposed reconcile decisions to the immutable decision log (never edits the projection).
+    async saveDecisions(decisions) {
+      if (!decisions.length) return 0;
+      const stmts = decisions.map((d) => ({
+        sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, confidence, status, valid_time)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+        args: [d.kind, d.targetKind, JSON.stringify(d.targetIds), JSON.stringify(d.payload), JSON.stringify(d.evidence), d.rationale, d.actor, d.actorTier, d.confidence, d.status, null],
+      }));
+      await db.transaction(stmts);
+      return decisions.length;
     },
   };
 }

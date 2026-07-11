@@ -1,0 +1,64 @@
+// entities/reconcile — evidence adjudication → proposed decisions. Pure verdict/decision + run() on fakes.
+// Uses real GPB cast (Mullá Ḥusayn, Fort Ṭabarsí, the Báb) as examples.
+import { describe, it, expect } from 'vitest';
+import { parseVerdict, decisionRow, buildUser, SYSTEM } from '../../api/lib/rag/entities/reconcile.js';
+import { fakeLLM, makeRag } from './kit.js';
+
+describe('reconcile — pure helpers', () => {
+  it('parseVerdict accepts the four verdicts and rejects anything else', () => {
+    expect(parseVerdict('{"verdict":"link","entity_id":5,"confidence":0.9}')).toMatchObject({ verdict: 'link', entityId: 5 });
+    expect(parseVerdict('{"verdict":"other","type":"place","canonical":"Fort Ṭabarsí"}')).toMatchObject({ verdict: 'other', type: 'place' });
+    expect(parseVerdict('{"verdict":"maybe"}')).toBeNull();
+    expect(parseVerdict('not json')).toBeNull();
+  });
+
+  it('decisionRow maps verdict→kind, carries entity_id only for a link, and is a tier-2 proposal', () => {
+    const cluster = { resolvedAs: 'Mullá Ḥusayn-i-Bushrú’í', freq: 40, paraIds: ['para_1', 'para_2'] };
+    const link = decisionRow(parseVerdict('{"verdict":"link","entity_id":5,"decisive":"same role/era","confidence":0.9}'), cluster, [{ id: 5 }]);
+    expect(link).toMatchObject({ kind: 'link', targetKind: 'mention-cluster', actor: 'model', actorTier: 2, status: 'proposed' });
+    expect(link.payload).toMatchObject({ entityId: 5, freq: 40 });
+
+    const other = decisionRow(parseVerdict('{"verdict":"other","type":"place","canonical":"Fort Ṭabarsí"}'), { resolvedAs: 'Fort Ṭabarsí', freq: 20, paraIds: [] }, []);
+    expect(other.kind).toBe('other-type');
+    expect(other.payload.entityId).toBeNull();              // never binds an entity for a non-person
+
+    const create = decisionRow(parseVerdict('{"verdict":"create","canonical":"Karbilá’í ‘Alí","confidence":0.7}'), { resolvedAs: 'x', freq: 3, paraIds: [] }, [{ id: 9 }]);
+    expect(create.kind).toBe('create');
+    expect(create.payload.entityId).toBeNull();             // a create carries no link id
+  });
+
+  it('the prompt forbids binding on name similarity alone', () => {
+    expect(SYSTEM).toMatch(/name similarity ALONE never/i);
+    expect(buildUser({ resolvedAs: 'the Báb', freq: 100, paraIds: ['para_1'] }, [{ id: 1, canonical: 'the Báb', importance: 100 }], [{ pid: 'para_1', context: '@Shíráz — Declaration' }]))
+      .toContain('the Báb');
+  });
+});
+
+describe('reconcile — run() on fake ports (GPB clusters)', () => {
+  const clusters = [
+    { resolvedAs: 'Mullá Ḥusayn-i-Bushrú’í (first Letter of the Living)', freq: 40, paraIds: ['para_1'] },
+    { resolvedAs: 'Fort Ṭabarsí', freq: 20, paraIds: ['para_9'] },
+  ];
+  // Branch the verdict on the cluster named in the prompt.
+  const adjudicate = (_opts, _i, messages) => {
+    const u = messages[1].content;
+    if (u.includes('Fort Ṭabarsí')) return { content: '{"verdict":"other","type":"place","canonical":"Fort Ṭabarsí","entity_id":null,"confidence":1}' };
+    return { content: '{"verdict":"link","type":"person","entity_id":5,"decisive":"same person: Ṭabarsí commander","confidence":0.92}' };
+  };
+
+  it('proposes a link for the person cluster and other-type for the place', async () => {
+    const seed = { clusters: { 21310: clusters }, coverage: { 21310: 1 }, candidates: [{ id: 5, canonical: 'Mullá Ḥusayn', type: 'person', importance: 95 }] };
+    const { rag, store } = makeRag({ seed, llm: fakeLLM(adjudicate) });
+    const stats = await rag.entities.reconcile(21310);
+    expect(stats).toMatchObject({ clusters: 2, adjudicated: 2, failed: 0, proposed: 2 });
+    expect(stats.byKind).toEqual({ link: 1, 'other-type': 1 });
+    const link = store.decisions.find((d) => d.kind === 'link');
+    expect(link.payload).toMatchObject({ entityId: 5 });
+    expect(store.decisions.every((d) => d.status === 'proposed' && d.actorTier === 2)).toBe(true);
+  });
+
+  it('gates on disambiguation', async () => {
+    const { rag } = makeRag({ seed: { clusters: { 21310: clusters }, coverage: { 21310: 0.5 } } });
+    await expect(rag.entities.reconcile(21310)).rejects.toThrow(/disambiguated/);
+  });
+});

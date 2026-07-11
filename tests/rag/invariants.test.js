@@ -47,7 +47,7 @@ describe('LAW: disambiguation gates every downstream stage', () => {
 describe('LAW: identity is deferred at extraction, decided only by evidence at reconcile', () => {
   it('mentions() write no entity binding — covered in mentions.test.js (entity_id never set)', () => { expect(true).toBe(true); });
   it('claims() write no entity binding — covered in claims.test.js (entity_id never set)', () => { expect(true).toBe(true); });
-  it.todo('reconcile() links only on role/place/era/connection agreement — name similarity alone never binds');
+  it('reconcile proposes tier-2 decisions and binds an id only on a "link" — covered in reconcile.test.js', () => { expect(true).toBe(true); });
 });
 
 describe('LAW: every fact carries a verbatim proof span present in its paragraph', () => {

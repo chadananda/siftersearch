@@ -11,7 +11,7 @@ export function fakeLLM(script = []) {
     calls,
     chat: async (messages, opts) => {
       calls.push({ messages, opts });
-      const r = typeof script === 'function' ? script(opts, i) : script[Math.min(i, script.length - 1)];
+      const r = typeof script === 'function' ? script(opts, i, messages) : script[Math.min(i, script.length - 1)];
       i++;
       return r ?? { content: '', finishReason: 'stop' };
     },
@@ -34,12 +34,13 @@ export function fakeCatalog(extra = {}) {
 // Store port, in memory. seed = { docs:{id:meta}, samples:{id:text}, paras:{id:[Paragraph]}, coverage:{id:0..1} }.
 // Saved context notes are recorded on `.saved` for write assertions.
 export function memStore(seed = {}) {
-  const saved = [];    // saveContext calls
-  const hyped = [];    // saveHype calls
-  const mentions = []; // saveMentions rows
-  const claims = [];   // saveClaims rows
+  const saved = [];     // saveContext calls
+  const hyped = [];     // saveHype calls
+  const mentions = [];  // saveMentions rows
+  const claims = [];     // saveClaims rows
+  const decisions = []; // saveDecisions rows
   return {
-    saved, hyped, mentions, claims,
+    saved, hyped, mentions, claims, decisions,
     getDocMeta: async (id) => seed.docs?.[id] || { id },
     getSampleText: async (id) => seed.samples?.[id] || '',
     getParagraphs: async (id) => seed.paras?.[id] || [],
@@ -49,6 +50,10 @@ export function memStore(seed = {}) {
     getRelations: async () => seed.relations || [],
     saveClaims: async (rows) => { claims.push(...rows); return rows.length; },
     getDisambigCoverage: async (id) => seed.coverage?.[id] ?? 1,
+    getMentionClusters: async (id) => seed.clusters?.[id] || [],
+    findCandidateEntities: async (name) => (typeof seed.candidates === 'function' ? seed.candidates(name) : seed.candidates || []),
+    getScenes: async (id, paraIds) => seed.scenes || paraIds.map((pid) => ({ pid, context: '' })),
+    saveDecisions: async (rows) => { decisions.push(...rows); return rows.length; },
   };
 }
 

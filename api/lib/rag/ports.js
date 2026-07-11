@@ -67,6 +67,10 @@
  * @property {(claims: ClaimRow[]) => Promise<number>} saveClaims          upsert by claim_hash; ids stay null
  * @property {(docId: number) => Promise<number>}  getDisambigCoverage    fraction 0..1 that carry a note (gate)
  * @property {(docId: number) => (Promise<string>|string)} [getCastSeed]  optional who's-who for the prompt
+ * @property {(docId: number, opts?: {minFreq?:number,filter?:string,limit?:number}) => Promise<Cluster[]>} getMentionClusters
+ * @property {(name: string, opts?: {type?:string,limit?:number}) => Promise<CandidateEntity[]>} findCandidateEntities  RECALL only
+ * @property {(docId: number, paraIds: string[]) => Promise<{pid:string,context:string}[]>} getScenes
+ * @property {(decisions: Decision[]) => Promise<number>} saveDecisions    append-only; never edits the graph
  * @typedef {Object} DocMeta
  * @property {number} id @property {string} [title] @property {string} [author] @property {string} [religion]
  * @property {string} [collection] @property {number} [year] @property {string} [description] @property {string} [lang]
