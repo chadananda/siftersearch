@@ -34,15 +34,20 @@ export function fakeCatalog(extra = {}) {
 // Store port, in memory. seed = { docs:{id:meta}, samples:{id:text}, paras:{id:[Paragraph]}, coverage:{id:0..1} }.
 // Saved context notes are recorded on `.saved` for write assertions.
 export function memStore(seed = {}) {
-  const saved = [];   // saveContext calls
-  const hyped = [];   // saveHype calls
+  const saved = [];    // saveContext calls
+  const hyped = [];    // saveHype calls
+  const mentions = []; // saveMentions rows
+  const claims = [];   // saveClaims rows
   return {
-    saved, hyped,
+    saved, hyped, mentions, claims,
     getDocMeta: async (id) => seed.docs?.[id] || { id },
     getSampleText: async (id) => seed.samples?.[id] || '',
     getParagraphs: async (id) => seed.paras?.[id] || [],
     saveContext: async (paragraphId, note, methodVersion) => { saved.push({ paragraphId, note, methodVersion }); },
     saveHype: async (paragraphId, questions, thesis) => { hyped.push({ paragraphId, questions, thesis }); },
+    saveMentions: async (rows) => { mentions.push(...rows); return rows.length; },
+    getRelations: async () => seed.relations || [],
+    saveClaims: async (rows) => { claims.push(...rows); return rows.length; },
     getDisambigCoverage: async (id) => seed.coverage?.[id] ?? 1,
   };
 }

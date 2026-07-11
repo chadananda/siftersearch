@@ -30,7 +30,7 @@ export function makeStore() {
     // note so a stage can resume idempotently.
     async getParagraphs(docId) {
       const rows = await db.queryAll(
-        `SELECT id, COALESCE(external_para_id, 'p' || id) pid, paragraph_index pidx, heading, text,
+        `SELECT id, COALESCE(external_para_id, 'p' || id) pid, paragraph_index pidx, heading, blocktype AS kind, text,
                 context, context_model AS contextModel, hyp_questions AS hyp, hyp_thesis AS hypThesis
            FROM content WHERE doc_id=? AND deleted_at IS NULL AND ${PROSE} ORDER BY paragraph_index`, [docId]);
       return rows.map((p) => ({ ...p, text: String(p.text).replace(/\s+/g, ' ').trim() }));
@@ -44,6 +44,43 @@ export function makeStore() {
     // Persist HyPE questions (array) + thesis for a paragraph; flags the row for Meili re-index.
     async saveHype(paragraphId, questions, thesis) {
       await content.updateHype(paragraphId, questions, thesis);
+    },
+
+    // Persist source-anchored mentions (INSERT OR IGNORE on the stable anchor). entity_id stays NULL —
+    // identity is bound later by evidence at reconcile, never here. Returns the count offered.
+    async saveMentions(mentions) {
+      if (!mentions.length) return 0;
+      const stmts = mentions.map((m) => ({
+        sql: `INSERT OR IGNORE INTO entity_mentions_v2
+                (anchor,doc_id,para_id,occurrence,surface,surface_norm,entity_id,resolved_as,resolution_basis,resolution_conf,method_version,model)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+        args: [m.anchor, m.docId, m.paraId, m.occurrence, m.surface, m.surfaceNorm, null, m.resolvedAs, 'note-deferred', null, m.methodVersion, m.methodVersion],
+      }));
+      await db.transaction(stmts);
+      return mentions.length;
+    },
+
+    // The controlled relation vocabulary the claims prompt constrains to.
+    async getRelations() {
+      return db.queryAll(`SELECT key, label FROM relations ORDER BY category, key`);
+    },
+
+    // Persist cited claims (INSERT OR IGNORE on the content-addressed claim_hash). entity_id/target stay NULL
+    // (deferred to reconcile). Returns the count offered.
+    async saveClaims(rows) {
+      if (!rows.length) return 0;
+      const stmts = rows.map((c) => ({
+        sql: `INSERT OR IGNORE INTO entity_claims
+                (claim_hash, entity_id, relation, target_entity_id, statement, proof_verbatim, doc_id, para_id,
+                 time_value, time_precision, time_basis, time_anchor, semantic_key, method_version, extractor_version,
+                 confidence, status, proof_ok, import_batch)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        args: [c.claimHash, null, c.relation, null, c.statement, c.proofVerbatim, c.docId, c.paraId,
+          c.timeValue, c.timePrecision, c.timeBasis, c.timeAnchor, c.semanticKey, c.methodVersion, c.extractor,
+          c.confidence, c.status, c.proofOk, c.batch],
+      }));
+      await db.transaction(stmts);
+      return rows.length;
     },
 
     // Fraction of a doc's prose paragraphs that carry a disambiguation note — the gate's input.

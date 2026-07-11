@@ -62,6 +62,9 @@
  * @property {(docId: number) => Promise<Paragraph[]>} getParagraphs      prose paragraphs in reading order
  * @property {(paragraphId: number, note: string, methodVersion: string) => Promise<void>} saveContext
  * @property {(paragraphId: number, questions: string[], thesis: string) => Promise<void>} saveHype
+ * @property {(mentions: Mention[]) => Promise<number>} saveMentions       upsert by anchor; entity_id stays null
+ * @property {() => Promise<{key:string,label:string}[]>} [getRelations]   controlled relation vocabulary
+ * @property {(claims: ClaimRow[]) => Promise<number>} saveClaims          upsert by claim_hash; ids stay null
  * @property {(docId: number) => Promise<number>}  getDisambigCoverage    fraction 0..1 that carry a note (gate)
  * @property {(docId: number) => (Promise<string>|string)} [getCastSeed]  optional who's-who for the prompt
  * @typedef {Object} DocMeta
@@ -69,6 +72,7 @@
  * @property {string} [collection] @property {number} [year] @property {string} [description] @property {string} [lang]
  * @typedef {Object} Paragraph
  * @property {number} id @property {string} pid @property {number} pidx @property {string} [heading] @property {string} text
+ * @property {string} [kind]         block kind ('paragraph'|'quote'); claims process 'paragraph' only
  * @property {string} [context]      the disambiguation note, when already present
  * @property {string} [contextModel] method-version tag of the existing note (for RESUME)
  * @property {string} [chapter]      chapter label for 'toc' segmentation (adapter-supplied where available)
