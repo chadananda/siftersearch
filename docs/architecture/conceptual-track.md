@@ -131,6 +131,17 @@ The payoff is the point of an interfaith library: a reader can **query one conce
 "the Word," "grace," or "the Covenant" and reach the corresponding concept in each tradition, in that tradition's
 own terms. (English-canonical concept naming makes this query natural across the whole multilingual corpus.)
 
+**Original-language anchoring — the root is the concept's true identity.** The mirror of interfaith linking: one
+broad English word can *collapse several distinct concepts.* "Justice" spans *insáf* (انصاف — personal
+fair-mindedness, equity) through *‘adl* (عدل — law and order, societal justice). The English gloss overlaps; the
+**original-language root disambiguates and explains** — so a concept's true identity is its **root**, not its
+English label (exactly as a *person's* identity is the Arabic-script name, not the romanization). Each concept
+entity therefore carries its **root** (Arabic/Persian), the **authoritative rendering** (the Guardian's
+word-choice), and the **spectrum** of renderings used across the corpus, so an inquirer asking about "justice" is
+*shown the spectrum* and can reach *insáf* and *‘adl* as distinct concepts. An authoritative term concordance
+(per-word root + the Guardian's rendering + the corpus spectrum) already exists for the Bahá'í corpus; for
+translations we pair the rendering with its original text and anchor each concept-occurrence to its root.
+
 **Guards (the concept-namesake discipline — same failure mode as person over-binding):**
 - **Context-fit, not surface-match.** A weather "cloud," or "a cloud of witnesses," is NOT the eschatological "clouds." Local evidence overrides.
 - **Cited interpretation only.** A lexicon entry must be a *real*, proof-backed interpretation from an actual authority — never AI-invented meaning.
