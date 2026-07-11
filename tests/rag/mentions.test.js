@@ -4,11 +4,12 @@ import { parseMentions, normSurface, anchorOf } from '../../api/lib/rag/entities
 import { fakeLLM, makeRag } from './kit.js';
 
 describe('mentions — pure helpers', () => {
-  it('parseMentions pulls surface=resolved pairs from the note, skipping abstentions', () => {
-    const note = '@Shíráz, ~1844 — the Declaration · He = the Báb; "Mullá Ḥusayn" = first Letter; X = ?';
+  it('parseMentions pulls quoted surface=resolved pairs, skipping abstentions and the header', () => {
+    // Real corpus format: quoted surfaces after the em-dash; header may itself contain an em-dash.
+    const note = '@(not established — infer), ~1844 — the Declaration · "He" = the Báb; "Mullá Ḥusayn" = first Letter; "X" = ?';
     expect(parseMentions(note)).toEqual([
       { surface: 'He', resolvedAs: 'the Báb' },
-      { surface: 'Mullá Ḥusayn', resolvedAs: 'first Letter' }, // quotes stripped; "X = ?" abstention dropped
+      { surface: 'Mullá Ḥusayn', resolvedAs: 'first Letter' }, // "X" = ? abstention dropped; header ignored
     ]);
     expect(parseMentions('@x, ~y — an idea with no resolves')).toEqual([]);
   });
@@ -21,9 +22,9 @@ describe('mentions — pure helpers', () => {
 
 describe('mentions — run() on fake ports', () => {
   const paras = [
-    { id: 1, pid: 'para_1', text: 't', context: '@Shíráz, ~1844 — Declaration · He = the Báb; Vaḥíd = Siyyid Yaḥyá', contextModel: 'v1' },
+    { id: 1, pid: 'para_1', text: 't', context: '@Shíráz, ~1844 — Declaration · "He" = the Báb; "Vaḥíd" = Siyyid Yaḥyá', contextModel: 'v1' },
     { id: 2, pid: 'para_2', text: 't', context: 'no note here', contextModel: 'v1' },      // no resolves
-    { id: 3, pid: 'para_3', text: 't', context: '@x — y · A = B', contextModel: 'other' }, // wrong version → skipped
+    { id: 3, pid: 'para_3', text: 't', context: '@x — y · "A" = B', contextModel: 'other' }, // wrong version → skipped
   ];
 
   it('records deferred, source-anchored mentions from disambiguated paragraphs only', async () => {

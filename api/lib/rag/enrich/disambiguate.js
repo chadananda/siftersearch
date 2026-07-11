@@ -73,9 +73,14 @@ export function gateResolves(resolve, passage) {
   });
 }
 
-// Render the note object to the stored string form.
+// Render the note object to the stored string form. Surfaces are QUOTED — matching the corpus format the
+// mention parser reads (a bare "surface" = handle, `;`-separated), so old and new notes parse identically.
 export function renderNote({ place, era, idea, resolve = [] }) {
-  return `@${place || '?'}, ~${era || '?'} — ${idea}${resolve.length ? ` · ${resolve.join('; ')}` : ''}`;
+  const quoted = resolve.map((r) => {
+    const i = r.indexOf(' = ');
+    return i < 0 ? r : `"${r.slice(0, i).trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')}" = ${r.slice(i + 3).trim()}`;
+  });
+  return `@${place || '?'}, ~${era || '?'} — ${idea}${quoted.length ? ` · ${quoted.join('; ')}` : ''}`;
 }
 
 // ── Prompt construction (pure) ───────────────────────────────────────────────

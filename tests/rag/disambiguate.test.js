@@ -18,9 +18,9 @@ describe('disambiguate — pure helpers', () => {
     expect(kept).toEqual(['Mullá Ḥusayn = first believer']);  // invented "Quddús" removed
   });
 
-  it('renderNote formats the stored string', () => {
+  it('renderNote formats the stored string with quoted surfaces', () => {
     expect(renderNote({ place: 'Shíráz', era: '1844', idea: 'the Declaration', resolve: ['He = the Báb'] }))
-      .toBe('@Shíráz, ~1844 — the Declaration · He = the Báb');
+      .toBe('@Shíráz, ~1844 — the Declaration · "He" = the Báb');
     expect(renderNote({ place: '', era: '', idea: 'a thread', resolve: [] })).toBe('@?, ~? — a thread');
   });
 
@@ -45,7 +45,7 @@ describe('disambiguate — run() on fake ports', () => {
     const stats = await rag.disambiguate(9, { version: 'v1' });
     expect(stats).toMatchObject({ paras: 2, done: 2, failed: 0, dropped: 2 }); // one invented name dropped per paragraph
     expect(store.saved).toHaveLength(2);
-    expect(store.saved[0].note).toContain('Mullá Ḥusayn = first Letter of the Living');
+    expect(store.saved[0].note).toContain('"Mullá Ḥusayn" = first Letter of the Living');
     expect(store.saved[0].note).not.toContain('Quddús');    // invented resolution gated out
     expect(store.saved[0]).toMatchObject({ paragraphId: 1, methodVersion: 'v1' });
   });

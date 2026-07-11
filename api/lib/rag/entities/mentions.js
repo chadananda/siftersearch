@@ -30,20 +30,23 @@ export async function run(ctx, docId, opts = {}) {
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 
-// Extract «surface = resolved» pairs from a note. The note is "@place, ~era — idea · s1 = h1; s2 = h2";
-// resolutions live after the first " · ". Tolerant of quotes around the surface; skips abstentions ("?").
+// Extract «"surface" = resolved» pairs from a note. Notes read "@place, ~era [pin] — [idea ·] "s1" = h1;
+// "s2" = h2". Surfaces are QUOTED (straight or curly); the regex matches only quoted pairs, so any idea
+// prefix and the "@place, era" header (which may itself contain an em-dash) are naturally skipped. Skips
+// abstentions ("?").
+const RESOLVE = /["“”]([^"“”]{1,70})["“”]\s*=\s*([^;]+?)(?=\s*;|\s*$)/g;
 export function parseMentions(context) {
-  const afterDash = String(context).split('—').slice(1).join('—');
-  const i = afterDash.indexOf(' · ');
-  if (i < 0) return [];
-  return afterDash.slice(i + 3).split(';').map((s) => s.trim()).filter(Boolean).map((pair) => {
-    const eq = pair.indexOf(' = ');
-    if (eq < 0) return null;
-    const surface = pair.slice(0, eq).trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, '');
-    const resolvedAs = pair.slice(eq + 3).trim();
-    if (!surface || !resolvedAs || /^\?+$/.test(resolvedAs)) return null;
-    return { surface, resolvedAs };
-  }).filter(Boolean);
+  const body = String(context).split('—').slice(1).join('—');
+  const out = [];
+  const re = new RegExp(RESOLVE.source, 'g');
+  let m;
+  while ((m = re.exec(body))) {
+    const surface = m[1].trim();
+    const resolvedAs = m[2].trim();
+    if (!surface || !resolvedAs || /^\?+$/.test(resolvedAs)) continue;
+    out.push({ surface, resolvedAs });
+  }
+  return out;
 }
 
 // Normalise a surface for de-dup only (NOT for identity): strip diacritics + quotes, collapse space, lower.
