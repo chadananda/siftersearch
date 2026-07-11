@@ -23,16 +23,17 @@ teaches X") just *references* a `person`/`work` entity the historical track buil
 
 ---
 
-## Historical Track — ordered by source authority
+## Historical Track — ordered by textual rigor / reliability
 
-The entity graph is anchored by **primary sources first**, so 3rd-party works resolve *against* established
-primaries rather than seeding identity themselves:
+Ranked by **how carefully each text was collected and edited** — a *factual* criterion, not nominal authority.
+('Abdu'l-Bahá's authority is supreme, but *Memorials of the Faithful* as a text is Sohrab's notes from oral
+story-telling rendered into English, so it can carry errors and ranks below the rigorously-edited scholars.)
+The graph is anchored by the most reliable texts first; looser ones resolve *against* them.
 
-1. **Top** — God Passes By → The Dawn-Breakers *(the Guardian's authoritative history + the person-seed)*
-2. **'Abdu'l-Bahá's own histories** — Memorials of the Faithful, The Secret of Divine Civilization
-3. **Eyewitness / pilgrim accounts** — Maḥmúd's Diary, The Chosen Highway, Juliet Thompson's Diary, In Galilee, Phelps, Sohrab, Sears *(primary because they witnessed it)*
-4. **Sub-basement — rigorous 3rd-party** — all Taherzadeh/Revelation of Bahá'u'lláh, Balyuzi, Momen, Mázindarání's Ẓuhúru'l-Ḥaqq *(so authoritative they form the foundation the rest build on)*
-5. **Secondary** — the general 3rd-party histories
+1. **Tier 1** — God Passes By → The Dawn-Breakers *(the Guardian's rigorous authoritative history + the person-seed)*
+2. **Tier 2 — current work** — the rigorously-edited scholars: all Taherzadeh/Revelation of Bahá'u'lláh, Balyuzi, Momen, Mázindarání's Ẓuhúru'l-Ḥaqq *(the reliable foundation)*
+3. **Tier 3 — primary but loosely collected** — 'Abdu'l-Bahá texts (Memorials, The Secret of Divine Civilization) + eyewitness/pilgrim accounts *(oral notes, personal diaries, translation layers → resolve against Tiers 1–2)*
+4. **Secondary** — the general 3rd-party histories
 
 ---
 

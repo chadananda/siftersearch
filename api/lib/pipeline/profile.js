@@ -30,49 +30,51 @@ const DOMAIN_ANCHORS = {
   christian: 'use CE/AD; the Incarnation as year ~1',
 };
 
-// Explicit overrides. priority: lower = earlier. HISTORICAL track ordered by SOURCE AUTHORITY —
-// primary/eyewitness (‘Abdu'l-Bahá's histories + pilgrim accounts) BEFORE 3rd-party compilations, so
-// the entity graph is anchored by primary sources and the secondary works resolve against it.
+// Explicit overrides. priority: lower = earlier. HISTORICAL track ordered by TEXTUAL RIGOR / RELIABILITY
+// (how carefully the text was collected + edited) — NOT nominal authority. This is a FACTUAL-extraction
+// criterion, distinct from the interpretive authority that governs the conceptual track: ‘Abdu'l-Bahá's
+// authority is supreme, but a text like Memorials of the Faithful is Sohrab's notes from oral story-telling
+// rendered to English and can carry many kinds of error, so it ranks BELOW the rigorously-edited scholars.
 // (Gate/8632 is doctrinal → conceptual pipeline, not the historical track: genre='doctrinal' → no historical extract.)
 export const PROFILE_OVERRIDES = {
-  // — top: the Guardian's authoritative history + person-seed —
+  // — TIER 1: the Guardian's rigorous, authoritative history + the person-seed —
   21310: { priority: 0,  genre: 'history',   lang: 'en', domain: 'bahai' }, // God Passes By
   21308: { priority: 10, genre: 'history',   lang: 'en', domain: 'bahai' }, // The Dawn-Breakers
-  // — primary: ‘Abdu'l-Bahá's own history works —
-  20907: { priority: 15, genre: 'biography', lang: 'en', domain: 'bahai' }, // Memorials of the Faithful
-  20919: { priority: 16, genre: 'history',   lang: 'en', domain: 'bahai' }, // The Secret of Divine Civilization
-  // — primary: eyewitness / pilgrim accounts (before any 3rd-party history) —
-  11355: { priority: 20, genre: 'history',   lang: 'en', domain: 'bahai' }, // Maḥmúd's Diary (Zarqání)
-  11335: { priority: 21, genre: 'history',   lang: 'en', domain: 'bahai' }, // The Chosen Highway (Blomfield)
-  12472: { priority: 22, genre: 'history',   lang: 'en', domain: 'bahai' }, // Diary of Juliet Thompson
-  12503: { priority: 23, genre: 'history',   lang: 'en', domain: 'bahai' }, // In Galilee (Thornton Chase)
-  150400:{ priority: 24, genre: 'history',   lang: 'en', domain: 'bahai' }, // Life & Teachings of Abbás Effendi (Phelps)
-  12665: { priority: 25, genre: 'history',   lang: 'en', domain: 'bahai' }, // Sohrab pilgrim notes
-  283034:{ priority: 26, genre: 'history',   lang: 'en', domain: 'bahai' }, // Sears — Pilgrimage to Haifa and Akka
-  // — SUB-BASEMENT: rigorous, authoritative 3rd-party works — the foundation the rest of the histories build on —
-  429:   { priority: 30, genre: 'history',   lang: 'en', domain: 'bahai' }, // Taherzadeh — Revelation of Bahá'u'lláh v1
-  430:   { priority: 31, genre: 'history',   lang: 'en', domain: 'bahai' }, // …v2
-  431:   { priority: 32, genre: 'history',   lang: 'en', domain: 'bahai' }, // …v3
-  432:   { priority: 33, genre: 'history',   lang: 'en', domain: 'bahai' }, // …v4
-  426:   { priority: 34, genre: 'history',   lang: 'en', domain: 'bahai' }, // Taherzadeh — Child of the Covenant
-  427:   { priority: 35, genre: 'history',   lang: 'en', domain: 'bahai' }, // Taherzadeh — The Covenant
-  28849: { priority: 36, genre: 'biography', lang: 'en', domain: 'bahai' }, // Balyuzi — The Báb
-  462:   { priority: 37, genre: 'biography', lang: 'en', domain: 'bahai' }, // Balyuzi — Bahá'u'lláh, King of Glory
-  3789:  { priority: 38, genre: 'biography', lang: 'en', domain: 'bahai' }, // Balyuzi — 'Abdu'l-Bahá
-  3887:  { priority: 39, genre: 'biography', lang: 'en', domain: 'bahai' }, // Balyuzi — Eminent Bahá'ís
-  464:   { priority: 40, genre: 'history',   lang: 'en', domain: 'bahai' }, // Balyuzi — E. G. Browne and the Bahá'í Faith
-  465:   { priority: 41, genre: 'history',   lang: 'en', domain: 'bahai' }, // Balyuzi — Muḥammad and the Course of Islám
-  467:   { priority: 42, genre: 'biography', lang: 'en', domain: 'bahai' }, // Balyuzi — Khadíjih Bagum
-  13433: { priority: 45, genre: 'history',   lang: 'en', domain: 'bahai' }, // Momen — Western Accounts of the Bábí & Bahá'í Religions
-  617265:{ priority: 50, genre: 'history',   lang: 'fa', domain: 'bahai' }, // Mázindarání — Ẓuhúru'l-Ḥaqq v1 (Persian → haiku)
-  617275:{ priority: 51, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v2
-  617284:{ priority: 52, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v3
-  617290:{ priority: 53, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v4
-  617298:{ priority: 54, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v5
-  617302:{ priority: 55, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v6
-  617305:{ priority: 56, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v7
-  617310:{ priority: 57, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v8
-  617313:{ priority: 58, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v9
+  // — TIER 2: rigorously collected + edited scholarly histories (CURRENT WORK) —
+  429:   { priority: 20, genre: 'history',   lang: 'en', domain: 'bahai' }, // Taherzadeh — Revelation of Bahá'u'lláh v1
+  430:   { priority: 21, genre: 'history',   lang: 'en', domain: 'bahai' }, // …v2
+  431:   { priority: 22, genre: 'history',   lang: 'en', domain: 'bahai' }, // …v3
+  432:   { priority: 23, genre: 'history',   lang: 'en', domain: 'bahai' }, // …v4
+  426:   { priority: 24, genre: 'history',   lang: 'en', domain: 'bahai' }, // Taherzadeh — Child of the Covenant
+  427:   { priority: 25, genre: 'history',   lang: 'en', domain: 'bahai' }, // Taherzadeh — The Covenant
+  28849: { priority: 30, genre: 'biography', lang: 'en', domain: 'bahai' }, // Balyuzi — The Báb
+  462:   { priority: 31, genre: 'biography', lang: 'en', domain: 'bahai' }, // Balyuzi — Bahá'u'lláh, King of Glory
+  3789:  { priority: 32, genre: 'biography', lang: 'en', domain: 'bahai' }, // Balyuzi — 'Abdu'l-Bahá
+  3887:  { priority: 33, genre: 'biography', lang: 'en', domain: 'bahai' }, // Balyuzi — Eminent Bahá'ís
+  464:   { priority: 34, genre: 'history',   lang: 'en', domain: 'bahai' }, // Balyuzi — E. G. Browne and the Bahá'í Faith
+  465:   { priority: 35, genre: 'history',   lang: 'en', domain: 'bahai' }, // Balyuzi — Muḥammad and the Course of Islám
+  467:   { priority: 36, genre: 'biography', lang: 'en', domain: 'bahai' }, // Balyuzi — Khadíjih Bagum
+  13433: { priority: 40, genre: 'history',   lang: 'en', domain: 'bahai' }, // Momen — Western Accounts of the Bábí & Bahá'í Religions
+  617265:{ priority: 45, genre: 'history',   lang: 'fa', domain: 'bahai' }, // Mázindarání — Ẓuhúru'l-Ḥaqq v1 (Persian → haiku)
+  617275:{ priority: 46, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v2
+  617284:{ priority: 47, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v3
+  617290:{ priority: 48, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v4
+  617298:{ priority: 49, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v5
+  617302:{ priority: 50, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v6
+  617305:{ priority: 51, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v7
+  617310:{ priority: 52, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v8
+  617313:{ priority: 53, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v9
+  // — TIER 3: primary but LOOSELY collected/edited (‘Abdu'l-Bahá texts as compiled + eyewitness/pilgrim notes) —
+  //   error-prone as TEXTS (oral notes, personal diaries, translation layers) → resolve against Tiers 1-2.
+  20907: { priority: 60, genre: 'biography', lang: 'en', domain: 'bahai' }, // Memorials of the Faithful (Sohrab's oral-storytelling notes → English)
+  20919: { priority: 61, genre: 'history',   lang: 'en', domain: 'bahai' }, // The Secret of Divine Civilization
+  11355: { priority: 62, genre: 'history',   lang: 'en', domain: 'bahai' }, // Maḥmúd's Diary (Zarqání)
+  11335: { priority: 63, genre: 'history',   lang: 'en', domain: 'bahai' }, // The Chosen Highway (Blomfield)
+  12472: { priority: 64, genre: 'history',   lang: 'en', domain: 'bahai' }, // Diary of Juliet Thompson
+  12503: { priority: 65, genre: 'history',   lang: 'en', domain: 'bahai' }, // In Galilee (Thornton Chase)
+  150400:{ priority: 66, genre: 'history',   lang: 'en', domain: 'bahai' }, // Life & Teachings of Abbás Effendi (Phelps)
+  12665: { priority: 67, genre: 'history',   lang: 'en', domain: 'bahai' }, // Sohrab pilgrim notes
+  283034:{ priority: 68, genre: 'history',   lang: 'en', domain: 'bahai' }, // Sears — Pilgrimage to Haifa and Akka
   // — Gate of the Heart: DOCTRINAL → the CONCEPTUAL pipeline, not this historical track —
   8632:  { priority: 900, genre: 'doctrinal', lang: 'en', domain: 'bahai', model: SONNET },
 };

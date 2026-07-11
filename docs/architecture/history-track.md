@@ -11,18 +11,20 @@ Build the **factual layer** — *who existed, who did what, when, where, which t
 event/person-based, every fact cited and proof-gated. Entity types: `person`, `work`/tablet, `place`, `group`,
 `event`. This is distinct from *organizing doctrine*, which is the Conceptual Track's job.
 
-## Ordering = source authority (primary → secondary)
+## Ordering = textual rigor / reliability (NOT nominal authority)
 
-The graph is anchored by **primary/eyewitness sources first**, so 3rd-party compilations resolve *against*
-established primaries rather than seeding identity themselves. Priorities live in
-`api/lib/pipeline/profile.js` `PROFILE_OVERRIDES`.
+The historical track ranks sources by **how carefully the text was collected and edited** — a *factual*
+criterion, deliberately distinct from the *interpretive* authority that governs the [Conceptual Track](conceptual-track.md).
+'Abdu'l-Bahá's authority is supreme, but *Memorials of the Faithful* as a **text** is Sohrab's notes from oral
+story-telling rendered into English — it can carry transcription, translation, and memory errors — so for
+*fact* extraction it ranks *below* the rigorously-edited scholars. The graph is anchored by the most reliable
+texts first; looser ones resolve *against* them. Priorities live in `api/lib/pipeline/profile.js` `PROFILE_OVERRIDES`.
 
 | Tier | Works (doc_id) | why |
 |---|---|---|
-| **Top** | God Passes By (21310) → The Dawn-Breakers (21308) | Shoghi Effendi's authoritative history + the person-seed of authority |
-| **Primary — ‘Abdu'l-Bahá** | Memorials of the Faithful (20907), The Secret of Divine Civilization (20919) | the Master's own history works |
-| **Primary — eyewitness/pilgrim** | Maḥmúd's Diary/Zarqání (11355), The Chosen Highway/Blomfield (11335), Diary of Juliet Thompson (12472), In Galilee/Chase (12503), Life & Teachings of Abbás Effendi/Phelps (150400), Sohrab pilgrim notes (12665), Sears — Pilgrimage (283034) | primary because they *witnessed* it |
-| **Sub-basement — rigorous 3rd-party** | all Taherzadeh/ROB (429–432, 426, 427), Balyuzi (28849, 462, 3789, 3887, 464, 465, 467), Momen — Western Accounts (13433), Mázindarání — Ẓuhúru'l-Ḥaqq (617265…617313, Persian) | so rigorous + authoritative they form the foundation the rest build on |
+| **1** | God Passes By (21310) → The Dawn-Breakers (21308) | the Guardian's rigorous, authoritative history + the person-seed |
+| **2 — current work** | all Taherzadeh/ROB (429–432, 426, 427), Balyuzi (28849, 462, 3789, 3887, 464, 465, 467), Momen — Western Accounts (13433), Mázindarání — Ẓuhúru'l-Ḥaqq (617265…617313, Persian) | rigorously collected + edited scholarly histories — the reliable foundation |
+| **3 — primary but loosely collected** | 'Abdu'l-Bahá texts (Memorials 20907, The Secret of Divine Civilization 20919); eyewitness/pilgrim accounts (Maḥmúd's Diary 11355, The Chosen Highway 11335, Diary of Juliet Thompson 12472, In Galilee 12503, Phelps 150400, Sohrab pilgrim notes 12665, Sears 283034) | *primary* but error-prone as texts (oral notes, personal diaries, translation layers) → resolve against Tiers 1–2 |
 | **Secondary** | general 3rd-party (Ahdieh, Rabbani, …) — default priority | resolve against everything above |
 
 Duplicate ingests exist for several works (esp. pilgrim accounts and Ẓuhúru'l-Ḥaqq's two copies) — dedup to
