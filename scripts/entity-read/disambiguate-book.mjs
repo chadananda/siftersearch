@@ -40,7 +40,7 @@ const PROVIDER = providerOf(MODEL);
 const FALLBACK = process.env.FALLBACK || profile.fallback;
 const FALLBACK_PROVIDER = providerOf(FALLBACK);
 const isPro = (m) => /pro/.test(m);
-const maxTokFor = (m) => +(process.env.MAXTOK || (isPro(m) ? 4000 : 1000)); // reasoning models need headroom before the JSON
+const maxTokFor = (m) => +(process.env.MAXTOK || (isPro(m) ? 4000 : 1500)); // 1000 truncated ~0.75% (genealogically dense paras → long resolve lists); 1500 + concise-handle instruction fixes it
 const LANG_NAME = { en: 'English', fa: 'Persian', ar: 'Arabic', he: 'Hebrew' };
 
 const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, meta.collection].filter(Boolean).join(' / '), meta.year ? `Year ${meta.year}` : '', meta.description ? `About: ${String(meta.description).slice(0, 240)}` : ''].filter(Boolean).join('\n');
@@ -55,7 +55,7 @@ Return exactly: {"place":"…","era":"… [pin|est]","idea":"…","resolve":["<n
 ALWAYS fill place, era, and idea — never blank; there is always a locus (place OR section of the work), a time, and a thread. "resolve" MAY be [] when no name needs it.
 • place / era — the location (or, for scripture/commentary, the work-section) and time in force. Inherit from STATE; change only when THIS passage moves. Mark era "[pin]" when stated or anchored (${profile.eraAnchors || 'a stated date, a named era, or "N years after" a known epoch — compute it'}), else "[est]".
 • idea — the subject / argument / thread this passage develops, in a few words (whose words or which tablet, if given, plus the point). This alone makes the note useful when no name needs resolving.
-• resolve — for each bare, elided, variant, or ambiguous name/epithet, "<name> = <fuller handle>". Use ONLY a handle the paragraph, scene, or CAST supports — never invent a nisba or upgrade a name to a famous namesake. The text's own qualifier beats prominence: an "amanuensis Mírzá Aḥmad" is NOT the scholar Mírzá Aḥmad-i-Azghandí. Keep honorifics (Mírzá, Mullá, Siyyid, Ḥájí, Karbilá'í, Ustád, Áqá) — they discriminate and are sometimes the whole handle. Use the most-used handle (Quddús, Vaḥíd, the Báb). Unsure → keep as written + "?"; under-resolve rather than mis-resolve. Skip names already in full and obvious pronouns; in quoted speech I/We = the speaker.
+• resolve — for each bare, elided, variant, or ambiguous name/epithet, "<name> = <fuller handle>". Keep each handle SHORT — the canonical name plus at most a two-word role (NOT a long descriptive clause; e.g. "Shahr-Bánú = 'Abdu'l-Bahá's betrothed", not a full sentence of relationships). Use ONLY a handle the paragraph, scene, or CAST supports — never invent a nisba or upgrade a name to a famous namesake. The text's own qualifier beats prominence: an "amanuensis Mírzá Aḥmad" is NOT the scholar Mírzá Aḥmad-i-Azghandí. Keep honorifics (Mírzá, Mullá, Siyyid, Ḥájí, Karbilá'í, Ustád, Áqá). Use the most-used handle (Quddús, Vaḥíd, the Báb). Unsure → keep as written + "?"; UNDER-resolve rather than over-resolve — resolve only the names a reader genuinely could not place, not every name; skip names already in full and obvious pronouns; in quoted speech I/We = the speaker.
 
 BOOK:
 ${bookMeta}
@@ -131,7 +131,7 @@ async function processSeg(seg, si) {
     let parsed = null, lastRes = null;
     for (const [m, prov, tries] of ladder) {
       for (let attempt = 0; attempt < tries && !parsed; attempt++) {
-        const sys = attempt < 1 && m === MODEL ? SYS : SYS + '\n\nIMPORTANT: keep "idea" to one short clause; output ONLY the compact JSON object, nothing else.';
+        const sys = attempt < 1 && m === MODEL ? SYS : SYS + '\n\nIMPORTANT: this passage is dense — resolve ONLY the few most ambiguous names (short handles), keep "idea" to one clause, and output ONLY the compact JSON object. Brevity prevents truncation.';
         let res;
         try { res = await retry(() => callModel(m, prov, sys, user)); }
         catch (e) { console.error(`  [${p.pid}] AI FAIL ${m} ${String(e.message).slice(0, 40)}`); break; }
