@@ -52,6 +52,7 @@ But do NOT over-create — these are false splits:
 • A deceased figure referenced in a LATER scene is the SAME person — a date gap between a person's death and a scene that merely MENTIONS them is NOT an era mismatch (e.g. Shaykh Aḥmad-i-Aḥsá'í, d. 1826, cited in an 1852 scene → LINK, not create).
 • Minor surface differences (a trailing period, an added descriptor, a parenthetical) are the SAME entity you would resolve the bare name to — link them to that candidate.
 • Do NOT invent a "context incompatibility" to justify a create; create ONLY when the core name + role genuinely has no match among the candidates. If a candidate matches the core name and role, LINK.
+• An ANONYMOUS or UNNAMED reference is NOT an entity — "the unnamed owner", "the wife of X", "two brothers", "a youth", "a neighbour", "a comrade" with NO given personal name → return "uncertain" (never create). Create ONLY for a real GIVEN NAME (a personal name, optionally with honorific/nisba/place). A bare first name alone with nothing to distinguish it (many people share it) → "uncertain", not create.
 Return ONLY JSON: {"verdict":"link|create|uncertain|other","type":"person|place|work|concept|community|group|event","entity_id":<id or null>,"canonical":"<name or null>","decisive":"<axis that settled it, ≤20 words>","confidence":0.0-1.0}`;
 
 export function parseVerdict(raw) {

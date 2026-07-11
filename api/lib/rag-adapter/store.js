@@ -126,8 +126,11 @@ export function makeStore() {
     // parenthetical/descriptor) — else a long "Name (the … leader, successor of …)" dilutes the skeleton and
     // misses the existing entity (seen live: Siyyid Káẓim-i-Rashtí wrongly proposed as a create).
     async findCandidateEntities(name, { type = 'person', limit = 6 } = {}) {
+      // Recall on the full string, the core name (before any parenthetical), AND the parenthetical alias —
+      // an entity may be stored under either form ("Áqáy-i-Kalím" vs its alias "Mírzá Músá").
       const core = String(name).replace(/\([^)]*\)/g, '').split(/[,;—]| the | who | a /)[0].trim();
-      const keys = [...new Set([...skeletonKeys(name), ...(core && core !== name ? skeletonKeys(core) : [])])];
+      const paren = (String(name).match(/\(([^)]+)\)/g) || []).map((s) => s.replace(/[()]/g, '')).join(' ');
+      const keys = [...new Set([name, core, paren].filter(Boolean).flatMap((p) => [...skeletonKeys(p)]))];
       if (!keys.length) return [];
       const rows = await db.queryAll(
         `SELECT lk.entity_id id, ge.canonical_name canonical, ge.entity_type type, ge.importance importance,
