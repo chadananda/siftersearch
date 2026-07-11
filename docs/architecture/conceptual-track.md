@@ -138,7 +138,15 @@ fair-mindedness, equity) through *‘adl* (عدل — law and order, societal ju
 English label (exactly as a *person's* identity is the Arabic-script name, not the romanization). Each concept
 entity therefore carries its **root** (Arabic/Persian), the **authoritative rendering** (the Guardian's
 word-choice), and the **spectrum** of renderings used across the corpus, so an inquirer asking about "justice" is
-*shown the spectrum* and can reach *insáf* and *‘adl* as distinct concepts. A term concordance of **Shoghi
+*shown the spectrum* and can reach *insáf* and *‘adl* as distinct concepts.
+
+The anchor cuts **both ways** — it does not only *split* an over-broad English word, it also *decodes* a rendering
+the English itself obscures. Two cases beyond "justice": a word **ambiguous in English** — "spirit," "soul" each
+stand over several distinct originals (*rúḥ*, *nafs*, *ján*…), so the English alone can't say which is meant; and a
+word **archaic to the point of opacity** — "collyrium," in *"anointed … with the collyrium of the knowledge of
+God,"* renders the perfectly plain *kuḥl* (kohl, the eye-salve). The reader stalls on the English while the
+original is *clearer* than the translation. Exposing the plain original behind the Guardian's deliberately
+elevated English is therefore illuminating in its own right — not only for disambiguation. A term concordance of **Shoghi
 Effendi's major translations** already exists (per-word root + his rendering + the spectrum) — an *authoritative
 sampler*: a quick query exposes the underlying original word **when the rendering is his** (the Guardian-translated
 tier we process first anyway). It doesn't replace judgment — the original itself uses several words for "justice"
