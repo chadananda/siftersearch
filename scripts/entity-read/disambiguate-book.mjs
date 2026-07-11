@@ -25,25 +25,35 @@ const { assignChapters } = await import('./chapter-map.mjs');
 const DOC = +(process.env.DOC || 21308);
 const SEGMAX = +(process.env.SEGMAX || 60);
 const WRITE = process.env.WRITE === '1';
-const MODEL = process.env.MODEL || 'deepseek-v4-flash';
-const IS_PRO = /pro/.test(MODEL);
-const MAXTOK = +(process.env.MAXTOK || (IS_PRO ? 4000 : 1000)); // pro (reasoning) burns tokens on THINKING before the JSON; flash-with-JSON: 1000 (600 truncated ~9% to finish=length → unparseable).
 const CHAP = process.env.CHAP || null;                 // restrict to one chapter (proof runs)
 const USE_TOC = process.env.USE_TOC ? process.env.USE_TOC === '1' : [21308, 21310].includes(DOC);
 const pnum = (pid) => +String(pid).replace(/\D/g, '');
 
-const meta = (await queryAll(`SELECT title, author, religion, collection, year, description FROM docs WHERE id=?`, [DOC]))[0] || {};
-const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, meta.collection].filter(Boolean).join(' / '), meta.year ? `Year ${meta.year}` : '', meta.description ? `About: ${String(meta.description).slice(0, 240)}` : ''].filter(Boolean).join('\n');
-// Pass 2 → Pass 3: the book-level MAIN CAST seed gives every chapter book-wide identity, so chapters disambiguate
-// independently without losing a figure introduced elsewhere (fixes cross-chapter identity).
-const castSeed = process.env.NO_CAST === '1' ? '' : await (async () => { try { return (await (await import('./cast-seed.mjs')).buildCastSeed(DOC)).seed; } catch (e) { console.error(`cast-seed unavailable: ${e.message}`); return ''; } })();
+// PROFILE-DRIVEN model routing (multilingual): flash for En/Ar/He, haiku for Persian (flash fails silently on it),
+// with an escalation ladder primary→fallback that self-heals a passage the cheap model can't parse. Env overrides win.
+const { detectProfile, providerOf } = await import('../../api/lib/pipeline/profile.js');
+const meta = (await queryAll(`SELECT id, title, author, religion, collection, year, description FROM docs WHERE id=?`, [DOC]))[0] || { id: DOC };
+const sampleText = (await queryAll(`SELECT text FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(text)>200 ORDER BY paragraph_index LIMIT 1`, [DOC]))[0]?.text || '';
+const profile = detectProfile(meta, sampleText);
+const MODEL = process.env.MODEL || profile.models.disambig;
+const PROVIDER = providerOf(MODEL);
+const FALLBACK = process.env.FALLBACK || profile.fallback;
+const FALLBACK_PROVIDER = providerOf(FALLBACK);
+const isPro = (m) => /pro/.test(m);
+const maxTokFor = (m) => +(process.env.MAXTOK || (isPro(m) ? 4000 : 1000)); // reasoning models need headroom before the JSON
+const LANG_NAME = { en: 'English', fa: 'Persian', ar: 'Arabic', he: 'Hebrew' };
 
-const SYS = `You output a compact disambiguation note as JSON for ONE paragraph of a historical narrative, so a later reader — an AI that has NOT read the earlier text — can place the passage and tell who is meant. Output JSON ONLY.
+const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, meta.collection].filter(Boolean).join(' / '), meta.year ? `Year ${meta.year}` : '', meta.description ? `About: ${String(meta.description).slice(0, 240)}` : ''].filter(Boolean).join('\n');
+// The book-level CAST seed (cumulative who's-who) grounds identity book-wide and lives in the STABLE cached prefix.
+const castSeed = process.env.NO_CAST === '1' ? '' : await (async () => { try { return (await (await import('./cast-seed.mjs')).buildCastSeed(DOC)).seed; } catch (e) { console.error(`cast-seed unavailable: ${e.message}`); return ''; } })();
+console.error(`profile: lang=${profile.lang} genre=${profile.genre} domain=${profile.domain} · model=${MODEL} (${PROVIDER}) → fallback=${FALLBACK}`);
+
+const SYS = `You output a compact disambiguation note as JSON for ONE passage of a ${profile.genre} work${profile.lang !== 'en' ? ` written in ${LANG_NAME[profile.lang] || profile.lang} (${profile.script} script) — READ the ${LANG_NAME[profile.lang] || profile.lang} passage and write your note in ENGLISH` : ''}, so a later English-reading AI that has NOT seen the surrounding text can place the passage and tell who/what is meant. Output JSON ONLY.
 
 Return exactly: {"place":"…","era":"… [pin|est]","idea":"…","resolve":["<name as written> = <fuller handle>", …]}
 
-ALWAYS fill place, era, and idea — never blank; there is always a location, a time, and a thread. "resolve" MAY be [] when no name needs it.
-• place / era — the location and time in force. Inherit from STATE; change only when THIS paragraph moves. Mark era "[pin]" when stated or anchored (Báb's Declaration May 1844; His martyrdom July 1850; Naw-Rúz ≈ 21 Mar; "N years after" an epoch — compute it, e.g. 7th Naw-Rúz after the Declaration = spring 1851), else "[est]".
+ALWAYS fill place, era, and idea — never blank; there is always a locus (place OR section of the work), a time, and a thread. "resolve" MAY be [] when no name needs it.
+• place / era — the location (or, for scripture/commentary, the work-section) and time in force. Inherit from STATE; change only when THIS passage moves. Mark era "[pin]" when stated or anchored (${profile.eraAnchors || 'a stated date, a named era, or "N years after" a known epoch — compute it'}), else "[est]".
 • idea — the subject / argument / thread this passage develops, in a few words (whose words or which tablet, if given, plus the point). This alone makes the note useful when no name needs resolving.
 • resolve — for each bare, elided, variant, or ambiguous name/epithet, "<name> = <fuller handle>". Use ONLY a handle the paragraph, scene, or CAST supports — never invent a nisba or upgrade a name to a famous namesake. The text's own qualifier beats prominence: an "amanuensis Mírzá Aḥmad" is NOT the scholar Mírzá Aḥmad-i-Azghandí. Keep honorifics (Mírzá, Mullá, Siyyid, Ḥájí, Karbilá'í, Ustád, Áqá) — they discriminate and are sometimes the whole handle. Use the most-used handle (Quddús, Vaḥíd, the Báb). Unsure → keep as written + "?"; under-resolve rather than mis-resolve. Skip names already in full and obvious pronouns; in quoted speech I/We = the speaker.
 
@@ -56,6 +66,7 @@ ${castSeed ? `\nCAST (who's-who — resolve a bare/variant name to the right PRI
 // ids, e.g. ROB, Gate of the Heart). Include 'quote' blocks — in many books the substance is quoted scripture.
 let paras = await queryAll(`SELECT id, COALESCE(external_para_id, 'p' || id) pid, paragraph_index pidx, heading, text FROM content WHERE doc_id=? AND deleted_at IS NULL AND blocktype IN ('paragraph','quote') ORDER BY paragraph_index`, [DOC]);
 paras = paras.map((p) => ({ ...p, text: String(p.text).replace(/\s+/g, ' ').trim() }));
+const LIMIT = +(process.env.LIMIT || 0); if (LIMIT) paras = paras.slice(0, LIMIT);   // cap total paras (dry-run testing)
 let segs;
 if (USE_TOC) {
   const { paras: mapped } = await assignChapters(DOC);
@@ -94,7 +105,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const retry = async (fn, n = 5) => { let err; for (let i = 0; i < n; i++) { try { return await fn(); } catch (e) { err = e; await sleep(700 * (i + 1)); } } throw err; };
 process.on('unhandledRejection', (e) => console.error(`unhandledRejection: ${String(e?.message || e).slice(0, 80)}`)); // never let a transient blip kill the run
 const doneSet = RESUME ? new Set((await queryAll(`SELECT COALESCE(external_para_id, 'p' || id) pid FROM content WHERE doc_id=? AND context_model='deepseek-disambig-v1' AND context IS NOT NULL`, [DOC])).map((r) => r.pid)) : new Set();
-let done = 0, failed = 0;
+let done = 0, failed = 0, escalations = 0, invalidDropped = 0;
+// Provider-aware call. DeepSeek supports response_format json_object; anthropic/openai rely on the
+// "Output JSON ONLY" instruction + parseNote's brace extraction (handles ```json fences too).
+async function callModel(model, provider, sys, user) {
+  const opts = { provider, model, temperature: 0, maxTokens: maxTokFor(model) };
+  if (provider === 'deepseek') { opts.responseFormat = { type: 'json_object' }; if (isPro(model)) opts.thinking = true; }
+  return chatCompletion([{ role: 'system', content: sys }, { role: 'user', content: user }], opts);
+}
 // One segment = one warm cache. STATE (place/era + a few recent name-resolves) is LOCAL and tiny, so segments run
 // in parallel AND consecutive same-scene calls share SYSTEM+SCENE+STATE (only the paragraph text varies → max cache).
 async function processSeg(seg, si) {
@@ -106,17 +124,28 @@ async function processSeg(seg, si) {
     const sceneLine = USE_TOC ? `${p.chapterNum || ''}${p.chapterTitle ? ' · ' + p.chapterTitle : ''}${p.scene ? ' · ' + p.scene : ''}`.trim() : (p.heading || '');
     const state = `place=${place || '(open)'} · era=${era || '(open)'}${known.length ? ` · known: ${known.join('; ')}` : ''}`;
     const user = `SCENE: ${sceneLine || '(none)'}\nSTATE (inherit place/era unless this paragraph moves): ${state}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
-    // Call + parse, retrying up to 3x: JSON is non-deterministic, so an unparseable/truncated reply almost always
-    // parses on a re-call. `idea` is required in the schema → a valid parse is structurally non-empty.
+    // Escalation ladder: primary model (3 tries) → fallback model (2 tries). Self-heals a passage the cheap
+    // model can't parse (esp. Persian on flash, which fails silently) instead of dropping it. `idea` is required
+    // in the schema → a valid parse is structurally non-empty.
+    const ladder = MODEL === FALLBACK ? [[MODEL, PROVIDER, 4]] : [[MODEL, PROVIDER, 3], [FALLBACK, FALLBACK_PROVIDER, 2]];
     let parsed = null, lastRes = null;
-    for (let attempt = 0; attempt < 3 && !parsed; attempt++) {
-      const sys = attempt < 1 ? SYS : SYS + '\n\nIMPORTANT: keep "idea" to one short clause; output ONLY the compact JSON object, nothing else.';
-      let res;
-      try { res = await retry(() => chatCompletion([{ role: 'system', content: sys }, { role: 'user', content: user }], { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: MAXTOK, responseFormat: { type: 'json_object' }, ...(IS_PRO ? { thinking: true } : {}) })); }
-      catch (e) { console.error(`  [${p.pid}] AI FAIL ${String(e.message).slice(0, 50)}`); break; }
-      lastRes = res; parsed = parseNote(res.content || '');
+    for (const [m, prov, tries] of ladder) {
+      for (let attempt = 0; attempt < tries && !parsed; attempt++) {
+        const sys = attempt < 1 && m === MODEL ? SYS : SYS + '\n\nIMPORTANT: keep "idea" to one short clause; output ONLY the compact JSON object, nothing else.';
+        let res;
+        try { res = await retry(() => callModel(m, prov, sys, user)); }
+        catch (e) { console.error(`  [${p.pid}] AI FAIL ${m} ${String(e.message).slice(0, 40)}`); break; }
+        lastRes = res; parsed = parseNote(res.content || '');
+      }
+      if (parsed) { if (m !== MODEL) escalations++; break; }
     }
-    if (!parsed) { console.error(`  [${p.pid}] unparseable after retries [finish=${lastRes?.finishReason || '?'}]`); failed++; continue; }
+    if (!parsed) { console.error(`  [${p.pid}] unparseable after ladder [finish=${lastRes?.finishReason || '?'}]`); failed++; continue; }
+    // Validation gate (your proof_ok doctrine): a resolved name's LHS must appear verbatim in the passage,
+    // else the model invented it → drop that resolution. Language-agnostic (LHS is the source-script name).
+    if (parsed.resolve.length) {
+      const kept = parsed.resolve.filter((r) => { const lhs = r.split('=')[0].trim().replace(/^["'“”]+|["'“”]+$/g, ''); return lhs.length < 2 || p.text.includes(lhs); });
+      invalidDropped += parsed.resolve.length - kept.length; parsed.resolve = kept;
+    }
     if (parsed.place) place = parsed.place;
     if (parsed.era) era = parsed.era;
     if (parsed.resolve.length) { known.push(...parsed.resolve); while (known.length > 5) known.shift(); }
@@ -129,5 +158,5 @@ async function processSeg(seg, si) {
 let next = 0;
 async function worker() { while (next < segs.length) { const i = next++; try { await processSeg(segs[i], i); } catch (e) { console.error(`seg ${i + 1} crashed: ${String(e.message).slice(0, 60)}`); } } }
 await Promise.all(Array.from({ length: Math.min(CONC, segs.length) }, worker));
-console.error(`\nDONE — ${done} paragraphs disambiguated, ${failed} failed${WRITE ? ' → content.context (model=deepseek-disambig-v1)' : ' (dry run)'}`);
+console.error(`\nDONE — ${done} paragraphs disambiguated, ${failed} failed · ${escalations} escalated to ${FALLBACK} · ${invalidDropped} invented-resolves dropped${WRITE ? ' → content.context (model=deepseek-disambig-v1)' : ' (dry run)'}`);
 process.exit(0);
