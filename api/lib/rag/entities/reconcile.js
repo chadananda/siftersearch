@@ -43,6 +43,10 @@ If it IS a person, decide by EVIDENCE:
 • "create" — a person NOT among the candidates (or the only name-candidate's evidence contradicts this cluster's role/era). Give canonical = the source's resolved form.
 • "uncertain" — evidence insufficient; route to human.
 Rules: name similarity ALONE never justifies "link" (namesakes abound); require role/place/era/connection agreement. A descriptor that contradicts a candidate (an "amanuensis" is not a "traditions-scholar") forbids linking. Prefer "create"/"uncertain" over a wrong link (a false merge fabricates a person).
+But do NOT over-create — these are false splits:
+• A deceased figure referenced in a LATER scene is the SAME person — a date gap between a person's death and a scene that merely MENTIONS them is NOT an era mismatch (e.g. Shaykh Aḥmad-i-Aḥsá'í, d. 1826, cited in an 1852 scene → LINK, not create).
+• Minor surface differences (a trailing period, an added descriptor, a parenthetical) are the SAME entity you would resolve the bare name to — link them to that candidate.
+• Do NOT invent a "context incompatibility" to justify a create; create ONLY when the core name + role genuinely has no match among the candidates. If a candidate matches the core name and role, LINK.
 Return ONLY JSON: {"verdict":"link|create|uncertain|other","type":"person|place|work|concept|community|group|event","entity_id":<id or null>,"canonical":"<name or null>","decisive":"<axis that settled it, ≤20 words>","confidence":0.0-1.0}`;
 
 export function parseVerdict(raw) {

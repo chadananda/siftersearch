@@ -114,9 +114,12 @@ export function makeStore() {
     },
 
     // Candidate entities by transliteration-invariant name recall (RECALL ONLY — the caller binds by
-    // evidence, never by this list).
+    // evidence, never by this list). Recalls on BOTH the full resolved string AND its core name (before any
+    // parenthetical/descriptor) — else a long "Name (the … leader, successor of …)" dilutes the skeleton and
+    // misses the existing entity (seen live: Siyyid Káẓim-i-Rashtí wrongly proposed as a create).
     async findCandidateEntities(name, { type = 'person', limit = 6 } = {}) {
-      const keys = [...skeletonKeys(name)];
+      const core = String(name).replace(/\([^)]*\)/g, '').split(/[,;—]| the | who | a /)[0].trim();
+      const keys = [...new Set([...skeletonKeys(name), ...(core && core !== name ? skeletonKeys(core) : [])])];
       if (!keys.length) return [];
       const rows = await db.queryAll(
         `SELECT lk.entity_id id, ge.canonical_name canonical, ge.entity_type type, ge.importance importance,
@@ -148,6 +151,35 @@ export function makeStore() {
       }));
       await db.transaction(stmts);
       return decisions.length;
+    },
+
+    // Mention-cluster decisions with payload normalised to the library's shape (tolerates the legacy
+    // snake_case payload from the pre-library reconcile prototype).
+    async getProposedDecisions() {
+      const rows = await db.queryAll(`SELECT id, kind, status, confidence, payload FROM entity_decisions WHERE target_kind='mention-cluster'`);
+      return rows.map((r) => {
+        let p = {};
+        try { p = JSON.parse(r.payload || '{}'); } catch { /* */ }
+        return { id: r.id, kind: r.kind, status: r.status, confidence: r.confidence,
+          payload: { resolvedAs: p.resolvedAs ?? p.resolved_as, entityId: p.entityId ?? p.entity_id ?? null, canonical: p.canonical ?? null, type: p.type ?? 'person', freq: p.freq } };
+      });
+    },
+
+    // Mint a new (bare) entity as a projection — invisible to the live browser until enriched. Returns its id.
+    async createEntity(canonical, type = 'person') {
+      const r = await db.query(`INSERT INTO graph_entities (name, canonical_name, entity_type, last_assessed_version) VALUES (?,?,?,?)`, [canonical, canonical, type, 'reconcile-v1']);
+      return r.lastInsertRowid;
+    },
+
+    // Bind an entire resolved-name cluster to an entity (the projection set by an applied decision). Returns rows bound.
+    async bindMentions(resolvedAs, entityId, conf) {
+      const r = await db.query(`UPDATE entity_mentions_v2 SET entity_id=?, resolution_basis='reconcile', resolution_conf=? WHERE resolved_as=?`, [entityId, conf, resolvedAs]);
+      return r.rows?.[0]?.changes ?? 0;
+    },
+
+    // Mark a decision applied + record which entity it resolved to (reversible provenance).
+    async markDecisionApplied(id, entityId) {
+      await db.query(`UPDATE entity_decisions SET status='applied', payload=json_set(COALESCE(payload,'{}'),'$.applied_entity_id',?) WHERE id=?`, [entityId, id]);
     },
   };
 }
