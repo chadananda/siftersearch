@@ -25,13 +25,13 @@ const CONC = Number(arg('concurrency', '4'));
 const ADVERSARIAL = ['persecuted', 'attacked', 'opposed', 'betrayed', 'slandered', 'harmed', 'tortured', 'defeated', 'expelled', 'denounced', 'condemned', 'humiliated', 'plotted-against', 'assailed', 'wronged', 'accused'];
 const REPORTED = ['%claimed%', '%alleged%', '%accused%', '%pretended%', '%boasted%', '%asserted that%', '%professed%'];
 
-const SYSTEM = `You audit ONE extracted historical claim against its SOURCE paragraph, for DIRECTION and FACTUALITY. A claim "Subject — relation Object" asserts the SUBJECT performs the relation upon the Object.
-Decide, using ONLY the paragraph:
-• "ok" — the paragraph narrates, as fact, that the Subject does this to the Object.
-• "passive" — the paragraph actually says the OBJECT does it to the SUBJECT; the Subject is the victim/patient and the claim's direction is REVERSED (e.g. proof "He was assailed by the Covenant-breakers" under claim "'Abdu'l-Bahá — persecuted Covenant-breakers").
-• "drop" — the statement is only an ACCUSATION / rumour / boast ATTRIBUTED to someone (especially an adversary), OR the proof does not support it, OR it is negated / hypothetical. Not a narrated fact about the Subject.
-• "relabel" — direction is fine but the relation word is wrong; give "better_relation".
-Return ONLY JSON: {"verdict":"ok|passive|drop|relabel","better_relation":"","why":"<=12 words"}`;
+const SYSTEM = `You audit ONE extracted historical claim against its SOURCE paragraph, for DIRECTION and FACTUALITY. A claim "Subject — relation Object" asserts the SUBJECT performs the relation upon the Object. Judge ONLY from the paragraph. Be CONSERVATIVE: when uncertain, choose "ok" — never discard a plausibly-supported claim.
+Choose in this order:
+• "passive" — the Subject is the VICTIM/patient: the paragraph says this was done TO the Subject (by the Object or by others) — "X was persecuted/attacked/betrayed by Y", "at the hands of", "Y rose against X", "X suffered". The direction is merely REVERSED; PREFER this over "drop" whenever the underlying fact is real (it is repaired, not deleted). Ex: proof "He was assailed by the Covenant-breakers" under "'Abdu'l-Bahá — persecuted Covenant-breakers" → passive.
+• "relabel" — direction fine but the relation WORD is wrong; give "better_relation".
+• "drop" — ONLY when the statement is not a narrated fact about the Subject at all: an accusation/rumour/boast ATTRIBUTED to an adversary ("the breakers claimed…"), OR the Subject is the WRONG person (the paragraph is about someone else), OR it is explicitly negated/hypothetical, OR the proof plainly contradicts it. Do NOT drop merely because the proof is terse.
+• "ok" — otherwise (the Subject genuinely does this to the Object, as narrated). Default here when unsure.
+Return ONLY JSON: {"verdict":"ok|passive|relabel|drop","better_relation":"","why":"<=12 words"}`;
 
 const buildUser = (c, para) => `PARAGRAPH:\n${para}\n\nCLAIM: ${c.statement}\nRELATION: ${c.relation}\nPROOF: ${c.proof_verbatim}`;
 
