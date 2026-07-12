@@ -27,8 +27,14 @@ const claims = await queryAll(
 // resolves than GPB, so most claim-paras have no bound mention → same-para binding under-covers. Within ONE
 // book's disambiguation context a name that maps to exactly ONE bound entity is safe to bind globally; a name
 // used by >1 entity in the doc is EXCLUDED (namesake-safe: under-bind, never mis-bind). Off for legacy batches.
+// Key on each entity's CORE name (canonical minus "(descriptor)" / ", descriptor") — else a relative's descriptor
+// ("son of Bahá'u'lláh") makes the father's name look ambiguous and blocks his (top) claims.
+const coreOf = (s) => nrm(String(s || '').split('(')[0].split(',')[0]);
 const docPairs = [];
-if (DOC) { const seen = new Set(); for (const m of mentions) { const rn = nrm(m.resolved_as); const k = m.entity_id + '|' + rn; if (!seen.has(k)) { seen.add(k); docPairs.push({ rn, eid: m.entity_id }); } } }
+if (DOC) {
+  const ents = await queryAll(`SELECT DISTINCT g.id, g.canonical_name FROM graph_entities g JOIN entity_mentions_v2 m ON m.entity_id=g.id WHERE m.doc_id=? AND m.entity_id IS NOT NULL`, [DOC]);
+  for (const e of ents) { const rn = coreOf(e.canonical_name); if (rn) docPairs.push({ rn, eid: e.id }); }
+}
 const docBind = (name) => {                                 // eid iff name matches exactly ONE doc entity, else null
   if (!DOC || !name) return null;
   let found = null;
