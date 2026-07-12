@@ -84,6 +84,11 @@ export function makeStore() {
       return rows.length;
     },
 
+    // Paragraphs that already have ≥1 claim — lets claims(--resume) reprocess only the gaps (crash / throttle).
+    async getClaimedParaIds(docId) {
+      return (await db.queryAll(`SELECT DISTINCT para_id FROM entity_claims WHERE doc_id=?`, [docId])).map((r) => r.para_id);
+    },
+
     // Fraction of a doc's prose paragraphs that carry a disambiguation note — the gate's input.
     async getDisambigCoverage(docId) {
       const r = (await db.queryAll(

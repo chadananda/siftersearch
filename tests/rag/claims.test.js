@@ -61,4 +61,21 @@ describe('claims — run() on fake ports', () => {
     const { rag } = makeRag({ seed: { ...seed, coverage: { 5: 0.3 } } });
     await expect(rag.entities.claims(5)).rejects.toThrow(/disambiguated/);
   });
+
+  it('RESUME skips paragraphs that already have claims (fills gaps, no re-work)', async () => {
+    const llm = fakeLLM([reply('stop', good)]);
+    const { rag } = makeRag({ seed: { ...seed, claimedParas: { 5: ['para_1'] } }, llm });
+    const stats = await rag.entities.claims(5, { version: 'v1', resume: true });
+    expect(stats.paras).toBe(0);          // the only paragraph was already claimed → skipped
+    expect(llm.calls.length).toBe(0);     // no model calls wasted on done work
+  });
+
+  it('RESILIENCE: a transient model error is surfaced as failed (never a silent loss), distinct from empty', async () => {
+    const llm = fakeLLM(() => { throw new Error('429 rate limit'); });   // every call throws → errored, never empty
+    const { rag, store } = makeRag({ seed, llm });
+    const stats = await rag.entities.claims(5, { version: 'v1', model: 'flash', fallback: 'flash' });  // single model → bounded backoff
+    expect(store.claims).toHaveLength(0);
+    expect(stats.failed).toBe(1);         // errored paragraph is counted — recoverable by a --resume re-run
+    expect(stats.empty).toBe(0);          // not misclassified as a genuine empty paragraph
+  }, 20000);                              // real ladder+retry-backoff on a fully-erroring paragraph is slow by design
 });

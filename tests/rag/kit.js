@@ -57,6 +57,7 @@ export function memStore(seed = {}) {
     saveMentions: async (rows) => { mentions.push(...rows); return rows.length; },
     getRelations: async () => seed.relations || [],
     saveClaims: async (rows) => { claims.push(...rows); return rows.length; },
+    getClaimedParaIds: async (id) => seed.claimedParas?.[id] || [...new Set(claims.map((c) => c.paraId))],
     saveConceptClaims: async (rows) => { conceptClaims.push(...rows); return rows.length; },
     getConceptGroups: async (id) => seed.conceptGroups?.[id] || [],
     findLexiconEntries: async () => seed.lexicon || [],

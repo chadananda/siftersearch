@@ -20,21 +20,26 @@ export async function run(ctx, docId, opts = {}) {
   const relations = (await ctx.store.getRelations?.()) || [];
   const relKeys = new Set(relations.map((r) => r.key));
   const relList = relations.map((r) => r.key).join(', ') || DEFAULT_RELATIONS;
-  const paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context && p.contextModel === version && (p.kind ?? 'paragraph') === 'paragraph');
+  let paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context && p.contextModel === version && (p.kind ?? 'paragraph') === 'paragraph');
+  // RESUME: only process paragraphs that don't already have claims — a re-run cheaply fills gaps (crash / earlier
+  // throttle) instead of re-doing the whole book. (INSERT OR IGNORE already dedups, but this skips the model calls.)
+  if (opts.resume) { const done = new Set((await ctx.store.getClaimedParaIds?.(docId)) || []); paras = paras.filter((p) => !done.has(p.pid)); }
   const system = buildSystem(profile, relList);
   const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
-  const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, continued: 0 };
+  const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, empty: 0, failed: 0, escalated: 0, continued: 0 };
 
   // Write INCREMENTALLY per paragraph so a long run is resilient (a crash keeps prior work) and observable.
+  // A paragraph ends 'ok' | 'empty' (model answered, no claims — genuine) | 'errored' (every call threw — a
+  // transient throttle). errored is surfaced as `failed` (never a silent loss); recovery is a cheap `--resume`
+  // re-run that reprocesses only the gap paragraphs. Idempotent resume beats an in-run retry that would re-run
+  // the full ladder twice on a persistently-dead paragraph.
   await pool(opts.concurrency ?? 5, paras, async (p) => {
-    const era = eraOf(p.context);
-    const { claims, escalated, continued } = await extractAll(ctx, { system, baseUser: buildUser(p), route, maxTokens });
+    const { claims, escalated, continued, errored } = await extractAll(ctx, { system, baseUser: buildUser(p), route, maxTokens });
     if (escalated) stats.escalated++;
     stats.continued += continued;
-    if (!claims.length) { stats.failed++; return; }
-    const textNorm = proofNorm(p.text);
-    const paraRows = [];
+    if (!claims.length) { if (errored) stats.failed++; else stats.empty++; return; }
+    const era = eraOf(p.context), textNorm = proofNorm(p.text), paraRows = [];
     for (const c of claims) {
       stats.claims++;
       if (!c.subject || !c.relation || !c.proof || !proofPresent(c.proof, textNorm)) { stats.dropped++; continue; }
@@ -50,13 +55,14 @@ export async function run(ctx, docId, opts = {}) {
 // (finish=length) and still adding claims; escalate to the fallback if the primary yields nothing.
 async function extractAll(ctx, { system, baseUser, route, maxTokens }) {
   const models = route.model === route.fallback ? [route.model] : [route.model, route.fallback];
-  let continued = 0;
+  let continued = 0, gotResponse = false;
   for (const model of models) {
     const claims = [], seen = new Set();
     let user = baseUser, complete = false;
     for (let cont = 0; cont < 5; cont++) {
       let res;
       try { res = await ctx.model.retry(() => ctx.model.callModel({ model, system, user, maxTokens: maxTokens(model), json: true })); } catch { break; }
+      gotResponse = true;                                            // distinguishes a transient error from a genuine empty
       let added = 0;
       for (const c of parseClaims(res.content || '')) {
         const k = `${c.subject}|${c.relation}|${c.object}`;
@@ -67,9 +73,9 @@ async function extractAll(ctx, { system, baseUser, route, maxTokens }) {
       continued++;
       user = `${baseUser}\n\nYou already listed these (do NOT repeat them): ${[...seen].slice(-50).join(' ; ')}\nContinue with the REMAINING claims ONLY, as JSON {"claims":[...]}.`;
     }
-    if (complete || claims.length) return { claims, escalated: model !== route.model, continued };
+    if (complete || claims.length) return { claims, escalated: model !== route.model, continued, errored: false };
   }
-  return { claims: [], escalated: false, continued };
+  return { claims: [], escalated: false, continued, errored: !gotResponse };  // errored: every call threw (transient) — recoverable
 }
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
