@@ -21,22 +21,24 @@ export async function run(ctx, docId, opts = {}) {
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
   const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0 };
 
-  const rows = [];
+  const rows = [];   // dry-run review buffer only
+  // Write INCREMENTALLY per paragraph so a long run is resilient (a crash keeps prior work) and observable.
   await pool(opts.concurrency ?? 5, paras, async (p) => {
     const { parsed, escalated } = await ctx.model.runLadder({ route, system, user: buildUser(p), parse: parseConceptClaims, maxTokens });
     if (escalated) stats.escalated++;
     if (!parsed || !parsed.length) { stats.failed++; return; }
     const textNorm = proofNorm(p.text);
+    const paraRows = [];
     for (const c of parsed) {
       stats.claims++;
       if (!c.concept || !c.relation || !c.proof || !conceptProofOk(c.proof, textNorm)) { stats.dropped++; continue; }
-      rows.push(conceptClaimRow(c, { docId, pid: p.pid, methodVersion: version, extractor, batch }));
+      paraRows.push(conceptClaimRow(c, { docId, pid: p.pid, methodVersion: version, extractor, batch }));
     }
+    if (opts.dryRun) rows.push(...paraRows);
+    else if (paraRows.length) stats.written += await ctx.store.saveConceptClaims(paraRows);
   });
   ctx.log.info?.({ docId, ...stats }, 'concepts/extract');
-  if (opts.dryRun) return { ...stats, written: 0, rows };   // return claims for review, write nothing
-  stats.written = await ctx.store.saveConceptClaims(rows);
-  return stats;
+  return opts.dryRun ? { ...stats, written: 0, rows } : stats;
 }
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
