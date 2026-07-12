@@ -14,7 +14,8 @@ export async function run(ctx, docId, opts = {}) {
   const extractor = opts.extractor ?? ctx.config.versions?.conceptExtract ?? 'concept-extract-v1';
   const batch = opts.batch ?? extractor;
   const profile = await profileFor(ctx, docId);
-  const paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context && p.contextModel === version && (p.kind ?? 'paragraph') === 'paragraph');
+  let paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context && p.contextModel === version && (p.kind ?? 'paragraph') === 'paragraph');
+  if (opts.limit) paras = paras.slice(0, opts.limit);          // small reviewed slices before a full run
   const system = buildSystem(profile);
   const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
@@ -32,8 +33,9 @@ export async function run(ctx, docId, opts = {}) {
       rows.push(conceptClaimRow(c, { docId, pid: p.pid, methodVersion: version, extractor, batch }));
     }
   });
-  stats.written = opts.dryRun ? 0 : await ctx.store.saveConceptClaims(rows);
   ctx.log.info?.({ docId, ...stats }, 'concepts/extract');
+  if (opts.dryRun) return { ...stats, written: 0, rows };   // return claims for review, write nothing
+  stats.written = await ctx.store.saveConceptClaims(rows);
   return stats;
 }
 
