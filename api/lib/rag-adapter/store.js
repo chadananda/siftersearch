@@ -209,6 +209,25 @@ export function makeStore() {
       return rows.length;
     },
 
+    // Interpretation claims (a higher text's stated meaning of a symbol) — the lexicon seed input.
+    async getConceptInterpretations(docId) {
+      return db.queryAll(
+        `SELECT subject, relation, target, statement, proof_verbatim, para_id, doc_id FROM concept_claims
+          WHERE doc_id=? AND relation IN ('means','interprets','symbolizes','is-station-of','fulfills')`, [docId]);
+    },
+
+    // Persist authority-ranked, cited lexicon entries (the cumulative interpretive seed).
+    async saveLexiconEntries(entries) {
+      if (!entries.length) return 0;
+      const stmts = entries.map((e) => ({
+        sql: `INSERT INTO concept_lexicon (symbol, interpretation, authority, authority_tier, layer, proof_doc_id, proof_para_id, proof_verbatim, method_version)
+              VALUES (?,?,?,?,?,?,?,?,?)`,
+        args: [e.symbol, e.interpretation, e.authority, e.authorityTier, e.layer, e.proofDocId, e.proofParaId, e.proofVerbatim, e.methodVersion],
+      }));
+      await db.transaction(stmts);
+      return entries.length;
+    },
+
     // Concept-claim occurrences grouped by symbol (subject) for concept reconcile — each with its claim ids
     // and paragraphs. Only unbound (concept_id NULL).
     async getConceptGroups(docId, { limit } = {}) {
