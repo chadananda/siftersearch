@@ -26,7 +26,7 @@ export async function run(ctx, docId, opts = {}) {
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
   const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, continued: 0 };
 
-  const rowsAll = [];
+  // Write INCREMENTALLY per paragraph so a long run is resilient (a crash keeps prior work) and observable.
   await pool(opts.concurrency ?? 5, paras, async (p) => {
     const era = eraOf(p.context);
     const { claims, escalated, continued } = await extractAll(ctx, { system, baseUser: buildUser(p), route, maxTokens });
@@ -34,13 +34,14 @@ export async function run(ctx, docId, opts = {}) {
     stats.continued += continued;
     if (!claims.length) { stats.failed++; return; }
     const textNorm = proofNorm(p.text);
+    const paraRows = [];
     for (const c of claims) {
       stats.claims++;
       if (!c.subject || !c.relation || !c.proof || !proofPresent(c.proof, textNorm)) { stats.dropped++; continue; }
-      rowsAll.push(claimRow(c, { docId, pid: p.pid, era, relKeys, methodVersion: version, extractor, batch }));
+      paraRows.push(claimRow(c, { docId, pid: p.pid, era, relKeys, methodVersion: version, extractor, batch }));
     }
+    if (!opts.dryRun && paraRows.length) stats.written += await ctx.store.saveClaims(paraRows);
   });
-  stats.written = opts.dryRun ? 0 : await ctx.store.saveClaims(rowsAll);
   ctx.log.info?.({ docId, ...stats }, 'entities/claims');
   return stats;
 }
