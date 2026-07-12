@@ -9,6 +9,9 @@ export async function seed(ctx, docId, opts = {}) {
   const version = opts.version ?? ctx.config.versions?.conceptExtract ?? 'concept-extract-v1';
   const claims = await ctx.store.getConceptInterpretations(docId);
   const entries = claims.map((c) => lexiconEntry(c, { authority, authorityTier, methodVersion: version }));
+  // Idempotent: clear this doc's prior lexicon entries (same method version) before re-seeding, so a re-run
+  // after more claims are extracted refreshes rather than duplicates.
+  if (!opts.dryRun) await ctx.store.clearLexicon?.(docId, version);
   const written = opts.dryRun ? 0 : await ctx.store.saveLexiconEntries(entries);
   const stats = { claims: claims.length, entries: entries.length, written };
   ctx.log.info?.({ docId, ...stats }, 'concepts/lexicon.seed');

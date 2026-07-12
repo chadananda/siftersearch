@@ -232,6 +232,11 @@ export function makeStore() {
           WHERE doc_id=? AND relation IN ('means','interprets','symbolizes','is-station-of','fulfills')`, [docId]);
     },
 
+    // Clear a doc's prior lexicon entries (same method version) — makes lexicon.seed idempotent on re-run.
+    async clearLexicon(docId, methodVersion) {
+      await db.query(`DELETE FROM concept_lexicon WHERE proof_doc_id=? AND method_version=?`, [docId, methodVersion]);
+    },
+
     // Persist authority-ranked, cited lexicon entries (the cumulative interpretive seed).
     async saveLexiconEntries(entries) {
       if (!entries.length) return 0;

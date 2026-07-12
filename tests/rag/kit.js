@@ -62,6 +62,7 @@ export function memStore(seed = {}) {
     findLexiconEntries: async () => seed.lexicon || [],
     saveConceptDecisions: async (rows) => { conceptDecisions.push(...rows); return rows.length; },
     getConceptInterpretations: async (id) => seed.conceptInterpretations?.[id] || [],
+    clearLexicon: async () => {},
     saveLexiconEntries: async (rows) => { lexiconEntries.push(...rows); return rows.length; },
     getConcept: async (id) => seed.concepts?.[id] || { id },
     saveConceptLinks: async (rows) => { conceptLinks.push(...rows); return rows.length; },
