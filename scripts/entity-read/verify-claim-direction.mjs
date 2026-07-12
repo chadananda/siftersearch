@@ -50,9 +50,11 @@ async function retry(fn, n = 3) { let e; for (let i = 0; i < n; i++) { try { ret
 // Pull the suspect set + its source paragraph text.
 const rel = ADVERSARIAL.map((r) => `'${r}'`).join(',');
 const repCond = REPORTED.map((p) => `c.proof_verbatim LIKE '${p}'`).join(' OR ');
+// A claim's para_id is COALESCE(external_para_id, 'p'||id) from getParagraphs, so it can be EITHER form —
+// match both, else wave-1 docs (which use the 'p'||id form) are silently dropped from the audit.
 const rows = await queryAll(
   `SELECT c.id, c.doc_id, c.para_id, c.relation, c.statement, c.proof_verbatim, p.text AS para
-     FROM entity_claims c JOIN content p ON p.doc_id=c.doc_id AND p.external_para_id=c.para_id
+     FROM entity_claims c JOIN content p ON p.doc_id=c.doc_id AND (p.external_para_id=c.para_id OR 'p'||p.id=c.para_id)
     WHERE c.doc_id IN (${DOCS.join(',')}) AND c.status='supported'
       AND ( c.relation IN (${rel}) OR ${repCond} )
     ${LIMIT ? `LIMIT ${LIMIT}` : ''}`);
