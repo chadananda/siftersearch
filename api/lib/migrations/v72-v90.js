@@ -376,6 +376,59 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_doc_pipeline_stages ON doc_pipeline(enabled, priority, hype_status, extract_status)`);
     logger.info('Migration 89 complete: doc_pipeline table (backfill via scripts/pipeline/pipeline-backfill.mjs)');
   },
+
+  90: async () => {
+    // CONCEPT substrate (docs/architecture/conceptual-track.md) — the doctrinal twin of the entity layer.
+    // A concept is a first-class entity (English canonical + original-language root + rendering spectrum); the
+    // interpretive LEXICON is the authority-ranked, CITED map symbol→interpretation that grows top-down (higher
+    // texts ARE interpretation) and is spent bottom-up. Claims/mentions/decisions/links mirror the improvable
+    // entity architecture (append-only, source-anchored, deferred identity).
+    logger.info('Starting migration 90: concept substrate');
+    await query(`CREATE TABLE IF NOT EXISTS concept_entities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      canonical TEXT NOT NULL,          -- English canonical (cross-tradition query handle)
+      root TEXT,                        -- original-language root (‘adl/insáf; Logos; clouds) in native script
+      renderings TEXT,                  -- JSON: spectrum of renderings across the corpus
+      concept_type TEXT DEFAULT 'concept', -- concept|symbol|metaphor|term
+      tradition TEXT, importance INTEGER, summary TEXT,
+      last_assessed_version TEXT, created_at INTEGER DEFAULT (unixepoch()))`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_concept_canonical ON concept_entities(canonical)`);
+    await query(`CREATE TABLE IF NOT EXISTS concept_lexicon (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      symbol TEXT NOT NULL,             -- the metaphor/term ("the clouds", "living water")
+      concept_id INTEGER,               -- resolved concept (nullable until reconciled)
+      interpretation TEXT NOT NULL,     -- the authoritative meaning
+      authority TEXT, authority_tier INTEGER,  -- who established it + interpretive rank (lower=higher, SE=0…)
+      layer TEXT DEFAULT 'metaphorical',       -- literal|metaphorical (separate attributed layers)
+      proof_doc_id INTEGER, proof_para_id TEXT, proof_verbatim TEXT,
+      method_version TEXT, created_at INTEGER DEFAULT (unixepoch()))`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_lexicon_symbol ON concept_lexicon(symbol)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_lexicon_authority ON concept_lexicon(authority_tier)`);
+    await query(`CREATE TABLE IF NOT EXISTS concept_claims (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, claim_hash TEXT UNIQUE,
+      concept_id INTEGER, subject TEXT, root TEXT, relation TEXT, target TEXT,
+      statement TEXT, proof_verbatim TEXT, doc_id INTEGER, para_id TEXT,
+      semantic_key TEXT, method_version TEXT, extractor_version TEXT,
+      confidence REAL, status TEXT DEFAULT 'supported', proof_ok INTEGER DEFAULT 0, import_batch TEXT)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_concept_claims_doc ON concept_claims(doc_id)`);
+    await query(`CREATE TABLE IF NOT EXISTS concept_mentions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, anchor TEXT UNIQUE,
+      doc_id INTEGER, para_id TEXT, surface TEXT, surface_norm TEXT,
+      concept_id INTEGER, resolved_as TEXT, resolution_basis TEXT, method_version TEXT, model TEXT,
+      created_at INTEGER DEFAULT (unixepoch()))`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_concept_mentions_doc ON concept_mentions(doc_id)`);
+    await query(`CREATE TABLE IF NOT EXISTS concept_decisions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kind TEXT, target_kind TEXT, target_ids TEXT, payload TEXT, evidence TEXT, rationale TEXT,
+      actor TEXT, actor_tier INTEGER, confidence REAL, status TEXT DEFAULT 'proposed',
+      supersedes INTEGER, valid_time TEXT, decided_at INTEGER DEFAULT (unixepoch()))`);
+    await query(`CREATE TABLE IF NOT EXISTS concept_links (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, a_concept_id INTEGER, b_concept_id INTEGER,
+      link_type TEXT,                   -- analogical|authoritative-bridge
+      authority TEXT, proof_doc_id INTEGER, proof_para_id TEXT, proof_verbatim TEXT,
+      rationale TEXT, created_at INTEGER DEFAULT (unixepoch()))`);
+    logger.info('Migration 90 complete: concept substrate (concept_entities/lexicon/claims/mentions/decisions/links)');
+  },
 };
 
 export const graphMigrations = {

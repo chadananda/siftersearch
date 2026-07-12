@@ -43,8 +43,9 @@ export function memStore(seed = {}) {
   const bound = [];      // bindMentions calls
   const appliedMarks = []; // markDecisionApplied calls
   const merges = [];     // applyMerge calls
+  const conceptClaims = []; // saveConceptClaims rows
   return {
-    saved, hyped, mentions, claims, decisions, created, bound, appliedMarks, merges,
+    saved, hyped, mentions, claims, decisions, created, bound, appliedMarks, merges, conceptClaims,
     getDocMeta: async (id) => seed.docs?.[id] || { id },
     getSampleText: async (id) => seed.samples?.[id] || '',
     getParagraphs: async (id) => seed.paras?.[id] || [],
@@ -53,6 +54,7 @@ export function memStore(seed = {}) {
     saveMentions: async (rows) => { mentions.push(...rows); return rows.length; },
     getRelations: async () => seed.relations || [],
     saveClaims: async (rows) => { claims.push(...rows); return rows.length; },
+    saveConceptClaims: async (rows) => { conceptClaims.push(...rows); return rows.length; },
     getDisambigCoverage: async (id) => seed.coverage?.[id] ?? 1,
     getMentionClusters: async (id) => seed.clusters?.[id] || [],
     getDecidedClusterNames: async () => new Set(seed.decided || []),

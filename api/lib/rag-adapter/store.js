@@ -193,6 +193,22 @@ export function makeStore() {
       await db.query(`UPDATE entity_decisions SET status='applied', payload=json_set(COALESCE(payload,'{}'),'$.applied_entity_id',?) WHERE id=?`, [entityId, id]);
     },
 
+    // Persist cited concept claims (INSERT OR IGNORE on claim_hash). concept_id stays NULL (deferred to
+    // concept reconcile). Stores the concept name (subject) + original-language root for later binding.
+    async saveConceptClaims(rows) {
+      if (!rows.length) return 0;
+      const stmts = rows.map((c) => ({
+        sql: `INSERT OR IGNORE INTO concept_claims
+                (claim_hash, concept_id, subject, root, relation, target, statement, proof_verbatim, doc_id, para_id,
+                 semantic_key, method_version, extractor_version, confidence, status, proof_ok, import_batch)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        args: [c.claimHash, null, c.concept, c.root, c.relation, c.target, c.statement, c.proofVerbatim, c.docId, c.paraId,
+          c.semanticKey, c.methodVersion, c.extractor, c.confidence, c.status, c.proofOk, c.batch],
+      }));
+      await db.transaction(stmts);
+      return rows.length;
+    },
+
     // Same-name entity groups (exact normalized canonical) for the dedup stage — each with mention count +
     // summary + a few facts so the adjudicator can judge same-person vs namesake by evidence.
     async getDuplicateGroups({ type = 'person', minSize = 2, limit } = {}) {
