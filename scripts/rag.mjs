@@ -25,6 +25,11 @@ const stages = {
   project: () => rag.entities.project(opts),
   merge: () => rag.entities.merge(opts),
   lookup: () => rag.entities.lookup(arg, opts),
+  'concept-extract': () => rag.concepts.extract(doc, opts),
+  'concept-lexicon': () => rag.concepts.lexicon.seed(doc, opts),
+  'concept-reconcile': () => rag.concepts.reconcile(doc, opts),
+  'concept-link': () => rag.concepts.link(opts.a, opts.b, opts),
+  'concept-disambiguate': () => rag.concepts.disambiguate(doc, opts),
 };
 if (!stages[stage]) { console.error(`stages: ${Object.keys(stages).join(', ')}`); process.exit(1); }
 
