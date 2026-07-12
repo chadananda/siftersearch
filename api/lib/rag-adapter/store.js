@@ -138,6 +138,7 @@ export function makeStore() {
            FROM entity_lookup_keys lk JOIN graph_entities ge ON ge.id=lk.entity_id
            LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type
           WHERE lk.skeleton_key IN (${keys.map(() => '?').join(',')})${type ? ' AND ge.entity_type=?' : ''}
+            AND ge.canonical_name NOT LIKE '%⟨merged%'
           GROUP BY lk.entity_id ORDER BY shared DESC, (ge.importance IS NULL), ge.importance DESC LIMIT ?`,
         [...keys, ...(type ? [type] : []), limit]);
       return rows;
@@ -287,7 +288,7 @@ export function makeStore() {
         `SELECT ge.id, ge.canonical_name canonical, er.summary,
                 (SELECT COUNT(*) FROM entity_mentions_v2 m WHERE m.entity_id=ge.id) mentions
            FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type
-          WHERE ge.entity_type=?`, [type]);
+          WHERE ge.entity_type=? AND ge.canonical_name NOT LIKE '%⟨merged%'`, [type]); // exclude already-merged (dead) entities
       const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
       const groups = {};
       for (const e of ents) { const k = norm(e.canonical); if (!k) continue; (groups[k] = groups[k] || []).push(e); }
