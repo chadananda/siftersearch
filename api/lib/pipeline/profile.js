@@ -55,15 +55,19 @@ export const PROFILE_OVERRIDES = {
   465:   { priority: 35, genre: 'history',   lang: 'en', domain: 'bahai' }, // Balyuzi — Muḥammad and the Course of Islám
   467:   { priority: 36, genre: 'biography', lang: 'en', domain: 'bahai' }, // Balyuzi — Khadíjih Bagum
   13433: { priority: 40, genre: 'history',   lang: 'en', domain: 'bahai' }, // Momen — Western Accounts of the Bábí & Bahá'í Religions
-  617265:{ priority: 45, genre: 'history',   lang: 'fa', domain: 'bahai' }, // Mázindarání — Ẓuhúru'l-Ḥaqq v1 (Persian → haiku)
-  617275:{ priority: 46, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v2
-  617284:{ priority: 47, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v3
-  617290:{ priority: 48, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v4
-  617298:{ priority: 49, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v5
-  617302:{ priority: 50, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v6
-  617305:{ priority: 51, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v7
-  617310:{ priority: 52, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v8
-  617313:{ priority: 53, genre: 'history',   lang: 'fa', domain: 'bahai' }, // …v9
+  // Mázindarání — Ẓuhúru'l-Ḥaqq (Persian → HAIKU: flash silently fails on Persian, and these are auto-detected
+  // as 'ar' because of heavy Arabic quotation of the Writings — pin lang:'fa' so they route to haiku, which is
+  // reliable on both Persian and Arabic). doc_ids are the REAL ingested volumes (earlier placeholders 617xxx
+  // did not exist, so the override never applied and the books would have misrouted to flash).
+  15228: { priority: 45, genre: 'history', lang: 'fa', domain: 'bahai' }, // Ẓuhúru'l-Ḥaqq v1 (Pre-Bábí Era)
+  15257: { priority: 46, genre: 'history', lang: 'fa', domain: 'bahai' }, // v2 (The Báb)
+  15254: { priority: 47, genre: 'history', lang: 'fa', domain: 'bahai' }, // v3 (Bábí Biographies)
+  20028: { priority: 48, genre: 'history', lang: 'fa', domain: 'bahai' }, // v4 (Early Bahá'u'lláh)
+  15256: { priority: 49, genre: 'history', lang: 'fa', domain: 'bahai' }, // v5 (Later Bahá'u'lláh)
+  20035: { priority: 50, genre: 'history', lang: 'fa', domain: 'bahai' }, // v6 (Bahá'í Biographies)
+  20037: { priority: 51, genre: 'history', lang: 'fa', domain: 'bahai' }, // v7 (‘Abdu'l-Bahá)
+  15255: { priority: 52, genre: 'history', lang: 'fa', domain: 'bahai' }, // v8 (Covenant Biographies)
+  15259: { priority: 53, genre: 'history', lang: 'fa', domain: 'bahai' }, // v9 (Shoghi Effendi)
   // — TIER 3: primary but LOOSELY collected/edited (‘Abdu'l-Bahá texts as compiled + eyewitness/pilgrim notes) —
   //   error-prone as TEXTS (oral notes, personal diaries, translation layers) → resolve against Tiers 1-2.
   20907: { priority: 60, genre: 'biography', lang: 'en', domain: 'bahai' }, // Memorials of the Faithful (Sohrab's oral-storytelling notes → English)
