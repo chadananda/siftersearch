@@ -35,18 +35,25 @@ export async function run(ctx, docId, opts = {}) {
 // prefix and the "@place, era" header (which may itself contain an em-dash) are naturally skipped. Skips
 // abstentions ("?").
 const RESOLVE = /["“”]([^"“”]{1,70})["“”]\s*=\s*([^;]+?)(?=\s*;|\s*$)/g;
+const keep = (s, r) => s && r && !/^\?+$/.test(r);
 export function parseMentions(context) {
   const body = String(context).split('—').slice(1).join('—');
+  // Format A (GPB/DB): QUOTED "surface" = handle — the regex ignores the @place header (even if it has an em-dash).
   const out = [];
   const re = new RegExp(RESOLVE.source, 'g');
   let m;
-  while ((m = re.exec(body))) {
-    const surface = m[1].trim();
-    const resolvedAs = m[2].trim();
-    if (!surface || !resolvedAs || /^\?+$/.test(resolvedAs)) continue;
-    out.push({ surface, resolvedAs });
-  }
-  return out;
+  while ((m = re.exec(body))) { const s = m[1].trim(), r = m[2].trim(); if (keep(s, r)) out.push({ surface: s, resolvedAs: r }); }
+  if (out.length) return out;
+  // Format B (wave-1/ROB/Taherzadeh): UNQUOTED "idea · surface = handle; surface2 = handle2" — resolves after " · ".
+  const dot = body.indexOf(' · ');
+  if (dot < 0) return [];
+  return body.slice(dot + 3).split(';').map((s) => s.trim()).filter(Boolean).map((pair) => {
+    const eq = pair.indexOf(' = ');
+    if (eq < 0) return null;
+    const surface = pair.slice(0, eq).trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, '');
+    const resolvedAs = pair.slice(eq + 3).trim();
+    return keep(surface, resolvedAs) ? { surface, resolvedAs } : null;
+  }).filter(Boolean);
 }
 
 // Normalise a surface for de-dup only (NOT for identity): strip diacritics + quotes, collapse space, lower.

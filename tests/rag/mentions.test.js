@@ -14,6 +14,14 @@ describe('mentions — pure helpers', () => {
     expect(parseMentions('@x, ~y — an idea with no resolves')).toEqual([]);
   });
 
+  it('parseMentions handles the wave-1 UNQUOTED "idea · surface = handle" format too', () => {
+    const note = '@Ṭihrán, ~1852 [pin] — the lineage of Bahá’u’lláh · Mírzá Buzurg = Mírzá ‘Abbás-i-Núrí; the Sháh = Náṣiri’d-Dín Sháh';
+    expect(parseMentions(note)).toEqual([
+      { surface: 'Mírzá Buzurg', resolvedAs: 'Mírzá ‘Abbás-i-Núrí' },
+      { surface: 'the Sháh', resolvedAs: 'Náṣiri’d-Dín Sháh' },
+    ]);
+  });
+
   it('anchorOf is deterministic and content-addressed', () => {
     expect(anchorOf(21308, 'para_5', normSurface('the Báb'), 0)).toBe(anchorOf(21308, 'para_5', normSurface('the Báb'), 0));
     expect(anchorOf(21308, 'para_5', normSurface('the Báb'), 0)).not.toBe(anchorOf(21308, 'para_6', normSurface('the Báb'), 0));
