@@ -35,13 +35,20 @@ if (DOC) {
   const ents = await queryAll(`SELECT DISTINCT g.id, g.canonical_name FROM graph_entities g JOIN entity_mentions_v2 m ON m.entity_id=g.id WHERE m.doc_id=? AND m.entity_id IS NOT NULL`, [DOC]);
   for (const e of ents) { const rn = coreOf(e.canonical_name); if (rn) docPairs.push({ rn, eid: e.id }); }
 }
+// Fallback match must be DIRECTIONAL: exact, or the claim subject is a substring of the fuller entity core
+// name ("mulla husayn" ⊂ "mulla husayn-i-bushrui"). NEVER core⊂subject — else a short common core ("muhammad",
+// "ali") is swallowed by any compound name ("Mírzá Muḥammad-‘Alí…") and mis-binds it to the Prophet/Imám.
+const docHit = (subj, core) => subj === core || (subj.length > 4 && core.includes(subj));
 const docBind = (name) => {                                 // eid iff name matches exactly ONE doc entity, else null
   if (!DOC || !name) return null;
   let found = null;
-  for (const p of docPairs) { if (hit(name, p.rn)) { if (found !== null && found !== p.eid) return null; found = p.eid; } }
+  for (const p of docPairs) { if (docHit(name, p.rn)) { if (found !== null && found !== p.eid) return null; found = p.eid; } }
   return found;
 };
 
+// Doc-scoped WRITE is authoritative + self-healing: clear this doc's prior binds first, then recompute — so a
+// re-run after a matcher fix removes stale mis-binds instead of leaving them (loop only sets, never clears).
+if (DOC && WRITE) await query(`UPDATE entity_claims SET entity_id=NULL, target_entity_id=NULL WHERE doc_id=?`, [DOC]);
 let subj = 0, obj = 0, done = 0, fbk = 0; const samples = [];
 for (const c of claims) {
   const parts = String(c.semantic_key || '').split('|');
