@@ -209,6 +209,37 @@ export function makeStore() {
       return rows.length;
     },
 
+    // Concept-claim occurrences grouped by symbol (subject) for concept reconcile — each with its claim ids
+    // and paragraphs. Only unbound (concept_id NULL).
+    async getConceptGroups(docId, { limit } = {}) {
+      const rows = await db.queryAll(`SELECT id, subject, para_id FROM concept_claims WHERE doc_id=? AND concept_id IS NULL AND subject IS NOT NULL`, [docId]);
+      const g = {};
+      for (const r of rows) { const k = r.subject; (g[k] = g[k] || { symbol: k, occurrences: [], paraIds: [] }); g[k].occurrences.push(r.id); if (r.para_id) g[k].paraIds.push(r.para_id); }
+      let out = Object.values(g);
+      if (limit) out = out.slice(0, limit);
+      return out;
+    },
+
+    // Lexicon interpretations for a symbol, authority-ranked (lower tier = higher authority).
+    async findLexiconEntries(symbol, { limit = 5 } = {}) {
+      return db.queryAll(
+        `SELECT id, interpretation, authority, authority_tier AS authorityTier, layer FROM concept_lexicon
+          WHERE symbol=? OR symbol LIKE ? ORDER BY (authority_tier IS NULL), authority_tier LIMIT ?`,
+        [symbol, `%${symbol}%`, limit]);
+    },
+
+    // Append proposed concept decisions (bind/under-bind) to the concept decision log.
+    async saveConceptDecisions(decisions) {
+      if (!decisions.length) return 0;
+      const stmts = decisions.map((d) => ({
+        sql: `INSERT INTO concept_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, confidence, status, valid_time)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+        args: [d.kind, d.targetKind, JSON.stringify(d.targetIds), JSON.stringify(d.payload), JSON.stringify(d.evidence), d.rationale, d.actor, d.actorTier, d.confidence, d.status, null],
+      }));
+      await db.transaction(stmts);
+      return decisions.length;
+    },
+
     // Same-name entity groups (exact normalized canonical) for the dedup stage — each with mention count +
     // summary + a few facts so the adjudicator can judge same-person vs namesake by evidence.
     async getDuplicateGroups({ type = 'person', minSize = 2, limit } = {}) {
