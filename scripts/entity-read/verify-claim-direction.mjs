@@ -25,15 +25,20 @@ const CONC = Number(arg('concurrency', '4'));
 const ADVERSARIAL = ['persecuted', 'attacked', 'opposed', 'betrayed', 'slandered', 'harmed', 'tortured', 'defeated', 'expelled', 'denounced', 'condemned', 'humiliated', 'plotted-against', 'assailed', 'wronged', 'accused'];
 const REPORTED = ['%claimed%', '%alleged%', '%accused%', '%pretended%', '%boasted%', '%asserted that%', '%professed%'];
 
-const SYSTEM = `You audit ONE extracted historical claim against its SOURCE paragraph, for DIRECTION and FACTUALITY. A claim "Subject — relation Object" asserts the SUBJECT performs the relation upon the Object. Judge ONLY from the paragraph. Be CONSERVATIVE: when uncertain, choose "ok" — never discard a plausibly-supported claim.
-Choose in this order:
-• "passive" — the Subject is the VICTIM/patient: the paragraph says this was done TO the Subject (by the Object or by others) — "X was persecuted/attacked/betrayed by Y", "at the hands of", "Y rose against X", "X suffered". The direction is merely REVERSED; PREFER this over "drop" whenever the underlying fact is real (it is repaired, not deleted). Ex: proof "He was assailed by the Covenant-breakers" under "'Abdu'l-Bahá — persecuted Covenant-breakers" → passive.
+const SYSTEM = `You audit ONE extracted claim for DIRECTION and FACTUALITY, using ONLY the source paragraph. You are told SUBJECT, RELATION, OBJECT explicitly. The claim asserts the SUBJECT is the DOER and the OBJECT is the one it is done to.
+First determine, from the paragraph, WHO is the doer (agent) and WHO is the target (patient) of this relation. Then:
+• "ok" — the paragraph says the SUBJECT is the DOER acting upon the OBJECT (correct as-is), even for harsh acts. If the SUBJECT is genuinely the aggressor, it is "ok".
+• "passive" — the roles are REVERSED: the paragraph says the SUBJECT is the one it happens TO (the victim/patient), done by the OBJECT or by others ("was ...ed by", "at the hands of", "arose against him", "suffered"). Choose this only when the SUBJECT is clearly the target, NOT the doer.
 • "relabel" — direction fine but the relation WORD is wrong; give "better_relation".
-• "drop" — ONLY when the statement is not a narrated fact about the Subject at all: an accusation/rumour/boast ATTRIBUTED to an adversary ("the breakers claimed…"), OR the Subject is the WRONG person (the paragraph is about someone else), OR it is explicitly negated/hypothetical, OR the proof plainly contradicts it. Do NOT drop merely because the proof is terse.
-• "ok" — otherwise (the Subject genuinely does this to the Object, as narrated). Default here when unsure.
-Return ONLY JSON: {"verdict":"ok|passive|relabel|drop","better_relation":"","why":"<=12 words"}`;
+• "drop" — the statement is not a narrated fact about the SUBJECT: an accusation/boast ATTRIBUTED to an adversary, OR the SUBJECT is the wrong person, OR it is negated/hypothetical, OR the paragraph is nonsensical for this pair.
+Be careful: do NOT flip a claim whose SUBJECT is truly the aggressor. When genuinely uncertain, choose "ok". Return ONLY JSON: {"verdict":"ok|passive|relabel|drop","better_relation":"","why":"<=12 words"}`;
 
-const buildUser = (c, para) => `PARAGRAPH:\n${para}\n\nCLAIM: ${c.statement}\nRELATION: ${c.relation}\nPROOF: ${c.proof_verbatim}`;
+const subjOf = (s) => String(s).split(' — ')[0].trim();
+function buildUser(c, para) {
+  const subj = subjOf(c.statement);
+  const obj = c.statement.slice(`${subj} — ${c.relation}`.length).trim() || '(unspecified)';
+  return `PARAGRAPH:\n${para}\n\nCLAIM under audit — SUBJECT="${subj}"  RELATION="${c.relation}"  OBJECT="${obj}".\nPROOF span: "${c.proof_verbatim}"\n\nDoes "${subj}" DO "${c.relation}" to "${obj}", or is "${subj}" the one it happens TO (reverse), or not a narrated fact?`;
+}
 
 function parseVerdict(raw) {
   const m = String(raw).match(/\{[\s\S]*\}/); if (!m) return null;
