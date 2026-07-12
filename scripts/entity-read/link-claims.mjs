@@ -22,17 +22,35 @@ for (const m of mentions) { if (!byPara.has(m.para_id)) byPara.set(m.para_id, []
 const claims = await queryAll(
   DOC ? `SELECT id, para_id, semantic_key FROM entity_claims WHERE doc_id=?`
       : `SELECT id, para_id, semantic_key FROM entity_claims WHERE import_batch IN ('db-v2','gpb-v2')`, DOC ? [DOC] : []);
-let subj = 0, obj = 0, done = 0;
+
+// Doc-level UNAMBIGUOUS fallback (wave-1/DOC only): wave-1 notes carry ~9x fewer explicit "surface=handle"
+// resolves than GPB, so most claim-paras have no bound mention → same-para binding under-covers. Within ONE
+// book's disambiguation context a name that maps to exactly ONE bound entity is safe to bind globally; a name
+// used by >1 entity in the doc is EXCLUDED (namesake-safe: under-bind, never mis-bind). Off for legacy batches.
+const docPairs = [];
+if (DOC) { const seen = new Set(); for (const m of mentions) { const rn = nrm(m.resolved_as); const k = m.entity_id + '|' + rn; if (!seen.has(k)) { seen.add(k); docPairs.push({ rn, eid: m.entity_id }); } } }
+const docBind = (name) => {                                 // eid iff name matches exactly ONE doc entity, else null
+  if (!DOC || !name) return null;
+  let found = null;
+  for (const p of docPairs) { if (hit(name, p.rn)) { if (found !== null && found !== p.eid) return null; found = p.eid; } }
+  return found;
+};
+
+let subj = 0, obj = 0, done = 0, fbk = 0; const samples = [];
 for (const c of claims) {
   const parts = String(c.semantic_key || '').split('|');
   const subject = parts[0] || '', object = parts[2] || '';
   const ms = byPara.get(c.para_id) || [];
-  const sm = ms.find((m) => hit(subject, m.rn));            // evidence-based subject mention in this para
-  if (!sm) continue;                                        // no bound mention → keep prior (entity_id is NOT NULL)
-  const om = object ? ms.find((m) => hit(object, m.rn)) : null;
-  subj++; if (om) obj++;
-  if (WRITE) await query(`UPDATE entity_claims SET entity_id=?, target_entity_id=? WHERE id=?`, [sm.eid, om?.eid || null, c.id]);
+  let sEid = (ms.find((m) => hit(subject, m.rn)) || {}).eid ?? null;   // pass 1: precise same-para
+  let oEid = object ? ((ms.find((m) => hit(object, m.rn)) || {}).eid ?? null) : null;
+  let viaFallback = false;
+  if (sEid == null) { const g = docBind(subject); if (g != null) { sEid = g; viaFallback = true; } }  // pass 2: doc-unambiguous
+  if (oEid == null && object) { const g = docBind(object); if (g != null) oEid = g; }
+  if (sEid == null) continue;                                          // still unresolved → keep prior
+  subj++; if (oEid != null) obj++; if (viaFallback) { fbk++; if (samples.length < 12) samples.push(`${subject} → #${sEid}`); }
+  if (WRITE) await query(`UPDATE entity_claims SET entity_id=?, target_entity_id=? WHERE id=?`, [sEid, oEid, c.id]);
   done++;
 }
-console.log(`${WRITE ? 'WROTE' : 'DRY'} — ${claims.length} v2 claims: ${subj} re-bound to evidence-based subject entity, ${obj} object-bound (${done} updated)`);
+console.log(`${WRITE ? 'WROTE' : 'DRY'} — ${claims.length} claims: ${subj} subject-bound (${fbk} via doc-unambiguous fallback), ${obj} object-bound (${done} updated)`);
+if (!WRITE && samples.length) console.log('  fallback samples: ' + samples.join(' ; '));
 process.exit(0);
