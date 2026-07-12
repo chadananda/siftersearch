@@ -61,7 +61,7 @@ async function extractAll(ctx, { system, baseUser, route, maxTokens }) {
     let user = baseUser, complete = false;
     for (let cont = 0; cont < 5; cont++) {
       let res;
-      try { res = await ctx.model.retry(() => ctx.model.callModel({ model, system, user, maxTokens: maxTokens(model), json: true })); } catch { break; }
+      try { res = await ctx.model.retry(() => ctx.model.callModel({ model, system, user, maxTokens: maxTokens(model), json: true })); } catch (e) { if (e?.fatal) throw e; break; }
       gotResponse = true;                                            // distinguishes a transient error from a genuine empty
       let added = 0;
       for (const c of parseClaims(res.content || '')) {

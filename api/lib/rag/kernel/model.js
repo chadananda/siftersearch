@@ -23,9 +23,18 @@ export function makeModelEngine({ llm, catalog }) {
   // A reasoning-capable model wants "thinking" on; read that from the catalog capability, not the id string.
   const wantsThinking = (id) => (info(id)?.capabilities || []).includes('reasoning');
 
-  // Backoff retry around one transient-failure-prone call.
+  // Backoff retry around one transient-failure-prone call. Retries ONLY transient failures (429/5xx/network).
+  // A NON-retryable error — 400 (e.g. "credit balance too low"), 401/403 (bad/expired key) — is FATAL: fail fast
+  // and TAG it (e.fatal) so callers surface it to the operator instead of silently retrying it through every
+  // paragraph. (Learned the hard way: a swallowed out-of-credits 400 made a stage churn an hour writing nothing.)
+  const isFatal = (e) => { const s = e?.status ?? e?.statusCode; return s === 400 || s === 401 || s === 403; };
   const retry = async (fn, n = 5, base = 700) => {
-    let err; for (let i = 0; i < n; i++) { try { return await fn(); } catch (e) { err = e; await sleep(base * (i + 1)); } } throw err;
+    let err;
+    for (let i = 0; i < n; i++) {
+      try { return await fn(); }
+      catch (e) { if (isFatal(e)) { e.fatal = true; throw e; } err = e; await sleep(base * (i + 1)); }
+    }
+    throw err;
   };
 
   // One call through the injected llm port. Passes INTENT (json, thinking) — the adapter translates intent
@@ -49,7 +58,7 @@ export function makeModelEngine({ llm, catalog }) {
       for (let attempt = 0; attempt < tries && !parsed; attempt++) {
         const sys = attempt < 1 && model === primary ? system : system + (denseHint ? `\n\n${denseHint}` : '');
         try { raw = await retry(() => callModel({ model, system: sys, user, maxTokens: tok(model), json, temperature })); }
-        catch { break; } // this rung exhausted its retries → fall through to the next rung
+        catch (e) { if (e?.fatal) throw e; break; } // fatal (credit/key) → abort loudly; else rung exhausted → next rung
         parsed = parse(raw.content || '');
       }
       if (parsed) { escalated = model !== primary; break; }

@@ -78,4 +78,13 @@ describe('claims — run() on fake ports', () => {
     expect(stats.failed).toBe(1);         // errored paragraph is counted — recoverable by a --resume re-run
     expect(stats.empty).toBe(0);          // not misclassified as a genuine empty paragraph
   }, 20000);                              // real ladder+retry-backoff on a fully-erroring paragraph is slow by design
+
+  it('FATAL: a non-retryable error (out-of-credits 400 / bad-key 401) aborts LOUDLY, not silently', async () => {
+    const llm = fakeLLM(() => { throw Object.assign(new Error('Your credit balance is too low'), { status: 400 }); });
+    const { rag, store } = makeRag({ seed, llm });
+    // Must REJECT with the real message (captured/surfaced), not silently retry+swallow it through every paragraph.
+    await expect(rag.entities.claims(5, { version: 'v1' })).rejects.toThrow(/credit balance/);
+    expect(store.claims).toHaveLength(0);
+    expect(llm.calls.length).toBe(1);     // fail-fast: ONE call, not 5 retries × 2 models
+  });
 });
