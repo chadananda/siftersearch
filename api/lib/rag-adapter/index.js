@@ -29,7 +29,10 @@ const profiler = (meta, sample) => detectProfile(meta, sample);
 
 // Host config that names concrete values the library must not hard-code — the method-version tags stamped on
 // enriched rows. Kept equal to the existing corpus tags so re-runs are idempotent against current data.
-const config = { versions: { disambig: 'deepseek-disambig-v1', hype: 'deepseek-hype-v1', extract: 'extract-v2' } };
+const config = {
+  versions: { disambig: 'deepseek-disambig-v1', hype: 'deepseek-hype-v1', extract: 'extract-v2' },
+  models: { merge: 'deepseek-v4-flash', mergeFallback: 'claude-haiku-4-5-20251001' }, // dedup adjudication (not doc-scoped → no profile)
+};
 
 // Assemble the full dependency set. Any field can be overridden by a caller (e.g. tests inject fakes).
 export function sifterDeps(overrides = {}) {

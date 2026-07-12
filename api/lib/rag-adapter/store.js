@@ -192,5 +192,40 @@ export function makeStore() {
     async markDecisionApplied(id, entityId) {
       await db.query(`UPDATE entity_decisions SET status='applied', payload=json_set(COALESCE(payload,'{}'),'$.applied_entity_id',?) WHERE id=?`, [entityId, id]);
     },
+
+    // Same-name entity groups (exact normalized canonical) for the dedup stage — each with mention count +
+    // summary + a few facts so the adjudicator can judge same-person vs namesake by evidence.
+    async getDuplicateGroups({ type = 'person', minSize = 2, limit } = {}) {
+      const ents = await db.queryAll(
+        `SELECT ge.id, ge.canonical_name canonical, er.summary,
+                (SELECT COUNT(*) FROM entity_mentions_v2 m WHERE m.entity_id=ge.id) mentions
+           FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type
+          WHERE ge.entity_type=?`, [type]);
+      const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+      const groups = {};
+      for (const e of ents) { const k = norm(e.canonical); if (!k) continue; (groups[k] = groups[k] || []).push(e); }
+      let out = Object.entries(groups).filter(([, es]) => es.length >= minSize)
+        .map(([key, es]) => ({ key, ids: es.map((e) => e.id), entities: es.sort((a, b) => b.mentions - a.mentions) }));
+      out.sort((a, b) => b.entities[0].mentions - a.entities[0].mentions);   // richest groups first
+      if (limit) out = out.slice(0, limit);
+      return out;
+    },
+
+    // Merge: repoint mentions + claims from the merged ids onto the canonical, record an append-only merge
+    // decision (reversible), and mark the merged graph_entities rows (canonical_name suffixed) so the bio
+    // browser stops surfacing them. Returns count merged.
+    async applyMerge(canonicalId, mergeIds, reason) {
+      if (!mergeIds.length) return 0;
+      const ph = mergeIds.map(() => '?').join(',');
+      await db.transaction([
+        { sql: `UPDATE entity_mentions_v2 SET entity_id=? WHERE entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
+        { sql: `UPDATE entity_claims SET entity_id=? WHERE entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
+        { sql: `UPDATE entity_claims SET target_entity_id=? WHERE target_entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
+        { sql: `UPDATE graph_entities SET canonical_name=canonical_name||' ⟨merged→${canonicalId}⟩' WHERE id IN (${ph})`, args: mergeIds },
+        { sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, rationale, actor, actor_tier, status, valid_time) VALUES ('merge','entity',?,?,?, 'model', 2, 'applied', NULL)`,
+          args: [JSON.stringify(mergeIds), JSON.stringify({ canonical: canonicalId, merged: mergeIds }), reason || null] },
+      ]);
+      return mergeIds.length;
+    },
   };
 }

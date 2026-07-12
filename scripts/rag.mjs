@@ -23,6 +23,7 @@ const stages = {
   claims: () => rag.entities.claims(doc, opts),
   reconcile: () => rag.entities.reconcile(doc, opts),
   project: () => rag.entities.project(opts),
+  merge: () => rag.entities.merge(opts),
   lookup: () => rag.entities.lookup(arg, opts),
 };
 if (!stages[stage]) { console.error(`stages: ${Object.keys(stages).join(', ')}`); process.exit(1); }

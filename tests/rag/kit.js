@@ -42,8 +42,9 @@ export function memStore(seed = {}) {
   const created = [];    // createEntity calls
   const bound = [];      // bindMentions calls
   const appliedMarks = []; // markDecisionApplied calls
+  const merges = [];     // applyMerge calls
   return {
-    saved, hyped, mentions, claims, decisions, created, bound, appliedMarks,
+    saved, hyped, mentions, claims, decisions, created, bound, appliedMarks, merges,
     getDocMeta: async (id) => seed.docs?.[id] || { id },
     getSampleText: async (id) => seed.samples?.[id] || '',
     getParagraphs: async (id) => seed.paras?.[id] || [],
@@ -59,6 +60,8 @@ export function memStore(seed = {}) {
     getScenes: async (id, paraIds) => seed.scenes || paraIds.map((pid) => ({ pid, context: '' })),
     saveDecisions: async (rows) => { decisions.push(...rows); return rows.length; },
     // project
+    getDuplicateGroups: async () => seed.dupGroups || [],
+    applyMerge: async (canonical, mergeIds) => { merges.push({ canonical, mergeIds }); return mergeIds.length; },
     getProposedDecisions: async () => seed.proposals || [],
     createEntity: async (canonical, type) => { const id = 1000 + created.length; created.push({ id, canonical, type }); return id; },
     bindMentions: async (resolvedAs, entityId, conf) => { bound.push({ resolvedAs, entityId, conf }); return seed.clusterSizes?.[resolvedAs] ?? 1; },
