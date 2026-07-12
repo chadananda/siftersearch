@@ -46,8 +46,9 @@ export function memStore(seed = {}) {
   const conceptClaims = []; // saveConceptClaims rows
   const conceptDecisions = []; // saveConceptDecisions rows
   const lexiconEntries = []; // saveLexiconEntries rows
+  const conceptLinks = []; // saveConceptLinks rows
   return {
-    saved, hyped, mentions, claims, decisions, created, bound, appliedMarks, merges, conceptClaims, conceptDecisions, lexiconEntries,
+    saved, hyped, mentions, claims, decisions, created, bound, appliedMarks, merges, conceptClaims, conceptDecisions, lexiconEntries, conceptLinks,
     getDocMeta: async (id) => seed.docs?.[id] || { id },
     getSampleText: async (id) => seed.samples?.[id] || '',
     getParagraphs: async (id) => seed.paras?.[id] || [],
@@ -62,6 +63,8 @@ export function memStore(seed = {}) {
     saveConceptDecisions: async (rows) => { conceptDecisions.push(...rows); return rows.length; },
     getConceptInterpretations: async (id) => seed.conceptInterpretations?.[id] || [],
     saveLexiconEntries: async (rows) => { lexiconEntries.push(...rows); return rows.length; },
+    getConcept: async (id) => seed.concepts?.[id] || { id },
+    saveConceptLinks: async (rows) => { conceptLinks.push(...rows); return rows.length; },
     getDisambigCoverage: async (id) => seed.coverage?.[id] ?? 1,
     getMentionClusters: async (id) => seed.clusters?.[id] || [],
     getDecidedClusterNames: async () => new Set(seed.decided || []),

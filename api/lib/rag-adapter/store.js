@@ -209,6 +209,22 @@ export function makeStore() {
       return rows.length;
     },
 
+    // A concept entity (for the interfaith link stage).
+    async getConcept(id) {
+      return (await db.queryAll(`SELECT id, canonical, root, tradition, summary FROM concept_entities WHERE id=?`, [id]))[0] || { id };
+    },
+
+    // Persist interfaith concept links (analogical / authoritative-bridge). Entities stay distinct.
+    async saveConceptLinks(links) {
+      if (!links.length) return 0;
+      const stmts = links.map((l) => ({
+        sql: `INSERT INTO concept_links (a_concept_id, b_concept_id, link_type, authority, proof_verbatim, rationale) VALUES (?,?,?,?,?,?)`,
+        args: [l.aConceptId, l.bConceptId, l.linkType, l.authority, l.proofVerbatim, l.rationale],
+      }));
+      await db.transaction(stmts);
+      return links.length;
+    },
+
     // Interpretation claims (a higher text's stated meaning of a symbol) — the lexicon seed input.
     async getConceptInterpretations(docId) {
       return db.queryAll(
