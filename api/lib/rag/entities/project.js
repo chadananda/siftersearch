@@ -17,7 +17,7 @@ export async function run(ctx, opts = {}) {
     && (d.status === 'approved' || d.status === 'applied' || (auto && (d.confidence || 0) >= hiConf)));
 
   const stats = { proposals: all.length, toApply: toApply.length, applied: 0, created: 0, linked: 0, mentionsBound: 0,
-    createdIds: [], uncertain: all.filter((d) => d.kind === 'uncertain').length };
+    createdIds: [], skippedBadId: 0, uncertain: all.filter((d) => d.kind === 'uncertain').length };
   if (opts.dryRun) return stats;
 
   for (const d of toApply) {                   // sequential: writes, and a create must resolve its id before binding
@@ -26,7 +26,13 @@ export async function run(ctx, opts = {}) {
       if (!d.payload.canonical) continue;
       entityId = await ctx.store.createEntity(d.payload.canonical, d.payload.type || 'person');
       if (entityId) { stats.created++; stats.createdIds.push(entityId); }   // → dedup-guard checks these for cross-name dups
-    } else { stats.linked++; }
+    } else {
+      // a link's id must be a real, numeric entity id. Research can emit a name-as-id or null when no candidate
+      // id was available — never bind those (a non-scalar id also crashes the writer). Skip, don't apply.
+      entityId = Number(entityId);
+      if (!Number.isInteger(entityId) || entityId <= 0) { stats.skippedBadId++; continue; }
+      stats.linked++;
+    }
     if (!entityId || !d.payload.resolvedAs) continue;
     stats.mentionsBound += await ctx.store.bindMentions(d.payload.resolvedAs, entityId, d.confidence);
     await ctx.store.markDecisionApplied(d.id, entityId);

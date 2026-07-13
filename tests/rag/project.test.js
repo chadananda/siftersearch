@@ -49,6 +49,19 @@ describe('entities/project', () => {
     expect(store.created[0].canonical).toBe('A');   // only the 21310 book's create is applied
   });
 
+  it('skips a link whose id is not a real numeric entity id (name-as-id / null) — never binds junk', async () => {
+    const bad = [
+      { id: 1, kind: 'link', status: 'approved', confidence: 0.95, payload: { resolvedAs: 'A', entityId: 'Mírzá Abu’l-Qásim', docId: 21308 } },
+      { id: 2, kind: 'link', status: 'approved', confidence: 0.95, payload: { resolvedAs: 'B', entityId: null, docId: 21308 } },
+      { id: 3, kind: 'link', status: 'approved', confidence: 0.95, payload: { resolvedAs: 'C', entityId: 42, docId: 21308 } },
+    ];
+    const { rag, store } = makeRag({ seed: { proposals: bad } });
+    const stats = await rag.entities.project({ docId: 21308 });
+    expect(stats.skippedBadId).toBe(2);          // name-as-id + null both skipped
+    expect(stats).toMatchObject({ linked: 1, applied: 1 });
+    expect(store.bound).toEqual([{ resolvedAs: 'C', entityId: 42, conf: 0.95 }]);   // only the real integer id bound
+  });
+
   it('auto mode applies a high-confidence proposed link', async () => {
     const hi = [{ id: 9, kind: 'link', status: 'proposed', confidence: 0.95, payload: { resolvedAs: 'Q', entityId: 1 } }];
     const { rag, store } = makeRag({ seed: { proposals: hi } });
