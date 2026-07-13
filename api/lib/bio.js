@@ -51,15 +51,13 @@ async function computeActiveBook(staticDocs, meta) {
   try { st = JSON.parse(fs.readFileSync(GROUNDING_STATUS_PATH, 'utf8')); } catch { /* none */ }
   const fresh = st && st.updatedAt && st.stage !== 'done' && (Date.now() - new Date(st.updatedAt).getTime() < 10 * 60000);
   let docId = fresh ? Number(st.docId) : null, stage = fresh ? st.stage : null;
-  // Fallback (e.g. an older driver with no status file): the curated book that's mid-pipeline — it has
-  // extracted claims but nothing BOUND to entities yet (reconcile/link not done). Exclude any book with a bound
-  // mention (a finished/"done" book), so a completed book with unbound leftover claims isn't shown as active.
+  // Fallback (an older driver with no status file): the curated book with the most RECENT claim write — i.e.
+  // where extraction is actively happening now. Best-effort only; the status file above is authoritative and
+  // makes this precise (stage + percent) for every book grounded under the current driver.
   if (!docId && staticDocs.length) {
     const ph = staticDocs.map(() => '?').join(',');
     const row = (await queryAll(`SELECT doc_id d, MAX(asserted_at) m FROM entity_claims
-        WHERE doc_id IN (${ph}) AND doc_id NOT IN (SELECT DISTINCT doc_id FROM entity_mentions_v2 WHERE entity_id IS NOT NULL)
-        GROUP BY doc_id HAVING SUM(CASE WHEN entity_id IS NOT NULL THEN 1 ELSE 0 END)=0
-        ORDER BY m DESC LIMIT 1`, staticDocs))[0];
+        WHERE doc_id IN (${ph}) GROUP BY doc_id ORDER BY m DESC LIMIT 1`, staticDocs))[0];
     if (row?.d) { docId = row.d; stage = 'grounding'; }
   }
   if (!docId) return null;
