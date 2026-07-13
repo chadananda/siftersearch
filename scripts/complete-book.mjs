@@ -7,6 +7,7 @@
 // Exit 0 = complete+searchable; 2 = a stage left it unsearchable (missing[] printed); 1 = usage.
 import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
 import { execSync } from 'node:child_process';
+import fs from 'node:fs';
 const { rag } = await import('../api/lib/rag-adapter/index.js');
 
 const argv = process.argv.slice(2);
@@ -20,21 +21,27 @@ const to = opt.only ? STAGES.indexOf(opt.only) : STAGES.length - 1;
 const want = (s) => { const i = STAGES.indexOf(s); return i >= from && i <= to; };
 const log = (s, r) => console.log(`\n▶ ${s}(${doc}) → ${JSON.stringify(r)}`);
 const writer = process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849';
+// Live status for the biography progress popup (api/lib/bio.js reads this): which book + stage is being worked.
+const STATUS_PATH = 'data/siftersearch-grounding-status.json', STARTED = new Date().toISOString();
+const mark = (stage) => { try { fs.writeFileSync(STATUS_PATH, JSON.stringify({ docId: doc, stage,
+  stageIndex: STAGES.indexOf(stage), totalStages: STAGES.length, startedAt: STARTED, updatedAt: new Date().toISOString() })); } catch { /* best-effort */ } };
 
 let createdIds = [];
-if (want('disambiguate')) log('disambiguate', await rag.disambiguate(doc, { concurrency: 4 }));
-if (want('mentions'))     log('mentions', await rag.entities.mentions(doc));
-if (want('claims'))       log('claims', await rag.entities.claims(doc, { resume: true, threshold: 0.9, concurrency: 4 }));
-if (want('reconcile'))    log('reconcile', await rag.entities.reconcile(doc, { resume: true, threshold: 0.9, concurrency: 4 })); // FULL — no --limit
-if (want('research'))     log('research-resolve', await rag.entities.researchResolve(doc, { concurrency: 3 })); // resolve uncertains: corpus+web
-if (want('project'))      { const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId: doc }); createdIds = r.createdIds || []; log('project', r); }
-if (want('link'))         execSync(`DOC=${doc} WRITE=1 SIFTER_WRITER_URL=${writer} node scripts/entity-read/link-claims.mjs`, { stdio: 'inherit' });
-if (want('dedup') && createdIds.length) log('dedup-guard', await rag.entities.dedupGuard({ entityIds: createdIds })); // AFTER link — new entities need bound claims to dedup on
-if (want('hype'))         log('hype', await rag.retrieval.index(doc, { resume: true }));
+if (want('disambiguate')) { mark('disambiguate'); log('disambiguate', await rag.disambiguate(doc, { concurrency: 4 })); }
+if (want('mentions'))     { mark('mentions'); log('mentions', await rag.entities.mentions(doc)); }
+if (want('claims'))       { mark('claims'); log('claims', await rag.entities.claims(doc, { resume: true, threshold: 0.9, concurrency: 4 })); }
+if (want('reconcile'))    { mark('reconcile'); log('reconcile', await rag.entities.reconcile(doc, { resume: true, threshold: 0.9, concurrency: 4 })); } // FULL — no --limit
+if (want('research'))     { mark('research'); log('research-resolve', await rag.entities.researchResolve(doc, { concurrency: 3 })); } // resolve uncertains: corpus+web
+if (want('project'))      { mark('project'); const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId: doc }); createdIds = r.createdIds || []; log('project', r); }
+if (want('link'))         { mark('link'); execSync(`DOC=${doc} WRITE=1 SIFTER_WRITER_URL=${writer} node scripts/entity-read/link-claims.mjs`, { stdio: 'inherit' }); }
+if (want('dedup') && createdIds.length) { mark('dedup'); log('dedup-guard', await rag.entities.dedupGuard({ entityIds: createdIds })); } // AFTER link — new entities need bound claims to dedup on
+if (want('hype'))         { mark('hype'); log('hype', await rag.retrieval.index(doc, { resume: true })); }
 if (want('verify')) {
+  mark('verify');
   const v = await rag.entities.verify(doc);
   log('verify', { ok: v.ok, ...v.checks, missing: v.missing });
   if (!v.ok) { console.error(`\n❌ BOOK ${doc} NOT DONE — unsearchable: ${v.missing.join('; ')}`); process.exit(2); }
   console.log(`\n✅ BOOK ${doc} COMPLETE + SEARCHABLE — cast ${v.checks.castCount}, claims ${v.checks.claimCount}, hype ${v.checks.hypeIndexed}, paras ${v.checks.paragraphsIndexed}`);
 }
+mark('done'); // clear the "active" marker so the popup stops showing this book as in-progress
 process.exit(0);

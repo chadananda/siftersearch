@@ -44,17 +44,33 @@
   let aiReasoning = $state(null);  // { summary (integrated markdown explanation), evidence: {id} } — the AI's answer
   let aiError = $state(null);      // surfaced when a meaning-search fetch fails (never silent)
   let showProgress = $state(false), progress = $state(null);   // book-integration roadmap popup
-  async function openProgress() {
-    showProgress = true;
-    if (!progress) { try { const r = await fetch(`${API}/api/v1/people/progress`); if (r.ok) progress = await r.json(); } catch { /* offline — modal shows a note */ } }
+  async function fetchProgress() {
+    try { const r = await fetch(`${API}/api/v1/people/progress`); if (r.ok) progress = await r.json(); } catch { /* offline — modal shows a note */ }
   }
-  // Lock background scroll while the roadmap modal is open — no scroll bleed-through to the page behind.
+  function openProgress() { showProgress = true; if (!progress) fetchProgress(); }
+  // While the roadmap modal is open: lock background scroll (no bleed-through) AND poll every 15s so the
+  // currently-grounding book's live progress updates without the user re-opening the popup.
   $effect(() => {
     if (typeof document === 'undefined' || !showProgress) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    const poll = setInterval(fetchProgress, 15000);
+    return () => { document.body.style.overflow = prev; clearInterval(poll); };
   });
+  // Size bars are scaled (sqrt, so the many small books stay visible against the few giants) to the largest book.
+  const maxBookSize = $derived(progress ? Math.max(1, ...progress.phases.flatMap((p) => p.books.map((b) => b.size || 0))) : 1);
+  const sizeBarPct = (n) => Math.max(3, Math.round(Math.sqrt((n || 0) / maxBookSize) * 100));
+  const fmtK = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n ?? 0));
+  const STAGE_LABEL = { disambiguate: 'Disambiguating text', mentions: 'Extracting mentions', claims: 'Extracting claims',
+    reconcile: 'Reconciling identities', research: 'Researching unresolved', project: 'Linking entities',
+    link: 'Linking claims', dedup: 'De-duplicating', hype: 'Generating questions', verify: 'Verifying', grounding: 'Grounding' };
+  const stageLabel = (s) => STAGE_LABEL[s] || 'Grounding';
+  // Collapsible phases: the phase being processed (or the frontier) auto-opens; the user can toggle any.
+  const activePhaseKey = $derived(progress?.active ? (progress.phases.find((p) => p.books.some((b) => b.id === progress.active.docId))?.key ?? null) : null);
+  const frontierKey = $derived(progress ? (progress.phases.find((p) => (p.done ?? 0) < (p.total ?? 0))?.key ?? progress.phases[0]?.key ?? null) : null);
+  let openSet = $state(null); // null = auto (follow active/frontier); becomes a Set once the user toggles
+  const openKeys = $derived(openSet ?? new Set([activePhaseKey ?? frontierKey].filter(Boolean)));
+  function togglePhase(key) { const s = new Set(openKeys); s.has(key) ? s.delete(key) : s.add(key); openSet = s; }
   // render the integrated explanation: escape HTML, then turn [text](url) into a source link (the evidence is woven inline)
   const escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const mdLinks = (s) => escHtml(s).replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="ai-cite-in">$1</a>');
@@ -209,24 +225,43 @@
           <button class="prog-close" onclick={() => (showProgress = false)} aria-label="Close">✕</button>
           <h2 class="prog-title">Absorbing the history</h2>
           {#if progress}
-            <p class="prog-lead"><strong>{(progress.cumulativeUnique ?? 0).toLocaleString()}</strong> distinct people grounded so far <span class="prog-sub">· {progress.doneBooks}/{progress.totalBooks} books</span> — on the way to <em>all history absorbed</em>.</p>
-            <p class="prog-fine">Per-book counts below are people appearing <em>in that book</em> (a figure in several books is counted in each) — the number above is the deduplicated total.</p>
+            <p class="prog-lead"><strong>{(progress.cumulativeUnique ?? 0).toLocaleString()}</strong> distinct people grounded so far <span class="prog-sub">· {progress.doneBooks}/{progress.totalBooks} books{#if progress.totalParas} · {fmtK(progress.totalParas)} paragraphs{/if}</span> — toward <em>all history absorbed</em>.</p>
+            {#if progress.active}
+              <div class="prog-active">
+                <span class="prog-active-dot" aria-hidden="true"></span>
+                <div class="prog-active-body">
+                  <div class="prog-active-line">Now grounding <strong>{progress.active.title}</strong></div>
+                  <div class="prog-active-meta">{stageLabel(progress.active.stage)}{#if progress.active.stageIndex != null} · stage {progress.active.stageIndex + 1}/{progress.active.totalStages}{/if}{#if progress.active.claimsExtracted} · {progress.active.claimsExtracted.toLocaleString()} claims{/if}</div>
+                  {#if progress.active.percent != null}<div class="prog-active-bar"><span style="width:{progress.active.percent}%"></span></div>{/if}
+                </div>
+                {#if progress.active.percent != null}<span class="prog-active-pct">{progress.active.percent}%</span>{/if}
+              </div>
+            {/if}
+            <p class="prog-fine">Per-book <span class="pb-new">+N</span> = people first grounded there; the bar shows each book's size (paragraphs). Click a phase to expand.</p>
             {#each progress.phases as ph (ph.key)}
-              <section class="prog-phase" class:upcoming={ph.upcoming}>
-                <header class="prog-phase-h">
+              {@const isOpen = openKeys.has(ph.key)}
+              <section class="prog-phase" class:upcoming={ph.upcoming} class:open={isOpen} class:isactive={ph.key === activePhaseKey}>
+                <button class="prog-phase-h" onclick={() => togglePhase(ph.key)} aria-expanded={isOpen}>
+                  <span class="prog-caret" aria-hidden="true">{isOpen ? '▾' : '▸'}</span>
                   <span class="prog-phase-label">{ph.label}</span>
-                  <span class="prog-phase-count">{ph.upcoming ? 'next' : `${ph.done}/${ph.total}`}</span>
-                </header>
-                <p class="prog-blurb">{ph.blurb}</p>
-                <ul class="prog-books">
-                  {#each ph.books as b (b.id)}
-                    <li class="prog-book" class:done={b.done}>
-                      <span class="prog-tick" aria-hidden="true">{b.done ? '✓' : ph.upcoming ? '·' : '○'}</span>
-                      <span class="prog-book-title">{b.title}</span>
-                      {#if b.done}<span class="prog-book-stats"><span class="pb-new" title="people first grounded via this book">+{b.newInSequence.toLocaleString()}</span>{#if b.unresolved}<span class="pb-un" title="people mentioned here but not yet resolved — will be revisited as later books are absorbed">{b.unresolved.toLocaleString()} unresolved</span>{/if}</span>{/if}
-                    </li>
-                  {/each}
-                </ul>
+                  <span class="prog-phase-count">{ph.done}/{ph.total}{#if ph.paras} · {fmtK(ph.paras)}¶{/if}</span>
+                </button>
+                {#if isOpen}
+                  <div class="prog-phase-body">
+                    <p class="prog-blurb">{ph.blurb}</p>
+                    <ul class="prog-books">
+                      {#each ph.books as b (b.id)}
+                        <li class="prog-book" class:done={b.done} class:active={progress.active && b.id === progress.active.docId}>
+                          <span class="prog-tick" aria-hidden="true">{b.done ? '✓' : (progress.active && b.id === progress.active.docId) ? '◐' : ph.upcoming ? '·' : '○'}</span>
+                          <span class="prog-book-title">{b.title}</span>
+                          {#if b.size}<span class="prog-book-size" title="{b.size.toLocaleString()} paragraphs"><span class="pb-bar"><span style="width:{sizeBarPct(b.size)}%"></span></span><span class="pb-num">{fmtK(b.size)}</span></span>{/if}
+                          {#if b.done}<span class="prog-book-stats"><span class="pb-new" title="people first grounded via this book">+{b.newInSequence.toLocaleString()}</span>{#if b.unresolved}<span class="pb-un" title="mentioned here but not yet resolved — revisited as later books are absorbed">{b.unresolved.toLocaleString()}?</span>{/if}</span>{/if}
+                        </li>
+                      {/each}
+                      {#if ph.books.length === 0}<li class="prog-empty">Catalog pending classification…</li>{/if}
+                    </ul>
+                  </div>
+                {/if}
               </section>
             {/each}
           {:else}
@@ -544,24 +579,50 @@
   .prog-lead { font-size: .85rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 1.1rem; }
   .prog-lead strong { color: var(--accent); }
   .prog-sub { color: var(--text-muted); font-weight: normal; }
-  .prog-fine { font-size: .72rem; color: var(--text-muted); line-height: 1.4; margin: -.7rem 0 1.1rem; opacity: .85; }
+  .prog-fine { font-size: .72rem; color: var(--text-muted); line-height: 1.4; margin: 0 0 1rem; opacity: .85; }
   .prog-fine em { font-style: italic; color: var(--text-secondary); }
-  .prog-phase { margin-bottom: 1.05rem; padding-left: .9rem; border-left: 2px solid var(--border); }
-  .prog-phase.upcoming { opacity: .62; border-left-style: dashed; }
-  .prog-phase-h { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
-  .prog-phase-label { font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; color: var(--text-primary); font-weight: 600; }
-  .prog-phase-count { font-size: .72rem; color: var(--accent); font-variant-numeric: tabular-nums; }
-  .prog-blurb { font-size: .78rem; color: var(--text-muted); line-height: 1.45; margin: .15rem 0 .45rem; }
-  .prog-books { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .18rem; }
-  .prog-book { display: flex; align-items: baseline; gap: .5rem; font-size: .82rem; color: var(--text-muted); }
+  /* live active-book banner */
+  .prog-active { display: flex; align-items: center; gap: .6rem; margin: 0 0 1.1rem; padding: .55rem .7rem;
+    background: var(--surface-2); border: 1px solid var(--accent); border-radius: .6rem; }
+  .prog-active-dot { flex: 0 0 auto; width: .55rem; height: .55rem; border-radius: 50%; background: var(--accent);
+    animation: progpulse 1.6s ease-in-out infinite; }
+  @keyframes progpulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.72); } }
+  .prog-active-body { flex: 1; min-width: 0; }
+  .prog-active-line { font-size: .82rem; color: var(--text-secondary); }
+  .prog-active-line strong { color: var(--text-primary); }
+  .prog-active-meta { font-size: .72rem; color: var(--text-muted); margin-top: .1rem; font-variant-numeric: tabular-nums; }
+  .prog-active-bar { height: .28rem; background: var(--surface-3); border-radius: 1rem; margin-top: .4rem; overflow: hidden; }
+  .prog-active-bar span { display: block; height: 100%; background: var(--accent); border-radius: 1rem; transition: width .6s ease; }
+  .prog-active-pct { flex: 0 0 auto; font-size: .95rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+  /* collapsible phases */
+  .prog-phase { margin-bottom: .35rem; padding-left: .9rem; border-left: 2px solid var(--border); }
+  .prog-phase.upcoming { border-left-style: dashed; }
+  .prog-phase.isactive { border-left-color: var(--accent); }
+  .prog-phase-h { width: 100%; display: flex; align-items: baseline; gap: .5rem; background: none; border: none;
+    padding: .35rem 0; cursor: pointer; text-align: left; }
+  .prog-phase-h:hover .prog-phase-label { color: var(--accent); }
+  .prog-caret { flex: 0 0 .8rem; color: var(--text-muted); font-size: .7rem; }
+  .prog-phase-label { flex: 1; font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; color: var(--text-primary); font-weight: 600; }
+  .prog-phase.upcoming .prog-phase-label { color: var(--text-secondary); }
+  .prog-phase-count { flex: 0 0 auto; font-size: .72rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .prog-phase-body { padding: .1rem 0 .55rem; }
+  .prog-blurb { font-size: .78rem; color: var(--text-muted); line-height: 1.45; margin: 0 0 .5rem; }
+  .prog-books { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .22rem; }
+  .prog-book { display: flex; align-items: center; gap: .5rem; font-size: .82rem; color: var(--text-muted); }
   .prog-book.done { color: var(--text-secondary); }
   .prog-tick { flex: 0 0 1rem; text-align: center; color: var(--border); }
-  .prog-book.done .prog-tick { color: var(--accent); }
-  .prog-book-title { flex: 1; min-width: 0; }
-  .prog-book.done .prog-book-title { color: var(--text-primary); }
-  .prog-book-n { flex: 0 0 auto; font-size: .72rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-  .prog-book-n::after { content: ' people'; opacity: .6; }
-  .prog-book-stats { flex: 0 0 auto; display: flex; gap: .55rem; align-items: baseline; font-size: .72rem; font-variant-numeric: tabular-nums; }
+  .prog-book.done .prog-tick, .prog-book.active .prog-tick { color: var(--accent); }
+  .prog-book-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .prog-book.done .prog-book-title, .prog-book.active .prog-book-title { color: var(--text-primary); }
+  .prog-book-size { flex: 0 0 5.5rem; display: flex; align-items: center; gap: .35rem; }
+  .pb-bar { flex: 1; height: .3rem; background: var(--surface-3); border-radius: 1rem; overflow: hidden; }
+  .pb-bar span { display: block; height: 100%; background: var(--border); border-radius: 1rem; }
+  .prog-book.done .pb-bar span, .prog-book.active .pb-bar span { background: var(--accent); }
+  .pb-num { flex: 0 0 2rem; text-align: right; font-size: .66rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .prog-book-stats { flex: 0 0 auto; display: flex; gap: .45rem; align-items: baseline; font-size: .72rem; font-variant-numeric: tabular-nums; }
   .pb-new { color: var(--accent); font-weight: 600; }
   .pb-un { color: var(--text-muted); }
+  .prog-empty { color: var(--text-muted); font-size: .76rem; font-style: italic; padding-left: 1.5rem; }
+  @media (prefers-reduced-motion: reduce) { .prog-active-dot { animation: none; } }
 </style>

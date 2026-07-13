@@ -1,6 +1,251 @@
 {
-  "generated": "2026-07-11T18:15:30.455Z",
+  "generated": "2026-07-13T20:28:57.343Z",
   "entries": [
+    {
+      "hash": "138f106c",
+      "date": "2026-07-13",
+      "type": "Fixed",
+      "description": "Stop truncation-thrash + purge deprecated deepseek-chat from live path",
+      "scope": "deepseek"
+    },
+    {
+      "hash": "3cb5ea10",
+      "date": "2026-07-13",
+      "type": "Fixed",
+      "description": "Integration-phases.js straight-quote delimiters (prev edit smart-quoted the code → SyntaxError)",
+      "scope": null
+    },
+    {
+      "hash": "f68d8afe",
+      "date": "2026-07-13",
+      "type": "Other",
+      "description": "Nayríz document-compilations are PRIMARY sources (Tier 3), not pillars",
+      "scope": null
+    },
+    {
+      "hash": "1535aa55",
+      "date": "2026-07-13",
+      "type": "Docs",
+      "description": "Backward re-resolution (convergence sweep) — re-run research-resolve over held uncertains vs the fuller corpus",
+      "scope": null
+    },
+    {
+      "hash": "3f05a478",
+      "date": "2026-07-13",
+      "type": "Other",
+      "description": "Show per-book new-in-sequence (+N) and unresolved (held-uncertain) counts",
+      "scope": "progress popup"
+    },
+    {
+      "hash": "14a2228e",
+      "date": "2026-07-13",
+      "type": "Other",
+      "description": "Lead with cumulative-UNIQUE grounded count (per-book totals overcount cross-book overlap)",
+      "scope": "progress popup"
+    },
+    {
+      "hash": "7f7fd652",
+      "date": "2026-07-13",
+      "type": "Other",
+      "description": "Lock background scroll + overscroll-behavior contain (no scroll bleed-through)",
+      "scope": "progress popup"
+    },
+    {
+      "hash": "1bc4c938",
+      "date": "2026-07-13",
+      "type": "Other",
+      "description": "Library-integration progress popup — phased roadmap toward 'all history absorbed'",
+      "scope": null
+    },
+    {
+      "hash": "26b7d0ba",
+      "date": "2026-07-13",
+      "type": "Docs",
+      "description": "Gate/ROB are descriptive scholarship (historical track, not doctrinal); real Máz ids; convergence principle",
+      "scope": "history-track"
+    },
+    {
+      "hash": "a44d394d",
+      "date": "2026-07-13",
+      "type": "Other",
+      "description": "Skip links with a non-numeric entity id (fixes writer crash on DB)",
+      "scope": null
+    },
+    {
+      "hash": "b791fd1c",
+      "date": "2026-07-13",
+      "type": "Other",
+      "description": "Research-resolve — scope corpus evidence to the book's tradition (fix cross-tradition false-links)",
+      "scope": null
+    },
+    {
+      "hash": "e96782f9",
+      "date": "2026-07-13",
+      "type": "Other",
+      "description": "Research-resolve stage — resolve UNCERTAINs by corpus+web, sourced+tiered (Lurch 6 lib)",
+      "scope": null
+    },
+    {
+      "hash": "c33d2fb6",
+      "date": "2026-07-12",
+      "type": "Other",
+      "description": "Doc-scope project — serial grounding applies only ONE book's decisions (Lurch 4b)",
+      "scope": null
+    },
+    {
+      "hash": "4f4f0a3a",
+      "date": "2026-07-12",
+      "type": "Other",
+      "description": "Complete-book driver — full DoD per book, gated on search-verify (Lurch 4)",
+      "scope": null
+    },
+    {
+      "hash": "24329e44",
+      "date": "2026-07-12",
+      "type": "Other",
+      "description": "Search-verify gate — 'done' means actually searchable (Lurch 3)",
+      "scope": null
+    },
+    {
+      "hash": "f7718960",
+      "date": "2026-07-12",
+      "type": "Other",
+      "description": "Dedup-guard — cross-name duplicate detection by grounded FACTS (Lurch 2)",
+      "scope": null
+    },
+    {
+      "hash": "1b2cc7ee",
+      "date": "2026-07-12",
+      "type": "Other",
+      "description": "Resolve-against-search — searchGrounded port + evidence-driven reconcile (Lurch 1)",
+      "scope": null
+    },
+    {
+      "hash": "b766e0b8",
+      "date": "2026-07-12",
+      "type": "Other",
+      "description": "Ground person browser on disambiguated v2 mentions + hard claims, retire legacy NER entity_mentions",
+      "scope": null
+    },
+    {
+      "hash": "d3576f13",
+      "date": "2026-07-12",
+      "type": "Docs",
+      "description": "Wave-1 extraction pipeline — operational run-a-book guide, stage contracts, invariants, model routing, hardening state + backlog (H7)",
+      "scope": null
+    },
+    {
+      "hash": "f6207846",
+      "date": "2026-07-12",
+      "type": "Other",
+      "description": "Fix Mázindarání override doc_ids (real 15228/15254-59/20028-37, not phantom 617xxx) so Persian Ẓuhúru'l-Ḥaqq routes to HAIKU not flash (flash silently fails on Persian)",
+      "scope": null
+    },
+    {
+      "hash": "a04852a5",
+      "date": "2026-07-12",
+      "type": "Docs",
+      "description": "Design for claim-authority-reconciliation (core-consistency gate — accusation vs likely-mistake)",
+      "scope": null
+    },
+    {
+      "hash": "b99da588",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Parse BOTH quoted (GPB/DB) and unquoted '·'-separated (wave-1/ROB) note formats",
+      "scope": null
+    },
+    {
+      "hash": "f06e5a42",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Concepts/link (red-first) — interfaith analogical + authoritative-bridge links",
+      "scope": null
+    },
+    {
+      "hash": "93c0187d",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Concepts/lexicon seed (red-first) — cumulative authority-ranked cited interpretive lexicon",
+      "scope": null
+    },
+    {
+      "hash": "220500f8",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Concepts/reconcile (red-first) — bind symbol occurrence to lexicon by evidence+authority",
+      "scope": null
+    },
+    {
+      "hash": "8063f7a1",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Concept engine start — substrate migration 90 + concepts/extract (red-first)",
+      "scope": null
+    },
+    {
+      "hash": "63d47eec",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Entities/merge — evidence-based, namesake-safe entity dedup",
+      "scope": null
+    },
+    {
+      "hash": "534d6bb3",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Fix anonymous-create + parenthetical-alias recall (found in GPB batch 1 review)",
+      "scope": null
+    },
+    {
+      "hash": "64cba160",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "CLI + resumable reconcile (idempotent reviewed batches)",
+      "scope": null
+    },
+    {
+      "hash": "5da42054",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Fix false-create failure modes found in live GPB review",
+      "scope": null
+    },
+    {
+      "hash": "51337d4d",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Entities/project + lookup — entity engine complete",
+      "scope": null
+    },
+    {
+      "hash": "915d5b42",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Entities/reconcile (evidence adjudication -> proposed decisions)",
+      "scope": null
+    },
+    {
+      "hash": "e9c9d736",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "ParseMentions/renderNote match the real corpus note format (quoted surfaces)",
+      "scope": null
+    },
+    {
+      "hash": "5886c66c",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Entity extraction stages (mentions + claims)",
+      "scope": null
+    },
+    {
+      "hash": "2d03683d",
+      "date": "2026-07-11",
+      "type": "Other",
+      "description": "Reusable RAG library (ports/adapter, kernel, enrich stages) + doc fixes",
+      "scope": null
+    },
     {
       "hash": "58f2f481",
       "date": "2026-07-11",
@@ -3255,255 +3500,259 @@
       "type": "Fixed",
       "description": "Skip companion for large collections (>20 docs) — prevents UHJ hallucination",
       "scope": null
-    },
-    {
-      "hash": "81967428",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Catalog-count label prohibits invented quotes for author lookups",
-      "scope": null
-    },
-    {
-      "hash": "3d1d3676",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Author-ranking queries route to SQL count query not deep_research",
-      "scope": null
-    },
-    {
-      "hash": "78f6a51b",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Judge prompt for browsing queries + library_overview tool scoring",
-      "scope": null
-    },
-    {
-      "hash": "95aa255c",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Browsing query skip_quotes flag + judge prompt browsing exceptions",
-      "scope": null
-    },
-    {
-      "hash": "ab92752f",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Social query short-circuit, zero-count hallucination, browsing fabrication",
-      "scope": null
-    },
-    {
-      "hash": "5bd16cc5",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Restore CATALOG-COMPANION quote instruction when sample titles have URLs",
-      "scope": null
-    },
-    {
-      "hash": "b0e01f58",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Restore companion search — early-return only for no-URL meta queries",
-      "scope": null
-    },
-    {
-      "hash": "32352825",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Early-return only when ALL sample docs have no source_url",
-      "scope": null
-    },
-    {
-      "hash": "c1b5051b",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Library_count samples prefer docs with source_url for verifiable title links",
-      "scope": null
-    },
-    {
-      "hash": "87905d2c",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Catalog sample titles — don't suggest URL format when no source_url available",
-      "scope": null
-    },
-    {
-      "hash": "4282840e",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Early-return for pure meta-queries — skip companion+SQL to prevent misattribution",
-      "scope": null
-    },
-    {
-      "hash": "fdc4f98f",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Skip companion search for pure meta-queries (what books do you have?)",
-      "scope": null
-    },
-    {
-      "hash": "9783087e",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Suppress CATALOG-COMPANION quote tag when no citation_url — prevents hallucination",
-      "scope": null
-    },
-    {
-      "hash": "0e055b11",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "SQL author fallback prefers docs with source_url to prevent hallucination",
-      "scope": null
-    },
-    {
-      "hash": "05e986df",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Crafter label — NEVER use sample title TEXT as quotable excerpt",
-      "scope": null
-    },
-    {
-      "hash": "00bbbc8e",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Normalize Unicode in author-matching check (Bahá'u'lláh apostrophe mismatch)",
-      "scope": null
-    },
-    {
-      "hash": "2ba8c730",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Author-catalog companion — verify Meilisearch returned author-matched results before SQL fallback",
-      "scope": null
-    },
-    {
-      "hash": "31b67411",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Cross-doc SQL query for author catalog — first doc may have 0 content rows",
-      "scope": null
-    },
-    {
-      "hash": "e8a1d4fe",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Correct column names external_para_id + paragraph_index in SQL fallbacks",
-      "scope": null
-    },
-    {
-      "hash": "6a2ee3ae",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Author-catalog always uses SQLite (bypass unreliable Meilisearch CONTAINS filter)",
-      "scope": null
-    },
-    {
-      "hash": "13f03f12",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Catalog_companion_sql + sequential_read_sql crafter tags — quotes now instructed for author-catalog SQL fallback and sequential reading",
-      "scope": null
-    },
-    {
-      "hash": "c15053d7",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "SQL fallback for sequential read + better catalog companion passages (v2.81.1)",
-      "scope": null
-    },
-    {
-      "hash": "e969eb09",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "UHJ catalog companion SQL fallback + bare-author-name explicit count (v2.81.0)",
-      "scope": null
-    },
-    {
-      "hash": "edb860e3",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Skip tradition parallel searches for bare author queries — v2.80.55",
-      "scope": null
-    },
-    {
-      "hash": "11783bda",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Title-case heuristic for unknown author names in Branch 0 — v2.80.54",
-      "scope": null
-    },
-    {
-      "hash": "74bdc373",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Use document_id-scoped search in Branch 0 for guaranteed author content — v2.80.53",
-      "scope": null
-    },
-    {
-      "hash": "9d13bb0e",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Restore Branch 2 for author queries, relax isAuthorOnlyQuery, better search query — v2.80.52",
-      "scope": null
-    },
-    {
-      "hash": "9a490520",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Skip parallel tradition searches when author-only query active — v2.80.51",
-      "scope": null
-    },
-    {
-      "hash": "02dec65c",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Fuzzy author name match in Branch 0 — handle Schafer/Schaefer spelling variants — v2.80.50",
-      "scope": null
-    },
-    {
-      "hash": "6ccdf215",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Jain companion, bare author routing, comparative detection — v2.80.49",
-      "scope": null
-    },
-    {
-      "hash": "9259bc00",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Sequential reading requests use mode='read' instead of document subagent QA",
-      "scope": null
-    },
-    {
-      "hash": "5b860f2b",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "QURAN NOTE instructs crafter to cite only primary Quran text for Quran-specific queries",
-      "scope": null
-    },
-    {
-      "hash": "2aae45d4",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Update CASE 1 block-quote override to match 40-word threshold",
-      "scope": null
-    },
-    {
-      "hash": "eb4ff8c9",
-      "date": "2026-05-17",
-      "type": "Other",
-      "description": "Vague query clarification — judge penalizes no-citation responses",
-      "scope": null
-    },
-    {
-      "hash": "aae32866",
-      "date": "2026-05-17",
-      "type": "Fixed",
-      "description": "Extend vague-query pattern to match 'thing with the stuff' variant",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-07-13": [
+      {
+        "hash": "138f106c",
+        "date": "2026-07-13",
+        "type": "Fixed",
+        "description": "Stop truncation-thrash + purge deprecated deepseek-chat from live path",
+        "scope": "deepseek"
+      },
+      {
+        "hash": "3cb5ea10",
+        "date": "2026-07-13",
+        "type": "Fixed",
+        "description": "Integration-phases.js straight-quote delimiters (prev edit smart-quoted the code → SyntaxError)",
+        "scope": null
+      },
+      {
+        "hash": "f68d8afe",
+        "date": "2026-07-13",
+        "type": "Other",
+        "description": "Nayríz document-compilations are PRIMARY sources (Tier 3), not pillars",
+        "scope": null
+      },
+      {
+        "hash": "1535aa55",
+        "date": "2026-07-13",
+        "type": "Docs",
+        "description": "Backward re-resolution (convergence sweep) — re-run research-resolve over held uncertains vs the fuller corpus",
+        "scope": null
+      },
+      {
+        "hash": "3f05a478",
+        "date": "2026-07-13",
+        "type": "Other",
+        "description": "Show per-book new-in-sequence (+N) and unresolved (held-uncertain) counts",
+        "scope": "progress popup"
+      },
+      {
+        "hash": "14a2228e",
+        "date": "2026-07-13",
+        "type": "Other",
+        "description": "Lead with cumulative-UNIQUE grounded count (per-book totals overcount cross-book overlap)",
+        "scope": "progress popup"
+      },
+      {
+        "hash": "7f7fd652",
+        "date": "2026-07-13",
+        "type": "Other",
+        "description": "Lock background scroll + overscroll-behavior contain (no scroll bleed-through)",
+        "scope": "progress popup"
+      },
+      {
+        "hash": "1bc4c938",
+        "date": "2026-07-13",
+        "type": "Other",
+        "description": "Library-integration progress popup — phased roadmap toward 'all history absorbed'",
+        "scope": null
+      },
+      {
+        "hash": "26b7d0ba",
+        "date": "2026-07-13",
+        "type": "Docs",
+        "description": "Gate/ROB are descriptive scholarship (historical track, not doctrinal); real Máz ids; convergence principle",
+        "scope": "history-track"
+      },
+      {
+        "hash": "a44d394d",
+        "date": "2026-07-13",
+        "type": "Other",
+        "description": "Skip links with a non-numeric entity id (fixes writer crash on DB)",
+        "scope": null
+      },
+      {
+        "hash": "b791fd1c",
+        "date": "2026-07-13",
+        "type": "Other",
+        "description": "Research-resolve — scope corpus evidence to the book's tradition (fix cross-tradition false-links)",
+        "scope": null
+      },
+      {
+        "hash": "e96782f9",
+        "date": "2026-07-13",
+        "type": "Other",
+        "description": "Research-resolve stage — resolve UNCERTAINs by corpus+web, sourced+tiered (Lurch 6 lib)",
+        "scope": null
+      }
+    ],
+    "2026-07-12": [
+      {
+        "hash": "c33d2fb6",
+        "date": "2026-07-12",
+        "type": "Other",
+        "description": "Doc-scope project — serial grounding applies only ONE book's decisions (Lurch 4b)",
+        "scope": null
+      },
+      {
+        "hash": "4f4f0a3a",
+        "date": "2026-07-12",
+        "type": "Other",
+        "description": "Complete-book driver — full DoD per book, gated on search-verify (Lurch 4)",
+        "scope": null
+      },
+      {
+        "hash": "24329e44",
+        "date": "2026-07-12",
+        "type": "Other",
+        "description": "Search-verify gate — 'done' means actually searchable (Lurch 3)",
+        "scope": null
+      },
+      {
+        "hash": "f7718960",
+        "date": "2026-07-12",
+        "type": "Other",
+        "description": "Dedup-guard — cross-name duplicate detection by grounded FACTS (Lurch 2)",
+        "scope": null
+      },
+      {
+        "hash": "1b2cc7ee",
+        "date": "2026-07-12",
+        "type": "Other",
+        "description": "Resolve-against-search — searchGrounded port + evidence-driven reconcile (Lurch 1)",
+        "scope": null
+      },
+      {
+        "hash": "b766e0b8",
+        "date": "2026-07-12",
+        "type": "Other",
+        "description": "Ground person browser on disambiguated v2 mentions + hard claims, retire legacy NER entity_mentions",
+        "scope": null
+      },
+      {
+        "hash": "d3576f13",
+        "date": "2026-07-12",
+        "type": "Docs",
+        "description": "Wave-1 extraction pipeline — operational run-a-book guide, stage contracts, invariants, model routing, hardening state + backlog (H7)",
+        "scope": null
+      },
+      {
+        "hash": "f6207846",
+        "date": "2026-07-12",
+        "type": "Other",
+        "description": "Fix Mázindarání override doc_ids (real 15228/15254-59/20028-37, not phantom 617xxx) so Persian Ẓuhúru'l-Ḥaqq routes to HAIKU not flash (flash silently fails on Persian)",
+        "scope": null
+      },
+      {
+        "hash": "a04852a5",
+        "date": "2026-07-12",
+        "type": "Docs",
+        "description": "Design for claim-authority-reconciliation (core-consistency gate — accusation vs likely-mistake)",
+        "scope": null
+      }
+    ],
     "2026-07-11": [
+      {
+        "hash": "b99da588",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Parse BOTH quoted (GPB/DB) and unquoted '·'-separated (wave-1/ROB) note formats",
+        "scope": null
+      },
+      {
+        "hash": "f06e5a42",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Concepts/link (red-first) — interfaith analogical + authoritative-bridge links",
+        "scope": null
+      },
+      {
+        "hash": "93c0187d",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Concepts/lexicon seed (red-first) — cumulative authority-ranked cited interpretive lexicon",
+        "scope": null
+      },
+      {
+        "hash": "220500f8",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Concepts/reconcile (red-first) — bind symbol occurrence to lexicon by evidence+authority",
+        "scope": null
+      },
+      {
+        "hash": "8063f7a1",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Concept engine start — substrate migration 90 + concepts/extract (red-first)",
+        "scope": null
+      },
+      {
+        "hash": "63d47eec",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Entities/merge — evidence-based, namesake-safe entity dedup",
+        "scope": null
+      },
+      {
+        "hash": "534d6bb3",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Fix anonymous-create + parenthetical-alias recall (found in GPB batch 1 review)",
+        "scope": null
+      },
+      {
+        "hash": "64cba160",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "CLI + resumable reconcile (idempotent reviewed batches)",
+        "scope": null
+      },
+      {
+        "hash": "5da42054",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Fix false-create failure modes found in live GPB review",
+        "scope": null
+      },
+      {
+        "hash": "51337d4d",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Entities/project + lookup — entity engine complete",
+        "scope": null
+      },
+      {
+        "hash": "915d5b42",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Entities/reconcile (evidence adjudication -> proposed decisions)",
+        "scope": null
+      },
+      {
+        "hash": "e9c9d736",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "ParseMentions/renderNote match the real corpus note format (quoted surfaces)",
+        "scope": null
+      },
+      {
+        "hash": "5886c66c",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Entity extraction stages (mentions + claims)",
+        "scope": null
+      },
+      {
+        "hash": "2d03683d",
+        "date": "2026-07-11",
+        "type": "Other",
+        "description": "Reusable RAG library (ports/adapter, kernel, enrich stages) + doc fixes",
+        "scope": null
+      },
       {
         "hash": "58f2f481",
         "date": "2026-07-11",
@@ -6817,253 +7066,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Skip companion for large collections (>20 docs) — prevents UHJ hallucination",
-        "scope": null
-      },
-      {
-        "hash": "81967428",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Catalog-count label prohibits invented quotes for author lookups",
-        "scope": null
-      },
-      {
-        "hash": "3d1d3676",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Author-ranking queries route to SQL count query not deep_research",
-        "scope": null
-      },
-      {
-        "hash": "78f6a51b",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Judge prompt for browsing queries + library_overview tool scoring",
-        "scope": null
-      },
-      {
-        "hash": "95aa255c",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Browsing query skip_quotes flag + judge prompt browsing exceptions",
-        "scope": null
-      },
-      {
-        "hash": "ab92752f",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Social query short-circuit, zero-count hallucination, browsing fabrication",
-        "scope": null
-      },
-      {
-        "hash": "5bd16cc5",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Restore CATALOG-COMPANION quote instruction when sample titles have URLs",
-        "scope": null
-      },
-      {
-        "hash": "b0e01f58",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Restore companion search — early-return only for no-URL meta queries",
-        "scope": null
-      },
-      {
-        "hash": "32352825",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Early-return only when ALL sample docs have no source_url",
-        "scope": null
-      },
-      {
-        "hash": "c1b5051b",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Library_count samples prefer docs with source_url for verifiable title links",
-        "scope": null
-      },
-      {
-        "hash": "87905d2c",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Catalog sample titles — don't suggest URL format when no source_url available",
-        "scope": null
-      },
-      {
-        "hash": "4282840e",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Early-return for pure meta-queries — skip companion+SQL to prevent misattribution",
-        "scope": null
-      },
-      {
-        "hash": "fdc4f98f",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Skip companion search for pure meta-queries (what books do you have?)",
-        "scope": null
-      },
-      {
-        "hash": "9783087e",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Suppress CATALOG-COMPANION quote tag when no citation_url — prevents hallucination",
-        "scope": null
-      },
-      {
-        "hash": "0e055b11",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "SQL author fallback prefers docs with source_url to prevent hallucination",
-        "scope": null
-      },
-      {
-        "hash": "05e986df",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Crafter label — NEVER use sample title TEXT as quotable excerpt",
-        "scope": null
-      },
-      {
-        "hash": "00bbbc8e",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Normalize Unicode in author-matching check (Bahá'u'lláh apostrophe mismatch)",
-        "scope": null
-      },
-      {
-        "hash": "2ba8c730",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Author-catalog companion — verify Meilisearch returned author-matched results before SQL fallback",
-        "scope": null
-      },
-      {
-        "hash": "31b67411",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Cross-doc SQL query for author catalog — first doc may have 0 content rows",
-        "scope": null
-      },
-      {
-        "hash": "e8a1d4fe",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Correct column names external_para_id + paragraph_index in SQL fallbacks",
-        "scope": null
-      },
-      {
-        "hash": "6a2ee3ae",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Author-catalog always uses SQLite (bypass unreliable Meilisearch CONTAINS filter)",
-        "scope": null
-      },
-      {
-        "hash": "13f03f12",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Catalog_companion_sql + sequential_read_sql crafter tags — quotes now instructed for author-catalog SQL fallback and sequential reading",
-        "scope": null
-      },
-      {
-        "hash": "c15053d7",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "SQL fallback for sequential read + better catalog companion passages (v2.81.1)",
-        "scope": null
-      },
-      {
-        "hash": "e969eb09",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "UHJ catalog companion SQL fallback + bare-author-name explicit count (v2.81.0)",
-        "scope": null
-      }
-    ],
-    "2026-05-17": [
-      {
-        "hash": "edb860e3",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Skip tradition parallel searches for bare author queries — v2.80.55",
-        "scope": null
-      },
-      {
-        "hash": "11783bda",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Title-case heuristic for unknown author names in Branch 0 — v2.80.54",
-        "scope": null
-      },
-      {
-        "hash": "74bdc373",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Use document_id-scoped search in Branch 0 for guaranteed author content — v2.80.53",
-        "scope": null
-      },
-      {
-        "hash": "9d13bb0e",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Restore Branch 2 for author queries, relax isAuthorOnlyQuery, better search query — v2.80.52",
-        "scope": null
-      },
-      {
-        "hash": "9a490520",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Skip parallel tradition searches when author-only query active — v2.80.51",
-        "scope": null
-      },
-      {
-        "hash": "02dec65c",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Fuzzy author name match in Branch 0 — handle Schafer/Schaefer spelling variants — v2.80.50",
-        "scope": null
-      },
-      {
-        "hash": "6ccdf215",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Jain companion, bare author routing, comparative detection — v2.80.49",
-        "scope": null
-      },
-      {
-        "hash": "9259bc00",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Sequential reading requests use mode='read' instead of document subagent QA",
-        "scope": null
-      },
-      {
-        "hash": "5b860f2b",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "QURAN NOTE instructs crafter to cite only primary Quran text for Quran-specific queries",
-        "scope": null
-      },
-      {
-        "hash": "2aae45d4",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Update CASE 1 block-quote override to match 40-word threshold",
-        "scope": null
-      },
-      {
-        "hash": "eb4ff8c9",
-        "date": "2026-05-17",
-        "type": "Other",
-        "description": "Vague query clarification — judge penalizes no-citation responses",
-        "scope": null
-      },
-      {
-        "hash": "aae32866",
-        "date": "2026-05-17",
-        "type": "Fixed",
-        "description": "Extend vague-query pattern to match 'thing with the stuff' variant",
         "scope": null
       }
     ]
