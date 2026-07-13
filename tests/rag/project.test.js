@@ -23,6 +23,7 @@ describe('entities/project', () => {
     const { rag, store } = makeRag({ seed: { proposals, clusterSizes: { 'Mullá Ḥusayn-i-Bushrú’í': 40, 'Karbilá’í ‘Alí': 3 } } });
     const stats = await rag.entities.project();
     expect(stats).toMatchObject({ applied: 2, created: 1, linked: 1, mentionsBound: 43 });
+    expect(stats.createdIds).toEqual([store.created[0].id]);   // → handed to dedup-guard
     expect(store.created[0]).toMatchObject({ canonical: 'Karbilá’í ‘Alí', type: 'person' });
     expect(store.bound.map((b) => b.resolvedAs).sort()).toEqual(['Karbilá’í ‘Alí', 'Mullá Ḥusayn-i-Bushrú’í']);
     expect(store.appliedMarks.map((m) => m.id).sort()).toEqual([1, 2]);
