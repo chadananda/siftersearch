@@ -1,7 +1,8 @@
 // Shared biography data layer — the single source of truth for person records (list + dossier) and source-book
 // facets, used by BOTH the internal /api/graph/bio/* routes and the official /api/v1/people API.
 import { queryAll, queryOne } from './db.js';
-import { INTEGRATION_PHASES, AUTHOR_ROUTING, PINNED_DOCS } from './integration-phases.js';
+import { INTEGRATION_PHASES, AUTHOR_ROUTING, PINNED_DOCS, ABSORPTION_ORDER } from './integration-phases.js';
+const ABSORB_IDX = new Map(ABSORPTION_ORDER.map((id, i) => [id, i])); // docId → grounding-sequence position
 import { chatCompletion } from './ai.js';
 import fs from 'fs';
 import path from 'path';
@@ -143,17 +144,16 @@ export async function getIntegrationProgress() {
     ) GROUP BY doc_id`, [...gradedDocs, ...gradedDocs])).forEach(r => { counts[r.doc_id] = r.n; });
   (await queryAll(`SELECT CAST(json_extract(payload,'$.docId') AS INT) d, COUNT(*) n FROM entity_decisions
       WHERE kind='uncertain' AND status='proposed' GROUP BY d`)).forEach(r => { if (r.d) unresolved[r.d] = r.n; });
-  // Absorption time (when each curated book was grounded) = MAX claim timestamp. Orders the roadmap by the real
-  // grounding SEQUENCE — grounded books chronologically, then not-yet-absorbed ones (largest first) — so the
-  // current book sits in its natural place instead of being scattered by size.
-  const absorbedAt = {};
-  (await queryAll(`SELECT doc_id d, MAX(asserted_at) t FROM entity_claims WHERE doc_id IN (${ph}) GROUP BY doc_id`, gradedDocs))
-    .forEach(r => { absorbedAt[r.d] = r.t; });
+  // Order each phase by the intended grounding SEQUENCE (ABSORPTION_ORDER). Books in the sequence sort by their
+  // position; books not listed sort after (grounded first, then largest) — so the roadmap reads in absorption
+  // order and the current book stays in its natural place instead of scattered by size.
+  const orderIdx = (id) => (ABSORB_IDX.has(id) ? ABSORB_IDX.get(id) : Infinity);
   const byAbsorption = (a, b) => {
-    const ta = absorbedAt[a], tb = absorbedAt[b];
-    if (ta && tb) return ta < tb ? -1 : ta > tb ? 1 : 0;  // both grounded → chronological (order of absorption)
-    if (ta) return -1; if (tb) return 1;                  // grounded before not-yet-grounded
-    return (meta[b]?.paragraph_count || 0) - (meta[a]?.paragraph_count || 0); // both pending → largest first
+    const ia = orderIdx(a), ib = orderIdx(b);
+    if (ia !== ib) return ia - ib;                                  // explicit grounding sequence
+    const da = (counts[a] || 0) > 0 ? 0 : 1, db = (counts[b] || 0) > 0 ? 0 : 1;
+    if (da !== db) return da - db;                                  // then grounded before pending
+    return (meta[b]?.paragraph_count || 0) - (meta[a]?.paragraph_count || 0); // then largest first
   };
   const phaseBookIds = {};
   for (const p of INTEGRATION_PHASES) phaseBookIds[p.key] = inPhase(p.key).sort(byAbsorption);

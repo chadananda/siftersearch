@@ -62,6 +62,16 @@ export const AUTHOR_ROUTING = [
   { re: /rabbani/i, phase: 'primary' },
 ];
 
+// Intended grounding SEQUENCE (order of absorption) — orders books WITHIN each phase in the popup so the roadmap
+// reads in the order books are actually absorbed, not scattered by size. Books not listed sort after the listed
+// ones (grounded first, then largest first). Extend as the plan grows.
+export const ABSORPTION_ORDER = [
+  21310, 21308, 8632, 429, 430, 431, 432,                          // GPB · Dawn-Breakers · Gate · ROB vols 1-4
+  28849, 466, 462, 3789, 3887, 464, 465, 467, 463, 427, 426,       // Balyuzi + Taherzadeh (Foundation)
+  15228, 15257, 15254, 20028, 15256, 20035, 20037, 15255, 15259, 13433, 20331, // Máz · Momen · Awakening (Pillars)
+  20907, 20919, 11355, 11335, 12472, 16552, 11265, 16316, 11344, 214474, 15347, 11374, 9095, // Primary
+];
+
 // Explicit PINS (docId → phase) for specific books whose author doesn't match a rule but which belong in a phase:
 // pilgrim notes + firsthand primary narratives → primary; Redman's collective account → foundation.
 export const PINNED_DOCS = {
