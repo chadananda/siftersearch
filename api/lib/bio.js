@@ -88,7 +88,14 @@ async function computeActiveBook(staticDocs, meta) {
     const claimedPar = (await queryAll(`SELECT COUNT(DISTINCT para_id) n FROM entity_claims WHERE doc_id=?`, [docId]))[0]?.n || 0;
     withinFrac = totalPar ? Math.min(0.99, claimedPar / totalPar) : 0.5;
   }
-  const percent = ts ? Math.max(3, Math.min(99, Math.round(((si + withinFrac) / ts) * 100))) : null;
+  // TIME-weighted percent: claims dominates wall-time (~70%), so it must dominate the bar — otherwise the bar
+  // barely moves during the long claims stage. Weights are rough wall-time shares (sum≈1); the bar climbs
+  // through completed stages + the current stage's share × its within-fraction.
+  const STAGE_WEIGHT = { disambiguate: 0.05, mentions: 0.02, claims: 0.55, reconcile: 0.08, research: 0.05,
+    project: 0.03, link: 0.02, merge: 0.10, dedup: 0.03, hype: 0.05, verify: 0.02 };
+  let done = 0; for (let i = 0; i < si; i++) done += STAGE_WEIGHT[GROUNDING_STAGES[i]] ?? (1 / ts);
+  const cur = STAGE_WEIGHT[stageName] ?? (1 / ts);
+  const percent = Math.max(3, Math.min(99, Math.round((done + cur * withinFrac) * 100)));
   return { docId, stage: stageName, stageIndex: si, totalStages: ts, percent, since: fresh ? st.startedAt : null,
     title: meta[docId]?.title || `doc ${docId}`, size: meta[docId]?.paragraph_count || 0, claimsExtracted: claims };
 }
