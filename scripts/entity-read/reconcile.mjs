@@ -16,7 +16,7 @@ const FILTER = process.env.FILTER || null;         // resolved_as LIKE %FILTER% 
 const LIMIT = process.env.LIMIT ? +process.env.LIMIT : 0;
 const MINFREQ = +(process.env.MINFREQ || 1);       // skip clusters mentioned < MINFREQ times (full run: 2)
 const CONC = +(process.env.CONC || 5);
-const MODEL = process.env.MODEL || 'deepseek-chat';
+const MODEL = process.env.MODEL || 'deepseek-v4-flash';
 const MV = 'deepseek-disambig-v1';
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
 const coreName = (rs) => String(rs).replace(/\([^)]*\)/g, '').split(/[,;—]| the | who | a /)[0].trim();  // (kept for the create-canonical; candidate recall uses the full name)

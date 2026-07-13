@@ -26,7 +26,11 @@ export async function run(ctx, docId, opts = {}) {
   if (opts.resume) { const done = new Set((await ctx.store.getClaimedParaIds?.(docId)) || []); paras = paras.filter((p) => !done.has(p.pid)); }
   const system = buildSystem(profile, relList);
   const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };
-  const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
+  // maxTokens is a CAP, not a target — a high cap costs nothing on simple paragraphs (the model stops when
+  // done) but PREVENTS the truncation→continuation thrash on dense ones. deepseek-v4-flash IS a reasoning
+  // model (returns reasoning_content that counts against max_tokens), so a 3000 cap starved the JSON answer →
+  // finish=length → up to 5 slow continuation calls/para. Give each model its full output headroom instead.
+  const maxTokens = (m) => Math.min(ctx.catalog.get(m)?.maxOutput ?? 4096, 8000);
   const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, empty: 0, failed: 0, escalated: 0, continued: 0 };
 
   // Write INCREMENTALLY per paragraph so a long run is resilient (a crash keeps prior work) and observable.

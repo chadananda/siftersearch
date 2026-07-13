@@ -4,17 +4,21 @@
 // (Arabic 2.28M paras, Hebrew 370K, Persian 139K, English). Resolution = explicit override for known books,
 // else derive from doc metadata + a script sample, with safe defaults so ANY document enriches acceptably.
 
-// ── Empirically-grounded model routing by language (2026-07-10 tests) ────────────────────────────────────
-// DeepSeek-flash: reliable + cheapest on English, ARABIC, HEBREW; SILENTLY FAILS (empty) on PERSIAN.
-// Claude-haiku: reliable on ALL incl. Persian; cheap (no reasoning tokens — ~2.8× cheaper than deepseek-pro
-//   here, which burns ~1764 reasoning tok/call). DeepSeek-pro's reasoning is wasteful for this task → not used.
-// So: flash where it works (the 2.6M Ar/He/En bulk), haiku for Persian + as the universal escalation target.
-const FLASH = 'deepseek-v4-flash', HAIKU = 'claude-haiku-4-5-20251001', SONNET = 'claude-sonnet-4-6';
+// ── Model routing by language — TWO models only, NO cross-provider escalation ─────────────────────────────
+// deepseek-v4-flash = the ONE deepseek: English, ARABIC, HEBREW (reliable + cheapest). It IS a reasoning model
+//   (returns reasoning_content) so extraction stages MUST give it maxTokens headroom for reasoning+answer
+//   (see claims.js) — under-budgeting truncates → continuation thrash. That is a CALL bug to fix, not a model
+//   failure to escalate around. Persian is the ONLY language flash can't do (silently empty).
+// claude-haiku-4-5 = the ONE haiku: PERSIAN ONLY. NEVER an English/Arabic/Hebrew fallback — too expensive.
+// Fallback = the SAME model retried (runLadder: primary===fallback → 4 tries). No pro, no sonnet, no
+// cross-provider hop. Fix the deepseek call; do not escalate to haiku.
+const FLASH = 'deepseek-v4-flash', HAIKU = 'claude-haiku-4-5-20251001';
+const SONNET = 'claude-sonnet-4-6'; // NOT an extraction fallback — only the doctrinal/CONCEPTUAL override below (Gate of the Heart)
 const LANG_ROUTING = {
-  en: { disambig: FLASH, hype: FLASH, extract: FLASH, fallback: HAIKU },
-  ar: { disambig: FLASH, hype: FLASH, extract: FLASH, fallback: HAIKU }, // flash handles Arabic
-  he: { disambig: FLASH, hype: FLASH, extract: FLASH, fallback: HAIKU }, // flash handles Hebrew
-  fa: { disambig: HAIKU, hype: HAIKU, extract: HAIKU, fallback: SONNET }, // flash unreliable on Persian → haiku primary
+  en: { disambig: FLASH, hype: FLASH, extract: FLASH, fallback: FLASH },
+  ar: { disambig: FLASH, hype: FLASH, extract: FLASH, fallback: FLASH }, // flash handles Arabic
+  he: { disambig: FLASH, hype: FLASH, extract: FLASH, fallback: FLASH }, // flash handles Hebrew
+  fa: { disambig: HAIKU, hype: HAIKU, extract: HAIKU, fallback: HAIKU }, // Persian ONLY → haiku (retry itself)
 };
 const providerOf = (model) => model.startsWith('claude') ? 'anthropic' : model.startsWith('gpt') ? 'openai' : 'deepseek';
 

@@ -192,7 +192,9 @@ async function chatLocal(messages, { model, temperature, maxTokens, stream, resp
 
 async function chatDeepSeek(messages, { model, temperature, maxTokens, stream, responseFormat, thinking = false }) {
   const client = getDeepSeek();
-  // translate a registry key (e.g. 'deepseek-v4-flash') to the real DeepSeek API id ('deepseek-chat'); pass raw ids through
+  // resolve the registry key to its live DeepSeek API id via the registry's `apiModel` (e.g.
+  // 'deepseek-v4-flash' → 'deepseek-v4-flash'); pass unknown raw ids straight through. NB: deepseek-chat is
+  // the DEPRECATED V3 id — never emit it; v4 ids only (deepseek-v4-flash / deepseek-v4-pro).
   const apiModel = getModel(model)?.apiModel || model;
   const params = { model: apiModel, messages, temperature, max_tokens: maxTokens, stream };
   if (responseFormat) params.response_format = responseFormat;

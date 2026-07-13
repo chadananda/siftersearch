@@ -283,7 +283,9 @@ export const MODEL_REGISTRY = {
   'deepseek-v4-flash': {
     provider: 'deepseek',
     apiModel: 'deepseek-v4-flash',    // DeepSeek V4 flash — the live API id (deepseek-chat V3 is DEPRECATED; v4 only)
-    name: 'DeepSeek V4 Flash (non-thinking)',
+    name: 'DeepSeek V4 Flash',        // hybrid: CAN reason (emits reasoning_content); we run it thinking-disabled
+                                      // for fast extraction, but reasoning still counts vs max_tokens → give
+                                      // large-output stages full maxOutput headroom (see rag/entities/claims.js)
     type: 'chat',
     pricing: { input: 0.00027, output: 0.0011 },
     contextWindow: 64000,

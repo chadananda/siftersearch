@@ -39,7 +39,7 @@ for (let b = 0; b < todo.length; b += 40) {
   const items = batch.map((r, i) => ({ i, label: r.relation, count: r.n }));
   try {
     const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: JSON.stringify(items) }],
-      { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 3000, responseFormat: { type: 'json_object' } });
+      { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 3000, responseFormat: { type: 'json_object' } });
     const p = JSON.parse((res.content || '').match(/\{[\s\S]*\}/)[0]);
     for (const m of (p.map || [])) { const r = batch[m.i]; if (r) map[r.relation] = { key: m.key, is_event: !!m.is_event, target: m.target || null, place: m.place || null }; }
   } catch (e) { console.error(`  batch ${b} failed: ${String(e.message).slice(0, 60)}`); }

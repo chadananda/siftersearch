@@ -16,7 +16,7 @@ const arg = (k, d) => { const m = process.argv.find((a) => a.startsWith(`--${k}=
 const WRITE = process.env.WRITE === '1';
 const DOCS = arg('docs', '21310,21308,426,427,429,430,431').split(',').map((s) => s.trim()).filter(Boolean);
 const LIMIT = Number(arg('limit', '0')) || null;
-const MODEL = arg('model', 'deepseek-chat');
+const MODEL = arg('model', 'deepseek-v4-flash');
 const CONC = Number(arg('concurrency', '4'));
 
 // Active-adversarial relations: with a protagonist as subject these are the ones the extractor most often inverts.

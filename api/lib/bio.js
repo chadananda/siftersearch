@@ -333,7 +333,7 @@ export async function bioSearch(rawQ) {
       let lead = ''; const byId = {};
       try {
         const res = await chatCompletion([{ role: 'system', content: CSYS }, { role: 'user', content: `QUESTION: ${q}\n\n${body}` }],
-          { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 900, responseFormat: { type: 'json_object' } });
+          { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 900, responseFormat: { type: 'json_object' } });
         const mm = (res.content || '').match(/\{[\s\S]*\}/); const p = mm ? JSON.parse(mm[0]) : {};
         lead = cl(p.lead || '');
         for (const c of (Array.isArray(p.clauses) ? p.clauses : [])) if (c && c.id != null) byId[Number(c.id)] = { i: Number.isInteger(+c.i) ? +c.i : 0, clause: cl(c.clause).slice(0, 140) };
@@ -381,7 +381,7 @@ Also output "lead": one short sentence stating the overall answer.
 Return ONLY JSON: {"lead":"...","matches":[{"id","clause"}]} — most relevant first, clear matches only.`;
   try {
     const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
-      { provider: 'deepseek', model: 'deepseek-chat', temperature: 0, maxTokens: 2600, responseFormat: { type: 'json_object' } });
+      { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 2600, responseFormat: { type: 'json_object' } });
     // tolerant parse: DeepSeek occasionally emits malformed/truncated JSON — salvage the lead + every COMPLETE {...}.
     const looseParse = (txt) => {
       const whole = (txt || '').match(/\{[\s\S]*\}/);
