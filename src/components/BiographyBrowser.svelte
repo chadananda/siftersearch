@@ -251,10 +251,13 @@
                         <li class="prog-book" class:done={b.done} class:active={progress.active && b.id === progress.active.docId}>
                           <span class="prog-tick" aria-hidden="true">{b.done ? '✓' : (progress.active && b.id === progress.active.docId) ? '◐' : ph.upcoming ? '·' : '○'}</span>
                           <span class="prog-book-title">{b.title}</span>
-                          {#if progress.active && b.id === progress.active.docId && progress.active.percent != null}
-                            <span class="prog-book-prog" title="{stageLabel(progress.active.stage)}"><span class="pbp-track"><span class="pbp-fill" style="width:{progress.active.percent}%"></span></span><span class="pbp-pct">{progress.active.percent}%</span></span>
-                          {:else if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}
-                          {#if b.done}<span class="prog-book-stats"><span class="pb-new" title="people first grounded via this book">+{b.newInSequence.toLocaleString()}</span>{#if b.unresolved}<span class="pb-un" title="mentioned here but not yet resolved — revisited as later books are absorbed">{b.unresolved.toLocaleString()}?</span>{/if}</span>{/if}
+                          <span class="col-size">
+                            {#if progress.active && b.id === progress.active.docId && progress.active.percent != null}
+                              <span class="pbp-track" title="{stageLabel(progress.active.stage)}"><span class="pbp-fill" style="width:{progress.active.percent}%"></span></span><span class="pbp-pct">{progress.active.percent}%</span>
+                            {:else if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}
+                          </span>
+                          <span class="col-new" title="people first grounded via this book">{#if b.done && b.newInSequence}+{b.newInSequence.toLocaleString()}{/if}</span>
+                          <span class="col-un" title="mentioned here but not yet resolved — revisited as later books are absorbed">{#if b.done && b.unresolved}{b.unresolved.toLocaleString()}?{/if}</span>
                         </li>
                       {/each}
                       {#if ph.books.length === 0}<li class="prog-empty">Catalog pending classification…</li>{/if}
@@ -614,14 +617,16 @@
   .prog-book.done .prog-tick, .prog-book.active .prog-tick { color: var(--accent); }
   .prog-book-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .prog-book.done .prog-book-title, .prog-book.active .prog-book-title { color: var(--text-primary); }
-  /* Non-active books show only their SIZE as a plain number (paragraphs) — no bar. */
-  .pb-num { flex: 0 0 3rem; text-align: right; font-size: .68rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  /* Fixed right-hand COLUMNS so every row lines up vertically: [size/progress] [+new] [unresolved]. */
+  .col-size { flex: 0 0 6rem; display: flex; align-items: center; justify-content: flex-end; gap: .4rem; }
+  .col-new { flex: 0 0 3.2rem; text-align: right; font-size: .72rem; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .col-un { flex: 0 0 3rem; text-align: right; font-size: .72rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .pb-num { font-size: .68rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
   .pb-num::after { content: ' ¶'; opacity: .5; }
-  /* PROGRESS bar — ONLY on the current book being ground; shows how far through the pipeline it is. */
-  .prog-book-prog { flex: 0 0 5.5rem; display: flex; align-items: center; gap: .4rem; }
+  /* PROGRESS bar — ONLY on the current book being ground; fills the size column. */
   .pbp-track { flex: 1; height: .34rem; background: var(--surface-3); border-radius: 1rem; overflow: hidden; }
   .pbp-fill { display: block; height: 100%; background: var(--accent); border-radius: 1rem; transition: width .6s ease; }
-  .pbp-pct { flex: 0 0 1.9rem; text-align: right; font-size: .68rem; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .pbp-pct { flex: 0 0 auto; font-size: .68rem; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
   .prog-book-stats { flex: 0 0 auto; display: flex; gap: .45rem; align-items: baseline; font-size: .72rem; font-variant-numeric: tabular-nums; }
   .pb-new { color: var(--accent); font-weight: 600; }
   .pb-un { color: var(--text-muted); }

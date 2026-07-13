@@ -1,6 +1,27 @@
 {
-  "generated": "2026-07-13T20:47:23.365Z",
+  "generated": "2026-07-13T21:10:14.614Z",
   "entries": [
+    {
+      "hash": "95a47dcd",
+      "date": "2026-07-13",
+      "type": "Fixed",
+      "description": "Author-routing floor >=40 paras (drop tiny fragments from Foundation/Primary)",
+      "scope": "bio popup"
+    },
+    {
+      "hash": "c109e57e",
+      "date": "2026-07-13",
+      "type": "New",
+      "description": "Author-routed phases — Balyuzi/Taherzadeh to Foundation, Rabbani to Primary",
+      "scope": "bio popup"
+    },
+    {
+      "hash": "33874655",
+      "date": "2026-07-13",
+      "type": "New",
+      "description": "Current-book PROGRESS bar replaces size bars",
+      "scope": "bio popup"
+    },
     {
       "hash": "80364f41",
       "date": "2026-07-13",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "Pipeline health endpoint + enhanced health-check with sync staleness detection",
       "scope": null
-    },
-    {
-      "hash": "ecaf43b3",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Separate cooldown docs from indexing progress display",
-      "scope": null
-    },
-    {
-      "hash": "dc94b9ce",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Migration 74 — unique constraints on entity tables break DB lock storm",
-      "scope": null
-    },
-    {
-      "hash": "c11ddf3e",
-      "date": "2026-05-18",
-      "type": "New",
-      "description": "Push entity mentions to Meili immediately after each paragraph resolves",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-13": [
+      {
+        "hash": "95a47dcd",
+        "date": "2026-07-13",
+        "type": "Fixed",
+        "description": "Author-routing floor >=40 paras (drop tiny fragments from Foundation/Primary)",
+        "scope": "bio popup"
+      },
+      {
+        "hash": "c109e57e",
+        "date": "2026-07-13",
+        "type": "New",
+        "description": "Author-routed phases — Balyuzi/Taherzadeh to Foundation, Rabbani to Primary",
+        "scope": "bio popup"
+      },
+      {
+        "hash": "33874655",
+        "date": "2026-07-13",
+        "type": "New",
+        "description": "Current-book PROGRESS bar replaces size bars",
+        "scope": "bio popup"
+      },
       {
         "hash": "80364f41",
         "date": "2026-07-13",
@@ -7045,27 +7066,6 @@
         "date": "2026-05-18",
         "type": "New",
         "description": "Pipeline health endpoint + enhanced health-check with sync staleness detection",
-        "scope": null
-      },
-      {
-        "hash": "ecaf43b3",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Separate cooldown docs from indexing progress display",
-        "scope": null
-      },
-      {
-        "hash": "dc94b9ce",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Migration 74 — unique constraints on entity tables break DB lock storm",
-        "scope": null
-      },
-      {
-        "hash": "c11ddf3e",
-        "date": "2026-05-18",
-        "type": "New",
-        "description": "Push entity mentions to Meili immediately after each paragraph resolves",
         "scope": null
       }
     ]
