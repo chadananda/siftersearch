@@ -32,7 +32,7 @@ export async function run(ctx, docId, opts = {}) {
     const { parsed, escalated } = await ctx.model.runLadder({ route, system: SYSTEM, user, parse: parseVerdict, maxTokens: 400 });
     if (!parsed) { stats.failed++; return; }
     stats.adjudicated++; if (escalated) stats.escalated++;
-    const row = decisionRow(parsed, cluster, candidates);
+    const row = decisionRow(parsed, cluster, candidates, docId);
     stats.byKind[row.kind] = (stats.byKind[row.kind] || 0) + 1;
     decisions.push(row);
   });
@@ -80,12 +80,12 @@ export function buildUser(cluster, candidates, scenes, evidence = []) {
 }
 
 // Map an adjudication verdict to an append-only decision row. entity_id is only carried for a "link".
-export function decisionRow(v, cluster, candidates) {
+export function decisionRow(v, cluster, candidates, docId) {
   const kind = v.verdict === 'other' ? 'other-type' : v.verdict; // link | create | uncertain | other-type
   return {
     kind, targetKind: 'mention-cluster',
     targetIds: cluster.paraIds.slice(0, 20),
-    payload: { resolvedAs: cluster.resolvedAs, verdict: v.verdict, type: v.type, entityId: v.verdict === 'link' ? v.entityId : null, canonical: v.canonical, freq: cluster.freq },
+    payload: { resolvedAs: cluster.resolvedAs, verdict: v.verdict, type: v.type, entityId: v.verdict === 'link' ? v.entityId : null, canonical: v.canonical, freq: cluster.freq, docId },
     evidence: { scenes: cluster.paraIds.slice(0, 6), candidates: candidates.map((c) => c.id) },
     rationale: v.decisive, actor: 'model', actorTier: 2, confidence: v.confidence, status: 'proposed',
   };

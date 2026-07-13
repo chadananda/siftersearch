@@ -22,9 +22,10 @@ describe('reconcile — pure helpers', () => {
     expect(other.kind).toBe('other-type');
     expect(other.payload.entityId).toBeNull();              // never binds an entity for a non-person
 
-    const create = decisionRow(parseVerdict('{"verdict":"create","canonical":"Karbilá’í ‘Alí","confidence":0.7}'), { resolvedAs: 'x', freq: 3, paraIds: [] }, [{ id: 9 }]);
+    const create = decisionRow(parseVerdict('{"verdict":"create","canonical":"Karbilá’í ‘Alí","confidence":0.7}'), { resolvedAs: 'x', freq: 3, paraIds: [] }, [{ id: 9 }], 21308);
     expect(create.kind).toBe('create');
     expect(create.payload.entityId).toBeNull();             // a create carries no link id
+    expect(create.payload.docId).toBe(21308);               // tagged with its book → doc-scoped project
   });
 
   it('the prompt forbids binding on name similarity alone', () => {

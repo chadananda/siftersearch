@@ -37,6 +37,18 @@ describe('entities/project', () => {
     expect(store.bound).toHaveLength(0);
   });
 
+  it('docId scopes application to ONE book — other books’ decisions stay unapplied (serial grounding)', async () => {
+    const mixed = [
+      { id: 1, kind: 'create', status: 'approved', confidence: 0.9, payload: { resolvedAs: 'A', entityId: null, canonical: 'A', type: 'person', docId: 21310 } },
+      { id: 2, kind: 'create', status: 'approved', confidence: 0.9, payload: { resolvedAs: 'B', entityId: null, canonical: 'B', type: 'person', docId: 21308 } },
+    ];
+    const { rag, store } = makeRag({ seed: { proposals: mixed } });
+    const stats = await rag.entities.project({ docId: 21310 });
+    expect(stats).toMatchObject({ applied: 1, created: 1 });
+    expect(store.created).toHaveLength(1);
+    expect(store.created[0].canonical).toBe('A');   // only the 21310 book's create is applied
+  });
+
   it('auto mode applies a high-confidence proposed link', async () => {
     const hi = [{ id: 9, kind: 'link', status: 'proposed', confidence: 0.95, payload: { resolvedAs: 'Q', entityId: 1 } }];
     const { rag, store } = makeRag({ seed: { proposals: hi } });

@@ -26,7 +26,7 @@ if (want('disambiguate')) log('disambiguate', await rag.disambiguate(doc, { conc
 if (want('mentions'))     log('mentions', await rag.entities.mentions(doc));
 if (want('claims'))       log('claims', await rag.entities.claims(doc, { resume: true, threshold: 0.9, concurrency: 4 }));
 if (want('reconcile'))    log('reconcile', await rag.entities.reconcile(doc, { resume: true, threshold: 0.9, concurrency: 4 })); // FULL — no --limit
-if (want('project'))      { const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9 }); createdIds = r.createdIds || []; log('project', r); }
+if (want('project'))      { const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId: doc }); createdIds = r.createdIds || []; log('project', r); }
 if (want('dedup') && createdIds.length) log('dedup-guard', await rag.entities.dedupGuard({ entityIds: createdIds }));
 if (want('link'))         execSync(`DOC=${doc} WRITE=1 SIFTER_WRITER_URL=${writer} node scripts/entity-read/link-claims.mjs`, { stdio: 'inherit' });
 if (want('hype'))         log('hype', await rag.retrieval.index(doc, { resume: true }));

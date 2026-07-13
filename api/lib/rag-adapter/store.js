@@ -258,7 +258,7 @@ export function makeStore() {
         let p = {};
         try { p = JSON.parse(r.payload || '{}'); } catch { /* */ }
         return { id: r.id, kind: r.kind, status: r.status, confidence: r.confidence,
-          payload: { resolvedAs: p.resolvedAs ?? p.resolved_as, entityId: p.entityId ?? p.entity_id ?? null, canonical: p.canonical ?? null, type: p.type ?? 'person', freq: p.freq } };
+          payload: { resolvedAs: p.resolvedAs ?? p.resolved_as, entityId: p.entityId ?? p.entity_id ?? null, canonical: p.canonical ?? null, type: p.type ?? 'person', freq: p.freq, docId: p.docId ?? p.doc_id ?? null } };
       });
     },
 

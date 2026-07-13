@@ -9,7 +9,10 @@ export async function run(ctx, opts = {}) {
   const hiConf = opts.hiConf ?? 0.85;
   const force = opts.force ?? false;           // re-apply already-applied (idempotent overwrite)
   const all = await ctx.store.getProposedDecisions();
+  // docId scopes application to ONE book's decisions — the invariant that makes serial grounding actually
+  // serial (without it, projecting GPB would also apply every later book's held creates). Omit → apply all.
   const toApply = all.filter((d) => kinds.includes(d.kind)
+    && (opts.docId == null || d.payload?.docId === opts.docId)
     && (force || d.status !== 'applied')
     && (d.status === 'approved' || d.status === 'applied' || (auto && (d.confidence || 0) >= hiConf)));
 
