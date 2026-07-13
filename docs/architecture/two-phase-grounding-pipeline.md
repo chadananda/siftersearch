@@ -68,6 +68,47 @@ port + search-evidence reconcile, dup-guard, search-verify stage, drop-in watche
 5. THEN automate: `pipeline.js` orchestrator over `doc_pipeline` + watcher enqueue → drop-in books auto-run
    Phase A immediately, Phase B when their turn arrives.
 
+## Research-resolve — "uncertain" is a research task, NOT a human-review hold
+Holding a figure as "uncertain" for later review offloads the research onto the user. The pipeline must
+RESOLVE it autonomously (the [[entity-research]] methodology): for each uncertain cluster / orphaned
+claim-figure —
+1. **Corpus-first** (authoritative + fast): search Meili across ALL books — is the figure/episode named in
+   another, more authoritative book? Did a scholar identify them? (e.g. GPB's bare "Lady Agnew" → the corpus
+   shows the attested London figures are Lady Blomfield + Arthur S. Agnew, no corroborating "Lady Agnew"
+   episode.)
+2. **Web/Wikipedia when the corpus is thin** (WebSearch/WebFetch): who was this figure? (e.g. Lady Agnew of
+   Lochnaw = Gertrude Vernon, 1864–1932 — but no source ties her to ‘Abdu'l-Bahá → stays low-confidence.)
+3. **Adjudicate** with the gathered evidence: same as an existing entity (link) / distinct new person (create,
+   cited) / likely-artifact (drop) / genuinely-thin (hold at low confidence, never assert).
+4. **Commit** a grounded, cited resolution. Never punt to the user.
+
+**EVERY evidence item records its SOURCE — provenance is mandatory, especially for out-of-corpus evidence.**
+We can only authority-rank a resolution if we know where its evidence came from:
+- **In-corpus** evidence → `{source_doc_id, para_id, authority_tier}` (ranked by the authority plan:
+  GPB/Shoghi Effendi > Dawn-Breakers > rigorous scholars > … — via `api/lib/authority.js` / `doc-tier.js`).
+- **External** evidence (web / Wikipedia / Perplexity) → `{url, source_title, retrieved_at, authority_tier:
+  'external-web'}` — the LOWEST tier, explicitly BELOW every in-corpus source. A fact resting only on external
+  web evidence is flagged as such (low confidence, corroboration-only), never allowed to outrank a corpus
+  source. Store the reference so the ranking (and any later re-adjudication) can see exactly what it stands on.
+No anonymous evidence — in-corpus or external, the resolution carries its citation.
+
+Built as `entities/research-resolve` (Lurch 6). Ports: `searchCorpus` (Meili, all books, returns doc→authority
+tier) + a web-research port (WebSearch/WebFetch or the deep-research worker `api/lib/deep-research.js`) that
+returns `{answer, sources[]}`. Runs on each book's `uncertain` set as part of the DoD — a book isn't done until
+its uncertains are researched (with sourced evidence), not merely held.
+
+### Backward re-resolution — the convergence sweep (TO BUILD)
+research-resolve runs FORWARD-ONLY: each book is resolved against the corpus grounded *at that moment*. So a
+figure held "uncertain" in an early book was researched against only the *earlier* corpus — e.g. Dawn-Breakers
+(book 2) had 330 uncertain martyrs, researched against GPB + web alone, because Mázindarání and the Nayríz
+biographies (Ahdieh/Rabbani) that explain many of them are grounded *later* in the sequence. Those tails do NOT
+resolve on their own. **Convergence requires a backward sweep:** after later books are grounded, RE-RUN
+research-resolve over ALL accumulated `uncertain` clusters against the now-fuller grounded corpus — an
+early-book blank becomes resolvable once the book that explains it is absorbed. Idempotent + reversible
+(proposes decisions; the guard skips non-integer link ids). Run it periodically during the wave and once as a
+final pass; it is the mechanism that makes cumulative ordering actually *converge* rather than strand tails.
+The biography progress popup surfaces the per-book `unresolved` count so the size of this tail is always visible.
+
 ## Definition of Done (per book) — see wave1-extraction-pipeline.md
 disambiguate → mentions → claims → reconcile(FULL) → project(link+create) → link-claims → dup-guard →
 HyPE+Meili sync → **verify searchable**. Never "done" without the final search-verify.
