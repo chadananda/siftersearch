@@ -29,6 +29,8 @@ describe('research-resolve — pure helpers', () => {
   it('the prompt makes corpus outrank web and prefers hold over a wrong resolution', () => {
     expect(SYSTEM).toMatch(/CORPUS always outranks WEB/i);
     expect(SYSTEM).toMatch(/Prefer "hold"/i);
+    expect(SYSTEM).toMatch(/REJECT cross-TRADITION/i);           // a Persian figure is not the biblical Potiphar
+    expect(SYSTEM).toMatch(/Potiphar/);
     expect(buildUser({ resolvedAs: 'X', freq: 2 }, [{ docId: 1, title: 'DB', authorityTier: 2, snippet: 'y' }], null)).toContain('authority 2');
   });
 });

@@ -11,13 +11,15 @@ const CORPUS_THIN = 2;   // fewer than this many corpus hits from OTHER books �
 
 export async function run(ctx, docId, opts = {}) {
   const clusters = opts.clusters || (await ctx.store.getUncertainClusters?.(docId, { limit: opts.limit })) || [];
+  const meta = (await ctx.store.getDocMeta?.(docId)) || {};   // religion scopes corpus evidence to this tradition
   const route = { model: opts.model ?? ctx.config.models?.merge, fallback: opts.fallback ?? ctx.config.models?.mergeFallback };
   const stats = { clusters: clusters.length, webUsed: 0, adjudicated: 0, failed: 0, held: 0, written: 0, byKind: {} };
   const decisions = [];
 
   await pool(opts.concurrency ?? 3, clusters, async (cluster) => {
-    // Corpus-first: evidence from OTHER books (this book is the one that raised the question), authority-ranked.
-    const corpus = ((await ctx.store.searchCorpus?.(cluster.resolvedAs, { limit: 6 })) || []).filter((c) => c.docId !== docId);
+    // Corpus-first: evidence from OTHER books in the SAME TRADITION (a cross-tradition namesake — the biblical
+    // Potiphar for a Persian "chief of executioners" — is not this figure), authority-ranked.
+    const corpus = ((await ctx.store.searchCorpus?.(cluster.resolvedAs, { limit: 6, religion: meta.religion })) || []).filter((c) => c.docId !== docId);
     let web = null;
     if (corpus.length < CORPUS_THIN && ctx.web?.research) { web = await ctx.web.research(webQuery(cluster)); if (web) stats.webUsed++; }
     const { parsed } = await ctx.model.runLadder({ route, system: SYSTEM, user: buildUser(cluster, corpus, web), parse: parseResolve, maxTokens: 450 });
@@ -43,6 +45,7 @@ Decide:
 • "other" — not a person (place/work/group/event) — give type.
 • "hold" — evidence is genuinely too thin to resolve; stay uncertain (do NOT invent an identity).
 Rules: CORPUS always outranks WEB; a resolution resting ONLY on external web is low-confidence. Prefer "hold" over a wrong resolution (a false identity fabricates a person). Cite which evidence items you used.
+REJECT cross-TRADITION / cross-ERA matches: this figure is from 19th-century Bábí/Bahá'í history — a passage from the Bible, Qur'án, Torah, or an ancient/other-tradition text that merely shares a NAME or TITLE is NOT this person (e.g. a Persian "chief of the executioners" is NOT the biblical Potiphar; a "Muḥammad" in a Persian scene is not the Prophet). Such a passage does not identify the figure — prefer "hold".
 Return ONLY JSON: {"verdict":"link|create|other|hold","entity_id":<id|null>,"canonical":"<name|null>","type":"person|place|work|group|event","used_corpus":[<C-indices>],"used_web":[<W-indices>],"confidence":0.0-1.0,"reason":"<=25 words"}.`;
 
 export function webQuery(cluster) {

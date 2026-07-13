@@ -204,21 +204,27 @@ export function makeStore() {
 
     // Full-corpus search (all books) for research-resolve — each hit carries its doc's AUTHORITY (10 - docTier,
     // so higher = more authoritative; GPB/primary highest), plus title + a snippet for the adjudicator.
-    async searchCorpus(query, { limit = 6 } = {}) {
+    async searchCorpus(query, { limit = 6, religion = null } = {}) {
       try {
         const { getMeili, INDEXES } = await import('../search.js');
         const { getDocTier } = await import('../doc-tier.js');
-        const res = await getMeili().index(INDEXES.PARAGRAPHS).search(String(query).slice(0, 120), { limit });
+        // Fetch extra when scoping by tradition (post-filter drops cross-tradition hits — a Bible/Qur'án passage
+        // that merely shares a name is not this figure). doc_id filterable; religion is post-filtered via the DB.
+        const res = await getMeili().index(INDEXES.PARAGRAPHS).search(String(query).slice(0, 120), { limit: religion ? limit * 4 : limit });
         const hits = res.hits || [];
         if (!hits.length) return [];
         const docIds = [...new Set(hits.map((h) => h.doc_id).filter(Boolean))];
         const docs = {};
         if (docIds.length) (await db.queryAll(`SELECT id, title, author, religion, collection FROM docs WHERE id IN (${docIds.map(() => '?').join(',')})`, docIds)).forEach((d) => { docs[d.id] = d; });
-        return hits.map((h) => {
+        const out = [];
+        for (const h of hits) {
           const d = docs[h.doc_id] || {};
+          if (religion && d.religion && d.religion !== religion) continue;   // scope to the book's tradition
           let tier = 9; try { tier = getDocTier(d) || 9; } catch { /* */ }
-          return { docId: h.doc_id, title: d.title || null, authorityTier: 10 - tier, paraId: h.external_para_id || null, snippet: String(h.text || '').replace(/\s+/g, ' ').slice(0, 200) };
-        });
+          out.push({ docId: h.doc_id, title: d.title || null, authorityTier: 10 - tier, paraId: h.external_para_id || null, snippet: String(h.text || '').replace(/\s+/g, ' ').slice(0, 200) });
+          if (out.length >= limit) break;
+        }
+        return out;
       } catch { return []; }
     },
 
