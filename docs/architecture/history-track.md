@@ -23,12 +23,20 @@ texts first; looser ones resolve *against* them.
 | Tier | Works (doc_id) | why |
 |---|---|---|
 | **1** | God Passes By (21310) → The Dawn-Breakers (21308) | the Guardian's rigorous, authoritative history + the person-seed |
-| **2 — current work** | all Taherzadeh/ROB (429–432, 426, 427), Balyuzi (28849, 462, 3789, 3887, 464, 465, 467), Momen — Western Accounts (13433), Mázindarání — Ẓuhúru'l-Ḥaqq (617265…617313, Persian) | rigorously collected + edited scholarly histories — the reliable foundation |
+| **2 — current work** | Gate of the Heart (8632, Saiedi — the Báb's tablets), Taherzadeh/ROB (429–432, 426, 427), Balyuzi (28849, 462, 3789, 3887, 464, 465, 467), Momen — Western Accounts (13433), Mázindarání — Ẓuhúru'l-Ḥaqq (15228, 15257, 15254, 20028, 15256, 20035, 20037, 15255, 15259, Persian) | rigorously collected + edited scholarly histories — the reliable foundation |
 | **3 — primary but loosely collected** | 'Abdu'l-Bahá texts (Memorials 20907, The Secret of Divine Civilization 20919); eyewitness/pilgrim accounts (Maḥmúd's Diary 11355, The Chosen Highway 11335, Diary of Juliet Thompson 12472, In Galilee 12503, Phelps 150400, Sohrab pilgrim notes 12665, Sears 283034) | *primary* but error-prone as texts (oral notes, personal diaries, translation layers) → resolve against Tiers 1–2 |
 | **Secondary** | general 3rd-party (Ahdieh, Rabbani, …) — default priority | resolve against everything above |
 
 Duplicate ingests exist for several works (esp. pilgrim accounts and Ẓuhúru'l-Ḥaqq's two copies) — dedup to
 one canonical per work before running.
+
+**Convergence — order is sequence, not exclusion.** EVERY book is eventually covered; the ordering only decides
+*what authoritative context is already grounded when each book is added*. A book added later resolves its
+identities *against* the more-reliable material already in the graph — the tail converges onto the same entities,
+it is never left out. This is why the two tracks run cumulatively but by **different criteria**: the historical
+track accretes by *textual rigor* (a scholar can supply a fact), the [Conceptual Track](conceptual-track.md)
+accretes by *interpretive authority* (only the authorized interpreters supply doctrine). Same corpus, two
+orderings; both converge to full coverage.
 
 ## Pipeline
 
@@ -39,9 +47,13 @@ Disambiguate   →   Extract mentions   →   Extract cited claims    →   Reco
                      identity left deferred)  English-canonical)
 ```
 
-Gated: extraction runs only on text that has already been disambiguated. Processed in priority order;
-person-heavy books get the full pass, doctrinal books (Gate of the Heart) drop out — they belong to the
-Conceptual Track.
+Gated: extraction runs only on text that has already been disambiguated. Processed in priority order.
+**Gate of the Heart and ROB belong to THIS (historical) track** — they are trustworthy *descriptive
+scholarship about the tablet (work) entities* (the Báb's core tablets; Bahá'u'lláh's tablets) with historical
+facts alongside, NOT doctrine. A book "belongs to the Conceptual Track" only for its *doctrinal-interpretive*
+content, and only the authoritative interpreters (Shoghi Effendi, the Central Figures) drive that track — no
+scholar ever enters it. A book with few *persons* but rich *works* (Gate) still runs here; its small person-cast
+is correct, and the tablets it describes are captured by the work-entity pass.
 
 ## Key mechanisms
 
