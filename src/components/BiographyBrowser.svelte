@@ -57,9 +57,6 @@
     const poll = setInterval(fetchProgress, 15000);
     return () => { document.body.style.overflow = prev; clearInterval(poll); };
   });
-  // Size bars are scaled (sqrt, so the many small books stay visible against the few giants) to the largest book.
-  const maxBookSize = $derived(progress ? Math.max(1, ...progress.phases.flatMap((p) => p.books.map((b) => b.size || 0))) : 1);
-  const sizeBarPct = (n) => Math.max(3, Math.round(Math.sqrt((n || 0) / maxBookSize) * 100));
   const fmtK = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n ?? 0));
   const STAGE_LABEL = { disambiguate: 'Disambiguating text', mentions: 'Extracting mentions', claims: 'Extracting claims',
     reconcile: 'Reconciling identities', research: 'Researching unresolved', project: 'Linking entities',
@@ -237,7 +234,7 @@
                 {#if progress.active.percent != null}<span class="prog-active-pct">{progress.active.percent}%</span>{/if}
               </div>
             {/if}
-            <p class="prog-fine">Per-book <span class="pb-new">+N</span> = people first grounded there; the bar shows each book's size (paragraphs). Click a phase to expand.</p>
+            <p class="prog-fine">Per-book <span class="pb-new">+N</span> = people first grounded there; ¶ = size in paragraphs. The book being grounded shows a live progress bar. Click a phase to expand.</p>
             {#each progress.phases as ph (ph.key)}
               {@const isOpen = openKeys.has(ph.key)}
               <section class="prog-phase" class:upcoming={ph.upcoming} class:open={isOpen} class:isactive={ph.key === activePhaseKey}>
@@ -254,7 +251,9 @@
                         <li class="prog-book" class:done={b.done} class:active={progress.active && b.id === progress.active.docId}>
                           <span class="prog-tick" aria-hidden="true">{b.done ? '✓' : (progress.active && b.id === progress.active.docId) ? '◐' : ph.upcoming ? '·' : '○'}</span>
                           <span class="prog-book-title">{b.title}</span>
-                          {#if b.size}<span class="prog-book-size" title="{b.size.toLocaleString()} paragraphs"><span class="pb-bar"><span style="width:{sizeBarPct(b.size)}%"></span></span><span class="pb-num">{fmtK(b.size)}</span></span>{/if}
+                          {#if progress.active && b.id === progress.active.docId && progress.active.percent != null}
+                            <span class="prog-book-prog" title="{stageLabel(progress.active.stage)}"><span class="pbp-track"><span class="pbp-fill" style="width:{progress.active.percent}%"></span></span><span class="pbp-pct">{progress.active.percent}%</span></span>
+                          {:else if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}
                           {#if b.done}<span class="prog-book-stats"><span class="pb-new" title="people first grounded via this book">+{b.newInSequence.toLocaleString()}</span>{#if b.unresolved}<span class="pb-un" title="mentioned here but not yet resolved — revisited as later books are absorbed">{b.unresolved.toLocaleString()}?</span>{/if}</span>{/if}
                         </li>
                       {/each}
@@ -615,11 +614,14 @@
   .prog-book.done .prog-tick, .prog-book.active .prog-tick { color: var(--accent); }
   .prog-book-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .prog-book.done .prog-book-title, .prog-book.active .prog-book-title { color: var(--text-primary); }
-  .prog-book-size { flex: 0 0 5.5rem; display: flex; align-items: center; gap: .35rem; }
-  .pb-bar { flex: 1; height: .3rem; background: var(--surface-3); border-radius: 1rem; overflow: hidden; }
-  .pb-bar span { display: block; height: 100%; background: var(--border); border-radius: 1rem; }
-  .prog-book.done .pb-bar span, .prog-book.active .pb-bar span { background: var(--accent); }
-  .pb-num { flex: 0 0 2rem; text-align: right; font-size: .66rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  /* Non-active books show only their SIZE as a plain number (paragraphs) — no bar. */
+  .pb-num { flex: 0 0 3rem; text-align: right; font-size: .68rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .pb-num::after { content: ' ¶'; opacity: .5; }
+  /* PROGRESS bar — ONLY on the current book being ground; shows how far through the pipeline it is. */
+  .prog-book-prog { flex: 0 0 5.5rem; display: flex; align-items: center; gap: .4rem; }
+  .pbp-track { flex: 1; height: .34rem; background: var(--surface-3); border-radius: 1rem; overflow: hidden; }
+  .pbp-fill { display: block; height: 100%; background: var(--accent); border-radius: 1rem; transition: width .6s ease; }
+  .pbp-pct { flex: 0 0 1.9rem; text-align: right; font-size: .68rem; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
   .prog-book-stats { flex: 0 0 auto; display: flex; gap: .45rem; align-items: baseline; font-size: .72rem; font-variant-numeric: tabular-nums; }
   .pb-new { color: var(--accent); font-weight: 600; }
   .pb-un { color: var(--text-muted); }

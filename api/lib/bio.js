@@ -46,6 +46,8 @@ export function readHistoryCatalog() {
 // The live status the grounding driver (scripts/complete-book.mjs) writes each stage — lets the popup show
 // which book is being worked and at what stage, updating on every poll. Best-effort (absent → DB-inferred).
 const GROUNDING_STATUS_PATH = path.join(process.cwd(), 'data', 'siftersearch-grounding-status.json');
+// The pipeline stages, in order — must match scripts/complete-book.mjs (drives the current book's % progress).
+const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'dedup', 'hype', 'verify'];
 async function computeActiveBook(staticDocs, meta) {
   let st = null;
   try { st = JSON.parse(fs.readFileSync(GROUNDING_STATUS_PATH, 'utf8')); } catch { /* none */ }
@@ -62,9 +64,21 @@ async function computeActiveBook(staticDocs, meta) {
   }
   if (!docId) return null;
   const claims = (await queryAll(`SELECT COUNT(*) n FROM entity_claims WHERE doc_id=?`, [docId]))[0]?.n || 0;
-  const si = fresh ? (st.stageIndex ?? null) : null, ts = fresh ? (st.totalStages ?? null) : null;
-  // Pipeline-stage progress (which of the N stages) — a coarse but honest book-completion estimate.
-  const percent = (si != null && ts) ? Math.min(99, Math.round((si / ts) * 100)) : null;
+  const ts = fresh ? (st.totalStages ?? GROUNDING_STAGES.length) : GROUNDING_STAGES.length;
+  let si = fresh ? (st.stageIndex ?? null) : null;
+  // No live status file (older driver / prefetch): INFER how far the book has progressed from its DB artifacts
+  // so the current book still shows a real progress bar — disambiguated → mentions → claims → bound (reconciled)
+  // → HyPE. This is the "how far along" signal the popup exists to surface.
+  if (si == null) {
+    const one = async (sql) => (await queryAll(sql, [docId]))[0]?.n || 0;
+    const bound = await one(`SELECT COUNT(*) n FROM entity_mentions_v2 WHERE doc_id=? AND entity_id IS NOT NULL`);
+    const hype = await one(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL`);
+    const ment = await one(`SELECT COUNT(*) n FROM entity_mentions_v2 WHERE doc_id=?`);
+    si = (hype > 0 && bound > 0) ? 8 : bound > 0 ? 6 : claims > 0 ? 2 : ment > 0 ? 1 : 0;
+    stage = GROUNDING_STAGES[si];
+  }
+  // Mid-stage estimate (a stage is "in progress", so count it half-done) → an honest 5–99% completion feel.
+  const percent = ts ? Math.max(5, Math.min(99, Math.round(((si + 0.5) / ts) * 100))) : null;
   return { docId, stage: stage || 'grounding', stageIndex: si, totalStages: ts, percent, since: fresh ? st.startedAt : null,
     title: meta[docId]?.title || `doc ${docId}`, size: meta[docId]?.paragraph_count || 0, claimsExtracted: claims };
 }

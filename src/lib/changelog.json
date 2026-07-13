@@ -1,6 +1,27 @@
 {
-  "generated": "2026-07-13T20:28:57.343Z",
+  "generated": "2026-07-13T20:47:23.365Z",
   "entries": [
+    {
+      "hash": "80364f41",
+      "date": "2026-07-13",
+      "type": "Fixed",
+      "description": "Active fallback = most-recent claim write (simpler, shows the actively-extracting book; status file is authoritative)",
+      "scope": "bio"
+    },
+    {
+      "hash": "033374ad",
+      "date": "2026-07-13",
+      "type": "Fixed",
+      "description": "Active-book fallback excludes done books (bound mentions) so it shows the real un-reconciled book, not a completed one with leftover unbound claims",
+      "scope": "bio"
+    },
+    {
+      "hash": "92d53065",
+      "date": "2026-07-13",
+      "type": "New",
+      "description": "Full roadmap redesign - phases, sizes, collapsible, live progress",
+      "scope": "bio popup"
+    },
     {
       "hash": "138f106c",
       "date": "2026-07-13",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "Push entity mentions to Meili immediately after each paragraph resolves",
       "scope": null
-    },
-    {
-      "hash": "f599fc2a",
-      "date": "2026-05-18",
-      "type": "Refactor",
-      "description": "Inline entity resolution in extractor — resolve immediately when LLM responds",
-      "scope": null
-    },
-    {
-      "hash": "73dcd4f8",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Revert isLargeCollection + add catalog-only exception to prevent hallucination",
-      "scope": null
-    },
-    {
-      "hash": "24a1089c",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Skip companion for large collections (>20 docs) — prevents UHJ hallucination",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-13": [
+      {
+        "hash": "80364f41",
+        "date": "2026-07-13",
+        "type": "Fixed",
+        "description": "Active fallback = most-recent claim write (simpler, shows the actively-extracting book; status file is authoritative)",
+        "scope": "bio"
+      },
+      {
+        "hash": "033374ad",
+        "date": "2026-07-13",
+        "type": "Fixed",
+        "description": "Active-book fallback excludes done books (bound mentions) so it shows the real un-reconciled book, not a completed one with leftover unbound claims",
+        "scope": "bio"
+      },
+      {
+        "hash": "92d53065",
+        "date": "2026-07-13",
+        "type": "New",
+        "description": "Full roadmap redesign - phases, sizes, collapsible, live progress",
+        "scope": "bio popup"
+      },
       {
         "hash": "138f106c",
         "date": "2026-07-13",
@@ -7045,27 +7066,6 @@
         "date": "2026-05-18",
         "type": "New",
         "description": "Push entity mentions to Meili immediately after each paragraph resolves",
-        "scope": null
-      },
-      {
-        "hash": "f599fc2a",
-        "date": "2026-05-18",
-        "type": "Refactor",
-        "description": "Inline entity resolution in extractor — resolve immediately when LLM responds",
-        "scope": null
-      },
-      {
-        "hash": "73dcd4f8",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Revert isLargeCollection + add catalog-only exception to prevent hallucination",
-        "scope": null
-      },
-      {
-        "hash": "24a1089c",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Skip companion for large collections (>20 docs) — prevents UHJ hallucination",
         "scope": null
       }
     ]
