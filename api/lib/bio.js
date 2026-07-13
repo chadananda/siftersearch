@@ -1,6 +1,6 @@
 // Shared biography data layer — the single source of truth for person records (list + dossier) and source-book
 // facets, used by BOTH the internal /api/graph/bio/* routes and the official /api/v1/people API.
-import { queryAll, queryOne, graphQueryAll } from './db.js';
+import { queryAll, queryOne } from './db.js';
 import { chatCompletion } from './ai.js';
 import fs from 'fs';
 import path from 'path';
@@ -16,16 +16,19 @@ export const SOURCE_BOOKS = [
   { key: 'dawn-breakers', label: 'The Dawn-Breakers', docs: [21308] },
 ];
 
-// entity_id → Set(book keys), from graph.db mentions mapped through content→docs (chunked under SQLite's 999-param cap)
+// entity_id → Set(book keys). Grounding comes from the DISAMBIGUATED evidence layer — an entity is "in" a book
+// if it has a bound v2 mention OR a bound hard-claim there (both carry doc_id + entity_id directly, so no
+// content-id join). The legacy NER entity_mentions table is retired: identity is now resolved by disambiguation
+// + claim evidence, never by raw name-extraction.
 export async function computeBookSources() {
   const bookOf = {};
   for (const b of SOURCE_BOOKS) {
-    const cids = (await queryAll(`SELECT id FROM content WHERE doc_id IN (${b.docs.join(',')})`)).map(r => String(r.id));
-    for (let i = 0; i < cids.length; i += 800) {
-      const chunk = cids.slice(i, i + 800);
-      const ents = await graphQueryAll(`SELECT DISTINCT entity_id FROM entity_mentions WHERE content_id IN (${chunk.map(() => '?').join(',')})`, chunk);
-      for (const e of ents) (bookOf[e.entity_id] ||= new Set()).add(b.key);
-    }
+    const ph = b.docs.map(() => '?').join(',');
+    const ents = await queryAll(
+      `SELECT DISTINCT entity_id FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL
+       UNION SELECT DISTINCT entity_id FROM entity_claims WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL`,
+      [...b.docs, ...b.docs]);
+    for (const e of ents) (bookOf[e.entity_id] ||= new Set()).add(b.key);
   }
   return bookOf;
 }
@@ -84,17 +87,21 @@ export async function getBioPerson(rawId) {
   } catch { /* no bio.json */ }
   let mentionCount = 0, books = [], gpbRefs = [];
   try {
-    const ms = await graphQueryAll('SELECT content_id FROM entity_mentions WHERE entity_id = ?', [id]);
+    // Cross-corpus reach from the disambiguated v2 substrate (doc_id + para_id carried directly).
+    const ms = await queryAll('SELECT doc_id, para_id FROM entity_mentions_v2 WHERE entity_id = ?', [id]);
     mentionCount = ms.length;
-    const cids = [...new Set(ms.map(m => String(m.content_id)))].slice(0, 900);
-    if (cids.length) {
-      const ph = cids.map(() => '?').join(',');
-      books = (await queryAll(`SELECT DISTINCT d.title FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id IN (${ph}) AND d.title IS NOT NULL`, cids)).map(b => b.title);
-      const gp = await queryAll(`SELECT c.external_para_id AS pid, c.text, c.heading, d.source_url AS url FROM content c JOIN docs d ON d.id = c.doc_id
-        WHERE c.id IN (${ph}) AND d.id IN (21310, 57347) AND c.external_para_id IS NOT NULL ORDER BY c.id LIMIT 24`, cids);
-      gpbRefs = gp.map(r => ({ paraId: r.pid, url: r.url ? `${r.url}?paraId=${r.pid}` : null, heading: r.heading || null, snippet: String(r.text || '').replace(/\s+/g, ' ').slice(0, 200) }));
+    const dids = [...new Set(ms.map(m => m.doc_id))];
+    if (dids.length) {
+      books = (await queryAll(`SELECT DISTINCT title FROM docs WHERE id IN (${dids.map(() => '?').join(',')}) AND title IS NOT NULL`, dids)).map(b => b.title);
+      const gpids = [...new Set(ms.filter(m => m.doc_id === 21310 || m.doc_id === 57347).map(m => m.para_id))].slice(0, 24);
+      if (gpids.length) {
+        const ph = gpids.map(() => '?').join(',');  // para_id stores either external_para_id or 'p'||content.id — match both
+        const gp = await queryAll(`SELECT c.external_para_id AS pid, c.text, c.heading, d.source_url AS url FROM content c JOIN docs d ON d.id = c.doc_id
+          WHERE c.doc_id IN (21310, 57347) AND (c.external_para_id IN (${ph}) OR 'p'||c.id IN (${ph})) ORDER BY c.id LIMIT 24`, [...gpids, ...gpids]);
+        gpbRefs = gp.map(r => ({ paraId: r.pid, url: r.url ? `${r.url}?paraId=${r.pid}` : null, heading: r.heading || null, snippet: String(r.text || '').replace(/\s+/g, ' ').slice(0, 200) }));
+      }
     }
-  } catch { /* graph optional */ }
+  } catch { /* mentions optional */ }
   const notes = obj(row.research_notes);
   // NEW substrate first: cited claims (proof-gated, temporal, source-linked) from entity_claims — the reconciled
   // evidence base. Fall back to legacy facts2/episodes only for entities the pipeline hasn't covered. Same UI shape.
