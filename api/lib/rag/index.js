@@ -50,6 +50,7 @@ export function createCorpusRAG(deps = {}) {
       async project(opts)         { return (await import('./entities/project.js')).run(ctx, opts); },           // materialize from decision log
       async merge(opts)           { return (await import('./entities/merge.js')).run(ctx, opts); },             // dedup same-name entities by evidence
       async dedupGuard(opts)      { return (await import('./entities/dedup-guard.js')).run(ctx, opts); },       // dedup cross-name duplicates by grounded FACTS
+      async verify(docId, opts)   { return (await import('./entities/verify.js')).run(ctx, docId, opts); },     // search-verify gate: cast+claims+HyPE actually return
       async lookup(q, opts)       { return (await import('./entities/lookup.js')).run(ctx, q, opts); },         // translit-invariant recall
     },
 

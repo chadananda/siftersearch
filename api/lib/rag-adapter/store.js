@@ -195,6 +195,40 @@ export function makeStore() {
       return { id: ent.id, name: ent.name, facts: facts.map((f) => ({ statement: f.statement, relation: f.relation, when: f.whenv })) };
     },
 
+    // Live search-index coverage for the verify gate. Cast + claims come from the DB (bound = grounded); the
+    // "actually searchable" checks (paragraphs, HyPE, and probes that a real cast name / HyPE question RETURNS)
+    // hit Meili. If Meili is unavailable the searchable counts stay 0 → verify reports "not searchable" (the
+    // correct, fail-closed answer). doc_id is the filterable attribute on both indexes.
+    async getGroundingCoverage(docId, { probeLimit = 3 } = {}) {
+      const castCount = (await db.queryAll(
+        `SELECT COUNT(*) n FROM (SELECT entity_id FROM entity_mentions_v2 WHERE doc_id=? AND entity_id IS NOT NULL
+           UNION SELECT entity_id FROM entity_claims WHERE doc_id=? AND entity_id IS NOT NULL)`, [docId, docId]))[0]?.n || 0;
+      const claimCount = (await db.queryAll(`SELECT COUNT(*) n FROM entity_claims WHERE doc_id=?`, [docId]))[0]?.n || 0;
+      let paragraphsIndexed = 0, hypeIndexed = 0; const probes = [];
+      try {
+        const { getMeili, INDEXES } = await import('../search.js');
+        const meili = getMeili();
+        const filt = `doc_id = ${Number(docId)}`;
+        paragraphsIndexed = (await meili.index(INDEXES.PARAGRAPHS).search('', { filter: filt, limit: 1 })).estimatedTotalHits || 0;
+        hypeIndexed = (await meili.index(INDEXES.HYPE_QUESTIONS).search('', { filter: filt, limit: 1 })).estimatedTotalHits || 0;
+        const names = (await db.queryAll(
+          `SELECT ge.canonical_name name FROM entity_claims c JOIN graph_entities ge ON ge.id=c.entity_id
+            WHERE c.doc_id=? AND c.entity_id IS NOT NULL GROUP BY c.entity_id ORDER BY COUNT(*) DESC LIMIT ?`, [docId, probeLimit])).map((r) => r.name);
+        for (const name of names) {
+          const hits = (await meili.index(INDEXES.PARAGRAPHS).search(name, { filter: filt, limit: 1 })).estimatedTotalHits || 0;
+          probes.push({ kind: 'cast', query: name, hits });
+        }
+        const hq = (await db.queryAll(`SELECT hyp_questions FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL AND hyp_questions!='' LIMIT 1`, [docId]))[0]?.hyp_questions;
+        if (hq) {
+          let q = String(hq);
+          try { const a = JSON.parse(hq); if (Array.isArray(a) && a.length) q = typeof a[0] === 'string' ? a[0] : (a[0].question || a[0].q || q); } catch { q = q.split('\n')[0]; }
+          const hits = (await meili.index(INDEXES.HYPE_QUESTIONS).search(q.slice(0, 120), { filter: filt, limit: 1 })).estimatedTotalHits || 0;
+          probes.push({ kind: 'hype', query: q.slice(0, 80), hits });
+        }
+      } catch { /* Meili unavailable → 0s → verify fails closed */ }
+      return { castCount, claimCount, hypeIndexed, paragraphsIndexed, probes };
+    },
+
     // Representative disambiguation notes for a set of paragraphs (the reconcile dossier).
     async getScenes(docId, paraIds) {
       if (!paraIds.length) return [];
