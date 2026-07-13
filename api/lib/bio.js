@@ -97,8 +97,12 @@ async function computeActiveBook(staticDocs, meta) {
   let done = 0; for (let i = 0; i < si; i++) done += STAGE_WEIGHT[GROUNDING_STAGES[i]] ?? (1 / ts);
   const cur = STAGE_WEIGHT[stageName] ?? (1 / ts);
   const percent = Math.max(3, Math.min(99, Math.round((done + cur * withinFrac) * 100)));
+  // Always resolve the real title — the active book may not be in a phase (e.g. a stray-collection doc), so fall
+  // back to the docs table rather than showing "doc <id>".
+  let m = meta[docId];
+  if (!m?.title) m = (await queryAll(`SELECT title, paragraph_count FROM docs WHERE id=?`, [docId]))[0] || m;
   return { docId, stage: stageName, stageIndex: si, totalStages: ts, percent, since: fresh ? st.startedAt : null,
-    title: meta[docId]?.title || `doc ${docId}`, size: meta[docId]?.paragraph_count || 0, claimsExtracted: claims };
+    title: m?.title || `doc ${docId}`, size: m?.paragraph_count || 0, claimsExtracted: claims };
 }
 
 // Integration progress for the biography "progress" popup — the phased roadmap (integration-phases.js): every

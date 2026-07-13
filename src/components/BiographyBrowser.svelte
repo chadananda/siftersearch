@@ -611,8 +611,11 @@
   .prog-phase-body { padding: .1rem 0 .55rem; }
   .prog-blurb { font-size: .78rem; color: var(--text-muted); line-height: 1.45; margin: 0 0 .5rem; }
   .prog-books { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .22rem; }
-  .prog-book { display: flex; align-items: center; gap: .5rem; font-size: .82rem; color: var(--text-muted); }
+  .prog-book { display: flex; align-items: center; gap: .5rem; font-size: .82rem; color: var(--text-muted); padding: .12rem .4rem; margin: 0 -.4rem; border-radius: .3rem; }
   .prog-book.done { color: var(--text-secondary); }
+  /* the currently-grounding book, styled inline as in-progress: accent tint + left bar + pulsing tick */
+  .prog-book.active { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+  .prog-book.active .prog-tick { animation: progpulse 1.6s ease-in-out infinite; }
   .prog-tick { flex: 0 0 1rem; text-align: center; color: var(--border); }
   .prog-book.done .prog-tick, .prog-book.active .prog-tick { color: var(--accent); }
   .prog-book-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
