@@ -70,6 +70,7 @@
  * @property {(docId: number, opts?: {minFreq?:number,filter?:string,limit?:number}) => Promise<Cluster[]>} getMentionClusters
  * @property {(name: string, opts?: {type?:string,limit?:number}) => Promise<CandidateEntity[]>} findCandidateEntities  RECALL only
  * @property {(query: string, opts?: {limit?:number}) => Promise<GroundedEvidence[]>} [searchGrounded]  resolve-against-search: evidence from the SEARCHABLE GROUNDED corpus (BOUND claims + entity dossiers of already-completed books, transliteration-tolerant). Lets reconcile/dedup-guard decide grouping/splitting on real cross-book evidence. Absent → reconcile falls back to name-recall + in-book scenes only.
+ * @property {(entityId: number, opts?: {limit?:number}) => Promise<{id:number,name:string,facts:{statement:string,relation?:string,when?:string}[]}|null>} [getEntityFacts]  an entity's distinctive bound claims — the dedup-guard's fact query.
  * @property {(docId: number, paraIds: string[]) => Promise<{pid:string,context:string}[]>} getScenes
  * @property {(decisions: Decision[]) => Promise<number>} saveDecisions    append-only; never edits the graph
  * @property {() => Promise<Decision[]>} getProposedDecisions              mention-cluster decisions (normalised payload)

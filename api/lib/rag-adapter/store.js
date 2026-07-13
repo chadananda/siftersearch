@@ -184,6 +184,17 @@ export function makeStore() {
       return out;
     },
 
+    // An entity's distinctive BOUND claims — the dedup-guard's fact query (resolve-by-fact, not by name).
+    async getEntityFacts(entityId, { limit = 6 } = {}) {
+      const ent = (await db.queryAll(`SELECT id, canonical_name name FROM graph_entities WHERE id=?`, [entityId]))[0];
+      if (!ent) return null;
+      const facts = await db.queryAll(
+        `SELECT statement, relation, time_value AS whenv FROM entity_claims
+           WHERE entity_id=? AND (status IS NULL OR status='supported') ORDER BY (time_value IS NULL), time_value LIMIT ?`,
+        [entityId, limit]);
+      return { id: ent.id, name: ent.name, facts: facts.map((f) => ({ statement: f.statement, relation: f.relation, when: f.whenv })) };
+    },
+
     // Representative disambiguation notes for a set of paragraphs (the reconcile dossier).
     async getScenes(docId, paraIds) {
       if (!paraIds.length) return [];
