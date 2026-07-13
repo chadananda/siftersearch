@@ -127,16 +127,9 @@ export async function getIntegrationProgress() {
     (await queryAll(`SELECT id, title, author, paragraph_count FROM docs WHERE id IN (${cp})`, chunk))
       .forEach(d => { meta[d.id] = d; });
   }
-  const bySize = (a, b) => (meta[b]?.paragraph_count || 0) - (meta[a]?.paragraph_count || 0);
-  // Ordered book-id list per phase: dynamic → its genre by size; static → curated anchors first, then the
-  // author-routed / pinned extras by size. Curated (non-dynamic) phases feed the grounded metrics in sequence.
   const inPhase = (k) => allDocs.filter(id => phaseByDoc[id] === k);
-  const phaseBookIds = {};
-  for (const p of INTEGRATION_PHASES) {
-    if (p.dynamic) phaseBookIds[p.key] = inPhase(p.key).sort(bySize);
-    else { const anchors = p.docs || []; phaseBookIds[p.key] = [...anchors, ...inPhase(p.key).filter(id => !anchors.includes(id)).sort(bySize)]; }
-  }
-  const gradedDocs = INTEGRATION_PHASES.filter(p => !p.dynamic).flatMap(p => phaseBookIds[p.key]);
+  const curatedKeys = new Set(INTEGRATION_PHASES.filter(p => !p.dynamic).map(p => p.key));
+  const gradedDocs = allDocs.filter(id => curatedKeys.has(phaseByDoc[id])); // curated docs that may be grounded
   const active = await computeActiveBook(gradedDocs, meta); // always fresh (cheap) → live polling
 
   if (_progCache && Date.now() - _progAt < 60000) return { ..._progCache, active };
@@ -150,13 +143,28 @@ export async function getIntegrationProgress() {
     ) GROUP BY doc_id`, [...gradedDocs, ...gradedDocs])).forEach(r => { counts[r.doc_id] = r.n; });
   (await queryAll(`SELECT CAST(json_extract(payload,'$.docId') AS INT) d, COUNT(*) n FROM entity_decisions
       WHERE kind='uncertain' AND status='proposed' GROUP BY d`)).forEach(r => { if (r.d) unresolved[r.d] = r.n; });
-  // New-in-sequence: the first book (in grounding order) to ground each entity → each book's NET contribution.
-  const order = {}; gradedDocs.forEach((d, i) => { order[d] = i; });
+  // Absorption time (when each curated book was grounded) = MAX claim timestamp. Orders the roadmap by the real
+  // grounding SEQUENCE — grounded books chronologically, then not-yet-absorbed ones (largest first) — so the
+  // current book sits in its natural place instead of being scattered by size.
+  const absorbedAt = {};
+  (await queryAll(`SELECT doc_id d, MAX(asserted_at) t FROM entity_claims WHERE doc_id IN (${ph}) GROUP BY doc_id`, gradedDocs))
+    .forEach(r => { absorbedAt[r.d] = r.t; });
+  const byAbsorption = (a, b) => {
+    const ta = absorbedAt[a], tb = absorbedAt[b];
+    if (ta && tb) return ta < tb ? -1 : ta > tb ? 1 : 0;  // both grounded → chronological (order of absorption)
+    if (ta) return -1; if (tb) return 1;                  // grounded before not-yet-grounded
+    return (meta[b]?.paragraph_count || 0) - (meta[a]?.paragraph_count || 0); // both pending → largest first
+  };
+  const phaseBookIds = {};
+  for (const p of INTEGRATION_PHASES) phaseBookIds[p.key] = inPhase(p.key).sort(byAbsorption);
+  // New-in-sequence: the first book (in ABSORPTION order) to ground each entity → each book's NET contribution.
+  const orderedGraded = INTEGRATION_PHASES.filter(p => !p.dynamic).flatMap(p => phaseBookIds[p.key]);
+  const order = {}; orderedGraded.forEach((d, i) => { order[d] = i; });
   const firstSeen = {}, newBy = {};
   (await queryAll(`SELECT doc_id d, entity_id e FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL
       UNION SELECT doc_id, entity_id FROM entity_claims WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL`, [...gradedDocs, ...gradedDocs]))
-    .forEach(({ d, e }) => { const o = order[d]; if (firstSeen[e] === undefined || o < firstSeen[e]) firstSeen[e] = o; });
-  for (const e in firstSeen) { const d = gradedDocs[firstSeen[e]]; newBy[d] = (newBy[d] || 0) + 1; }
+    .forEach(({ d, e }) => { const o = order[d]; if (o !== undefined && (firstSeen[e] === undefined || o < firstSeen[e])) firstSeen[e] = o; });
+  for (const e in firstSeen) { const d = orderedGraded[firstSeen[e]]; newBy[d] = (newBy[d] || 0) + 1; }
 
   const book = (id, extra = {}) => ({ id, title: meta[id]?.title || `doc ${id}`, author: meta[id]?.author || null,
     size: meta[id]?.paragraph_count || 0, persons: counts[id] || 0, newInSequence: newBy[id] || 0,
