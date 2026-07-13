@@ -48,6 +48,13 @@
     showProgress = true;
     if (!progress) { try { const r = await fetch(`${API}/api/v1/people/progress`); if (r.ok) progress = await r.json(); } catch { /* offline — modal shows a note */ } }
   }
+  // Lock background scroll while the roadmap modal is open — no scroll bleed-through to the page behind.
+  $effect(() => {
+    if (typeof document === 'undefined' || !showProgress) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  });
   // render the integrated explanation: escape HTML, then turn [text](url) into a source link (the evidence is woven inline)
   const escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const mdLinks = (s) => escHtml(s).replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="ai-cite-in">$1</a>');
@@ -525,8 +532,9 @@
     border: 1px solid var(--border); border-radius: 1rem; padding: .28rem .7rem; cursor: pointer; transition: .18s; }
   .progbtn:hover { border-color: var(--accent); color: var(--accent); }
   .prog-overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-start; justify-content: center;
-    padding: 5vh 1rem; background: rgb(0 0 0 / .55); backdrop-filter: blur(3px); overflow-y: auto; }
-  .prog-modal { position: relative; width: min(40rem, 100%); background: var(--surface-1); border: 1px solid var(--border);
+    padding: 5vh 1rem; background: rgb(0 0 0 / .55); backdrop-filter: blur(3px); overflow-y: auto; overscroll-behavior: contain; }
+  .prog-modal { position: relative; width: min(40rem, 100%); max-height: 90vh; overflow-y: auto; overscroll-behavior: contain;
+    background: var(--surface-1); border: 1px solid var(--border);
     border-radius: 1rem; padding: 1.6rem 1.5rem 1.2rem; box-shadow: 0 24px 60px rgb(0 0 0 / .4); }
   .prog-close { position: absolute; top: .8rem; right: .8rem; width: 2rem; height: 2rem; border: none; border-radius: 50%;
     background: var(--surface-3); color: var(--text-secondary); cursor: pointer; font-size: .9rem; }
