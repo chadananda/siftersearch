@@ -223,7 +223,7 @@
                     <li class="prog-book" class:done={b.done}>
                       <span class="prog-tick" aria-hidden="true">{b.done ? '✓' : ph.upcoming ? '·' : '○'}</span>
                       <span class="prog-book-title">{b.title}</span>
-                      {#if b.persons}<span class="prog-book-n">{b.persons.toLocaleString()}</span>{/if}
+                      {#if b.done}<span class="prog-book-stats"><span class="pb-new" title="people first grounded via this book">+{b.newInSequence.toLocaleString()}</span>{#if b.unresolved}<span class="pb-un" title="people mentioned here but not yet resolved — will be revisited as later books are absorbed">{b.unresolved.toLocaleString()} unresolved</span>{/if}</span>{/if}
                     </li>
                   {/each}
                 </ul>
@@ -561,4 +561,7 @@
   .prog-book.done .prog-book-title { color: var(--text-primary); }
   .prog-book-n { flex: 0 0 auto; font-size: .72rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
   .prog-book-n::after { content: ' people'; opacity: .6; }
+  .prog-book-stats { flex: 0 0 auto; display: flex; gap: .55rem; align-items: baseline; font-size: .72rem; font-variant-numeric: tabular-nums; }
+  .pb-new { color: var(--accent); font-weight: 600; }
+  .pb-un { color: var(--text-muted); }
 </style>

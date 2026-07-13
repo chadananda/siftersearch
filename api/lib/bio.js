@@ -49,9 +49,20 @@ export async function getIntegrationProgress() {
     ) GROUP BY doc_id`, [...docs, ...docs])).forEach(r => { counts[r.doc_id] = r.n; });
   const meta = {};
   (await queryAll(`SELECT id, title, author FROM docs WHERE id IN (${ph})`, docs)).forEach(d => { meta[d.id] = d; });
+  // Unresolved (held "uncertain") per book — the tail awaiting the backward re-resolution sweep.
+  const unresolved = {};
+  (await queryAll(`SELECT CAST(json_extract(payload,'$.docId') AS INT) d, COUNT(*) n FROM entity_decisions
+      WHERE kind='uncertain' AND status='proposed' GROUP BY d`)).forEach(r => { if (r.d) unresolved[r.d] = r.n; });
+  // New-in-sequence: the first phase-book (in manifest order) to ground each entity → each book's NET contribution.
+  const order = {}; docs.forEach((d, i) => { order[d] = i; });
+  const firstSeen = {}, newBy = {};
+  (await queryAll(`SELECT doc_id d, entity_id e FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL
+      UNION SELECT doc_id, entity_id FROM entity_claims WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL`, [...docs, ...docs]))
+    .forEach(({ d, e }) => { const o = order[d]; if (firstSeen[e] === undefined || o < firstSeen[e]) firstSeen[e] = o; });
+  for (const e in firstSeen) { const d = docs[firstSeen[e]]; newBy[d] = (newBy[d] || 0) + 1; }
   const phases = INTEGRATION_PHASES.map(p => {
     const books = p.docs.map(id => ({ id, title: meta[id]?.title || `doc ${id}`, author: meta[id]?.author || null,
-      persons: counts[id] || 0, done: (counts[id] || 0) > 0 }));
+      persons: counts[id] || 0, newInSequence: newBy[id] || 0, unresolved: unresolved[id] || 0, done: (counts[id] || 0) > 0 }));
     return { key: p.key, label: p.label, blurb: p.blurb, upcoming: !!p.upcoming, books,
       done: books.filter(b => b.done).length, total: books.length, persons: books.reduce((s, b) => s + b.persons, 0) };
   });
