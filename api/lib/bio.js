@@ -78,9 +78,18 @@ async function computeActiveBook(staticDocs, meta) {
     si = (hype > 0 && bound > 0) ? at('hype') : bound > 0 ? at('link') : claims > 0 ? at('claims') : ment > 0 ? at('mentions') : 0;
     stage = GROUNDING_STAGES[si];
   }
-  // Mid-stage estimate (a stage is "in progress", so count it half-done) → an honest 5–99% completion feel.
-  const percent = ts ? Math.max(5, Math.min(99, Math.round(((si + 0.5) / ts) * 100))) : null;
-  return { docId, stage: stage || 'grounding', stageIndex: si, totalStages: ts, percent, since: fresh ? st.startedAt : null,
+  // Within-stage progress so the bar CLIMBS during a long stage (not frozen at the stage boundary). The claims
+  // stage dominates wall-time, so measure it directly: distinct paragraphs with claims / disambiguated paragraphs.
+  // Other stages get a 0.5 mid-estimate (they're short). percent = (stageIndex + withinFrac) / totalStages.
+  const stageName = stage || GROUNDING_STAGES[si] || 'grounding';
+  let withinFrac = 0.5;
+  if (stageName === 'claims') {
+    const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND context IS NOT NULL`, [docId]))[0]?.n || 0;
+    const claimedPar = (await queryAll(`SELECT COUNT(DISTINCT para_id) n FROM entity_claims WHERE doc_id=?`, [docId]))[0]?.n || 0;
+    withinFrac = totalPar ? Math.min(0.99, claimedPar / totalPar) : 0.5;
+  }
+  const percent = ts ? Math.max(3, Math.min(99, Math.round(((si + withinFrac) / ts) * 100))) : null;
+  return { docId, stage: stageName, stageIndex: si, totalStages: ts, percent, since: fresh ? st.startedAt : null,
     title: meta[docId]?.title || `doc ${docId}`, size: meta[docId]?.paragraph_count || 0, claimsExtracted: claims };
 }
 
