@@ -1,6 +1,7 @@
 // Shared biography data layer — the single source of truth for person records (list + dossier) and source-book
 // facets, used by BOTH the internal /api/graph/bio/* routes and the official /api/v1/people API.
 import { queryAll, queryOne } from './db.js';
+import { INTEGRATION_PHASES } from './integration-phases.js';
 import { chatCompletion } from './ai.js';
 import fs from 'fs';
 import path from 'path';
@@ -31,6 +32,34 @@ export async function computeBookSources() {
     for (const e of ents) (bookOf[e.entity_id] ||= new Set()).add(b.key);
   }
   return bookOf;
+}
+
+// Integration progress for the biography "progress" popup — the phased roadmap (integration-phases.js) with
+// each book's LIVE grounded-person count (distinct entities bound in this book, same "grounded" definition the
+// browser uses). A book counts as integrated once it has grounded persons. Cached briefly.
+let _progCache = null, _progAt = 0;
+export async function getIntegrationProgress() {
+  if (_progCache && Date.now() - _progAt < 300000) return _progCache;
+  const docs = [...new Set(INTEGRATION_PHASES.flatMap(p => p.docs))];
+  const ph = docs.map(() => '?').join(',');
+  const counts = {};
+  (await queryAll(`SELECT doc_id, COUNT(*) n FROM (
+      SELECT doc_id, entity_id FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL
+      UNION SELECT doc_id, entity_id FROM entity_claims WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL
+    ) GROUP BY doc_id`, [...docs, ...docs])).forEach(r => { counts[r.doc_id] = r.n; });
+  const meta = {};
+  (await queryAll(`SELECT id, title, author FROM docs WHERE id IN (${ph})`, docs)).forEach(d => { meta[d.id] = d; });
+  const phases = INTEGRATION_PHASES.map(p => {
+    const books = p.docs.map(id => ({ id, title: meta[id]?.title || `doc ${id}`, author: meta[id]?.author || null,
+      persons: counts[id] || 0, done: (counts[id] || 0) > 0 }));
+    return { key: p.key, label: p.label, blurb: p.blurb, upcoming: !!p.upcoming, books,
+      done: books.filter(b => b.done).length, total: books.length, persons: books.reduce((s, b) => s + b.persons, 0) };
+  });
+  const doneBooks = phases.reduce((s, p) => s + (p.upcoming ? 0 : p.done), 0);
+  const totalBooks = phases.reduce((s, p) => s + (p.upcoming ? 0 : p.total), 0);
+  _progCache = { phases, doneBooks, totalBooks, goal: 'all history absorbed' };
+  _progAt = Date.now();
+  return _progCache;
 }
 
 // The full person dataset for the browser + API list endpoint. Cached briefly (data changes rarely; the book-

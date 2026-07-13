@@ -11,7 +11,7 @@
 //     sort=importance|name             default importance
 //     limit=<1-200> (default 50)  offset=<n>
 //   GET /api/v1/people/:id             — full dossier (relationships, GPB citations, cross-corpus reach)
-import { listBioPersons, getBioPerson, bioSearch } from '../lib/bio.js';
+import { listBioPersons, getBioPerson, bioSearch, getIntegrationProgress } from '../lib/bio.js';
 import { queryAll } from '../lib/db.js';
 import { entityLookup, entityDossier, entitySearch } from '../lib/entity-api.js';
 
@@ -19,6 +19,9 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').rep
 const toks = (s) => fold(s).split(/[^a-z0-9]+/).filter((t) => t.length > 1);
 
 export default async function peopleRoutes(server) {
+  // Phased book-integration roadmap + live grounded counts — powers the biography "progress" popup.
+  server.get('/people/progress', async () => getIntegrationProgress());
+
   server.get('/people', async (request) => {
     const qs = request.query || {};
     const limit = Math.min(2000, Math.max(1, parseInt(qs.limit, 10) || 50));

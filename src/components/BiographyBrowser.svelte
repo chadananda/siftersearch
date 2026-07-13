@@ -43,6 +43,11 @@
   let aiBusy = $state(false);
   let aiReasoning = $state(null);  // { summary (integrated markdown explanation), evidence: {id} } — the AI's answer
   let aiError = $state(null);      // surfaced when a meaning-search fetch fails (never silent)
+  let showProgress = $state(false), progress = $state(null);   // book-integration roadmap popup
+  async function openProgress() {
+    showProgress = true;
+    if (!progress) { try { const r = await fetch(`${API}/api/v1/people/progress`); if (r.ok) progress = await r.json(); } catch { /* offline — modal shows a note */ } }
+  }
   // render the integrated explanation: escape HTML, then turn [text](url) into a source link (the evidence is woven inline)
   const escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const mdLinks = (s) => escHtml(s).replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="ai-cite-in">$1</a>');
@@ -182,6 +187,7 @@
       </div>
       <div class="subrow">
         <span class="resultline">{filtered.length.toLocaleString()} {filtered.length === 1 ? 'soul' : 'souls'}{#if q || filter || aiIds !== null}{` of ${persons.length.toLocaleString()}`}{/if}</span>
+        <button class="progbtn" onclick={openProgress} title="Which books have been integrated so far — the road to all history absorbed">◧&nbsp;Library progress</button>
       </div>
       <div class="samples" class:hidden={!!q.trim() || aiIds !== null || aiBusy}>
         <span class="samples-lead">✦ Ask the archive — try:</span>
@@ -189,6 +195,38 @@
       </div>
       {#if aiError}<p class="ai-error">{aiError}</p>{/if}
     </div>
+
+    {#if showProgress}
+      <div class="prog-overlay" onclick={() => (showProgress = false)} role="presentation" transition:fade={{ duration: 150 }}>
+        <div class="prog-modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Library integration progress">
+          <button class="prog-close" onclick={() => (showProgress = false)} aria-label="Close">✕</button>
+          <h2 class="prog-title">Absorbing the history</h2>
+          {#if progress}
+            <p class="prog-lead"><strong>{progress.doneBooks}</strong> of {progress.totalBooks} seed &amp; foundation &amp; pillar books integrated — on the way to <em>all history absorbed</em>.</p>
+            {#each progress.phases as ph (ph.key)}
+              <section class="prog-phase" class:upcoming={ph.upcoming}>
+                <header class="prog-phase-h">
+                  <span class="prog-phase-label">{ph.label}</span>
+                  <span class="prog-phase-count">{ph.upcoming ? 'next' : `${ph.done}/${ph.total}`}</span>
+                </header>
+                <p class="prog-blurb">{ph.blurb}</p>
+                <ul class="prog-books">
+                  {#each ph.books as b (b.id)}
+                    <li class="prog-book" class:done={b.done}>
+                      <span class="prog-tick" aria-hidden="true">{b.done ? '✓' : ph.upcoming ? '·' : '○'}</span>
+                      <span class="prog-book-title">{b.title}</span>
+                      {#if b.persons}<span class="prog-book-n">{b.persons.toLocaleString()}</span>{/if}
+                    </li>
+                  {/each}
+                </ul>
+              </section>
+            {/each}
+          {:else}
+            <p class="prog-lead">Loading the roadmap…</p>
+          {/if}
+        </div>
+      </div>
+    {/if}
 
     {#if aiIds !== null && aiReasoning}
       <div class="ai-answer" transition:fade={{ duration: 250 }}>
@@ -481,4 +519,34 @@
   .d-sec:nth-of-type(3) { animation-delay: .24s; } .d-sec:nth-of-type(4) { animation-delay: .3s; }
   .d-sec:nth-of-type(5) { animation-delay: .36s; }
   @media (prefers-reduced-motion: reduce) { *, .card, .orb { animation: none !important; } }
+
+  /* ── Library-integration progress popup ─────────────────────────────── */
+  .progbtn { flex: 0 0 auto; font-size: .78rem; color: var(--text-secondary); background: none;
+    border: 1px solid var(--border); border-radius: 1rem; padding: .28rem .7rem; cursor: pointer; transition: .18s; }
+  .progbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .prog-overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-start; justify-content: center;
+    padding: 5vh 1rem; background: rgb(0 0 0 / .55); backdrop-filter: blur(3px); overflow-y: auto; }
+  .prog-modal { position: relative; width: min(40rem, 100%); background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 1rem; padding: 1.6rem 1.5rem 1.2rem; box-shadow: 0 24px 60px rgb(0 0 0 / .4); }
+  .prog-close { position: absolute; top: .8rem; right: .8rem; width: 2rem; height: 2rem; border: none; border-radius: 50%;
+    background: var(--surface-3); color: var(--text-secondary); cursor: pointer; font-size: .9rem; }
+  .prog-close:hover { color: var(--text-primary); }
+  .prog-title { font-family: 'Amiri', Georgia, serif; font-size: 1.5rem; margin: 0 2rem .2rem 0; color: var(--text-primary); }
+  .prog-lead { font-size: .85rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 1.1rem; }
+  .prog-lead strong { color: var(--accent); }
+  .prog-phase { margin-bottom: 1.05rem; padding-left: .9rem; border-left: 2px solid var(--border); }
+  .prog-phase.upcoming { opacity: .62; border-left-style: dashed; }
+  .prog-phase-h { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+  .prog-phase-label { font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; color: var(--text-primary); font-weight: 600; }
+  .prog-phase-count { font-size: .72rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .prog-blurb { font-size: .78rem; color: var(--text-muted); line-height: 1.45; margin: .15rem 0 .45rem; }
+  .prog-books { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .18rem; }
+  .prog-book { display: flex; align-items: baseline; gap: .5rem; font-size: .82rem; color: var(--text-muted); }
+  .prog-book.done { color: var(--text-secondary); }
+  .prog-tick { flex: 0 0 1rem; text-align: center; color: var(--border); }
+  .prog-book.done .prog-tick { color: var(--accent); }
+  .prog-book-title { flex: 1; min-width: 0; }
+  .prog-book.done .prog-book-title { color: var(--text-primary); }
+  .prog-book-n { flex: 0 0 auto; font-size: .72rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .prog-book-n::after { content: ' people'; opacity: .6; }
 </style>
