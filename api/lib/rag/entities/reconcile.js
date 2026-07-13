@@ -25,7 +25,10 @@ export async function run(ctx, docId, opts = {}) {
   await pool(opts.concurrency ?? 5, clusters, async (cluster) => {
     const candidates = await ctx.store.findCandidateEntities(cluster.resolvedAs, { type: 'person', limit: 6 });
     const scenes = await ctx.store.getScenes(docId, cluster.paraIds.slice(0, 4));
-    const user = buildUser(cluster, candidates, scenes);
+    // Resolve-against-search: evidence from the grounded corpus (completed, higher-authority books) — this is
+    // what makes cumulative ordering meaningful (decide grouping/splitting on real cross-book fact, not name).
+    const evidence = (await ctx.store.searchGrounded?.(cluster.resolvedAs, { limit: 6 })) || [];
+    const user = buildUser(cluster, candidates, scenes, evidence);
     const { parsed, escalated } = await ctx.model.runLadder({ route, system: SYSTEM, user, parse: parseVerdict, maxTokens: 400 });
     if (!parsed) { stats.failed++; return; }
     stats.adjudicated++; if (escalated) stats.escalated++;
@@ -47,6 +50,7 @@ If it IS a person, decide by EVIDENCE:
 • "link" — the cluster IS one specific candidate (same person: compatible role, place, era, connections). Give its id.
 • "create" — a person NOT among the candidates (or the only name-candidate's evidence contradicts this cluster's role/era). Give canonical = the source's resolved form.
 • "uncertain" — evidence insufficient; route to human.
+GROUNDED EVIDENCE, when present, is prior-established fact from COMPLETED higher-authority books and is DECISIVE: if a candidate's grounded facts (birth/death/kin/role/place/connections) match this cluster → "link" that id; if a grounded fact CONTRADICTS a candidate → do NOT link it (create or split). Grounded evidence outranks name overlap and the in-book scenes.
 Rules: name similarity ALONE never justifies "link" (namesakes abound); require role/place/era/connection agreement. A descriptor that contradicts a candidate (an "amanuensis" is not a "traditions-scholar") forbids linking. Prefer "create"/"uncertain" over a wrong link (a false merge fabricates a person).
 But do NOT over-create — these are false splits:
 • A deceased figure referenced in a LATER scene is the SAME person — a date gap between a person's death and a scene that merely MENTIONS them is NOT an era mismatch (e.g. Shaykh Aḥmad-i-Aḥsá'í, d. 1826, cited in an 1852 scene → LINK, not create).
@@ -65,10 +69,14 @@ export function parseVerdict(raw) {
   } catch { return null; }
 }
 
-export function buildUser(cluster, candidates, scenes) {
+export function buildUser(cluster, candidates, scenes, evidence = []) {
   const sceneBlock = scenes.map((s) => `[${s.pid}] ${String(s.context || '').slice(0, 220)}`).join('\n') || '(no scenes)';
   const candBlock = candidates.map((c) => `  #${c.id} "${c.canonical}" (imp ${c.importance ?? '?'}) — ${String(c.summary || '').slice(0, 90)}`).join('\n') || '  (no name-candidates found)';
-  return `MENTION CLUSTER — resolved as: "${cluster.resolvedAs}" (${cluster.freq} mentions)\nSCENES:\n${sceneBlock}\n\nCANDIDATE entities (name-recall only, verify by evidence):\n${candBlock}`;
+  const evBlock = evidence.length
+    ? '\n\nGROUNDED EVIDENCE (facts already established in COMPLETED higher-authority books — decisive for identity):\n'
+      + evidence.map((e) => `  →#${e.entityId} "${e.name}": ${String(e.fact || '').slice(0, 140)}${e.source ? ` [${e.source}]` : ''}`).join('\n')
+    : '';
+  return `MENTION CLUSTER — resolved as: "${cluster.resolvedAs}" (${cluster.freq} mentions)\nSCENES:\n${sceneBlock}\n\nCANDIDATE entities (name-recall only, verify by evidence):\n${candBlock}${evBlock}`;
 }
 
 // Map an adjudication verdict to an append-only decision row. entity_id is only carried for a "link".

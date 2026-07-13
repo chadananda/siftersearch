@@ -32,6 +32,25 @@ Concept stages mirror this: `concept-extract` → `concept_claims` (deferred `co
 `concept_lexicon` (authority-ranked symbol→interpretation); `concept-reconcile` → `concept_decisions`
 (bind occurrence → lexicon).
 
+## Definition of Done — a book is COMPLETE only when all of this is true (no deferral)
+
+A book is NOT "done" when its claims are extracted. It is done only when its **cast is reconciled,
+created, deduped, HyPE'd, and verified searchable in prod**. Enforced by the `complete-book <doc>` driver,
+which refuses to report success unless the final search-verification passes:
+
+1. disambiguate (every paragraph) · 2. mentions · 3. claims (proof-gated) ·
+4. **reconcile — FULL cluster set (never `--limit`)** · 5. **project `--kinds=link,create`** (apply new
+   persons, not just links) · 6. link-claims · 7. **claim-evidence dup-guard** (new entity's hard claims vs
+   existing → propose merges for cross-book duplicates name-recall missed) · 8. **HyPE + Meili sync** ·
+   9. **verify: the book's cast + facts + HyPE actually return in prod search.**
+
+**Execution is SERIAL, in cumulative authority order** (GPB → DB → Gate → ROB v1 (429) → ROB v2–4 →
+Balyuzi → Mázindarání → Momen). Complete + search-verify one book before starting the next. Do NOT run
+books breadth-first and defer reconcile/create/HyPE to a later batch — that leaves every book half-finished
+and its persons unsearchable. (Post-mortem: the 2026-07 breadth-first campaign did exactly this — ran
+reconcile with `--limit` and `project --kinds=link` only, so 240 creates + thousands of clusters stayed
+unbound and "done" silently meant only "claims extracted.")
+
 ## Invariants (what keeps it correct)
 
 - **Identity is deferred**: extractors never bind `entity_id`; evidence binds it at reconcile. The materialized

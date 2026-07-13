@@ -36,7 +36,9 @@ header) and the body stays terse.
 - `enrich/` — passage enrichment: `disambiguate`, `retrieval` (HyPE).
 - `entities/` — factual layer: `mentions` · `claims` · `reconcile` · `project` · `lookup`.
 - `concepts/` — doctrinal layer: `lexicon` · `disambiguate` · `extract` · `reconcile` · `link`.
-- `pipeline.js` — gated, ordered, idempotent orchestration composing the stages.
+- `pipeline.js` — **NOT YET BUILT** (the gated, ordered orchestrator). Today stages are driven individually
+  via `scripts/rag.mjs`; the two-phase orchestrator is the final build step. See
+  `docs/architecture/two-phase-grounding-pipeline.md`. Do not claim a complete pipeline exists until this ships.
 
 ## Invariants
 - Writes go through the single writer (`ctx.writerUrl` = `SIFTER_WRITER_URL`), never a direct connection.

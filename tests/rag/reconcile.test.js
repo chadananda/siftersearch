@@ -32,6 +32,20 @@ describe('reconcile — pure helpers', () => {
     expect(buildUser({ resolvedAs: 'the Báb', freq: 100, paraIds: ['para_1'] }, [{ id: 1, canonical: 'the Báb', importance: 100 }], [{ pid: 'para_1', context: '@Shíráz — Declaration' }]))
       .toContain('the Báb');
   });
+
+  it('buildUser renders a GROUNDED EVIDENCE block when cross-book evidence is supplied', () => {
+    const u = buildUser({ resolvedAs: 'Mírzá Aḥmad', freq: 5, paraIds: ['para_3'] },
+      [{ id: 7, canonical: 'Mírzá Aḥmad-i-Azghandí', importance: 40 }],
+      [{ pid: 'para_3', context: '@Baghdád — the Báb’s amanuensis' }],
+      [{ entityId: 9, name: '‘Abdu’l-Karím-i-Qazvíní', fact: 'served as the Báb’s amanuensis at Baghdád', source: 'GPB ¶88' }]);
+    expect(u).toMatch(/GROUNDED EVIDENCE/);
+    expect(u).toContain('#9');
+    expect(u).toContain('amanuensis');       // the decisive cross-book fact reaches the adjudicator
+  });
+
+  it('the prompt makes grounded evidence decisive over name overlap', () => {
+    expect(SYSTEM).toMatch(/GROUNDED EVIDENCE[\s\S]*DECISIVE/);
+  });
 });
 
 describe('reconcile — run() on fake ports (GPB clusters)', () => {
@@ -55,6 +69,22 @@ describe('reconcile — run() on fake ports (GPB clusters)', () => {
     const link = store.decisions.find((d) => d.kind === 'link');
     expect(link.payload).toMatchObject({ entityId: 5 });
     expect(store.decisions.every((d) => d.status === 'proposed' && d.actorTier === 2)).toBe(true);
+  });
+
+  it('consults the grounded corpus and feeds its evidence into the adjudication prompt', async () => {
+    const seed = {
+      clusters: { 21310: [{ resolvedAs: 'Mírzá Aḥmad', freq: 5, paraIds: ['para_3'] }] },
+      coverage: { 21310: 1 },
+      candidates: [{ id: 7, canonical: 'Mírzá Aḥmad-i-Azghandí', type: 'person', importance: 40 }],
+      grounded: [{ entityId: 9, name: '‘Abdu’l-Karím-i-Qazvíní', fact: 'the Báb’s amanuensis at Baghdád', source: 'GPB ¶88' }],
+    };
+    const llm = fakeLLM([{ content: '{"verdict":"create","type":"person","canonical":"Mírzá Aḥmad","confidence":0.6}' }]);
+    const { rag } = makeRag({ seed, llm });
+    await rag.entities.reconcile(21310);
+    const prompt = llm.calls[0].messages[1].content;
+    expect(prompt).toMatch(/GROUNDED EVIDENCE/);
+    expect(prompt).toContain('amanuensis');     // cross-book fact name-recall alone would miss
+    expect(prompt).toContain('#9');
   });
 
   it('gates on disambiguation', async () => {

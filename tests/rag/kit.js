@@ -71,6 +71,7 @@ export function memStore(seed = {}) {
     getMentionClusters: async (id) => seed.clusters?.[id] || [],
     getDecidedClusterNames: async () => new Set(seed.decided || []),
     findCandidateEntities: async (name) => (typeof seed.candidates === 'function' ? seed.candidates(name) : seed.candidates || []),
+    searchGrounded: async (query, opts) => (typeof seed.grounded === 'function' ? seed.grounded(query, opts) : seed.grounded || []),
     getScenes: async (id, paraIds) => seed.scenes || paraIds.map((pid) => ({ pid, context: '' })),
     saveDecisions: async (rows) => { decisions.push(...rows); return rows.length; },
     // project

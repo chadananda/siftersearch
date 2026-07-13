@@ -149,6 +149,41 @@ export function makeStore() {
       return rows;
     },
 
+    // Resolve-against-search: evidence from the GROUNDED corpus for an identity decision. "Grounded" = claims
+    // already BOUND to an entity (entity_id set only at project, i.e. from prior COMPLETED books — the current
+    // book's claims are still unbound during its own reconcile, so they're naturally excluded). Recalls entities
+    // two ways so it catches what name-recall alone misses: (a) transliteration-invariant NAME skeleton, (b) a
+    // token match on established claim statements (the resolved cluster usually carries a role/epithet — e.g.
+    // "…the Báb's amanuensis" surfaces Qazvíní even when the bare name recalls Azghandí). Returns compact,
+    // entity-linked facts (≤2 per entity) — retrieve-then-reason, never dumps text.
+    async searchGrounded(query, { limit = 6 } = {}) {
+      const core = String(query).replace(/\([^)]*\)/g, '').split(/[,;—]| the | who /)[0].trim();
+      const keys = [...new Set([query, core].filter(Boolean).flatMap((p) => [...skeletonKeys(p)]))];
+      const ids = new Set();
+      if (keys.length) (await db.queryAll(
+        `SELECT DISTINCT entity_id id FROM entity_lookup_keys WHERE skeleton_key IN (${keys.map(() => '?').join(',')})`, keys
+      )).forEach((r) => ids.add(r.id));
+      const toks = [...new Set((String(query).toLowerCase().match(/[\p{L}]{4,}/gu) || []))].slice(0, 6);
+      if (toks.length) (await db.queryAll(
+        `SELECT DISTINCT entity_id id FROM entity_claims WHERE entity_id IS NOT NULL AND (status IS NULL OR status='supported')
+           AND (${toks.map(() => 'lower(statement) LIKE ?').join(' OR ')}) LIMIT 40`, toks.map((t) => `%${t}%`)
+      )).forEach((r) => ids.add(r.id));
+      const idList = [...ids].slice(0, 12);
+      if (!idList.length) return [];
+      const rows = await db.queryAll(
+        `SELECT c.entity_id id, ge.canonical_name name, c.statement fact, c.para_id
+           FROM entity_claims c JOIN graph_entities ge ON ge.id=c.entity_id
+          WHERE c.entity_id IN (${idList.map(() => '?').join(',')}) AND (c.status IS NULL OR c.status='supported')
+          ORDER BY (c.time_value IS NULL), c.time_value`, idList);
+      const per = {}, out = [];
+      for (const r of rows) {
+        if ((per[r.id] = (per[r.id] || 0) + 1) > 2) continue;    // ≤2 distinctive facts per entity
+        out.push({ entityId: r.id, name: r.name, fact: r.fact, source: r.para_id });
+        if (out.length >= limit) break;
+      }
+      return out;
+    },
+
     // Representative disambiguation notes for a set of paragraphs (the reconcile dossier).
     async getScenes(docId, paraIds) {
       if (!paraIds.length) return [];
