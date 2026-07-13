@@ -15,7 +15,7 @@ const doc = Number(argv.find((a) => !a.startsWith('--')));
 const opt = Object.fromEntries(argv.filter((a) => a.startsWith('--')).map((a) => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v ?? true]; }));
 if (!doc) { console.error('usage: complete-book <docId> [--from=stage] [--only=stage]'); process.exit(1); }
 
-const STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'dedup', 'hype', 'verify'];
+const STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'merge', 'dedup', 'hype', 'verify'];
 const from = opt.only ? STAGES.indexOf(opt.only) : (opt.from ? STAGES.indexOf(opt.from) : 0);
 const to = opt.only ? STAGES.indexOf(opt.only) : STAGES.length - 1;
 const want = (s) => { const i = STAGES.indexOf(s); return i >= from && i <= to; };
@@ -34,6 +34,7 @@ if (want('reconcile'))    { mark('reconcile'); log('reconcile', await rag.entiti
 if (want('research'))     { mark('research'); log('research-resolve', await rag.entities.researchResolve(doc, { concurrency: 3 })); } // resolve uncertains: corpus+web
 if (want('project'))      { mark('project'); const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId: doc }); createdIds = r.createdIds || []; log('project', r); }
 if (want('link'))         { mark('link'); execSync(`DOC=${doc} WRITE=1 SIFTER_WRITER_URL=${writer} node scripts/entity-read/link-claims.mjs`, { stdio: 'inherit' }); }
+if (want('merge'))        { mark('merge'); log('merge', await rag.entities.merge({ concurrency: 4 })); } // same-name dedup by evidence (catches intra-batch + cross-book same-name dups dedup-guard's cross-name search misses)
 if (want('dedup') && createdIds.length) { mark('dedup'); log('dedup-guard', await rag.entities.dedupGuard({ entityIds: createdIds })); } // AFTER link — new entities need bound claims to dedup on
 if (want('hype'))         { mark('hype'); log('hype', await rag.retrieval.index(doc, { resume: true })); }
 if (want('verify')) {

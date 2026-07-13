@@ -47,7 +47,7 @@ export function readHistoryCatalog() {
 // which book is being worked and at what stage, updating on every poll. Best-effort (absent → DB-inferred).
 const GROUNDING_STATUS_PATH = path.join(process.cwd(), 'data', 'siftersearch-grounding-status.json');
 // The pipeline stages, in order — must match scripts/complete-book.mjs (drives the current book's % progress).
-const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'dedup', 'hype', 'verify'];
+const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'merge', 'dedup', 'hype', 'verify'];
 async function computeActiveBook(staticDocs, meta) {
   let st = null;
   try { st = JSON.parse(fs.readFileSync(GROUNDING_STATUS_PATH, 'utf8')); } catch { /* none */ }
@@ -74,7 +74,8 @@ async function computeActiveBook(staticDocs, meta) {
     const bound = await one(`SELECT COUNT(*) n FROM entity_mentions_v2 WHERE doc_id=? AND entity_id IS NOT NULL`);
     const hype = await one(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL`);
     const ment = await one(`SELECT COUNT(*) n FROM entity_mentions_v2 WHERE doc_id=?`);
-    si = (hype > 0 && bound > 0) ? 8 : bound > 0 ? 6 : claims > 0 ? 2 : ment > 0 ? 1 : 0;
+    const at = (name) => GROUNDING_STAGES.indexOf(name);
+    si = (hype > 0 && bound > 0) ? at('hype') : bound > 0 ? at('link') : claims > 0 ? at('claims') : ment > 0 ? at('mentions') : 0;
     stage = GROUNDING_STAGES[si];
   }
   // Mid-stage estimate (a stage is "in progress", so count it half-done) → an honest 5–99% completion feel.
