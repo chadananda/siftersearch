@@ -4,6 +4,7 @@
 // adapter. Use `rag` (a ready instance) or `createSifterRAG()` for a custom config.
 import { createCorpusRAG } from '../rag/index.js';
 import { makeStore } from './store.js';                       // Store port over the SifterSearch schema
+import { makeWeb } from './web.js';                           // WebResearch port (keyless Wikipedia, sourced)
 import { chatCompletion } from '../ai.js';                    // the app's LLM client
 import { getModel } from '../model-registry.js';              // price/provider/local catalog (incl. local models)
 import { detectProfile } from '../pipeline/profile.js';       // the app's routing policy (language/genre → models)
@@ -36,7 +37,7 @@ const config = {
 
 // Assemble the full dependency set. Any field can be overridden by a caller (e.g. tests inject fakes).
 export function sifterDeps(overrides = {}) {
-  return { llm, models, store: makeStore(), profiler, log: logger, config, ...overrides };
+  return { llm, models, store: makeStore(), profiler, log: logger, config, web: makeWeb(), ...overrides };
 }
 
 // A ready, app-wired CorpusRAG. Import this from application code and the pipeline orchestrator.

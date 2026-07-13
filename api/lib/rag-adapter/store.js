@@ -184,6 +184,44 @@ export function makeStore() {
       return out;
     },
 
+    // The book's clusters left UNCERTAIN by reconcile — the research-resolve worklist. Skips clusters already
+    // researched (a decision tagged via:'research') so re-runs don't re-research the same figure.
+    async getUncertainClusters(docId, { limit = 500 } = {}) {
+      const researched = new Set();
+      for (const r of await db.queryAll(`SELECT payload FROM entity_decisions WHERE kind IN ('link','create','uncertain','other-type')`)) {
+        try { const p = JSON.parse(r.payload || '{}'); if (p.via === 'research' && p.resolvedAs) researched.add(p.resolvedAs); } catch { /* */ }
+      }
+      const out = [];
+      for (const r of await db.queryAll(`SELECT target_ids, payload FROM entity_decisions WHERE kind='uncertain' AND status='proposed'`)) {
+        let p = {}; try { p = JSON.parse(r.payload || '{}'); } catch { continue; }
+        if (p.docId !== docId || p.via === 'research' || researched.has(p.resolvedAs)) continue;
+        let paraIds = []; try { paraIds = JSON.parse(r.target_ids || '[]'); } catch { /* */ }
+        out.push({ resolvedAs: p.resolvedAs, paraIds, freq: p.freq });
+        if (out.length >= limit) break;
+      }
+      return out;
+    },
+
+    // Full-corpus search (all books) for research-resolve — each hit carries its doc's AUTHORITY (10 - docTier,
+    // so higher = more authoritative; GPB/primary highest), plus title + a snippet for the adjudicator.
+    async searchCorpus(query, { limit = 6 } = {}) {
+      try {
+        const { getMeili, INDEXES } = await import('../search.js');
+        const { getDocTier } = await import('../doc-tier.js');
+        const res = await getMeili().index(INDEXES.PARAGRAPHS).search(String(query).slice(0, 120), { limit });
+        const hits = res.hits || [];
+        if (!hits.length) return [];
+        const docIds = [...new Set(hits.map((h) => h.doc_id).filter(Boolean))];
+        const docs = {};
+        if (docIds.length) (await db.queryAll(`SELECT id, title, author, religion, collection FROM docs WHERE id IN (${docIds.map(() => '?').join(',')})`, docIds)).forEach((d) => { docs[d.id] = d; });
+        return hits.map((h) => {
+          const d = docs[h.doc_id] || {};
+          let tier = 9; try { tier = getDocTier(d) || 9; } catch { /* */ }
+          return { docId: h.doc_id, title: d.title || null, authorityTier: 10 - tier, paraId: h.external_para_id || null, snippet: String(h.text || '').replace(/\s+/g, ' ').slice(0, 200) };
+        });
+      } catch { return []; }
+    },
+
     // An entity's distinctive BOUND claims — the dedup-guard's fact query (resolve-by-fact, not by name).
     async getEntityFacts(entityId, { limit = 6 } = {}) {
       const ent = (await db.queryAll(`SELECT id, canonical_name name FROM graph_entities WHERE id=?`, [entityId]))[0];

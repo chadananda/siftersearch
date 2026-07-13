@@ -24,6 +24,7 @@ const stages = {
   reconcile: () => rag.entities.reconcile(doc, opts),
   project: () => rag.entities.project(opts),
   merge: () => rag.entities.merge(opts),
+  'research-resolve': () => rag.entities.researchResolve(doc, opts),
   lookup: () => rag.entities.lookup(arg, opts),
   'concept-extract': () => rag.concepts.extract(doc, opts),
   'concept-lexicon': () => rag.concepts.lexicon.seed(doc, opts),
