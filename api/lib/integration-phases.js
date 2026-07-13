@@ -21,6 +21,10 @@ export const INTEGRATION_PHASES = [
       28849, 462, 3789, 3887, 464, 465, 467,                // Balyuzi (The Báb, King of Glory, ‘Abdu’l-Bahá, …)
       15228, 15257, 15254, 20028, 15256, 20035, 20037, 15255, 15259, // Mázindarání — Ẓuhúru’l-Ḥaqq (Persian)
       13433,                                                // Momen — The Bábí & Bahá’í Religions (Western accounts)
+      20331,                                                // Ahdieh & Chapman — Awakening (Nayríz history)
+      // Nayríz source cluster (resolves Dawn-Breakers' large unresolved Nayríz-martyr tail) — candidates
+      // pending confirmation: 16552 Rabbani Bábís of Nayríz · 11265 Martyrdom of Ḥájí Muḥammad-Riḍá · 16316
+      // Memories of My Life · 214474 The Afnán Family.
     ],
   },
   {
