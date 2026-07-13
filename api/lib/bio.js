@@ -93,7 +93,7 @@ export async function getIntegrationProgress() {
   // AUTHOR routing — every Balyuzi/Taherzadeh (→foundation) and Rabbani (→primary) Bahá'í Book, so the whole
   // master-historian + Rabbani corpus lands in the right phase, not just the curated anchors.
   const routed = await queryAll(`SELECT id, author FROM docs WHERE collection='Baha''i Books'
-      AND deleted_at IS NULL AND duplicate_of IS NULL
+      AND deleted_at IS NULL AND duplicate_of IS NULL AND coalesce(paragraph_count,0) >= 40
       AND (author LIKE '%Balyuzi%' OR author LIKE '%Taherzadeh%' OR author LIKE '%Rabbani%')`);
   // phaseByDoc: static anchors → author routing → explicit pins → classified genre (biographies/histories).
   const phaseByDoc = {};
