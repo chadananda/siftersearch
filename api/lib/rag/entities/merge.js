@@ -6,7 +6,8 @@
 import { pool } from '../kernel/run.js';
 
 export const SYSTEM = `You deduplicate PERSON entities. Given a GROUP of entities that share a name (each with its evidence — mention count, summary, sample facts), decide which are the SAME individual and which are DISTINCT namesakes.
-Rules: merge ONLY when role, era, place, and connections agree; a shared NAME alone is NEVER enough (many people share a name — keep them apart). Different nisbas/roles/eras = different people. Prefer keeping apart over a wrong merge (a false merge fabricates one person from two).
+Rules: merge ONLY when role, era, place, and connections agree; a shared COMMON name alone is NEVER enough (many people share a common given-name/patronymic — keep them apart). Different nisbas/roles/eras = different people. Prefer keeping apart over a wrong merge (a false merge fabricates one person from two).
+EXCEPTION — distinctive unique names: a DISTINCTIVE full name that denotes ONE specific, identifiable individual (a named foreign statesman or author, a full Western personal name, a uniquely-qualified figure — e.g. "Otto von Bismarck", "Joseph Hardegg", "Edward Granville Browne") with NO CONTRADICTING fact is the SAME person — two such records are a failed split, MERGE them. This exception is ONLY for distinctive unique names, never for common forms like "Mullá ‘Alí" or "Mírzá Muḥammad" (those stay apart unless facts agree).
 Pick as "canonical" the entity with the richest evidence (most mentions / fullest summary).
 Return ONLY JSON: {"canonical":<id>,"same":[<ids that ARE the canonical, to merge in>],"distinct":[<ids that are DIFFERENT people, keep>],"reason":"<=20 words"}.`;
 
