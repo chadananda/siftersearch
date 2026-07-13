@@ -209,7 +209,8 @@
           <button class="prog-close" onclick={() => (showProgress = false)} aria-label="Close">✕</button>
           <h2 class="prog-title">Absorbing the history</h2>
           {#if progress}
-            <p class="prog-lead"><strong>{progress.doneBooks}</strong> of {progress.totalBooks} seed &amp; foundation &amp; pillar books integrated — on the way to <em>all history absorbed</em>.</p>
+            <p class="prog-lead"><strong>{(progress.cumulativeUnique ?? 0).toLocaleString()}</strong> distinct people grounded so far <span class="prog-sub">· {progress.doneBooks}/{progress.totalBooks} books</span> — on the way to <em>all history absorbed</em>.</p>
+            <p class="prog-fine">Per-book counts below are people appearing <em>in that book</em> (a figure in several books is counted in each) — the number above is the deduplicated total.</p>
             {#each progress.phases as ph (ph.key)}
               <section class="prog-phase" class:upcoming={ph.upcoming}>
                 <header class="prog-phase-h">
@@ -542,6 +543,9 @@
   .prog-title { font-family: 'Amiri', Georgia, serif; font-size: 1.5rem; margin: 0 2rem .2rem 0; color: var(--text-primary); }
   .prog-lead { font-size: .85rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 1.1rem; }
   .prog-lead strong { color: var(--accent); }
+  .prog-sub { color: var(--text-muted); font-weight: normal; }
+  .prog-fine { font-size: .72rem; color: var(--text-muted); line-height: 1.4; margin: -.7rem 0 1.1rem; opacity: .85; }
+  .prog-fine em { font-style: italic; color: var(--text-secondary); }
   .prog-phase { margin-bottom: 1.05rem; padding-left: .9rem; border-left: 2px solid var(--border); }
   .prog-phase.upcoming { opacity: .62; border-left-style: dashed; }
   .prog-phase-h { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }

@@ -57,7 +57,12 @@ export async function getIntegrationProgress() {
   });
   const doneBooks = phases.reduce((s, p) => s + (p.upcoming ? 0 : p.done), 0);
   const totalBooks = phases.reduce((s, p) => s + (p.upcoming ? 0 : p.total), 0);
-  _progCache = { phases, doneBooks, totalBooks, goal: 'all history absorbed' };
+  // Cumulative UNIQUE people grounded across all these books (deduped — a figure in N books counts once).
+  // This is the true "history absorbed" figure; per-book counts overcount by the cross-book overlap.
+  const cumulativeUnique = (await queryAll(`SELECT COUNT(*) n FROM (
+      SELECT entity_id e FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL
+      UNION SELECT entity_id FROM entity_claims WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL)`, [...docs, ...docs]))[0]?.n || 0;
+  _progCache = { phases, doneBooks, totalBooks, cumulativeUnique, goal: 'all history absorbed' };
   _progAt = Date.now();
   return _progCache;
 }
