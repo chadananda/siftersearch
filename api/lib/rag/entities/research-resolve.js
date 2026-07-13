@@ -20,9 +20,12 @@ export async function run(ctx, docId, opts = {}) {
     // Corpus-first: evidence from OTHER books in the SAME TRADITION (a cross-tradition namesake — the biblical
     // Potiphar for a Persian "chief of executioners" — is not this figure), authority-ranked.
     const corpus = ((await ctx.store.searchCorpus?.(cluster.resolvedAs, { limit: 6, religion: meta.religion })) || []).filter((c) => c.docId !== docId);
+    // Candidate existing entities (transliteration-invariant recall) so a "link" verdict cites a REAL #id — the
+    // evidence decides which (if any) candidate this uncertain figure actually is.
+    const candidates = (await ctx.store.findCandidateEntities?.(cluster.resolvedAs, { type: 'person', limit: 6 })) || [];
     let web = null;
     if (corpus.length < CORPUS_THIN && ctx.web?.research) { web = await ctx.web.research(webQuery(cluster)); if (web) stats.webUsed++; }
-    const { parsed } = await ctx.model.runLadder({ route, system: SYSTEM, user: buildUser(cluster, corpus, web), parse: parseResolve, maxTokens: 450 });
+    const { parsed } = await ctx.model.runLadder({ route, system: SYSTEM, user: buildUser(cluster, corpus, web, candidates), parse: parseResolve, maxTokens: 450 });
     if (!parsed) { stats.failed++; return; }
     stats.adjudicated++;
     const row = decisionRow(parsed, cluster, collectEvidence(parsed, corpus, web), docId);
@@ -40,7 +43,7 @@ export async function run(ctx, docId, opts = {}) {
 export const SYSTEM = `You resolve the identity of an UNCERTAIN historical figure using RESEARCH EVIDENCE — do not guess, do not defer to a human.
 You get the figure as a source resolved it, plus CORPUS EVIDENCE (passages from other books, each with an AUTHORITY tier — higher = more authoritative) and optionally EXTERNAL WEB evidence (lowest authority — corroboration only, never decisive over the corpus).
 Decide:
-• "link" — the figure IS a known entity the evidence identifies (give its id if a candidate id is shown).
+• "link" — the figure IS one of the CANDIDATE entities (give its #id). Link ONLY to a candidate #id shown below — NEVER invent an id or put a name in entity_id. If no candidate matches, choose "create" or "hold".
 • "create" — a real, named, distinct person the evidence identifies/corroborates (give canonical name).
 • "other" — not a person (place/work/group/event) — give type.
 • "hold" — evidence is genuinely too thin to resolve; stay uncertain (do NOT invent an identity).
@@ -52,10 +55,11 @@ export function webQuery(cluster) {
   return `Who is "${cluster.resolvedAs}"? Historical identity, dates, and any connection to Bábí/Bahá'í history.`;
 }
 
-export function buildUser(cluster, corpus, web) {
+export function buildUser(cluster, corpus, web, candidates = []) {
+  const cand = candidates.length ? `\nCANDIDATE entities (link ONLY to one of these #ids if the evidence confirms it):\n${candidates.map((c) => `  #${c.id} "${c.canonical}"${c.summary ? ' — ' + String(c.summary).slice(0, 70) : ''}`).join('\n')}` : '\n(no candidate entities by name)';
   const c = corpus.map((e, i) => `  [C${i}] (${e.title || 'src'} · authority ${e.authorityTier ?? '?'}) "${String(e.snippet || '').slice(0, 160)}"${e.entityId ? ` → entity #${e.entityId}` : ''}`).join('\n') || '  (no corpus evidence)';
   const w = web ? `\nEXTERNAL WEB (lowest authority — corroboration only):\n${(web.sources || []).map((s, i) => `  [W${i}] ${s.title || s.url}`).join('\n')}\n  summary: ${String(web.answer || '').slice(0, 300)}` : '';
-  return `UNCERTAIN FIGURE — resolved by source as: "${cluster.resolvedAs}" (${cluster.freq ?? '?'} mentions)\nCORPUS EVIDENCE (other books, authority-ranked):\n${c}${w}\n\nResolve the identity from the evidence.`;
+  return `UNCERTAIN FIGURE — resolved by source as: "${cluster.resolvedAs}" (${cluster.freq ?? '?'} mentions)${cand}\nCORPUS EVIDENCE (other books, authority-ranked):\n${c}${w}\n\nResolve the identity from the evidence.`;
 }
 
 export function parseResolve(raw) {

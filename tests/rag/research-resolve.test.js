@@ -31,6 +31,13 @@ describe('research-resolve — pure helpers', () => {
     expect(SYSTEM).toMatch(/Prefer "hold"/i);
     expect(SYSTEM).toMatch(/REJECT cross-TRADITION/i);           // a Persian figure is not the biblical Potiphar
     expect(SYSTEM).toMatch(/Potiphar/);
+    expect(SYSTEM).toMatch(/NEVER invent an id/i);
+  });
+
+  it('buildUser lists candidate entities so a link cites a real #id (not a name)', () => {
+    const u = buildUser({ resolvedAs: 'the youth', freq: 3 }, [], null, [{ id: 42, canonical: 'Mullá Ḥusayn', summary: 'first to believe' }]);
+    expect(u).toMatch(/CANDIDATE entities/);
+    expect(u).toContain('#42');
     expect(buildUser({ resolvedAs: 'X', freq: 2 }, [{ docId: 1, title: 'DB', authorityTier: 2, snippet: 'y' }], null)).toContain('authority 2');
   });
 });
