@@ -51,6 +51,7 @@ export function createCorpusRAG(deps = {}) {
       async merge(opts)           { return (await import('./entities/merge.js')).run(ctx, opts); },             // dedup same-name entities by evidence
       async dedupGuard(opts)      { return (await import('./entities/dedup-guard.js')).run(ctx, opts); },       // dedup cross-name duplicates by grounded FACTS
       async verify(docId, opts)   { return (await import('./entities/verify.js')).run(ctx, docId, opts); },     // search-verify gate: cast+claims+HyPE actually return
+      async researchResolve(docId, opts) { return (await import('./entities/research-resolve.js')).run(ctx, docId, opts); }, // resolve UNCERTAINs by corpus+web research (sourced)
       async lookup(q, opts)       { return (await import('./entities/lookup.js')).run(ctx, q, opts); },         // translit-invariant recall
     },
 
@@ -85,6 +86,7 @@ function buildContext(deps) {
     profiler: deps.profiler,     // per-doc routing policy (host config)
     log,
     model: makeModelEngine({ llm: deps.llm, catalog: deps.models }), // routed calls + ladder
+    web: deps.web || null,       // OPTIONAL web-research port (research-resolve); absent → corpus-only
     config: deps.config || {},
   };
 }

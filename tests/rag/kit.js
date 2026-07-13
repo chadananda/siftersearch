@@ -74,6 +74,8 @@ export function memStore(seed = {}) {
     searchGrounded: async (query, opts) => (typeof seed.grounded === 'function' ? seed.grounded(query, opts) : seed.grounded || []),
     getEntityFacts: async (id, opts) => (typeof seed.entityFacts === 'function' ? seed.entityFacts(id, opts) : (seed.entityFacts?.[id] ?? null)),
     getGroundingCoverage: async (id) => seed.grounding?.[id] || { castCount: 0, claimCount: 0, hypeIndexed: 0, paragraphsIndexed: 0, probes: [] },
+    getUncertainClusters: async (id) => seed.uncertain?.[id] || [],
+    searchCorpus: async (query, opts) => (typeof seed.corpus === 'function' ? seed.corpus(query, opts) : seed.corpus || []),
     getScenes: async (id, paraIds) => seed.scenes || paraIds.map((pid) => ({ pid, context: '' })),
     saveDecisions: async (rows) => { decisions.push(...rows); return rows.length; },
     // project
@@ -95,6 +97,12 @@ export function fakeProfiler(profile = {}) {
   });
 }
 
+// Web-research port fake. `answer` is a {answer,sources} object (or fn); records queries.
+export function fakeWeb(answer = null) {
+  const calls = [];
+  return { calls, research: async (query) => { calls.push(query); return typeof answer === 'function' ? answer(query) : answer; } };
+}
+
 // A ready CorpusRAG on all fakes. Returns the instance plus the ports so a test can inspect them.
 export function makeRag(overrides = {}) {
   const ports = {
@@ -104,6 +112,7 @@ export function makeRag(overrides = {}) {
     profiler: overrides.profiler || fakeProfiler(overrides.profile || {}),
     log: overrides.log,
   };
+  if (overrides.web) ports.web = overrides.web;
   return { rag: createCorpusRAG(ports), ...ports };
 }
 

@@ -72,6 +72,8 @@
  * @property {(query: string, opts?: {limit?:number}) => Promise<GroundedEvidence[]>} [searchGrounded]  resolve-against-search: evidence from the SEARCHABLE GROUNDED corpus (BOUND claims + entity dossiers of already-completed books, transliteration-tolerant). Lets reconcile/dedup-guard decide grouping/splitting on real cross-book evidence. Absent → reconcile falls back to name-recall + in-book scenes only.
  * @property {(entityId: number, opts?: {limit?:number}) => Promise<{id:number,name:string,facts:{statement:string,relation?:string,when?:string}[]}|null>} [getEntityFacts]  an entity's distinctive bound claims — the dedup-guard's fact query.
  * @property {(docId: number, opts?: object) => Promise<{castCount:number,claimCount:number,hypeIndexed:number,paragraphsIndexed:number,probes:{kind:string,query:string,hits:number}[]}>} [getGroundingCoverage]  live search-index coverage for a book (probes Meili + DB) — powers the verify gate that makes "done = searchable" enforceable.
+ * @property {(docId: number, opts?: {limit?:number}) => Promise<Cluster[]>} [getUncertainClusters]  the book's clusters left UNCERTAIN by reconcile — the research-resolve worklist.
+ * @property {(query: string, opts?: {limit?:number}) => Promise<CorpusEvidence[]>} [searchCorpus]  full-corpus search (all books, typo/translit-tolerant), each hit carrying its doc's AUTHORITY tier — the research stage's corpus-first evidence.
  * @property {(docId: number, paraIds: string[]) => Promise<{pid:string,context:string}[]>} getScenes
  * @property {(decisions: Decision[]) => Promise<number>} saveDecisions    append-only; never edits the graph
  * @property {() => Promise<Decision[]>} getProposedDecisions              mention-cluster decisions (normalised payload)
@@ -92,6 +94,9 @@
  * @property {string} name       that entity's canonical name
  * @property {string} fact       a compact grounded fact/snippet (a bound claim statement or dossier line)
  * @property {string} [source]   short source label (e.g. "GPB ¶72")
+ * @typedef {Object} CorpusEvidence  one corpus passage for research-resolve, carrying its provenance + authority
+ * @property {number} docId @property {string} [title] @property {number} [authorityTier] @property {string} [paraId]
+ * @property {string} snippet @property {number} [entityId]  the entity that passage is already bound to, if any
  */
 
 /**
@@ -104,6 +109,9 @@
  * @typedef {Object} Deps
  * @property {LLM} llm @property {ModelCatalog} models @property {Store} store @property {Profiler} profiler
  * @property {Logger} [log]
+ * @property {WebResearch} [web]   OPTIONAL out-of-corpus research (research-resolve); absent → corpus-only
+ * @typedef {Object} WebResearch
+ * @property {(query: string) => Promise<{answer:string, sources:{url:string,title?:string}[]}|null>} research  a web/Wikipedia/Perplexity lookup that RETURNS ITS SOURCES (mandatory provenance — external evidence is the lowest authority tier)
  */
 
 export {}; // types only
