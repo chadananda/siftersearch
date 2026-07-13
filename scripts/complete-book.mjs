@@ -27,9 +27,10 @@ const mark = (stage) => { try { fs.writeFileSync(STATUS_PATH, JSON.stringify({ d
   stageIndex: STAGES.indexOf(stage), totalStages: STAGES.length, startedAt: STARTED, updatedAt: new Date().toISOString() })); } catch { /* best-effort */ } };
 
 let createdIds = [];
-if (want('disambiguate')) { mark('disambiguate'); log('disambiguate', await rag.disambiguate(doc, { concurrency: 4 })); }
+const CC = Number(opt.cc) || 8; // per-paragraph stage concurrency (claims is the bottleneck on dense books); override with --cc=N
+if (want('disambiguate')) { mark('disambiguate'); log('disambiguate', await rag.disambiguate(doc, { concurrency: CC })); }
 if (want('mentions'))     { mark('mentions'); log('mentions', await rag.entities.mentions(doc)); }
-if (want('claims'))       { mark('claims'); log('claims', await rag.entities.claims(doc, { resume: true, threshold: 0.9, concurrency: 4 })); }
+if (want('claims'))       { mark('claims'); log('claims', await rag.entities.claims(doc, { resume: true, threshold: 0.9, concurrency: CC })); }
 if (want('reconcile'))    { mark('reconcile'); log('reconcile', await rag.entities.reconcile(doc, { resume: true, threshold: 0.9, concurrency: 4 })); } // FULL — no --limit
 if (want('research'))     { mark('research'); log('research-resolve', await rag.entities.researchResolve(doc, { concurrency: 3 })); } // resolve uncertains: corpus+web
 if (want('project'))      { mark('project'); const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId: doc }); createdIds = r.createdIds || []; log('project', r); }
