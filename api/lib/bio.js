@@ -1,7 +1,7 @@
 // Shared biography data layer — the single source of truth for person records (list + dossier) and source-book
 // facets, used by BOTH the internal /api/graph/bio/* routes and the official /api/v1/people API.
 import { queryAll, queryOne } from './db.js';
-import { INTEGRATION_PHASES } from './integration-phases.js';
+import { INTEGRATION_PHASES, AUTHOR_ROUTING, PINNED_DOCS } from './integration-phases.js';
 import { chatCompletion } from './ai.js';
 import fs from 'fs';
 import path from 'path';
@@ -88,12 +88,20 @@ async function computeActiveBook(staticDocs, meta) {
 // The phase structure is cached briefly; the `active` block is recomputed on EVERY call so polling stays live.
 let _progCache = null, _progAt = 0;
 export async function getIntegrationProgress() {
-  // Resolve each phase's doc-ids: static `docs`, or the dynamic classified histories catalog.
   const historyBooks = readHistoryCatalog();
-  const staticDocs = [...new Set(INTEGRATION_PHASES.flatMap(p => p.docs || []))];
-  const histDocs = historyBooks.map(b => b.id).filter(id => !staticDocs.includes(id));
   const genreOf = Object.fromEntries(historyBooks.map(b => [b.id, b.genre]));
-  const allDocs = [...new Set([...staticDocs, ...histDocs])];
+  // AUTHOR routing — every Balyuzi/Taherzadeh (→foundation) and Rabbani (→primary) Bahá'í Book, so the whole
+  // master-historian + Rabbani corpus lands in the right phase, not just the curated anchors.
+  const routed = await queryAll(`SELECT id, author FROM docs WHERE collection='Baha''i Books'
+      AND deleted_at IS NULL AND duplicate_of IS NULL
+      AND (author LIKE '%Balyuzi%' OR author LIKE '%Taherzadeh%' OR author LIKE '%Rabbani%')`);
+  // phaseByDoc: static anchors → author routing → explicit pins → classified genre (biographies/histories).
+  const phaseByDoc = {};
+  for (const p of INTEGRATION_PHASES) for (const id of (p.docs || [])) phaseByDoc[id] = p.key;
+  for (const r of routed) { const rule = AUTHOR_ROUTING.find(x => x.re.test(r.author || '')); if (rule) phaseByDoc[r.id] = rule.phase; }
+  for (const [id, phk] of Object.entries(PINNED_DOCS)) phaseByDoc[Number(id)] = phk;
+  for (const b of historyBooks) if (!phaseByDoc[b.id]) phaseByDoc[b.id] = (b.genre === 'biography' ? 'biographies' : 'histories');
+  const allDocs = [...new Set(Object.keys(phaseByDoc).map(Number))];
 
   // Size + title/author for EVERY book (chunked to stay under the SQLite param limit).
   const meta = {};
@@ -102,39 +110,42 @@ export async function getIntegrationProgress() {
     (await queryAll(`SELECT id, title, author, paragraph_count FROM docs WHERE id IN (${cp})`, chunk))
       .forEach(d => { meta[d.id] = d; });
   }
-  const active = await computeActiveBook(staticDocs, meta); // always fresh (cheap) → live polling
+  const bySize = (a, b) => (meta[b]?.paragraph_count || 0) - (meta[a]?.paragraph_count || 0);
+  // Ordered book-id list per phase: dynamic → its genre by size; static → curated anchors first, then the
+  // author-routed / pinned extras by size. Curated (non-dynamic) phases feed the grounded metrics in sequence.
+  const inPhase = (k) => allDocs.filter(id => phaseByDoc[id] === k);
+  const phaseBookIds = {};
+  for (const p of INTEGRATION_PHASES) {
+    if (p.dynamic) phaseBookIds[p.key] = inPhase(p.key).sort(bySize);
+    else { const anchors = p.docs || []; phaseBookIds[p.key] = [...anchors, ...inPhase(p.key).filter(id => !anchors.includes(id)).sort(bySize)]; }
+  }
+  const gradedDocs = INTEGRATION_PHASES.filter(p => !p.dynamic).flatMap(p => phaseBookIds[p.key]);
+  const active = await computeActiveBook(gradedDocs, meta); // always fresh (cheap) → live polling
 
   if (_progCache && Date.now() - _progAt < 60000) return { ..._progCache, active };
 
-  // Grounded metrics run only over the curated (static) docs — histories aren't grounded yet.
-  const ph = staticDocs.map(() => '?').join(',');
+  // Grounded metrics run over the curated (non-dynamic) docs in phase order — biographies/histories aren't grounded yet.
+  const ph = gradedDocs.map(() => '?').join(',');
   const counts = {}, unresolved = {};
   (await queryAll(`SELECT doc_id, COUNT(*) n FROM (
       SELECT doc_id, entity_id FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL
       UNION SELECT doc_id, entity_id FROM entity_claims WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL
-    ) GROUP BY doc_id`, [...staticDocs, ...staticDocs])).forEach(r => { counts[r.doc_id] = r.n; });
+    ) GROUP BY doc_id`, [...gradedDocs, ...gradedDocs])).forEach(r => { counts[r.doc_id] = r.n; });
   (await queryAll(`SELECT CAST(json_extract(payload,'$.docId') AS INT) d, COUNT(*) n FROM entity_decisions
       WHERE kind='uncertain' AND status='proposed' GROUP BY d`)).forEach(r => { if (r.d) unresolved[r.d] = r.n; });
-  // New-in-sequence: the first phase-book (in manifest order) to ground each entity → each book's NET contribution.
-  const order = {}; staticDocs.forEach((d, i) => { order[d] = i; });
+  // New-in-sequence: the first book (in grounding order) to ground each entity → each book's NET contribution.
+  const order = {}; gradedDocs.forEach((d, i) => { order[d] = i; });
   const firstSeen = {}, newBy = {};
   (await queryAll(`SELECT doc_id d, entity_id e FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL
-      UNION SELECT doc_id, entity_id FROM entity_claims WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL`, [...staticDocs, ...staticDocs]))
+      UNION SELECT doc_id, entity_id FROM entity_claims WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL`, [...gradedDocs, ...gradedDocs]))
     .forEach(({ d, e }) => { const o = order[d]; if (firstSeen[e] === undefined || o < firstSeen[e]) firstSeen[e] = o; });
-  for (const e in firstSeen) { const d = staticDocs[firstSeen[e]]; newBy[d] = (newBy[d] || 0) + 1; }
+  for (const e in firstSeen) { const d = gradedDocs[firstSeen[e]]; newBy[d] = (newBy[d] || 0) + 1; }
 
   const book = (id, extra = {}) => ({ id, title: meta[id]?.title || `doc ${id}`, author: meta[id]?.author || null,
     size: meta[id]?.paragraph_count || 0, persons: counts[id] || 0, newInSequence: newBy[id] || 0,
     unresolved: unresolved[id] || 0, done: (counts[id] || 0) > 0, ...extra });
   const phases = INTEGRATION_PHASES.map(p => {
-    let books;
-    if (p.dynamic) {
-      // Biographies / Histories: this phase holds one genre; largest (most content) first.
-      books = histDocs.filter(id => genreOf[id] === p.dynamic).map(id => book(id, { genre: p.dynamic }))
-        .sort((a, b) => b.size - a.size);
-    } else {
-      books = p.docs.map(id => book(id));
-    }
+    const books = phaseBookIds[p.key].map(id => book(id, p.dynamic ? { genre: genreOf[id] } : {}));
     return { key: p.key, label: p.label, blurb: p.blurb, upcoming: !!p.upcoming, books,
       done: books.filter(b => b.done).length, total: books.length,
       persons: books.reduce((s, b) => s + b.persons, 0), paras: books.reduce((s, b) => s + b.size, 0) };
@@ -144,7 +155,7 @@ export async function getIntegrationProgress() {
   // Cumulative UNIQUE people grounded across the curated books (deduped — a figure in N books counts once).
   const cumulativeUnique = (await queryAll(`SELECT COUNT(*) n FROM (
       SELECT entity_id e FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL
-      UNION SELECT entity_id FROM entity_claims WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL)`, [...staticDocs, ...staticDocs]))[0]?.n || 0;
+      UNION SELECT entity_id FROM entity_claims WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL)`, [...gradedDocs, ...gradedDocs]))[0]?.n || 0;
   const totalParas = phases.reduce((s, p) => s + p.paras, 0);
   _progCache = { phases, doneBooks, totalBooks, cumulativeUnique, totalParas, goal: 'all history absorbed' };
   _progAt = Date.now();
