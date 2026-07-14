@@ -44,19 +44,27 @@
   let aiReasoning = $state(null);  // { summary (integrated markdown explanation), evidence: {id} } — the AI's answer
   let aiError = $state(null);      // surfaced when a meaning-search fetch fails (never silent)
   let showProgress = $state(false), progress = $state(null);   // book-integration roadmap popup
-  let simPct = $state(0), _simDoc = null;  // client-SIMULATED active-book % — creeps between polls so a long stage never looks frozen
+  let simPct = $state(0), _simDoc = null, _lastReal = 0;  // client-SIMULATED active-book % — creeps between polls so a long stage never looks frozen
+  let pollRate = $state(null);  // smoothed per-poll (~30s) REAL-% delta → drives display precision (slow book → more decimals)
   async function fetchProgress() {
     try {
       const r = await fetch(`${API}/api/v1/people/progress`); if (!r.ok) return;
       progress = await r.json();
       const a = progress?.active;
-      if (!a) { simPct = 0; _simDoc = null; }
-      // New book (or first sight) → snap to its real %. Same book → catch up to the fresh real %, never rewinding
-      // (a cache-jitter dip in the real % shouldn't pull the bar backward).
-      else if (a.docId !== _simDoc) { simPct = a.percent ?? 0; _simDoc = a.docId; }
-      else if ((a.percent ?? 0) > simPct) simPct = a.percent;
+      if (!a) { simPct = 0; _simDoc = null; pollRate = null; }
+      // New book (or first sight) → snap to its real % + reset the rate. Same book → catch up to the fresh real %
+      // (never rewinding on a cache-jitter dip) and track how fast the REAL % moves per poll (EMA-smoothed).
+      else if (a.docId !== _simDoc) { simPct = a.percent ?? 0; _simDoc = a.docId; _lastReal = a.percent ?? 0; pollRate = null; }
+      else {
+        const d = Math.abs((a.percent ?? 0) - _lastReal); _lastReal = a.percent ?? 0;
+        pollRate = pollRate == null ? d : pollRate * 0.5 + d * 0.5;   // EMA avoids precision flicker at the threshold
+        if ((a.percent ?? 0) > simPct) simPct = a.percent;
+      }
     } catch { /* offline — modal shows a note */ }
   }
+  // Display precision: a fast (small) book reads fine at 2 decimals, but a large book whose REAL % moves <5% per 30s
+  // poll needs 2 EXTRA decimals to visibly climb. First poll (rate unknown) → guess by book size.
+  const pctDigits = $derived(pollRate == null ? ((progress?.active?.size ?? 0) >= 600 ? 4 : 2) : (pollRate < 5 ? 4 : 2));
   function openProgress() { showProgress = true; if (!progress) fetchProgress(); }
   // The progress panel is PERSISTENT (a collapsed side rail): fetch on mount and poll every 30s so it always shows a
   // live book count + the grounding book, whether the panel is open or not.
@@ -200,7 +208,7 @@
       <span class="prog-rail-num">{progress ? (progress.cumulativeUnique ?? 0).toLocaleString() : '·'}</span>
       <span class="prog-rail-cap">souls</span>
       {#if progress?.active}
-        <span class="prog-rail-live"><span class="prog-rail-dot" aria-hidden="true"></span>{simPct.toFixed(2)}%</span>
+        <span class="prog-rail-live"><span class="prog-rail-dot" aria-hidden="true"></span>{simPct.toFixed(pctDigits)}%</span>
       {:else if progress}
         <span class="prog-rail-books">{progress.doneBooks}/{progress.totalBooks}</span>
       {/if}
@@ -274,7 +282,7 @@
                   <div class="prog-active-meta">{stageLabel(progress.active.stage)}{#if progress.active.stageIndex != null} · stage {progress.active.stageIndex + 1}/{progress.active.totalStages}{/if}{#if progress.active.claimsExtracted} · {progress.active.claimsExtracted.toLocaleString()} claims{/if}</div>
                   {#if progress.active.percent != null}<div class="prog-active-bar"><span style="width:{simPct}%"></span></div>{/if}
                 </div>
-                {#if progress.active.percent != null}<span class="prog-active-pct">{simPct.toFixed(2)}%</span>{/if}
+                {#if progress.active.percent != null}<span class="prog-active-pct">{simPct.toFixed(pctDigits)}%</span>{/if}
               </div>
             {/if}
             <p class="prog-fine">Per-book <span class="pb-new">+N</span> = people first grounded there; ¶ = size in paragraphs. The book being grounded shows a live progress bar. Click a phase to expand.</p>
@@ -296,7 +304,7 @@
                           <span class="prog-book-title">{b.title}</span>
                           <span class="col-size">
                             {#if progress.active && b.id === progress.active.docId && progress.active.percent != null}
-                              <span class="pbp-track" title="{stageLabel(progress.active.stage)}"><span class="pbp-fill" style="width:{simPct}%"></span></span><span class="pbp-pct">{simPct.toFixed(2)}%</span>
+                              <span class="pbp-track" title="{stageLabel(progress.active.stage)}"><span class="pbp-fill" style="width:{simPct}%"></span></span><span class="pbp-pct">{simPct.toFixed(pctDigits)}%</span>
                             {:else if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}
                           </span>
                           <span class="col-new" title="people first grounded via this book">{#if b.done && b.newInSequence}+{b.newInSequence.toLocaleString()}{/if}</span>
