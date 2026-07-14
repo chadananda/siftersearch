@@ -32,7 +32,7 @@ export async function run(ctx, docId, opts = {}) {
     const row = decisionRow(parsed, cluster, collectEvidence(parsed, corpus, web), docId);
     if (parsed.verdict === 'hold') stats.held++; else stats.byKind[row.kind] = (stats.byKind[row.kind] || 0) + 1;
     decisions.push(row);
-  });
+  }, opts.onProgress);
 
   if (!opts.dryRun && decisions.length) stats.written = await ctx.store.saveDecisions(decisions);
   ctx.log.info?.({ docId, ...stats }, 'entities/research-resolve');

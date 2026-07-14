@@ -47,7 +47,7 @@ export async function run(ctx, docId, opts = {}) {
     stats.byKind[row.kind] = (stats.byKind[row.kind] || 0) + 1;
     decisions.push(row);
     await flush();                    // checkpoint once the buffer fills
-  });
+  }, opts.onProgress);
   if (opts.dryRun) { ctx.log.info?.({ docId, ...stats }, 'entities/reconcile'); return { ...stats, proposed: 0, decisions }; }
   await flush(true);                  // final partial batch
   ctx.log.info?.({ docId, ...stats }, 'entities/reconcile');

@@ -30,7 +30,7 @@ export async function run(ctx, opts = {}) {
     stats.kept += (parsed.distinct || []).length;
     if (!same.length) return;
     plans.push({ canonical: parsed.canonical, merge: same, reason: parsed.reason, key: g.key });
-  });
+  }, opts.onProgress);
 
   if (opts.dryRun) return { ...stats, plans };
   for (const p of plans) {

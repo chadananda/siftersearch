@@ -88,7 +88,12 @@ async function computeActiveBook(staticDocs, meta) {
   // Other stages get a 0.5 mid-estimate (they're short). percent = (stageIndex + withinFrac) / totalStages.
   const stageName = stage || GROUNDING_STAGES[si] || 'grounding';
   let withinFrac = 0.5;
-  if (stageName === 'disambiguate') {
+  // PREFERRED: the executor reports REAL per-item progress (paras/clusters/uncertains settled ÷ job size) into
+  // run_json.withinFrac — every long stage flows through pool()'s onProgress. Use it directly (no DB counts) so the
+  // bar climbs continuously through EVERY stage; a flat bar then means work actually stopped, not "unobserved".
+  if (run && typeof run.withinFrac === 'number') {
+    withinFrac = Math.max(0, Math.min(0.999, run.withinFrac));
+  } else if (stageName === 'disambiguate') {
     // Disambiguate is a full model pass over every prose paragraph — measure it directly (context-filled / total prose)
     // so the bar climbs through it instead of sitting flat.
     const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL`, [docId]))[0]?.n || 0;

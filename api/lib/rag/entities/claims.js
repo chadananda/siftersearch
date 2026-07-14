@@ -60,7 +60,7 @@ export async function run(ctx, docId, opts = {}) {
       buf.push(claimRow(c, { docId, pid: p.pid, era, relKeys, methodVersion: version, extractor, batch }));
     }
     if (buf.length >= FLUSH_ROWS) await flush();
-  });
+  }, opts.onProgress);
   await flush();                                                     // final partial batch
   ctx.log.info?.({ docId, ...stats }, 'entities/claims');
   return stats;

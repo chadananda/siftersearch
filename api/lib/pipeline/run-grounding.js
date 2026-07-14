@@ -29,9 +29,21 @@ export async function runGrounding(docId, opts = {}) {
   // enter() reports the live stage into doc_pipeline.run_json (the single truth bio.js/UI/API read) AND calls onStage.
   const enter = async (s) => {
     currentRun = { docId, stage: s, stageIndex: GROUNDING_STAGES.indexOf(s), totalStages: GROUNDING_STAGES.length,
+      withinFrac: 0, itemsDone: 0, itemsTotal: 0,
       pid: process.pid, host: os.hostname(), startedAt, updatedAt: new Date().toISOString() };
     if (report) await writeRun();
     await onStage?.(s, { index: GROUNDING_STAGES.indexOf(s), total: GROUNDING_STAGES.length });
+  };
+  // Per-item within-stage progress from the stages' pool() → run_json.withinFrac, so the bar reflects REAL work
+  // done (job size = total items) and a flat bar means work actually stopped. Throttled to ~3s so a per-paragraph
+  // callback doesn't hammer the single writer; the value is always kept fresh in-memory for the heartbeat too.
+  let lastProg = 0;
+  const onProgress = (done, total) => {
+    if (!currentRun || !total) return;
+    currentRun.itemsDone = done; currentRun.itemsTotal = total;
+    currentRun.withinFrac = Math.min(0.999, done / total);
+    const now = Date.now();
+    if (report && (now - lastProg > 3000 || done === total)) { lastProg = now; currentRun.updatedAt = new Date().toISOString(); writeRun(); }
   };
   const emit = (s, r) => { onResult?.(s, r); return r; };
 
@@ -41,16 +53,16 @@ export async function runGrounding(docId, opts = {}) {
   const hb = report ? setInterval(() => { if (currentRun) { currentRun.updatedAt = new Date().toISOString(); writeRun(); } }, 30000) : null;
 
   try {
-    if (want('disambiguate')) { await enter('disambiguate'); emit('disambiguate', await rag.disambiguate(docId, { concurrency: cc })); }
+    if (want('disambiguate')) { await enter('disambiguate'); emit('disambiguate', await rag.disambiguate(docId, { concurrency: cc, onProgress })); }
     if (want('mentions'))     { await enter('mentions'); emit('mentions', await rag.entities.mentions(docId)); }
-    if (want('claims'))       { await enter('claims'); emit('claims', await rag.entities.claims(docId, { resume: true, threshold: 0.9, concurrency: cc })); }
-    if (want('reconcile'))    { await enter('reconcile'); emit('reconcile', await rag.entities.reconcile(docId, { resume: true, threshold: 0.9, concurrency: 4 })); } // FULL — no --limit
-    if (want('research'))     { await enter('research'); emit('research', await rag.entities.researchResolve(docId, { concurrency: 3 })); } // resolve uncertains: corpus+web
+    if (want('claims'))       { await enter('claims'); emit('claims', await rag.entities.claims(docId, { resume: true, threshold: 0.9, concurrency: cc, onProgress })); }
+    if (want('reconcile'))    { await enter('reconcile'); emit('reconcile', await rag.entities.reconcile(docId, { resume: true, threshold: 0.9, concurrency: 4, onProgress })); } // FULL — no --limit
+    if (want('research'))     { await enter('research'); emit('research', await rag.entities.researchResolve(docId, { concurrency: 3, onProgress })); } // resolve uncertains: corpus+web
     if (want('project'))      { await enter('project'); const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId }); out.createdIds = r.createdIds || []; emit('project', r); }
     if (want('link'))         { await enter('link'); execSync(`DOC=${docId} WRITE=1 SIFTER_WRITER_URL=${writer} node scripts/entity-read/link-claims.mjs`, { stdio: 'inherit' }); }
-    if (want('merge'))        { await enter('merge'); emit('merge', await rag.entities.merge({ concurrency: 4 })); } // same-name dedup by evidence
-    if (want('dedup') && out.createdIds.length) { await enter('dedup'); emit('dedup', await rag.entities.dedupGuard({ entityIds: out.createdIds })); } // AFTER link — new entities need bound claims
-    if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { resume: true })); }
+    if (want('merge'))        { await enter('merge'); emit('merge', await rag.entities.merge({ concurrency: 4, onProgress })); } // same-name dedup by evidence
+    if (want('dedup') && out.createdIds.length) { await enter('dedup'); emit('dedup', await rag.entities.dedupGuard({ entityIds: out.createdIds, onProgress })); } // AFTER link — new entities need bound claims
+    if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { resume: true, onProgress })); }
 
     if (want('verify')) {
       await enter('verify');

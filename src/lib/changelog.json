@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-14T23:11:07.776Z",
+  "generated": "2026-07-14T23:57:37.770Z",
   "entries": [
+    {
+      "hash": "375b3cfe",
+      "date": "2026-07-14",
+      "type": "Other",
+      "description": "Checkpoint decisions in batches + scope resume by book (the binding fix)",
+      "scope": null
+    },
     {
       "hash": "8716bf76",
       "date": "2026-07-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Bulk-meili-sync use MEILISEARCH_KEY + MEILI_HOST env var names",
       "scope": null
-    },
-    {
-      "hash": "8894a238",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Bulk-meili-sync source_url from docs not content",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-14": [
+      {
+        "hash": "375b3cfe",
+        "date": "2026-07-14",
+        "type": "Other",
+        "description": "Checkpoint decisions in batches + scope resume by book (the binding fix)",
+        "scope": null
+      },
       {
         "hash": "8716bf76",
         "date": "2026-07-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Bulk-meili-sync use MEILISEARCH_KEY + MEILI_HOST env var names",
-        "scope": null
-      },
-      {
-        "hash": "8894a238",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Bulk-meili-sync source_url from docs not content",
         "scope": null
       }
     ]

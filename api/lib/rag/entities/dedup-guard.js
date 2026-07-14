@@ -41,7 +41,7 @@ export async function run(ctx, opts = {}) {
     decisions.push({ kind: 'merge', targetKind: 'entity', targetIds: [canonical, ...merge],
       payload: { canonical, merge }, evidence: { via: 'grounded-facts', candidates: cands.map((c) => c.entityId) },
       rationale: parsed.reason, actor: 'model', actorTier: 2, confidence: parsed.confidence ?? 0.7, status: 'proposed' });
-  });
+  }, opts.onProgress);
 
   if (!opts.dryRun && decisions.length) stats.proposed = await ctx.store.saveDecisions(decisions);
   ctx.log.info?.(stats, 'entities/dedup-guard');

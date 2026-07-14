@@ -24,6 +24,9 @@ export async function run(ctx, docId, opts = {}) {
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 4000 : 1500); // reasoning models emit more
   const latin = profile.script === 'latin';
   const stats = { paras: paras.length, segments: segs.length, done: 0, failed: 0, escalated: 0, dropped: 0 };
+  // Report per PARAGRAPH (not per segment): a segment is many sequential model calls, so per-segment reporting
+  // would go flat for a whole window. total = paras.length is the known job size; progress = paras settled.
+  const report = () => opts.onProgress?.(stats.done + stats.failed, paras.length);
 
   // Each segment is one warm cache; within it, calls are sequential and carry a tiny STATE (place · era · a
   // few recent resolves) so consecutive same-scene calls share SYSTEM+SCENE+STATE. Segments run concurrently.
@@ -32,14 +35,14 @@ export async function run(ctx, docId, opts = {}) {
     for (const p of seg) {
       const user = buildUser(p, { place, era, known });
       const { parsed, escalated } = await ctx.model.runLadder({ route, system, user, parse: parseNote, maxTokens, denseHint: DENSE_HINT });
-      if (!parsed) { stats.failed++; continue; }
+      if (!parsed) { stats.failed++; report(); continue; }
       const resolve = latin ? gateResolves(parsed.resolve, p.text) : parsed.resolve; // drop invented names (Latin only)
       stats.dropped += parsed.resolve.length - resolve.length;
       if (parsed.place) place = parsed.place;
       if (parsed.era) era = parsed.era;
       if (resolve.length) { known.push(...resolve); while (known.length > 5) known.shift(); }
       if (!opts.dryRun) await ctx.store.saveContext(p.id, renderNote({ ...parsed, resolve }), version);
-      stats.done++; if (escalated) stats.escalated++;
+      stats.done++; if (escalated) stats.escalated++; report();
     }
   });
   ctx.log.info?.({ docId, ...stats }, 'disambiguate');

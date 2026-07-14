@@ -2,9 +2,27 @@
 import { describe, it, expect } from 'vitest';
 import { makeModelEngine } from '../../api/lib/rag/kernel/model.js';
 import { createCorpusRAG } from '../../api/lib/rag/index.js';
+import { pool } from '../../api/lib/rag/kernel/run.js';
 import { fakeLLM, fakeCatalog, memStore, fakeProfiler, makeRag, parseIdea } from './kit.js';
 
 const engine = (llm) => makeModelEngine({ llm, catalog: fakeCatalog() });
+
+describe('kernel/run — pool progress reporting', () => {
+  it('reports (done,total) after each item settles, monotonically, ending at total', async () => {
+    const items = [1, 2, 3, 4, 5];
+    const seen = [];
+    const out = await pool(2, items, async (x) => x * 10, (done, total) => seen.push([done, total]));
+    expect(out).toEqual([10, 20, 30, 40, 50]);          // results in input order, concurrency respected
+    expect(seen.length).toBe(5);                         // one report per item
+    expect(seen.map((s) => s[0])).toEqual([1, 2, 3, 4, 5]); // done counts monotonically 1..N
+    expect(seen.every((s) => s[1] === 5)).toBe(true);    // total is the known job size throughout
+  });
+
+  it('is a no-op without a callback (back-compatible) and handles empty input', async () => {
+    expect(await pool(3, [], async (x) => x)).toEqual([]);
+    expect(await pool(3, [7, 8], async (x) => x + 1)).toEqual([8, 9]); // no onProgress → still works
+  });
+});
 
 describe('kernel/model — routing', () => {
   it('resolves provider from the catalog; local routes transparently; unknown throws', () => {

@@ -44,40 +44,33 @@
   let aiReasoning = $state(null);  // { summary (integrated markdown explanation), evidence: {id} } — the AI's answer
   let aiError = $state(null);      // surfaced when a meaning-search fetch fails (never silent)
   let showProgress = $state(false), progress = $state(null);   // book-integration roadmap popup
-  let simPct = $state(0), _simDoc = null, _lastReal = 0, _lastTime = 0, _rate = 0;  // simulated % + estimated climb rate (%/ms)
+  // simPct EASES toward the real backend percent (`_target`) and is strictly MONOTONIC — it never snaps backward.
+  // The backend now reports REAL per-item within-stage progress, so the bar tracks actual work: when it advances,
+  // work is happening; when it holds, work has genuinely stalled (no more fake creep masking a stall).
+  let simPct = $state(0), _simDoc = null, _target = 0;
   async function fetchProgress() {
     try {
       const r = await fetch(`${API}/api/v1/people/progress`); if (!r.ok) return;
       progress = await r.json();
       const a = progress?.active;
-      if (!a) { simPct = 0; _simDoc = null; }
-      // New book → snap + seed a small default rate. Same book → RESET simPct to the fresh real %, and recompute the
-      // count-up RATE from how much the real % gained since the last poll (%/ms, EMA-smoothed). The ticker climbs at
-      // that rate until the next poll re-anchors it.
-      else if (a.docId !== _simDoc) { simPct = a.percent ?? 0; _simDoc = a.docId; _lastReal = a.percent ?? 0; _lastTime = Date.now(); _rate = 0.0002; }
-      else {
-        const now = Date.now(), dt = Math.max(1, now - _lastTime), gain = Math.max(0, (a.percent ?? 0) - _lastReal);
-        _rate = _rate * 0.4 + (gain / dt) * 0.6;
-        simPct = a.percent ?? 0; _lastReal = a.percent ?? 0; _lastTime = now;
-      }
+      if (!a) { simPct = 0; _target = 0; _simDoc = null; }
+      else if (a.docId !== _simDoc) { simPct = a.percent ?? 0; _target = a.percent ?? 0; _simDoc = a.docId; } // new book → snap
+      else { _target = Math.max(_target, a.percent ?? 0); }   // same book → advance the target (monotonic; never lower)
     } catch { /* offline — modal shows a note */ }
   }
   function openProgress() { showProgress = true; if (!progress) fetchProgress(); }
-  // The progress panel is PERSISTENT (a collapsed side rail): fetch on mount and poll every 30s so it always shows a
-  // live book count + the grounding book, whether the panel is open or not.
+  // The progress panel is PERSISTENT (a collapsed side rail): fetch on mount and poll so it always shows a live
+  // book count + the grounding book, whether the panel is open or not.
   $effect(() => {
     if (typeof window === 'undefined') return;
     fetchProgress();
-    const poll = setInterval(fetchProgress, 12000);
-    // Between polls, SIMULATE forward motion: ease up to the last real %, then drift a little past it (capped) so a
-    // long stage (claims/hype) keeps visibly advancing; the next poll re-anchors. Illusion only — never reaches 100%,
-    // and completion clears `active` (→ simPct 0), so a finished book doesn't sit at 96%.
+    const poll = setInterval(fetchProgress, 8000);
+    // Between polls, EASE simPct up to the real target so the climb looks smooth (asymptotic approach + a tiny floor
+    // to close the last sliver). Never exceeds the target and never decreases — so the displayed number is honest:
+    // it moves exactly when real work moves it. Completion clears `active` (→ simPct 0), so a done book doesn't stick.
     const sim = setInterval(() => {
       const a = progress?.active; if (!a) { if (simPct) simPct = 0; return; }
-      // Climb continuously at the estimated rate (`_rate` %/ms × the 200ms tick). Never freezes — a tiny floor keeps it
-      // moving even when the measured rate is ~0. Each poll RESETS simPct to the fresh real % and recomputes the rate,
-      // so it re-anchors to the truth and keeps climbing from there. Hard cap 99 until completion clears `active`.
-      simPct = Math.min(99, simPct + Math.max(_rate * 200, 0.02));
+      if (simPct < _target) simPct = Math.min(_target, simPct + Math.max((_target - simPct) * 0.06, 0.03));
     }, 200);
     return () => { clearInterval(poll); clearInterval(sim); };
   });

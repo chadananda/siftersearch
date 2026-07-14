@@ -23,14 +23,16 @@ export async function run(ctx, docId, opts = {}) {
   const route = { model: opts.model ?? profile.models.hype, fallback: opts.fallback ?? profile.fallback };
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 1500);
   const stats = { paras: paras.length, segments: segs.length, done: 0, failed: 0, escalated: 0 };
+  // Report per PARAGRAPH — HyPE runs one call per paragraph inside each segment; total = paras.length.
+  const report = () => opts.onProgress?.(stats.done + stats.failed, paras.length);
 
   await pool(opts.concurrency ?? 5, segs, async (seg) => {
     for (const p of seg) {
       const user = buildUser(p);
       const { parsed, escalated } = await ctx.model.runLadder({ route, system, user, parse: parseHype, maxTokens, temperature: 0.3, denseHint: DENSE_HINT });
-      if (!parsed) { stats.failed++; continue; }
+      if (!parsed) { stats.failed++; report(); continue; }
       if (!opts.dryRun) await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis);
-      stats.done++; if (escalated) stats.escalated++;
+      stats.done++; if (escalated) stats.escalated++; report();
     }
   });
   ctx.log.info?.({ docId, ...stats }, 'retrieval/hype');
