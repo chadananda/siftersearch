@@ -70,3 +70,4 @@ tests/chat/runs/results-*.json
 /db-*.json
 /person-gloss-plan.json
 .work/
+data/siftersearch-gazetteer.json
