@@ -8,6 +8,7 @@
 import { assertDisambiguated } from '../kernel/gate.js';
 import { profileFor } from '../kernel/profile.js';
 import { pool } from '../kernel/run.js';
+import { IDENTITY_DOCTRINE } from './evidence-doctrine.js';
 
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
@@ -44,7 +45,9 @@ export async function run(ctx, docId, opts = {}) {
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 
-export const SYSTEM = `You are an entity-resolution adjudicator for a prosopography. Given a MENTION CLUSTER (an entity as the source resolves it, with representative scenes) and CANDIDATE existing PERSON entities (found by transliteration-invariant name recall — CANDIDATES, not matches):
+export const SYSTEM = `${IDENTITY_DOCTRINE}
+
+You are an entity-resolution adjudicator for a prosopography. Given a MENTION CLUSTER (an entity as the source resolves it, with representative scenes) and CANDIDATE existing PERSON entities (found by transliteration-invariant name recall — CANDIDATES, not matches):
 FIRST classify the cluster's TYPE. If it is NOT an individual human — a PLACE (fort, city, house, shrine), a WORK (tablet/book), a CONCEPT/term, a RELIGION or COMMUNITY, a GROUP, an EVENT/upheaval, or a messianic archetype — return {"verdict":"other","type":"place|work|concept|community|group|event","canonical":"<the reference>","entity_id":null,"decisive":"not a person","confidence":1}.
 If it IS a person, decide by EVIDENCE:
 • "link" — the cluster IS one specific candidate (same person: compatible role, place, era, connections). Give its id.

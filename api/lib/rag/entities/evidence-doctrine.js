@@ -1,0 +1,10 @@
+// The ONE identity-adjudication doctrine shared by every entity resolver (reconcile · merge · dedup-guard ·
+// research-resolve), so "same person vs namesake" is judged identically everywhere. Encodes the hard lesson:
+// identity is decided by DISCRIMINATIVE evidence, never by a shared name and never by a shared CATEGORY
+// (role/side/status). The Herrigel rule — two people who share a category are not thereby the same person.
+export const IDENTITY_DOCTRINE = `IDENTITY IS DECIDED BY DISCRIMINATIVE EVIDENCE — never by a shared name alone, and never by a shared CATEGORY.
+DISCRIMINATIVE facts (identity-bearing — a match is evidence of the SAME person): a specific name+NISBA (…-i-Yazdí, …-i-Qazvíní), death PLACE+YEAR, a NAMED relative (father/spouse/child/sibling by name), a unique office held in a NAMED place, birth date/place, or a distinctive personal title/epithet tied to that one person.
+CATEGORY facts (NON-identifying — a match is NEVER a basis to merge): side/allegiance (Bábí, Bahá'í, opponent, Covenant-breaker), role or status type (believer, martyr, cleric, prince, governor, merchant, poet, king), a generic era, or a generic town-of-origin shared by many.
+Decide SAME only when at least one DISCRIMINATIVE fact matches AND no discriminative fact CONTRADICTS. ANY discriminative contradiction — a different nisba, a different death (place or year), a different named parent, an incompatible lifespan — is DECISIVE for DISTINCT (namesakes).
+Names are ASYMMETRIC: a distinctive/qualified name (carries a nisba, a title, or is foreign) merges on ABSENCE of contradiction; a BARE COMMON name (Muḥammad, Aḥmad, ‘Alí, Ḥusayn, Ḥasan, Mihdí, ‘Abdu'lláh…) requires a POSITIVE discriminative tie — absence of contradiction is NOT enough (it could be any of dozens). When evidence is thin, prefer DISTINCT / UNRESOLVED — a false merge fabricates one person from two.
+THE TRAP (never do this): "both are Covenant-breakers", "both were martyred", "both are from Zanján", "both are clerics" are CATEGORY matches, NOT identity. Example: Wilhelm Herrigel and Mírzá Muḥammad-‘Alí were both Covenant-breakers, yet are entirely DIFFERENT people.`;

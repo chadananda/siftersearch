@@ -6,6 +6,7 @@
 // authorityTier}; external evidence keeps {url, sourceTitle, authorityTier:'external-web'} — the LOWEST tier,
 // never allowed to outrank a corpus source. The entity-research methodology, as a pipeline stage.
 import { pool } from '../kernel/run.js';
+import { IDENTITY_DOCTRINE } from './evidence-doctrine.js';
 
 const CORPUS_THIN = 2;   // fewer than this many corpus hits from OTHER books → consult the web
 
@@ -40,7 +41,9 @@ export async function run(ctx, docId, opts = {}) {
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 
-export const SYSTEM = `You resolve the identity of an UNCERTAIN historical figure using RESEARCH EVIDENCE — do not guess, do not defer to a human.
+export const SYSTEM = `${IDENTITY_DOCTRINE}
+
+You resolve the identity of an UNCERTAIN historical figure using RESEARCH EVIDENCE — do not guess, do not defer to a human.
 You get the figure as a source resolved it, plus CORPUS EVIDENCE (passages from other books, each with an AUTHORITY tier — higher = more authoritative) and optionally EXTERNAL WEB evidence (lowest authority — corroboration only, never decisive over the corpus).
 Decide:
 • "link" — the figure IS one of the CANDIDATE entities (give its #id). Link ONLY to a candidate #id shown below — NEVER invent an id or put a name in entity_id. If no candidate matches, choose "create" or "hold".

@@ -7,8 +7,11 @@
 // "hard claims as evidence for merging/splitting". Uses store.searchGrounded (resolve-by-fact) + a grounded
 // corpus, so it is only meaningful AFTER prior books are grounded (the point of cumulative ordering).
 import { pool } from '../kernel/run.js';
+import { IDENTITY_DOCTRINE } from './evidence-doctrine.js';
 
-export const SYSTEM = `You decide whether TWO person records are the SAME individual recorded under different names/spellings — judged by their FACTS, not their names (names may be transliterated differently, or one may be an epithet).
+export const SYSTEM = `${IDENTITY_DOCTRINE}
+
+You decide whether TWO person records are the SAME individual recorded under different names/spellings — judged by their FACTS, not their names (names may be transliterated differently, or one may be an epithet).
 The SUBJECT and one or more CANDIDATES each come with distinctive facts (birth/death place & year, kinship, office/title, participation).
 Rules: SAME only when the load-bearing facts AGREE — same death (place+year), same kin, same office/era. ONE contradicting load-bearing fact (different death place/year, different father, incompatible era) → DISTINCT (namesakes). A shared role or era alone is NOT enough. Prefer DISTINCT when evidence is thin — a false merge fabricates one person from two.
 Return ONLY JSON: {"same":<candidate id or null>,"canonical":<id whose record is richer/more authoritative, or null>,"reason":"<=20 words"}.`;

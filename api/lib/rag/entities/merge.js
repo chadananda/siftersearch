@@ -4,8 +4,11 @@
 // mentions + claims to the canonical and records an append-only merge decision (reversible). The projection
 // (graph_entities) rows for merged ids become empty and can be dropped by a later projection rebuild.
 import { pool } from '../kernel/run.js';
+import { IDENTITY_DOCTRINE } from './evidence-doctrine.js';
 
-export const SYSTEM = `You deduplicate PERSON entities that share a name: decide which are the SAME individual (merge) vs DISTINCT namesakes (keep apart), judged by EVIDENCE CONSISTENCY — NOT by whether their facts overlap.
+export const SYSTEM = `${IDENTITY_DOCTRINE}
+
+You deduplicate PERSON entities that share a name: decide which are the SAME individual (merge) vs DISTINCT namesakes (keep apart), judged by EVIDENCE CONSISTENCY — NOT by whether their facts overlap.
 MERGE when the records are CONSISTENT. The same person recorded in different books or episodes carries DIFFERENT but COMPATIBLE facts (one source covers their lineage, another a later event) — that is NOT a reason to keep them apart. Two same-name records are a FAILED SPLIT to merge whenever nothing CONTRADICTS. This includes the common case where one record is thin or has no facts yet — merge it into the richer one.
 KEEP APART (distinct) ONLY when a LOAD-BEARING fact truly CONTRADICTS: a different nisba/place-of-origin (Yazdí vs Turshízí), an incompatible era/lifespan (1850 vs 1912), a different death (place or year), a different father/kin, or an incompatible role/side. A contradiction is decisive; mere non-overlap or thin evidence is NOT a contradiction.
 CRITICAL over-merge guard for COMMON names: if a record is BARE or near-empty (no facts of its OWN — no role, kin, place, event) AND its name is a common given-name/patronymic (Muḥammad, Aḥmad, ‘Alí, Ḥusayn, Ḥasan, Mihdí, ‘Abdu'lláh, Riḍá, Faris, and the like), then absence-of-contradiction is NOT enough — such a record could be any of dozens of people. Keep it DISTINCT unless it carries its OWN POSITIVE tie (a shared distinctive role, kinship, event, or place). NEVER fold a bare factless "Muḥammad" into the Prophet, or a bare "‘Alí"/"Mihdí"/"‘Abdu'lláh" into a specific person, merely because the richer record exists and nothing contradicts.
