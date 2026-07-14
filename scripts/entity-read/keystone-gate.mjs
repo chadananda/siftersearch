@@ -43,6 +43,9 @@ export const ROSTER = [
 // Relational descriptor → a DIFFERENT person defined by their relation to the figure. Drop from identity set.
 const RELATIONAL = /\b(sons?|daughters?|father|mother|brothers?|sisters?|wife|wives|husband|uncle|aunt|cousins?|widow|widower|servants?|attendants?|companions?|followers?|envoys?|messengers?|amanuensis|scribe|nephews?|niece|maid|parents?|consort|betrothed|in-law|Biglarbagi)\b/i;
 const REL_OF = /\bof\b/i; // "X of Y" — English connective never appears inside a transliterated personal name.
+// Descriptive-placeholder stub (a clause, not a name): "the ... who had grown friendly to X", "renamed ... by X".
+const DESCRIPTIVE = /\b(who|whom|which|renamed|unnamed|friendly|previously|transcribed|dictation|grown)\b/i;
+const isName = (n) => !(RELATIONAL.test(n) || REL_OF.test(n) || DESCRIPTIVE.test(n));
 
 const nisbaOf = (name) => (name.match(/-i-([A-Za-zÀ-ÿ‘’'`]+)/g) || []).join(',');
 
@@ -63,7 +66,7 @@ export async function runGate() {
   const results = [];
   for (const k of ROSTER) {
     const all = (await candidates(k.forms)).sort((a, b) => b.mentions - a.mentions);
-    const identity = all.filter((e) => !(RELATIONAL.test(e.n) || REL_OF.test(e.n)) && e.mentions > 0);
+    const identity = all.filter((e) => isName(e.n) && e.mentions > 0);
     const assoc = all.length - identity.length; // relational descriptors dropped as distinct associates
     // core = highest-mention identity entity; others sharing its nisba ≈ same-person, differing nisba = namesake
     const core = identity[0];
