@@ -44,16 +44,17 @@
   let aiReasoning = $state(null);  // { summary (integrated markdown explanation), evidence: {id} } — the AI's answer
   let aiError = $state(null);      // surfaced when a meaning-search fetch fails (never silent)
   let showProgress = $state(false), progress = $state(null);   // book-integration roadmap popup
-  let simPct = $state(0), _simDoc = null;  // client-SIMULATED active-book % — creeps between polls so a long stage never looks frozen
+  let simPct = $state(0), _simDoc = null, _lastReal = 0, _delta = 2;  // simulated % + tracked per-poll real gain (predicts next)
   async function fetchProgress() {
     try {
       const r = await fetch(`${API}/api/v1/people/progress`); if (!r.ok) return;
       progress = await r.json();
       const a = progress?.active;
       if (!a) { simPct = 0; _simDoc = null; }
-      // New book (or first sight) → snap to its real %. Same book → do NOT snap (the sim ticker eases toward real),
-      // so simPct never lands exactly on the whole-number real % and freezes there.
-      else if (a.docId !== _simDoc) { simPct = a.percent ?? 0; _simDoc = a.docId; }
+      // New book → snap once + reset the gain estimate. Same book → don't snap (the sim ticker eases toward a target
+      // just past real), and update the EMA of how much the real % gains per poll (drives that target).
+      else if (a.docId !== _simDoc) { simPct = a.percent ?? 0; _simDoc = a.docId; _lastReal = a.percent ?? 0; _delta = 2; }
+      else { _delta = _delta * 0.6 + Math.max(0, (a.percent ?? 0) - _lastReal) * 0.4; _lastReal = a.percent ?? 0; }
     } catch { /* offline — modal shows a note */ }
   }
   function openProgress() { showProgress = true; if (!progress) fetchProgress(); }
@@ -62,17 +63,18 @@
   $effect(() => {
     if (typeof window === 'undefined') return;
     fetchProgress();
-    const poll = setInterval(fetchProgress, 30000);
+    const poll = setInterval(fetchProgress, 12000);
     // Between polls, SIMULATE forward motion: ease up to the last real %, then drift a little past it (capped) so a
     // long stage (claims/hype) keeps visibly advancing; the next poll re-anchors. Illusion only — never reaches 100%,
     // and completion clears `active` (→ simPct 0), so a finished book doesn't sit at 96%.
     const sim = setInterval(() => {
       const a = progress?.active; if (!a) { if (simPct) simPct = 0; return; }
-      const real = a.percent ?? 0, behind = real - simPct;
-      // ALWAYS step up every tick — catch up fast when behind the real %, otherwise a small continuous creep. Never
-      // clamps to the whole-number real %, so the display never sits at *.00. Safe to creep indefinitely: a stall/crash
-      // clears `active` (heartbeat freshness) → simPct resets to 0, so it can't mask a dead run. Soft-cap near 97.
-      simPct = Math.min(97, simPct + (behind > 0.5 ? Math.max(0.08, behind * 0.1) : 0.03));
+      const real = a.percent ?? 0;
+      // Aim just PAST real — at the value expected by the next poll (real + recent per-poll gain, min 1.2, hard-capped
+      // 98). Ease toward that moving target so the bar always climbs in decimals, tracks real honestly, and never runs
+      // away to a fixed cap or clamps onto the whole-number real % (which froze it at *.00). Min step keeps it visible.
+      const target = Math.min(98, real + Math.max(1.2, _delta));
+      if (simPct < target) simPct = Math.min(target, simPct + Math.max(0.04, (target - simPct) * 0.05));
     }, 200);
     return () => { clearInterval(poll); clearInterval(sim); };
   });
