@@ -72,9 +72,9 @@
       // Ease up to the real % quickly, then drift only slightly past it (small cap) so a long stage still creeps but the
       // bar never overstates progress much — the backend now reports real within-stage progress, so little drift is needed.
       const real = a.percent ?? 0, ceil = Math.min(98, real + 3);
-      if (simPct < real) simPct = Math.min(real, simPct + Math.max(0.35, (real - simPct) * 0.12));
-      else if (simPct < ceil) simPct = Math.min(ceil, simPct + 0.04);
-    }, 600);
+      if (simPct < real) simPct = Math.min(real, simPct + Math.max(0.20, (real - simPct) * 0.12));
+      else if (simPct < ceil) simPct = Math.min(ceil, simPct + 0.02);   // ~0.1%/s → fills the +3 cap smoothly across the 30s gap
+    }, 200);
     return () => { clearInterval(poll); clearInterval(sim); };
   });
   const fmtK = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n ?? 0));
@@ -200,7 +200,7 @@
       <span class="prog-rail-num">{progress ? (progress.cumulativeUnique ?? 0).toLocaleString() : '·'}</span>
       <span class="prog-rail-cap">souls</span>
       {#if progress?.active}
-        <span class="prog-rail-live"><span class="prog-rail-dot" aria-hidden="true"></span>{Math.round(simPct)}%</span>
+        <span class="prog-rail-live"><span class="prog-rail-dot" aria-hidden="true"></span>{simPct.toFixed(2)}%</span>
       {:else if progress}
         <span class="prog-rail-books">{progress.doneBooks}/{progress.totalBooks}</span>
       {/if}
@@ -274,7 +274,7 @@
                   <div class="prog-active-meta">{stageLabel(progress.active.stage)}{#if progress.active.stageIndex != null} · stage {progress.active.stageIndex + 1}/{progress.active.totalStages}{/if}{#if progress.active.claimsExtracted} · {progress.active.claimsExtracted.toLocaleString()} claims{/if}</div>
                   {#if progress.active.percent != null}<div class="prog-active-bar"><span style="width:{simPct}%"></span></div>{/if}
                 </div>
-                {#if progress.active.percent != null}<span class="prog-active-pct">{Math.round(simPct)}%</span>{/if}
+                {#if progress.active.percent != null}<span class="prog-active-pct">{simPct.toFixed(2)}%</span>{/if}
               </div>
             {/if}
             <p class="prog-fine">Per-book <span class="pb-new">+N</span> = people first grounded there; ¶ = size in paragraphs. The book being grounded shows a live progress bar. Click a phase to expand.</p>
@@ -296,7 +296,7 @@
                           <span class="prog-book-title">{b.title}</span>
                           <span class="col-size">
                             {#if progress.active && b.id === progress.active.docId && progress.active.percent != null}
-                              <span class="pbp-track" title="{stageLabel(progress.active.stage)}"><span class="pbp-fill" style="width:{simPct}%"></span></span><span class="pbp-pct">{Math.round(simPct)}%</span>
+                              <span class="pbp-track" title="{stageLabel(progress.active.stage)}"><span class="pbp-fill" style="width:{simPct}%"></span></span><span class="pbp-pct">{simPct.toFixed(2)}%</span>
                             {:else if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}
                           </span>
                           <span class="col-new" title="people first grounded via this book">{#if b.done && b.newInSequence}+{b.newInSequence.toLocaleString()}{/if}</span>
