@@ -22,7 +22,17 @@ export async function run(ctx, docId, opts = {}) {
   const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };
   const stats = { clusters: clusters.length, adjudicated: 0, failed: 0, escalated: 0, proposed: 0, byKind: {} };
 
-  const decisions = [];
+  // CHECKPOINT decisions in batches, not one final write: a big book has thousands of clusters (hours of work),
+  // and a single end-of-run save loses everything to any interruption (worker restart / kill) — leaving the book
+  // stuck at 0 decisions forever. Flushing incrementally makes progress durable + lets `resume` skip what landed.
+  const FLUSH = opts.flush ?? 40;
+  const decisions = [];               // buffer awaiting write (dryRun keeps all here, writes nothing)
+  const flush = async (final = false) => {
+    if (opts.dryRun) return;
+    if (!decisions.length || (!final && decisions.length < FLUSH)) return;
+    const chunk = decisions.splice(0, decisions.length);   // sync splice before await → concurrency-safe
+    stats.proposed += await ctx.store.saveDecisions(chunk);
+  };
   await pool(opts.concurrency ?? 5, clusters, async (cluster) => {
     const candidates = await ctx.store.findCandidateEntities(cluster.resolvedAs, { type: 'person', limit: 6 });
     const scenes = await ctx.store.getScenes(docId, cluster.paraIds.slice(0, 4));
@@ -36,10 +46,11 @@ export async function run(ctx, docId, opts = {}) {
     const row = decisionRow(parsed, cluster, candidates, docId);
     stats.byKind[row.kind] = (stats.byKind[row.kind] || 0) + 1;
     decisions.push(row);
+    await flush();                    // checkpoint once the buffer fills
   });
+  if (opts.dryRun) { ctx.log.info?.({ docId, ...stats }, 'entities/reconcile'); return { ...stats, proposed: 0, decisions }; }
+  await flush(true);                  // final partial batch
   ctx.log.info?.({ docId, ...stats }, 'entities/reconcile');
-  if (opts.dryRun) return { ...stats, proposed: 0, decisions }; // return verdicts for review, write nothing
-  stats.proposed = await ctx.store.saveDecisions(decisions);
   return stats;
 }
 

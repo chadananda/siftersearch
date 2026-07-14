@@ -38,6 +38,7 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
       CREATE TABLE graph_entities (id INTEGER PRIMARY KEY, name TEXT, canonical_name TEXT, entity_type TEXT, importance INT, last_assessed_version TEXT);
       CREATE TABLE entity_research (canonical_name TEXT, entity_type TEXT, summary TEXT);
       CREATE TABLE entity_lookup_keys (entity_id INT, skeleton_key TEXT);
+      CREATE TABLE entity_decisions (id INTEGER PRIMARY KEY, kind TEXT, target_kind TEXT, target_ids TEXT, payload TEXT, evidence TEXT, rationale TEXT, actor TEXT, actor_tier INT, confidence REAL, status TEXT, valid_time TEXT);
       -- 101 is the gazetteer anchor "Áqáy-i-Kalím"; 999 is the ≠-guarded namesake "Ḥájí Mírzá Músáy-i-Qumí".
       INSERT INTO graph_entities VALUES (101, 'Áqáy-i-Kalím', 'Áqáy-i-Kalím', 'person', 78, NULL);
       INSERT INTO graph_entities VALUES (999, 'Ḥájí Mírzá Músáy-i-Qumí', 'Ḥájí Mírzá Músáy-i-Qumí', 'person', 20, NULL);
@@ -79,5 +80,17 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
   it('saveContext forwards paragraph id, note, and method version to the writer path', async () => {
     await store.saveContext(100, '@Shíráz, ~1844 — the Declaration', 'disambig-v1');
     expect(updateContextOnly).toHaveBeenCalledWith(100, '@Shíráz, ~1844 — the Declaration', 'disambig-v1');
+  });
+
+  it('getDecidedClusterNames is scoped to the book: a same-named cluster in another book is NOT skipped', async () => {
+    await store.saveDecisions([
+      { kind: 'link', targetKind: 'mention-cluster', targetIds: ['para_1'], payload: { resolvedAs: 'Mírzá Aḥmad', docId: 7 }, evidence: {}, rationale: '', actor: 'model', actorTier: 2, confidence: 0.9, status: 'proposed' },
+      { kind: 'create', targetKind: 'mention-cluster', targetIds: ['para_2'], payload: { resolvedAs: 'Some Other Name', docId: 99 }, evidence: {}, rationale: '', actor: 'model', actorTier: 2, confidence: 0.8, status: 'proposed' },
+    ]);
+    const inBook = await store.getDecidedClusterNames(7);
+    expect(inBook.has('Mírzá Aḥmad')).toBe(true);          // decided in THIS book → resume skips it
+    expect(inBook.has('Some Other Name')).toBe(false);     // decided in a DIFFERENT book → still to be processed here
+    const otherBook = await store.getDecidedClusterNames(99);
+    expect(otherBook.has('Mírzá Aḥmad')).toBe(false);      // and the reverse holds — no cross-book leakage
   });
 });

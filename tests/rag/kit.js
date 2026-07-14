@@ -39,6 +39,7 @@ export function memStore(seed = {}) {
   const mentions = [];  // saveMentions rows
   const claims = [];     // saveClaims rows
   const decisions = []; // saveDecisions rows
+  const decisionBatches = []; // size of each saveDecisions call (proves incremental checkpointing)
   const created = [];    // createEntity calls
   const bound = [];      // bindMentions calls
   const appliedMarks = []; // markDecisionApplied calls
@@ -48,7 +49,7 @@ export function memStore(seed = {}) {
   const lexiconEntries = []; // saveLexiconEntries rows
   const conceptLinks = []; // saveConceptLinks rows
   return {
-    saved, hyped, mentions, claims, decisions, created, bound, appliedMarks, merges, conceptClaims, conceptDecisions, lexiconEntries, conceptLinks,
+    saved, hyped, mentions, claims, decisions, decisionBatches, created, bound, appliedMarks, merges, conceptClaims, conceptDecisions, lexiconEntries, conceptLinks,
     getDocMeta: async (id) => seed.docs?.[id] || { id },
     getSampleText: async (id) => seed.samples?.[id] || '',
     getParagraphs: async (id) => seed.paras?.[id] || [],
@@ -69,7 +70,7 @@ export function memStore(seed = {}) {
     saveConceptLinks: async (rows) => { conceptLinks.push(...rows); return rows.length; },
     getDisambigCoverage: async (id) => seed.coverage?.[id] ?? 1,
     getMentionClusters: async (id) => seed.clusters?.[id] || [],
-    getDecidedClusterNames: async () => new Set(seed.decided || []),
+    getDecidedClusterNames: async (docId) => new Set(typeof seed.decided === 'function' ? seed.decided(docId) : (seed.decided || [])),
     findCandidateEntities: async (name) => (typeof seed.candidates === 'function' ? seed.candidates(name) : seed.candidates || []),
     searchGrounded: async (query, opts) => (typeof seed.grounded === 'function' ? seed.grounded(query, opts) : seed.grounded || []),
     getEntityFacts: async (id, opts) => (typeof seed.entityFacts === 'function' ? seed.entityFacts(id, opts) : (seed.entityFacts?.[id] ?? null)),
@@ -77,7 +78,7 @@ export function memStore(seed = {}) {
     getUncertainClusters: async (id) => seed.uncertain?.[id] || [],
     searchCorpus: async (query, opts) => (typeof seed.corpus === 'function' ? seed.corpus(query, opts) : seed.corpus || []),
     getScenes: async (id, paraIds) => seed.scenes || paraIds.map((pid) => ({ pid, context: '' })),
-    saveDecisions: async (rows) => { decisions.push(...rows); return rows.length; },
+    saveDecisions: async (rows) => { decisions.push(...rows); decisionBatches.push(rows.length); return rows.length; },
     // project
     getDuplicateGroups: async () => seed.dupGroups || [],
     applyMerge: async (canonical, mergeIds) => { merges.push({ canonical, mergeIds }); return mergeIds.length; },

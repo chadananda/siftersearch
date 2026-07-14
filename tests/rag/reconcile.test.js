@@ -93,3 +93,38 @@ describe('reconcile — run() on fake ports (GPB clusters)', () => {
     await expect(rag.entities.reconcile(21310)).rejects.toThrow(/disambiguated/);
   });
 });
+
+describe('reconcile — durable checkpointing + resume (the binding fix)', () => {
+  // A big book: many clusters, so a single end-of-run write would lose everything to an interruption.
+  const many = Array.from({ length: 10 }, (_, i) => ({ resolvedAs: `Person ${i}`, freq: 5, paraIds: [`para_${i}`] }));
+  const linkAll = () => ({ content: '{"verdict":"create","type":"person","canonical":"x","confidence":0.7}' });
+
+  it('flushes decisions in batches instead of one final write, so partial progress is durable', async () => {
+    const seed = { clusters: { 21310: many }, coverage: { 21310: 1 } };
+    const { rag, store } = makeRag({ seed, llm: fakeLLM(linkAll) });
+    const stats = await rag.entities.reconcile(21310, { flush: 3, concurrency: 2 });
+    expect(stats.proposed).toBe(10);                 // every decision persisted…
+    expect(store.decisions.length).toBe(10);
+    expect(store.decisionBatches.length).toBeGreaterThan(1);  // …across multiple checkpoints, not one end-write
+    expect(store.decisionBatches.reduce((a, b) => a + b, 0)).toBe(10); // no rows lost or duplicated
+  });
+
+  it('resume skips clusters already decided IN THIS BOOK (a killed run picks up where it left off)', async () => {
+    const seed = { clusters: { 21310: many }, coverage: { 21310: 1 }, decided: ['Person 0', 'Person 1', 'Person 2'] };
+    const llm = fakeLLM(linkAll);
+    const { rag, store } = makeRag({ seed, llm });
+    const stats = await rag.entities.reconcile(21310, { resume: true, flush: 3 });
+    expect(stats.clusters).toBe(7);                  // the 3 already-decided are filtered out
+    expect(store.decisions.length).toBe(7);          // only the remaining are adjudicated + written
+    expect(llm.calls.length).toBe(7);                // and no LLM call is wasted on decided clusters
+  });
+
+  it('dryRun writes nothing but still returns the verdicts for review', async () => {
+    const seed = { clusters: { 21310: many }, coverage: { 21310: 1 } };
+    const { rag, store } = makeRag({ seed, llm: fakeLLM(linkAll) });
+    const stats = await rag.entities.reconcile(21310, { dryRun: true, flush: 3 });
+    expect(stats.proposed).toBe(0);
+    expect(store.decisions.length).toBe(0);          // nothing persisted
+    expect(stats.decisions.length).toBe(10);         // but the caller gets every verdict
+  });
+});

@@ -109,11 +109,19 @@ export function makeStore() {
       catch { return ''; }
     },
 
-    // Resolved names that already carry a reconcile decision — so a resumed batch skips them (idempotent).
-    async getDecidedClusterNames() {
+    // Resolved names that already carry a reconcile decision IN THIS BOOK — so a resumed batch skips them
+    // (idempotent). Scoped by docId: the same name in another book is a DIFFERENT cluster (different scenes,
+    // possibly a different person) and must get its own decision, so a global skip would drop real work.
+    async getDecidedClusterNames(docId) {
       const rows = await db.queryAll(`SELECT payload FROM entity_decisions WHERE target_kind='mention-cluster'`);
       const s = new Set();
-      for (const r of rows) { try { const p = JSON.parse(r.payload || '{}'); const n = p.resolvedAs ?? p.resolved_as; if (n) s.add(n); } catch { /* */ } }
+      for (const r of rows) {
+        try {
+          const p = JSON.parse(r.payload || '{}');
+          if (docId != null && (p.docId ?? p.doc_id) !== docId) continue;
+          const n = p.resolvedAs ?? p.resolved_as; if (n) s.add(n);
+        } catch { /* */ }
+      }
       return s;
     },
 
