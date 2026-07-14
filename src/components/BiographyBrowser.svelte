@@ -168,10 +168,13 @@
 <div class="archive">
   {#if !showProgress}
     <button class="prog-bar" class:active={!!progress?.active} onclick={openProgress} title="Library progress — the road to all history absorbed" aria-label="Open library progress panel">
-      <span class="prog-bar-fill" style="width:{progress ? Math.round((progress.doneBooks / Math.max(1, progress.totalBooks)) * 100) : 0}%"></span>
+      <!-- Base fill = COMPLETED books; the bright shimmering sub-segment = the ACTIVE book filling its own slice,
+           so a long book visibly progresses (0→100%) rather than the bar looking frozen between book completions. -->
+      <span class="prog-bar-fill" style="width:{progress ? ((progress.doneBooks / Math.max(1, progress.totalBooks)) * 100).toFixed(2) : 0}%"></span>
+      {#if progress?.active}<span class="prog-bar-sub" style="left:{((progress.doneBooks / Math.max(1, progress.totalBooks)) * 100).toFixed(2)}%;width:{(((progress.active.percent ?? 0) / 100) * (100 / Math.max(1, progress.totalBooks))).toFixed(2)}%"></span>{/if}
       <span class="prog-bar-row">
         <span class="prog-bar-ico" aria-hidden="true">◧</span>
-        <span class="prog-bar-label">{#if progress?.active}Grounding <strong>{progress.active.title}</strong>{:else}Library grounding{/if}</span>
+        <span class="prog-bar-label">{#if progress?.active}Grounding <strong>{progress.active.title}</strong>{#if progress.active.percent != null} · {progress.active.percent}%{/if}{:else}Library grounding{/if}</span>
         <span class="prog-bar-stat">{#if progress}{progress.doneBooks}/{progress.totalBooks}&nbsp;books · {(progress.cumulativeUnique ?? 0).toLocaleString()}&nbsp;souls{:else}…{/if}</span>
         <span class="prog-bar-chev" aria-hidden="true">⌃</span>
       </span>
@@ -634,9 +637,11 @@
   .prog-bar:hover .prog-bar-chev { transform: translateY(-1px); color: var(--accent); }
   /* Active = a moving shimmer across the fill + a pulsing icon + a soft accent ring. */
   .prog-bar.active { border-color: color-mix(in oklab, var(--accent) 45%, var(--border)); }
-  .prog-bar.active .prog-bar-fill { background-image: linear-gradient(90deg,
-      color-mix(in oklab, var(--accent) 14%, transparent), color-mix(in oklab, var(--accent) 42%, transparent), color-mix(in oklab, var(--accent) 14%, transparent));
-    background-size: 220% 100%; animation: progshimmer 2.4s linear infinite; }
+  .prog-bar-sub { position: absolute; top: 0; bottom: 0; z-index: 0;
+    background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 30%, transparent), color-mix(in oklab, var(--accent) 62%, transparent), color-mix(in oklab, var(--accent) 30%, transparent));
+    background-size: 220% 100%; box-shadow: 0 0 12px color-mix(in oklab, var(--accent) 40%, transparent);
+    transition: width .7s cubic-bezier(.2, .8, .2, 1), left .7s; }
+  .prog-bar.active .prog-bar-sub { animation: progshimmer 2.4s linear infinite; }
   .prog-bar.active .prog-bar-ico { animation: progpulse 1.6s ease-in-out infinite; }
   @keyframes progshimmer { from { background-position: 220% 0; } to { background-position: -220% 0; } }
   @keyframes progpulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.88); } }

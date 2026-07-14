@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-14T13:38:52.004Z",
+  "generated": "2026-07-14T13:46:26.623Z",
   "entries": [
+    {
+      "hash": "36928fd2",
+      "date": "2026-07-14",
+      "type": "Other",
+      "description": "Collapsed progress → artistic bar at top under navbar (sticky, gradient fill, shimmer + pulse when actively grounding); grounding efficiency: batch claims writes (~15x fewer writer round-trips → less :7849 contention, faster) + catch write failures + bounded 90s writer-fetch timeout (fixes the uncaught headers-timeout that crashed 3887; writer txns atomic + resume idempotent = no dup risk)",
+      "scope": null
+    },
     {
       "hash": "39d5a642",
       "date": "2026-07-13",
@@ -3493,16 +3500,18 @@
       "type": "Performance",
       "description": "Batch 500 docs per fetch instead of re-fetching per doc",
       "scope": null
-    },
-    {
-      "hash": "8c008501",
-      "date": "2026-05-18",
-      "type": "Performance",
-      "description": "Sync fetch limit 10→500 — prevents premature loop break; fills 5-slot pipeline (was only ~90 paras/job, now ~2500)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-07-14": [
+      {
+        "hash": "36928fd2",
+        "date": "2026-07-14",
+        "type": "Other",
+        "description": "Collapsed progress → artistic bar at top under navbar (sticky, gradient fill, shimmer + pulse when actively grounding); grounding efficiency: batch claims writes (~15x fewer writer round-trips → less :7849 contention, faster) + catch write failures + bounded 90s writer-fetch timeout (fixes the uncaught headers-timeout that crashed 3887; writer txns atomic + resume idempotent = no dup risk)",
+        "scope": null
+      }
+    ],
     "2026-07-13": [
       {
         "hash": "39d5a642",
@@ -7059,13 +7068,6 @@
         "date": "2026-05-18",
         "type": "Performance",
         "description": "Batch 500 docs per fetch instead of re-fetching per doc",
-        "scope": null
-      },
-      {
-        "hash": "8c008501",
-        "date": "2026-05-18",
-        "type": "Performance",
-        "description": "Sync fetch limit 10→500 — prevents premature loop break; fills 5-slot pipeline (was only ~90 paras/job, now ~2500)",
         "scope": null
       }
     ]
