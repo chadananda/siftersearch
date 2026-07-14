@@ -1,6 +1,27 @@
 {
-  "generated": "2026-07-13T23:13:41.442Z",
+  "generated": "2026-07-14T01:14:24.355Z",
   "entries": [
+    {
+      "hash": "4ed118e0",
+      "date": "2026-07-13",
+      "type": "Fixed",
+      "description": "Merge Pillars into Foundation — all trustworthy scholars = one authoritative-historical category (Pillars too abstract)",
+      "scope": "bio popup"
+    },
+    {
+      "hash": "6f929d1d",
+      "date": "2026-07-13",
+      "type": "Fixed",
+      "description": "Move Dawn-Breakers into Seed (with GPB) — clearer for readers; Foundation = Balyuzi+Taherzadeh only",
+      "scope": "bio popup"
+    },
+    {
+      "hash": "667a51e7",
+      "date": "2026-07-13",
+      "type": "Fixed",
+      "description": "Resolve active-book title (never 'doc N'); active row styled inline in-progress; drop stray 28849 (use canonical 466)",
+      "scope": "bio popup"
+    },
     {
       "hash": "41e93694",
       "date": "2026-07-13",
@@ -3479,31 +3500,31 @@
       "type": "Fixed",
       "description": "Restore synced_last_2h to pipeline endpoint (fast via idx_content_recently_synced); fix sync_stuck logic; dev-machine remote_only for Meili/boss checks",
       "scope": null
-    },
-    {
-      "hash": "8e019b7d",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Force idx_content_dirty_doc_updated for getDocsWithDirtyParagraphs (43x speedup, 5s→117ms); fix ge.type→ge.entity_type in entity sync",
-      "scope": null
-    },
-    {
-      "hash": "1b39ed19",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Remove 69s full-table-scan from pipeline health endpoint — was blocking event loop and crashing API",
-      "scope": null
-    },
-    {
-      "hash": "3a6def03",
-      "date": "2026-05-18",
-      "type": "Performance",
-      "description": "Health-check 45s→18s during outages — parallelize meili checks, skip remote probes when api_down",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-13": [
+      {
+        "hash": "4ed118e0",
+        "date": "2026-07-13",
+        "type": "Fixed",
+        "description": "Merge Pillars into Foundation — all trustworthy scholars = one authoritative-historical category (Pillars too abstract)",
+        "scope": "bio popup"
+      },
+      {
+        "hash": "6f929d1d",
+        "date": "2026-07-13",
+        "type": "Fixed",
+        "description": "Move Dawn-Breakers into Seed (with GPB) — clearer for readers; Foundation = Balyuzi+Taherzadeh only",
+        "scope": "bio popup"
+      },
+      {
+        "hash": "667a51e7",
+        "date": "2026-07-13",
+        "type": "Fixed",
+        "description": "Resolve active-book title (never 'doc N'); active row styled inline in-progress; drop stray 28849 (use canonical 466)",
+        "scope": "bio popup"
+      },
       {
         "hash": "41e93694",
         "date": "2026-07-13",
@@ -7045,27 +7066,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Restore synced_last_2h to pipeline endpoint (fast via idx_content_recently_synced); fix sync_stuck logic; dev-machine remote_only for Meili/boss checks",
-        "scope": null
-      },
-      {
-        "hash": "8e019b7d",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Force idx_content_dirty_doc_updated for getDocsWithDirtyParagraphs (43x speedup, 5s→117ms); fix ge.type→ge.entity_type in entity sync",
-        "scope": null
-      },
-      {
-        "hash": "1b39ed19",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Remove 69s full-table-scan from pipeline health endpoint — was blocking event loop and crashing API",
-        "scope": null
-      },
-      {
-        "hash": "3a6def03",
-        "date": "2026-05-18",
-        "type": "Performance",
-        "description": "Health-check 45s→18s during outages — parallelize meili checks, skip remote probes when api_down",
         "scope": null
       }
     ]

@@ -68,6 +68,9 @@
   let openSet = $state(null); // null = auto (follow active/frontier); becomes a Set once the user toggles
   const openKeys = $derived(openSet ?? new Set([activePhaseKey ?? frontierKey].filter(Boolean)));
   function togglePhase(key) { const s = new Set(openKeys); s.has(key) ? s.delete(key) : s.add(key); openSet = s; }
+  // Period-tree sub-groups (e.g. Pilgrim Notes by era) — collapsed by default, since they're numerous.
+  let openGroups = $state(new Set());
+  function toggleGroup(phaseKey, label) { const k = `${phaseKey}:${label}`; const s = new Set(openGroups); s.has(k) ? s.delete(k) : s.add(k); openGroups = s; }
   // render the integrated explanation: escape HTML, then turn [text](url) into a source link (the evidence is woven inline)
   const escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const mdLinks = (s) => escHtml(s).replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="ai-cite-in">$1</a>');
@@ -260,8 +263,32 @@
                           <span class="col-un" title="mentioned here but not yet resolved — revisited as later books are absorbed">{#if b.done && b.unresolved}{b.unresolved.toLocaleString()}?{/if}</span>
                         </li>
                       {/each}
-                      {#if ph.books.length === 0}<li class="prog-empty">Catalog pending classification…</li>{/if}
+                      {#if ph.books.length === 0 && !ph.groups}<li class="prog-empty">Catalog pending classification…</li>{/if}
                     </ul>
+                    {#if ph.groups}
+                      {#each ph.groups as g (g.label)}
+                        {@const gOpen = openGroups.has(ph.key + ':' + g.label)}
+                        <div class="prog-group" class:open={gOpen}>
+                          <button class="prog-group-h" onclick={() => toggleGroup(ph.key, g.label)} aria-expanded={gOpen}>
+                            <span class="prog-caret" aria-hidden="true">{gOpen ? '▾' : '▸'}</span>
+                            <span class="prog-group-label">{g.label}</span>
+                            <span class="prog-group-count">{g.done}/{g.total}{#if g.paras} · {fmtK(g.paras)}¶{/if}</span>
+                          </button>
+                          {#if gOpen}
+                            <ul class="prog-books prog-subbooks">
+                              {#each g.books as b (b.id)}
+                                <li class="prog-book" class:done={b.done}>
+                                  <span class="prog-tick" aria-hidden="true">{b.done ? '✓' : '·'}</span>
+                                  <span class="prog-book-title">{b.title}</span>
+                                  <span class="col-size">{#if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}</span>
+                                  <span class="col-new"></span><span class="col-un"></span>
+                                </li>
+                              {/each}
+                            </ul>
+                          {/if}
+                        </div>
+                      {/each}
+                    {/if}
                   </div>
                 {/if}
               </section>
@@ -634,5 +661,13 @@
   .pb-new { color: var(--accent); font-weight: 600; }
   .pb-un { color: var(--text-muted); }
   .prog-empty { color: var(--text-muted); font-size: .76rem; font-style: italic; padding-left: 1.5rem; }
+  /* Period sub-groups (e.g. Pilgrim Notes by era) — a collapsible tree nested inside a phase. */
+  .prog-group { margin: .1rem 0 .1rem .3rem; border-left: 1px solid var(--border); padding-left: .55rem; }
+  .prog-group-h { width: 100%; display: flex; align-items: baseline; gap: .45rem; background: none; border: none; padding: .22rem 0; cursor: pointer; text-align: left; }
+  .prog-group-h:hover .prog-group-label { color: var(--accent); }
+  .prog-group-label { flex: 1; font-size: .74rem; color: var(--text-secondary); }
+  .prog-group-count { flex: 0 0 auto; font-size: .68rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .prog-subbooks { padding-left: .1rem; margin-top: .05rem; }
+  .prog-subbooks .prog-book { font-size: .78rem; }
   @media (prefers-reduced-motion: reduce) { .prog-active-dot { animation: none; } }
 </style>

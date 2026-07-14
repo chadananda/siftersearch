@@ -179,6 +179,31 @@ export async function getIntegrationProgress() {
       done: books.filter(b => b.done).length, total: books.length,
       persons: books.reduce((s, b) => s + b.persons, 0), paras: books.reduce((s, b) => s + b.size, 0) };
   });
+
+  // Pilgrim Notes — hundreds of small primary-source accounts organized by PERIOD (in file_path). Too numerous
+  // to list flat, so attach them as collapsible per-period sub-groups under Primary Sources (a tree view).
+  const pilgrim = await queryAll(`SELECT id, title, file_path, paragraph_count FROM docs
+      WHERE collection='Pilgrim Notes' AND deleted_at IS NULL AND duplicate_of IS NULL`);
+  if (pilgrim.length) {
+    const grounded = new Set(); const pIds = pilgrim.map(d => d.id);
+    for (let i = 0; i < pIds.length; i += 800) { const c = pIds.slice(i, i + 800), cp = c.map(() => '?').join(',');
+      (await queryAll(`SELECT DISTINCT doc_id d FROM entity_claims WHERE doc_id IN (${cp})`, c)).forEach(r => grounded.add(r.d)); }
+    const periodOf = (fp) => { const m = String(fp || '').match(/Pilgrim Notes\/([^/]+)/); return m ? m[1] : 'Other'; };
+    const startYear = (label) => { const m = label.match(/\((\d{4})/); return m ? +m[1] : 9999; };
+    const byPeriod = {};
+    for (const d of pilgrim) { const k = periodOf(d.file_path); (byPeriod[k] ||= []).push({ id: d.id, title: d.title, size: d.paragraph_count || 0, done: grounded.has(d.id) }); }
+    const groups = Object.entries(byPeriod)
+      .map(([label, bks]) => ({ label, books: bks.sort((a, b) => a.title.localeCompare(b.title)),
+        total: bks.length, done: bks.filter(b => b.done).length, paras: bks.reduce((s, b) => s + b.size, 0) }))
+      .sort((a, b) => startYear(a.label) - startYear(b.label));
+    const primary = phases.find(p => p.key === 'primary');
+    if (primary) {
+      primary.groups = groups;
+      primary.total += groups.reduce((s, g) => s + g.total, 0);
+      primary.done += groups.reduce((s, g) => s + g.done, 0);
+      primary.paras += groups.reduce((s, g) => s + g.paras, 0);
+    }
+  }
   const doneBooks = phases.reduce((s, p) => s + (p.upcoming ? 0 : p.done), 0);
   const totalBooks = phases.reduce((s, p) => s + p.total, 0);
   // Cumulative UNIQUE people grounded across the curated books (deduped — a figure in N books counts once).
