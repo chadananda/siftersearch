@@ -5,11 +5,12 @@
 // (graph_entities) rows for merged ids become empty and can be dropped by a later projection rebuild.
 import { pool } from '../kernel/run.js';
 
-export const SYSTEM = `You deduplicate PERSON entities. Given a GROUP of entities that share a name (each with its evidence — mention count, summary, sample facts), decide which are the SAME individual and which are DISTINCT namesakes.
-Rules: merge ONLY when role, era, place, and connections agree; a shared COMMON name alone is NEVER enough (many people share a common given-name/patronymic — keep them apart). Different nisbas/roles/eras = different people. Prefer keeping apart over a wrong merge (a false merge fabricates one person from two).
-EXCEPTION — distinctive unique names: a DISTINCTIVE full name that denotes ONE specific, identifiable individual (a named foreign statesman or author, a full Western personal name, a uniquely-qualified figure — e.g. "Otto von Bismarck", "Joseph Hardegg", "Edward Granville Browne") with NO CONTRADICTING fact is the SAME person — two such records are a failed split, MERGE them. This exception is ONLY for distinctive unique names, never for common forms like "Mullá ‘Alí" or "Mírzá Muḥammad" (those stay apart unless facts agree).
-Pick as "canonical" the entity with the richest evidence (most mentions / fullest summary).
-Return ONLY JSON: {"canonical":<id>,"same":[<ids that ARE the canonical, to merge in>],"distinct":[<ids that are DIFFERENT people, keep>],"reason":"<=20 words"}.`;
+export const SYSTEM = `You deduplicate PERSON entities that share a name: decide which are the SAME individual (merge) vs DISTINCT namesakes (keep apart), judged by EVIDENCE CONSISTENCY — NOT by whether their facts overlap.
+MERGE when the records are CONSISTENT. The same person recorded in different books or episodes carries DIFFERENT but COMPATIBLE facts (one source covers their lineage, another a later event) — that is NOT a reason to keep them apart. Two same-name records are a FAILED SPLIT to merge whenever nothing CONTRADICTS. This includes the common case where one record is thin or has no facts yet — merge it into the richer one.
+KEEP APART (distinct) ONLY when a LOAD-BEARING fact truly CONTRADICTS: a different nisba/place-of-origin (Yazdí vs Turshízí), an incompatible era/lifespan (1850 vs 1912), a different death (place or year), a different father/kin, or an incompatible role/side. A contradiction is decisive; mere non-overlap or thin evidence is NOT a contradiction.
+The ONLY caution: a BARE, very common given-name with NOTHING distinguishing on either side (several bare "Aḥmad"/"Muḥammad"/"‘Alí", no role/kin/event) may be different people — keep apart unless a positive signal ties them. A distinctive or qualified name (full name, nisba, epithet, title, foreign statesman) with no contradiction → MERGE.
+Pick "canonical" = the entity with the richest evidence (most claims/mentions/fullest summary).
+Return ONLY JSON: {"canonical":<id>,"same":[<ids to merge INTO canonical>],"distinct":[<ids that genuinely CONTRADICT — keep>],"reason":"<=20 words"}.`;
 
 export async function run(ctx, opts = {}) {
   const groups = await ctx.store.getDuplicateGroups({ type: 'person', minSize: opts.minSize ?? 2, limit: opts.limit });

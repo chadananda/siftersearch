@@ -9,9 +9,10 @@ describe('merge — pure helpers', () => {
       .toEqual({ canonical: 5, same: [6, 7], distinct: [8], reason: 'same era/role' });
     expect(parseMerge('nope')).toBeNull();
   });
-  it('the prompt forbids merging on a shared common name alone, but allows the distinctive-unique-name exception', () => {
-    expect(SYSTEM).toMatch(/shared COMMON name alone is NEVER enough/i);   // namesake protection holds
-    expect(SYSTEM).toMatch(/distinctive/i);                                // …but distinctive unique names may merge
+  it('the prompt merges on evidence CONSISTENCY (keep apart only on contradiction), with a bare-common-name caution', () => {
+    expect(SYSTEM).toMatch(/consisten/i);                 // merge when consistent — not "facts must agree"
+    expect(SYSTEM).toMatch(/contradict/i);                // keep apart ONLY on a load-bearing contradiction
+    expect(SYSTEM).toMatch(/bare|common given-name/i);    // namesake caution retained for bare common names
     expect(buildUser({ key: 'abdulbaha', ids: [1, 2], entities: [{ id: 1, canonical: '‘Abdu’l-Bahá', mentions: 40 }, { id: 2, canonical: '‘Abdu’l-Bahá', mentions: 3 }] })).toContain('abdulbaha');
   });
 });
