@@ -1,61 +1,40 @@
 #!/usr/bin/env node
-// complete-book — drive ONE book through the full Definition of Done and REFUSE to report it done unless it
-// VERIFIES as searchable (cast + claims + HyPE actually return from the live indexes). Serial grounding runs
-// this per book in authority order; a book must pass before the next begins. Reuses the app-wired `rag`.
-// Idempotent: every stage resumes/skips completed work, so re-running is cheap and safe.
-//   SIFTER_WRITER_URL=http://127.0.0.1:7849 node scripts/complete-book.mjs 21310 [--from=reconcile] [--only=verify]
+// complete-book — thin CLI over the shared grounding executor (api/lib/pipeline/run-grounding.js). Drives ONE book
+// through the full Definition of Done and REFUSES to report it done unless it VERIFIES as searchable. Serial
+// grounding runs this per book in authority order. Idempotent: every stage resumes/skips completed work.
+//   SIFTER_WRITER_URL=http://127.0.0.1:7849 node scripts/complete-book.mjs 21310 [--from=reconcile] [--only=verify] [--cc=N]
 // Exit 0 = complete+searchable; 2 = a stage left it unsearchable (missing[] printed); 1 = usage.
 import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
-import { execSync } from 'node:child_process';
 import fs from 'node:fs';
-const { rag } = await import('../api/lib/rag-adapter/index.js');
+const { runGrounding, GROUNDING_STAGES } = await import('../api/lib/pipeline/run-grounding.js');
 
 const argv = process.argv.slice(2);
 const doc = Number(argv.find((a) => !a.startsWith('--')));
 const opt = Object.fromEntries(argv.filter((a) => a.startsWith('--')).map((a) => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v ?? true]; }));
-if (!doc) { console.error('usage: complete-book <docId> [--from=stage] [--only=stage]'); process.exit(1); }
+if (!doc) { console.error('usage: complete-book <docId> [--from=stage] [--only=stage] [--cc=N]'); process.exit(1); }
 
-const STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'merge', 'dedup', 'hype', 'verify'];
-const from = opt.only ? STAGES.indexOf(opt.only) : (opt.from ? STAGES.indexOf(opt.from) : 0);
-const to = opt.only ? STAGES.indexOf(opt.only) : STAGES.length - 1;
-const want = (s) => { const i = STAGES.indexOf(s); return i >= from && i <= to; };
-const log = (s, r) => console.log(`\n▶ ${s}(${doc}) → ${JSON.stringify(r)}`);
-const writer = process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849';
 // Live status for the biography progress popup (api/lib/bio.js reads this): which book + stage is being worked.
 const STATUS_PATH = 'data/siftersearch-grounding-status.json', STARTED = new Date().toISOString();
 const mark = (stage) => { try { fs.writeFileSync(STATUS_PATH, JSON.stringify({ docId: doc, stage,
-  stageIndex: STAGES.indexOf(stage), totalStages: STAGES.length, startedAt: STARTED, updatedAt: new Date().toISOString() })); } catch { /* best-effort */ } };
+  stageIndex: GROUNDING_STAGES.indexOf(stage), totalStages: GROUNDING_STAGES.length, startedAt: STARTED, updatedAt: new Date().toISOString() })); } catch { /* best-effort */ } };
 
-let createdIds = [];
-const CC = Number(opt.cc) || 8; // per-paragraph stage concurrency (claims is the bottleneck on dense books); override with --cc=N
-if (want('disambiguate')) { mark('disambiguate'); log('disambiguate', await rag.disambiguate(doc, { concurrency: CC })); }
-if (want('mentions'))     { mark('mentions'); log('mentions', await rag.entities.mentions(doc)); }
-if (want('claims'))       { mark('claims'); log('claims', await rag.entities.claims(doc, { resume: true, threshold: 0.9, concurrency: CC })); }
-if (want('reconcile'))    { mark('reconcile'); log('reconcile', await rag.entities.reconcile(doc, { resume: true, threshold: 0.9, concurrency: 4 })); } // FULL — no --limit
-if (want('research'))     { mark('research'); log('research-resolve', await rag.entities.researchResolve(doc, { concurrency: 3 })); } // resolve uncertains: corpus+web
-if (want('project'))      { mark('project'); const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId: doc }); createdIds = r.createdIds || []; log('project', r); }
-if (want('link'))         { mark('link'); execSync(`DOC=${doc} WRITE=1 SIFTER_WRITER_URL=${writer} node scripts/entity-read/link-claims.mjs`, { stdio: 'inherit' }); }
-if (want('merge'))        { mark('merge'); log('merge', await rag.entities.merge({ concurrency: 4 })); } // same-name dedup by evidence (catches intra-batch + cross-book same-name dups dedup-guard's cross-name search misses)
-if (want('dedup') && createdIds.length) { mark('dedup'); log('dedup-guard', await rag.entities.dedupGuard({ entityIds: createdIds })); } // AFTER link — new entities need bound claims to dedup on
-if (want('hype'))         { mark('hype'); log('hype', await rag.retrieval.index(doc, { resume: true })); }
-if (want('verify')) {
-  mark('verify');
-  const v = await rag.entities.verify(doc);
-  log('verify', { ok: v.ok, ...v.checks, missing: v.missing });
-  if (!v.ok) { console.error(`\n❌ BOOK ${doc} NOT DONE — unsearchable: ${v.missing.join('; ')}`); process.exit(2); }
-  console.log(`\n✅ BOOK ${doc} COMPLETE + SEARCHABLE — cast ${v.checks.castCount}, claims ${v.checks.claimCount}, hype ${v.checks.hypeIndexed}, paras ${v.checks.paragraphsIndexed}`);
-  // Keystone-roster DoD: no major figure may be split across name/title/epithet. Reports flagged keystones
-  // (evidence-adjudicated: opponents/differing-nisba namesakes auto-separated). Warns, doesn't block — a
-  // cross-book split may pre-exist from another book; the operator resolves via keystone-gate.mjs.
-  try {
-    const { runGate } = await import('./entity-read/keystone-gate.mjs');
-    const flagged = (await runGate()).filter((r) => r.verdict !== 'ok');
-    if (flagged.length) {
-      console.warn(`⚠ KEYSTONE GATE: ${flagged.length} figure(s) flagged — resolve before shipping: ` +
-        flagged.map((r) => `${r.who}[${r.verdict}${r.real?.length ? ` ${r.real.length} frag` : ''}]`).join(', '));
-      console.warn(`   detail: node scripts/entity-read/keystone-gate.mjs`);
-    } else console.log('✅ KEYSTONE GATE: all major figures resolve to a single entity');
-  } catch (e) { console.warn('⚠ keystone gate skipped:', e.message); }
+const res = await runGrounding(doc, {
+  from: opt.from === true ? undefined : opt.from,
+  only: opt.only === true ? undefined : opt.only,
+  cc: Number(opt.cc) || 8,
+  onStage: (stage) => mark(stage),
+  onResult: (stage, r) => console.log(`\n▶ ${stage}(${doc}) → ${JSON.stringify(r)}`),
+});
+
+if (res.verify && !res.verify.ok) { console.error(`\n❌ BOOK ${doc} NOT DONE — unsearchable: ${res.verify.missing.join('; ')}`); process.exit(2); }
+if (res.verify?.ok) {
+  const v = res.verify;
+  console.log(`\n✅ BOOK ${doc} COMPLETE + SEARCHABLE — cast ${v.castCount}, claims ${v.claimCount}, hype ${v.hypeIndexed}, paras ${v.paragraphsIndexed}`);
+  if (res.flaggedKeystones.length) {
+    console.warn(`⚠ KEYSTONE GATE: ${res.flaggedKeystones.length} figure(s) flagged — resolve before shipping: ` +
+      res.flaggedKeystones.map((r) => `${r.who}[${r.verdict}${r.real?.length ? ` ${r.real.length} frag` : ''}]`).join(', '));
+    console.warn(`   detail: node scripts/entity-read/keystone-gate.mjs`);
+  } else console.log('✅ KEYSTONE GATE: all major figures resolve to a single entity');
 }
 mark('done'); // clear the "active" marker so the popup stops showing this book as in-progress
 process.exit(0);
