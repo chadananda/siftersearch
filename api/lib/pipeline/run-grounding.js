@@ -2,8 +2,11 @@
 // Shared by the CLI (scripts/complete-book.mjs), the orchestrator, and the HTTP control API so operator +
 // automation + UI all use ONE path (no parallel drivers). Stage lifecycle is surfaced through callbacks
 // (onStage before each, onResult after) so the caller decides where to report — status file, doc_pipeline, logs.
-// Deps: ../rag-adapter (the stages), node:child_process (the link stage shells out, as the CLI did).
+// Deps: ../rag-adapter (the stages), ./state.js (reports live run state into doc_pipeline — the single truth the
+// UI/API read), node:child_process (the link stage shells out, as the CLI did).
 import { execSync } from 'node:child_process';
+import os from 'node:os';
+import { setRun } from './state.js';
 const { rag } = await import('../rag-adapter/index.js');
 
 // Full Definition-of-Done sequence, in order. Must stay in lockstep with the rag stage set.
@@ -15,12 +18,18 @@ export const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcil
  * Returns { ok, verify, createdIds, flaggedKeystones }. Throws if a stage throws (caller handles resume/retry).
  */
 export async function runGrounding(docId, opts = {}) {
-  const { from, only, cc = 8, onStage, onResult } = opts;
+  const { from, only, cc = 8, onStage, onResult, report = true } = opts;
   const writer = opts.writer || process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849';
   const fromI = only ? GROUNDING_STAGES.indexOf(only) : (from ? GROUNDING_STAGES.indexOf(from) : 0);
   const toI = only ? GROUNDING_STAGES.indexOf(only) : GROUNDING_STAGES.length - 1;
   const want = (s) => { const i = GROUNDING_STAGES.indexOf(s); return i >= fromI && i <= toI; };
-  const enter = async (s) => onStage?.(s, { index: GROUNDING_STAGES.indexOf(s), total: GROUNDING_STAGES.length });
+  const startedAt = new Date().toISOString();
+  // enter() reports the live stage into doc_pipeline.run_json (the single truth bio.js/UI/API read) AND calls onStage.
+  const enter = async (s) => {
+    if (report) await setRun(docId, { docId, stage: s, stageIndex: GROUNDING_STAGES.indexOf(s), totalStages: GROUNDING_STAGES.length,
+      pid: process.pid, host: os.hostname(), startedAt, updatedAt: new Date().toISOString() }).catch(() => {});
+    await onStage?.(s, { index: GROUNDING_STAGES.indexOf(s), total: GROUNDING_STAGES.length });
+  };
   const emit = (s, r) => { onResult?.(s, r); return r; };
 
   const out = { ok: false, verify: null, createdIds: [], flaggedKeystones: [] };
@@ -52,5 +61,6 @@ export async function runGrounding(docId, opts = {}) {
   } else {
     out.ok = true; // a partial run (no verify requested) is not a failure
   }
+  if (report) await setRun(docId, null).catch(() => {}); // run over → idle (UI stops showing this book as active)
   return out;
 }

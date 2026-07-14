@@ -4,6 +4,7 @@ import { queryAll, queryOne } from './db.js';
 import { INTEGRATION_PHASES, AUTHOR_ROUTING, PINNED_DOCS, ABSORPTION_ORDER } from './integration-phases.js';
 const ABSORB_IDX = new Map(ABSORPTION_ORDER.map((id, i) => [id, i])); // docId → grounding-sequence position
 import { chatCompletion } from './ai.js';
+import * as pipelineState from './pipeline/state.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -44,26 +45,24 @@ export function readHistoryCatalog() {
     .filter(b => b && GENRE_RANK[b.genre] !== undefined); } catch { return []; }
 }
 
-// The live status the grounding driver (scripts/complete-book.mjs) writes each stage — lets the popup show
-// which book is being worked and at what stage, updating on every poll. Best-effort (absent → DB-inferred).
-const GROUNDING_STATUS_PATH = path.join(process.cwd(), 'data', 'siftersearch-grounding-status.json');
-// The pipeline stages, in order — must match scripts/complete-book.mjs (drives the current book's % progress).
+// Live grounding state is reported by the executor (api/lib/pipeline/run-grounding.js) INTO doc_pipeline.run_json —
+// the single source of truth (replaces the old data/siftersearch-grounding-status.json file). bio.js READS it; it
+// never infers the active book from a file. `pipelineState.activeRun()` returns the freshest non-idle run, or null.
+// The stages, in order — must match run-grounding.js GROUNDING_STAGES (drives the current book's % progress).
 const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'merge', 'dedup', 'hype', 'verify'];
 let _activeCache = null, _activeSig = '', _activeAt = 0;
 async function computeActiveBook(staticDocs, meta) {
-  let st = null;
-  try { st = JSON.parse(fs.readFileSync(GROUNDING_STATUS_PATH, 'utf8')); } catch { /* none */ }
-  // The driver marks 'done' when a book finishes → nothing is grounding right now. Show NO active book, and (below)
-  // suppress the claim-recency fallback so the just-finished book doesn't linger at ~96% forever. Cheap early-out.
-  if (st && st.stage === 'done') return null;
-  // Lightweight: the active block is polled every ~30s. Cache it ~20s, keyed by the status file's stage signature,
-  // so repeated polls (and multiple viewers) don't re-run COUNTs against the live DB while grounding writes.
-  const sig = st ? `${st.docId}:${st.stage}:${st.updatedAt}` : 'none';
+  const run = await pipelineState.activeRun();               // driver-reported truth; null when idle/done
+  let docId = run?.doc_id ?? null, stage = run?.stage ?? null;
+  let si = run?.stageIndex ?? null;
+  const ts = run?.totalStages ?? GROUNDING_STAGES.length;
+  const startedAt = run?.startedAt ?? null;
+  // Lightweight: the active block is polled ~30s. Cache ~20s, keyed by the run signature, so repeated polls (and
+  // multiple viewers) don't re-run COUNTs against the live DB while grounding writes.
+  const sig = run ? `${docId}:${stage}:${run.updatedAt}` : 'none';
   if (_activeSig === sig && Date.now() - _activeAt < 20000) return _activeCache;
-  const fresh = st && st.updatedAt && (Date.now() - new Date(st.updatedAt).getTime() < 10 * 60000);
-  let docId = fresh ? Number(st.docId) : null, stage = fresh ? st.stage : null;
-  // Fallback (an older driver with no status file): the curated book with the most RECENT claim write — but ONLY if
-  // that write is recent (grounding is genuinely live). Stale writes = nothing active, so idle shows no book.
+  // Fallback (transition / a run predating run_json): the curated book with the most RECENT claim write — but ONLY if
+  // that write is <5min old (grounding genuinely live). Stale writes = nothing active, so idle shows no book.
   if (!docId && staticDocs.length) {
     const ph = staticDocs.map(() => '?').join(',');
     const row = (await queryAll(`SELECT doc_id d, MAX(asserted_at) m FROM entity_claims
@@ -72,8 +71,6 @@ async function computeActiveBook(staticDocs, meta) {
   }
   if (!docId) { _activeCache = null; _activeSig = sig; _activeAt = Date.now(); return null; }
   const claims = (await queryAll(`SELECT COUNT(*) n FROM entity_claims WHERE doc_id=?`, [docId]))[0]?.n || 0;
-  const ts = fresh ? (st.totalStages ?? GROUNDING_STAGES.length) : GROUNDING_STAGES.length;
-  let si = fresh ? (st.stageIndex ?? null) : null;
   // No live status file (older driver / prefetch): INFER how far the book has progressed from its DB artifacts
   // so the current book still shows a real progress bar — disambiguated → mentions → claims → bound (reconciled)
   // → HyPE. This is the "how far along" signal the popup exists to surface.
@@ -113,7 +110,7 @@ async function computeActiveBook(staticDocs, meta) {
   // back to the docs table rather than showing "doc <id>".
   let m = meta[docId];
   if (!m?.title) m = (await queryAll(`SELECT title, paragraph_count FROM docs WHERE id=?`, [docId]))[0] || m;
-  const active = { docId, stage: stageName, stageIndex: si, totalStages: ts, percent, since: fresh ? st.startedAt : null,
+  const active = { docId, stage: stageName, stageIndex: si, totalStages: ts, percent, since: startedAt,
     title: m?.title || `doc ${docId}`, size: m?.paragraph_count || 0, claimsExtracted: claims };
   _activeCache = active; _activeSig = sig; _activeAt = Date.now();
   return active;

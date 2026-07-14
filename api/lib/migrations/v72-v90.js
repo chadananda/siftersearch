@@ -429,6 +429,16 @@ export const migrations = {
       rationale TEXT, created_at INTEGER DEFAULT (unixepoch()))`);
     logger.info('Migration 90 complete: concept substrate (concept_entities/lexicon/claims/mentions/decisions/links)');
   },
+
+  91: async () => {
+    // Grounding CONTROL: live run state the executor (api/lib/pipeline/run-grounding.js) reports INTO the canonical
+    // doc_pipeline row — relocating the scattered data/siftersearch-grounding-status.json that bio.js used to infer
+    // the active book from. JSON: {docId,stage,stageIndex,totalStages,pid,host,startedAt,updatedAt} | null when idle.
+    logger.info('Starting migration 91: doc_pipeline.run_json (driver-reported live grounding state)');
+    try { await query(`ALTER TABLE doc_pipeline ADD COLUMN run_json TEXT`); }
+    catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    logger.info('Migration 91 complete: doc_pipeline.run_json');
+  },
 };
 
 export const graphMigrations = {

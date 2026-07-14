@@ -38,6 +38,7 @@ import chatRoutes from './routes/chat.js';
 import graphRoutes from './routes/graph.js';
 import peopleRoutes from './routes/people.js';
 import deepResearchRoutes from './routes/deep-research.js';
+import groundingRoutes from './routes/grounding.js';
 import { config } from './lib/config.js';
 
 export async function createServer(opts = {}) {
@@ -223,6 +224,7 @@ export async function createServer(opts = {}) {
   await server.register(userRoutes, { prefix: '/api/user' });
   await server.register(adminRoutes, { prefix: '/api/admin' });
   await server.register(entityReviewRoutes, { prefix: '/api/admin' });
+  await server.register(groundingRoutes, { prefix: '/api/admin' });
   await server.register(documentsRoutes, { prefix: '/api/documents' });
   await server.register(servicesRoutes, { prefix: '/api/services' });
   await server.register(anonymousRoutes, { prefix: '/api/anonymous' });

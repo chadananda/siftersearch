@@ -40,6 +40,35 @@ export async function setPriority(docId, priority) {
 }
 
 /**
+ * The executor's LIVE run state, reported into the canonical doc_pipeline row (replaces the old status file).
+ * `run` = {docId,stage,stageIndex,totalStages,pid,host,startedAt,updatedAt} while grounding, or null when done/idle.
+ */
+export async function setRun(docId, run) {
+  await query(`INSERT INTO doc_pipeline (doc_id) VALUES (?) ON CONFLICT(doc_id) DO NOTHING`, [docId]);
+  await query(`UPDATE doc_pipeline SET run_json = ?, updated_at = unixepoch() WHERE doc_id = ?`,
+    [run ? JSON.stringify(run) : null, docId]);
+}
+
+export async function getRun(docId) {
+  const row = await queryOne(`SELECT run_json FROM doc_pipeline WHERE doc_id = ?`, [docId]);
+  try { return row?.run_json ? JSON.parse(row.run_json) : null; } catch { return null; }
+}
+
+/** The single doc grounding RIGHT NOW (freshest non-idle run_json, within 10 min), or null. Drives the live UI/API. */
+export async function activeRun() {
+  const rows = await queryAll(
+    `SELECT doc_id, run_json, updated_at FROM doc_pipeline WHERE run_json IS NOT NULL ORDER BY updated_at DESC LIMIT 4`);
+  const now = Math.floor(Date.now() / 1000);
+  for (const r of rows) {
+    try {
+      const run = JSON.parse(r.run_json);
+      if (run?.stage && run.stage !== 'done' && (now - (r.updated_at || 0) < 600)) return { doc_id: r.doc_id, ...run };
+    } catch { /* skip malformed */ }
+  }
+  return null;
+}
+
+/**
  * Pick the next unit of work by priority, enforcing the DISAMBIGUATE → {HyPE ∥ EXTRACT} order.
  * Returns { doc_id, stage, partial } or null. Only ENABLED docs are eligible.
  */
@@ -123,7 +152,7 @@ export async function statusReport() {
     UNION ALL SELECT 'hype', hype_status, COUNT(*) FROM doc_pipeline GROUP BY hype_status
     UNION ALL SELECT 'extract', extract_status, COUNT(*) FROM doc_pipeline GROUP BY extract_status`);
   const enabled = await queryAll(`
-    SELECT p.doc_id, p.priority, p.profile, p.disambig_status, p.hype_status, p.extract_status, d.title
+    SELECT p.doc_id, p.priority, p.profile, p.disambig_status, p.hype_status, p.extract_status, p.run_json, d.title
     FROM doc_pipeline p JOIN docs d ON d.id = p.doc_id
     WHERE p.enabled = 1 ORDER BY p.priority ASC`);
   const totals = await queryOne(`SELECT COUNT(*) docs, SUM(enabled) enabled FROM doc_pipeline`);
