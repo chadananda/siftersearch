@@ -49,21 +49,28 @@ export function readHistoryCatalog() {
 const GROUNDING_STATUS_PATH = path.join(process.cwd(), 'data', 'siftersearch-grounding-status.json');
 // The pipeline stages, in order — must match scripts/complete-book.mjs (drives the current book's % progress).
 const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'merge', 'dedup', 'hype', 'verify'];
+let _activeCache = null, _activeSig = '', _activeAt = 0;
 async function computeActiveBook(staticDocs, meta) {
   let st = null;
   try { st = JSON.parse(fs.readFileSync(GROUNDING_STATUS_PATH, 'utf8')); } catch { /* none */ }
-  const fresh = st && st.updatedAt && st.stage !== 'done' && (Date.now() - new Date(st.updatedAt).getTime() < 10 * 60000);
+  // The driver marks 'done' when a book finishes → nothing is grounding right now. Show NO active book, and (below)
+  // suppress the claim-recency fallback so the just-finished book doesn't linger at ~96% forever. Cheap early-out.
+  if (st && st.stage === 'done') return null;
+  // Lightweight: the active block is polled every ~30s. Cache it ~20s, keyed by the status file's stage signature,
+  // so repeated polls (and multiple viewers) don't re-run COUNTs against the live DB while grounding writes.
+  const sig = st ? `${st.docId}:${st.stage}:${st.updatedAt}` : 'none';
+  if (_activeSig === sig && Date.now() - _activeAt < 20000) return _activeCache;
+  const fresh = st && st.updatedAt && (Date.now() - new Date(st.updatedAt).getTime() < 10 * 60000);
   let docId = fresh ? Number(st.docId) : null, stage = fresh ? st.stage : null;
-  // Fallback (an older driver with no status file): the curated book with the most RECENT claim write — i.e.
-  // where extraction is actively happening now. Best-effort only; the status file above is authoritative and
-  // makes this precise (stage + percent) for every book grounded under the current driver.
+  // Fallback (an older driver with no status file): the curated book with the most RECENT claim write — but ONLY if
+  // that write is recent (grounding is genuinely live). Stale writes = nothing active, so idle shows no book.
   if (!docId && staticDocs.length) {
     const ph = staticDocs.map(() => '?').join(',');
     const row = (await queryAll(`SELECT doc_id d, MAX(asserted_at) m FROM entity_claims
         WHERE doc_id IN (${ph}) GROUP BY doc_id ORDER BY m DESC LIMIT 1`, staticDocs))[0];
-    if (row?.d) { docId = row.d; stage = 'grounding'; }
+    if (row?.d && row.m && Date.now() - new Date(row.m).getTime() < 5 * 60000) { docId = row.d; stage = 'grounding'; }
   }
-  if (!docId) return null;
+  if (!docId) { _activeCache = null; _activeSig = sig; _activeAt = Date.now(); return null; }
   const claims = (await queryAll(`SELECT COUNT(*) n FROM entity_claims WHERE doc_id=?`, [docId]))[0]?.n || 0;
   const ts = fresh ? (st.totalStages ?? GROUNDING_STAGES.length) : GROUNDING_STAGES.length;
   let si = fresh ? (st.stageIndex ?? null) : null;
@@ -88,6 +95,11 @@ async function computeActiveBook(staticDocs, meta) {
     const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND context IS NOT NULL`, [docId]))[0]?.n || 0;
     const claimedPar = (await queryAll(`SELECT COUNT(DISTINCT para_id) n FROM entity_claims WHERE doc_id=?`, [docId]))[0]?.n || 0;
     withinFrac = totalPar ? Math.min(0.99, claimedPar / totalPar) : 0.5;
+  } else if (stageName === 'hype') {
+    // HyPE is the other long stage on big books — measure it directly (paragraphs with questions / disambiguated).
+    const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND context IS NOT NULL`, [docId]))[0]?.n || 0;
+    const hypePar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL`, [docId]))[0]?.n || 0;
+    withinFrac = totalPar ? Math.min(0.99, hypePar / totalPar) : 0.5;
   }
   // TIME-weighted percent: claims dominates wall-time (~70%), so it must dominate the bar — otherwise the bar
   // barely moves during the long claims stage. Weights are rough wall-time shares (sum≈1); the bar climbs
@@ -101,8 +113,10 @@ async function computeActiveBook(staticDocs, meta) {
   // back to the docs table rather than showing "doc <id>".
   let m = meta[docId];
   if (!m?.title) m = (await queryAll(`SELECT title, paragraph_count FROM docs WHERE id=?`, [docId]))[0] || m;
-  return { docId, stage: stageName, stageIndex: si, totalStages: ts, percent, since: fresh ? st.startedAt : null,
+  const active = { docId, stage: stageName, stageIndex: si, totalStages: ts, percent, since: fresh ? st.startedAt : null,
     title: m?.title || `doc ${docId}`, size: m?.paragraph_count || 0, claimsExtracted: claims };
+  _activeCache = active; _activeSig = sig; _activeAt = Date.now();
+  return active;
 }
 
 // Integration progress for the biography "progress" popup — the phased roadmap (integration-phases.js): every
