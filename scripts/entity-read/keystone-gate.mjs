@@ -48,24 +48,28 @@ const DESCRIPTIVE = /\b(who|whom|which|renamed|unnamed|friendly|previously|trans
 const isName = (n) => !(RELATIONAL.test(n) || REL_OF.test(n) || DESCRIPTIVE.test(n));
 
 const nisbaOf = (name) => (name.match(/-i-([A-Za-zÀ-ÿ‘’'`]+)/g) || []).join(',');
+// Match must be apostrophe/case-insensitive — the DB mixes ' ’ ` ʻ ʼ (e.g. ‘Abdu'l-Bahá) and a straight-
+// apostrophe roster form would miss the real entity, producing a false MISSING (feedback_transliteration_vs_aliases).
+const fold = (s) => s.toLowerCase().replace(/[‘’'`ʻʼ]/g, '');
 
-async function candidates(forms) {
+// Load every person once; match roster forms in JS on the folded name (avoids SQL LIKE apostrophe brittleness).
+const ALL = await queryAll(
+  `SELECT ge.id, ge.canonical_name n,
+          (SELECT COUNT(*) FROM entity_mentions_v2 m WHERE m.entity_id=ge.id) mentions
+     FROM graph_entities ge WHERE ge.entity_type='person'`);
+const FOLDED = ALL.map((r) => ({ ...r, f: fold(r.n) }));
+
+function candidates(forms) {
+  const keys = forms.map(fold);
   const seen = new Map();
-  for (const f of forms) {
-    const rows = await queryAll(
-      `SELECT ge.id, ge.canonical_name n,
-              (SELECT COUNT(*) FROM entity_mentions_v2 m WHERE m.entity_id=ge.id) mentions
-         FROM graph_entities ge
-        WHERE ge.entity_type='person' AND ge.canonical_name LIKE ?`, [`%${f}%`]);
-    for (const r of rows) if (!seen.has(r.id)) seen.set(r.id, r);
-  }
+  for (const r of FOLDED) if (keys.some((k) => r.f.includes(k)) && !seen.has(r.id)) seen.set(r.id, r);
   return [...seen.values()];
 }
 
 export async function runGate() {
   const results = [];
   for (const k of ROSTER) {
-    const all = (await candidates(k.forms)).sort((a, b) => b.mentions - a.mentions);
+    const all = candidates(k.forms).sort((a, b) => b.mentions - a.mentions);
     const identity = all.filter((e) => isName(e.n) && e.mentions > 0);
     const assoc = all.length - identity.length; // relational descriptors dropped as distinct associates
     // core = highest-mention identity entity; others sharing its nisba ≈ same-person, differing nisba = namesake
