@@ -32,6 +32,13 @@ const GUARDS = [
   { a: 'Nabíl-i-A‘ẓam', b: 'Nabíl-i-Akbar', why: 'Zarandí the Dawn-Breakers author ≠ Nabíl-i-Akbar (Mullá Muḥammad-i-Qá’iní), an Apostle' },
   { a: 'Ásíyih Khánum', b: 'Navváb-i-Raḍaví', why: 'Bahá’u’lláh’s wife (the "saintly Navváb") ≠ a Yazd persecutor of Vaḥíd (side=opponent)' },
   { a: 'Mírzá Aḥmad-i-Qazvíní', b: 'Mírzá Aḥmad-i-Azghandí', why: 'different nisbas; the Báb’s amanuensis ≠ the traditions-collector' },
+  { a: 'Siyyid Javád-i-Karbilá\'í', b: 'Ḥájí Siyyid Javád-i-Kirmání', why: 'the Shaykhí disciple (Siyyid-i-Núr, family friend, d. Kirmán 1882) ≠ the Imám-Jum\'ih of Kirmán (a cousin of the Báb, secret believer, protector of Quddús)' },
+  { a: 'Mullá Yúsuf-i-Ardibílí', b: 'Mullá Yúsuf-i-Khú\'í', why: 'different nisbas (Ardabíl vs Khuy) — distinct fort companions (Ẓuhúru’l-Ḥaqq d15257)' },
+  { a: 'Shaykh Sa\'íd-i-Hindí', b: 'Mullá Sa\'íd-i-Bárfurúshí', why: 'Hindí (of India) ≠ Bárfurúshí (of Bárfurúsh); named as distinct fort companions' },
+  { a: 'Mírzá Hádíy-i-Qazvíní', b: 'Áqá Mírzá Hádí Nahrí-i-Iṣfahání', why: 'Qazvín ≠ the Nahrí family of Iṣfahán; two distinct men + Hádí’s own brother Mírzá Muḥammad-‘Alí' },
+  { a: 'Muḥammad-Ḥasan-i-Bushrú\'í', b: 'Muḥammad-Ḥasan-i-Qazvíní', why: 'brother of Mullá Ḥusayn (Bushrúyih) ≠ a youth (fatá) of Qazvín' },
+  { a: 'Mullá Ṣádiq-i-Muqaddas', b: 'Ibn-i-Aṣdaq', why: 'Muqaddas (Ismu’lláhu’l-Aṣdaq) is the FATHER; Ibn-i-Aṣdaq (Mírzá ‘Alí-Muḥammad) is his SON, a Hand of the Cause' },
+  { a: '‘Abbás-Qulí Khán-i-Láríjání', b: 'Mihdí-Qulí Mírzá', why: 'the commander ≠ the royal prince he served under at Ṭabarsí' },
 ];
 
 const rows = await queryAll(
