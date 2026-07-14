@@ -69,11 +69,12 @@
     // and completion clears `active` (→ simPct 0), so a finished book doesn't sit at 96%.
     const sim = setInterval(() => {
       const a = progress?.active; if (!a) { if (simPct) simPct = 0; return; }
-      // Ease up to the real % quickly, then drift only slightly past it (small cap) so a long stage still creeps but the
-      // bar never overstates progress much — the backend now reports real within-stage progress, so little drift is needed.
-      const real = a.percent ?? 0, ceil = Math.min(98, real + 3);
+      const real = a.percent ?? 0;
+      // Catch up to the real % fast; once at/above it, keep creeping SLOWLY so the number NEVER freezes between the
+      // coarse backend updates (batched claims, stage jumps). Safe to creep indefinitely: a crash/stall clears `active`
+      // (heartbeat freshness) → simPct resets to 0, so this can't mask a dead run. Soft-cap near 97; completion clears it.
       if (simPct < real) simPct = Math.min(real, simPct + Math.max(0.20, (real - simPct) * 0.12));
-      else if (simPct < ceil) simPct = Math.min(ceil, simPct + 0.02);   // ~0.1%/s → fills the +3 cap smoothly across the 30s gap
+      else simPct = Math.min(97, simPct + 0.02);   // ~0.1%/s continuous creep — always visibly moving
     }, 200);
     return () => { clearInterval(poll); clearInterval(sim); };
   });
