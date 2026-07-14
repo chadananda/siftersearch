@@ -227,8 +227,9 @@
           {#if progress}<span class="prog-tab-n">{progress.doneBooks}/{progress.totalBooks}</span>{/if}
         </button>
       {:else}
-        <div class="prog-drawer" role="dialog" aria-label="Library integration progress" transition:fade={{ duration: 150 }}>
-          <button class="prog-close" onclick={() => (showProgress = false)} aria-label="Collapse panel">›</button>
+        <div class="prog-scrim" onclick={() => (showProgress = false)} role="presentation" transition:fade={{ duration: 150 }}></div>
+        <div class="prog-drawer" role="dialog" aria-modal="true" aria-label="Library integration progress" transition:fade={{ duration: 150 }}>
+          <button class="prog-close" onclick={() => (showProgress = false)} aria-label="Close panel" title="Close">✕</button>
           <h2 class="prog-title">Absorbing the history</h2>
           {#if progress}
             <p class="prog-lead"><strong>{(progress.cumulativeUnique ?? 0).toLocaleString()}</strong> distinct people grounded so far <span class="prog-sub">· {progress.doneBooks}/{progress.totalBooks} books{#if progress.totalParas} · {fmtK(progress.totalParas)} paragraphs{/if}</span> — toward <em>all history absorbed</em>.</p>
@@ -607,21 +608,25 @@
   .progbtn { flex: 0 0 auto; font-size: .78rem; color: var(--text-secondary); background: none;
     border: 1px solid var(--border); border-radius: 1rem; padding: .28rem .7rem; cursor: pointer; transition: .18s; }
   .progbtn:hover { border-color: var(--accent); color: var(--accent); }
-  .prog-panel { position: fixed; top: 0; right: 0; height: 100dvh; z-index: 40; display: flex; align-items: flex-start; pointer-events: none; }
+  /* Persistent progress panel. Collapsed = a slim edge-tab; expanded = a SOLID drawer above the navbar with a
+     dimming backdrop (click-outside to close) so page content never bleeds through or sits under the nav. */
+  .prog-panel { position: fixed; inset: 0; z-index: 1000; pointer-events: none; }
   .prog-panel > * { pointer-events: auto; }
   .prog-tab { position: absolute; top: 50%; right: 0; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: .45rem;
-    writing-mode: vertical-rl; background: var(--surface-1); border: 1px solid var(--border); border-right: none;
-    border-radius: .7rem 0 0 .7rem; padding: .95rem .5rem; cursor: pointer; color: var(--text-secondary); font-size: .74rem; letter-spacing: .02em;
-    box-shadow: -6px 0 18px rgb(0 0 0 / .18); transition: color .18s, border-color .18s, background .18s; }
-  .prog-tab:hover { color: var(--accent); border-color: var(--accent); background: var(--surface-2); }
+    writing-mode: vertical-rl; background: light-dark(#f8fafc, #1e293b); border: 1px solid var(--border); border-right: none;
+    border-radius: .7rem 0 0 .7rem; padding: 1rem .55rem; cursor: pointer; color: var(--text-secondary); font-size: .74rem; letter-spacing: .02em;
+    box-shadow: -6px 0 18px rgb(0 0 0 / .22); transition: color .18s, border-color .18s; }
+  .prog-tab:hover { color: var(--accent); border-color: var(--accent); }
   .prog-tab-ico { writing-mode: horizontal-tb; font-size: 1.05rem; }
   .prog-tab-n { writing-mode: horizontal-tb; font-weight: 700; color: var(--accent); font-size: .72rem; }
-  .prog-drawer { position: relative; width: min(34rem, 94vw); height: 100dvh; overflow-y: auto; overscroll-behavior: contain;
-    background: var(--surface-1); border-left: 1px solid var(--border); box-shadow: -20px 0 50px rgb(0 0 0 / .3);
+  .prog-scrim { position: fixed; inset: 0; background: rgb(0 0 0 / .5); backdrop-filter: blur(2px); }
+  .prog-drawer { position: absolute; top: 0; right: 0; height: 100dvh; width: min(34rem, 94vw); overflow-y: auto; overscroll-behavior: contain;
+    background: light-dark(#f8fafc, #1e293b); border-left: 1px solid var(--border); box-shadow: -24px 0 60px rgb(0 0 0 / .5);
     padding: 1.8rem 1.5rem 3rem; }
-  .prog-close { position: absolute; top: .8rem; right: .8rem; width: 2rem; height: 2rem; border: none; border-radius: 50%;
-    background: var(--surface-3); color: var(--text-secondary); cursor: pointer; font-size: 1.15rem; line-height: 1; }
-  .prog-close:hover { color: var(--text-primary); }
+  .prog-close { position: absolute; top: .9rem; right: .9rem; width: 2.2rem; height: 2.2rem; border: none; border-radius: 50%;
+    background: var(--surface-2); color: var(--text-primary); cursor: pointer; font-size: 1rem; line-height: 1;
+    box-shadow: 0 2px 8px rgb(0 0 0 / .25); transition: background .18s, color .18s; }
+  .prog-close:hover { background: var(--accent); color: #fff; }
   .prog-title { font-family: 'Amiri', Georgia, serif; font-size: 1.5rem; margin: 0 2rem .2rem 0; color: var(--text-primary); }
   .prog-lead { font-size: .85rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 1.1rem; }
   .prog-lead strong { color: var(--accent); }

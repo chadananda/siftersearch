@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-14T05:39:27.375Z",
+  "generated": "2026-07-14T13:14:32.883Z",
   "entries": [
+    {
+      "hash": "39d5a642",
+      "date": "2026-07-13",
+      "type": "Other",
+      "description": "Promote the library-progress popup into a persistent collapsible right-hand side panel (slim edge-tab when collapsed shows live book count; expands to the full roadmap drawer). Persistent 20s poll; no scroll-lock.",
+      "scope": null
+    },
     {
       "hash": "eccd7ae6",
       "date": "2026-07-13",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Sync fetch limit 10→500 — prevents premature loop break; fills 5-slot pipeline (was only ~90 paras/job, now ~2500)",
       "scope": null
-    },
-    {
-      "hash": "790aa7da",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Enrichment check is remote_only from dev machine (localhost API ping guard)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-13": [
+      {
+        "hash": "39d5a642",
+        "date": "2026-07-13",
+        "type": "Other",
+        "description": "Promote the library-progress popup into a persistent collapsible right-hand side panel (slim edge-tab when collapsed shows live book count; expands to the full roadmap drawer). Persistent 20s poll; no scroll-lock.",
+        "scope": null
+      },
       {
         "hash": "eccd7ae6",
         "date": "2026-07-13",
@@ -7059,13 +7066,6 @@
         "date": "2026-05-18",
         "type": "Performance",
         "description": "Sync fetch limit 10→500 — prevents premature loop break; fills 5-slot pipeline (was only ~90 paras/job, now ~2500)",
-        "scope": null
-      },
-      {
-        "hash": "790aa7da",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Enrichment check is remote_only from dev machine (localhost API ping guard)",
         "scope": null
       }
     ]
