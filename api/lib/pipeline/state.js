@@ -62,7 +62,8 @@ export async function activeRun() {
   for (const r of rows) {
     try {
       const run = JSON.parse(r.run_json);
-      if (run?.stage && run.stage !== 'done' && (now - (r.updated_at || 0) < 600)) return { doc_id: r.doc_id, ...run };
+      // Live only if heartbeated recently (executor refreshes run_json every 30s); past 150s the book is treated dead.
+      if (run?.stage && run.stage !== 'done' && (now - (r.updated_at || 0) < 150)) return { doc_id: r.doc_id, ...run };
     } catch { /* skip malformed */ }
   }
   return null;

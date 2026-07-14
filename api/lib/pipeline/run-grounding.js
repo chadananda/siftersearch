@@ -24,43 +24,55 @@ export async function runGrounding(docId, opts = {}) {
   const toI = only ? GROUNDING_STAGES.indexOf(only) : GROUNDING_STAGES.length - 1;
   const want = (s) => { const i = GROUNDING_STAGES.indexOf(s); return i >= fromI && i <= toI; };
   const startedAt = new Date().toISOString();
+  let currentRun = null;   // the live run object; enter() replaces it, the heartbeat refreshes its updatedAt.
+  const writeRun = () => setRun(docId, currentRun).catch(() => {});
   // enter() reports the live stage into doc_pipeline.run_json (the single truth bio.js/UI/API read) AND calls onStage.
   const enter = async (s) => {
-    if (report) await setRun(docId, { docId, stage: s, stageIndex: GROUNDING_STAGES.indexOf(s), totalStages: GROUNDING_STAGES.length,
-      pid: process.pid, host: os.hostname(), startedAt, updatedAt: new Date().toISOString() }).catch(() => {});
+    currentRun = { docId, stage: s, stageIndex: GROUNDING_STAGES.indexOf(s), totalStages: GROUNDING_STAGES.length,
+      pid: process.pid, host: os.hostname(), startedAt, updatedAt: new Date().toISOString() };
+    if (report) await writeRun();
     await onStage?.(s, { index: GROUNDING_STAGES.indexOf(s), total: GROUNDING_STAGES.length });
   };
   const emit = (s, r) => { onResult?.(s, r); return r; };
 
   const out = { ok: false, verify: null, createdIds: [], flaggedKeystones: [] };
+  // HEARTBEAT: a stage can run far longer than the freshness window (e.g. disambiguate/claims/hype minutes+), so refresh
+  // run_json.updatedAt every 30s — otherwise activeRun/UI treat the (still-running) book as dead and show nothing.
+  const hb = report ? setInterval(() => { if (currentRun) { currentRun.updatedAt = new Date().toISOString(); writeRun(); } }, 30000) : null;
 
-  if (want('disambiguate')) { await enter('disambiguate'); emit('disambiguate', await rag.disambiguate(docId, { concurrency: cc })); }
-  if (want('mentions'))     { await enter('mentions'); emit('mentions', await rag.entities.mentions(docId)); }
-  if (want('claims'))       { await enter('claims'); emit('claims', await rag.entities.claims(docId, { resume: true, threshold: 0.9, concurrency: cc })); }
-  if (want('reconcile'))    { await enter('reconcile'); emit('reconcile', await rag.entities.reconcile(docId, { resume: true, threshold: 0.9, concurrency: 4 })); } // FULL — no --limit
-  if (want('research'))     { await enter('research'); emit('research', await rag.entities.researchResolve(docId, { concurrency: 3 })); } // resolve uncertains: corpus+web
-  if (want('project'))      { await enter('project'); const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId }); out.createdIds = r.createdIds || []; emit('project', r); }
-  if (want('link'))         { await enter('link'); execSync(`DOC=${docId} WRITE=1 SIFTER_WRITER_URL=${writer} node scripts/entity-read/link-claims.mjs`, { stdio: 'inherit' }); }
-  if (want('merge'))        { await enter('merge'); emit('merge', await rag.entities.merge({ concurrency: 4 })); } // same-name dedup by evidence
-  if (want('dedup') && out.createdIds.length) { await enter('dedup'); emit('dedup', await rag.entities.dedupGuard({ entityIds: out.createdIds })); } // AFTER link — new entities need bound claims
-  if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { resume: true })); }
+  try {
+    if (want('disambiguate')) { await enter('disambiguate'); emit('disambiguate', await rag.disambiguate(docId, { concurrency: cc })); }
+    if (want('mentions'))     { await enter('mentions'); emit('mentions', await rag.entities.mentions(docId)); }
+    if (want('claims'))       { await enter('claims'); emit('claims', await rag.entities.claims(docId, { resume: true, threshold: 0.9, concurrency: cc })); }
+    if (want('reconcile'))    { await enter('reconcile'); emit('reconcile', await rag.entities.reconcile(docId, { resume: true, threshold: 0.9, concurrency: 4 })); } // FULL — no --limit
+    if (want('research'))     { await enter('research'); emit('research', await rag.entities.researchResolve(docId, { concurrency: 3 })); } // resolve uncertains: corpus+web
+    if (want('project'))      { await enter('project'); const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId }); out.createdIds = r.createdIds || []; emit('project', r); }
+    if (want('link'))         { await enter('link'); execSync(`DOC=${docId} WRITE=1 SIFTER_WRITER_URL=${writer} node scripts/entity-read/link-claims.mjs`, { stdio: 'inherit' }); }
+    if (want('merge'))        { await enter('merge'); emit('merge', await rag.entities.merge({ concurrency: 4 })); } // same-name dedup by evidence
+    if (want('dedup') && out.createdIds.length) { await enter('dedup'); emit('dedup', await rag.entities.dedupGuard({ entityIds: out.createdIds })); } // AFTER link — new entities need bound claims
+    if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { resume: true })); }
 
-  if (want('verify')) {
-    await enter('verify');
-    const v = await rag.entities.verify(docId);
-    out.verify = { ok: v.ok, ...v.checks, missing: v.missing };
-    out.ok = v.ok;
-    emit('verify', out.verify);
-    // Keystone-roster DoD (warn-only): major figures must not split across name/title/epithet. Evidence-adjudicated.
-    if (v.ok) {
-      try {
-        const { runGate } = await import('../../../scripts/entity-read/keystone-gate.mjs');
-        out.flaggedKeystones = (await runGate()).filter((r) => r.verdict !== 'ok');
-      } catch { /* gate optional — never blocks completion */ }
+    if (want('verify')) {
+      await enter('verify');
+      const v = await rag.entities.verify(docId);
+      out.verify = { ok: v.ok, ...v.checks, missing: v.missing };
+      out.ok = v.ok;
+      emit('verify', out.verify);
+      // Keystone-roster DoD (warn-only): major figures must not split across name/title/epithet. Evidence-adjudicated.
+      if (v.ok) {
+        try {
+          const { runGate } = await import('../../../scripts/entity-read/keystone-gate.mjs');
+          out.flaggedKeystones = (await runGate()).filter((r) => r.verdict !== 'ok');
+        } catch { /* gate optional — never blocks completion */ }
+      }
+    } else {
+      out.ok = true; // a partial run (no verify requested) is not a failure
     }
-  } else {
-    out.ok = true; // a partial run (no verify requested) is not a failure
+    return out;
+  } finally {
+    // Clear the marker on completion OR a thrown crash → UI goes idle + /start can relaunch (no stale run_json).
+    // (A hard SIGKILL skips this; the freshness guard then clears it after the heartbeat lapses.)
+    if (hb) clearInterval(hb);
+    if (report) await setRun(docId, null).catch(() => {});
   }
-  if (report) await setRun(docId, null).catch(() => {}); // run over → idle (UI stops showing this book as active)
-  return out;
 }

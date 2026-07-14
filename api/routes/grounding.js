@@ -13,7 +13,13 @@ import { getIntegrationProgress } from '../lib/bio.js';
 import { logger } from '../lib/logger.js';
 
 const parseRun = (rj) => { try { return rj ? JSON.parse(rj) : null; } catch { return null; } };
-const isLive = (run) => !!(run && run.stage && run.stage !== 'done');
+// Live only if the run heartbeated within 150s (executor refreshes every 30s). A crashed/killed book stops
+// heartbeating → treated as not-running so /start can relaunch it instead of 409-ing on a stale marker.
+const isLive = (run) => {
+  if (!run || !run.stage || run.stage === 'done') return false;
+  const ts = run.updatedAt ? Date.parse(run.updatedAt) : 0;
+  return Date.now() - ts < 150000;
+};
 
 export default async function groundingRoutes(fastify) {
   const admin = { preHandler: requireInternal };

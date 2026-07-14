@@ -88,7 +88,13 @@ async function computeActiveBook(staticDocs, meta) {
   // Other stages get a 0.5 mid-estimate (they're short). percent = (stageIndex + withinFrac) / totalStages.
   const stageName = stage || GROUNDING_STAGES[si] || 'grounding';
   let withinFrac = 0.5;
-  if (stageName === 'claims') {
+  if (stageName === 'disambiguate') {
+    // Disambiguate is a full model pass over every prose paragraph — measure it directly (context-filled / total prose)
+    // so the bar climbs through it instead of sitting flat.
+    const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL`, [docId]))[0]?.n || 0;
+    const disPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND context IS NOT NULL`, [docId]))[0]?.n || 0;
+    withinFrac = totalPar ? Math.min(0.99, disPar / totalPar) : 0.5;
+  } else if (stageName === 'claims') {
     const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND context IS NOT NULL`, [docId]))[0]?.n || 0;
     const claimedPar = (await queryAll(`SELECT COUNT(DISTINCT para_id) n FROM entity_claims WHERE doc_id=?`, [docId]))[0]?.n || 0;
     withinFrac = totalPar ? Math.min(0.99, claimedPar / totalPar) : 0.5;
@@ -101,8 +107,10 @@ async function computeActiveBook(staticDocs, meta) {
   // TIME-weighted percent: claims dominates wall-time (~70%), so it must dominate the bar — otherwise the bar
   // barely moves during the long claims stage. Weights are rough wall-time shares (sum≈1); the bar climbs
   // through completed stages + the current stage's share × its within-fraction.
-  const STAGE_WEIGHT = { disambiguate: 0.05, mentions: 0.02, claims: 0.55, reconcile: 0.08, research: 0.05,
-    project: 0.03, link: 0.02, merge: 0.10, dedup: 0.03, hype: 0.05, verify: 0.02 };
+  // Rough wall-time shares (sum≈1). The three full model passes — disambiguate, claims, hype — dominate; the rest are
+  // quick. So the bar climbs through every long stage rather than jumping only during claims.
+  const STAGE_WEIGHT = { disambiguate: 0.18, mentions: 0.02, claims: 0.47, reconcile: 0.07, research: 0.03,
+    project: 0.02, link: 0.02, merge: 0.05, dedup: 0.02, hype: 0.10, verify: 0.02 };
   let done = 0; for (let i = 0; i < si; i++) done += STAGE_WEIGHT[GROUNDING_STAGES[i]] ?? (1 / ts);
   const cur = STAGE_WEIGHT[stageName] ?? (1 / ts);
   const percent = Math.max(3, Math.min(99, Math.round((done + cur * withinFrac) * 100)));
