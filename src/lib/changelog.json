@@ -1,6 +1,34 @@
 {
-  "generated": "2026-07-14T01:38:16.480Z",
+  "generated": "2026-07-14T05:39:27.375Z",
   "entries": [
+    {
+      "hash": "eccd7ae6",
+      "date": "2026-07-13",
+      "type": "Other",
+      "description": "Gazetteer identity-anchor resolver (app-side, additive)",
+      "scope": null
+    },
+    {
+      "hash": "789c3ea2",
+      "date": "2026-07-13",
+      "type": "Fixed",
+      "description": "Stronger over-merge guard — bare factless common-name records need a POSITIVE tie, not just absence of contradiction (no bare-Muhammad->Prophet)",
+      "scope": "merge"
+    },
+    {
+      "hash": "805c8e35",
+      "date": "2026-07-13",
+      "type": "Fixed",
+      "description": "Evidence-CONSISTENCY doctrine — merge same-name unless a load-bearing fact CONTRADICTS (fixes same-person-across-books under-merge; Mírzá Músá x4 etc.)",
+      "scope": "merge"
+    },
+    {
+      "hash": "3f1fd5e9",
+      "date": "2026-07-13",
+      "type": "Fixed",
+      "description": "AI-thinking search bar — mask conic glow to border ring (no center bleed through translucent bar)",
+      "scope": "bio"
+    },
     {
       "hash": "b9bfb68d",
       "date": "2026-07-13",
@@ -3472,38 +3500,38 @@
       "type": "Fixed",
       "description": "Enrichment check is remote_only from dev machine (localhost API ping guard)",
       "scope": null
-    },
-    {
-      "hash": "df420554",
-      "date": "2026-05-18",
-      "type": "New",
-      "description": "Migration 78 — add em_synced column to entity_mentions (idempotent) Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
-      "scope": null
-    },
-    {
-      "hash": "98fe31e4",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Convert content.embedding Buffer to Float32Array before Meili push",
-      "scope": null
-    },
-    {
-      "hash": "9428d989",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Pipeline health endpoint WAL guard — skip slow COUNT when WAL > 200MB",
-      "scope": null
-    },
-    {
-      "hash": "7a20dfb2",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Sync worker falls back to content.embedding when cache empty; increase PIPELINE_LIMIT 2→5, FLUSH_PARAS 100→500 for vector re-sync",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-13": [
+      {
+        "hash": "eccd7ae6",
+        "date": "2026-07-13",
+        "type": "Other",
+        "description": "Gazetteer identity-anchor resolver (app-side, additive)",
+        "scope": null
+      },
+      {
+        "hash": "789c3ea2",
+        "date": "2026-07-13",
+        "type": "Fixed",
+        "description": "Stronger over-merge guard — bare factless common-name records need a POSITIVE tie, not just absence of contradiction (no bare-Muhammad->Prophet)",
+        "scope": "merge"
+      },
+      {
+        "hash": "805c8e35",
+        "date": "2026-07-13",
+        "type": "Fixed",
+        "description": "Evidence-CONSISTENCY doctrine — merge same-name unless a load-bearing fact CONTRADICTS (fixes same-person-across-books under-merge; Mírzá Músá x4 etc.)",
+        "scope": "merge"
+      },
+      {
+        "hash": "3f1fd5e9",
+        "date": "2026-07-13",
+        "type": "Fixed",
+        "description": "AI-thinking search bar — mask conic glow to border ring (no center bleed through translucent bar)",
+        "scope": "bio"
+      },
       {
         "hash": "b9bfb68d",
         "date": "2026-07-13",
@@ -7038,34 +7066,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Enrichment check is remote_only from dev machine (localhost API ping guard)",
-        "scope": null
-      },
-      {
-        "hash": "df420554",
-        "date": "2026-05-18",
-        "type": "New",
-        "description": "Migration 78 — add em_synced column to entity_mentions (idempotent) Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
-        "scope": null
-      },
-      {
-        "hash": "98fe31e4",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Convert content.embedding Buffer to Float32Array before Meili push",
-        "scope": null
-      },
-      {
-        "hash": "9428d989",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Pipeline health endpoint WAL guard — skip slow COUNT when WAL > 200MB",
-        "scope": null
-      },
-      {
-        "hash": "7a20dfb2",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Sync worker falls back to content.embedding when cache empty; increase PIPELINE_LIMIT 2→5, FLUSH_PARAS 100→500 for vector re-sync",
         "scope": null
       }
     ]

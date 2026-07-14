@@ -48,14 +48,13 @@
     try { const r = await fetch(`${API}/api/v1/people/progress`); if (r.ok) progress = await r.json(); } catch { /* offline — modal shows a note */ }
   }
   function openProgress() { showProgress = true; if (!progress) fetchProgress(); }
-  // While the roadmap modal is open: lock background scroll (no bleed-through) AND poll every 15s so the
-  // currently-grounding book's live progress updates without the user re-opening the popup.
+  // The progress panel is PERSISTENT (a collapsed right-edge tab): fetch on mount and poll every 20s so the tab
+  // always shows a live book count and the currently-grounding book updates whether the panel is open or not.
   $effect(() => {
-    if (typeof document === 'undefined' || !showProgress) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const poll = setInterval(fetchProgress, 15000);
-    return () => { document.body.style.overflow = prev; clearInterval(poll); };
+    if (typeof window === 'undefined') return;
+    fetchProgress();
+    const poll = setInterval(fetchProgress, 20000);
+    return () => clearInterval(poll);
   });
   const fmtK = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n ?? 0));
   const STAGE_LABEL = { disambiguate: 'Disambiguating text', mentions: 'Extracting mentions', claims: 'Extracting claims',
@@ -219,10 +218,17 @@
       {#if aiError}<p class="ai-error">{aiError}</p>{/if}
     </div>
 
-    {#if showProgress}
-      <div class="prog-overlay" onclick={() => (showProgress = false)} role="presentation" transition:fade={{ duration: 150 }}>
-        <div class="prog-modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Library integration progress">
-          <button class="prog-close" onclick={() => (showProgress = false)} aria-label="Close">✕</button>
+    <!-- Persistent right-hand progress panel: a slim edge-tab when collapsed, a full drawer when expanded. -->
+    <aside class="prog-panel" class:open={showProgress}>
+      {#if !showProgress}
+        <button class="prog-tab" onclick={openProgress} title="Library progress — the road to all history absorbed" aria-label="Open library progress">
+          <span class="prog-tab-ico" aria-hidden="true">◧</span>
+          <span class="prog-tab-tx">Library&nbsp;progress</span>
+          {#if progress}<span class="prog-tab-n">{progress.doneBooks}/{progress.totalBooks}</span>{/if}
+        </button>
+      {:else}
+        <div class="prog-drawer" role="dialog" aria-label="Library integration progress" transition:fade={{ duration: 150 }}>
+          <button class="prog-close" onclick={() => (showProgress = false)} aria-label="Collapse panel">›</button>
           <h2 class="prog-title">Absorbing the history</h2>
           {#if progress}
             <p class="prog-lead"><strong>{(progress.cumulativeUnique ?? 0).toLocaleString()}</strong> distinct people grounded so far <span class="prog-sub">· {progress.doneBooks}/{progress.totalBooks} books{#if progress.totalParas} · {fmtK(progress.totalParas)} paragraphs{/if}</span> — toward <em>all history absorbed</em>.</p>
@@ -297,8 +303,8 @@
             <p class="prog-lead">Loading the roadmap…</p>
           {/if}
         </div>
-      </div>
-    {/if}
+      {/if}
+    </aside>
 
     {#if aiIds !== null && aiReasoning}
       <div class="ai-answer" transition:fade={{ duration: 250 }}>
@@ -601,13 +607,20 @@
   .progbtn { flex: 0 0 auto; font-size: .78rem; color: var(--text-secondary); background: none;
     border: 1px solid var(--border); border-radius: 1rem; padding: .28rem .7rem; cursor: pointer; transition: .18s; }
   .progbtn:hover { border-color: var(--accent); color: var(--accent); }
-  .prog-overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-start; justify-content: center;
-    padding: 5vh 1rem; background: rgb(0 0 0 / .55); backdrop-filter: blur(3px); overflow-y: auto; overscroll-behavior: contain; }
-  .prog-modal { position: relative; width: min(40rem, 100%); max-height: 90vh; overflow-y: auto; overscroll-behavior: contain;
-    background: var(--surface-1); border: 1px solid var(--border);
-    border-radius: 1rem; padding: 1.6rem 1.5rem 1.2rem; box-shadow: 0 24px 60px rgb(0 0 0 / .4); }
+  .prog-panel { position: fixed; top: 0; right: 0; height: 100dvh; z-index: 40; display: flex; align-items: flex-start; pointer-events: none; }
+  .prog-panel > * { pointer-events: auto; }
+  .prog-tab { position: absolute; top: 50%; right: 0; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: .45rem;
+    writing-mode: vertical-rl; background: var(--surface-1); border: 1px solid var(--border); border-right: none;
+    border-radius: .7rem 0 0 .7rem; padding: .95rem .5rem; cursor: pointer; color: var(--text-secondary); font-size: .74rem; letter-spacing: .02em;
+    box-shadow: -6px 0 18px rgb(0 0 0 / .18); transition: color .18s, border-color .18s, background .18s; }
+  .prog-tab:hover { color: var(--accent); border-color: var(--accent); background: var(--surface-2); }
+  .prog-tab-ico { writing-mode: horizontal-tb; font-size: 1.05rem; }
+  .prog-tab-n { writing-mode: horizontal-tb; font-weight: 700; color: var(--accent); font-size: .72rem; }
+  .prog-drawer { position: relative; width: min(34rem, 94vw); height: 100dvh; overflow-y: auto; overscroll-behavior: contain;
+    background: var(--surface-1); border-left: 1px solid var(--border); box-shadow: -20px 0 50px rgb(0 0 0 / .3);
+    padding: 1.8rem 1.5rem 3rem; }
   .prog-close { position: absolute; top: .8rem; right: .8rem; width: 2rem; height: 2rem; border: none; border-radius: 50%;
-    background: var(--surface-3); color: var(--text-secondary); cursor: pointer; font-size: .9rem; }
+    background: var(--surface-3); color: var(--text-secondary); cursor: pointer; font-size: 1.15rem; line-height: 1; }
   .prog-close:hover { color: var(--text-primary); }
   .prog-title { font-family: 'Amiri', Georgia, serif; font-size: 1.5rem; margin: 0 2rem .2rem 0; color: var(--text-primary); }
   .prog-lead { font-size: .85rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 1.1rem; }
