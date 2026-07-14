@@ -63,6 +63,8 @@
   const stageLabel = (s) => STAGE_LABEL[s] || 'Grounding';
   // Collapsible phases: the phase being processed (or the frontier) auto-opens; the user can toggle any.
   const activePhaseKey = $derived(progress?.active ? (progress.phases.find((p) => p.books.some((b) => b.id === progress.active.docId))?.key ?? null) : null);
+  // Overall progress = completed books + the active book's own fraction, as a 0–100 percent (drives the collapsed rail fill).
+  const overallPct = $derived(progress ? Math.min(100, ((progress.doneBooks + (progress.active?.percent ?? 0) / 100) / Math.max(1, progress.totalBooks)) * 100) : 0);
   const frontierKey = $derived(progress ? (progress.phases.find((p) => (p.done ?? 0) < (p.total ?? 0))?.key ?? progress.phases[0]?.key ?? null) : null);
   let openSet = $state(null); // null = auto (follow active/frontier); becomes a Set once the user toggles
   const openKeys = $derived(openSet ?? new Set([activePhaseKey ?? frontierKey].filter(Boolean)));
@@ -167,17 +169,20 @@
 
 <div class="archive">
   {#if !showProgress}
-    <button class="prog-bar" class:active={!!progress?.active} onclick={openProgress} title="Library progress — the road to all history absorbed" aria-label="Open library progress panel">
-      <!-- Base fill = COMPLETED books; the bright shimmering sub-segment = the ACTIVE book filling its own slice,
-           so a long book visibly progresses (0→100%) rather than the bar looking frozen between book completions. -->
-      <span class="prog-bar-fill" style="width:{progress ? ((progress.doneBooks / Math.max(1, progress.totalBooks)) * 100).toFixed(2) : 0}%"></span>
-      {#if progress?.active}<span class="prog-bar-sub" style="left:{((progress.doneBooks / Math.max(1, progress.totalBooks)) * 100).toFixed(2)}%;width:{(((progress.active.percent ?? 0) / 100) * (100 / Math.max(1, progress.totalBooks))).toFixed(2)}%"></span>{/if}
-      <span class="prog-bar-row">
-        <span class="prog-bar-ico" aria-hidden="true">◧</span>
-        <span class="prog-bar-label">{#if progress?.active}Grounding <strong>{progress.active.title}</strong>{#if progress.active.percent != null} · {progress.active.percent}%{/if}{:else}Library grounding{/if}</span>
-        <span class="prog-bar-stat">{#if progress}{progress.doneBooks}/{progress.totalBooks}&nbsp;books · {(progress.cumulativeUnique ?? 0).toLocaleString()}&nbsp;souls{:else}…{/if}</span>
-        <span class="prog-bar-chev" aria-hidden="true">⌃</span>
-      </span>
+    <!-- Collapsed state of the progress sidebar: a standard collapsible-sidebar rail docked to the top-right side.
+         A little info (souls + overall %, live book % when grounding) + a clear ‹ arrow to expand into the full drawer. -->
+    <button class="prog-rail" class:active={!!progress?.active} onclick={openProgress}
+      title={progress?.active ? `Grounding ${progress.active.title} — click to expand` : 'Library progress — click to expand'}
+      aria-label="Expand library progress panel">
+      <span class="prog-rail-track" aria-hidden="true"><span class="prog-rail-fill" style="height:{overallPct.toFixed(1)}%"></span></span>
+      <span class="prog-rail-arrow" aria-hidden="true">‹</span>
+      <span class="prog-rail-num">{progress ? (progress.cumulativeUnique ?? 0).toLocaleString() : '·'}</span>
+      <span class="prog-rail-cap">souls</span>
+      {#if progress?.active}
+        <span class="prog-rail-live"><span class="prog-rail-dot" aria-hidden="true"></span>{progress.active.percent ?? 0}%</span>
+      {:else if progress}
+        <span class="prog-rail-books">{progress.doneBooks}/{progress.totalBooks}</span>
+      {/if}
     </button>
   {/if}
   {#if heroSet.length}
@@ -223,7 +228,6 @@
       </div>
       <div class="subrow">
         <span class="resultline">{filtered.length.toLocaleString()} {filtered.length === 1 ? 'soul' : 'souls'}{#if q || filter || aiIds !== null}{` of ${persons.length.toLocaleString()}`}{/if}</span>
-        <button class="progbtn" onclick={openProgress} title="Which books have been integrated so far — the road to all history absorbed">◧&nbsp;Library progress</button>
       </div>
       <div class="samples" class:hidden={!!q.trim() || aiIds !== null || aiBusy}>
         <span class="samples-lead">✦ Ask the archive — try:</span>
@@ -613,39 +617,39 @@
   @media (prefers-reduced-motion: reduce) { *, .card, .orb { animation: none !important; } }
 
   /* ── Library-integration progress popup ─────────────────────────────── */
-  .progbtn { flex: 0 0 auto; font-size: .78rem; color: var(--text-secondary); background: none;
-    border: 1px solid var(--border); border-radius: 1rem; padding: .28rem .7rem; cursor: pointer; transition: .18s; }
-  .progbtn:hover { border-color: var(--accent); color: var(--accent); }
   /* Persistent progress panel. Collapsed = a slim edge-tab; expanded = a SOLID drawer above the navbar with a
      dimming backdrop (click-outside to close) so page content never bleeds through or sits under the nav. */
   .prog-panel { position: fixed; inset: 0; z-index: 1000; pointer-events: none; }
   .prog-panel > * { pointer-events: auto; }
-  /* Collapsed progress = an artistic bar at the top of the archive, sticky just under the sticky navbar (z 100). */
-  .prog-bar { position: sticky; top: 3.35rem; z-index: 30; display: block; width: 100%; margin: 0 0 1.15rem; padding: 0;
-    border: 1px solid var(--border); border-radius: .7rem; overflow: hidden; cursor: pointer; text-align: left;
-    background: light-dark(#f8fafc, #1e293b); box-shadow: 0 3px 14px rgb(0 0 0 / .12); transition: border-color .2s, box-shadow .2s; }
-  .prog-bar:hover { border-color: var(--accent); box-shadow: 0 4px 18px rgb(0 0 0 / .18); }
-  .prog-bar-fill { position: absolute; inset: 0 auto 0 0; z-index: 0;
-    background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 34%, transparent), color-mix(in oklab, var(--accent) 10%, transparent));
-    transition: width .7s cubic-bezier(.2, .8, .2, 1); }
-  .prog-bar-row { position: relative; z-index: 1; display: flex; align-items: center; gap: .6rem; padding: .6rem .9rem; font-size: .84rem; color: var(--text-primary); }
-  .prog-bar-ico { font-size: 1.05rem; color: var(--accent); flex: 0 0 auto; }
-  .prog-bar-label { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .prog-bar-label strong { color: var(--accent); font-weight: 700; }
-  .prog-bar-stat { margin-left: auto; color: var(--text-secondary); font-size: .78rem; white-space: nowrap; flex: 0 0 auto; }
-  .prog-bar-chev { flex: 0 0 auto; color: var(--text-secondary); transition: transform .2s, color .2s; }
-  .prog-bar:hover .prog-bar-chev { transform: translateY(-1px); color: var(--accent); }
-  /* Active = a moving shimmer across the fill + a pulsing icon + a soft accent ring. */
-  .prog-bar.active { border-color: color-mix(in oklab, var(--accent) 45%, var(--border)); }
-  .prog-bar-sub { position: absolute; top: 0; bottom: 0; z-index: 0;
-    background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 30%, transparent), color-mix(in oklab, var(--accent) 62%, transparent), color-mix(in oklab, var(--accent) 30%, transparent));
-    background-size: 220% 100%; box-shadow: 0 0 12px color-mix(in oklab, var(--accent) 40%, transparent);
-    transition: width .7s cubic-bezier(.2, .8, .2, 1), left .7s; }
-  .prog-bar.active .prog-bar-sub { animation: progshimmer 2.4s linear infinite; }
-  .prog-bar.active .prog-bar-ico { animation: progpulse 1.6s ease-in-out infinite; }
-  @keyframes progshimmer { from { background-position: 220% 0; } to { background-position: -220% 0; } }
-  @keyframes progpulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.88); } }
-  @media (prefers-reduced-motion: reduce) { .prog-bar.active .prog-bar-fill, .prog-bar.active .prog-bar-ico { animation: none; } }
+  /* Collapsed progress = a standard collapsible-sidebar rail docked to the top-right side, below the sticky navbar (z 100).
+     Little info (souls + overall %, live book % when grounding) + a clear ‹ arrow; click expands to the full drawer. */
+  .prog-rail { position: fixed; top: 4.4rem; right: 0; z-index: 45;
+    display: flex; flex-direction: column; align-items: center; gap: .18rem;
+    min-width: 3.9rem; padding: .55rem .5rem .7rem; cursor: pointer; overflow: hidden;
+    background: light-dark(#f8fafc, #1e293b); color: var(--text-secondary);
+    border: 1px solid var(--border); border-right: none; border-radius: .85rem 0 0 .85rem;
+    box-shadow: -6px 8px 24px rgb(0 0 0 / .18);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, color .18s ease; }
+  .prog-rail:hover { transform: translateX(-3px); border-color: var(--accent); color: var(--text-primary);
+    box-shadow: -8px 10px 28px rgb(0 0 0 / .26); }
+  /* overall-progress fill along the rail's left edge (bottom → top) */
+  .prog-rail-track { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--surface-3); }
+  .prog-rail-fill { position: absolute; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(0deg, var(--accent), color-mix(in oklab, var(--accent) 35%, transparent));
+    transition: height .7s cubic-bezier(.2, .8, .2, 1); }
+  .prog-rail-arrow { font-size: 1.25rem; line-height: 1; font-weight: 700; color: var(--accent); }
+  .prog-rail-num { margin-top: .2rem; font-size: .98rem; font-weight: 700; line-height: 1; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .prog-rail-cap { font-size: .56rem; text-transform: uppercase; letter-spacing: .09em; color: var(--text-muted); }
+  .prog-rail-books { margin-top: .18rem; font-size: .64rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .prog-rail-live { display: flex; align-items: center; gap: .22rem; margin-top: .22rem;
+    font-size: .62rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .prog-rail-dot { width: .42rem; height: .42rem; border-radius: 50%; background: var(--accent); flex: 0 0 auto; }
+  /* Active = accent ring + pulsing live-dot + glowing arrow. */
+  .prog-rail.active { border-color: color-mix(in oklab, var(--accent) 50%, var(--border)); }
+  .prog-rail.active .prog-rail-dot { animation: progpulse 1.6s ease-in-out infinite; }
+  .prog-rail.active .prog-rail-arrow { animation: railglow 2.4s ease-in-out infinite; }
+  @keyframes railglow { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+  @media (prefers-reduced-motion: reduce) { .prog-rail.active .prog-rail-dot, .prog-rail.active .prog-rail-arrow { animation: none; } }
   .prog-scrim { position: fixed; inset: 0; background: rgb(0 0 0 / .5); backdrop-filter: blur(2px); }
   .prog-drawer { position: absolute; top: 0; right: 0; height: 100dvh; width: min(34rem, 94vw); overflow-y: auto; overscroll-behavior: contain;
     background: light-dark(#f8fafc, #1e293b); border-left: 1px solid var(--border); box-shadow: -24px 0 60px rgb(0 0 0 / .5);
