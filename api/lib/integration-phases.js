@@ -63,8 +63,9 @@ export const AUTHOR_ROUTING = [
 // ones (grounded first, then largest first). Extend as the plan grows.
 export const ABSORPTION_ORDER = [
   21310, 21308, 8632, 429, 430, 431, 432,                          // GPB · Dawn-Breakers · Gate · ROB vols 1-4
-  466, 462, 3789, 3887, 464, 465, 467, 463, 427, 426,              // Balyuzi + Taherzadeh (Foundation; 466 canonical, not stray-scrape 28849)
+  466, 462, 3789, 3887, 464, 467, 12427, 463, 427, 426,            // Balyuzi + Taherzadeh (Foundation; 466 canonical, not stray-scrape 28849)
   15228, 15257, 15254, 20028, 15256, 20035, 20037, 15255, 15259, 13433, 20331, // Máz · Momen · Awakening (Foundation)
+  465,  // Muḥammad and the Course of Islam — Islamic background, not a Bahá'í book → grounded LAST in Foundation
   20907, 20919, 11355, 11335, 12472, 16552, 11265, 16316, 11344, 214474, 15347, 11374, 9095, // Primary
 ];
 
