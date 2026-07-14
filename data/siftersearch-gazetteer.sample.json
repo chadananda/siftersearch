@@ -1,0 +1,46 @@
+{
+  "built": "2026-07-13T00:00:00.000Z",
+  "count": 3,
+  "guards": [
+    {
+      "a": "Áqáy-i-Kalím",
+      "b": "Ḥájí Mírzá Músáy-i-Qumí",
+      "why": "different -Qumí nisba; Qum-born martyr, not Bahá’u’lláh’s brother"
+    }
+  ],
+  "entries": [
+    {
+      "id": 101,
+      "canonical": "Áqáy-i-Kalím",
+      "forms": ["Áqáy-i-Kalím", "Mírzá Músá", "Jináb-i-Kalím", "the ablest of His brothers"],
+      "nisba": null,
+      "side": "bahai",
+      "dates": "1817-1887",
+      "kin": "brother of Bahá’u’lláh",
+      "importance": 78,
+      "mentions": 214
+    },
+    {
+      "id": 202,
+      "canonical": "Mírzá Yaḥyá",
+      "forms": ["Mírzá Yaḥyá", "Ṣubḥ-i-Azal", "Yaḥyá"],
+      "nisba": null,
+      "side": "babi",
+      "dates": "1831-1912",
+      "kin": "half-brother of Bahá’u’lláh",
+      "importance": 70,
+      "mentions": 160
+    },
+    {
+      "id": 303,
+      "canonical": "Ḥujjat",
+      "forms": ["Ḥujjat", "Mullá Muḥammad-‘Alíy-i-Zanjání", "Ḥujjat-i-Zanjání"],
+      "nisba": "Zanjání",
+      "side": "babi",
+      "dates": "1812-1851",
+      "kin": null,
+      "importance": 72,
+      "mentions": 140
+    }
+  ]
+}
