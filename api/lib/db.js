@@ -23,10 +23,14 @@ const ROUTE_WRITES = !!WRITER_URL && !IS_WRITER;
 // Fails loud — never silently falls back to a direct write (that would
 // reintroduce the contention this whole mechanism exists to prevent).
 async function postWriteBatch(statements, name = '') {
+  // Bounded write: a slow/stuck write aborts as a catchable TimeoutError instead of an uncaught undici
+  // headers-timeout crashing a long grounding run. Safe — writer transactions are atomic and the pipeline's
+  // resume is idempotent per paragraph, so an aborted-but-maybe-committed write never duplicates.
   const res = await fetch(`${WRITER_URL}/write`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ statements, name }),
+    signal: AbortSignal.timeout(90000),
   });
   if (!res.ok) {
     const detail = await res.text().catch(() => '');

@@ -33,24 +33,33 @@ export async function run(ctx, docId, opts = {}) {
   const maxTokens = (m) => Math.min(ctx.catalog.get(m)?.maxOutput ?? 4096, 8000);
   const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, empty: 0, failed: 0, escalated: 0, continued: 0 };
 
-  // Write INCREMENTALLY per paragraph so a long run is resilient (a crash keeps prior work) and observable.
-  // A paragraph ends 'ok' | 'empty' (model answered, no claims — genuine) | 'errored' (every call threw — a
-  // transient throttle). errored is surfaced as `failed` (never a silent loss); recovery is a cheap `--resume`
-  // re-run that reprocesses only the gap paragraphs. Idempotent resume beats an in-run retry that would re-run
-  // the full ladder twice on a persistently-dead paragraph.
+  // BATCHED, resilient writes: accumulate claim rows and flush in chunks instead of one write per paragraph.
+  // Per-paragraph writes flooded the single writer (:7849) on dense books — the queue backed up until a write
+  // headers-timed-out UNCAUGHT and crashed the whole run. Batching cuts writer round-trips ~15× (less contention,
+  // fewer timeouts, faster). A flush failure is CAUGHT (never crashes the run): those paragraphs stay un-claimed
+  // and a cheap `--resume` re-does only them (claims are idempotent per paragraph, so no partial/duplicate risk).
+  const FLUSH_ROWS = 200;
+  const buf = [];
+  const flush = async () => {
+    if (opts.dryRun || !buf.length) return;
+    const rows = buf.splice(0, buf.length);                          // synchronous splice → safe under the async pool
+    try { stats.written += await ctx.store.saveClaims(rows); }
+    catch (e) { if (e?.fatal) throw e; stats.writeFailed = (stats.writeFailed || 0) + rows.length; ctx.log.warn?.({ err: e?.message, rows: rows.length }, 'claims write failed — paragraphs left for --resume'); }
+  };
   await pool(opts.concurrency ?? 5, paras, async (p) => {
     const { claims, escalated, continued, errored } = await extractAll(ctx, { system, baseUser: buildUser(p), route, maxTokens });
     if (escalated) stats.escalated++;
     stats.continued += continued;
     if (!claims.length) { if (errored) stats.failed++; else stats.empty++; return; }
-    const era = eraOf(p.context), textNorm = proofNorm(p.text), paraRows = [];
+    const era = eraOf(p.context), textNorm = proofNorm(p.text);
     for (const c of claims) {
       stats.claims++;
       if (!c.subject || !c.relation || !c.proof || !proofPresent(c.proof, textNorm)) { stats.dropped++; continue; }
-      paraRows.push(claimRow(c, { docId, pid: p.pid, era, relKeys, methodVersion: version, extractor, batch }));
+      buf.push(claimRow(c, { docId, pid: p.pid, era, relKeys, methodVersion: version, extractor, batch }));
     }
-    if (!opts.dryRun && paraRows.length) stats.written += await ctx.store.saveClaims(paraRows);
+    if (buf.length >= FLUSH_ROWS) await flush();
   });
+  await flush();                                                     // final partial batch
   ctx.log.info?.({ docId, ...stats }, 'entities/claims');
   return stats;
 }

@@ -166,6 +166,17 @@
 <svelte:window onkeydown={(e) => e.key === 'Escape' && close()} />
 
 <div class="archive">
+  {#if !showProgress}
+    <button class="prog-bar" class:active={!!progress?.active} onclick={openProgress} title="Library progress — the road to all history absorbed" aria-label="Open library progress panel">
+      <span class="prog-bar-fill" style="width:{progress ? Math.round((progress.doneBooks / Math.max(1, progress.totalBooks)) * 100) : 0}%"></span>
+      <span class="prog-bar-row">
+        <span class="prog-bar-ico" aria-hidden="true">◧</span>
+        <span class="prog-bar-label">{#if progress?.active}Grounding <strong>{progress.active.title}</strong>{:else}Library grounding{/if}</span>
+        <span class="prog-bar-stat">{#if progress}{progress.doneBooks}/{progress.totalBooks}&nbsp;books · {(progress.cumulativeUnique ?? 0).toLocaleString()}&nbsp;souls{:else}…{/if}</span>
+        <span class="prog-bar-chev" aria-hidden="true">⌃</span>
+      </span>
+    </button>
+  {/if}
   {#if heroSet.length}
     <div class="hero" aria-hidden="true">
       {#each heroSet as p, idx (idx)}
@@ -219,14 +230,8 @@
     </div>
 
     <!-- Persistent right-hand progress panel: a slim edge-tab when collapsed, a full drawer when expanded. -->
-    <aside class="prog-panel" class:open={showProgress}>
-      {#if !showProgress}
-        <button class="prog-tab" onclick={openProgress} title="Library progress — the road to all history absorbed" aria-label="Open library progress">
-          <span class="prog-tab-ico" aria-hidden="true">◧</span>
-          <span class="prog-tab-tx">Library&nbsp;progress</span>
-          {#if progress}<span class="prog-tab-n">{progress.doneBooks}/{progress.totalBooks}</span>{/if}
-        </button>
-      {:else}
+    {#if showProgress}
+      <aside class="prog-panel">
         <div class="prog-scrim" onclick={() => (showProgress = false)} role="presentation" transition:fade={{ duration: 150 }}></div>
         <div class="prog-drawer" role="dialog" aria-modal="true" aria-label="Library integration progress" transition:fade={{ duration: 150 }}>
           <button class="prog-close" onclick={() => (showProgress = false)} aria-label="Close panel" title="Close">✕</button>
@@ -304,8 +309,8 @@
             <p class="prog-lead">Loading the roadmap…</p>
           {/if}
         </div>
-      {/if}
-    </aside>
+      </aside>
+    {/if}
 
     {#if aiIds !== null && aiReasoning}
       <div class="ai-answer" transition:fade={{ duration: 250 }}>
@@ -612,13 +617,30 @@
      dimming backdrop (click-outside to close) so page content never bleeds through or sits under the nav. */
   .prog-panel { position: fixed; inset: 0; z-index: 1000; pointer-events: none; }
   .prog-panel > * { pointer-events: auto; }
-  .prog-tab { position: absolute; top: 50%; right: 0; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: .45rem;
-    writing-mode: vertical-rl; background: light-dark(#f8fafc, #1e293b); border: 1px solid var(--border); border-right: none;
-    border-radius: .7rem 0 0 .7rem; padding: 1rem .55rem; cursor: pointer; color: var(--text-secondary); font-size: .74rem; letter-spacing: .02em;
-    box-shadow: -6px 0 18px rgb(0 0 0 / .22); transition: color .18s, border-color .18s; }
-  .prog-tab:hover { color: var(--accent); border-color: var(--accent); }
-  .prog-tab-ico { writing-mode: horizontal-tb; font-size: 1.05rem; }
-  .prog-tab-n { writing-mode: horizontal-tb; font-weight: 700; color: var(--accent); font-size: .72rem; }
+  /* Collapsed progress = an artistic bar at the top of the archive, sticky just under the sticky navbar (z 100). */
+  .prog-bar { position: sticky; top: 3.35rem; z-index: 30; display: block; width: 100%; margin: 0 0 1.15rem; padding: 0;
+    border: 1px solid var(--border); border-radius: .7rem; overflow: hidden; cursor: pointer; text-align: left;
+    background: light-dark(#f8fafc, #1e293b); box-shadow: 0 3px 14px rgb(0 0 0 / .12); transition: border-color .2s, box-shadow .2s; }
+  .prog-bar:hover { border-color: var(--accent); box-shadow: 0 4px 18px rgb(0 0 0 / .18); }
+  .prog-bar-fill { position: absolute; inset: 0 auto 0 0; z-index: 0;
+    background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 34%, transparent), color-mix(in oklab, var(--accent) 10%, transparent));
+    transition: width .7s cubic-bezier(.2, .8, .2, 1); }
+  .prog-bar-row { position: relative; z-index: 1; display: flex; align-items: center; gap: .6rem; padding: .6rem .9rem; font-size: .84rem; color: var(--text-primary); }
+  .prog-bar-ico { font-size: 1.05rem; color: var(--accent); flex: 0 0 auto; }
+  .prog-bar-label { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .prog-bar-label strong { color: var(--accent); font-weight: 700; }
+  .prog-bar-stat { margin-left: auto; color: var(--text-secondary); font-size: .78rem; white-space: nowrap; flex: 0 0 auto; }
+  .prog-bar-chev { flex: 0 0 auto; color: var(--text-secondary); transition: transform .2s, color .2s; }
+  .prog-bar:hover .prog-bar-chev { transform: translateY(-1px); color: var(--accent); }
+  /* Active = a moving shimmer across the fill + a pulsing icon + a soft accent ring. */
+  .prog-bar.active { border-color: color-mix(in oklab, var(--accent) 45%, var(--border)); }
+  .prog-bar.active .prog-bar-fill { background-image: linear-gradient(90deg,
+      color-mix(in oklab, var(--accent) 14%, transparent), color-mix(in oklab, var(--accent) 42%, transparent), color-mix(in oklab, var(--accent) 14%, transparent));
+    background-size: 220% 100%; animation: progshimmer 2.4s linear infinite; }
+  .prog-bar.active .prog-bar-ico { animation: progpulse 1.6s ease-in-out infinite; }
+  @keyframes progshimmer { from { background-position: 220% 0; } to { background-position: -220% 0; } }
+  @keyframes progpulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.88); } }
+  @media (prefers-reduced-motion: reduce) { .prog-bar.active .prog-bar-fill, .prog-bar.active .prog-bar-ico { animation: none; } }
   .prog-scrim { position: fixed; inset: 0; background: rgb(0 0 0 / .5); backdrop-filter: blur(2px); }
   .prog-drawer { position: absolute; top: 0; right: 0; height: 100dvh; width: min(34rem, 94vw); overflow-y: auto; overscroll-behavior: contain;
     background: light-dark(#f8fafc, #1e293b); border-left: 1px solid var(--border); box-shadow: -24px 0 60px rgb(0 0 0 / .5);
