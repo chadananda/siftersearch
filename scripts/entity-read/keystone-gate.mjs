@@ -61,7 +61,7 @@ const ALL = await queryAll(
      LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type='person'
     WHERE ge.entity_type='person'`);
 const FOLDED = ALL.map((r) => ({ ...r, f: fold(r.n) }));
-const isOpponent = (side) => /opponent|enemy|other/i.test(side || '');
+const isOpponent = (side) => /opponent|enemy|other|covenant|breaker/i.test(side || '');
 
 function candidates(forms) {
   const keys = forms.map(fold);
