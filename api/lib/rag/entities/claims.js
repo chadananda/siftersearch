@@ -38,7 +38,9 @@ export async function run(ctx, docId, opts = {}) {
   // headers-timed-out UNCAUGHT and crashed the whole run. Batching cuts writer round-trips ~15× (less contention,
   // fewer timeouts, faster). A flush failure is CAUGHT (never crashes the run): those paragraphs stay un-claimed
   // and a cheap `--resume` re-does only them (claims are idempotent per paragraph, so no partial/duplicate risk).
-  const FLUSH_ROWS = 200;
+  // 20 rows ≈ a handful of paragraphs — small enough that the progress %'s within-stage fraction climbs in fine steps
+  // (not ~40% jumps), still ~10× fewer writer round-trips than per-paragraph, so no contention/timeout regression.
+  const FLUSH_ROWS = 20;
   const buf = [];
   const flush = async () => {
     if (opts.dryRun || !buf.length) return;
