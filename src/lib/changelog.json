@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-14T14:01:41.776Z",
+  "generated": "2026-07-14T14:25:40.294Z",
   "entries": [
+    {
+      "hash": "019ae36c",
+      "date": "2026-07-14",
+      "type": "Other",
+      "description": "Collapsed state → standard right-side rail (top-right, docked), not a full-width top bar",
+      "scope": null
+    },
     {
       "hash": "36928fd2",
       "date": "2026-07-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Bulk-meili-sync — direct 2000-para batches, bypasses per-doc overhead Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
       "scope": null
-    },
-    {
-      "hash": "16f8d883",
-      "date": "2026-05-18",
-      "type": "Performance",
-      "description": "Batch 500 docs per fetch instead of re-fetching per doc",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-14": [
+      {
+        "hash": "019ae36c",
+        "date": "2026-07-14",
+        "type": "Other",
+        "description": "Collapsed state → standard right-side rail (top-right, docked), not a full-width top bar",
+        "scope": null
+      },
       {
         "hash": "36928fd2",
         "date": "2026-07-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-05-18",
         "type": "New",
         "description": "Bulk-meili-sync — direct 2000-para batches, bypasses per-doc overhead Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
-        "scope": null
-      },
-      {
-        "hash": "16f8d883",
-        "date": "2026-05-18",
-        "type": "Performance",
-        "description": "Batch 500 docs per fetch instead of re-fetching per doc",
         "scope": null
       }
     ]

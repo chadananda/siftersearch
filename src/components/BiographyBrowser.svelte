@@ -44,17 +44,36 @@
   let aiReasoning = $state(null);  // { summary (integrated markdown explanation), evidence: {id} } — the AI's answer
   let aiError = $state(null);      // surfaced when a meaning-search fetch fails (never silent)
   let showProgress = $state(false), progress = $state(null);   // book-integration roadmap popup
+  let simPct = $state(0), _simDoc = null;  // client-SIMULATED active-book % — creeps between polls so a long stage never looks frozen
   async function fetchProgress() {
-    try { const r = await fetch(`${API}/api/v1/people/progress`); if (r.ok) progress = await r.json(); } catch { /* offline — modal shows a note */ }
+    try {
+      const r = await fetch(`${API}/api/v1/people/progress`); if (!r.ok) return;
+      progress = await r.json();
+      const a = progress?.active;
+      if (!a) { simPct = 0; _simDoc = null; }
+      // New book (or first sight) → snap to its real %. Same book → catch up to the fresh real %, never rewinding
+      // (a cache-jitter dip in the real % shouldn't pull the bar backward).
+      else if (a.docId !== _simDoc) { simPct = a.percent ?? 0; _simDoc = a.docId; }
+      else if ((a.percent ?? 0) > simPct) simPct = a.percent;
+    } catch { /* offline — modal shows a note */ }
   }
   function openProgress() { showProgress = true; if (!progress) fetchProgress(); }
-  // The progress panel is PERSISTENT (a collapsed right-edge tab): fetch on mount and poll every 20s so the tab
-  // always shows a live book count and the currently-grounding book updates whether the panel is open or not.
+  // The progress panel is PERSISTENT (a collapsed side rail): fetch on mount and poll every 30s so it always shows a
+  // live book count + the grounding book, whether the panel is open or not.
   $effect(() => {
     if (typeof window === 'undefined') return;
     fetchProgress();
-    const poll = setInterval(fetchProgress, 20000);
-    return () => clearInterval(poll);
+    const poll = setInterval(fetchProgress, 30000);
+    // Between polls, SIMULATE forward motion: ease up to the last real %, then drift a little past it (capped) so a
+    // long stage (claims/hype) keeps visibly advancing; the next poll re-anchors. Illusion only — never reaches 100%,
+    // and completion clears `active` (→ simPct 0), so a finished book doesn't sit at 96%.
+    const sim = setInterval(() => {
+      const a = progress?.active; if (!a) { if (simPct) simPct = 0; return; }
+      const real = a.percent ?? 0, ceil = Math.min(98, real + 7);
+      if (simPct < real) simPct = Math.min(real, simPct + Math.max(0.35, (real - simPct) * 0.12));
+      else if (simPct < ceil) simPct = Math.min(ceil, simPct + 0.09);
+    }, 600);
+    return () => { clearInterval(poll); clearInterval(sim); };
   });
   const fmtK = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n ?? 0));
   const STAGE_LABEL = { disambiguate: 'Disambiguating text', mentions: 'Extracting mentions', claims: 'Extracting claims',
@@ -64,7 +83,7 @@
   // Collapsible phases: the phase being processed (or the frontier) auto-opens; the user can toggle any.
   const activePhaseKey = $derived(progress?.active ? (progress.phases.find((p) => p.books.some((b) => b.id === progress.active.docId))?.key ?? null) : null);
   // Overall progress = completed books + the active book's own fraction, as a 0–100 percent (drives the collapsed rail fill).
-  const overallPct = $derived(progress ? Math.min(100, ((progress.doneBooks + (progress.active?.percent ?? 0) / 100) / Math.max(1, progress.totalBooks)) * 100) : 0);
+  const overallPct = $derived(progress ? Math.min(100, ((progress.doneBooks + (progress.active ? simPct : 0) / 100) / Math.max(1, progress.totalBooks)) * 100) : 0);
   const frontierKey = $derived(progress ? (progress.phases.find((p) => (p.done ?? 0) < (p.total ?? 0))?.key ?? progress.phases[0]?.key ?? null) : null);
   let openSet = $state(null); // null = auto (follow active/frontier); becomes a Set once the user toggles
   const openKeys = $derived(openSet ?? new Set([activePhaseKey ?? frontierKey].filter(Boolean)));
@@ -179,7 +198,7 @@
       <span class="prog-rail-num">{progress ? (progress.cumulativeUnique ?? 0).toLocaleString() : '·'}</span>
       <span class="prog-rail-cap">souls</span>
       {#if progress?.active}
-        <span class="prog-rail-live"><span class="prog-rail-dot" aria-hidden="true"></span>{progress.active.percent ?? 0}%</span>
+        <span class="prog-rail-live"><span class="prog-rail-dot" aria-hidden="true"></span>{Math.round(simPct)}%</span>
       {:else if progress}
         <span class="prog-rail-books">{progress.doneBooks}/{progress.totalBooks}</span>
       {/if}
@@ -251,9 +270,9 @@
                 <div class="prog-active-body">
                   <div class="prog-active-line">Now grounding <strong>{progress.active.title}</strong></div>
                   <div class="prog-active-meta">{stageLabel(progress.active.stage)}{#if progress.active.stageIndex != null} · stage {progress.active.stageIndex + 1}/{progress.active.totalStages}{/if}{#if progress.active.claimsExtracted} · {progress.active.claimsExtracted.toLocaleString()} claims{/if}</div>
-                  {#if progress.active.percent != null}<div class="prog-active-bar"><span style="width:{progress.active.percent}%"></span></div>{/if}
+                  {#if progress.active.percent != null}<div class="prog-active-bar"><span style="width:{simPct}%"></span></div>{/if}
                 </div>
-                {#if progress.active.percent != null}<span class="prog-active-pct">{progress.active.percent}%</span>{/if}
+                {#if progress.active.percent != null}<span class="prog-active-pct">{Math.round(simPct)}%</span>{/if}
               </div>
             {/if}
             <p class="prog-fine">Per-book <span class="pb-new">+N</span> = people first grounded there; ¶ = size in paragraphs. The book being grounded shows a live progress bar. Click a phase to expand.</p>
