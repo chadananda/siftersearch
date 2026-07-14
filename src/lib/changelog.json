@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-14T01:14:24.355Z",
+  "generated": "2026-07-14T01:38:16.480Z",
   "entries": [
+    {
+      "hash": "b9bfb68d",
+      "date": "2026-07-13",
+      "type": "New",
+      "description": "Pilgrim Notes as collapsible per-period tree under Primary Sources (613 small docs, grouped by era from file_path)",
+      "scope": "bio popup"
+    },
     {
       "hash": "4ed118e0",
       "date": "2026-07-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Sync worker falls back to content.embedding when cache empty; increase PIPELINE_LIMIT 2→5, FLUSH_PARAS 100→500 for vector re-sync",
       "scope": null
-    },
-    {
-      "hash": "06dc7f2f",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Restore synced_last_2h to pipeline endpoint (fast via idx_content_recently_synced); fix sync_stuck logic; dev-machine remote_only for Meili/boss checks",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-13": [
+      {
+        "hash": "b9bfb68d",
+        "date": "2026-07-13",
+        "type": "New",
+        "description": "Pilgrim Notes as collapsible per-period tree under Primary Sources (613 small docs, grouped by era from file_path)",
+        "scope": "bio popup"
+      },
       {
         "hash": "4ed118e0",
         "date": "2026-07-13",
@@ -7059,13 +7066,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Sync worker falls back to content.embedding when cache empty; increase PIPELINE_LIMIT 2→5, FLUSH_PARAS 100→500 for vector re-sync",
-        "scope": null
-      },
-      {
-        "hash": "06dc7f2f",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Restore synced_last_2h to pipeline endpoint (fast via idx_content_recently_synced); fix sync_stuck logic; dev-machine remote_only for Meili/boss checks",
         "scope": null
       }
     ]

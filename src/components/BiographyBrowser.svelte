@@ -441,8 +441,13 @@
   .searchbar:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
   .searchbar:focus-within { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent), 0 16px 38px -10px color-mix(in srgb, var(--accent) 45%, transparent), 0 2px 6px rgb(0 0 0 / .14); }
   /* AI thinking: a conic-gradient halo orbiting the whole bar — the "radically cool" signal */
-  .searchbar.busy { border-color: transparent; box-shadow: 0 0 26px -2px color-mix(in srgb, var(--accent) 45%, transparent); }
-  .searchbar.busy::before { content: ''; position: absolute; inset: -2.5px; border-radius: inherit; z-index: -1; background: conic-gradient(from var(--bio-angle), transparent 0deg, color-mix(in srgb, var(--accent) 25%, transparent) 35deg, var(--accent) 95deg, color-mix(in srgb, var(--accent) 55%, #fff) 140deg, var(--accent) 185deg, transparent 250deg, transparent 360deg); animation: bio-orbit 1.2s linear infinite; }
+  .searchbar.busy { border-color: transparent; box-shadow: 0 0 16px -6px color-mix(in srgb, var(--accent) 40%, transparent); }
+  /* animated conic border glow — MASKED to the border RING only (padding-box XOR border-box), so it glows at the
+     edges and never bleeds through the bar's translucent (—surface-1 = 80% opaque) center. */
+  .searchbar.busy::before { content: ''; position: absolute; inset: -1.5px; border-radius: inherit; padding: 2.5px;
+    background: conic-gradient(from var(--bio-angle), transparent 0deg, color-mix(in srgb, var(--accent) 20%, transparent) 40deg, var(--accent) 110deg, color-mix(in srgb, var(--accent) 70%, #fff) 150deg, var(--accent) 190deg, transparent 250deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; animation: bio-orbit 1.2s linear infinite; }
 
   .mag { color: var(--accent); font-size: 1.7rem; line-height: 1; display: inline-flex; width: 2rem; height: 2rem; align-items: center; justify-content: center; flex: 0 0 auto; }
   .mag.thinking { animation: bio-sparkle 1.5s ease-in-out infinite; filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent) 65%, transparent)); }
