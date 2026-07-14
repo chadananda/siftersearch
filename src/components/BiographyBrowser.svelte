@@ -44,17 +44,22 @@
   let aiReasoning = $state(null);  // { summary (integrated markdown explanation), evidence: {id} } — the AI's answer
   let aiError = $state(null);      // surfaced when a meaning-search fetch fails (never silent)
   let showProgress = $state(false), progress = $state(null);   // book-integration roadmap popup
-  let simPct = $state(0), _simDoc = null, _lastReal = 0, _delta = 2;  // simulated % + tracked per-poll real gain (predicts next)
+  let simPct = $state(0), _simDoc = null, _lastReal = 0, _lastTime = 0, _rate = 0;  // simulated % + estimated climb rate (%/ms)
   async function fetchProgress() {
     try {
       const r = await fetch(`${API}/api/v1/people/progress`); if (!r.ok) return;
       progress = await r.json();
       const a = progress?.active;
       if (!a) { simPct = 0; _simDoc = null; }
-      // New book → snap once + reset the gain estimate. Same book → don't snap (the sim ticker eases toward a target
-      // just past real), and update the EMA of how much the real % gains per poll (drives that target).
-      else if (a.docId !== _simDoc) { simPct = a.percent ?? 0; _simDoc = a.docId; _lastReal = a.percent ?? 0; _delta = 2; }
-      else { _delta = _delta * 0.6 + Math.max(0, (a.percent ?? 0) - _lastReal) * 0.4; _lastReal = a.percent ?? 0; }
+      // New book → snap + seed a small default rate. Same book → RESET simPct to the fresh real %, and recompute the
+      // count-up RATE from how much the real % gained since the last poll (%/ms, EMA-smoothed). The ticker climbs at
+      // that rate until the next poll re-anchors it.
+      else if (a.docId !== _simDoc) { simPct = a.percent ?? 0; _simDoc = a.docId; _lastReal = a.percent ?? 0; _lastTime = Date.now(); _rate = 0.0002; }
+      else {
+        const now = Date.now(), dt = Math.max(1, now - _lastTime), gain = Math.max(0, (a.percent ?? 0) - _lastReal);
+        _rate = _rate * 0.4 + (gain / dt) * 0.6;
+        simPct = a.percent ?? 0; _lastReal = a.percent ?? 0; _lastTime = now;
+      }
     } catch { /* offline — modal shows a note */ }
   }
   function openProgress() { showProgress = true; if (!progress) fetchProgress(); }
@@ -69,12 +74,10 @@
     // and completion clears `active` (→ simPct 0), so a finished book doesn't sit at 96%.
     const sim = setInterval(() => {
       const a = progress?.active; if (!a) { if (simPct) simPct = 0; return; }
-      const real = a.percent ?? 0;
-      // Aim just PAST real — at the value expected by the next poll (real + recent per-poll gain, min 1.2, hard-capped
-      // 98). Ease toward that moving target so the bar always climbs in decimals, tracks real honestly, and never runs
-      // away to a fixed cap or clamps onto the whole-number real % (which froze it at *.00). Min step keeps it visible.
-      const target = Math.min(98, real + Math.max(1.2, _delta));
-      if (simPct < target) simPct = Math.min(target, simPct + Math.max(0.04, (target - simPct) * 0.05));
+      // Climb continuously at the estimated rate (`_rate` %/ms × the 200ms tick). Never freezes — a tiny floor keeps it
+      // moving even when the measured rate is ~0. Each poll RESETS simPct to the fresh real % and recomputes the rate,
+      // so it re-anchors to the truth and keeps climbing from there. Hard cap 99 until completion clears `active`.
+      simPct = Math.min(99, simPct + Math.max(_rate * 200, 0.02));
     }, 200);
     return () => { clearInterval(poll); clearInterval(sim); };
   });
