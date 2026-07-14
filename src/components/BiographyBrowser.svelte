@@ -69,9 +69,11 @@
     // and completion clears `active` (→ simPct 0), so a finished book doesn't sit at 96%.
     const sim = setInterval(() => {
       const a = progress?.active; if (!a) { if (simPct) simPct = 0; return; }
-      const real = a.percent ?? 0, ceil = Math.min(98, real + 7);
+      // Ease up to the real % quickly, then drift only slightly past it (small cap) so a long stage still creeps but the
+      // bar never overstates progress much — the backend now reports real within-stage progress, so little drift is needed.
+      const real = a.percent ?? 0, ceil = Math.min(98, real + 3);
       if (simPct < real) simPct = Math.min(real, simPct + Math.max(0.35, (real - simPct) * 0.12));
-      else if (simPct < ceil) simPct = Math.min(ceil, simPct + 0.09);
+      else if (simPct < ceil) simPct = Math.min(ceil, simPct + 0.04);
     }, 600);
     return () => { clearInterval(poll); clearInterval(sim); };
   });
@@ -294,7 +296,7 @@
                           <span class="prog-book-title">{b.title}</span>
                           <span class="col-size">
                             {#if progress.active && b.id === progress.active.docId && progress.active.percent != null}
-                              <span class="pbp-track" title="{stageLabel(progress.active.stage)}"><span class="pbp-fill" style="width:{progress.active.percent}%"></span></span><span class="pbp-pct">{progress.active.percent}%</span>
+                              <span class="pbp-track" title="{stageLabel(progress.active.stage)}"><span class="pbp-fill" style="width:{simPct}%"></span></span><span class="pbp-pct">{Math.round(simPct)}%</span>
                             {:else if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}
                           </span>
                           <span class="col-new" title="people first grounded via this book">{#if b.done && b.newInSequence}+{b.newInSequence.toLocaleString()}{/if}</span>
