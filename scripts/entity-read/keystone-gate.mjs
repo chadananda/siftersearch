@@ -52,12 +52,16 @@ const nisbaOf = (name) => (name.match(/-i-([A-Za-zÀ-ÿ‘’'`]+)/g) || []).joi
 // apostrophe roster form would miss the real entity, producing a false MISSING (feedback_transliteration_vs_aliases).
 const fold = (s) => s.toLowerCase().replace(/[‘’'`ʻʼ]/g, '');
 
-// Load every person once; match roster forms in JS on the folded name (avoids SQL LIKE apostrophe brittleness).
+// Load every person once WITH its evidence (side + summary) — identity is decided by CONTEXT, not the name.
+// A candidate that merely shares a name but is an opponent, or carries a differing nisba, is a DIFFERENT person.
 const ALL = await queryAll(
-  `SELECT ge.id, ge.canonical_name n,
+  `SELECT ge.id, ge.canonical_name n, er.side, er.summary,
           (SELECT COUNT(*) FROM entity_mentions_v2 m WHERE m.entity_id=ge.id) mentions
-     FROM graph_entities ge WHERE ge.entity_type='person'`);
+     FROM graph_entities ge
+     LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type='person'
+    WHERE ge.entity_type='person'`);
 const FOLDED = ALL.map((r) => ({ ...r, f: fold(r.n) }));
+const isOpponent = (side) => /opponent|enemy|other/i.test(side || '');
 
 function candidates(forms) {
   const keys = forms.map(fold);
@@ -72,14 +76,21 @@ export async function runGate() {
     const all = candidates(k.forms).sort((a, b) => b.mentions - a.mentions);
     const identity = all.filter((e) => isName(e.n) && e.mentions > 0);
     const assoc = all.length - identity.length; // relational descriptors dropped as distinct associates
-    // core = highest-mention identity entity; others sharing its nisba ≈ same-person, differing nisba = namesake
     const core = identity[0];
-    const frags = identity.slice(1).map((e) => ({
-      ...e,
-      hint: !core ? '' : (nisbaOf(e.n) && nisbaOf(core.n) && nisbaOf(e.n) !== nisbaOf(core.n) ? 'namesake?' : '≈same?'),
-    }));
-    const verdict = identity.length === 0 ? 'MISSING' : identity.length > 1 ? 'SPLIT' : 'ok';
-    results.push({ who: k.who, verdict, core, frags, assoc });
+    // Classify each remaining candidate by EVIDENCE, not name overlap:
+    //  - differing nisba  → namesake (feedback_nisba_disconflation: Yazdí≠Turshízí is near-decisive)
+    //  - opponent vs the figure's Bábí/Bahá'í side → a different (hostile) person, never a fragment
+    //  - otherwise → a genuine REVIEW candidate; its summary is shown so identity is judged on context
+    const frags = identity.slice(1).map((e) => {
+      const nb = nisbaOf(e.n), cnb = core ? nisbaOf(core.n) : '';
+      let cls = 'REVIEW';
+      if (nb && cnb && nb !== cnb) cls = 'namesake(nisba)';
+      else if (core && isOpponent(e.side) !== isOpponent(core.side)) cls = 'distinct(side)';
+      return { ...e, cls };
+    });
+    const real = frags.filter((f) => f.cls === 'REVIEW');
+    const verdict = identity.length === 0 ? 'MISSING' : real.length ? 'SPLIT' : 'ok';
+    results.push({ who: k.who, verdict, core, frags, real, assoc });
   }
   return results;
 }
@@ -92,12 +103,17 @@ if (process.argv.includes('--json')) {
   const ok = results.filter((r) => r.verdict === 'ok');
   console.log(`KEYSTONE GATE — ${bad.length} flagged / ${results.length} figures\n`);
   for (const r of bad) {
+    const sep = r.frags.filter((f) => f.cls !== 'REVIEW');
     console.log(`${r.verdict.padEnd(8)}${r.who}   ${r.assoc ? `(${r.assoc} relational assoc. dropped)` : ''}`);
-    if (r.core) console.log(`         core  #${r.core.id}  "${r.core.n}"  m=${r.core.mentions}`);
-    for (const f of r.frags) console.log(`         frag  #${f.id}  "${f.n}"  m=${f.mentions}   ${f.hint}`);
+    if (r.core) console.log(`         core   #${r.core.id}  "${r.core.n}"  m=${r.core.mentions}`);
+    for (const f of r.real) { // genuine same-person candidates — judge on the summary shown
+      console.log(`         SPLIT? #${f.id}  "${f.n}"  m=${f.mentions}`);
+      if (f.summary) console.log(`                └ ${String(f.summary).replace(/\s+/g, ' ').slice(0, 150)}`);
+    }
+    if (sep.length) console.log(`         auto-separated: ${sep.map((f) => `"${f.n}" [${f.cls}]`).join(', ')}`);
   }
   console.log('\nSINGLE (ok):');
   for (const r of ok) console.log(`  ${r.who}  → #${r.core.id} (m=${r.core.mentions})`);
-  process.exitCode = bad.some((r) => r.verdict === 'MISSING' || r.frags.some((f) => f.hint === '≈same?')) ? 1 : 0;
+  process.exitCode = bad.length ? 1 : 0;
 }
 process.exit(process.exitCode || 0);
