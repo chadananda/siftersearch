@@ -4,9 +4,9 @@
 //
 // Phase model (2026-07-13):
 //   seed        — God Passes By + The Dawn-Breakers (the authority seed — the core cast).
-//   foundation  — the two master Bahá'í historians: EVERYTHING by H.M. Balyuzi and Adib Taherzadeh
-//                 (author-routed below), the bedrock beneath the seed.
-//   pillars     — the other carefully-edited scholarship: Gate of the Heart (Saiedi), Mázindarání, Momen, Ahdieh.
+//   foundation  — all the TRUSTWORTHY BAHÁ'Í SCHOLARS (that is what makes it authoritative historically):
+//                 Saiedi (Gate of the Heart), Taherzadeh (ROB) + Balyuzi (author-routed), Mázindarání, Momen,
+//                 Ahdieh. The carefully-documented scholarship that is the bedrock beneath the seed.
 //   primary     — FIRSTHAND/documentary: 'Abdu'l-Bahá's own texts, eyewitness/pilgrim notes, and EVERYTHING
 //                 translated/edited by Ahang Rabbani (author-routed) — the Nayríz documents + primary narratives.
 //   biographies — the classified long tail: individual lives (content-sample genre === 'biography').
@@ -22,22 +22,18 @@ export const INTEGRATION_PHASES = [
   },
   {
     key: 'foundation', label: 'Foundation',
-    blurb: "The two master Bahá'í historians — H.M. Balyuzi and Adib Taherzadeh. Their carefully documented biographies and histories (the Revelation of Bahá'u'lláh, the lives of the Central Figures) are the bedrock beneath the seed.",
-    docs: [], // no static anchor — Balyuzi + Taherzadeh join via author routing (AUTHOR_ROUTING below).
-  },
-  {
-    key: 'pillars', label: 'Pillars',
-    blurb: 'The other carefully collected + edited scholarship — the reliable factual foundation beyond the master historians.',
+    blurb: "The trustworthy Bahá'í scholars — that is what makes this the authoritative historical foundation. Careful, well-documented research: Saiedi's Gate of the Heart (the Báb's tablets) and Taherzadeh's Revelation of Bahá'u'lláh, Balyuzi's biographies of the Central Figures, Mázindarání's Ẓuhúru'l-Ḥaqq, Momen's Western accounts, and Ahdieh's Awakening. The bedrock beneath the seed that the whole cast resolves against.",
     docs: [
       8632,                                                          // Gate of the Heart (Saiedi — the Báb's tablets)
       15228, 15257, 15254, 20028, 15256, 20035, 20037, 15255, 15259, // Mázindarání — Ẓuhúru'l-Ḥaqq (Persian)
       13433,                                                         // Momen — The Bábí & Bahá'í Religions
       20331,                                                         // Ahdieh & Chapman — Awakening (Nayríz history)
+      // + everything by H.M. Balyuzi and Adib Taherzadeh (author-routed via AUTHOR_ROUTING below).
     ],
   },
   {
     key: 'primary', label: 'Primary Sources', upcoming: true,
-    blurb: "FIRSTHAND / documentary — 'Abdu'l-Bahá's own texts, eyewitness & pilgrim notes, and everything translated or compiled by Ahang Rabbani (the Nayríz documents and primary narratives). High evidential value but loosely collected AS TEXTS, so each resolves AGAINST the foundation and pillars rather than overriding them.",
+    blurb: "FIRSTHAND / documentary — 'Abdu'l-Bahá's own texts, eyewitness & pilgrim notes, and everything translated or compiled by Ahang Rabbani (the Nayríz documents and primary narratives). High evidential value but loosely collected AS TEXTS, so each resolves AGAINST the foundation rather than overriding it.",
     docs: [
       20907, 20919, 11355, 11335, 12472, 214474, // 'Abdu'l-Bahá texts + pilgrim diaries + The Afnán Family; Rabbani joins via author routing.
     ],
@@ -68,7 +64,7 @@ export const AUTHOR_ROUTING = [
 export const ABSORPTION_ORDER = [
   21310, 21308, 8632, 429, 430, 431, 432,                          // GPB · Dawn-Breakers · Gate · ROB vols 1-4
   466, 462, 3789, 3887, 464, 465, 467, 463, 427, 426,              // Balyuzi + Taherzadeh (Foundation; 466 canonical, not stray-scrape 28849)
-  15228, 15257, 15254, 20028, 15256, 20035, 20037, 15255, 15259, 13433, 20331, // Máz · Momen · Awakening (Pillars)
+  15228, 15257, 15254, 20028, 15256, 20035, 20037, 15255, 15259, 13433, 20331, // Máz · Momen · Awakening (Foundation)
   20907, 20919, 11355, 11335, 12472, 16552, 11265, 16316, 11344, 214474, 15347, 11374, 9095, // Primary
 ];
 
