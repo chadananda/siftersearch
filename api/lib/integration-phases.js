@@ -3,9 +3,9 @@
 // (getIntegrationProgress in bio.js). HISTORICAL (factual) track only.
 //
 // Phase model (2026-07-13):
-//   seed        — God Passes By (the authority seed).
-//   foundation  — The Dawn-Breakers + the two master Bahá'í historians whose works are foundational:
-//                 EVERYTHING by H.M. Balyuzi and Adib Taherzadeh (author-routed below), the bedrock cast.
+//   seed        — God Passes By + The Dawn-Breakers (the authority seed — the core cast).
+//   foundation  — the two master Bahá'í historians: EVERYTHING by H.M. Balyuzi and Adib Taherzadeh
+//                 (author-routed below), the bedrock beneath the seed.
 //   pillars     — the other carefully-edited scholarship: Gate of the Heart (Saiedi), Mázindarání, Momen, Ahdieh.
 //   primary     — FIRSTHAND/documentary: 'Abdu'l-Bahá's own texts, eyewitness/pilgrim notes, and EVERYTHING
 //                 translated/edited by Ahang Rabbani (author-routed) — the Nayríz documents + primary narratives.
@@ -17,13 +17,13 @@
 export const INTEGRATION_PHASES = [
   {
     key: 'seed', label: 'Seed',
-    blurb: "The authority seed — the Guardian's rigorous, authoritative history establishes the core cast.",
-    docs: [21310], // God Passes By (Shoghi Effendi)
+    blurb: "The authority seed — the Guardian's God Passes By and Nabíl's Dawn-Breakers together establish the core cast that every later book resolves against.",
+    docs: [21310, 21308], // God Passes By (Shoghi Effendi) + The Dawn-Breakers (Nabíl)
   },
   {
     key: 'foundation', label: 'Foundation',
-    blurb: "The Dawn-Breakers plus the two master Bahá'í historians — H.M. Balyuzi and Adib Taherzadeh. Their carefully documented biographies and histories (the Revelation of Bahá'u'lláh, the lives of the Central Figures) are the bedrock the whole cast resolves against.",
-    docs: [21308], // The Dawn-Breakers (Nabíl) — the anchor; Balyuzi + Taherzadeh join via author routing.
+    blurb: "The two master Bahá'í historians — H.M. Balyuzi and Adib Taherzadeh. Their carefully documented biographies and histories (the Revelation of Bahá'u'lláh, the lives of the Central Figures) are the bedrock beneath the seed.",
+    docs: [], // no static anchor — Balyuzi + Taherzadeh join via author routing (AUTHOR_ROUTING below).
   },
   {
     key: 'pillars', label: 'Pillars',
