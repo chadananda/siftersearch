@@ -51,10 +51,9 @@
       progress = await r.json();
       const a = progress?.active;
       if (!a) { simPct = 0; _simDoc = null; }
-      // New book (or first sight) → snap to its real %. Same book → catch up to the fresh real %, never rewinding
-      // (a cache-jitter dip in the real % shouldn't pull the bar backward).
+      // New book (or first sight) → snap to its real %. Same book → do NOT snap (the sim ticker eases toward real),
+      // so simPct never lands exactly on the whole-number real % and freezes there.
       else if (a.docId !== _simDoc) { simPct = a.percent ?? 0; _simDoc = a.docId; }
-      else if ((a.percent ?? 0) > simPct) simPct = a.percent;
     } catch { /* offline — modal shows a note */ }
   }
   function openProgress() { showProgress = true; if (!progress) fetchProgress(); }
@@ -69,12 +68,11 @@
     // and completion clears `active` (→ simPct 0), so a finished book doesn't sit at 96%.
     const sim = setInterval(() => {
       const a = progress?.active; if (!a) { if (simPct) simPct = 0; return; }
-      const real = a.percent ?? 0;
-      // Catch up to the real % fast; once at/above it, keep creeping SLOWLY so the number NEVER freezes between the
-      // coarse backend updates (batched claims, stage jumps). Safe to creep indefinitely: a crash/stall clears `active`
-      // (heartbeat freshness) → simPct resets to 0, so this can't mask a dead run. Soft-cap near 97; completion clears it.
-      if (simPct < real) simPct = Math.min(real, simPct + Math.max(0.20, (real - simPct) * 0.12));
-      else simPct = Math.min(97, simPct + 0.02);   // ~0.1%/s continuous creep — always visibly moving
+      const real = a.percent ?? 0, behind = real - simPct;
+      // ALWAYS step up every tick — catch up fast when behind the real %, otherwise a small continuous creep. Never
+      // clamps to the whole-number real %, so the display never sits at *.00. Safe to creep indefinitely: a stall/crash
+      // clears `active` (heartbeat freshness) → simPct resets to 0, so it can't mask a dead run. Soft-cap near 97.
+      simPct = Math.min(97, simPct + (behind > 0.5 ? Math.max(0.08, behind * 0.1) : 0.03));
     }, 200);
     return () => { clearInterval(poll); clearInterval(sim); };
   });

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-14T19:06:23.126Z",
+  "generated": "2026-07-14T19:33:17.504Z",
   "entries": [
+    {
+      "hash": "8716bf76",
+      "date": "2026-07-14",
+      "type": "Other",
+      "description": "Flush batch 200->20 so progress % climbs in fine steps (was ~40% jumps)",
+      "scope": null
+    },
     {
       "hash": "019ae36c",
       "date": "2026-07-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Bulk-meili-sync source_url from docs not content",
       "scope": null
-    },
-    {
-      "hash": "bf627ceb",
-      "date": "2026-05-18",
-      "type": "New",
-      "description": "Bulk-meili-sync — direct 2000-para batches, bypasses per-doc overhead Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-14": [
+      {
+        "hash": "8716bf76",
+        "date": "2026-07-14",
+        "type": "Other",
+        "description": "Flush batch 200->20 so progress % climbs in fine steps (was ~40% jumps)",
+        "scope": null
+      },
       {
         "hash": "019ae36c",
         "date": "2026-07-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Bulk-meili-sync source_url from docs not content",
-        "scope": null
-      },
-      {
-        "hash": "bf627ceb",
-        "date": "2026-05-18",
-        "type": "New",
-        "description": "Bulk-meili-sync — direct 2000-para batches, bypasses per-doc overhead Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
         "scope": null
       }
     ]
