@@ -95,6 +95,10 @@ export async function runGate() {
   return results;
 }
 
+import { fileURLToPath } from 'node:url';
+const isMain = fileURLToPath(import.meta.url) === process.argv[1];
+if (!isMain) { /* imported (e.g. by complete-book.mjs DoD) — expose runGate, don't run the CLI */ }
+else {
 const results = await runGate();
 if (process.argv.includes('--json')) {
   console.log(JSON.stringify(results, null, 2));
@@ -117,3 +121,4 @@ if (process.argv.includes('--json')) {
   process.exitCode = bad.length ? 1 : 0;
 }
 process.exit(process.exitCode || 0);
+}

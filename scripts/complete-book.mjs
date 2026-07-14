@@ -44,6 +44,18 @@ if (want('verify')) {
   log('verify', { ok: v.ok, ...v.checks, missing: v.missing });
   if (!v.ok) { console.error(`\n❌ BOOK ${doc} NOT DONE — unsearchable: ${v.missing.join('; ')}`); process.exit(2); }
   console.log(`\n✅ BOOK ${doc} COMPLETE + SEARCHABLE — cast ${v.checks.castCount}, claims ${v.checks.claimCount}, hype ${v.checks.hypeIndexed}, paras ${v.checks.paragraphsIndexed}`);
+  // Keystone-roster DoD: no major figure may be split across name/title/epithet. Reports flagged keystones
+  // (evidence-adjudicated: opponents/differing-nisba namesakes auto-separated). Warns, doesn't block — a
+  // cross-book split may pre-exist from another book; the operator resolves via keystone-gate.mjs.
+  try {
+    const { runGate } = await import('./entity-read/keystone-gate.mjs');
+    const flagged = (await runGate()).filter((r) => r.verdict !== 'ok');
+    if (flagged.length) {
+      console.warn(`⚠ KEYSTONE GATE: ${flagged.length} figure(s) flagged — resolve before shipping: ` +
+        flagged.map((r) => `${r.who}[${r.verdict}${r.real?.length ? ` ${r.real.length} frag` : ''}]`).join(', '));
+      console.warn(`   detail: node scripts/entity-read/keystone-gate.mjs`);
+    } else console.log('✅ KEYSTONE GATE: all major figures resolve to a single entity');
+  } catch (e) { console.warn('⚠ keystone gate skipped:', e.message); }
 }
 mark('done'); // clear the "active" marker so the popup stops showing this book as in-progress
 process.exit(0);
