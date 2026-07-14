@@ -5,9 +5,13 @@
 import * as db from '../db.js';           // shared SQLite wrapper (reads direct, writes routed to the single writer)
 import content from '../content.js';      // paragraph write helpers (updateContextOnly routes through the writer)
 import { skeletonKeys } from '../translit-key.js'; // transliteration-invariant recall keys (Sadeq→Ṣádiq…)
+import { loadGazetteer, anchorFor, guardedPair } from './gazetteer.js'; // central-cast identity anchor + ≠guards
 
 // Blocktypes that carry readable prose we enrich (skip figures, nav, etc.). App-specific → stays here.
 const PROSE = "blocktype IN ('paragraph','quote')";
+
+// Gazetteer path (env-overridable). Absent file → empty gazetteer → recall unchanged (graceful).
+const GAZETTEER_PATH = process.env.SIFTER_GAZETTEER || 'data/siftersearch-gazetteer.json';
 
 export function makeStore() {
   return {
@@ -137,7 +141,7 @@ export function makeStore() {
       const paren = (String(name).match(/\(([^)]+)\)/g) || []).map((s) => s.replace(/[()]/g, '')).join(' ');
       const keys = [...new Set([name, core, paren].filter(Boolean).flatMap((p) => [...skeletonKeys(p)]))];
       if (!keys.length) return [];
-      const rows = await db.queryAll(
+      let rows = await db.queryAll(
         `SELECT lk.entity_id id, ge.canonical_name canonical, ge.entity_type type, ge.importance importance,
                 er.summary, COUNT(DISTINCT lk.skeleton_key) shared
            FROM entity_lookup_keys lk JOIN graph_entities ge ON ge.id=lk.entity_id
@@ -146,7 +150,27 @@ export function makeStore() {
             AND ge.canonical_name NOT LIKE '%⟨merged%'
           GROUP BY lk.entity_id ORDER BY shared DESC, (ge.importance IS NULL), ge.importance DESC LIMIT ?`,
         [...keys, ...(type ? [type] : []), limit]);
-      return rows;
+      // Gazetteer boost: a central-cast form (title/epithet/nisba) must recall the SAME anchor entity as its
+      // name (anti-split). If `name` folds to an anchor, ensure that entity is present and FIRST. And drop any
+      // candidate the ≠guards mark as a distinct namesake of the query name OR its resolved anchor (never
+      // re-merged) — guards are keyed to canonical names, so a form-query must guard by the anchor too.
+      const gaz = loadGazetteer(GAZETTEER_PATH);
+      const anchor = anchorFor(gaz, name);
+      if (anchor) {
+        const existing = rows.find((r) => r.id === anchor.id);
+        rows = rows.filter((r) => r.id !== anchor.id);
+        const head = existing || (await db.queryAll(
+          `SELECT ge.id id, ge.canonical_name canonical, ge.entity_type type, ge.importance importance, er.summary
+             FROM graph_entities ge
+             LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type
+            WHERE ge.id=? AND ge.canonical_name NOT LIKE '%⟨merged%'`, [anchor.id]))[0];
+        if (head) rows.unshift({ ...head, shared: head.shared ?? 0 });
+      }
+      if (gaz.guards?.length) {
+        const names = [name, anchor?.canonical].filter(Boolean);
+        rows = rows.filter((r) => r.id === anchor?.id || !names.some((n) => guardedPair(gaz, n, r.canonical)));
+      }
+      return rows.slice(0, limit);
     },
 
     // Resolve-against-search: evidence from the GROUNDED corpus for an identity decision. "Grounded" = claims
