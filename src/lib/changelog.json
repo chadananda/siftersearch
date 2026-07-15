@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-15T03:35:33.820Z",
+  "generated": "2026-07-15T03:47:51.606Z",
   "entries": [
+    {
+      "hash": "2efa1090",
+      "date": "2026-07-14",
+      "type": "Other",
+      "description": "Main bar and per-book mini bar render identically",
+      "scope": null
+    },
     {
       "hash": "34c44df2",
       "date": "2026-07-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Unified-worker saves completedItems on shutdown, reduce FLUSH_PARAS 500->100",
       "scope": null
-    },
-    {
-      "hash": "16536924",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Health-check mass-reset detection + CLAUDE.md anti-pattern doc",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-14": [
+      {
+        "hash": "2efa1090",
+        "date": "2026-07-14",
+        "type": "Other",
+        "description": "Main bar and per-book mini bar render identically",
+        "scope": null
+      },
       {
         "hash": "34c44df2",
         "date": "2026-07-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Unified-worker saves completedItems on shutdown, reduce FLUSH_PARAS 500->100",
-        "scope": null
-      },
-      {
-        "hash": "16536924",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Health-check mass-reset detection + CLAUDE.md anti-pattern doc",
         "scope": null
       }
     ]

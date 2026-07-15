@@ -29,6 +29,6 @@ if (!initialData?.people?.length) {
   title="Biographical Archive — SifterSearch"
   description="A searchable archive of the people of early Bábí and Bahá'í history — kings and martyrs, scholars and villagers — with portraits, relationships, and sources drawn from across the library."
 >
-  <NavBar client:only="svelte" currentPage="biography" />
+  <NavBar client:load currentPage="biography" />
   <BiographyBrowser client:idle initialData={initialData} />
 </Layout>
