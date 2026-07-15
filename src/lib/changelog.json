@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-15T03:13:56.054Z",
+  "generated": "2026-07-15T03:23:51.232Z",
   "entries": [
+    {
+      "hash": "34c44df2",
+      "date": "2026-07-14",
+      "type": "Other",
+      "description": "Accurate at all times — absolute reporting, float %, velocity interp, live task lines",
+      "scope": null
+    },
     {
       "hash": "fef219ec",
       "date": "2026-07-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Health-check mass-reset detection + CLAUDE.md anti-pattern doc",
       "scope": null
-    },
-    {
-      "hash": "51d52c9e",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "InitializeIndexes only PATCHes settings when changed — stops settingsUpdate queue pollution on API restart",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-14": [
+      {
+        "hash": "34c44df2",
+        "date": "2026-07-14",
+        "type": "Other",
+        "description": "Accurate at all times — absolute reporting, float %, velocity interp, live task lines",
+        "scope": null
+      },
       {
         "hash": "fef219ec",
         "date": "2026-07-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Health-check mass-reset detection + CLAUDE.md anti-pattern doc",
-        "scope": null
-      },
-      {
-        "hash": "51d52c9e",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "InitializeIndexes only PATCHes settings when changed — stops settingsUpdate queue pollution on API restart",
         "scope": null
       }
     ]

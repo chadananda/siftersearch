@@ -44,26 +44,33 @@
   let aiReasoning = $state(null);  // { summary (integrated markdown explanation), evidence: {id} } — the AI's answer
   let aiError = $state(null);      // surfaced when a meaning-search fetch fails (never silent)
   let showProgress = $state(false), progress = $state(null);   // book-integration roadmap popup
-  // Progress display is VELOCITY-TRACKED: simPct advances between polls at the MEASURED speed (%/ms, EMA-smoothed
-  // so it sharpens with each sample), re-anchoring on every real sample. It's strictly MONOTONIC (never snaps back),
-  // capped so a late poll can't run it away, and it FREEZES only when real progress genuinely stalls (velocity
-  // decays to 0 on zero-gain samples). A transient missing poll HOLDS the last value — it never resets to 0.
-  const POLL_MS = 6000, LOOKAHEAD_MS = 9000;
+  // Progress display: smooth, monotonic, honest, and BOUNDED. Between polls simPct eases from the last real reading
+  // toward it + ONE poll's expected gain (learned as an EMA of recent per-poll gains), reaching it over ~one poll
+  // interval then holding for the next real sample. It can never overshoot beyond one poll's gain — so a legitimate
+  // large jump (resume / re-weight) re-anchors WITHOUT being read as huge velocity (the old bug that ran it to 99).
+  // A real stall decays the gain → the bar honestly stops. A transient missing poll HOLDS (never resets to 0).
+  const POLL_MS = 6000;
   let simPct = $state(0);
-  let _simDoc = null, _anchor = 0, _anchorT = 0, _vel = 0, _lastPct = 0, _nulls = 0;
+  let _simDoc = null, _lastReal = 0, _lastRealT = 0, _gainEMA = 0, _pollEMA = POLL_MS, _nulls = 0;
   async function fetchProgress() {
     try {
       const r = await fetch(`${API}/api/v1/people/progress`); if (!r.ok) return;
       progress = await r.json();
       const a = progress?.active, now = Date.now();
-      if (!a) { if (++_nulls >= 3) { simPct = 0; _simDoc = null; _vel = 0; } return; } // sustained null = idle; else HOLD
+      if (!a) { if (++_nulls >= 3) { simPct = 0; _simDoc = null; _gainEMA = 0; } return; } // sustained null = idle; else HOLD
       _nulls = 0;
       const p = a.percent ?? 0;
-      if (a.docId !== _simDoc) { _simDoc = a.docId; simPct = p; _anchor = p; _anchorT = now; _vel = 0; _lastPct = p; }
-      else {
-        const dt = Math.max(1, now - _anchorT), inst = Math.max(0, p - _lastPct) / dt;   // measured %/ms this interval
-        _vel = _vel === 0 ? inst : _vel * 0.6 + inst * 0.4;   // EMA; a zero-gain sample decays it → honest freeze on stall
-        _lastPct = p; _anchor = Math.max(simPct, p); _anchorT = now;   // anchor forward (monotonic)
+      if (a.docId !== _simDoc) {                       // new book → anchor; no gain learned yet
+        _simDoc = a.docId; simPct = p; _lastReal = p; _lastRealT = now; _gainEMA = 0; _pollEMA = POLL_MS;
+      } else {
+        const gain = p - _lastReal, gap = Math.max(1, now - _lastRealT);
+        if (gain > 12) { simPct = Math.max(simPct, p); }   // big jump (resume/re-weight) → re-anchor, DON'T learn velocity
+        else {
+          _pollEMA = _pollEMA * 0.7 + gap * 0.3;
+          _gainEMA = _gainEMA * 0.6 + Math.max(0, gain) * 0.4;   // smoothed per-poll forward gain (decays on a stall)
+          simPct = Math.max(simPct, p);                          // catch up to real, monotonic
+        }
+        _lastReal = p; _lastRealT = now;
       }
     } catch { /* offline — modal shows a note */ }
   }
@@ -74,13 +81,13 @@
     if (typeof window === 'undefined') return;
     fetchProgress();
     const poll = setInterval(fetchProgress, POLL_MS);
-    // Extrapolate from the anchor at the measured velocity; cap the lookahead (~1.5 polls) so a missed poll can't
-    // run the bar away; clamp to 99; strictly monotonic. This is the smooth, increasingly-accurate motion.
+    // Ease from the last real reading toward (real + one poll's expected gain) across one poll interval, then hold.
+    // Bounded by construction — never runs away; monotonic; clamped to 99.
     const sim = setInterval(() => {
       if (!progress?.active) return;
-      const v = Math.max(0, _vel);
-      const next = Math.min(99, _anchor + v * LOOKAHEAD_MS, _anchor + v * (Date.now() - _anchorT));
-      if (next > simPct) simPct = next;
+      const frac = Math.min(1, (Date.now() - _lastRealT) / Math.max(1000, _pollEMA));
+      const target = Math.min(99, _lastReal + _gainEMA * frac);
+      if (target > simPct) simPct = target;
     }, 100);
     return () => { clearInterval(poll); clearInterval(sim); };
   });
