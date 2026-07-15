@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-15T05:34:05.223Z",
+  "generated": "2026-07-15T11:57:41.604Z",
   "entries": [
+    {
+      "hash": "2ffd7130",
+      "date": "2026-07-14",
+      "type": "Other",
+      "description": "Honest done-gate (reconcile decided >=85% of clusters) + high-res progress",
+      "scope": null
+    },
     {
       "hash": "3cb66111",
       "date": "2026-07-14",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "PM2 warn includes stdout preview",
       "scope": null
-    },
-    {
-      "hash": "8bf4e51f",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "PM2 full path + boss_vllm clearer warning message",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-14": [
+      {
+        "hash": "2ffd7130",
+        "date": "2026-07-14",
+        "type": "Other",
+        "description": "Honest done-gate (reconcile decided >=85% of clusters) + high-res progress",
+        "scope": null
+      },
       {
         "hash": "3cb66111",
         "date": "2026-07-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-05-18",
         "type": "Other",
         "description": "PM2 warn includes stdout preview",
-        "scope": null
-      },
-      {
-        "hash": "8bf4e51f",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "PM2 full path + boss_vllm clearer warning message",
         "scope": null
       }
     ]

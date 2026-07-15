@@ -92,36 +92,48 @@
     return () => { clearInterval(poll); clearInterval(sim); };
   });
   const fmtK = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n ?? 0));
-  // Per-stage human copy: a TITLE + one-line purpose, plus the verb+noun for the live task line ("Reconciled X / Y
-  // name-clusters"). "stage 4/11" tells the user nothing; this says what the phase is and what it's doing right now.
+  // Per-stage PLAIN-LANGUAGE copy for a visitor (no jargon): a friendly TITLE, a 1–2 sentence EXPLAIN of what the
+  // step is doing and why, and verb+noun for the live count line. Deliberately avoids "disambiguate / reconcile /
+  // entity / cluster / corpus / index" — a first-time reader should understand every word.
   const STAGE_INFO = {
-    disambiguate: { title: 'Disambiguating text', desc: 'Reading each paragraph in context to pin down who and what every name refers to', verb: 'Disambiguated', noun: 'paragraphs' },
-    mentions: { title: 'Extracting mentions', desc: 'Collecting every name, title and epithet the text mentions', verb: 'Scanned', noun: 'paragraphs' },
-    claims: { title: 'Extracting claims', desc: 'Pulling cited facts about each person, place and work out of the text', verb: 'Processed', noun: 'paragraphs' },
-    reconcile: { title: 'Reconciling identities', desc: 'Matching each name to a known person by evidence — or proposing a new one', verb: 'Reconciled', noun: 'name-clusters' },
-    research: { title: 'Researching unresolved', desc: 'Resolving uncertain identities against the wider corpus and the web', verb: 'Researched', noun: 'uncertain names' },
-    project: { title: 'Linking entities', desc: 'Applying the resolved identities into the entity graph', verb: 'Applied', noun: 'decisions' },
-    link: { title: 'Linking claims', desc: 'Binding each extracted fact to its resolved entity', verb: 'Linked', noun: 'claims' },
-    merge: { title: 'Merging duplicates', desc: 'Consolidating same-name entities the evidence shows are one person', verb: 'Reviewed', noun: 'name-groups' },
-    dedup: { title: 'De-duplicating', desc: 'Guarding each new entity against existing duplicates by its facts', verb: 'Checked', noun: 'new entities' },
-    hype: { title: 'Generating questions', desc: 'Writing the questions each paragraph answers, for retrieval search', verb: 'Generated', noun: 'paragraphs' },
-    verify: { title: 'Verifying', desc: 'Confirming the book is fully grounded and searchable', verb: 'Verifying', noun: 'checks' },
-    grounding: { title: 'Grounding', desc: 'Processing the book', verb: 'Processed', noun: 'items' },
+    disambiguate: { title: 'Reading the book in context', verb: 'Read', noun: 'paragraphs',
+      explain: 'Reading every paragraph in order and working out who and what each name refers to — so a mention like "the Master" or "his brother" is understood as the right person, not just matched by spelling.' },
+    mentions: { title: 'Collecting every name', verb: 'Scanned', noun: 'paragraphs',
+      explain: 'Noting each person, place and title the text mentions — including nicknames and the many honorific forms the same person can be called.' },
+    claims: { title: 'Gathering the facts', verb: 'Read', noun: 'paragraphs',
+      explain: 'Drawing out what the book actually says about each person — their dates, relationships and deeds — and keeping the exact sentence it came from, so every fact stays traceable to its source.' },
+    reconcile: { title: 'Working out who is who', verb: 'Matched', noun: 'names',
+      explain: 'Deciding whether each name is someone already in the library or a new person, by weighing the surrounding evidence rather than the name alone — because many different people share the same name.' },
+    research: { title: 'Researching the unknowns', verb: 'Researched', noun: 'uncertain names',
+      explain: 'For the people this book alone cannot place, searching the rest of the library — and, where needed, trusted outside sources — to work out exactly who they were.' },
+    project: { title: 'Adding the people in', verb: 'Applied', noun: 'decisions',
+      explain: 'Recording the newly-identified people and linking each name in the book to the right person in the library.' },
+    link: { title: 'Connecting facts to people', verb: 'Linked', noun: 'facts',
+      explain: 'Attaching every fact and quotation to the person it is about, so that a search for someone brings up everything the book says about them.' },
+    merge: { title: 'Merging duplicate people', verb: 'Reviewed', noun: 'name groups',
+      explain: 'Finding places where the same person was recorded more than once under slightly different names, and combining them into a single, complete record.' },
+    dedup: { title: 'Double-checking new people', verb: 'Checked', noun: 'new people',
+      explain: 'Making sure each newly-added person is not already in the library under another name, before they become permanent.' },
+    hype: { title: 'Making it searchable', verb: 'Prepared', noun: 'passages',
+      explain: 'Writing out the everyday questions each passage answers, so a reader finds the right page even when their words are different from the book’s.' },
+    verify: { title: 'Final check', verb: 'Checking', noun: 'checks',
+      explain: 'Confirming the whole book has been processed and that its people and passages actually turn up when you search for them.' },
+    grounding: { title: 'Processing the book', verb: 'Processed', noun: 'items',
+      explain: 'Reading the book and carefully adding its people, facts and passages to the searchable library.' },
   };
   const stageInfo = (s) => STAGE_INFO[s] || STAGE_INFO.grounding;
   const stageLabel = (s) => stageInfo(s).title;
-  // Live task line: verb + real absolute counts (e.g. "Reconciled 1,664 / 6,533 name-clusters · 25%"); falls back
-  // to the stage purpose when the stage reports no item count (the quick bookkeeping stages).
+  // Live count line in plain words ("Matched 1,664 of 6,533 names · 25%"); omitted for the quick bookkeeping steps.
   const taskLine = $derived.by(() => {
     const a = progress?.active; if (!a) return '';
     const info = stageInfo(a.stage);
     if (a.stageTotal) {
       const pct = Math.round(((a.stageDone || 0) / a.stageTotal) * 100);
-      return `${info.verb} ${(a.stageDone || 0).toLocaleString()} / ${a.stageTotal.toLocaleString()} ${info.noun} · ${pct}%`;
+      return `${info.verb} ${(a.stageDone || 0).toLocaleString()} of ${a.stageTotal.toLocaleString()} ${info.noun} · ${pct}%`;
     }
-    return info.desc;
+    return '';
   });
-  const stageDesc = $derived(progress?.active ? stageInfo(progress.active.stage).desc : '');
+  const stageExplain = $derived(progress?.active ? stageInfo(progress.active.stage).explain : '');
   // Collapsible phases: the phase being processed (or the frontier) auto-opens; the user can toggle any.
   const activePhaseKey = $derived(progress?.active ? (progress.phases.find((p) => p.books.some((b) => b.id === progress.active.docId))?.key ?? null) : null);
   // Overall progress = completed books + the active book's own fraction, as a 0–100 percent (drives the collapsed rail fill).
@@ -310,9 +322,10 @@
               <div class="prog-active">
                 <span class="prog-active-dot" aria-hidden="true"></span>
                 <div class="prog-active-body">
-                  <div class="prog-active-line">Now grounding <strong>{progress.active.title}</strong></div>
-                  <div class="prog-active-stage"><strong>{stageLabel(progress.active.stage)}</strong> — {stageDesc}<span class="prog-active-step">{#if progress.active.stageIndex != null} · step {progress.active.stageIndex + 1} of {progress.active.totalStages}{/if}</span></div>
-                  <div class="prog-active-task">{taskLine}</div>
+                  <div class="prog-active-line">Now reading <strong>{progress.active.title}</strong></div>
+                  <div class="prog-active-stage"><strong>{stageLabel(progress.active.stage)}</strong><span class="prog-active-step">{#if progress.active.stageIndex != null} · step {progress.active.stageIndex + 1} of {progress.active.totalStages}{/if}</span></div>
+                  <div class="prog-active-explain">{stageExplain}</div>
+                  {#if taskLine}<div class="prog-active-task">{taskLine}</div>{/if}
                   {#if progress.active.percent != null}<div class="prog-active-bar"><span style="width:{simPct}%"></span></div>{/if}
                 </div>
                 {#if progress.active.percent != null}<span class="prog-active-pct">{simPct.toFixed(1)}%</span>{/if}
@@ -736,8 +749,9 @@
   .prog-active-line { font-size: .82rem; color: var(--text-secondary); }
   .prog-active-line strong { color: var(--text-primary); }
   .prog-active-meta { font-size: .72rem; color: var(--text-muted); margin-top: .1rem; font-variant-numeric: tabular-nums; }
-  .prog-active-stage { font-size: .74rem; color: var(--text-secondary); margin-top: .28rem; line-height: 1.35; }
+  .prog-active-stage { font-size: .82rem; color: var(--text-primary); margin-top: .3rem; line-height: 1.3; }
   .prog-active-stage strong { color: var(--text-primary); }
+  .prog-active-explain { font-size: .74rem; color: var(--text-secondary); margin-top: .2rem; line-height: 1.45; }
   .prog-active-step { color: var(--text-muted); }
   .prog-active-task { font-size: .74rem; color: var(--accent); margin-top: .18rem; font-variant-numeric: tabular-nums; }
   .prog-active-bar { height: .28rem; background: var(--surface-3); border-radius: 1rem; margin-top: .4rem; overflow: hidden; }
