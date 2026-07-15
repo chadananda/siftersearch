@@ -337,7 +337,7 @@
                           <span class="prog-book-title">{b.title}</span>
                           <span class="col-size">
                             {#if progress.active && b.id === progress.active.docId && progress.active.percent != null}
-                              <span class="pbp-track" title="{stageLabel(progress.active.stage)}"><span class="pbp-fill" style="width:{simPct}%"></span></span><span class="pbp-pct">{simPct.toFixed(2)}%</span>
+                              <span class="pbp-track" title="{stageLabel(progress.active.stage)}"><span class="pbp-fill" style="width:{simPct}%"></span></span><span class="pbp-pct">{simPct.toFixed(1)}%</span>
                             {:else if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}
                           </span>
                           <span class="col-new" title="people first grounded via this book">{#if b.done && b.newInSequence}+{b.newInSequence.toLocaleString()}{/if}</span>
@@ -775,7 +775,7 @@
   .pb-num::after { content: ' ¶'; opacity: .5; }
   /* PROGRESS bar — ONLY on the current book being ground; fills the size column. */
   .pbp-track { flex: 1; height: .34rem; background: var(--surface-3); border-radius: 1rem; overflow: hidden; }
-  .pbp-fill { display: block; height: 100%; background: var(--accent); border-radius: 1rem; transition: width .6s ease; }
+  .pbp-fill { display: block; height: 100%; background: var(--accent); border-radius: 1rem; transition: width .3s linear; }
   .pbp-pct { flex: 0 0 auto; font-size: .68rem; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
   .prog-book-stats { flex: 0 0 auto; display: flex; gap: .45rem; align-items: baseline; font-size: .72rem; font-variant-numeric: tabular-nums; }
   .pb-new { color: var(--accent); font-weight: 600; }
