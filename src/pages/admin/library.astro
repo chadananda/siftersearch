@@ -1,8 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import LibraryManagement from '../../components/admin/LibraryManagement.svelte';
 ---
 
 <AdminLayout title="Library Management">
-  <LibraryManagement client:only="svelte" />
+  <LibraryManagement client:only="svelte"><IslandSkeleton slot="fallback" /></LibraryManagement>
 </AdminLayout>

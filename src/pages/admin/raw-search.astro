@@ -1,8 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import RawSearch from '../../components/admin/RawSearch.svelte';
 ---
 
 <AdminLayout title="Raw Search">
-  <RawSearch client:only="svelte" />
+  <RawSearch client:only="svelte"><IslandSkeleton slot="fallback" /></RawSearch>
 </AdminLayout>

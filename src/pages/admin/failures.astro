@@ -1,8 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import DocumentFailures from '../../components/admin/DocumentFailures.svelte';
 ---
 
 <AdminLayout title="Document Failures">
-  <DocumentFailures client:only="svelte" />
+  <DocumentFailures client:only="svelte"><IslandSkeleton slot="fallback" /></DocumentFailures>
 </AdminLayout>

@@ -1,8 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import AdminDashboard from '../../components/admin/AdminDashboard.svelte';
 ---
 
 <AdminLayout title="Admin Dashboard">
-  <AdminDashboard client:only="svelte" />
+  <AdminDashboard client:only="svelte"><IslandSkeleton slot="fallback" /></AdminDashboard>
 </AdminLayout>

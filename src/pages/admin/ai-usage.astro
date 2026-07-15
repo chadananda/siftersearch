@@ -1,8 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import AIUsageDashboard from '../../components/admin/AIUsageDashboard.svelte';
 ---
 
 <AdminLayout title="AI Usage & Costs">
-  <AIUsageDashboard client:only="svelte" />
+  <AIUsageDashboard client:only="svelte"><IslandSkeleton slot="fallback" /></AIUsageDashboard>
 </AdminLayout>

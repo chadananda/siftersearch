@@ -13,15 +13,19 @@ import BiographyBrowser from '../components/BiographyBrowser.svelte';
 // Proof of concept: the page is built entirely on the official public API (/api/v1/people …), the same
 // endpoints any third-party consumer would use — not the internal /api/graph/bio/* routes.
 const API = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+// The full cast (~600 people, ~440KB) is a heavy query — ~9s warm, and slower when tower-nas is also grounding.
+// Retry patiently with backoff (generous timeout) so a transient blip under load doesn't fail the build, but still
+// REFUSE to ship an empty page (baked data = no reflow on load; that's the whole point of prerendering here).
 let initialData = null;
-for (let attempt = 0; attempt < 4 && !initialData; attempt++) {
+for (let attempt = 0; attempt < 6 && !initialData?.people?.length; attempt++) {
+  if (attempt > 0) await new Promise((r) => setTimeout(r, 3000));   // let the API/cache recover between tries
   try {
-    const res = await fetch(`${API}/api/v1/people?limit=2000`, { signal: AbortSignal.timeout(20000) });
+    const res = await fetch(`${API}/api/v1/people?limit=2000`, { signal: AbortSignal.timeout(45000) });
     if (res.ok) initialData = await res.json();
   } catch (e) { /* transient — retry */ }
 }
 if (!initialData?.people?.length) {
-  throw new Error('biography prerender: /api/v1/people returned no data — refusing to ship an empty page (is tower-nas up?)');
+  throw new Error('biography prerender: /api/v1/people returned no data after 6 tries — refusing to ship an empty page (is tower-nas up?)');
 }
 ---
 

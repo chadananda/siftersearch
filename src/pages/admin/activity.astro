@@ -1,8 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import UserActivity from '../../components/admin/UserActivity.svelte';
 ---
 
 <AdminLayout title="User Activity">
-  <UserActivity client:only="svelte" />
+  <UserActivity client:only="svelte"><IslandSkeleton slot="fallback" /></UserActivity>
 </AdminLayout>

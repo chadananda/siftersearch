@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-15T04:06:01.129Z",
+  "generated": "2026-07-15T04:12:36.560Z",
   "entries": [
+    {
+      "hash": "1af6ada8",
+      "date": "2026-07-14",
+      "type": "Other",
+      "description": "SSR fallback placeholders for public content islands (no reflow on hydration)",
+      "scope": null
+    },
     {
       "hash": "bdb94fbd",
       "date": "2026-07-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Health-check meili timeout for vs_db/entity_mentions + pm2 PATH",
       "scope": null
-    },
-    {
-      "hash": "4a7990cf",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Health-check meili stats timeout + PM2 JSON parse",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-14": [
+      {
+        "hash": "1af6ada8",
+        "date": "2026-07-14",
+        "type": "Other",
+        "description": "SSR fallback placeholders for public content islands (no reflow on hydration)",
+        "scope": null
+      },
       {
         "hash": "bdb94fbd",
         "date": "2026-07-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Health-check meili timeout for vs_db/entity_mentions + pm2 PATH",
-        "scope": null
-      },
-      {
-        "hash": "4a7990cf",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Health-check meili stats timeout + PM2 JSON parse",
         "scope": null
       }
     ]

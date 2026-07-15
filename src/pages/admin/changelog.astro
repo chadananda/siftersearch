@@ -1,8 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import LibraryChangelog from '../../components/admin/LibraryChangelog.svelte';
 ---
 
 <AdminLayout title="Library Changelog">
-  <LibraryChangelog client:only="svelte" />
+  <LibraryChangelog client:only="svelte"><IslandSkeleton slot="fallback" /></LibraryChangelog>
 </AdminLayout>

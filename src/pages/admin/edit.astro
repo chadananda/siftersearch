@@ -1,11 +1,12 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import DocumentEditor from '../../components/admin/DocumentEditor.svelte';
 ---
 
 <AdminLayout title="Edit Document">
   <div class="edit-page">
-    <DocumentEditor client:only="svelte" />
+    <DocumentEditor client:only="svelte"><IslandSkeleton slot="fallback" /></DocumentEditor>
   </div>
 </AdminLayout>
 

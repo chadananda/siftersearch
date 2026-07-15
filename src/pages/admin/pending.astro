@@ -1,8 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import PendingApproval from '../../components/admin/PendingApproval.svelte';
 ---
 
 <AdminLayout title="Pending Approval">
-  <PendingApproval client:only="svelte" />
+  <PendingApproval client:only="svelte"><IslandSkeleton slot="fallback" /></PendingApproval>
 </AdminLayout>
