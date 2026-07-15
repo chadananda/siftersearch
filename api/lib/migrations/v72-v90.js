@@ -439,6 +439,17 @@ export const migrations = {
     catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
     logger.info('Migration 91 complete: doc_pipeline.run_json');
   },
+
+  92: async () => {
+    // EEWA versioned adjudication: stamp each reconcile decision with the adjudicator engine version so a book's
+    // decisions carry their version and stale ones can be re-adjudicated. entity_decisions had `supersedes` but not
+    // `method_version`; the versioning code (store.saveDecisions/getProposedDecisions/getReadjudicationClusters +
+    // the bio.js roadmap version badge) requires it. Design: docs/architecture/reconcile-evidence-escalation.md.
+    logger.info('Starting migration 92: entity_decisions.method_version (EEWA adjudicator versioning)');
+    try { await query(`ALTER TABLE entity_decisions ADD COLUMN method_version TEXT`); }
+    catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    logger.info('Migration 92 complete: entity_decisions.method_version');
+  },
 };
 
 export const graphMigrations = {
