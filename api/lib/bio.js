@@ -51,6 +51,27 @@ export function readHistoryCatalog() {
 // The stages, in order — must match run-grounding.js GROUNDING_STAGES (drives the current book's % progress).
 const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'merge', 'dedup', 'hype', 'verify'];
 let _activeCache = null, _activeSig = '', _activeAt = 0;
+
+// Per-book stage job sizes (item counts) → the bar's per-stage weights. prose paras drive the paragraph passes
+// (disambiguate/claims/hype); distinct mention-clusters drive reconcile (the big one on biography volumes);
+// research ≈ a stable fraction of clusters (NOT the live 'uncertain' count, which grows during reconcile and
+// would wobble the total). The quick bookkeeping stages get a small nominal so they contribute a sliver, never 0.
+// Static per run → cached ~2min by doc (a GROUP BY over mentions is too heavy to run on every 3s poll).
+const _sizeCache = new Map();
+async function stageSizes(docId) {
+  const hit = _sizeCache.get(docId);
+  if (hit && Date.now() - hit.at < 120000) return hit.sizes;
+  const prose = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL`, [docId]))[0]?.n || 0;
+  const clusters = (await queryAll(`SELECT COUNT(DISTINCT resolved_as) n FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL`, [docId]))[0]?.n || 0;
+  const sizes = {
+    disambiguate: prose, mentions: prose ? 30 : 0, claims: prose,
+    reconcile: clusters, research: Math.round(clusters * 0.3),
+    project: 30, link: 30, merge: 60, dedup: 30, hype: prose, verify: 20,
+  };
+  _sizeCache.set(docId, { sizes, at: Date.now() });
+  return sizes;
+}
+
 async function computeActiveBook(staticDocs, meta) {
   const run = await pipelineState.activeRun();               // driver-reported truth; null when idle/done
   let docId = run?.doc_id ?? null, stage = run?.stage ?? null;
@@ -109,16 +130,18 @@ async function computeActiveBook(staticDocs, meta) {
     const hypePar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL`, [docId]))[0]?.n || 0;
     withinFrac = totalPar ? Math.min(0.99, hypePar / totalPar) : 0.5;
   }
-  // TIME-weighted percent: claims dominates wall-time (~70%), so it must dominate the bar — otherwise the bar
-  // barely moves during the long claims stage. Weights are rough wall-time shares (sum≈1); the bar climbs
-  // through completed stages + the current stage's share × its within-fraction.
-  // Rough wall-time shares (sum≈1). The three full model passes — disambiguate, claims, hype — dominate; the rest are
-  // quick. So the bar climbs through every long stage rather than jumping only during claims.
-  const STAGE_WEIGHT = { disambiguate: 0.18, mentions: 0.02, claims: 0.47, reconcile: 0.07, research: 0.03,
-    project: 0.02, link: 0.02, merge: 0.05, dedup: 0.02, hype: 0.10, verify: 0.02 };
-  let done = 0; for (let i = 0; i < si; i++) done += STAGE_WEIGHT[GROUNDING_STAGES[i]] ?? (1 / ts);
-  const cur = STAGE_WEIGHT[stageName] ?? (1 / ts);
-  const percent = Math.max(3, Math.min(99, Math.round((done + cur * withinFrac) * 100)));
+  // Bar weight per stage = its REAL job size (item count), measured PER BOOK. Fixed weights can't be right for
+  // both a narrative (claims/paragraphs dominate) and a biographical volume (reconcile — thousands of clusters —
+  // is >half the work). Each item ≈ one model call, so item-count is a good wall-time proxy: the stage that
+  // actually takes the time gets the bar-share, so a long reconcile CLIMBS instead of sitting flat at ~68%.
+  const sizes = await stageSizes(docId);
+  const total = Object.values(sizes).reduce((a, b) => a + b, 0) || 1;
+  let done = 0;
+  for (let i = 0; i < GROUNDING_STAGES.length; i++) {
+    const frac = i < si ? 1 : (i === si ? withinFrac : 0);   // prior stages full, current by within-frac, rest 0
+    done += (sizes[GROUNDING_STAGES[i]] / total) * frac;
+  }
+  const percent = Math.max(3, Math.min(99, Math.round(done * 100)));
   // Always resolve the real title — the active book may not be in a phase (e.g. a stray-collection doc), so fall
   // back to the docs table rather than showing "doc <id>".
   let m = meta[docId];

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-14T23:57:37.770Z",
+  "generated": "2026-07-15T02:17:58.815Z",
   "entries": [
+    {
+      "hash": "fef219ec",
+      "date": "2026-07-14",
+      "type": "Other",
+      "description": "Real per-item within-stage progress (every stage reports, no flat bars)",
+      "scope": null
+    },
     {
       "hash": "375b3cfe",
       "date": "2026-07-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "InitializeIndexes only PATCHes settings when changed — stops settingsUpdate queue pollution on API restart",
       "scope": null
-    },
-    {
-      "hash": "ef954dd3",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Bulk-meili-sync use MEILISEARCH_KEY + MEILI_HOST env var names",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-14": [
+      {
+        "hash": "fef219ec",
+        "date": "2026-07-14",
+        "type": "Other",
+        "description": "Real per-item within-stage progress (every stage reports, no flat bars)",
+        "scope": null
+      },
       {
         "hash": "375b3cfe",
         "date": "2026-07-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "InitializeIndexes only PATCHes settings when changed — stops settingsUpdate queue pollution on API restart",
-        "scope": null
-      },
-      {
-        "hash": "ef954dd3",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Bulk-meili-sync use MEILISEARCH_KEY + MEILI_HOST env var names",
         "scope": null
       }
     ]
