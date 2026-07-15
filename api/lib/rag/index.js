@@ -92,3 +92,7 @@ function buildContext(deps) {
 }
 
 export default createCorpusRAG;
+
+// The current adjudicator engine version — re-exported on the public surface so app code (UI/roadmap/worklist)
+// reads ONE canonical value to decide which books are behind and due for an incremental re-adjudication sweep.
+export { ADJUDICATOR_VERSION } from './entities/reconcile.js';

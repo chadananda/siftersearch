@@ -69,4 +69,35 @@ describe('entities/project', () => {
     expect(stats).toMatchObject({ applied: 1, linked: 1 });
     expect(store.bound[0]).toMatchObject({ resolvedAs: 'Q', entityId: 1 });
   });
+
+  it('a re-adjudicated CREATE reuses the entity its superseded create minted — never a duplicate', async () => {
+    const re = [{ id: 20, kind: 'create', status: 'proposed', confidence: 0.9, supersedes: 10, priorKind: 'create', priorEntityId: 555,
+      payload: { resolvedAs: 'Re One', entityId: null, canonical: 'Re One', type: 'person', docId: 21310 } }];
+    const { rag, store } = makeRag({ seed: { proposals: re, clusterSizes: { 'Re One': 4 } } });
+    const stats = await rag.entities.project({ auto: true, hiConf: 0.85, docId: 21310 });
+    expect(stats).toMatchObject({ reused: 1, created: 0, mentionsBound: 4 });
+    expect(store.created).toHaveLength(0);                          // no new entity minted
+    expect(store.bound[0]).toMatchObject({ resolvedAs: 'Re One', entityId: 555 });  // rebound to the same entity
+  });
+
+  it('a re-adjudication pulling a LINK back to uncertain UNBINDS the cluster', async () => {
+    const pull = [{ id: 21, kind: 'uncertain', status: 'proposed', confidence: 0.3, supersedes: 11, priorKind: 'link', priorEntityId: 88,
+      payload: { resolvedAs: 'Pull One', docId: 21310 } }];
+    const { rag, store } = makeRag({ seed: { proposals: pull, clusterSizes: { 'Pull One': 6 } } });
+    const stats = await rag.entities.project({ auto: true, docId: 21310 });
+    expect(stats.unbound).toBe(6);
+    expect(store.unbound[0]).toMatchObject({ resolvedAs: 'Pull One' });
+    expect(store.bound).toHaveLength(0);                            // never bound; the veto is honored
+    expect(store.appliedMarks).toContainEqual({ id: 21, entityId: null });
+  });
+
+  it('a LINK→CREATE split does NOT reuse the old link target (that entity is someone else) — mints new', async () => {
+    const split = [{ id: 22, kind: 'create', status: 'proposed', confidence: 0.9, supersedes: 12, priorKind: 'link', priorEntityId: 99,
+      payload: { resolvedAs: 'Split One', entityId: null, canonical: 'Split One', type: 'person', docId: 21310 } }];
+    const { rag, store } = makeRag({ seed: { proposals: split, clusterSizes: { 'Split One': 2 } } });
+    const stats = await rag.entities.project({ auto: true, hiConf: 0.85, docId: 21310 });
+    expect(stats).toMatchObject({ created: 1, reused: 0 });
+    expect(store.created).toHaveLength(1);
+    expect(store.bound[0].entityId).not.toBe(99);                  // not bound to the prior link target
+  });
 });

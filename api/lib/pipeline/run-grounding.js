@@ -18,10 +18,12 @@ export const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcil
  * Returns { ok, verify, createdIds, flaggedKeystones }. Throws if a stage throws (caller handles resume/retry).
  */
 export async function runGrounding(docId, opts = {}) {
-  const { from, only, cc = 8, onStage, onResult, report = true } = opts;
+  const { from, only, to, readjudicate, cc = 8, onStage, onResult, report = true } = opts;
   const writer = opts.writer || process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849';
   const fromI = only ? GROUNDING_STAGES.indexOf(only) : (from ? GROUNDING_STAGES.indexOf(from) : 0);
-  const toI = only ? GROUNDING_STAGES.indexOf(only) : GROUNDING_STAGES.length - 1;
+  // `to` bounds the last stage (used by an incremental re-adjudication sweep to run reconcile..link and skip a
+  // full hype re-index). `only` still pins a single stage.
+  const toI = only ? GROUNDING_STAGES.indexOf(only) : (to ? GROUNDING_STAGES.indexOf(to) : GROUNDING_STAGES.length - 1);
   const want = (s) => { const i = GROUNDING_STAGES.indexOf(s); return i >= fromI && i <= toI; };
   const startedAt = new Date().toISOString();
   let currentRun = null;   // the live run object; enter() replaces it, the heartbeat refreshes its updatedAt.
@@ -56,7 +58,7 @@ export async function runGrounding(docId, opts = {}) {
     if (want('disambiguate')) { await enter('disambiguate'); emit('disambiguate', await rag.disambiguate(docId, { concurrency: cc, onProgress })); }
     if (want('mentions'))     { await enter('mentions'); emit('mentions', await rag.entities.mentions(docId)); }
     if (want('claims'))       { await enter('claims'); emit('claims', await rag.entities.claims(docId, { resume: true, threshold: 0.9, concurrency: cc, onProgress })); }
-    if (want('reconcile'))    { await enter('reconcile'); emit('reconcile', await rag.entities.reconcile(docId, { resume: true, threshold: 0.9, concurrency: 4, onProgress })); } // FULL — no --limit
+    if (want('reconcile'))    { await enter('reconcile'); emit('reconcile', await rag.entities.reconcile(docId, readjudicate ? { readjudicate, threshold: 0.9, concurrency: 4, onProgress } : { resume: true, threshold: 0.9, concurrency: 4, onProgress })); } // readjudicate = incremental re-sweep of the improvable clusters; else FULL resume
     if (want('research'))     { await enter('research'); emit('research', await rag.entities.researchResolve(docId, { concurrency: 3, onProgress })); } // resolve uncertains: corpus+web
     if (want('project'))      { await enter('project'); const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId }); out.createdIds = r.createdIds || []; emit('project', r); }
     if (want('link'))         { await enter('link'); execSync(`DOC=${docId} WRITE=1 SIFTER_WRITER_URL=${writer} node scripts/entity-read/link-claims.mjs`, { stdio: 'inherit' }); }

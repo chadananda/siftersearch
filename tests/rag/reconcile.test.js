@@ -1,7 +1,7 @@
 // entities/reconcile — evidence adjudication → proposed decisions. Pure verdict/decision + run() on fakes.
 // Uses real GPB cast (Mullá Ḥusayn, Fort Ṭabarsí, the Báb) as examples.
 import { describe, it, expect } from 'vitest';
-import { parseVerdict, decisionRow, buildUser, SYSTEM } from '../../api/lib/rag/entities/reconcile.js';
+import { parseVerdict, decisionRow, buildUser, SYSTEM, ADJUDICATOR_VERSION } from '../../api/lib/rag/entities/reconcile.js';
 import { fakeLLM, makeRag } from './kit.js';
 
 describe('reconcile — pure helpers', () => {
@@ -133,5 +133,66 @@ describe('reconcile — durable checkpointing + resume (the binding fix)', () =>
     expect(stats.proposed).toBe(0);
     expect(store.decisions.length).toBe(0);          // nothing persisted
     expect(stats.decisions.length).toBe(10);         // but the caller gets every verdict
+  });
+});
+
+describe('reconcile — EEWA P1 facts + P2 verification gate + versioning', () => {
+  it('feeds the cluster\'s own facts + candidate facts into the adjudication prompt', async () => {
+    const seed = {
+      clusters: { 21310: [{ resolvedAs: 'Mírzá Qásim', freq: 5, paraIds: ['para_1'] }] },
+      coverage: { 21310: 1 },
+      candidates: [{ id: 7, canonical: 'Mírzá Qásim', type: 'person', importance: 40 }],
+      clusterFacts: { 'Mírzá Qásim': [{ statement: 'Mírzá Qásim — martyred at Zanján', relation: 'died', when: '1850' }] },
+      entityFacts: { 7: { facts: [{ statement: 'defended the fort at Zanján', relation: 'held-office', when: '1850' }] } },
+    };
+    const llm = fakeLLM([{ content: '{"verdict":"link","type":"person","entity_id":7,"confidence":0.9}' }]);
+    const { rag } = makeRag({ seed, llm });
+    await rag.entities.reconcile(21310);
+    const prompt = llm.calls[0].messages[1].content;
+    expect(prompt).toMatch(/THIS CLUSTER'S OWN FACTS/);
+    expect(prompt).toContain('martyred at Zanján');       // the book's own testimony reaches the adjudicator
+    expect(prompt).toMatch(/CANDIDATE FACTS/);
+    expect(prompt).toContain('defended the fort');         // and the candidate's fact-profile
+  });
+
+  it('the verification gate VETOES a LINK when candidate facts contradict the cluster (death year)', async () => {
+    const seed = {
+      clusters: { 21310: [{ resolvedAs: 'Áqá Ján', freq: 5, paraIds: ['para_1'] }] },
+      coverage: { 21310: 1 },
+      candidates: [{ id: 5, canonical: 'Áqá Ján', type: 'person', importance: 40 }],
+      clusterFacts: { 'Áqá Ján': [{ statement: 'Áqá Ján — died 1849', relation: 'died', when: '1849' }] },
+      entityFacts: { 5: { facts: [{ statement: 'died 1892', relation: 'died', when: '1892' }] } },
+    };
+    const llm = fakeLLM([{ content: '{"verdict":"link","type":"person","entity_id":5,"confidence":0.95}' }]);
+    const { rag, store } = makeRag({ seed, llm });
+    const stats = await rag.entities.reconcile(21310);
+    expect(stats.vetoed).toBe(1);
+    const d = store.decisions[0];
+    expect(d.kind).toBe('uncertain');                 // a fabrication was prevented
+    expect(d.payload.entityId).toBeNull();
+    expect(d.rationale).toMatch(/veto.*death/i);
+  });
+
+  it('stamps every decision with the adjudicator method_version', async () => {
+    const seed = { clusters: { 21310: [{ resolvedAs: 'New Person', freq: 3, paraIds: ['para_1'] }] }, coverage: { 21310: 1 } };
+    const llm = fakeLLM([{ content: '{"verdict":"create","type":"person","canonical":"New Person","confidence":0.8}' }]);
+    const { rag, store } = makeRag({ seed, llm });
+    await rag.entities.reconcile(21310);
+    expect(store.decisions.every((d) => d.methodVersion === ADJUDICATOR_VERSION)).toBe(true);
+  });
+
+  it('readjudicate mode processes ONLY the improvable clusters and supersedes their prior decision', async () => {
+    const seed = {
+      coverage: { 21310: 1 },
+      readjudicate: { 21310: [{ resolvedAs: 'Uncertain One', freq: 3, paraIds: ['para_2'], priorId: 77 }] },
+      candidates: [],
+    };
+    const llm = fakeLLM([{ content: '{"verdict":"create","type":"person","canonical":"Uncertain One","confidence":0.85}' }]);
+    const { rag, store } = makeRag({ seed, llm });
+    const stats = await rag.entities.reconcile(21310, { readjudicate: true });
+    expect(stats.clusters).toBe(1);                   // only the improvable one, not the whole book
+    expect(store.decisions.length).toBe(1);
+    expect(store.decisions[0].supersedes).toBe(77);   // append-only replacement of the stale decision
+    expect(store.decisions[0].methodVersion).toBe(ADJUDICATOR_VERSION);
   });
 });

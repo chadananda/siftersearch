@@ -46,12 +46,14 @@ export default async function groundingRoutes(fastify) {
   // Supports FULL runs and RE-PROCESSING runs: `from=<stage>` resumes from a stage, `only=<stage>` runs one stage
   // (e.g. only=research to re-resolve just the uncertains) — both report live via run_json exactly like a full run.
   fastify.post('/grounding/start', admin, async (req) => {
-    const { docId, from, only, cc } = req.body || {};
+    const { docId, from, only, to, readjudicate, cc } = req.body || {};
     if (!docId) throw ApiError.badRequest('docId required');
     if (isLive(await state.getRun(Number(docId)))) throw ApiError.conflict(`doc ${docId} is already grounding`);
     const args = [`${process.cwd()}/scripts/complete-book.mjs`, String(docId)];
     if (from) args.push(`--from=${from}`);
     if (only) args.push(`--only=${only}`);
+    if (to) args.push(`--to=${to}`);
+    if (readjudicate) args.push('--readjudicate');   // incremental re-adjudication sweep (reuse prior work)
     if (cc) args.push(`--cc=${cc}`);
     // Send the detached CLI's output to a per-doc log (was stdio:'ignore', which hid crashes — a silent mid-stage
     // exit was undiagnosable). Falls back to 'ignore' if the log can't be opened.

@@ -315,22 +315,27 @@
         <div class="prog-scrim" onclick={() => (showProgress = false)} role="presentation" transition:fade={{ duration: 150 }}></div>
         <div class="prog-drawer" role="dialog" aria-modal="true" aria-label="Library integration progress" transition:fade={{ duration: 150 }}>
           <button class="prog-close" onclick={() => (showProgress = false)} aria-label="Close panel" title="Close">✕</button>
-          <h2 class="prog-title">Absorbing the history</h2>
-          {#if progress}
-            <p class="prog-lead"><strong>{(progress.cumulativeUnique ?? 0).toLocaleString()}</strong> distinct people grounded so far <span class="prog-sub">· {progress.doneBooks}/{progress.totalBooks} books{#if progress.totalParas} · {fmtK(progress.totalParas)} paragraphs{/if}</span> — toward <em>all history absorbed</em>.</p>
-            {#if progress.active}
-              <div class="prog-active">
-                <span class="prog-active-dot" aria-hidden="true"></span>
-                <div class="prog-active-body">
-                  <div class="prog-active-line">Now reading <strong>{progress.active.title}</strong></div>
-                  <div class="prog-active-stage"><strong>{stageLabel(progress.active.stage)}</strong><span class="prog-active-step">{#if progress.active.stageIndex != null} · step {progress.active.stageIndex + 1} of {progress.active.totalStages}{/if}</span></div>
-                  <div class="prog-active-explain">{stageExplain}</div>
-                  {#if taskLine}<div class="prog-active-task">{taskLine}</div>{/if}
-                  {#if progress.active.percent != null}<div class="prog-active-bar"><span style="width:{simPct}%"></span></div>{/if}
+          <div class="prog-head">
+            <h2 class="prog-title">Absorbing the history</h2>
+            {#if progress}
+              <p class="prog-lead"><strong>{(progress.cumulativeUnique ?? 0).toLocaleString()}</strong> distinct people grounded so far <span class="prog-sub">· {progress.doneBooks}/{progress.totalBooks} books{#if progress.totalParas} · {fmtK(progress.totalParas)} paragraphs{/if}</span> — toward <em>all history absorbed</em>.</p>
+              {#if progress.active}
+                <div class="prog-active">
+                  <span class="prog-active-dot" aria-hidden="true"></span>
+                  <div class="prog-active-body">
+                    <div class="prog-active-line">Now reading <strong>{progress.active.title}</strong>{#if progress.active.adjudicatorVersion}<span class="prog-active-ver" title="grounding with adjudicator engine v{progress.active.adjudicatorVersion}">v{progress.active.adjudicatorVersion}</span>{/if}</div>
+                    <div class="prog-active-stage"><strong>{stageLabel(progress.active.stage)}</strong><span class="prog-active-step">{#if progress.active.stageIndex != null} · step {progress.active.stageIndex + 1} of {progress.active.totalStages}{/if}</span></div>
+                    <div class="prog-active-explain">{stageExplain}</div>
+                    {#if taskLine}<div class="prog-active-task">{taskLine}</div>{/if}
+                    {#if progress.active.percent != null}<div class="prog-active-bar"><span style="width:{simPct}%"></span></div>{/if}
+                  </div>
+                  {#if progress.active.percent != null}<span class="prog-active-pct">{simPct.toFixed(1)}%</span>{/if}
                 </div>
-                {#if progress.active.percent != null}<span class="prog-active-pct">{simPct.toFixed(1)}%</span>{/if}
-              </div>
+              {/if}
             {/if}
+          </div>
+          {#if progress}
+            <div class="prog-list">
             <p class="prog-fine">Per-book <span class="pb-new">+N</span> = people first grounded there; ¶ = size in paragraphs. The book being grounded shows a live progress bar. Click a phase to expand.</p>
             {#each progress.phases as ph (ph.key)}
               {@const isOpen = openKeys.has(ph.key)}
@@ -355,6 +360,7 @@
                           </span>
                           <span class="col-new" title="people first grounded via this book">{#if b.done && b.newInSequence}+{b.newInSequence.toLocaleString()}{/if}</span>
                           <span class="col-un" title="mentioned here but not yet resolved — revisited as later books are absorbed">{#if b.done && b.unresolved}{b.unresolved.toLocaleString()}?{/if}</span>
+                          <span class="col-ver">{#if b.adjVersion > 0}<span class="ver-chip {b.adjVersion >= b.adjCurrent ? 'ver-ok' : 'ver-behind'}" title={b.adjVersion >= b.adjCurrent ? `Adjudicator v${b.adjVersion} — up to date` : `Adjudicator v${b.adjVersion} — re-adjudication to v${b.adjCurrent} due`}>v{b.adjVersion}</span>{/if}</span>
                         </li>
                       {/each}
                       {#if ph.books.length === 0 && !ph.groups}<li class="prog-empty">Catalog pending classification…</li>{/if}
@@ -387,8 +393,9 @@
                 {/if}
               </section>
             {/each}
+            </div>
           {:else}
-            <p class="prog-lead">Loading the roadmap…</p>
+            <div class="prog-list"><p class="prog-lead">Loading the roadmap…</p></div>
           {/if}
         </div>
       </aside>
@@ -726,9 +733,11 @@
   @keyframes railglow { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
   @media (prefers-reduced-motion: reduce) { .prog-rail.active .prog-rail-dot, .prog-rail.active .prog-rail-arrow { animation: none; } }
   .prog-scrim { position: fixed; inset: 0; background: rgb(0 0 0 / .5); backdrop-filter: blur(2px); }
-  .prog-drawer { position: absolute; top: 0; right: 0; height: 100dvh; width: min(34rem, 94vw); overflow-y: auto; overscroll-behavior: contain;
-    background: light-dark(#f8fafc, #1e293b); border-left: 1px solid var(--border); box-shadow: -24px 0 60px rgb(0 0 0 / .5);
-    padding: 1.8rem 1.5rem 3rem; }
+  .prog-drawer { position: absolute; top: 0; right: 0; height: 100dvh; width: min(34rem, 94vw); display: flex; flex-direction: column; overflow: hidden;
+    background: light-dark(#f8fafc, #1e293b); border-left: 1px solid var(--border); box-shadow: -24px 0 60px rgb(0 0 0 / .5); }
+  /* sticky header (title + summary + live banner) stays put; only the phase list below it scrolls */
+  .prog-head { flex: 0 0 auto; padding: 1.8rem 1.5rem .7rem; border-bottom: 1px solid var(--border); }
+  .prog-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: .8rem 1.5rem 3rem; }
   .prog-close { position: absolute; top: .9rem; right: .9rem; width: 2.2rem; height: 2.2rem; border: none; border-radius: 50%;
     background: var(--surface-2); color: var(--text-primary); cursor: pointer; font-size: 1rem; line-height: 1;
     box-shadow: 0 2px 8px rgb(0 0 0 / .25); transition: background .18s, color .18s; }
@@ -748,6 +757,9 @@
   .prog-active-body { flex: 1; min-width: 0; }
   .prog-active-line { font-size: .82rem; color: var(--text-secondary); }
   .prog-active-line strong { color: var(--text-primary); }
+  .prog-active-ver { display: inline-block; margin-left: .4rem; font-size: .58rem; font-weight: 600; color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); border-radius: .85rem; padding: .02rem .32rem;
+    vertical-align: middle; font-variant-numeric: tabular-nums; }
   .prog-active-meta { font-size: .72rem; color: var(--text-muted); margin-top: .1rem; font-variant-numeric: tabular-nums; }
   .prog-active-stage { font-size: .82rem; color: var(--text-primary); margin-top: .3rem; line-height: 1.3; }
   .prog-active-stage strong { color: var(--text-primary); }
@@ -785,6 +797,10 @@
   .col-size { flex: 0 0 6rem; display: flex; align-items: center; justify-content: flex-end; gap: .4rem; }
   .col-new { flex: 0 0 3.2rem; text-align: right; font-size: .72rem; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
   .col-un { flex: 0 0 3rem; text-align: right; font-size: .72rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .col-ver { flex: 0 0 auto; text-align: right; }
+  .ver-chip { font-size: .6rem; font-weight: 600; border-radius: .85rem; padding: .05rem .35rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ver-ok { color: var(--success); border: 1px solid color-mix(in srgb, var(--success) 35%, transparent); }
+  .ver-behind { color: var(--warning); border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent); }
   .pb-num { font-size: .68rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
   .pb-num::after { content: ' ¶'; opacity: .5; }
   /* PROGRESS bar — ONLY on the current book being ground; fills the size column. */

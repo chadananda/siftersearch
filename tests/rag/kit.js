@@ -42,6 +42,7 @@ export function memStore(seed = {}) {
   const decisionBatches = []; // size of each saveDecisions call (proves incremental checkpointing)
   const created = [];    // createEntity calls
   const bound = [];      // bindMentions calls
+  const unbound = [];    // unbindMentions calls
   const appliedMarks = []; // markDecisionApplied calls
   const merges = [];     // applyMerge calls
   const conceptClaims = []; // saveConceptClaims rows
@@ -49,7 +50,7 @@ export function memStore(seed = {}) {
   const lexiconEntries = []; // saveLexiconEntries rows
   const conceptLinks = []; // saveConceptLinks rows
   return {
-    saved, hyped, mentions, claims, decisions, decisionBatches, created, bound, appliedMarks, merges, conceptClaims, conceptDecisions, lexiconEntries, conceptLinks,
+    saved, hyped, mentions, claims, decisions, decisionBatches, created, bound, unbound, appliedMarks, merges, conceptClaims, conceptDecisions, lexiconEntries, conceptLinks,
     getDocMeta: async (id) => seed.docs?.[id] || { id },
     getSampleText: async (id) => seed.samples?.[id] || '',
     getParagraphs: async (id) => seed.paras?.[id] || [],
@@ -74,6 +75,8 @@ export function memStore(seed = {}) {
     findCandidateEntities: async (name) => (typeof seed.candidates === 'function' ? seed.candidates(name) : seed.candidates || []),
     searchGrounded: async (query, opts) => (typeof seed.grounded === 'function' ? seed.grounded(query, opts) : seed.grounded || []),
     getEntityFacts: async (id, opts) => (typeof seed.entityFacts === 'function' ? seed.entityFacts(id, opts) : (seed.entityFacts?.[id] ?? null)),
+    getClusterFacts: async (id, resolvedAs) => (typeof seed.clusterFacts === 'function' ? seed.clusterFacts(resolvedAs) : (seed.clusterFacts?.[resolvedAs] ?? [])),
+    getReadjudicationClusters: async (id, opts) => (typeof seed.readjudicate === 'function' ? seed.readjudicate(id, opts) : (seed.readjudicate?.[id] ?? seed.readjudicate ?? [])),
     getGroundingCoverage: async (id) => seed.grounding?.[id] || { castCount: 0, claimCount: 0, hypeIndexed: 0, paragraphsIndexed: 0, probes: [] },
     getUncertainClusters: async (id) => seed.uncertain?.[id] || [],
     searchCorpus: async (query, opts) => (typeof seed.corpus === 'function' ? seed.corpus(query, opts) : seed.corpus || []),
@@ -85,6 +88,7 @@ export function memStore(seed = {}) {
     getProposedDecisions: async () => seed.proposals || [],
     createEntity: async (canonical, type) => { const id = 1000 + created.length; created.push({ id, canonical, type }); return id; },
     bindMentions: async (resolvedAs, entityId, conf) => { bound.push({ resolvedAs, entityId, conf }); return seed.clusterSizes?.[resolvedAs] ?? 1; },
+    unbindMentions: async (resolvedAs) => { unbound.push({ resolvedAs }); return seed.clusterSizes?.[resolvedAs] ?? 1; },
     markDecisionApplied: async (id, entityId) => { appliedMarks.push({ id, entityId }); },
   };
 }

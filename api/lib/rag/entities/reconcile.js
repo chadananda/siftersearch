@@ -9,16 +9,31 @@ import { assertDisambiguated } from '../kernel/gate.js';
 import { profileFor } from '../kernel/profile.js';
 import { pool } from '../kernel/run.js';
 import { IDENTITY_DOCTRINE } from './evidence-doctrine.js';
+import { verifyLink } from './verify-link.js';
+
+// The adjudicator engine version — a single monotonic integer stamped on every decision this run produces
+// (method_version). Bump when the resolution logic improves; a book whose decisions are all < this is "behind"
+// and a candidate for a cheap incremental re-adjudication sweep. v2 = EEWA-lite: cluster+candidate facts fed to
+// the prompt (P1) + the contradiction verification gate on every LINK (P2). (v1 = the pre-EEWA thin reconcile.)
+export const ADJUDICATOR_VERSION = 2;
 
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
   const profile = await profileFor(ctx, docId);
-  let clusters = await ctx.store.getMentionClusters(docId, { minFreq: opts.minFreq ?? 1, filter: opts.filter });
-  const allClusters = clusters.length;            // pre-resume count → ABSOLUTE progress base
-  if (opts.resume) {                              // skip clusters that already have a decision (idempotent batches)
-    const decided = await ctx.store.getDecidedClusterNames(docId);
-    clusters = clusters.filter((c) => !decided.has(c.resolvedAs));
+  // Three run modes: readjudicate (re-decide ONLY the improvable minority, superseding their old decision) |
+  // resume (skip already-decided) | full. readjudicate is the cheap incremental sweep — reuses all prior work.
+  let clusters;
+  if (opts.readjudicate) {
+    const sel = opts.readjudicate === true ? {} : opts.readjudicate;
+    clusters = await ctx.store.getReadjudicationClusters(docId, { sinceVersion: sel.sinceVersion ?? ADJUDICATOR_VERSION, ...sel });
+  } else {
+    clusters = await ctx.store.getMentionClusters(docId, { minFreq: opts.minFreq ?? 1, filter: opts.filter });
+    if (opts.resume) {                            // skip clusters that already have a decision (idempotent batches)
+      const decided = await ctx.store.getDecidedClusterNames(docId);
+      clusters = clusters.filter((c) => !decided.has(c.resolvedAs));
+    }
   }
+  const allClusters = clusters.length;            // count after mode-filtering → ABSOLUTE progress base
   if (opts.limit) clusters = clusters.slice(0, opts.limit);   // apply the batch cap AFTER resume-filtering
   // ABSOLUTE progress: report against ALL clusters (incl resume-skipped), so a resumed reconcile's bar reflects
   // true book progress (e.g. 1664/6533) rather than the remaining slice (24/4893).
@@ -45,11 +60,31 @@ export async function run(ctx, docId, opts = {}) {
     // Resolve-against-search: evidence from the grounded corpus (completed, higher-authority books) — this is
     // what makes cumulative ordering meaningful (decide grouping/splitting on real cross-book fact, not name).
     const evidence = (await ctx.store.searchGrounded?.(cluster.resolvedAs, { limit: 6 })) || [];
-    const user = buildUser(cluster, candidates, scenes, evidence);
+    // EEWA P1 — the evidence that actually settles identity, already in the DB: the cluster's OWN facts (the
+    // book's testimony) + each top candidate's fact-profile, so the model compares fact-to-fact, not name-to-name.
+    const ownFacts = (await ctx.store.getClusterFacts?.(docId, cluster.resolvedAs, cluster.paraIds)) || [];
+    const candFacts = {};
+    for (const c of candidates.slice(0, 3)) {
+      const f = await ctx.store.getEntityFacts?.(c.id, { limit: 4 });
+      if (f?.facts?.length) candFacts[c.id] = f.facts;
+    }
+    const user = buildUser(cluster, candidates, scenes, evidence, ownFacts, candFacts);
     const { parsed, escalated } = await ctx.model.runLadder({ route, system: SYSTEM, user, parse: parseVerdict, maxTokens: 400 });
     if (!parsed) { stats.failed++; return; }
     stats.adjudicated++; if (escalated) stats.escalated++;
-    const row = decisionRow(parsed, cluster, candidates, docId);
+    // EEWA P2 — verification gate: a proposed LINK must survive a contradiction check against the candidate's
+    // facts (nisba/era/death/role/kin). A conflict VETOES the link (fabrication guardrail) → downgrade to
+    // uncertain with the conflicting axis recorded, rather than merge two different people.
+    let verdict = parsed;
+    if (parsed.verdict === 'link' && parsed.entityId != null) {
+      const cand = candidates.find((c) => c.id === parsed.entityId);
+      const v = verifyLink({ name: cluster.resolvedAs, facts: ownFacts }, { name: cand?.canonical || '', facts: candFacts[parsed.entityId] || [], side: cand?.side });
+      if (v && v.ok === false) {
+        verdict = { ...parsed, verdict: 'uncertain', entityId: null, decisive: `verify-gate veto (${v.axis}): ${v.reason}`.slice(0, 90) };
+        stats.vetoed = (stats.vetoed || 0) + 1;
+      }
+    }
+    const row = decisionRow(verdict, cluster, candidates, docId, { methodVersion: ADJUDICATOR_VERSION, supersedes: cluster.priorId ?? null });
     stats.byKind[row.kind] = (stats.byKind[row.kind] || 0) + 1;
     decisions.push(row);
     await flush();                    // checkpoint once the buffer fills
@@ -70,6 +105,7 @@ If it IS a person, decide by EVIDENCE:
 • "link" — the cluster IS one specific candidate (same person: compatible role, place, era, connections). Give its id.
 • "create" — a person NOT among the candidates (or the only name-candidate's evidence contradicts this cluster's role/era). Give canonical = the source's resolved form.
 • "uncertain" — evidence insufficient; route to human.
+Weigh THIS CLUSTER'S OWN FACTS (the book's testimony about it) against each CANDIDATE'S FACTS — fact-to-fact, not name-to-name. LINK only when the cluster's facts are COMPATIBLE with a candidate's; a contradiction on a discriminative axis (different death place/year, incompatible office, conflicting parentage/kin, a different nisba) FORBIDS the link — prefer "create"/"uncertain" over merging two different people.
 GROUNDED EVIDENCE, when present, is prior-established fact from COMPLETED higher-authority books and is DECISIVE: if a candidate's grounded facts (birth/death/kin/role/place/connections) match this cluster → "link" that id; if a grounded fact CONTRADICTS a candidate → do NOT link it (create or split). Grounded evidence outranks name overlap and the in-book scenes.
 Rules: name similarity ALONE never justifies "link" (namesakes abound); require role/place/era/connection agreement. A descriptor that contradicts a candidate (an "amanuensis" is not a "traditions-scholar") forbids linking. Prefer "create"/"uncertain" over a wrong link (a false merge fabricates a person).
 But do NOT over-create — these are false splits:
@@ -90,18 +126,31 @@ export function parseVerdict(raw) {
   } catch { return null; }
 }
 
-export function buildUser(cluster, candidates, scenes, evidence = []) {
+export function buildUser(cluster, candidates, scenes, evidence = [], ownFacts = [], candFacts = {}) {
   const sceneBlock = scenes.map((s) => `[${s.pid}] ${String(s.context || '').slice(0, 220)}`).join('\n') || '(no scenes)';
   const candBlock = candidates.map((c) => `  #${c.id} "${c.canonical}" (imp ${c.importance ?? '?'}) — ${String(c.summary || '').slice(0, 90)}`).join('\n') || '  (no name-candidates found)';
+  // The cluster's OWN facts — the book's testimony about this person, the strongest identity evidence.
+  const ownBlock = ownFacts.length
+    ? `\n\nTHIS CLUSTER'S OWN FACTS (what the book asserts about "${cluster.resolvedAs}"):\n`
+      + ownFacts.slice(0, 8).map((f) => `  • ${String(f.statement).slice(0, 140)}${f.when ? ` (${f.when})` : ''}`).join('\n')
+    : '';
+  // Each candidate's fact-profile — compare fact-to-fact (a contradiction on death/office/kin/nisba forbids a link).
+  const candFactBlock = candidates.some((c) => candFacts[c.id]?.length)
+    ? '\n\nCANDIDATE FACTS (compare against this cluster fact-to-fact, not name-to-name):\n'
+      + candidates.filter((c) => candFacts[c.id]?.length).map((c) =>
+        `  #${c.id} "${c.canonical}":\n` + candFacts[c.id].slice(0, 4).map((f) => `      – ${String(f.statement).slice(0, 120)}${f.when ? ` (${f.when})` : ''}`).join('\n')).join('\n')
+    : '';
   const evBlock = evidence.length
     ? '\n\nGROUNDED EVIDENCE (facts already established in COMPLETED higher-authority books — decisive for identity):\n'
       + evidence.map((e) => `  →#${e.entityId} "${e.name}": ${String(e.fact || '').slice(0, 140)}${e.source ? ` [${e.source}]` : ''}`).join('\n')
     : '';
-  return `MENTION CLUSTER — resolved as: "${cluster.resolvedAs}" (${cluster.freq} mentions)\nSCENES:\n${sceneBlock}\n\nCANDIDATE entities (name-recall only, verify by evidence):\n${candBlock}${evBlock}`;
+  return `MENTION CLUSTER — resolved as: "${cluster.resolvedAs}" (${cluster.freq} mentions)\nSCENES:\n${sceneBlock}\n\nCANDIDATE entities (name-recall only, verify by evidence):\n${candBlock}${candFactBlock}${ownBlock}${evBlock}`;
 }
 
 // Map an adjudication verdict to an append-only decision row. entity_id is only carried for a "link".
-export function decisionRow(v, cluster, candidates, docId) {
+// meta.methodVersion stamps the adjudicator engine version; meta.supersedes = the prior decision id this one
+// replaces (a re-adjudication sweep), so project re-binds and the old row is filtered out (never mutated).
+export function decisionRow(v, cluster, candidates, docId, meta = {}) {
   const kind = v.verdict === 'other' ? 'other-type' : v.verdict; // link | create | uncertain | other-type
   return {
     kind, targetKind: 'mention-cluster',
@@ -109,5 +158,6 @@ export function decisionRow(v, cluster, candidates, docId) {
     payload: { resolvedAs: cluster.resolvedAs, verdict: v.verdict, type: v.type, entityId: v.verdict === 'link' ? v.entityId : null, canonical: v.canonical, freq: cluster.freq, docId },
     evidence: { scenes: cluster.paraIds.slice(0, 6), candidates: candidates.map((c) => c.id) },
     rationale: v.decisive, actor: 'model', actorTier: 2, confidence: v.confidence, status: 'proposed',
+    methodVersion: meta.methodVersion ?? null, supersedes: meta.supersedes ?? null,
   };
 }

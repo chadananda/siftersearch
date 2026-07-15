@@ -15,6 +15,8 @@ if (!doc) { console.error('usage: complete-book <docId> [--from=stage] [--only=s
 const res = await runGrounding(doc, {
   from: opt.from === true ? undefined : opt.from,
   only: opt.only === true ? undefined : opt.only,
+  to: opt.to === true ? undefined : opt.to,
+  readjudicate: opt.readjudicate ? true : undefined,   // incremental re-adjudication sweep (reuse prior work)
   cc: Number(opt.cc) || 8,
   onResult: (stage, r) => console.log(`\n▶ ${stage}(${doc}) → ${JSON.stringify(r)}`),
 });

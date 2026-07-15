@@ -314,28 +314,100 @@ export function makeStore() {
       return rows;
     },
 
+    // The mention-cluster's OWN facts (EEWA P1) — claims the book asserts about THIS person, pulled from the
+    // cluster's own paragraphs (para-indexed → fast) and filtered to the subject whose skeleton matches the
+    // resolved name. The book's own testimony ("martyred at Ṭabarsí, brother of X") is the strongest identity
+    // evidence; feeding it to the adjudicator is fact-to-fact resolution, not name-to-name. Claims are still
+    // unbound (entity_id NULL) during the book's own reconcile — we match by subject text, not entity_id.
+    async getClusterFacts(docId, resolvedAs, paraIds = [], { limit = 8 } = {}) {
+      const pids = paraIds.slice(0, 40);
+      if (!pids.length) return [];
+      const core = String(resolvedAs).replace(/\([^)]*\)/g, '').split(/[,;—]| the | who /)[0].trim();
+      const want = new Set([resolvedAs, core].filter(Boolean).flatMap((p) => [...skeletonKeys(p)]));
+      const rows = await db.queryAll(
+        `SELECT statement, relation, time_value FROM entity_claims
+           WHERE doc_id=? AND para_id IN (${pids.map(() => '?').join(',')}) AND (status IS NULL OR status='supported')
+           ORDER BY (time_value IS NULL), time_value`, [docId, ...pids]);
+      const out = [];
+      for (const r of rows) {
+        const subj = String(r.statement).split(/\s+[—-]\s+/)[0];        // "subject — relation object"
+        if (![...skeletonKeys(subj)].some((k) => want.has(k))) continue; // only the claims ABOUT this cluster
+        out.push({ statement: r.statement, relation: r.relation, when: r.time_value });
+        if (out.length >= limit) break;
+      }
+      return out;
+    },
+
     // Append proposed reconcile decisions to the immutable decision log (never edits the projection).
+    // method_version = the adjudicator engine version that produced it (staleness signal for re-sweeps);
+    // supersedes = the prior decision id this re-adjudication replaces (append-only; history never mutated).
     async saveDecisions(decisions) {
       if (!decisions.length) return 0;
       const stmts = decisions.map((d) => ({
-        sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, confidence, status, valid_time)
-              VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-        args: [d.kind, d.targetKind, JSON.stringify(d.targetIds), JSON.stringify(d.payload), JSON.stringify(d.evidence), d.rationale, d.actor, d.actorTier, d.confidence, d.status, null],
+        sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, confidence, status, method_version, supersedes, valid_time)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        args: [d.kind, d.targetKind, JSON.stringify(d.targetIds), JSON.stringify(d.payload), JSON.stringify(d.evidence), d.rationale, d.actor, d.actorTier, d.confidence, d.status, d.methodVersion ?? null, d.supersedes ?? null, null],
       }));
       await db.transaction(stmts);
       return decisions.length;
     },
 
     // Mention-cluster decisions with payload normalised to the library's shape (tolerates the legacy
-    // snake_case payload from the pre-library reconcile prototype).
+    // snake_case payload from the pre-library reconcile prototype). Returns the LATEST NON-SUPERSEDED decision
+    // per (docId,resolvedAs): a re-adjudication appends a new row with supersedes=<old id>, so the old one is
+    // excluded and the improved decision projects (project re-binds by resolved_as). Applied rows are kept
+    // (an already-applied superseded decision is still filtered out, so its binding is replaced, not doubled).
     async getProposedDecisions() {
-      const rows = await db.queryAll(`SELECT id, kind, status, confidence, payload FROM entity_decisions WHERE target_kind='mention-cluster'`);
-      return rows.map((r) => {
-        let p = {};
-        try { p = JSON.parse(r.payload || '{}'); } catch { /* */ }
-        return { id: r.id, kind: r.kind, status: r.status, confidence: r.confidence,
-          payload: { resolvedAs: p.resolvedAs ?? p.resolved_as, entityId: p.entityId ?? p.entity_id ?? null, canonical: p.canonical ?? null, type: p.type ?? 'person', freq: p.freq, docId: p.docId ?? p.doc_id ?? null } };
-      });
+      const rows = await db.queryAll(`SELECT id, kind, status, confidence, payload, method_version, supersedes FROM entity_decisions WHERE target_kind='mention-cluster' ORDER BY id`);
+      const superseded = new Set(rows.map((r) => r.supersedes).filter((x) => x != null));
+      const appliedEntityById = new Map();            // decision id -> the entity it bound (for supersede re-projection)
+      const kindById = new Map();                     // decision id -> its kind (reuse a minted entity only if prior was a create)
+      for (const r of rows) { kindById.set(r.id, r.kind); try { const pp = JSON.parse(r.payload || '{}'); if (pp.applied_entity_id != null) appliedEntityById.set(r.id, pp.applied_entity_id); } catch { /* */ } }
+      const latest = new Map();                       // (docId||resolvedAs) → newest non-superseded row (max id wins)
+      for (const r of rows) {
+        if (superseded.has(r.id)) continue;           // an older version replaced by a later re-adjudication
+        let p = {}; try { p = JSON.parse(r.payload || '{}'); } catch { /* */ }
+        const resolvedAs = p.resolvedAs ?? p.resolved_as;
+        const docId = p.docId ?? p.doc_id ?? null;
+        // priorEntityId = what the decision THIS one supersedes had bound — so project REUSES a re-created entity
+        // (never re-mints a duplicate) and can unbind when a re-adjudication pulls a link back to uncertain.
+        const dec = { id: r.id, kind: r.kind, status: r.status, confidence: r.confidence, methodVersion: r.method_version ?? null,
+          supersedes: r.supersedes ?? null, priorKind: r.supersedes != null ? (kindById.get(r.supersedes) ?? null) : null,
+          priorEntityId: r.supersedes != null ? (appliedEntityById.get(r.supersedes) ?? null) : null,
+          payload: { resolvedAs, entityId: p.entityId ?? p.entity_id ?? null, canonical: p.canonical ?? null, type: p.type ?? 'person', freq: p.freq, docId, appliedEntityId: p.applied_entity_id ?? null } };
+        latest.set(`${docId} ${resolvedAs}`, dec);   // rows sorted by id → last write wins (newest)
+      }
+      return [...latest.values()];
+    },
+
+    // Improvable clusters for an incremental re-adjudication sweep (EEWA §5b). Returns ONLY clusters whose
+    // CURRENT (latest non-superseded) decision is worth revisiting — kind=uncertain, OR confidence < maxConf,
+    // OR decided by an engine older than sinceVersion (null/absent method_version = pre-versioning = stale),
+    // OR never decided at all. Each carries `priorId` = the decision this re-adjudication will supersede
+    // (null when none). Confident, current clusters are skipped → a sweep costs ~the improvable fraction.
+    async getReadjudicationClusters(docId, { maxConf = 0.9, sinceVersion = null, includeUncertain = true, minFreq = 1 } = {}) {
+      const rows = await db.queryAll(`SELECT id, kind, confidence, payload, method_version, supersedes FROM entity_decisions WHERE target_kind='mention-cluster' ORDER BY id`);
+      const superseded = new Set(rows.map((r) => r.supersedes).filter((x) => x != null));
+      const current = new Map();                       // resolvedAs → latest non-superseded decision (this doc)
+      for (const r of rows) {
+        if (superseded.has(r.id)) continue;
+        let p = {}; try { p = JSON.parse(r.payload || '{}'); } catch { continue; }
+        if ((p.docId ?? p.doc_id ?? null) !== docId) continue;
+        current.set(p.resolvedAs ?? p.resolved_as, { id: r.id, kind: r.kind, confidence: r.confidence, methodVersion: r.method_version ?? null });
+      }
+      const verStale = (mv) => sinceVersion != null && (mv == null || Number(mv) < sinceVersion);
+      const clusters = await db.queryAll(`SELECT resolved_as, COUNT(*) freq, GROUP_CONCAT(DISTINCT para_id) paras
+        FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%not given%' AND resolved_as NOT LIKE '%?%'
+        GROUP BY resolved_as ORDER BY freq DESC`, [docId]);
+      const out = [];
+      for (const c of clusters) {
+        if (c.freq < minFreq) continue;
+        const d = current.get(c.resolved_as);
+        const improvable = !d || (includeUncertain && d.kind === 'uncertain')
+          || (d.confidence != null && d.confidence < maxConf) || verStale(d.methodVersion);
+        if (improvable) out.push({ resolvedAs: c.resolved_as, freq: c.freq, paraIds: String(c.paras).split(','), priorId: d?.id ?? null });
+      }
+      return out;
     },
 
     // Mint a new (bare) entity as a projection — invisible to the live browser until enriched. Returns its id.
@@ -347,6 +419,13 @@ export function makeStore() {
     // Bind an entire resolved-name cluster to an entity (the projection set by an applied decision). Returns rows bound.
     async bindMentions(resolvedAs, entityId, conf) {
       const r = await db.query(`UPDATE entity_mentions_v2 SET entity_id=?, resolution_basis='reconcile', resolution_conf=? WHERE resolved_as=?`, [entityId, conf, resolvedAs]);
+      return r.rows?.[0]?.changes ?? 0;
+    },
+
+    // Unbind a cluster — a re-adjudication that pulls a prior LINK/CREATE back to 'uncertain' returns its mentions
+    // to the pool (entity_id NULL). Facts are retained (rows survive), only the binding is withdrawn. Returns rows freed.
+    async unbindMentions(resolvedAs) {
+      const r = await db.query(`UPDATE entity_mentions_v2 SET entity_id=NULL, resolution_basis='reconcile-unbind', resolution_conf=NULL WHERE resolved_as=? AND entity_id IS NOT NULL`, [resolvedAs]);
       return r.rows?.[0]?.changes ?? 0;
     },
 

@@ -30,6 +30,13 @@ describe('disambiguate — pure helpers', () => {
     expect(sys).toContain('Persian');
     expect(sys).toContain('Vaḥíd ≠');
   });
+
+  it('buildSystem instructs SCENE COREFERENCE — bind an in-scene role/epithet to the named anchor (P0)', () => {
+    const sys = buildSystem(fakeProfiler({ genre: 'history' })({}), { title: 'The Dawn-Breakers', author: 'Nabíl' }, '');
+    expect(sys).toMatch(/SCENE COREFERENCE/);
+    expect(sys).toMatch(/governor of Zanján = Amír Aslán Khán/);   // co-referring forms collapse to ONE identity
+    expect(sys).toMatch(/points? OUTSIDE the scene|pointing OUTSIDE the scene/i); // an out-of-scene ref stays "?"
+  });
 });
 
 describe('disambiguate — run() on fake ports', () => {

@@ -5,6 +5,7 @@ import { INTEGRATION_PHASES, AUTHOR_ROUTING, PINNED_DOCS, ABSORPTION_ORDER } fro
 const ABSORB_IDX = new Map(ABSORPTION_ORDER.map((id, i) => [id, i])); // docId → grounding-sequence position
 import { chatCompletion } from './ai.js';
 import * as pipelineState from './pipeline/state.js';
+import { ADJUDICATOR_VERSION } from './rag/index.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -159,6 +160,7 @@ async function computeActiveBook(staticDocs, meta) {
   if (!m?.title) m = (await queryAll(`SELECT title, paragraph_count FROM docs WHERE id=?`, [docId]))[0] || m;
   const active = { docId, stage: stageName, stageIndex: si, totalStages: ts, percent, since: startedAt,
     stageDone, stageTotal, stageFrac: Math.round(stageFrac * 1000) / 1000,
+    adjudicatorVersion: ADJUDICATOR_VERSION,   // the engine version this run is grounding with (shown in the progress box)
     title: m?.title || `doc ${docId}`, size: m?.paragraph_count || 0, claimsExtracted: claims };
   _activeCache = active; _activeSig = sig; _activeAt = Date.now();
   return active;
@@ -210,12 +212,18 @@ export async function getIntegrationProgress() {
   // HONEST "done": a book is done only when reconcile has actually adjudicated its cast — decisions exist AND cover
   // most of its name-clusters. Just having ≥1 legacy-bound person is NOT done (the Covenant books had 0 decisions
   // yet showed ✓). decsByDoc counts reconcile decisions; clustersByDoc counts distinct resolvable names.
-  const decsByDoc = {}, clustersByDoc = {};
+  const decsByDoc = {}, clustersByDoc = {}, adjMinVerByDoc = {};
   (await queryAll(`SELECT CAST(json_extract(payload,'$.docId') AS INT) d, COUNT(*) n FROM entity_decisions
       WHERE target_kind='mention-cluster' GROUP BY d`)).forEach(r => { if (r.d) decsByDoc[r.d] = r.n; });
   (await queryAll(`SELECT doc_id d, COUNT(DISTINCT resolved_as) n FROM entity_mentions_v2
       WHERE doc_id IN (${ph}) AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%' GROUP BY doc_id`, gradedDocs))
     .forEach(r => { clustersByDoc[r.d] = r.n; });
+  // Adjudicator version: MIN(method_version) per book over mention-cluster decisions. A pre-EEWA decision has
+  // NULL method_version → treated as v1 (the original thin reconcile). A book is "behind" when its min <
+  // ADJUDICATOR_VERSION and due for a re-adjudication sweep. (A book with NO decisions stays absent here → 0 → hidden.)
+  (await queryAll(`SELECT CAST(json_extract(payload,'$.docId') AS INT) d,
+      MIN(COALESCE(CAST(method_version AS INT), 1)) v FROM entity_decisions
+      WHERE target_kind='mention-cluster' GROUP BY d`)).forEach(r => { if (r.d) adjMinVerByDoc[r.d] = r.v; });
   // Done ⇔ reconcile substantially decided the book's clusters. A COMPLETE new-pipeline run decides ~every cluster
   // (≥100%, since research adds decisions on the uncertains); legacy/partial runs sit at 20–62%. Threshold 0.85 so
   // only genuinely-finished books read as done — the roadmap tells the truth, and books re-fill to ✓ as re-reconcile
@@ -245,7 +253,8 @@ export async function getIntegrationProgress() {
 
   const book = (id, extra = {}) => ({ id, title: meta[id]?.title || `doc ${id}`, author: meta[id]?.author || null,
     size: meta[id]?.paragraph_count || 0, persons: counts[id] || 0, newInSequence: newBy[id] || 0,
-    unresolved: unresolved[id] || 0, done: isGrounded(id), ...extra });
+    unresolved: unresolved[id] || 0, done: isGrounded(id),
+    adjVersion: adjMinVerByDoc[id] ?? 0, adjCurrent: ADJUDICATOR_VERSION, ...extra });
   const phases = INTEGRATION_PHASES.map(p => {
     const books = phaseBookIds[p.key].map(id => book(id, p.dynamic ? { genre: genreOf[id] } : {}));
     return { key: p.key, label: p.label, blurb: p.blurb, upcoming: !!p.upcoming, books,
