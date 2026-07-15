@@ -69,8 +69,17 @@ export async function run(ctx, docId, opts = {}) {
       if (f?.facts?.length) candFacts[c.id] = f.facts;
     }
     const user = buildUser(cluster, candidates, scenes, evidence, ownFacts, candFacts);
-    const { parsed, escalated } = await ctx.model.runLadder({ route, system: SYSTEM, user, parse: parseVerdict, maxTokens: 400 });
-    if (!parsed) { stats.failed++; return; }
+    // maxTokens 800 (was 400): the fact-fed prompt invites a prose preamble before the JSON — at 400 the verdict
+    // object was TRUNCATED (finishReason=length) on denser books, and since temperature=0 every retry returned the
+    // same truncated text. denseHint steers retries to emit ONLY the JSON. (GPB 9.5% → DB 17.3% parse-fails traced here.)
+    const { parsed, escalated, finishReason, raw } = await ctx.model.runLadder({
+      route, system: SYSTEM, user, parse: parseVerdict, maxTokens: 800,
+      denseHint: 'Output ONLY the JSON verdict object — no preamble, no explanation, no markdown fences.' });
+    if (!parsed) {
+      stats.failed++;
+      if ((stats.failed) <= 25) ctx.log.warn?.({ resolvedAs: cluster.resolvedAs, finishReason, head: String(raw?.content || '').replace(/\s+/g, ' ').slice(0, 140) }, 'reconcile: parse-fail');
+      return;
+    }
     stats.adjudicated++; if (escalated) stats.escalated++;
     // EEWA P2 — verification gate: a proposed LINK must survive a contradiction check against the candidate's
     // facts (nisba/era/death/role/kin). A conflict VETOES the link (fabrication guardrail) → downgrade to
