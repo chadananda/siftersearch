@@ -5,6 +5,7 @@
 // Mounted at /api/admin (requireInternal — X-Internal-Key === DEPLOY_SECRET or admin JWT). Writes route to the
 // single writer (the API process sets SIFTER_WRITER_URL), so no direct-write contention.
 import { spawn } from 'child_process';
+import fs from 'node:fs';
 import { requireInternal } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
 import * as state from '../lib/pipeline/state.js';
@@ -42,20 +43,28 @@ export default async function groundingRoutes(fastify) {
   });
 
   // START grounding a book — spawns the executor detached (replaces manual `ssh nohup`). Idempotent: 409 if live.
+  // Supports FULL runs and RE-PROCESSING runs: `from=<stage>` resumes from a stage, `only=<stage>` runs one stage
+  // (e.g. only=research to re-resolve just the uncertains) — both report live via run_json exactly like a full run.
   fastify.post('/grounding/start', admin, async (req) => {
-    const { docId, from, cc } = req.body || {};
+    const { docId, from, only, cc } = req.body || {};
     if (!docId) throw ApiError.badRequest('docId required');
     if (isLive(await state.getRun(Number(docId)))) throw ApiError.conflict(`doc ${docId} is already grounding`);
     const args = [`${process.cwd()}/scripts/complete-book.mjs`, String(docId)];
     if (from) args.push(`--from=${from}`);
+    if (only) args.push(`--only=${only}`);
     if (cc) args.push(`--cc=${cc}`);
+    // Send the detached CLI's output to a per-doc log (was stdio:'ignore', which hid crashes — a silent mid-stage
+    // exit was undiagnosable). Falls back to 'ignore' if the log can't be opened.
+    let outFd = 'ignore';
+    try { outFd = fs.openSync(`${process.cwd()}/logs/grounding-${Number(docId)}.log`, 'a'); } catch { outFd = 'ignore'; }
     const child = spawn(process.execPath, args, {
-      cwd: process.cwd(), detached: true, stdio: 'ignore',
+      cwd: process.cwd(), detached: true, stdio: ['ignore', outFd, outFd],
       env: { ...process.env, SIFTER_WRITER_URL: process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849' },
     });
     child.unref();
-    logger.info({ docId: Number(docId), pid: child.pid, from, cc }, 'grounding started via control API');
-    return { started: true, docId: Number(docId), pid: child.pid, from: from || null, cc: Number(cc) || 8 };
+    if (typeof outFd === 'number') { try { fs.closeSync(outFd); } catch { /* child keeps its copy */ } }
+    logger.info({ docId: Number(docId), pid: child.pid, from, only, cc }, 'grounding started via control API');
+    return { started: true, docId: Number(docId), pid: child.pid, from: from || null, only: only || null, cc: Number(cc) || 8 };
   });
 
   // STOP a live run — signal the reported pid (best-effort) and clear the run marker so the UI goes idle.

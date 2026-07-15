@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-15T13:06:42.047Z",
+  "generated": "2026-07-15T13:24:23.621Z",
   "entries": [
+    {
+      "hash": "6effea7c",
+      "date": "2026-07-15",
+      "type": "Other",
+      "description": "Use RELATIONSHIP and ROLE as identity evidence (recover leaked facts)",
+      "scope": null
+    },
     {
       "hash": "eb1ed340",
       "date": "2026-07-15",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Pm2 exec write to /tmp",
       "scope": null
-    },
-    {
-      "hash": "a250f6ac",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "PM2 check — use stdout",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-15": [
+      {
+        "hash": "6effea7c",
+        "date": "2026-07-15",
+        "type": "Other",
+        "description": "Use RELATIONSHIP and ROLE as identity evidence (recover leaked facts)",
+        "scope": null
+      },
       {
         "hash": "eb1ed340",
         "date": "2026-07-15",
@@ -7063,13 +7070,6 @@
         "date": "2026-05-18",
         "type": "Other",
         "description": "Pm2 exec write to /tmp",
-        "scope": null
-      },
-      {
-        "hash": "a250f6ac",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "PM2 check — use stdout",
         "scope": null
       }
     ]
