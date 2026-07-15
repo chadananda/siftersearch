@@ -218,12 +218,15 @@ export async function getIntegrationProgress() {
   (await queryAll(`SELECT doc_id d, COUNT(DISTINCT resolved_as) n FROM entity_mentions_v2
       WHERE doc_id IN (${ph}) AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%' GROUP BY doc_id`, gradedDocs))
     .forEach(r => { clustersByDoc[r.d] = r.n; });
-  // Adjudicator version: MIN(method_version) per book over mention-cluster decisions. A pre-EEWA decision has
-  // NULL method_version → treated as v1 (the original thin reconcile). A book is "behind" when its min <
-  // ADJUDICATOR_VERSION and due for a re-adjudication sweep. (A book with NO decisions stays absent here → 0 → hidden.)
+  // Adjudicator version: MIN(method_version) per book over its CURRENT (non-superseded) mention-cluster decisions.
+  // A pre-EEWA decision has NULL method_version → treated as v1 (the original thin reconcile). A book is "behind"
+  // when its min < ADJUDICATOR_VERSION and due for a re-adjudication sweep. Superseded rows are EXCLUDED — else a
+  // fully re-swept book still shows v1 from its lingering old (superseded) nulls. (No decisions → absent → 0 → hidden.)
   (await queryAll(`SELECT CAST(json_extract(payload,'$.docId') AS INT) d,
       MIN(COALESCE(CAST(method_version AS INT), 1)) v FROM entity_decisions
-      WHERE target_kind='mention-cluster' GROUP BY d`)).forEach(r => { if (r.d) adjMinVerByDoc[r.d] = r.v; });
+      WHERE target_kind='mention-cluster'
+        AND id NOT IN (SELECT supersedes FROM entity_decisions WHERE supersedes IS NOT NULL)
+      GROUP BY d`)).forEach(r => { if (r.d) adjMinVerByDoc[r.d] = r.v; });
   // Done ⇔ reconcile substantially decided the book's clusters. A COMPLETE new-pipeline run decides ~every cluster
   // (≥100%, since research adds decisions on the uncertains); legacy/partial runs sit at 20–62%. Threshold 0.85 so
   // only genuinely-finished books read as done — the roadmap tells the truth, and books re-fill to ✓ as re-reconcile
