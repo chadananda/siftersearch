@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-15T11:57:41.604Z",
+  "generated": "2026-07-15T13:06:42.047Z",
   "entries": [
+    {
+      "hash": "eb1ed340",
+      "date": "2026-07-15",
+      "type": "Other",
+      "description": "Plain-language stage descriptions (3-4 lines, no jargon)",
+      "scope": null
+    },
     {
       "hash": "2ffd7130",
       "date": "2026-07-14",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "PM2 check — use stdout",
       "scope": null
-    },
-    {
-      "hash": "d35fb865",
-      "date": "2026-05-18",
-      "type": "Other",
-      "description": "PM2 warn includes stdout preview",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-07-15": [
+      {
+        "hash": "eb1ed340",
+        "date": "2026-07-15",
+        "type": "Other",
+        "description": "Plain-language stage descriptions (3-4 lines, no jargon)",
+        "scope": null
+      }
+    ],
     "2026-07-14": [
       {
         "hash": "2ffd7130",
@@ -7061,13 +7070,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "PM2 check — use stdout",
-        "scope": null
-      },
-      {
-        "hash": "d35fb865",
-        "date": "2026-05-18",
-        "type": "Other",
-        "description": "PM2 warn includes stdout preview",
         "scope": null
       }
     ]

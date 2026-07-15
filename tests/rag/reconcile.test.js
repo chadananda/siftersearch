@@ -28,6 +28,13 @@ describe('reconcile — pure helpers', () => {
     expect(create.payload.docId).toBe(21308);               // tagged with its book → doc-scoped project
   });
 
+  it('the prompt treats RELATIONSHIP and ROLE as identity evidence (not just the name)', () => {
+    expect(SYSTEM).toMatch(/RELATIONSHIP and ROLE are identity evidence/i);
+    expect(SYSTEM).toMatch(/maternal uncle of the Báb/);           // relationship-anchored ref → resolve, not punt
+    expect(SYSTEM).toMatch(/so its facts attach to that person instead of being lost/i);
+    expect(SYSTEM).toMatch(/A TRULY generic reference/);           // but genuinely-generic still → uncertain
+  });
+
   it('the prompt forbids binding on name similarity alone', () => {
     expect(SYSTEM).toMatch(/name similarity ALONE never/i);
     expect(buildUser({ resolvedAs: 'the Báb', freq: 100, paraIds: ['para_1'] }, [{ id: 1, canonical: 'the Báb', importance: 100 }], [{ pid: 'para_1', context: '@Shíráz — Declaration' }]))
