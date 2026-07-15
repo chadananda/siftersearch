@@ -1,10 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import IslandSkeleton from '../components/common/IslandSkeleton.astro';
 import NavBar from '../components/common/NavBar.svelte';
 import LibraryBrowser from '../components/library/LibraryBrowser.svelte';
 ---
 
 <Layout title="Library - SifterSearch" description="Browse the complete document library. Explore sacred texts, scriptures, and scholarly works from world religions.">
   <NavBar client:load currentPage="library" />
-  <LibraryBrowser client:only="svelte" />
+  <LibraryBrowser client:only="svelte"><IslandSkeleton slot="fallback" /></LibraryBrowser>
 </Layout>

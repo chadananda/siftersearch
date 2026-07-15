@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-15T03:47:51.606Z",
+  "generated": "2026-07-15T04:06:01.129Z",
   "entries": [
+    {
+      "hash": "bdb94fbd",
+      "date": "2026-07-14",
+      "type": "Other",
+      "description": "SSR the navbar on biography + library (was client:only → blank until hydrate)",
+      "scope": null
+    },
     {
       "hash": "2efa1090",
       "date": "2026-07-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Health-check meili stats timeout + PM2 JSON parse",
       "scope": null
-    },
-    {
-      "hash": "15013d8b",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Unified-worker saves completedItems on shutdown, reduce FLUSH_PARAS 500->100",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-14": [
+      {
+        "hash": "bdb94fbd",
+        "date": "2026-07-14",
+        "type": "Other",
+        "description": "SSR the navbar on biography + library (was client:only → blank until hydrate)",
+        "scope": null
+      },
       {
         "hash": "2efa1090",
         "date": "2026-07-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Health-check meili stats timeout + PM2 JSON parse",
-        "scope": null
-      },
-      {
-        "hash": "15013d8b",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Unified-worker saves completedItems on shutdown, reduce FLUSH_PARAS 500->100",
         "scope": null
       }
     ]

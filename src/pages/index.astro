@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import IslandSkeleton from '../components/common/IslandSkeleton.astro';
 import LiquidBackground from '../components/LiquidBackground.svelte';
 import ChatInterface from '../components/ChatInterface.svelte';
 ---
@@ -7,7 +8,7 @@ import ChatInterface from '../components/ChatInterface.svelte';
 <Layout title="SifterSearch - AI-Powered Interfaith Library" description="Search thousands of sacred texts from world religions with AI-powered semantic search. Explore Baha'i writings, pilgrim notes, and interfaith literature instantly.">
   <LiquidBackground client:only="svelte" />
   <main class="main-container">
-    <ChatInterface client:only="svelte" />
+    <ChatInterface client:only="svelte"><IslandSkeleton slot="fallback" /></ChatInterface>
   </main>
 </Layout>
 

@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import IslandSkeleton from '../components/common/IslandSkeleton.astro';
 import LiquidBackground from '../components/LiquidBackground.svelte';
 import NavBar from '../components/common/NavBar.svelte';
 import ContributeForm from '../components/ContributeForm.svelte';
@@ -10,7 +11,7 @@ import ContributeForm from '../components/ContributeForm.svelte';
   <LiquidBackground client:only="svelte" />
   <NavBar currentPage="contribute" client:load />
   <main class="contribute-page">
-    <ContributeForm client:only="svelte" />
+    <ContributeForm client:only="svelte"><IslandSkeleton slot="fallback" /></ContributeForm>
   </main>
 </Layout>
 

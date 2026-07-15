@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import NavBar from '../../components/common/NavBar.svelte';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import PostDetail from '../../components/forum/PostDetail.svelte';
@@ -9,7 +10,7 @@ import PostDetail from '../../components/forum/PostDetail.svelte';
   <LiquidBackground slot="background" client:only="svelte" />
   <NavBar client:load currentPage="community" />
   <div class="post-page">
-    <PostDetail client:only="svelte" />
+    <PostDetail client:only="svelte"><IslandSkeleton slot="fallback" /></PostDetail>
   </div>
 </Layout>
 

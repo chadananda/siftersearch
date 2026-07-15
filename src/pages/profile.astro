@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import IslandSkeleton from '../components/common/IslandSkeleton.astro';
 import LiquidBackground from '../components/LiquidBackground.svelte';
 import NavBar from '../components/common/NavBar.svelte';
 import ProfilePage from '../components/ProfilePage.svelte';
@@ -11,7 +12,7 @@ import ProfilePage from '../components/ProfilePage.svelte';
   <NavBar currentPage="profile" client:load />
   <main class="profile-wrapper">
     <div class="page-container">
-      <ProfilePage client:only="svelte" />
+      <ProfilePage client:only="svelte"><IslandSkeleton slot="fallback" /></ProfilePage>
     </div>
   </main>
 </Layout>

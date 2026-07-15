@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import IslandSkeleton from '../components/common/IslandSkeleton.astro';
 import LiquidBackground from '../components/LiquidBackground.svelte';
 import NavBar from '../components/common/NavBar.svelte';
 import ReferralDashboard from '../components/ReferralDashboard.svelte';
@@ -10,7 +11,7 @@ import ReferralDashboard from '../components/ReferralDashboard.svelte';
   <LiquidBackground client:only="svelte" />
   <NavBar currentPage="referrals" client:load />
   <main class="referral-page">
-    <ReferralDashboard client:only="svelte" />
+    <ReferralDashboard client:only="svelte"><IslandSkeleton slot="fallback" /></ReferralDashboard>
   </main>
 </Layout>
 

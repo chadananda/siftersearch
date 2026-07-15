@@ -1,12 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import NavBar from '../../components/common/NavBar.svelte';
 import DocumentViewer from '../../components/library/DocumentViewer.svelte';
 ---
 
 <Layout title="Document - SifterSearch" description="View document from the SifterSearch library">
   <NavBar client:load currentPage="library" />
-  <DocumentViewer client:only="svelte" />
+  <DocumentViewer client:only="svelte"><IslandSkeleton slot="fallback" /></DocumentViewer>
 </Layout>
 
 <style>
