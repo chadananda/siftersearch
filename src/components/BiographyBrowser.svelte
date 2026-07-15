@@ -44,18 +44,27 @@
   let aiReasoning = $state(null);  // { summary (integrated markdown explanation), evidence: {id} } — the AI's answer
   let aiError = $state(null);      // surfaced when a meaning-search fetch fails (never silent)
   let showProgress = $state(false), progress = $state(null);   // book-integration roadmap popup
-  // simPct EASES toward the real backend percent (`_target`) and is strictly MONOTONIC — it never snaps backward.
-  // The backend now reports REAL per-item within-stage progress, so the bar tracks actual work: when it advances,
-  // work is happening; when it holds, work has genuinely stalled (no more fake creep masking a stall).
-  let simPct = $state(0), _simDoc = null, _target = 0;
+  // Progress display is VELOCITY-TRACKED: simPct advances between polls at the MEASURED speed (%/ms, EMA-smoothed
+  // so it sharpens with each sample), re-anchoring on every real sample. It's strictly MONOTONIC (never snaps back),
+  // capped so a late poll can't run it away, and it FREEZES only when real progress genuinely stalls (velocity
+  // decays to 0 on zero-gain samples). A transient missing poll HOLDS the last value — it never resets to 0.
+  const POLL_MS = 6000, LOOKAHEAD_MS = 9000;
+  let simPct = $state(0);
+  let _simDoc = null, _anchor = 0, _anchorT = 0, _vel = 0, _lastPct = 0, _nulls = 0;
   async function fetchProgress() {
     try {
       const r = await fetch(`${API}/api/v1/people/progress`); if (!r.ok) return;
       progress = await r.json();
-      const a = progress?.active;
-      if (!a) { simPct = 0; _target = 0; _simDoc = null; }
-      else if (a.docId !== _simDoc) { simPct = a.percent ?? 0; _target = a.percent ?? 0; _simDoc = a.docId; } // new book → snap
-      else { _target = Math.max(_target, a.percent ?? 0); }   // same book → advance the target (monotonic; never lower)
+      const a = progress?.active, now = Date.now();
+      if (!a) { if (++_nulls >= 3) { simPct = 0; _simDoc = null; _vel = 0; } return; } // sustained null = idle; else HOLD
+      _nulls = 0;
+      const p = a.percent ?? 0;
+      if (a.docId !== _simDoc) { _simDoc = a.docId; simPct = p; _anchor = p; _anchorT = now; _vel = 0; _lastPct = p; }
+      else {
+        const dt = Math.max(1, now - _anchorT), inst = Math.max(0, p - _lastPct) / dt;   // measured %/ms this interval
+        _vel = _vel === 0 ? inst : _vel * 0.6 + inst * 0.4;   // EMA; a zero-gain sample decays it → honest freeze on stall
+        _lastPct = p; _anchor = Math.max(simPct, p); _anchorT = now;   // anchor forward (monotonic)
+      }
     } catch { /* offline — modal shows a note */ }
   }
   function openProgress() { showProgress = true; if (!progress) fetchProgress(); }
@@ -64,21 +73,48 @@
   $effect(() => {
     if (typeof window === 'undefined') return;
     fetchProgress();
-    const poll = setInterval(fetchProgress, 8000);
-    // Between polls, EASE simPct up to the real target so the climb looks smooth (asymptotic approach + a tiny floor
-    // to close the last sliver). Never exceeds the target and never decreases — so the displayed number is honest:
-    // it moves exactly when real work moves it. Completion clears `active` (→ simPct 0), so a done book doesn't stick.
+    const poll = setInterval(fetchProgress, POLL_MS);
+    // Extrapolate from the anchor at the measured velocity; cap the lookahead (~1.5 polls) so a missed poll can't
+    // run the bar away; clamp to 99; strictly monotonic. This is the smooth, increasingly-accurate motion.
     const sim = setInterval(() => {
-      const a = progress?.active; if (!a) { if (simPct) simPct = 0; return; }
-      if (simPct < _target) simPct = Math.min(_target, simPct + Math.max((_target - simPct) * 0.06, 0.03));
-    }, 200);
+      if (!progress?.active) return;
+      const v = Math.max(0, _vel);
+      const next = Math.min(99, _anchor + v * LOOKAHEAD_MS, _anchor + v * (Date.now() - _anchorT));
+      if (next > simPct) simPct = next;
+    }, 100);
     return () => { clearInterval(poll); clearInterval(sim); };
   });
   const fmtK = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n ?? 0));
-  const STAGE_LABEL = { disambiguate: 'Disambiguating text', mentions: 'Extracting mentions', claims: 'Extracting claims',
-    reconcile: 'Reconciling identities', research: 'Researching unresolved', project: 'Linking entities',
-    link: 'Linking claims', dedup: 'De-duplicating', hype: 'Generating questions', verify: 'Verifying', grounding: 'Grounding' };
-  const stageLabel = (s) => STAGE_LABEL[s] || 'Grounding';
+  // Per-stage human copy: a TITLE + one-line purpose, plus the verb+noun for the live task line ("Reconciled X / Y
+  // name-clusters"). "stage 4/11" tells the user nothing; this says what the phase is and what it's doing right now.
+  const STAGE_INFO = {
+    disambiguate: { title: 'Disambiguating text', desc: 'Reading each paragraph in context to pin down who and what every name refers to', verb: 'Disambiguated', noun: 'paragraphs' },
+    mentions: { title: 'Extracting mentions', desc: 'Collecting every name, title and epithet the text mentions', verb: 'Scanned', noun: 'paragraphs' },
+    claims: { title: 'Extracting claims', desc: 'Pulling cited facts about each person, place and work out of the text', verb: 'Processed', noun: 'paragraphs' },
+    reconcile: { title: 'Reconciling identities', desc: 'Matching each name to a known person by evidence — or proposing a new one', verb: 'Reconciled', noun: 'name-clusters' },
+    research: { title: 'Researching unresolved', desc: 'Resolving uncertain identities against the wider corpus and the web', verb: 'Researched', noun: 'uncertain names' },
+    project: { title: 'Linking entities', desc: 'Applying the resolved identities into the entity graph', verb: 'Applied', noun: 'decisions' },
+    link: { title: 'Linking claims', desc: 'Binding each extracted fact to its resolved entity', verb: 'Linked', noun: 'claims' },
+    merge: { title: 'Merging duplicates', desc: 'Consolidating same-name entities the evidence shows are one person', verb: 'Reviewed', noun: 'name-groups' },
+    dedup: { title: 'De-duplicating', desc: 'Guarding each new entity against existing duplicates by its facts', verb: 'Checked', noun: 'new entities' },
+    hype: { title: 'Generating questions', desc: 'Writing the questions each paragraph answers, for retrieval search', verb: 'Generated', noun: 'paragraphs' },
+    verify: { title: 'Verifying', desc: 'Confirming the book is fully grounded and searchable', verb: 'Verifying', noun: 'checks' },
+    grounding: { title: 'Grounding', desc: 'Processing the book', verb: 'Processed', noun: 'items' },
+  };
+  const stageInfo = (s) => STAGE_INFO[s] || STAGE_INFO.grounding;
+  const stageLabel = (s) => stageInfo(s).title;
+  // Live task line: verb + real absolute counts (e.g. "Reconciled 1,664 / 6,533 name-clusters · 25%"); falls back
+  // to the stage purpose when the stage reports no item count (the quick bookkeeping stages).
+  const taskLine = $derived.by(() => {
+    const a = progress?.active; if (!a) return '';
+    const info = stageInfo(a.stage);
+    if (a.stageTotal) {
+      const pct = Math.round(((a.stageDone || 0) / a.stageTotal) * 100);
+      return `${info.verb} ${(a.stageDone || 0).toLocaleString()} / ${a.stageTotal.toLocaleString()} ${info.noun} · ${pct}%`;
+    }
+    return info.desc;
+  });
+  const stageDesc = $derived(progress?.active ? stageInfo(progress.active.stage).desc : '');
   // Collapsible phases: the phase being processed (or the frontier) auto-opens; the user can toggle any.
   const activePhaseKey = $derived(progress?.active ? (progress.phases.find((p) => p.books.some((b) => b.id === progress.active.docId))?.key ?? null) : null);
   // Overall progress = completed books + the active book's own fraction, as a 0–100 percent (drives the collapsed rail fill).
@@ -197,7 +233,7 @@
       <span class="prog-rail-num">{progress ? (progress.cumulativeUnique ?? 0).toLocaleString() : '·'}</span>
       <span class="prog-rail-cap">souls</span>
       {#if progress?.active}
-        <span class="prog-rail-live"><span class="prog-rail-dot" aria-hidden="true"></span>{simPct.toFixed(2)}%</span>
+        <span class="prog-rail-live"><span class="prog-rail-dot" aria-hidden="true"></span>{simPct.toFixed(1)}%</span>
       {:else if progress}
         <span class="prog-rail-books">{progress.doneBooks}/{progress.totalBooks}</span>
       {/if}
@@ -268,10 +304,11 @@
                 <span class="prog-active-dot" aria-hidden="true"></span>
                 <div class="prog-active-body">
                   <div class="prog-active-line">Now grounding <strong>{progress.active.title}</strong></div>
-                  <div class="prog-active-meta">{stageLabel(progress.active.stage)}{#if progress.active.stageIndex != null} · stage {progress.active.stageIndex + 1}/{progress.active.totalStages}{/if}{#if progress.active.claimsExtracted} · {progress.active.claimsExtracted.toLocaleString()} claims{/if}</div>
+                  <div class="prog-active-stage"><strong>{stageLabel(progress.active.stage)}</strong> — {stageDesc}<span class="prog-active-step">{#if progress.active.stageIndex != null} · step {progress.active.stageIndex + 1} of {progress.active.totalStages}{/if}</span></div>
+                  <div class="prog-active-task">{taskLine}</div>
                   {#if progress.active.percent != null}<div class="prog-active-bar"><span style="width:{simPct}%"></span></div>{/if}
                 </div>
-                {#if progress.active.percent != null}<span class="prog-active-pct">{simPct.toFixed(2)}%</span>{/if}
+                {#if progress.active.percent != null}<span class="prog-active-pct">{simPct.toFixed(1)}%</span>{/if}
               </div>
             {/if}
             <p class="prog-fine">Per-book <span class="pb-new">+N</span> = people first grounded there; ¶ = size in paragraphs. The book being grounded shows a live progress bar. Click a phase to expand.</p>
@@ -692,8 +729,12 @@
   .prog-active-line { font-size: .82rem; color: var(--text-secondary); }
   .prog-active-line strong { color: var(--text-primary); }
   .prog-active-meta { font-size: .72rem; color: var(--text-muted); margin-top: .1rem; font-variant-numeric: tabular-nums; }
+  .prog-active-stage { font-size: .74rem; color: var(--text-secondary); margin-top: .28rem; line-height: 1.35; }
+  .prog-active-stage strong { color: var(--text-primary); }
+  .prog-active-step { color: var(--text-muted); }
+  .prog-active-task { font-size: .74rem; color: var(--accent); margin-top: .18rem; font-variant-numeric: tabular-nums; }
   .prog-active-bar { height: .28rem; background: var(--surface-3); border-radius: 1rem; margin-top: .4rem; overflow: hidden; }
-  .prog-active-bar span { display: block; height: 100%; background: var(--accent); border-radius: 1rem; transition: width .6s ease; }
+  .prog-active-bar span { display: block; height: 100%; background: var(--accent); border-radius: 1rem; transition: width .3s linear; }
   .prog-active-pct { flex: 0 0 auto; font-size: .95rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
 
   /* collapsible phases */

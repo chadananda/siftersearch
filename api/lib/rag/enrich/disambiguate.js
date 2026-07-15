@@ -25,8 +25,10 @@ export async function run(ctx, docId, opts = {}) {
   const latin = profile.script === 'latin';
   const stats = { paras: paras.length, segments: segs.length, done: 0, failed: 0, escalated: 0, dropped: 0 };
   // Report per PARAGRAPH (not per segment): a segment is many sequential model calls, so per-segment reporting
-  // would go flat for a whole window. total = paras.length is the known job size; progress = paras settled.
-  const report = () => opts.onProgress?.(stats.done + stats.failed, paras.length);
+  // would go flat for a whole window. Report ABSOLUTE progress: total = ALL prose (all.length), already-done =
+  // resume-skipped (base), so a resumed run's bar reflects true progress (not just the remaining slice).
+  const base = all.length - paras.length;
+  const report = () => opts.onProgress?.(base + stats.done + stats.failed, all.length);
 
   // Each segment is one warm cache; within it, calls are sequential and carry a tiny STATE (place · era · a
   // few recent resolves) so consecutive same-scene calls share SYSTEM+SCENE+STATE. Segments run concurrently.

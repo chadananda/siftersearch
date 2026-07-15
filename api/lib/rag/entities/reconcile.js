@@ -14,11 +14,17 @@ export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
   const profile = await profileFor(ctx, docId);
   let clusters = await ctx.store.getMentionClusters(docId, { minFreq: opts.minFreq ?? 1, filter: opts.filter });
+  const allClusters = clusters.length;            // pre-resume count → ABSOLUTE progress base
   if (opts.resume) {                              // skip clusters that already have a decision (idempotent batches)
     const decided = await ctx.store.getDecidedClusterNames(docId);
     clusters = clusters.filter((c) => !decided.has(c.resolvedAs));
   }
   if (opts.limit) clusters = clusters.slice(0, opts.limit);   // apply the batch cap AFTER resume-filtering
+  // ABSOLUTE progress: report against ALL clusters (incl resume-skipped), so a resumed reconcile's bar reflects
+  // true book progress (e.g. 1664/6533) rather than the remaining slice (24/4893).
+  const progBase = opts.limit ? 0 : allClusters - clusters.length;
+  const progTotal = opts.limit ? clusters.length : allClusters;
+  const onProgress = opts.onProgress ? (d) => opts.onProgress(progBase + d, progTotal) : undefined;
   const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };
   const stats = { clusters: clusters.length, adjudicated: 0, failed: 0, escalated: 0, proposed: 0, byKind: {} };
 
@@ -47,7 +53,7 @@ export async function run(ctx, docId, opts = {}) {
     stats.byKind[row.kind] = (stats.byKind[row.kind] || 0) + 1;
     decisions.push(row);
     await flush();                    // checkpoint once the buffer fills
-  }, opts.onProgress);
+  }, onProgress);
   if (opts.dryRun) { ctx.log.info?.({ docId, ...stats }, 'entities/reconcile'); return { ...stats, proposed: 0, decisions }; }
   await flush(true);                  // final partial batch
   ctx.log.info?.({ docId, ...stats }, 'entities/reconcile');

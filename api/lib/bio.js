@@ -58,6 +58,7 @@ let _activeCache = null, _activeSig = '', _activeAt = 0;
 // would wobble the total). The quick bookkeeping stages get a small nominal so they contribute a sliver, never 0.
 // Static per run → cached ~2min by doc (a GROUP BY over mentions is too heavy to run on every 3s poll).
 const _sizeCache = new Map();
+const _pctFloor = new Map();   // docId → {startedAt, pct}: per-run monotonic floor so emitted % never regresses
 async function stageSizes(docId) {
   const hit = _sizeCache.get(docId);
   if (hit && Date.now() - hit.at < 120000) return hit.sizes;
@@ -141,12 +142,23 @@ async function computeActiveBook(staticDocs, meta) {
     const frac = i < si ? 1 : (i === si ? withinFrac : 0);   // prior stages full, current by within-frac, rest 0
     done += (sizes[GROUNDING_STAGES[i]] / total) * frac;
   }
-  const percent = Math.max(3, Math.min(99, Math.round(done * 100)));
+  // HIGH-RESOLUTION float (2dp) — never the old integer that froze each whole-percent for ~a minute of real work.
+  let percent = Math.max(3, Math.min(99, Math.round(done * 10000) / 100));
+  // MONOTONIC per run (keyed by startedAt): clamp so the emitted percent can never regress at the source — kills
+  // any backward jump from a re-weight / recompute / transient read. A genuinely new run (different startedAt) resets.
+  const floor = _pctFloor.get(docId);
+  if (floor && floor.startedAt === startedAt) percent = Math.max(percent, floor.pct);
+  _pctFloor.set(docId, { startedAt, pct: percent });
+  // Current-stage DETAIL (absolute done/total, now that stages report ABSOLUTE progress) — the "window into what's
+  // happening" the bar surfaces: e.g. "Reconciling identities · 1,664 / 6,533".
+  const stageDone = run?.itemsDone ?? null, stageTotal = run?.itemsTotal ?? null;
+  const stageFrac = stageTotal ? Math.min(1, (stageDone || 0) / stageTotal) : withinFrac;
   // Always resolve the real title — the active book may not be in a phase (e.g. a stray-collection doc), so fall
   // back to the docs table rather than showing "doc <id>".
   let m = meta[docId];
   if (!m?.title) m = (await queryAll(`SELECT title, paragraph_count FROM docs WHERE id=?`, [docId]))[0] || m;
   const active = { docId, stage: stageName, stageIndex: si, totalStages: ts, percent, since: startedAt,
+    stageDone, stageTotal, stageFrac: Math.round(stageFrac * 1000) / 1000,
     title: m?.title || `doc ${docId}`, size: m?.paragraph_count || 0, claimsExtracted: claims };
   _activeCache = active; _activeSig = sig; _activeAt = Date.now();
   return active;

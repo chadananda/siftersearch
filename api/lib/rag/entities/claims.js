@@ -21,9 +21,12 @@ export async function run(ctx, docId, opts = {}) {
   const relKeys = new Set(relations.map((r) => r.key));
   const relList = relations.map((r) => r.key).join(', ') || DEFAULT_RELATIONS;
   let paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context && p.contextModel === version && (p.kind ?? 'paragraph') === 'paragraph');
+  const allParas = paras.length;   // pre-resume count → ABSOLUTE progress base (resumed runs report true totals)
   // RESUME: only process paragraphs that don't already have claims — a re-run cheaply fills gaps (crash / earlier
   // throttle) instead of re-doing the whole book. (INSERT OR IGNORE already dedups, but this skips the model calls.)
   if (opts.resume) { const done = new Set((await ctx.store.getClaimedParaIds?.(docId)) || []); paras = paras.filter((p) => !done.has(p.pid)); }
+  const progBase = allParas - paras.length;   // resume-skipped paragraphs (already done)
+  const onProgress = opts.onProgress ? (d) => opts.onProgress(progBase + d, allParas) : undefined;
   const system = buildSystem(profile, relList);
   const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };
   // maxTokens is a CAP, not a target — a high cap costs nothing on simple paragraphs (the model stops when
@@ -60,7 +63,7 @@ export async function run(ctx, docId, opts = {}) {
       buf.push(claimRow(c, { docId, pid: p.pid, era, relKeys, methodVersion: version, extractor, batch }));
     }
     if (buf.length >= FLUSH_ROWS) await flush();
-  }, opts.onProgress);
+  }, onProgress);
   await flush();                                                     // final partial batch
   ctx.log.info?.({ docId, ...stats }, 'entities/claims');
   return stats;

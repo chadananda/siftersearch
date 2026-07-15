@@ -23,8 +23,10 @@ export async function run(ctx, docId, opts = {}) {
   const route = { model: opts.model ?? profile.models.hype, fallback: opts.fallback ?? profile.fallback };
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 1500);
   const stats = { paras: paras.length, segments: segs.length, done: 0, failed: 0, escalated: 0 };
-  // Report per PARAGRAPH — HyPE runs one call per paragraph inside each segment; total = paras.length.
-  const report = () => opts.onProgress?.(stats.done + stats.failed, paras.length);
+  // Report per PARAGRAPH, ABSOLUTE: total = all HyPE-eligible paras (long), already-done = resume-skipped (base),
+  // so a resumed hype run's bar shows true progress not just the remaining slice.
+  const base = long.length - paras.length;
+  const report = () => opts.onProgress?.(base + stats.done + stats.failed, long.length);
 
   await pool(opts.concurrency ?? 5, segs, async (seg) => {
     for (const p of seg) {
