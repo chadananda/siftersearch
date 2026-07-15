@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-15T04:12:36.560Z",
+  "generated": "2026-07-15T05:34:05.223Z",
   "entries": [
+    {
+      "hash": "3cb66111",
+      "date": "2026-07-14",
+      "type": "Other",
+      "description": "SSR fallback placeholders for admin islands + harden biography prerender fetch",
+      "scope": null
+    },
     {
       "hash": "1af6ada8",
       "date": "2026-07-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "PM2 full path + boss_vllm clearer warning message",
       "scope": null
-    },
-    {
-      "hash": "fa83bfd1",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Health-check meili timeout for vs_db/entity_mentions + pm2 PATH",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-14": [
+      {
+        "hash": "3cb66111",
+        "date": "2026-07-14",
+        "type": "Other",
+        "description": "SSR fallback placeholders for admin islands + harden biography prerender fetch",
+        "scope": null
+      },
       {
         "hash": "1af6ada8",
         "date": "2026-07-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "PM2 full path + boss_vllm clearer warning message",
-        "scope": null
-      },
-      {
-        "hash": "fa83bfd1",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Health-check meili timeout for vs_db/entity_mentions + pm2 PATH",
         "scope": null
       }
     ]
