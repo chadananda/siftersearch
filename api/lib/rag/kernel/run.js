@@ -10,7 +10,12 @@ export async function pool(conc, items, worker, onProgress) {
   const runner = async () => {
     while (next < total) {
       const i = next++;
-      results[i] = await worker(items[i], i);
+      // A single transient per-item failure (an LLM/search call timeout, a flaky fetch) must NOT crash the whole
+      // stage — on a book with thousands of items that is near-certain. Catch it, drop the item to null, keep going:
+      // the stage's own side-effects (decisions/claims already flushed) survive, and a re-run re-selects the skipped
+      // item. Same contract as parallel(): a thrown worker → null result, never a rejected pool.
+      try { results[i] = await worker(items[i], i); }
+      catch { results[i] = null; }
       done += 1;
       onProgress?.(done, total);
     }

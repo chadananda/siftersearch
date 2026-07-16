@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-16T04:59:36.878Z",
+  "generated": "2026-07-16T12:54:58.829Z",
   "entries": [
+    {
+      "hash": "e4e99478",
+      "date": "2026-07-15",
+      "type": "Other",
+      "description": "Arabic-script identity key (recall aid) in reconcile candidate-recall + prompt + lookup index; alias-registration on bind for cross-book Persian recall; Sonnet Persian disambiguation; ADJUDICATOR_VERSION 2->3",
+      "scope": null
+    },
     {
       "hash": "e7a922c9",
       "date": "2026-07-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "PM2 crash-loop threshold 50→1000, enrichment treated as warn-only",
       "scope": null
-    },
-    {
-      "hash": "c504a030",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "PM2 check — use spawnSync instead of exec (avoids async event-loop output issue)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-15": [
+      {
+        "hash": "e4e99478",
+        "date": "2026-07-15",
+        "type": "Other",
+        "description": "Arabic-script identity key (recall aid) in reconcile candidate-recall + prompt + lookup index; alias-registration on bind for cross-book Persian recall; Sonnet Persian disambiguation; ADJUDICATOR_VERSION 2->3",
+        "scope": null
+      },
       {
         "hash": "e7a922c9",
         "date": "2026-07-15",
@@ -7063,13 +7070,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "PM2 crash-loop threshold 50→1000, enrichment treated as warn-only",
-        "scope": null
-      },
-      {
-        "hash": "c504a030",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "PM2 check — use spawnSync instead of exec (avoids async event-loop output issue)",
         "scope": null
       }
     ]
