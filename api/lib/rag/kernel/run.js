@@ -14,8 +14,11 @@ export async function pool(conc, items, worker, onProgress) {
       // stage — on a book with thousands of items that is near-certain. Catch it, drop the item to null, keep going:
       // the stage's own side-effects (decisions/claims already flushed) survive, and a re-run re-selects the skipped
       // item. Same contract as parallel(): a thrown worker → null result, never a rejected pool.
+      // EXCEPT a FATAL error (kernel/model tags out-of-credits 400 / bad-key 401/403 as e.fatal): that is not
+      // per-item bad luck, it kills EVERY subsequent call. Swallowing it turns the run into silent no-op churn —
+      // the stage reports success having written a fraction of the book. Re-throw so the operator sees it.
       try { results[i] = await worker(items[i], i); }
-      catch { results[i] = null; }
+      catch (e) { if (e?.fatal) throw e; results[i] = null; }
       done += 1;
       onProgress?.(done, total);
     }

@@ -22,6 +22,21 @@ describe('kernel/run — pool progress reporting', () => {
     expect(await pool(3, [], async (x) => x)).toEqual([]);
     expect(await pool(3, [7, 8], async (x) => x + 1)).toEqual([8, 9]); // no onProgress → still works
   });
+
+  // A transient per-item failure is bad luck on ONE item; a book has thousands, so it must not end the stage.
+  it('drops a transient per-item failure to null and keeps processing the rest', async () => {
+    const out = await pool(2, [1, 2, 3], async (x) => { if (x === 2) throw new Error('timeout'); return x * 10; });
+    expect(out).toEqual([10, null, 30]);
+  });
+
+  // …but an out-of-credits/bad-key error kills EVERY later call. Swallowing it = a stage that reports success
+  // having written a fraction of the book (exactly how a Sonnet run silently wrote 26% of a doc). Fail loudly.
+  it('re-throws a FATAL error instead of swallowing it into silent no-op churn', async () => {
+    const fatal = Object.assign(new Error('credit balance too low'), { fatal: true });
+    let attempted = 0;
+    await expect(pool(1, [1, 2, 3], async () => { attempted++; throw fatal; })).rejects.toThrow('credit balance');
+    expect(attempted).toBe(1); // aborted at the first fatal — did not churn through the remaining items
+  });
 });
 
 describe('kernel/model — routing', () => {
