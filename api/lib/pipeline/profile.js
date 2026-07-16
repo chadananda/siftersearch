@@ -13,12 +13,15 @@
 // Fallback = the SAME model retried (runLadder: primary===fallback → 4 tries). No pro, no sonnet, no
 // cross-provider hop. Fix the deepseek call; do not escalate to haiku.
 const FLASH = 'deepseek-v4-flash', HAIKU = 'claude-haiku-4-5-20251001';
-const SONNET = 'claude-sonnet-4-6'; // NOT an extraction fallback — only the doctrinal/CONCEPTUAL override below (Gate of the Heart)
+const SONNET = 'claude-sonnet-4-6'; // Persian DISAMBIGUATION (make-or-break identity stage) + the doctrinal/CONCEPTUAL override (Gate of the Heart)
 const LANG_ROUTING = {
   en: { disambig: FLASH, hype: FLASH, extract: FLASH, fallback: FLASH },
   ar: { disambig: FLASH, hype: FLASH, extract: FLASH, fallback: FLASH }, // flash handles Arabic
   he: { disambig: FLASH, hype: FLASH, extract: FLASH, fallback: FLASH }, // flash handles Hebrew
-  fa: { disambig: HAIKU, hype: HAIKU, extract: HAIKU, fallback: HAIKU }, // Persian ONLY → haiku (retry itself)
+  // Persian: flash can't read it. DISAMBIGUATE on SONNET — it reads the Persian, resolves identity, and sets the
+  // transliteration everything downstream inherits, so its quality gates the densest, highest-value books; the
+  // bulk stages (hype/extract, which work off the English notes) stay on cheaper HAIKU. Fallback = HAIKU.
+  fa: { disambig: SONNET, hype: HAIKU, extract: HAIKU, fallback: HAIKU },
 };
 const providerOf = (model) => model.startsWith('claude') ? 'anthropic' : model.startsWith('gpt') ? 'openai' : 'deepseek';
 

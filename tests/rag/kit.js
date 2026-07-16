@@ -43,6 +43,7 @@ export function memStore(seed = {}) {
   const created = [];    // createEntity calls
   const bound = [];      // bindMentions calls
   const unbound = [];    // unbindMentions calls
+  const arabicAliases = []; // registerArabicAliases calls
   const appliedMarks = []; // markDecisionApplied calls
   const merges = [];     // applyMerge calls
   const conceptClaims = []; // saveConceptClaims rows
@@ -50,7 +51,7 @@ export function memStore(seed = {}) {
   const lexiconEntries = []; // saveLexiconEntries rows
   const conceptLinks = []; // saveConceptLinks rows
   return {
-    saved, hyped, mentions, claims, decisions, decisionBatches, created, bound, unbound, appliedMarks, merges, conceptClaims, conceptDecisions, lexiconEntries, conceptLinks,
+    saved, hyped, mentions, claims, decisions, decisionBatches, created, bound, unbound, arabicAliases, appliedMarks, merges, conceptClaims, conceptDecisions, lexiconEntries, conceptLinks,
     getDocMeta: async (id) => seed.docs?.[id] || { id },
     getSampleText: async (id) => seed.samples?.[id] || '',
     getParagraphs: async (id) => seed.paras?.[id] || [],
@@ -89,6 +90,7 @@ export function memStore(seed = {}) {
     createEntity: async (canonical, type) => { const id = 1000 + created.length; created.push({ id, canonical, type }); return id; },
     bindMentions: async (resolvedAs, entityId, conf) => { bound.push({ resolvedAs, entityId, conf }); return seed.clusterSizes?.[resolvedAs] ?? 1; },
     unbindMentions: async (resolvedAs) => { unbound.push({ resolvedAs }); return seed.clusterSizes?.[resolvedAs] ?? 1; },
+    registerArabicAliases: async (entityId, resolvedAs) => { arabicAliases.push({ entityId, resolvedAs }); return seed.arabicAliasCount?.[resolvedAs] ?? 0; },
     markDecisionApplied: async (id, entityId) => { appliedMarks.push({ id, entityId }); },
   };
 }

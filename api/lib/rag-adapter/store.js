@@ -4,7 +4,7 @@
 // writer when SIFTER_WRITER_URL is set. Grown method-by-method as stages need data.
 import * as db from '../db.js';           // shared SQLite wrapper (reads direct, writes routed to the single writer)
 import content from '../content.js';      // paragraph write helpers (updateContextOnly routes through the writer)
-import { skeletonKeys } from '../translit-key.js'; // transliteration-invariant recall keys (Sadeq→Ṣádiq…)
+import { skeletonKeys, nameKeys, arabicKeys } from '../translit-key.js'; // recall keys: translit skeletons ∪ Arabic-script keys (Persian docs)
 import { loadGazetteer, anchorFor, guardedPair } from './gazetteer.js'; // central-cast identity anchor + ≠guards
 
 // Blocktypes that carry readable prose we enrich (skip figures, nav, etc.). App-specific → stays here.
@@ -128,30 +128,35 @@ export function makeStore() {
     // Mention-clusters for reconcile: distinct resolved names in the book with frequency + the paragraphs
     // they occur in. Skips unresolved '?' and non-id roster markers.
     async getMentionClusters(docId, { minFreq = 1, filter, limit } = {}) {
-      const params = [docId];
-      let where = `doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%not given%' AND resolved_as NOT LIKE '%?%'`;
-      if (filter) { where += ` AND resolved_as LIKE ?`; params.push(`%${filter}%`); }
-      let rows = await db.queryAll(`SELECT resolved_as, COUNT(*) freq, GROUP_CONCAT(DISTINCT para_id) paras
-        FROM entity_mentions_v2 WHERE ${where} GROUP BY resolved_as ORDER BY freq DESC`, params);
+      // arabic_form = the cluster's original Perso-Arabic surface (longest = most complete name), pulled from
+      // entity_mentions_v2.surface. For Persian docs this is the STABLE identity key (transliteration is a lossy
+      // model derivative); reconcile shows it to the model + recalls candidates by it. Null for Latin-only books.
+      const params = [docId, docId];
+      let where = `m.doc_id=? AND m.resolved_as IS NOT NULL AND m.resolved_as NOT LIKE '%not given%' AND m.resolved_as NOT LIKE '%?%'`;
+      if (filter) { where += ` AND m.resolved_as LIKE ?`; params.push(`%${filter}%`); }
+      let rows = await db.queryAll(`SELECT m.resolved_as, COUNT(*) freq, GROUP_CONCAT(DISTINCT m.para_id) paras,
+        (SELECT s.surface FROM entity_mentions_v2 s WHERE s.resolved_as=m.resolved_as AND s.doc_id=? AND s.surface GLOB '*[؀-ۿ]*' ORDER BY length(s.surface) DESC LIMIT 1) arabic_form
+        FROM entity_mentions_v2 m WHERE ${where} GROUP BY m.resolved_as ORDER BY freq DESC`, params);
       rows = rows.filter((r) => r.freq >= minFreq);
       if (limit) rows = rows.slice(0, limit);
-      return rows.map((r) => ({ resolvedAs: r.resolved_as, freq: r.freq, paraIds: String(r.paras).split(',') }));
+      return rows.map((r) => ({ resolvedAs: r.resolved_as, freq: r.freq, paraIds: String(r.paras).split(','), arabicForm: r.arabic_form || null }));
     },
 
     // Candidate entities by transliteration-invariant name recall (RECALL ONLY — the caller binds by
     // evidence, never by this list). Recalls on BOTH the full resolved string AND its core name (before any
     // parenthetical/descriptor) — else a long "Name (the … leader, successor of …)" dilutes the skeleton and
     // misses the existing entity (seen live: Siyyid Káẓim-i-Rashtí wrongly proposed as a create).
-    async findCandidateEntities(name, { type = 'person', limit = 6 } = {}) {
-      // Recall on the full string, the core name (before any parenthetical), AND the parenthetical alias —
-      // an entity may be stored under either form ("Áqáy-i-Kalím" vs its alias "Mírzá Músá").
+    async findCandidateEntities(name, { type = 'person', limit = 6, arabicForm = null } = {}) {
+      // Recall on the full string, the core name (before any parenthetical), the parenthetical alias, AND (for
+      // Persian clusters) the original Arabic-script surface — an entity may be stored under either form, and the
+      // Arabic key matches an entity that carries an Arabic alias regardless of transliteration divergence.
       const core = String(name).replace(/\([^)]*\)/g, '').split(/[,;—]| the | who | a /)[0].trim();
       const paren = (String(name).match(/\(([^)]+)\)/g) || []).map((s) => s.replace(/[()]/g, '')).join(' ');
-      const keys = [...new Set([name, core, paren].filter(Boolean).flatMap((p) => [...skeletonKeys(p)]))];
+      const keys = [...new Set([name, core, paren, arabicForm].filter(Boolean).flatMap((p) => [...nameKeys(p)]))];
       if (!keys.length) return [];
       let rows = await db.queryAll(
         `SELECT lk.entity_id id, ge.canonical_name canonical, ge.entity_type type, ge.importance importance,
-                er.summary, COUNT(DISTINCT lk.skeleton_key) shared
+                er.summary, er.aliases aliases, COUNT(DISTINCT lk.skeleton_key) shared
            FROM entity_lookup_keys lk JOIN graph_entities ge ON ge.id=lk.entity_id
            LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type
           WHERE lk.skeleton_key IN (${keys.map(() => '?').join(',')})${type ? ' AND ge.entity_type=?' : ''}
@@ -168,7 +173,7 @@ export function makeStore() {
         const existing = rows.find((r) => r.id === anchor.id);
         rows = rows.filter((r) => r.id !== anchor.id);
         const head = existing || (await db.queryAll(
-          `SELECT ge.id id, ge.canonical_name canonical, ge.entity_type type, ge.importance importance, er.summary
+          `SELECT ge.id id, ge.canonical_name canonical, ge.entity_type type, ge.importance importance, er.summary, er.aliases aliases
              FROM graph_entities ge
              LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type
             WHERE ge.id=? AND ge.canonical_name NOT LIKE '%⟨merged%'`, [anchor.id]))[0];
@@ -178,7 +183,12 @@ export function makeStore() {
         const names = [name, anchor?.canonical].filter(Boolean);
         rows = rows.filter((r) => r.id === anchor?.id || !names.some((n) => guardedPair(gaz, n, r.canonical)));
       }
-      return rows.slice(0, limit);
+      // Surface the candidate's own Arabic-script alias (if it carries one) so reconcile can compare Arabic-to-Arabic.
+      return rows.slice(0, limit).map(({ aliases, ...r }) => {
+        let arabicForm = null;
+        try { const a = JSON.parse(aliases || '[]'); if (Array.isArray(a)) arabicForm = a.find((x) => /[؀-ۿ]/.test(String(x))) || null; } catch { /* */ }
+        return { ...r, arabicForm };
+      });
     },
 
     // Resolve-against-search: evidence from the GROUNDED corpus for an identity decision. "Grounded" = claims
@@ -396,16 +406,17 @@ export function makeStore() {
         current.set(p.resolvedAs ?? p.resolved_as, { id: r.id, kind: r.kind, confidence: r.confidence, methodVersion: r.method_version ?? null });
       }
       const verStale = (mv) => sinceVersion != null && (mv == null || Number(mv) < sinceVersion);
-      const clusters = await db.queryAll(`SELECT resolved_as, COUNT(*) freq, GROUP_CONCAT(DISTINCT para_id) paras
-        FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%not given%' AND resolved_as NOT LIKE '%?%'
-        GROUP BY resolved_as ORDER BY freq DESC`, [docId]);
+      const clusters = await db.queryAll(`SELECT m.resolved_as, COUNT(*) freq, GROUP_CONCAT(DISTINCT m.para_id) paras,
+        (SELECT s.surface FROM entity_mentions_v2 s WHERE s.resolved_as=m.resolved_as AND s.doc_id=? AND s.surface GLOB '*[؀-ۿ]*' ORDER BY length(s.surface) DESC LIMIT 1) arabic_form
+        FROM entity_mentions_v2 m WHERE m.doc_id=? AND m.resolved_as IS NOT NULL AND m.resolved_as NOT LIKE '%not given%' AND m.resolved_as NOT LIKE '%?%'
+        GROUP BY m.resolved_as ORDER BY freq DESC`, [docId, docId]);
       const out = [];
       for (const c of clusters) {
         if (c.freq < minFreq) continue;
         const d = current.get(c.resolved_as);
         const improvable = !d || (includeUncertain && d.kind === 'uncertain')
           || (d.confidence != null && d.confidence < maxConf) || verStale(d.methodVersion);
-        if (improvable) out.push({ resolvedAs: c.resolved_as, freq: c.freq, paraIds: String(c.paras).split(','), priorId: d?.id ?? null });
+        if (improvable) out.push({ resolvedAs: c.resolved_as, freq: c.freq, paraIds: String(c.paras).split(','), arabicForm: c.arabic_form || null, priorId: d?.id ?? null });
       }
       return out;
     },
@@ -432,6 +443,40 @@ export function makeStore() {
     // Mark a decision applied + record which entity it resolved to (reversible provenance).
     async markDecisionApplied(id, entityId) {
       await db.query(`UPDATE entity_decisions SET status='applied', payload=json_set(COALESCE(payload,'{}'),'$.applied_entity_id',?) WHERE id=?`, [entityId, id]);
+    },
+
+    // Reset a doc's DERIVED substrate (mentions + claims) so a re-disambiguation re-derives them fresh from the new
+    // notes. These are disposable projections of content.context — NOT entities and NOT decisions (both persist; the
+    // fresh reconcile re-links to the same entities via supersede-reuse). Needed because mentions use a stable
+    // surface anchor with INSERT OR IGNORE, so without a reset a re-run keeps the OLD resolved handle. Returns counts.
+    async resetDocDerived(docId) {
+      const m = await db.query(`DELETE FROM entity_mentions_v2 WHERE doc_id=?`, [docId]);
+      const c = await db.query(`DELETE FROM entity_claims WHERE doc_id=?`, [docId]);
+      return { mentions: m.rows?.[0]?.changes ?? 0, claims: c.rows?.[0]?.changes ?? 0 };
+    },
+
+    // Register a bound Persian cluster's ORIGINAL Arabic-script name(s) as ALIASES of the entity — so the lookup
+    // index (build-lookup-index → nameKeys) accumulates Arabic keys and the SAME person in a later Persian book (or
+    // its English-book self) is RECALLED as a candidate instead of duplicated. This is a RECALL aid built AFTER the
+    // evidence-based bind; it is never itself an identity decision. Only distinctive full names (arabicKeys non-empty
+    // after honorific-strip → excludes bare سید/آقا titles). Called by project per bound cluster; no-op for non-Persian.
+    async registerArabicAliases(entityId, resolvedAs) {
+      const ent = (await db.queryAll(`SELECT canonical_name cn, entity_type et FROM graph_entities WHERE id=?`, [entityId]))[0];
+      if (!ent) return 0;
+      const surfaces = (await db.queryAll(
+        `SELECT DISTINCT surface FROM entity_mentions_v2 WHERE resolved_as=? AND surface GLOB '*[؀-ۿ]*' ORDER BY length(surface) DESC LIMIT 5`, [resolvedAs]
+      )).map((r) => r.surface).filter((s) => s && s.trim().length >= 3 && [...arabicKeys(s)].length >= 1);
+      if (!surfaces.length) return 0;
+      const row = (await db.queryAll(`SELECT aliases FROM entity_research WHERE canonical_name=? AND entity_type=?`, [ent.cn, ent.et]))[0];
+      let aliases = []; try { const a = JSON.parse(row?.aliases || '[]'); if (Array.isArray(a)) aliases = a; } catch { /* */ }
+      const have = new Set(aliases.map((a) => String(a)));
+      let added = 0;
+      for (const s of surfaces) if (!have.has(s)) { aliases.push(s); have.add(s); added++; }
+      if (!added) return 0;
+      const j = JSON.stringify(aliases);
+      if (row) await db.query(`UPDATE entity_research SET aliases=? WHERE canonical_name=? AND entity_type=?`, [j, ent.cn, ent.et]);
+      else await db.query(`INSERT INTO entity_research (canonical_name, entity_type, aliases) VALUES (?,?,?)`, [ent.cn, ent.et, j]);
+      return added;
     },
 
     // Persist cited concept claims (INSERT OR IGNORE on claim_hash). concept_id stays NULL (deferred to

@@ -1,10 +1,11 @@
 // Build the fast AI-free entity LOOKUP index (entity_lookup_keys) from the projected entities (graph_entities +
-// aliases). For each entity, index skeletonKeys(canonical) ∪ skeletonKeys(each alias). Rebuildable — it is a
-// PROJECTION of the current entities; truncate + repopulate. RECALL/lookup only, never determinative.
+// aliases). For each entity, index nameKeys(canonical) ∪ nameKeys(each alias) — transliteration skeletons ∪
+// Arabic-script keys (ar:) — so entities with Perso-Arabic canonical names or aliases are reachable from both
+// scripts. Rebuildable — it is a PROJECTION of the current entities; truncate + repopulate. RECALL/lookup only.
 //   WRITE: SIFTER_WRITER_URL=http://127.0.0.1:7849 WRITE=1 node scripts/entity-read/build-lookup-index.mjs
 import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
 const { queryAll, query } = await import('../../api/lib/db.js');
-const { skeletonKeys } = await import('../../api/lib/translit-key.js');
+const { nameKeys } = await import('../../api/lib/translit-key.js');
 const WRITE = process.env.WRITE === '1';
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
 const esc = (s) => `'${String(s == null ? '' : s).replace(/'/g, "''")}'`;
@@ -18,7 +19,7 @@ for (const e of ents) {
   const seen = new Set();
   for (const [surf, isCanon] of surfaces) {
     if (!surf) continue;
-    for (const k of skeletonKeys(surf)) { const d = `${k}|${nrm(surf)}`; if (seen.has(d)) continue; seen.add(d);
+    for (const k of nameKeys(surf)) { const d = `${k}|${nrm(surf)}`; if (seen.has(d)) continue; seen.add(d);
       rows.push(`(${esc(k)},${e.id},${esc(surf)},${esc(nrm(surf))},${isCanon},${esc(e.et)},${e.imp == null ? 'NULL' : e.imp})`); }
   }
 }

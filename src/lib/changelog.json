@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-15T19:31:50.159Z",
+  "generated": "2026-07-16T04:59:36.878Z",
   "entries": [
+    {
+      "hash": "e7a922c9",
+      "date": "2026-07-15",
+      "type": "Other",
+      "description": "MaxTokens 400->800 + JSON-only retry hint + parse-fail logging — fixes climbing parse-failure rate (GPB 9.5%, DB 17.3%) from truncated verdict JSON on fact-fed prompts",
+      "scope": null
+    },
     {
       "hash": "6effea7c",
       "date": "2026-07-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "PM2 check — use spawnSync instead of exec (avoids async event-loop output issue)",
       "scope": null
-    },
-    {
-      "hash": "7de6f721",
-      "date": "2026-05-18",
-      "type": "Other",
-      "description": "Pm2 exec write to /tmp",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-15": [
+      {
+        "hash": "e7a922c9",
+        "date": "2026-07-15",
+        "type": "Other",
+        "description": "MaxTokens 400->800 + JSON-only retry hint + parse-fail logging — fixes climbing parse-failure rate (GPB 9.5%, DB 17.3%) from truncated verdict JSON on fact-fed prompts",
+        "scope": null
+      },
       {
         "hash": "6effea7c",
         "date": "2026-07-15",
@@ -7063,13 +7070,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "PM2 check — use spawnSync instead of exec (avoids async event-loop output issue)",
-        "scope": null
-      },
-      {
-        "hash": "7de6f721",
-        "date": "2026-05-18",
-        "type": "Other",
-        "description": "Pm2 exec write to /tmp",
         "scope": null
       }
     ]

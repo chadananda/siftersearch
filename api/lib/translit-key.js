@@ -40,3 +40,45 @@ export function skeletonKeys(name) {
   return keys;
 }
 export const shareKey = (a, b) => { const B = skeletonKeys(b); for (const k of skeletonKeys(a)) if (B.has(k)) return true; return false; };
+
+// ── Arabic/Persian-script keys ────────────────────────────────────────────────
+// The TRUE identity key for Perso-Arabic names: the script itself. Transliteration (skeletonKeys) is a lossy,
+// model-produced derivative that fragments Persian sources; the original script (stored on entity_mentions_v2.surface)
+// is unambiguous. Perso-Arabic script already omits short vowels, so the letters ARE the consonantal skeleton — we
+// only normalise script variants (ك↔ک, ي↔ی, ة↔ه, hamza forms) + strip harakat/tatweel/ZWNJ + honorifics/article.
+// RECALL / compare ONLY (like skeletonKeys) — never a binding decision. Keys are `ar:<token>` (namespaced from Latin).
+const AR_MARKS = /[ً-ْٰـ‌‍‎‏ؐ-ؚۖ-ۭ]/g; // harakat, tatweel, ZWNJ/ZWJ, marks
+const AR_HON = new Set(['حضرت', 'آقا', 'آقاى', 'آقای', 'اقا', 'میرزا', 'ميرزا', 'ملا', 'ملّا', 'مولا', 'شیخ', 'شيخ', 'سید', 'سيد', 'سیّد', 'حاجی', 'حاجى', 'حاجّی', 'حاج', 'جناب', 'مولانا', 'خان', 'بیگ', 'بگ', 'امیر', 'امير', 'مير', 'ابن', 'بن', 'ابو', 'ام', 'الحاج', 'کربلایی', 'مشهدی', 'استاد', 'ملّای']);
+function arNorm(s) {
+  return String(s || '').replace(AR_MARKS, '')
+    .replace(/[أإآٱ]/g, 'ا').replace(/ء/g, '')          // hamza-alef variants → bare alef; drop standalone hamza
+    .replace(/ؤ/g, 'و').replace(/ئ/g, 'ی')              // hamza carriers → base letter
+    .replace(/ك/g, 'ک').replace(/[يى]/g, 'ی').replace(/[ةۀ]/g, 'ه'); // Arabic→Persian kaf/yeh; teh-marbuta/heh→heh
+}
+const arTokens = (name) => arNorm(name).split(/[\s\-ـ.,،؛]+/).map((t) => t.replace(/^ال/, '')).filter((t) => t.length >= 2 && !AR_HON.has(t));
+export function arabicKeys(name) {
+  const n = arNorm(name);
+  if (!/[؀-ۿ]/.test(n)) return new Set();     // no Perso-Arabic script → nothing to key
+  return new Set(arTokens(name).filter((t) => /[؀-ۿ]/.test(t)).map((t) => `ar:${t}`));
+}
+// The nisba (place/tribe adjective, e.g. رشتی/یزدی) — a distinctive namesake discriminator, unambiguous in Arabic
+// script. CONSERVATIVE (a false nisba would cause a wrong verify-gate reject): need ≥2 tokens (a bare name has no
+// nisba), the last ی-ending token of ≥4 chars, and NOT a common given name that happens to end in ی (علی/تقی are
+// only 3 chars so already excluded by length; یحیی/مهدی/هادی need the stoplist). Returns `ar:<token>` or null.
+const AR_GIVEN_YE = new Set(['یحیی', 'مهدی', 'هادی', 'نبی', 'زکی', 'ولی', 'صفی', 'وفی']);
+export function arabicNisba(name) {
+  const toks = arTokens(name).filter((t) => /[؀-ۿ]/.test(t));
+  if (toks.length < 2) return null;
+  for (let i = toks.length - 1; i >= 0; i--) {
+    const t = toks[i];
+    if (t.length >= 4 && t.endsWith('ی') && !AR_GIVEN_YE.has(t)) return `ar:${t}`;
+  }
+  return null;
+}
+// Union recall net: transliteration skeletons ∪ Arabic-script keys. Use this wherever a name may be Latin OR
+// Perso-Arabic (candidate recall, lookup index) so both scripts bucket into the same net.
+export function nameKeys(name) {
+  const keys = skeletonKeys(name);
+  for (const k of arabicKeys(name)) keys.add(k);
+  return keys;
+}

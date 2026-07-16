@@ -17,7 +17,7 @@ export async function run(ctx, opts = {}) {
     && (d.status === 'approved' || d.status === 'applied' || (auto && (d.confidence || 0) >= hiConf)));
 
   const stats = { proposals: all.length, toApply: toApply.length, applied: 0, created: 0, reused: 0, linked: 0, mentionsBound: 0,
-    unbound: 0, createdIds: [], skippedBadId: 0, uncertain: all.filter((d) => d.kind === 'uncertain').length };
+    unbound: 0, arabicAliases: 0, createdIds: [], skippedBadId: 0, uncertain: all.filter((d) => d.kind === 'uncertain').length };
   if (opts.dryRun) return stats;
 
   // Re-adjudication PULLBACK: a cluster now 'uncertain' whose superseded decision had BOUND an entity must be
@@ -50,6 +50,9 @@ export async function run(ctx, opts = {}) {
     }
     if (!entityId || !d.payload.resolvedAs) continue;
     stats.mentionsBound += await ctx.store.bindMentions(d.payload.resolvedAs, entityId, d.confidence);  // re-binds a moved cluster (overwrites by resolved_as)
+    // Persian: register the cluster's Arabic-script name as an entity alias (RECALL aid built AFTER this evidence
+    // decision) so the same person is recalled — not duplicated — in later Persian books. No-op for non-Persian.
+    stats.arabicAliases += (await ctx.store.registerArabicAliases?.(entityId, d.payload.resolvedAs)) || 0;
     await ctx.store.markDecisionApplied(d.id, entityId);
     stats.applied++;
   }

@@ -70,6 +70,13 @@ describe('entities/project', () => {
     expect(store.bound[0]).toMatchObject({ resolvedAs: 'Q', entityId: 1 });
   });
 
+  it('registers each bound cluster\'s Arabic alias (recall aid, built AFTER the evidence decision)', async () => {
+    const { rag, store } = makeRag({ seed: { proposals, clusterSizes: { 'Mullá Ḥusayn-i-Bushrú’í': 40, 'Karbilá’í ‘Alí': 3 } } });
+    await rag.entities.project();
+    // both applied clusters (the link #1 + the create #2) get registerArabicAliases called (no-op for non-Persian)
+    expect(store.arabicAliases.map((a) => a.resolvedAs).sort()).toEqual(['Karbilá’í ‘Alí', 'Mullá Ḥusayn-i-Bushrú’í']);
+  });
+
   it('a re-adjudicated CREATE reuses the entity its superseded create minted — never a duplicate', async () => {
     const re = [{ id: 20, kind: 'create', status: 'proposed', confidence: 0.9, supersedes: 10, priorKind: 'create', priorEntityId: 555,
       payload: { resolvedAs: 'Re One', entityId: null, canonical: 'Re One', type: 'person', docId: 21310 } }];

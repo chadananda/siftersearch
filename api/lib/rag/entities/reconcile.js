@@ -13,9 +13,10 @@ import { verifyLink } from './verify-link.js';
 
 // The adjudicator engine version — a single monotonic integer stamped on every decision this run produces
 // (method_version). Bump when the resolution logic improves; a book whose decisions are all < this is "behind"
-// and a candidate for a cheap incremental re-adjudication sweep. v2 = EEWA-lite: cluster+candidate facts fed to
-// the prompt (P1) + the contradiction verification gate on every LINK (P2). (v1 = the pre-EEWA thin reconcile.)
-export const ADJUDICATOR_VERSION = 2;
+// and a candidate for a re-adjudication sweep. v1 = pre-EEWA thin reconcile. v2 = EEWA-lite: cluster+candidate
+// facts fed to the prompt (P1) + the contradiction verification gate on every LINK (P2). v3 = Arabic-script
+// identity key fed into candidate recall + the prompt (Persian docs) + Sonnet disambiguation.
+export const ADJUDICATOR_VERSION = 3;
 
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
@@ -55,7 +56,9 @@ export async function run(ctx, docId, opts = {}) {
     stats.proposed += await ctx.store.saveDecisions(chunk);
   };
   await pool(opts.concurrency ?? 5, clusters, async (cluster) => {
-    const candidates = await ctx.store.findCandidateEntities(cluster.resolvedAs, { type: 'person', limit: 6 });
+    // arabicForm (Persian docs) = the cluster's original Arabic-script name — the stable identity key. Recall
+    // candidates by it too (matches an entity's Arabic alias across transliteration divergence).
+    const candidates = await ctx.store.findCandidateEntities(cluster.resolvedAs, { type: 'person', limit: 6, arabicForm: cluster.arabicForm });
     const scenes = await ctx.store.getScenes(docId, cluster.paraIds.slice(0, 4));
     // Resolve-against-search: evidence from the grounded corpus (completed, higher-authority books) — this is
     // what makes cumulative ordering meaningful (decide grouping/splitting on real cross-book fact, not name).
@@ -137,7 +140,7 @@ export function parseVerdict(raw) {
 
 export function buildUser(cluster, candidates, scenes, evidence = [], ownFacts = [], candFacts = {}) {
   const sceneBlock = scenes.map((s) => `[${s.pid}] ${String(s.context || '').slice(0, 220)}`).join('\n') || '(no scenes)';
-  const candBlock = candidates.map((c) => `  #${c.id} "${c.canonical}" (imp ${c.importance ?? '?'}) — ${String(c.summary || '').slice(0, 90)}`).join('\n') || '  (no name-candidates found)';
+  const candBlock = candidates.map((c) => `  #${c.id} "${c.canonical}"${c.arabicForm ? ` [${c.arabicForm}]` : ''} (imp ${c.importance ?? '?'}) — ${String(c.summary || '').slice(0, 90)}`).join('\n') || '  (no name-candidates found)';
   // The cluster's OWN facts — the book's testimony about this person, the strongest identity evidence.
   const ownBlock = ownFacts.length
     ? `\n\nTHIS CLUSTER'S OWN FACTS (what the book asserts about "${cluster.resolvedAs}"):\n`
@@ -153,7 +156,10 @@ export function buildUser(cluster, candidates, scenes, evidence = [], ownFacts =
     ? '\n\nGROUNDED EVIDENCE (facts already established in COMPLETED higher-authority books — decisive for identity):\n'
       + evidence.map((e) => `  →#${e.entityId} "${e.name}": ${String(e.fact || '').slice(0, 140)}${e.source ? ` [${e.source}]` : ''}`).join('\n')
     : '';
-  return `MENTION CLUSTER — resolved as: "${cluster.resolvedAs}" (${cluster.freq} mentions)\nSCENES:\n${sceneBlock}\n\nCANDIDATE entities (name-recall only, verify by evidence):\n${candBlock}${candFactBlock}${ownBlock}${evBlock}`;
+  // For Persian sources, the ORIGINAL Arabic-script name is the unambiguous identity key (the transliteration is a
+  // lossy rendering that can vary between mentions) — compare it directly to candidate names, esp. the nisba.
+  const arabicLine = cluster.arabicForm ? ` · original script: ${cluster.arabicForm}` : '';
+  return `MENTION CLUSTER — resolved as: "${cluster.resolvedAs}"${arabicLine} (${cluster.freq} mentions)\nSCENES:\n${sceneBlock}\n\nCANDIDATE entities (name-recall only, verify by evidence):\n${candBlock}${candFactBlock}${ownBlock}${evBlock}`;
 }
 
 // Map an adjudication verdict to an append-only decision row. entity_id is only carried for a "link".

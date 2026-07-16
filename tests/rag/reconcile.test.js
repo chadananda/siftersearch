@@ -41,6 +41,16 @@ describe('reconcile — pure helpers', () => {
       .toContain('the Báb');
   });
 
+  it('buildUser shows the original Arabic-script form for a Persian cluster (the stable identity key)', () => {
+    const u = buildUser({ resolvedAs: 'Siyyid Káẓim-i-Rashtí', arabicForm: 'سید کاظم رشتی', freq: 5, paraIds: ['para_1'] }, [], []);
+    expect(u).toMatch(/original script: سید کاظم رشتی/);
+    // Latin-only book: no arabicForm → no original-script line
+    expect(buildUser({ resolvedAs: 'the Báb', freq: 100, paraIds: [] }, [], [])).not.toMatch(/original script/);
+    // a candidate's own Arabic alias is shown for cross-script comparison
+    expect(buildUser({ resolvedAs: 'X', freq: 3, paraIds: [] }, [{ id: 7, canonical: 'Mullá Ḥusayn', arabicForm: 'ملا حسین', importance: 90 }], []))
+      .toMatch(/\[ملا حسین\]/);
+  });
+
   it('buildUser renders a GROUNDED EVIDENCE block when cross-book evidence is supplied', () => {
     const u = buildUser({ resolvedAs: 'Mírzá Aḥmad', freq: 5, paraIds: ['para_3'] },
       [{ id: 7, canonical: 'Mírzá Aḥmad-i-Azghandí', importance: 40 }],
