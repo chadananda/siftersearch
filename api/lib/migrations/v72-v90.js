@@ -450,6 +450,28 @@ export const migrations = {
     catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
     logger.info('Migration 92 complete: entity_decisions.method_version');
   },
+  93: async () => {
+    // Grounding QUEUE. Until now the work ORDER lived in an operator's head (or an agent's polling loop), and each
+    // next book was launched by hand — so when the babysitter stopped, the pipeline stopped with a free machine and
+    // hours of nothing. The queue moves that order into the API: enqueue books, and a supervisor advances them.
+    // A dead babysitter must not mean a dead pipeline.
+    logger.info('Starting migration 93: grounding_queue');
+    await query(`CREATE TABLE IF NOT EXISTS grounding_queue (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      doc_id INTEGER NOT NULL,
+      opts_json TEXT,                          -- {from,to,only,readjudicate,cc} → passed straight to the executor
+      position INTEGER NOT NULL DEFAULT 0,     -- work order (ties break by id)
+      status TEXT NOT NULL DEFAULT 'queued',   -- queued | running | done | failed | cancelled
+      note TEXT,
+      error TEXT,
+      pid INTEGER,
+      enqueued_at INTEGER DEFAULT (unixepoch()),
+      started_at INTEGER,
+      finished_at INTEGER
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_grounding_queue_pick ON grounding_queue(status, position, id)`);
+    logger.info('Migration 93 complete: grounding_queue');
+  },
 };
 
 export const graphMigrations = {

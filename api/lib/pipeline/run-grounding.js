@@ -36,6 +36,9 @@ export async function runGrounding(docId, opts = {}) {
     setAIContext({ stage: s });   // the live ALS store — assigning to `scope` would not reach it (it was spread)
     currentRun = { docId, stage: s, stageIndex: GROUNDING_STAGES.indexOf(s), totalStages: GROUNDING_STAGES.length,
       withinFrac: 0, itemsDone: 0, itemsTotal: 0,
+      // toStage = this run's BOUND. The queue supervisor reads it to enforce "one graph-mutating run at a time":
+      // a full run parked in disambiguate will still reach the tail later, so intent — not current stage — decides.
+      toStage: GROUNDING_STAGES[toI],
       pid: process.pid, host: os.hostname(), startedAt, updatedAt: new Date().toISOString() };
     if (report) await writeRun();
     await onStage?.(s, { index: GROUNDING_STAGES.indexOf(s), total: GROUNDING_STAGES.length });

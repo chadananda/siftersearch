@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-17T02:33:59.631Z",
+  "generated": "2026-07-17T13:06:26.709Z",
   "entries": [
+    {
+      "hash": "4be2b2fa",
+      "date": "2026-07-16",
+      "type": "Other",
+      "description": "Report + display EVERY grounding book (parallel runs), tabbed panel",
+      "scope": null
+    },
     {
       "hash": "038b94c9",
       "date": "2026-07-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Pipeline health uses localhost first; embed warn threshold context",
       "scope": null
-    },
-    {
-      "hash": "a2a98207",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Enrichment check blocks event loop — move stats to pipeline endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-16": [
+      {
+        "hash": "4be2b2fa",
+        "date": "2026-07-16",
+        "type": "Other",
+        "description": "Report + display EVERY grounding book (parallel runs), tabbed panel",
+        "scope": null
+      },
       {
         "hash": "038b94c9",
         "date": "2026-07-16",
@@ -7063,13 +7070,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Pipeline health uses localhost first; embed warn threshold context",
-        "scope": null
-      },
-      {
-        "hash": "a2a98207",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Enrichment check blocks event loop — move stats to pipeline endpoint",
         "scope": null
       }
     ]

@@ -4,13 +4,14 @@
 // orchestrator, and UI drive grounding through this ONE surface instead of ad-hoc SSH/SQL.
 // Mounted at /api/admin (requireInternal — X-Internal-Key === DEPLOY_SECRET or admin JWT). Writes route to the
 // single writer (the API process sets SIFTER_WRITER_URL), so no direct-write contention.
-import { spawn } from 'child_process';
-import fs from 'node:fs';
 import { requireInternal } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
 import * as state from '../lib/pipeline/state.js';
+import * as queue from '../lib/pipeline/queue.js';
+import { spawnGrounding } from '../lib/pipeline/spawn.js';
 import { makeStore } from '../lib/rag-adapter/store.js';
 import { getIntegrationProgress } from '../lib/bio.js';
+import { queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 
 const parseRun = (rj) => { try { return rj ? JSON.parse(rj) : null; } catch { return null; } };
@@ -49,24 +50,56 @@ export default async function groundingRoutes(fastify) {
     const { docId, from, only, to, readjudicate, cc } = req.body || {};
     if (!docId) throw ApiError.badRequest('docId required');
     if (isLive(await state.getRun(Number(docId)))) throw ApiError.conflict(`doc ${docId} is already grounding`);
-    const args = [`${process.cwd()}/scripts/complete-book.mjs`, String(docId)];
-    if (from) args.push(`--from=${from}`);
-    if (only) args.push(`--only=${only}`);
-    if (to) args.push(`--to=${to}`);
-    if (readjudicate) args.push('--readjudicate');   // incremental re-adjudication sweep (reuse prior work)
-    if (cc) args.push(`--cc=${cc}`);
-    // Send the detached CLI's output to a per-doc log (was stdio:'ignore', which hid crashes — a silent mid-stage
-    // exit was undiagnosable). Falls back to 'ignore' if the log can't be opened.
-    let outFd = 'ignore';
-    try { outFd = fs.openSync(`${process.cwd()}/logs/grounding-${Number(docId)}.log`, 'a'); } catch { outFd = 'ignore'; }
-    const child = spawn(process.execPath, args, {
-      cwd: process.cwd(), detached: true, stdio: ['ignore', outFd, outFd],
-      env: { ...process.env, SIFTER_WRITER_URL: process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849' },
-    });
-    child.unref();
-    if (typeof outFd === 'number') { try { fs.closeSync(outFd); } catch { /* child keeps its copy */ } }
-    logger.info({ docId: Number(docId), pid: child.pid, from, only, cc }, 'grounding started via control API');
-    return { started: true, docId: Number(docId), pid: child.pid, from: from || null, only: only || null, cc: Number(cc) || 8 };
+    const pid = spawnGrounding(docId, { from, only, to, readjudicate, cc });   // the ONE launcher (shared with the queue)
+    return { started: true, docId: Number(docId), pid, from: from || null, only: only || null, cc: Number(cc) || 8 };
+  });
+
+  // ── QUEUE: the API owns the work ORDER and advances it ──────────────────────────────────────────────────────
+  // Enqueue books and the supervisor starts each one as a slot frees — so processing continues without an operator
+  // (or an agent loop) alive to launch the next book. `to` bounds a run (e.g. to:'research' keeps it out of the
+  // shared-graph tail, letting it co-run with a full book).
+  fastify.post('/grounding/queue', admin, async (req) => {
+    const { docId, docIds, ...opts } = req.body || {};
+    const ids = docIds || (docId ? [docId] : []);
+    if (!ids.length) throw ApiError.badRequest('docId or docIds required');
+    const rows = [];
+    for (const id of ids) rows.push(await queue.enqueue({ docId: id, ...opts }));
+    queue.tick().catch(() => {});                       // start immediately if a slot is free
+    return { queued: rows.length, items: rows.map(({ opts_json, ...r }) => r) };
+  });
+
+  fastify.get('/grounding/queue', admin, async () => ({ items: await queue.list() }));
+
+  fastify.delete('/grounding/queue/:id', admin, async (req) => {
+    const row = await queue.cancel(req.params.id);
+    if (!row) throw ApiError.notFound('queue item not found');
+    return row;
+  });
+
+  // Force a supervisor pass (normally on a 20s timer) — useful right after enqueuing or stopping a run.
+  fastify.post('/grounding/queue/tick', admin, async () => queue.tick());
+
+  // ── MONITOR: everything an operator needs in ONE call ───────────────────────────────────────────────────────
+  // live runs + the work order + spend per book + budget. Exists so babysitting is a single cheap poll instead of
+  // a pile of ad-hoc SQL: the watcher reports, the API decides.
+  fastify.get('/grounding/monitor', admin, async () => {
+    const [runs, items, spend] = await Promise.all([
+      state.activeRuns(),
+      queue.list({ limit: 12 }),
+      queryAll(`SELECT CAST(document_id AS INT) docId, provider, COUNT(*) calls,
+                  ROUND(SUM(estimated_cost_usd), 4) usd
+                FROM ai_usage WHERE caller='corpus-rag' AND document_id IS NOT NULL
+                GROUP BY docId, provider ORDER BY usd DESC`),
+    ]);
+    const byProvider = {};
+    for (const s of spend) byProvider[s.provider] = Math.round(((byProvider[s.provider] || 0) + s.usd) * 100) / 100;
+    return {
+      live: runs.map((r) => ({ docId: r.doc_id, stage: r.stage, toStage: r.toStage ?? null, pid: r.pid,
+        itemsDone: r.itemsDone, itemsTotal: r.itemsTotal, startedAt: r.startedAt, updatedAt: r.updatedAt })),
+      queue: items.filter((i) => i.status === 'queued'),
+      recent: items.filter((i) => i.status !== 'queued'),
+      spend: { byBook: spend, byProvider, total: Math.round(spend.reduce((a, b) => a + b.usd, 0) * 100) / 100 },
+    };
   });
 
   // STOP a live run — signal the reported pid (best-effort) and clear the run marker so the UI goes idle.
@@ -107,4 +140,8 @@ export default async function groundingRoutes(fastify) {
     logger.info({ out }, 'entity tables backed up via control API');
     return { backedUp: true, path: out };
   });
+
+  // The supervisor lives with the control plane: same process, same lifecycle. NEVER under test (it would spawn
+  // real books against the real corpus); GROUNDING_SUPERVISOR=0 disables it in any environment.
+  if (process.env.NODE_ENV !== 'test' && process.env.GROUNDING_SUPERVISOR !== '0') queue.startSupervisor();
 }
