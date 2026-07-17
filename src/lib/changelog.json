@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-17T13:13:00.205Z",
+  "generated": "2026-07-17T15:10:27.077Z",
   "entries": [
+    {
+      "hash": "1579131c",
+      "date": "2026-07-17",
+      "type": "Other",
+      "description": "Count concurrency from an IMMEDIATE signal, not lagging heartbeats",
+      "scope": null
+    },
     {
       "hash": "ecc92698",
       "date": "2026-07-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Library-watcher memory leak — skip full content load for unchanged docs",
       "scope": null
-    },
-    {
-      "hash": "96c33a4c",
-      "date": "2026-05-19",
-      "type": "Other",
-      "description": "Library-watcher memory + log-size checks in health-check",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-17": [
+      {
+        "hash": "1579131c",
+        "date": "2026-07-17",
+        "type": "Other",
+        "description": "Count concurrency from an IMMEDIATE signal, not lagging heartbeats",
+        "scope": null
+      },
       {
         "hash": "ecc92698",
         "date": "2026-07-17",
@@ -7065,13 +7072,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Library-watcher memory leak — skip full content load for unchanged docs",
-        "scope": null
-      },
-      {
-        "hash": "96c33a4c",
-        "date": "2026-05-19",
-        "type": "Other",
-        "description": "Library-watcher memory + log-size checks in health-check",
         "scope": null
       }
     ]

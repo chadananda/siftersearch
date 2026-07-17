@@ -20,6 +20,19 @@ const TAIL_FROM = GROUNDING_STAGES.indexOf('project');   // first stage that tou
 const TICK_MS = 20000;
 
 const parseOpts = (r) => { try { return r.opts_json ? JSON.parse(r.opts_json) : {}; } catch { return {}; } };
+
+// Did a vanished run actually REACH its work, or did it die early? proc-gone is ambiguous — a clean finish and a
+// SIGKILL both clear run_json — so NEVER equate proc-gone with success (that once marked a book 'done' at 6%
+// disambiguated, then ran its tail into the gate). The floor every bound needs is disambiguation: if the book
+// isn't ~fully disambiguated, the run crashed and the row is FAILED (stays re-runnable), not done.
+async function reachedBound(docId) {
+  const row = await queryOne(
+    `SELECT (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) total,
+            (SELECT COUNT(*) FROM content WHERE doc_id=? AND context IS NOT NULL AND context!='') disamb`,
+    [docId, docId]);
+  const total = row?.total || 0, disamb = row?.disamb || 0;
+  return total > 0 && disamb / total >= 0.98;
+}
 /** Does a run intend to reach the graph-mutating tail? Decided by its BOUND (`to`), not its current stage — a
  *  full run sitting in disambiguate will still collide at the tail later. */
 export const ownsTail = (opts = {}) =>
@@ -76,8 +89,11 @@ export async function tick() {
   for (const r of runningRows) {
     const age = Date.now() / 1000 - (r.started_at || 0);
     if (!liveJson.has(r.doc_id) && r.started_at && age > 90) {
-      await query(`UPDATE grounding_queue SET status='done', finished_at=unixepoch() WHERE id=?`, [r.id]);
-      logger.info({ docId: r.doc_id, id: r.id }, 'grounding queue: run finished');
+      // proc gone: DONE only if the book actually reached its work; otherwise it died early → FAILED (re-runnable).
+      const ok = await reachedBound(r.doc_id);
+      await query(`UPDATE grounding_queue SET status=?, error=?, finished_at=unixepoch() WHERE id=?`,
+        [ok ? 'done' : 'failed', ok ? null : 'proc exited before disambiguation completed (likely killed)', r.id]);
+      logger.info({ docId: r.doc_id, id: r.id, outcome: ok ? 'done' : 'failed' }, 'grounding queue: run ended');
     } else busy++;
   }
   // Runs started outside the queue still occupy the box.
