@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-17T16:45:17.971Z",
+  "generated": "2026-07-17T17:07:26.579Z",
   "entries": [
+    {
+      "hash": "8b26a3c2",
+      "date": "2026-07-17",
+      "type": "Other",
+      "description": "Stable-order the multi-book tabs so they stop jittering + hopping between books",
+      "scope": null
+    },
     {
       "hash": "ffe5e569",
       "date": "2026-07-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "ScanLibraryForIngestion mtime pre-check — skip file read for unchanged docs",
       "scope": null
-    },
-    {
-      "hash": "deed190e",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "GetFileHash uses streaming MD5 — eliminates scan memory accumulation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-17": [
+      {
+        "hash": "8b26a3c2",
+        "date": "2026-07-17",
+        "type": "Other",
+        "description": "Stable-order the multi-book tabs so they stop jittering + hopping between books",
+        "scope": null
+      },
       {
         "hash": "ffe5e569",
         "date": "2026-07-17",
@@ -7065,13 +7072,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "ScanLibraryForIngestion mtime pre-check — skip file read for unchanged docs",
-        "scope": null
-      },
-      {
-        "hash": "deed190e",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "GetFileHash uses streaming MD5 — eliminates scan memory accumulation",
         "scope": null
       }
     ]

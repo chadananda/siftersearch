@@ -16,7 +16,12 @@ import { GROUNDING_STAGES } from './run-grounding.js';
 import { logger } from '../logger.js';
 
 const MAX_CONCURRENT = Number(process.env.GROUNDING_MAX_CONCURRENT || 5);
-const TAIL_FROM = GROUNDING_STAGES.indexOf('project');   // first stage that touches the shared graph
+// The GRAPH-MUTATING band is project→dedup: these create/link/merge/dedup shared entities and `merge` is global,
+// so two runs here race. Everything else parallelizes safely — the READ stages (disambiguate…research) write only
+// per-paragraph data, and hype/verify AFTER dedup touch no shared entity (hype = per-paragraph questions; verify =
+// read-only). The old rule counted project→END as the tail, which wrongly serialized independent hype-only runs.
+const GRAPH_START = GROUNDING_STAGES.indexOf('project');
+const GRAPH_END = GROUNDING_STAGES.indexOf('dedup');
 const TICK_MS = 20000;
 
 const parseOpts = (r) => { try { return r.opts_json ? JSON.parse(r.opts_json) : {}; } catch { return {}; } };
@@ -33,10 +38,19 @@ async function reachedBound(docId) {
   const total = row?.total || 0, disamb = row?.disamb || 0;
   return total > 0 && disamb / total >= 0.98;
 }
-/** Does a run intend to reach the graph-mutating tail? Decided by its BOUND (`to`), not its current stage — a
- *  full run sitting in disambiguate will still collide at the tail later. */
-export const ownsTail = (opts = {}) =>
-  (opts.to ? GROUNDING_STAGES.indexOf(opts.to) : GROUNDING_STAGES.length - 1) >= TAIL_FROM;
+/**
+ * Does a run's stage RANGE overlap the graph-mutating band (project→dedup)? Decided by the run's BOUND, not its
+ * current stage — a full run parked in disambiguate still reaches the band later. `only:X` = the single stage X;
+ * otherwise the range is [from||first .. to||last]. hype-only / research-bounded / read-stage runs own NO tail →
+ * co-runnable. (Even this band-serialization is conservative: the single WRITER already serializes writes and
+ * decisions are append-only, so concurrent graph work is mostly safe — relaxing it further is a tracked follow-up.)
+ */
+export const ownsTail = (opts = {}) => {
+  const at = (s, dflt) => { const i = s ? GROUNDING_STAGES.indexOf(s) : -1; return i >= 0 ? i : dflt; };
+  const start = opts.only ? at(opts.only, 0) : at(opts.from, 0);
+  const end = opts.only ? at(opts.only, GROUNDING_STAGES.length - 1) : at(opts.to, GROUNDING_STAGES.length - 1);
+  return start <= GRAPH_END && end >= GRAPH_START;   // [start,end] overlaps [project,dedup]
+};
 
 /** Add a book to the work order. Returns the queued row. */
 export async function enqueue({ docId, note = null, position = null, ...opts }) {

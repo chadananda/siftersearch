@@ -17,10 +17,25 @@ describe('grounding queue — one graph-mutating run at a time', () => {
     expect(ownsTail({ to: 'disambiguate' })).toBe(false);
   });
 
-  it('treats a run bounded AT or AFTER project as owning the tail', () => {
+  it('treats a run whose range reaches into project→dedup as owning the tail', () => {
     expect(ownsTail({ to: 'project' })).toBe(true);
     expect(ownsTail({ to: 'link' })).toBe(true);
-    expect(ownsTail({ to: 'verify' })).toBe(true);
+    expect(ownsTail({ from: 'project' })).toBe(true);
+    expect(ownsTail({ from: 'project', to: 'dedup' })).toBe(true);
+  });
+
+  // The bug that serialized 4 HyPE jobs: hype/verify come AFTER dedup and touch no shared entity, so they must
+  // NOT own the tail. Only the graph-mutating band (project→dedup) does.
+  it('does NOT serialize hype/verify — they run after the graph band and mutate no shared entity', () => {
+    expect(ownsTail({ only: 'hype' })).toBe(false);
+    expect(ownsTail({ only: 'verify' })).toBe(false);
+    expect(ownsTail({ from: 'hype' })).toBe(false);       // hype→verify, past the band
+  });
+
+  it('an only:<graph-stage> run DOES own the tail (single graph-mutating stage)', () => {
+    expect(ownsTail({ only: 'project' })).toBe(true);
+    expect(ownsTail({ only: 'merge' })).toBe(true);
+    expect(ownsTail({ only: 'dedup' })).toBe(true);
   });
 
   // Intent, not position: a full run parked in disambiguate for hours will STILL collide at the tail later, so
