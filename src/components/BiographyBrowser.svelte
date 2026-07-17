@@ -50,28 +50,41 @@
   // large jump (resume / re-weight) re-anchors WITHOUT being read as huge velocity (the old bug that ran it to 99).
   // A real stall decays the gain → the bar honestly stops. A transient missing poll HOLDS (never resets to 0).
   const POLL_MS = 6000;
-  let simPct = $state(0);
-  let _simDoc = null, _lastReal = 0, _lastRealT = 0, _gainEMA = 0, _pollEMA = POLL_MS, _nulls = 0;
+  // `actives` (list) is the current contract; `active` (single) is the older one — read both so the panel keeps
+  // working against either API version.
+  const activeList = (p) => p?.actives ?? (p?.active ? [p.active] : []);
+  // Books ground in PARALLEL (a Persian book on one provider alongside an English one on another), so every piece
+  // of live state is keyed BY DOC — a single slot would make two books fight over one bar. simPcts: docId → the
+  // smoothed, monotonic percent shown for that book.
+  let simPcts = $state({});
+  const _sim = new Map();   // docId → {lastReal, lastRealT, gainEMA, pollEMA} — smoothing memory per book
+  let _nulls = 0;
   async function fetchProgress() {
     try {
       const r = await fetch(`${API}/api/v1/people/progress`); if (!r.ok) return;
       progress = await r.json();
-      const a = progress?.active, now = Date.now();
-      if (!a) { if (++_nulls >= 3) { simPct = 0; _simDoc = null; _gainEMA = 0; } return; } // sustained null = idle; else HOLD
+      const list = activeList(progress), now = Date.now();
+      if (!list.length) { if (++_nulls >= 3) { simPcts = {}; _sim.clear(); } return; } // sustained null = idle; else HOLD
       _nulls = 0;
-      const p = a.percent ?? 0;
-      if (a.docId !== _simDoc) {                       // new book → anchor; no gain learned yet
-        _simDoc = a.docId; simPct = p; _lastReal = p; _lastRealT = now; _gainEMA = 0; _pollEMA = POLL_MS;
-      } else {
-        const gain = p - _lastReal, gap = Math.max(1, now - _lastRealT);
-        if (gain > 12) { simPct = Math.max(simPct, p); }   // big jump (resume/re-weight) → re-anchor, DON'T learn velocity
-        else {
-          _pollEMA = _pollEMA * 0.7 + gap * 0.3;
-          _gainEMA = _gainEMA * 0.6 + Math.max(0, gain) * 0.4;   // smoothed per-poll forward gain (decays on a stall)
-          simPct = Math.max(simPct, p);                          // catch up to real, monotonic
+      const next = { ...simPcts }, live = new Set();
+      for (const a of list) {
+        live.add(a.docId);
+        const p = a.percent ?? 0;
+        const s = _sim.get(a.docId);
+        if (!s) {                                      // new book → anchor; no gain learned yet
+          _sim.set(a.docId, { lastReal: p, lastRealT: now, gainEMA: 0, pollEMA: POLL_MS });
+          next[a.docId] = p; continue;
         }
-        _lastReal = p; _lastRealT = now;
+        const gain = p - s.lastReal, gap = Math.max(1, now - s.lastRealT);
+        if (gain <= 12) {                              // big jump (resume/re-weight) → re-anchor, DON'T learn velocity
+          s.pollEMA = s.pollEMA * 0.7 + gap * 0.3;
+          s.gainEMA = s.gainEMA * 0.6 + Math.max(0, gain) * 0.4; // smoothed per-poll forward gain (decays on a stall)
+        }
+        next[a.docId] = Math.max(next[a.docId] ?? 0, p);         // catch up to real, monotonic
+        s.lastReal = p; s.lastRealT = now;
       }
+      for (const k of Object.keys(next)) if (!live.has(+k)) { delete next[k]; _sim.delete(+k); } // finished → drop
+      simPcts = next;
     } catch { /* offline — modal shows a note */ }
   }
   function openProgress() { showProgress = true; if (!progress) fetchProgress(); }
@@ -84,10 +97,16 @@
     // Ease from the last real reading toward (real + one poll's expected gain) across one poll interval, then hold.
     // Bounded by construction — never runs away; monotonic; clamped to 99.
     const sim = setInterval(() => {
-      if (!progress?.active) return;
-      const frac = Math.min(1, (Date.now() - _lastRealT) / Math.max(1000, _pollEMA));
-      const target = Math.min(99, _lastReal + _gainEMA * frac);
-      if (target > simPct) simPct = target;
+      const list = activeList(progress);
+      if (!list.length) return;
+      const now = Date.now(); let changed = false; const next = { ...simPcts };
+      for (const a of list) {
+        const s = _sim.get(a.docId); if (!s) continue;
+        const frac = Math.min(1, (now - s.lastRealT) / Math.max(1000, s.pollEMA));
+        const target = Math.min(99, s.lastReal + s.gainEMA * frac);
+        if (target > (next[a.docId] ?? 0)) { next[a.docId] = target; changed = true; }
+      }
+      if (changed) simPcts = next;
     }, 100);
     return () => { clearInterval(poll); clearInterval(sim); };
   });
@@ -123,9 +142,18 @@
   };
   const stageInfo = (s) => STAGE_INFO[s] || STAGE_INFO.grounding;
   const stageLabel = (s) => stageInfo(s).title;
+  // EVERY book grounding right now. The API reports `actives` (a list — parallel runs are normal); `active` is
+  // kept as the first entry, so fall back to it if we're talking to an older API.
+  const actives = $derived(activeList(progress));
+  // Which book's detail the panel shows. Index-free: pinned by docId so a list re-order (freshest-first) can't
+  // silently swap which book you're reading. Falls back to the first live book when the pinned one finishes.
+  let tabDoc = $state(null);
+  const sel = $derived(actives.find((a) => a.docId === tabDoc) ?? actives[0] ?? null);
+  const pctOf = (docId) => simPcts[docId] ?? 0;
+  const isActive = (docId) => actives.some((a) => a.docId === docId);
   // Live count line in plain words ("Matched 1,664 of 6,533 names · 25%"); omitted for the quick bookkeeping steps.
   const taskLine = $derived.by(() => {
-    const a = progress?.active; if (!a) return '';
+    const a = sel; if (!a) return '';
     const info = stageInfo(a.stage);
     if (a.stageTotal) {
       const pct = Math.round(((a.stageDone || 0) / a.stageTotal) * 100);
@@ -133,11 +161,13 @@
     }
     return '';
   });
-  const stageExplain = $derived(progress?.active ? stageInfo(progress.active.stage).explain : '');
+  const stageExplain = $derived(sel ? stageInfo(sel.stage).explain : '');
   // Collapsible phases: the phase being processed (or the frontier) auto-opens; the user can toggle any.
-  const activePhaseKey = $derived(progress?.active ? (progress.phases.find((p) => p.books.some((b) => b.id === progress.active.docId))?.key ?? null) : null);
-  // Overall progress = completed books + the active book's own fraction, as a 0–100 percent (drives the collapsed rail fill).
-  const overallPct = $derived(progress ? Math.min(100, ((progress.doneBooks + (progress.active ? simPct : 0) / 100) / Math.max(1, progress.totalBooks)) * 100) : 0);
+  const activePhaseKey = $derived(sel ? (progress?.phases.find((p) => p.books.some((b) => b.id === sel.docId))?.key ?? null) : null);
+  // Overall progress = completed books + EVERY live book's own fraction (two books in flight are two books'
+  // worth of progress), as a 0–100 percent (drives the collapsed rail fill).
+  const liveFrac = $derived(actives.reduce((s, a) => s + pctOf(a.docId) / 100, 0));
+  const overallPct = $derived(progress ? Math.min(100, ((progress.doneBooks + liveFrac) / Math.max(1, progress.totalBooks)) * 100) : 0);
   const frontierKey = $derived(progress ? (progress.phases.find((p) => (p.done ?? 0) < (p.total ?? 0))?.key ?? progress.phases[0]?.key ?? null) : null);
   let openSet = $state(null); // null = auto (follow active/frontier); becomes a Set once the user toggles
   const openKeys = $derived(openSet ?? new Set([activePhaseKey ?? frontierKey].filter(Boolean)));
@@ -244,15 +274,17 @@
   {#if !showProgress}
     <!-- Collapsed state of the progress sidebar: a standard collapsible-sidebar rail docked to the top-right side.
          A little info (souls + overall %, live book % when grounding) + a clear ‹ arrow to expand into the full drawer. -->
-    <button class="prog-rail" class:active={!!progress?.active} onclick={openProgress}
-      title={progress?.active ? `Grounding ${progress.active.title} — click to expand` : 'Library progress — click to expand'}
+    <button class="prog-rail" class:active={actives.length > 0} onclick={openProgress}
+      title={actives.length ? `Grounding ${actives.map((a) => a.title).join(' + ')} — click to expand` : 'Library progress — click to expand'}
       aria-label="Expand library progress panel">
       <span class="prog-rail-track" aria-hidden="true"><span class="prog-rail-fill" style="height:{overallPct.toFixed(1)}%"></span></span>
       <span class="prog-rail-arrow" aria-hidden="true">‹</span>
       <span class="prog-rail-num">{progress ? (progress.cumulativeUnique ?? 0).toLocaleString() : '·'}</span>
       <span class="prog-rail-cap">souls</span>
-      {#if progress?.active}
-        <span class="prog-rail-live"><span class="prog-rail-dot" aria-hidden="true"></span>{simPct.toFixed(1)}%</span>
+      {#if actives.length}
+        <!-- Collapsed rail has room for ONE number: show the selected book's %, and how many books are running. -->
+        <span class="prog-rail-live"><span class="prog-rail-dot" aria-hidden="true"></span>{pctOf(sel?.docId).toFixed(1)}%</span>
+        {#if actives.length > 1}<span class="prog-rail-books">×{actives.length}</span>{/if}
       {:else if progress}
         <span class="prog-rail-books">{progress.doneBooks}/{progress.totalBooks}</span>
       {/if}
@@ -319,17 +351,32 @@
             <h2 class="prog-title">Absorbing the history</h2>
             {#if progress}
               <p class="prog-lead"><strong>{(progress.cumulativeUnique ?? 0).toLocaleString()}</strong> distinct people grounded so far <span class="prog-sub">· {progress.doneBooks}/{progress.totalBooks} books{#if progress.totalParas} · {fmtK(progress.totalParas)} paragraphs{/if}</span> — toward <em>all history absorbed</em>.</p>
-              {#if progress.active}
+              {#if actives.length > 1}
+                <!-- More than one book grounds at a time (different providers → no contention), so the panel TABS
+                     between them: one tab per live book, each with its own live bar. -->
+                <div class="prog-tabs" role="tablist" aria-label="Books being processed">
+                  {#each actives as a (a.docId)}
+                    <button class="prog-tab" class:sel={sel?.docId === a.docId} role="tab"
+                      aria-selected={sel?.docId === a.docId} onclick={() => (tabDoc = a.docId)}
+                      title="{a.title} — {pctOf(a.docId).toFixed(1)}%">
+                      <span class="prog-tab-dot" aria-hidden="true"></span>
+                      <span class="prog-tab-title">{a.title}</span>
+                      <span class="prog-tab-pct">{pctOf(a.docId).toFixed(0)}%</span>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+              {#if sel}
                 <div class="prog-active">
                   <span class="prog-active-dot" aria-hidden="true"></span>
                   <div class="prog-active-body">
-                    <div class="prog-active-line">Now reading <strong>{progress.active.title}</strong>{#if progress.active.adjudicatorVersion}<span class="prog-active-ver" title="grounding with adjudicator engine v{progress.active.adjudicatorVersion}">v{progress.active.adjudicatorVersion}</span>{/if}</div>
-                    <div class="prog-active-stage"><strong>{stageLabel(progress.active.stage)}</strong><span class="prog-active-step">{#if progress.active.stageIndex != null} · step {progress.active.stageIndex + 1} of {progress.active.totalStages}{/if}</span></div>
+                    <div class="prog-active-line">Now reading <strong>{sel.title}</strong>{#if sel.adjudicatorVersion}<span class="prog-active-ver" title="grounding with adjudicator engine v{sel.adjudicatorVersion}">v{sel.adjudicatorVersion}</span>{/if}</div>
+                    <div class="prog-active-stage"><strong>{stageLabel(sel.stage)}</strong><span class="prog-active-step">{#if sel.stageIndex != null} · step {sel.stageIndex + 1} of {sel.totalStages}{/if}</span></div>
                     <div class="prog-active-explain">{stageExplain}</div>
                     {#if taskLine}<div class="prog-active-task">{taskLine}</div>{/if}
-                    {#if progress.active.percent != null}<div class="prog-active-bar"><span style="width:{simPct}%"></span></div>{/if}
+                    {#if sel.percent != null}<div class="prog-active-bar"><span style="width:{pctOf(sel.docId)}%"></span></div>{/if}
                   </div>
-                  {#if progress.active.percent != null}<span class="prog-active-pct">{simPct.toFixed(1)}%</span>{/if}
+                  {#if sel.percent != null}<span class="prog-active-pct">{pctOf(sel.docId).toFixed(1)}%</span>{/if}
                 </div>
               {/if}
             {/if}
@@ -350,12 +397,18 @@
                     <p class="prog-blurb">{ph.blurb}</p>
                     <ul class="prog-books">
                       {#each ph.books as b (b.id)}
-                        <li class="prog-book" class:done={b.done} class:active={progress.active && b.id === progress.active.docId}>
-                          <span class="prog-tick" aria-hidden="true">{b.done ? '✓' : (progress.active && b.id === progress.active.docId) ? '◐' : ph.upcoming ? '·' : '○'}</span>
-                          <span class="prog-book-title">{b.title}</span>
+                        {@const live = actives.find((a) => a.docId === b.id)}
+                        <li class="prog-book" class:done={b.done} class:active={!!live}>
+                          <span class="prog-tick" aria-hidden="true">{b.done ? '✓' : live ? '◐' : ph.upcoming ? '·' : '○'}</span>
+                          <!-- Clicking a processing book focuses its tab above — the row IS the tab selector. -->
+                          {#if live}
+                            <button class="prog-book-title as-link" onclick={() => (tabDoc = b.id)} title="Show {b.title} in the progress panel">{b.title}</button>
+                          {:else}
+                            <span class="prog-book-title">{b.title}</span>
+                          {/if}
                           <span class="col-size">
-                            {#if progress.active && b.id === progress.active.docId && progress.active.percent != null}
-                              <span class="pbp-track" title="{stageLabel(progress.active.stage)}"><span class="pbp-fill" style="width:{simPct}%"></span></span><span class="pbp-pct">{simPct.toFixed(1)}%</span>
+                            {#if live && live.percent != null}
+                              <span class="pbp-track" title="{stageLabel(live.stage)}"><span class="pbp-fill" style="width:{pctOf(b.id)}%"></span></span><span class="pbp-pct">{pctOf(b.id).toFixed(1)}%</span>
                             {:else if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}
                           </span>
                           <span class="col-new" title="people first grounded via this book">{#if b.done && b.newInSequence}+{b.newInSequence.toLocaleString()}{/if}</span>
@@ -749,8 +802,25 @@
   .prog-fine { font-size: .72rem; color: var(--text-muted); line-height: 1.4; margin: 0 0 1rem; opacity: .85; }
   .prog-fine em { font-style: italic; color: var(--text-secondary); }
   /* live active-book banner */
+  /* Tabs — one per book grounding right now (parallel runs). Only rendered when >1 book is live. */
+  .prog-tabs { display: flex; gap: .3rem; margin: 0 0 .5rem; }
+  .prog-tab { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: .35rem; cursor: pointer;
+    padding: .35rem .5rem; border: 1px solid var(--border); border-bottom: none;
+    border-radius: .5rem .5rem 0 0; background: var(--surface-1); color: var(--text-secondary);
+    font-size: .74rem; text-align: left; }
+  .prog-tab:hover { color: var(--text-primary); border-color: var(--accent); }
+  .prog-tab.sel { background: var(--surface-2); border-color: var(--accent); color: var(--text-primary); }
+  .prog-tab-dot { flex: 0 0 auto; width: .4rem; height: .4rem; border-radius: 50%; background: var(--accent);
+    animation: progpulse 1.6s ease-in-out infinite; }
+  .prog-tab-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .prog-tab-pct { flex: 0 0 auto; font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; }
+  /* A processing book's title doubles as its tab selector — a button that must still read as the row's text. */
+  .prog-book-title.as-link { background: none; border: none; padding: 0; font: inherit; color: inherit;
+    cursor: pointer; text-align: left; }
+  .prog-book-title.as-link:hover { color: var(--accent); text-decoration: underline; }
   .prog-active { display: flex; align-items: center; gap: .6rem; margin: 0 0 1.1rem; padding: .55rem .7rem;
     background: var(--surface-2); border: 1px solid var(--accent); border-radius: .6rem; }
+  .prog-tabs + .prog-active { border-top-left-radius: 0; border-top-right-radius: 0; margin-top: 0; }
   .prog-active-dot { flex: 0 0 auto; width: .55rem; height: .55rem; border-radius: 50%; background: var(--accent);
     animation: progpulse 1.6s ease-in-out infinite; }
   @keyframes progpulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.72); } }

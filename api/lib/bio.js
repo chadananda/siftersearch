@@ -51,7 +51,8 @@ export function readHistoryCatalog() {
 // never infers the active book from a file. `pipelineState.activeRun()` returns the freshest non-idle run, or null.
 // The stages, in order — must match run-grounding.js GROUNDING_STAGES (drives the current book's % progress).
 const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'merge', 'dedup', 'hype', 'verify'];
-let _activeCache = null, _activeSig = '', _activeAt = 0;
+// Per-DOC cache (books ground in parallel, so a single-slot cache would thrash between them each poll).
+const _activeCache = new Map();   // docId → { sig, at, value }
 
 // Per-book stage job sizes (item counts) → the bar's per-stage weights. prose paras drive the paragraph passes
 // (disambiguate/claims/hype); distinct mention-clusters drive reconcile (the big one on biography volumes);
@@ -74,16 +75,22 @@ async function stageSizes(docId) {
   return sizes;
 }
 
-async function computeActiveBook(staticDocs, meta) {
-  const run = await pipelineState.activeRun();               // driver-reported truth; null when idle/done
+/**
+ * The live block for ONE grounding book. Takes the run (rather than fetching "the" run) so N books in flight
+ * each get their own block — the API reports a LIST and the UI tabs between them.
+ * `run` may be null: then the claim-write fallback below infers a book (legacy/transition runs).
+ */
+async function computeActiveBook(run, staticDocs, meta) {
   let docId = run?.doc_id ?? null, stage = run?.stage ?? null;
   let si = run?.stageIndex ?? null;
   const ts = run?.totalStages ?? GROUNDING_STAGES.length;
   const startedAt = run?.startedAt ?? null;
-  // Lightweight: the active block is polled ~30s. Cache ~20s, keyed by the run signature, so repeated polls (and
-  // multiple viewers) don't re-run COUNTs against the live DB while grounding writes.
+  // Lightweight: the active block is polled ~30s. Cache ~20s per doc, keyed by the run signature, so repeated
+  // polls (and multiple viewers) don't re-run COUNTs against the live DB while grounding writes.
   const sig = run ? `${docId}:${stage}:${run.updatedAt}` : 'none';
-  if (_activeSig === sig && Date.now() - _activeAt < 20000) return _activeCache;
+  const hit = _activeCache.get(docId ?? 'none');
+  if (hit && hit.sig === sig && Date.now() - hit.at < 20000) return hit.value;
+  const remember = (value) => { _activeCache.set(docId ?? 'none', { sig, at: Date.now(), value }); return value; };
   // Fallback (transition / a run predating run_json): the curated book with the most RECENT claim write — but ONLY if
   // that write is <5min old (grounding genuinely live). Stale writes = nothing active, so idle shows no book.
   if (!docId && staticDocs.length) {
@@ -92,7 +99,7 @@ async function computeActiveBook(staticDocs, meta) {
         WHERE doc_id IN (${ph}) GROUP BY doc_id ORDER BY m DESC LIMIT 1`, staticDocs))[0];
     if (row?.d && row.m && Date.now() - new Date(row.m).getTime() < 5 * 60000) { docId = row.d; stage = 'grounding'; }
   }
-  if (!docId) { _activeCache = null; _activeSig = sig; _activeAt = Date.now(); return null; }
+  if (!docId) return remember(null);
   const claims = (await queryAll(`SELECT COUNT(*) n FROM entity_claims WHERE doc_id=?`, [docId]))[0]?.n || 0;
   // No live status file (older driver / prefetch): INFER how far the book has progressed from its DB artifacts
   // so the current book still shows a real progress bar — disambiguated → mentions → claims → bound (reconciled)
@@ -162,8 +169,21 @@ async function computeActiveBook(staticDocs, meta) {
     stageDone, stageTotal, stageFrac: Math.round(stageFrac * 1000) / 1000,
     adjudicatorVersion: ADJUDICATOR_VERSION,   // the engine version this run is grounding with (shown in the progress box)
     title: m?.title || `doc ${docId}`, size: m?.paragraph_count || 0, claimsExtracted: claims };
-  _activeCache = active; _activeSig = sig; _activeAt = Date.now();
-  return active;
+  return remember(active);
+}
+
+/**
+ * The live block for EVERY grounding book (freshest first). Books run in parallel by design, so this is the
+ * list the UI tabs across; `active` (singular, = the first) stays for callers that just want "the current book".
+ */
+async function computeActiveBooks(staticDocs, meta) {
+  const runs = await pipelineState.activeRuns();
+  if (!runs.length) {                                   // nothing reported → let the claim-write fallback try
+    const one = await computeActiveBook(null, staticDocs, meta);
+    return one ? [one] : [];
+  }
+  const blocks = await Promise.all(runs.map((r) => computeActiveBook(r, staticDocs, meta)));
+  return blocks.filter(Boolean);
 }
 
 // Integration progress for the biography "progress" popup — the phased roadmap (integration-phases.js): every
@@ -196,9 +216,12 @@ export async function getIntegrationProgress() {
   const inPhase = (k) => allDocs.filter(id => phaseByDoc[id] === k);
   const curatedKeys = new Set(INTEGRATION_PHASES.filter(p => !p.dynamic).map(p => p.key));
   const gradedDocs = allDocs.filter(id => curatedKeys.has(phaseByDoc[id])); // curated docs that may be grounded
-  const active = await computeActiveBook(gradedDocs, meta); // always fresh (cheap) → live polling
+  // `actives` = every book grounding right now (parallel runs are normal); `active` = the first, kept so existing
+  // callers/UI keep working. Always fresh (cheap) → live polling.
+  const actives = await computeActiveBooks(gradedDocs, meta);
+  const active = actives[0] || null;
 
-  if (_progCache && Date.now() - _progAt < 60000) return { ..._progCache, active };
+  if (_progCache && Date.now() - _progAt < 60000) return { ..._progCache, active, actives };
 
   // Grounded metrics run over the curated (non-dynamic) docs in phase order — biographies/histories aren't grounded yet.
   const ph = gradedDocs.map(() => '?').join(',');
@@ -317,7 +340,7 @@ export async function getIntegrationProgress() {
   const totalParas = phases.reduce((s, p) => s + p.paras, 0);
   _progCache = { phases, doneBooks, totalBooks, cumulativeUnique, totalParas, goal: 'all history absorbed' };
   _progAt = Date.now();
-  return { ..._progCache, active };
+  return { ..._progCache, active, actives };
 }
 
 // The full person dataset for the browser + API list endpoint. Cached briefly (data changes rarely; the book-

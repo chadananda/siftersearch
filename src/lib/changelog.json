@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-17T02:07:24.821Z",
+  "generated": "2026-07-17T02:33:59.631Z",
   "entries": [
+    {
+      "hash": "038b94c9",
+      "date": "2026-07-16",
+      "type": "Other",
+      "description": "Normalise prompt-token accounting across providers (anthropic excludes cache reads)",
+      "scope": null
+    },
     {
       "hash": "0b6f9861",
       "date": "2026-07-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Enrichment check blocks event loop — move stats to pipeline endpoint",
       "scope": null
-    },
-    {
-      "hash": "249a1d33",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "IsLocalhostReachable — check /health endpoint, 3s timeout, robust error handling",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-16": [
+      {
+        "hash": "038b94c9",
+        "date": "2026-07-16",
+        "type": "Other",
+        "description": "Normalise prompt-token accounting across providers (anthropic excludes cache reads)",
+        "scope": null
+      },
       {
         "hash": "0b6f9861",
         "date": "2026-07-16",
@@ -7063,15 +7070,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Enrichment check blocks event loop — move stats to pipeline endpoint",
-        "scope": null
-      }
-    ],
-    "2026-05-18": [
-      {
-        "hash": "249a1d33",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "IsLocalhostReachable — check /health endpoint, 3s timeout, robust error handling",
         "scope": null
       }
     ]

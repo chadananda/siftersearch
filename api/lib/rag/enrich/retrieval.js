@@ -30,11 +30,18 @@ export async function run(ctx, docId, opts = {}) {
 
   await pool(opts.concurrency ?? 5, segs, async (seg) => {
     for (const p of seg) {
-      const user = buildUser(p);
-      const { parsed, escalated } = await ctx.model.runLadder({ route, system, user, parse: parseHype, maxTokens, temperature: 0.3, denseHint: DENSE_HINT });
-      if (!parsed) { stats.failed++; report(); continue; }
-      if (!opts.dryRun) await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis);
-      stats.done++; if (escalated) stats.escalated++; report();
+      // Per-PARAGRAPH guard: pool()'s guard is per ITEM = per SEGMENT here, so an unguarded throw would drop every
+      // remaining paragraph of the segment while the stage still reported success. Fatal (credit/key/policy) aborts.
+      try {
+        const user = buildUser(p);
+        const { parsed, escalated } = await ctx.model.runLadder({ route, system, user, parse: parseHype, maxTokens, temperature: 0.3, denseHint: DENSE_HINT });
+        if (!parsed) { stats.failed++; report(); continue; }
+        if (!opts.dryRun) await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis);
+        stats.done++; if (escalated) stats.escalated++; report();
+      } catch (e) {
+        if (e?.fatal) throw e;
+        stats.failed++; report();
+      }
     }
   });
   ctx.log.info?.({ docId, ...stats }, 'retrieval/hype');

@@ -54,19 +54,29 @@ export async function getRun(docId) {
   try { return row?.run_json ? JSON.parse(row.run_json) : null; } catch { return null; }
 }
 
-/** The single doc grounding RIGHT NOW (freshest non-idle run_json, within 10 min), or null. Drives the live UI/API. */
-export async function activeRun() {
+/**
+ * EVERY doc grounding right now, freshest first. Books legitimately run in parallel (e.g. a Persian book on
+ * anthropic alongside an English book on deepseek — different providers, no rate-limit contention), so the live
+ * state is a LIST; reporting only one would render the other invisible while it spends money and mutates data.
+ */
+export async function activeRuns() {
   const rows = await queryAll(
-    `SELECT doc_id, run_json, updated_at FROM doc_pipeline WHERE run_json IS NOT NULL ORDER BY updated_at DESC LIMIT 4`);
+    `SELECT doc_id, run_json, updated_at FROM doc_pipeline WHERE run_json IS NOT NULL ORDER BY updated_at DESC LIMIT 8`);
   const now = Math.floor(Date.now() / 1000);
+  const live = [];
   for (const r of rows) {
     try {
       const run = JSON.parse(r.run_json);
       // Live only if heartbeated recently (executor refreshes run_json every 30s); past 150s the book is treated dead.
-      if (run?.stage && run.stage !== 'done' && (now - (r.updated_at || 0) < 150)) return { doc_id: r.doc_id, ...run };
+      if (run?.stage && run.stage !== 'done' && (now - (r.updated_at || 0) < 150)) live.push({ doc_id: r.doc_id, ...run });
     } catch { /* skip malformed */ }
   }
-  return null;
+  return live;
+}
+
+/** The freshest single live run, or null. Kept for callers that only need "is anything grounding". */
+export async function activeRun() {
+  return (await activeRuns())[0] || null;
 }
 
 /**

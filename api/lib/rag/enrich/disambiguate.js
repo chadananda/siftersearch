@@ -35,16 +35,26 @@ export async function run(ctx, docId, opts = {}) {
   await pool(opts.concurrency ?? 5, segs, async (seg) => {
     let place = '', era = '', known = [];
     for (const p of seg) {
-      const user = buildUser(p, { place, era, known });
-      const { parsed, escalated } = await ctx.model.runLadder({ route, system, user, parse: parseNote, maxTokens, denseHint: DENSE_HINT });
-      if (!parsed) { stats.failed++; report(); continue; }
-      const resolve = latin ? gateResolves(parsed.resolve, p.text) : parsed.resolve; // drop invented names (Latin only)
-      stats.dropped += parsed.resolve.length - resolve.length;
-      if (parsed.place) place = parsed.place;
-      if (parsed.era) era = parsed.era;
-      if (resolve.length) { known.push(...resolve); while (known.length > 5) known.shift(); }
-      if (!opts.dryRun) await ctx.store.saveContext(p.id, renderNote({ ...parsed, resolve }), version);
-      stats.done++; if (escalated) stats.escalated++; report();
+      // ONE paragraph's failure must not end the SEGMENT. pool() guards per ITEM, and an item here is a whole
+      // segment (~hundreds of paragraphs), so an unguarded throw mid-loop silently discards every paragraph after
+      // it — the stage still reports success. A transient blip (writer restart, socket timeout) is near-certain
+      // across thousands of calls, so count it as failed and carry on; only a FATAL (credit/key/spend-policy)
+      // aborts, because that kills every later call anyway and must surface.
+      try {
+        const user = buildUser(p, { place, era, known });
+        const { parsed, escalated } = await ctx.model.runLadder({ route, system, user, parse: parseNote, maxTokens, denseHint: DENSE_HINT });
+        if (!parsed) { stats.failed++; report(); continue; }
+        const resolve = latin ? gateResolves(parsed.resolve, p.text) : parsed.resolve; // drop invented names (Latin only)
+        stats.dropped += parsed.resolve.length - resolve.length;
+        if (parsed.place) place = parsed.place;
+        if (parsed.era) era = parsed.era;
+        if (resolve.length) { known.push(...resolve); while (known.length > 5) known.shift(); }
+        if (!opts.dryRun) await ctx.store.saveContext(p.id, renderNote({ ...parsed, resolve }), version);
+        stats.done++; if (escalated) stats.escalated++; report();
+      } catch (e) {
+        if (e?.fatal) throw e;
+        stats.failed++; report();
+      }
     }
   });
   ctx.log.info?.({ docId, ...stats }, 'disambiguate');
