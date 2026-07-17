@@ -229,8 +229,11 @@ export async function getIntegrationProgress() {
   // SPEND per book, from the central ai_usage log — what this book actually cost and on whose meter. Only
   // grounding calls (service_type 'grounding:<stage>') count, so chat/search spend never inflates a book.
   // Rolled up per provider because provider IS the story: deepseek is ~free, anthropic is the Persian budget.
+  // CAST: document_id is a TEXT column, so numeric ids are stored as text — historically as '15254.0' (a bound
+  // JS number under TEXT affinity). Grouping on the raw column would key this map by a string that never matches
+  // an integer book id → every book reads $0. Cast on read so both new ('15254') and legacy ('15254.0') rows roll up.
   const costByDoc = {};
-  (await queryAll(`SELECT document_id d, provider p, ROUND(SUM(estimated_cost_usd), 4) usd, COUNT(*) calls
+  (await queryAll(`SELECT CAST(document_id AS INT) d, provider p, ROUND(SUM(estimated_cost_usd), 4) usd, COUNT(*) calls
       FROM ai_usage WHERE service_type LIKE 'grounding:%' AND document_id IS NOT NULL GROUP BY d, p`))
     .forEach(({ d, p, usd, calls }) => {
       const c = (costByDoc[d] ||= { usd: 0, calls: 0, byProvider: {} });

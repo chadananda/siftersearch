@@ -269,6 +269,10 @@ export function logAIUsage({
       // Cached prompt tokens bill ~0.1x (anthropic cache_read_input_tokens / deepseek prompt_cache_hit_tokens).
       const fresh = Math.max(0, inputTokens - cachedTokens);
       const cost = (fresh * pricing.input + cachedTokens * pricing.input * 0.1 + completionTokens * pricing.output) / 1000;
+      // document_id is a TEXT column, so a bound JS number lands as '15254.0' and `WHERE document_id=15254`
+      // then matches NOTHING (int vs text storage classes). Normalise to a clean integer string on write so a
+      // book's spend is actually findable; readers additionally CAST for the legacy '…​.0' rows.
+      const docKey = documentId == null || documentId === '' ? null : String(Math.trunc(Number(documentId)));
       telemetryQuery(
         `INSERT INTO ai_usage (
           provider, model, service_type,
@@ -278,7 +282,7 @@ export function logAIUsage({
         [
           provider, model, serviceType,
           promptTokens, completionTokens, totalTokens, cost,
-          caller, success ? 1 : 0, errorMessage, userId, jobId, documentId
+          caller, success ? 1 : 0, errorMessage, userId, jobId, docKey
         ]
       );
     } catch (err) {

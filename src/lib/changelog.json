@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-17T01:50:55.253Z",
+  "generated": "2026-07-17T01:55:27.297Z",
   "entries": [
+    {
+      "hash": "6176c4bf",
+      "date": "2026-07-16",
+      "type": "Other",
+      "description": "Meter EVERY chat call at ai.js (not just the rag adapter) + price from the registry",
+      "scope": null
+    },
     {
       "hash": "f57b24f5",
       "date": "2026-07-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Sync_staleness falls back to direct DB query when API returns unsynced=-1",
       "scope": null
-    },
-    {
-      "hash": "608df5a1",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Remove missingInMeili mass-reset bug in runFullSyncCheck",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-16": [
+      {
+        "hash": "6176c4bf",
+        "date": "2026-07-16",
+        "type": "Other",
+        "description": "Meter EVERY chat call at ai.js (not just the rag adapter) + price from the registry",
+        "scope": null
+      },
       {
         "hash": "f57b24f5",
         "date": "2026-07-16",
@@ -7065,13 +7072,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Sync_staleness falls back to direct DB query when API returns unsynced=-1",
-        "scope": null
-      },
-      {
-        "hash": "608df5a1",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Remove missingInMeili mass-reset bug in runFullSyncCheck",
         "scope": null
       }
     ]
