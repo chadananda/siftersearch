@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-17T13:06:26.709Z",
+  "generated": "2026-07-17T13:10:09.963Z",
   "entries": [
+    {
+      "hash": "8255636a",
+      "date": "2026-07-17",
+      "type": "Other",
+      "description": "The API owns the work QUEUE and advances it — plus one monitor call",
+      "scope": null
+    },
     {
       "hash": "4be2b2fa",
       "date": "2026-07-16",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Revert enrichment queries from pipeline health endpoint",
       "scope": null
-    },
-    {
-      "hash": "4da03df9",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Pipeline health uses localhost first; embed warn threshold context",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-07-17": [
+      {
+        "hash": "8255636a",
+        "date": "2026-07-17",
+        "type": "Other",
+        "description": "The API owns the work QUEUE and advances it — plus one monitor call",
+        "scope": null
+      }
+    ],
     "2026-07-16": [
       {
         "hash": "4be2b2fa",
@@ -7063,13 +7072,6 @@
         "date": "2026-05-19",
         "type": "Other",
         "description": "Revert enrichment queries from pipeline health endpoint",
-        "scope": null
-      },
-      {
-        "hash": "4da03df9",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Pipeline health uses localhost first; embed warn threshold context",
         "scope": null
       }
     ]

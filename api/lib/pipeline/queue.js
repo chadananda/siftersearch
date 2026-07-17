@@ -28,9 +28,14 @@ export const ownsTail = (opts = {}) =>
 /** Add a book to the work order. Returns the queued row. */
 export async function enqueue({ docId, note = null, position = null, ...opts }) {
   const pos = position ?? (((await queryOne(`SELECT MAX(position) m FROM grounding_queue WHERE status='queued'`))?.m ?? 0) + 1);
-  await query(`INSERT INTO grounding_queue (doc_id, opts_json, position, note) VALUES (?, ?, ?, ?)`,
+  const res = await query(`INSERT INTO grounding_queue (doc_id, opts_json, position, note) VALUES (?, ?, ?, ?)`,
     [Number(docId), JSON.stringify(opts), pos, note]);
-  const row = await queryOne(`SELECT * FROM grounding_queue WHERE id = last_insert_rowid()`);
+  // `query` routes writes to the SINGLE WRITER — a different connection — so last_insert_rowid() read back here
+  // sees nothing. Use the id the writer itself reports; fall back to the newest row for this doc.
+  const id = res?.lastInsertRowid ?? res?.rows?.[0]?.lastInsertRowid;
+  const row = id
+    ? await queryOne(`SELECT * FROM grounding_queue WHERE id=?`, [Number(id)])
+    : await queryOne(`SELECT * FROM grounding_queue WHERE doc_id=? ORDER BY id DESC LIMIT 1`, [Number(docId)]);
   logger.info({ docId: Number(docId), position: pos, opts }, 'grounding queued');
   return row;
 }
