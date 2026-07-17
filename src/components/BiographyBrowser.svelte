@@ -144,9 +144,12 @@
   const stageLabel = (s) => stageInfo(s).title;
   // EVERY book grounding right now. The API reports `actives` (a list — parallel runs are normal); `active` is
   // kept as the first entry, so fall back to it if we're talking to an older API.
-  const actives = $derived(activeList(progress));
-  // Which book's detail the panel shows. Index-free: pinned by docId so a list re-order (freshest-first) can't
-  // silently swap which book you're reading. Falls back to the first live book when the pinned one finishes.
+  // STABLE ORDER by docId: the API returns them freshest-heartbeat-first, which REORDERS every poll — so the tab
+  // strip jittered and the default selection hopped to whichever book pinged last ("moves between books"). Sort
+  // by a fixed key so the tabs hold still and the selected book only changes when the USER clicks.
+  const actives = $derived([...activeList(progress)].sort((a, b) => a.docId - b.docId));
+  // Which book's detail the panel shows. Pinned by docId (never index): a click sets tabDoc and it STICKS across
+  // polls; only when that book finishes does it fall back to the first (now stable) live book.
   let tabDoc = $state(null);
   const sel = $derived(actives.find((a) => a.docId === tabDoc) ?? actives[0] ?? null);
   const pctOf = (docId) => simPcts[docId] ?? 0;

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-17T15:10:27.077Z",
+  "generated": "2026-07-17T16:45:17.971Z",
   "entries": [
+    {
+      "hash": "ffe5e569",
+      "date": "2026-07-17",
+      "type": "Other",
+      "description": "Proc-gone is NOT success — verify the run reached its work, else mark FAILED",
+      "scope": null
+    },
     {
       "hash": "1579131c",
       "date": "2026-07-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "GetFileHash uses streaming MD5 — eliminates scan memory accumulation",
       "scope": null
-    },
-    {
-      "hash": "5540ebb6",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Library-watcher memory leak — skip full content load for unchanged docs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-17": [
+      {
+        "hash": "ffe5e569",
+        "date": "2026-07-17",
+        "type": "Other",
+        "description": "Proc-gone is NOT success — verify the run reached its work, else mark FAILED",
+        "scope": null
+      },
       {
         "hash": "1579131c",
         "date": "2026-07-17",
@@ -7065,13 +7072,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "GetFileHash uses streaming MD5 — eliminates scan memory accumulation",
-        "scope": null
-      },
-      {
-        "hash": "5540ebb6",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Library-watcher memory leak — skip full content load for unchanged docs",
         "scope": null
       }
     ]
