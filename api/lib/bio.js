@@ -233,11 +233,13 @@ export async function getIntegrationProgress() {
   // JS number under TEXT affinity). Grouping on the raw column would key this map by a string that never matches
   // an integer book id → every book reads $0. Cast on read so both new ('15254') and legacy ('15254.0') rows roll up.
   const costByDoc = {};
-  (await queryAll(`SELECT CAST(document_id AS INT) d, provider p, ROUND(SUM(estimated_cost_usd), 4) usd, COUNT(*) calls
+  // 6dp, not 2: an individual call costs ~1e-5, so rounding to cents floors a real cost to $0 — under-reporting
+  // is the same failure as not reporting. Sum first, round once.
+  (await queryAll(`SELECT CAST(document_id AS INT) d, provider p, ROUND(SUM(estimated_cost_usd), 6) usd, COUNT(*) calls
       FROM ai_usage WHERE service_type LIKE 'grounding:%' AND document_id IS NOT NULL GROUP BY d, p`))
     .forEach(({ d, p, usd, calls }) => {
       const c = (costByDoc[d] ||= { usd: 0, calls: 0, byProvider: {} });
-      c.usd = Math.round((c.usd + usd) * 10000) / 10000; c.calls += calls; c.byProvider[p] = usd;
+      c.usd = Math.round((c.usd + usd) * 1e6) / 1e6; c.calls += calls; c.byProvider[p] = usd;
     });
   // Done ⇔ reconcile substantially decided the book's clusters. A COMPLETE new-pipeline run decides ~every cluster
   // (≥100%, since research adds decisions on the uncertains); legacy/partial runs sit at 20–62%. Threshold 0.85 so
