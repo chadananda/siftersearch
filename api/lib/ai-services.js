@@ -249,6 +249,7 @@ export function logAIUsage({
   promptTokens = 0,
   completionTokens = 0,
   totalTokens = 0,
+  cachedTokens = 0,
   caller = null,
   success = true,
   errorMessage = null,
@@ -260,9 +261,14 @@ export function logAIUsage({
   // contention from the sync worker never freezes the event loop.
   setImmediate(() => {
     try {
-      const pricing = MODEL_PRICING[model] || { input: 0, output: 0 };
+      // The REGISTRY is the price source of truth; MODEL_PRICING is a legacy duplicate kept only for ids the
+      // registry doesn't carry. It silently lacked the models we actually run (deepseek-v4-flash), so a priced
+      // call logged $0 — a zero cost is indistinguishable from "no spend", which is how spend stays invisible.
+      const pricing = getModel(model)?.pricing || MODEL_PRICING[model] || { input: 0, output: 0 };
       const inputTokens = promptTokens || totalTokens;
-      const cost = (inputTokens * pricing.input + completionTokens * pricing.output) / 1000;
+      // Cached prompt tokens bill ~0.1x (anthropic cache_read_input_tokens / deepseek prompt_cache_hit_tokens).
+      const fresh = Math.max(0, inputTokens - cachedTokens);
+      const cost = (fresh * pricing.input + cachedTokens * pricing.input * 0.1 + completionTokens * pricing.output) / 1000;
       telemetryQuery(
         `INSERT INTO ai_usage (
           provider, model, service_type,

@@ -1,19 +1,14 @@
-// rag-adapter/usage — metering + SPEND POLICY for every LLM call the library makes. The adapter's llm port is
-// the ONE chokepoint every stage's model call passes through, so both concerns live here (host policy, never
-// the pure library). Doc/stage attribution rides an AsyncLocalStorage scope the executor opens per stage — the
-// library passes no docId to the port, so this is how a cost lands against a book without touching library code.
-// Deps: node:async_hooks, ../db (telemetryQuery = fire-and-forget, own connection, 200ms busy timeout),
-// ../model-registry (the ONE pricing source — never a second local price table).
-import { AsyncLocalStorage } from 'node:async_hooks';
-import { telemetryQuery } from '../db.js';
+// rag-adapter/usage — the SPEND POLICY for library model calls (host policy, never the pure library).
+// METERING is NOT here: it lives at ai.js chatCompletion, the one client EVERY caller funnels through
+// (grounding, deep-research, translation, search…), so logging there covers the whole app instead of just this
+// adapter — and logging in both places would double-count. Attribution rides the shared ../ai-context scope.
+// Deps: ../ai-context (ambient doc/stage/lang), ../model-registry (the ONE pricing source).
+import { withAIContext, currentAIContext } from '../ai-context.js';
 import { getModel } from '../model-registry.js';
-import { logger } from '../logger.js';
-
-const scope = new AsyncLocalStorage();
 
 /** Open a metering/policy scope for a stage. Everything awaited inside (incl. pool concurrency) inherits it. */
-export const withUsageScope = (ctx, fn) => scope.run({ ...scope.getStore(), ...ctx }, fn);
-export const currentScope = () => scope.getStore() || {};
+export const withUsageScope = (ctx, fn) => withAIContext(ctx, fn);
+export const currentScope = () => currentAIContext();
 
 // ── SPEND POLICY ─────────────────────────────────────────────────────────────
 // Anthropic is authorised for PERSIAN ONLY, because flash cannot read Persian — it is a capability necessity,
@@ -51,27 +46,3 @@ export function costOf({ model, promptTokens = 0, completionTokens = 0, cachedTo
   return (fresh * p.input + cachedTokens * p.input * CACHE_READ_MULT + completionTokens * p.output) / 1000;
 }
 
-/**
- * Record ONE model call into the central spend log (`ai_usage`) — the same table the rest of the app bills to,
- * so grounding shows up in overall spend instead of being invisible. Attributed to the scoped doc + stage.
- * Fire-and-forget: telemetry must never fail or slow a stage.
- */
-export function recordUsage({ model, provider, usage = {}, ok = true, errorMessage = null }) {
-  const { docId = null, stage = null } = currentScope();
-  const promptTokens = usage.promptTokens || 0;
-  const completionTokens = usage.completionTokens || 0;
-  const cachedTokens = usage.cachedTokens || 0;
-  const cost = costOf({ model, promptTokens, completionTokens, cachedTokens });
-  setImmediate(() => {
-    try {
-      telemetryQuery(
-        `INSERT INTO ai_usage (provider, model, service_type, prompt_tokens, completion_tokens, total_tokens,
-           estimated_cost_usd, caller, success, error_message, user_id, job_id, document_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [provider, model, `grounding:${stage || 'unscoped'}`, promptTokens, completionTokens,
-          promptTokens + completionTokens, cost, 'corpus-rag', ok ? 1 : 0, errorMessage, null, null, docId],
-      );
-    } catch (err) { logger.warn({ err: err.message, model, stage }, 'ai_usage log failed'); }
-  });
-  return cost;
-}

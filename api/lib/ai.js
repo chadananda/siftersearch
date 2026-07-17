@@ -11,6 +11,7 @@ import { Ollama } from 'ollama';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { logAIUsage } from './ai-services.js';
+import { currentAIContext } from './ai-context.js';   // ambient doc/stage attribution for every logged call
 import { getModel } from './model-registry.js';
 
 // Lazy-initialized clients
@@ -82,19 +83,43 @@ export async function chatCompletion(messages, options = {}) {
 
   logger.debug({ provider, model, messageCount: messages.length }, 'Chat completion');
 
-  switch (provider) {
-    case 'openai':
-      return chatOpenAI(messages, { model, temperature, maxTokens, stream });
-    case 'anthropic':
-      return chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache: options.usePromptCache });
-    case 'ollama':
-      return chatOllama(messages, { model, temperature, maxTokens, stream });
-    case 'deepseek':
-      return chatDeepSeek(messages, { model, temperature, maxTokens, stream, responseFormat: options.responseFormat, thinking: options.thinking ?? false });
-    case 'local':
-      return chatLocal(messages, { model, temperature, maxTokens, stream, responseFormat: options.responseFormat });
-    default:
-      throw new Error(`Unknown AI provider: ${provider}`);
+  const dispatch = () => {
+    switch (provider) {
+      case 'openai':
+        return chatOpenAI(messages, { model, temperature, maxTokens, stream });
+      case 'anthropic':
+        return chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache: options.usePromptCache });
+      case 'ollama':
+        return chatOllama(messages, { model, temperature, maxTokens, stream });
+      case 'deepseek':
+        return chatDeepSeek(messages, { model, temperature, maxTokens, stream, responseFormat: options.responseFormat, thinking: options.thinking ?? false });
+      case 'local':
+        return chatLocal(messages, { model, temperature, maxTokens, stream, responseFormat: options.responseFormat });
+      default:
+        throw new Error(`Unknown AI provider: ${provider}`);
+    }
+  };
+
+  // METER EVERY CHAT CALL. createEmbedding has always logged; chatCompletion never did — so every chat
+  // completion in the app (grounding, deep-research, translation, search, graph workers) billed invisibly.
+  // Logging HERE, at the one client every caller funnels through, is what makes spend total-able per book and
+  // per subsystem. Attribution (doc/stage) comes from the ambient AI context when a driver opened one.
+  // Streaming is skipped: usage isn't known until the stream drains, and no pipeline stage streams.
+  const { docId = null, stage = null, caller = null } = currentAIContext();
+  const serviceType = stage ? `grounding:${stage}` : (options.serviceType || 'chat');
+  if (stream) return dispatch();
+  try {
+    const res = await dispatch();
+    logAIUsage({
+      provider, model, serviceType, caller: caller || options.caller || null, documentId: docId,
+      promptTokens: res.usage?.promptTokens || 0, completionTokens: res.usage?.completionTokens || 0,
+      totalTokens: res.usage?.totalTokens || 0, cachedTokens: res.usage?.cachedTokens || 0, success: true
+    });
+    return res;
+  } catch (err) {
+    logAIUsage({ provider, model, serviceType, caller: caller || options.caller || null, documentId: docId,
+      success: false, errorMessage: err.message });
+    throw err;
   }
 }
 

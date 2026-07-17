@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-17T01:44:29.162Z",
+  "generated": "2026-07-17T01:50:55.253Z",
   "entries": [
+    {
+      "hash": "f57b24f5",
+      "date": "2026-07-16",
+      "type": "Other",
+      "description": "Meter every AI call, enforce paid-providers-are-Persian-only, enable prompt caching",
+      "scope": null
+    },
     {
       "hash": "e4e99478",
       "date": "2026-07-15",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Remove missingInMeili mass-reset bug in runFullSyncCheck",
       "scope": null
-    },
-    {
-      "hash": "88f62e0d",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "PM2 crash-loop threshold 50→1000, enrichment treated as warn-only",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-07-16": [
+      {
+        "hash": "f57b24f5",
+        "date": "2026-07-16",
+        "type": "Other",
+        "description": "Meter every AI call, enforce paid-providers-are-Persian-only, enable prompt caching",
+        "scope": null
+      }
+    ],
     "2026-07-15": [
       {
         "hash": "e4e99478",
@@ -7063,13 +7072,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Remove missingInMeili mass-reset bug in runFullSyncCheck",
-        "scope": null
-      },
-      {
-        "hash": "88f62e0d",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "PM2 crash-loop threshold 50→1000, enrichment treated as warn-only",
         "scope": null
       }
     ]

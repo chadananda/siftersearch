@@ -8,39 +8,30 @@ import { makeWeb } from './web.js';                           // WebResearch por
 import { chatCompletion } from '../ai.js';                    // the app's LLM client
 import { getModel } from '../model-registry.js';              // price/provider/local catalog (incl. local models)
 import { detectProfile } from '../pipeline/profile.js';       // the app's routing policy (language/genre → models)
-import { assertSpendAllowed, recordUsage, currentScope } from './usage.js'; // spend policy + cost metering
+import { assertSpendAllowed, currentScope } from './usage.js';  // spend policy (metering lives in ai.js)
 import { logger } from '../logger.js';
 
 // LLM port: translate the library's INTENT (json, thinking) into this client's provider-specific options.
 // Provider quirks (which providers honour response_format) live HERE, never in the library.
 //
-// This is also the ONE chokepoint every library model call crosses, so it carries the two host concerns the
-// library must not know about:
-//  1. SPEND POLICY — paid providers are Persian-only; refused (fatally) for any other language, fallbacks
-//     included. Enforced here so no config default or new stage can quietly bill English.
-//  2. METERING — every call is costed from the registry and written to the central `ai_usage` log against the
-//     scoped doc+stage, so per-book spend is visible instead of invisible.
+// This is also where the SPEND POLICY is enforced — paid providers are Persian-only, refused (fatally) for any
+// other language, fallbacks included — so no config default or future stage can quietly bill English. (Metering
+// is NOT here: it lives at ai.js chatCompletion, which every caller in the app funnels through.)
 // PROMPT CACHING is on for Anthropic: the stages are built stable-prefix-heavy (a byte-identical SYSTEM prompt
 // across a whole book — rules + book meta + cast), which only pays off if the cache is actually requested.
-// Without it every call re-bills the full prefix; with a large cast that is the dominant cost of a Persian book.
+// Without it every call re-bills the full prefix; the Persian cast alone is ~6.9K tokens, which made the prefix
+// the dominant cost of a Persian book (~10x).
 const JSON_CAPABLE = new Set(['deepseek', 'openai']);
 const llm = {
-  chat: async (messages, { model, provider, maxTokens, temperature = 0, json, thinking }) => {
+  chat: (messages, { model, provider, maxTokens, temperature = 0, json, thinking }) => {
     const { lang, stage } = currentScope();
     assertSpendAllowed({ provider, model, lang, stage });
-    try {
-      const res = await chatCompletion(messages, {
-        provider, model, temperature, maxTokens,
-        ...(json && JSON_CAPABLE.has(provider) ? { responseFormat: { type: 'json_object' } } : {}),
-        ...(thinking ? { thinking: true } : {}),
-        ...(provider === 'anthropic' ? { usePromptCache: true } : {}),
-      });
-      recordUsage({ model, provider, usage: res.usage, ok: true });
-      return res;
-    } catch (e) {
-      recordUsage({ model, provider, usage: e.usage || {}, ok: false, errorMessage: e.message });
-      throw e;
-    }
+    return chatCompletion(messages, {
+      provider, model, temperature, maxTokens, caller: 'corpus-rag',
+      ...(json && JSON_CAPABLE.has(provider) ? { responseFormat: { type: 'json_object' } } : {}),
+      ...(thinking ? { thinking: true } : {}),
+      ...(provider === 'anthropic' ? { usePromptCache: true } : {}),
+    });
   },
 };
 
