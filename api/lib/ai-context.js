@@ -12,3 +12,10 @@ export const withAIContext = (ctx, fn) => store.run({ ...store.getStore(), ...ct
 
 /** Current attribution, or {} outside any scope. */
 export const currentAIContext = () => store.getStore() || {};
+
+/**
+ * Update the LIVE scope in place — for a long run whose attribution changes as it advances (the executor
+ * setting the current stage). withAIContext SPREADS its argument into a fresh store, so mutating the object
+ * you passed in does NOT reach the store; this writes to the store itself. No-op outside a scope.
+ */
+export const setAIContext = (patch) => { const s = store.getStore(); if (s) Object.assign(s, patch); };

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-17T01:57:03.651Z",
+  "generated": "2026-07-17T02:05:01.363Z",
   "entries": [
+    {
+      "hash": "0da4e88d",
+      "date": "2026-07-16",
+      "type": "Other",
+      "description": "Per-book cost at 6dp — rounding to cents floored real spend to $0",
+      "scope": null
+    },
     {
       "hash": "1460967d",
       "date": "2026-07-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Sync_staleness checks sync_stuck before exiting on WAL-large sentinel",
       "scope": null
-    },
-    {
-      "hash": "61a97e46",
-      "date": "2026-05-18",
-      "type": "Fixed",
-      "description": "Sync_staleness event-loop + mass-reset denominator fixes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-16": [
+      {
+        "hash": "0da4e88d",
+        "date": "2026-07-16",
+        "type": "Other",
+        "description": "Per-book cost at 6dp — rounding to cents floored real spend to $0",
+        "scope": null
+      },
       {
         "hash": "1460967d",
         "date": "2026-07-16",
@@ -7065,13 +7072,6 @@
         "date": "2026-05-18",
         "type": "Fixed",
         "description": "Sync_staleness checks sync_stuck before exiting on WAL-large sentinel",
-        "scope": null
-      },
-      {
-        "hash": "61a97e46",
-        "date": "2026-05-18",
-        "type": "Fixed",
-        "description": "Sync_staleness event-loop + mass-reset denominator fixes",
         "scope": null
       }
     ]

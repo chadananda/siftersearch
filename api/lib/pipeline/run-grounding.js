@@ -8,6 +8,7 @@ import { execSync } from 'node:child_process';
 import os from 'node:os';
 import { setRun } from './state.js';
 const { rag, withUsageScope, langOf } = await import('../rag-adapter/index.js');
+const { setAIContext } = await import('../ai-context.js');   // stamp the live stage onto the metering scope
 
 // Full Definition-of-Done sequence, in order. Must stay in lockstep with the rag stage set.
 export const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'merge', 'dedup', 'hype', 'verify'];
@@ -32,7 +33,7 @@ export async function runGrounding(docId, opts = {}) {
   // It also re-scopes metering, so every model call the stage makes is costed against (docId, stage) in ai_usage
   // and checked against the spend policy (paid providers = Persian only).
   const enter = async (s) => {
-    scope.stage = s;
+    setAIContext({ stage: s });   // the live ALS store — assigning to `scope` would not reach it (it was spread)
     currentRun = { docId, stage: s, stageIndex: GROUNDING_STAGES.indexOf(s), totalStages: GROUNDING_STAGES.length,
       withinFrac: 0, itemsDone: 0, itemsTotal: 0,
       pid: process.pid, host: os.hostname(), startedAt, updatedAt: new Date().toISOString() };

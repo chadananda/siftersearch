@@ -235,8 +235,11 @@ export async function getIntegrationProgress() {
   const costByDoc = {};
   // 6dp, not 2: an individual call costs ~1e-5, so rounding to cents floors a real cost to $0 — under-reporting
   // is the same failure as not reporting. Sum first, round once.
+  // Match on the CALLER as well as the stage tag: a grounding call is a corpus-rag call whatever its stage
+  // label, so a row logged before the stage tag existed (or from a stage-less path) still counts toward its book.
   (await queryAll(`SELECT CAST(document_id AS INT) d, provider p, ROUND(SUM(estimated_cost_usd), 6) usd, COUNT(*) calls
-      FROM ai_usage WHERE service_type LIKE 'grounding:%' AND document_id IS NOT NULL GROUP BY d, p`))
+      FROM ai_usage WHERE (service_type LIKE 'grounding:%' OR caller = 'corpus-rag') AND document_id IS NOT NULL
+      GROUP BY d, p`))
     .forEach(({ d, p, usd, calls }) => {
       const c = (costByDoc[d] ||= { usd: 0, calls: 0, byProvider: {} });
       c.usd = Math.round((c.usd + usd) * 1e6) / 1e6; c.calls += calls; c.byProvider[p] = usd;

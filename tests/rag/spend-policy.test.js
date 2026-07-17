@@ -3,6 +3,7 @@
 // ONLY; English/Arabic/Hebrew are deepseek-only, fallbacks included."
 import { describe, it, expect } from 'vitest';
 import { assertSpendAllowed, costOf, withUsageScope, currentScope } from '../../api/lib/rag-adapter/usage.js';
+import { setAIContext } from '../../api/lib/ai-context.js';
 
 const call = (lang, model, provider) => () => assertSpendAllowed({ provider, model, lang, stage: 'reconcile' });
 
@@ -54,5 +55,19 @@ describe('cost metering', () => {
       expect(currentScope()).toMatchObject({ docId: 15256, lang: 'fa', stage: 'disambiguate' });
     });
     expect(currentScope().docId).toBeUndefined(); // scope does not leak outside the run
+  });
+
+  // A run advances through stages inside ONE scope, so the stage must be updatable mid-run. withUsageScope
+  // SPREADS its argument into a fresh store, so mutating the caller's own object silently never lands — which
+  // shipped every call to the log as service_type 'chat' with no stage, despite the doc attributing correctly.
+  it('reflects a stage change made DURING the run (setAIContext writes the live store)', async () => {
+    const passed = { docId: 13433, lang: 'en', stage: null };
+    await withUsageScope(passed, async () => {
+      setAIContext({ stage: 'reconcile' });
+      await new Promise((r) => setTimeout(r, 1));
+      expect(currentScope().stage).toBe('reconcile');   // the store saw it
+      passed.stage = 'bogus';
+      expect(currentScope().stage).toBe('reconcile');   // ...and the caller's detached object cannot spoof it
+    });
   });
 });
