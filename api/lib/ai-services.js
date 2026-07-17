@@ -250,6 +250,7 @@ export function logAIUsage({
   completionTokens = 0,
   totalTokens = 0,
   cachedTokens = 0,
+  cacheWriteTokens = 0,
   caller = null,
   success = true,
   errorMessage = null,
@@ -266,9 +267,11 @@ export function logAIUsage({
       // call logged $0 — a zero cost is indistinguishable from "no spend", which is how spend stays invisible.
       const pricing = getModel(model)?.pricing || MODEL_PRICING[model] || { input: 0, output: 0 };
       const inputTokens = promptTokens || totalTokens;
-      // Cached prompt tokens bill ~0.1x (anthropic cache_read_input_tokens / deepseek prompt_cache_hit_tokens).
-      const fresh = Math.max(0, inputTokens - cachedTokens);
-      const cost = (fresh * pricing.input + cachedTokens * pricing.input * 0.1 + completionTokens * pricing.output) / 1000;
+      // promptTokens is the WHOLE prompt (clients normalise this), so the cached portion is a subset of it.
+      // Cache reads bill ~0.1x; a cache WRITE bills ~1.25x (paid once per prefix, then amortised over the book).
+      const fresh = Math.max(0, inputTokens - cachedTokens - cacheWriteTokens);
+      const cost = (fresh * pricing.input + cachedTokens * pricing.input * 0.1
+        + cacheWriteTokens * pricing.input * 1.25 + completionTokens * pricing.output) / 1000;
       // document_id is a TEXT column, so a bound JS number lands as '15254.0' and `WHERE document_id=15254`
       // then matches NOTHING (int vs text storage classes). Normalise to a clean integer string on write so a
       // book's spend is actually findable; readers additionally CAST for the legacy '…​.0' rows.

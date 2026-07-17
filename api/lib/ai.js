@@ -113,7 +113,8 @@ export async function chatCompletion(messages, options = {}) {
     logAIUsage({
       provider, model, serviceType, caller: caller || options.caller || null, documentId: docId,
       promptTokens: res.usage?.promptTokens || 0, completionTokens: res.usage?.completionTokens || 0,
-      totalTokens: res.usage?.totalTokens || 0, cachedTokens: res.usage?.cachedTokens || 0, success: true
+      totalTokens: res.usage?.totalTokens || 0, cachedTokens: res.usage?.cachedTokens || 0,
+      cacheWriteTokens: res.usage?.cacheWriteTokens || 0, success: true
     });
     return res;
   } catch (err) {
@@ -181,14 +182,22 @@ async function chatAnthropic(messages, { model, temperature, maxTokens, stream, 
     return response; // Return stream
   }
 
+  // Anthropic reports input_tokens EXCLUSIVE of cache reads/writes, while OpenAI/DeepSeek report a prompt total
+  // that INCLUDES its cached portion. Normalise to one meaning — promptTokens = the WHOLE prompt — so a single
+  // cost formula (fresh = prompt - cached) is right for every provider instead of silently under-billing the
+  // fresh tokens of a cached Anthropic call. cacheWriteTokens is surfaced separately: it bills at ~1.25x.
+  const cacheRead = response.usage?.cache_read_input_tokens || 0;
+  const cacheWrite = response.usage?.cache_creation_input_tokens || 0;
+  const freshIn = response.usage?.input_tokens || 0;
   return {
     content: response.content[0].text,
     finishReason: response.stop_reason,
     usage: {
-      promptTokens: response.usage?.input_tokens,
+      promptTokens: freshIn + cacheRead + cacheWrite,
       completionTokens: response.usage?.output_tokens,
-      cachedTokens: response.usage?.cache_read_input_tokens || 0,
-      totalTokens: (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0)
+      cachedTokens: cacheRead,
+      cacheWriteTokens: cacheWrite,
+      totalTokens: freshIn + cacheRead + cacheWrite + (response.usage?.output_tokens || 0)
     },
     model: response.model
   };
