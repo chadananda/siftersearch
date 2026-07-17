@@ -15,7 +15,7 @@ import { spawnGrounding } from './spawn.js';
 import { GROUNDING_STAGES } from './run-grounding.js';
 import { logger } from '../logger.js';
 
-const MAX_CONCURRENT = Number(process.env.GROUNDING_MAX_CONCURRENT || 2);
+const MAX_CONCURRENT = Number(process.env.GROUNDING_MAX_CONCURRENT || 5);
 const TAIL_FROM = GROUNDING_STAGES.indexOf('project');   // first stage that touches the shared graph
 const TICK_MS = 20000;
 
@@ -60,26 +60,38 @@ export async function cancel(id) {
  * Idempotent and cheap — safe to call on a timer.
  */
 export async function tick() {
+  // Concurrency must be counted from an IMMEDIATE signal. activeRuns() reads run_json heartbeats, which a
+  // just-spawned proc has not written yet — so back-to-back ticks each saw a free slot and over-spawned (8 enqueue
+  // calls → 5 procs against a cap of 2). The queue's own 'running' rows are written synchronously at spawn, so
+  // count the UNION: queue rows (immediate, authoritative) + run_json (covers runs started outside the queue).
   const live = await activeRuns();
-  const liveDocs = new Set(live.map((r) => r.doc_id));
+  const runningRows = await queryAll(`SELECT * FROM grounding_queue WHERE status='running'`);
+  const liveDocs = new Set([...live.map((r) => r.doc_id), ...runningRows.map((r) => r.doc_id)]);
 
   // A 'running' row whose proc is gone has finished (or died). run_json is cleared by the executor's finally, so
-  // "not live" is the completion signal. Don't guess success — record it and let the roadmap's done flag speak.
-  for (const r of await queryAll(`SELECT * FROM grounding_queue WHERE status='running'`)) {
-    if (!liveDocs.has(r.doc_id) && r.started_at && (Date.now() / 1000 - r.started_at) > 60) {
+  // "not live" is the completion signal — but only once the run has had time to publish a heartbeat, else we'd
+  // reap the run we just spawned. Don't guess success: record it and let the roadmap's done flag speak.
+  const liveJson = new Set(live.map((r) => r.doc_id));
+  let busy = 0;
+  for (const r of runningRows) {
+    const age = Date.now() / 1000 - (r.started_at || 0);
+    if (!liveJson.has(r.doc_id) && r.started_at && age > 90) {
       await query(`UPDATE grounding_queue SET status='done', finished_at=unixepoch() WHERE id=?`, [r.id]);
       logger.info({ docId: r.doc_id, id: r.id }, 'grounding queue: run finished');
-    }
+    } else busy++;
   }
+  // Runs started outside the queue still occupy the box.
+  for (const r of live) if (!runningRows.some((q) => q.doc_id === r.doc_id)) busy++;
+  if (busy >= MAX_CONCURRENT) return { started: [], busy };
 
-  if (live.length >= MAX_CONCURRENT) return { started: [], live: live.length };
-  // A live run owns the tail if its own bound says so (run_json carries toStage); unknown bound → assume it does,
-  // because assuming otherwise is what causes a graph race.
-  const tailBusy = live.some((r) => ownsTail({ to: r.toStage }));
+  // A run owns the tail per its BOUND: run_json.toStage for live runs, opts.to for queue rows. Unknown → assume it
+  // does, because assuming otherwise is exactly what causes a graph race.
+  const tailBusy = live.some((r) => ownsTail({ to: r.toStage }))
+    || runningRows.some((r) => liveJson.has(r.doc_id) && ownsTail(parseOpts(r)));
 
   const started = [];
   for (const r of await queryAll(`SELECT * FROM grounding_queue WHERE status='queued' ORDER BY position ASC, id ASC`)) {
-    if (live.length + started.length >= MAX_CONCURRENT) break;
+    if (busy + started.length >= MAX_CONCURRENT) break;
     const opts = parseOpts(r);
     if (liveDocs.has(r.doc_id)) continue;                          // that book is already grounding
     if (ownsTail(opts) && (tailBusy || started.some((s) => s.ownsTail))) continue;  // one graph-mutating run at a time
@@ -87,7 +99,7 @@ export async function tick() {
     await query(`UPDATE grounding_queue SET status='running', started_at=unixepoch(), pid=? WHERE id=?`, [pid, r.id]);
     started.push({ id: r.id, docId: r.doc_id, pid, ownsTail: ownsTail(opts) });
   }
-  return { started, live: live.length };
+  return { started, busy };
 }
 
 let timer = null;

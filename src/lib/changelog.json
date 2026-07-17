@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-17T13:10:09.963Z",
+  "generated": "2026-07-17T13:13:00.205Z",
   "entries": [
+    {
+      "hash": "ecc92698",
+      "date": "2026-07-17",
+      "type": "Other",
+      "description": "Read the enqueued row by the WRITER-reported id, not last_insert_rowid()",
+      "scope": null
+    },
     {
       "hash": "8255636a",
       "date": "2026-07-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Library-watcher memory + log-size checks in health-check",
       "scope": null
-    },
-    {
-      "hash": "d93aa250",
-      "date": "2026-05-19",
-      "type": "Other",
-      "description": "Revert enrichment queries from pipeline health endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-17": [
+      {
+        "hash": "ecc92698",
+        "date": "2026-07-17",
+        "type": "Other",
+        "description": "Read the enqueued row by the WRITER-reported id, not last_insert_rowid()",
+        "scope": null
+      },
       {
         "hash": "8255636a",
         "date": "2026-07-17",
@@ -7065,13 +7072,6 @@
         "date": "2026-05-19",
         "type": "Other",
         "description": "Library-watcher memory + log-size checks in health-check",
-        "scope": null
-      },
-      {
-        "hash": "d93aa250",
-        "date": "2026-05-19",
-        "type": "Other",
-        "description": "Revert enrichment queries from pipeline health endpoint",
         "scope": null
       }
     ]
