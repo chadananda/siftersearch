@@ -8,6 +8,7 @@ import { requireInternal } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
 import * as state from '../lib/pipeline/state.js';
 import * as queue from '../lib/pipeline/queue.js';
+import { graphBandHolder } from '../lib/pipeline/lock.js';
 import { spawnGrounding } from '../lib/pipeline/spawn.js';
 import { makeStore } from '../lib/rag-adapter/store.js';
 import { getIntegrationProgress } from '../lib/bio.js';
@@ -83,13 +84,14 @@ export default async function groundingRoutes(fastify) {
   // live runs + the work order + spend per book + budget. Exists so babysitting is a single cheap poll instead of
   // a pile of ad-hoc SQL: the watcher reports, the API decides.
   fastify.get('/grounding/monitor', admin, async () => {
-    const [runs, items, spend] = await Promise.all([
+    const [runs, items, spend, bandHolder] = await Promise.all([
       state.activeRuns(),
       queue.list({ limit: 12 }),
       queryAll(`SELECT CAST(document_id AS INT) docId, provider, COUNT(*) calls,
                   ROUND(SUM(estimated_cost_usd), 4) usd
                 FROM ai_usage WHERE caller='corpus-rag' AND document_id IS NOT NULL
                 GROUP BY docId, provider ORDER BY usd DESC`),
+      graphBandHolder().catch(() => null),
     ]);
     const byProvider = {};
     for (const s of spend) byProvider[s.provider] = Math.round(((byProvider[s.provider] || 0) + s.usd) * 100) / 100;
@@ -98,6 +100,7 @@ export default async function groundingRoutes(fastify) {
         itemsDone: r.itemsDone, itemsTotal: r.itemsTotal, startedAt: r.startedAt, updatedAt: r.updatedAt })),
       queue: items.filter((i) => i.status === 'queued'),
       recent: items.filter((i) => i.status !== 'queued'),
+      graphBandHolder: bandHolder,   // docId currently in the project→dedup mutex, or null
       spend: { byBook: spend, byProvider, total: Math.round(spend.reduce((a, b) => a + b.usd, 0) * 100) / 100 },
     };
   });

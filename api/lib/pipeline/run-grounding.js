@@ -9,6 +9,7 @@ import os from 'node:os';
 import { setRun } from './state.js';
 const { rag, withUsageScope, langOf } = await import('../rag-adapter/index.js');
 const { setAIContext } = await import('../ai-context.js');   // stamp the live stage onto the metering scope
+const { acquireGraphBand, releaseGraphBand } = await import('./lock.js'); // graph-band mutex (project→dedup only)
 
 // Full Definition-of-Done sequence, in order. Must stay in lockstep with the rag stage set.
 export const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'merge', 'dedup', 'hype', 'verify'];
@@ -67,6 +68,7 @@ export async function runGrounding(docId, opts = {}) {
   const scope = { docId, lang: null, stage: null };
   try { scope.lang = await langOf(docId); } catch { /* unknown language → policy fails closed on paid providers */ }
 
+  let heldBand = false;   // whether this run currently holds the graph-band mutex (released in finally on crash)
   return withUsageScope(scope, async () => {
   try {
     if (want('disambiguate')) { await enter('disambiguate'); emit('disambiguate', await rag.disambiguate(docId, { concurrency: cc, onProgress })); }
@@ -74,10 +76,15 @@ export async function runGrounding(docId, opts = {}) {
     if (want('claims'))       { await enter('claims'); emit('claims', await rag.entities.claims(docId, { resume: true, threshold: 0.9, concurrency: cc, onProgress })); }
     if (want('reconcile'))    { await enter('reconcile'); emit('reconcile', await rag.entities.reconcile(docId, readjudicate ? { readjudicate, threshold: 0.9, concurrency: 4, onProgress } : { resume: true, threshold: 0.9, concurrency: 4, onProgress })); } // readjudicate = incremental re-sweep of the improvable clusters; else FULL resume
     if (want('research'))     { await enter('research'); emit('research', await rag.entities.researchResolve(docId, { concurrency: 3, onProgress })); } // resolve uncertains: corpus+web
+    // GRAPH-MUTATING BAND (project→dedup): create/link/merge/dedup shared entities; `merge` is global. Serialised
+    // by the band mutex — everything before/after runs concurrently, but only ONE run mutates the graph at a time.
+    const wantsBand = ['project', 'link', 'merge', 'dedup'].some(want);
+    if (wantsBand) { await enter(currentRun?.stage || 'project'); await acquireGraphBand(docId, { onWait: () => { if (currentRun) { currentRun.waitingForGraph = true; writeRun(); } } }); heldBand = true; if (currentRun) { currentRun.waitingForGraph = false; } }
     if (want('project'))      { await enter('project'); const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId }); out.createdIds = r.createdIds || []; emit('project', r); }
     if (want('link'))         { await enter('link'); execSync(`DOC=${docId} WRITE=1 SIFTER_WRITER_URL=${writer} node scripts/entity-read/link-claims.mjs`, { stdio: 'inherit' }); }
     if (want('merge'))        { await enter('merge'); emit('merge', await rag.entities.merge({ concurrency: 4, onProgress })); } // same-name dedup by evidence
     if (want('dedup') && out.createdIds.length) { await enter('dedup'); emit('dedup', await rag.entities.dedupGuard({ entityIds: out.createdIds, onProgress })); } // AFTER link — new entities need bound claims
+    if (wantsBand) { await releaseGraphBand(docId); heldBand = false; }   // release BEFORE hype/verify (they don't mutate the graph)
     if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { resume: true, onProgress })); }
 
     if (want('verify')) {
@@ -98,6 +105,9 @@ export async function runGrounding(docId, opts = {}) {
     }
     return out;
   } finally {
+    // Release the band on a thrown crash (a clean run already released it after dedup). A hard SIGKILL skips this,
+    // but the mutex's stale-steal reclaims the band after the stale window, so it never wedges permanently.
+    if (heldBand) await releaseGraphBand(docId).catch(() => {});
     // Clear the marker on completion OR a thrown crash → UI goes idle + /start can relaunch (no stale run_json).
     // (A hard SIGKILL skips this; the freshness guard then clears it after the heartbeat lapses.)
     if (hb) clearInterval(hb);

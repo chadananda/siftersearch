@@ -472,6 +472,23 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_grounding_queue_pick ON grounding_queue(status, position, id)`);
     logger.info('Migration 93 complete: grounding_queue');
   },
+  94: async () => {
+    // GRAPH-BAND MUTEX. The old rule serialized WHOLE books to protect the shared entity graph — a book held the
+    // "tail" for its entire run (Vol8's 6.5h reconcile blocked every English book's graph-integration). But only
+    // project→dedup actually mutate the shared graph, and the single writer already serializes the WRITES; we
+    // just need at most one run in the MUTATING band at a time. This lock is that mutex: a run claims it only for
+    // project→dedup, so every other stage (disambiguate…research, hype, verify) runs fully concurrently.
+    // Claims route through the single writer, so the atomic UPDATE-WHERE-holder-IS-NULL is truly atomic across procs.
+    logger.info('Starting migration 94: grounding_locks (graph-band mutex)');
+    await query(`CREATE TABLE IF NOT EXISTS grounding_locks (
+      name TEXT PRIMARY KEY,
+      holder INTEGER,                 -- docId currently in the band, or NULL
+      acquired_at INTEGER             -- unixepoch when claimed; a holder older than the stale window is reclaimable
+    )`);
+    await query(`INSERT INTO grounding_locks (name, holder, acquired_at) VALUES ('graph_band', NULL, NULL)
+                 ON CONFLICT(name) DO NOTHING`);
+    logger.info('Migration 94 complete: grounding_locks');
+  },
 };
 
 export const graphMigrations = {

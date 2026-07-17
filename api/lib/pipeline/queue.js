@@ -26,17 +26,48 @@ const TICK_MS = 20000;
 
 const parseOpts = (r) => { try { return r.opts_json ? JSON.parse(r.opts_json) : {}; } catch { return {}; } };
 
-// Did a vanished run actually REACH its work, or did it die early? proc-gone is ambiguous — a clean finish and a
-// SIGKILL both clear run_json — so NEVER equate proc-gone with success (that once marked a book 'done' at 6%
-// disambiguated, then ran its tail into the gate). The floor every bound needs is disambiguation: if the book
-// isn't ~fully disambiguated, the run crashed and the row is FAILED (stays re-runnable), not done.
-async function reachedBound(docId) {
-  const row = await queryOne(
-    `SELECT (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) total,
-            (SELECT COUNT(*) FROM content WHERE doc_id=? AND context IS NOT NULL AND context!='') disamb`,
-    [docId, docId]);
-  const total = row?.total || 0, disamb = row?.disamb || 0;
-  return total > 0 && disamb / total >= 0.98;
+// Did a vanished run actually REACH its bound, or die early? proc-gone is ambiguous — a clean finish and a SIGKILL
+// both clear run_json — so NEVER equate proc-gone with success (that once marked a book 'done' at 6% disambiguated,
+// and separately marked read-halves 'done' with reconcile never run). Verify the ARTIFACT of the run's OWN bound
+// stage (the last stage it was asked to complete: `only`, else `to`, else the full pipeline). Disambig alone is
+// too weak for anything bounded past it.
+export const boundStageOf = (opts = {}) => opts.only || opts.to || 'verify';
+
+export async function reachedBound(docId, opts = {}, deps = {}) {
+  const q = deps.queryOne || queryOne;
+  const row = await q(
+    `SELECT (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) prose,
+            (SELECT COUNT(*) FROM content WHERE doc_id=? AND context IS NOT NULL AND context!='') disamb,
+            (SELECT COUNT(*) FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL) hyped,
+            (SELECT COUNT(*) FROM entity_mentions_v2 WHERE doc_id=?) mentions,
+            (SELECT COUNT(*) FROM entity_claims WHERE doc_id=?) claims,
+            (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
+            (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions`,
+    [docId, docId, docId, docId, docId, docId, docId]);
+  const prose = row?.prose || 0;
+  if (prose === 0) return false;
+  if ((row.disamb || 0) / prose < 0.98) return false;                     // the floor for EVERY bound
+  // Per-stage artifact checks. Stages with no distinct cheap artifact (research/project/link/merge/dedup/verify)
+  // all follow reconcile, so they ride on reconcile's decisions.
+  const artifactOk = {
+    mentions: (row.mentions || 0) > 0,
+    claims: (row.claims || 0) > 0,
+    reconcile: (row.decisions || 0) >= 0.85 * Math.max(1, row.clusters || 0),
+    hype: (row.hyped || 0) >= 0.9 * prose,
+  };
+  const artifactStage = (s) => (['research', 'project', 'link', 'merge', 'dedup', 'verify'].includes(s) ? 'reconcile' : s);
+  const bound = boundStageOf(opts);
+  if (opts.only) {
+    // A single-stage run: verify ONLY that stage's artifact (its prerequisites were enforced by the gate, not by it).
+    const s = artifactStage(bound);
+    return s === 'disambiguate' ? true : artifactOk[s] === true;
+  }
+  // A full/`to` run did every stage up to the bound: require each artifact-bearing stage at or before it.
+  const bi = GROUNDING_STAGES.indexOf(bound);
+  for (const s of ['mentions', 'claims', 'reconcile', 'hype']) {
+    if (GROUNDING_STAGES.indexOf(s) <= bi && artifactOk[s] === false) return false;
+  }
+  return true;
 }
 /**
  * Does a run's stage RANGE overlap the graph-mutating band (project→dedup)? Decided by the run's BOUND, not its
@@ -103,10 +134,10 @@ export async function tick() {
   for (const r of runningRows) {
     const age = Date.now() / 1000 - (r.started_at || 0);
     if (!liveJson.has(r.doc_id) && r.started_at && age > 90) {
-      // proc gone: DONE only if the book actually reached its work; otherwise it died early → FAILED (re-runnable).
-      const ok = await reachedBound(r.doc_id);
+      // proc gone: DONE only if the book actually reached its bound stage; otherwise it died early → FAILED.
+      const ok = await reachedBound(r.doc_id, parseOpts(r));
       await query(`UPDATE grounding_queue SET status=?, error=?, finished_at=unixepoch() WHERE id=?`,
-        [ok ? 'done' : 'failed', ok ? null : 'proc exited before disambiguation completed (likely killed)', r.id]);
+        [ok ? 'done' : 'failed', ok ? null : `proc exited before completing bound stage (${boundStageOf(parseOpts(r))})`, r.id]);
       logger.info({ docId: r.doc_id, id: r.id, outcome: ok ? 'done' : 'failed' }, 'grounding queue: run ended');
     } else busy++;
   }
@@ -114,20 +145,22 @@ export async function tick() {
   for (const r of live) if (!runningRows.some((q) => q.doc_id === r.doc_id)) busy++;
   if (busy >= MAX_CONCURRENT) return { started: [], busy };
 
-  // A run owns the tail per its BOUND: run_json.toStage for live runs, opts.to for queue rows. Unknown → assume it
-  // does, because assuming otherwise is exactly what causes a graph race.
-  const tailBusy = live.some((r) => ownsTail({ to: r.toStage }))
-    || runningRows.some((r) => liveJson.has(r.doc_id) && ownsTail(parseOpts(r)));
-
+  // No more whole-book tail-lock: graph exclusivity is now the BAND MUTEX (pipeline/lock.js) — a run serialises
+  // only at project→dedup, so a long reconcile no longer blocks other books' graph work. The queue just fills
+  // free slots up to MAX_CONCURRENT; the mutex does the rest.
   const started = [];
   for (const r of await queryAll(`SELECT * FROM grounding_queue WHERE status='queued' ORDER BY position ASC, id ASC`)) {
     if (busy + started.length >= MAX_CONCURRENT) break;
-    const opts = parseOpts(r);
-    if (liveDocs.has(r.doc_id)) continue;                          // that book is already grounding
-    if (ownsTail(opts) && (tailBusy || started.some((s) => s.ownsTail))) continue;  // one graph-mutating run at a time
-    const pid = spawnGrounding(r.doc_id, opts);
-    await query(`UPDATE grounding_queue SET status='running', started_at=unixepoch(), pid=? WHERE id=?`, [pid, r.id]);
-    started.push({ id: r.id, docId: r.doc_id, pid, ownsTail: ownsTail(opts) });
+    if (liveDocs.has(r.doc_id) || started.some((s) => s.docId === r.doc_id)) continue; // already grounding this book
+    // ATOMIC CLAIM: flip the row to 'running' BEFORE spawning, guarded by WHERE status='queued'. Two concurrent
+    // ticks (the 20s timer + a POST /queue/tick) both selected this row while it was still 'queued' and each
+    // spawned a proc — the over-spawn that needed killing by hand. The write routes through the single writer, so
+    // exactly one UPDATE matches; the loser sees 0 changes and skips.
+    const claim = await query(`UPDATE grounding_queue SET status='running', started_at=unixepoch() WHERE id=? AND status='queued'`, [r.id]);
+    if ((claim?.rows?.[0]?.changes ?? 0) === 0) continue;          // another tick claimed it first
+    const pid = spawnGrounding(r.doc_id, parseOpts(r));
+    await query(`UPDATE grounding_queue SET pid=? WHERE id=?`, [pid, r.id]);
+    started.push({ id: r.id, docId: r.doc_id, pid });
   }
   return { started, busy };
 }
