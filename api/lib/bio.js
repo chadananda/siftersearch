@@ -226,6 +226,16 @@ export async function getIntegrationProgress() {
   (await queryAll(`SELECT CAST(json_extract(payload,'$.docId') AS INT) d,
       MAX(COALESCE(CAST(method_version AS INT), 1)) v FROM entity_decisions
       WHERE target_kind='mention-cluster' GROUP BY d`)).forEach(r => { if (r.d) adjVerByDoc[r.d] = r.v; });
+  // SPEND per book, from the central ai_usage log — what this book actually cost and on whose meter. Only
+  // grounding calls (service_type 'grounding:<stage>') count, so chat/search spend never inflates a book.
+  // Rolled up per provider because provider IS the story: deepseek is ~free, anthropic is the Persian budget.
+  const costByDoc = {};
+  (await queryAll(`SELECT document_id d, provider p, ROUND(SUM(estimated_cost_usd), 4) usd, COUNT(*) calls
+      FROM ai_usage WHERE service_type LIKE 'grounding:%' AND document_id IS NOT NULL GROUP BY d, p`))
+    .forEach(({ d, p, usd, calls }) => {
+      const c = (costByDoc[d] ||= { usd: 0, calls: 0, byProvider: {} });
+      c.usd = Math.round((c.usd + usd) * 10000) / 10000; c.calls += calls; c.byProvider[p] = usd;
+    });
   // Done ⇔ reconcile substantially decided the book's clusters. A COMPLETE new-pipeline run decides ~every cluster
   // (≥100%, since research adds decisions on the uncertains); legacy/partial runs sit at 20–62%. Threshold 0.85 so
   // only genuinely-finished books read as done — the roadmap tells the truth, and books re-fill to ✓ as re-reconcile
@@ -256,12 +266,14 @@ export async function getIntegrationProgress() {
   const book = (id, extra = {}) => ({ id, title: meta[id]?.title || `doc ${id}`, author: meta[id]?.author || null,
     size: meta[id]?.paragraph_count || 0, persons: counts[id] || 0, newInSequence: newBy[id] || 0,
     unresolved: unresolved[id] || 0, done: isGrounded(id),
-    adjVersion: adjVerByDoc[id] ?? 0, adjCurrent: ADJUDICATOR_VERSION, ...extra });
+    adjVersion: adjVerByDoc[id] ?? 0, adjCurrent: ADJUDICATOR_VERSION,
+    cost: costByDoc[id] || { usd: 0, calls: 0, byProvider: {} }, ...extra });
   const phases = INTEGRATION_PHASES.map(p => {
     const books = phaseBookIds[p.key].map(id => book(id, p.dynamic ? { genre: genreOf[id] } : {}));
     return { key: p.key, label: p.label, blurb: p.blurb, upcoming: !!p.upcoming, books,
       done: books.filter(b => b.done).length, total: books.length,
-      persons: books.reduce((s, b) => s + b.persons, 0), paras: books.reduce((s, b) => s + b.size, 0) };
+      persons: books.reduce((s, b) => s + b.persons, 0), paras: books.reduce((s, b) => s + b.size, 0),
+      usd: Math.round(books.reduce((s, b) => s + b.cost.usd, 0) * 100) / 100 };
   });
 
   // Pilgrim Notes — hundreds of small primary-source accounts organized by PERIOD (in file_path). Too numerous

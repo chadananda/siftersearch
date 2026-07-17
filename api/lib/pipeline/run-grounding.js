@@ -7,7 +7,7 @@
 import { execSync } from 'node:child_process';
 import os from 'node:os';
 import { setRun } from './state.js';
-const { rag } = await import('../rag-adapter/index.js');
+const { rag, withUsageScope, langOf } = await import('../rag-adapter/index.js');
 
 // Full Definition-of-Done sequence, in order. Must stay in lockstep with the rag stage set.
 export const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'merge', 'dedup', 'hype', 'verify'];
@@ -29,7 +29,10 @@ export async function runGrounding(docId, opts = {}) {
   let currentRun = null;   // the live run object; enter() replaces it, the heartbeat refreshes its updatedAt.
   const writeRun = () => setRun(docId, currentRun).catch(() => {});
   // enter() reports the live stage into doc_pipeline.run_json (the single truth bio.js/UI/API read) AND calls onStage.
+  // It also re-scopes metering, so every model call the stage makes is costed against (docId, stage) in ai_usage
+  // and checked against the spend policy (paid providers = Persian only).
   const enter = async (s) => {
+    scope.stage = s;
     currentRun = { docId, stage: s, stageIndex: GROUNDING_STAGES.indexOf(s), totalStages: GROUNDING_STAGES.length,
       withinFrac: 0, itemsDone: 0, itemsTotal: 0,
       pid: process.pid, host: os.hostname(), startedAt, updatedAt: new Date().toISOString() };
@@ -54,6 +57,13 @@ export async function runGrounding(docId, opts = {}) {
   // run_json.updatedAt every 30s — otherwise activeRun/UI treat the (still-running) book as dead and show nothing.
   const hb = report ? setInterval(() => { if (currentRun) { currentRun.updatedAt = new Date().toISOString(); writeRun(); } }, 30000) : null;
 
+  // ONE metering + policy scope for the whole run: every model call any stage makes inherits (docId, lang, stage),
+  // so its cost lands in ai_usage against THIS book and a paid provider is refused unless the book is Persian.
+  // enter() mutates scope.stage as the run advances — the AsyncLocalStorage store is this same object.
+  const scope = { docId, lang: null, stage: null };
+  try { scope.lang = await langOf(docId); } catch { /* unknown language → policy fails closed on paid providers */ }
+
+  return withUsageScope(scope, async () => {
   try {
     if (want('disambiguate')) { await enter('disambiguate'); emit('disambiguate', await rag.disambiguate(docId, { concurrency: cc, onProgress })); }
     if (want('mentions'))     { await enter('mentions'); emit('mentions', await rag.entities.mentions(docId)); }
@@ -89,4 +99,5 @@ export async function runGrounding(docId, opts = {}) {
     if (hb) clearInterval(hb);
     if (report) await setRun(docId, null).catch(() => {});
   }
+  });
 }
