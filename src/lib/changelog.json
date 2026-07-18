@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-18T19:16:01.097Z",
+  "generated": "2026-07-18T19:22:48.384Z",
   "entries": [
+    {
+      "hash": "4440a341",
+      "date": "2026-07-18",
+      "type": "Other",
+      "description": "Fix plan-follower crash + size-weighted concurrency (3-5 by size)",
+      "scope": null
+    },
     {
       "hash": "a3b546c3",
       "date": "2026-07-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Promoter JSON parsing — strip markdown code fences from DeepSeek responses",
       "scope": null
-    },
-    {
-      "hash": "785a95db",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "TrackCost retry + promoter adjudication debug logging",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-18": [
+      {
+        "hash": "4440a341",
+        "date": "2026-07-18",
+        "type": "Other",
+        "description": "Fix plan-follower crash + size-weighted concurrency (3-5 by size)",
+        "scope": null
+      },
       {
         "hash": "a3b546c3",
         "date": "2026-07-18",
@@ -7067,13 +7074,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Promoter JSON parsing — strip markdown code fences from DeepSeek responses",
-        "scope": null
-      },
-      {
-        "hash": "785a95db",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "TrackCost retry + promoter adjudication debug logging",
         "scope": null
       }
     ]

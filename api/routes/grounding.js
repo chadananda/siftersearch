@@ -9,6 +9,7 @@ import { ApiError } from '../lib/errors.js';
 import * as state from '../lib/pipeline/state.js';
 import * as queue from '../lib/pipeline/queue.js';
 import * as processor from '../lib/pipeline/plan.js';   // plan/override/general mode processor (chooses next work)
+import * as digest from '../lib/pipeline/digest.js';    // hourly progress-digest email
 import { graphBandHolder } from '../lib/pipeline/lock.js';
 import { spawnGrounding } from '../lib/pipeline/spawn.js';
 import { makeStore } from '../lib/rag-adapter/store.js';
@@ -184,6 +185,18 @@ export default async function groundingRoutes(fastify) {
 
   // Processor MODE: plan (follow the history plan) | override (agents hand-enroll) | general (whole library).
   // GET returns the current mode; POST switches it at runtime (in-memory → a restart reverts to the safe default).
+  // Hourly progress digest: emails what finished in (since, now]. Driven by a cron that tracks the window in a
+  // state file (robust across restarts). `preview=1` renders without sending. `now` (upper bound) is returned so
+  // the cron persists it as the next window's `since` → contiguous, no gaps or overlaps.
+  fastify.post('/grounding/digest', admin, async (req) => {
+    const b = req.body || {};
+    const now = (await queryOne('SELECT unixepoch() n'))?.n ?? Math.floor(Date.now() / 1000);
+    const since = Number(b.since) || (now - 3600);
+    if (b.preview) { const d = await digest.buildDigest(since); return { since, now, count: d.books.length, html: digest.renderDigestHtml(d) }; }
+    const r = await digest.sendDigest(since);
+    return { since, now, ...r };
+  });
+
   fastify.get('/grounding/mode', admin, async () => ({ mode: processor.getMode(), modes: ['plan', 'override', 'general'] }));
   fastify.post('/grounding/mode', admin, async (req) => {
     const m = (req.body || {}).mode;
