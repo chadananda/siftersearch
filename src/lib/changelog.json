@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-18T18:13:49.110Z",
+  "generated": "2026-07-18T18:44:03.462Z",
   "entries": [
+    {
+      "hash": "04b6b18c",
+      "date": "2026-07-18",
+      "type": "Other",
+      "description": "Serial full-grounding in strict roadmap order (GROUNDING_MAX_CONCURRENT=1)",
+      "scope": null
+    },
     {
       "hash": "0d2dcfb2",
       "date": "2026-07-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "QueryWithRetry in graph-extractor — all write paths resilient to SQLITE_BUSY",
       "scope": null
-    },
-    {
-      "hash": "9d8bb617",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "QueryWithRetry in resolver+promoter — eliminate SQLITE_BUSY deadlock",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-18": [
+      {
+        "hash": "04b6b18c",
+        "date": "2026-07-18",
+        "type": "Other",
+        "description": "Serial full-grounding in strict roadmap order (GROUNDING_MAX_CONCURRENT=1)",
+        "scope": null
+      },
       {
         "hash": "0d2dcfb2",
         "date": "2026-07-18",
@@ -7067,13 +7074,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "QueryWithRetry in graph-extractor — all write paths resilient to SQLITE_BUSY",
-        "scope": null
-      },
-      {
-        "hash": "9d8bb617",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "QueryWithRetry in resolver+promoter — eliminate SQLITE_BUSY deadlock",
         "scope": null
       }
     ]

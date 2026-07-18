@@ -73,7 +73,11 @@ module.exports = {
         // must not enter the tail before book N finishes — the band mutex alone doesn't order by position, so
         // concurrency MUST be 1 to guarantee ordered graph resolution. (Was 5 → parallel read-halves that
         // completed out of order and partially.)
-        GROUNDING_MAX_CONCURRENT: '1'
+        GROUNDING_MAX_CONCURRENT: '1',
+        // Processor mode: plan = follow the hardcoded history plan (integration-phases.js) top-down, resuming
+        // each book from its real incomplete stage — no operator/agent needed. override = agents hand-enrol via
+        // the API; general = whole-library (post-plan default). Runtime-switchable via POST /grounding/mode.
+        GROUNDING_MODE: 'plan'
       },
       // 30s gives Fastify time to drain in-flight chat SSE streams
       // (typically 5-15s each) before SIGKILL on deploy. 5s was too short —

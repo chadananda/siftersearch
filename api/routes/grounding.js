@@ -8,6 +8,7 @@ import { requireInternal } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
 import * as state from '../lib/pipeline/state.js';
 import * as queue from '../lib/pipeline/queue.js';
+import * as processor from '../lib/pipeline/plan.js';   // plan/override/general mode processor (chooses next work)
 import { graphBandHolder } from '../lib/pipeline/lock.js';
 import { spawnGrounding } from '../lib/pipeline/spawn.js';
 import { makeStore } from '../lib/rag-adapter/store.js';
@@ -181,7 +182,19 @@ export default async function groundingRoutes(fastify) {
     return { backedUp: true, path: out };
   });
 
-  // The supervisor lives with the control plane: same process, same lifecycle. NEVER under test (it would spawn
-  // real books against the real corpus); GROUNDING_SUPERVISOR=0 disables it in any environment.
-  if (process.env.NODE_ENV !== 'test' && process.env.GROUNDING_SUPERVISOR !== '0') queue.startSupervisor();
+  // Processor MODE: plan (follow the history plan) | override (agents hand-enroll) | general (whole library).
+  // GET returns the current mode; POST switches it at runtime (in-memory → a restart reverts to the safe default).
+  fastify.get('/grounding/mode', admin, async () => ({ mode: processor.getMode(), modes: ['plan', 'override', 'general'] }));
+  fastify.post('/grounding/mode', admin, async (req) => {
+    const m = (req.body || {}).mode;
+    if (!m) throw ApiError.badRequest('mode required (plan|override|general)');
+    try { return { mode: processor.setMode(m) }; } catch (e) { throw ApiError.badRequest(e.message); }
+  });
+
+  // The supervisor + processor live with the control plane: same process, same lifecycle. NEVER under test (they
+  // would spawn real books against the real corpus); GROUNDING_SUPERVISOR=0 disables them in any environment.
+  if (process.env.NODE_ENV !== 'test' && process.env.GROUNDING_SUPERVISOR !== '0') {
+    queue.startSupervisor();     // runs the queue serially
+    processor.startProcessor();  // chooses the next work per the active mode (plan by default)
+  }
 }
