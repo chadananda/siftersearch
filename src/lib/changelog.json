@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-18T23:19:58.713Z",
+  "generated": "2026-07-18T23:31:48.871Z",
   "entries": [
+    {
+      "hash": "9f5e9f48",
+      "date": "2026-07-18",
+      "type": "Other",
+      "description": "Daily $100/day DeepSeek budget-reset cron (off-peak-only)",
+      "scope": null
+    },
     {
       "hash": "19d93373",
       "date": "2026-07-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Health check uses /api/v1/health not /api/search/health",
       "scope": null
-    },
-    {
-      "hash": "46debd8b",
-      "date": "2026-05-19",
-      "type": "Performance",
-      "description": "Promoter getCandidates — prefix LIKE to use idx_alias_surface index",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-18": [
+      {
+        "hash": "9f5e9f48",
+        "date": "2026-07-18",
+        "type": "Other",
+        "description": "Daily $100/day DeepSeek budget-reset cron (off-peak-only)",
+        "scope": null
+      },
       {
         "hash": "19d93373",
         "date": "2026-07-18",
@@ -7067,13 +7074,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Health check uses /api/v1/health not /api/search/health",
-        "scope": null
-      },
-      {
-        "hash": "46debd8b",
-        "date": "2026-05-19",
-        "type": "Performance",
-        "description": "Promoter getCandidates — prefix LIKE to use idx_alias_surface index",
         "scope": null
       }
     ]

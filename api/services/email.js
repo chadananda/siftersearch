@@ -74,6 +74,35 @@ function getEmailClient() {
           return { success: true };
         }
       };
+    } else if (provider === 'zeptomail' && process.env.ZEPTO_API_KEY) {
+      // ZeptoMail (Zoho) transactional API. Token → `Zoho-enczapikey <key>`. FROM must be a verified sender in
+      // the mail agent (ZEPTO_AGENT), i.e. on that agent's domain — set EMAIL_FROM / ZEPTO_FROM accordingly.
+      emailClient = {
+        send: async (options) => {
+          const host = process.env.ZEPTO_HOST || 'api.zeptomail.com';
+          const key = process.env.ZEPTO_API_KEY;
+          const auth = key.startsWith('Zoho-enczapikey') ? key : `Zoho-enczapikey ${key}`;
+          const raw = process.env.ZEPTO_FROM || process.env.EMAIL_FROM || 'noreply@bahai-education.org';
+          const m = raw.match(/^\s*"?([^"<]*?)"?\s*<?\s*([^<>\s]+@[^<>\s]+)\s*>?\s*$/);   // "Name <addr>" or "addr"
+          const from = { address: (m ? m[2] : raw).trim(), name: (m && m[1] ? m[1].trim() : 'SifterSearch') };
+          const response = await fetch(`https://${host}/v1.1/email`, {
+            method: 'POST',
+            headers: { 'Authorization': auth, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({
+              from,
+              to: [{ email_address: { address: options.to } }],
+              subject: options.subject,
+              htmlbody: options.html || undefined,
+              textbody: options.text || undefined
+            })
+          });
+          if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`ZeptoMail error: ${error}`);
+          }
+          return response.json();
+        }
+      };
     } else {
       // Console fallback for development
       emailClient = {
