@@ -5,6 +5,7 @@ import { INTEGRATION_PHASES, AUTHOR_ROUTING, PINNED_DOCS, ABSORPTION_ORDER } fro
 const ABSORB_IDX = new Map(ABSORPTION_ORDER.map((id, i) => [id, i])); // docId → grounding-sequence position
 import { chatCompletion } from './ai.js';
 import * as pipelineState from './pipeline/state.js';
+import { reachedBound } from './pipeline/queue.js';   // the pipeline's OWN completion test → one definition of "done"
 import { ADJUDICATOR_VERSION } from './rag/index.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './pipeline/peak.js';
 import fs from 'fs';
@@ -269,11 +270,15 @@ export async function getIntegrationProgress() {
       const c = (costByDoc[d] ||= { usd: 0, calls: 0, byProvider: {} });
       c.usd = Math.round((c.usd + usd) * 1e6) / 1e6; c.calls += calls; c.byProvider[p] = usd;
     });
-  // Done ⇔ reconcile substantially decided the book's clusters. A COMPLETE new-pipeline run decides ~every cluster
-  // (≥100%, since research adds decisions on the uncertains); legacy/partial runs sit at 20–62%. Threshold 0.85 so
-  // only genuinely-finished books read as done — the roadmap tells the truth, and books re-fill to ✓ as re-reconcile
-  // completes each one.
-  const isGrounded = (id) => (decsByDoc[id] || 0) >= 0.85 * (clustersByDoc[id] || 1) && (decsByDoc[id] || 0) > 0;
+  // Done ⇔ the book reached FULL grounding, tested by the SAME reachedBound() the queue uses to decide a run
+  // finished — one definition of "done", so the roadmap ✓ can never disagree with the pipeline. Reconcile alone
+  // is NOT enough: a read-half-only book (disambiguate→reconcile done, but the graph tail + HyPE never ran → 0
+  // entity bindings, 0 hyp_questions) has decisions covering its clusters (clusters exist only for processed
+  // paragraphs) yet is not grounded. That was the 8322/9095 leak — both showed ✓ on reconcile while fully
+  // unprojected + un-HyPE'd. reachedBound(verify) requires disamb≥98% + mentions + claims + reconcile + HyPE.
+  const doneByDoc = {};
+  await Promise.all(gradedDocs.map(async (id) => { try { doneByDoc[id] = await reachedBound(id, {}); } catch { doneByDoc[id] = false; } }));
+  const isGrounded = (id) => doneByDoc[id] === true;
   // Order each phase by the intended grounding SEQUENCE (ABSORPTION_ORDER). Books in the sequence sort by their
   // position; books not listed sort after (grounded first, then largest) — so the roadmap reads in absorption
   // order and the current book stays in its natural place instead of scattered by size.

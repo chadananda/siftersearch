@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-18T13:34:15.555Z",
+  "generated": "2026-07-18T14:30:46.767Z",
   "entries": [
+    {
+      "hash": "0ce86896",
+      "date": "2026-07-18",
+      "type": "Other",
+      "description": "Make a single-writer hang non-catastrophic + self-healing (2026-07-18 incident)",
+      "scope": null
+    },
     {
       "hash": "ffca4fb3",
       "date": "2026-07-17",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Remove propagateHypeFromNormalizedHash() from enrichment startup path",
       "scope": null
-    },
-    {
-      "hash": "eaf80c1e",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Serial DB writes in graph-extractor eliminates SQLITE_BUSY validator crash",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-07-18": [
+      {
+        "hash": "0ce86896",
+        "date": "2026-07-18",
+        "type": "Other",
+        "description": "Make a single-writer hang non-catastrophic + self-healing (2026-07-18 incident)",
+        "scope": null
+      }
+    ],
     "2026-07-17": [
       {
         "hash": "ffca4fb3",
@@ -7065,13 +7074,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Remove propagateHypeFromNormalizedHash() from enrichment startup path",
-        "scope": null
-      },
-      {
-        "hash": "eaf80c1e",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Serial DB writes in graph-extractor eliminates SQLITE_BUSY validator crash",
         "scope": null
       }
     ]
