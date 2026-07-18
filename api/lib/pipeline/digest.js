@@ -41,6 +41,18 @@ export async function buildDigest(sinceEpoch, deps = {}) {
     });
   }
 
+  // Currently-processing books (in flight) with their live stage + within-stage progress, so the digest shows
+  // momentum even in an hour where nothing fully finished.
+  const procRows = await qAll(
+    `SELECT q.doc_id, d.title, d.author, d.paragraph_count paras, p.run_json
+     FROM grounding_queue q LEFT JOIN docs d ON d.id=q.doc_id LEFT JOIN doc_pipeline p ON p.doc_id=q.doc_id
+     WHERE q.status='running' ORDER BY q.position`);
+  const processing = procRows.map((r) => {
+    let rj = {}; try { rj = r.run_json ? JSON.parse(r.run_json) : {}; } catch { /* ignore */ }
+    return { id: r.doc_id, title: r.title || `doc ${r.doc_id}`, author: r.author || 'Unknown', paras: r.paras || 0,
+      stage: rj.stage || '—', stageNum: (rj.stageIndex ?? 0) + 1, totalStages: rj.totalStages || 11, withinFrac: rj.withinFrac || 0 };
+  });
+
   const doneParas = planBooks.filter((b) => b.done).reduce((s, b) => s + (b.size || 0), 0);
   const plan = {
     docsDone: prog.doneBooks || 0,
@@ -51,11 +63,23 @@ export async function buildDigest(sinceEpoch, deps = {}) {
     parasPct: pct(doneParas, prog.totalParas || 0),
     peopleTotal: prog.cumulativeUnique || 0,
   };
-  return { books, plan, sinceEpoch };
+  return { books, processing, plan, sinceEpoch };
 }
 
 // A clean, email-client-safe HTML digest (inline styles, table layout, dark-friendly neutral palette).
-export function renderDigestHtml({ books, plan }) {
+export function renderDigestHtml({ books, processing = [], plan }) {
+  const procRow = (b) => `<tr><td style="padding:9px 0;border-bottom:1px solid #eef1f5">
+      <div style="font:600 14px/1.3 Georgia,serif;color:#1a2233">${esc(b.title)}</div>
+      <div style="font:400 12px/1.4 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#8b92a1">${esc(b.author)}</div>
+      <div style="margin-top:5px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:5px;background:#eef1f5;overflow:hidden"><tr><td style="height:6px;width:${Math.max(2, Math.round((b.withinFrac || 0) * 100))}%;background:#f5a623;font-size:0;line-height:0">&nbsp;</td><td style="font-size:0">&nbsp;</td></tr></table></div>
+      <div style="font:400 11px/1.4 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#9aa0ac;margin-top:3px">stage ${b.stageNum}/${b.totalStages} · ${esc(b.stage)} · ${Math.round((b.withinFrac || 0) * 100)}% · ${commas(b.paras)} paragraphs</div>
+    </td></tr>`;
+  const procSection = processing.length ? `
+      <tr><td style="padding:22px 4px 8px;font:600 13px/1.4 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#5a6172;text-transform:uppercase;letter-spacing:.5px">Currently processing (${processing.length})</td></tr>
+      <tr><td style="padding:0 18px;background:#fff;border:1px solid #e3e7ee;border-radius:10px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${processing.map(procRow).join('')}</table></td></tr>` : '';
+  return renderDigestHtmlInner({ books, plan, procSection });
+}
+function renderDigestHtmlInner({ books, plan, procSection }) {
   const bar = (p, color) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:6px;background:#e8ebf0;overflow:hidden"><tr><td style="height:10px;width:${Math.max(2, p)}%;background:${color};font-size:0;line-height:0">&nbsp;</td><td style="font-size:0;line-height:0">&nbsp;</td></tr></table>`;
   const card = (b) => `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;border:1px solid #e3e7ee;border-radius:10px;background:#fff">
@@ -87,39 +111,51 @@ export function renderDigestHtml({ books, plan }) {
           <tr><td>${bar(plan.parasPct, '#38c793')}</td></tr>
         </table>
       </td></tr>
-      <tr><td style="padding:22px 4px 10px;font:600 13px/1.4 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#5a6172;text-transform:uppercase;letter-spacing:.5px">Completed this hour</td></tr>
-      <tr><td>${books.map(card).join('')}</td></tr>
+      ${books.length ? `<tr><td style="padding:22px 4px 10px;font:600 13px/1.4 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#5a6172;text-transform:uppercase;letter-spacing:.5px">Completed this hour</td></tr>
+      <tr><td>${books.map(card).join('')}</td></tr>` : ''}
+      ${procSection}
       <tr><td style="padding:10px 4px 4px;font:400 12px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#9aa0ac">Cumulative unique people grounded across the library: <b style="color:#5a6172">${commas(plan.peopleTotal)}</b>. You'll get the next update in an hour, only if more books finish.</td></tr>
     </table>
   </td></tr></table></div>`;
 }
 
-export function renderDigestText({ books, plan }) {
+export function renderDigestText({ books, processing = [], plan }) {
   const lines = [
     `SifterSearch — Grounding Progress`,
     `${books.length} document(s) fully grounded this hour`, '',
     `LIBRARY (history plan):`,
     `  Documents: ${commas(plan.docsDone)} of ${commas(plan.docsTotal)} (${plan.docsPct}%) — ${commas(plan.docsTotal - plan.docsDone)} remaining`,
     `  Content:   ${commas(plan.parasDone)} of ${commas(plan.parasTotal)} paragraphs (${plan.parasPct}%)`, '',
-    `COMPLETED THIS HOUR:`,
   ];
-  for (const b of books) {
-    lines.push(`  • ${b.title} — ${b.author}${b.phase ? ` [${b.phase}]` : ''}`);
-    if (b.description) lines.push(`      ${b.description.slice(0, 200)}`);
-    lines.push(`      ${commas(b.people)} people grounded · +${commas(b.newPeople)} new to the graph · ${commas(b.paras)} paragraphs`);
+  if (books.length) {
+    lines.push(`COMPLETED THIS HOUR:`);
+    for (const b of books) {
+      lines.push(`  • ${b.title} — ${b.author}${b.phase ? ` [${b.phase}]` : ''}`);
+      if (b.description) lines.push(`      ${b.description.slice(0, 200)}`);
+      lines.push(`      ${commas(b.people)} people grounded · +${commas(b.newPeople)} new to the graph · ${commas(b.paras)} paragraphs`);
+    }
+    lines.push('');
   }
-  lines.push('', `Cumulative unique people grounded: ${commas(plan.peopleTotal)}.`);
+  if (processing.length) {
+    lines.push(`CURRENTLY PROCESSING (${processing.length}):`);
+    for (const b of processing) lines.push(`  • ${b.title} — ${b.author}  [stage ${b.stageNum}/${b.totalStages} · ${b.stage} · ${Math.round((b.withinFrac || 0) * 100)}%]`);
+    lines.push('');
+  }
+  lines.push(`Cumulative unique people grounded: ${commas(plan.peopleTotal)}.`);
   return lines.join('\n');
 }
 
 // Build + send the digest for (sinceEpoch, now]. Returns {count, sentTo|null}. Sends nothing when no book finished.
 export async function sendDigest(sinceEpoch, deps = {}) {
   const digest = await buildDigest(sinceEpoch, deps);
-  if (!digest.books.length) return { count: 0, sentTo: null };
+  // Hourly cron: skip the email when nothing finished. `force` (a manual test) always sends, so the recipient can
+  // confirm delivery immediately and still see in-progress + plan status.
+  if (!digest.books.length && !deps.force) return { count: 0, processing: digest.processing.length, sentTo: null };
   const to = deps.to || process.env.DIGEST_EMAIL || process.env.SITE_ADMIN_EMAIL;
   if (!to) { logger.warn('digest: no recipient (set DIGEST_EMAIL or SITE_ADMIN_EMAIL)'); return { count: digest.books.length, sentTo: null }; }
-  const subject = `SifterSearch: ${digest.books.length} book${digest.books.length === 1 ? '' : 's'} grounded — ${digest.plan.docsDone}/${digest.plan.docsTotal} done (${digest.plan.docsPct}%)`;
+  const tag = deps.force && !digest.books.length ? '[TEST] ' : '';
+  const subject = `${tag}SifterSearch: ${digest.books.length} grounded, ${digest.processing.length} in progress — ${digest.plan.docsDone}/${digest.plan.docsTotal} done (${digest.plan.docsPct}%)`;
   await (deps.sendEmail || sendEmail)({ to, subject, text: renderDigestText(digest), html: renderDigestHtml(digest) });
-  logger.info({ to, count: digest.books.length }, 'grounding digest sent');
-  return { count: digest.books.length, sentTo: to };
+  logger.info({ to, count: digest.books.length, processing: digest.processing.length }, 'grounding digest sent');
+  return { count: digest.books.length, processing: digest.processing.length, sentTo: to };
 }

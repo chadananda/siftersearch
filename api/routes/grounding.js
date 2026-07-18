@@ -205,8 +205,8 @@ export default async function groundingRoutes(fastify) {
     const b = req.body || {};
     const now = (await queryOne('SELECT unixepoch() n'))?.n ?? Math.floor(Date.now() / 1000);
     const since = Number(b.since) || (now - 3600);
-    if (b.preview) { const d = await digest.buildDigest(since); return { since, now, count: d.books.length, html: digest.renderDigestHtml(d) }; }
-    const r = await digest.sendDigest(since);
+    if (b.preview) { const d = await digest.buildDigest(since); return { since, now, count: d.books.length, processing: d.processing.length, html: digest.renderDigestHtml(d) }; }
+    const r = await digest.sendDigest(since, { force: !!(b.test || b.force) });   // test/force → always send (verify email)
     return { since, now, ...r };
   });
 

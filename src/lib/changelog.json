@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-18T19:39:00.780Z",
+  "generated": "2026-07-18T23:17:07.391Z",
   "entries": [
+    {
+      "hash": "bd32f53b",
+      "date": "2026-07-18",
+      "type": "Other",
+      "description": "Plan-follower feeds full slot budget + API queue reset (stop direct DB access)",
+      "scope": null
+    },
     {
       "hash": "751e5c03",
       "date": "2026-07-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Migration 27 guard + setSchemaVersion retry — unblock promoter crash loop",
       "scope": null
-    },
-    {
-      "hash": "822c72c7",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Promoter system prompt — pass as role:system message not dropped option",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-18": [
+      {
+        "hash": "bd32f53b",
+        "date": "2026-07-18",
+        "type": "Other",
+        "description": "Plan-follower feeds full slot budget + API queue reset (stop direct DB access)",
+        "scope": null
+      },
       {
         "hash": "751e5c03",
         "date": "2026-07-18",
@@ -7067,13 +7074,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Migration 27 guard + setSchemaVersion retry — unblock promoter crash loop",
-        "scope": null
-      },
-      {
-        "hash": "822c72c7",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Promoter system prompt — pass as role:system message not dropped option",
         "scope": null
       }
     ]
