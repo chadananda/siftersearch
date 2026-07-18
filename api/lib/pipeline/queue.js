@@ -191,7 +191,15 @@ export async function providerForDoc(docId, deps = {}) {
  * One supervisor pass: reconcile queue rows against reality, then fill any free slot.
  * Idempotent and cheap — safe to call on a timer.
  */
+let _ticking = false;
+// Serialise ticks: the 20s timer and an ad-hoc POST /queue/tick can fire together, and two ticks that both read
+// busy=0 each launch a full budget → 2× over-launch (9 procs against a budget of 5). One tick at a time.
 export async function tick() {
+  if (_ticking) return { started: [], busy: -1, skipped: 'busy' };
+  _ticking = true;
+  try { return await _tick(); } finally { _ticking = false; }
+}
+async function _tick() {
   // Concurrency must be counted from an IMMEDIATE signal. activeRuns() reads run_json heartbeats, which a
   // just-spawned proc has not written yet — so back-to-back ticks each saw a free slot and over-spawned (8 enqueue
   // calls → 5 procs against a cap of 2). The queue's own 'running' rows are written synchronously at spawn, so

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-18T19:22:48.384Z",
+  "generated": "2026-07-18T19:30:56.214Z",
   "entries": [
+    {
+      "hash": "419ba748",
+      "date": "2026-07-18",
+      "type": "Other",
+      "description": "Hourly progress-digest email (nice HTML) for unattended runs",
+      "scope": null
+    },
     {
       "hash": "4440a341",
       "date": "2026-07-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Force DeepSeek JSON mode in promoter adjudication",
       "scope": null
-    },
-    {
-      "hash": "5d6b45c6",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Promoter JSON parsing — strip markdown code fences from DeepSeek responses",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-18": [
+      {
+        "hash": "419ba748",
+        "date": "2026-07-18",
+        "type": "Other",
+        "description": "Hourly progress-digest email (nice HTML) for unattended runs",
+        "scope": null
+      },
       {
         "hash": "4440a341",
         "date": "2026-07-18",
@@ -7067,13 +7074,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Force DeepSeek JSON mode in promoter adjudication",
-        "scope": null
-      },
-      {
-        "hash": "5d6b45c6",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Promoter JSON parsing — strip markdown code fences from DeepSeek responses",
         "scope": null
       }
     ]
