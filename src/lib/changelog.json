@@ -1,6 +1,27 @@
 {
-  "generated": "2026-07-17T21:06:09.108Z",
+  "generated": "2026-07-18T13:34:15.555Z",
   "entries": [
+    {
+      "hash": "ffca4fb3",
+      "date": "2026-07-17",
+      "type": "Other",
+      "description": "ProviderForDoc uses ACTUAL billed provider, not language — fixes Persian misroute",
+      "scope": null
+    },
+    {
+      "hash": "1848e581",
+      "date": "2026-07-17",
+      "type": "Other",
+      "description": "Fix Haiku 4.5 4x cost undercount + server spend-gate/off-peak/auto-retry hardening",
+      "scope": null
+    },
+    {
+      "hash": "0b05a5cb",
+      "date": "2026-07-17",
+      "type": "Other",
+      "description": "Graph-band mutex replaces whole-book tail-lock; atomic queue claim; reachedBound verifies the real bound stage",
+      "scope": null
+    },
     {
       "hash": "c1fc59c5",
       "date": "2026-07-17",
@@ -3479,31 +3500,31 @@
       "type": "Fixed",
       "description": "Serial DB writes in graph-extractor eliminates SQLITE_BUSY validator crash",
       "scope": null
-    },
-    {
-      "hash": "f0bcb07a",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "SQLITE_BUSY crash in graph workers — 30s busy_timeout via env var",
-      "scope": null
-    },
-    {
-      "hash": "66f66b85",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Boss_vllm health check remote_only on dev machine (gate on meiliReachable)",
-      "scope": null
-    },
-    {
-      "hash": "4b7f1d4e",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "GetFileHash must trim content to match ingester hashContent(text.trim())",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-17": [
+      {
+        "hash": "ffca4fb3",
+        "date": "2026-07-17",
+        "type": "Other",
+        "description": "ProviderForDoc uses ACTUAL billed provider, not language — fixes Persian misroute",
+        "scope": null
+      },
+      {
+        "hash": "1848e581",
+        "date": "2026-07-17",
+        "type": "Other",
+        "description": "Fix Haiku 4.5 4x cost undercount + server spend-gate/off-peak/auto-retry hardening",
+        "scope": null
+      },
+      {
+        "hash": "0b05a5cb",
+        "date": "2026-07-17",
+        "type": "Other",
+        "description": "Graph-band mutex replaces whole-book tail-lock; atomic queue claim; reachedBound verifies the real bound stage",
+        "scope": null
+      },
       {
         "hash": "c1fc59c5",
         "date": "2026-07-17",
@@ -7051,27 +7072,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Serial DB writes in graph-extractor eliminates SQLITE_BUSY validator crash",
-        "scope": null
-      },
-      {
-        "hash": "f0bcb07a",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "SQLITE_BUSY crash in graph workers — 30s busy_timeout via env var",
-        "scope": null
-      },
-      {
-        "hash": "66f66b85",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Boss_vllm health check remote_only on dev machine (gate on meiliReachable)",
-        "scope": null
-      },
-      {
-        "hash": "4b7f1d4e",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "GetFileHash must trim content to match ingester hashContent(text.trim())",
         "scope": null
       }
     ]

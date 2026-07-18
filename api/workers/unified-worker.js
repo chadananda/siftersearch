@@ -984,6 +984,15 @@ function startWriteServer() {
   const port = parseInt(process.env.SIFTER_WRITER_PORT || '', 10);
   if (!port) return;
   const server = createServer((req, res) => {
+    // Liveness probe for the writer watchdog. Touches the DB, so a FROZEN event loop (the 2026-07-18 deadlock:
+    // pm2 still shows "online" while /write is wedged) OR a stuck DB connection both fail to answer within the
+    // probe timeout — that silent gap, invisible to pm2, is exactly what the watchdog restarts on.
+    if (req.method === 'GET' && req.url === '/health') {
+      getDb()
+        .then((db) => { db.prepare('SELECT 1').get(); res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"ok":true}'); })
+        .catch((err) => { res.writeHead(500, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: err.message })); });
+      return;
+    }
     if (req.method !== 'POST' || req.url !== '/write') {
       res.writeHead(404); res.end(); return;
     }

@@ -19,24 +19,40 @@ const WRITER_URL = process.env.SIFTER_WRITER_URL || null;
 const IS_WRITER = process.env.SIFTER_IS_WRITER === '1';
 const ROUTE_WRITES = !!WRITER_URL && !IS_WRITER;
 
+// A sustained run of write failures means the single writer is DOWN (deadlocked/crashed), not a one-off
+// blip. Tracked process-wide so we can distinguish "one flaky write" (tolerated) from "the writer is gone".
+let writeFailStreak = 0;
+const WRITER_DOWN_STREAK = Number(process.env.SIFTER_WRITER_DOWN_STREAK || 8);
+
 // POST a batch of {sql,args} to the writer; returns per-statement results.
 // Fails loud — never silently falls back to a direct write (that would
 // reintroduce the contention this whole mechanism exists to prevent).
-async function postWriteBatch(statements, name = '') {
+export async function postWriteBatch(statements, name = '') {
   // Bounded write: a slow/stuck write aborts as a catchable TimeoutError instead of an uncaught undici
   // headers-timeout crashing a long grounding run. Safe — writer transactions are atomic and the pipeline's
   // resume is idempotent per paragraph, so an aborted-but-maybe-committed write never duplicates.
-  const res = await fetch(`${WRITER_URL}/write`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ statements, name }),
-    signal: AbortSignal.timeout(90000),
-  });
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '');
-    throw new Error(`writer ${res.status}: ${detail.slice(0, 200)}`);
+  try {
+    const res = await fetch(`${WRITER_URL}/write`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ statements, name }),
+      signal: AbortSignal.timeout(90000),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      throw new Error(`writer ${res.status}: ${detail.slice(0, 200)}`);
+    }
+    writeFailStreak = 0;
+    return (await res.json()).results;
+  } catch (e) {
+    // The grounding pool()/stages tolerate a LONE write failure (a writer restart on deploy) by dropping that
+    // paragraph — resume refills it. But when the writer is fully DOWN, every write fails; without a signal the
+    // stage keeps calling the model + dropping each write as "per-item flake" → silent no-op churn that wastes
+    // spend and freezes the queue (the 2026-07-18 incident). After a streak of failures, tag the error FATAL so
+    // the stage aborts the book fast → the queue's auto-retry requeues it once the writer is back.
+    if (++writeFailStreak >= WRITER_DOWN_STREAK) e.fatal = true;
+    throw e;
   }
-  return (await res.json()).results;
 }
 
 let contentDb = null;
