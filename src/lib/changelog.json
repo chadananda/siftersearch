@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-18T18:44:03.462Z",
+  "generated": "2026-07-18T19:16:01.097Z",
   "entries": [
+    {
+      "hash": "a3b546c3",
+      "date": "2026-07-18",
+      "type": "Other",
+      "description": "Plan-follower — the app now follows the history plan itself (3 processor modes)",
+      "scope": null
+    },
     {
       "hash": "04b6b18c",
       "date": "2026-07-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "TrackCost retry + promoter adjudication debug logging",
       "scope": null
-    },
-    {
-      "hash": "130fe7c4",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "QueryWithRetry in graph-extractor — all write paths resilient to SQLITE_BUSY",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-18": [
+      {
+        "hash": "a3b546c3",
+        "date": "2026-07-18",
+        "type": "Other",
+        "description": "Plan-follower — the app now follows the history plan itself (3 processor modes)",
+        "scope": null
+      },
       {
         "hash": "04b6b18c",
         "date": "2026-07-18",
@@ -7067,13 +7074,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "TrackCost retry + promoter adjudication debug logging",
-        "scope": null
-      },
-      {
-        "hash": "130fe7c4",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "QueryWithRetry in graph-extractor — all write paths resilient to SQLITE_BUSY",
         "scope": null
       }
     ]

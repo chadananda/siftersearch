@@ -18,7 +18,15 @@ import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './peak.js';
 
 export { nowInPeak, peakEndsAt } from './peak.js';   // re-export so callers/tests import peak logic via the queue
 
+// Concurrency is SIZE-WEIGHTED, not a flat book count: GROUNDING_MAX_CONCURRENT is a SLOT budget, and a book
+// consumes ceil(paragraphs / SLOT_PARAS) slots — so we run ~5 small books, or back off to 1-2 huge ones (an
+// 18k-paragraph history nearly fills the budget alone). The early foundation books ran at a budget of 1 (strict
+// serial) so the shared cast seeded in order; once that's established, parallelism is safe — the band mutex still
+// serialises the graph-mutating tail, so only the cheaper read stages actually overlap.
 const MAX_CONCURRENT = Number(process.env.GROUNDING_MAX_CONCURRENT || 5);
+const SLOT_PARAS = Number(process.env.GROUNDING_SLOT_PARAS || 6000);
+const slotsFor = (paras) => Math.max(1, Math.ceil((paras || 0) / SLOT_PARAS));
+const paraCountOf = async (docId) => (await queryOne(`SELECT paragraph_count n FROM docs WHERE id=?`, [docId]))?.n || 0;
 // The GRAPH-MUTATING band is project→dedup: these create/link/merge/dedup shared entities and `merge` is global,
 // so two runs here race. Everything else parallelizes safely — the READ stages (disambiguate…research) write only
 // per-paragraph data, and hype/verify AFTER dedup touch no shared entity (hype = per-paragraph questions; verify =
@@ -197,6 +205,7 @@ export async function tick() {
   // reap the run we just spawned. Don't guess success: record it and let the roadmap's done flag speak.
   const liveJson = new Set(live.map((r) => r.doc_id));
   let busy = 0;
+  const busyDocs = [];   // doc_ids actually in flight → summed into slot usage below
   for (const r of runningRows) {
     const age = Date.now() / 1000 - (r.started_at || 0);
     if (!liveJson.has(r.doc_id) && r.started_at && age > 90) {
@@ -218,11 +227,14 @@ export async function tick() {
           [`failed after ${MAX_RETRIES} retries: did not reach ${boundStageOf(parseOpts(r))}`, r.id]);
         logger.error({ docId: r.doc_id, id: r.id }, 'grounding queue: run failed permanently after retries');
       }
-    } else busy++;
+    } else { busy++; busyDocs.push(r.doc_id); }
   }
   // Runs started outside the queue still occupy the box.
-  for (const r of live) if (!runningRows.some((q) => q.doc_id === r.doc_id)) busy++;
-  if (busy >= MAX_CONCURRENT) return { started: [], busy };
+  for (const r of live) if (!runningRows.some((q) => q.doc_id === r.doc_id)) { busy++; busyDocs.push(r.doc_id); }
+  // Size-weighted slot usage of everything in flight. If the budget is already full, launch nothing this tick.
+  let usedSlots = 0;
+  for (const d of busyDocs) usedSlots += slotsFor(await paraCountOf(d));
+  if (usedSlots >= MAX_CONCURRENT) return { started: [], busy };
 
   // No more whole-book tail-lock: graph exclusivity is now the BAND MUTEX (pipeline/lock.js) — a run serialises
   // only at project→dedup, so a long reconcile no longer blocks other books' graph work. The queue just fills
@@ -235,9 +247,11 @@ export async function tick() {
   const started = [];
   // Skip rows still in retry-backoff (next_attempt_at in the future) so a just-requeued book waits its cooldown.
   for (const r of await queryAll(`SELECT * FROM grounding_queue WHERE status='queued' AND (next_attempt_at IS NULL OR next_attempt_at <= unixepoch()) ORDER BY position ASC, id ASC`)) {
-    if (busy + started.length >= MAX_CONCURRENT) break;
+    if (usedSlots >= MAX_CONCURRENT) break;                        // slot budget full
     if (liveDocs.has(r.doc_id) || started.some((s) => s.docId === r.doc_id)) continue; // already grounding this book
     if (blockedProviders.size && blockedProviders.has(await providerForDoc(r.doc_id))) continue; // budget OR peak wall: leave queued
+    const slots = slotsFor(await paraCountOf(r.doc_id));
+    if (usedSlots > 0 && usedSlots + slots > MAX_CONCURRENT) break; // next book (in order) doesn't fit → wait, don't skip ahead
     // ATOMIC CLAIM: flip the row to 'running' BEFORE spawning, guarded by WHERE status='queued'. Two concurrent
     // ticks (the 20s timer + a POST /queue/tick) both selected this row while it was still 'queued' and each
     // spawned a proc — the over-spawn that needed killing by hand. The write routes through the single writer, so
@@ -247,6 +261,7 @@ export async function tick() {
     const pid = spawnGrounding(r.doc_id, parseOpts(r));
     await query(`UPDATE grounding_queue SET pid=? WHERE id=?`, [pid, r.id]);
     started.push({ id: r.id, docId: r.doc_id, pid });
+    usedSlots += slots;
   }
   return { started, busy, blocked: [...blockedProviders] };
 }

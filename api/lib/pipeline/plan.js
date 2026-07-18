@@ -60,7 +60,7 @@ export async function resumeStageFor(docId, deps = {}) {
 // Idempotent: already-queued books are respected (never duplicated); position is pinned to the source index so
 // order can never drift. `orderedIds()` supplies the candidate order (plan order or library order per mode).
 async function refill(orderedIdsFn, { lookahead, deps }) {
-  const rows = deps.list ? await deps.list() : (await list({ limit: 100000 })).items;
+  const rows = deps.list ? await deps.list() : await list({ limit: 100000 });   // list() returns the array itself
   const active = new Set(rows.filter((r) => r.status === 'queued' || r.status === 'running').map((r) => r.doc_id));
   if (active.size >= lookahead) return { added: [], active: active.size };   // enough work already queued
 

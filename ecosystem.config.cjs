@@ -71,9 +71,12 @@ module.exports = {
         // Grounding runs ONE book at a time, fully, in strict roadmap order. The graph tail
         // (project→merge→dedup) resolves each book against the CUMULATIVE graph of all prior books, so book N+1
         // must not enter the tail before book N finishes — the band mutex alone doesn't order by position, so
-        // concurrency MUST be 1 to guarantee ordered graph resolution. (Was 5 → parallel read-halves that
-        // completed out of order and partially.)
-        GROUNDING_MAX_CONCURRENT: '1',
+        // SIZE-WEIGHTED concurrency: a SLOT budget (not a book count). A book uses ceil(paragraphs/SLOT_PARAS)
+        // slots, so we run ~5 small books or 1-2 huge ones. Ran at 1 (strict serial) while the foundation seeded
+        // the shared cast in order; now that's done, parallelism is safe (the band mutex still serialises the
+        // graph-mutating tail, so only the cheaper read stages overlap).
+        GROUNDING_MAX_CONCURRENT: '5',
+        GROUNDING_SLOT_PARAS: '6000',
         // Processor mode: plan = follow the hardcoded history plan (integration-phases.js) top-down, resuming
         // each book from its real incomplete stage — no operator/agent needed. override = agents hand-enrol via
         // the API; general = whole-library (post-plan default). Runtime-switchable via POST /grounding/mode.
