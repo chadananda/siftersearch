@@ -6,6 +6,7 @@ const ABSORB_IDX = new Map(ABSORPTION_ORDER.map((id, i) => [id, i])); // docId �
 import { chatCompletion } from './ai.js';
 import * as pipelineState from './pipeline/state.js';
 import { ADJUDICATOR_VERSION } from './rag/index.js';
+import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './pipeline/peak.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -220,8 +221,9 @@ export async function getIntegrationProgress() {
   // callers/UI keep working. Always fresh (cheap) → live polling.
   const actives = await computeActiveBooks(gradedDocs, meta);
   const active = actives[0] || null;
+  const offPeak = await computeOffPeakHint();   // {waiting, resumesAt} — books held for cheap DeepSeek hours (fresh, cheap)
 
-  if (_progCache && Date.now() - _progAt < 60000) return { ..._progCache, active, actives };
+  if (_progCache && Date.now() - _progAt < 60000) return { ..._progCache, active, actives, offPeak };
 
   // Grounded metrics run over the curated (non-dynamic) docs in phase order — biographies/histories aren't grounded yet.
   const ph = gradedDocs.map(() => '?').join(',');
@@ -340,7 +342,28 @@ export async function getIntegrationProgress() {
   const totalParas = phases.reduce((s, p) => s + p.paras, 0);
   _progCache = { phases, doneBooks, totalBooks, cumulativeUnique, totalParas, goal: 'all history absorbed' };
   _progAt = Date.now();
-  return { ..._progCache, active, actives };
+  return { ..._progCache, active, actives, offPeak };
+}
+
+// Off-peak hold hint for the progress UI: is DeepSeek work QUEUED but held for the cheap window? If so, when does
+// it resume? Non-sensitive (no dollar figures) so it rides the public /people/progress endpoint. Fresh each poll.
+async function computeOffPeakHint() {
+  try {
+    const rows = await queryAll(`SELECT peak_windows FROM grounding_budget WHERE offpeak_only=1`);
+    if (!rows.length) return { waiting: false, resumesAt: null };
+    const now = new Date();
+    let resumesAt = null;
+    for (const r of rows) {
+      let w = DEFAULT_PEAK_WINDOWS; try { if (r.peak_windows) w = JSON.parse(r.peak_windows); } catch { /* default */ }
+      if (!nowInPeak(w, now)) continue;
+      const e = peakEndsAt(w, now); if (!e) continue;
+      const ts = Math.floor(e.getTime() / 1000);
+      resumesAt = resumesAt == null ? ts : Math.min(resumesAt, ts);
+    }
+    if (resumesAt == null) return { waiting: false, resumesAt: null };
+    const q = await queryOne(`SELECT COUNT(*) n FROM grounding_queue WHERE status='queued'`);
+    return { waiting: (q?.n || 0) > 0, resumesAt: (q?.n || 0) > 0 ? resumesAt : null };
+  } catch { return { waiting: false, resumesAt: null }; }  // tables may not exist (tests/fresh db)
 }
 
 // The full person dataset for the browser + API list endpoint. Cached briefly (data changes rarely; the book-

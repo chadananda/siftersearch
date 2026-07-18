@@ -36,7 +36,7 @@ const MODEL_PRICING = {
   // Anthropic
   'claude-opus-4-7': { input: 0.015, output: 0.075 },
   'claude-sonnet-4-6': { input: 0.003, output: 0.015 },
-  'claude-haiku-4-5-20251001': { input: 0.00025, output: 0.00125 },
+  'claude-haiku-4-5-20251001': { input: 0.001, output: 0.005 },   // real Haiku 4.5 rates ($1/$5 per M); was 4× low (Haiku-3 prices) → hid a ~$200 drain
   'claude-3-opus-20240229': { input: 0.015, output: 0.075 },
   'claude-3-sonnet-20240229': { input: 0.003, output: 0.015 },
   'claude-3-haiku-20240307': { input: 0.00025, output: 0.00125 },

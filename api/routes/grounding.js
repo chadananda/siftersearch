@@ -12,7 +12,7 @@ import { graphBandHolder } from '../lib/pipeline/lock.js';
 import { spawnGrounding } from '../lib/pipeline/spawn.js';
 import { makeStore } from '../lib/rag-adapter/store.js';
 import { getIntegrationProgress } from '../lib/bio.js';
-import { queryAll } from '../lib/db.js';
+import { query, queryOne, queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 
 const parseRun = (rj) => { try { return rj ? JSON.parse(rj) : null; } catch { return null; } };
@@ -84,7 +84,7 @@ export default async function groundingRoutes(fastify) {
   // live runs + the work order + spend per book + budget. Exists so babysitting is a single cheap poll instead of
   // a pile of ad-hoc SQL: the watcher reports, the API decides.
   fastify.get('/grounding/monitor', admin, async () => {
-    const [runs, items, spend, bandHolder] = await Promise.all([
+    const [runs, items, spend, bandHolder, budget] = await Promise.all([
       state.activeRuns(),
       queue.list({ limit: 12 }),
       queryAll(`SELECT CAST(document_id AS INT) docId, provider, COUNT(*) calls,
@@ -92,17 +92,54 @@ export default async function groundingRoutes(fastify) {
                 FROM ai_usage WHERE caller='corpus-rag' AND document_id IS NOT NULL
                 GROUP BY docId, provider ORDER BY usd DESC`),
       graphBandHolder().catch(() => null),
+      queue.budgetStatus().catch(() => []),
     ]);
     const byProvider = {};
     for (const s of spend) byProvider[s.provider] = Math.round(((byProvider[s.provider] || 0) + s.usd) * 100) / 100;
+    const queued = items.filter((i) => i.status === 'queued');
+    // A single health verdict the cloud health-check reads to decide whether to ping the user AT ALL.
+    const overBudget = budget.filter((b) => b.over).map((b) => b.provider);
+    const warnBudget = budget.filter((b) => b.warn && !b.over).map((b) => b.provider);
+    const peakBlocked = budget.filter((b) => b.peakBlocked);
+    const offPeakResumesAt = peakBlocked.length
+      ? Math.min(...peakBlocked.map((b) => b.offPeakResumesAt).filter((t) => t)) : null;
+    const health = {
+      ok: overBudget.length === 0,
+      overBudget,                                   // providers at ceiling → new books of theirs are paused
+      warnBudget,                                   // providers ≥ warn_frac → heads-up
+      queuedBlocked: overBudget.length > 0 && queued.length > 0,  // work waiting behind a budget wall
+      // DELIBERATE off-peak hold: work IS queued but held for cheap hours → the UI shows "waiting for off-hour
+      // rates · [countdown]" (offPeakResumesAt) so a paused-for-savings pipeline never reads as stuck.
+      peakWaiting: peakBlocked.length > 0 && queued.length > 0,
+      offPeakResumesAt,
+      liveCount: runs.length,
+    };
     return {
       live: runs.map((r) => ({ docId: r.doc_id, stage: r.stage, toStage: r.toStage ?? null, pid: r.pid,
         itemsDone: r.itemsDone, itemsTotal: r.itemsTotal, startedAt: r.startedAt, updatedAt: r.updatedAt })),
-      queue: items.filter((i) => i.status === 'queued'),
+      queue: queued,
       recent: items.filter((i) => i.status !== 'queued'),
       graphBandHolder: bandHolder,   // docId currently in the project→dedup mutex, or null
       spend: { byBook: spend, byProvider, total: Math.round(spend.reduce((a, b) => a + b.usd, 0) * 100) / 100 },
+      budget,                        // [{provider, spent, ceiling, frac, over, warn}] — the server-side spend gate
+      health,
     };
+  });
+
+  // SET/UPDATE a provider budget ceiling — the server-side spend backstop for unattended runs. Baseline is captured
+  // automatically as the current spend for that provider, so `ceiling_usd` is the INCREMENTAL allowance from now.
+  fastify.post('/grounding/budget', admin, async (req) => {
+    const { provider, ceilingUsd, warnFrac, offpeakOnly, peakWindows } = req.body || {};
+    if (!provider || !(Number(ceilingUsd) > 0)) throw ApiError.badRequest('provider + positive ceilingUsd required');
+    const pw = Array.isArray(peakWindows) ? JSON.stringify(peakWindows) : null;   // NULL → server DEFAULT_PEAK_WINDOWS
+    const base = await queryOne(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage WHERE provider=? AND caller='corpus-rag'`, [provider]);
+    await query(`INSERT INTO grounding_budget (provider, ceiling_usd, baseline_usd, warn_frac, offpeak_only, peak_windows, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, unixepoch())
+                 ON CONFLICT(provider) DO UPDATE SET ceiling_usd=excluded.ceiling_usd, baseline_usd=excluded.baseline_usd,
+                   warn_frac=excluded.warn_frac, offpeak_only=excluded.offpeak_only, peak_windows=excluded.peak_windows, updated_at=unixepoch()`,
+      [provider, Number(ceilingUsd), base?.s || 0, Number(warnFrac) > 0 ? Number(warnFrac) : 0.8, offpeakOnly ? 1 : 0, pw]);
+    logger.info({ provider, ceilingUsd, baseline: base?.s || 0, offpeakOnly: !!offpeakOnly }, 'grounding budget set');
+    return { provider, ceilingUsd: Number(ceilingUsd), baselineUsd: base?.s || 0, offpeakOnly: !!offpeakOnly, budget: await queue.budgetStatus() };
   });
 
   // STOP a live run — signal the reported pid (best-effort) and clear the run marker so the UI goes idle.

@@ -168,7 +168,7 @@ export const MODEL_REGISTRY = {
     provider: 'anthropic',
     name: 'Claude Haiku 4.5',
     type: 'chat',
-    pricing: { input: 0.00025, output: 0.00125 },
+    pricing: { input: 0.001, output: 0.005 },   // Haiku 4.5 = $1/M in, $5/M out (per-1K here). Was Haiku-3 rates ($0.25/$1.25) → 4× undercount that hid a ~$200 drain.
     contextWindow: 200000,
     maxOutput: 8192,
     capabilities: ['validation', 'classification', 'extraction', 'batch'],

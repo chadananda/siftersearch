@@ -489,6 +489,28 @@ export const migrations = {
                  ON CONFLICT(name) DO NOTHING`);
     logger.info('Migration 94 complete: grounding_locks');
   },
+  95: async () => {
+    // UNATTENDED SELF-HEAL + SPEND BACKSTOP. For a run that must survive travel with nobody watching:
+    //  • grounding_budget — a per-provider ceiling the SUPERVISOR enforces (books billing to an over-budget
+    //    provider stay queued), so spend can't run away without a human's monitoring loop. `spent` is measured
+    //    INCREMENTALLY over baseline_usd (captured when the budget was set).
+    //  • grounding_queue.retry_count / next_attempt_at — auto-retry with backoff, so a transient death (timeout,
+    //    killed proc, flaky fetch) requeues itself instead of stranding the book until a human re-enqueues it.
+    logger.info('Starting migration 95: grounding_budget + queue auto-retry columns');
+    await query(`CREATE TABLE IF NOT EXISTS grounding_budget (
+      provider TEXT PRIMARY KEY,               -- 'anthropic' | 'deepseek' | 'openai'
+      ceiling_usd REAL NOT NULL,               -- incremental allowance over baseline_usd
+      baseline_usd REAL NOT NULL DEFAULT 0,    -- SUM(cost) at the moment the budget was set → spent = SUM(cost)-baseline
+      warn_frac REAL NOT NULL DEFAULT 0.8,     -- surface a heads-up at this fraction of the ceiling
+      offpeak_only INTEGER NOT NULL DEFAULT 0, -- 1 = supervisor won't LAUNCH this provider's books during a peak window
+      peak_windows TEXT,                       -- JSON [["HH:MM","HH:MM"],…] UTC; NULL = DEFAULT_PEAK_WINDOWS (DeepSeek 2× hours)
+      updated_at INTEGER DEFAULT (unixepoch())
+    )`);
+    const addCol = async (sql) => { try { await query(sql); } catch (err) { if (!err.message?.includes('duplicate column')) throw err; } };
+    await addCol(`ALTER TABLE grounding_queue ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0`);
+    await addCol(`ALTER TABLE grounding_queue ADD COLUMN next_attempt_at INTEGER`);
+    logger.info('Migration 95 complete: grounding_budget + auto-retry columns');
+  },
 };
 
 export const graphMigrations = {

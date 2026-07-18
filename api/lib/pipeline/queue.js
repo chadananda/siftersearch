@@ -14,6 +14,9 @@ import { activeRuns } from './state.js';
 import { spawnGrounding } from './spawn.js';
 import { GROUNDING_STAGES } from './run-grounding.js';
 import { logger } from '../logger.js';
+import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './peak.js';
+
+export { nowInPeak, peakEndsAt } from './peak.js';   // re-export so callers/tests import peak logic via the queue
 
 const MAX_CONCURRENT = Number(process.env.GROUNDING_MAX_CONCURRENT || 5);
 // The GRAPH-MUTATING band is project→dedup: these create/link/merge/dedup shared entities and `merge` is global,
@@ -23,6 +26,16 @@ const MAX_CONCURRENT = Number(process.env.GROUNDING_MAX_CONCURRENT || 5);
 const GRAPH_START = GROUNDING_STAGES.indexOf('project');
 const GRAPH_END = GROUNDING_STAGES.indexOf('dedup');
 const TICK_MS = 20000;
+// Matches hype-book.mjs MINLEN (skip fragments below this length) so reachedBound's hype denominator counts the
+// SAME paragraphs hype actually processes. Keep in sync with that script's default.
+const HYPE_MINLEN = Number(process.env.MINLEN || 60);
+// Auto-retry (unattended self-heal): a transient death (timeout, killed proc, flaky fetch) shouldn't strand a book.
+// Requeue with backoff up to MAX_RETRIES, then leave it 'failed' for a human. Terminal reasons (budget) never retry.
+const MAX_RETRIES = Number(process.env.GROUNDING_MAX_RETRIES || 2);
+const RETRY_BACKOFF_S = Number(process.env.GROUNDING_RETRY_BACKOFF_S || 120);
+// DeepSeek peak/valley pricing: with off-peak-only enabled on a provider, the supervisor won't LAUNCH its books
+// during a peak window (a running book finishes — we launch-gate, not kill). Thousands of short books → nearly all
+// spend lands in the cheap window. Pure window math lives in ./peak.js (shared with bio.js, no import cycle).
 
 const parseOpts = (r) => { try { return r.opts_json ? JSON.parse(r.opts_json) : {}; } catch { return {}; } };
 
@@ -39,21 +52,25 @@ export async function reachedBound(docId, opts = {}, deps = {}) {
     `SELECT (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) prose,
             (SELECT COUNT(*) FROM content WHERE doc_id=? AND context IS NOT NULL AND context!='') disamb,
             (SELECT COUNT(*) FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL) hyped,
+            (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(trim(text)) >= ${HYPE_MINLEN}) hypeable,
             (SELECT COUNT(*) FROM entity_mentions_v2 WHERE doc_id=?) mentions,
             (SELECT COUNT(*) FROM entity_claims WHERE doc_id=?) claims,
             (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
             (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions`,
-    [docId, docId, docId, docId, docId, docId, docId]);
+    [docId, docId, docId, docId, docId, docId, docId, docId]);
   const prose = row?.prose || 0;
   if (prose === 0) return false;
   if ((row.disamb || 0) / prose < 0.98) return false;                     // the floor for EVERY bound
   // Per-stage artifact checks. Stages with no distinct cheap artifact (research/project/link/merge/dedup/verify)
   // all follow reconcile, so they ride on reconcile's decisions.
+  // HYPE denominator = HYPEABLE paras (length >= HYPE_MINLEN), NOT all prose: hype-book.mjs skips shorter
+  // fragments (titles/publisher lines), so measuring hyped/all-prose false-failed English books with many short
+  // paragraphs (e.g. 185 hyped / 232 prose = 80% < 90% though hype was COMPLETE). Match hype's own filter.
   const artifactOk = {
     mentions: (row.mentions || 0) > 0,
     claims: (row.claims || 0) > 0,
     reconcile: (row.decisions || 0) >= 0.85 * Math.max(1, row.clusters || 0),
-    hype: (row.hyped || 0) >= 0.9 * prose,
+    hype: (row.hyped || 0) >= 0.9 * Math.max(1, row.hypeable || 0),
   };
   const artifactStage = (s) => (['research', 'project', 'link', 'merge', 'dedup', 'verify'].includes(s) ? 'reconcile' : s);
   const bound = boundStageOf(opts);
@@ -114,6 +131,44 @@ export async function cancel(id) {
 }
 
 /**
+ * Server-side SPEND GATE — the budget backstop that used to live only in a human's monitoring loop, so an
+ * UNATTENDED run can't overspend. Each provider has a ceiling measured INCREMENTALLY over a baseline captured when
+ * the budget was set (spent = SUM(cost) − baseline). Books billing to an `over` provider stay queued instead of
+ * launching; `warn` (default 80%) is a heads-up the health-check surfaces. Empty table = no gate (fail-open on
+ * config, fail-closed on spend once a row exists).
+ */
+export async function budgetStatus(deps = {}) {
+  const qa = deps.queryAll || queryAll;
+  const qo = deps.queryOne || queryOne;
+  const now = deps.now || new Date();
+  const rows = await qa(`SELECT provider, ceiling_usd, baseline_usd, warn_frac, offpeak_only, peak_windows FROM grounding_budget`);
+  const out = [];
+  for (const b of rows) {
+    const spentRow = await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage WHERE provider=? AND caller='corpus-rag'`, [b.provider]);
+    const spent = Math.max(0, (spentRow?.s || 0) - (b.baseline_usd || 0));
+    const frac = b.ceiling_usd > 0 ? spent / b.ceiling_usd : 0;
+    let windows = DEFAULT_PEAK_WINDOWS;
+    try { if (b.peak_windows) windows = JSON.parse(b.peak_windows); } catch { /* keep default */ }
+    const offpeakOnly = !!b.offpeak_only;
+    const inPeak = nowInPeak(windows, now);
+    const peakBlocked = offpeakOnly && inPeak;                    // peakBlocked → won't launch this provider's books now
+    const endsAt = peakBlocked ? peakEndsAt(windows, now) : null;
+    out.push({ provider: b.provider, spent: Math.round(spent * 100) / 100, ceiling: b.ceiling_usd,
+      frac: Math.round(frac * 1000) / 1000, over: spent >= b.ceiling_usd, warn: frac >= (b.warn_frac ?? 0.8),
+      offpeakOnly, inPeak, peakBlocked,
+      offPeakResumesAt: endsAt ? Math.floor(endsAt.getTime() / 1000) : null });  // epoch s → the UI's countdown target
+  }
+  return out;
+}
+
+/** Which provider a book bills to: Persian (fa) → anthropic (Haiku/Sonnet); everything else → deepseek. */
+export async function providerForDoc(docId, deps = {}) {
+  const row = await (deps.queryOne || queryOne)(
+    `SELECT language lang FROM content WHERE doc_id=? AND language IS NOT NULL GROUP BY language ORDER BY COUNT(*) DESC LIMIT 1`, [docId]);
+  return String(row?.lang || '').startsWith('fa') ? 'anthropic' : 'deepseek';
+}
+
+/**
  * One supervisor pass: reconcile queue rows against reality, then fill any free slot.
  * Idempotent and cheap — safe to call on a timer.
  */
@@ -134,11 +189,24 @@ export async function tick() {
   for (const r of runningRows) {
     const age = Date.now() / 1000 - (r.started_at || 0);
     if (!liveJson.has(r.doc_id) && r.started_at && age > 90) {
-      // proc gone: DONE only if the book actually reached its bound stage; otherwise it died early → FAILED.
+      // proc gone: DONE only if the book actually reached its bound stage; otherwise it died early.
       const ok = await reachedBound(r.doc_id, parseOpts(r));
-      await query(`UPDATE grounding_queue SET status=?, error=?, finished_at=unixepoch() WHERE id=?`,
-        [ok ? 'done' : 'failed', ok ? null : `proc exited before completing bound stage (${boundStageOf(parseOpts(r))})`, r.id]);
-      logger.info({ docId: r.doc_id, id: r.id, outcome: ok ? 'done' : 'failed' }, 'grounding queue: run ended');
+      if (ok) {
+        await query(`UPDATE grounding_queue SET status='done', error=NULL, finished_at=unixepoch() WHERE id=?`, [r.id]);
+        logger.info({ docId: r.doc_id, id: r.id, outcome: 'done' }, 'grounding queue: run ended');
+      } else if ((r.retry_count || 0) < MAX_RETRIES) {
+        // AUTO-RETRY: a transient death (timeout/killed/flaky) shouldn't strand a book while unattended. Requeue
+        // with escalating backoff; the atomic claim + budget gate still apply on the next launch.
+        const rc = (r.retry_count || 0) + 1;
+        const backoff = RETRY_BACKOFF_S * rc;
+        await query(`UPDATE grounding_queue SET status='queued', retry_count=?, next_attempt_at=unixepoch()+?, pid=NULL, started_at=NULL, error=? WHERE id=?`,
+          [rc, backoff, `retry ${rc}/${MAX_RETRIES}: did not reach ${boundStageOf(parseOpts(r))} (backoff ${backoff}s)`, r.id]);
+        logger.warn({ docId: r.doc_id, id: r.id, retry: rc, backoff }, 'grounding queue: run failed → requeued with backoff');
+      } else {
+        await query(`UPDATE grounding_queue SET status='failed', finished_at=unixepoch(), error=? WHERE id=?`,
+          [`failed after ${MAX_RETRIES} retries: did not reach ${boundStageOf(parseOpts(r))}`, r.id]);
+        logger.error({ docId: r.doc_id, id: r.id }, 'grounding queue: run failed permanently after retries');
+      }
     } else busy++;
   }
   // Runs started outside the queue still occupy the box.
@@ -148,10 +216,17 @@ export async function tick() {
   // No more whole-book tail-lock: graph exclusivity is now the BAND MUTEX (pipeline/lock.js) — a run serialises
   // only at project→dedup, so a long reconcile no longer blocks other books' graph work. The queue just fills
   // free slots up to MAX_CONCURRENT; the mutex does the rest.
+  // LAUNCH GATE (two server-side guards so an UNATTENDED run stays cheap + safe): a provider is blocked when it is
+  //  • OVER its ceiling (budget backstop — never overspend), or
+  //  • PEAK-BLOCKED (offpeak_only set AND currently a peak-pricing window — hold DeepSeek books for the cheap hours).
+  // Blocked books stay queued; the next tick launches them once the wall clears. Computed once per tick.
+  const blockedProviders = new Set((await budgetStatus()).filter((b) => b.over || b.peakBlocked).map((b) => b.provider));
   const started = [];
-  for (const r of await queryAll(`SELECT * FROM grounding_queue WHERE status='queued' ORDER BY position ASC, id ASC`)) {
+  // Skip rows still in retry-backoff (next_attempt_at in the future) so a just-requeued book waits its cooldown.
+  for (const r of await queryAll(`SELECT * FROM grounding_queue WHERE status='queued' AND (next_attempt_at IS NULL OR next_attempt_at <= unixepoch()) ORDER BY position ASC, id ASC`)) {
     if (busy + started.length >= MAX_CONCURRENT) break;
     if (liveDocs.has(r.doc_id) || started.some((s) => s.docId === r.doc_id)) continue; // already grounding this book
+    if (blockedProviders.size && blockedProviders.has(await providerForDoc(r.doc_id))) continue; // budget OR peak wall: leave queued
     // ATOMIC CLAIM: flip the row to 'running' BEFORE spawning, guarded by WHERE status='queued'. Two concurrent
     // ticks (the 20s timer + a POST /queue/tick) both selected this row while it was still 'queued' and each
     // spawned a proc — the over-spawn that needed killing by hand. The write routes through the single writer, so
@@ -162,7 +237,7 @@ export async function tick() {
     await query(`UPDATE grounding_queue SET pid=? WHERE id=?`, [pid, r.id]);
     started.push({ id: r.id, docId: r.doc_id, pid });
   }
-  return { started, busy };
+  return { started, busy, blocked: [...blockedProviders] };
 }
 
 let timer = null;
