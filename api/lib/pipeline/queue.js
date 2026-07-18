@@ -161,10 +161,21 @@ export async function budgetStatus(deps = {}) {
   return out;
 }
 
-/** Which provider a book bills to: Persian (fa) → anthropic (Haiku/Sonnet); everything else → deepseek. */
+/**
+ * Which provider a book bills to (for the spend + off-peak gates). GROUND TRUTH is what the doc has ACTUALLY
+ * charged: the pipeline's model routing (Mázindarání Persian → Haiku/anthropic) doesn't match content.language
+ * (often NULL) or docs.language (Vol 8 is mistagged 'ar'), so keying on language misrouted Persian to deepseek and
+ * the off-peak gate wrongly held it. Prefer the provider from this doc's ai_usage; fall back to language only for a
+ * doc with no spend history yet.
+ */
 export async function providerForDoc(docId, deps = {}) {
-  const row = await (deps.queryOne || queryOne)(
-    `SELECT language lang FROM content WHERE doc_id=? AND language IS NOT NULL GROUP BY language ORDER BY COUNT(*) DESC LIMIT 1`, [docId]);
+  const qo = deps.queryOne || queryOne;
+  const used = await qo(
+    `SELECT provider FROM ai_usage WHERE caller='corpus-rag' AND CAST(document_id AS INT)=? GROUP BY provider ORDER BY COUNT(*) DESC LIMIT 1`, [docId]);
+  if (used?.provider) return used.provider;
+  const row = await qo(
+    `SELECT COALESCE((SELECT language FROM content WHERE doc_id=? AND language IS NOT NULL GROUP BY language ORDER BY COUNT(*) DESC LIMIT 1),
+                     (SELECT language FROM docs WHERE id=?)) lang`, [docId, docId]);
   return String(row?.lang || '').startsWith('fa') ? 'anthropic' : 'deepseek';
 }
 
