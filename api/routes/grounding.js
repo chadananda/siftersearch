@@ -82,6 +82,19 @@ export default async function groundingRoutes(fastify) {
   // Force a supervisor pass (normally on a 20s timer) — useful right after enqueuing or stopping a run.
   fastify.post('/grounding/queue/tick', admin, async () => queue.tick());
 
+  // Reset the working queue: SIGTERM any running procs, drop all queued/running rows, clear stale run_json. In
+  // plan/general mode the processor re-derives the next work from the plan on its next tick, so this is the
+  // API-native way to recover a tangled queue — no direct DB access. Writes route through the single writer.
+  fastify.post('/grounding/queue/reset', admin, async () => {
+    const running = await queryAll(`SELECT pid FROM grounding_queue WHERE status='running' AND pid IS NOT NULL`);
+    let killed = 0;
+    for (const r of running) { try { process.kill(Number(r.pid), 'SIGTERM'); killed++; } catch { /* already gone */ } }
+    const before = (await queryOne(`SELECT COUNT(*) n FROM grounding_queue WHERE status IN ('queued','running')`))?.n || 0;
+    await query(`DELETE FROM grounding_queue WHERE status IN ('queued','running')`);
+    await query(`UPDATE doc_pipeline SET run_json=NULL WHERE run_json IS NOT NULL`);
+    return { cleared: before, killed };
+  });
+
   // ── MONITOR: everything an operator needs in ONE call ───────────────────────────────────────────────────────
   // live runs + the work order + spend per book + budget. Exists so babysitting is a single cheap poll instead of
   // a pile of ad-hoc SQL: the watcher reports, the API decides.

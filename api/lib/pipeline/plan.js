@@ -115,7 +115,10 @@ export function startProcessor() {
     const mode = getMode();
     const driver = mode === 'plan' ? followPlanTick : mode === 'general' ? followGeneralTick : null;
     if (!driver) return Promise.resolve();     // override → follower stands down
-    return driver()
+    // Keep MORE books queued than the supervisor's slot budget so it never starves (a book can be 1 slot; 5 slots
+    // ≈ 5 small books). Default a comfortable lookahead above GROUNDING_MAX_CONCURRENT.
+    const lookahead = Number(process.env.GROUNDING_LOOKAHEAD || Math.max(8, Number(process.env.GROUNDING_MAX_CONCURRENT || 5) + 3));
+    return driver({ lookahead })
       .then((r) => { if (r.added?.length) logger.info({ mode, added: r.added }, 'processor: enqueued next book(s)'); })
       .catch((e) => logger.warn({ mode, err: e.message }, 'processor tick failed'));
   };

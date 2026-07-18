@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-18T19:30:56.214Z",
+  "generated": "2026-07-18T19:39:00.780Z",
   "entries": [
+    {
+      "hash": "751e5c03",
+      "date": "2026-07-18",
+      "type": "Other",
+      "description": "Serialise supervisor ticks (tick mutex) — concurrent 20s-timer + POST /queue/tick both read busy=0 and over-launched 2x the slot budget (9 procs vs 5). One tick at a time.",
+      "scope": null
+    },
     {
       "hash": "419ba748",
       "date": "2026-07-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Promoter system prompt — pass as role:system message not dropped option",
       "scope": null
-    },
-    {
-      "hash": "03701400",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Force DeepSeek JSON mode in promoter adjudication",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-18": [
+      {
+        "hash": "751e5c03",
+        "date": "2026-07-18",
+        "type": "Other",
+        "description": "Serialise supervisor ticks (tick mutex) — concurrent 20s-timer + POST /queue/tick both read busy=0 and over-launched 2x the slot budget (9 procs vs 5). One tick at a time.",
+        "scope": null
+      },
       {
         "hash": "419ba748",
         "date": "2026-07-18",
@@ -7067,13 +7074,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Promoter system prompt — pass as role:system message not dropped option",
-        "scope": null
-      },
-      {
-        "hash": "03701400",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Force DeepSeek JSON mode in promoter adjudication",
         "scope": null
       }
     ]
