@@ -67,7 +67,13 @@ module.exports = {
         // this the API was the one unrouted writer, so its admin writes
         // contended with the worker and intermittently hit SQLITE_BUSY.
         SIFTER_WRITER_URL: 'http://127.0.0.1:7849',
-        SQLITE_BUSY_TIMEOUT_MS: '30000'
+        SQLITE_BUSY_TIMEOUT_MS: '30000',
+        // Grounding runs ONE book at a time, fully, in strict roadmap order. The graph tail
+        // (project→merge→dedup) resolves each book against the CUMULATIVE graph of all prior books, so book N+1
+        // must not enter the tail before book N finishes — the band mutex alone doesn't order by position, so
+        // concurrency MUST be 1 to guarantee ordered graph resolution. (Was 5 → parallel read-halves that
+        // completed out of order and partially.)
+        GROUNDING_MAX_CONCURRENT: '1'
       },
       // 30s gives Fastify time to drain in-flight chat SSE streams
       // (typically 5-15s each) before SIGKILL on deploy. 5s was too short —

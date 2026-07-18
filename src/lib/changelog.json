@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-18T14:30:46.767Z",
+  "generated": "2026-07-18T18:13:49.110Z",
   "entries": [
+    {
+      "hash": "0d2dcfb2",
+      "date": "2026-07-18",
+      "type": "Other",
+      "description": "\"done\" ⇔ FULL grounding (reachedBound), not reconcile alone — fixes read-half books showing ✓",
+      "scope": null
+    },
     {
       "hash": "0ce86896",
       "date": "2026-07-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "QueryWithRetry in resolver+promoter — eliminate SQLITE_BUSY deadlock",
       "scope": null
-    },
-    {
-      "hash": "97f6edb4",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Remove propagateHypeFromNormalizedHash() from enrichment startup path",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-18": [
+      {
+        "hash": "0d2dcfb2",
+        "date": "2026-07-18",
+        "type": "Other",
+        "description": "\"done\" ⇔ FULL grounding (reachedBound), not reconcile alone — fixes read-half books showing ✓",
+        "scope": null
+      },
       {
         "hash": "0ce86896",
         "date": "2026-07-18",
@@ -7067,13 +7074,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "QueryWithRetry in resolver+promoter — eliminate SQLITE_BUSY deadlock",
-        "scope": null
-      },
-      {
-        "hash": "97f6edb4",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Remove propagateHypeFromNormalizedHash() from enrichment startup path",
         "scope": null
       }
     ]
