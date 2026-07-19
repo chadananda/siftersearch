@@ -60,6 +60,22 @@ describe('followPlanTick — keeps the next N incomplete plan books queued, in o
     expect(calls).toEqual([{ docId: 3, position: 1, from: 'hype' }]); // id2 skipped (active), id3 enqueued
   });
 
+  it('includes phase GROUPS (pilgrim primary sources) in plan order, after that phase\'s books', async () => {
+    const calls = [];
+    const deps = {
+      getProgress: async () => ({ phases: [
+        { books: [{ id: 1, done: false }], groups: [{ books: [{ id: 2, done: false }, { id: 3, done: false }] }] },
+        { books: [{ id: 9, done: false }] },   // next phase (e.g. biographies) — must come AFTER the groups
+      ] }),
+      list: async () => [],
+      resumeStageFor: async () => ({}),
+      enqueue: async (a) => calls.push(a),
+      tick: async () => {},
+    };
+    await followPlanTick({ lookahead: 4, deps });
+    expect(calls.map((c) => c.docId)).toEqual([1, 2, 3, 9]);   // book, then its group docs, then next phase
+  });
+
   it('does nothing when the queue already holds >= lookahead active books (cheap early-exit)', async () => {
     const calls = [];
     const deps = {

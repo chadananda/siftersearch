@@ -28,6 +28,10 @@ export async function buildDigest(sinceEpoch, deps = {}) {
     const b = byId.get(r.doc_id) || {};
     const meta = await (deps.queryOne || queryOne)(`SELECT title, author, description, paragraph_count FROM docs WHERE id=?`, [r.doc_id]);
     if (!meta) continue;
+    // Count people DIRECTLY from the book's bound entities — getIntegrationProgress only computes b.persons for the
+    // curated seed/foundation/primary docs, so pilgrim/biography completions were reporting 0 (the "0 names" bug).
+    const pc = await (deps.queryOne || queryOne)(
+      `SELECT COUNT(DISTINCT entity_id) n FROM entity_claims WHERE doc_id=? AND entity_id IS NOT NULL`, [r.doc_id]);
     books.push({
       id: r.doc_id,
       title: b.title || meta.title || `doc ${r.doc_id}`,
@@ -35,8 +39,8 @@ export async function buildDigest(sinceEpoch, deps = {}) {
       description: meta.description || '',
       phase: b.phase || '',
       paras: b.size || meta.paragraph_count || 0,
-      people: b.persons || 0,          // people grounded in this book
-      newPeople: b.newInSequence || 0, // NET-new people this book added to the graph (first-seen here)
+      people: (pc && pc.n) || b.persons || 0,   // people grounded in this book (bound entities)
+      newPeople: b.newInSequence || 0,          // NET-new to the graph (curated only; 0 for dynamic — secondary)
       finishedAt: r.finished_at,
     });
   }

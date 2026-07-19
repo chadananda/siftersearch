@@ -26,6 +26,12 @@ describe('buildDigest', () => {
     expect(d.processing).toHaveLength(1);
     expect(d.processing[0]).toMatchObject({ title: 'Live Book', stage: 'hype', stageNum: 10, totalStages: 11, withinFrac: 0.5 });
   });
+  it('counts people DIRECTLY from bound entities (fixes 0-names for dynamic/pilgrim books)', async () => {
+    const d = await buildDigest(500, deps({
+      queryOne: async (sql) => (sql.includes('entity_claims') ? { n: 37 } : { title: 'Bio', author: 'X', description: '', paragraph_count: 100 }),
+    }));
+    expect(d.books[0].people).toBe(37);   // direct count, not the curated-only b.persons
+  });
   it('is empty when nothing finished or processing in the window', async () => {
     const d = await buildDigest(500, deps({ _done: [] }));
     expect(d.books).toHaveLength(0);

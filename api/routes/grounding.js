@@ -210,6 +210,13 @@ export default async function groundingRoutes(fastify) {
     return { since, now, ...r };
   });
 
+  // Trigger a plan-follower pass now (normally on a ~3-min timer) — repopulates the queue with the next books in
+  // plan order (incl. the pilgrim/period primary-source groups). Useful right after a queue reset.
+  fastify.post('/grounding/plan/tick', admin, async (req) => {
+    const lookahead = Number((req.body || {}).lookahead) || Number(process.env.GROUNDING_LOOKAHEAD || 8);
+    return processor.followPlanTick({ lookahead });
+  });
+
   fastify.get('/grounding/mode', admin, async () => ({ mode: processor.getMode(), modes: ['plan', 'override', 'general'] }));
   fastify.post('/grounding/mode', admin, async (req) => {
     const m = (req.body || {}).mode;

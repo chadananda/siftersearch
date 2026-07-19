@@ -88,7 +88,14 @@ async function refill(orderedIdsFn, { lookahead, deps }) {
 export async function followPlanTick({ lookahead = 3, deps = {} } = {}) {
   const orderedIds = async () => {
     const prog = deps.getProgress ? await deps.getProgress() : await getIntegrationProgress();
-    return (prog.phases || []).flatMap((p) => p.books || []).filter((b) => b && b.id).map((b) => ({ id: b.id, done: !!b.done }));
+    // A phase's work = its listed `books` PLUS its `groups` (e.g. the hundreds of Pilgrim-Notes primary sources
+    // grouped by period under Primary Sources — they're NOT in `books`). Both must be followed, in phase order,
+    // so the 600+ primary docs are grounded BEFORE biographies. Group `done` is a weak has-claims flag, so force
+    // resumeStageFor to decide (done:false) rather than fast-skip.
+    return (prog.phases || []).flatMap((p) => [
+      ...(p.books || []).map((b) => ({ id: b.id, done: !!b.done })),
+      ...(p.groups || []).flatMap((g) => (g.books || []).map((b) => ({ id: b.id, done: false }))),
+    ]).filter((b) => b && b.id);
   };
   return refill(orderedIds, { lookahead, deps });
 }
