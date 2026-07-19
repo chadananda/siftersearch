@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-19T12:59:07.504Z",
+  "generated": "2026-07-19T14:18:04.914Z",
   "entries": [
+    {
+      "hash": "c1b566fa",
+      "date": "2026-07-19",
+      "type": "Other",
+      "description": "Fix DeepSeek off-peak windows to the REAL discount hours (16:30-00:30 UTC)",
+      "scope": null
+    },
     {
       "hash": "82bd32e8",
       "date": "2026-07-18",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Enrichment context overflow + library-watcher OOM",
       "scope": null
-    },
-    {
-      "hash": "01168693",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Worker crash resistance — wrap fetchBatch and per-row in try-catch",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-07-19": [
+      {
+        "hash": "c1b566fa",
+        "date": "2026-07-19",
+        "type": "Other",
+        "description": "Fix DeepSeek off-peak windows to the REAL discount hours (16:30-00:30 UTC)",
+        "scope": null
+      }
+    ],
     "2026-07-18": [
       {
         "hash": "82bd32e8",
@@ -7067,13 +7076,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Enrichment context overflow + library-watcher OOM",
-        "scope": null
-      },
-      {
-        "hash": "01168693",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Worker crash resistance — wrap fetchBatch and per-row in try-catch",
         "scope": null
       }
     ]
