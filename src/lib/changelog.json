@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-18T23:31:48.871Z",
+  "generated": "2026-07-19T12:59:07.504Z",
   "entries": [
+    {
+      "hash": "82bd32e8",
+      "date": "2026-07-18",
+      "type": "Other",
+      "description": "Add ZeptoMail (Zoho) provider — HTTP transactional API (Zoho-enczapikey auth, verified-domain sender)",
+      "scope": null
+    },
     {
       "hash": "9f5e9f48",
       "date": "2026-07-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Worker crash resistance — wrap fetchBatch and per-row in try-catch",
       "scope": null
-    },
-    {
-      "hash": "a5c32dd8",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Health check uses /api/v1/health not /api/search/health",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-18": [
+      {
+        "hash": "82bd32e8",
+        "date": "2026-07-18",
+        "type": "Other",
+        "description": "Add ZeptoMail (Zoho) provider — HTTP transactional API (Zoho-enczapikey auth, verified-domain sender)",
+        "scope": null
+      },
       {
         "hash": "9f5e9f48",
         "date": "2026-07-18",
@@ -7067,13 +7074,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Worker crash resistance — wrap fetchBatch and per-row in try-catch",
-        "scope": null
-      },
-      {
-        "hash": "a5c32dd8",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Health check uses /api/v1/health not /api/search/health",
         "scope": null
       }
     ]

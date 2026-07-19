@@ -2,8 +2,10 @@
 // so BOTH the supervisor (queue.js) and the progress endpoint (bio.js) can import it without a circular import.
 // Windows are ["HH:MM","HH:MM"] pairs in UTC; a window may wrap past UTC midnight (e.g. 23:00→03:00).
 
-// DeepSeek peak = 2× (published schedule, UTC). 01-04 & 06-10 UTC = 6-9 PM & 11 PM-3 AM Arizona (MST, UTC-7).
-export const DEFAULT_PEAK_WINDOWS = [['01:00', '04:00'], ['06:00', '10:00']];
+// DeepSeek pricing (published, UTC): OFF-PEAK discount 16:30-00:30 UTC (~50% off chat, ~75% reasoner); standard
+// (full price) the rest. So "peak" (when offpeak_only pauses) = the full-price window 00:30-16:30 UTC
+// = 5:30 PM-9:30 AM Arizona (MST, UTC-7) → the run grounds only in the cheap 9:30 AM-5:30 PM MST window.
+export const DEFAULT_PEAK_WINDOWS = [['00:30', '16:30']];
 
 export const hhmmToMin = (s) => { const [h, m] = String(s).split(':').map(Number); return (h || 0) * 60 + (m || 0); };
 

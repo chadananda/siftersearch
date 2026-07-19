@@ -8,6 +8,6 @@ SEC=$(grep -hoP "^DEPLOY_SECRET=\K.*" .env-secrets .env-public 2>/dev/null | hea
 LOG="$HOME/sifter/siftersearch/logs/budget-daily.log"
 mkdir -p "$(dirname "$LOG")"
 RESP=$(curl -s --max-time 20 -X POST -H "X-Internal-Key: $SEC" -H "content-type: application/json" \
-  -d '{"provider":"deepseek","ceilingUsd":100,"offpeakOnly":true}' \
+  -d '{"provider":"deepseek","ceilingUsd":100,"offpeakOnly":true,"peakWindows":[["00:30","16:30"]]}' \
   http://127.0.0.1:7839/api/admin/grounding/budget 2>/dev/null)
 echo "$(date -u +%FT%TZ) reset -> $RESP" >> "$LOG"
