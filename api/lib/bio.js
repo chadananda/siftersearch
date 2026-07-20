@@ -1,8 +1,7 @@
 // Shared biography data layer — the single source of truth for person records (list + dossier) and source-book
 // facets, used by BOTH the internal /api/graph/bio/* routes and the official /api/v1/people API.
 import { queryAll, queryOne } from './db.js';
-import { INTEGRATION_PHASES, AUTHOR_ROUTING, PINNED_DOCS, ABSORPTION_ORDER } from './integration-phases.js';
-const ABSORB_IDX = new Map(ABSORPTION_ORDER.map((id, i) => [id, i])); // docId → grounding-sequence position
+import { INTEGRATION_PHASES } from './integration-phases.js';
 import { chatCompletion } from './ai.js';
 import * as pipelineState from './pipeline/state.js';
 import { reachedBound } from './pipeline/queue.js';   // the pipeline's OWN completion test → one definition of "done"
@@ -193,29 +192,22 @@ async function computeActiveBooks(staticDocs, meta) {
 // The phase structure is cached briefly; the `active` block is recomputed on EVERY call so polling stays live.
 let _progCache = null, _progAt = 0;
 export async function getIntegrationProgress() {
-  const historyBooks = readHistoryCatalog();
-  const genreOf = Object.fromEntries(historyBooks.map(b => [b.id, b.genre]));
-  // AUTHOR routing — every Balyuzi/Taherzadeh (→foundation) and Rabbani (→primary) Bahá'í Book, so the whole
-  // master-historian + Rabbani corpus lands in the right phase, not just the curated anchors.
-  const routed = await queryAll(`SELECT id, author FROM docs WHERE collection='Baha''i Books'
-      AND deleted_at IS NULL AND duplicate_of IS NULL AND coalesce(paragraph_count,0) >= 40
-      AND (author LIKE '%Balyuzi%' OR author LIKE '%Taherzadeh%' OR author LIKE '%Rabbani%')`);
-  // phaseByDoc: static anchors → author routing → explicit pins → classified genre (biographies/histories).
+  // genreOf is DISPLAY-ONLY now (the biographies/histories genre labels) — it no longer decides membership.
+  const genreOf = Object.fromEntries(readHistoryCatalog().map(b => [b.id, b.genre]));
+  // Membership is EXPLICIT: a doc is in the plan IFF its id is listed in integration-phases.js. No author-routing,
+  // no collection sweep, no genre auto-classification — nothing rides in on a rule. (Pilgrim-group docs, primary.groups,
+  // render as a separate tree below and are intentionally NOT part of phaseByDoc / the graded metrics.)
   const phaseByDoc = {};
   for (const p of INTEGRATION_PHASES) for (const id of (p.docs || [])) phaseByDoc[id] = p.key;
-  for (const r of routed) { const rule = AUTHOR_ROUTING.find(x => x.re.test(r.author || '')); if (rule) phaseByDoc[r.id] = rule.phase; }
-  for (const [id, phk] of Object.entries(PINNED_DOCS)) phaseByDoc[Number(id)] = phk;
-  for (const b of historyBooks) if (!phaseByDoc[b.id]) phaseByDoc[b.id] = (b.genre === 'biography' ? 'biographies' : 'histories');
   const allDocs = [...new Set(Object.keys(phaseByDoc).map(Number))];
 
   // Size + title/author for EVERY book (chunked to stay under the SQLite param limit).
   const meta = {};
   for (let i = 0; i < allDocs.length; i += 800) {
     const chunk = allDocs.slice(i, i + 800), cp = chunk.map(() => '?').join(',');
-    (await queryAll(`SELECT id, title, author, paragraph_count FROM docs WHERE id IN (${cp})`, chunk))
+    (await queryAll(`SELECT id, title, author, paragraph_count FROM docs WHERE id IN (${cp}) AND deleted_at IS NULL AND duplicate_of IS NULL`, chunk))
       .forEach(d => { meta[d.id] = d; });
   }
-  const inPhase = (k) => allDocs.filter(id => phaseByDoc[id] === k);
   const curatedKeys = new Set(INTEGRATION_PHASES.filter(p => !p.dynamic).map(p => p.key));
   const gradedDocs = allDocs.filter(id => curatedKeys.has(phaseByDoc[id])); // curated docs that may be grounded
   // `actives` = every book grounding right now (parallel runs are normal); `active` = the first, kept so existing
@@ -279,19 +271,11 @@ export async function getIntegrationProgress() {
   const doneByDoc = {};
   await Promise.all(gradedDocs.map(async (id) => { try { doneByDoc[id] = await reachedBound(id, {}); } catch { doneByDoc[id] = false; } }));
   const isGrounded = (id) => doneByDoc[id] === true;
-  // Order each phase by the intended grounding SEQUENCE (ABSORPTION_ORDER). Books in the sequence sort by their
-  // position; books not listed sort after (grounded first, then largest) — so the roadmap reads in absorption
-  // order and the current book stays in its natural place instead of scattered by size.
-  const orderIdx = (id) => (ABSORB_IDX.has(id) ? ABSORB_IDX.get(id) : Infinity);
-  const byAbsorption = (a, b) => {
-    const ia = orderIdx(a), ib = orderIdx(b);
-    if (ia !== ib) return ia - ib;                                  // explicit grounding sequence
-    const da = (counts[a] || 0) > 0 ? 0 : 1, db = (counts[b] || 0) > 0 ? 0 : 1;
-    if (da !== db) return da - db;                                  // then grounded before pending
-    return (meta[b]?.paragraph_count || 0) - (meta[a]?.paragraph_count || 0); // then largest first
-  };
+  // Order IS the hard-coded list order (integration-phases.js was snapshotted in the intended grounding sequence).
+  // No dynamic re-sort — the list is the order, so the roadmap and the follower that walks it stay stable and match
+  // the file exactly. A listed id that's since been soft-deleted/dup'd has no meta → filtered out here.
   const phaseBookIds = {};
-  for (const p of INTEGRATION_PHASES) phaseBookIds[p.key] = inPhase(p.key).sort(byAbsorption);
+  for (const p of INTEGRATION_PHASES) phaseBookIds[p.key] = (p.docs || []).filter((id) => meta[id]);
   // New-in-sequence: the first book (in ABSORPTION order) to ground each entity → each book's NET contribution.
   const orderedGraded = INTEGRATION_PHASES.filter(p => !p.dynamic).flatMap(p => phaseBookIds[p.key]);
   const order = {}; orderedGraded.forEach((d, i) => { order[d] = i; });
@@ -314,23 +298,23 @@ export async function getIntegrationProgress() {
       usd: Math.round(books.reduce((s, b) => s + b.cost.usd, 0) * 100) / 100 };
   });
 
-  // Pilgrim Notes — hundreds of small primary-source accounts organized by PERIOD (in file_path). Too numerous
-  // to list flat, so attach them as collapsible per-period sub-groups under Primary Sources (a tree view).
-  const pilgrim = await queryAll(`SELECT id, title, file_path, paragraph_count FROM docs
-      WHERE collection='Pilgrim Notes' AND deleted_at IS NULL AND duplicate_of IS NULL`);
-  if (pilgrim.length) {
-    const grounded = new Set(); const pIds = pilgrim.map(d => d.id);
-    for (let i = 0; i < pIds.length; i += 800) { const c = pIds.slice(i, i + 800), cp = c.map(() => '?').join(',');
-      (await queryAll(`SELECT DISTINCT doc_id d FROM entity_claims WHERE doc_id IN (${cp})`, c)).forEach(r => grounded.add(r.d)); }
-    const periodOf = (fp) => { const m = String(fp || '').match(/Pilgrim Notes\/([^/]+)/); return m ? m[1] : 'Other'; };
-    const startYear = (label) => { const m = label.match(/\((\d{4})/); return m ? +m[1] : 9999; };
-    const byPeriod = {};
-    for (const d of pilgrim) { const k = periodOf(d.file_path); (byPeriod[k] ||= []).push({ id: d.id, title: d.title, size: d.paragraph_count || 0, done: grounded.has(d.id) }); }
-    const groups = Object.entries(byPeriod)
-      .map(([label, bks]) => ({ label, books: bks.sort((a, b) => a.title.localeCompare(b.title)),
-        total: bks.length, done: bks.filter(b => b.done).length, paras: bks.reduce((s, b) => s + b.size, 0) }))
-      .sort((a, b) => startYear(a.label) - startYear(b.label));
-    const primary = phases.find(p => p.key === 'primary');
+  // Pilgrim Notes — the Primary phase's per-period sub-groups, from the EXPLICIT hard-coded group lists
+  // (integration-phases.js `primary.groups`), NOT a collection sweep. Resolve title/size + a has-claims "grounded"
+  // flag per id; a soft-deleted/duplicate id drops out (meta filter), so the tree only shows live, listed docs.
+  const primarySpec = INTEGRATION_PHASES.find((p) => p.key === 'primary');
+  if (primarySpec?.groups?.length) {
+    const groupIds = [...new Set(primarySpec.groups.flatMap((g) => g.docs || []))];
+    const gmeta = {}; const grounded = new Set();
+    for (let i = 0; i < groupIds.length; i += 800) {
+      const c = groupIds.slice(i, i + 800), cp = c.map(() => '?').join(',');
+      (await queryAll(`SELECT id, title, paragraph_count FROM docs WHERE id IN (${cp}) AND deleted_at IS NULL AND duplicate_of IS NULL`, c)).forEach((d) => { gmeta[d.id] = d; });
+      (await queryAll(`SELECT DISTINCT doc_id d FROM entity_claims WHERE doc_id IN (${cp})`, c)).forEach((r) => grounded.add(r.d));
+    }
+    const groups = primarySpec.groups.map((g) => {
+      const books = (g.docs || []).filter((id) => gmeta[id]).map((id) => ({ id, title: gmeta[id].title, size: gmeta[id].paragraph_count || 0, done: grounded.has(id) }));
+      return { label: g.label, books, total: books.length, done: books.filter((b) => b.done).length, paras: books.reduce((s, b) => s + b.size, 0) };
+    });
+    const primary = phases.find((p) => p.key === 'primary');
     if (primary) {
       primary.groups = groups;
       primary.total += groups.reduce((s, g) => s + g.total, 0);

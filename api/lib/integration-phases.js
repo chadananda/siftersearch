@@ -1,80 +1,115 @@
-// The book-integration ROADMAP for the biography "progress" view — the phased plan toward "all history
-// absorbed". Doc-ids only; titles/authors + live grounded-person counts + per-book SIZE resolve from the DB
-// (getIntegrationProgress in bio.js). HISTORICAL (factual) track only.
-//
-// Phase model (2026-07-13):
-//   seed        — God Passes By + The Dawn-Breakers (the authority seed — the core cast).
-//   foundation  — all the TRUSTWORTHY BAHÁ'Í SCHOLARS (that is what makes it authoritative historically):
-//                 Saiedi (Gate of the Heart), Taherzadeh (ROB) + Balyuzi (author-routed), Mázindarání, Momen,
-//                 Ahdieh. The carefully-documented scholarship that is the bedrock beneath the seed.
-//   primary     — FIRSTHAND/documentary: 'Abdu'l-Bahá's own texts, eyewitness/pilgrim notes, and EVERYTHING
-//                 translated/edited by Ahang Rabbani (author-routed) — the Nayríz documents + primary narratives.
-//   biographies — the classified long tail: individual lives (content-sample genre === 'biography').
-//   histories   — the classified long tail: general histories (genre === 'history'), some not Bahá'í-centric.
-//
-// AUTHOR routing + explicit PINS (below) run in bio.js and OVERRIDE a book's static/genre placement, so the whole
-// Balyuzi/Taherzadeh/Rabbani corpus sorts correctly, not just the curated anchors.
+// The book-integration ROADMAP — the SINGLE hard-coded plan (the ONE place plan membership is defined).
+// Doc-ids ONLY; per-doc metadata (title/author/size/grounded-status/people/cost) resolves live from the DB in
+// getIntegrationProgress (bio.js). A document is in the plan IFF its id is listed here — no author-routing, no
+// collection sweep, no genre auto-classification. Nothing rides in on a rule, so duplicates / phantoms / external
+// scrapes can never appear unless explicitly added, and the follower processes exactly this list, in this order.
+// Snapshotted 2026-07-20 from the then-live roadmap (identical frontend). To add/remove a book, edit the id lists.
+// A soft-deleted or duplicate_of doc is still dropped at render (bio.js filters deleted/duplicate), so removing a
+// book = delete its id here (and, if desired, soft-delete the doc). `dynamic` marks the display-only long-tail
+// phases (biographies/histories): shown upcoming + genre-labelled + not yet graded; membership is still this list.
 export const INTEGRATION_PHASES = [
   {
-    key: 'seed', label: 'Seed',
-    blurb: "The authority seed — the Guardian's God Passes By and Nabíl's Dawn-Breakers together establish the core cast that every later book resolves against.",
-    docs: [21310, 21308], // God Passes By (Shoghi Effendi) + The Dawn-Breakers (Nabíl)
-  },
-  {
-    key: 'foundation', label: 'Foundation',
-    blurb: "The trustworthy Bahá'í scholars — that is what makes this the authoritative historical foundation. Careful, well-documented research: Saiedi's Gate of the Heart (the Báb's tablets) and Taherzadeh's Revelation of Bahá'u'lláh, Balyuzi's biographies of the Central Figures, Mázindarání's Ẓuhúru'l-Ḥaqq, Momen's Western accounts, and Ahdieh's Awakening. The bedrock beneath the seed that the whole cast resolves against.",
+    key: 'seed', label: "Seed",
+    blurb: `The authority seed — the Guardian's God Passes By and Nabíl's Dawn-Breakers together establish the core cast that every later book resolves against.`,
     docs: [
-      8632,                                                          // Gate of the Heart (Saiedi — the Báb's tablets)
-      15228, 15257, 15254, 20028, 15256, 20035, 20037, 15255, 15259, // Mázindarání — Ẓuhúru'l-Ḥaqq (Persian)
-      13433,                                                         // Momen — The Bábí & Bahá'í Religions
-      20331,                                                         // Ahdieh & Chapman — Awakening (Nayríz history)
-      // + everything by H.M. Balyuzi and Adib Taherzadeh (author-routed via AUTHOR_ROUTING below).
+    21310, 21308,
     ],
   },
   {
-    key: 'primary', label: 'Primary Sources', upcoming: true,
-    blurb: "FIRSTHAND / documentary — 'Abdu'l-Bahá's own texts, eyewitness & pilgrim notes, and everything translated or compiled by Ahang Rabbani (the Nayríz documents and primary narratives). High evidential value but loosely collected AS TEXTS, so each resolves AGAINST the foundation rather than overriding it.",
+    key: 'foundation', label: "Foundation",
+    blurb: `The trustworthy Bahá'í scholars — that is what makes this the authoritative historical foundation. Careful, well-documented research: Saiedi's Gate of the Heart (the Báb's tablets) and Taherzadeh's Revelation of Bahá'u'lláh, Balyuzi's biographies of the Central Figures, Mázindarání's Ẓuhúru'l-Ḥaqq, Momen's Western accounts, and Ahdieh's Awakening. The bedrock beneath the seed that the whole cast resolves against.`,
     docs: [
-      20907, 20919, 11355, 11335, 12472, // 'Abdu'l-Bahá texts + pilgrim diaries; Rabbani joins via author routing.
-      // 214474 (The Afnán Family) REMOVED 2026-07-19: it is an EXTERNAL site2rag scrape (bahai-library.com), not an
-      // approved core-library document, and has no ingested content — grounding runs pull ONLY from the core library.
+    8632, 429, 430, 431, 432, 466, 462, 3789, 3887, 464, 467, 463, 427, 426, 15228, 15257, 15254, 20028, 15256,
+    20035, 20037, 15255, 15259, 13433, 20331, 465, 9095, 8322,
     ],
   },
   {
-    key: 'biographies', label: 'Biographies', upcoming: true,
-    blurb: "Individual lives — biographies of believers, martyrs, and figures, tightly focused on specific people. Grounded BEFORE the general histories: the clean per-person cast disentangles identities before the broader (and sometimes non-Bahá'í) narrative histories are absorbed.",
-    dynamic: 'biography', // catalog books where genre==='biography' (bahai-history-catalog.json)
+    key: 'primary', label: "Primary Sources", upcoming: true,
+    blurb: `FIRSTHAND / documentary — 'Abdu'l-Bahá's own texts, eyewitness & pilgrim notes, and everything translated or compiled by Ahang Rabbani (the Nayríz documents and primary narratives). High evidential value but loosely collected AS TEXTS, so each resolves AGAINST the foundation rather than overriding it.`,
+    docs: [
+    20907, 20919, 11355, 11335, 12472, 16552, 11265, 16316, 15347, 11374, 11310, 11242, 11308, 11244, 12435,
+    ],
+    groups: [
+      { label: "Bahá'u'lláh Period (1844-1892)", docs: [
+        12470, 12466,
+      ] },
+      { label: "Abdu'l-Baha Period (1892-1921)", docs: [
+        15342, 12546, 12595, 12574, 12596, 12576, 12550, 12678, 12553, 12669, 12621, 12585, 12561, 12571,
+        15335, 7689, 8801, 12598, 12548, 7660, 12600, 12567, 12580, 12579, 12534, 2459, 12531, 9748, 12536,
+        12507, 9998, 14794, 1857, 14785, 12501, 12547, 8810, 8233, 12597, 14802, 12486, 12719, 14870, 2501,
+        7959, 8137, 8130, 12572, 7542, 7940, 16832, 2398, 12489, 7655, 12530, 16833, 15678, 15674, 12537, 2400,
+        12495, 2755, 12562, 15681, 15679, 6355, 6351, 15668, 6353, 6349, 1835, 15675, 6354, 15683, 15670,
+        14845, 1592, 15680, 15677, 15673, 15682, 15664, 15671, 15676, 16577, 12528, 15665, 15663, 9762, 12515,
+        12490, 16576, 9277, 12380, 15325, 12599, 12573, 12570, 4071, 9052, 10082, 12588, 5748, 12510, 9001,
+        12484, 10073, 14831, 9068, 16828, 12533, 5751, 9780, 8243, 12517, 10408, 12552, 12482, 9053, 12569,
+        9978, 9979, 8833, 12582, 14797, 2401, 12488, 12508, 9076, 12503, 10072, 8075, 9201, 7521, 12557, 9007,
+        12529, 15667, 7692, 15669, 16830, 12479, 12526, 8151, 12469, 12472, 9054, 9302, 12721, 15651, 15653,
+        14880, 15652, 14847, 12632, 14861, 14871, 14851, 12481, 12578, 12527, 12581, 8794, 12631, 9498, 7690,
+        6555, 10000, 12511, 15662, 12554, 8155, 2388, 15658, 2115, 10093, 10068, 15654, 14885, 16240, 12519,
+        9024, 9021, 12475, 9209, 4068, 9258, 7873, 12509, 9003, 7862, 2185, 2414, 12568, 12539, 2474, 6542,
+        7870, 12679, 9208, 15659, 12660, 12551, 12607, 10067, 12476, 1855, 12514, 2411, 12496, 12520, 14796,
+        14800, 9756, 14878, 14833, 12518, 9993, 9262, 9268, 15672, 9014, 12544, 10064, 14864, 12615, 14834,
+        12521, 12467, 12498, 12522, 9207, 8232, 12497, 12587, 12513, 12487, 14867, 12602, 12604, 12505, 9294,
+        12523, 9267, 12473, 12474, 14842, 14875, 12506, 12608, 12499, 15332, 14856, 12468, 12668, 12524, 12729,
+        12592, 12606, 12564, 12494, 12545, 12471, 9835, 12589, 10088, 12516, 14887, 9232, 9497, 14826, 12480,
+        14848, 10087, 12512, 14836, 14888, 15657, 14849, 12715, 14854, 14879, 12728, 14872, 14863, 12672,
+        12591, 12500, 8070, 12639, 9526, 12478, 12540, 9059, 12532, 10195, 14859, 12538, 12675, 12575, 12493,
+        12485, 2454, 12665, 2509, 12541, 14843, 14846, 9043, 8822, 9200, 12709, 9238, 2480, 9069, 9075, 12477,
+        12504, 12502, 9767, 15359, 16829, 15323, 15666, 1193, 15655, 15656, 9260, 15660, 15661, 14865, 14844,
+        12549, 9204, 12492, 12543, 12464, 15685, 14788, 14839, 8186, 2446, 12590, 12605, 10012, 12657, 14883,
+        9005, 10003, 12558, 2481, 12555, 12733, 9083, 12559, 9514, 12712, 14868, 12560, 15684, 9065, 12625,
+        12535, 12556, 12670, 12483, 12525, 12542, 9504, 9077, 9510, 7658, 12491, 12593, 12577, 9028, 12594,
+        12563,
+      ] },
+      { label: "Shoghi Effendi Period (1921-1957)", docs: [
+        9079, 9858, 9271, 12651, 12684, 9020, 12737, 12662, 9997, 12624, 16280, 12613, 12722, 12629, 9291,
+        12649, 12724, 8815, 2557, 12691, 10015, 12583, 12680, 12642, 12713, 9044, 2558, 8816, 12705, 15344,
+        12654, 12617, 12565, 12703, 14813, 14814, 12609, 12694, 14837, 12689, 14815, 2531, 15687, 12708, 14803,
+        12677, 15686, 2587, 9272, 12663, 12566, 12716, 6570, 12736, 12646, 9781, 12616, 12702, 9300, 12698,
+        12685, 12674, 4099, 12717, 12687, 12614, 12711, 12655, 12620, 9009, 9245, 12637, 12640, 12688, 9495,
+        12739, 12714, 8996, 4116, 12643, 12707, 14818, 14821, 14841, 14827, 12627, 12658, 12701, 12738, 14824,
+        12732, 14830, 14820, 12630, 12636, 12683, 12611, 12641, 12648, 14812, 12619, 12645, 12635, 9219, 12622,
+        12726, 2678, 12633, 9532, 12586, 12693, 12700, 8190, 8792, 2647, 9244, 9521, 9763, 12653, 14829, 14819,
+        14811, 12720, 14805, 12666, 9999, 15689, 14822, 2671, 14810, 14816, 9543, 12695, 12601, 12667, 9041,
+        9971, 12697, 2648, 12731, 10075, 12710, 9984, 10008, 12652, 12612, 10062, 12659, 12626, 9008, 9034,
+        12628, 9058, 8826, 12650, 12584, 14892, 8997, 9220, 12634, 12647, 7483, 9986, 9225, 12656, 7481, 12618,
+        12734, 12623, 12465, 12676, 1882, 9279, 12692, 12681, 12638, 12610, 12686, 12723, 9242, 12664, 9530,
+        12682, 12699, 12704, 12696, 15688, 14825, 12735, 9227, 9062, 2609, 12644, 9199, 4100, 16835, 12690,
+        9980, 14823, 8818, 9026, 12718, 9282,
+      ] },
+      { label: "UHJ and Hands Period (1957-present)", docs: [
+        9214, 9755, 9256, 12725, 9760, 4572, 15690, 8289, 15225, 8154, 12730, 9296, 12706, 12661, 10074, 9286,
+        9063, 10006, 9528, 9056, 10011, 12603, 9768, 12673, 8807, 12727, 12671, 9283, 2592,
+      ] },
+    ],
   },
   {
-    key: 'histories', label: 'General Histories', upcoming: true,
-    blurb: "General published histories — the broad narrative context, some of it not Bahá'í-centric. Content-sample classified from the 'Baha'i Books' collection (topical, doctrinal, comparative-religion excluded). Grounded LAST so each resolves against the full clean cast.",
-    dynamic: 'history', // catalog books where genre==='history'
+    key: 'biographies', label: "Biographies", upcoming: true, dynamic: 'biography',
+    blurb: `Individual lives — biographies of believers, martyrs, and figures, tightly focused on specific people. Grounded BEFORE the general histories: the clean per-person cast disentangles identities before the broader (and sometimes non-Bahá'í) narrative histories are absorbed.`,
+    docs: [
+    11266, 7132, 8633, 11256, 11228, 11196, 11182, 11251, 7147, 7226, 11340, 7173, 11179, 539, 7164, 8467,
+    11180, 516, 11237, 11174, 11236, 14896, 11372, 8310, 11170, 8258, 7179, 16740, 11243, 11193, 11231, 7143,
+    11280, 515, 11363, 11338, 11295, 7144, 11300, 7223, 11206, 11197, 11343, 11262, 11183, 11283, 11213, 11264,
+    11226, 7142, 11358, 8290, 11208, 16739, 11375, 537, 11255, 11336, 16742, 11330, 15952, 11345, 11307, 11297,
+    11263, 11282, 11290, 11341, 11332, 11298, 8208, 11204, 15953, 11361, 16730, 16737, 11320, 7129, 11321,
+    11302, 11281, 11299, 11273, 16751, 11276, 12417, 12444, 11233, 11274, 16313, 11360, 12347, 16735, 12422,
+    16743, 11369, 11198, 15638, 11322, 12432, 12274, 16733, 514, 11199, 15297, 11229, 12389, 11212, 11188,
+    12436, 420, 12439, 15330, 12272, 12366, 12354, 11269, 11275, 11287, 12392, 12275, 12430, 7188, 7133, 12390,
+    7130, 11306, 11309, 12363, 15944, 480,
+    ],
+  },
+  {
+    key: 'histories', label: "General Histories", upcoming: true, dynamic: 'history',
+    blurb: `General published histories — the broad narrative context, some of it not Bahá'í-centric. Content-sample classified from the 'Baha'i Books' collection (topical, doctrinal, comparative-religion excluded). Grounded LAST so each resolves against the full clean cast.`,
+    docs: [
+    11184, 11172, 11327, 11249, 11195, 11326, 11177, 494, 513, 11169, 11352, 15947, 527, 8465, 11344, 491,
+    11328, 11334, 16291, 8296, 11367, 7199, 9094, 16736, 488, 11178, 7160, 15943, 7174, 20338, 11368, 15940,
+    7181, 11371, 11200, 15955, 15941, 20332, 15935, 11318, 11194, 11337, 16554, 11248, 11314, 11291, 11202,
+    11333, 15643, 11356, 7220, 11278, 15938, 16729, 15973, 15950, 422, 11324, 11192, 11241, 11329, 8219, 8228,
+    11292, 11181, 11185, 11377, 11323, 16551, 11349, 11354, 12378, 11235, 15939, 11312, 12367, 11277, 11187,
+    15930, 545, 11250, 11373, 11225, 11227, 11239, 12428, 11252, 11351, 12373, 11346, 11498, 11325, 15965,
+    11220, 11305, 11257, 11279, 11331, 16732, 11296, 11357, 12368, 8059, 12443, 486, 11286, 519, 7116, 12344,
+    11342, 12441,
+    ],
   },
 ];
-
-// AUTHOR routing — a book by these authors is PLACED in the given phase regardless of its genre/catalog placement.
-// Matched against the docs.author string (case-insensitive substring). This is why every Balyuzi/Taherzadeh work
-// lands in Foundation and every Rabbani translation in Primary, not just the named anchors.
-export const AUTHOR_ROUTING = [
-  { re: /balyuzi|taherzadeh/i, phase: 'foundation' },
-  { re: /rabbani/i, phase: 'primary' },
-];
-
-// Intended grounding SEQUENCE (order of absorption) — orders books WITHIN each phase in the popup so the roadmap
-// reads in the order books are actually absorbed, not scattered by size. Books not listed sort after the listed
-// ones (grounded first, then largest first). Extend as the plan grows.
-export const ABSORPTION_ORDER = [
-  21310, 21308, 8632, 429, 430, 431, 432,                          // GPB · Dawn-Breakers · Gate · ROB vols 1-4
-  466, 462, 3789, 3887, 464, 467, 12427, 463, 427, 426,            // Balyuzi + Taherzadeh (Foundation; 466 canonical, not stray-scrape 28849)
-  15228, 15257, 15254, 20028, 15256, 20035, 20037, 15255, 15259, 13433, 20331, // Máz · Momen · Awakening (Foundation)
-  465,  // Muḥammad and the Course of Islam — Islamic background, not a Bahá'í book → grounded LAST in Foundation
-  20907, 20919, 11355, 11335, 12472, 16552, 11265, 16316, 15347, 11374, 9095, // Primary (removed: 214474 = external site2rag scrape; 11344 = duplicate file of the finished 16552, doc soft-deleted + file archived)
-];
-
-// Explicit PINS (docId → phase) for specific books whose author doesn't match a rule but which belong in a phase:
-// pilgrim notes + firsthand primary narratives → primary; Redman's collective account → foundation.
-export const PINNED_DOCS = {
-  15347: 'primary',    // 1912, Ella Cooper's Notes From California (pilgrim notes)
-  11374: 'primary',    // The Genesis of the Bábí-Bahá'í Faiths in Shíráz and Fárs (Afnán — firsthand)
-  9095: 'foundation',  // 'Abdu'l-Bahá in Their Midst (Redman)
-};
