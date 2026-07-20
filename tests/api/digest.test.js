@@ -32,6 +32,16 @@ describe('buildDigest', () => {
     }));
     expect(d.books[0].people).toBe(37);   // direct count, not the curated-only b.persons
   });
+  it('links each book title to its SifterSearch library page (slug + religion + collection)', async () => {
+    const d = await buildDigest(500, deps({
+      queryOne: async (sql) => (sql.includes('entity_claims') ? { n: 3 }
+        : { title: 'The Dawn-Breakers', author: 'Nabíl', description: '', paragraph_count: 100, slug: 'nabil_dawn-breakers', collection: "Baha'i Books", religion: "Baha'i" }),
+    }));
+    expect(d.books[0].url).toBe("https://siftersearch.com/library/bahai/bahai-books/nabil_dawn-breakers");
+    const html = renderDigestHtml(d);
+    expect(html).toContain('<a href="https://siftersearch.com/library/bahai/bahai-books/nabil_dawn-breakers"');
+    expect(renderDigestText(d)).toContain('https://siftersearch.com/library/');
+  });
   it('reports a re-grounding book only ONCE (the repeat-in-every-digest bug: 47 done-rows for one doc)', async () => {
     const d = await buildDigest(500, deps({ _done: [
       { doc_id: 5, finished_at: 1000 }, { doc_id: 5, finished_at: 2000 }, { doc_id: 5, finished_at: 3000 },

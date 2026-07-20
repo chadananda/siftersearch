@@ -7,6 +7,16 @@ import { queryAll, queryOne } from '../db.js';
 import { logger } from '../logger.js';
 import { sendEmail } from '../../services/email.js';
 import { getIntegrationProgress } from '../bio.js';
+import { slugifyPath } from '../slug.js';
+
+// Link a book title to its page. Prefer the SifterSearch library URL (works for every doc with a slug); fall back
+// to the Ocean source_url when present. Same scheme as the sitemap: /library/<religion>/<collection>/<slug>.
+const SITE_URL = 'https://siftersearch.com';
+function bookUrl(m) {
+  if (m && m.slug && m.religion && m.collection) return `${SITE_URL}/library/${slugifyPath(m.religion)}/${slugifyPath(m.collection)}/${m.slug}`;
+  return (m && m.source_url) || null;
+}
+const titleHtml = (b, style) => (b.url ? `<a href="${esc(b.url)}" target="_blank" style="${style};text-decoration:underline">${esc(b.title)}</a>` : esc(b.title));
 
 const pct = (n, d) => (d > 0 ? Math.round((n / d) * 1000) / 10 : 0);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -34,7 +44,7 @@ export async function buildDigest(sinceEpoch, deps = {}) {
   const books = [];
   for (const r of uniqueRows) {
     const b = byId.get(r.doc_id) || {};
-    const meta = await (deps.queryOne || queryOne)(`SELECT title, author, description, paragraph_count FROM docs WHERE id=?`, [r.doc_id]);
+    const meta = await (deps.queryOne || queryOne)(`SELECT title, author, description, paragraph_count, slug, collection, religion, source_url FROM docs WHERE id=?`, [r.doc_id]);
     if (!meta) continue;
     // Count people DIRECTLY from the book's bound entities — getIntegrationProgress only computes b.persons for the
     // curated seed/foundation/primary docs, so pilgrim/biography completions were reporting 0 (the "0 names" bug).
@@ -49,6 +59,7 @@ export async function buildDigest(sinceEpoch, deps = {}) {
       paras: b.size || meta.paragraph_count || 0,
       people: (pc && pc.n) || b.persons || 0,   // people grounded in this book (bound entities)
       newPeople: b.newInSequence || 0,          // NET-new to the graph (curated only; 0 for dynamic — secondary)
+      url: bookUrl(meta),
       finishedAt: r.finished_at,
     });
   }
@@ -56,12 +67,13 @@ export async function buildDigest(sinceEpoch, deps = {}) {
   // Currently-processing books (in flight) with their live stage + within-stage progress, so the digest shows
   // momentum even in an hour where nothing fully finished.
   const procRows = await qAll(
-    `SELECT q.doc_id, d.title, d.author, d.paragraph_count paras, p.run_json
+    `SELECT q.doc_id, d.title, d.author, d.paragraph_count paras, d.slug, d.collection, d.religion, d.source_url, p.run_json
      FROM grounding_queue q LEFT JOIN docs d ON d.id=q.doc_id LEFT JOIN doc_pipeline p ON p.doc_id=q.doc_id
      WHERE q.status='running' ORDER BY q.position`);
   const processing = procRows.map((r) => {
     let rj = {}; try { rj = r.run_json ? JSON.parse(r.run_json) : {}; } catch { /* ignore */ }
     return { id: r.doc_id, title: r.title || `doc ${r.doc_id}`, author: r.author || 'Unknown', paras: r.paras || 0,
+      url: bookUrl(r),
       stage: rj.stage || '—', stageNum: (rj.stageIndex ?? 0) + 1, totalStages: rj.totalStages || 11, withinFrac: rj.withinFrac || 0 };
   });
 
@@ -81,7 +93,7 @@ export async function buildDigest(sinceEpoch, deps = {}) {
 // A clean, email-client-safe HTML digest (inline styles, table layout, dark-friendly neutral palette).
 export function renderDigestHtml({ books, processing = [], plan }) {
   const procRow = (b) => `<tr><td style="padding:9px 0;border-bottom:1px solid #eef1f5">
-      <div style="font:600 14px/1.3 Georgia,serif;color:#1a2233">${esc(b.title)}</div>
+      <div style="font:600 14px/1.3 Georgia,serif;color:#1a2233">${titleHtml(b, "color:#1a2233")}</div>
       <div style="font:400 12px/1.4 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#8b92a1">${esc(b.author)}</div>
       <div style="margin-top:5px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:5px;background:#eef1f5;overflow:hidden"><tr><td style="height:6px;width:${Math.max(2, Math.round((b.withinFrac || 0) * 100))}%;background:#f5a623;font-size:0;line-height:0">&nbsp;</td><td style="font-size:0">&nbsp;</td></tr></table></div>
       <div style="font:400 11px/1.4 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#9aa0ac;margin-top:3px">stage ${b.stageNum}/${b.totalStages} · ${esc(b.stage)} · ${Math.round((b.withinFrac || 0) * 100)}% · ${commas(b.paras)} paragraphs</div>
@@ -96,7 +108,7 @@ function renderDigestHtmlInner({ books, plan, procSection }) {
   const card = (b) => `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;border:1px solid #e3e7ee;border-radius:10px;background:#fff">
       <tr><td style="padding:16px 18px">
-        <div style="font:600 16px/1.35 Georgia,'Times New Roman',serif;color:#1a2233">${esc(b.title)}</div>
+        <div style="font:600 16px/1.35 Georgia,'Times New Roman',serif;color:#1a2233">${titleHtml(b, "color:#1a2233")}</div>
         <div style="font:400 13px/1.4 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#7b8394;margin:2px 0 8px">${esc(b.author)}${b.phase ? ` &nbsp;·&nbsp; <span style="color:#9aa0ac">${esc(b.phase)}</span>` : ''}</div>
         ${b.description ? `<div style="font:400 13px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#4a5162;margin:0 0 12px">${esc(b.description).slice(0, 320)}${b.description.length > 320 ? '…' : ''}</div>` : ''}
         <table role="presentation" cellpadding="0" cellspacing="0"><tr>
@@ -142,7 +154,7 @@ export function renderDigestText({ books, processing = [], plan }) {
   if (books.length) {
     lines.push(`COMPLETED THIS HOUR:`);
     for (const b of books) {
-      lines.push(`  • ${b.title} — ${b.author}${b.phase ? ` [${b.phase}]` : ''}`);
+      lines.push(`  • ${b.title} — ${b.author}${b.phase ? ` [${b.phase}]` : ''}${b.url ? `\n    ${b.url}` : ''}`);
       if (b.description) lines.push(`      ${b.description.slice(0, 200)}`);
       lines.push(`      ${commas(b.people)} people grounded · +${commas(b.newPeople)} new to the graph · ${commas(b.paras)} paragraphs`);
     }
