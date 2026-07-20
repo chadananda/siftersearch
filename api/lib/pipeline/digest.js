@@ -12,19 +12,27 @@ const pct = (n, d) => (d > 0 ? Math.round((n / d) * 1000) / 10 : 0);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const commas = (n) => Number(n || 0).toLocaleString('en-US');
 
-// Gather the digest for books that reached FULL grounding with finished_at in (since, now].
+// Gather the digest for books whose FIRST full-grounding completion landed in (since, now].
 export async function buildDigest(sinceEpoch, deps = {}) {
   const qAll = deps.queryAll || queryAll;
   const prog = deps.getProgress ? await deps.getProgress() : await getIntegrationProgress();
   const planBooks = (prog.phases || []).flatMap((p) => (p.books || []).map((b) => ({ ...b, phase: p.label })));
   const byId = new Map(planBooks.map((b) => [b.id, b]));
 
+  // Report each book AT MOST ONCE, in the window of its FIRST completion. The queue can accumulate many 'done'
+  // rows for one doc (a book that re-grounds writes a fresh row each time — one doc had 47), so filtering on any
+  // row's finished_at re-reported the same book every hour. GROUP BY doc_id + MIN(finished_at) = first completion:
+  // once a book's first completion falls in a past window, it can never re-appear even if it re-grounds later.
   const doneRows = await qAll(
-    `SELECT doc_id, finished_at FROM grounding_queue WHERE status='done' AND finished_at IS NOT NULL AND finished_at > ?
-     ORDER BY finished_at ASC`, [sinceEpoch]);
+    `SELECT doc_id, MIN(finished_at) finished_at FROM grounding_queue WHERE status='done' AND finished_at IS NOT NULL
+     GROUP BY doc_id HAVING MIN(finished_at) > ? ORDER BY finished_at ASC`, [sinceEpoch]);
+
+  // Defense in depth: one entry per doc_id (rows are sorted first-completion-first, so the first wins).
+  const seen = new Set();
+  const uniqueRows = doneRows.filter((r) => (seen.has(r.doc_id) ? false : (seen.add(r.doc_id), true)));
 
   const books = [];
-  for (const r of doneRows) {
+  for (const r of uniqueRows) {
     const b = byId.get(r.doc_id) || {};
     const meta = await (deps.queryOne || queryOne)(`SELECT title, author, description, paragraph_count FROM docs WHERE id=?`, [r.doc_id]);
     if (!meta) continue;

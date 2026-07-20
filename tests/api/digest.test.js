@@ -32,6 +32,13 @@ describe('buildDigest', () => {
     }));
     expect(d.books[0].people).toBe(37);   // direct count, not the curated-only b.persons
   });
+  it('reports a re-grounding book only ONCE (the repeat-in-every-digest bug: 47 done-rows for one doc)', async () => {
+    const d = await buildDigest(500, deps({ _done: [
+      { doc_id: 5, finished_at: 1000 }, { doc_id: 5, finished_at: 2000 }, { doc_id: 5, finished_at: 3000 },
+    ] }));
+    expect(d.books).toHaveLength(1);
+    expect(d.books[0].id).toBe(5);
+  });
   it('is empty when nothing finished or processing in the window', async () => {
     const d = await buildDigest(500, deps({ _done: [] }));
     expect(d.books).toHaveLength(0);
