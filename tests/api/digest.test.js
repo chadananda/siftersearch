@@ -8,7 +8,7 @@ const deps = (o = {}) => ({
   queryOne: async () => ({ title: 'The Dawn-Breakers', author: 'Nabíl', description: 'An early history.', paragraph_count: 1200 }),
   getProgress: async () => ({
     phases: [{ label: 'Foundation', books: [{ id: 5, title: 'The Dawn-Breakers', author: 'Nabíl', size: 1200, persons: 42, newInSequence: 10, done: true }] }],
-    doneBooks: 30, totalBooks: 253, totalParas: 100000, cumulativeUnique: 5000,
+    doneBooks: 30, totalBooks: 253, doneParas: 1200, totalParas: 100000, cumulativeUnique: 5000,
   }),
   ...o,
 });

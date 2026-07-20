@@ -77,7 +77,9 @@ export async function buildDigest(sinceEpoch, deps = {}) {
       stage: rj.stage || '—', stageNum: (rj.stageIndex ?? 0) + 1, totalStages: rj.totalStages || 11, withinFrac: rj.withinFrac || 0 };
   });
 
-  const doneParas = planBooks.filter((b) => b.done).reduce((s, b) => s + (b.size || 0), 0);
+  // doneBooks/doneParas come from getIntegrationProgress and count EVERY phase incl. pilgrim groups, so the headline
+  // reflects the primary-source grounding actually in progress (not just the frozen seed+foundation total).
+  const doneParas = prog.doneParas || 0;
   const plan = {
     docsDone: prog.doneBooks || 0,
     docsTotal: prog.totalBooks || 0,

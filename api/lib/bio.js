@@ -322,14 +322,20 @@ export async function getIntegrationProgress() {
       primary.paras += groups.reduce((s, g) => s + g.paras, 0);
     }
   }
-  const doneBooks = phases.reduce((s, p) => s + (p.upcoming ? 0 : p.done), 0);
+  // Done counts EVERY phase (incl. pilgrim groups via primary.done) so progress reflects the work actually happening
+  // — the primary phase is `upcoming` but IS being ground now, so excluding it froze the headline at seed+foundation.
+  // biographies/histories contribute 0 (not started), so counting all phases is correct, not inflating.
+  const doneBooks = phases.reduce((s, p) => s + p.done, 0);
   const totalBooks = phases.reduce((s, p) => s + p.total, 0);
+  const doneParas = phases.reduce((s, p) => s
+    + p.books.filter((b) => b.done).reduce((a, b) => a + (b.size || 0), 0)
+    + (p.groups || []).reduce((a, g) => a + g.books.filter((b) => b.done).reduce((x, b) => x + (b.size || 0), 0), 0), 0);
   // Cumulative UNIQUE people grounded across the curated books (deduped — a figure in N books counts once).
   const cumulativeUnique = (await queryAll(`SELECT COUNT(*) n FROM (
       SELECT entity_id e FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL
       UNION SELECT entity_id FROM entity_claims WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL)`, [...gradedDocs, ...gradedDocs]))[0]?.n || 0;
   const totalParas = phases.reduce((s, p) => s + p.paras, 0);
-  _progCache = { phases, doneBooks, totalBooks, cumulativeUnique, totalParas, goal: 'all history absorbed' };
+  _progCache = { phases, doneBooks, totalBooks, doneParas, cumulativeUnique, totalParas, goal: 'all history absorbed' };
   _progAt = Date.now();
   return { ..._progCache, active, actives, offPeak };
 }
