@@ -102,7 +102,7 @@ export const INTEGRATION_PHASES = [
     key: 'histories', label: "General Histories", upcoming: true, dynamic: 'history',
     blurb: `General published histories — the broad narrative context, some of it not Bahá'í-centric. Content-sample classified from the 'Baha'i Books' collection (topical, doctrinal, comparative-religion excluded). Grounded LAST so each resolves against the full clean cast.`,
     docs: [
-    11184, 11172, 11327, 11249, 11195, 11326, 11177, 494, 513, 11169, 11352, 15947, 527, 8465, 11344, 491,
+    11184, 11172, 11327, 11249, 11195, 11326, 11177, 494, 513, 11169, 11352, 15947, 527, 8465, 491,
     11328, 11334, 16291, 8296, 11367, 7199, 9094, 16736, 488, 11178, 7160, 15943, 7174, 20338, 11368, 15940,
     7181, 11371, 11200, 15955, 15941, 20332, 15935, 11318, 11194, 11337, 16554, 11248, 11314, 11291, 11202,
     11333, 15643, 11356, 7220, 11278, 15938, 16729, 15973, 15950, 422, 11324, 11192, 11241, 11329, 8219, 8228,
