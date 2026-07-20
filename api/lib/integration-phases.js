@@ -35,7 +35,9 @@ export const INTEGRATION_PHASES = [
     key: 'primary', label: 'Primary Sources', upcoming: true,
     blurb: "FIRSTHAND / documentary — 'Abdu'l-Bahá's own texts, eyewitness & pilgrim notes, and everything translated or compiled by Ahang Rabbani (the Nayríz documents and primary narratives). High evidential value but loosely collected AS TEXTS, so each resolves AGAINST the foundation rather than overriding it.",
     docs: [
-      20907, 20919, 11355, 11335, 12472, 214474, // 'Abdu'l-Bahá texts + pilgrim diaries + The Afnán Family; Rabbani joins via author routing.
+      20907, 20919, 11355, 11335, 12472, // 'Abdu'l-Bahá texts + pilgrim diaries; Rabbani joins via author routing.
+      // 214474 (The Afnán Family) REMOVED 2026-07-19: it is an EXTERNAL site2rag scrape (bahai-library.com), not an
+      // approved core-library document, and has no ingested content — grounding runs pull ONLY from the core library.
     ],
   },
   {
@@ -66,7 +68,7 @@ export const ABSORPTION_ORDER = [
   466, 462, 3789, 3887, 464, 467, 12427, 463, 427, 426,            // Balyuzi + Taherzadeh (Foundation; 466 canonical, not stray-scrape 28849)
   15228, 15257, 15254, 20028, 15256, 20035, 20037, 15255, 15259, 13433, 20331, // Máz · Momen · Awakening (Foundation)
   465,  // Muḥammad and the Course of Islam — Islamic background, not a Bahá'í book → grounded LAST in Foundation
-  20907, 20919, 11355, 11335, 12472, 16552, 11265, 16316, 11344, 214474, 15347, 11374, 9095, // Primary
+  20907, 20919, 11355, 11335, 12472, 16552, 11265, 16316, 11344, 15347, 11374, 9095, // Primary (214474 removed — external site2rag scrape, not approved core library)
 ];
 
 // Explicit PINS (docId → phase) for specific books whose author doesn't match a rule but which belong in a phase:
