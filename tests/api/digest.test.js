@@ -64,8 +64,11 @@ describe('render', () => {
     expect(html).toContain('11.9%');               // plan progress
     expect(html).toContain('Currently processing');
     expect(html).toContain('Live Book');           // in-progress
+    expect(html).toContain('searchable database of the people and events');  // purpose explanation
+    expect(html).toContain('https://siftersearch.com/biography');            // link back to the project
     expect(html).not.toContain('<script');
     expect(renderDigestText(d)).toContain('CURRENTLY PROCESSING');
+    expect(renderDigestText(d)).toContain('https://siftersearch.com/biography');
   });
   it('escapes HTML in titles (no injection)', async () => {
     const d = await buildDigest(500, deps({

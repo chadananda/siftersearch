@@ -128,6 +128,10 @@ function renderDigestHtmlInner({ books, plan, procSection }) {
         <div style="font:700 20px/1.2 Georgia,'Times New Roman',serif;color:#1a2233">SifterSearch &middot; Grounding Progress</div>
         <div style="font:400 13px/1.4 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#7b8394;margin-top:3px">${books.length} document${books.length === 1 ? '' : 's'} fully grounded this hour</div>
       </td></tr>
+      <tr><td style="padding:0 4px 18px">
+        <div style="font:400 13px/1.65 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#5a6172">SifterSearch is reading the Bahá'í historical corpus book by book — identifying every person mentioned and extracting the sourced facts about them (dates, relationships, roles, events, and places), then cross-referencing each against the wider record to build one searchable database of the people and events of Bahá'í history. A book counts as "grounded" once its full cast has been resolved and added to that shared graph.</div>
+        <div style="margin-top:10px"><a href="${SITE_URL}/biography" target="_blank" style="font:600 13px/1 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#2f6fed;text-decoration:none">Explore the biography database &rarr;</a></div>
+      </td></tr>
       <tr><td style="padding:18px 20px;background:#1a2233;border-radius:12px">
         <div style="font:400 11px/1.4 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#9aa8c4;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Library — history plan</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -149,6 +153,10 @@ export function renderDigestText({ books, processing = [], plan }) {
   const lines = [
     `SifterSearch — Grounding Progress`,
     `${books.length} document(s) fully grounded this hour`, '',
+    `SifterSearch is reading the Bahá'í historical corpus book by book — identifying every person mentioned and`,
+    `extracting the sourced facts about them (dates, relationships, roles, events, places), then cross-referencing`,
+    `each against the wider record to build one searchable database of the people and events of Bahá'í history.`,
+    `Explore the biography database: ${SITE_URL}/biography`, '',
     `LIBRARY (history plan):`,
     `  Documents: ${commas(plan.docsDone)} of ${commas(plan.docsTotal)} (${plan.docsPct}%) — ${commas(plan.docsTotal - plan.docsDone)} remaining`,
     `  Content:   ${commas(plan.parasDone)} of ${commas(plan.parasTotal)} paragraphs (${plan.parasPct}%)`, '',
