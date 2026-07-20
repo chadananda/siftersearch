@@ -237,21 +237,19 @@ export default async function deepResearchRoutes(fastify) {
     // Run async without awaiting — Fastify is fine with this as long as reply was already sent
     setImmediate(async () => { try {
 
-    const Anthropic = (await import('@anthropic-ai/sdk')).default;
     const { hybridSearch } = await import('../lib/search.js');
     const { getAuthority } = await import('../lib/authority.js');
+    const { chatCompletion } = await import('../lib/ai.js');
 
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    // Deep-research runs on DeepSeek — Anthropic is locked to grounding the approved Persian plan books
+    // (see anthropic-policy.js). Return the Anthropic response shape the reassessment code expects.
     const chat = async (messages, opts = {}) => {
-      const model = opts.model || 'claude-sonnet-4-6';
-      const systemMsg = messages.find(m => m.role === 'system');
-      const userMsgs = messages.filter(m => m.role !== 'system');
-      return anthropic.messages.create({
-        model,
-        max_tokens: opts.max_tokens || 4096,
-        ...(systemMsg ? { system: systemMsg.content } : {}),
-        messages: userMsgs,
+      const res = await chatCompletion(messages, {
+        provider: 'deepseek', model: opts.model || 'deepseek-v4-pro',
+        maxTokens: opts.max_tokens || 4096, thinking: true, caller: 'deep-research/reassess',
       });
+      return { content: [{ text: res.content }], stop_reason: res.finishReason || 'end_turn',
+        usage: { input_tokens: res.usage?.promptTokens || 0, output_tokens: res.usage?.completionTokens || 0 } };
     };
     const search = (q, opts = {}) => hybridSearch(q, {
       limit: opts.limit || 30,

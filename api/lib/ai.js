@@ -13,6 +13,7 @@ import { logger } from './logger.js';
 import { logAIUsage } from './ai-services.js';
 import { currentAIContext } from './ai-context.js';   // ambient doc/stage attribution for every logged call
 import { getModel } from './model-registry.js';
+import { assertAnthropicAllowed } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
 
 // Lazy-initialized clients
 let openaiClient = null;
@@ -82,6 +83,14 @@ export async function chatCompletion(messages, options = {}) {
   } = options;
 
   logger.debug({ provider, model, messageCount: messages.length }, 'Chat completion');
+
+  // SPEND GATE (fail-closed): this is the one client every caller funnels through, so refusing here guarantees
+  // no routing table, config default, or future stage can bill Anthropic outside the approved Persian plan books.
+  // lang/docId ride the ambient ai-context opened by the grounding driver; a call with no such context → refused.
+  if (provider === 'anthropic') {
+    const g = currentAIContext() || {};
+    assertAnthropicAllowed({ provider, model, lang: g.lang, docId: g.docId, caller: g.caller || options.caller, stage: g.stage });
+  }
 
   const dispatch = () => {
     switch (provider) {

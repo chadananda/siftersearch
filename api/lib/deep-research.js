@@ -705,7 +705,7 @@ Return: [{"idx": N, "score": 0-10, "answer": "..."}]`;
       const response = await chat([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
-      ], { model: 'claude-haiku-4-5-20251001', caller: 'deep-research/rerank' });
+      ], { model: 'deepseek-v4-flash', caller: 'deep-research/rerank' });
       const text = response.content?.[0]?.text || '';
       const json = text.match(/\[[\s\S]*\]/)?.[0];
       if (json) {
@@ -1234,7 +1234,7 @@ Return ONLY valid JSON:
   try {
     const response = await chat(
       [{ role: 'user', content: userPrompt }],
-      { model: 'claude-haiku-4-5-20251001', max_tokens: 400, caller: 'deep-research/hero-prompt' }
+      { model: 'deepseek-v4-flash', max_tokens: 400, caller: 'deep-research/hero-prompt' }
     );
     const text = response.content?.[0]?.text || '';
     const json = text.match(/\{[\s\S]*\}/)?.[0];

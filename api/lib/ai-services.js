@@ -19,6 +19,8 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { query, telemetryQuery } from './db.js';
 import { getModel } from './model-registry.js';
+import { currentAIContext } from './ai-context.js';
+import { assertAnthropicAllowed } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
 
 // =============================================================================
 // MODEL PRICING (per 1K tokens, Jan 2025)
@@ -274,7 +276,7 @@ export function logAIUsage({
         + cacheWriteTokens * pricing.input * 1.25 + completionTokens * pricing.output) / 1000;
       // document_id is a TEXT column, so a bound JS number lands as '15254.0' and `WHERE document_id=15254`
       // then matches NOTHING (int vs text storage classes). Normalise to a clean integer string on write so a
-      // book's spend is actually findable; readers additionally CAST for the legacy '…​.0' rows.
+      // book's spend is actually findable; readers additionally CAST for the legacy dotted-zero rows.
       const docKey = documentId == null || documentId === '' ? null : String(Math.trunc(Number(documentId)));
       telemetryQuery(
         `INSERT INTO ai_usage (
@@ -353,8 +355,8 @@ const SERVICE_CONFIG = {
       maxTokens: 2000
     },
     remote: {
-      provider: 'anthropic',
-      model: 'claude-haiku-4-5-20251001',  // USER-FACING quality path — Haiku: fast + capable
+      provider: 'deepseek',
+      model: 'deepseek-v4-flash',  // USER-FACING quality path — DeepSeek (Anthropic locked to Persian-plan grounding only)
       temperature: 0.7,
       maxTokens: 2000
     }
@@ -370,8 +372,8 @@ const SERVICE_CONFIG = {
       maxTokens: 500
     },
     remote: {
-      provider: 'anthropic',
-      model: 'claude-haiku-4-5-20251001',  // USER-FACING conversational path — Haiku
+      provider: 'deepseek',
+      model: 'deepseek-v4-flash',  // USER-FACING conversational path — DeepSeek (Anthropic locked to Persian-plan grounding only)
       temperature: 0.8,
       maxTokens: 500
     }
@@ -577,6 +579,10 @@ async function chatDeepSeek(messages, opts) {
 }
 
 async function chatAnthropic(messages, opts) {
+  // Fail-closed backstop: even though the service configs route quality/creative to DeepSeek, refuse any Anthropic
+  // call that isn't the approved grounding-Persian-plan use (mirrors the ai.js chatCompletion gate).
+  const g = currentAIContext() || {};
+  assertAnthropicAllowed({ provider: 'anthropic', model: opts.model, lang: g.lang, docId: g.docId, caller: g.caller || opts.caller, stage: g.stage });
   const client = getClient('anthropic');
 
   // Convert to Anthropic format

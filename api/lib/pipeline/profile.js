@@ -87,7 +87,9 @@ export const PROFILE_OVERRIDES = {
   12665: { priority: 67, genre: 'history',   lang: 'en', domain: 'bahai' }, // Sohrab pilgrim notes
   283034:{ priority: 68, genre: 'history',   lang: 'en', domain: 'bahai' }, // Sears — Pilgrimage to Haifa and Akka
   // — Gate of the Heart: DOCTRINAL → the CONCEPTUAL pipeline, not this historical track —
-  8632:  { priority: 900, genre: 'doctrinal', lang: 'en', domain: 'bahai', model: SONNET },
+  // (English → deepseek. Anthropic is locked to the approved Persian plan books; an English doc must never route
+  // to a paid Claude model — see anthropic-policy.js. Was model:SONNET, which the spend gate would now refuse.)
+  8632:  { priority: 900, genre: 'doctrinal', lang: 'en', domain: 'bahai' },
 };
 
 const SCRIPT = { hebrew: /[֐-׿]/, arabicPersian: /[؀-ۿ]/, persianOnly: /[پچژگی]/ };

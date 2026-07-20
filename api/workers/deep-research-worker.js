@@ -26,13 +26,13 @@ import {
   runDeepResearch,
 } from '../lib/deep-research.js';
 import { hybridSearch } from '../lib/search.js';
-import Anthropic from '@anthropic-ai/sdk';
+import { chatCompletion } from '../lib/ai.js';
+import { getModel } from '../lib/model-registry.js';
 
-const MODEL_PRICING = {
-  'claude-sonnet-4-6': { input: 0.003, output: 0.015 },
-  'claude-haiku-4-5-20251001': { input: 0.00025, output: 0.00125 },
-};
-const DEFAULT_MODEL = 'claude-sonnet-4-6';
+// Deep-research runs on DeepSeek. Anthropic is locked to grounding the approved Persian plan books (see
+// anthropic-policy.js) — this worker is not an authorised Anthropic caller, so it uses the gated ai.js client
+// with a DeepSeek model. deepseek-v4-pro = the reasoning tier (thinking on), appropriate for multi-step research.
+const DEFAULT_MODEL = 'deepseek-v4-pro';
 
 const POLL_INTERVAL_MS = 30_000;
 const IDLE_SLEEP_MS = 60_000;
@@ -42,44 +42,21 @@ let isShuttingDown = false;
 let heartbeatTimer = null;
 let currentResearchId = null;
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-// makeChatFn returns a chat function bound to a cost accumulator object.
-// Each call logs to ai_usage and increments acc.inputTokens/outputTokens/costUsd.
-// The caller field tags which pipeline step made the call for per-step breakdown.
+// makeChatFn returns a chat function bound to a cost accumulator object. It funnels through the gated ai.js
+// chatCompletion (DeepSeek) — which logs ai_usage itself — and returns an Anthropic-SHAPED object so the
+// downstream research code (which reads response.content[0].text) is unchanged. The caller field tags the step.
 export function makeChatFn(acc, researchId) {
   return async function chat(messages, opts = {}) {
     const caller = opts.caller || 'deep-research';
     const model = opts.model || DEFAULT_MODEL;
-    const systemMsg = messages.find(m => m.role === 'system');
-    const userMsgs = messages.filter(m => m.role !== 'system');
-
-    // Retry on overloaded_error with exponential backoff (up to 4 attempts)
-    let response;
-    for (let attempt = 0; attempt < 4; attempt++) {
-      try {
-        response = await anthropic.messages.create({
-          model,
-          max_tokens: opts.max_tokens || 4096,
-          ...(systemMsg ? { system: systemMsg.content } : {}),
-          messages: userMsgs,
-        });
-        break;
-      } catch (err) {
-        const isOverloaded = err?.status === 529 || err?.message?.includes('overloaded');
-        if (isOverloaded && attempt < 3) {
-          const delay = (attempt + 1) * 15000; // 15s, 30s, 45s
-          logger.warn({ attempt, delay, caller }, 'API overloaded — retrying after delay');
-          await new Promise(r => setTimeout(r, delay));
-        } else {
-          throw err;
-        }
-      }
-    }
-    const inputTok = response.usage?.input_tokens || 0;
-    const outputTok = response.usage?.output_tokens || 0;
-    const pricing = MODEL_PRICING[model] || MODEL_PRICING[DEFAULT_MODEL];
-    const cost = (inputTok * pricing.input + outputTok * pricing.output) / 1000;
+    const res = await chatCompletion(messages, {
+      provider: 'deepseek', model, maxTokens: opts.max_tokens || 4096, thinking: true,
+      caller, serviceType: 'deep-research',
+    });
+    const inputTok = res.usage?.promptTokens || 0;
+    const outputTok = res.usage?.completionTokens || 0;
+    const p = getModel(model)?.pricing || { input: 0, output: 0 };
+    const cost = (inputTok * p.input + outputTok * p.output) / 1000;   // registry pricing is per 1K tokens
     acc.inputTokens += inputTok;
     acc.outputTokens += outputTok;
     acc.costUsd += cost;
@@ -88,13 +65,10 @@ export function makeChatFn(acc, researchId) {
     acc.breakdown[caller].outputTokens += outputTok;
     acc.breakdown[caller].costUsd += cost;
     acc.breakdown[caller].calls += 1;
-    // Log to ai_usage inline — avoids importing ai-services.js (heavy module with client init)
-    query(
-      `INSERT INTO ai_usage (provider, model, service_type, prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd, caller, success, job_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      ['anthropic', model, 'chat', inputTok, outputTok, inputTok + outputTok, cost, caller, 1, researchId ? String(researchId) : null]
-    ).catch(err => logger.warn({ err: err.message }, 'ai_usage log failed'));
-    return response;
+    // ai_usage is logged by chatCompletion (the shared meter) — no inline insert here, to avoid double-counting.
+    // Return the Anthropic response shape the callers expect.
+    return { content: [{ text: res.content }], stop_reason: res.finishReason || 'end_turn',
+      usage: { input_tokens: inputTok, output_tokens: outputTok } };
   };
 }
 

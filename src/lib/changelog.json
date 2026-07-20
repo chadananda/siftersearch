@@ -1,6 +1,13 @@
 {
-  "generated": "2026-07-19T23:31:05.337Z",
+  "generated": "2026-07-20T01:46:00.113Z",
   "entries": [
+    {
+      "hash": "9ef691cd",
+      "date": "2026-07-19",
+      "type": "Other",
+      "description": "Follower now processes the 600+ pilgrim PRIMARY sources (were skipped) + digest people count fix",
+      "scope": null
+    },
     {
       "hash": "f2eefe1c",
       "date": "2026-07-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Updater swaps all workers on deploy — was missing graph+enrichment+watcher",
       "scope": null
-    },
-    {
-      "hash": "afb27845",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Health check — detect vLLM context window mismatch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-07-19": [
+      {
+        "hash": "9ef691cd",
+        "date": "2026-07-19",
+        "type": "Other",
+        "description": "Follower now processes the 600+ pilgrim PRIMARY sources (were skipped) + digest people count fix",
+        "scope": null
+      },
       {
         "hash": "f2eefe1c",
         "date": "2026-07-19",
@@ -7069,13 +7076,6 @@
         "date": "2026-05-19",
         "type": "Fixed",
         "description": "Updater swaps all workers on deploy — was missing graph+enrichment+watcher",
-        "scope": null
-      },
-      {
-        "hash": "afb27845",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Health check — detect vLLM context window mismatch",
         "scope": null
       }
     ]

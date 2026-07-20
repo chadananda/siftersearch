@@ -15,7 +15,9 @@
 // Designed to be called periodically by a PM2 worker. Idempotent — safe
 // to interrupt and resume.
 
-import Anthropic from '@anthropic-ai/sdk';
+// RETIRED 2026-07-10 (superseded by the per-book grounding pipeline). The Anthropic SDK import and its client are
+// removed so this legacy Sonnet-batch path can never bill Anthropic outside the approved allowlist (anthropic-policy.js)
+// and cannot bypass the static import guard. If any caller still reaches getClient(), it fails loudly by design.
 import { logger } from './logger.js';
 import { query, queryAll, queryOne, transaction } from './db.js';
 import { getDocTier, isPrimaryDoctrinal, getContextWindow } from './doc-tier.js';
@@ -31,16 +33,12 @@ const MAX_REQUESTS_PER_BATCH = 2500;
 // without the key set (key is required at submit time, not import time).
 // Long timeout for batch submission — sending 2500 requests serialized is
 // a sizable upload, even on a fast connection.
-let _client;
 function getClient() {
-  if (!_client) {
-    _client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-      timeout: 600000,  // 10 min — generous for large batch submissions
-      maxRetries: 2
-    });
-  }
-  return _client;
+  // RETIRED: this Sonnet-batch enrichment path is superseded and de-authorised. Anthropic is permitted only for
+  // grounding the approved Persian plan books via the gated ai.js client. Fail loudly if anything calls it.
+  const e = new Error('sonnet-enrichment is RETIRED and de-authorised for Anthropic — use the grounding pipeline (anthropic-policy.js).');
+  e.fatal = true;
+  throw e;
 }
 
 // ─── Prompt construction ─────────────────────────────────────────────────────
