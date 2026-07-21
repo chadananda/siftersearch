@@ -433,10 +433,19 @@
                           {#if gOpen}
                             <ul class="prog-books prog-subbooks">
                               {#each g.books as b (b.id)}
-                                <li class="prog-book" class:done={b.done}>
-                                  <span class="prog-tick" aria-hidden="true">{b.done ? '✓' : '·'}</span>
-                                  <span class="prog-book-title">{b.title}</span>
-                                  <span class="col-size">{#if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}</span>
+                                {@const live = actives.find((a) => a.docId === b.id)}
+                                <li class="prog-book" class:done={b.done} class:active={!!live}>
+                                  <span class="prog-tick" aria-hidden="true">{b.done ? '✓' : live ? '◐' : '·'}</span>
+                                  {#if live}
+                                    <button class="prog-book-title as-link" onclick={() => (tabDoc = b.id)} title="Show {b.title} in the progress panel">{b.title}</button>
+                                  {:else}
+                                    <span class="prog-book-title">{b.title}</span>
+                                  {/if}
+                                  <span class="col-size">
+                                    {#if live && live.percent != null}
+                                      <span class="pbp-track" title="{stageLabel(live.stage)}"><span class="pbp-fill" style="width:{pctOf(b.id)}%"></span></span><span class="pbp-pct">{pctOf(b.id).toFixed(1)}%</span>
+                                    {:else if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}
+                                  </span>
                                   <span class="col-new"></span><span class="col-un"></span>
                                 </li>
                               {/each}
