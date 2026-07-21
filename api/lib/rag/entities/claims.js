@@ -129,7 +129,7 @@ export function claimRow(c, { docId, pid, era, relKeys, methodVersion, extractor
   const statement = `${c.subject} — ${c.relation}${c.object ? ' ' + c.object : ''}`.slice(0, 300);
   return {
     claimHash: sha(`${docId}|${pid}|${semanticKey}`), relation: rel, statement,
-    proofVerbatim: String(c.proof).slice(0, 240), docId, paraId: pid,
+    proofVerbatim: String(c.proof).slice(0, 150), docId, paraId: pid,
     timeValue: year, timePrecision: year ? 'year' : null, timeBasis, timeAnchor: String(when).slice(0, 160),
     semanticKey, methodVersion, extractor, confidence: 0.7, status: 'supported', proofOk: 1, batch,
   };
@@ -149,7 +149,7 @@ Rules:
 • relation = the single best-fitting key from RELATIONS; if none fits use "related-to".
 • object = the other entity (person/place/work) or a short literal value.
 • DIRECTION (critical) — the subject DOES the relation; the object is what it is done TO. Read "subject relation object" back: it must match what the paragraph asserts. Passive voice moves the doer — "X was killed/attacked/exiled/opposed/persecuted/betrayed by Y", "at the hands of Y", "Y arose/rose against X", "X suffered under Y" all make Y the AGENT: put Y as subject (or, ONLY if a passive relation key such as "converted-by"/"condemned-by" fits, keep X as subject with that passive key). NEVER make the victim the doer. Why: "He was assailed by the Covenant-breakers" is NOT "He persecuted the Covenant-breakers." Ex: "‘Abdu'l-Bahá was assailed on every side by the Covenant-breakers" ⇒ {Covenant-breakers, opposed, ‘Abdu'l-Bahá} — never {‘Abdu'l-Bahá, persecuted, Covenant-breakers}.
-• proof = a span copied VERBATIM and EXACTLY from the paragraph (≤200 chars) that supports the claim AND its direction — include the "by …" / negation words; do not cut mid-clause so the meaning flips. If you cannot copy an exact, self-contained supporting span, OMIT the claim.
+• proof = a span copied VERBATIM and EXACTLY from the paragraph (≤130 chars) that supports the claim AND its direction — include the "by …" / negation words; do not cut mid-clause so the meaning flips. If you cannot copy an exact, self-contained supporting span, OMIT the claim.
 • when = copy the note's era for this scene (keep its "[pin: …]"/"[est: …]" tag); a more specific date only if stated.
 • ONLY narrator-asserted FACTS — no outside knowledge, and NOT what a party merely CLAIMS. An accusation, boast, rumour, or assertion ATTRIBUTED to someone (especially an adversary — "the Covenant-breakers claimed…", "his enemies alleged…") is not a fact about the target; skip it, along with negated / hypothetical / questioned statements. Why: a hostile party's slander is evidence of the slander, not of the target's conduct. Capture LOAD-BEARING facts (birth, death/martyrdom w/ place+cause, kinship, conversion, teacher/disciple, office/title, participation, authorship, meetings, journeys), NOT narrative colour. The object must be a CONCRETE named entity or substantive value — skip vague/anaphoric objects. At most ONE characterised-as per person.
 RELATIONS: ${relList}

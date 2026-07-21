@@ -511,6 +511,17 @@ export const migrations = {
     await addCol(`ALTER TABLE grounding_queue ADD COLUMN next_attempt_at INTEGER`);
     logger.info('Migration 95 complete: grounding_budget + auto-retry columns');
   },
+  96: async () => {
+    // CACHE METRICS. logAIUsage already receives + costs cached_tokens/cache_write_tokens (DeepSeek prefix-cache
+    // hits bill ~0.1x, writes ~1.25x) but never PERSISTED the counts — so realized cache-hit rate was unmeasurable
+    // (couldn't tell whether the big static hype/disambiguate prefix was actually caching). Add the columns so the
+    // INSERT records them and per-stage cache efficiency (SUM(cached_tokens)/SUM(prompt_tokens)) becomes queryable.
+    logger.info('Starting migration 96: ai_usage cache-token columns');
+    const addCol = async (sql) => { try { await query(sql); } catch (err) { if (!err.message?.includes('duplicate column')) throw err; } };
+    await addCol(`ALTER TABLE ai_usage ADD COLUMN cached_tokens INTEGER NOT NULL DEFAULT 0`);
+    await addCol(`ALTER TABLE ai_usage ADD COLUMN cache_write_tokens INTEGER NOT NULL DEFAULT 0`);
+    logger.info('Migration 96 complete: ai_usage cache-token columns');
+  },
 };
 
 export const graphMigrations = {

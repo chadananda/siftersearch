@@ -281,12 +281,12 @@ export function logAIUsage({
       telemetryQuery(
         `INSERT INTO ai_usage (
           provider, model, service_type,
-          prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd,
+          prompt_tokens, completion_tokens, total_tokens, cached_tokens, cache_write_tokens, estimated_cost_usd,
           caller, success, error_message, user_id, job_id, document_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           provider, model, serviceType,
-          promptTokens, completionTokens, totalTokens, cost,
+          promptTokens, completionTokens, totalTokens, cachedTokens, cacheWriteTokens, cost,
           caller, success ? 1 : 0, errorMessage, userId, jobId, docKey
         ]
       );
