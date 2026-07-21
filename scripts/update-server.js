@@ -195,7 +195,10 @@ async function checkForUpdates() {
 }
 
 const HEALTH_CHECK_PORT = 7899; // Temp port for pre-deploy health check
-const HEALTH_CHECK_RETRIES = 5;
+// Startup runs migrations + service checks and now takes >10s, so the old 5×2s=10s window timed out and ABORTED
+// every deploy ("Test API failed to start after all retries") — the old server kept running and backend fixes never
+// went live. Widen to 30×2s=60s so a slow-but-healthy boot verifies instead of spuriously failing.
+const HEALTH_CHECK_RETRIES = 30;
 const HEALTH_CHECK_INTERVAL = 2000; // 2s between retries
 
 /**
