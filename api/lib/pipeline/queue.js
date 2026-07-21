@@ -84,7 +84,7 @@ export async function reachedBound(docId, opts = {}, deps = {}) {
     mentions: true,                                                          // yield, not a processing gate (see above)
     claims: true,                                                            // yield, not a processing gate (see above)
     reconcile: (row.decisions || 0) >= 0.85 * (row.clusters || 0),           // 0 clusters ⇒ nothing to reconcile ⇒ done
-    hype: (row.hyped || 0) >= 0.9 * Math.max(1, row.hypeable || 0),          // stage-10 processing gate (implies 2–9 ran)
+    hype: (row.hyped || 0) >= 0.9 * (row.hypeable || 0),                     // stage-10 processing gate (implies 2–9 ran); 0 hypeable ⇒ nothing to hype ⇒ done
   };
   const artifactStage = (s) => (['research', 'project', 'link', 'merge', 'dedup', 'verify'].includes(s) ? 'reconcile' : s);
   const bound = boundStageOf(opts);

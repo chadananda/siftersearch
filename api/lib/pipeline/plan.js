@@ -50,10 +50,14 @@ export async function resumeStageFor(docId, deps = {}) {
   const prose = r?.prose || 0;
   if (prose === 0) return null;                                              // no groundable content → skip
   if ((r.disamb || 0) / prose < 0.98) return {};                            // disambiguation incomplete → full
-  if ((r.decisions || 0) < 0.85 * Math.max(1, r.clusters || 0)) return {};  // reconcile incomplete → full
-  if ((r.claimsBound || 0) === 0) return { from: 'project' };               // read-half done → graph tail + HyPE
-  if ((r.hyped || 0) < 0.9 * Math.max(1, r.hypeable || 0)) return { from: 'hype' }; // only HyPE left
-  return null;                                                               // fully grounded → done
+  if ((r.decisions || 0) < 0.85 * (r.clusters || 0)) return {};             // reconcile incomplete → full (0 clusters ⇒ nothing to reconcile ⇒ ok)
+  // DONE = fully PROCESSED, not entity OUTPUT (must match reachedBound, else the follower re-queues what the queue
+  // considers done → the re-grounding grind). HyPE is stage 10 (after the graph tail), so once it covers the
+  // hypeable paras the whole pipeline ran → done, EVEN with 0 bound claims (a legitimately entity-sparse book).
+  // The old order tested claimsBound===0 FIRST and re-ran such books from 'project' forever.
+  if ((r.hyped || 0) >= 0.9 * (r.hypeable || 0)) return null;                // HyPE complete ⇒ all prior stages ran → done
+  if ((r.claimsBound || 0) === 0) return { from: 'project' };               // HyPE incomplete + no tail evidence → graph tail + HyPE
+  return { from: 'hype' };                                                   // tail done, only HyPE left
 }
 
 // Keep the next `lookahead` incomplete books queued, in the given order, each resuming from its real stage.
