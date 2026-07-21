@@ -74,11 +74,17 @@ export async function reachedBound(docId, opts = {}, deps = {}) {
   // HYPE denominator = HYPEABLE paras (length >= HYPE_MINLEN), NOT all prose: hype-book.mjs skips shorter
   // fragments (titles/publisher lines), so measuring hyped/all-prose false-failed English books with many short
   // paragraphs (e.g. 185 hyped / 232 prose = 80% < 90% though hype was COMPLETE). Match hype's own filter.
+  // COMPLETION = PROCESSING complete, NOT output ≥ threshold. mentions>0 / claims>0 were OUTPUT gates: a book that
+  // legitimately yields 0 entities could never complete → re-selected forever (the re-grounding grind). But `hype`
+  // is stage 10 — a book that is ≥0.9 hyped has already run EVERY prior stage incl. entity extraction (2–9), so a
+  // 0-mention/0-claim hyped book is genuinely entity-sparse and DONE, not broken. Gate on the PROCESSING stages
+  // (disamb floor above + hype) and reconcile only when there is something to reconcile. Per-paragraph FAILED
+  // (unprocessable, e.g. oversized/mis-segmented) is handled separately (mark book failed → repair queue), not here.
   const artifactOk = {
-    mentions: (row.mentions || 0) > 0,
-    claims: (row.claims || 0) > 0,
-    reconcile: (row.decisions || 0) >= 0.85 * Math.max(1, row.clusters || 0),
-    hype: (row.hyped || 0) >= 0.9 * Math.max(1, row.hypeable || 0),
+    mentions: true,                                                          // yield, not a processing gate (see above)
+    claims: true,                                                            // yield, not a processing gate (see above)
+    reconcile: (row.decisions || 0) >= 0.85 * (row.clusters || 0),           // 0 clusters ⇒ nothing to reconcile ⇒ done
+    hype: (row.hyped || 0) >= 0.9 * Math.max(1, row.hypeable || 0),          // stage-10 processing gate (implies 2–9 ran)
   };
   const artifactStage = (s) => (['research', 'project', 'link', 'merge', 'dedup', 'verify'].includes(s) ? 'reconcile' : s);
   const bound = boundStageOf(opts);
@@ -87,9 +93,9 @@ export async function reachedBound(docId, opts = {}, deps = {}) {
     const s = artifactStage(bound);
     return s === 'disambiguate' ? true : artifactOk[s] === true;
   }
-  // A full/`to` run did every stage up to the bound: require each artifact-bearing stage at or before it.
+  // A full/`to` run did every stage up to the bound: require each PROCESSING-gate stage at or before it.
   const bi = GROUNDING_STAGES.indexOf(bound);
-  for (const s of ['mentions', 'claims', 'reconcile', 'hype']) {
+  for (const s of ['reconcile', 'hype']) {
     if (GROUNDING_STAGES.indexOf(s) <= bi && artifactOk[s] === false) return false;
   }
   return true;
