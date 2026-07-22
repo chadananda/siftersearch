@@ -72,10 +72,13 @@ module.exports = {
         // (project→merge→dedup) resolves each book against the CUMULATIVE graph of all prior books, so book N+1
         // must not enter the tail before book N finishes — the band mutex alone doesn't order by position, so
         // SIZE-WEIGHTED concurrency: a SLOT budget (not a book count). A book uses ceil(paragraphs/SLOT_PARAS)
-        // slots, so we run ~5 small books or 1-2 huge ones. Ran at 1 (strict serial) while the foundation seeded
+        // slots, so we run ~20 small books or a few huge ones. Ran at 1 (strict serial) while the foundation seeded
         // the shared cast in order; now that's done, parallelism is safe (the band mutex still serialises the
         // graph-mutating tail, so only the cheaper read stages overlap).
-        GROUNDING_MAX_CONCURRENT: '5',
+        // 5→20 (2026-07-22, user): push throughput. Safe because (a) kernel/model.js already backs off per-call on
+        // DeepSeek 429/5xx (concurrency self-limits at DeepSeek's real rate), and (b) the $100/day spend cap bounds
+        // cost regardless. Structural ceiling beyond this = the serialized graph band (project→dedup), not DeepSeek.
+        GROUNDING_MAX_CONCURRENT: '20',
         GROUNDING_SLOT_PARAS: '6000',
         // Processor mode: plan = follow the hardcoded history plan (integration-phases.js) top-down, resuming
         // each book from its real incomplete stage — no operator/agent needed. override = agents hand-enrol via
