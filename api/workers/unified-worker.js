@@ -752,17 +752,41 @@ async function resetPreWipeBatch() {
   }
 }
 
+// SAFEGUARD (2026-07-28): a background maintenance op that never resolves (a Meili/HTTP call with no
+// timeout, a stuck async handle) would idle the single-writer's event loop → /write + /health stop
+// answering → the watchdog restart-loops the worker forever, so grounding completions never persist,
+// books re-ground, digests re-fire, and DeepSeek is re-billed for finished work. This wraps each task
+// so a hang can NEVER wedge the writer: on timeout we NAME the culprit in the log and continue. NOTE:
+// only guards ASYNC hangs (Promise.race can't interrupt a synchronous better-sqlite3 call).
+async function withTimeout(fn, ms, label) {
+  let timer;
+  try {
+    return await Promise.race([
+      Promise.resolve().then(fn),
+      new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(`__TIMEOUT__ ${label} ${ms}ms`)), ms); if (timer.unref) timer.unref(); }),
+    ]);
+  } catch (err) {
+    if (String(err && err.message).startsWith('__TIMEOUT__')) {
+      logger.error({ task: label, ms }, `SAFEGUARD: periodic task '${label}' exceeded ${ms}ms — aborted to keep the writer alive; continuing`);
+      return undefined;
+    }
+    throw err;
+  } finally { clearTimeout(timer); }
+}
+const PERIODIC_TASK_TIMEOUT_MS = 90_000;   // < watchdog GRACE (240s) so the timeout fires before a restart
+
 async function runPeriodicTasks() {
-  await resetPreWipeBatch();
+  const T = PERIODIC_TASK_TIMEOUT_MS;
+  await withTimeout(() => resetPreWipeBatch(), T, 'resetPreWipeBatch');
   const now = Date.now();
-  if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await runCleanupCycle();
-  if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await runFullSyncCheck();
-  if (now - lastHypeSyncTime >= HYPE_SYNC_INTERVAL_MS) await runHypeSyncCycle();
-  if (now - lastEntitySyncTime >= ENTITY_SYNC_INTERVAL_MS) await runEntitySyncCycle();
-  if (now - lastAliasSyncTime >= ALIAS_SYNC_INTERVAL_MS) await runAliasSyncCycle();
+  if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await withTimeout(() => runCleanupCycle(), T, 'cleanupCycle');
+  if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await withTimeout(() => runFullSyncCheck(), T, 'fullSyncCheck');
+  if (now - lastHypeSyncTime >= HYPE_SYNC_INTERVAL_MS) await withTimeout(() => runHypeSyncCycle(), T, 'hypeSyncCycle');
+  if (now - lastEntitySyncTime >= ENTITY_SYNC_INTERVAL_MS) await withTimeout(() => runEntitySyncCycle(), T, 'entitySyncCycle');
+  if (now - lastAliasSyncTime >= ALIAS_SYNC_INTERVAL_MS) await withTimeout(() => runAliasSyncCycle(), T, 'aliasSyncCycle');
   // Site-only DBs live outside main DB; periodic pump every cycle (cheap
   // when the queue is empty).
-  await runSiteOnlySyncCycle();
+  await withTimeout(() => runSiteOnlySyncCycle(), T, 'siteOnlySyncCycle');
   if (now - lastJobCleanupTime >= JOB_CLEANUP_INTERVAL_MS) {
     try {
       const cleaned = await cleanupExpiredJobs();
@@ -773,7 +797,7 @@ async function runPeriodicTasks() {
     lastJobCleanupTime = now;
   }
   // Process email queue
-  try { await processEmailQueue(5); } catch { /* ignore */ }
+  try { await withTimeout(() => processEmailQueue(5), PERIODIC_TASK_TIMEOUT_MS, 'emailQueue'); } catch { /* ignore */ }
   // Report API usage to Stripe every 5 min
   if (now - lastUsageReportTime >= USAGE_REPORT_INTERVAL_MS) {
     try { await reportUsageToStripe(); } catch (err) { logger.error({ error: err.message }, 'Usage report error'); }
