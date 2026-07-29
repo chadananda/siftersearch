@@ -40,13 +40,16 @@ async function groundingSpendToday() {
                             WHERE provider='deepseek' AND service_type LIKE 'grounding%' AND date(timestamp)=date('now')`);
   return Number(r?.s || 0);
 }
-// Entity-graph size — the "+N new to the graph" signal. LEGIT grounding grows this every hour (even mid-book);
-// RE-GROUNDING finished books adds +0. Progress = a book completed OR the graph grew. -1 = unknown → don't stall.
+// GROUNDING-WRITE signal — entity_mentions_v2 row count. Every book's grounding writes mentions here, so it climbs
+// steadily during legit work (+hundreds/hr) and goes FLAT when the writer is broken or re-grounding-without-persist
+// (the 07-24..28 failure). NOTE: do NOT use graph_entities here — it's the resolved+deduped count and barely moves,
+// because this corpus reuses the same historical figures across books, so legit grounding would look "flat" and the
+// guard would FALSE-HALT healthy work. Progress = a book completed OR mentions grew. -1 = unknown → never stall.
 async function entityCount() {
-  const r = await queryOne(`SELECT COUNT(*) n FROM graph_entities`).catch(() => ({ n: -1 }));
+  const r = await queryOne(`SELECT COUNT(*) n FROM entity_mentions_v2`).catch(() => ({ n: -1 }));
   return Number(r?.n ?? -1);
 }
-const MIN_ENTITIES = Number(process.env.STALL_MIN_ENTITIES || 5);   // graph growth that counts as real progress
+const MIN_ENTITIES = Number(process.env.STALL_MIN_ENTITIES || 50);  // grounding-write growth that counts as real progress
 async function setMode(mode) {
   try {
     const r = await fetch(`${API}/api/admin/grounding/mode`, {
