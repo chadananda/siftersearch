@@ -40,6 +40,13 @@ async function groundingSpendToday() {
                             WHERE provider='deepseek' AND service_type LIKE 'grounding%' AND date(timestamp)=date('now')`);
   return Number(r?.s || 0);
 }
+// Entity-graph size — the "+N new to the graph" signal. LEGIT grounding grows this every hour (even mid-book);
+// RE-GROUNDING finished books adds +0. Progress = a book completed OR the graph grew. -1 = unknown → don't stall.
+async function entityCount() {
+  const r = await queryOne(`SELECT COUNT(*) n FROM graph_entities`).catch(() => ({ n: -1 }));
+  return Number(r?.n ?? -1);
+}
+const MIN_ENTITIES = Number(process.env.STALL_MIN_ENTITIES || 5);   // graph growth that counts as real progress
 async function setMode(mode) {
   try {
     const r = await fetch(`${API}/api/admin/grounding/mode`, {
@@ -54,16 +61,20 @@ const alarm = (subject, text) => TO ? sendEmail({ to: TO, subject, text }).catch
   const prog = await getIntegrationProgress();
   const doneBooks = prog.doneBooks || 0, totalBooks = prog.totalBooks || 0;
   const spend = await groundingSpendToday();
+  const entities = await entityCount();
   const st = readState();
-  const prev = st.snapshot;                 // last hour: {doneBooks, spend}
+  const prev = st.snapshot;                 // last hour: {doneBooks, spend, entities}
   let strikes = st.strikes || 0, halted = !!st.haltedByGuard;
 
   if (prev) {
     const dBooks = doneBooks - prev.doneBooks;
     const dSpend = spend - prev.spend;       // negative across the UTC-midnight reset → not a stall
-    const stalling = dSpend >= SPEND_THRESHOLD && dBooks < MIN_BOOKS;
+    // real progress = a book finished OR the entity graph grew (unknown counts → assume progress; never false-halt)
+    const dEntities = (entities >= 0 && (prev.entities ?? -1) >= 0) ? entities - prev.entities : MIN_ENTITIES;
+    const progressed = dBooks >= MIN_BOOKS || dEntities >= MIN_ENTITIES;
+    const stalling = dSpend >= SPEND_THRESHOLD && !progressed;
     strikes = stalling ? strikes + 1 : 0;
-    logger.info({ doneBooks, totalBooks, dBooks, dSpend: Math.round(dSpend * 100) / 100, strikes, halted }, 'stall-guard tick');
+    logger.info({ doneBooks, totalBooks, dBooks, dEntities, dSpend: Math.round(dSpend * 100) / 100, strikes, halted }, 'stall-guard tick');
 
     if (stalling && strikes >= STRIKES_TO_HALT && !halted) {
       const ok = await setMode('override');
@@ -71,6 +82,7 @@ const alarm = (subject, text) => TO ? sendEmail({ to: TO, subject, text }).catch
         `⚠️ SifterSearch HALTED — grounding spent $${dSpend.toFixed(2)} with 0 progress`,
         `Spend-without-progress detected for ${strikes} consecutive hours:\n` +
         `  done-count: ${prev.doneBooks} → ${doneBooks} of ${totalBooks} (NO advance)\n` +
+        `  net-new entities to the graph: ${dEntities} (the "+0 new" re-grounding signature)\n` +
         `  grounding spend this hour: $${dSpend.toFixed(2)}\n\n` +
         `This is the signature of re-grounding already-finished books (a stuck writer / broken completion persistence)` +
         ` — the exact failure that burned $160+ over 4 days on 07-24..28.\n\n` +
@@ -78,15 +90,15 @@ const alarm = (subject, text) => TO ? sendEmail({ to: TO, subject, text }).catch
         ` Fix the writer/completion path, then resume with mode=plan.`);
       halted = true;
       logger.error({ dSpend, strikes }, 'STALL GUARD: halted grounding + alarmed');
-    } else if (halted && dBooks >= MIN_BOOKS) {
+    } else if (halted && progressed) {
       await setMode('plan');
       await alarm(`✅ SifterSearch — grounding resumed (progress returned)`,
-        `Done-count advanced (+${dBooks}, now ${doneBooks}/${totalBooks}); grounding auto-resumed (mode=plan).`);
+        `Progress returned (+${dBooks} books, +${dEntities} entities, now ${doneBooks}/${totalBooks}); grounding auto-resumed (mode=plan).`);
       halted = false; strikes = 0;
       logger.info('STALL GUARD: progress returned → resumed');
     }
   }
 
-  writeState({ snapshot: { doneBooks, spend, ts: Date.now() }, strikes, haltedByGuard: halted });
+  writeState({ snapshot: { doneBooks, spend, entities, ts: Date.now() }, strikes, haltedByGuard: halted });
   process.exit(0);
 })().catch((e) => { logger.error({ err: e.message }, 'stall-guard crashed'); process.exit(1); });
