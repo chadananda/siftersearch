@@ -83,7 +83,11 @@ module.exports = {
         // Processor mode: plan = follow the hardcoded history plan (integration-phases.js) top-down, resuming
         // each book from its real incomplete stage — no operator/agent needed. override = agents hand-enrol via
         // the API; general = whole-library (post-plan default). Runtime-switchable via POST /grounding/mode.
-        GROUNDING_MODE: 'plan'
+        // TEMP-HALT 2026-08-06: pinned to 'override' while the grounding completion-check hang fix (migration 97,
+        // idx_edec_cluster_docid + idx_ec_doc) lands and is verified. override = follower stands down, so a restart
+        // can't resume grounding (or re-wedge the API via getIntegrationProgress) before the fix is confirmed.
+        // FLIP BACK to 'plan' in the follow-up commit that resumes grounding. See project_grounding_hang_regrounding_20260729.
+        GROUNDING_MODE: 'override'
       },
       // 30s gives Fastify time to drain in-flight chat SSE streams
       // (typically 5-15s each) before SIGKILL on deploy. 5s was too short —

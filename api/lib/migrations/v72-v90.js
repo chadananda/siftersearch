@@ -522,6 +522,27 @@ export const migrations = {
     await addCol(`ALTER TABLE ai_usage ADD COLUMN cache_write_tokens INTEGER NOT NULL DEFAULT 0`);
     logger.info('Migration 96 complete: ai_usage cache-token columns');
   },
+  97: async () => {
+    // GROUNDING COMPLETION-CHECK INDEXES. getIntegrationProgress() (bio.js) runs reachedBound() over ~898 plan docs
+    // on every follower tick (plan.js followPlanTick) AND on every /grounding status/monitor call. Two of
+    // reachedBound's per-doc subqueries were catastrophic at that fan-out:
+    //   (a) reconcile-decisions count: entity_decisions filtered by CAST(json_extract(payload,'$.docId') AS INT) had
+    //       NO matching index — the existing idx_edec_target only narrowed by target_kind, then json_extract'd every
+    //       mention-cluster row (~0.4s/doc × 898 ≈ 6 min of CPU).
+    //   (b) claims count (also hit by plan.js resumeStageFor per candidate book): entity_claims has no doc_id index
+    //       → a full SCAN of 607K rows on every call.
+    // Together these pinned the API event loop at 100% CPU for minutes → /health timed out, all control was lost
+    // (incident 2026-07-29). Both are ADDITIVE indexes — verified USED via EXPLAIN QUERY PLAN, zero logic change,
+    // an index can never alter query RESULTS, only speed. The expression index must match the query expression
+    // character-for-character, so keep this in sync with reachedBound()/resumeStageFor() if that CAST/path changes.
+    logger.info('Starting migration 97: grounding completion-check indexes');
+    await query(`CREATE INDEX IF NOT EXISTS idx_edec_cluster_docid
+                 ON entity_decisions(target_kind, CAST(json_extract(payload,'$.docId') AS INT))`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ec_doc ON entity_claims(doc_id)`);
+    await query(`ANALYZE entity_decisions`);
+    await query(`ANALYZE entity_claims`);
+    logger.info('Migration 97 complete: grounding completion-check indexes');
+  },
 };
 
 export const graphMigrations = {
