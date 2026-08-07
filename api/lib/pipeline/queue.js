@@ -28,6 +28,11 @@ const MAX_CONCURRENT = Number(process.env.GROUNDING_MAX_CONCURRENT || 5);
 const SLOT_PARAS = Number(process.env.GROUNDING_SLOT_PARAS || 6000);
 const slotsFor = (paras) => Math.max(1, Math.ceil((paras || 0) / SLOT_PARAS));
 const paraCountOf = async (docId) => (await queryOne(`SELECT paragraph_count n FROM docs WHERE id=?`, [docId]))?.n || 0;
+// Is a spawned grounding proc still alive? signal 0 = existence check: throws ESRCH if gone, EPERM if alive-but-
+// not-ours (treat as alive). The reap uses THIS (actual OS liveness), not run_json heartbeat freshness — a live but
+// quiet proc (slow heartbeat / blocked on the band mutex) must NOT be reaped-and-requeued, or it gets re-spawned as a
+// DUPLICATE while the original still runs (the 2026-08-07 dup runaway). No pid → can't confirm alive → false.
+const isPidAlive = (pid) => { if (!pid) return false; try { process.kill(Number(pid), 0); return true; } catch (e) { return e.code === 'EPERM'; } };
 // The GRAPH-MUTATING band is project→dedup: these create/link/merge/dedup shared entities and `merge` is global,
 // so two runs here race. Everything else parallelizes safely — the READ stages (disambiguate…research) write only
 // per-paragraph data, and hype/verify AFTER dedup touch no shared entity (hype = per-paragraph questions; verify =
@@ -254,7 +259,11 @@ async function _tick() {
   const busyDocs = [];   // doc_ids actually in flight → summed into slot usage below
   for (const r of runningRows) {
     const age = Date.now() / 1000 - (r.started_at || 0);
-    if (!liveJson.has(r.doc_id) && r.started_at && age > 90) {
+    // Reap ONLY when the run is genuinely gone: its OS proc is DEAD. Keying on run_json heartbeat staleness alone
+    // falsely reaped live-but-quiet procs (slow heartbeat / blocked on the band mutex) → requeue → the launch loop
+    // re-spawned a DUPLICATE while the original ran (the 2026-08-07 runaway). A live pid ⇒ still busy, keep the row
+    // 'running' so it also stays in liveDocs and the launch loop won't double it.
+    if (!isPidAlive(r.pid) && !liveJson.has(r.doc_id) && r.started_at && age > 90) {
       // proc gone: DONE only if the book actually reached its bound stage; otherwise it died early.
       const ok = await reachedBound(r.doc_id, parseOpts(r));
       if (ok) {
