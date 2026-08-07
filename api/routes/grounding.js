@@ -13,7 +13,7 @@ import * as digest from '../lib/pipeline/digest.js';    // hourly progress-diges
 import { graphBandHolder } from '../lib/pipeline/lock.js';
 import { spawnGrounding } from '../lib/pipeline/spawn.js';
 import { makeStore } from '../lib/rag-adapter/store.js';
-import { getIntegrationProgress } from '../lib/bio.js';
+import { getIntegrationProgress, gradedPlanDocIds } from '../lib/bio.js';
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 
@@ -31,6 +31,18 @@ export default async function groundingRoutes(fastify) {
 
   // LIVE status — the full roadmap + the driver-reported active book (the same payload the UI reads).
   fastify.get('/grounding/status', admin, async () => getIntegrationProgress());
+
+  // VERIFIER (2026-08-06): prove reachedBoundBulk() ≡ per-doc reachedBound() over the graded plan docs, so the
+  // roadmap's bulk done-check (the migration-97 perf fix) can't silently diverge from the pipeline's own test.
+  // Read-only; expect mismatchCount:0. Kept as a cheap regression probe.
+  fastify.get('/grounding/verify-done-bulk', admin, async () => {
+    const ids = gradedPlanDocIds();
+    const bulk = await queue.reachedBoundBulk(ids, {});
+    const single = new Set();
+    for (const id of ids) { if (await queue.reachedBound(id, {})) single.add(Number(id)); }
+    const mismatches = ids.filter((id) => bulk.has(Number(id)) !== single.has(Number(id)));
+    return { total: ids.length, bulkDone: bulk.size, singleDone: single.size, mismatchCount: mismatches.length, mismatches: mismatches.slice(0, 50) };
+  });
 
   // The enabled worklist in priority order: each doc's coarse stage status + live run.
   fastify.get('/grounding/books', admin, async () => {

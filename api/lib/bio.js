@@ -4,7 +4,8 @@ import { queryAll, queryOne } from './db.js';
 import { INTEGRATION_PHASES } from './integration-phases.js';
 import { chatCompletion } from './ai.js';
 import * as pipelineState from './pipeline/state.js';
-import { reachedBound } from './pipeline/queue.js';   // the pipeline's OWN completion test → one definition of "done"
+import { reachedBound, reachedBoundBulk } from './pipeline/queue.js';   // the pipeline's OWN completion test → one definition of "done"
+import { logger } from './logger.js';
 import { ADJUDICATOR_VERSION } from './rag/index.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './pipeline/peak.js';
 import fs from 'fs';
@@ -191,6 +192,16 @@ async function computeActiveBooks(staticDocs, meta) {
 // book in sequence with its SIZE (paragraph_count), LIVE grounded-person count, and the currently-active book.
 // The phase structure is cached briefly; the `active` block is recomputed on EVERY call so polling stays live.
 let _progCache = null, _progAt = 0;
+// The curated (non-dynamic) plan doc ids the roadmap grades for "done" — same membership getIntegrationProgress
+// uses (integration-phases.js, curated phases only). Exported so a verifier can compare bulk vs single done-checks.
+export function gradedPlanDocIds() {
+  const phaseByDoc = {};
+  for (const p of INTEGRATION_PHASES) for (const id of (p.docs || [])) phaseByDoc[id] = p.key;
+  const allDocs = [...new Set(Object.keys(phaseByDoc).map(Number))];
+  const curatedKeys = new Set(INTEGRATION_PHASES.filter((p) => !p.dynamic).map((p) => p.key));
+  return allDocs.filter((id) => curatedKeys.has(phaseByDoc[id]));
+}
+
 export async function getIntegrationProgress() {
   // genreOf is DISPLAY-ONLY now (the biographies/histories genre labels) — it no longer decides membership.
   const genreOf = Object.fromEntries(readHistoryCatalog().map(b => [b.id, b.genre]));
@@ -268,8 +279,17 @@ export async function getIntegrationProgress() {
   // entity bindings, 0 hyp_questions) has decisions covering its clusters (clusters exist only for processed
   // paragraphs) yet is not grounded. That was the 8322/9095 leak — both showed ✓ on reconcile while fully
   // unprojected + un-HyPE'd. reachedBound(verify) requires disamb≥98% + mentions + claims + reconcile + HyPE.
+  // BULK done-check: one batch of GROUP BY scans over all graded docs, sharing reachedBound's exact decision
+  // (reachedBoundBulk → isDoneFromArtifacts). Replaces an 898× per-doc reachedBound() sweep that pinned the API
+  // event loop for minutes (incident 2026-07-29). On any failure, fall back to not-done (never throw the roadmap).
   const doneByDoc = {};
-  await Promise.all(gradedDocs.map(async (id) => { try { doneByDoc[id] = await reachedBound(id, {}); } catch { doneByDoc[id] = false; } }));
+  try {
+    const doneSet = await reachedBoundBulk(gradedDocs, {});
+    for (const id of gradedDocs) doneByDoc[id] = doneSet.has(Number(id));
+  } catch (e) {
+    logger.warn({ err: e.message }, 'getIntegrationProgress: bulk done-check failed → treating graded docs as not-done this pass');
+    for (const id of gradedDocs) doneByDoc[id] = false;
+  }
   const isGrounded = (id) => doneByDoc[id] === true;
   // Order IS the hard-coded list order (integration-phases.js was snapshotted in the intended grounding sequence).
   // No dynamic re-sort — the list is the order, so the roadmap and the follower that walks it stay stable and match

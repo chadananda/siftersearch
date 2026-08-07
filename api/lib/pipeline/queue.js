@@ -54,37 +54,27 @@ const parseOpts = (r) => { try { return r.opts_json ? JSON.parse(r.opts_json) : 
 // too weak for anything bounded past it.
 export const boundStageOf = (opts = {}) => opts.only || opts.to || 'verify';
 
-export async function reachedBound(docId, opts = {}, deps = {}) {
-  const q = deps.queryOne || queryOne;
-  const row = await q(
-    `SELECT (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) prose,
-            (SELECT COUNT(*) FROM content WHERE doc_id=? AND context IS NOT NULL AND context!='') disamb,
-            (SELECT COUNT(*) FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL) hyped,
-            (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(trim(text)) >= ${HYPE_MINLEN}) hypeable,
-            (SELECT COUNT(*) FROM entity_mentions_v2 WHERE doc_id=?) mentions,
-            (SELECT COUNT(*) FROM entity_claims WHERE doc_id=?) claims,
-            (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
-            (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions`,
-    [docId, docId, docId, docId, docId, docId, docId, docId]);
-  const prose = row?.prose || 0;
+// The pure DONE decision, given a book's artifact COUNTS + the run's bound. Extracted so the single-doc
+// reachedBound() and the batched reachedBoundBulk() share ONE definition of "done" — the roadmap and the queue can
+// never disagree. Only disamb/reconcile/hype GATE completion; mentions/claims are yields, not gates, so they don't
+// appear here.
+//   HYPE denominator = HYPEABLE paras (length >= HYPE_MINLEN), NOT all prose: hype-book.mjs skips shorter fragments
+//   (titles/publisher lines), so measuring hyped/all-prose false-failed English books with many short paragraphs
+//   (e.g. 185 hyped / 232 prose = 80% < 90% though hype was COMPLETE). Match hype's own filter.
+//   COMPLETION = PROCESSING complete, NOT output ≥ threshold. mentions>0 / claims>0 were OUTPUT gates: a book that
+//   legitimately yields 0 entities could never complete → re-selected forever (the re-grounding grind). But `hype`
+//   is stage 10 — a book ≥0.9 hyped has already run EVERY prior stage incl. entity extraction (2–9), so a
+//   0-mention/0-claim hyped book is genuinely entity-sparse and DONE, not broken. Gate on the PROCESSING stages
+//   (disamb floor + hype) and reconcile only when there is something to reconcile. Per-paragraph FAILED
+//   (unprocessable, e.g. oversized/mis-segmented) is handled separately (mark book failed → repair queue), not here.
+export function isDoneFromArtifacts({ prose = 0, disamb = 0, hyped = 0, hypeable = 0, clusters = 0, decisions = 0 } = {}, opts = {}) {
   if (prose === 0) return false;
-  if ((row.disamb || 0) / prose < 0.98) return false;                     // the floor for EVERY bound
-  // Per-stage artifact checks. Stages with no distinct cheap artifact (research/project/link/merge/dedup/verify)
-  // all follow reconcile, so they ride on reconcile's decisions.
-  // HYPE denominator = HYPEABLE paras (length >= HYPE_MINLEN), NOT all prose: hype-book.mjs skips shorter
-  // fragments (titles/publisher lines), so measuring hyped/all-prose false-failed English books with many short
-  // paragraphs (e.g. 185 hyped / 232 prose = 80% < 90% though hype was COMPLETE). Match hype's own filter.
-  // COMPLETION = PROCESSING complete, NOT output ≥ threshold. mentions>0 / claims>0 were OUTPUT gates: a book that
-  // legitimately yields 0 entities could never complete → re-selected forever (the re-grounding grind). But `hype`
-  // is stage 10 — a book that is ≥0.9 hyped has already run EVERY prior stage incl. entity extraction (2–9), so a
-  // 0-mention/0-claim hyped book is genuinely entity-sparse and DONE, not broken. Gate on the PROCESSING stages
-  // (disamb floor above + hype) and reconcile only when there is something to reconcile. Per-paragraph FAILED
-  // (unprocessable, e.g. oversized/mis-segmented) is handled separately (mark book failed → repair queue), not here.
+  if (disamb / prose < 0.98) return false;                                   // the disambiguation floor for EVERY bound
   const artifactOk = {
     mentions: true,                                                          // yield, not a processing gate (see above)
     claims: true,                                                            // yield, not a processing gate (see above)
-    reconcile: (row.decisions || 0) >= 0.85 * (row.clusters || 0),           // 0 clusters ⇒ nothing to reconcile ⇒ done
-    hype: (row.hyped || 0) >= 0.9 * (row.hypeable || 0),                     // stage-10 processing gate (implies 2–9 ran); 0 hypeable ⇒ nothing to hype ⇒ done
+    reconcile: decisions >= 0.85 * clusters,                                 // 0 clusters ⇒ nothing to reconcile ⇒ done
+    hype: hyped >= 0.9 * hypeable,                                           // stage-10 processing gate (implies 2–9 ran); 0 hypeable ⇒ nothing to hype ⇒ done
   };
   const artifactStage = (s) => (['research', 'project', 'link', 'merge', 'dedup', 'verify'].includes(s) ? 'reconcile' : s);
   const bound = boundStageOf(opts);
@@ -99,6 +89,47 @@ export async function reachedBound(docId, opts = {}, deps = {}) {
     if (GROUNDING_STAGES.indexOf(s) <= bi && artifactOk[s] === false) return false;
   }
   return true;
+}
+
+export async function reachedBound(docId, opts = {}, deps = {}) {
+  const q = deps.queryOne || queryOne;
+  const row = await q(
+    `SELECT (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) prose,
+            (SELECT COUNT(*) FROM content WHERE doc_id=? AND context IS NOT NULL AND context!='') disamb,
+            (SELECT COUNT(*) FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL) hyped,
+            (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(trim(text)) >= ${HYPE_MINLEN}) hypeable,
+            (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
+            (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions`,
+    [docId, docId, docId, docId, docId, docId]);
+  return isDoneFromArtifacts(row || {}, opts);
+}
+
+// Batched reachedBound over MANY docs — the roadmap (bio.js getIntegrationProgress) grades ~898 plan docs, and doing
+// that as 898× the single-doc query pinned the API event loop for MINUTES (incident 2026-07-29). This does it as a
+// handful of GROUP BY scans (each table read ONCE) and applies the SAME isDoneFromArtifacts() decision, so it cannot
+// diverge from reachedBound(). Returns a Set of the docIds that are DONE for `opts` (default = full 'verify' bound).
+export async function reachedBoundBulk(docIds, opts = {}, deps = {}) {
+  const qa = deps.queryAll || queryAll;
+  const ids = [...new Set((docIds || []).map(Number).filter(Number.isFinite))];
+  const done = new Set();
+  if (!ids.length) return done;
+  const ph = ids.map(() => '?').join(',');
+  const blank = () => Object.fromEntries(ids.map((id) => [id, 0]));
+  const prose = blank(), disamb = blank(), hyped = blank(), hypeable = blank(), clusters = blank(), decisions = blank();
+  const load = (rows, map) => rows.forEach((r) => { if (r.d != null && r.d in map) map[r.d] = r.n; });
+  // Same WHERE clauses as reachedBound's per-doc subqueries — kept identical so bulk === single.
+  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL GROUP BY doc_id`, ids), prose);
+  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND context IS NOT NULL AND context!='' GROUP BY doc_id`, ids), disamb);
+  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND hyp_questions IS NOT NULL GROUP BY doc_id`, ids), hyped);
+  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(trim(text)) >= ${HYPE_MINLEN} GROUP BY doc_id`, ids), hypeable);
+  load(await qa(`SELECT doc_id d, COUNT(DISTINCT resolved_as) n FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%' GROUP BY doc_id`, ids), clusters);
+  // decisions: the docId lives in the JSON payload, so GROUP BY the extracted id (one scan of mention-cluster rows;
+  // idx_edec_cluster_docid accelerates the target_kind narrowing). Keep only our ids.
+  load(await qa(`SELECT CAST(json_extract(payload,'$.docId') AS INT) d, COUNT(*) n FROM entity_decisions WHERE target_kind='mention-cluster' GROUP BY d`), decisions);
+  for (const id of ids) {
+    if (isDoneFromArtifacts({ prose: prose[id], disamb: disamb[id], hyped: hyped[id], hypeable: hypeable[id], clusters: clusters[id], decisions: decisions[id] }, opts)) done.add(id);
+  }
+  return done;
 }
 /**
  * Does a run's stage RANGE overlap the graph-mutating band (project→dedup)? Decided by the run's BOUND, not its
