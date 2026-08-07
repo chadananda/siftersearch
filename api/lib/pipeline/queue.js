@@ -15,6 +15,7 @@ import { spawnGrounding } from './spawn.js';
 import { GROUNDING_STAGES } from './run-grounding.js';
 import { logger } from '../logger.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './peak.js';
+import fs from 'node:fs';
 
 export { nowInPeak, peakEndsAt } from './peak.js';   // re-export so callers/tests import peak logic via the queue
 
@@ -309,6 +310,28 @@ async function _tick() {
     usedSlots += slots;
   }
   return { started, busy, blocked: [...blockedProviders] };
+}
+
+// BOOT SAFETY (2026-08-07 runaway): a restart — deploy, auto-updater, or crash — leaves the previous run's DETACHED
+// grounding procs (complete-book.mjs) alive, but the fresh supervisor has no queue row / heartbeat for them. It then
+// re-derives the SAME books from the plan and spawns DUPLICATES; repeated across restarts/resets that produced 123
+// procs across 21 books (~6× per book), a failure storm, and ~$37 wasted before it was caught. Grounding is fully
+// resumable (resumeStageFor picks each book up from its real stage), so the safe reset is to KILL any surviving
+// complete-book procs at boot, BEFORE the supervisor/follower start, and let the queue re-derive from a clean slate.
+// Linux-only (reads /proc); a no-op anywhere without /proc (e.g. tests, macOS) or when nothing is running.
+export function killStrayGroundingProcs() {
+  let killed = 0;
+  try {
+    for (const pid of fs.readdirSync('/proc')) {
+      if (!/^\d+$/.test(pid) || Number(pid) === process.pid) continue;
+      let cmd = '';
+      try { cmd = fs.readFileSync(`/proc/${pid}/cmdline`, 'utf8'); } catch { continue; }
+      if (!cmd.includes('scripts/complete-book.mjs')) continue;
+      try { process.kill(Number(pid), 'SIGKILL'); killed++; } catch { /* already gone or not ours */ }
+    }
+  } catch { /* no /proc → nothing to reap */ }
+  if (killed) logger.warn({ killed }, 'boot: killed stray/detached grounding procs (clean slate → no duplicate-spawn runaway)');
+  return killed;
 }
 
 let timer = null;
