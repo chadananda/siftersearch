@@ -69,7 +69,8 @@ export async function createServer(opts = {}) {
         widgetOrigins = s;
       } catch { /* table absent or read failure → keep previous set */ }
     }
-    return widgetOrigins.has(origin) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    // The API's own origin (same-origin browser POSTs still send Origin — e.g. the /widget/demo page) + dev hosts.
+    return widgetOrigins.has(origin) || origin === 'https://api.siftersearch.com' || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
   }
   await server.register(cors, {
     origin: (origin, callback) => {
