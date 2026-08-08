@@ -1,0 +1,379 @@
+{
+  "run_at": "2026-08-08T05:48:10.190Z",
+  "total": 12,
+  "passed": 10,
+  "fail": 2,
+  "pass_rate": 83,
+  "mrr": 0.653,
+  "latency_p50_ms": 715,
+  "latency_p95_ms": 1157,
+  "top_k": 10,
+  "api_base": "https://api.siftersearch.com",
+  "endpoint": "multi",
+  "categories": {
+    "lay-paraphrase": {
+      "passed": 10,
+      "total": 12,
+      "pass_rate": 83
+    }
+  },
+  "failure_breakdown": {
+    "not_found": 2,
+    "text_mismatch": 0,
+    "anti_test": 0,
+    "authority_low": 0,
+    "timed_out": 0,
+    "http_error": 0,
+    "network_error": 0
+  },
+  "hype": {
+    "matched_hits": 10,
+    "matched_hype_touched": 10,
+    "matched_hype_led": 8,
+    "top1_hype_touched": 12,
+    "top1_hype_led": 9,
+    "top1_total": 12
+  },
+  "results": [
+    {
+      "id": "lay-first-believer",
+      "category": "lay-paraphrase",
+      "ok": true,
+      "rank": 1,
+      "recip_rank": 1,
+      "text_hit": false,
+      "anti_hit": true,
+      "authority_hit": true,
+      "latency_ms": 896,
+      "top_hit_doc_id": 21310,
+      "top_hit_author": "Shoghi Effendi",
+      "top_hit_title": "God Passes By",
+      "top_hit_authority": 7,
+      "top_hit_text": "To Mírzá Áqá Ján, “the first to believe” in Him, designated later as Khádimu’lláh (Servant of God) — a Bábí youth, aflam",
+      "matched_layers": {
+        "main": 0,
+        "hype": 20,
+        "entity": null
+      },
+      "top1_layers": {
+        "main": 0,
+        "hype": 20,
+        "entity": null
+      },
+      "query": "who was the first person to believe in the Bab",
+      "intent": "Casual question; canonical answer (Mulla Husayn, the Babu'l-Bab) lives in the histories",
+      "religion_filter": "Baha'i"
+    },
+    {
+      "id": "lay-bab-execution",
+      "category": "lay-paraphrase",
+      "ok": true,
+      "rank": 1,
+      "recip_rank": 1,
+      "text_hit": true,
+      "anti_hit": true,
+      "authority_hit": true,
+      "latency_ms": 676,
+      "top_hit_doc_id": 21310,
+      "top_hit_author": "Shoghi Effendi",
+      "top_hit_title": "God Passes By",
+      "top_hit_authority": 7,
+      "top_hit_text": "Who knows what thoughts flooded the heart of ‘Abdu’l-Bahá as He found Himself the central figure of such memorable scene",
+      "matched_layers": {
+        "main": null,
+        "hype": 7,
+        "entity": null
+      },
+      "top1_layers": {
+        "main": null,
+        "hype": 7,
+        "entity": null
+      },
+      "query": "what happened when they executed the Bab",
+      "intent": "Lay phrasing for the Martyrdom of the Bab (Tabriz, 1850)",
+      "religion_filter": "Baha'i"
+    },
+    {
+      "id": "lay-tahirih-veil",
+      "category": "lay-paraphrase",
+      "ok": false,
+      "rank": null,
+      "recip_rank": 0,
+      "text_hit": false,
+      "anti_hit": true,
+      "authority_hit": true,
+      "latency_ms": 568,
+      "top_hit_doc_id": 10088,
+      "top_hit_author": "Mary Hanford Ford",
+      "top_hit_title": "Pilgrimage to 'Akká",
+      "top_hit_authority": 7,
+      "top_hit_text": "With her spirit and courage no half way measures were possible, and she was soon one of the most inspired and eloquent t",
+      "matched_layers": null,
+      "top1_layers": {
+        "main": 17,
+        "hype": 4,
+        "entity": null
+      },
+      "query": "why did Tahirih take off her veil in front of everyone",
+      "intent": "Badasht conference; Tahirih appearing unveiled",
+      "religion_filter": "Baha'i"
+    },
+    {
+      "id": "lay-badasht",
+      "category": "lay-paraphrase",
+      "ok": true,
+      "rank": 1,
+      "recip_rank": 1,
+      "text_hit": true,
+      "anti_hit": true,
+      "authority_hit": true,
+      "latency_ms": 591,
+      "top_hit_doc_id": 21310,
+      "top_hit_author": "Shoghi Effendi",
+      "top_hit_title": "God Passes By",
+      "top_hit_authority": 7,
+      "top_hit_text": "The nucleus of this community had been formed by the Báb, soon after the night of the Declaration of His Mission to Mull",
+      "matched_layers": {
+        "main": null,
+        "hype": 10,
+        "entity": null
+      },
+      "top1_layers": {
+        "main": null,
+        "hype": 10,
+        "entity": null
+      },
+      "query": "what was the gathering at Badasht about",
+      "intent": "Conference of Badasht — announcement of the new Dispensation / break with the past",
+      "religion_filter": "Baha'i"
+    },
+    {
+      "id": "lay-seven-martyrs",
+      "category": "lay-paraphrase",
+      "ok": true,
+      "rank": 2,
+      "recip_rank": 0.5,
+      "text_hit": true,
+      "anti_hit": true,
+      "authority_hit": true,
+      "latency_ms": 715,
+      "top_hit_doc_id": 13433,
+      "top_hit_author": "Moojan Momen",
+      "top_hit_title": "The Bábí and Bahá’í Religions 1844-1944: Some Contemporary Western Accounts",
+      "top_hit_authority": 3,
+      "top_hit_text": "There is, moreover, an interesting story concerning the manner of execution of the Seven Martyrs. This story goes back t",
+      "matched_layers": {
+        "main": null,
+        "hype": 6,
+        "entity": null
+      },
+      "top1_layers": {
+        "main": 26,
+        "hype": 0,
+        "entity": null
+      },
+      "query": "story of the seven martyrs of Tehran",
+      "intent": "The Seven Martyrs of Tihran episode",
+      "religion_filter": "Baha'i"
+    },
+    {
+      "id": "lay-quddus-death",
+      "category": "lay-paraphrase",
+      "ok": true,
+      "rank": 1,
+      "recip_rank": 1,
+      "text_hit": true,
+      "anti_hit": true,
+      "authority_hit": true,
+      "latency_ms": 662,
+      "top_hit_doc_id": 21310,
+      "top_hit_author": "Shoghi Effendi",
+      "top_hit_title": "God Passes By",
+      "top_hit_authority": 7,
+      "top_hit_text": "The pillars of His infant Faith had, for the most part, been hurled down at the first onset of the hurricane that had be",
+      "matched_layers": {
+        "main": null,
+        "hype": 4,
+        "entity": null
+      },
+      "top1_layers": {
+        "main": null,
+        "hype": 4,
+        "entity": null
+      },
+      "query": "how did Quddus die",
+      "intent": "Fate of Quddus after Fort Tabarsi (martyred at Barfurush)",
+      "religion_filter": "Baha'i"
+    },
+    {
+      "id": "lay-bab-remains",
+      "category": "lay-paraphrase",
+      "ok": true,
+      "rank": 2,
+      "recip_rank": 0.5,
+      "text_hit": true,
+      "anti_hit": true,
+      "authority_hit": true,
+      "latency_ms": 902,
+      "top_hit_doc_id": 466,
+      "top_hit_author": "H.M. Balyuzi",
+      "top_hit_title": "The Báb - The Herald of the Days",
+      "top_hit_authority": 5,
+      "top_hit_text": "'Your Excellency is aware of the warm interest taken by the British Government in all that concerns the honor, respectab",
+      "matched_layers": {
+        "main": null,
+        "hype": 9,
+        "entity": null
+      },
+      "top1_layers": {
+        "main": 9,
+        "hype": 25,
+        "entity": null
+      },
+      "query": "what happened to the body of the Bab after he was killed",
+      "intent": "Recovery and concealment of the Bab's remains",
+      "religion_filter": "Baha'i"
+    },
+    {
+      "id": "lay-tabarsi",
+      "category": "lay-paraphrase",
+      "ok": true,
+      "rank": 3,
+      "recip_rank": 0.3333333333333333,
+      "text_hit": false,
+      "anti_hit": true,
+      "authority_hit": true,
+      "latency_ms": 755,
+      "top_hit_doc_id": 7144,
+      "top_hit_author": "Marguerite Reimer Sears",
+      "top_hit_title": "Bill: A biography of Hand of the Cause of God William Sears",
+      "top_hit_authority": 5,
+      "top_hit_text": "Another day found us at Fort Shaykh Ṭabarsí, the Muslim shrine where a large number of besieged Bábís took refuge, defen",
+      "matched_layers": {
+        "main": null,
+        "hype": 7,
+        "entity": null
+      },
+      "top1_layers": {
+        "main": 18,
+        "hype": 6,
+        "entity": null
+      },
+      "query": "what was the fort of Shaykh Tabarsi and what happened there",
+      "intent": "Mazindaran upheaval at the shrine/fort of Shaykh Tabarsi",
+      "religion_filter": "Baha'i"
+    },
+    {
+      "id": "lay-bab-bahaullah-meet",
+      "category": "lay-paraphrase",
+      "ok": true,
+      "rank": 1,
+      "recip_rank": 1,
+      "text_hit": true,
+      "anti_hit": true,
+      "authority_hit": true,
+      "latency_ms": 646,
+      "top_hit_doc_id": 21310,
+      "top_hit_author": "Shoghi Effendi",
+      "top_hit_title": "God Passes By",
+      "top_hit_authority": 7,
+      "top_hit_text": "From its birth, government, clergy and people had risen as one man against it and vowed eternal enmity to its cause. Muḥ",
+      "matched_layers": {
+        "main": null,
+        "hype": 6,
+        "entity": null
+      },
+      "top1_layers": {
+        "main": null,
+        "hype": 6,
+        "entity": null
+      },
+      "query": "did the Bab and Bahaullah ever meet each other in person",
+      "intent": "They never met in person — stated in the histories",
+      "religion_filter": "Baha'i"
+    },
+    {
+      "id": "lay-siyah-chal",
+      "category": "lay-paraphrase",
+      "ok": true,
+      "rank": 1,
+      "recip_rank": 1,
+      "text_hit": true,
+      "anti_hit": true,
+      "authority_hit": true,
+      "latency_ms": 1157,
+      "top_hit_doc_id": 21308,
+      "top_hit_author": "Nabil Zarandi",
+      "top_hit_title": "The Dawn-Breakers",
+      "top_hit_authority": 6,
+      "top_hit_text": "The Síyáh-C̱hál, into which Bahá’u’lláh was thrown, originally a reservoir of water for one of the public baths of Ṭihrá",
+      "matched_layers": {
+        "main": 8,
+        "hype": 21,
+        "entity": null
+      },
+      "top1_layers": {
+        "main": 8,
+        "hype": 21,
+        "entity": null
+      },
+      "query": "why was Bahaullah thrown into the Siyah-Chal dungeon",
+      "intent": "Aftermath of the 1852 attempt on the Shah; imprisonment in the Siyah-Chal",
+      "religion_filter": "Baha'i"
+    },
+    {
+      "id": "lay-babi-persecutions",
+      "category": "lay-paraphrase",
+      "ok": true,
+      "rank": 2,
+      "recip_rank": 0.5,
+      "text_hit": true,
+      "anti_hit": true,
+      "authority_hit": true,
+      "latency_ms": 764,
+      "top_hit_doc_id": 11228,
+      "top_hit_author": "A.L.M. Nicolas",
+      "top_hit_title": "Seyyèd ‘Alí-Muḥammad, dit le Bâb",
+      "top_hit_authority": 5,
+      "top_hit_text": "blessures se défendait fort mal, mais les baigneurs\ncoururent prévenir les ferrachs de ce qui se passait.\nCeux-ci se pré",
+      "matched_layers": {
+        "main": null,
+        "hype": 21,
+        "entity": null
+      },
+      "top1_layers": {
+        "main": null,
+        "hype": 0,
+        "entity": null
+      },
+      "query": "how many Babis were killed in the persecutions in Persia",
+      "intent": "Scale of the Babi persecutions/martyrdoms",
+      "religion_filter": "Baha'i"
+    },
+    {
+      "id": "lay-him-whom-god",
+      "category": "lay-paraphrase",
+      "ok": false,
+      "rank": null,
+      "recip_rank": 0,
+      "text_hit": false,
+      "anti_hit": true,
+      "authority_hit": true,
+      "latency_ms": 708,
+      "top_hit_doc_id": 15952,
+      "top_hit_author": "Constance Elizabeth Maud",
+      "top_hit_title": "’Abdu’l-Bahá",
+      "top_hit_authority": 5,
+      "top_hit_text": "years later, Baha Ullah, one of his own followers, rose up proclaiming his message of Unity and Brotherhood, and was rec",
+      "matched_layers": null,
+      "top1_layers": {
+        "main": null,
+        "hype": 0,
+        "entity": null
+      },
+      "query": "who was the promised one the Bab told his followers to expect",
+      "intent": "Him Whom God shall make manifest — the Bab's promise fulfilled by Bahaullah",
+      "religion_filter": "Baha'i"
+    }
+  ]
+}

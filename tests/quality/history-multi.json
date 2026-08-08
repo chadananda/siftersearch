@@ -1,0 +1,26 @@
+[
+  {
+    "run_at": "2026-08-08T05:48:10.190Z",
+    "total": 12,
+    "passed": 10,
+    "pass_rate": 83,
+    "mrr": 0.653,
+    "latency_p50_ms": 715,
+    "latency_p95_ms": 1157,
+    "hype": {
+      "matched_hits": 10,
+      "matched_hype_touched": 10,
+      "matched_hype_led": 8,
+      "top1_hype_touched": 12,
+      "top1_hype_led": 9,
+      "top1_total": 12
+    },
+    "categories": {
+      "lay-paraphrase": {
+        "passed": 10,
+        "total": 12,
+        "pass_rate": 83
+      }
+    }
+  }
+]
