@@ -25,6 +25,14 @@ export const APPROVED_PERSIAN_DOCS = new Set(
 export const isAnthropicModel = (model) => /^claude/i.test(String(model || ''));
 export const isAnthropicProvider = (provider) => provider === 'anthropic';
 
+// FLAGSHIP EXCEPTION (user-authorized, Chad 2026-08-08: "do the very best that we can, including paid, for
+// Dawn-Breakers and GPB"): doc ids in PAID_DOC_ALLOWLIST may use Anthropic in ANY language — the hype-v3
+// question regeneration for the two canonical English histories, after v4-flash's unsuppressible reasoning
+// balloon made deepseek unfit for that task (measured: ~4k hidden tokens/call, no mitigation works).
+// Env-scoped and default-EMPTY: the fail-closed posture is unchanged unless the env explicitly opens it;
+// remove the var to close the exception without a deploy. Mirrors the same allowlist in rag-adapter/usage.js.
+const PAID_DOC_ALLOWLIST = new Set(String(process.env.PAID_DOC_ALLOWLIST || '').split(',').map((s) => Number(s.trim())).filter(Boolean));
+
 /**
  * Throw (fatal) unless an Anthropic call is the one approved use: grounding a Persian paragraph of an approved
  * plan book. Not an Anthropic call → returns immediately (no effect on deepseek/openai/ollama/local).
@@ -35,6 +43,7 @@ export function assertAnthropicAllowed({ provider, model, lang, docId, caller, s
   const okLang = lang === 'fa';
   const okDoc = docId != null && APPROVED_PERSIAN_DOCS.has(Number(docId));
   if (okLang && okDoc) return;                                              // the ONE authorised case
+  if (docId != null && PAID_DOC_ALLOWLIST.has(Number(docId))) return;       // flagship exception (see note above)
   const e = new Error(
     `Anthropic spend policy: ${model || 'claude'} REFUSED — Anthropic is authorised only for grounding the ` +
     `approved Persian plan books (Mázandarání Ẓuhúru'l-Ḥaqq). Got lang=${lang || 'none'}, doc=${docId ?? 'none'}, ` +
