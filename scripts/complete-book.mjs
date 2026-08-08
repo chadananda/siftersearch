@@ -18,6 +18,7 @@ const res = await runGrounding(doc, {
   to: opt.to === true ? undefined : opt.to,
   readjudicate: opt.readjudicate ? true : undefined,   // incremental re-adjudication sweep (reuse prior work)
   rehype: opt.rehype ? true : undefined,               // regenerate HyPE from scratch (upgrade to current HYPE_VERSION)
+  hypeModel: typeof opt['hype-model'] === 'string' ? opt['hype-model'] : undefined,   // hype-stage model override
   cc: Number(opt.cc) || 8,
   onResult: (stage, r) => console.log(`\n▶ ${stage}(${doc}) → ${JSON.stringify(r)}`),
 });

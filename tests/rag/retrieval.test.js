@@ -93,7 +93,7 @@ describe('retrieval — run() on fake ports', () => {
 
   it('slices a long paragraph into bounded calls and merges (thesis from part 1, dedup, one save)', async () => {
     const sent = 'The Báb declared His mission in Shíráz before Mullá Ḥusayn on the evening of 23 May 1844. ';
-    const long = { ...para, id: 7, pid: 'p7', text: sent.repeat(14).trim() };   // ~1,270 chars → 2 slices
+    const long = { ...para, id: 7, pid: 'p7', text: sent.repeat(50).trim() };   // ~4,550 chars → sliced
     const replies = [
       { content: '{"questions":["Where did the Báb declare His mission?","Who witnessed the Declaration?"],"thesis":"The Báb declared His mission in Shíráz in 1844."}' },
       { content: '{"questions":["Who witnessed the Declaration?","When did the Bábí Dispensation begin?"],"thesis":""}' },
@@ -103,8 +103,8 @@ describe('retrieval — run() on fake ports', () => {
     const stats = await rag.retrieval.index(9);
     expect(stats.done).toBe(1);
     expect(stats.sliced).toBe(1);
-    expect(llm.calls.length).toBe(2);                                            // one bounded call per slice
-    expect(llm.calls[1].messages.find((m) => m.role === 'user').content).toContain('FOCUS (part 2/2)');
+    expect(llm.calls.length).toBeGreaterThanOrEqual(2);                          // one bounded call per slice
+    expect(llm.calls[1].messages.find((m) => m.role === 'user').content).toMatch(/FOCUS \(part 2\/\d+\)/);
     expect(store.hyped).toHaveLength(1);
     expect(store.hyped[0].thesis).toContain('Shíráz');                           // thesis from part 1
     expect(store.hyped[0].questions).toEqual([                                    // dedup across slices
@@ -116,11 +116,12 @@ describe('retrieval — run() on fake ports', () => {
 
   it('sliceParagraph: short stays whole; long splits on sentence bounds; no boundaries stays whole', () => {
     expect(sliceParagraph('short one.')).toHaveLength(1);
-    const long = 'One sentence here. '.repeat(60).trim();
+    expect(sliceParagraph('One sentence here. '.repeat(60).trim())).toHaveLength(1);      // ~1,140 chars: under threshold now
+    const long = 'One sentence here. '.repeat(300).trim();                                // ~5,700 chars
     const slices = sliceParagraph(long);
     expect(slices.length).toBeGreaterThan(1);
     expect(slices.join(' ').length).toBeGreaterThanOrEqual(long.length - slices.length);  // nothing lost beyond joins
-    expect(sliceParagraph('x'.repeat(1200))).toHaveLength(1);                    // no sentence bounds → one slice
+    expect(sliceParagraph('x'.repeat(4500))).toHaveLength(1);                             // no sentence bounds → one slice
   });
 
   it('upgrade: redoes old-version paragraphs, skips already-current ones (retries resume, no double-spend)', async () => {

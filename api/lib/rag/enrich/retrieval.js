@@ -33,8 +33,12 @@ const MAX_FACTS_PER_PARA = 24;  // sanity slice only — the densest observed pa
 // paragraphs are split into sentence groups, one call per group (a handful of questions each, reasoning stays
 // small), answers concatenated up to QUESTION_CEILING. Slice calls share the same cached SYS prefix, and the
 // full paragraph rides along as context so questions stay globally grounded.
-const SLICE_CHARS = 900;        // paragraphs longer than this get sliced
-const SLICE_TARGET = 700;       // aim ~this many chars of focus text per slice call
+// 4000 (was 900): slicing exists to bound v4-flash's ask-scaling reasoning, but it introduced cross-slice
+// redundancy — and flagship runs now use a paid model with NO hidden-reasoning billing, where a whole-paragraph
+// call is both cheaper and cleaner. 4000 keeps slicing as a monster-paragraph guard only. (v3-on-flash remains
+// deprecated in practice: even sliced it truncated 41% — see .work/eewa-build-state.md 08-08.)
+const SLICE_CHARS = 4000;       // paragraphs longer than this get sliced
+const SLICE_TARGET = 1500;      // aim ~this many chars of focus text per slice call
 
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });

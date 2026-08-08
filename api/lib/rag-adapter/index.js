@@ -24,8 +24,8 @@ import { logger } from '../logger.js';
 const JSON_CAPABLE = new Set(['deepseek', 'openai']);
 const llm = {
   chat: (messages, { model, provider, maxTokens, temperature = 0, json, thinking }) => {
-    const { lang, stage } = currentScope();
-    assertSpendAllowed({ provider, model, lang, stage });
+    const { lang, stage, docId } = currentScope();
+    assertSpendAllowed({ provider, model, lang, stage, docId });
     return chatCompletion(messages, {
       provider, model, temperature, maxTokens, caller: 'corpus-rag',
       ...(json && JSON_CAPABLE.has(provider) ? { responseFormat: { type: 'json_object' } } : {}),

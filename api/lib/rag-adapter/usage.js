@@ -19,10 +19,17 @@ export const currentScope = () => currentAIContext();
 // FAIL-CLOSED: an unscoped call has no language to check, so a paid provider is refused rather than assumed OK.
 const PAID_PROVIDERS = new Set(['anthropic', 'openai']);
 const PAID_LANGS = new Set(['fa']);
+// FLAGSHIP EXCEPTION (user-authorized, Chad 2026-08-08: "do the very best that we can, including paid, for
+// Dawn-Breakers and GPB"): docs listed in PAID_DOC_ALLOWLIST may use paid providers in ANY language. Motivation:
+// v4-flash's hidden reasoning balloons ~4k tokens/call on the fact-fed adaptive HyPE prompt and cannot be
+// suppressed, so the two canonical books get a paid model for question generation. Env-scoped (not hardcoded)
+// so the exception is visible in config and removable without a deploy. Empty (default) = no exception.
+const PAID_DOC_ALLOWLIST = new Set(String(process.env.PAID_DOC_ALLOWLIST || '').split(',').map((s) => Number(s.trim())).filter(Boolean));
 
-export function assertSpendAllowed({ provider, model, lang, stage }) {
+export function assertSpendAllowed({ provider, model, lang, stage, docId }) {
   if (!PAID_PROVIDERS.has(provider)) return;
   if (PAID_LANGS.has(lang)) return;
+  if (docId && PAID_DOC_ALLOWLIST.has(Number(docId))) return;   // flagship exception — see note above
   // Reuse the kernel's fatal contract: a policy breach is not per-item bad luck, so it must abort the run
   // loudly instead of being swallowed into partial work.
   const e = new Error(
