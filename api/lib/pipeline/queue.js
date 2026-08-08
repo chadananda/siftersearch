@@ -328,18 +328,27 @@ async function _tick() {
 // resumable (resumeStageFor picks each book up from its real stage), so the safe reset is to KILL any surviving
 // complete-book procs at boot, BEFORE the supervisor/follower start, and let the queue re-derive from a clean slate.
 // Linux-only (reads /proc); a no-op anywhere without /proc (e.g. tests, macOS) or when nothing is running.
-export function killStrayGroundingProcs() {
+export async function killStrayGroundingProcs() {
+  // Spare procs with a LIVE queue row: the reaper exists for ORPHANS (procs the supervisor lost track of).
+  // Killing everything indiscriminately meant every API restart (deploys!) executed legitimate in-flight runs
+  // — observed 2026-08-08: three widget deploys silently killed the flagship hype runs three times.
+  let tracked = new Set();
+  try {
+    const rows = await queryAll(`SELECT pid FROM grounding_queue WHERE status='running' AND pid IS NOT NULL`);
+    tracked = new Set(rows.map((r) => Number(r.pid)));
+  } catch { /* no table/DB yet → treat all as strays (original behavior) */ }
   let killed = 0;
   try {
     for (const pid of fs.readdirSync('/proc')) {
       if (!/^\d+$/.test(pid) || Number(pid) === process.pid) continue;
+      if (tracked.has(Number(pid))) continue;   // legitimate tracked run — leave it alone
       let cmd = '';
       try { cmd = fs.readFileSync(`/proc/${pid}/cmdline`, 'utf8'); } catch { continue; }
       if (!cmd.includes('scripts/complete-book.mjs')) continue;
       try { process.kill(Number(pid), 'SIGKILL'); killed++; } catch { /* already gone or not ours */ }
     }
   } catch { /* no /proc → nothing to reap */ }
-  if (killed) logger.warn({ killed }, 'boot: killed stray/detached grounding procs (clean slate → no duplicate-spawn runaway)');
+  if (killed) logger.warn({ killed, spared: tracked.size }, 'boot: killed stray/detached grounding procs (tracked runs spared)');
   return killed;
 }
 

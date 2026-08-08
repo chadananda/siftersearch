@@ -239,7 +239,7 @@ export default async function groundingRoutes(fastify) {
   // The supervisor + processor live with the control plane: same process, same lifecycle. NEVER under test (they
   // would spawn real books against the real corpus); GROUNDING_SUPERVISOR=0 disables them in any environment.
   if (process.env.NODE_ENV !== 'test' && process.env.GROUNDING_SUPERVISOR !== '0') {
-    queue.killStrayGroundingProcs(); // clean slate: kill any detached procs a restart left behind, else the fresh
+    await queue.killStrayGroundingProcs(); // clean slate: kill any detached procs a restart left behind, else the fresh
                                      // supervisor re-derives the same books → duplicate-spawn runaway (2026-08-07)
     queue.startSupervisor();     // runs the queue serially
     processor.startProcessor();  // chooses the next work per the active mode (plan by default)
