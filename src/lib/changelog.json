@@ -1,6 +1,188 @@
 {
-  "generated": "2026-07-20T01:46:00.113Z",
+  "generated": "2026-08-08T13:16:59.789Z",
   "entries": [
+    {
+      "hash": "a96d8e19",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "Flagship sonnet hype battery — lay-paraphrase 67%→83%, MRR 0.390→0.653, hype-touched 100%",
+      "scope": null
+    },
+    {
+      "hash": "20c1c344",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "Render assistant markdown links + italics safely (escape-all-then-rebuild) — raw [text](url) syntax was showing in answers",
+      "scope": null
+    },
+    {
+      "hash": "e2b75d7e",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "Correct chat endpoint path (/api/chat/stream — chat routes mount at /api/chat, not /api/v1)",
+      "scope": null
+    },
+    {
+      "hash": "aa9d2823",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "Allow the API's own origin in CORS — same-origin POSTs (the /widget/demo page) still send an Origin header",
+      "scope": null
+    },
+    {
+      "hash": "ba922456",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "Flagship paid-model runs for GPB + Dawn-Breakers (user-authorized policy exception)",
+      "scope": null
+    },
+    {
+      "hash": "3a79b9ce",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "SifterChat widget execution plan — PRD goals mapped to the real architecture",
+      "scope": null
+    },
+    {
+      "hash": "211bd9bc",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "ZFS-snapshot copy strategy — immune to the .backup-vs-writes livelock",
+      "scope": null
+    },
+    {
+      "hash": "7a33aac1",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "Fix BACKUP_DIR misdirection + vault second-drive copy + unkillable-silence breadcrumbs",
+      "scope": null
+    },
+    {
+      "hash": "39c82fd1",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "Cron-owned daily backup with verification + alerting — never block the writer again; hype: version-aware upgrade resume",
+      "scope": null
+    },
+    {
+      "hash": "c9362302",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "Fix --multi endpoint path (/api/search/multi — routes/search.js mounts at /api/search, not /api/v1)",
+      "scope": null
+    },
+    {
+      "hash": "72b0a065",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "HyPE measurement loop — win-share telemetry + multi-index eval endpoint + lay-paraphrase fixtures",
+      "scope": null
+    },
+    {
+      "hash": "ab30ab47",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "Reap on actual pid-liveness, not heartbeat staleness — fixes duplicate-proc runaway (steady-state source)",
+      "scope": null
+    },
+    {
+      "hash": "81086b04",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "Kill stray detached procs on boot — prevent duplicate-spawn runaway",
+      "scope": null
+    },
+    {
+      "hash": "489bf72d",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "Harden stall-guard (no-completion backstop) + resume (GROUNDING_MODE -> plan)",
+      "scope": null
+    },
+    {
+      "hash": "ca2d84b4",
+      "date": "2026-08-07",
+      "type": "Other",
+      "description": "Bulk roadmap done-check (getIntegrationProgress 898 calls -> ~6 GROUP BY) — cut ~5s sweep to <1s",
+      "scope": null
+    },
+    {
+      "hash": "41f2eeff",
+      "date": "2026-08-06",
+      "type": "Other",
+      "description": "Fix API event-loop hang (migration 97 completion-check indexes) + pin GROUNDING_MODE=override",
+      "scope": null
+    },
+    {
+      "hash": "aa545835",
+      "date": "2026-07-28",
+      "type": "Other",
+      "description": "Timeout-guard periodic maintenance tasks — a single hung async task can no longer wedge the single-writer",
+      "scope": null
+    },
+    {
+      "hash": "617861b5",
+      "date": "2026-07-21",
+      "type": "Other",
+      "description": "Widen pre-deploy verification window 10s→60s (was aborting EVERY backend deploy)",
+      "scope": null
+    },
+    {
+      "hash": "b6089773",
+      "date": "2026-07-21",
+      "type": "Other",
+      "description": "Claims proof-trim 200→130 + persist ai_usage cache-token columns (migr 96)",
+      "scope": null
+    },
+    {
+      "hash": "85a00d94",
+      "date": "2026-07-20",
+      "type": "Other",
+      "description": "Add project-purpose explanation + link back to the biography page",
+      "scope": null
+    },
+    {
+      "hash": "d4991891",
+      "date": "2026-07-20",
+      "type": "Other",
+      "description": "Link each book title to its SifterSearch library page",
+      "scope": null
+    },
+    {
+      "hash": "91b5fef8",
+      "date": "2026-07-20",
+      "type": "Other",
+      "description": "Drop 11344 from histories list (soft-deleted Nayriz dup the old genre-classifier still showed; new render already filters it)",
+      "scope": null
+    },
+    {
+      "hash": "47f54e3c",
+      "date": "2026-07-20",
+      "type": "Other",
+      "description": "Make integration-phases.js the SINGLE hard-coded source (identical roadmap, no rules)",
+      "scope": null
+    },
+    {
+      "hash": "66fd9542",
+      "date": "2026-07-20",
+      "type": "Other",
+      "description": "Report each book only ONCE (on first completion) — fixes the same books repeating every hourly email",
+      "scope": null
+    },
+    {
+      "hash": "c84fc003",
+      "date": "2026-07-19",
+      "type": "Other",
+      "description": "Remove duplicate doc 11344 (Nayriz) from the plan — same book as the finished 16552",
+      "scope": null
+    },
+    {
+      "hash": "8f82d272",
+      "date": "2026-07-19",
+      "type": "Other",
+      "description": "Remove doc 214474 (The Afnán Family) from the grounding plan — external site2rag scrape, not approved core library",
+      "scope": null
+    },
     {
       "hash": "9ef691cd",
       "date": "2026-07-19",
@@ -3318,192 +3500,202 @@
       "type": "Fixed",
       "description": "Meili_batch_stall threshold 10min→45min (paragraphs HNSW ~30min/batch normal)",
       "scope": null
-    },
-    {
-      "hash": "a7050c27",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Reduce Meili task poll 50ms to 500ms; add batch-stall health check",
-      "scope": null
-    },
-    {
-      "hash": "688875eb",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Purge 100 rows/batch+1s delay, no startup orphan check — prevent sync worker starvation",
-      "scope": null
-    },
-    {
-      "hash": "ef85e4a9",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Batch hardDeleteExpired — prevent 15-min write lock on 250K+ soft-deleted rows",
-      "scope": null
-    },
-    {
-      "hash": "7b9a42b9",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Bump sync worker SQLITE_BUSY_TIMEOUT_MS 30s→120s",
-      "scope": null
-    },
-    {
-      "hash": "007120fe",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Restore AND deleted_at IS NULL in graph_enriched background count",
-      "scope": null
-    },
-    {
-      "hash": "c308d35b",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Migration 79 — covering index for graph_enriched=0 AND deleted_at IS NULL",
-      "scope": null
-    },
-    {
-      "hash": "3860aa4d",
-      "date": "2026-05-21",
-      "type": "Performance",
-      "description": "Strip all blocking queries from pipeline health endpoint",
-      "scope": null
-    },
-    {
-      "hash": "b98b4e89",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Drop length(text) from graph_enriched=0 background count — defeats partial index",
-      "scope": null
-    },
-    {
-      "hash": "d901073f",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Remove graph_enriched=1 full-table-scan from pipeline background refresh",
-      "scope": null
-    },
-    {
-      "hash": "f0f377b3",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Remove MIN(created_at) from pipeline background query — it bypassed partial index",
-      "scope": null
-    },
-    {
-      "hash": "02de39ff",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Pipeline health endpoint no longer blocks event loop on cold-cache COUNT(*) queries",
-      "scope": null
-    },
-    {
-      "hash": "04d25e11",
-      "date": "2026-05-21",
-      "type": "New",
-      "description": "Centralized DB service with named queries",
-      "scope": null
-    },
-    {
-      "hash": "bfca6934",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Pipeline health endpoint 8s timeout — prevent cold-cache query from blocking event loop",
-      "scope": null
-    },
-    {
-      "hash": "a6a4c8e0",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Hourly WAL checkpoint in sync-worker — prevent unbounded WAL growth",
-      "scope": null
-    },
-    {
-      "hash": "0fd46ea4",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Library-watcher SIGABRT — raise V8 heap 4G→8G, add 30s SQLite busy timeout",
-      "scope": null
-    },
-    {
-      "hash": "333ae19f",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Siftersearch-worker SQLITE_BUSY_TIMEOUT_MS=30s — stop lock errors during watcher writes",
-      "scope": null
-    },
-    {
-      "hash": "7010d1b4",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Health-check handles missing enrichment stats gracefully (WAL-deferred)",
-      "scope": null
-    },
-    {
-      "hash": "2f30ba0c",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Pipeline health endpoint WAL guard covers graph stats + reuses single WAL stat",
-      "scope": null
-    },
-    {
-      "hash": "36539640",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Health-check localhost-first API probe + correct 12G watcher memory threshold",
-      "scope": null
-    },
-    {
-      "hash": "90520d5d",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Library-watcher — raise RSS limit to 12G + mtime writeback in hourly scan",
-      "scope": null
-    },
-    {
-      "hash": "9012acf4",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Library-watcher scan OOM — 3-tier skip avoids file reads for 99% of docs",
-      "scope": null
-    },
-    {
-      "hash": "4e929649",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Library-watcher NODE_OPTIONS — PM2 v6 ignores node_args, use env instead",
-      "scope": null
-    },
-    {
-      "hash": "144a74cf",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Library-watcher OOM — 4GB heap limit + mtime writeback",
-      "scope": null
-    },
-    {
-      "hash": "63b479c7",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Library-watcher heap OOM — mtime pre-check skips file reads on unchanged docs",
-      "scope": null
-    },
-    {
-      "hash": "dc28389b",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Library-watcher OOM — reduce SQLite cache/mmap via env vars",
-      "scope": null
-    },
-    {
-      "hash": "47ad239c",
-      "date": "2026-05-19",
-      "type": "Fixed",
-      "description": "Updater swaps all workers on deploy — was missing graph+enrichment+watcher",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-07": [
+      {
+        "hash": "a96d8e19",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "Flagship sonnet hype battery — lay-paraphrase 67%→83%, MRR 0.390→0.653, hype-touched 100%",
+        "scope": null
+      },
+      {
+        "hash": "20c1c344",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "Render assistant markdown links + italics safely (escape-all-then-rebuild) — raw [text](url) syntax was showing in answers",
+        "scope": null
+      },
+      {
+        "hash": "e2b75d7e",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "Correct chat endpoint path (/api/chat/stream — chat routes mount at /api/chat, not /api/v1)",
+        "scope": null
+      },
+      {
+        "hash": "aa9d2823",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "Allow the API's own origin in CORS — same-origin POSTs (the /widget/demo page) still send an Origin header",
+        "scope": null
+      },
+      {
+        "hash": "ba922456",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "Flagship paid-model runs for GPB + Dawn-Breakers (user-authorized policy exception)",
+        "scope": null
+      },
+      {
+        "hash": "3a79b9ce",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "SifterChat widget execution plan — PRD goals mapped to the real architecture",
+        "scope": null
+      },
+      {
+        "hash": "211bd9bc",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "ZFS-snapshot copy strategy — immune to the .backup-vs-writes livelock",
+        "scope": null
+      },
+      {
+        "hash": "7a33aac1",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "Fix BACKUP_DIR misdirection + vault second-drive copy + unkillable-silence breadcrumbs",
+        "scope": null
+      },
+      {
+        "hash": "39c82fd1",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "Cron-owned daily backup with verification + alerting — never block the writer again; hype: version-aware upgrade resume",
+        "scope": null
+      },
+      {
+        "hash": "c9362302",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "Fix --multi endpoint path (/api/search/multi — routes/search.js mounts at /api/search, not /api/v1)",
+        "scope": null
+      },
+      {
+        "hash": "72b0a065",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "HyPE measurement loop — win-share telemetry + multi-index eval endpoint + lay-paraphrase fixtures",
+        "scope": null
+      },
+      {
+        "hash": "ab30ab47",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "Reap on actual pid-liveness, not heartbeat staleness — fixes duplicate-proc runaway (steady-state source)",
+        "scope": null
+      },
+      {
+        "hash": "81086b04",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "Kill stray detached procs on boot — prevent duplicate-spawn runaway",
+        "scope": null
+      },
+      {
+        "hash": "489bf72d",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "Harden stall-guard (no-completion backstop) + resume (GROUNDING_MODE -> plan)",
+        "scope": null
+      },
+      {
+        "hash": "ca2d84b4",
+        "date": "2026-08-07",
+        "type": "Other",
+        "description": "Bulk roadmap done-check (getIntegrationProgress 898 calls -> ~6 GROUP BY) — cut ~5s sweep to <1s",
+        "scope": null
+      }
+    ],
+    "2026-08-06": [
+      {
+        "hash": "41f2eeff",
+        "date": "2026-08-06",
+        "type": "Other",
+        "description": "Fix API event-loop hang (migration 97 completion-check indexes) + pin GROUNDING_MODE=override",
+        "scope": null
+      }
+    ],
+    "2026-07-28": [
+      {
+        "hash": "aa545835",
+        "date": "2026-07-28",
+        "type": "Other",
+        "description": "Timeout-guard periodic maintenance tasks — a single hung async task can no longer wedge the single-writer",
+        "scope": null
+      }
+    ],
+    "2026-07-21": [
+      {
+        "hash": "617861b5",
+        "date": "2026-07-21",
+        "type": "Other",
+        "description": "Widen pre-deploy verification window 10s→60s (was aborting EVERY backend deploy)",
+        "scope": null
+      },
+      {
+        "hash": "b6089773",
+        "date": "2026-07-21",
+        "type": "Other",
+        "description": "Claims proof-trim 200→130 + persist ai_usage cache-token columns (migr 96)",
+        "scope": null
+      }
+    ],
+    "2026-07-20": [
+      {
+        "hash": "85a00d94",
+        "date": "2026-07-20",
+        "type": "Other",
+        "description": "Add project-purpose explanation + link back to the biography page",
+        "scope": null
+      },
+      {
+        "hash": "d4991891",
+        "date": "2026-07-20",
+        "type": "Other",
+        "description": "Link each book title to its SifterSearch library page",
+        "scope": null
+      },
+      {
+        "hash": "91b5fef8",
+        "date": "2026-07-20",
+        "type": "Other",
+        "description": "Drop 11344 from histories list (soft-deleted Nayriz dup the old genre-classifier still showed; new render already filters it)",
+        "scope": null
+      },
+      {
+        "hash": "47f54e3c",
+        "date": "2026-07-20",
+        "type": "Other",
+        "description": "Make integration-phases.js the SINGLE hard-coded source (identical roadmap, no rules)",
+        "scope": null
+      },
+      {
+        "hash": "66fd9542",
+        "date": "2026-07-20",
+        "type": "Other",
+        "description": "Report each book only ONCE (on first completion) — fixes the same books repeating every hourly email",
+        "scope": null
+      }
+    ],
     "2026-07-19": [
+      {
+        "hash": "c84fc003",
+        "date": "2026-07-19",
+        "type": "Other",
+        "description": "Remove duplicate doc 11344 (Nayriz) from the plan — same book as the finished 16552",
+        "scope": null
+      },
+      {
+        "hash": "8f82d272",
+        "date": "2026-07-19",
+        "type": "Other",
+        "description": "Remove doc 214474 (The Afnán Family) from the grounding plan — external site2rag scrape, not approved core library",
+        "scope": null
+      },
       {
         "hash": "9ef691cd",
         "date": "2026-07-19",
@@ -6892,190 +7084,6 @@
         "date": "2026-05-21",
         "type": "Fixed",
         "description": "Meili_batch_stall threshold 10min→45min (paragraphs HNSW ~30min/batch normal)",
-        "scope": null
-      },
-      {
-        "hash": "a7050c27",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Reduce Meili task poll 50ms to 500ms; add batch-stall health check",
-        "scope": null
-      },
-      {
-        "hash": "688875eb",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Purge 100 rows/batch+1s delay, no startup orphan check — prevent sync worker starvation",
-        "scope": null
-      },
-      {
-        "hash": "ef85e4a9",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Batch hardDeleteExpired — prevent 15-min write lock on 250K+ soft-deleted rows",
-        "scope": null
-      },
-      {
-        "hash": "7b9a42b9",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Bump sync worker SQLITE_BUSY_TIMEOUT_MS 30s→120s",
-        "scope": null
-      },
-      {
-        "hash": "007120fe",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Restore AND deleted_at IS NULL in graph_enriched background count",
-        "scope": null
-      },
-      {
-        "hash": "c308d35b",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Migration 79 — covering index for graph_enriched=0 AND deleted_at IS NULL",
-        "scope": null
-      },
-      {
-        "hash": "3860aa4d",
-        "date": "2026-05-21",
-        "type": "Performance",
-        "description": "Strip all blocking queries from pipeline health endpoint",
-        "scope": null
-      },
-      {
-        "hash": "b98b4e89",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Drop length(text) from graph_enriched=0 background count — defeats partial index",
-        "scope": null
-      },
-      {
-        "hash": "d901073f",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Remove graph_enriched=1 full-table-scan from pipeline background refresh",
-        "scope": null
-      },
-      {
-        "hash": "f0f377b3",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Remove MIN(created_at) from pipeline background query — it bypassed partial index",
-        "scope": null
-      },
-      {
-        "hash": "02de39ff",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Pipeline health endpoint no longer blocks event loop on cold-cache COUNT(*) queries",
-        "scope": null
-      },
-      {
-        "hash": "04d25e11",
-        "date": "2026-05-21",
-        "type": "New",
-        "description": "Centralized DB service with named queries",
-        "scope": null
-      },
-      {
-        "hash": "bfca6934",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Pipeline health endpoint 8s timeout — prevent cold-cache query from blocking event loop",
-        "scope": null
-      },
-      {
-        "hash": "a6a4c8e0",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Hourly WAL checkpoint in sync-worker — prevent unbounded WAL growth",
-        "scope": null
-      }
-    ],
-    "2026-05-19": [
-      {
-        "hash": "0fd46ea4",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Library-watcher SIGABRT — raise V8 heap 4G→8G, add 30s SQLite busy timeout",
-        "scope": null
-      },
-      {
-        "hash": "333ae19f",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Siftersearch-worker SQLITE_BUSY_TIMEOUT_MS=30s — stop lock errors during watcher writes",
-        "scope": null
-      },
-      {
-        "hash": "7010d1b4",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Health-check handles missing enrichment stats gracefully (WAL-deferred)",
-        "scope": null
-      },
-      {
-        "hash": "2f30ba0c",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Pipeline health endpoint WAL guard covers graph stats + reuses single WAL stat",
-        "scope": null
-      },
-      {
-        "hash": "36539640",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Health-check localhost-first API probe + correct 12G watcher memory threshold",
-        "scope": null
-      },
-      {
-        "hash": "90520d5d",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Library-watcher — raise RSS limit to 12G + mtime writeback in hourly scan",
-        "scope": null
-      },
-      {
-        "hash": "9012acf4",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Library-watcher scan OOM — 3-tier skip avoids file reads for 99% of docs",
-        "scope": null
-      },
-      {
-        "hash": "4e929649",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Library-watcher NODE_OPTIONS — PM2 v6 ignores node_args, use env instead",
-        "scope": null
-      },
-      {
-        "hash": "144a74cf",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Library-watcher OOM — 4GB heap limit + mtime writeback",
-        "scope": null
-      },
-      {
-        "hash": "63b479c7",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Library-watcher heap OOM — mtime pre-check skips file reads on unchanged docs",
-        "scope": null
-      },
-      {
-        "hash": "dc28389b",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Library-watcher OOM — reduce SQLite cache/mmap via env vars",
-        "scope": null
-      },
-      {
-        "hash": "47ad239c",
-        "date": "2026-05-19",
-        "type": "Fixed",
-        "description": "Updater swaps all workers on deploy — was missing graph+enrichment+watcher",
         "scope": null
       }
     ]

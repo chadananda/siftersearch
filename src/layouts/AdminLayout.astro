@@ -105,6 +105,12 @@ function isActive(href: string): boolean {
           </svg>
           Entity Review
         </a>
+        <a href="https://api.siftersearch.com/widget-admin" target="_blank" rel="noopener" class="nav-item">
+          <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z" />
+          </svg>
+          Chat Widgets
+        </a>
       </nav>
       <div class="sidebar-footer">
         <a href="/" class="nav-item">
@@ -123,6 +129,9 @@ function isActive(href: string): boolean {
       </div>
     </main>
   </div>
+  <!-- House SifterChat widget — internal lab: the permanent house profile running on siftersearch.com itself
+       (admin-only, so it never touches public visitors). Dogfoods the embed we hand to host sites. -->
+  <script is:inline src="https://api.siftersearch.com/widget.js" data-key="wgt_house_siftersearch" async></script>
 </Layout>
 
 <style>

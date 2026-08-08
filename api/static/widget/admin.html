@@ -71,7 +71,11 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 async function api(path, opts = {}) {
-  const r = await fetch(API + path, { ...opts, headers: { 'X-Internal-Key': KEY, 'content-type': 'application/json', ...(opts.headers||{}) } });
+  // Cookie-first (a logged-in admin reaching this from /admin authenticates via the admin JWT, same-origin),
+  // internal key as fallback (direct/no-cookie access). requireInternal on the API accepts either.
+  const headers = { 'content-type': 'application/json', ...(opts.headers || {}) };
+  if (KEY) headers['X-Internal-Key'] = KEY;
+  const r = await fetch(API + path, { ...opts, credentials: 'include', headers });
   if (r.status === 401 || r.status === 403) { throw new Error('unauthorized'); }
   const t = await r.text();
   let j = null; try { j = t ? JSON.parse(t) : null; } catch {}
@@ -185,7 +189,15 @@ async function act(a, p, card) {
   }
 }
 
-if (KEY) unlock();
+// Try cookie auth first (logged-in admin); fall back to the key gate.
+(async () => {
+  try {
+    await api('/api/v1/widget/admin/profiles');
+    $('gate').classList.add('hide'); $('app').classList.remove('hide');
+    $('whoami').textContent = 'authenticated';
+    render();
+  } catch { if (KEY) unlock(); }
+})();
 </script>
 </body>
 </html>
