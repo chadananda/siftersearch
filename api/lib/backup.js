@@ -177,10 +177,34 @@ export async function runBackup() {
   }
 
   // ── 1. SQLite content DB ────────────────────────────────────────
+  // STRATEGY (2026-08-08): prefer a ZFS-snapshot copy over `sqlite3 .backup`. An external `.backup` RESTARTS
+  // from page 0 every time another connection commits — under active grounding writes it LIVELOCKS at 100% CPU
+  // and never finishes (observed: 31min+ with no progress; also the source of the Jul-27 18GB orphaned WAL).
+  // A ZFS snapshot is instant and atomic regardless of write load; the copied db+wal pair is crash-consistent
+  // (sqlite recovers the WAL on first open; we fold it in with wal_checkpoint and the caller's quick_check
+  // verifies the result). Set BACKUP_ZFS_DATASET (e.g. fast/siftersearch-db) to enable; empty → legacy .backup.
   const components = [];
+  const zfsDataset = process.env.BACKUP_ZFS_DATASET || '';
   try {
-    logger.info({ dbPath, backupPath }, 'Starting SQLite backup');
-    execSync(`sqlite3 "${dbPath}" ".backup ${backupPath}"`, { stdio: 'pipe' });
+    logger.info({ dbPath, backupPath, strategy: zfsDataset ? 'zfs-snapshot' : 'sqlite-backup' }, 'Starting SQLite backup');
+    if (zfsDataset) {
+      const snapName = `siftersearch-backup-${Date.now()}`;
+      const zfs = (args) => { try { execSync(`sudo -n zfs ${args}`, { stdio: 'pipe' }); } catch { execSync(`zfs ${args}`, { stdio: 'pipe' }); } };
+      zfs(`snapshot ${zfsDataset}@${snapName}`);
+      try {
+        const mount = execSync(`zfs get -H -o value mountpoint ${zfsDataset}`, { stdio: 'pipe' }).toString().trim();
+        const snapDir = `${mount}/.zfs/snapshot/${snapName}`;
+        const dbFile = dbPath.split('/').pop();
+        execSync(`cp "${snapDir}/${dbFile}" "${backupPath}"`, { stdio: 'pipe', timeout: 3600_000 });
+        if (existsSync(`${snapDir}/${dbFile}-wal`)) execSync(`cp "${snapDir}/${dbFile}-wal" "${backupPath}-wal"`, { stdio: 'pipe', timeout: 600_000 });
+        // Fold the WAL into the copy → clean single-file snapshot (removes -wal/-shm side files).
+        execSync(`sqlite3 "${backupPath}" "PRAGMA journal_mode=DELETE;"`, { stdio: 'pipe', timeout: 1800_000 });
+      } finally {
+        try { zfs(`destroy ${zfsDataset}@${snapName}`); } catch (e) { logger.warn({ err: e.message, snapName }, 'backup snapshot destroy failed — clean up manually'); }
+      }
+    } else {
+      execSync(`sqlite3 "${dbPath}" ".backup ${backupPath}"`, { stdio: 'pipe', timeout: 3600_000 });
+    }
     logger.info({ backupPath }, 'SQLite backup complete');
     components.push({ component: 'sqlite_content', success: true, dest: backupPath });
   } catch (err) {

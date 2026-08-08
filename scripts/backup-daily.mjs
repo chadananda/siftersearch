@@ -31,6 +31,8 @@ process.env.BACKUP_DIR ||= '/tank/backups/siftersearch';
 // Second-drive copy (separate physical spindle): runBackup() rsyncs the day's snapshot to BACKUP_NAS_TARGET
 // when set — vault is the dedicated backup drive on this machine. Remote/offsite target can replace this later.
 process.env.BACKUP_NAS_TARGET ||= '/vault/siftersearch/';
+// ZFS-snapshot copy strategy — immune to the .backup-vs-active-writes livelock (see backup.js).
+process.env.BACKUP_ZFS_DATASET ||= 'fast/siftersearch-db';
 const crumb = (m) => console.error(`[backup-daily ${new Date().toISOString()}] ${m}`);   // unbuffered breadcrumbs — pino's first lines sit in a buffer while execSync blocks, so a killed run used to look like it never started
 
 const { runBackup } = await import('../api/lib/backup.js');
