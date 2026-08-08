@@ -24,6 +24,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
 dotenv.config({ path: join(ROOT, '.env-public') });
+// BACKUP_DIR historically lived only in the PM2 ecosystem env — a standalone run without it silently fell
+// back to data/backups/ ON THE NVME POOL next to the live DB (observed in prod: a full 35GB Jul-28 snapshot
+// misdirected onto /fast). Belt-and-braces: env file SHOULD set it; this default guarantees it.
+process.env.BACKUP_DIR ||= '/tank/backups/siftersearch';
+// Second-drive copy (separate physical spindle): runBackup() rsyncs the day's snapshot to BACKUP_NAS_TARGET
+// when set — vault is the dedicated backup drive on this machine. Remote/offsite target can replace this later.
+process.env.BACKUP_NAS_TARGET ||= '/vault/siftersearch/';
+const crumb = (m) => console.error(`[backup-daily ${new Date().toISOString()}] ${m}`);   // unbuffered breadcrumbs — pino's first lines sit in a buffer while execSync blocks, so a killed run used to look like it never started
 
 const { runBackup } = await import('../api/lib/backup.js');
 const { sendEmail } = await import('../api/services/email.js');
@@ -37,11 +45,13 @@ const sql = (db, q) => execSync(`sqlite3 "${db}" "${q}"`, { stdio: 'pipe', timeo
 
 const t0 = Date.now();
 const problems = [];
+crumb(`starting — BACKUP_DIR=${process.env.BACKUP_DIR} vault=${process.env.BACKUP_NAS_TARGET}`);
 
 // ── 1. The backup itself (shared implementation) ─────────────────────────────
 let result = null;
 try {
   result = await runBackup();
+  crumb(`runBackup done (remoteSynced=${result?.remoteSynced})`);
   for (const c of result.components || []) {
     if (!c.success && !c.skipped) problems.push(`${c.component}: ${c.error || 'failed'}`);
   }
@@ -69,6 +79,26 @@ try {
   verify.ok = true;
 } catch (e) {
   problems.push(`VERIFY failed: ${e.message}`);
+}
+crumb(`verify done (ok=${verify.ok} quick_check=${String(verify.quickCheck).slice(0, 20)})`);
+
+// ── 2b. Second-drive (vault) copy: verify it landed + prune old copies there ─
+const VAULT = (process.env.BACKUP_NAS_TARGET || '').replace(/\/$/, '');
+if (VAULT && fs.existsSync(VAULT)) {
+  try {
+    const vcopy = join(VAULT, `sifter-${today}.db`);
+    if (!fs.existsSync(vcopy)) throw new Error(`vault copy missing: ${vcopy}`);
+    const s1 = fs.statSync(snap).size, s2 = fs.statSync(vcopy).size;
+    if (s1 !== s2) throw new Error(`vault copy size mismatch: ${s2} vs ${s1}`);
+    // keep the newest 5 dailies on the vault drive
+    const olds = fs.readdirSync(VAULT).filter((f) => /^sifter-\d{4}-\d{2}-\d{2}\.db$/.test(f)).sort().slice(0, -5);
+    for (const f of olds) fs.unlinkSync(join(VAULT, f));
+    crumb(`vault copy verified (${(s2 / 1e9).toFixed(1)}GB) · pruned ${olds.length} old`);
+  } catch (e) {
+    problems.push(`VAULT copy failed: ${e.message}`);
+  }
+} else if (VAULT) {
+  problems.push(`VAULT target missing on disk: ${VAULT}`);
 }
 
 // ── 3. Prune litter from previously interrupted runs (never today's files) ───
