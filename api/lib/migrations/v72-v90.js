@@ -543,6 +543,15 @@ export const migrations = {
     await query(`ANALYZE entity_claims`);
     logger.info('Migration 97 complete: grounding completion-check indexes');
   },
+  98: async () => {
+    // HyPE generator version stamp (mirrors context_model for disambiguation). v2 ("hype-v2-facts") makes
+    // question counts ADAPTIVE (2-5) and feeds cited claims into generation — so which generator produced a
+    // paragraph's questions must be trackable for measurement + selective re-runs. NULL = v1 (legacy 5-question).
+    logger.info('Starting migration 98: content.hyp_model (HyPE generator version stamp)');
+    try { await query(`ALTER TABLE content ADD COLUMN hyp_model TEXT`); }
+    catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    logger.info('Migration 98 complete: content.hyp_model');
+  },
 };
 
 export const graphMigrations = {

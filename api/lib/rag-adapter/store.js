@@ -36,7 +36,7 @@ export function makeStore() {
     async getParagraphs(docId) {
       const rows = await db.queryAll(
         `SELECT id, COALESCE(external_para_id, 'p' || id) pid, paragraph_index pidx, heading, blocktype AS kind, text,
-                context, context_model AS contextModel, hyp_questions AS hyp, hyp_thesis AS hypThesis
+                context, context_model AS contextModel, hyp_questions AS hyp, hyp_thesis AS hypThesis, hyp_model AS hypModel
            FROM content WHERE doc_id=? AND deleted_at IS NULL AND ${PROSE} ORDER BY paragraph_index`, [docId]);
       return rows.map((p) => ({ ...p, text: String(p.text).replace(/\s+/g, ' ').trim() }));
     },
@@ -46,9 +46,23 @@ export function makeStore() {
       await content.updateContextOnly(paragraphId, note, methodVersion);
     },
 
-    // Persist HyPE questions (array) + thesis for a paragraph; flags the row for Meili re-index.
-    async saveHype(paragraphId, questions, thesis) {
-      await content.updateHype(paragraphId, questions, thesis);
+    // Persist HyPE questions (array) + thesis for a paragraph, stamped with the generator version
+    // (hyp_model — mirrors context_model); flags the row for Meili re-index.
+    async saveHype(paragraphId, questions, thesis, version) {
+      await content.updateHype(paragraphId, questions, thesis, version);
+    },
+
+    // Cited claims per paragraph — the knowledge feed for fact-informed HyPE (retrieval stage's optional
+    // getParaClaims port). Keyed by the same pid shape getParagraphs uses. Live (non-superseded) claims only;
+    // statements truncated to prompt-friendly length.
+    async getParaClaims(docId) {
+      const rows = await db.queryAll(
+        `SELECT para_id pid, statement FROM entity_claims
+          WHERE doc_id=? AND superseded_at IS NULL AND statement IS NOT NULL AND statement != ''
+          ORDER BY para_id, id`, [docId]);
+      const byPara = {};
+      for (const r of rows) (byPara[r.pid] ||= []).push(String(r.statement).slice(0, 140));
+      return byPara;
     },
 
     // Persist source-anchored mentions (INSERT OR IGNORE on the stable anchor). entity_id stays NULL —

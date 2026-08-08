@@ -584,12 +584,12 @@ async function updateHypQuestions(id, questions) {
  * Update HyPE questions + thesis together (from the book-level generator hype-book.mjs).
  * Does NOT touch synced/embedding; sets enhanced_synced=0 so Meili re-indexes the sidecar.
  */
-async function updateHype(id, questions, thesis) {
+async function updateHype(id, questions, thesis, version = null) {
   const ts = now();
   const q = Array.isArray(questions) ? JSON.stringify(questions) : (questions || null);
   return query(`
-    UPDATE content SET hyp_questions = ?, hyp_thesis = ?, enhanced_synced = 0, updated_at = ? WHERE id = ?
-  `, [q, thesis || null, ts, id]);
+    UPDATE content SET hyp_questions = ?, hyp_thesis = ?, hyp_model = ?, enhanced_synced = 0, updated_at = ? WHERE id = ?
+  `, [q, thesis || null, version, ts, id]);
 }
 
 /**

@@ -20,7 +20,10 @@ export const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcil
  * Returns { ok, verify, createdIds, flaggedKeystones }. Throws if a stage throws (caller handles resume/retry).
  */
 export async function runGrounding(docId, opts = {}) {
-  const { from, only, to, readjudicate, cc = 8, onStage, onResult, report = true } = opts;
+  // rehype: regenerate HyPE from scratch (resume=false on the hype stage) — the explicit path for upgrading a
+  // book's questions to the current HYPE_VERSION (e.g. v1 fixed-5 → v2 fact-informed adaptive). Only meaningful
+  // with only:'hype' or a range covering hype; every other stage still resumes.
+  const { from, only, to, readjudicate, rehype = false, cc = 8, onStage, onResult, report = true } = opts;
   const writer = opts.writer || process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849';
   const fromI = only ? GROUNDING_STAGES.indexOf(only) : (from ? GROUNDING_STAGES.indexOf(from) : 0);
   // `to` bounds the last stage (used by an incremental re-adjudication sweep to run reconcile..link and skip a
@@ -85,7 +88,7 @@ export async function runGrounding(docId, opts = {}) {
     if (want('merge'))        { await enter('merge'); emit('merge', await rag.entities.merge({ concurrency: 4, onProgress })); } // same-name dedup by evidence
     if (want('dedup') && out.createdIds.length) { await enter('dedup'); emit('dedup', await rag.entities.dedupGuard({ entityIds: out.createdIds, onProgress })); } // AFTER link — new entities need bound claims
     if (wantsBand) { await releaseGraphBand(docId); heldBand = false; }   // release BEFORE hype/verify (they don't mutate the graph)
-    if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { resume: true, onProgress })); }
+    if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { resume: !rehype, onProgress })); }
 
     if (want('verify')) {
       await enter('verify');

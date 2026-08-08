@@ -99,9 +99,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const retry = async (fn, n = 5) => { let err; for (let i = 0; i < n; i++) { try { return await fn(); } catch (e) { err = e; await sleep(700 * (i + 1)); } } throw err; };
 process.on('unhandledRejection', (e) => console.error(`unhandledRejection: ${String(e?.message || e).slice(0, 80)}`));
 
-// RESUME: a paragraph is "done" only if it has a NEW-FORMAT hyp (a JSON array of >=4 questions) AND a thesis.
-// The old garbage HyPE (3 newline-joined noun-phrases, no thesis) does NOT match → gets replaced.
-const isNewFormat = (hq, th) => { if (!th) return false; try { const a = JSON.parse(hq); return Array.isArray(a) && a.length >= 4; } catch { return false; } };
+// RESUME: a paragraph is "done" only if it has a NEW-FORMAT hyp (a JSON array of >=2 questions) AND a thesis.
+// >=2 (not 4): the kernel's v2 generator writes ADAPTIVE 2-5 question arrays — a stricter check here would
+// endlessly regenerate v2 rows. The old garbage HyPE (newline-joined, no thesis) still fails → gets replaced.
+const isNewFormat = (hq, th) => { if (!th) return false; try { const a = JSON.parse(hq); return Array.isArray(a) && a.length >= 2; } catch { return false; } };
 const doneSet = RESUME ? new Set((await queryAll(`SELECT external_para_id pid, hyp_questions hq, hyp_thesis th FROM content WHERE doc_id=?`, [DOC])).filter((r) => isNewFormat(r.hq, r.th)).map((r) => r.pid)) : new Set();
 
 let done = 0, failed = 0, cacheHit = 0, cacheTot = 0, escalations = 0;

@@ -67,6 +67,7 @@
  * @property {(claims: ClaimRow[]) => Promise<number>} saveClaims          upsert by claim_hash; ids stay null
  * @property {(docId: number) => Promise<number>}  getDisambigCoverage    fraction 0..1 that carry a note (gate)
  * @property {(docId: number) => (Promise<string>|string)} [getCastSeed]  optional who's-who for the prompt
+ * @property {(docId: number) => Promise<Record<string,string[]>>} [getParaClaims]  optional pid→cited-claim statements — the knowledge feed for fact-informed HyPE (absent → fact-blind questions)
  * @property {(docId: number, opts?: {minFreq?:number,filter?:string,limit?:number}) => Promise<Cluster[]>} getMentionClusters
  * @property {(name: string, opts?: {type?:string,limit?:number}) => Promise<CandidateEntity[]>} findCandidateEntities  RECALL only
  * @property {(query: string, opts?: {limit?:number}) => Promise<GroundedEvidence[]>} [searchGrounded]  resolve-against-search: evidence from the SEARCHABLE GROUNDED corpus (BOUND claims + entity dossiers of already-completed books, transliteration-tolerant). Lets reconcile/dedup-guard decide grouping/splitting on real cross-book evidence. Absent → reconcile falls back to name-recall + in-book scenes only.

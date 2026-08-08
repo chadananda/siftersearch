@@ -6,12 +6,13 @@ import fs from 'fs';
 import { logger } from '../logger.js';
 
 /** Launch a detached grounding run. Returns the pid. Opts map 1:1 to the CLI flags. */
-export function spawnGrounding(docId, { from, only, to, readjudicate, cc } = {}) {
+export function spawnGrounding(docId, { from, only, to, readjudicate, rehype, cc } = {}) {
   const args = [`${process.cwd()}/scripts/complete-book.mjs`, String(docId)];
   if (from) args.push(`--from=${from}`);
   if (only) args.push(`--only=${only}`);
   if (to) args.push(`--to=${to}`);
   if (readjudicate) args.push('--readjudicate');
+  if (rehype) args.push('--rehype');   // regenerate HyPE (resume=false on the hype stage)
   if (cc) args.push(`--cc=${cc}`);
   // Send output to a per-doc log — stdio:'ignore' once hid a silent mid-stage exit and made it undiagnosable.
   let outFd = 'ignore';

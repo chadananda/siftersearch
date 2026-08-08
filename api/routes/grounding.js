@@ -62,10 +62,10 @@ export default async function groundingRoutes(fastify) {
   // Supports FULL runs and RE-PROCESSING runs: `from=<stage>` resumes from a stage, `only=<stage>` runs one stage
   // (e.g. only=research to re-resolve just the uncertains) — both report live via run_json exactly like a full run.
   fastify.post('/grounding/start', admin, async (req) => {
-    const { docId, from, only, to, readjudicate, cc } = req.body || {};
+    const { docId, from, only, to, readjudicate, rehype, cc } = req.body || {};
     if (!docId) throw ApiError.badRequest('docId required');
     if (isLive(await state.getRun(Number(docId)))) throw ApiError.conflict(`doc ${docId} is already grounding`);
-    const pid = spawnGrounding(docId, { from, only, to, readjudicate, cc });   // the ONE launcher (shared with the queue)
+    const pid = spawnGrounding(docId, { from, only, to, readjudicate, rehype, cc });   // the ONE launcher (shared with the queue)
     return { started: true, docId: Number(docId), pid, from: from || null, only: only || null, cc: Number(cc) || 8 };
   });
 

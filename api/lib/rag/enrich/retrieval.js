@@ -1,28 +1,40 @@
 // enrich/retrieval — HyPE: the hypothetical questions each passage answers, so a reader's own wording
 // retrieves it. Runs AFTER disambiguation (gated): it reads the disambiguation note to resolve references,
-// then writes 5 English questions + a one-sentence thesis per paragraph. Questions are ALWAYS English — the
+// then writes 2-5 English questions + a one-sentence thesis per paragraph. Questions are ALWAYS English — the
 // cross-lingual bridge: an English query embedding matches the English HyPE of a Persian/Arabic passage, so
 // one index retrieves the whole corpus. Same cache discipline as disambiguation (stable SYS prefix; segments
 // concurrent, sequential within).
+//
+// v2 (2026-08-08, "hype-v2-facts"): questions are KNOWLEDGE-INFORMED. The entity pipeline extracts cited
+// claims FROM these very paragraphs (store.getParaClaims, optional port) — feeding them back in means the
+// model knows exactly which facts a paragraph establishes and writes questions that make each fact
+// retrievable. Plus: ADAPTIVE count (2-5 distinct asks, no quota-padding — fixed 5 forced rephrased
+// duplicates on thin paragraphs), genre-matched registers (history vs doctrinal), and ≥1 topic-phrased
+// question WITHOUT personal names (measured gap: person-anchored questions lost topic searches like
+// "children's classes Burma"). Rows are stamped hyp_model=HYPE_VERSION; v1 rows (5-question, unstamped)
+// remain valid/done — regeneration is explicit (opts.resume=false), never implicit.
 import { assertDisambiguated } from '../kernel/gate.js';  // HyPE consumes disambiguated text → gate first
 import { profileFor } from '../kernel/profile.js';
 import { segment } from '../kernel/segment.js';
 import { pool } from '../kernel/run.js';
 
+export const HYPE_VERSION = 'hype-v2-facts';
 const DENSE_HINT = 'Keep each question short; output ONLY the compact JSON object, nothing else.';
 const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not worth HyPE
+const MAX_FACTS_PER_PARA = 6;   // prompt budget: the densest paragraphs carry 10+ claims; 6 covers the distinct ones
 
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
   const profile = await profileFor(ctx, docId);
-  const [meta, all, cast] = await Promise.all([ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId), castOf(ctx, docId)]);
+  const [meta, all, cast, facts] = await Promise.all([
+    ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId), castOf(ctx, docId), factsOf(ctx, docId)]);
   const long = all.filter((p) => p.text.length >= (opts.minLen ?? MIN_LEN));
   const paras = (opts.resume ?? true) ? long.filter((p) => !isDone(p)) : long;
   const segs = segment(paras, { mode: profile.segmentation, segMax: opts.segMax ?? 60 });
   const system = buildSystem(profile, meta, cast);
   const route = { model: opts.model ?? profile.models.hype, fallback: opts.fallback ?? profile.fallback };
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 1500);
-  const stats = { paras: paras.length, segments: segs.length, done: 0, failed: 0, escalated: 0 };
+  const stats = { paras: paras.length, segments: segs.length, done: 0, failed: 0, escalated: 0, factFed: 0, version: HYPE_VERSION };
   // Report per PARAGRAPH, ABSOLUTE: total = all HyPE-eligible paras (long), already-done = resume-skipped (base),
   // so a resumed hype run's bar shows true progress not just the remaining slice.
   const base = long.length - paras.length;
@@ -33,10 +45,12 @@ export async function run(ctx, docId, opts = {}) {
       // Per-PARAGRAPH guard: pool()'s guard is per ITEM = per SEGMENT here, so an unguarded throw would drop every
       // remaining paragraph of the segment while the stage still reported success. Fatal (credit/key/policy) aborts.
       try {
-        const user = buildUser(p);
+        const pFacts = facts[p.pid] || null;
+        if (pFacts) stats.factFed++;
+        const user = buildUser(p, pFacts);
         const { parsed, escalated } = await ctx.model.runLadder({ route, system, user, parse: parseHype, maxTokens, temperature: 0.3, denseHint: DENSE_HINT });
         if (!parsed) { stats.failed++; report(); continue; }
-        if (!opts.dryRun) await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis);
+        if (!opts.dryRun) await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
         stats.done++; if (escalated) stats.escalated++; report();
       } catch (e) {
         if (e?.fatal) throw e;
@@ -49,9 +63,12 @@ export async function run(ctx, docId, opts = {}) {
 }
 
 const castOf = (ctx, docId) => (ctx.store.getCastSeed ? Promise.resolve(ctx.store.getCastSeed(docId)).catch(() => '') : Promise.resolve(''));
-// A paragraph is HyPE-done only with the NEW format: a JSON array of ≥4 questions AND a thesis. Old
-// newline-joined HyPE (no thesis) fails this → gets regenerated.
-const isDone = (p) => { if (!p.hypThesis) return false; try { const a = JSON.parse(p.hyp); return Array.isArray(a) && a.length >= 4; } catch { return false; } };
+// Cited claims per paragraph (optional port; {} = fact-blind, prompt degrades gracefully to v2-without-facts).
+const factsOf = (ctx, docId) => (ctx.store.getParaClaims ? Promise.resolve(ctx.store.getParaClaims(docId)).catch(() => ({})) : Promise.resolve({}));
+// A paragraph is HyPE-done with EITHER format: v2 adaptive (2-5 questions) or v1 (exactly 5) — both are JSON
+// arrays ≥2 with a thesis. Old newline-joined HyPE (no thesis / not JSON) fails → gets regenerated. v1 rows are
+// NOT auto-regenerated; upgrading a book to v2 is an explicit resume:false run.
+const isDone = (p) => { if (!p.hypThesis) return false; try { const a = JSON.parse(p.hyp); return Array.isArray(a) && a.length >= 2; } catch { return false; } };
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 
@@ -61,30 +78,48 @@ export function parseHype(raw) {
   try {
     const j = JSON.parse(m[0]);
     const q = (j.questions || []).filter((x) => typeof x === 'string' && x.trim());
-    if (q.length < 4) return null;
+    if (q.length < 2) return null;
     return { questions: q.slice(0, 5), thesis: String(j.thesis || '').trim() };
   } catch { return null; }
 }
 
 const LANG_NAME = { en: 'English', fa: 'Persian', ar: 'Arabic', he: 'Hebrew' };
 
+// Register menu by genre: narrative books answer who/what/when/outcome; doctrinal books answer
+// concept/assertion/implication. One menu per book (genre is a book-level profile), listed as guidance —
+// the ADAPTIVE rule (distinct asks only) decides how many actually apply to a given paragraph.
+const REGISTERS = {
+  history: `(a) a concrete who/what/when/where fact it states, (b) the event or episode and its outcome, (c) why it matters or what followed from it, (d) how a curious lay reader would casually ask about it`,
+  biography: `(a) a concrete fact about the person (role, relationship, act, date), (b) the episode recounted and its outcome, (c) the person's significance or what this reveals about them, (d) how a curious lay reader would casually ask about it`,
+  doctrinal: `(a) the concept, term, or station the passage explains, (b) what the passage asserts or teaches about it, (c) its implication or application, (d) how a thoughtful lay reader would casually ask about it`,
+};
+
 export function buildSystem(profile, meta, cast = '') {
   const lang = LANG_NAME[profile.lang] || profile.lang;
   const foreign = profile.lang !== 'en'
     ? `\nThe paragraph is in ${lang} (${profile.script} script) — READ it, but write ALL questions and the thesis in ENGLISH so an English query can retrieve this ${lang} passage.\n` : '';
+  const registers = REGISTERS[profile.genre] || REGISTERS.history;
   const bookMeta = [`"${meta.title}" by ${meta.author || '?'}`, [meta.religion, meta.collection].filter(Boolean).join(' / '), meta.year ? `Year ${meta.year}` : '', meta.description ? `About: ${String(meta.description).slice(0, 240)}` : ''].filter(Boolean).join('\n');
   return `You generate Hypothetical Prompt Embeddings (HyPE) for ONE paragraph, to power semantic search. A reader searches with a QUESTION; write the questions THIS paragraph answers, so it is retrievable by anyone asking about its content in their own words. Output JSON ONLY.
 ${foreign}
 From the paragraph (use the disambiguation CONTEXT only to resolve who/what/where — do NOT ask about the context):
-- "questions": EXACTLY 5, each ending "?", max 15 words, one per register: (1) a concrete factual who/what/when it states, (2) a second distinct concrete fact, (3) the concept/term/role it explains, (4) what follows from / is significant about it, (5) how a thoughtful lay reader would casually ask. Vary phrasing; never invent facts.
+- "questions": 2 to 5 — one per DISTINCT thing this paragraph genuinely answers. No padding: never restate the same ask in different words; a fact-dense paragraph deserves 4-5 questions, a thin or transitional one only 2-3. Each ends "?", max 15 words. Draw from these registers as they apply: ${registers}.
+  • At least ONE question must be phrased WITHOUT naming any person — by event, place, period, or theme ("What happened at …?", "How did the … community …?") — so topic searches also retrieve this paragraph.
+  • Use the name-forms a reader would type: canonical short names (the CAST's primary forms), never long honorific chains.
+  • Ground every question in what the paragraph ACTUALLY says — never invent facts.
 - "thesis": ONE sentence (20-45 words) stating what this paragraph teaches as a proposition, stated directly.
 
-Return exactly: {"questions":["…?","…?","…?","…?","…?"],"thesis":"…"}
+If ESTABLISHED FACTS are provided with the paragraph, they are cited claims extracted from THIS paragraph — the knowledge researchers seek here. Ensure each distinct fact is reachable by at least one question (related facts may share a question). Prefer fact-bearing questions over generic ones.
+
+Return exactly: {"questions":["…?","…?"],"thesis":"…"} (2-5 questions)
 
 BOOK:
 ${bookMeta}${cast ? `\n\nBOOK CAST (who's-who — resolve a name to the right figure; do not ask about people not in the paragraph):\n${cast}` : ''}`;
 }
 
-export function buildUser(p) {
-  return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
+export function buildUser(p, facts = null) {
+  const factBlock = facts?.length
+    ? `\n\nESTABLISHED FACTS (cited claims from this paragraph — make each retrievable):\n${facts.slice(0, MAX_FACTS_PER_PARA).map((f) => `- ${f}`).join('\n')}`
+    : '';
+  return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${factBlock}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
 }
