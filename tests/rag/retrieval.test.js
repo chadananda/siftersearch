@@ -1,7 +1,7 @@
 // enrich/retrieval (HyPE) — pure parse + run() on fakes, including the disambiguation gate and the v2
 // fact-informed adaptive behavior (2-5 questions, version stamp, cited-claim feed).
 import { describe, it, expect } from 'vitest';
-import { parseHype, HYPE_VERSION } from '../../api/lib/rag/enrich/retrieval.js';
+import { parseHype, sliceParagraph, HYPE_VERSION } from '../../api/lib/rag/enrich/retrieval.js';
 import { fakeLLM, makeRag } from './kit.js';
 
 const NOTE = '{"questions":["Who declared in Shíráz?","When was the Declaration?","What is the Báb\'s role?","Why does it matter?","How did it begin?"],"thesis":"The Báb declared His mission in Shíráz in 1844."}';
@@ -89,6 +89,38 @@ describe('retrieval — run() on fake ports', () => {
     expect(stats.done).toBe(1);
     expect(store.hyped).toHaveLength(1);
     expect(store.hyped[0].version).toBe(HYPE_VERSION);
+  });
+
+  it('slices a long paragraph into bounded calls and merges (thesis from part 1, dedup, one save)', async () => {
+    const sent = 'The Báb declared His mission in Shíráz before Mullá Ḥusayn on the evening of 23 May 1844. ';
+    const long = { ...para, id: 7, pid: 'p7', text: sent.repeat(14).trim() };   // ~1,270 chars → 2 slices
+    const replies = [
+      { content: '{"questions":["Where did the Báb declare His mission?","Who witnessed the Declaration?"],"thesis":"The Báb declared His mission in Shíráz in 1844."}' },
+      { content: '{"questions":["Who witnessed the Declaration?","When did the Bábí Dispensation begin?"],"thesis":""}' },
+    ];
+    const llm = fakeLLM(replies);
+    const { rag, store } = makeRag({ seed: { paras: { 9: [long] }, coverage: { 9: 1 } }, llm });
+    const stats = await rag.retrieval.index(9);
+    expect(stats.done).toBe(1);
+    expect(stats.sliced).toBe(1);
+    expect(llm.calls.length).toBe(2);                                            // one bounded call per slice
+    expect(llm.calls[1].messages.find((m) => m.role === 'user').content).toContain('FOCUS (part 2/2)');
+    expect(store.hyped).toHaveLength(1);
+    expect(store.hyped[0].thesis).toContain('Shíráz');                           // thesis from part 1
+    expect(store.hyped[0].questions).toEqual([                                    // dedup across slices
+      'Where did the Báb declare His mission?',
+      'Who witnessed the Declaration?',
+      'When did the Bábí Dispensation begin?',
+    ]);
+  });
+
+  it('sliceParagraph: short stays whole; long splits on sentence bounds; no boundaries stays whole', () => {
+    expect(sliceParagraph('short one.')).toHaveLength(1);
+    const long = 'One sentence here. '.repeat(60).trim();
+    const slices = sliceParagraph(long);
+    expect(slices.length).toBeGreaterThan(1);
+    expect(slices.join(' ').length).toBeGreaterThanOrEqual(long.length - slices.length);  // nothing lost beyond joins
+    expect(sliceParagraph('x'.repeat(1200))).toHaveLength(1);                    // no sentence bounds → one slice
   });
 
   it('upgrade: redoes old-version paragraphs, skips already-current ones (retries resume, no double-spend)', async () => {

@@ -27,6 +27,14 @@ const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not wort
 // was arbitrary in both directions: it padded thin paragraphs and starved dense ones.)
 const QUESTION_CEILING = 40;
 const MAX_FACTS_PER_PARA = 24;  // sanity slice only — the densest observed paragraph carries 12 claims
+// SENTENCE-SLICING (measured necessity, 2026-08-08): v4-flash's hybrid reasoning SCALES WITH THE ASK — asked
+// for a dense paragraph's full 20-40 questions in one call, it burned past a 4000 cap (481/500 truncated) and
+// then past 8000 too (31/41). Raising the container feeds the balloon; the fix is bounding the TASK: long
+// paragraphs are split into sentence groups, one call per group (a handful of questions each, reasoning stays
+// small), answers concatenated up to QUESTION_CEILING. Slice calls share the same cached SYS prefix, and the
+// full paragraph rides along as context so questions stay globally grounded.
+const SLICE_CHARS = 900;        // paragraphs longer than this get sliced
+const SLICE_TARGET = 700;       // aim ~this many chars of focus text per slice call
 
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
@@ -61,8 +69,23 @@ export async function run(ctx, docId, opts = {}) {
       try {
         const pFacts = facts[p.pid] || null;
         if (pFacts) stats.factFed++;
-        const user = buildUser(p, pFacts);
-        const { parsed, escalated } = await ctx.model.runLadder({ route, system, user, parse: parseHype, maxTokens, temperature: 0.3, denseHint: DENSE_HINT });
+        const slices = sliceParagraph(p.text);
+        let parsed = null, escalated = false;
+        if (slices.length === 1) {
+          ({ parsed, escalated } = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts), parse: parseHype, maxTokens, temperature: 0.3, denseHint: DENSE_HINT }));
+        } else {
+          // One bounded call per sentence-group; slice 1 also writes the whole-paragraph thesis.
+          const questions = []; let thesis = '';
+          for (let si = 0; si < slices.length; si++) {
+            const r = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts, { focus: slices[si], part: si + 1, parts: slices.length }), parse: si === 0 ? parseHype : parseHypeSlice, maxTokens, temperature: 0.3, denseHint: DENSE_HINT });
+            if (r.escalated) escalated = true;
+            if (!r.parsed) continue;                       // a lost slice costs coverage, not the paragraph
+            if (si === 0) thesis = r.parsed.thesis;
+            for (const q of r.parsed.questions) { const k = q.toLowerCase().replace(/[^a-z0-9 ]/g, ''); if (!questions.some((e) => e.k === k)) questions.push({ k, q }); }
+          }
+          if (questions.length && thesis) parsed = { questions: questions.slice(0, QUESTION_CEILING).map((e) => e.q), thesis };
+          stats.sliced = (stats.sliced || 0) + 1;
+        }
         if (!parsed) { stats.failed++; report(); continue; }
         if (!opts.dryRun) await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
         stats.done++; if (escalated) stats.escalated++; report();
@@ -131,9 +154,34 @@ BOOK:
 ${bookMeta}${cast ? `\n\nBOOK CAST (who's-who — resolve a name to the right figure; do not ask about people not in the paragraph):\n${cast}` : ''}`;
 }
 
-export function buildUser(p, facts = null) {
+// Split a long paragraph into sentence groups of ~SLICE_TARGET chars. Sentence-boundary regex covers
+// Latin + Arabic-script terminators; a paragraph with no detectable boundaries stays one slice.
+export function sliceParagraph(text) {
+  if (text.length <= SLICE_CHARS) return [text];
+  const sentences = text.split(/(?<=[.!?؟۔…])\s+/u).filter((s) => s.trim());
+  if (sentences.length < 2) return [text];
+  const slices = []; let cur = '';
+  for (const s of sentences) {
+    if (cur && cur.length + s.length > SLICE_TARGET) { slices.push(cur.trim()); cur = ''; }
+    cur += (cur ? ' ' : '') + s;
+  }
+  if (cur.trim()) slices.push(cur.trim());
+  return slices;
+}
+
+// Slice parts 2+ carry no thesis — questions only.
+export function parseHypeSlice(raw) {
+  const p = parseHype(raw);
+  return p ? { questions: p.questions, thesis: '' } : null;
+}
+
+export function buildUser(p, facts = null, slice = null) {
   const factBlock = facts?.length
     ? `\n\nESTABLISHED FACTS (cited claims from this paragraph — make each retrievable):\n${facts.slice(0, MAX_FACTS_PER_PARA).map((f) => `- ${f}`).join('\n')}`
     : '';
-  return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${factBlock}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
+  if (!slice) return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${factBlock}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
+  const thesisNote = slice.part === 1
+    ? 'Include the "thesis" for the WHOLE paragraph.'
+    : 'Set "thesis" to "" — it was written with part 1.';
+  return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${factBlock}\n\nFULL PARAGRAPH [${p.pid}] (for context only):\n${p.text}\n\nFOCUS (part ${slice.part}/${slice.parts}) — write questions ONLY for what these sentences state (facts covered by other parts are handled there). ${thesisNote}\nFOCUS SENTENCES:\n${slice.focus}`;
 }
