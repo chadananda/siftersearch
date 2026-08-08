@@ -9,7 +9,8 @@
 
 import { readFile, stat, realpath } from 'fs/promises';
 import { join } from 'path';
-import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence } from '../lib/search.js';
+import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence, multiIndexSearch, getSearchSourceStats } from '../lib/search.js';
+import { requireInternal } from '../lib/auth.js';
 import { queryOne, userQuery } from '../lib/db.js';
 import { getCachedContentCounts, getCachedPipelineCounts } from '../services/progress.js';
 import { CURRENT_VERSION } from '../lib/migrations/runner.js';
@@ -386,6 +387,20 @@ export default async function searchRoutes(fastify) {
   const searchStatsCache = { data: null, timestamp: 0, ttl: 30000 }; // 30s
   // Pipeline status: reuse library.js background timer via shared pipelineCache import
   // No heavy queries in request path — always return cached/zero data
+
+  // ── HyPE measurement loop (2026-08-08) ─────────────────────────────────────
+  // Production win-share: which retrieval layer (main/hype/entity) surfaces the results the multi-index
+  // path (Jafar chat) actually returns. In-memory since last restart.
+  fastify.get('/source-stats', { preHandler: requireInternal }, async () => getSearchSourceStats());
+
+  // Eval surface for the multi-index (HyPE-consuming) path. The public POST / uses hybridSearch only, so
+  // the search-quality battery could never measure HyPE's contribution. Internal-only; used by
+  // tests/quality/score-search.mjs --multi. Hits carry _layerRanks {main,hype,entity} + matched_hype.
+  fastify.post('/multi', { preHandler: requireInternal }, async (request) => {
+    const { query, limit = 10, filters = {} } = request.body || {};
+    if (!query || !String(query).trim()) return { hits: [] };
+    return multiIndexSearch(String(query), { limit: Math.min(Number(limit) || 10, 30), filters, includeMatchedHype: true });
+  });
 
   fastify.get('/stats', async (request) => {
     const now = Date.now();

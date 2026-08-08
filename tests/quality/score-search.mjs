@@ -35,9 +35,19 @@ const WRITE_REPORT = args.includes('--write-report');
 const ANALYZE = args.includes('--analyze'); // generate AI analysis after writing report
 const TOP_K = parseInt(args.find(a => a.startsWith('--top-k='))?.split('=')[1] || '10', 10);
 const CATEGORY = args.find(a => a.startsWith('--category='))?.split('=')[1] || null;
+// --multi: run the battery against the MULTI-INDEX path (/api/v1/search/multi, internal) instead of the
+// public /search. The public endpoint is hybridSearch-only — HyPE never contributes there — so measuring
+// HyPE's retrieval value requires this mode. Hits carry _layerRanks {main,hype,entity}; the report gains
+// a `hype` block (touched/led shares). Needs DEPLOY_SECRET (or INTERNAL_API_KEY) in .env-secrets.
+const MULTI = args.includes('--multi');
 
 const API_BASE = process.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const API_KEY = process.env.PUBLIC_SIFTER_API_KEY;
+const INTERNAL_KEY = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY;
+if (MULTI && !INTERNAL_KEY) {
+  console.error('--multi needs DEPLOY_SECRET (or INTERNAL_API_KEY) in .env-secrets');
+  process.exit(2);
+}
 
 const rawFixtures = JSON.parse(readFileSync(join(__dirname, 'ocean-fixtures.json'), 'utf-8'));
 const FIXTURES = CATEGORY ? rawFixtures.filter(f => f.category === CATEGORY) : rawFixtures;
@@ -63,9 +73,9 @@ async function runOne(fix) {
 
   let res, body;
   try {
-    res = await fetch(`${API_BASE}/api/v1/search`, {
+    res = await fetch(`${API_BASE}/api/v1/search${MULTI ? '/multi' : ''}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+      headers: { 'Content-Type': 'application/json', ...(MULTI ? { 'X-Internal-Key': INTERNAL_KEY } : { 'X-API-Key': API_KEY }) },
       body: JSON.stringify(reqBody),
       signal: AbortSignal.timeout(25000)
     });
@@ -181,6 +191,9 @@ async function runOne(fix) {
     top_hit_title: hits[0]?.title,
     top_hit_authority: hits[0]?.authority ?? hits[0]?.authorityTier ?? hits[0]?.tier,
     top_hit_text: (hits[0]?.text || '').slice(0, 120),
+    // --multi provenance: which layer(s) surfaced the matched hit / the top hit ({main,hype,entity} ranks)
+    matched_layers: (MULTI && rank > 0) ? (hits[rank - 1]?._layerRanks ?? null) : null,
+    top1_layers: MULTI ? (hits[0]?._layerRanks ?? null) : null,
     query: fix.query,
     intent: fix.intent,
     religion_filter: fix.religion_filter
@@ -262,6 +275,25 @@ const failBreakdown = (() => {
   return { not_found, text_mismatch, anti_test, authority_low, timed_out, http_error, network_error };
 })();
 
+// --multi: HyPE contribution shares. "touched" = the hit was ALSO surfaced by the HyPE sidecar;
+// "led" = HyPE ranked it before main did (or main missed it entirely) — the share of retrieval wins
+// HyPE is actually responsible for. This is the eval half of the HyPE measurement loop.
+const hypeAgg = (() => {
+  if (!MULTI) return null;
+  const found = results.filter(r => r.matched_layers);
+  const led = (L) => L && L.hype != null && (L.main == null || L.hype < L.main);
+  const touched = (L) => L && L.hype != null;
+  const withTop1 = results.filter(r => r.top1_layers);
+  return {
+    matched_hits: found.length,
+    matched_hype_touched: found.filter(r => touched(r.matched_layers)).length,
+    matched_hype_led: found.filter(r => led(r.matched_layers)).length,
+    top1_hype_touched: withTop1.filter(r => touched(r.top1_layers)).length,
+    top1_hype_led: withTop1.filter(r => led(r.top1_layers)).length,
+    top1_total: withTop1.length,
+  };
+})();
+
 const report = {
   run_at: new Date().toISOString(),
   total: results.length,
@@ -273,8 +305,10 @@ const report = {
   latency_p95_ms: p95,
   top_k: TOP_K,
   api_base: API_BASE,
+  endpoint: MULTI ? 'multi' : 'public',
   categories,
   failure_breakdown: failBreakdown,
+  ...(hypeAgg ? { hype: hypeAgg } : {}),
   results
 };
 
@@ -287,6 +321,12 @@ if (JSON_ONLY) {
   console.log('─'.repeat(72));
   for (const [cat, stats] of Object.entries(categories)) {
     console.log(`  ${cat.padEnd(20)} ${stats.passed}/${stats.total} (${stats.pass_rate}%)`);
+  }
+  if (hypeAgg) {
+    console.log('─'.repeat(72));
+    const pct = (n, d) => d ? `${Math.round(100 * n / d)}%` : '—';
+    console.log(`  HyPE (multi-index): matched hits touched ${hypeAgg.matched_hype_touched}/${hypeAgg.matched_hits} (${pct(hypeAgg.matched_hype_touched, hypeAgg.matched_hits)}) · led ${hypeAgg.matched_hype_led}/${hypeAgg.matched_hits} (${pct(hypeAgg.matched_hype_led, hypeAgg.matched_hits)})`);
+    console.log(`  HyPE top-1 results: touched ${pct(hypeAgg.top1_hype_touched, hypeAgg.top1_total)} · led ${pct(hypeAgg.top1_hype_led, hypeAgg.top1_total)}`);
   }
   console.log('═'.repeat(72));
   for (const r of results.filter(r => !r.ok)) {
@@ -303,15 +343,16 @@ if (JSON_ONLY) {
 }
 
 if (WRITE_REPORT) {
-  const outPath = join(__dirname, 'results-latest.json');
+  // --multi writes to its own files so the public-endpoint baseline/history is never clobbered.
+  const outPath = join(__dirname, MULTI ? 'results-latest-multi.json' : 'results-latest.json');
   writeFileSync(outPath, JSON.stringify(report, null, 2));
-  if (!JSON_ONLY) console.log(`\nReport written to tests/quality/results-latest.json`);
+  if (!JSON_ONLY) console.log(`\nReport written to tests/quality/${MULTI ? 'results-latest-multi.json' : 'results-latest.json'}`);
 
   // Append summary to history file (no per-result data — just headline metrics)
-  const histPath = join(__dirname, 'history.json');
+  const histPath = join(__dirname, MULTI ? 'history-multi.json' : 'history.json');
   let history = [];
   try { history = JSON.parse(readFileSync(histPath, 'utf8')); } catch {}
-  const snapshot = { run_at: report.run_at, total: report.total, passed: report.passed, pass_rate: report.pass_rate, mrr: report.mrr, latency_p50_ms: report.latency_p50_ms, latency_p95_ms: report.latency_p95_ms, categories: Object.fromEntries(Object.entries(report.categories).map(([k,v]) => [k, {passed: v.passed, total: v.total, pass_rate: v.pass_rate}])) };
+  const snapshot = { run_at: report.run_at, total: report.total, passed: report.passed, pass_rate: report.pass_rate, mrr: report.mrr, latency_p50_ms: report.latency_p50_ms, latency_p95_ms: report.latency_p95_ms, ...(report.hype ? { hype: report.hype } : {}), categories: Object.fromEntries(Object.entries(report.categories).map(([k,v]) => [k, {passed: v.passed, total: v.total, pass_rate: v.pass_rate}])) };
   history.push(snapshot);
   writeFileSync(histPath, JSON.stringify(history, null, 2));
   if (!JSON_ONLY) console.log(`History appended to tests/quality/history.json`);

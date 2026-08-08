@@ -4881,5 +4881,152 @@
     "expected_entity_canonical": "Mullá Ḥusayn",
     "expected_doc_id": 21308,
     "religion_filter": "Baha'i"
+  },
+  {
+    "id": "lay-first-believer",
+    "category": "lay-paraphrase",
+    "query": "who was the first person to believe in the Bab",
+    "intent": "Casual question; canonical answer (Mulla Husayn, the Babu'l-Bab) lives in the histories",
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      21308,
+      21310
+    ],
+    "expected_text_contains": [
+      "Husayn"
+    ]
+  },
+  {
+    "id": "lay-bab-execution",
+    "category": "lay-paraphrase",
+    "query": "what happened when they executed the Bab",
+    "intent": "Lay phrasing for the Martyrdom of the Bab (Tabriz, 1850)",
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      21308,
+      21310
+    ]
+  },
+  {
+    "id": "lay-tahirih-veil",
+    "category": "lay-paraphrase",
+    "query": "why did Tahirih take off her veil in front of everyone",
+    "intent": "Badasht conference; Tahirih appearing unveiled",
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      21308,
+      21310
+    ],
+    "expected_text_contains": [
+      "veil"
+    ]
+  },
+  {
+    "id": "lay-badasht",
+    "category": "lay-paraphrase",
+    "query": "what was the gathering at Badasht about",
+    "intent": "Conference of Badasht — announcement of the new Dispensation / break with the past",
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      21308,
+      21310
+    ]
+  },
+  {
+    "id": "lay-seven-martyrs",
+    "category": "lay-paraphrase",
+    "query": "story of the seven martyrs of Tehran",
+    "intent": "The Seven Martyrs of Tihran episode",
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      21308,
+      21310
+    ],
+    "expected_text_contains": [
+      "martyr"
+    ]
+  },
+  {
+    "id": "lay-quddus-death",
+    "category": "lay-paraphrase",
+    "query": "how did Quddus die",
+    "intent": "Fate of Quddus after Fort Tabarsi (martyred at Barfurush)",
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      21308,
+      21310
+    ],
+    "expected_text_contains": [
+      "Quddus"
+    ]
+  },
+  {
+    "id": "lay-bab-remains",
+    "category": "lay-paraphrase",
+    "query": "what happened to the body of the Bab after he was killed",
+    "intent": "Recovery and concealment of the Bab's remains",
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      21308,
+      21310
+    ]
+  },
+  {
+    "id": "lay-tabarsi",
+    "category": "lay-paraphrase",
+    "query": "what was the fort of Shaykh Tabarsi and what happened there",
+    "intent": "Mazindaran upheaval at the shrine/fort of Shaykh Tabarsi",
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      21308,
+      21310
+    ],
+    "expected_text_contains": [
+      "Tabarsi"
+    ]
+  },
+  {
+    "id": "lay-bab-bahaullah-meet",
+    "category": "lay-paraphrase",
+    "query": "did the Bab and Bahaullah ever meet each other in person",
+    "intent": "They never met in person — stated in the histories",
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      21308,
+      21310
+    ]
+  },
+  {
+    "id": "lay-siyah-chal",
+    "category": "lay-paraphrase",
+    "query": "why was Bahaullah thrown into the Siyah-Chal dungeon",
+    "intent": "Aftermath of the 1852 attempt on the Shah; imprisonment in the Siyah-Chal",
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      21308,
+      21310
+    ]
+  },
+  {
+    "id": "lay-babi-persecutions",
+    "category": "lay-paraphrase",
+    "query": "how many Babis were killed in the persecutions in Persia",
+    "intent": "Scale of the Babi persecutions/martyrdoms",
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      21308,
+      21310
+    ]
+  },
+  {
+    "id": "lay-him-whom-god",
+    "category": "lay-paraphrase",
+    "query": "who was the promised one the Bab told his followers to expect",
+    "intent": "Him Whom God shall make manifest — the Bab's promise fulfilled by Bahaullah",
+    "religion_filter": "Baha'i",
+    "expected_doc_ids": [
+      21308,
+      21310
+    ]
   }
 ]

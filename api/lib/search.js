@@ -1067,6 +1067,25 @@ const DEFAULT_WEIGHTS = {
  * @param {boolean} options.includeMatchedHype - attach .matched_hype on each hit (debug)
  * @returns {Object} { hits, estimatedTotalHits, _layers: {main: count, hype: count} }
  */
+// ── Retrieval win-share telemetry (2026-08-08) ──────────────────────────────
+// In-memory tallies of which layer (main hybrid / HyPE sidecar / entity mentions) actually surfaces the
+// results multiIndexSearch returns — the PRODUCTION half of the HyPE measurement loop (the eval half is
+// tests/quality/score-search.mjs --multi). Without this, HyPE's contribution to real chat retrieval was
+// unmeasurable and every prompt/format change was guesswork. Resets on restart (fine for tuning);
+// read via GET /api/v1/search/source-stats (internal).
+const SOURCE_STATS = { since: new Date().toISOString(), searches: 0, top1: { mainOnly: 0, hypeOnly: 0, both: 0, none: 0 }, top1HypeLed: 0, top1EntityTouched: 0, top3HypeTouched: 0 };
+function tallySourceStats(entries) {
+  if (!entries.length) return;
+  SOURCE_STATS.searches++;
+  const e0 = entries[0];
+  const m = e0.mainRank != null, h = e0.hypeRank != null;
+  SOURCE_STATS.top1[m && h ? 'both' : m ? 'mainOnly' : h ? 'hypeOnly' : 'none']++;
+  if (h && (!m || e0.hypeRank < e0.mainRank)) SOURCE_STATS.top1HypeLed++;   // hype found it before (or without) main
+  if (e0.entityRank != null) SOURCE_STATS.top1EntityTouched++;
+  if (entries.slice(0, 3).some((e) => e.hypeRank != null)) SOURCE_STATS.top3HypeTouched++;
+}
+export function getSearchSourceStats() { return SOURCE_STATS; }
+
 export async function multiIndexSearch(query, options = {}) {
   const limit = options.limit || 10;
   const overFetch = Math.max(limit * 3, 30);
@@ -1250,12 +1269,13 @@ export async function multiIndexSearch(query, options = {}) {
     finalEntries = sortedDeduped.slice(0, limit);
   }
 
+  tallySourceStats(finalEntries);   // win-share telemetry — see SOURCE_STATS above
   const hits = finalEntries.map(e => {
     const h = {
       ...e.paragraph,
       _rrfScore: e.score,
       ...(options.includeMatchedHype && e.matchedHype ? { matched_hype: e.matchedHype } : {}),
-      _layerRanks: { main: e.mainRank, hype: e.hypeRank }
+      _layerRanks: { main: e.mainRank, hype: e.hypeRank, entity: e.entityRank }
     };
     if (!h.source_url && h.doc_id) h.source_url = `https://siftersearch.com/document/${h.doc_id}`;
     return h;
