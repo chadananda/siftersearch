@@ -86,6 +86,13 @@
   function citationHref(c) {
     return c.document_id ? `https://siftersearch.com/document/${c.document_id}` : null;
   }
+  // Minimal, safe rich text: escape ALL html, then rebuild only [text](https://…) links and *italics*.
+  function renderRich(t) {
+    const esc = String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return esc
+      .replace(/\[([^\]]{1,120})\]\((https:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+      .replace(/\*([^*\n]{1,160})\*/g, '<em>$1</em>');
+  }
   function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
   function togglePanel() { open = !open; if (open) scroll(); }
   $effect(() => {
@@ -106,7 +113,7 @@
         <div class="body" bind:this={bodyEl}>
           {#each messages as m}
             <div class="msg {m.role}">
-              <div class="bubble">{m.content}{#if m.pending}<span class="cursor">▍</span>{/if}</div>
+              <div class="bubble">{#if m.role === 'assistant'}{@html renderRich(m.content)}{:else}{m.content}{/if}{#if m.pending}<span class="cursor">▍</span>{/if}</div>
               {#if m.citations?.length}
                 <div class="cites">
                   {#each m.citations.slice(0, 4) as c}
@@ -171,7 +178,7 @@
   @keyframes blink { 50% { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .cursor { animation: none; } }
   .cites { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
-  .cites a { font-size: 11.5px; color: var(--accent); text-decoration: none; border: 1px solid currentColor; border-radius: 10px; padding: 1px 8px; }
+  .bubble :global(a) { color: var(--accent); } .cites a { font-size: 11.5px; color: var(--accent); text-decoration: none; border: 1px solid currentColor; border-radius: 10px; padding: 1px 8px; }
   .error { color: #a33; font-size: 13px; padding: 4px 2px; }
   footer { display: flex; gap: 8px; padding: 10px; background: #fff; border-top: 1px solid #ececea; }
   textarea { flex: 1; resize: none; border: 1px solid #d9d9d5; border-radius: 9px; padding: 8px 10px; font-size: 14px; outline: none; }
