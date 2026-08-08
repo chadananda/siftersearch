@@ -24,7 +24,7 @@ import { checkEnvironment, getEnvSummary } from './lib/env-check.js';
 import { createServer } from './server.js';
 import { logger } from './lib/logger.js';
 import { ensureServicesRunning, cleanupServices } from './lib/services.js';
-import { seedAdminUser } from './lib/auth.js';
+import { seedAdminUser, seedTestUser } from './lib/auth.js';
 import { runMigrations } from './lib/migrations.js';
 import { startSyncWorker, stopSyncWorker } from './services/sync-worker.js';
 import { stopEmbeddingWorker } from './services/embedding-worker.js';
@@ -110,6 +110,14 @@ const start = async () => {
       }
     } catch (err) {
       logger.warn({ err }, 'Failed to seed admin user');
+    }
+
+    // Seed the QA/test admin (TEST_ADMIN_EMAIL/PASS) if configured — self-healing test account
+    try {
+      const testResult = await seedTestUser();
+      if (testResult) logger.info({ email: testResult.email, action: testResult.action }, 'Test admin user seeded');
+    } catch (err) {
+      logger.warn({ err }, 'Failed to seed test admin user');
     }
 
     // Restore AI processing pause state from database

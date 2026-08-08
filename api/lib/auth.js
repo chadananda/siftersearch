@@ -262,3 +262,27 @@ export async function seedAdminUser() {
 
   return { id: result.rows[0].id, email: adminEmail, action: 'created' };
 }
+
+// Seed the dedicated QA/test admin from TEST_ADMIN_EMAIL / TEST_ADMIN_PASS. Same shape as seedAdminUser
+// (tier=admin, pre-verified) — a self-healing test account so every authenticated surface stays reachable
+// for end-to-end QA. Standalone reset also available via scripts/seed-test-admin.mjs.
+export async function seedTestUser() {
+  const email = process.env.TEST_ADMIN_EMAIL;
+  const pass = process.env.TEST_ADMIN_PASS;
+  if (!email || !pass) return null;
+
+  const existing = await queryOne('SELECT id, tier, email_verified FROM users WHERE email = ?', [email.toLowerCase()]);
+  if (existing) {
+    if (existing.tier === 'admin' && existing.email_verified === 1) return { id: existing.id, email, action: 'verified' };
+    const passwordHash = await hashPassword(pass);
+    await query('UPDATE users SET password_hash = ?, tier = ?, email_verified = 1 WHERE id = ?', [passwordHash, 'admin', existing.id]);
+    return { id: existing.id, email, action: 'updated' };
+  }
+  const passwordHash = await hashPassword(pass);
+  const now = new Date().toISOString();
+  const result = await query(
+    'INSERT INTO users (email, password_hash, name, tier, email_verified, approved_at) VALUES (?, ?, ?, ?, 1, ?) RETURNING id',
+    [email.toLowerCase(), passwordHash, 'QA Test Admin', 'admin', now]
+  );
+  return { id: result.rows[0].id, email, action: 'created' };
+}
