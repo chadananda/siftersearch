@@ -35,7 +35,7 @@ const WRITE_REPORT = args.includes('--write-report');
 const ANALYZE = args.includes('--analyze'); // generate AI analysis after writing report
 const TOP_K = parseInt(args.find(a => a.startsWith('--top-k='))?.split('=')[1] || '10', 10);
 const CATEGORY = args.find(a => a.startsWith('--category='))?.split('=')[1] || null;
-// --multi: run the battery against the MULTI-INDEX path (/api/v1/search/multi, internal) instead of the
+// --multi: run the battery against the MULTI-INDEX path (/api/search/multi, internal) instead of the
 // public /search. The public endpoint is hybridSearch-only — HyPE never contributes there — so measuring
 // HyPE's retrieval value requires this mode. Hits carry _layerRanks {main,hype,entity}; the report gains
 // a `hype` block (touched/led shares). Needs DEPLOY_SECRET (or INTERNAL_API_KEY) in .env-secrets.
@@ -73,7 +73,7 @@ async function runOne(fix) {
 
   let res, body;
   try {
-    res = await fetch(`${API_BASE}/api/v1/search${MULTI ? '/multi' : ''}`, {
+    res = await fetch(MULTI ? `${API_BASE}/api/search/multi` : `${API_BASE}/api/v1/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(MULTI ? { 'X-Internal-Key': INTERNAL_KEY } : { 'X-API-Key': API_KEY }) },
       body: JSON.stringify(reqBody),

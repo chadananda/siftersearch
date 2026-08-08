@@ -1072,7 +1072,7 @@ const DEFAULT_WEIGHTS = {
 // results multiIndexSearch returns — the PRODUCTION half of the HyPE measurement loop (the eval half is
 // tests/quality/score-search.mjs --multi). Without this, HyPE's contribution to real chat retrieval was
 // unmeasurable and every prompt/format change was guesswork. Resets on restart (fine for tuning);
-// read via GET /api/v1/search/source-stats (internal).
+// read via GET /api/search/source-stats (internal).
 const SOURCE_STATS = { since: new Date().toISOString(), searches: 0, top1: { mainOnly: 0, hypeOnly: 0, both: 0, none: 0 }, top1HypeLed: 0, top1EntityTouched: 0, top3HypeTouched: 0 };
 function tallySourceStats(entries) {
   if (!entries.length) return;
