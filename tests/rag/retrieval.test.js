@@ -8,17 +8,23 @@ const NOTE = '{"questions":["Who declared in Shíráz?","When was the Declaratio
 const NOTE3 = '{"questions":["Who declared in Shíráz?","When was the Declaration?","What happened in Shíráz in 1844?"],"thesis":"The Báb declared His mission in Shíráz in 1844."}';
 const para = { id: 1, pid: 'p1', text: 'a'.repeat(80), heading: 'Ch1', context: '@Shíráz, ~1844 — the Declaration' };
 
-describe('retrieval — parseHype (v2 adaptive)', () => {
-  it('accepts 5 questions + thesis, caps at 5', () => {
+describe('retrieval — parseHype (v3: count set by the paragraph)', () => {
+  it('accepts 5 questions + thesis', () => {
     expect(parseHype(NOTE)).toMatchObject({ thesis: expect.stringContaining('Shíráz') });
     expect(parseHype(NOTE).questions).toHaveLength(5);
   });
-  it('accepts an adaptive 2-3 question array (thin paragraph)', () => {
+  it('accepts thin-paragraph counts down to a single question', () => {
     expect(parseHype(NOTE3).questions).toHaveLength(3);
     expect(parseHype('{"questions":["a?","b?"],"thesis":"x"}').questions).toHaveLength(2);
+    expect(parseHype('{"questions":["only one?"],"thesis":"x"}').questions).toHaveLength(1);
   });
-  it('rejects fewer than 2 questions', () => {
-    expect(parseHype('{"questions":["only one?"],"thesis":"x"}')).toBeNull();
+  it('accepts dense-paragraph counts (20-40) and rails only at the 40 sanity ceiling', () => {
+    const dense = JSON.stringify({ questions: Array.from({ length: 27 }, (_, i) => `q${i}?`), thesis: 'x' });
+    expect(parseHype(dense).questions).toHaveLength(27);
+    const runaway = JSON.stringify({ questions: Array.from({ length: 55 }, (_, i) => `q${i}?`), thesis: 'x' });
+    expect(parseHype(runaway).questions).toHaveLength(40);
+  });
+  it('rejects an empty question array', () => {
     expect(parseHype('{"questions":[],"thesis":"x"}')).toBeNull();
   });
 });

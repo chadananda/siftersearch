@@ -18,10 +18,15 @@ import { profileFor } from '../kernel/profile.js';
 import { segment } from '../kernel/segment.js';
 import { pool } from '../kernel/run.js';
 
-export const HYPE_VERSION = 'hype-v2-facts';
+export const HYPE_VERSION = 'hype-v3-adaptive';
 const DENSE_HINT = 'Keep each question short; output ONLY the compact JSON object, nothing else.';
 const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not worth HyPE
-const MAX_FACTS_PER_PARA = 6;   // prompt budget: the densest paragraphs carry 10+ claims; 6 covers the distinct ones
+// Question count is set by the PARAGRAPH, not a quota: a dense passage (every sentence answering several
+// questions) may yield 20-40; a transition yields 1-3. QUESTION_CEILING is a runaway-model sanity rail only —
+// far above any real paragraph — never a target. (The old EXACTLY-5 was inherited from HyPE convention and
+// was arbitrary in both directions: it padded thin paragraphs and starved dense ones.)
+const QUESTION_CEILING = 40;
+const MAX_FACTS_PER_PARA = 24;  // sanity slice only — the densest observed paragraph carries 12 claims
 
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
@@ -33,7 +38,8 @@ export async function run(ctx, docId, opts = {}) {
   const segs = segment(paras, { mode: profile.segmentation, segMax: opts.segMax ?? 60 });
   const system = buildSystem(profile, meta, cast);
   const route = { model: opts.model ?? profile.models.hype, fallback: opts.fallback ?? profile.fallback };
-  const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 1500);
+  // Headroom for uncapped counts: ~40 questions ≈ 1,400 output tokens + thesis + (reasoning models) thinking.
+  const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 8000 : 4000);
   const stats = { paras: paras.length, segments: segs.length, done: 0, failed: 0, escalated: 0, factFed: 0, version: HYPE_VERSION };
   // Report per PARAGRAPH, ABSOLUTE: total = all HyPE-eligible paras (long), already-done = resume-skipped (base),
   // so a resumed hype run's bar shows true progress not just the remaining slice.
@@ -65,10 +71,10 @@ export async function run(ctx, docId, opts = {}) {
 const castOf = (ctx, docId) => (ctx.store.getCastSeed ? Promise.resolve(ctx.store.getCastSeed(docId)).catch(() => '') : Promise.resolve(''));
 // Cited claims per paragraph (optional port; {} = fact-blind, prompt degrades gracefully to v2-without-facts).
 const factsOf = (ctx, docId) => (ctx.store.getParaClaims ? Promise.resolve(ctx.store.getParaClaims(docId)).catch(() => ({})) : Promise.resolve({}));
-// A paragraph is HyPE-done with EITHER format: v2 adaptive (2-5 questions) or v1 (exactly 5) — both are JSON
-// arrays ≥2 with a thesis. Old newline-joined HyPE (no thesis / not JSON) fails → gets regenerated. v1 rows are
-// NOT auto-regenerated; upgrading a book to v2 is an explicit resume:false run.
-const isDone = (p) => { if (!p.hypThesis) return false; try { const a = JSON.parse(p.hyp); return Array.isArray(a) && a.length >= 2; } catch { return false; } };
+// A paragraph is HyPE-done with ANY generator format: v3 adaptive (1-40), v2 (2-5), v1 (exactly 5) — all are
+// JSON arrays ≥1 with a thesis. Old newline-joined HyPE (no thesis / not JSON) fails → gets regenerated. Older
+// versions are NOT auto-regenerated; upgrading a book is an explicit resume:false (rehype) run.
+const isDone = (p) => { if (!p.hypThesis) return false; try { const a = JSON.parse(p.hyp); return Array.isArray(a) && a.length >= 1; } catch { return false; } };
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 
@@ -78,8 +84,8 @@ export function parseHype(raw) {
   try {
     const j = JSON.parse(m[0]);
     const q = (j.questions || []).filter((x) => typeof x === 'string' && x.trim());
-    if (q.length < 2) return null;
-    return { questions: q.slice(0, 5), thesis: String(j.thesis || '').trim() };
+    if (q.length < 1) return null;
+    return { questions: q.slice(0, 40), thesis: String(j.thesis || '').trim() };   // 40 = QUESTION_CEILING sanity rail
   } catch { return null; }
 }
 
@@ -103,15 +109,15 @@ export function buildSystem(profile, meta, cast = '') {
   return `You generate Hypothetical Prompt Embeddings (HyPE) for ONE paragraph, to power semantic search. A reader searches with a QUESTION; write the questions THIS paragraph answers, so it is retrievable by anyone asking about its content in their own words. Output JSON ONLY.
 ${foreign}
 From the paragraph (use the disambiguation CONTEXT only to resolve who/what/where — do NOT ask about the context):
-- "questions": 2 to 5 — one per DISTINCT thing this paragraph genuinely answers. No padding: never restate the same ask in different words; a fact-dense paragraph deserves 4-5 questions, a thin or transitional one only 2-3. Each ends "?", max 15 words. Draw from these registers as they apply: ${registers}.
+- "questions": EVERY distinct question this paragraph genuinely answers — the paragraph's content sets the count, not a quota. Work through it sentence by sentence: a dense sentence often answers several distinct questions (who, what, when, where, why, outcome, significance); a long fact-packed paragraph may deserve 15, 25, even 40 questions, while a thin transitional one deserves only 1-3. Never pad or rephrase the same ask twice — and never omit a distinct askable fact. Each ends "?", max 15 words. Useful angles: ${registers}.
   • At least ONE question must be phrased WITHOUT naming any person — by event, place, period, or theme ("What happened at …?", "How did the … community …?") — so topic searches also retrieve this paragraph.
   • Use the name-forms a reader would type: canonical short names (the CAST's primary forms), never long honorific chains.
   • Ground every question in what the paragraph ACTUALLY says — never invent facts.
 - "thesis": ONE sentence (20-45 words) stating what this paragraph teaches as a proposition, stated directly.
 
-If ESTABLISHED FACTS are provided with the paragraph, they are cited claims extracted from THIS paragraph — the knowledge researchers seek here. Ensure each distinct fact is reachable by at least one question (related facts may share a question). Prefer fact-bearing questions over generic ones.
+If ESTABLISHED FACTS are provided with the paragraph, they are cited claims extracted from THIS paragraph — the knowledge researchers seek here. EVERY listed fact must be reachable by at least one question (closely related facts may share a question). Prefer fact-bearing questions over generic ones.
 
-Return exactly: {"questions":["…?","…?"],"thesis":"…"} (2-5 questions)
+Return exactly: {"questions":["…?","…?"],"thesis":"…"} (as many questions as the paragraph answers)
 
 BOOK:
 ${bookMeta}${cast ? `\n\nBOOK CAST (who's-who — resolve a name to the right figure; do not ask about people not in the paragraph):\n${cast}` : ''}`;
