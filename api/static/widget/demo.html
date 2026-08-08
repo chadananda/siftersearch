@@ -13,12 +13,20 @@
 </head>
 <body>
   <h1>SifterChat embed demo</h1>
-  <p>This page embeds the widget exactly the way a host site would — the bubble should appear bottom-right.
-     It is using the <strong>Bahá'í Education</strong> dogfood profile.</p>
-  <p>The one-line embed for a host site:</p>
-  <pre>&lt;script src="https://api.siftersearch.com/widget.js" data-key="wgt_be_7f3a9c2e51" async&gt;&lt;/script&gt;</pre>
+  <p>This page embeds the widget exactly the way a host site would — the bubble appears bottom-right.
+     Pass <code>?key=&lt;token&gt;</code> to test any profile (defaults to the Bahá'í Education profile).</p>
+  <pre id="snippet"></pre>
   <p class="hint">Ask it something like <em>“Who was the first person to believe in the Báb?”</em> or
      <em>“What happened at the conference of Badasht?”</em></p>
-  <script src="/widget.js" data-key="wgt_be_7f3a9c2e51" async></script>
+  <script>
+    (function () {
+      var key = new URLSearchParams(location.search).get('key') || 'wgt_be_7f3a9c2e51';
+      document.getElementById('snippet').textContent =
+        '<script src="' + location.origin + '/widget.js" data-key="' + key + '" async><\/script>';
+      var s = document.createElement('script');
+      s.src = '/widget.js'; s.async = true; s.setAttribute('data-key', key);
+      document.body.appendChild(s);
+    })();
+  </script>
 </body>
 </html>

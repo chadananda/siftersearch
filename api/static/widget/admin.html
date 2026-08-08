@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SifterChat — widget admin</title>
+<style>
+  :root { --bg:#f6f6f4; --card:#fff; --line:#e4e4e0; --accent:#0f5f73; --muted:#777; }
+  * { box-sizing: border-box; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; margin: 0; background: var(--bg); color: #1c1c1c; }
+  header { background: var(--accent); color: #fff; padding: 14px 22px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 18px; margin: 0; }
+  main { max-width: 960px; margin: 22px auto; padding: 0 18px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .row > * { flex: 0 0 auto; }
+  h2 { font-size: 15px; margin: 0 0 4px; } h3 { font-size: 14px; margin: 0; }
+  .muted { color: var(--muted); font-size: 12.5px; }
+  .house { background: #eef6f8; border-color: #bcdfe6; }
+  .badge { font-size: 11px; background: var(--accent); color: #fff; border-radius: 10px; padding: 1px 8px; }
+  .stat { display: inline-block; margin-right: 16px; font-size: 13px; }
+  .stat b { font-size: 18px; display: block; }
+  button { border: none; border-radius: 8px; padding: 7px 12px; cursor: pointer; font-size: 13px; background: var(--accent); color: #fff; }
+  button.ghost { background: #ececea; color: #333; }
+  button.danger { background: #b23b3b; }
+  button:disabled { opacity: .5; cursor: default; }
+  input, textarea, select { border: 1px solid #d9d9d5; border-radius: 8px; padding: 7px 9px; font-size: 13px; font-family: inherit; }
+  textarea { width: 100%; min-height: 84px; }
+  label { font-size: 12px; color: var(--muted); display: block; margin: 8px 0 2px; }
+  code { background: #f0f0ee; border-radius: 5px; padding: 1px 6px; font-size: 12px; word-break: break-all; }
+  .snippet { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  td, th { text-align: left; padding: 4px 6px; border-bottom: 1px solid #eee; }
+  .gate { max-width: 380px; margin: 80px auto; }
+  .err { color: #b23b3b; font-size: 13px; }
+  .bars { display: flex; gap: 2px; align-items: flex-end; height: 60px; margin-top: 8px; }
+  .bar { flex: 1; background: var(--accent); min-height: 2px; border-radius: 2px 2px 0 0; }
+  .hide { display: none; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header><h1>SifterChat — widget admin</h1><span id="whoami" class="muted"></span></header>
+<main>
+  <div id="gate" class="card gate">
+    <h2>Admin key</h2>
+    <p class="muted">Enter the internal key (DEPLOY_SECRET) to manage widget profiles.</p>
+    <input id="key" type="password" placeholder="internal key" style="width:100%" />
+    <div style="margin-top:10px"><button id="unlock">Unlock</button></div>
+    <p id="gateErr" class="err"></p>
+  </div>
+
+  <div id="app" class="hide">
+    <div class="card">
+      <h2>Create a profile</h2>
+      <label>Name</label><input id="cName" placeholder="e.g. Ocean Library" style="width:100%" />
+      <label>Domains (comma-separated — the origin allowlist)</label>
+      <input id="cDomains" placeholder="example.org, www.example.org" style="width:100%" />
+      <label>Config (JSON: greeting, accent, position, chatbotLocation, placeholder)</label>
+      <textarea id="cConfig">{ "greeting": "Ask me anything…", "accent": "#1a6b5e", "position": "bottom-right" }</textarea>
+      <div style="margin-top:10px"><button id="create">Create profile</button> <span id="createErr" class="err"></span></div>
+    </div>
+    <div id="list"></div>
+  </div>
+</main>
+
+<script>
+const API = location.origin;
+let KEY = sessionStorage.getItem('sifter_admin_key') || '';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+async function api(path, opts = {}) {
+  const r = await fetch(API + path, { ...opts, headers: { 'X-Internal-Key': KEY, 'content-type': 'application/json', ...(opts.headers||{}) } });
+  if (r.status === 401 || r.status === 403) { throw new Error('unauthorized'); }
+  const t = await r.text();
+  let j = null; try { j = t ? JSON.parse(t) : null; } catch {}
+  if (!r.ok) throw new Error((j && j.error) || ('HTTP ' + r.status));
+  return j;
+}
+
+async function unlock() {
+  KEY = $('key').value.trim();
+  $('gateErr').textContent = '';
+  try {
+    await api('/api/v1/widget/admin/profiles');
+    sessionStorage.setItem('sifter_admin_key', KEY);
+    $('gate').classList.add('hide'); $('app').classList.remove('hide');
+    $('whoami').textContent = 'authenticated';
+    render();
+  } catch (e) { $('gateErr').textContent = e.message === 'unauthorized' ? 'Wrong key.' : e.message; }
+}
+$('unlock').onclick = unlock;
+$('key').addEventListener('keydown', (e) => { if (e.key === 'Enter') unlock(); });
+
+$('create').onclick = async () => {
+  $('createErr').textContent = '';
+  let config; try { config = JSON.parse($('cConfig').value || '{}'); } catch { $('createErr').textContent = 'Config is not valid JSON'; return; }
+  const domains = $('cDomains').value.split(',').map((s) => s.trim()).filter(Boolean);
+  try {
+    await api('/api/v1/widget/admin/profiles', { method: 'POST', body: JSON.stringify({ name: $('cName').value, domains, config }) });
+    $('cName').value = ''; $('cDomains').value = '';
+    render();
+  } catch (e) { $('createErr').textContent = e.message; }
+};
+
+function statLine(s) {
+  const last = s.lastTs ? new Date(s.lastTs * 1000).toLocaleDateString() : '—';
+  return `<span class="stat"><b>${s.messages}</b>messages/30d</span><span class="stat"><b>${s.sessions}</b>sessions/30d</span><span class="stat"><b>${last}</b>last active</span>`;
+}
+
+function profileCard(p) {
+  return `<div class="card ${p.isHouse ? 'house' : ''}" data-id="${p.id}">
+    <div class="row" style="justify-content:space-between">
+      <div><h3>${esc(p.name)} ${p.isHouse ? '<span class="badge">house · permanent</span>' : ''}</h3>
+        <div class="muted">token <code>${esc(p.token)}</code> · domains: ${esc((p.domains||[]).join(', ') || '—')}</div></div>
+      <div class="row">
+        <button class="ghost" data-act="analytics">Analytics</button>
+        <button class="ghost" data-act="edit">Configure</button>
+        ${p.isHouse ? '' : '<button class="danger" data-act="delete">Delete</button>'}
+      </div>
+    </div>
+    <div style="margin-top:8px">${statLine(p.stats)}</div>
+    <div class="snippet"><code>${esc(p.embed)}</code> <button class="ghost" data-act="copy">Copy</button>
+      <a href="/widget/demo?key=${encodeURIComponent(p.token)}" target="_blank">Try ▸</a></div>
+    <div class="panel hide" data-panel></div>
+  </div>`;
+}
+
+let PROFILES = [];
+async function render() {
+  const data = await api('/api/v1/widget/admin/profiles');
+  PROFILES = data.profiles;
+  $('list').innerHTML = PROFILES.map(profileCard).join('');
+  $('list').querySelectorAll('.card[data-id]').forEach((card) => {
+    const id = Number(card.dataset.id);
+    const p = PROFILES.find((x) => x.id === id);
+    card.querySelectorAll('button[data-act]').forEach((btn) => {
+      btn.onclick = () => act(btn.dataset.act, p, card);
+    });
+  });
+}
+
+async function act(a, p, card) {
+  const panel = card.querySelector('[data-panel]');
+  if (a === 'copy') { navigator.clipboard.writeText(p.embed); return; }
+  if (a === 'delete') {
+    if (!confirm(`Delete profile "${p.name}"? This cannot be undone.`)) return;
+    try { await api('/api/v1/widget/admin/profiles/' + p.id, { method: 'DELETE' }); render(); }
+    catch (e) { alert(e.message); }
+    return;
+  }
+  if (a === 'edit') {
+    if (!panel.classList.contains('hide')) { panel.classList.add('hide'); return; }
+    panel.innerHTML = `<hr/><label>Name</label><input class="eName" value="${esc(p.name)}" style="width:100%"/>
+      <label>Domains (comma-separated)</label><input class="eDomains" value="${esc((p.domains||[]).join(', '))}" style="width:100%"/>
+      <label>Config (JSON)</label><textarea class="eConfig">${esc(JSON.stringify(p.config, null, 2))}</textarea>
+      <div style="margin-top:8px"><button class="save">Save</button> <span class="eErr err"></span></div>`;
+    panel.classList.remove('hide');
+    panel.querySelector('.save').onclick = async () => {
+      let config; try { config = JSON.parse(panel.querySelector('.eConfig').value || '{}'); } catch { panel.querySelector('.eErr').textContent = 'Invalid JSON'; return; }
+      const domains = panel.querySelector('.eDomains').value.split(',').map((s) => s.trim()).filter(Boolean);
+      try { await api('/api/v1/widget/admin/profiles/' + p.id, { method: 'PATCH', body: JSON.stringify({ name: panel.querySelector('.eName').value, domains, config }) }); render(); }
+      catch (e) { panel.querySelector('.eErr').textContent = e.message; }
+    };
+    return;
+  }
+  if (a === 'analytics') {
+    if (!panel.classList.contains('hide')) { panel.classList.add('hide'); return; }
+    panel.innerHTML = '<hr/><div class="muted">loading…</div>'; panel.classList.remove('hide');
+    try {
+      const d = await api('/api/v1/widget/admin/profiles/' + p.id + '/analytics?days=30');
+      const t = d.totals;
+      const max = Math.max(1, ...d.daily.map((x) => x.messages || 0));
+      const bars = d.daily.map((x) => `<div class="bar" style="height:${Math.round(100 * (x.messages||0) / max)}%" title="${x.day}: ${x.messages||0} msgs"></div>`).join('');
+      const qs = d.recentQuestions.slice(0, 25).map((r) => `<tr><td>${esc(r.q)}</td><td class="muted" style="white-space:nowrap">${esc(r.at)}</td></tr>`).join('');
+      panel.innerHTML = `<hr/>
+        <div>${['loads','opens','messages','answers','sessions'].map((k) => `<span class="stat"><b>${t[k]}</b>${k}</span>`).join('')}
+          <span class="stat"><b>${t.avgLatencyMs ? Math.round(t.avgLatencyMs)+'ms' : '—'}</b>avg latency</span></div>
+        <div class="muted" style="margin-top:10px">messages/day (30d)</div><div class="bars">${bars || '<span class="muted">no data yet</span>'}</div>
+        <div class="muted" style="margin-top:12px">recent questions (admin content-gap view)</div>
+        <table>${qs || '<tr><td class="muted">no questions yet</td></tr>'}</table>`;
+    } catch (e) { panel.innerHTML = '<hr/><span class="err">' + esc(e.message) + '</span>'; }
+    return;
+  }
+}
+
+if (KEY) unlock();
+</script>
+</body>
+</html>

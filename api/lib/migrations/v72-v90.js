@@ -575,6 +575,31 @@ export const migrations = {
        '{"greeting":"Hello! I can answer questions about the Bahá''í Faith and its teachings.","accent":"#27548c","position":"bottom-right"}')`);
     logger.info('Migration 99 complete: widget_profiles (+2 dogfood seeds)');
   },
+  100: async () => {
+    // Widget admin: (1) is_house — the ONE permanent profile that runs on siftersearch.com itself as the
+    // internal lab; the admin API refuses to delete a house row. (2) widget_events — per-profile analytics
+    // (client-emitted: widget_load/open/message_sent/answer_served), keyed by token so the admin screen can
+    // segment each profile. Volume is tiny for now (2 dogfood sites + the lab); add rollups/pruning if it grows.
+    logger.info('Starting migration 100: widget house flag + widget_events');
+    const addCol = async (sql) => { try { await query(sql); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; } };
+    await addCol(`ALTER TABLE widget_profiles ADD COLUMN is_house INTEGER NOT NULL DEFAULT 0`);
+    await query(`CREATE TABLE IF NOT EXISTS widget_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token TEXT NOT NULL,
+      type TEXT NOT NULL,
+      session_id TEXT,
+      meta_json TEXT,
+      ts INTEGER NOT NULL DEFAULT (unixepoch())
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_widget_events_token_ts ON widget_events(token, ts DESC)`);
+    // The house profile — internal lab on siftersearch.com. is_house=1 (undeletable). Scoped to the default
+    // corpus (chatbotLocation null = full cross-tradition Jafar), so it doubles as a live corpus assistant.
+    await query(`INSERT OR IGNORE INTO widget_profiles (token, name, domains, is_house, config_json) VALUES
+      ('wgt_house_siftersearch', 'SifterSearch (house)', '["siftersearch.com","www.siftersearch.com","localhost"]', 1,
+       '{"greeting":"Ask me anything across the sacred literature — this is SifterSearch''s own assistant.","accent":"#0f5f73","position":"bottom-right"}')`);
+    await query(`UPDATE widget_profiles SET is_house=1 WHERE token='wgt_house_siftersearch' AND is_house=0`);
+    logger.info('Migration 100 complete: is_house + widget_events (+ house profile)');
+  },
 };
 
 export const graphMigrations = {

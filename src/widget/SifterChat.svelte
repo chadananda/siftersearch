@@ -19,6 +19,25 @@
 
   const storeKey = () => `sifter-chat:${token}`;
 
+  // Per-visitor session id (client-generated, persisted) — groups events into "conversations" for analytics.
+  const sid = (() => {
+    try {
+      const k = `sifter-chat-sid:${token}`;
+      let v = localStorage.getItem(k);
+      if (!v) { v = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()).slice(0, 40); localStorage.setItem(k, v); }
+      return v;
+    } catch { return String(Date.now()); }
+  })();
+  // Fire-and-forget analytics beacon (never blocks or errors the UI).
+  function track(type, meta) {
+    try {
+      const body = JSON.stringify({ token, sessionId: sid, events: [{ type, ts: Date.now(), ...(meta ? { meta } : {}) }] });
+      const url = `${api}/api/v1/widget/events`;
+      if (navigator.sendBeacon) navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+      else fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: true }).catch(() => {});
+    } catch { /* analytics must never break chat */ }
+  }
+
   $effect(() => {
     if (!token) return;
     fetch(`${api}/api/v1/widget/config/${encodeURIComponent(token)}`)
@@ -27,6 +46,7 @@
         cfg = c;
         try { messages = JSON.parse(localStorage.getItem(storeKey()) || '[]'); } catch { messages = []; }
         if (!messages.length && c.greeting) messages = [{ role: 'assistant', content: c.greeting }];
+        track('widget_load');
       })
       .catch(() => { denied = true; });
   });
@@ -41,6 +61,8 @@
     errorMsg = '';
     messages = [...messages, { role: 'user', content: text }, { role: 'assistant', content: '', citations: [], pending: true }];
     busy = true;
+    track('message_sent', { q: text.slice(0, 400) });
+    const _t0 = Date.now();
     scroll();
     const history = messages.slice(0, -1).filter((m) => !m.pending).map((m) => ({ role: m.role, content: m.content })).slice(-12);
     try {
@@ -74,6 +96,7 @@
       if (!last.content) last.content = 'Sorry — I could not find an answer just now. Please try rephrasing.';
       messages = [...messages];
       persist();
+      track('answer_served', { latencyMs: Date.now() - _t0, chars: last.content.length });
     } catch (e) {
       messages = messages.slice(0, -1);
       errorMsg = 'Something went wrong reaching the assistant. Please try again.';
@@ -94,7 +117,8 @@
       .replace(/\*([^*\n]{1,160})\*/g, '<em>$1</em>');
   }
   function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
-  function togglePanel() { open = !open; if (open) scroll(); }
+  let openedOnce = false;
+  function togglePanel() { open = !open; if (open) { scroll(); if (!openedOnce) { openedOnce = true; track('open'); } } }
   $effect(() => {
     const esc = (e) => { if (e.key === 'Escape' && open) open = false; };
     window.addEventListener('keydown', esc);
