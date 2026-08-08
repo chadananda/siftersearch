@@ -44,7 +44,7 @@
     scroll();
     const history = messages.slice(0, -1).filter((m) => !m.pending).map((m) => ({ role: m.role, content: m.content })).slice(-12);
     try {
-      const res = await fetch(`${api}/api/v1/chat/stream`, {
+      const res = await fetch(`${api}/api/chat/stream`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ messages: history, ...(cfg?.chatbotLocation ? { chatbot_location: cfg.chatbotLocation } : {}) }),
