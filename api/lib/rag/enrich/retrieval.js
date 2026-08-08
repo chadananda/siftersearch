@@ -34,7 +34,11 @@ export async function run(ctx, docId, opts = {}) {
   const [meta, all, cast, facts] = await Promise.all([
     ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId), castOf(ctx, docId), factsOf(ctx, docId)]);
   const long = all.filter((p) => p.text.length >= (opts.minLen ?? MIN_LEN));
-  const paras = (opts.resume ?? true) ? long.filter((p) => !isDone(p)) : long;
+  // upgrade: version-aware resume — "done" means at the CURRENT generator version, so re-hyping a book skips
+  // paragraphs already upgraded and redoes the rest. A killed upgrade run therefore RESUMES where it died on
+  // retry instead of restarting from zero (resume:false remains the unconditional full redo).
+  const doneP = opts.upgrade ? (p) => p.hypModel === HYPE_VERSION && isDone(p) : isDone;
+  const paras = (opts.resume ?? true) ? long.filter((p) => !doneP(p)) : long;
   const segs = segment(paras, { mode: profile.segmentation, segMax: opts.segMax ?? 60 });
   const system = buildSystem(profile, meta, cast);
   const route = { model: opts.model ?? profile.models.hype, fallback: opts.fallback ?? profile.fallback };

@@ -82,12 +82,22 @@ describe('retrieval — run() on fake ports', () => {
     expect(store.hyped).toHaveLength(0);
   });
 
-  it('resume:false regenerates even already-done paragraphs (the explicit rehype path)', async () => {
+  it('resume:false regenerates even already-done paragraphs (unconditional full redo)', async () => {
     const doneV1 = { ...para, id: 2, pid: 'p2', hyp: JSON.stringify(['a?', 'b?', 'c?', 'd?', 'e?']), hypThesis: 'done' };
     const { rag, store } = makeRag({ seed: { paras: { 9: [doneV1] }, coverage: { 9: 1 } }, llm: fakeLLM([{ content: NOTE }]) });
     const stats = await rag.retrieval.index(9, { resume: false });
     expect(stats.done).toBe(1);
     expect(store.hyped).toHaveLength(1);
     expect(store.hyped[0].version).toBe(HYPE_VERSION);
+  });
+
+  it('upgrade: redoes old-version paragraphs, skips already-current ones (retries resume, no double-spend)', async () => {
+    const v1 = { ...para, id: 2, pid: 'p2', hyp: JSON.stringify(['a?', 'b?', 'c?', 'd?', 'e?']), hypThesis: 'done' };                    // no hypModel → v1
+    const current = { ...para, id: 5, pid: 'p5', hyp: JSON.stringify(['x?', 'y?']), hypThesis: 'done', hypModel: HYPE_VERSION };        // already upgraded
+    const { rag, store } = makeRag({ seed: { paras: { 9: [v1, current] }, coverage: { 9: 1 } }, llm: fakeLLM([{ content: NOTE }]) });
+    const stats = await rag.retrieval.index(9, { upgrade: true });
+    expect(stats.done).toBe(1);                       // only the v1 paragraph regenerated
+    expect(store.hyped).toHaveLength(1);
+    expect(store.hyped[0].paragraphId).toBe(2);
   });
 });

@@ -33,7 +33,7 @@ import { processAudioJob } from '../services/audio.js';
 import { notifyJobComplete, processEmailQueue } from '../services/email.js';
 import { JOB_TYPES } from '../services/jobs.js';
 import { reportUsageToStripe } from '../lib/billing.js';
-import { runBackup, shouldRunBackup } from '../lib/backup.js';
+// (backup.js no longer imported — the daily backup is cron-owned: scripts/backup-daily.mjs; see note in runPeriodicTasks)
 
 // Site registry populated at boot from sites.yaml. Used to resolve
 // source_site → meili_index_prefix for sync routing AND to drive the
@@ -803,15 +803,12 @@ async function runPeriodicTasks() {
     try { await reportUsageToStripe(); } catch (err) { logger.error({ error: err.message }, 'Usage report error'); }
     lastUsageReportTime = now;
   }
-  // Daily backup (checks interval internally via .last-backup timestamp)
-  if (shouldRunBackup()) {
-    try {
-      const result = await runBackup();
-      logger.info({ ...result }, 'Daily backup completed');
-    } catch (err) {
-      logger.error({ err: err.message }, 'Backup failed');
-    }
-  }
+  // Daily backup: MOVED OUT of this process (2026-08-08) to cron → scripts/backup-daily.mjs. runBackup()'s
+  // execSync steps (35GB sqlite .backup + ~100GB Meili rsync) BLOCKED this event loop for their whole duration —
+  // the single-writer went deaf (:7849 bound but not accepting), the watchdog health-failed it and restarted
+  // mid-backup, interrupting the rsync and re-triggering the cycle on next boot (the morning restart-loop behind
+  // this process's 600+ lifetime restarts). withTimeout() could not guard it: execSync blocks the thread, so no
+  // timer can fire. The cron script also VERIFIES the snapshot and emails on failure. Do not re-add here.
   // WAL checkpoint — TRUNCATE every 15 min to prevent WAL from growing to GB-scale.
   // Restarts the API on block (API holds perpetual read marks; stateless, restarts in <5s).
   if (now - lastWalCheckpointTime >= WAL_CHECKPOINT_INTERVAL_MS) {

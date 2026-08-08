@@ -88,7 +88,7 @@ export async function runGrounding(docId, opts = {}) {
     if (want('merge'))        { await enter('merge'); emit('merge', await rag.entities.merge({ concurrency: 4, onProgress })); } // same-name dedup by evidence
     if (want('dedup') && out.createdIds.length) { await enter('dedup'); emit('dedup', await rag.entities.dedupGuard({ entityIds: out.createdIds, onProgress })); } // AFTER link — new entities need bound claims
     if (wantsBand) { await releaseGraphBand(docId); heldBand = false; }   // release BEFORE hype/verify (they don't mutate the graph)
-    if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { resume: !rehype, onProgress })); }
+    if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { upgrade: rehype, onProgress })); }   // rehype = version-aware upgrade (skips already-current paras → retries resume)
 
     if (want('verify')) {
       await enter('verify');
