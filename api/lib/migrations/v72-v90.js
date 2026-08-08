@@ -552,6 +552,29 @@ export const migrations = {
     catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
     logger.info('Migration 98 complete: content.hyp_model');
   },
+  99: async () => {
+    // SifterChat widget profiles (planning/sifterchat-widget-plan.md Phase 0). One row per embeddable site:
+    // token identifies the profile; domains[] is the origin allowlist (config endpoint + CORS both read it);
+    // config_json carries theme/greeting/scoping. Seeds the two dogfood sites (Chad 2026-08-08); Long Beach
+    // domain is a best guess — edit the row if the real domain differs.
+    logger.info('Starting migration 99: widget_profiles');
+    await query(`CREATE TABLE IF NOT EXISTS widget_profiles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      domains TEXT NOT NULL DEFAULT '[]',
+      tier TEXT NOT NULL DEFAULT 'free',
+      config_json TEXT NOT NULL DEFAULT '{}',
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_at INTEGER DEFAULT (unixepoch())
+    )`);
+    await query(`INSERT OR IGNORE INTO widget_profiles (token, name, domains, config_json) VALUES
+      ('wgt_be_7f3a9c2e51', 'Bahá''í Education', '["bahai-education.org","www.bahai-education.org","localhost"]',
+       '{"greeting":"Welcome! Ask me anything about the Bahá''í teachings, history, or sacred texts.","accent":"#1a6b5e","position":"bottom-right"}'),
+      ('wgt_lb_4b8d1f6a92', 'Long Beach Bahá''í Community', '["bahailongbeach.org","www.bahailongbeach.org","localhost"]',
+       '{"greeting":"Hello! I can answer questions about the Bahá''í Faith and its teachings.","accent":"#27548c","position":"bottom-right"}')`);
+    logger.info('Migration 99 complete: widget_profiles (+2 dogfood seeds)');
+  },
 };
 
 export const graphMigrations = {

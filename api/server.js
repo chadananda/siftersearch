@@ -39,6 +39,7 @@ import graphRoutes from './routes/graph.js';
 import peopleRoutes from './routes/people.js';
 import deepResearchRoutes from './routes/deep-research.js';
 import groundingRoutes from './routes/grounding.js';
+import widgetRoutes from './routes/widget.js';
 import { config } from './lib/config.js';
 
 export async function createServer(opts = {}) {
@@ -50,6 +51,26 @@ export async function createServer(opts = {}) {
 
   // CORS - allow configured origins
   const allowedOrigins = config.server.corsOrigins.split(',').map(o => o.trim());
+  // SifterChat widget embeds: host-site origins are approved dynamically from widget_profiles.domains
+  // (planning/sifterchat-widget-plan.md). Cached 60s so the CORS preflight path never hits the DB per-request;
+  // a missing table (pre-migration) just means no extra origins.
+  let widgetOrigins = new Set();
+  let widgetOriginsAt = 0;
+  async function isWidgetOrigin(origin) {
+    if (Date.now() - widgetOriginsAt > 60_000) {
+      widgetOriginsAt = Date.now();
+      try {
+        const { queryAll } = await import('./lib/db.js');
+        const rows = await queryAll(`SELECT domains FROM widget_profiles`);
+        const s = new Set();
+        for (const r of rows) {
+          try { for (const d of JSON.parse(r.domains || '[]')) { s.add(`https://${d}`); s.add(`http://${d}`); } } catch { /* skip malformed */ }
+        }
+        widgetOrigins = s;
+      } catch { /* table absent or read failure → keep previous set */ }
+    }
+    return widgetOrigins.has(origin) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+  }
   await server.register(cors, {
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, curl, etc.)
@@ -62,7 +83,8 @@ export async function createServer(opts = {}) {
       if (origin.endsWith('.pages.dev')) {
         return callback(null, true);
       }
-      callback(new Error('Not allowed by CORS'), false);
+      // Widget host sites (dynamic, from widget_profiles)
+      isWidgetOrigin(origin).then((ok) => (ok ? callback(null, true) : callback(new Error('Not allowed by CORS'), false)));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -243,6 +265,7 @@ export async function createServer(opts = {}) {
   await server.register(graphRoutes, { prefix: '/api/graph' });
   await server.register(peopleRoutes, { prefix: '/api/v1' });
   await server.register(deepResearchRoutes, { prefix: '/api/v1' });
+  await server.register(widgetRoutes);   // SifterChat embed: /widget.js, /widget/sifter-chat.js, /api/v1/widget/config/:token (absolute paths)
 
   // Error handling
   server.setErrorHandler(errorHandler);

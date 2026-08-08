@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "2.182.0",
+  "version": "2.183.0",
   "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {
@@ -82,7 +82,8 @@
     "prod:logs": "pm2 logs siftersearch-api",
     "prod:status": "pm2 status",
     "prod:verify": "node scripts/verify-deployment.js",
-    "prod:deploy": "git pull && npm install && pm2 restart siftersearch-api && sleep 3 && npm run prod:verify"
+    "prod:deploy": "git pull && npm install && pm2 restart siftersearch-api && sleep 3 && npm run prod:verify",
+    "build:widget": "vite build --config vite.widget.config.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
