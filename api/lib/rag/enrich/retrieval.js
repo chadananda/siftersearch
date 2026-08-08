@@ -42,8 +42,12 @@ export async function run(ctx, docId, opts = {}) {
   const segs = segment(paras, { mode: profile.segmentation, segMax: opts.segMax ?? 60 });
   const system = buildSystem(profile, meta, cast);
   const route = { model: opts.model ?? profile.models.hype, fallback: opts.fallback ?? profile.fallback };
-  // Headroom for uncapped counts: ~40 questions ≈ 1,400 output tokens + thesis + (reasoning models) thinking.
-  const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 8000 : 4000);
+  // Headroom for uncapped counts — sized from a MEASURED failure, not a guess: v4-flash is a HYBRID whose
+  // reasoning output counts against max_tokens even though the catalog doesn't tag it 'reasoning' (see
+  // model-registry note). At 4000, 481/500 pilot calls truncated (avg completion 3,949) → unparseable →
+  // ~11 full-cost retries per paragraph. Reasoning scales with question count (planning 20-40 questions can
+  // burn 2-3k thinking tokens) + up to ~3k of JSON → 8000 floor for everything; 12000 for explicit reasoners.
+  const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 12000 : 8000);
   const stats = { paras: paras.length, segments: segs.length, done: 0, failed: 0, escalated: 0, factFed: 0, version: HYPE_VERSION };
   // Report per PARAGRAPH, ABSOLUTE: total = all HyPE-eligible paras (long), already-done = resume-skipped (base),
   // so a resumed hype run's bar shows true progress not just the remaining slice.
