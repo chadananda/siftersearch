@@ -25,6 +25,7 @@ import { config } from './config.js';
 import { executeTool, TOOLS } from '../routes/chat.js';
 import { getScopeForLocation } from './search/scope.js';
 import { checkDeepResearch, recordQuestionHit } from './deep-research.js';
+import { extractQuotedSpan, phraseQueryVariants } from './quote-lookup.js';
 import { queryAll } from './db.js';
 import { findEntity } from './graph-db.js';
 
@@ -619,6 +620,34 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     return { retrieved_quotes: [], subagent_syntheses: [], tool_calls: [], is_political: true };
   }
 
+  // ── Quote-source fast path ─────────────────────────────────────────────────
+  // "Where is this quote from: '…'?" resolves by EXACT PHRASE against the whole
+  // corpus — Meili answers in ms. This must run before deep-research pre-fetch
+  // and the tradition sweep: both used to hijack quote lookups and return
+  // "vaguely similar ideas from other religions" (the worst observed failure).
+  // Phrase-only by design; if the phrase isn't in the library we return EMPTY
+  // so the crafter says so plainly instead of substituting thematic cousins.
+  if (entities?.intent === 'quote_request') {
+    const span = extractQuotedSpan(userMessage);
+    if (span) {
+      for (const q of phraseQueryVariants(span)) {
+        const res = await runTool('search', { query: q, mode: 'passages', limit: 12, semanticRatio: 0 });
+        harvestPassages(res, 'quote-phrase');
+        if (retrieved.length) break;
+      }
+      // Hits arrive authority-sorted from executeSearch, so the originating
+      // primary work outranks books that merely quote the passage.
+      logger.info({ span: span.slice(0, 60), hits: retrieved.length }, 'quote-source fast path');
+      return {
+        retrieved_quotes: retrieved.slice(0, 8),
+        subagent_syntheses,
+        tool_calls: debugCalls,
+        quote_lookup: { span, found: retrieved.length > 0 }
+      };
+    }
+    // No quoted span — a passage REQUEST ("show me a quote about love"): fall through.
+  }
+
   // Catalog pre-fetch: for library overview/browsing questions, skip the
   // per-tradition search loop entirely and return authoritative count data.
   // Two paths:
@@ -879,17 +908,20 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // NOT short-circuit "What are the Zoroastrian teachings on good and evil?" —
   // it has no Zoroastrian quotes and causes a general-knowledge fallback.
   const MINOR_TRAD_PATTERNS_EARLY = [
-    { pattern: /\bhind(?:u|uism)\b|\bdharma\b|\bveda[ns]?\b|\bupanishad\b|\bgita\b|\bmahabharata\b|\bbhagavad\b/i, religion: 'Hindu' },
+    { pattern: /\bhind(?:u|uism)\b|\bdharma\b|\bveda[ns]?\b|\bupanishad\b|\bgita\b|\bmahabharata\b|\bbhagavad\b|\bkrishna\b/i, religion: 'Hindu' },
     { pattern: /\bsikh(?:ism)?\b|\bguru granth\b|\bseva\b|\bwaheguru\b|\bnanakshahi\b/i, religion: 'Sikh' },
     { pattern: /\bzoroastr(?:ian|ianism)?\b|\bavesta\b|\bahura mazda\b|\bgathas?\b|\bmazdayasna\b/i, religion: 'Zoroastrian' },
     { pattern: /\btao(?:ism|ist)?\b|\bconfuci(?:us|anism)?\b|\banalects\b/i, religion: 'Tao' },
     { pattern: /\bjain(?:ism)?\b|\bahimsa\b|\bmahavira\b/i, religion: 'Jain' },
   ];
   const MAJOR_TRAD_PATTERNS_EARLY = [
-    { pattern: /\bislam(?:ic)?\b|\bquran\b|\bqu['']ran\b|\bsunni\b|\bshia\b|\bmuslim\b/i, religion: 'Islam' },
-    { pattern: /\bchrist(?:ian(?:ity)?)?\b|\bgospel\b|\bbible\b|\bjesus\b/i, religion: 'Christian' },
-    { pattern: /\bbuddh(?:ist|ism)?\b|\bpali\b|\bdhamma\b|\bnirvana\b|\beightfold\b/i, religion: 'Buddhist' },
-    { pattern: /\b(?:jewish|judaism|torah|talmud|hebrew|rabbinic)\b/i, religion: 'Judaism' },
+    // Founder/central-figure NAMES included: "What did the Buddha teach…" is a
+    // single-tradition question even though no religion word appears — without
+    // these, requiredTradition stayed null and interfaith articles hijacked it.
+    { pattern: /\bislam(?:ic)?\b|\bquran\b|\bqu['']ran\b|\bsunni\b|\bshia\b|\bmuslim\b|\bmu[hḥ]ammad\b|\bhadith\b/i, religion: 'Islam' },
+    { pattern: /\bchrist(?:ian(?:ity)?)?\b|\bgospel\b|\bbible\b|\bjesus\b|\bnew testament\b/i, religion: 'Christian' },
+    { pattern: /\bbuddh(?:ist|ism|a)?\b|\bpali\b|\bdhamma(?:pada)?\b|\bnirvana\b|\beightfold\b/i, religion: 'Buddhist' },
+    { pattern: /\b(?:jewish|judaism|torah|talmud|hebrew|rabbinic|moses)\b/i, religion: 'Judaism' },
     // Bahá'í-specific questions must route to Bahá'í-only search (not 5-tradition loop)
     // Trailing \b after 'í' (U+00ED) doesn't fire because í is not \w — use lookahead instead.
     { pattern: /\bbah[aá]['']?[ií](?=[^a-zA-Z]|$)|\bbah[aá]u'?ll[aá]h\b|\b'?abdu'l-bah[aá]\b|\bshoghi\s+effendi\b|\baqdas\b|\biq[aá]n\b|\bhidden\s+words\b|\bbayan\b|\ball-merciful\b|\bseven\s+valleys\b|\b七つの谷\b/i, religion: "Baha'i" },
@@ -1346,7 +1378,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // Without this, "What are the Zoroastrian teachings on good and evil?" returns
       // Bahá'í texts that mention Zoroaster instead of actual Avesta passages.
       const MINOR_TRADITION_PATTERNS = [
-        { pattern: /\bhind(?:u|uism)\b|\bdharma\b|\bveda[ns]?\b|\bupanishad\b|\bgita\b|\bmahabharata\b|\bbhagavad\b/i, religion: 'Hindu' },
+        { pattern: /\bhind(?:u|uism)\b|\bdharma\b|\bveda[ns]?\b|\bupanishad\b|\bgita\b|\bmahabharata\b|\bbhagavad\b|\bkrishna\b/i, religion: 'Hindu' },
         { pattern: /\bsikh(?:ism)?\b|\bguru granth\b|\bseva\b|\bwaheguru\b|\bnanakshahi\b/i, religion: 'Sikh' },
         { pattern: /\bzoroastr(?:ian|ianism)?\b|\bavesta\b|\bahura mazda\b|\bgathas?\b|\bmazdayasna\b/i, religion: 'Zoroastrian' },
         { pattern: /\btao(?:ism|ist)?\b|\bconfuci(?:us|anism)?\b|\banalects\b/i, religion: 'Tao' },
@@ -2047,6 +2079,24 @@ GOOD: "I tend to stay out of the political arena — not from indifference, but 
 
 EXAMPLE — "Which party should I vote for?"
 GOOD: "That's not really my lane — I leave electoral questions to those better suited for them. But if you're thinking about justice, the duties of citizenship, or how spiritual principles relate to public life, I'd love to explore that."
+
+╔══════════════════════════════════════════════════════════╗
+║  QUOTE-SOURCE IDENTIFICATION (user asks WHERE a quote is  ║
+║  from / WHO said it)                                      ║
+╚══════════════════════════════════════════════════════════╝
+When the user's question asks for the SOURCE of a specific quotation, the only useful answer
+names the work, the author, and links the passage. 1-3 sentences, nothing more.
+- If a retrieved_quote contains the quoted text (exactly or nearly): "That is from *Work Title*
+  by Author — ["the quoted words in context"](url)." Optionally ONE sentence of surrounding context.
+- If NO retrieved_quote contains the quoted text: say plainly that you could not locate that
+  exact wording in the library, and stop. DO NOT offer thematically similar passages. DO NOT
+  bring in other works, authors, or traditions "reflecting the broader theme." A wrong-but-
+  related answer is worse than an honest miss — the user asked for a citation, not a meditation.
+
+STAY IN THE ASKED DOMAIN: when the question names one tradition, figure, or work, answer from
+that domain only. Retrieved quotes from OTHER traditions are context you may silently ignore —
+citing them is subject-changing unless the user explicitly asked for comparison. Prefer a short
+single-tradition answer over interfaith coverage.
 
 OUTPUT: just the reply text. No JSON wrapping, no preamble, no meta-commentary.`;
 

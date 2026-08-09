@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T06:11:50.347Z",
+  "generated": "2026-08-09T14:43:28.297Z",
   "entries": [
+    {
+      "hash": "bccfbcef",
+      "date": "2026-08-08",
+      "type": "Other",
+      "description": "\"The Illuminated Ocean\" — flagship redesign of SifterChat",
+      "scope": null
+    },
     {
       "hash": "45c95f61",
       "date": "2026-08-08",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Run periodic tasks (WAL checkpoint) after each sync job, not only when idle",
       "scope": null
-    },
-    {
-      "hash": "0dd5e1e1",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "Auto-restart siftersearch-api when WAL TRUNCATE checkpoint blocked by reader locks",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-08": [
+      {
+        "hash": "bccfbcef",
+        "date": "2026-08-08",
+        "type": "Other",
+        "description": "\"The Illuminated Ocean\" — flagship redesign of SifterChat",
+        "scope": null
+      },
       {
         "hash": "45c95f61",
         "date": "2026-08-08",
@@ -7077,13 +7084,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "Run periodic tasks (WAL checkpoint) after each sync job, not only when idle",
-        "scope": null
-      },
-      {
-        "hash": "0dd5e1e1",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "Auto-restart siftersearch-api when WAL TRUNCATE checkpoint blocked by reader locks",
         "scope": null
       }
     ]

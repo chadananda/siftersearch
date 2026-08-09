@@ -1021,8 +1021,27 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
         ...(canonicalCandidate ? [canonicalCandidate] : []),
         ...meiliCandidates
       ];
+      // Liveness gate: dedupe left husk records carrying canonical titles with every
+      // paragraph soft-deleted (e.g. the Gleanings doc that sent the subagent into an
+      // empty book). A candidate the subagent can't read is worse than none — require
+      // live content, keeping the husk list only if NOTHING has live text.
+      let live = candidates;
+      try {
+        const ids = candidates.map((c) => c.document_id).filter(Boolean);
+        if (ids.length) {
+          const rows = await queryAll(
+            `SELECT doc_id, COUNT(*) as n FROM content WHERE doc_id IN (${ids.map(() => '?').join(',')})
+             AND deleted_at IS NULL GROUP BY doc_id`, ids
+          );
+          const liveCounts = new Map(rows.map((r) => [r.doc_id, r.n]));
+          const withText = candidates.filter((c) => (liveCounts.get(c.document_id) || 0) > 0);
+          if (withText.length) live = withText;
+        }
+      } catch (liveErr) {
+        logger.warn({ err: liveErr.message }, 'find_document liveness check failed — returning unfiltered');
+      }
       return {
-        candidates: candidates.slice(0, safeLimit),
+        candidates: live.slice(0, safeLimit),
         searched: title,
         religion_filter: religion || null,
         author_filter: author || null
