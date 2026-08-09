@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T15:48:41.751Z",
+  "generated": "2026-08-09T15:55:34.821Z",
   "entries": [
+    {
+      "hash": "1a434670",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Needle engine — fuzzy quote-hunt ladder (imperfect memory is the norm)",
+      "scope": null
+    },
     {
       "hash": "5e4f2f0f",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Retry logic in fetchPipelineHealth — prevent transient-failure alarm storm",
       "scope": null
-    },
-    {
-      "hash": "364e7380",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "Service-pattern fixes for 3 architectural debt items",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "1a434670",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Needle engine — fuzzy quote-hunt ladder (imperfect memory is the norm)",
+        "scope": null
+      },
       {
         "hash": "5e4f2f0f",
         "date": "2026-08-09",
@@ -7079,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "Retry logic in fetchPipelineHealth — prevent transient-failure alarm storm",
-        "scope": null
-      },
-      {
-        "hash": "364e7380",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "Service-pattern fixes for 3 architectural debt items",
         "scope": null
       }
     ]

@@ -2666,7 +2666,18 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     }
   }
 
-  const research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds });
+  // Long searches must never feel silent: after a few seconds, tell the user we're
+  // digging (the widget/UI renders stage events as status text). Two escalations.
+  const deepTimers = sendEvent ? [
+    setTimeout(() => sendEvent({ type: 'stage', stage: 'deepening' }), 4000),
+    setTimeout(() => sendEvent({ type: 'stage', stage: 'deepening-more' }), 11000),
+  ] : [];
+  let research;
+  try {
+    research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds });
+  } finally {
+    deepTimers.forEach(clearTimeout);
+  }
 
   // Web fallback (Perplexity, key-gated): the library returned NOTHING — rather
   // than a bare "no results", consult the web and answer with clearly-attributed

@@ -160,7 +160,7 @@
           const line = frame.split('\n').find((l) => l.startsWith('data: '));
           if (!line) continue;
           let ev; try { ev = JSON.parse(line.slice(6)); } catch { continue; }
-          if (ev.type === 'stage' && (ev.stage === 'research' || ev.stage === 'craft')) { if (phase !== 'streaming') phase = ev.stage; }
+          if (ev.type === 'stage' && ev.stage) { if (phase !== 'streaming') phase = ev.stage; }
           else if (ev.type === 'text' && typeof ev.content === 'string') { gotLive = true; pendBuf += ev.content; }
           else if (ev.type === 'chunk' && typeof ev.text === 'string') { if (gotLive) replay += ev.text; else pendBuf += ev.text; }
           else if (ev.type === 'citations' && Array.isArray(ev.citations)) { pendCites = ev.citations; }
@@ -243,7 +243,11 @@
                   <div class="bubble" class:lit={m.lit}>
                     {#if m.role === 'assistant'}
                       {#if m.pending && !m.content}
-                        <span class="stage">{phase === 'craft' ? 'Composing…' : 'Searching the ocean of texts…'}</span>
+                        <span class="stage">{
+                          phase === 'craft' ? 'Composing…'
+                          : phase === 'deepening' ? 'Looking deeper into the library…'
+                          : phase === 'deepening-more' ? 'Still searching — combing the historical records…'
+                          : 'Searching the ocean of texts…'}</span>
                       {:else}
                         {@html renderRich(m.content)}{#if m.pending}<span class="caret" aria-hidden="true"></span>{/if}
                       {/if}
