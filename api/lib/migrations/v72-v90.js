@@ -600,6 +600,57 @@ export const migrations = {
     await query(`UPDATE widget_profiles SET is_house=1 WHERE token='wgt_house_siftersearch' AND is_house=0`);
     logger.info('Migration 100 complete: is_house + widget_events (+ house profile)');
   },
+
+  101: async () => {
+    // Answer cache (perf Layer 1) with VERSIONED metrics and stale-while-revalidate.
+    // answer_cache: one row per cached (question, persona) — research bundle (persona-
+    //   independent) + crafted answer, stamped with the SEARCH_VERSION that produced it.
+    //   A version-mismatched hit is served AS-IS (fast) and queued for background
+    //   revalidation, so search improvements phase the old cache out systematically
+    //   without ever giving up the latency win.
+    // answer_cache_serves: one row per serve — cache_status × versions × latency —
+    //   the measurement substrate for hit-rate/latency/quality dashboards per version.
+    // search_versions: log of version bumps so metrics join to what changed and when.
+    logger.info('Starting migration 101: answer_cache + serve metrics + search_versions');
+    await query(`CREATE TABLE IF NOT EXISTS answer_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      question_norm TEXT NOT NULL,
+      question_hash TEXT NOT NULL,
+      question_embedding BLOB,
+      tradition TEXT,
+      persona TEXT NOT NULL DEFAULT 'Jafar',
+      research_json TEXT,
+      answer_md TEXT,
+      citations_json TEXT,
+      search_version TEXT NOT NULL,
+      retrieved_count INTEGER,
+      web_fallback INTEGER NOT NULL DEFAULT 0,
+      hit_count INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      last_served_at INTEGER
+    )`);
+    await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_answer_cache_qp ON answer_cache(question_hash, persona)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_answer_cache_version ON answer_cache(search_version)`);
+    await query(`CREATE TABLE IF NOT EXISTS answer_cache_serves (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      question_hash TEXT,
+      cache_status TEXT NOT NULL,           -- hit-fresh | hit-stale | miss | store
+      served_version TEXT,                  -- version of the answer actually served
+      current_version TEXT NOT NULL,        -- pipeline version at serve time
+      similarity REAL,
+      latency_ms INTEGER,
+      ts INTEGER NOT NULL DEFAULT (unixepoch())
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_acs_ts ON answer_cache_serves(ts DESC)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_acs_status_ts ON answer_cache_serves(cache_status, ts DESC)`);
+    await query(`CREATE TABLE IF NOT EXISTS search_versions (
+      version TEXT PRIMARY KEY,
+      first_seen_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      notes TEXT
+    )`);
+    logger.info('Migration 101 complete: answer cache + versioned serve metrics');
+  },
 };
 
 export const graphMigrations = {

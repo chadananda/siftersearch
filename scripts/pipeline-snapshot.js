@@ -242,6 +242,14 @@ async function main() {
     }
   }
 
+  // Answer-cache health: size, per-version composition (stale phase-out visible
+  // as the old version's count shrinking), and 24h serve mix with latencies.
+  let answerCache = null;
+  try {
+    const { cacheStats } = await import('../api/lib/answer-cache.js');
+    answerCache = await cacheStats();
+  } catch (err) { answerCache = { error: err.message }; }
+
   const snapshot = {
     generated_at: new Date().toISOString(),
     computed_in_ms: Date.now() - t0,
@@ -249,6 +257,7 @@ async function main() {
     library,
     bottlenecks,
     aiUsage,
+    answer_cache: answerCache,
     entity_review_model_at: erGeneratedAt,
     priority_books: books,
     summary: {

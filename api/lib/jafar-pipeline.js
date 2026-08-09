@@ -27,6 +27,8 @@ import { getScopeForLocation } from './search/scope.js';
 import { checkDeepResearch, recordQuestionHit } from './deep-research.js';
 import { extractQuotedSpan, phraseQueryVariants, scoreCandidate } from './quote-lookup.js';
 import { perplexityFallback } from './perplexity.js';
+import { checkAnswerCache, storeAnswer, touchEntry, recordServe, queueRevalidation, questionHash, SEARCH_VERSION } from './answer-cache.js';
+import { createEmbedding } from './ai.js';
 import { queryAll } from './db.js';
 import { findEntity } from './graph-db.js';
 
@@ -2699,8 +2701,13 @@ function isSocialQuery(msg) {
   return SOCIAL_RE.test((msg || '').trim());
 }
 
-export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location, persona_name }) {
+export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location, persona_name, _skipCache = false }) {
   const userMessage = messages[messages.length - 1].content;
+  const _t0 = Date.now();
+  // Opening turn = no prior USER message (the widget's greeting counts as assistant).
+  const isOpeningTurn = !messages.slice(0, -1).some((m) => m.role === 'user');
+  const persona = persona_name || 'Jafar';
+  let qEmbedding = null;   // computed once; reused by cache + deep-research pre-fetch
 
   // Resolve scope_config once at pipeline entry. Site-only chatbot locations
   // (e.g. 'bahaiteachings.org') restrict search to that site's index ONLY —
@@ -2737,6 +2744,50 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
       retried: false,
       research_calls: []
     };
+  }
+
+  // ── Answer cache (Layer 1): opening turns only, before any LLM call. ──────
+  // hit-fresh → stream the cached answer (~0.3s total). hit-stale (version-
+  // mismatched) → stream the OLD answer just as fast AND queue a background
+  // revalidation at the current SEARCH_VERSION — stale answers phase out
+  // systematically as they're touched, never by dropping the cache.
+  if (!_skipCache && isOpeningTurn && !chatbot_location) {
+    try {
+      let hit = await checkAnswerCache(userMessage, { persona });   // exact-hash pass (free)
+      if (!hit) {
+        qEmbedding = (await createEmbedding(userMessage)).embedding;
+        hit = await checkAnswerCache(userMessage, { persona, embedding: qEmbedding });
+      }
+      if (hit?.entry?.answer_md) {
+        const { entry, similarity, stale } = hit;
+        touchEntry(entry.id);
+        recordServe({
+          question_hash: entry.question_hash, cache_status: stale ? 'hit-stale' : 'hit-fresh',
+          served_version: entry.search_version, similarity, latency_ms: Date.now() - _t0
+        });
+        if (stale) {
+          queueRevalidation(entry, () =>
+            runJafarPipeline({ messages, sendEvent: null, debug: false, chatbot_location, persona_name, _skipCache: true }));
+        }
+        if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
+        const cachedQuotes = (() => { try { return JSON.parse(entry.research_json || '[]'); } catch { return []; } })();
+        if (sendEvent) for (const ch of entry.answer_md) sendEvent({ type: 'text', content: ch });
+        return {
+          reply: entry.answer_md,
+          user_intent: 'cached',
+          response_register: 'conversational',
+          retrieved_count: cachedQuotes.length,
+          retrieval_quotes: cachedQuotes,
+          gate: { pass: true, picker: stale ? 'cache-stale' : 'cache-fresh' },
+          retried: false,
+          research_calls: [],
+          cache: { status: stale ? 'hit-stale' : 'hit-fresh', similarity, served_version: entry.search_version, current_version: SEARCH_VERSION }
+        };
+      }
+      recordServe({ question_hash: questionHash(userMessage), cache_status: 'miss', latency_ms: Date.now() - _t0 });
+    } catch (err) {
+      logger.warn({ err: err.message }, 'answer-cache read path failed — continuing uncached');
+    }
   }
 
   // Stage 1: classify intent + entities (1 mini call ~1-2s), then run
@@ -2843,6 +2894,28 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   const draft = stripUngroundedLinks(rawDraft, linkAllowlist);
   const gate = { pass: true, picker: 'streamed-no-pick' };
   const retried = false;
+
+  // Write-through (Layer 1): cache the finished answer for opening-turn, default-scope,
+  // non-political questions. Stamped with SEARCH_VERSION; a later version bump serves
+  // this stale-then-revalidates it. Fire-and-forget — caching never delays the reply.
+  if (isOpeningTurn && !chatbot_location && !research.is_political && draft && draft.length >= 40) {
+    (async () => {
+      try {
+        const emb = qEmbedding || (await createEmbedding(userMessage)).embedding;
+        await storeAnswer(userMessage, {
+          persona,
+          embedding: emb,
+          tradition: (Array.isArray(entities?.traditions) && entities.traditions.length === 1) ? entities.traditions[0] : null,
+          research: research.retrieved_quotes,
+          answer: draft,
+          retrieved_count: research.retrieved_quotes.length,
+          web_fallback: !!webContext
+        });
+      } catch (e) {
+        logger.warn({ err: e.message }, 'answer-cache write-through failed');
+      }
+    })();
+  }
 
   return {
     reply: draft,
