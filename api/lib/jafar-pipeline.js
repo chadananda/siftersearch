@@ -689,12 +689,14 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     if (confidence !== 'high') {
       const personTag = (entities?.named_persons || []).join(' ');
       const semQuery = `${personTag} ${memory} ${(entities?.topics || []).join(' ')}`.trim().slice(0, 300);
-      const res = await runTool('search', {
-        query: semQuery, mode: 'passages', limit: 20,
-        ...(tradition ? { religion: tradition } : {}),
-        semanticRatio: 0.6
-      });
-      harvestPassages(res, 'quote-similar');
+      // Corpus-wide semantic dilutes across 4.6M paragraphs; when no tradition was
+      // extracted, ALSO run a Bahá'í-scoped pass (this platform's prior — e2/e4
+      // resolved via web while the passage sat live in Gleanings/Promulgation).
+      const semSearches = [
+        runTool('search', { query: semQuery, mode: 'passages', limit: 20, ...(tradition ? { religion: tradition } : {}), semanticRatio: 0.6 }),
+        ...(!tradition ? [runTool('search', { query: semQuery, mode: 'passages', limit: 12, religion: "Baha'i", semanticRatio: 0.6 })] : []),
+      ];
+      for (const res of await Promise.all(semSearches)) harvestPassages(res, 'quote-similar');
       // Originator boost: a work AUTHORED by the person the user attributes the quote
       // to outranks a biography/compilation merely quoting them — the source of "an
       // 'Abdu'l-Bahá quote" is Promulgation, not *Martha Root: Herald of the Kingdom*.

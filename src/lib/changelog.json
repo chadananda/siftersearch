@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T17:15:48.027Z",
+  "generated": "2026-08-09T17:27:36.431Z",
   "entries": [
+    {
+      "hash": "7914a7d9",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Quote hunts never reach the interfaith sweep (e4 Zohar regression) + name-over-office rule",
+      "scope": null
+    },
     {
       "hash": "9c06f235",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Doc-by-doc fetchBatch in graph-extractor — eliminates 98s sort",
       "scope": null
-    },
-    {
-      "hash": "b876f89b",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "Revert O(n²) fetchBatch; add resetReextractQueue periodic task",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "7914a7d9",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Quote hunts never reach the interfaith sweep (e4 Zohar regression) + name-over-office rule",
+        "scope": null
+      },
       {
         "hash": "9c06f235",
         "date": "2026-08-09",
@@ -7079,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Performance",
         "description": "Doc-by-doc fetchBatch in graph-extractor — eliminates 98s sort",
-        "scope": null
-      },
-      {
-        "hash": "b876f89b",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "Revert O(n²) fetchBatch; add resetReextractQueue periodic task",
         "scope": null
       }
     ]
