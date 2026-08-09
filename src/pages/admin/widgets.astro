@@ -1,0 +1,9 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
+import WidgetManager from '../../components/admin/WidgetManager.svelte';
+---
+
+<AdminLayout title="Chat Widgets">
+  <WidgetManager client:only="svelte"><IslandSkeleton slot="fallback" /></WidgetManager>
+</AdminLayout>

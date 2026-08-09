@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T01:50:00.847Z",
+  "generated": "2026-08-09T01:50:53.189Z",
   "entries": [
+    {
+      "hash": "b50cde5d",
+      "date": "2026-08-08",
+      "type": "Other",
+      "description": "Pin unique dev ports (UI 5173→7842) — no cross-project conflicts",
+      "scope": null
+    },
     {
       "hash": "57e368c6",
       "date": "2026-08-08",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Health check for stale meili_sync_tasks + pipeline endpoint sync_tasks field",
       "scope": null
-    },
-    {
-      "hash": "5656b757",
-      "date": "2026-05-21",
-      "type": "Performance",
-      "description": "Optimistic Meili sync — markSynced immediately, reconcile failures on restart",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-08": [
+      {
+        "hash": "b50cde5d",
+        "date": "2026-08-08",
+        "type": "Other",
+        "description": "Pin unique dev ports (UI 5173→7842) — no cross-project conflicts",
+        "scope": null
+      },
       {
         "hash": "57e368c6",
         "date": "2026-08-08",
@@ -7077,15 +7084,6 @@
         "date": "2026-05-22",
         "type": "New",
         "description": "Health check for stale meili_sync_tasks + pipeline endpoint sync_tasks field",
-        "scope": null
-      }
-    ],
-    "2026-05-21": [
-      {
-        "hash": "5656b757",
-        "date": "2026-05-21",
-        "type": "Performance",
-        "description": "Optimistic Meili sync — markSynced immediately, reconcile failures on restart",
         "scope": null
       }
     ]

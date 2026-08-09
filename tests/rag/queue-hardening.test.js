@@ -167,7 +167,7 @@ describe('budgetStatus.peakBlocked — the off-peak launch wall', () => {
     expect(b.inPeak).toBe(true); expect(b.peakBlocked).toBe(true); expect(b.over).toBe(false);
   });
   it('offpeak_only but currently off-peak → NOT blocked (books launch)', async () => {
-    const [b] = await budgetStatus({ ...budgetRow(), now: at(15) });  // 15:00 UTC = off-peak
+    const [b] = await budgetStatus({ ...budgetRow(), now: at(20) });  // 20:00 UTC = off-peak (discount hours 16:30-00:30)
     expect(b.inPeak).toBe(false); expect(b.peakBlocked).toBe(false);
   });
   it('flag OFF → never peak-blocked even during a peak window (opt-in)', async () => {

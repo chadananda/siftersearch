@@ -8,7 +8,7 @@
 import { userQuery } from '../db.js';
 import { logger } from '../logger.js';
 
-export const USER_DB_CURRENT_VERSION = 3;
+export const USER_DB_CURRENT_VERSION = 4;
 
 export const userMigrations = {
   // Version 1: Create all user tables in user database
@@ -279,5 +279,12 @@ export const userMigrations = {
     try { await userQuery('CREATE INDEX IF NOT EXISTS idx_api_usage_log_reported ON api_usage_log(reported_to_stripe)'); } catch { /* exists */ }
 
     logger.info('User migration 3 complete: api_subscriptions and api_usage_log tables created');
+  },
+
+  // Version 4: is_test flag — QA/test accounts are excluded from all admin views and analytics
+  4: async () => {
+    try { await userQuery('ALTER TABLE users ADD COLUMN is_test INTEGER DEFAULT 0'); } catch { /* exists */ }
+    await userQuery(`UPDATE users SET is_test = 1 WHERE email LIKE 'test-%@siftersearch.com'`);
+    logger.info('User migration 4 complete: users.is_test added, existing test accounts flagged');
   },
 };

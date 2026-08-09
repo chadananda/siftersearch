@@ -842,6 +842,29 @@ export const admin = {
     if (options.offset) params.set('offset', options.offset);
     if (options.days) params.set('days', options.days);
     return request(`/api/admin/activity/search-log?${params.toString()}`);
+  },
+
+  // Chat widget profiles (routes/widget.js; requireInternal accepts the admin JWT)
+  async getWidgetProfiles() {
+    return request('/api/v1/widget/admin/profiles');
+  },
+  async createWidgetProfile(profile) {
+    return request('/api/v1/widget/admin/profiles', {
+      method: 'POST',
+      body: JSON.stringify(profile)
+    });
+  },
+  async updateWidgetProfile(id, updates) {
+    return request(`/api/v1/widget/admin/profiles/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates)
+    });
+  },
+  async deleteWidgetProfile(id) {
+    return request(`/api/v1/widget/admin/profiles/${id}`, { method: 'DELETE' });
+  },
+  async getWidgetAnalytics(id, days = 30) {
+    return request(`/api/v1/widget/admin/profiles/${id}/analytics?days=${days}`);
   }
 };
 

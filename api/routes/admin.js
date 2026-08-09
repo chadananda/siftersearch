@@ -71,6 +71,10 @@ const backgroundTasks = new Map();
 const PIPELINE_SNAPSHOT_PATH = join(process.cwd(), 'data', 'pipeline-status.json');
 const PIPELINE_STALE_S = 600; // flag snapshots older than 10 min
 
+// Test accounts (users.is_test=1, e.g. the QA test-admin) never appear in admin views or analytics.
+const NOT_TEST_USER = 'COALESCE(is_test, 0) = 0';
+const NOT_TEST_EVENT = '(user_id IS NULL OR user_id NOT IN (SELECT id FROM users WHERE is_test = 1))';
+
 export default async function adminRoutes(fastify) {
   // Note: Server management routes (/server/*) use requireInternal which accepts
   // either X-Internal-Key header or admin JWT. Other routes use requireTier('admin').
@@ -89,6 +93,7 @@ export default async function adminRoutes(fastify) {
           SUM(CASE WHEN tier = 'banned' THEN 1 ELSE 0 END) as banned,
           SUM(CASE WHEN approved_at IS NULL AND tier = 'verified' THEN 1 ELSE 0 END) as pending
         FROM users
+        WHERE ${NOT_TEST_USER}
       `),
       getSearchStats().catch(() => ({ documents: { numberOfDocuments: 0 }, paragraphs: { numberOfDocuments: 0 } })),
       userQueryOne(`
@@ -98,6 +103,7 @@ export default async function adminRoutes(fastify) {
           COUNT(DISTINCT user_id) as unique_users
         FROM analytics
         WHERE created_at > datetime('now', '-30 days')
+          AND ${NOT_TEST_EVENT}
       `)
     ]);
 
@@ -144,7 +150,7 @@ export default async function adminRoutes(fastify) {
     let sql = `
       SELECT id, email, name, tier, preferred_language, created_at, approved_at
       FROM users
-      WHERE 1=1
+      WHERE ${NOT_TEST_USER}
     `;
     const params = [];
 
@@ -164,7 +170,7 @@ export default async function adminRoutes(fastify) {
     const users = await userQueryAll(sql, params);
 
     // Get total count
-    let countSql = 'SELECT COUNT(*) as count FROM users WHERE 1=1';
+    let countSql = `SELECT COUNT(*) as count FROM users WHERE ${NOT_TEST_USER}`;
     const countParams = [];
     if (tier) {
       countSql += ' AND tier = ?';
@@ -190,7 +196,7 @@ export default async function adminRoutes(fastify) {
     const users = await userQueryAll(`
       SELECT id, email, name, created_at, referred_by
       FROM users
-      WHERE tier = 'verified' AND approved_at IS NULL
+      WHERE tier = 'verified' AND approved_at IS NULL AND ${NOT_TEST_USER}
       ORDER BY created_at ASC
     `);
 
@@ -323,7 +329,7 @@ export default async function adminRoutes(fastify) {
       SELECT a.*, u.email as user_email
       FROM analytics a
       LEFT JOIN users u ON a.user_id = u.id
-      WHERE 1=1
+      WHERE COALESCE(u.is_test, 0) = 0
     `;
     const params = [];
 
@@ -534,7 +540,7 @@ export default async function adminRoutes(fastify) {
       Promise.all([
         queryOne('SELECT COUNT(*) as count FROM docs'),
         queryOne('SELECT COUNT(*) as count FROM content'),
-        userQueryOne('SELECT COUNT(*) as count FROM users'),
+        userQueryOne(`SELECT COUNT(*) as count FROM users WHERE ${NOT_TEST_USER}`),
         queryOne('SELECT COUNT(*) as count FROM library_nodes')
       ]).then(([docs, content, users, nodes]) => ({
         docs: docs?.count || 0,
@@ -3570,6 +3576,7 @@ Collection: ${paragraph.collection || 'Unknown'}
         FROM analytics
         WHERE event_type IN ('anonymous_search', 'search')
           AND created_at >= ?
+          AND ${NOT_TEST_EVENT}
         ORDER BY created_at DESC
         LIMIT ? OFFSET ?
       `, [sinceStr, limit, offset]),
@@ -3577,6 +3584,7 @@ Collection: ${paragraph.collection || 'Unknown'}
         SELECT COUNT(*) as count FROM analytics
         WHERE event_type IN ('anonymous_search', 'search')
           AND created_at >= ?
+          AND ${NOT_TEST_EVENT}
       `, [sinceStr]),
       userQueryOne(`
         SELECT
@@ -3585,12 +3593,14 @@ Collection: ${paragraph.collection || 'Unknown'}
         FROM analytics
         WHERE event_type IN ('anonymous_search', 'search')
           AND created_at >= ?
+          AND ${NOT_TEST_EVENT}
       `, [sinceStr]),
       userQueryAll(`
         SELECT details, COUNT(*) as count
         FROM analytics
         WHERE event_type IN ('anonymous_search', 'search')
           AND created_at >= ?
+          AND ${NOT_TEST_EVENT}
         GROUP BY details
         ORDER BY count DESC
         LIMIT 20
@@ -3600,6 +3610,7 @@ Collection: ${paragraph.collection || 'Unknown'}
         FROM analytics
         WHERE event_type IN ('anonymous_search', 'search')
           AND created_at >= ?
+          AND ${NOT_TEST_EVENT}
         GROUP BY DATE(created_at)
         ORDER BY day DESC
       `, [sinceStr])
@@ -3639,6 +3650,7 @@ Collection: ${paragraph.collection || 'Unknown'}
           SUM(search_count) as total_searches,
           AVG(search_count) as avg_searches
         FROM users
+        WHERE ${NOT_TEST_USER}
       `),
       userQueryOne(`
         SELECT COUNT(*) as count FROM anonymous_users WHERE converted_to_user_id IS NOT NULL
@@ -3653,7 +3665,7 @@ Collection: ${paragraph.collection || 'Unknown'}
       userQueryAll(`
         SELECT id, email, name, tier, search_count, created_at
         FROM users
-        WHERE search_count > 0
+        WHERE search_count > 0 AND ${NOT_TEST_USER}
         ORDER BY search_count DESC
         LIMIT 20
       `)
@@ -3835,23 +3847,23 @@ Collection: ${paragraph.collection || 'Unknown'}
       userQueryAll(`
         SELECT id, query, user_id, anonymous_user_id, api_key_id, result_count, duration_ms, search_type, created_at
         FROM search_log
-        WHERE created_at >= ?
+        WHERE created_at >= ? AND ${NOT_TEST_EVENT}
         ORDER BY created_at DESC
         LIMIT ? OFFSET ?
       `, [sinceStr, limit, offset]),
-      userQueryOne('SELECT COUNT(*) as count FROM search_log WHERE created_at >= ?', [sinceStr]),
+      userQueryOne(`SELECT COUNT(*) as count FROM search_log WHERE created_at >= ? AND ${NOT_TEST_EVENT}`, [sinceStr]),
       userQueryOne(`
         SELECT
           COUNT(*) as total_searches,
           COUNT(DISTINCT COALESCE(user_id, anonymous_user_id)) as unique_users,
           AVG(duration_ms) as avg_duration,
           AVG(result_count) as avg_results
-        FROM search_log WHERE created_at >= ?
+        FROM search_log WHERE created_at >= ? AND ${NOT_TEST_EVENT}
       `, [sinceStr]),
       userQueryAll(`
         SELECT query, COUNT(*) as count, AVG(result_count) as avg_results
         FROM search_log
-        WHERE created_at >= ?
+        WHERE created_at >= ? AND ${NOT_TEST_EVENT}
         GROUP BY query
         ORDER BY count DESC
         LIMIT 30
@@ -3861,7 +3873,7 @@ Collection: ${paragraph.collection || 'Unknown'}
           COUNT(*) as searches,
           COUNT(DISTINCT COALESCE(user_id, anonymous_user_id)) as unique_users
         FROM search_log
-        WHERE created_at >= ?
+        WHERE created_at >= ? AND ${NOT_TEST_EVENT}
         GROUP BY DATE(created_at)
         ORDER BY day DESC
       `, [sinceStr])

@@ -271,17 +271,17 @@ export async function seedTestUser() {
   const pass = process.env.TEST_ADMIN_PASS;
   if (!email || !pass) return null;
 
-  const existing = await queryOne('SELECT id, tier, email_verified FROM users WHERE email = ?', [email.toLowerCase()]);
+  const existing = await queryOne('SELECT id, tier, email_verified, is_test FROM users WHERE email = ?', [email.toLowerCase()]);
   if (existing) {
-    if (existing.tier === 'admin' && existing.email_verified === 1) return { id: existing.id, email, action: 'verified' };
+    if (existing.tier === 'admin' && existing.email_verified === 1 && existing.is_test === 1) return { id: existing.id, email, action: 'verified' };
     const passwordHash = await hashPassword(pass);
-    await query('UPDATE users SET password_hash = ?, tier = ?, email_verified = 1 WHERE id = ?', [passwordHash, 'admin', existing.id]);
+    await query('UPDATE users SET password_hash = ?, tier = ?, email_verified = 1, is_test = 1 WHERE id = ?', [passwordHash, 'admin', existing.id]);
     return { id: existing.id, email, action: 'updated' };
   }
   const passwordHash = await hashPassword(pass);
   const now = new Date().toISOString();
   const result = await query(
-    'INSERT INTO users (email, password_hash, name, tier, email_verified, approved_at) VALUES (?, ?, ?, ?, 1, ?) RETURNING id',
+    'INSERT INTO users (email, password_hash, name, tier, email_verified, approved_at, is_test) VALUES (?, ?, ?, ?, 1, ?, 1) RETURNING id',
     [email.toLowerCase(), passwordHash, 'QA Test Admin', 'admin', now]
   );
   return { id: result.rows[0].id, email, action: 'created' };
