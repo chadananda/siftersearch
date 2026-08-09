@@ -26,6 +26,7 @@ import { executeTool, TOOLS } from '../routes/chat.js';
 import { getScopeForLocation } from './search/scope.js';
 import { checkDeepResearch, recordQuestionHit } from './deep-research.js';
 import { extractQuotedSpan, phraseQueryVariants } from './quote-lookup.js';
+import { perplexityFallback } from './perplexity.js';
 import { queryAll } from './db.js';
 import { findEntity } from './graph-db.js';
 
@@ -2089,9 +2090,11 @@ names the work, the author, and links the passage. 1-3 sentences, nothing more.
 - If a retrieved_quote contains the quoted text (exactly or nearly): "That is from *Work Title*
   by Author — ["the quoted words in context"](url)." Optionally ONE sentence of surrounding context.
 - If NO retrieved_quote contains the quoted text: say plainly that you could not locate that
-  exact wording in the library, and stop. DO NOT offer thematically similar passages. DO NOT
-  bring in other works, authors, or traditions "reflecting the broader theme." A wrong-but-
-  related answer is worse than an honest miss — the user asked for a citation, not a meditation.
+  exact wording in the library. DO NOT offer thematically similar passages. DO NOT bring in
+  other works, authors, or traditions "reflecting the broader theme." A wrong-but-related
+  answer is worse than an honest miss — the user asked for a citation, not a meditation.
+  EXCEPTION: when a WEB SEARCH CONTEXT block is provided, after the "not in the library"
+  sentence you should relay what the web search identified, attributed to the web.
 
 STAY IN THE ASKED DOMAIN: when the question names one tradition, figure, or work, answer from
 that domain only. Retrieved quotes from OTHER traditions are context you may silently ignore —
@@ -2106,8 +2109,8 @@ const crafterSystem = (persona) => (persona && persona !== 'Jafar') ? CRAFTER_SY
 
 // Streaming variant — yields each chunk as it arrives. Used in the
 // fast-path orchestrator. Returns the full text at the end.
-export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name }) {
-  const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent });
+export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, web_context }) {
+  const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context });
   // gpt-4o for the crafter — the new answer-first prompt requires the
   // model to read the user's question, decide which retrieved_quote
   // actually addresses it (semantic relevance, not just topical keyword
@@ -2228,7 +2231,7 @@ function stripRestatementSentences(text) {
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
-function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent }) {
+function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context }) {
   const TIER_LABEL = {
     1: 'TIER 1 (Shoghi Effendi — supreme interpreter)',
     2: "TIER 2 ('Abdu'l-Bahá — Center of the Covenant, interpreter)",
@@ -2293,6 +2296,16 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     ? `\n⚠️ REQUIRED: This reply MUST cite passages from ALL of these traditions (each has quotes in retrieved_quotes): ${presentTraditions.join(', ')}. Silence on any listed tradition is a failure.`
     : '';
 
+  // Web fallback context: the library retrieval was empty and a Perplexity web
+  // search answered instead. Clearly bounded so the crafter attributes it as web
+  // information and never dresses it up as library citations.
+  const webBlock = web_context?.text ? `
+
+WEB SEARCH CONTEXT (library retrieval was EMPTY; the following comes from a live web search, NOT from the library):
+${web_context.text}
+Web sources you may link: ${(web_context.citations || []).map((c) => `[${c.title}](${c.url})`).join(' · ') || '(none)'}
+RULES FOR THIS BLOCK: open by saying the library did not contain material on this (for quote lookups: that the exact wording is not in the library). THEN answer from the web context, attributed plainly ("according to a web search…"). Link only the web sources listed above. Do NOT invent library citations. Stay brief.` : '';
+
   return `user_intent: ${user_intent}
 
 user_question: ${user_question}
@@ -2301,7 +2314,7 @@ conversation_summary: ${conversation_summary || '(this is the opening turn)'}${t
 
 retrieved_quotes (${retrieved_quotes.length} entries — use these as the substrate; entries marked SUMMARY are sub-agent context, not quotable text):
 
-${quotesPayload || '(no quotes retrieved — reply must say so)'}${synthesisBlock}
+${quotesPayload || (web_context?.text ? '(no library quotes — use the WEB SEARCH CONTEXT below)' : '(no quotes retrieved — reply must say so)')}${synthesisBlock}${webBlock}
 
 TORAH NOTE: "Torah" refers specifically to the Five Books of Moses (Genesis, Exodus, Leviticus, Numbers, Deuteronomy). When a question asks about "the Torah", prefer Q-entries whose source_title contains those book names over Talmud, Mishnah, or other Jewish texts. A Talmud passage is rabbinic commentary, not the Torah itself.
 
@@ -2566,6 +2579,16 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
 
   const research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds });
 
+  // Web fallback (Perplexity, key-gated): the library returned NOTHING — rather
+  // than a bare "no results", consult the web and answer with clearly-attributed
+  // web information. Covers quote-source misses too ("not in our library, but a
+  // web search identifies it as…"). Never runs when the library had material.
+  let webContext = null;
+  if (!research.is_political && research.retrieved_quotes.length === 0) {
+    webContext = await perplexityFallback(userMessage);
+    if (webContext && sendEvent) sendEvent({ type: 'debug_web_fallback', sources: webContext.citations.length });
+  }
+
   // Conversation summary
   const conversationSummary = summarizeConversation(messages);
 
@@ -2604,9 +2627,14 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     user_intent: userIntent,
     _temperature_override: 0.3,
     onChunk,
-    persona_name
+    persona_name,
+    web_context: webContext
   });
-  const draft = stripUngroundedLinks(rawDraft, research.retrieved_quotes);
+  // Web-source links are legitimate when the fallback ran — extend the allowlist.
+  const linkAllowlist = webContext
+    ? [...research.retrieved_quotes, ...webContext.citations.map((c) => ({ citation_url: c.url }))]
+    : research.retrieved_quotes;
+  const draft = stripUngroundedLinks(rawDraft, linkAllowlist);
   const gate = { pass: true, picker: 'streamed-no-pick' };
   const retried = false;
 

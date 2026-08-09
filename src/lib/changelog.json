@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T14:53:41.844Z",
+  "generated": "2026-08-09T15:14:03.265Z",
   "entries": [
+    {
+      "hash": "2f1145fb",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Fix quote fast path — phrase mode bypasses HyPE merge; repair snake_case return crash",
+      "scope": null
+    },
     {
       "hash": "d129ab47",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add meili_sync_tasks reconciler to sync-processor periodic tasks",
       "scope": null
-    },
-    {
-      "hash": "3a98fa9c",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "Raise meili_sync_tasks stale threshold 4h→8h — HNSW rebuilds on 4M+ vectors take 5-8h",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "2f1145fb",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Fix quote fast path — phrase mode bypasses HyPE merge; repair snake_case return crash",
+        "scope": null
+      },
       {
         "hash": "d129ab47",
         "date": "2026-08-09",
@@ -7079,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "Add meili_sync_tasks reconciler to sync-processor periodic tasks",
-        "scope": null
-      },
-      {
-        "hash": "3a98fa9c",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "Raise meili_sync_tasks stale threshold 4h→8h — HNSW rebuilds on 4M+ vectors take 5-8h",
         "scope": null
       }
     ]
