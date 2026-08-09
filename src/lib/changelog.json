@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T16:03:43.491Z",
+  "generated": "2026-08-09T16:17:30.895Z",
   "entries": [
+    {
+      "hash": "e6b73a8c",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Format-for-comprehension — answer-first, adaptive shape, books always linked",
+      "scope": null
+    },
     {
       "hash": "1a434670",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Graph-validator cycles reextract back to extractor queue",
       "scope": null
-    },
-    {
-      "hash": "59ebea7b",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "Retry logic in fetchPipelineHealth — prevent transient-failure alarm storm",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "e6b73a8c",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Format-for-comprehension — answer-first, adaptive shape, books always linked",
+        "scope": null
+      },
       {
         "hash": "1a434670",
         "date": "2026-08-09",
@@ -7079,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "Graph-validator cycles reextract back to extractor queue",
-        "scope": null
-      },
-      {
-        "hash": "59ebea7b",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "Retry logic in fetchPipelineHealth — prevent transient-failure alarm storm",
         "scope": null
       }
     ]

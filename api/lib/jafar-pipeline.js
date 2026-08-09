@@ -712,6 +712,44 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     };
   }
 
+  // ── Entity-first for historical who/what questions ─────────────────────────
+  // The prosopography (entity_claims — evidence-reconciled cited facts, each with
+  // a verbatim proof span, source book and paragraph link) answers who/what/when
+  // PRECISELY: canonical names, kinship, roles, dates. Eval showed retrieval found
+  // the right passages while answers omitted the fact ("cited GPB ¶37, never named
+  // Quddús"). So: dossiers load FIRST as authoritative context + their best proof
+  // spans join retrieved_quotes (linkable); passage search then decorates.
+  const bahaiDomain = !Array.isArray(entities?.traditions) || entities.traditions.length === 0 || entities.traditions.includes("Baha'i");
+  if (bahaiDomain && entities?.named_persons?.length && ['explain', 'discuss', 'definition'].includes(entities?.intent || '')) {
+    for (const person of entities.named_persons.slice(0, 2)) {
+      try {
+        const lk = await runTool('entity_lookup', { q: person, type: 'person' });
+        const top = lk?.candidates?.[0];
+        if (!top?.id) continue;
+        const d = await runTool('entity_dossier', { id: top.id });
+        if (!d?.name) continue;
+        const lines = [
+          `Canonical name: ${d.name}${d.aliases?.length ? ` (also: ${d.aliases.slice(0, 4).join(', ')})` : ''}${d.side ? ` · side: ${d.side}` : ''}`,
+          ...(d.summary ? [d.summary] : []),
+          ...(d.claims || []).slice(0, 12).map((c) =>
+            `- ${c.relation}${c.object ? ` → ${c.object}` : ''}: ${c.statement}${c.when ? ` (${c.when})` : ''}${c.sourceAbbr ? ` [${c.sourceAbbr}]` : ''}`),
+        ];
+        subagentSyntheses.push({
+          source_title: `Entity dossier: ${d.name}`,
+          source_author: 'cited-claims database (evidence-reconciled)',
+          answer: lines.join('\n'),
+        });
+        // Proof-bearing claims become quotable, LINKABLE evidence for the crafter.
+        for (const c of (d.claims || []).filter((x) => x.proof && x.url).slice(0, 5)) {
+          retrieved.push({
+            text: c.proof, source_title: c.source || 'history', source_author: '',
+            citation_url: c.url, religion: "Baha'i", via: 'entity-claim',
+          });
+        }
+      } catch { /* the dossier is enrichment — never a blocker */ }
+    }
+  }
+
   // Catalog pre-fetch: for library overview/browsing questions, skip the
   // per-tradition search loop entirely and return authoritative count data.
   // Two paths:
@@ -2246,14 +2284,15 @@ export function stripUngroundedLinks(text, retrievedQuotes) {
     (retrievedQuotes || []).map(q => q.citation_url).filter(Boolean)
   );
   if (validUrls.size === 0) return text;
-  // Also allow matching on base URL (without fragment) so the crafter can emit
-  // either the full paragraph-level URL or the document-level URL and still pass.
-  const validBaseUrls = new Set([...validUrls].map(u => u.split('#')[0]));
+  // Also allow matching on base URL (without fragment OR query) so the crafter can
+  // emit the paragraph-level URL or the book-level URL and still pass — the WORK
+  // LINKS rule sends readers to the book itself on first mention.
+  const validBaseUrls = new Set([...validUrls].map(u => u.split('#')[0].split('?')[0]));
   // Allow one level of balanced parens in URLs (e.g., "/path (en)#p10")
   // First: remove literal template placeholders like [text](url) where url is not an https link
   let cleaned = text.replace(/\[([^\]]+)\]\((?!https?:\/\/)([^)]*)\)/g, '$1');
   return cleaned.replace(/\[([^\]]+)\]\((https?:\/\/(?:[^()]+|\([^()]*\))*)\)/g, (match, fragment, url) => {
-    return validUrls.has(url) || validBaseUrls.has(url.split('#')[0]) ? match : fragment;
+    return validUrls.has(url) || validBaseUrls.has(url.split('#')[0].split('?')[0]) ? match : fragment;
   });
 }
 
@@ -2419,7 +2458,13 @@ conversation_summary: ${conversation_summary || '(this is the opening turn)'}${t
 
 retrieved_quotes (${retrieved_quotes.length} entries — use these as the substrate; entries marked SUMMARY are sub-agent context, not quotable text):
 
-${quotesPayload || (web_context?.text ? '(no library quotes — use the WEB SEARCH CONTEXT below)' : '(no quotes retrieved — reply must say so)')}${synthesisBlock}${quoteBlock}${webBlock}
+${quotesPayload || (web_context?.text ? '(no library quotes — use the WEB SEARCH CONTEXT below)' : '(no quotes retrieved — reply must say so)')}${(() => {
+    const links = [...new Map(retrieved_quotes
+      .filter((q) => q.citation_url && q.source_title)
+      .map((q) => [q.source_title, q.citation_url.split('#')[0].split('?')[0]])).entries()]
+      .slice(0, 8).map(([t, u]) => `[*${t}*](${u})`).join(' · ');
+    return links ? `\n\nWORK LINKS (book-level URLs — when the user asks ABOUT a work, its first mention should be one of these links): ${links}` : '';
+  })()}${synthesisBlock}${quoteBlock}${webBlock}
 
 TORAH NOTE: "Torah" refers specifically to the Five Books of Moses (Genesis, Exodus, Leviticus, Numbers, Deuteronomy). When a question asks about "the Torah", prefer Q-entries whose source_title contains those book names over Talmud, Mishnah, or other Jewish texts. A Talmud passage is rabbinic commentary, not the Torah itself.
 
