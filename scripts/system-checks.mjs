@@ -107,6 +107,17 @@ if (db) {
   metrics.widget24 = g(`SELECT COUNT(*) n, COUNT(DISTINCT session_id) sessions FROM widget_events WHERE created_at > datetime('now','-24 hours')`);
   metrics.paras = g(`SELECT COUNT(*) n FROM content WHERE deleted_at IS NULL`)?.n;
   metrics.hypedDocs = g(`SELECT COUNT(DISTINCT doc_id) n FROM content WHERE hyp_questions IS NOT NULL`)?.n;
+  // Hollow-done guard (daily only — heavier query): a substantial book whose disambiguation is complete
+  // but with ZERO extracted people or claims is a silent extraction failure being grandfathered as done,
+  // never a "sparse book". These docs are full of historical gems; surface them instead of hiding them.
+  if (MODE === 'daily') {
+    metrics.hollow = g(`SELECT COUNT(*) n FROM (SELECT DISTINCT doc_id d FROM grounding_queue) p
+      WHERE (SELECT COUNT(*) FROM content WHERE doc_id=p.d AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) >= 40
+        AND (SELECT COUNT(*) FROM content WHERE doc_id=p.d AND context IS NOT NULL AND context!='') >=
+            0.98*(SELECT COUNT(*) FROM content WHERE doc_id=p.d AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL)
+        AND ((SELECT COUNT(*) FROM entity_mentions_v2 WHERE doc_id=p.d)=0 OR (SELECT COUNT(*) FROM entity_claims WHERE doc_id=p.d)=0)`)?.n;
+    if (metrics.hollow != null) add('Hollow-done books', metrics.hollow === 0, 'warn', `${metrics.hollow} disambiguated books with zero extraction yield`);
+  }
 }
 
 // ── 6. Disk ──────────────────────────────────────────────────────────────────

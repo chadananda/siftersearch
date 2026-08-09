@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T23:35:53.133Z",
+  "generated": "2026-08-09T23:39:58.884Z",
   "entries": [
+    {
+      "hash": "5ffc0173",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "ONE done-definition for group books + version chips",
+      "scope": null
+    },
     {
       "hash": "251c665c",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "PropagateHypeFromNormalizedHash lock starvation — smaller batches + index",
       "scope": null
-    },
-    {
-      "hash": "bbf47efd",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "Chunk bulkUpdateEmbeddings writes — prevent write-lock starvation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "5ffc0173",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "ONE done-definition for group books + version chips",
+        "scope": null
+      },
       {
         "hash": "251c665c",
         "date": "2026-08-09",
@@ -7079,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "PropagateHypeFromNormalizedHash lock starvation — smaller batches + index",
-        "scope": null
-      },
-      {
-        "hash": "bbf47efd",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "Chunk bulkUpdateEmbeddings writes — prevent write-lock starvation",
         "scope": null
       }
     ]
