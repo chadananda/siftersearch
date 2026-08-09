@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "2.186.34",
+  "version": "2.186.35",
   "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {
@@ -73,6 +73,9 @@
     "changelog": "node scripts/generate-changelog.js",
     "prebuild": "node scripts/generate-changelog.js",
     "deploy": "node scripts/deploy.js",
+    "deploy:worker": "bash scripts/deploy-worker.sh",
+    "checks": "node scripts/system-checks.mjs",
+    "checks:daily": "node scripts/system-checks.mjs --daily",
     "lint": "eslint . --ext .js,.svelte,.astro",
     "format": "prettier --write .",
     "prod:start": "pm2 start ecosystem.config.cjs --env production",

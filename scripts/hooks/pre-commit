@@ -17,6 +17,10 @@
 
 set -e
 
+# Non-interactive shells (agents, CI) may lack node on PATH — self-heal with the fnm install
+# so `git commit` works bare, without an `export PATH=… &&` prefix wrapping every commit.
+command -v node >/dev/null 2>&1 || export PATH="$HOME/.local/share/fnm/node-versions/v24.16.0/installation/bin:$PATH"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
