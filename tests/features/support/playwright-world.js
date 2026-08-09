@@ -18,7 +18,7 @@ class PlaywrightWorld extends World {
     this.page = null;
 
     // Configuration
-    this.baseUrl = process.env.BASE_URL || 'http://localhost:5173';
+    this.baseUrl = process.env.BASE_URL || 'http://localhost:7842';
     this.apiUrl = process.env.API_URL || 'http://localhost:3001';
     this.headless = process.env.HEADLESS !== 'false';
     this.slowMo = parseInt(process.env.SLOW_MO || '0', 10);

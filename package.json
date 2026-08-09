@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "2.186.0",
+  "version": "2.186.1",
   "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {
@@ -12,9 +12,9 @@
   "scripts": {
     "preflight": "node scripts/preflight.js",
     "dev": "DEV_MODE=true node scripts/dev.js",
-    "dev:prod": "DEV_MODE=true PUBLIC_API_URL=https://api.siftersearch.com astro dev --port 5173",
+    "dev:prod": "DEV_MODE=true PUBLIC_API_URL=https://api.siftersearch.com astro dev --port 7842",
     "dev:api": "DEV_MODE=true node --watch api/index.js",
-    "dev:ui": "DEV_MODE=true astro dev --port 5173",
+    "dev:ui": "DEV_MODE=true astro dev --port 7842",
     "build": "astro build && node scripts/finalize-sitemap-index.js",
     "build:api": "echo 'API is runtime JS, no build needed'",
     "preview": "astro preview",
@@ -24,7 +24,7 @@
     "test:api": "vitest run tests/api",
     "test:e2e": "playwright test",
     "test:bdd": "cucumber-js",
-    "test:bdd:prod": "UI_URL=http://localhost:5173 API_URL=https://api.siftersearch.com cucumber-js",
+    "test:bdd:prod": "UI_URL=http://localhost:7842 API_URL=https://api.siftersearch.com cucumber-js",
     "test:bdd:critical": "cucumber-js --profile critical",
     "test:bdd:smoke": "cucumber-js --profile smoke",
     "test:bdd:all": "cucumber-js --profile all",

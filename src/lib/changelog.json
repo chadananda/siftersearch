@@ -1,6 +1,20 @@
 {
-  "generated": "2026-08-08T13:16:59.789Z",
+  "generated": "2026-08-09T01:50:00.847Z",
   "entries": [
+    {
+      "hash": "57e368c6",
+      "date": "2026-08-08",
+      "type": "Other",
+      "description": "Self-healing seedTestUser() on boot (TEST_ADMIN_EMAIL/PASS), mirrors seedAdminUser",
+      "scope": null
+    },
+    {
+      "hash": "115cd04e",
+      "date": "2026-08-08",
+      "type": "Other",
+      "description": "Idempotent env-driven seed for QA test-admin user (tier=admin, email_verified=1) via single writer",
+      "scope": null
+    },
     {
       "hash": "a96d8e19",
       "date": "2026-08-07",
@@ -3486,23 +3500,25 @@
       "type": "Performance",
       "description": "Optimistic Meili sync — markSynced immediately, reconcile failures on restart",
       "scope": null
-    },
-    {
-      "hash": "14b4c5aa",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Increase Meili task timeout 900s→7200s — HNSW on 4M+ vector index takes 15-60min/batch",
-      "scope": null
-    },
-    {
-      "hash": "55f1c6c7",
-      "date": "2026-05-21",
-      "type": "Fixed",
-      "description": "Meili_batch_stall threshold 10min→45min (paragraphs HNSW ~30min/batch normal)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-08": [
+      {
+        "hash": "57e368c6",
+        "date": "2026-08-08",
+        "type": "Other",
+        "description": "Self-healing seedTestUser() on boot (TEST_ADMIN_EMAIL/PASS), mirrors seedAdminUser",
+        "scope": null
+      },
+      {
+        "hash": "115cd04e",
+        "date": "2026-08-08",
+        "type": "Other",
+        "description": "Idempotent env-driven seed for QA test-admin user (tier=admin, email_verified=1) via single writer",
+        "scope": null
+      }
+    ],
     "2026-08-07": [
       {
         "hash": "a96d8e19",
@@ -7070,20 +7086,6 @@
         "date": "2026-05-21",
         "type": "Performance",
         "description": "Optimistic Meili sync — markSynced immediately, reconcile failures on restart",
-        "scope": null
-      },
-      {
-        "hash": "14b4c5aa",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Increase Meili task timeout 900s→7200s — HNSW on 4M+ vector index takes 15-60min/batch",
-        "scope": null
-      },
-      {
-        "hash": "55f1c6c7",
-        "date": "2026-05-21",
-        "type": "Fixed",
-        "description": "Meili_batch_stall threshold 10min→45min (paragraphs HNSW ~30min/batch normal)",
         "scope": null
       }
     ]

@@ -6,7 +6,7 @@
 import { Given, When, Then } from '@cucumber/cucumber';
 import { expect } from 'chai';
 
-const BASE_URL = process.env.UI_URL || 'http://localhost:5173';
+const BASE_URL = process.env.UI_URL || 'http://localhost:7842';
 
 // ============================================
 // Authentication Steps (shared across features)

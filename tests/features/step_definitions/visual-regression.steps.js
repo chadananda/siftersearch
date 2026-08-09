@@ -11,7 +11,7 @@ import { mkdir } from 'fs/promises';
 import { join } from 'path';
 
 const SCREENSHOT_DIR = 'test-results/screenshots';
-const BASE_URL = process.env.BASE_URL || process.env.UI_URL || 'http://localhost:5173';
+const BASE_URL = process.env.BASE_URL || process.env.UI_URL || 'http://localhost:7842';
 
 // ============================================
 // Setup Steps

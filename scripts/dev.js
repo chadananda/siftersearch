@@ -48,7 +48,7 @@ const COLORS = {
 // Dev ports (different from production to allow both on same machine)
 const MEILI_PORT = process.env.MEILI_PORT || '7701';
 const API_PORT = process.env.API_PORT || '3001';
-const UI_PORT = process.env.APP_PORT || '5173';
+const UI_PORT = process.env.APP_PORT || '7842';
 const MEILI_URL = `http://127.0.0.1:${MEILI_PORT}`;
 
 const SKIP_PREFLIGHT = process.argv.includes('--quick') || process.argv.includes('-q');

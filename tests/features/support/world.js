@@ -12,9 +12,9 @@ class SifterSearchWorld extends World {
   constructor(options) {
     super(options);
 
-    // Base URLs (dev mode uses 5173, production preview uses 4321)
+    // Base URLs (dev mode uses 7842, production preview uses 4321)
     this.apiBaseUrl = process.env.API_URL || 'http://localhost:3000';
-    this.uiBaseUrl = process.env.UI_URL || 'http://localhost:5173';
+    this.uiBaseUrl = process.env.UI_URL || 'http://localhost:7842';
 
     // Browser config
     this.headless = process.env.HEADLESS !== 'false';

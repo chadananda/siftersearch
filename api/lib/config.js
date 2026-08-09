@@ -208,8 +208,8 @@ const searchConfig = {
 const serverConfig = {
   port: getInt('API_PORT', 7839),  // Single port for dev & prod (less common to avoid conflicts)
   host: get('HOST', '0.0.0.0'),
-  frontendUrl: getDevOrProd('APP_URL', 'https://siftersearch.com', 'http://localhost:5173'),
-  corsOrigins: get('CORS_ORIGINS', 'http://localhost:5173,http://localhost:4321,https://siftersearch.com,https://www.siftersearch.com')
+  frontendUrl: getDevOrProd('APP_URL', 'https://siftersearch.com', 'http://localhost:7842'),
+  corsOrigins: get('CORS_ORIGINS', 'http://localhost:7842,http://localhost:4321,https://siftersearch.com,https://www.siftersearch.com')
 };
 
 // Auth configuration
