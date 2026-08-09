@@ -12,7 +12,7 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { query, queryAll, graphQueryAll, userQueryOne } from '../lib/db.js';
+import { query, queryOne, queryAll, graphQueryAll, userQueryOne } from '../lib/db.js';
 import { requireAdmin, verifyRefreshToken } from '../lib/auth.js';
 
 const ER_MODEL_PATH = join(process.cwd(), 'data', 'entity-review-model.json');
@@ -90,7 +90,9 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<':
 
 export async function buildModel() {
   // 1. all entities (sifter.db)
-  const entities = await queryAll(`SELECT id, canonical_name, entity_type, religion, era, description, name_meaning, significance, research_notes, summary, importance FROM graph_entities ORDER BY canonical_name`);
+  // research_notes deliberately EXCLUDED — multi-KB per entity, it alone pushed the rendered
+  // page to ~54MB. The page lazy-loads it per entity via GET /entity-review/notes/:id.
+  const entities = await queryAll(`SELECT id, canonical_name, entity_type, religion, era, description, name_meaning, significance, summary, importance FROM graph_entities ORDER BY canonical_name`);
   const byId = new Map(entities.map(e => [Number(e.id), { ...e, id: Number(e.id), aliases: [], relations: [], mentions: 0, firstDoc: null, firstHeading: null, firstIdx: Infinity, books: new Set() }]));
 
   // 2. display aliases — from the CURATED entity_research.aliases (genuinely distinct names/titles +
@@ -190,7 +192,7 @@ function render(ents, { embed = false } = {}) {
             ${e.description ? `<p class="desc">${esc(e.description)}</p>` : '<p class="nodesc">(no description yet)</p>'}
             ${e.aliases.length ? `<p class="al"><b>Aliases:</b> ${e.aliases.map(esc).join(' · ')}</p>` : ''}
             ${e.relations.length ? `<p class="rel"><b>Relationships:</b> ${e.relations.map(r => esc(r.type) + ' → ' + esc(r.target)).join(' · ')}</p>` : ''}
-            ${e.research_notes ? `<p class="notes"><b>Notes:</b> ${esc(e.research_notes)}</p>` : ''}
+            <p class="notes" data-notes-id="${e.id}"></p>
             <p class="id">entity #${e.id}</p>
             <div class="flagwrap${e.flagged ? ' on' : ''}">
               <label class="flag"><input type="checkbox" class="flagcb" id="fc-${e.id}" data-id="${e.id}"${e.flagged ? ' checked' : ''}> ⚑ Flag for review</label>
@@ -404,6 +406,16 @@ document.addEventListener('change',function(e){
 // Save the flag/note with a direct, credentialed POST. The refresh-token cookie authorizes the
 // write (same origin when served standalone from the API; cross-origin with CORS when embedded on
 // the edge — window.__ER_API_BASE is set by the host page in that case).
+// Lazy-load research notes on first expand — inlining them for every entity made the page ~54MB.
+document.addEventListener('toggle',function(e){
+  var d=e.target; if(!d.open||!d.classList||!d.classList.contains('ent'))return;
+  var slot=d.querySelector('p.notes[data-notes-id]'); if(!slot||slot.dataset.loaded)return;
+  slot.dataset.loaded='1';
+  fetch((window.__ER_API_BASE||'')+'/api/admin/entity-review/notes/'+slot.dataset.notesId,{credentials:'include'})
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(j){if(j&&j.notes){slot.innerHTML='<b>Notes:</b> ';slot.appendChild(document.createTextNode(j.notes));}})
+    .catch(function(){});
+},true);
 document.addEventListener('click',function(e){
   var btn=e.target.closest&&e.target.closest('button.flagsave'); if(!btn)return;
   var id=btn.dataset.id, b=fbox(id), cb=document.getElementById('fc-'+id);
@@ -472,6 +484,13 @@ export default async function entityReviewRoutes(server) {
     reply.header('content-type', 'text/html; charset=utf-8').header('cache-control', 'no-store');
     const embed = req.query?.embed === '1' || req.query?.embed === 'true';
     return render(ents, { embed });
+  });
+
+  // Per-entity research notes, fetched on expand (single-row lookup; kept out of the page render).
+  server.get('/entity-review/notes/:id', { preHandler: adminAuth }, async (req, reply) => {
+    const row = await queryOne(`SELECT research_notes FROM graph_entities WHERE id = ?`, [Number(req.params.id)]);
+    if (!row) return reply.code(404).send({ error: 'entity not found' });
+    return { notes: row.research_notes || null };
   });
 
   // Set/clear a review flag + note. Keyed by canonical_name+entity_type (durable across

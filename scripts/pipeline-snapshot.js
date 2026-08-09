@@ -231,11 +231,12 @@ async function main() {
     try {
       const { buildModel } = await import('../api/routes/entity-review.js');
       const ents = await buildModel();
-      erGeneratedAt = new Date().toISOString();
+      const wroteAt = new Date().toISOString();
       writeFileSync(ER_MODEL_PATH, JSON.stringify({
-        generated_at: erGeneratedAt,
+        generated_at: wroteAt,
         entities: ents.map((e) => ({ ...e, books: [...e.books] })),   // Set → array for JSON
       }));
+      erGeneratedAt = wroteAt;   // only after a successful write — status must not report a model that isn't on disk
     } catch (err) {
       console.error('entity-review model build failed:', err.message);
     }
