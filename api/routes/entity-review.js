@@ -472,7 +472,12 @@ export default async function entityReviewRoutes(server) {
     try {
       // Precomputed by the snapshot cron; books round-trips JSON as an array → rehydrate the Set.
       const cached = JSON.parse(readFileSync(ER_MODEL_PATH, 'utf8'));
-      ents = cached.entities.map((e) => ({ ...e, books: new Set(e.books) }));
+      // Filter HERE too, not just in buildModel: a stale cached model with the full 52k
+      // corpus-wide entity table meant ~30s of synchronous render per request — which
+      // blocked every other request in the API (preflights died → site-wide CORS errors).
+      ents = cached.entities
+        .filter((e) => (e.mentions || 0) > 0 || e.flagged)
+        .map((e) => ({ ...e, books: new Set(e.books) }));
       // Flags overlay — live (small table) so a reviewer's toggle survives the model's staleness.
       let flagRows = [];
       try { flagRows = await queryAll(`SELECT canonical_name, entity_type, comment FROM entity_review_flags WHERE status='open'`); } catch { /* table not created yet */ }
