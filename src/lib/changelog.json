@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T16:20:58.161Z",
+  "generated": "2026-08-09T17:04:30.445Z",
   "entries": [
+    {
+      "hash": "9c06f235",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Rank dossier claims by question relevance + hard evidence-grounding rule for bolded facts",
+      "scope": null
+    },
     {
       "hash": "9ca41d87",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Revert O(n²) fetchBatch; add resetReextractQueue periodic task",
       "scope": null
-    },
-    {
-      "hash": "b343f118",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "Extractor owns graph_enriched — validator must not write content table",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "9c06f235",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Rank dossier claims by question relevance + hard evidence-grounding rule for bolded facts",
+        "scope": null
+      },
       {
         "hash": "9ca41d87",
         "date": "2026-08-09",
@@ -7079,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "Revert O(n²) fetchBatch; add resetReextractQueue periodic task",
-        "scope": null
-      },
-      {
-        "hash": "b343f118",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "Extractor owns graph_enriched — validator must not write content table",
         "scope": null
       }
     ]

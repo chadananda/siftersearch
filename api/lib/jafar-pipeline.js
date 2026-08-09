@@ -687,14 +687,24 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     // scoped to the attributed tradition. Runs whenever rung 1 wasn't decisive.
     if (confidence !== 'high') {
       const personTag = (entities?.named_persons || []).join(' ');
-      const semQuery = `${personTag} ${memory}`.trim().slice(0, 300);
+      const semQuery = `${personTag} ${memory} ${(entities?.topics || []).join(' ')}`.trim().slice(0, 300);
       const res = await runTool('search', {
         query: semQuery, mode: 'passages', limit: 20,
         ...(tradition ? { religion: tradition } : {}),
         semanticRatio: 0.6
       });
       harvestPassages(res, 'quote-similar');
-      for (const r of retrieved) if (r._score == null) r._score = scoreCandidate(memory, r.text);
+      // Originator boost: a work AUTHORED by the person the user attributes the quote
+      // to outranks a biography/compilation merely quoting them — the source of "an
+      // 'Abdu'l-Bahá quote" is Promulgation, not *Martha Root: Herald of the Kingdom*.
+      const normName = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’ʻ']/g, '');
+      const personsNorm = (entities?.named_persons || []).map(normName).filter(Boolean);
+      for (const r of retrieved) {
+        if (r._score == null) r._score = scoreCandidate(memory, r.text);
+        if (personsNorm.length && r.source_author && personsNorm.some((p) => normName(r.source_author).includes(p.replace(/^the /, '')))) {
+          r._score = Math.min(1, r._score + 0.2);
+        }
+      }
       retrieved.sort((a, b) => (b._score || 0) - (a._score || 0));
       // Description-only memories carry attribution noise ("a quote by Abdu'l-Baha
       // about…") that can never match passage text — the likely bar sits lower here.
@@ -737,8 +747,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         const lines = [
           `Canonical name: ${d.name}${d.aliases?.length ? ` (also: ${d.aliases.slice(0, 4).join(', ')})` : ''}${d.side ? ` · side: ${d.side}` : ''}`,
           ...(d.summary ? [d.summary] : []),
+          `Cited relations (each reads: ${d.name} —relation→ other person):`,
           ...ranked.slice(0, 12).map((c) =>
-            `- ${c.relation}${c.object ? ` → ${c.object}` : ''}: ${c.statement}${c.when ? ` (${c.when})` : ''}${c.sourceAbbr ? ` [${c.sourceAbbr}]` : ''}`),
+            `- ${d.name} —${c.relation}→ ${c.object || '(see statement)'}${c.when ? ` (${c.when})` : ''}${c.sourceAbbr ? ` [${c.sourceAbbr}]` : ''}${c.statement ? ` — ${c.statement}` : ''}`),
         ];
         subagentSyntheses.push({
           source_title: `Entity dossier: ${d.name}`,
@@ -1816,6 +1827,19 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     }
   }
 
+  // Relevance floor/ordering: the crafter treats Q1-Q5 as most relevant, so order
+  // by topical overlap with the question — an off-topic authority passage
+  // ("independent investigation of truth" in a grief answer) must never sit at Q1.
+  // Zero-overlap entries sink to the end (kept — the crafter may still ignore them).
+  // Comparative questions keep their diversity ordering.
+  if (entities?.comparative !== true && trimmed.length > 1) {
+    const qText = `${userMessage} ${(entities?.topics || []).join(' ')}`;
+    const scored = trimmed.map((q, i) => ({ q, i, s: scoreCandidate(qText, `${q.text || ''} ${q.source_title || ''}`) }));
+    scored.sort((a, b) => (b.s - a.s) || (a.i - b.i));
+    trimmed.length = 0;
+    trimmed.push(...scored.map((x) => x.q));
+  }
+
   logger.info({
     retrieved: retrieved.length,
     trimmed: trimmed.length,
@@ -1839,6 +1863,7 @@ ANSWER FIRST, ALWAYS: your opening sentence states the answer to the question �
 FORMAT FOR COMPREHENSION — shape the reply to the question:
 - Factual/who-what-when ("Who led the defenders at Zanjan?") → the NAME/fact in **bold** in sentence one, then 1-2 grounding sentences. Never bury the fact under quotes.
   THE FACT MUST COME FROM THE EVIDENCE: only assert a name/date/place as the answer if it appears in a Q-entry, an Entity-dossier line, or the web context. If the evidence at hand does not contain the specific fact asked for, say plainly that the retrieved sources don't name it — a confident wrong name from memory is the worst possible answer.
+  When an Entity-dossier line DIRECTLY answers the question, prefer it over inferences from passage prose — the dossier is evidence-reconciled. When SEVERAL dossier lines answer it (two companions, joint leaders), include ALL of them. When the dossier lists a famous title among a person's aliases (Ḥujjat, Quddús, Bábu'l-Báb), use it alongside the name.
 - Source-of-a-quote → **bold full citation** (author, *work*, section) in sentence one; then the actual passage as a Markdown blockquote (> …) with its link; close with its authentication standing.
 - Explanations/teachings → short paragraphs (2-3 sentences each), **bold** the key terms on first use.
 - Lists (prayers, books, examples) → Markdown bullets, each item's title linked when a URL exists.
@@ -2443,6 +2468,7 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
   const quoteBlock = quote_lookup ? `
 
 QUOTE-HUNT: the user is locating the source of a quotation. Remembered wording: ${quote_lookup.span ? `"${quote_lookup.span}"` : '(described from memory, no exact words given)'}. Library match confidence: ${quote_lookup.confidence || 'none'}.
+SPEAKER vs BOOK: a Q-entry's cited author is the BOOK's author — biographies and compilations QUOTE the person the user asked about. Attribute the words to their SPEAKER; when the containing book is not by the speaker, say "these are the words of X, quoted in *Book* by Y" — NEVER "from X, *Book by someone else*". When both a work BY the speaker and a book quoting them match, cite the speaker's own work as the source.
 - high → answer plainly: "That is from *Work* by Author — [the actual words](url)."
 - likely → open with "This is very likely the passage you're remembering:" then give the top passage with work, author, link — and note the actual wording where it differs from their memory.
 - low/none → do NOT present weak matches as the answer. Say the exact wording could not be found in the library; if a WEB SEARCH CONTEXT block follows, relay its identification (web-attributed); you may offer ONE closest library passage clearly labeled as the nearest match, never as the source.` : '';
