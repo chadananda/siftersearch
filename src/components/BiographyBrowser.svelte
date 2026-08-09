@@ -447,6 +447,7 @@
                                     {:else if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}
                                   </span>
                                   <span class="col-new"></span><span class="col-un"></span>
+                                  <span class="col-ver">{#if b.adjVersion > 0}<span class="ver-chip {b.adjVersion >= b.adjCurrent ? 'ver-ok' : 'ver-behind'}" title={b.adjVersion >= b.adjCurrent ? `Adjudicator v${b.adjVersion} — up to date` : `Adjudicator v${b.adjVersion} — re-adjudication to v${b.adjCurrent} due`}>v{b.adjVersion}</span>{/if}</span>
                                 </li>
                               {/each}
                             </ul>

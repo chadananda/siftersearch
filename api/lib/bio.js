@@ -328,10 +328,17 @@ export async function getIntegrationProgress() {
     for (let i = 0; i < groupIds.length; i += 800) {
       const c = groupIds.slice(i, i + 800), cp = c.map(() => '?').join(',');
       (await queryAll(`SELECT id, title, paragraph_count FROM docs WHERE id IN (${cp}) AND deleted_at IS NULL AND duplicate_of IS NULL`, c)).forEach((d) => { gmeta[d.id] = d; });
-      (await queryAll(`SELECT DISTINCT doc_id d FROM entity_claims WHERE doc_id IN (${cp})`, c)).forEach((r) => grounded.add(r.d));
     }
+    // ONE done-definition everywhere: group books use the SAME reachedBound artifact test as curated books
+    // and the pipeline itself. The old per-id "has ≥1 claim" flag showed ✓ on books whose full grounding never
+    // ran (and no ✓ on artifact-done books with a legitimately empty cast) — display and processing disagreed.
+    try {
+      const gDone = await reachedBoundBulk(groupIds.filter((id) => gmeta[id]), {});
+      gDone.forEach((id) => grounded.add(Number(id)));
+    } catch { /* never throw the roadmap; an empty set just shows books as pending */ }
     const groups = primarySpec.groups.map((g) => {
-      const books = (g.docs || []).filter((id) => gmeta[id]).map((id) => ({ id, title: gmeta[id].title, size: gmeta[id].paragraph_count || 0, done: grounded.has(id) }));
+      const books = (g.docs || []).filter((id) => gmeta[id]).map((id) => ({ id, title: gmeta[id].title, size: gmeta[id].paragraph_count || 0,
+        done: grounded.has(Number(id)), adjVersion: adjVerByDoc[id] ?? 0, adjCurrent: ADJUDICATOR_VERSION }));
       return { label: g.label, books, total: books.length, done: books.filter((b) => b.done).length, paras: books.reduce((s, b) => s + b.size, 0) };
     });
     const primary = phases.find((p) => p.key === 'primary');

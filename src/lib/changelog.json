@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T21:24:52.570Z",
+  "generated": "2026-08-09T23:35:53.133Z",
   "entries": [
+    {
+      "hash": "251c665c",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "PATH-robust pre-commit hook + npm scripts for deploy and checks",
+      "scope": null
+    },
     {
       "hash": "ea818098",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Chunk bulkUpdateEmbeddings writes — prevent write-lock starvation",
       "scope": null
-    },
-    {
-      "hash": "b2524eb9",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "Chunk enrichment_pending writes — prevent write-lock starvation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "251c665c",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "PATH-robust pre-commit hook + npm scripts for deploy and checks",
+        "scope": null
+      },
       {
         "hash": "ea818098",
         "date": "2026-08-09",
@@ -7079,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "Chunk bulkUpdateEmbeddings writes — prevent write-lock starvation",
-        "scope": null
-      },
-      {
-        "hash": "b2524eb9",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "Chunk enrichment_pending writes — prevent write-lock starvation",
         "scope": null
       }
     ]
