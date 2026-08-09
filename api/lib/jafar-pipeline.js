@@ -546,7 +546,7 @@ function inferWorkFromHistory(messages, currentEntitiesWorkName) {
   return null;
 }
 
-export async function deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds = [] }) {
+export async function deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds = [], silent = false }) {
   const retrieved = [];
   const debugCalls = [];
   // Subagent syntheses — when a document subagent runs, its `answer` field
@@ -1081,7 +1081,8 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // inject them directly — they were hand-selected for cross-tradition diversity
   // and relevance, so they make better research context than live search alone.
   // We still run the normal search below to supplement with fresher/adjacent passages.
-  recordQuestionHit(userMessage).catch(() => {});
+  // Silent (speculative prep) runs record NO demand analytics — partials aren't searches.
+  if (!silent) recordQuestionHit(userMessage).catch(() => {});
   try {
     const dr = await checkDeepResearch(userMessage);
     if (dr?.quotes?.length >= 3) {
@@ -2705,7 +2706,11 @@ function isSocialQuery(msg) {
   return SOCIAL_RE.test((msg || '').trim());
 }
 
-export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location, persona_name, _skipCache = false }) {
+export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location, persona_name, _skipCache = false, _silent = false }) {
+  // _silent: a speculative query-prep run. Partials are PREP requests, not searches
+  // (Chad): no analytics of any kind until the user commits with a submit. The run
+  // may still fill the answer cache (that's its purpose) — but writes no demand
+  // tracking, no serve metrics, no store metrics.
   const userMessage = messages[messages.length - 1].content;
   const _t0 = Date.now();
   // Opening turn = no prior USER message (the widget's greeting counts as assistant).
@@ -2757,11 +2762,13 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   // systematically as they're touched, never by dropping the cache.
   const serveCachedAnswer = (hit) => {
     const { entry, similarity, stale } = hit;
-    touchEntry(entry.id);
-    recordServe({
-      question_hash: entry.question_hash, cache_status: stale ? 'hit-stale' : 'hit-fresh',
-      served_version: entry.search_version, similarity, latency_ms: Date.now() - _t0
-    });
+    if (!_silent) {
+      touchEntry(entry.id);
+      recordServe({
+        question_hash: entry.question_hash, cache_status: stale ? 'hit-stale' : 'hit-fresh',
+        served_version: entry.search_version, similarity, latency_ms: Date.now() - _t0
+      });
+    }
     if (stale) {
       queueRevalidation(entry, () =>
         runJafarPipeline({ messages, sendEvent: null, debug: false, chatbot_location, persona_name, _skipCache: true }));
@@ -2825,7 +2832,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
         }
       }
       if (hit?.entry?.answer_md) return serveCachedAnswer(hit);
-      if (isOpeningTurn) recordServe({ question_hash: questionHash(canonicalQ), cache_status: 'miss', latency_ms: Date.now() - _t0 });
+      if (isOpeningTurn && !_silent) recordServe({ question_hash: questionHash(canonicalQ), cache_status: 'miss', latency_ms: Date.now() - _t0 });
     } catch (err) {
       logger.warn({ err: err.message }, 'answer-cache stage-B failed — continuing uncached');
     }
@@ -2855,7 +2862,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   ] : [];
   let research;
   try {
-    research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds });
+    research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds, silent: _silent });
   } finally {
     deepTimers.forEach(clearTimeout);
   }
@@ -2946,7 +2953,8 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
           research: research.retrieved_quotes,
           answer: draft,
           retrieved_count: research.retrieved_quotes.length,
-          web_fallback: !!webContext
+          web_fallback: !!webContext,
+          silent: _silent
         });
       } catch (e) {
         logger.warn({ err: e.message }, 'answer-cache write-through failed');

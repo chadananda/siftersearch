@@ -1327,7 +1327,8 @@ export default async function chatRoutes(fastify) {
     const promise = runJafarPipeline({
       messages: [{ role: 'user', content: text }],
       sendEvent: null, debug: false, chatbot_location: undefined,
-      persona_name: persona === 'Jafar' ? null : persona
+      persona_name: persona === 'Jafar' ? null : persona,
+      _silent: true   // partials are PREP requests, not searches — zero analytics until submit
     }).catch((err) => { logger.warn({ err: err.message }, 'prewarm speculative run failed'); return null; });
     _prewarm.set(key, { promise, startedAt: Date.now() });
     logger.info({ chars: text.length, persona }, 'query-prep: speculative pipeline started');

@@ -94,7 +94,7 @@ export async function checkAnswerCache(question, { persona = 'Jafar', embedding 
 }
 
 /** Write-through after a successful full-pipeline answer (opening turns only). */
-export async function storeAnswer(question, { persona = 'Jafar', embedding = null, canonical = null, tradition = null, research = null, answer = '', citations = null, retrieved_count = 0, web_fallback = false }) {
+export async function storeAnswer(question, { persona = 'Jafar', embedding = null, canonical = null, tradition = null, research = null, answer = '', citations = null, retrieved_count = 0, web_fallback = false, silent = false }) {
   try {
     if (!answer || answer.length < 40) return;   // don't cache empty/refusal stubs
     const hash = questionHash(question);
@@ -114,7 +114,7 @@ export async function storeAnswer(question, { persona = 'Jafar', embedding = nul
         citations ? JSON.stringify(citations).slice(0, 100000) : null,
         SEARCH_VERSION, retrieved_count, web_fallback ? 1 : 0]
     );
-    recordServe({ question_hash: hash, cache_status: 'store' });
+    if (!silent) recordServe({ question_hash: hash, cache_status: 'store' });
   } catch (err) {
     logger.warn({ err: err.message }, 'answer-cache store failed (non-fatal)');
   }
