@@ -728,10 +728,16 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         if (!top?.id) continue;
         const d = await runTool('entity_dossier', { id: top.id });
         if (!d?.name) continue;
+        // Rank claims by RELEVANCE to the question (a dossier can hold hundreds;
+        // first-N-by-date buried "accompanied → Quddús" for a pilgrimage question).
+        const ranked = (d.claims || [])
+          .map((c) => ({ c, s: scoreCandidate(userMessage, `${c.relation} ${c.object || ''} ${c.statement}`) }))
+          .sort((a, b) => b.s - a.s)
+          .map((x) => x.c);
         const lines = [
           `Canonical name: ${d.name}${d.aliases?.length ? ` (also: ${d.aliases.slice(0, 4).join(', ')})` : ''}${d.side ? ` · side: ${d.side}` : ''}`,
           ...(d.summary ? [d.summary] : []),
-          ...(d.claims || []).slice(0, 12).map((c) =>
+          ...ranked.slice(0, 12).map((c) =>
             `- ${c.relation}${c.object ? ` → ${c.object}` : ''}: ${c.statement}${c.when ? ` (${c.when})` : ''}${c.sourceAbbr ? ` [${c.sourceAbbr}]` : ''}`),
         ];
         subagentSyntheses.push({
@@ -740,7 +746,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           answer: lines.join('\n'),
         });
         // Proof-bearing claims become quotable, LINKABLE evidence for the crafter.
-        for (const c of (d.claims || []).filter((x) => x.proof && x.url).slice(0, 5)) {
+        for (const c of ranked.filter((x) => x.proof && x.url).slice(0, 5)) {
           retrieved.push({
             text: c.proof, source_title: c.source || 'history', source_author: '',
             citation_url: c.url, religion: "Baha'i", via: 'entity-claim',
@@ -1832,6 +1838,7 @@ ANSWER FIRST, ALWAYS: your opening sentence states the answer to the question �
 
 FORMAT FOR COMPREHENSION — shape the reply to the question:
 - Factual/who-what-when ("Who led the defenders at Zanjan?") → the NAME/fact in **bold** in sentence one, then 1-2 grounding sentences. Never bury the fact under quotes.
+  THE FACT MUST COME FROM THE EVIDENCE: only assert a name/date/place as the answer if it appears in a Q-entry, an Entity-dossier line, or the web context. If the evidence at hand does not contain the specific fact asked for, say plainly that the retrieved sources don't name it — a confident wrong name from memory is the worst possible answer.
 - Source-of-a-quote → **bold full citation** (author, *work*, section) in sentence one; then the actual passage as a Markdown blockquote (> …) with its link; close with its authentication standing.
 - Explanations/teachings → short paragraphs (2-3 sentences each), **bold** the key terms on first use.
 - Lists (prayers, books, examples) → Markdown bullets, each item's title linked when a URL exists.
