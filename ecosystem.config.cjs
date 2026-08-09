@@ -83,11 +83,11 @@ module.exports = {
         // Processor mode: plan = follow the hardcoded history plan (integration-phases.js) top-down, resuming
         // each book from its real incomplete stage — no operator/agent needed. override = agents hand-enrol via
         // the API; general = whole-library (post-plan default). Runtime-switchable via POST /grounding/mode.
-        // TEMP-HALT 2026-08-08: pinned 'override' while the disambiguation-coverage deadlock fix is pending
-        // (~19 primary-tail books loop at the 99% gate — terminal-disposition + shared-floor fix approved but not
-        // yet shipped). A deploy restart in 'plan' would resume that billing loop. Flip back to 'plan' in the
-        // coverage-fix commit. See project_grounding_hang_regrounding_20260729 (HYPE plateau section).
-        GROUNDING_MODE: 'override'
+        // 2026-08-09: back to 'plan' — the coverage-deadlock is FIXED (terminal-disposition + shared floor in
+        // the disambiguate stage: sub-floor fragments and answered-but-unparseable paragraphs get a terminal
+        // note, so the 99% gate closes; transport errors never terminalize). The ~19-book primary-tail plateau
+        // that forced the 08-08 override pin can now complete.
+        GROUNDING_MODE: 'plan'
       },
       // 30s gives Fastify time to drain in-flight chat SSE streams
       // (typically 5-15s each) before SIGKILL on deploy. 5s was too short —

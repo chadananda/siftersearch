@@ -13,17 +13,35 @@ import { pool } from '../kernel/run.js';              // bounded-concurrency map
 
 const DENSE_HINT = 'This passage is dense — resolve ONLY the few most ambiguous names (short handles), keep "idea" to one clause, and output ONLY the compact JSON object. Brevity prevents truncation.';
 
+// TERMINAL DISPOSITION — the coverage-deadlock fix. Every paragraph must end a clean run carrying SOME
+// note, or the 99% gate loops the book forever (the primary-tail plateau). Two terminal classes:
+// sub-floor fragments (TOC debris, bare numbers — stamped without a model call) and content the model
+// answers on but can never produce a valid note for (stamped only after a second full ladder also
+// parse-fails; transport errors NEVER terminalize — the queue's book retry owns those).
+const MIN_LEN = 25;
+const TINY_NOTE = '@?, ~? — [fragment: below disambiguation floor]';
+const TERMINAL_NOTE = '@?, ~? — [unresolvable: no valid disambiguation after retries]';
+
 export async function run(ctx, docId, opts = {}) {
   const profile = await profileFor(ctx, docId);
   const [meta, all, cast] = await Promise.all([ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId), castOf(ctx, docId)]);
   const version = opts.version ?? ctx.config.versions?.disambig ?? 'disambig-v1'; // method tag is host config
-  const paras = (opts.resume ?? true) ? all.filter((p) => p.contextModel !== version) : all;
+  const remaining = (opts.resume ?? true) ? all.filter((p) => p.contextModel !== version) : all;
+  const minLen = opts.minLen ?? MIN_LEN;
+  const tinyParas = remaining.filter((p) => p.text.length < minLen);
+  const paras = remaining.filter((p) => p.text.length >= minLen);
   const segs = segment(paras, { mode: profile.segmentation, segMax: opts.segMax ?? 60 });
   const system = buildSystem(profile, meta, cast);
   const route = { model: opts.model ?? profile.models.disambig, fallback: opts.fallback ?? profile.fallback };
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 4000 : 1500); // reasoning models emit more
   const latin = profile.script === 'latin';
-  const stats = { paras: paras.length, segments: segs.length, done: 0, failed: 0, escalated: 0, dropped: 0 };
+  const stats = { paras: paras.length, segments: segs.length, done: 0, failed: 0, escalated: 0, dropped: 0, tiny: 0, terminal: 0 };
+  const unparseable = [];   // model ANSWERED but no valid note — terminal-sweep candidates (never transport errors)
+
+  for (const p of tinyParas) {
+    if (!opts.dryRun) await ctx.store.saveContext(p.id, TINY_NOTE, version);
+    stats.tiny++;
+  }
   // Report per PARAGRAPH (not per segment): a segment is many sequential model calls, so per-segment reporting
   // would go flat for a whole window. Report ABSOLUTE progress: total = ALL prose (all.length), already-done =
   // resume-skipped (base), so a resumed run's bar reflects true progress (not just the remaining slice).
@@ -42,8 +60,10 @@ export async function run(ctx, docId, opts = {}) {
       // aborts, because that kills every later call anyway and must surface.
       try {
         const user = buildUser(p, { place, era, known });
-        const { parsed, escalated } = await ctx.model.runLadder({ route, system, user, parse: parseNote, maxTokens, denseHint: DENSE_HINT });
-        if (!parsed) { stats.failed++; report(); continue; }
+        const { parsed, escalated, raw } = await ctx.model.runLadder({ route, system, user, parse: parseNote, maxTokens, denseHint: DENSE_HINT });
+        // raw==null → every attempt THREW (transport/provider) — never terminal-sweep those; a non-null raw
+        // with no parse is positive evidence the model answered and the content yields no note.
+        if (!parsed) { stats.failed++; if (raw) unparseable.push(p); report(); continue; }
         const resolve = latin ? gateResolves(parsed.resolve, p.text) : parsed.resolve; // drop invented names (Latin only)
         stats.dropped += parsed.resolve.length - resolve.length;
         if (parsed.place) place = parsed.place;
@@ -57,6 +77,28 @@ export async function run(ctx, docId, opts = {}) {
       }
     }
   });
+  // Terminal sweep: one more full ladder per unparseable paragraph (fresh state — a poisoned carried
+  // STATE is one known cause of persistent parse-failure). Still answering-but-invalid → terminal note.
+  for (const p of unparseable) {
+    let answered = false;
+    try {
+      const user = buildUser(p, { place: '', era: '', known: [] });
+      const { parsed, escalated, raw } = await ctx.model.runLadder({ route, system, user, parse: parseNote, maxTokens, denseHint: DENSE_HINT });
+      if (parsed) {
+        const resolve = latin ? gateResolves(parsed.resolve, p.text) : parsed.resolve;
+        if (!opts.dryRun) await ctx.store.saveContext(p.id, renderNote({ ...parsed, resolve }), version);
+        stats.done++; stats.failed--; if (escalated) stats.escalated++;
+        continue;
+      }
+      answered = !!raw;
+    } catch (e) {
+      if (e?.fatal) throw e;   // transport error on the retry → leave un-noted for the book-level retry
+    }
+    if (!answered) continue;
+    if (!opts.dryRun) await ctx.store.saveContext(p.id, TERMINAL_NOTE, version);
+    stats.terminal++; stats.failed--;
+  }
+
   ctx.log.info?.({ docId, ...stats }, 'disambiguate');
   return stats;
 }

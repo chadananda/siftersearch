@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T20:25:18.319Z",
+  "generated": "2026-08-09T20:57:29.523Z",
   "entries": [
+    {
+      "hash": "87c005ab",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Single-origin edge worker — SSR + assets + /api proxy in one Worker deploy",
+      "scope": null
+    },
     {
       "hash": "7914a7d9",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "PickNextDoc O(1) — drop EXISTS, use LIMIT 1 on partial index",
       "scope": null
-    },
-    {
-      "hash": "f7744da8",
-      "date": "2026-05-22",
-      "type": "Performance",
-      "description": "Doc-by-doc fetchBatch in graph-extractor — eliminates 98s sort",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "87c005ab",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Single-origin edge worker — SSR + assets + /api proxy in one Worker deploy",
+        "scope": null
+      },
       {
         "hash": "7914a7d9",
         "date": "2026-08-09",
@@ -7079,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Performance",
         "description": "PickNextDoc O(1) — drop EXISTS, use LIMIT 1 on partial index",
-        "scope": null
-      },
-      {
-        "hash": "f7744da8",
-        "date": "2026-05-22",
-        "type": "Performance",
-        "description": "Doc-by-doc fetchBatch in graph-extractor — eliminates 98s sort",
         "scope": null
       }
     ]

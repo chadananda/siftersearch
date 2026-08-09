@@ -65,3 +65,53 @@ describe('disambiguate — run() on fake ports', () => {
     expect(store.saved).toHaveLength(0);
   });
 });
+
+// Coverage-deadlock fix: every paragraph must end a clean run with SOME note (real or terminal),
+// or the 99% gate loops the book forever (the ~19-book primary-tail plateau, 2026-08-08).
+describe('disambiguate — terminal disposition + shared floor', () => {
+  const note = '{"place":"Shíráz","era":"1844 [pin]","idea":"arrival","resolve":[]}';
+
+  it('stamps sub-floor fragments with a terminal note WITHOUT a model call', async () => {
+    const paras = [
+      { id: 1, pid: 'p1', text: '4. Smyrna.' },                                        // TOC debris, below floor
+      { id: 2, pid: 'p2', text: 'Mullá Ḥusayn reached Shíráz and there unfolded his whole errand.' },
+    ];
+    const llm = fakeLLM([{ content: note, finishReason: 'stop' }]);
+    const { rag, store } = makeRag({ seed: { paras: { 9: paras } }, llm });
+    const stats = await rag.disambiguate(9, { version: 'v1' });
+    expect(stats).toMatchObject({ done: 1, failed: 0, tiny: 1, terminal: 0 });
+    const frag = store.saved.find((s) => s.paragraphId === 1);
+    expect(frag.note).toMatch(/^@\?, ~\? — \[fragment/);
+    expect(frag.methodVersion).toBe('v1');
+    expect(llm.calls).toHaveLength(1);                     // the fragment never reached the model
+  });
+
+  it('retries an unparseable paragraph once, then writes a terminal note so coverage can close', async () => {
+    const paras = [
+      { id: 1, pid: 'p1', text: 'Mullá Ḥusayn reached Shíráz and there unfolded his whole errand.' },
+      { id: 2, pid: 'p2', text: 'O Thou Glory of the All-Glorious, Exalted One of the Most Exalted realm of eternity.' },
+    ];
+    // p2's content never yields a valid note — the model ANSWERS, but with no idea (parse-null).
+    const llm = fakeLLM((opts, i, messages) =>
+      messages.some((m) => m.content.includes('Mullá Ḥusayn'))
+        ? { content: note, finishReason: 'stop' }
+        : { content: '{"place":"?"}', finishReason: 'stop' });
+    const { rag, store } = makeRag({ seed: { paras: { 9: paras } }, llm });
+    const stats = await rag.disambiguate(9, { version: 'v1' });
+    expect(stats).toMatchObject({ done: 1, terminal: 1 });
+    const term = store.saved.find((s) => s.paragraphId === 2);
+    expect(term.note).toMatch(/^@\?, ~\? — \[unresolvable/);
+    expect(term.methodVersion).toBe('v1');
+  });
+
+  // ~40s real time: the kernel ladder runs 5-try exponential backoff per attempt across primary AND
+  // fallback before surfacing a transport failure. The slow path IS the behavior under test.
+  it('never terminalizes on transport errors — a provider outage leaves paragraphs un-noted for the book retry', { timeout: 120000 }, async () => {
+    const paras = [{ id: 1, pid: 'p1', text: 'Mullá Ḥusayn reached Shíráz and there unfolded his whole errand.' }];
+    const llm = { calls: [], chat: async () => { throw new Error('socket hang up'); } };
+    const { rag, store } = makeRag({ seed: { paras: { 9: paras } }, llm });
+    const stats = await rag.disambiguate(9, { version: 'v1' });
+    expect(stats).toMatchObject({ done: 0, failed: 1, terminal: 0 });
+    expect(store.saved).toHaveLength(0);                   // nothing stamped — the queue's retry handles it
+  });
+});
