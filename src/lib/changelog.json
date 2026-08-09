@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T02:12:10.305Z",
+  "generated": "2026-08-09T02:15:00.609Z",
   "entries": [
+    {
+      "hash": "daaf16b1",
+      "date": "2026-08-08",
+      "type": "Other",
+      "description": "Persona from profile, Ocean brand, wide panel, readable dark links",
+      "scope": null
+    },
     {
       "hash": "0108daf0",
       "date": "2026-08-08",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "WAL checkpoint PASSIVE→TRUNCATE, interval 1h→15min",
       "scope": null
-    },
-    {
-      "hash": "80002398",
-      "date": "2026-05-22",
-      "type": "New",
-      "description": "WAL size health check + pipeline endpoint wal field",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-08": [
+      {
+        "hash": "daaf16b1",
+        "date": "2026-08-08",
+        "type": "Other",
+        "description": "Persona from profile, Ocean brand, wide panel, readable dark links",
+        "scope": null
+      },
       {
         "hash": "0108daf0",
         "date": "2026-08-08",
@@ -7077,13 +7084,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "WAL checkpoint PASSIVE→TRUNCATE, interval 1h→15min",
-        "scope": null
-      },
-      {
-        "hash": "80002398",
-        "date": "2026-05-22",
-        "type": "New",
-        "description": "WAL size health check + pipeline endpoint wal field",
         "scope": null
       }
     ]
