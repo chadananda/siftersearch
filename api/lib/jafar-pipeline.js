@@ -27,7 +27,7 @@ import { getScopeForLocation } from './search/scope.js';
 import { checkDeepResearch, recordQuestionHit } from './deep-research.js';
 import { extractQuotedSpan, phraseQueryVariants, scoreCandidate } from './quote-lookup.js';
 import { perplexityFallback } from './perplexity.js';
-import { checkAnswerCache, storeAnswer, touchEntry, recordServe, queueRevalidation, questionHash, SEARCH_VERSION } from './answer-cache.js';
+import { checkAnswerCache, storeAnswer, touchEntry, recordServe, queueRevalidation, questionHash, normalizeQuestion, SEARCH_VERSION } from './answer-cache.js';
 import { createEmbedding } from './ai.js';
 import { queryAll } from './db.js';
 import { findEntity } from './graph-db.js';
@@ -408,7 +408,9 @@ comparative: true ONLY when the user explicitly asks to compare traditions or wh
 
 quoted_span: When the user is trying to locate/source a quotation and provides remembered wording (in quote marks OR as "it starts like…"/"something like…"), return that wording VERBATIM as they gave it (their words only, no lead-in phrases like "where is the quote"). null when they describe a passage without giving any of its wording, or aren't quote-hunting.
 
-Output: {"intent": "...", "work_name": "..."|null, "topics": [...], "named_persons": [...], "traditions": [...], "comparative": true|false, "quoted_span": "..."|null}`;
+canonical_question: Rephrase the user's request as ONE well-formed, standalone, neutrally-worded question. Resolve pronouns and context references using the RECENT CONVERSATION ("what about her death?" after discussing Táhirih → "How did Táhirih die?"). Statements and keywords become questions ("baha'i afterlife" → "What do Bahá'ís believe happens after death?"). Same meaning MUST yield the same question regardless of phrasing — this is a retrieval key. Keep the user's specifics (names, quoted words) intact.
+
+Output: {"intent": "...", "work_name": "..."|null, "topics": [...], "named_persons": [...], "traditions": [...], "comparative": true|false, "quoted_span": "..."|null, "canonical_question": "..."}`;
 
 export async function classifyIntentAndEntities(userMessage, recentMessages = []) {
   // Build a short context snippet from the last 2 turns (user + assistant pairs)
@@ -464,11 +466,13 @@ export async function classifyIntentAndEntities(userMessage, recentMessages = []
       comparative: parsed.comparative === true,
       quoted_span: (typeof parsed.quoted_span === 'string' && parsed.quoted_span.trim().length >= 8)
         ? parsed.quoted_span.trim() : null,
+      canonical_question: (typeof parsed.canonical_question === 'string' && parsed.canonical_question.trim().length >= 10)
+        ? parsed.canonical_question.trim().slice(0, 400) : null,
     };
   } catch (err) {
     logger.warn({ err: err.message }, 'intent+entity classification failed; defaulting');
     // traditions/comparative/quoted_span as null signals "unknown" → callers may use their backstops.
-    return { intent: 'discuss', work_name: null, topics: [], named_persons: [], traditions: null, comparative: null, quoted_span: null };
+    return { intent: 'discuss', work_name: null, topics: [], named_persons: [], traditions: null, comparative: null, quoted_span: null, canonical_question: null };
   }
 }
 
@@ -2751,6 +2755,36 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   // mismatched) → stream the OLD answer just as fast AND queue a background
   // revalidation at the current SEARCH_VERSION — stale answers phase out
   // systematically as they're touched, never by dropping the cache.
+  const serveCachedAnswer = (hit) => {
+    const { entry, similarity, stale } = hit;
+    touchEntry(entry.id);
+    recordServe({
+      question_hash: entry.question_hash, cache_status: stale ? 'hit-stale' : 'hit-fresh',
+      served_version: entry.search_version, similarity, latency_ms: Date.now() - _t0
+    });
+    if (stale) {
+      queueRevalidation(entry, () =>
+        runJafarPipeline({ messages, sendEvent: null, debug: false, chatbot_location, persona_name, _skipCache: true }));
+    }
+    if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
+    const cachedQuotes = (() => { try { return JSON.parse(entry.research_json || '[]'); } catch { return []; } })();
+    if (sendEvent) for (const ch of entry.answer_md) sendEvent({ type: 'text', content: ch });
+    return {
+      reply: entry.answer_md,
+      user_intent: 'cached',
+      response_register: 'conversational',
+      retrieved_count: cachedQuotes.length,
+      retrieval_quotes: cachedQuotes,
+      gate: { pass: true, picker: stale ? 'cache-stale' : 'cache-fresh' },
+      retried: false,
+      research_calls: [],
+      cache: { status: stale ? 'hit-stale' : 'hit-fresh', similarity, served_version: entry.search_version, current_version: SEARCH_VERSION }
+    };
+  };
+
+  // Stage A (raw-form lookup, before ANY LLM call): exact-hash + raw-message cosine.
+  // Cleanly-phrased repeats hit here in ~0.3s. Entries are KEYED by canonical
+  // question, and a clean raw question embeds close enough to its canonical form.
   if (!_skipCache && isOpeningTurn && !chatbot_location) {
     try {
       let hit = await checkAnswerCache(userMessage, { persona });   // exact-hash pass (free)
@@ -2758,35 +2792,9 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
         qEmbedding = (await createEmbedding(userMessage)).embedding;
         hit = await checkAnswerCache(userMessage, { persona, embedding: qEmbedding });
       }
-      if (hit?.entry?.answer_md) {
-        const { entry, similarity, stale } = hit;
-        touchEntry(entry.id);
-        recordServe({
-          question_hash: entry.question_hash, cache_status: stale ? 'hit-stale' : 'hit-fresh',
-          served_version: entry.search_version, similarity, latency_ms: Date.now() - _t0
-        });
-        if (stale) {
-          queueRevalidation(entry, () =>
-            runJafarPipeline({ messages, sendEvent: null, debug: false, chatbot_location, persona_name, _skipCache: true }));
-        }
-        if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
-        const cachedQuotes = (() => { try { return JSON.parse(entry.research_json || '[]'); } catch { return []; } })();
-        if (sendEvent) for (const ch of entry.answer_md) sendEvent({ type: 'text', content: ch });
-        return {
-          reply: entry.answer_md,
-          user_intent: 'cached',
-          response_register: 'conversational',
-          retrieved_count: cachedQuotes.length,
-          retrieval_quotes: cachedQuotes,
-          gate: { pass: true, picker: stale ? 'cache-stale' : 'cache-fresh' },
-          retried: false,
-          research_calls: [],
-          cache: { status: stale ? 'hit-stale' : 'hit-fresh', similarity, served_version: entry.search_version, current_version: SEARCH_VERSION }
-        };
-      }
-      recordServe({ question_hash: questionHash(userMessage), cache_status: 'miss', latency_ms: Date.now() - _t0 });
+      if (hit?.entry?.answer_md) return serveCachedAnswer(hit);
     } catch (err) {
-      logger.warn({ err: err.message }, 'answer-cache read path failed — continuing uncached');
+      logger.warn({ err: err.message }, 'answer-cache stage-A failed — continuing uncached');
     }
   }
 
@@ -2797,6 +2805,31 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   const entities = await classifyIntentAndEntities(userMessage, messages.slice(0, -1));
   const userIntent = entities.intent;
   if (sendEvent && debug) sendEvent({ type: 'debug_intent', intent: userIntent, entities });
+
+  // Stage B (semantic-question lookup — the HyPE mechanism applied to the cache):
+  // the canonical question collapses statements/keywords/follow-ups onto one form
+  // ("baha'i afterlife" and "what about her death?" both become real questions),
+  // then we match canonical-vs-canonical. Reads are allowed even on follow-ups
+  // (the canonical form is context-resolved and standalone); a hit here still
+  // skips the expensive research+craft (~2s total vs 5-10s).
+  const canonicalQ = entities.canonical_question;
+  let canonicalEmbedding = null;
+  if (!_skipCache && !chatbot_location && canonicalQ) {
+    try {
+      let hit = null;
+      if (normalizeQuestion(canonicalQ) !== normalizeQuestion(userMessage)) {
+        hit = await checkAnswerCache(canonicalQ, { persona });
+        if (!hit) {
+          canonicalEmbedding = (await createEmbedding(canonicalQ)).embedding;
+          hit = await checkAnswerCache(canonicalQ, { persona, embedding: canonicalEmbedding });
+        }
+      }
+      if (hit?.entry?.answer_md) return serveCachedAnswer(hit);
+      if (isOpeningTurn) recordServe({ question_hash: questionHash(canonicalQ), cache_status: 'miss', latency_ms: Date.now() - _t0 });
+    } catch (err) {
+      logger.warn({ err: err.message }, 'answer-cache stage-B failed — continuing uncached');
+    }
+  }
 
   // Response register: research mode when the query asks for a compiled list
   // of references to a specific person/event (vs. a conversational answer).
@@ -2901,10 +2934,14 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   if (isOpeningTurn && !chatbot_location && !research.is_political && draft && draft.length >= 40) {
     (async () => {
       try {
-        const emb = qEmbedding || (await createEmbedding(userMessage)).embedding;
-        await storeAnswer(userMessage, {
+        // KEY BY THE SEMANTIC QUESTION (the HyPE mechanism): the canonical form is
+        // the cache key, so every phrasing of the same ask collapses onto one entry.
+        const keyQuestion = canonicalQ || userMessage;
+        const emb = (canonicalQ && canonicalEmbedding) || qEmbedding || (await createEmbedding(keyQuestion)).embedding;
+        await storeAnswer(keyQuestion, {
           persona,
           embedding: emb,
+          canonical: canonicalQ,
           tradition: (Array.isArray(entities?.traditions) && entities.traditions.length === 1) ? entities.traditions[0] : null,
           research: research.retrieved_quotes,
           answer: draft,

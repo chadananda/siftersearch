@@ -651,6 +651,16 @@ export const migrations = {
     )`);
     logger.info('Migration 101 complete: answer cache + versioned serve metrics');
   },
+
+  102: async () => {
+    // Semantic-question caching (the HyPE mechanism applied to the cache): entries are
+    // KEYED by the canonical question form (LLM-rewritten from the user's raw phrasing,
+    // context-resolved), so statements/keywords/follow-ups collapse onto one embedding.
+    logger.info('Starting migration 102: answer_cache.canonical_question');
+    try { await query(`ALTER TABLE answer_cache ADD COLUMN canonical_question TEXT`); }
+    catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    logger.info('Migration 102 complete');
+  },
 };
 
 export const graphMigrations = {

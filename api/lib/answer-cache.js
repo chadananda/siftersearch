@@ -94,21 +94,22 @@ export async function checkAnswerCache(question, { persona = 'Jafar', embedding 
 }
 
 /** Write-through after a successful full-pipeline answer (opening turns only). */
-export async function storeAnswer(question, { persona = 'Jafar', embedding = null, tradition = null, research = null, answer = '', citations = null, retrieved_count = 0, web_fallback = false }) {
+export async function storeAnswer(question, { persona = 'Jafar', embedding = null, canonical = null, tradition = null, research = null, answer = '', citations = null, retrieved_count = 0, web_fallback = false }) {
   try {
     if (!answer || answer.length < 40) return;   // don't cache empty/refusal stubs
     const hash = questionHash(question);
     await query(
-      `INSERT INTO answer_cache (question_norm, question_hash, question_embedding, tradition, persona,
+      `INSERT INTO answer_cache (question_norm, question_hash, question_embedding, canonical_question, tradition, persona,
          research_json, answer_md, citations_json, search_version, retrieved_count, web_fallback, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,unixepoch())
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,unixepoch())
        ON CONFLICT(question_hash, persona) DO UPDATE SET
-         question_embedding=excluded.question_embedding, tradition=excluded.tradition,
+         question_embedding=excluded.question_embedding, canonical_question=excluded.canonical_question,
+         tradition=excluded.tradition,
          research_json=excluded.research_json, answer_md=excluded.answer_md,
          citations_json=excluded.citations_json, search_version=excluded.search_version,
          retrieved_count=excluded.retrieved_count, web_fallback=excluded.web_fallback,
          updated_at=unixepoch()`,
-      [normalizeQuestion(question), hash, embedding ? toBuf(embedding) : null, tradition, persona,
+      [normalizeQuestion(question), hash, embedding ? toBuf(embedding) : null, canonical || question, tradition, persona,
         research ? JSON.stringify(research).slice(0, 400000) : null, answer,
         citations ? JSON.stringify(citations).slice(0, 100000) : null,
         SEARCH_VERSION, retrieved_count, web_fallback ? 1 : 0]
