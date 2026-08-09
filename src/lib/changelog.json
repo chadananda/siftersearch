@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T14:43:28.297Z",
+  "generated": "2026-08-09T14:53:41.844Z",
   "entries": [
+    {
+      "hash": "d129ab47",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Quote-source fast path + domain scoping — stop \"similar ideas from other religions\"",
+      "scope": null
+    },
     {
       "hash": "bccfbcef",
       "date": "2026-08-08",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Raise meili_sync_tasks stale threshold 4h→8h — HNSW rebuilds on 4M+ vectors take 5-8h",
       "scope": null
-    },
-    {
-      "hash": "cea99ebc",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "Run periodic tasks (WAL checkpoint) after each sync job, not only when idle",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-09": [
+      {
+        "hash": "d129ab47",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Quote-source fast path + domain scoping — stop \"similar ideas from other religions\"",
+        "scope": null
+      }
+    ],
     "2026-08-08": [
       {
         "hash": "bccfbcef",
@@ -7077,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "Raise meili_sync_tasks stale threshold 4h→8h — HNSW rebuilds on 4M+ vectors take 5-8h",
-        "scope": null
-      },
-      {
-        "hash": "cea99ebc",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "Run periodic tasks (WAL checkpoint) after each sync job, not only when idle",
         "scope": null
       }
     ]

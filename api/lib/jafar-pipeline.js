@@ -631,7 +631,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     const span = extractQuotedSpan(userMessage);
     if (span) {
       for (const q of phraseQueryVariants(span)) {
-        const res = await runTool('search', { query: q, mode: 'passages', limit: 12, semanticRatio: 0 });
+        const res = await runTool('search', { query: q, mode: 'passages', limit: 12, phrase: true });
         harvestPassages(res, 'quote-phrase');
         if (retrieved.length) break;
       }
@@ -640,7 +640,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       logger.info({ span: span.slice(0, 60), hits: retrieved.length }, 'quote-source fast path');
       return {
         retrieved_quotes: retrieved.slice(0, 8),
-        subagent_syntheses,
+        subagent_syntheses: subagentSyntheses,
         tool_calls: debugCalls,
         quote_lookup: { span, found: retrieved.length > 0 }
       };

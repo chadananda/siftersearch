@@ -457,7 +457,7 @@ For an unfiltered total of the whole library, use library_overview instead.`,
 
 // ─── Tool implementations ─────────────────────────────────────────────────
 
-export async function executeSearch({ query, mode = 'passages', religion, collection, author, language, document_id, start = 0, limit = 10, scope_config, semanticRatio, entityIds }) {
+export async function executeSearch({ query, mode = 'passages', religion, collection, author, language, document_id, start = 0, limit = 10, scope_config, semanticRatio, entityIds, phrase }) {
   const safeLimit = Math.min(limit || 10, 100);
 
   // MODE: read — fetch paragraphs from a specific document
@@ -493,6 +493,14 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     if (document_id) filters.documentId = document_id;
 
     let merged;
+    if (phrase) {
+      // PHRASE mode (quote-source lookups): pure BM25 straight to the paragraphs
+      // index — Meili honors "quoted phrases" in q. The multi-index merge below
+      // would blend in HyPE-question hits, which match ANY text semantically and
+      // pollute an exact-phrase lookup with thematic cousins.
+      const r = await hybridSearch(query, { limit: safeLimit, filters, scope_config, semanticRatio: 0 }).catch(() => ({ hits: [] }));
+      merged = r.hits || [];
+    } else {
     try {
       const result = await multiIndexSearch(query, { limit: safeLimit, filters, scope_config, ...(semanticRatio != null ? { semanticRatio } : {}), ...(entityIds?.length ? { entityIds } : {}) });
       merged = (result.hits || []).map(hit => ({
@@ -515,6 +523,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
       }
       merged.sort((a, b) => (b._authorityScore || 0) - (a._authorityScore || 0));
     }
+    } // close phrase/multi-index branch
 
     // Enrich hits with source-site provenance + external paragraph IDs so
     // OL (and other sites) can render proper deep-links. The Meili paragraph
