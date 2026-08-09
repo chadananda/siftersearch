@@ -36,21 +36,75 @@ export function extractQuotedSpan(text) {
 
 /**
  * Progressive Meili PHRASE queries for a span — full phrase first, then leading
- * 8 / 6 words, each in straight- and curly-apostrophe forms (the corpus stores
- * curly U+2019). Phrase-only by design: an unquoted fallback would reintroduce
- * the "vaguely similar ideas from other religions" failure this path exists to kill.
+ * word windows down to 3 words (people's memory usually diverges from the real
+ * text after the first few words: "Sorrow not if things…" vs "Sorrow not if, in
+ * these days…"), each in straight- and curly-apostrophe forms (the corpus stores
+ * curly U+2019). These are the OPPORTUNISTIC fast wins — imperfectly remembered
+ * quotes are the NORM, and the fuzzy scorer below is the real engine.
  */
 export function phraseQueryVariants(span) {
-  const clean = String(span).replace(/[\s"“”]+/g, ' ').replace(/[.,;:!?]+$/, '').trim();
+  const clean = String(span).replace(/[\s"“”]+/g, ' ').replace(/[.,;:!?…]+$/, '').trim();
   const words = clean.match(/\S+/g) || [];
-  const lengths = [words.length, 8, 6].filter((n, i, a) => n >= 3 && a.indexOf(n) === i && n <= words.length);
+  const lengths = [words.length, 8, 6, 4, 3].filter((n, i, a) => n >= 3 && a.indexOf(n) === i && n <= words.length);
   const out = [];
   for (const n of lengths) {
-    const frag = words.slice(0, n).join(' ');
+    const frag = words.slice(0, n).join(' ').replace(/[.,;:!?…]+$/, '');
     for (const variant of [frag, frag.replace(/'/g, '’'), frag.replace(/’/g, "'")]) {
       const q = `"${variant}"`;
       if (!out.includes(q)) out.push(q);
     }
   }
   return out;
+}
+
+// Small stopword set for distinctive-term scoring — enough to separate memorable
+// content words ("mosquito", "citizens") from glue. Deliberately conservative.
+const STOP = new Set(('a an and are as at be but by for from had has have he her his i if in into is it its me my not of on or our '
+  + 'she so that the their them then there they this to us was we were what when where which who will with you your thing things '
+  + 'say says said like about something quote passage verse').split(' '));
+
+// Crude stem — memory and source differ in morphology ("weakest" vs "weak",
+// "conquered" vs "conquer"). One suffix strip, never below 3 chars.
+const stem = (w) => {
+  for (const suf of ['iest', 'ing', 'est', 'ed', 'ly', 'es', 's']) {
+    if (suf === 's' && w.endsWith('ss')) continue;   // grass, witness, holiness
+    if (w.length - suf.length >= 3 && w.endsWith(suf)) return w.slice(0, -suf.length);
+  }
+  return w;
+};
+
+const contentWords = (s) => (String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .match(/[a-z]{3,}/g) || []).filter((w) => !STOP.has(w)).map(stem);
+
+/**
+ * The memorable content words of a remembered quote/description — what survives
+ * imperfect human memory. Used to score search candidates.
+ */
+export function distinctiveTerms(text) {
+  return [...new Set(contentWords(text))];
+}
+
+/**
+ * How well does a candidate passage match the user's remembered wording/description?
+ * Returns 0..1: fraction of the memory's distinctive terms present in the candidate,
+ * with a bonus for consecutive runs (phrases surviving intact). Deterministic scoring
+ * of CANDIDATES (not user-text classification) — cheap, explainable, unit-testable.
+ */
+export function scoreCandidate(memory, candidateText) {
+  const terms = distinctiveTerms(memory);
+  if (!terms.length) return 0;
+  const hay = new Set(contentWords(candidateText));
+  let hit = 0;
+  for (const t of terms) if (hay.has(t)) hit++;
+  const coverage = hit / terms.length;
+  // Consecutive-run bonus: check the memory's word PAIRS surviving in order.
+  const memSeq = contentWords(memory);
+  const candSeq = contentWords(candidateText).join(' ');
+  let pairs = 0, pairHits = 0;
+  for (let i = 0; i + 1 < memSeq.length; i++) {
+    pairs++;
+    if (candSeq.includes(memSeq[i] + ' ' + memSeq[i + 1])) pairHits++;
+  }
+  const runBonus = pairs ? (pairHits / pairs) * 0.25 : 0;
+  return Math.min(1, coverage * 0.85 + runBonus);
 }

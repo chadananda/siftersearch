@@ -25,7 +25,7 @@ import { config } from './config.js';
 import { executeTool, TOOLS } from '../routes/chat.js';
 import { getScopeForLocation } from './search/scope.js';
 import { checkDeepResearch, recordQuestionHit } from './deep-research.js';
-import { extractQuotedSpan, phraseQueryVariants } from './quote-lookup.js';
+import { extractQuotedSpan, phraseQueryVariants, scoreCandidate } from './quote-lookup.js';
 import { perplexityFallback } from './perplexity.js';
 import { queryAll } from './db.js';
 import { findEntity } from './graph-db.js';
@@ -651,34 +651,65 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     return { retrieved_quotes: [], subagent_syntheses: [], tool_calls: [], is_political: true };
   }
 
-  // ── Quote-source fast path ─────────────────────────────────────────────────
-  // "Where is this quote from: '…'?" resolves by EXACT PHRASE against the whole
-  // corpus — Meili answers in ms. This must run before deep-research pre-fetch
-  // and the tradition sweep: both used to hijack quote lookups and return
-  // "vaguely similar ideas from other religions" (the worst observed failure).
-  // Phrase-only by design; if the phrase isn't in the library we return EMPTY
-  // so the crafter says so plainly instead of substituting thematic cousins.
-  if (entities?.intent === 'quote_request') {
-    // The LLM extraction supplies the remembered wording (handles "it starts like…",
-    // partial memories, no quote marks); the pure-function extractor is the backstop.
+  // ── Quote-hunt needle engine ───────────────────────────────────────────────
+  // Runs for EVERY quote-sourcing ask — with remembered wording OR only a
+  // description ("a quote by Abdu'l-Baha about man being weaker than a blade of
+  // grass"). Imperfectly remembered quotes are the NORM (Chad), so exact phrase
+  // is just the opportunistic fast win; the real engine is scoped semantic+HyPE
+  // over the remembered imagery, with candidates SCORED against the memory and
+  // answered in confidence tiers. Never falls into the interfaith sweep.
+  // Trigger: quote_request with remembered wording, OR a description-only hunt
+  // (attributed person/tradition + topical description — the Parisa case).
+  if (entities?.intent === 'quote_request' && (entities?.quoted_span || extractQuotedSpan(userMessage) || (entities?.named_persons?.length && entities?.topics?.length))) {
     const span = entities?.quoted_span || extractQuotedSpan(userMessage);
+    // The memory we score against: remembered wording if given, else the full ask
+    // (its imagery words are what survived — "mosquito", "blade of grass").
+    const memory = span || userMessage;
+    const tradition = Array.isArray(entities?.traditions) && entities.traditions.length === 1 ? entities.traditions[0] : null;
+
+    // Rung 1 — opportunistic exact/leading-phrase hits (ms, free).
     if (span) {
       for (const q of phraseQueryVariants(span)) {
         const res = await runTool('search', { query: q, mode: 'passages', limit: 12, phrase: true });
         harvestPassages(res, 'quote-phrase');
         if (retrieved.length) break;
       }
-      // Hits arrive authority-sorted from executeSearch, so the originating
-      // primary work outranks books that merely quote the passage.
-      logger.info({ span: span.slice(0, 60), hits: retrieved.length }, 'quote-source fast path');
-      return {
-        retrieved_quotes: retrieved.slice(0, 8),
-        subagent_syntheses: subagentSyntheses,
-        tool_calls: debugCalls,
-        quote_lookup: { span, found: retrieved.length > 0 }
-      };
     }
-    // No quoted span — a passage REQUEST ("show me a quote about love"): fall through.
+    let confidence = null;
+    if (retrieved.length) {
+      // Phrase hits still get scored — a 3-word window can match the wrong passage.
+      for (const r of retrieved) r._score = scoreCandidate(memory, r.text);
+      retrieved.sort((a, b) => (b._score || 0) - (a._score || 0));
+      confidence = retrieved[0]._score >= 0.75 ? 'high' : retrieved[0]._score >= 0.45 ? 'likely' : 'low';
+    }
+
+    // Rung 2 — the real engine: semantic+HyPE over the remembered imagery,
+    // scoped to the attributed tradition. Runs whenever rung 1 wasn't decisive.
+    if (confidence !== 'high') {
+      const personTag = (entities?.named_persons || []).join(' ');
+      const semQuery = `${personTag} ${memory}`.trim().slice(0, 300);
+      const res = await runTool('search', {
+        query: semQuery, mode: 'passages', limit: 20,
+        ...(tradition ? { religion: tradition } : {}),
+        semanticRatio: 0.6
+      });
+      harvestPassages(res, 'quote-similar');
+      for (const r of retrieved) if (r._score == null) r._score = scoreCandidate(memory, r.text);
+      retrieved.sort((a, b) => (b._score || 0) - (a._score || 0));
+      // Description-only memories carry attribution noise ("a quote by Abdu'l-Baha
+      // about…") that can never match passage text — the likely bar sits lower here.
+      const top = retrieved[0]?._score || 0;
+      confidence = top >= 0.75 ? 'high' : top >= 0.32 ? 'likely' : retrieved.length ? 'low' : 'none';
+    }
+
+    const best = retrieved.slice(0, 5);
+    logger.info({ span: (span || '').slice(0, 50), memory: memory.slice(0, 50), hits: retrieved.length, confidence, topScore: retrieved[0]?._score }, 'quote-hunt ladder');
+    return {
+      retrieved_quotes: best,
+      subagent_syntheses: subagentSyntheses,
+      tool_calls: debugCalls,
+      quote_lookup: { span: span || null, confidence, found: confidence === 'high' || confidence === 'likely' }
+    };
   }
 
   // Catalog pre-fetch: for library overview/browsing questions, skip the
@@ -2155,8 +2186,8 @@ const crafterSystem = (persona) => (persona && persona !== 'Jafar') ? CRAFTER_SY
 
 // Streaming variant — yields each chunk as it arrives. Used in the
 // fast-path orchestrator. Returns the full text at the end.
-export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, web_context, comparative }) {
-  const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context, comparative });
+export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, web_context, comparative, quote_lookup }) {
+  const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context, comparative, quote_lookup });
   // gpt-4o for the crafter — the new answer-first prompt requires the
   // model to read the user's question, decide which retrieved_quote
   // actually addresses it (semantic relevance, not just topical keyword
@@ -2277,7 +2308,7 @@ function stripRestatementSentences(text) {
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
-function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context, comparative }) {
+function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context, comparative, quote_lookup }) {
   const TIER_LABEL = {
     1: 'TIER 1 (Shoghi Effendi — supreme interpreter)',
     2: "TIER 2 ('Abdu'l-Bahá — Center of the Covenant, interpreter)",
@@ -2345,6 +2376,15 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     ? `\n⚠️ REQUIRED: This reply MUST cite passages from ALL of these traditions (each has quotes in retrieved_quotes): ${presentTraditions.join(', ')}. Silence on any listed tradition is a failure.`
     : '';
 
+  // Quote-hunt confidence: imperfectly remembered quotes are the NORM, so the reply
+  // language must scale with match confidence rather than pretending certainty.
+  const quoteBlock = quote_lookup ? `
+
+QUOTE-HUNT: the user is locating the source of a quotation. Remembered wording: ${quote_lookup.span ? `"${quote_lookup.span}"` : '(described from memory, no exact words given)'}. Library match confidence: ${quote_lookup.confidence || 'none'}.
+- high → answer plainly: "That is from *Work* by Author — [the actual words](url)."
+- likely → open with "This is very likely the passage you're remembering:" then give the top passage with work, author, link — and note the actual wording where it differs from their memory.
+- low/none → do NOT present weak matches as the answer. Say the exact wording could not be found in the library; if a WEB SEARCH CONTEXT block follows, relay its identification (web-attributed); you may offer ONE closest library passage clearly labeled as the nearest match, never as the source.` : '';
+
   // Web fallback context: the library retrieval was empty and a Perplexity web
   // search answered instead. Clearly bounded so the crafter attributes it as web
   // information and never dresses it up as library citations.
@@ -2363,7 +2403,7 @@ conversation_summary: ${conversation_summary || '(this is the opening turn)'}${t
 
 retrieved_quotes (${retrieved_quotes.length} entries — use these as the substrate; entries marked SUMMARY are sub-agent context, not quotable text):
 
-${quotesPayload || (web_context?.text ? '(no library quotes — use the WEB SEARCH CONTEXT below)' : '(no quotes retrieved — reply must say so)')}${synthesisBlock}${webBlock}
+${quotesPayload || (web_context?.text ? '(no library quotes — use the WEB SEARCH CONTEXT below)' : '(no quotes retrieved — reply must say so)')}${synthesisBlock}${quoteBlock}${webBlock}
 
 TORAH NOTE: "Torah" refers specifically to the Five Books of Moses (Genesis, Exodus, Leviticus, Numbers, Deuteronomy). When a question asks about "the Torah", prefer Q-entries whose source_title contains those book names over Talmud, Mishnah, or other Jewish texts. A Talmud passage is rabbinic commentary, not the Torah itself.
 
@@ -2633,8 +2673,15 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   // web information. Covers quote-source misses too ("not in our library, but a
   // web search identifies it as…"). Never runs when the library had material.
   let webContext = null;
-  if (!research.is_political && research.retrieved_quotes.length === 0) {
-    webContext = await perplexityFallback(userMessage);
+  // Fire on empty retrieval OR a low-confidence quote hunt (imperfect memory is the
+  // norm — a weak library guess plus a web identification beats either alone). Quote
+  // hunts get DOMAIN CONTEXT so the web search doesn't return generic quote sites.
+  const quoteMiss = research.quote_lookup && !research.quote_lookup.found;
+  if (!research.is_political && (research.retrieved_quotes.length === 0 || quoteMiss)) {
+    const webQuestion = research.quote_lookup
+      ? `Identify the source — the exact work, author, and where it appears — of this quotation or remembered passage, most likely from Bahá'í or other sacred literature: ${research.quote_lookup.span ? `"${research.quote_lookup.span}"` : userMessage}`
+      : userMessage;
+    webContext = await perplexityFallback(webQuestion);
     if (webContext && sendEvent) sendEvent({ type: 'debug_web_fallback', sources: webContext.citations.length });
   }
 
@@ -2678,7 +2725,8 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     onChunk,
     persona_name,
     web_context: webContext,
-    comparative: entities?.comparative
+    comparative: entities?.comparative,
+    quote_lookup: research.quote_lookup
   });
   // Web-source links are legitimate when the fallback ran — extend the allowlist.
   const linkAllowlist = webContext
