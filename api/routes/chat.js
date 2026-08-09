@@ -1257,7 +1257,83 @@ async function executeTranslatePassage({ text, source_lang, work_context }) {
 
 // ─── Route ────────────────────────────────────────────────────────────────
 
+// Query-prep prewarm map (perf Layer 3): while the user is still TYPING, the
+// client debounces partials to /chat/prep; a settled-looking partial starts the
+// full pipeline speculatively, and the submit attaches to that in-flight promise
+// instead of starting over — the answer is often ready by the time they hit Enter.
+// In-memory only, short TTL: partials are keystrokes, never logged or persisted.
+const _prewarm = new Map();   // key: persona|normalized-text → { promise, startedAt }
+const _lastPrep = new Map();  // sessionId → last partial (stability = user paused)
+const PREWARM_TTL_MS = 90000;
+const PREWARM_MAX_INFLIGHT = 4;
+const prewarmKey = (persona, text) => `${persona}|${String(text).toLowerCase().replace(/\s+/g, ' ').trim()}`;
+function prewarmSweep() {
+  const now = Date.now();
+  for (const [k, v] of _prewarm) if (now - v.startedAt > PREWARM_TTL_MS) _prewarm.delete(k);
+  if (_lastPrep.size > 2000) _lastPrep.clear();
+}
+
 export default async function chatRoutes(fastify) {
+  // Layer 3: speculative query-prep. Cheap by default (cache probe only); the full
+  // pipeline is started ONLY for a settled-looking partial (ends with terminal
+  // punctuation OR unchanged since the previous prep = the user paused), bounded
+  // globally and deduped. Responses are tiny; partials never enter any log table.
+  fastify.post('/prep', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['partial'],
+        properties: {
+          partial: { type: 'string', maxLength: 2000 },
+          sessionId: { type: 'string', maxLength: 64 },
+          widget_token: { type: 'string', maxLength: 64 }
+        }
+      }
+    }
+  }, async (request) => {
+    prewarmSweep();
+    const { partial, sessionId, widget_token } = request.body;
+    const text = String(partial || '').trim();
+    if (text.split(/\s+/).length < 3 || text.length < 12) return { status: 'noop' };
+
+    let persona = 'Jafar';
+    if (widget_token) {
+      const prof = await queryOne('SELECT name FROM widget_profiles WHERE token = ?', [widget_token]).catch(() => null);
+      persona = prof?.name?.trim().slice(0, 60) || 'Jafar';
+    }
+    const key = prewarmKey(persona, text);
+    if (_prewarm.has(key)) return { status: 'warming' };
+
+    // Cache probe (embed + cosine — no LLM): already answered → submit hits Stage A.
+    try {
+      const { checkAnswerCache } = await import('../lib/answer-cache.js');
+      const { createEmbedding } = await import('../lib/ai.js');
+      let hit = await checkAnswerCache(text, { persona });
+      if (!hit) {
+        const emb = (await createEmbedding(text)).embedding;
+        hit = await checkAnswerCache(text, { persona, embedding: emb });
+      }
+      if (hit?.entry?.answer_md) return { status: 'cached' };
+    } catch { /* prep must never error the client */ }
+
+    // Speculative pipeline start — only for settled-looking partials.
+    const last = sessionId ? _lastPrep.get(sessionId) : null;
+    if (sessionId) _lastPrep.set(sessionId, text);
+    const settled = /[?.!]$/.test(text) || last === text;
+    const inflight = [..._prewarm.values()].filter((v) => v.promise).length;
+    if (!settled || inflight >= PREWARM_MAX_INFLIGHT) return { status: 'noop' };
+
+    const { runJafarPipeline } = await import('../lib/jafar-pipeline.js');
+    const promise = runJafarPipeline({
+      messages: [{ role: 'user', content: text }],
+      sendEvent: null, debug: false, chatbot_location: undefined,
+      persona_name: persona === 'Jafar' ? null : persona
+    }).catch((err) => { logger.warn({ err: err.message }, 'prewarm speculative run failed'); return null; });
+    _prewarm.set(key, { promise, startedAt: Date.now() });
+    logger.info({ chars: text.length, persona }, 'query-prep: speculative pipeline started');
+    return { status: 'warming' };
+  });
+
   fastify.post('/stream', {
     preHandler: optionalAuthenticate,
     schema: {
@@ -1317,13 +1393,28 @@ export default async function chatRoutes(fastify) {
       const { runJafarPipeline } = await import('../lib/jafar-pipeline.js');
 
       const debug = request.headers['x-debug-chat'] === '1' || request.headers['x-debug-chat'] === 'true';
-      const result = await runJafarPipeline({
-        messages: messages.map(m => ({ role: m.role, content: m.content })),
-        sendEvent,
-        debug,
-        chatbot_location,
-        persona_name
-      });
+      // Attach to a prewarmed speculative run when one matches this exact question
+      // (Layer 3): the pipeline started while the user was still typing, so by
+      // Enter the answer is partly or fully computed. Opening turns only.
+      const lastMsg = messages[messages.length - 1]?.content || '';
+      const isOpening = !messages.slice(0, -1).some((m) => m.role === 'user');
+      const pw = isOpening ? _prewarm.get(prewarmKey(persona_name || 'Jafar', lastMsg)) : null;
+      let result = null;
+      if (pw?.promise) {
+        _prewarm.delete(prewarmKey(persona_name || 'Jafar', lastMsg));
+        if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
+        result = await pw.promise;
+        if (result) logger.info({ waitedMs: Date.now() - pw.startedAt }, 'query-prep: submit attached to speculative run');
+      }
+      if (!result) {
+        result = await runJafarPipeline({
+          messages: messages.map(m => ({ role: m.role, content: m.content })),
+          sendEvent,
+          debug,
+          chatbot_location,
+          persona_name
+        });
+      }
 
       // Word-by-word emit so the existing dialogue UI's typing animation
       // still triggers, even though the text is fully buffered before send.

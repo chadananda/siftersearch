@@ -209,6 +209,25 @@
     flushQuote();
     return out.join('\n');
   }
+  // Query-prep (perceived speed): while the user types their FIRST question, debounce
+  // partials to /api/chat/prep — a settled pause starts the answer pipeline server-side,
+  // so it's often ready (or warming) by the time they press Enter. Fire-and-forget;
+  // partials are never logged server-side.
+  let prepTimer = null;
+  function schedulePrep() {
+    if (messages.some((m) => m.role === 'user')) return;   // opening question only
+    clearTimeout(prepTimer);
+    prepTimer = setTimeout(() => {
+      const text = input.trim();
+      if (text.split(/\s+/).length < 3) return;
+      fetch(`${api}/api/chat/prep`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ partial: text, sessionId: sid, widget_token: token }),
+        keepalive: true,
+      }).catch(() => {});
+    }, 300);
+  }
   function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
   let openedOnce = false;
   function togglePanel() {
@@ -293,6 +312,7 @@
             bind:value={input}
             bind:this={inputEl}
             onkeydown={onKey}
+            oninput={schedulePrep}
             disabled={busy}
             aria-label="Your question"
           ></textarea>
