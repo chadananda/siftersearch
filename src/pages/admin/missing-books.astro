@@ -1,0 +1,9 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
+import MissingBooks from '../../components/admin/MissingBooks.svelte';
+---
+
+<AdminLayout title="Missing Books">
+  <MissingBooks client:only="svelte"><IslandSkeleton slot="fallback" /></MissingBooks>
+</AdminLayout>

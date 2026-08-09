@@ -250,11 +250,48 @@ async function main() {
     answerCache = await cacheStats();
   } catch (err) { answerCache = { error: err.message }; }
 
+  // ── Missing-books triage ───────────────────────────────────────────────────
+  // Two failure classes surfaced for /admin/missing-books: (1) STUBS — docs whose "content"
+  // is a scraped bahai-library.com metadata page (logo/TAGS chrome, <36 paras, no real text);
+  // the ones carrying .docx/.pdf source links are directly fetchable real books. (2) HUSKS —
+  // live doc rows with ZERO live content paragraphs. The stub scan LIKEs across low-¶ docs'
+  // content (~6s) → snapshot-only, 6h gate (the list changes only on ingest activity).
+  const MISSING_TTL_MS = 6 * 60 * 60 * 1000;
+  let missingBooks = prevSnapshot.missingBooks ?? null;
+  const mbAge = missingBooks?.generated_at ? Date.now() - Date.parse(missingBooks.generated_at) : Infinity;
+  if (mbAge > MISSING_TTL_MS) {
+    const stubs = await queryAll(`
+      SELECT d.id, d.title, d.author, d.paragraph_count AS paras, d.religion, d.collection, d.source_url,
+             SUM(CASE WHEN c.text LIKE '%logo_1850x358%' THEN 1 ELSE 0 END) AS logo,
+             SUM(CASE WHEN c.text LIKE '%TAGS:%' THEN 1 ELSE 0 END) AS tags,
+             SUM(CASE WHEN c.text LIKE '%bahai-library.com/docs/%' OR c.text LIKE '%.docx%' OR c.text LIKE '%.pdf%' THEN 1 ELSE 0 END) AS doclinks
+      FROM docs d JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL
+      WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.language = 'en'
+        AND d.paragraph_count BETWEEN 1 AND 35
+      GROUP BY d.id
+      HAVING logo > 0 OR tags > 0
+      ORDER BY doclinks DESC, d.title`).catch(() => []);
+    const huskTotal = (await queryOne(`
+      SELECT COUNT(*) AS n FROM docs d WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
+        AND NOT EXISTS (SELECT 1 FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL)`).catch(() => null))?.n ?? null;
+    const husks = await queryAll(`
+      SELECT d.id, d.title, d.author, d.religion, d.collection, d.source_url
+      FROM docs d WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
+        AND NOT EXISTS (SELECT 1 FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL)
+      ORDER BY d.title LIMIT 400`).catch(() => []);
+    missingBooks = {
+      generated_at: new Date().toISOString(),
+      stubs: stubs.map((s) => ({ ...s, fetchable: s.doclinks > 0 })),
+      husks, huskTotal,
+    };
+  }
+
   const snapshot = {
     generated_at: new Date().toISOString(),
     computed_in_ms: Date.now() - t0,
     integrity,
     library,
+    missingBooks,
     bottlenecks,
     aiUsage,
     answer_cache: answerCache,

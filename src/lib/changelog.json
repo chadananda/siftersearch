@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T23:39:58.884Z",
+  "generated": "2026-08-09T23:53:40.992Z",
   "entries": [
+    {
+      "hash": "7340a74f",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Hollow-done guard in daily digest (disambiguated books with zero extraction yield)",
+      "scope": null
+    },
     {
       "hash": "5ffc0173",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Pre-wipe meili sync reset + WAL threshold — resolve meili_vs_db health failure",
       "scope": null
-    },
-    {
-      "hash": "dbd75b4f",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "PropagateHypeFromNormalizedHash lock starvation — smaller batches + index",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "7340a74f",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Hollow-done guard in daily digest (disambiguated books with zero extraction yield)",
+        "scope": null
+      },
       {
         "hash": "5ffc0173",
         "date": "2026-08-09",
@@ -7079,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "Pre-wipe meili sync reset + WAL threshold — resolve meili_vs_db health failure",
-        "scope": null
-      },
-      {
-        "hash": "dbd75b4f",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "PropagateHypeFromNormalizedHash lock starvation — smaller batches + index",
         "scope": null
       }
     ]

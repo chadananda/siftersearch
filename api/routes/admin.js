@@ -3389,6 +3389,13 @@ Collection: ${paragraph.collection || 'Unknown'}
   // =============================================
 
   // Library overview: document counts by language, pipeline stages
+  // Missing-books triage — snapshot-only (the stub scan LIKEs across content for ~6s; it must
+  // NEVER run in-request). Serves whatever the cron last computed; `pending` until the first pass.
+  fastify.get('/library/missing-books', { preHandler: requireTier('admin') }, async () => {
+    const mb = readAdminSnapshot()?.missingBooks;
+    return mb || { pending: true, message: 'Snapshot not generated yet — the pipeline-snapshot cron computes this section within ~5 minutes.' };
+  });
+
   fastify.get('/library/overview', { preHandler: requireTier('admin') }, async () => {
     const snap = readAdminSnapshot();
     // File exists but section not yet computed (deploy raced the cron): serve the cheap

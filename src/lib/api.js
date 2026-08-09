@@ -845,6 +845,11 @@ export const admin = {
     return request(`/api/admin/activity/search-log?${params.toString()}`);
   },
 
+  // Missing-books triage (snapshot-backed; see /admin/missing-books)
+  async getMissingBooks() {
+    return request('/api/admin/library/missing-books');
+  },
+
   // Chat widget profiles (routes/widget.js; requireInternal accepts the admin JWT)
   async getWidgetProfiles() {
     return request('/api/v1/widget/admin/profiles');
