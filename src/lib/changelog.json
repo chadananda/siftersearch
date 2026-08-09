@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T02:50:40.598Z",
+  "generated": "2026-08-09T02:52:05.198Z",
   "entries": [
+    {
+      "hash": "45c95f61",
+      "date": "2026-08-08",
+      "type": "Fixed",
+      "description": "Add missing /apple-touch-icon.png (was the one broken link site-wide)",
+      "scope": null
+    },
     {
       "hash": "0edcf947",
       "date": "2026-08-08",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Auto-restart siftersearch-api when WAL TRUNCATE checkpoint blocked by reader locks",
       "scope": null
-    },
-    {
-      "hash": "2479f7df",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "WAL stat resolves symlink; improve graph_pipeline warning text",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-08": [
+      {
+        "hash": "45c95f61",
+        "date": "2026-08-08",
+        "type": "Fixed",
+        "description": "Add missing /apple-touch-icon.png (was the one broken link site-wide)",
+        "scope": null
+      },
       {
         "hash": "0edcf947",
         "date": "2026-08-08",
@@ -7077,13 +7084,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "Auto-restart siftersearch-api when WAL TRUNCATE checkpoint blocked by reader locks",
-        "scope": null
-      },
-      {
-        "hash": "2479f7df",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "WAL stat resolves symlink; improve graph_pipeline warning text",
         "scope": null
       }
     ]

@@ -145,10 +145,11 @@ export async function buildModel() {
     }
   } catch { /* graph_relations may be absent */ }
 
-  // graph_entities is now the CORPUS-WIDE table (~52k rows) but this page reviews the
-  // Dawn-Breakers/GPB graph. Rendering all 52k produced a ~56MB page (≈1KB of markup each).
-  // Keep only entities with actual mentions in the review books, plus anything flagged.
-  return [...byId.values()].filter((e) => e.mentions > 0 || e.flagged);
+  // graph_entities is now the CORPUS-WIDE table (~52k rows) and entity_mentions spans more
+  // books than this page reviews — "has any mention" still kept ~15k entities (~16MB page).
+  // This page's scope IS the DOCS constant: keep entities mentioned in those books + flagged.
+  const reviewDocs = new Set(Object.keys(DOCS).map(Number));
+  return [...byId.values()].filter((e) => [...e.books].some((b) => reviewDocs.has(Number(b))) || e.flagged);
 }
 
 function render(ents, { embed = false } = {}) {
@@ -475,8 +476,9 @@ export default async function entityReviewRoutes(server) {
       // Filter HERE too, not just in buildModel: a stale cached model with the full 52k
       // corpus-wide entity table meant ~30s of synchronous render per request — which
       // blocked every other request in the API (preflights died → site-wide CORS errors).
+      const reviewDocs = new Set(Object.keys(DOCS).map(Number));
       ents = cached.entities
-        .filter((e) => (e.mentions || 0) > 0 || e.flagged)
+        .filter((e) => (e.books || []).some((b) => reviewDocs.has(Number(b))) || e.flagged)
         .map((e) => ({ ...e, books: new Set(e.books) }));
       // Flags overlay — live (small table) so a reviewer's toggle survives the model's staleness.
       let flagRows = [];
