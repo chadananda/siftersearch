@@ -658,9 +658,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // is just the opportunistic fast win; the real engine is scoped semantic+HyPE
   // over the remembered imagery, with candidates SCORED against the memory and
   // answered in confidence tiers. Never falls into the interfaith sweep.
-  // Trigger: quote_request with remembered wording, OR a description-only hunt
-  // (attributed person/tradition + topical description — the Parisa case).
-  if (entities?.intent === 'quote_request' && (entities?.quoted_span || extractQuotedSpan(userMessage) || (entities?.named_persons?.length && entities?.topics?.length))) {
+  // Trigger: ANY quote-sourcing ask — remembered wording, or a topical description
+  // ("looking for a quote about the light souls radiate…"). A quote hunt must NEVER
+  // fall into the interfaith sweep: e4 regressed to a Zohar answer when it did.
+  if (entities?.intent === 'quote_request' && (entities?.quoted_span || extractQuotedSpan(userMessage) || entities?.named_persons?.length || entities?.topics?.length)) {
     const span = entities?.quoted_span || extractQuotedSpan(userMessage);
     // The memory we score against: remembered wording if given, else the full ask
     // (its imagery words are what survived — "mosquito", "blade of grass").
@@ -1863,7 +1864,7 @@ ANSWER FIRST, ALWAYS: your opening sentence states the answer to the question �
 FORMAT FOR COMPREHENSION — shape the reply to the question:
 - Factual/who-what-when ("Who led the defenders at Zanjan?") → the NAME/fact in **bold** in sentence one, then 1-2 grounding sentences. Never bury the fact under quotes.
   THE FACT MUST COME FROM THE EVIDENCE: only assert a name/date/place as the answer if it appears in a Q-entry, an Entity-dossier line, or the web context. If the evidence at hand does not contain the specific fact asked for, say plainly that the retrieved sources don't name it — a confident wrong name from memory is the worst possible answer.
-  When an Entity-dossier line DIRECTLY answers the question, prefer it over inferences from passage prose — the dossier is evidence-reconciled. When SEVERAL dossier lines answer it (two companions, joint leaders), include ALL of them. When the dossier lists a famous title among a person's aliases (Ḥujjat, Quddús, Bábu'l-Báb), use it alongside the name.
+  When an Entity-dossier line DIRECTLY answers the question, prefer it over inferences from passage prose — the dossier is evidence-reconciled. When SEVERAL dossier lines answer it (two companions, joint leaders), include ALL of them. When the dossier lists a famous title among a person's aliases (Ḥujjat, Quddús, Bábu'l-Báb), use it alongside the name. Answer "who" with the person's NAME (plus office/title) whenever the evidence gives it — "the Grand Vizír" alone is not an answer when the evidence names Mírzá Taqí Khán.
 - Source-of-a-quote → **bold full citation** (author, *work*, section) in sentence one; then the actual passage as a Markdown blockquote (> …) with its link; close with its authentication standing.
 - Explanations/teachings → short paragraphs (2-3 sentences each), **bold** the key terms on first use.
 - Lists (prayers, books, examples) → Markdown bullets, each item's title linked when a URL exists.
