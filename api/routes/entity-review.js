@@ -144,7 +144,11 @@ export async function buildModel() {
       if (e && t) e.relations.push({ type: r.relation_type, target: t.canonical_name });
     }
   } catch { /* graph_relations may be absent */ }
-  return [...byId.values()];
+
+  // graph_entities is now the CORPUS-WIDE table (~52k rows) but this page reviews the
+  // Dawn-Breakers/GPB graph. Rendering all 52k produced a ~56MB page (≈1KB of markup each).
+  // Keep only entities with actual mentions in the review books, plus anything flagged.
+  return [...byId.values()].filter((e) => e.mentions > 0 || e.flagged);
 }
 
 function render(ents, { embed = false } = {}) {
