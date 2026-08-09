@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T15:14:03.265Z",
+  "generated": "2026-08-09T15:36:32.507Z",
   "entries": [
+    {
+      "hash": "39dba36f",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Perplexity web fallback when the library comes up empty (key-gated)",
+      "scope": null
+    },
     {
       "hash": "2f1145fb",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Raise meili_sync_tasks stale threshold 8h→12h; clarify warning message",
       "scope": null
-    },
-    {
-      "hash": "2ce0792e",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "Add meili_sync_tasks reconciler to sync-processor periodic tasks",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "39dba36f",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Perplexity web fallback when the library comes up empty (key-gated)",
+        "scope": null
+      },
       {
         "hash": "2f1145fb",
         "date": "2026-08-09",
@@ -7079,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "Raise meili_sync_tasks stale threshold 8h→12h; clarify warning message",
-        "scope": null
-      },
-      {
-        "hash": "2ce0792e",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "Add meili_sync_tasks reconciler to sync-processor periodic tasks",
         "scope": null
       }
     ]

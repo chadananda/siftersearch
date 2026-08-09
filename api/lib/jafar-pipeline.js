@@ -400,7 +400,13 @@ topics: 1-3 lowercase topical keywords for passage search that capture what the 
 
 named_persons: Array of specific named historical or religious persons mentioned in the query (not generic terms). Include full canonical names with diacritics when known. Empty array if none. Examples: ["Mullá Husayn", "ʻAbdu'l-Bahá"], ["Plato"], ["the Buddha"]. Max 3.
 
-Output: {"intent": "...", "work_name": "..."|null, "topics": [...], "named_persons": [...]}`;
+traditions: Array of religious traditions the question is ABOUT, from exactly this vocabulary: "Baha'i", "Christian", "Islam", "Judaism", "Buddhist", "Hindu", "Sikh", "Tao", "Zoroastrian", "Jain". Infer from ANY signal — tradition names in any grammatical form ("Baha'is", "Bahá'í", "Buddhist"), founders and central figures ("the Buddha" → Buddhist; "Jesus" → Christian; "Muhammad" → Islam; "Bahá'u'lláh"/"ʻAbdu'l-Bahá"/"the Báb"/"Shoghi Effendi" → Baha'i; "Krishna" → Hindu; "Confucius"/"Lao Tzu" → Tao), scriptures ("the Quran" → Islam; "the Gospels" → Christian; "the Vedas" → Hindu; "Hidden Words"/"Aqdas"/"Iqan" → Baha'i). A question naming ONE tradition gets a one-element array. Empty array when the question is not tradition-specific ("what do religions say about hope?", "tell me about prayer").
+
+comparative: true ONLY when the user explicitly asks to compare traditions or what OTHER/different religions say ("compare X and Y", "how do other faiths view…", "what do different religions teach about…", "Buddhist vs Baha'i"). A question about ONE tradition is NOT comparative even if an answer could mention others. false otherwise.
+
+quoted_span: When the user is trying to locate/source a quotation and provides remembered wording (in quote marks OR as "it starts like…"/"something like…"), return that wording VERBATIM as they gave it (their words only, no lead-in phrases like "where is the quote"). null when they describe a passage without giving any of its wording, or aren't quote-hunting.
+
+Output: {"intent": "...", "work_name": "..."|null, "topics": [...], "named_persons": [...], "traditions": [...], "comparative": true|false, "quoted_span": "..."|null}`;
 
 export async function classifyIntentAndEntities(userMessage, recentMessages = []) {
   // Build a short context snippet from the last 2 turns (user + assistant pairs)
@@ -428,15 +434,39 @@ export async function classifyIntentAndEntities(userMessage, recentMessages = []
     });
     const parsed = JSON.parse(resp.choices[0].message.content);
     const validIntents = ['quote_request', 'definition', 'explain', 'discuss'];
+    // Normalize the LLM's tradition labels onto the router's canonical vocabulary.
+    // (This maps STRUCTURED output — not user text; free-form chat is never regex-routed.)
+    const TRADITION_CANON = {
+      "baha'i": "Baha'i", bahai: "Baha'i", "bahá'í": "Baha'i",
+      christian: 'Christian', christianity: 'Christian',
+      islam: 'Islam', islamic: 'Islam', muslim: 'Islam',
+      judaism: 'Judaism', jewish: 'Judaism',
+      buddhist: 'Buddhist', buddhism: 'Buddhist',
+      hindu: 'Hindu', hinduism: 'Hindu',
+      sikh: 'Sikh', sikhism: 'Sikh',
+      tao: 'Tao', taoism: 'Tao', taoist: 'Tao', confucian: 'Tao', confucianism: 'Tao',
+      zoroastrian: 'Zoroastrian', zoroastrianism: 'Zoroastrian',
+      jain: 'Jain', jainism: 'Jain',
+    };
+    const traditions = (Array.isArray(parsed.traditions) ? parsed.traditions : [])
+      .map((t) => TRADITION_CANON[String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')])
+      .filter(Boolean)
+      .filter((t, i, a) => a.indexOf(t) === i)
+      .slice(0, 3);
     return {
       intent: validIntents.includes(parsed.intent) ? parsed.intent : 'discuss',
       work_name: parsed.work_name || null,
       topics: Array.isArray(parsed.topics) ? parsed.topics.slice(0, 3) : [],
       named_persons: Array.isArray(parsed.named_persons) ? parsed.named_persons.slice(0, 3) : [],
+      traditions,
+      comparative: parsed.comparative === true,
+      quoted_span: (typeof parsed.quoted_span === 'string' && parsed.quoted_span.trim().length >= 8)
+        ? parsed.quoted_span.trim() : null,
     };
   } catch (err) {
     logger.warn({ err: err.message }, 'intent+entity classification failed; defaulting');
-    return { intent: 'discuss', work_name: null, topics: [], named_persons: [] };
+    // traditions/comparative/quoted_span as null signals "unknown" → callers may use their backstops.
+    return { intent: 'discuss', work_name: null, topics: [], named_persons: [], traditions: null, comparative: null, quoted_span: null };
   }
 }
 
@@ -629,7 +659,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // Phrase-only by design; if the phrase isn't in the library we return EMPTY
   // so the crafter says so plainly instead of substituting thematic cousins.
   if (entities?.intent === 'quote_request') {
-    const span = extractQuotedSpan(userMessage);
+    // The LLM extraction supplies the remembered wording (handles "it starts like…",
+    // partial memories, no quote marks); the pure-function extractor is the backstop.
+    const span = entities?.quoted_span || extractQuotedSpan(userMessage);
     if (span) {
       for (const q of phraseQueryVariants(span)) {
         const res = await runTool('search', { query: q, mode: 'passages', limit: 12, phrase: true });
@@ -927,21 +959,28 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     // Trailing \b after 'í' (U+00ED) doesn't fire because í is not \w — use lookahead instead.
     { pattern: /\bbah[aá]['']?[ií](?=[^a-zA-Z]|$)|\bbah[aá]u'?ll[aá]h\b|\b'?abdu'l-bah[aá]\b|\bshoghi\s+effendi\b|\baqdas\b|\biq[aá]n\b|\bhidden\s+words\b|\bbayan\b|\ball-merciful\b|\bseven\s+valleys\b|\b七つの谷\b/i, religion: "Baha'i" },
   ];
-  // Which named major traditions appear in the question?
-  // Used for: single-tradition routing (requiredTradition) + 2-tradition comparative restriction.
+  // Which traditions is the question about? LLM intent extraction is the ROUTER
+  // (it reads founders, plurals, scriptures — regex can't); the regex patterns
+  // below are a BACKSTOP used only when the extraction failed (traditions === null).
+  // Chad's rule: never classify free-form conversation with regex — it injects inflexibility.
+  const llmTraditions = Array.isArray(entities?.traditions) ? entities.traditions : null;
   const _majorMatches = MAJOR_TRAD_PATTERNS_EARLY.filter(({ pattern }) => pattern.test(userMessage));
   const requiredTradition = (() => {
+    if (llmTraditions) {
+      return (llmTraditions.length === 1 && entities?.comparative !== true) ? llmTraditions[0] : null;
+    }
+    // Backstop (LLM extraction failed):
     for (const { pattern, religion } of MINOR_TRAD_PATTERNS_EARLY) {
       if (pattern.test(userMessage)) return religion;
     }
-    // Only flag major traditions when the question is EXPLICITLY about them
-    // (not just mentioning them in passing in a multi-tradition question)
     if (_majorMatches.length === 1) return _majorMatches[0].religion; // single-tradition question
     return null; // multi-tradition or generic — deep research articles are fine
   })();
   // When exactly 2 traditions are named (e.g. "Bahá'í and Judaism"), restrict live search
   // to those 2 — not all 5 INTERFAITH_TRADITIONS — so the crafter doesn't cite Islam/Buddhism.
-  const _namedTraditions = _majorMatches.length === 2 ? _majorMatches.map(m => m.religion) : null;
+  const _namedTraditions = llmTraditions
+    ? (llmTraditions.length === 2 ? llmTraditions : null)
+    : (_majorMatches.length === 2 ? _majorMatches.map(m => m.religion) : null);
 
   // Deep Research pre-fetch: if we have curated passage sets for this question,
   // inject them directly — they were hand-selected for cross-tradition diversity
@@ -962,7 +1001,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // Let the targeted tradition search run instead.
       // For comparative/multi-religion questions ("compare X", "how do different religions
       // view Y"), always run the full 5-tradition search to get inline-citable URLs.
-      const isComparativeQuestion = /\b(compare|contrast|how do.{0,30}differ|across.{0,20}religion|different.{0,20}religion|multiple.{0,20}tradition|both.*faith|both.*religion|two.*tradition|other religions? (?:say|teach|believe|view|think)|what.*other.{0,20}(?:religion|tradition|faith)s?\s+(?:say|teach|believe)|what do (?:other|different) religions?)\b/i.test(userMessage);
+      // LLM comparative signal is authoritative; the regex is the failed-extraction backstop.
+      const isComparativeQuestion = (typeof entities?.comparative === 'boolean')
+        ? entities.comparative
+        : /\b(compare|contrast|how do.{0,30}differ|across.{0,20}religion|different.{0,20}religion|multiple.{0,20}tradition|both.*faith|both.*religion|two.*tradition|other religions? (?:say|teach|believe|view|think)|what.*other.{0,20}(?:religion|tradition|faith)s?\s+(?:say|teach|believe)|what do (?:other|different) religions?)\b/i.test(userMessage);
 
       // Always inject cached deep research quotes into retrieved — they are curated
       // and diversity-balanced. For simple questions, return early (skip live search).
@@ -1385,7 +1427,11 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         { pattern: /\btao(?:ism|ist)?\b|\bconfuci(?:us|anism)?\b|\banalects\b/i, religion: 'Tao' },
         { pattern: /\bjain(?:ism)?\b|\bahimsa\b|\bmahavira\b/i, religion: 'Jain' },
       ];
+      const MINOR_SET = new Set(['Hindu', 'Sikh', 'Zoroastrian', 'Tao', 'Jain']);
       const detectedMinorTradition = (() => {
+        // LLM-routed tradition first (regex is backstop-only for failed extraction).
+        if (requiredTradition && MINOR_SET.has(requiredTradition)) return requiredTradition;
+        if (Array.isArray(entities?.traditions)) return null;   // LLM answered; don't second-guess with regex
         for (const { pattern, religion } of MINOR_TRADITION_PATTERNS) {
           if (pattern.test(userMessage)) return religion;
         }
@@ -2109,8 +2155,8 @@ const crafterSystem = (persona) => (persona && persona !== 'Jafar') ? CRAFTER_SY
 
 // Streaming variant — yields each chunk as it arrives. Used in the
 // fast-path orchestrator. Returns the full text at the end.
-export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, web_context }) {
-  const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context });
+export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, web_context, comparative }) {
+  const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context, comparative });
   // gpt-4o for the crafter — the new answer-first prompt requires the
   // model to read the user's question, decide which retrieved_quote
   // actually addresses it (semantic relevance, not just topical keyword
@@ -2231,7 +2277,7 @@ function stripRestatementSentences(text) {
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
-function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context }) {
+function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context, comparative }) {
   const TIER_LABEL = {
     1: 'TIER 1 (Shoghi Effendi — supreme interpreter)',
     2: "TIER 2 ('Abdu'l-Bahá — Center of the Covenant, interpreter)",
@@ -2285,14 +2331,17 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
 
   // Build a summary of which traditions have passages in retrieved_quotes
   const presentTraditions = [...new Set(retrieved_quotes.filter(q => q.religion).map(q => q.religion))];
-  // Fire for 3+ traditions (general comparative) or 2 traditions when the question
-  // explicitly names both (e.g. "Bahá'í and Islam on fasting"). For single-tradition
-  // questions that happen to pick up a second tradition as search noise, don't force
-  // the crafter to cite both — that would violate the user's actual request.
-  const isExplicitComparative = presentTraditions.length === 2 &&
-    /\b(and|both|compare|versus|vs\.?|differ)\b/i.test(user_question) &&
-    presentTraditions.every(t => new RegExp(t.split(/\s+/)[0], 'i').test(user_question));
-  const traditionsWarning = (presentTraditions.length >= 3 || isExplicitComparative)
+  // Cite-all-traditions is REQUIRED only when the USER asked a comparative question
+  // (LLM intent signal threaded from the pipeline). It must never fire off retrieval
+  // mix alone — a single-tradition question that picked up other traditions as search
+  // noise was being FORCED into a five-religion tour by this very warning. Backstop
+  // heuristic applies only when the comparative signal is unknown (extraction failed).
+  const userAskedComparative = (typeof comparative === 'boolean')
+    ? comparative
+    : (presentTraditions.length === 2 &&
+        /\b(and|both|compare|versus|vs\.?|differ)\b/i.test(user_question) &&
+        presentTraditions.every(t => new RegExp(t.split(/\s+/)[0], 'i').test(user_question)));
+  const traditionsWarning = (userAskedComparative && presentTraditions.length >= 2)
     ? `\n⚠️ REQUIRED: This reply MUST cite passages from ALL of these traditions (each has quotes in retrieved_quotes): ${presentTraditions.join(', ')}. Silence on any listed tradition is a failure.`
     : '';
 
@@ -2628,7 +2677,8 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     _temperature_override: 0.3,
     onChunk,
     persona_name,
-    web_context: webContext
+    web_context: webContext,
+    comparative: entities?.comparative
   });
   // Web-source links are legitimate when the fallback ran — extend the allowlist.
   const linkAllowlist = webContext
