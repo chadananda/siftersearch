@@ -183,13 +183,31 @@
   function citationHref(c) {
     return c.document_id ? `https://siftersearch.com/document/${c.document_id}` : null;
   }
-  // Minimal, safe rich text: escape ALL html, then rebuild [text](https://…) links, **bold**, *italics*.
+  // Minimal, safe rich text: escape ALL html, then rebuild [text](https://…) links,
+  // **bold**, *italics*, "> " blockquotes and "- " bullets (the crafter formats for
+  // comprehension — blockquoted passages, bulleted lists, bolded key facts).
   function renderRich(t) {
     const esc = String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return esc
-      .replace(/\[([^\]]{1,120})\]\((https:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    const inline = (s) => s
+      .replace(/\[([^\]]{1,160})\]\((https:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
       .replace(/\*\*([^*\n]{1,200})\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*\n]{1,160})\*/g, '<em>$1</em>');
+    const lines = esc.split('\n');
+    const out = [];
+    let quoteRun = [];
+    const flushQuote = () => {
+      if (quoteRun.length) { out.push('<blockquote>' + quoteRun.join('<br>') + '</blockquote>'); quoteRun = []; }
+    };
+    for (const line of lines) {
+      const bq = line.match(/^\s*&gt;\s?(.*)$/);
+      if (bq) { quoteRun.push(inline(bq[1])); continue; }
+      flushQuote();
+      const li = line.match(/^\s*[-•]\s+(.*)$/);
+      if (li) { out.push('<span class="li">• ' + inline(li[1]) + '</span>'); continue; }
+      out.push(inline(line));
+    }
+    flushQuote();
+    return out.join('\n');
   }
   function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
   let openedOnce = false;
@@ -410,6 +428,15 @@
   }
   .bubble :global(a) { color: var(--accent); text-decoration-color: color-mix(in srgb, var(--gold) 60%, transparent); text-underline-offset: 2px; }
   .bubble :global(em) { color: color-mix(in srgb, currentColor 82%, var(--accent)); }
+  .bubble :global(strong) { font-weight: 650; color: color-mix(in srgb, currentColor 88%, var(--accent-deep)); }
+  /* Blockquoted passages — the gilded rule motif marks the sacred text itself. */
+  .bubble :global(blockquote) {
+    margin: .5em 0; padding: .35em 0 .35em .85em;
+    border-left: 2.5px solid var(--gold);
+    background: color-mix(in srgb, var(--gold) 5%, transparent);
+    border-radius: 0 6px 6px 0; font-style: italic;
+  }
+  .bubble :global(.li) { display: block; padding-left: .95em; text-indent: -0.95em; }
 
   /* Streaming caret — a breathing quill of accent-to-gold light. */
   .caret {
