@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T20:57:29.523Z",
+  "generated": "2026-08-09T21:13:36.558Z",
   "entries": [
+    {
+      "hash": "3f64a7d3",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Coverage-deadlock fix (terminal disposition + shared floor) + ops sentinel/daily digest",
+      "scope": null
+    },
     {
       "hash": "87c005ab",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "PickNextDoc filter length>50 — skip docs with all-short paragraphs",
       "scope": null
-    },
-    {
-      "hash": "b586758d",
-      "date": "2026-05-22",
-      "type": "Performance",
-      "description": "PickNextDoc O(1) — drop EXISTS, use LIMIT 1 on partial index",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "3f64a7d3",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Coverage-deadlock fix (terminal disposition + shared floor) + ops sentinel/daily digest",
+        "scope": null
+      },
       {
         "hash": "87c005ab",
         "date": "2026-08-09",
@@ -7079,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "PickNextDoc filter length>50 — skip docs with all-short paragraphs",
-        "scope": null
-      },
-      {
-        "hash": "b586758d",
-        "date": "2026-05-22",
-        "type": "Performance",
-        "description": "PickNextDoc O(1) — drop EXISTS, use LIMIT 1 on partial index",
         "scope": null
       }
     ]
