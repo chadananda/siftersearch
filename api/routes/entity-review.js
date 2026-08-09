@@ -1,4 +1,7 @@
-// Entity review page — LIVE-BUILDS from the DB on every request (no cache).
+// Entity review page — renders from the model PRECOMPUTED by scripts/pipeline-snapshot.js
+// (data/entity-review-model.json; live-builds only when that file is absent, i.e. dev —
+// the full build loads every entity_mention and took ~32s, blocking the whole API).
+// Review flags are overlaid live per request (small table) so toggles show on reload.
 // For manual review of the Dawn-Breakers (21308) + GPB (21310) entity graph.
 // Tabs per entity_type; within each, sections per DB chapter (heading) listing entities
 // FIRST INTRODUCED in that chapter (earliest mention, no repetition); each entity is a
@@ -7,8 +10,12 @@
 // Route: GET /api/admin/entity-review  →  served by api/server.js (prefix /api/admin)
 // Deps: db.js (query/queryAll = sifter.db; graphQueryAll = graph.db sidecar).
 
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { query, queryAll, graphQueryAll, userQueryOne } from '../lib/db.js';
 import { requireAdmin, verifyRefreshToken } from '../lib/auth.js';
+
+const ER_MODEL_PATH = join(process.cwd(), 'data', 'entity-review-model.json');
 
 const REFRESH_COOKIE = 'refresh_token';
 
@@ -81,7 +88,7 @@ const BOOK_ORDER = { 21310: 1, 21308: 2 };
 const bookOrder = (id) => (BOOK_ORDER[id] != null ? BOOK_ORDER[id] : 99);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-async function buildModel() {
+export async function buildModel() {
   // 1. all entities (sifter.db)
   const entities = await queryAll(`SELECT id, canonical_name, entity_type, religion, era, description, name_meaning, significance, research_notes, summary, importance FROM graph_entities ORDER BY canonical_name`);
   const byId = new Map(entities.map(e => [Number(e.id), { ...e, id: Number(e.id), aliases: [], relations: [], mentions: 0, firstDoc: null, firstHeading: null, firstIdx: Infinity, books: new Set() }]));
@@ -445,7 +452,23 @@ export default async function entityReviewRoutes(server) {
   try { await query(FLAG_DDL); } catch (e) { /* writer may be momentarily down; POST retries */ }
 
   server.get('/entity-review', { preHandler: adminAuth }, async (req, reply) => {
-    const ents = await buildModel();
+    let ents;
+    try {
+      // Precomputed by the snapshot cron; books round-trips JSON as an array → rehydrate the Set.
+      const cached = JSON.parse(readFileSync(ER_MODEL_PATH, 'utf8'));
+      ents = cached.entities.map((e) => ({ ...e, books: new Set(e.books) }));
+      // Flags overlay — live (small table) so a reviewer's toggle survives the model's staleness.
+      let flagRows = [];
+      try { flagRows = await queryAll(`SELECT canonical_name, entity_type, comment FROM entity_review_flags WHERE status='open'`); } catch { /* table not created yet */ }
+      const flagMap = new Map(flagRows.map((f) => [`${f.canonical_name} ${f.entity_type}`, f.comment || '']));
+      for (const e of ents) {
+        const c = flagMap.get(`${e.canonical_name} ${e.entity_type || 'unknown'}`);
+        e.flagged = c !== undefined;
+        e.flagComment = c || '';
+      }
+    } catch {
+      ents = await buildModel();   // dev, or the one cycle before the cron first writes the file
+    }
     reply.header('content-type', 'text/html; charset=utf-8').header('cache-control', 'no-store');
     const embed = req.query?.embed === '1' || req.query?.embed === 'true';
     return render(ents, { embed });

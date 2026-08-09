@@ -219,6 +219,28 @@ async function main() {
     filters: { models: aiModels.map((r) => r.model), callers: aiCallers.map((r) => r.caller) },
   };
 
+  // Entity-review model (data/entity-review-model.json, separate file — it's MBs):
+  // the full build loads every entity_mention (~32s) so it must never run in the API.
+  // 30-min refresh gate, same pattern as `library`.
+  const ER_MODEL_PATH = join(ROOT, 'data', 'entity-review-model.json');
+  const ER_TTL_MS = 30 * 60 * 1000;
+  let erGeneratedAt = null;
+  try { erGeneratedAt = JSON.parse(readFileSync(ER_MODEL_PATH, 'utf8'))?.generated_at ?? null; } catch { /* absent */ }
+  const erAge = erGeneratedAt ? Date.now() - Date.parse(erGeneratedAt) : Infinity;
+  if (erAge > ER_TTL_MS) {
+    try {
+      const { buildModel } = await import('../api/routes/entity-review.js');
+      const ents = await buildModel();
+      erGeneratedAt = new Date().toISOString();
+      writeFileSync(ER_MODEL_PATH, JSON.stringify({
+        generated_at: erGeneratedAt,
+        entities: ents.map((e) => ({ ...e, books: [...e.books] })),   // Set → array for JSON
+      }));
+    } catch (err) {
+      console.error('entity-review model build failed:', err.message);
+    }
+  }
+
   const snapshot = {
     generated_at: new Date().toISOString(),
     computed_in_ms: Date.now() - t0,
@@ -226,6 +248,7 @@ async function main() {
     library,
     bottlenecks,
     aiUsage,
+    entity_review_model_at: erGeneratedAt,
     priority_books: books,
     summary: {
       books_total: books.length,
