@@ -17,9 +17,12 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 dotenv.config({ path: '.env-public' });
 dotenv.config({ path: '.env-secrets' });
 const isDev = process.env.DEV_MODE === 'true' || process.env.NODE_ENV === 'development';
-process.env.PUBLIC_API_URL = isDev
-  ? (process.env.API_URL_DEV || 'http://localhost:3001')
-  : (process.env.API_URL || 'https://api.siftersearch.com');
+// Production is SAME-ORIGIN: the edge worker proxies /api/* to the tunnel, so the
+// browser base is '' (relative). SSR code must NOT use PUBLIC_API_URL bare — server
+// fetches fall back to the absolute tunnel origin (see middleware.js et al).
+// An explicitly pre-set PUBLIC_API_URL (e.g. dev:prod script) is respected.
+process.env.PUBLIC_API_URL = process.env.PUBLIC_API_URL
+  ?? (isDev ? (process.env.API_URL_DEV || 'http://localhost:3001') : '');
 
 export default defineConfig({
   site: 'https://siftersearch.com',

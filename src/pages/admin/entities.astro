@@ -7,7 +7,7 @@ export const prerender = false;
 
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
-const apiBase = import.meta.env.PUBLIC_API_URL || '';
+const apiBase = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com'; // SSR fetch — needs absolute origin
 const cookie = Astro.request.headers.get('cookie') || '';
 
 let fragment = '';

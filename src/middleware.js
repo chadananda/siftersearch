@@ -4,7 +4,9 @@ import { defineMiddleware } from 'astro:middleware';
 // (scoped to .siftersearch.com), which the edge validates against the API's read-only
 // /api/auth/session endpoint and requires tier === 'admin'. Unauthorized requests are redirected
 // home and the page never renders — gating lives on the server, not in the browser.
-const API_BASE = import.meta.env.PUBLIC_API_URL || '';
+// SSR runs inside the edge worker where PUBLIC_API_URL is '' (same-origin is for
+// browsers) — server-side fetches must use the absolute tunnel origin.
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;

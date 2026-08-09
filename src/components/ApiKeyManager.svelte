@@ -22,6 +22,8 @@
   let copiedKeyId = $state(null);
   let copiedExample = $state(null);
 
+  // Canonical public host for the printed developer guide — external API consumers
+  // call api.siftersearch.com directly, not through the site's worker proxy.
   const API_BASE = 'https://api.siftersearch.com/api/v1';
 
   const apiGuide = `# SifterSearch API Quick Start

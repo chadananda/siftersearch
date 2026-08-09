@@ -28,7 +28,7 @@ const viewMode = Astro.url.searchParams.get('view') || 'default';
 // For document pages, check for redirects server-side
 // This ensures proper SEO with HTTP 301 redirects
 if (segments.length === 3) {
-  const API_BASE = import.meta.env.PUBLIC_API_URL || '';
+  const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com'; // SSR fetch — needs absolute origin
   try {
     const res = await fetch(
       `${API_BASE}/api/library/by-path/${encodeURIComponent(religion)}/${encodeURIComponent(collection)}/${encodeURIComponent(slug)}?limit=1`,

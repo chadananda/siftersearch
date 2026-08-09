@@ -3,7 +3,8 @@
  * Handles all communication with the backend API
  */
 
-const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
+// '' in production = same-origin: the edge worker proxies /api/* to the backend.
+const API_URL = import.meta.env.PUBLIC_API_URL || '';
 const USER_ID_KEY = 'sifter_user_id';
 const SESSION_KEY = 'sifter_session_id'; // Keep for backwards compatibility
 
