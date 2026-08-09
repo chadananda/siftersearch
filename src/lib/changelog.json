@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T02:15:00.609Z",
+  "generated": "2026-08-09T02:19:20.649Z",
   "entries": [
+    {
+      "hash": "0edcf947",
+      "date": "2026-08-08",
+      "type": "Other",
+      "description": "Subtle Ocean mark in panel header",
+      "scope": null
+    },
     {
       "hash": "daaf16b1",
       "date": "2026-08-08",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "WAL stat resolves symlink; improve graph_pipeline warning text",
       "scope": null
-    },
-    {
-      "hash": "32114458",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "WAL checkpoint PASSIVE→TRUNCATE, interval 1h→15min",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-08": [
+      {
+        "hash": "0edcf947",
+        "date": "2026-08-08",
+        "type": "Other",
+        "description": "Subtle Ocean mark in panel header",
+        "scope": null
+      },
       {
         "hash": "daaf16b1",
         "date": "2026-08-08",
@@ -7077,13 +7084,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "WAL stat resolves symlink; improve graph_pipeline warning text",
-        "scope": null
-      },
-      {
-        "hash": "32114458",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "WAL checkpoint PASSIVE→TRUNCATE, interval 1h→15min",
         "scope": null
       }
     ]

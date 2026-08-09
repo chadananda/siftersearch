@@ -75,6 +75,15 @@ const PIPELINE_STALE_S = 600; // flag snapshots older than 10 min
 const NOT_TEST_USER = 'COALESCE(is_test, 0) = 0';
 const NOT_TEST_EVENT = '(user_id IS NULL OR user_id NOT IN (SELECT id FROM users WHERE is_test = 1))';
 
+// Heavy admin rollups (library overview/bottlenecks, ai-usage summary) are precomputed
+// out-of-process by scripts/pipeline-snapshot.js — better-sqlite3 is synchronous, so a
+// full content/ai_usage scan in-request blocks the ENTIRE API for its duration. Read the
+// snapshot here; fall back to live queries only when the section has never been computed
+// (dev, where the cron doesn't run and tables are small).
+function readAdminSnapshot() {
+  try { return JSON.parse(readFileSync(PIPELINE_SNAPSHOT_PATH, 'utf8')); } catch { return null; }
+}
+
 export default async function adminRoutes(fastify) {
   // Note: Server management routes (/server/*) use requireInternal which accepts
   // either X-Internal-Key header or admin JWT. Other routes use requireTier('admin').
@@ -3142,6 +3151,24 @@ Collection: ${paragraph.collection || 'Unknown'}
 
   // Get AI usage summary (today, week, month, by model, by caller)
   fastify.get('/ai-usage/summary', { preHandler: requireTier('admin') }, async () => {
+    // Precomputed out-of-process (every ~5 min) — the live aggregation below scans a
+    // multi-million-row ai_usage window and blocks the API for seconds while it runs.
+    const snapAi = readAdminSnapshot()?.aiUsage;
+    if (snapAi?.combined) {
+      const c = snapAi.combined;
+      return {
+        today: { calls: c.today_calls || 0, tokens: c.today_tokens || 0, cost: c.today_cost || 0 },
+        week: { calls: c.week_calls || 0, tokens: c.week_tokens || 0, cost: c.week_cost || 0 },
+        month: { calls: c.month_calls || 0, tokens: c.month_tokens || 0, cost: c.month_cost || 0 },
+        failedCalls: c.failed_week || 0,
+        byModel: snapAi.byModel || [],
+        byProvider: snapAi.byProvider || [],
+        byCaller: snapAi.byCaller || [],
+        byCallerToday: snapAi.byCallerToday || [],
+        snapshot_generated_at: snapAi.generated_at
+      };
+    }
+
     const now = Date.now();
     if (_aiUsageCache && (now - _aiUsageCacheTime) < AI_USAGE_CACHE_TTL) {
       return _aiUsageCache;
@@ -3307,6 +3334,9 @@ Collection: ${paragraph.collection || 'Unknown'}
 
   // Get distinct models and callers for filter dropdowns
   fastify.get('/ai-usage/filters', { preHandler: requireTier('admin') }, async () => {
+    const snapFilters = readAdminSnapshot()?.aiUsage?.filters;
+    if (snapFilters) return snapFilters;
+
     const [models, callers] = await Promise.all([
       queryAll('SELECT DISTINCT model FROM ai_usage ORDER BY model'),
       queryAll('SELECT DISTINCT caller FROM ai_usage WHERE caller IS NOT NULL ORDER BY caller')
@@ -3360,30 +3390,13 @@ Collection: ${paragraph.collection || 'Unknown'}
 
   // Library overview: document counts by language, pipeline stages
   fastify.get('/library/overview', { preHandler: requireTier('admin') }, async () => {
-    const [
-      byLanguage,
-      embeddingStats,
-      dirtyCount,
-      failureCount,
-      totalDocs,
-      recentDocs,
-      syncStats
-    ] = await Promise.all([
-      queryAll(`
-        SELECT
-          d.language,
-          COUNT(DISTINCT d.id) as doc_count,
-          COUNT(c.id) as paragraph_count,
-          SUM(CASE WHEN c.embedding IS NULL THEN 1 ELSE 0 END) as pending_embedding,
-          SUM(CASE WHEN c.synced = 0 AND c.embedding IS NOT NULL THEN 1 ELSE 0 END) as pending_sync,
-          SUM(CASE WHEN c.synced = 1 THEN 1 ELSE 0 END) as synced
-        FROM docs d
-        LEFT JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL
-        WHERE d.deleted_at IS NULL
-        GROUP BY d.language
-        ORDER BY paragraph_count DESC
-      `),
-      content.getEmbeddingStats(),
+    const snap = readAdminSnapshot();
+    // File exists but section not yet computed (deploy raced the cron): serve the cheap
+    // parts with empty aggregates for one cycle rather than falling into the full scan.
+    const snapLibrary = snap?.library || (snap ? { byLanguage: [], embeddingStats: {}, generated_at: null } : null);
+
+    // Cheap live queries (small tables / selective partial indexes) — always fresh.
+    const [dirtyCount, failureCount, totalDocs, recentDocs, syncStats] = await Promise.all([
       content.getDirtyCount(),
       queryOne('SELECT COUNT(*) as count FROM document_failures WHERE resolved = 0'),
       queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
@@ -3399,6 +3412,28 @@ Collection: ${paragraph.collection || 'Unknown'}
       getSyncStats().catch(() => null)
     ]);
 
+    // Full-corpus aggregates come from the snapshot; live fallback only when the
+    // section has never been computed (dev — small DB, cron absent).
+    const [byLanguage, embeddingStats] = snapLibrary
+      ? [snapLibrary.byLanguage, snapLibrary.embeddingStats]
+      : await Promise.all([
+          queryAll(`
+            SELECT
+              d.language,
+              COUNT(DISTINCT d.id) as doc_count,
+              COUNT(c.id) as paragraph_count,
+              SUM(CASE WHEN c.embedding IS NULL THEN 1 ELSE 0 END) as pending_embedding,
+              SUM(CASE WHEN c.synced = 0 AND c.embedding IS NOT NULL THEN 1 ELSE 0 END) as pending_sync,
+              SUM(CASE WHEN c.synced = 1 THEN 1 ELSE 0 END) as synced
+            FROM docs d
+            LEFT JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL
+            WHERE d.deleted_at IS NULL
+            GROUP BY d.language
+            ORDER BY paragraph_count DESC
+          `),
+          content.getEmbeddingStats()
+        ]);
+
     return {
       totalDocuments: totalDocs?.count || 0,
       unresolvedFailures: failureCount?.count || 0,
@@ -3406,55 +3441,69 @@ Collection: ${paragraph.collection || 'Unknown'}
       dirty: dirtyCount || { documents: 0, paragraphs: 0 },
       sync: syncStats || null,
       byLanguage: byLanguage || [],
-      recentDocuments: recentDocs || []
+      recentDocuments: recentDocs || [],
+      snapshot_generated_at: snapLibrary?.generated_at || null
     };
   });
 
   // Pipeline bottleneck detail — documents stuck at each stage
   fastify.get('/library/bottlenecks', { preHandler: requireTier('admin') }, async (request) => {
     const language = request.query.language || null;
+    const snap = readAdminSnapshot();
+    const snapBottlenecks = snap?.bottlenecks || (snap ? { pendingEmbedding: [], pendingSync: [], generated_at: null } : null);
 
-    let langFilter = '';
-    const params = [];
-    if (language) {
-      langFilter = ' AND d.language = ?';
-      params.push(language);
+    // Failures live in a small table — always live.
+    const failures = await queryAll(`
+      SELECT file_path, file_name, error_type, error_message, created_at
+      FROM document_failures
+      WHERE resolved = 0
+      ORDER BY created_at DESC
+      LIMIT 50
+    `);
+
+    // Backlog lists from the snapshot (language filter applied in JS); live
+    // fallback only when the section has never been computed (dev).
+    let pendingEmbedding, pendingSync;
+    if (snapBottlenecks) {
+      const byLang = (rows) => language ? (rows || []).filter((r) => r.language === language) : (rows || []);
+      pendingEmbedding = byLang(snapBottlenecks.pendingEmbedding);
+      pendingSync = byLang(snapBottlenecks.pendingSync);
+    } else {
+      let langFilter = '';
+      const params = [];
+      if (language) {
+        langFilter = ' AND d.language = ?';
+        params.push(language);
+      }
+      [pendingEmbedding, pendingSync] = await Promise.all([
+        queryAll(`
+          SELECT d.id, d.title, d.author, d.language, d.file_path,
+            COUNT(c.id) as pending_paragraphs
+          FROM docs d
+          JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL AND c.embedding IS NULL
+          WHERE d.deleted_at IS NULL ${langFilter}
+          GROUP BY d.id
+          ORDER BY pending_paragraphs DESC
+          LIMIT 50
+        `, params),
+        queryAll(`
+          SELECT d.id, d.title, d.author, d.language,
+            COUNT(c.id) as unsynced_paragraphs
+          FROM docs d
+          JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL AND c.synced = 0 AND c.embedding IS NOT NULL
+          WHERE d.deleted_at IS NULL ${langFilter}
+          GROUP BY d.id
+          ORDER BY unsynced_paragraphs DESC
+          LIMIT 50
+        `, params)
+      ]);
     }
-
-    const [pendingEmbedding, pendingSync, failures] = await Promise.all([
-      queryAll(`
-        SELECT d.id, d.title, d.author, d.language, d.file_path,
-          COUNT(c.id) as pending_paragraphs
-        FROM docs d
-        JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL AND c.embedding IS NULL
-        WHERE d.deleted_at IS NULL ${langFilter}
-        GROUP BY d.id
-        ORDER BY pending_paragraphs DESC
-        LIMIT 50
-      `, params),
-      queryAll(`
-        SELECT d.id, d.title, d.author, d.language,
-          COUNT(c.id) as unsynced_paragraphs
-        FROM docs d
-        JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL AND c.synced = 0 AND c.embedding IS NOT NULL
-        WHERE d.deleted_at IS NULL ${langFilter}
-        GROUP BY d.id
-        ORDER BY unsynced_paragraphs DESC
-        LIMIT 50
-      `, params),
-      queryAll(`
-        SELECT file_path, file_name, error_type, error_message, created_at
-        FROM document_failures
-        WHERE resolved = 0
-        ORDER BY created_at DESC
-        LIMIT 50
-      `)
-    ]);
 
     return {
       pendingEmbedding: pendingEmbedding || [],
       pendingSync: pendingSync || [],
-      failures: failures || []
+      failures: failures || [],
+      snapshot_generated_at: snapBottlenecks?.generated_at || null
     };
   });
 

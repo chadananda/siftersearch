@@ -111,8 +111,9 @@ async function main() {
   // masse → raise an alert the monitor surfaces. deleted_at IS NULL uses the
   // partial index, so this is cheap. See project_canonical_gutted_by_dedupe_20260609.
   const liveParas = (await queryOne(`SELECT COUNT(*) AS n FROM content WHERE deleted_at IS NULL`).catch(() => ({ n: null })))?.n ?? null;
-  let prev = {};
-  try { prev = JSON.parse(readFileSync(join(ROOT, 'data', 'pipeline-status.json'), 'utf8'))?.integrity ?? {}; } catch { /* first run */ }
+  let prevSnapshot = {};
+  try { prevSnapshot = JSON.parse(readFileSync(join(ROOT, 'data', 'pipeline-status.json'), 'utf8')) ?? {}; } catch { /* first run */ }
+  const prev = prevSnapshot.integrity ?? {};
   // High-water baseline carries forward; only ratchets UP on healthy growth.
   const baseline = Math.max(prev.baseline_live_paras ?? 0, liveParas ?? 0);
   // Alert if live content fell >2% (or >5000 paras) below the baseline high.
@@ -127,10 +128,104 @@ async function main() {
       : null,
   };
 
+  // ── Admin-page rollups ─────────────────────────────────────────────────────
+  // /api/admin/library/{overview,bottlenecks} and /api/admin/ai-usage/{summary,filters}
+  // read these from the snapshot instead of scanning content/ai_usage in the API
+  // process — one admin page-load used to block the whole API for 60s+.
+
+  // Full-corpus aggregates (two complete passes over ~4.6M content rows): only
+  // recompute when the carried-forward copy is older than 30 min.
+  const LIBRARY_TTL_MS = 30 * 60 * 1000;
+  let library = prevSnapshot.library ?? null;
+  const libAge = library?.generated_at ? Date.now() - Date.parse(library.generated_at) : Infinity;
+  if (libAge > LIBRARY_TTL_MS) {
+    const [byLanguage, embeddingStats] = await Promise.all([
+      queryAll(`
+        SELECT d.language,
+          COUNT(DISTINCT d.id) as doc_count,
+          COUNT(c.id) as paragraph_count,
+          SUM(CASE WHEN c.embedding IS NULL THEN 1 ELSE 0 END) as pending_embedding,
+          SUM(CASE WHEN c.synced = 0 AND c.embedding IS NOT NULL THEN 1 ELSE 0 END) as pending_sync,
+          SUM(CASE WHEN c.synced = 1 THEN 1 ELSE 0 END) as synced
+        FROM docs d
+        LEFT JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL
+        WHERE d.deleted_at IS NULL
+        GROUP BY d.language
+        ORDER BY paragraph_count DESC`).catch(() => []),
+      queryOne(`
+        SELECT COUNT(*) as total,
+          SUM(CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END) as with_embedding,
+          SUM(CASE WHEN embedding IS NULL THEN 1 ELSE 0 END) as missing_embeddings,
+          SUM(CASE WHEN synced = 0 THEN 1 ELSE 0 END) as dirty
+        FROM content
+        WHERE deleted_at IS NULL`).catch(() => null),
+    ]);
+    library = { generated_at: new Date().toISOString(), byLanguage, embeddingStats };
+  }
+
+  // Bottleneck lists ride the selective partial indexes (cheap in the steady
+  // state where backlogs ≈ 0); recomputed every run for freshness.
+  const [pendingEmbedding, pendingSync] = await Promise.all([
+    queryAll(`
+      SELECT d.id, d.title, d.author, d.language, d.file_path, COUNT(c.id) as pending_paragraphs
+      FROM docs d
+      JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL AND c.embedding IS NULL
+      WHERE d.deleted_at IS NULL
+      GROUP BY d.id ORDER BY pending_paragraphs DESC LIMIT 50`).catch(() => []),
+    queryAll(`
+      SELECT d.id, d.title, d.author, d.language, COUNT(c.id) as unsynced_paragraphs
+      FROM docs d
+      JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL AND c.synced = 0 AND c.embedding IS NOT NULL
+      WHERE d.deleted_at IS NULL
+      GROUP BY d.id ORDER BY unsynced_paragraphs DESC LIMIT 50`).catch(() => []),
+  ]);
+  const bottlenecks = { generated_at: new Date().toISOString(), pendingEmbedding, pendingSync };
+
+  // ai_usage rollups (timestamp/caller/model indexed; a few seconds on the big table).
+  const fmtTs = (d) => d.toISOString().replace('T', ' ').slice(0, 19);
+  const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+  const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 7);
+  const monthStart = new Date(); monthStart.setDate(monthStart.getDate() - 30);
+  const [aiCombined, aiByModel, aiByProvider, aiByCaller, aiByCallerToday, aiModels, aiCallers] = await Promise.all([
+    queryOne(`
+      SELECT
+        SUM(CASE WHEN timestamp >= ? THEN 1 ELSE 0 END) as today_calls,
+        COALESCE(SUM(CASE WHEN timestamp >= ? THEN total_tokens ELSE 0 END), 0) as today_tokens,
+        COALESCE(SUM(CASE WHEN timestamp >= ? THEN estimated_cost_usd ELSE 0 END), 0) as today_cost,
+        SUM(CASE WHEN timestamp >= ? THEN 1 ELSE 0 END) as week_calls,
+        COALESCE(SUM(CASE WHEN timestamp >= ? THEN total_tokens ELSE 0 END), 0) as week_tokens,
+        COALESCE(SUM(CASE WHEN timestamp >= ? THEN estimated_cost_usd ELSE 0 END), 0) as week_cost,
+        COUNT(*) as month_calls,
+        COALESCE(SUM(total_tokens), 0) as month_tokens,
+        COALESCE(SUM(estimated_cost_usd), 0) as month_cost,
+        SUM(CASE WHEN success = 0 AND timestamp >= ? THEN 1 ELSE 0 END) as failed_week
+      FROM ai_usage WHERE timestamp >= ?`,
+      [fmtTs(dayStart), fmtTs(dayStart), fmtTs(dayStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(monthStart)]).catch(() => null),
+    queryAll(`SELECT model, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
+      FROM ai_usage WHERE timestamp >= ? GROUP BY model ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(() => []),
+    queryAll(`SELECT provider, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
+      FROM ai_usage WHERE timestamp >= ? GROUP BY provider ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(() => []),
+    queryAll(`SELECT COALESCE(caller,'unknown') as caller, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
+      FROM ai_usage WHERE timestamp >= ? GROUP BY caller ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(() => []),
+    queryAll(`SELECT COALESCE(caller,'unknown') as caller, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
+      FROM ai_usage WHERE timestamp >= ? GROUP BY caller ORDER BY cost DESC`, [fmtTs(dayStart)]).catch(() => []),
+    queryAll(`SELECT DISTINCT model FROM ai_usage ORDER BY model`).catch(() => []),
+    queryAll(`SELECT DISTINCT caller FROM ai_usage WHERE caller IS NOT NULL ORDER BY caller`).catch(() => []),
+  ]);
+  const aiUsage = {
+    generated_at: new Date().toISOString(),
+    combined: aiCombined,
+    byModel: aiByModel, byProvider: aiByProvider, byCaller: aiByCaller, byCallerToday: aiByCallerToday,
+    filters: { models: aiModels.map((r) => r.model), callers: aiCallers.map((r) => r.caller) },
+  };
+
   const snapshot = {
     generated_at: new Date().toISOString(),
     computed_in_ms: Date.now() - t0,
     integrity,
+    library,
+    bottlenecks,
+    aiUsage,
     priority_books: books,
     summary: {
       books_total: books.length,
