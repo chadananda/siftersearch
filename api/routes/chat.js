@@ -1297,9 +1297,11 @@ export default async function chatRoutes(fastify) {
     if (text.split(/\s+/).length < 3 || text.length < 12) return { status: 'noop' };
 
     let persona = 'Jafar';
+    let prepDefaultTradition = null;
     if (widget_token) {
-      const prof = await queryOne('SELECT name FROM widget_profiles WHERE token = ?', [widget_token]).catch(() => null);
+      const prof = await queryOne('SELECT name, config_json FROM widget_profiles WHERE token = ?', [widget_token]).catch(() => null);
       persona = prof?.name?.trim().slice(0, 60) || 'Jafar';
+      try { prepDefaultTradition = JSON.parse(prof?.config_json || '{}').default_tradition || null; } catch { /* ignore */ }
     }
     const key = prewarmKey(persona, text);
     if (_prewarm.has(key)) return { status: 'warming' };
@@ -1328,6 +1330,7 @@ export default async function chatRoutes(fastify) {
       messages: [{ role: 'user', content: text }],
       sendEvent: null, debug: false, chatbot_location: undefined,
       persona_name: persona === 'Jafar' ? null : persona,
+      default_tradition: prepDefaultTradition,
       _silent: true   // partials are PREP requests, not searches — zero analytics until submit
     }).catch((err) => { logger.warn({ err: err.message }, 'prewarm speculative run failed'); return null; });
     _prewarm.set(key, { promise, startedAt: Date.now() });
@@ -1368,9 +1371,15 @@ export default async function chatRoutes(fastify) {
   }, async (request, reply) => {
     const { messages, researchContext, chatbot_location, widget_token } = request.body;
     let persona_name = null;
+    let default_tradition = null;
     if (widget_token) {
-      const prof = await queryOne('SELECT name FROM widget_profiles WHERE token = ?', [widget_token]).catch(() => null);
+      const prof = await queryOne('SELECT name, config_json FROM widget_profiles WHERE token = ?', [widget_token]).catch(() => null);
       persona_name = prof?.name?.trim().slice(0, 60) || null;
+      // Per-site answer steering: a host site can declare its home tradition
+      // (config_json.default_tradition, e.g. "Baha'i" for longbeachbahai.org) —
+      // questions default to that tradition's domain unless the USER indicates
+      // another tradition. Server-side from the token: never client-supplied.
+      try { default_tradition = JSON.parse(prof?.config_json || '{}').default_tradition || null; } catch { /* ignore */ }
     }
     const userId = request.user?.sub?.toString() || getAnonymousUserId(request);
 
@@ -1413,7 +1422,8 @@ export default async function chatRoutes(fastify) {
           sendEvent,
           debug,
           chatbot_location,
-          persona_name
+          persona_name,
+          default_tradition
         });
       }
 

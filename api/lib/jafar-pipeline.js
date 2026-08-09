@@ -546,7 +546,7 @@ function inferWorkFromHistory(messages, currentEntitiesWorkName) {
   return null;
 }
 
-export async function deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds = [], silent = false }) {
+export async function deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds = [], silent = false, default_tradition = null }) {
   const retrieved = [];
   const debugCalls = [];
   // Subagent syntheses — when a document subagent runs, its `answer` field
@@ -1062,7 +1062,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   const _majorMatches = MAJOR_TRAD_PATTERNS_EARLY.filter(({ pattern }) => pattern.test(userMessage));
   const requiredTradition = (() => {
     if (llmTraditions) {
-      return (llmTraditions.length === 1 && entities?.comparative !== true) ? llmTraditions[0] : null;
+      if (llmTraditions.length === 1 && entities?.comparative !== true) return llmTraditions[0];
+      // Site steering: no tradition indicated by the USER → the host site's home
+      // tradition applies (e.g. longbeachbahai.org → Baha'i). The user naming any
+      // tradition, or asking comparatively, always overrides the site default.
+      if (llmTraditions.length === 0 && entities?.comparative !== true && default_tradition) return default_tradition;
+      return null;
     }
     // Backstop (LLM extraction failed):
     for (const { pattern, religion } of MINOR_TRAD_PATTERNS_EARLY) {
@@ -2706,7 +2711,7 @@ function isSocialQuery(msg) {
   return SOCIAL_RE.test((msg || '').trim());
 }
 
-export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location, persona_name, _skipCache = false, _silent = false }) {
+export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location, persona_name, default_tradition = null, _skipCache = false, _silent = false }) {
   // _silent: a speculative query-prep run. Partials are PREP requests, not searches
   // (Chad): no analytics of any kind until the user commits with a submit. The run
   // may still fill the answer cache (that's its purpose) — but writes no demand
@@ -2862,7 +2867,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   ] : [];
   let research;
   try {
-    research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds, silent: _silent });
+    research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config, entityIds, silent: _silent, default_tradition });
   } finally {
     deepTimers.forEach(clearTimeout);
   }
