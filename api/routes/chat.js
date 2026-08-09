@@ -1253,12 +1253,20 @@ export default async function chatRoutes(fastify) {
           // set, search is restricted to that site's scope (site-only sites
           // see only their own content; supplemental sites see the default
           // scope). Default Jafar leaves this null.
-          chatbot_location: { type: 'string', maxLength: 128 }
+          chatbot_location: { type: 'string', maxLength: 128 },
+          // Widget embed token — resolves the profile's display name so the
+          // assistant introduces itself as that persona (e.g. "Anis").
+          widget_token: { type: 'string', maxLength: 64 }
         }
       }
     }
   }, async (request, reply) => {
-    const { messages, researchContext, chatbot_location } = request.body;
+    const { messages, researchContext, chatbot_location, widget_token } = request.body;
+    let persona_name = null;
+    if (widget_token) {
+      const prof = await queryOne('SELECT name FROM widget_profiles WHERE token = ?', [widget_token]).catch(() => null);
+      persona_name = prof?.name?.trim().slice(0, 60) || null;
+    }
     const userId = request.user?.sub?.toString() || getAnonymousUserId(request);
 
     // Set headers directly on raw response — reply.header() doesn't survive flushHeaders()
@@ -1285,7 +1293,8 @@ export default async function chatRoutes(fastify) {
         messages: messages.map(m => ({ role: m.role, content: m.content })),
         sendEvent,
         debug,
-        chatbot_location
+        chatbot_location,
+        persona_name
       });
 
       // Word-by-word emit so the existing dialogue UI's typing animation

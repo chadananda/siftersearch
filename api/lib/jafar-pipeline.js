@@ -2050,9 +2050,13 @@ GOOD: "That's not really my lane — I leave electoral questions to those better
 
 OUTPUT: just the reply text. No JSON wrapping, no preamble, no meta-commentary.`;
 
+// Widget profiles can rename the assistant (e.g. "Anis" for Long Beach). The persona is
+// identical — only the name changes, so a rename-in-place of the system prompt is exact.
+const crafterSystem = (persona) => (persona && persona !== 'Jafar') ? CRAFTER_SYSTEM.replaceAll('Jafar', persona) : CRAFTER_SYSTEM;
+
 // Streaming variant — yields each chunk as it arrives. Used in the
 // fast-path orchestrator. Returns the full text at the end.
-export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override }) {
+export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name }) {
   const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent });
   // gpt-4o for the crafter — the new answer-first prompt requires the
   // model to read the user's question, decide which retrieved_quote
@@ -2064,7 +2068,7 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, subag
   const stream = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [
-      { role: 'system', content: CRAFTER_SYSTEM },
+      { role: 'system', content: crafterSystem(persona_name) },
       { role: 'user', content: userPayload }
     ],
     temperature: typeof _temperature_override === 'number' ? _temperature_override : 0.2,
@@ -2446,7 +2450,7 @@ function isSocialQuery(msg) {
   return SOCIAL_RE.test((msg || '').trim());
 }
 
-export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location }) {
+export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location, persona_name }) {
   const userMessage = messages[messages.length - 1].content;
 
   // Resolve scope_config once at pipeline entry. Site-only chatbot locations
@@ -2467,7 +2471,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     if (/thank/i.test(trimmed)) {
       reply = "You're welcome! Feel free to ask anytime — I'm here to help you explore the world's religious texts.";
     } else if (/^[\s?!.,;:…\u2026]*$/.test(trimmed) || trimmed.length === 0) {
-      reply = "Hi! I'm Jafar — here to help you explore teachings and scriptures from the world's great religious traditions. What would you like to know?";
+      reply = `Hi! I'm ${persona_name || 'Jafar'} — here to help you explore teachings and scriptures from the world's great religious traditions. What would you like to know?`;
     } else {
       reply = "Hello! I'm here whenever you have a question about spiritual teachings, scriptures, or the texts in our library.";
     }
@@ -2549,7 +2553,8 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     conversation_summary: conversationSummary,
     user_intent: userIntent,
     _temperature_override: 0.3,
-    onChunk
+    onChunk,
+    persona_name
   });
   const draft = stripUngroundedLinks(rawDraft, research.retrieved_quotes);
   const gate = { pass: true, picker: 'streamed-no-pick' };

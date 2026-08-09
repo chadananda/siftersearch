@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-09T01:50:53.189Z",
+  "generated": "2026-08-09T02:12:10.305Z",
   "entries": [
+    {
+      "hash": "0108daf0",
+      "date": "2026-08-08",
+      "type": "Other",
+      "description": "Native /admin/widgets page + test users excluded from all views/analytics",
+      "scope": null
+    },
     {
       "hash": "b50cde5d",
       "date": "2026-08-08",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "WAL size health check + pipeline endpoint wal field",
       "scope": null
-    },
-    {
-      "hash": "5bdefb55",
-      "date": "2026-05-22",
-      "type": "New",
-      "description": "Health check for stale meili_sync_tasks + pipeline endpoint sync_tasks field",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-08": [
+      {
+        "hash": "0108daf0",
+        "date": "2026-08-08",
+        "type": "Other",
+        "description": "Native /admin/widgets page + test users excluded from all views/analytics",
+        "scope": null
+      },
       {
         "hash": "b50cde5d",
         "date": "2026-08-08",
@@ -7077,13 +7084,6 @@
         "date": "2026-05-22",
         "type": "New",
         "description": "WAL size health check + pipeline endpoint wal field",
-        "scope": null
-      },
-      {
-        "hash": "5bdefb55",
-        "date": "2026-05-22",
-        "type": "New",
-        "description": "Health check for stale meili_sync_tasks + pipeline endpoint sync_tasks field",
         "scope": null
       }
     ]
