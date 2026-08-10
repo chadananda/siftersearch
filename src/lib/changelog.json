@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T00:45:56.282Z",
+  "generated": "2026-08-10T01:00:26.071Z",
   "entries": [
+    {
+      "hash": "d0a273de",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Recent-docs smoke test passes on valid empty list (30-day window bricked deploys)",
+      "scope": null
+    },
     {
       "hash": "298b2a98",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Improve meili_sync_tasks health message — accurate HNSW rebuild context",
       "scope": null
-    },
-    {
-      "hash": "372b253a",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "Add WAL checkpoint to unified-worker — prevents 2.7GB WAL accumulation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "d0a273de",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Recent-docs smoke test passes on valid empty list (30-day window bricked deploys)",
+        "scope": null
+      },
       {
         "hash": "298b2a98",
         "date": "2026-08-09",
@@ -7079,13 +7086,6 @@
         "date": "2026-05-22",
         "type": "Fixed",
         "description": "Improve meili_sync_tasks health message — accurate HNSW rebuild context",
-        "scope": null
-      },
-      {
-        "hash": "372b253a",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "Add WAL checkpoint to unified-worker — prevents 2.7GB WAL accumulation",
         "scope": null
       }
     ]

@@ -139,14 +139,13 @@ export async function createServer(opts = {}) {
     done();
   });
 
-  // Disable caching during alpha - ensures fresh data on every request
-  // Exceptions: routes that set their own Cache-Control for performance.
+  // Cache policy: no-store is the DEFAULT, not a mandate. Any route that sets its own
+  // Cache-Control (library tree/stats, doc pages, widget config, conversations …) keeps it —
+  // that's what lets Cloudflare edge-cache the hot public reads instead of paying the tunnel
+  // round-trip on every page load. (The old alpha-era hook overwrote even deliberate headers.)
   server.addHook('onSend', async (request, reply) => {
+    if (reply.getHeader('cache-control')) return;   // route made an explicit choice — respect it
     if (request.url.startsWith('/api/search/quick')) return;
-    // Saved-conversation fetch endpoint must keep its public-cache headers
-    // so remote sites can cache the share-URL response. Skip the global
-    // no-store override for GET /api/v1/conversations/...
-    if (request.method === 'GET' && /^\/api\/v1\/conversations\/[^/?]+/.test(request.url)) return;
     reply.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     reply.header('Pragma', 'no-cache');
     reply.header('Expires', '0');

@@ -41,6 +41,9 @@ const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 // In-memory cache for library stats
 // Counter table makes main counts instant; pipeline status queries still need caching
 const statsCache = { data: null, timestamp: 0, ttl: 10000 }; // 10s cache — short enough for responsive progress bars
+// Tree changes only on ingest — cache in-process AND at the edge (headers set in the route), so the
+// library page never waits on the tunnel, or on an API event-loop burst, in the steady state.
+const treeCache = { data: null, timestamp: 0, ttl: 60000 };
 // Pipeline status cache — refreshed by background timer every 60s.
 const pipelineCache = { data: null, timestamp: 0, ttl: 30000 }; // 30s — state file updates every 60s
 
@@ -166,7 +169,9 @@ export default async function libraryRoutes(fastify) {
    * Returns religions with nested collections and document counts
    * Uses libsql docs table as source of truth
    */
-  fastify.get('/tree', async () => {
+  fastify.get('/tree', async (request, reply) => {
+    reply.header('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400');
+    if (treeCache.data && Date.now() - treeCache.timestamp < treeCache.ttl) return treeCache.data;
     // Get authority data from library_nodes
     const authorityMap = {};
     try {
@@ -225,7 +230,9 @@ export default async function libraryRoutes(fastify) {
     const religions = Array.from(religionMap.values())
       .sort((a, b) => a.name.localeCompare(b.name));
 
-    return { religions };
+    treeCache.data = { religions };
+    treeCache.timestamp = Date.now();
+    return treeCache.data;
   });
 
   /**
