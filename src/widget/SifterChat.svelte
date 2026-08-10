@@ -315,6 +315,22 @@
             <span class="subtitle">Ocean guide</span>
           </span>
           <span class="hbtns">
+            <button class="icon profile" aria-label={connectedEmail ? `Account: ${connectedEmail}` : 'Connect for email summaries'} aria-expanded={profileOpen} onclick={profileClick} title={connectedEmail ? connectedEmail : 'Connect'}>
+              {#if connectedEmail && connectedPic}
+                <img class="pavatar" src={connectedPic} alt="" referrerpolicy="no-referrer" />
+              {:else}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+              {/if}
+            </button>
+            {#if profileOpen && connectedEmail}
+              <div class="pmenu" role="menu">
+                <div class="pmail">{connectedEmail}</div>
+                <div class="pnote">Receiving research summaries</div>
+                <button class="pdisc" role="menuitem" onclick={disconnectOnetap}>Disconnect</button>
+              </div>
+            {/if}
             <button class="icon" aria-label={muted ? 'Unmute sounds' : 'Mute sounds'} aria-pressed={muted} onclick={toggleMute} title={muted ? 'Unmute' : 'Mute'}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 9.5v5h3.5L13 19V5L7.5 9.5H4z" fill="currentColor" stroke="none"/>
@@ -441,6 +457,24 @@
   .olater:hover { opacity: .9; }
   .oframe { width: 100%; height: 120px; border: 0; display: block; background: transparent; }
   @keyframes fadeup { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* Header profile: avatar when connected, person icon otherwise; small popover for disconnect */
+  .icon.profile { position: relative; overflow: hidden; }
+  .pavatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+  .pmenu {
+    position: absolute; top: 52px; right: 46px; z-index: 5;
+    background: var(--accent-deep); border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+    border-radius: 10px; padding: 10px 14px; min-width: 200px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+    animation: fadeup .25s ease both;
+  }
+  .pmail { font-size: 13px; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; }
+  .pnote { font-size: 11.5px; opacity: .65; color: #fff; margin: 2px 0 8px; }
+  .pdisc {
+    border: 1px solid color-mix(in srgb, #fff 25%, transparent); background: none; color: #fff;
+    border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer; opacity: .85;
+  }
+  .pdisc:hover { opacity: 1; }
 
   /* ── Launch bubble: Ocean mark, gentle breathing. Hidden while the panel is open. ── */
   .bubble-btn {
