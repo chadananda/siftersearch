@@ -2498,10 +2498,14 @@ SPEAKER vs BOOK: a Q-entry's cited author is the BOOK's author — biographies a
   // information and never dresses it up as library citations.
   const webBlock = web_context?.text ? `
 
-WEB SEARCH CONTEXT (library retrieval was EMPTY; the following comes from a live web search, NOT from the library):
+WEB SEARCH CONTEXT (the library did not contain the answer; the following comes from a live web search, NOT from the library):
 ${web_context.text}
 Web sources you may link: ${(web_context.citations || []).map((c) => `[${c.title}](${c.url})`).join(' · ') || '(none)'}
-RULES FOR THIS BLOCK: open by saying the library did not contain material on this (for quote lookups: that the exact wording is not in the library). THEN answer from the web context, attributed plainly ("according to a web search…"). Link only the web sources listed above. Do NOT invent library citations. Stay brief.` : '';
+RULES FOR THIS BLOCK:
+- Open by saying the library did not contain material on this (for quote lookups: that the exact wording is not in the library).
+- NAME THE PUBLISHED SOURCE. If the web identifies a specific published book/author/compilation that records the passage (e.g. "Vignettes from the Life of 'Abdu'l-Bahá by Annamarie Honnold"), lead with that TITLED work. ALWAYS PREFER A PUBLISHED BOOK over a blog, forum, or personal website — cite the book by title+author even when the linkable URL is a secondary page; mention a blog/site only if no published work is identified.
+- MARK IT UNVERIFIED. Web attributions are not confirmed against our library — phrase them as "according to a web search, this appears in…" or "is generally attributed to…", never as an established citation. If the web names a further ORIGINAL source (a compilation citing an earlier book), report it as a lead to verify, not as fact.
+- Link only the web sources listed above. Do NOT invent library citations. Stay brief.` : '';
 
   return `user_intent: ${user_intent}
 
@@ -2892,7 +2896,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   const quoteMiss = research.quote_lookup && research.quote_lookup.confidence !== 'high';
   if (!research.is_political && (research.retrieved_quotes.length === 0 || quoteMiss)) {
     const webQuestion = research.quote_lookup
-      ? `Identify the source — the exact work, author, and where it appears — of this quotation or remembered passage, most likely from Bahá'í or other sacred literature: ${research.quote_lookup.span ? `"${research.quote_lookup.span}"` : userMessage}`
+      ? `Identify the specific PUBLISHED SOURCE — the exact book title and author — that records this quotation or anecdote, most likely from Bahá'í or other sacred literature. Prefer a published book or authoritative compilation over blogs, forums, or personal websites. If a compilation records it, also name the earlier book it cites. Quotation/passage: ${research.quote_lookup.span ? `"${research.quote_lookup.span}"` : userMessage}`
       : userMessage;
     webContext = await perplexityFallback(webQuestion);
     if (webContext && sendEvent) sendEvent({ type: 'debug_web_fallback', sources: webContext.citations.length });
