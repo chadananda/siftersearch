@@ -59,8 +59,20 @@ function summarizeToolResult(r) {
   return out;
 }
 
-/** Build canonical siftersearch.com URL for a document */
+// The OceanLibrary canonical link, when this doc has one. RULE (absolute): a search result must
+// ALWAYS surface the OceanLibrary.com book link when one exists — NEVER a siftersearch.com link.
+// search.js already sets hit.source_url to the OL URL (+ ?paraId= when the paragraph is known);
+// it only fabricates a siftersearch.com/document/ URL when NO real source_url exists, so we test
+// the host to use real OL links and ignore the fabricated ones.
+const olSourceUrl = (doc) => {
+  const u = doc.source_url || doc.documentSourceUrl || '';
+  try { return /(^|\.)oceanlibrary\.com$/i.test(new URL(u).hostname) ? u : null; } catch { return null; }
+};
+
+/** Canonical document URL — OceanLibrary book link when available, else the siftersearch.com page. */
 function getDocumentUrl(doc) {
+  const ol = olSourceUrl(doc);
+  if (ol) return ol.split('?')[0];   // doc-level OL link (drop any ?paraId anchor)
   const docSlug = doc.slug || generateDocSlug(doc);
   if (!docSlug || !doc.religion || !doc.collection) {
     // Use document ID (doc_id/document_id), NOT paragraph ID (id)
@@ -70,8 +82,10 @@ function getDocumentUrl(doc) {
   return `${SITE_URL}/library/${slugifyPath(doc.religion)}/${slugifyPath(doc.collection)}/${docSlug}`;
 }
 
-/** Build canonical URL for a paragraph within a document */
+/** Canonical paragraph URL — OceanLibrary paragraph deep-link (?paraId=) when available. */
 function getParagraphUrl(doc, paragraphIndex) {
+  const ol = olSourceUrl(doc);
+  if (ol) return ol;   // search.js already appended ?paraId=external_para_id when known
   return `${getDocumentUrl(doc)}#p${paragraphIndex}`;
 }
 
@@ -608,8 +622,8 @@ export default async function publicApiRoutes(fastify) {
 
     const paragraph = await queryOne(`
       SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype,
-             c.translation, c.context,
-             d.title, d.author, d.religion, d.collection, d.language, d.year
+             c.translation, c.context, c.external_para_id,
+             d.title, d.author, d.religion, d.collection, d.language, d.year, d.source_url
       FROM content c
       JOIN docs d ON c.doc_id = d.id
       WHERE c.id = ? AND c.deleted_at IS NULL AND d.deleted_at IS NULL
@@ -622,7 +636,10 @@ export default async function publicApiRoutes(fastify) {
     const docInfo = {
       title: paragraph.title, author: paragraph.author,
       religion: paragraph.religion, collection: paragraph.collection,
-      language: paragraph.language, year: paragraph.year
+      language: paragraph.language, year: paragraph.year,
+      // OceanLibrary paragraph deep-link: source_url + ?paraId (so getParagraphUrl yields the OL link, not a siftersearch one)
+      source_url: paragraph.source_url && paragraph.external_para_id && !String(paragraph.source_url).includes('paraId=')
+        ? `${paragraph.source_url}?paraId=${paragraph.external_para_id}` : paragraph.source_url
     };
     return {
       id: paragraph.id,
