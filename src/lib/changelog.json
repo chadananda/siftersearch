@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T16:19:25.714Z",
+  "generated": "2026-08-10T16:27:48.724Z",
   "entries": [
+    {
+      "hash": "1c25feb9",
+      "date": "2026-08-10",
+      "type": "Other",
+      "description": "Bump SEARCH_VERSION → 2026-08-10.1 (invalidate stale quote-hunt answers after routing/fallback fixes)",
+      "scope": null
+    },
     {
       "hash": "7e8e2bfa",
       "date": "2026-08-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Calibrate-deepseek cap concurrency at 10 to prevent SQLITE_BUSY; add dedup-library script",
       "scope": null
-    },
-    {
-      "hash": "6b9539aa",
-      "date": "2026-05-26",
-      "type": "Fixed",
-      "description": "Calibrate-deepseek — handle NBSP in GPB title via GLOB + skip HTML paragraphs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-10": [
+      {
+        "hash": "1c25feb9",
+        "date": "2026-08-10",
+        "type": "Other",
+        "description": "Bump SEARCH_VERSION → 2026-08-10.1 (invalidate stale quote-hunt answers after routing/fallback fixes)",
+        "scope": null
+      },
       {
         "hash": "7e8e2bfa",
         "date": "2026-08-10",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-26",
         "type": "Fixed",
         "description": "Calibrate-deepseek cap concurrency at 10 to prevent SQLITE_BUSY; add dedup-library script",
-        "scope": null
-      },
-      {
-        "hash": "6b9539aa",
-        "date": "2026-05-26",
-        "type": "Fixed",
-        "description": "Calibrate-deepseek — handle NBSP in GPB title via GLOB + skip HTML paragraphs",
         "scope": null
       }
     ]

@@ -106,5 +106,24 @@ export function scoreCandidate(memory, candidateText) {
     if (candSeq.includes(memSeq[i] + ' ' + memSeq[i + 1])) pairHits++;
   }
   const runBonus = pairs ? (pairHits / pairs) * 0.25 : 0;
-  return Math.min(1, coverage * 0.85 + runBonus);
+  // PHRASE-SURVIVAL CAP: a needle that collapses to a couple of common tokens
+  // ("little", "day" from "Little by little, day by day") otherwise scores a perfect
+  // 1.0 against ANY passage mentioning those words scattered about — a false HIGH that
+  // presents a wrong source confidently AND suppresses the web fallback. Require the
+  // PHRASE itself to substantially survive (a long contiguous run of the memory's words
+  // in the candidate) before a coverage-driven score may reach the HIGH band. Longest
+  // run computed over the distinctive-word sequences; short quotes need most of it intact.
+  const candSeqStr = ' ' + candSeq + ' ';
+  let longestRun = 0;
+  for (let i = 0; i < memSeq.length; i++) {
+    for (let j = i; j < memSeq.length; j++) {
+      if (candSeqStr.includes(' ' + memSeq.slice(i, j + 1).join(' ') + ' ')) longestRun = Math.max(longestRun, j - i + 1);
+      else break;
+    }
+  }
+  const runFrac = memSeq.length ? longestRun / memSeq.length : 0;
+  const base = coverage * 0.85 + runBonus;
+  // Below a substantial contiguous run, cap out of the HIGH band (0.75) into "likely" —
+  // enough to surface as a candidate, never enough to be treated as a decisive exact hit.
+  return Math.min(1, runFrac >= 0.6 ? base : Math.min(base, 0.6));
 }

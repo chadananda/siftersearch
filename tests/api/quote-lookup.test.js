@@ -87,4 +87,17 @@ describe('distinctiveTerms + scoreCandidate (fuzzy memory matching)', () => {
   it('empty/glue-only memory scores zero', () => {
     expect(scoreCandidate('the and of', 'anything at all here')).toBe(0);
   });
+  it('a common-token needle does NOT reach HIGH on scattered words (the "little by little, day by day" false positive)', () => {
+    // Needle collapses to {little, day}; a passage mentioning both scattered — but WITHOUT the
+    // phrase — must stay out of the decisive HIGH band, so the web fallback still fires.
+    const needle = 'Little by little, day by day';
+    const scattered = 'After reaching a high level of civilization, they began little by little to forget the principles, and in later days focused on rites and ceremonials.';
+    const s = scoreCandidate(needle, scattered);
+    expect(s).toBeLessThan(0.75);   // NOT a decisive exact hit
+  });
+  it('the phrase actually present still scores HIGH', () => {
+    const needle = 'Little by little, day by day';
+    const present = 'He was asked how one grows, and answered: little by little, day by day, the soul is perfected.';
+    expect(scoreCandidate(needle, present)).toBeGreaterThanOrEqual(0.75);
+  });
 });
