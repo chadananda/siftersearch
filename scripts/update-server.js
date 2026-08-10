@@ -245,15 +245,17 @@ async function runSmokeTests(port) {
   }
   tests.push({ name: 'library-stats', pass: statsOk, detail: statsDetail });
 
-  // 4. Recent documents (verifies route registration + DB read)
+  // 4. Recent documents (verifies route registration + DB read). PASS on a valid empty list:
+  // the endpoint windows to 30 days, so a quiet library month returns [] legitimately — requiring
+  // length>0 bricked every deploy after 30 ingest-free days (2026-08-09).
   const recent = await httpGet(`${base}/api/library/recent?limit=1`);
   let recentOk = false;
   let recentDetail = 'no response';
   if (recent.ok) {
     try {
       const data = JSON.parse(recent.body);
-      recentOk = Array.isArray(data.documents) && data.documents.length > 0;
-      recentDetail = `${data.documents?.length || 0} docs returned`;
+      recentOk = Array.isArray(data.documents);
+      recentDetail = `${data.documents?.length || 0} docs returned (route + DB ok)`;
     } catch { recentDetail = 'invalid JSON'; }
   }
   tests.push({ name: 'recent-docs', pass: recentOk, detail: recentDetail });
