@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T14:38:57.543Z",
+  "generated": "2026-08-10T15:54:57.233Z",
   "entries": [
+    {
+      "hash": "28f6e358",
+      "date": "2026-08-10",
+      "type": "Other",
+      "description": "Retry+backoff through writer congestion, smaller batches",
+      "scope": null
+    },
     {
       "hash": "49655fd2",
       "date": "2026-08-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Calibrate-deepseek — select GPB by content count, skip image/nav paragraphs",
       "scope": null
-    },
-    {
-      "hash": "2b9ef5ca",
-      "date": "2026-05-26",
-      "type": "Fixed",
-      "description": "Calibrate-deepseek — drop Unicode LIKE filter + strip markdown from JSON parse",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-10": [
+      {
+        "hash": "28f6e358",
+        "date": "2026-08-10",
+        "type": "Other",
+        "description": "Retry+backoff through writer congestion, smaller batches",
+        "scope": null
+      },
       {
         "hash": "49655fd2",
         "date": "2026-08-10",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-26",
         "type": "Fixed",
         "description": "Calibrate-deepseek — select GPB by content count, skip image/nav paragraphs",
-        "scope": null
-      },
-      {
-        "hash": "2b9ef5ca",
-        "date": "2026-05-26",
-        "type": "Fixed",
-        "description": "Calibrate-deepseek — drop Unicode LIKE filter + strip markdown from JSON parse",
         "scope": null
       }
     ]

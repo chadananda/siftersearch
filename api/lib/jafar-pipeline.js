@@ -667,7 +667,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // Trigger: ANY quote-sourcing ask — remembered wording, or a topical description
   // ("looking for a quote about the light souls radiate…"). A quote hunt must NEVER
   // fall into the interfaith sweep: e4 regressed to a Zohar answer when it did.
-  if (entities?.intent === 'quote_request' && (entities?.quoted_span || extractQuotedSpan(userMessage) || entities?.named_persons?.length || entities?.topics?.length)) {
+  // Enter the ladder on the intent OR the LLM's own quoted_span signal: a "where is this
+  // from?" question often classifies as discuss/explain, yet the classifier still fills
+  // quoted_span (its prompt sets it whenever the user is sourcing a quotation). Gating on
+  // intent alone skipped the ladder for those → no quote_lookup → the web fallback (which
+  // keys on quote_lookup) never fired. This is the Anne-Perry "little by little" miss.
+  if ((entities?.intent === 'quote_request' || entities?.quoted_span) && (entities?.quoted_span || extractQuotedSpan(userMessage) || entities?.named_persons?.length || entities?.topics?.length)) {
     const span = entities?.quoted_span || extractQuotedSpan(userMessage);
     // The memory we score against: remembered wording if given, else the full ask
     // (its imagery words are what survived — "mosquito", "blade of grass").
@@ -2880,7 +2885,11 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   // Fire on empty retrieval OR a low-confidence quote hunt (imperfect memory is the
   // norm — a weak library guess plus a web identification beats either alone). Quote
   // hunts get DOMAIN CONTEXT so the web search doesn't return generic quote sites.
-  const quoteMiss = research.quote_lookup && !research.quote_lookup.found;
+  // A quote hunt escalates to the web on anything short of a DECISIVE exact hit — not only on
+  // found=false. A weak semantic 'likely' can latch onto narrator framing ("the son of the
+  // Founder") while the actual needle is absent (the Anne-Perry miss); corroborating such a
+  // guess against the web, clearly attributed, beats presenting it as the library's answer.
+  const quoteMiss = research.quote_lookup && research.quote_lookup.confidence !== 'high';
   if (!research.is_political && (research.retrieved_quotes.length === 0 || quoteMiss)) {
     const webQuestion = research.quote_lookup
       ? `Identify the source — the exact work, author, and where it appears — of this quotation or remembered passage, most likely from Bahá'í or other sacred literature: ${research.quote_lookup.span ? `"${research.quote_lookup.span}"` : userMessage}`
