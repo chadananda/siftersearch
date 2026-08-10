@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T04:31:45.477Z",
+  "generated": "2026-08-10T14:04:53.492Z",
   "entries": [
+    {
+      "hash": "dd07a0d0",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Site Google sign-in (One Tap + button) · profile pictures · admin email whitelist",
+      "scope": null
+    },
     {
       "hash": "3b69c4b1",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Meili_sync_tasks false-positive FAIL — downgrade to WARN when count is static",
       "scope": null
-    },
-    {
-      "hash": "92d5b179",
-      "date": "2026-05-26",
-      "type": "Fixed",
-      "description": "Arabic/Chinese embedding crash + cap sidecar cache batch at 200 params",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "dd07a0d0",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Site Google sign-in (One Tap + button) · profile pictures · admin email whitelist",
+        "scope": null
+      },
       {
         "hash": "3b69c4b1",
         "date": "2026-08-09",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-26",
         "type": "Fixed",
         "description": "Meili_sync_tasks false-positive FAIL — downgrade to WARN when count is static",
-        "scope": null
-      },
-      {
-        "hash": "92d5b179",
-        "date": "2026-05-26",
-        "type": "Fixed",
-        "description": "Arabic/Chinese embedding crash + cap sidecar cache batch at 200 params",
         "scope": null
       }
     ]
