@@ -734,7 +734,10 @@ Return ONLY JSON: {"lead":"...","matches":[{"id","clause"}]} — most relevant f
       try {
         const res = await chatCompletion(
           [{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${ids.map(lineFor).join('\n')}` }],
-          { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 1400, responseFormat: { type: 'json_object' } });
+          // 6000, NOT less: v4-flash burns a ~4k hidden-reasoning floor on judge-shaped prompts
+          // REGARDLESS of ask size (measured — a 4-person chunk at 1400 returned empty content).
+          // The chunk bounds the JSON; the cap must clear reasoning + JSON or content never arrives.
+          { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 6000, responseFormat: { type: 'json_object' } });
         if (!res.content || !res.content.trim()) logger.warn({ q, chunk: ids.length }, 'bioSearch judge returned EMPTY content (reasoning balloon?)');
         return looseParse(res.content);
       } catch (e) { logger.warn({ q, err: e.message }, 'bioSearch judge chunk failed'); return {}; }
