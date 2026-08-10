@@ -19,7 +19,7 @@ import { query, queryOne, queryAll } from './db.js';
 import { logger } from './logger.js';
 
 // ── The search-quality version. Bump when retrieval or crafting changes answers. ──
-export const SEARCH_VERSION = '2026-08-09.1';
+export const SEARCH_VERSION = '2026-08-10.1';   // bump: quote-source routing + web-fallback (published-source) changes
 
 const SIM_THRESHOLD = 0.93;       // "same question"
 const MAX_CANDIDATES = 20000;     // cosine scan cap (matches deep_research pattern; ANN index later)
