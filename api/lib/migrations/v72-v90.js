@@ -694,6 +694,18 @@ export const migrations = {
     catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
     logger.info('Migration 104 complete');
   },
+
+  105: async () => {
+    // The per-doc billed-provider lookup (spend policy: "the provider the doc ACTUALLY billed to")
+    // ran as a 290ms two-temp-btree scan PER BOOK on the API event loop — the grounding follower
+    // fires it for every queued doc every ~3 min, seizing the loop for seconds and slowing every
+    // endpoint. Expression index matches the query shape exactly (same pattern as migration 97).
+    logger.info('Starting migration 105: ai_usage (caller, CAST(document_id AS INT)) index');
+    await query(`CREATE INDEX IF NOT EXISTS idx_ai_usage_caller_docid
+                 ON ai_usage(caller, CAST(document_id AS INT))`);
+    await query(`ANALYZE idx_ai_usage_caller_docid`);
+    logger.info('Migration 105 complete');
+  },
 };
 
 export const graphMigrations = {
