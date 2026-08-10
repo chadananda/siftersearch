@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T14:12:00.760Z",
+  "generated": "2026-08-10T14:23:03.334Z",
   "entries": [
+    {
+      "hash": "49655fd2",
+      "date": "2026-08-10",
+      "type": "Other",
+      "description": "Fix content-namespace import, straggler sweep, find-fallback file moves",
+      "scope": null
+    },
     {
       "hash": "c1524686",
       "date": "2026-08-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Calibrate-deepseek — drop Unicode LIKE filter + strip markdown from JSON parse",
       "scope": null
-    },
-    {
-      "hash": "6830904a",
-      "date": "2026-05-26",
-      "type": "Fixed",
-      "description": "Calibrate-deepseek GPB lookup — trim trailing spaces in title match",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-10": [
+      {
+        "hash": "49655fd2",
+        "date": "2026-08-10",
+        "type": "Other",
+        "description": "Fix content-namespace import, straggler sweep, find-fallback file moves",
+        "scope": null
+      },
       {
         "hash": "c1524686",
         "date": "2026-08-10",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-26",
         "type": "Fixed",
         "description": "Calibrate-deepseek — drop Unicode LIKE filter + strip markdown from JSON parse",
-        "scope": null
-      },
-      {
-        "hash": "6830904a",
-        "date": "2026-05-26",
-        "type": "Fixed",
-        "description": "Calibrate-deepseek GPB lookup — trim trailing spaces in title match",
         "scope": null
       }
     ]

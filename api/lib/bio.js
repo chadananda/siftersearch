@@ -702,14 +702,17 @@ export async function bioSearch(rawQ) {
   const qterms = tokize(q);
   const matchScore = (eid) => exById[eid].reduce((s, c) => s + qterms.filter((t) => c.hay.includes(t)).length, 0);
   let poolIds = candidateIds || Object.keys(exById).map(Number).filter((eid) => matchScore(eid) > 0);
-  // 40×10 (was 60×14): v4-flash's hidden reasoning scales with catalog size — the trim roughly halves
-  // judgment latency with no measured recall loss (top-40 by match score dominates qualifying answers).
   poolIds = poolIds.filter((id) => exById[id]).sort((a, b) => matchScore(b) - matchScore(a) || (impById[b] - impById[a])).slice(0, 40);
-  const lines = poolIds.map((id) => {
+  // v4-flash's hidden reasoning SCALES WITH THE ASK (measured 2026-08-08): one 40-person catalog blew
+  // the token budget on reasoning and returned EMPTY content — zero matches, no error (the Ṭabarsí bug).
+  // Bound the task, never the container: judge in SMALL parallel chunks and merge.
+  const lineFor = (id) => {
     const fx = [...exById[id]].sort((a, b) => qterms.filter((t) => b.hay.includes(t)).length - qterms.filter((t) => a.hay.includes(t)).length);
-    return `${id}|${nameById[id]}: ${fx.slice(0, 10).map((c) => `• ${cl(c.statement)} « ${cl(c.proof).slice(0, 150)} »${c.when ? ' [' + c.when + ']' : ''}`).join(' ')}`;
-  });
-  const catalog = lines.join('\n');
+    return `${id}|${nameById[id]}: ${fx.slice(0, 8).map((c) => `• ${cl(c.statement)} « ${cl(c.proof).slice(0, 140)} »${c.when ? ' [' + c.when + ']' : ''}`).join(' ')}`;
+  };
+  const CHUNK = 12;
+  const chunks = [];
+  for (let i = 0; i < poolIds.length; i += CHUNK) chunks.push(poolIds.slice(i, i + CHUNK));
 
   const SYS = `You answer a question about people in early Bábí/Bahá'í history from a CATALOG of cited claims — one person per line: "id|name: • statement « verbatim proof » [period] • …" (from God Passes By and The Dawn-Breakers).
 A person qualifies ONLY if one of their claims, AS SHOWN BY ITS VERBATIM PROOF, DIRECTLY satisfies the QUERY — the right act AND place AND period. Reject mere group membership. Reject "promised/prophesied/expected" when the query asks who actually DID or MET something. For a place/period query the proof must name that place/period.
@@ -717,8 +720,6 @@ For each qualifying person output {"id":<number>, "clause":"<a SHORT phrase answ
 Also output "lead": one short sentence stating the overall answer.
 Return ONLY JSON: {"lead":"...","matches":[{"id","clause"}]} — most relevant first, clear matches only.`;
   try {
-    const res = await chatCompletion([{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${catalog}` }],
-      { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 2600, responseFormat: { type: 'json_object' } });
     // tolerant parse: DeepSeek occasionally emits malformed/truncated JSON — salvage the lead + every COMPLETE {...}.
     const looseParse = (txt) => {
       const whole = (txt || '').match(/\{[\s\S]*\}/);
@@ -728,7 +729,20 @@ Return ONLY JSON: {"lead":"...","matches":[{"id","clause"}]} — most relevant f
       if (objs.length) out.matches = objs.filter((x) => x && x.id != null);
       return out;
     };
-    const parsed = looseParse(res.content);
+    // Parallel small-chunk judging (bounded asks — see CHUNK note above). Merge matches; first lead wins.
+    const chunkResults = await Promise.all(chunks.map(async (ids) => {
+      try {
+        const res = await chatCompletion(
+          [{ role: 'system', content: SYS }, { role: 'user', content: `QUERY: ${q}\n\nCATALOG:\n${ids.map(lineFor).join('\n')}` }],
+          { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 1400, responseFormat: { type: 'json_object' } });
+        if (!res.content || !res.content.trim()) logger.warn({ q, chunk: ids.length }, 'bioSearch judge returned EMPTY content (reasoning balloon?)');
+        return looseParse(res.content);
+      } catch (e) { logger.warn({ q, err: e.message }, 'bioSearch judge chunk failed'); return {}; }
+    }));
+    const parsed = {
+      lead: chunkResults.find((r) => r.lead)?.lead || '',
+      matches: chunkResults.flatMap((r) => (Array.isArray(r.matches) ? r.matches : [])),
+    };
     const evidence = {}; const aiIds = []; const parts = [];
     for (const mm of (Array.isArray(parsed.matches) ? parsed.matches : [])) {
       const id = Number(mm.id); if (!id || aiIds.includes(id) || !exById[id]) continue;
