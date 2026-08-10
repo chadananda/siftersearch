@@ -391,7 +391,7 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
 const INTENT_SYSTEM = `Classify the user's latest message and extract retrieval entities. Use RECENT CONVERSATION CONTEXT (when provided) to resolve pronouns and implicit references — e.g. if the prior turn established "non-believers" as the topic, a follow-up "what about the Gospel?" means Gospel + non-believers. Output JSON ONLY.
 
 intent: ONE of
-- "quote_request": user asks for a quote/passage/verse/text excerpt explicitly. Words like "show me", "quote me", "find the verse", "give me the passage".
+- "quote_request": EITHER (a) the user asks for a quote/passage/verse to be shown ("show me", "quote me", "find the verse", "give me the passage"), OR (b) the user PROVIDES a quotation/anecdote/reference and wants to know its SOURCE — where it is from, who said or recorded it, which book it appears in, or whether it is authentic ("where is this from?", "what's the source for this quote?", "do you know how to find the source for…", "who said…", "is this a real quote?", "can you source this?"). Case (b) applies EVEN when the wording is embedded in a narrative sentence (e.g. 'He was asked X. "…," He replied.') — sourcing a supplied passage is always quote_request, never explain/discuss.
 - "definition": user asks what a term, concept, or doctrine means.
 - "explain": user asks how something works, why a teaching exists, or what a tradition says about a topic.
 - "discuss": general conversation, follow-up commentary, opinion, open exploration.
@@ -406,7 +406,7 @@ traditions: Array of religious traditions the question is ABOUT, from exactly th
 
 comparative: true ONLY when the user explicitly asks to compare traditions or what OTHER/different religions say ("compare X and Y", "how do other faiths view…", "what do different religions teach about…", "Buddhist vs Baha'i"). A question about ONE tradition is NOT comparative even if an answer could mention others. false otherwise.
 
-quoted_span: When the user is trying to locate/source a quotation and provides remembered wording (in quote marks OR as "it starts like…"/"something like…"), return that wording VERBATIM as they gave it (their words only, no lead-in phrases like "where is the quote"). null when they describe a passage without giving any of its wording, or aren't quote-hunting.
+quoted_span: When the user is trying to locate/source a quotation and provides any of its wording (in quote marks, embedded in a narrative sentence, OR as "it starts like…"/"something like…"), return the DISTINCTIVE quoted words VERBATIM — the actual saying itself, not the narrator's framing. Strip lead-ins ("where is the quote", "the source for this reference") AND third-person framing ("He was asked…", "the son of the Founder"): from 'ʻAbdu'l-Bahá was asked how one becomes a Bahá'í. "Little by little, day by day," He replied.' return "Little by little, day by day". null only when they describe a passage giving NONE of its wording, or aren't quote-hunting.
 
 canonical_question: Rephrase the user's request as ONE well-formed, standalone, neutrally-worded question. Resolve pronouns and context references using the RECENT CONVERSATION ("what about her death?" after discussing Táhirih → "How did Táhirih die?"). Statements and keywords become questions ("baha'i afterlife" → "What do Bahá'ís believe happens after death?"). Same meaning MUST yield the same question regardless of phrasing — this is a retrieval key. Keep the user's specifics (names, quoted words) intact.
 
