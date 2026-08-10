@@ -7,7 +7,9 @@
   // canonical reply as `chunk` events at the end — we pace the live stream word-by-word (ink onto the
   // page) and swap in the canonical text at settle (it may differ: ungrounded links get stripped).
   // Transcript persists in localStorage per token. Soft WebAudio feedback (synthesized, muteable).
-  let { token = '', api = 'https://siftersearch.com' } = $props();  // ONE public domain; the edge worker proxies /api/* + /widget*
+  // token/api from the loader; accent/name/mission are optional per-page overrides (data-* attrs)
+  // that tune the widget without touching the DB profile. ONE public domain; the edge worker proxies /api.
+  let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '' } = $props();
 
   // Ocean mark (public/ocean-noback.svg) — one path constant, used for header roundel,
   // launch bubble, message avatars and the watermark. Keeps the widget self-contained.
@@ -53,6 +55,9 @@
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`config ${r.status}`))))
       .then((c) => {
         cfg = c;
+        // Per-page overrides win over the server profile (display + steering only).
+        if (accent) cfg.accent = accent;
+        if (name) cfg.name = name;
         try { messages = JSON.parse(localStorage.getItem(storeKey()) || '[]'); } catch { messages = []; }
         if (!messages.length && c.greeting) messages = [{ role: 'assistant', content: c.greeting, done: true }];
         track('widget_load');
@@ -146,7 +151,9 @@
       const res = await fetch(`${api}/api/chat/stream`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ messages: history, widget_token: token, ...(cfg?.chatbotLocation ? { chatbot_location: cfg.chatbotLocation } : {}) }),
+        body: JSON.stringify({ messages: history, widget_token: token,
+          ...(name ? { name } : {}), ...(mission ? { mission } : {}),
+          ...(cfg?.chatbotLocation ? { chatbot_location: cfg.chatbotLocation } : {}) }),
       });
       if (!res.ok || !res.body) throw new Error(`chat ${res.status}`);
       const reader = res.body.getReader();

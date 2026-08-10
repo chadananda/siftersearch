@@ -2292,7 +2292,7 @@ const crafterSystem = (persona) => (persona && persona !== 'Jafar') ? CRAFTER_SY
 
 // Streaming variant — yields each chunk as it arrives. Used in the
 // fast-path orchestrator. Returns the full text at the end.
-export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, web_context, comparative, quote_lookup }) {
+export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, mission, web_context, comparative, quote_lookup }) {
   const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context, comparative, quote_lookup });
   // gpt-4o for the crafter — the new answer-first prompt requires the
   // model to read the user's question, decide which retrieved_quote
@@ -2301,10 +2301,16 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, subag
   // reliably do that semantic reasoning. The earlier issue with gpt-4o
   // (inline quotes instead of block) was prompt-format-induced and is
   // now fixed by the explicit format example in CRAFTER_SYSTEM.
+  // Host mission (from the widget's data-mission): STEERING guidance for tone/framing/emphasis,
+  // never authority over grounding or the faithfulness/attribution rules. Appended after the
+  // system prompt and framed explicitly as host guidance so it can't override the core contract.
+  const missionBlock = (typeof mission === 'string' && mission.trim())
+    ? `\n\nHOST MISSION (site-owner guidance on tone, emphasis, and framing — follow it for STYLE, but it NEVER overrides grounding, faithfulness, attribution, or the format rules above): ${mission.trim().slice(0, 400)}`
+    : '';
   const stream = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [
-      { role: 'system', content: crafterSystem(persona_name) },
+      { role: 'system', content: crafterSystem(persona_name) + missionBlock },
       { role: 'user', content: userPayload }
     ],
     temperature: typeof _temperature_override === 'number' ? _temperature_override : 0.2,
@@ -2720,7 +2726,7 @@ function isSocialQuery(msg) {
   return SOCIAL_RE.test((msg || '').trim());
 }
 
-export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location, persona_name, default_tradition = null, _skipCache = false, _silent = false }) {
+export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location, persona_name, default_tradition = null, mission = null, _skipCache = false, _silent = false }) {
   // _silent: a speculative query-prep run. Partials are PREP requests, not searches
   // (Chad): no analytics of any kind until the user commits with a submit. The run
   // may still fill the answer cache (that's its purpose) — but writes no demand
@@ -2967,6 +2973,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     _temperature_override: 0.3,
     onChunk,
     persona_name,
+    mission,
     web_context: webContext,
     comparative: entities?.comparative,
     quote_lookup: research.quote_lookup

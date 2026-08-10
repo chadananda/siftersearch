@@ -1,5 +1,9 @@
 // SifterChat loader — the one-line embed. Usage on any approved host site:
 //   <script src="https://siftersearch.com/widget.js" data-key="wgt_…" async></script>
+// Optional per-page overrides (tune without editing the DB profile):
+//   data-accent="#1a6b5e"   primary/accent color
+//   data-name="Anís"        the assistant's display + self-reference name
+//   data-mission="…"        a short mission/steering prompt (≤400 chars)
 // Reads its own script tag for the profile token, loads the custom-element bundle from the same origin,
 // and mounts <sifter-chat>. Hand-written (no build); the element bundle is built via `npm run build:widget`.
 (function () {
@@ -13,6 +17,11 @@
     var el = document.createElement('sifter-chat');
     el.setAttribute('token', key);
     el.setAttribute('api', api);
+    // Pass through optional data-* overrides to the element.
+    ['accent', 'name', 'mission'].forEach(function (a) {
+      var v = script.getAttribute('data-' + a);
+      if (v) el.setAttribute(a, v);
+    });
     document.body.appendChild(el);
   }
   var bundle = document.createElement('script');

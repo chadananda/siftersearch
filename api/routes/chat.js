@@ -1364,12 +1364,17 @@ export default async function chatRoutes(fastify) {
           chatbot_location: { type: 'string', maxLength: 128 },
           // Widget embed token — resolves the profile's display name so the
           // assistant introduces itself as that persona (e.g. "Anis").
-          widget_token: { type: 'string', maxLength: 64 }
+          widget_token: { type: 'string', maxLength: 64 },
+          // Per-page widget overrides (data-name / data-mission on the embed): the
+          // host site's own tuning. Display name + a short steering mission. Bounded;
+          // treated as guidance, never system authority.
+          name: { type: 'string', maxLength: 60 },
+          mission: { type: 'string', maxLength: 400 }
         }
       }
     }
   }, async (request, reply) => {
-    const { messages, researchContext, chatbot_location, widget_token } = request.body;
+    const { messages, researchContext, chatbot_location, widget_token, name, mission } = request.body;
     let persona_name = null;
     let default_tradition = null;
     if (widget_token) {
@@ -1381,6 +1386,9 @@ export default async function chatRoutes(fastify) {
       // another tradition. Server-side from the token: never client-supplied.
       try { default_tradition = JSON.parse(prof?.config_json || '{}').default_tradition || null; } catch { /* ignore */ }
     }
+    // Per-page data-* overrides win over the profile (display name) + carry the mission.
+    if (typeof name === 'string' && name.trim()) persona_name = name.trim().slice(0, 60);
+    const mission_prompt = (typeof mission === 'string' && mission.trim()) ? mission.trim().slice(0, 400) : null;
     const userId = request.user?.sub?.toString() || getAnonymousUserId(request);
 
     // Set headers directly on raw response — reply.header() doesn't survive flushHeaders()
@@ -1423,7 +1431,8 @@ export default async function chatRoutes(fastify) {
           debug,
           chatbot_location,
           persona_name,
-          default_tradition
+          default_tradition,
+          mission: mission_prompt
         });
       }
 
