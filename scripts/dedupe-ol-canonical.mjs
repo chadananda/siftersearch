@@ -16,9 +16,10 @@ import Database from 'better-sqlite3';
 
 const APPLY = process.argv.includes('--apply');
 const db = new Database('data/sifter.db', { readonly: true });
-const { safeSoftDeleteDocs } = await import('../api/lib/content.js');
+const { content } = await import('../api/lib/content.js');
 const { query } = await import('../api/lib/db.js');
 const { config } = await import('../api/lib/config.js');
+const { execFileSync } = await import('node:child_process');
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/['‘’`ʻ"“”_]/g, '').replace(/[^a-z0-9]+/gi, ' ').trim().toLowerCase();
@@ -65,31 +66,50 @@ if (olInternal.length) {
   for (const g of olInternal) console.log(`  = ${g.map((x) => `${x.id}(${x.pc}¶)`).join(' · ')} "${g[0].title}"`);
 }
 
+// Stragglers from a previously interrupted apply: duplicate_of already set but never soft-deleted.
+const stragglers = db.prepare(`SELECT id FROM docs WHERE duplicate_of IS NOT NULL AND deleted_at IS NULL`).all();
+if (stragglers.length) console.log(`stragglers (duplicate_of set, not yet deactivated): ${stragglers.length}`);
+
 if (!APPLY) { console.log('\nDRY RUN — re-run with --apply to execute.'); process.exit(0); }
 
 // ── APPLY ────────────────────────────────────────────────────────────────────
 const libBase = config.library?.basePath;
 const dupDir = libBase ? path.resolve(libBase, '..', 'library-duplicates') : null;
 let moved = 0, moveFail = 0;
+// DB file_path values drift against the disk (files renamed after ingest; Unicode variants), so
+// fall back to a find by a distinctive basename fragment — move only on an UNAMBIGUOUS single hit.
+const locate = (fp) => {
+  const exact = path.resolve(libBase, fp);
+  if (fs.existsSync(exact)) return exact;
+  const base = path.basename(fp, '.md');
+  const frag = base.split(/ - /).slice(-2, -1)[0] || base.slice(-40);   // distinctive middle segment
+  try {
+    const out = execFileSync('find', [libBase, '-name', `*${frag.replace(/[*?[\]]/g, '?')}*`, '-not', '-path', '*/-sites/*'],
+      { encoding: 'utf8', timeout: 60000 }).trim().split('\n').filter(Boolean);
+    return out.length === 1 ? out[0] : null;
+  } catch { return null; }
+};
 for (const r of physical) {
   try {
-    const src = path.resolve(libBase, r.dupe.fp);
-    if (!fs.existsSync(src)) { moveFail++; continue; }
-    const dest = path.join(dupDir, r.dupe.fp);
+    const src = locate(r.dupe.fp);
+    if (!src) { console.log(`  move: NOT FOUND / ambiguous — ${r.dupe.id} ${r.dupe.fp.slice(0, 70)}`); moveFail++; continue; }
+    const rel = path.relative(libBase, src);
+    const dest = path.join(dupDir, rel);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.renameSync(src, dest);
     moved++;
   } catch (e) { console.error(`move failed ${r.dupe.id}: ${e.message}`); moveFail++; }
 }
-console.log(`\nmoved ${moved}/${physical.length} folder files → ${dupDir} (${moveFail} missing/failed)`);
+console.log(`\nmoved ${moved}/${physical.length} folder files → ${dupDir} (${moveFail} unresolved — listed above)`);
 
 let deactivated = 0;
-for (let i = 0; i < toRemove.length; i += 25) {
-  const batch = toRemove.slice(i, i + 25);
-  for (const r of batch) await query('UPDATE docs SET duplicate_of = ? WHERE id = ?', [r.olId, r.dupe.id]);
-  const res = await safeSoftDeleteDocs(batch.map((r) => r.dupe.id), { reason: 'ol-canonical-dedupe', maxDelete: 25 });
+const work = [...toRemove.map((r) => ({ id: r.dupe.id, olId: r.olId })), ...stragglers.map((s) => ({ id: s.id, olId: null }))];
+for (let i = 0; i < work.length; i += 25) {
+  const batch = work.slice(i, i + 25);
+  for (const r of batch) if (r.olId) await query('UPDATE docs SET duplicate_of = ? WHERE id = ?', [r.olId, r.id]);
+  const res = await content.safeSoftDeleteDocs(batch.map((r) => r.id), { reason: 'ol-canonical-dedupe', maxDelete: 25 });
   deactivated += res.deleted;
-  if (i % 250 === 0) console.log(`${deactivated}/${toRemove.length}`);
+  if (i % 250 === 0) console.log(`${deactivated}/${work.length}`);
 }
 console.log(`\nAPPLY DONE: deactivated ${deactivated} duplicates (duplicate_of → OL id), moved ${moved} files.`);
 console.log('Meili removal follows automatically via the worker sync sweep (content rows marked deleted+dirty).');

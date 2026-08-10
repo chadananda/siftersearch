@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T14:04:53.492Z",
+  "generated": "2026-08-10T14:12:00.760Z",
   "entries": [
+    {
+      "hash": "c1524686",
+      "date": "2026-08-10",
+      "type": "Other",
+      "description": "OL-canonical dedupe — exact-title dupes deactivated, folder files moved to library-duplicates/",
+      "scope": null
+    },
     {
       "hash": "dd07a0d0",
       "date": "2026-08-09",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Calibrate-deepseek GPB lookup — trim trailing spaces in title match",
       "scope": null
-    },
-    {
-      "hash": "9da99d66",
-      "date": "2026-05-26",
-      "type": "Fixed",
-      "description": "Meili_sync_tasks false-positive FAIL — downgrade to WARN when count is static",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-10": [
+      {
+        "hash": "c1524686",
+        "date": "2026-08-10",
+        "type": "Other",
+        "description": "OL-canonical dedupe — exact-title dupes deactivated, folder files moved to library-duplicates/",
+        "scope": null
+      }
+    ],
     "2026-08-09": [
       {
         "hash": "dd07a0d0",
@@ -7073,13 +7082,6 @@
         "date": "2026-05-26",
         "type": "Fixed",
         "description": "Calibrate-deepseek GPB lookup — trim trailing spaces in title match",
-        "scope": null
-      },
-      {
-        "hash": "9da99d66",
-        "date": "2026-05-26",
-        "type": "Fixed",
-        "description": "Meili_sync_tasks false-positive FAIL — downgrade to WARN when count is static",
         "scope": null
       }
     ]
