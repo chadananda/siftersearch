@@ -104,12 +104,24 @@ console.log(`\nmoved ${moved}/${physical.length} folder files → ${dupDir} (${m
 
 let deactivated = 0;
 const work = [...toRemove.map((r) => ({ id: r.dupe.id, olId: r.olId })), ...stragglers.map((s) => ({ id: s.id, olId: null }))];
-for (let i = 0; i < work.length; i += 25) {
-  const batch = work.slice(i, i + 25);
-  for (const r of batch) if (r.olId) await query('UPDATE docs SET duplicate_of = ? WHERE id = ?', [r.olId, r.id]);
-  const res = await content.safeSoftDeleteDocs(batch.map((r) => r.id), { reason: 'ol-canonical-dedupe', maxDelete: 25 });
+// The writer can be slow to ACK while chewing large content updates (a 2k¶ doc soft-delete) and
+// concurrent Meili sweeps — ride through with retry+backoff instead of dying mid-run.
+const retry = async (fn) => {
+  for (let a = 0; ; a++) {
+    try { return await fn(); }
+    catch (e) {
+      if (a >= 4) throw e;
+      console.log(`  writer busy (${e.message}) — retrying in ${20 * (a + 1)}s`);
+      await new Promise((r) => setTimeout(r, 20000 * (a + 1)));
+    }
+  }
+};
+for (let i = 0; i < work.length; i += 10) {
+  const batch = work.slice(i, i + 10);
+  for (const r of batch) if (r.olId) await retry(() => query('UPDATE docs SET duplicate_of = ? WHERE id = ?', [r.olId, r.id]));
+  const res = await retry(() => content.safeSoftDeleteDocs(batch.map((r) => r.id), { reason: 'ol-canonical-dedupe', maxDelete: 10 }));
   deactivated += res.deleted;
-  if (i % 250 === 0) console.log(`${deactivated}/${work.length}`);
+  if (i % 200 === 0) console.log(`${deactivated}/${work.length}`);
 }
 console.log(`\nAPPLY DONE: deactivated ${deactivated} duplicates (duplicate_of → OL id), moved ${moved} files.`);
 console.log('Meili removal follows automatically via the worker sync sweep (content rows marked deleted+dirty).');
