@@ -101,8 +101,8 @@ export async function reachedBound(docId, opts = {}, deps = {}) {
   const q = deps.queryOne || queryOne;
   const row = await q(
     `SELECT (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) prose,
-            (SELECT COUNT(*) FROM content WHERE doc_id=? AND context IS NOT NULL AND context!='') disamb,
-            (SELECT COUNT(*) FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL) hyped,
+            (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND context IS NOT NULL AND context!='') disamb,
+            (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND hyp_questions IS NOT NULL) hyped,
             (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(trim(text)) >= ${HYPE_MINLEN}) hypeable,
             (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
             (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions`,
@@ -125,8 +125,11 @@ export async function reachedBoundBulk(docIds, opts = {}, deps = {}) {
   const load = (rows, map) => rows.forEach((r) => { if (r.d != null && r.d in map) map[r.d] = r.n; });
   // Same WHERE clauses as reachedBound's per-doc subqueries — kept identical so bulk === single.
   load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL GROUP BY doc_id`, ids), prose);
-  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND context IS NOT NULL AND context!='' GROUP BY doc_id`, ids), disamb);
-  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND hyp_questions IS NOT NULL GROUP BY doc_id`, ids), hyped);
+  // NUMERATOR = same row-set as the prose DENOMINATOR (live prose only). Counting context/hype on header
+  // or deleted rows inflated coverage past 100% → books "done" here while the stage gate's honest ratio
+  // failed → endless did-not-reach-verify churn with disambiguate never re-run (2026-08-09).
+  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND context IS NOT NULL AND context!='' GROUP BY doc_id`, ids), disamb);
+  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND hyp_questions IS NOT NULL GROUP BY doc_id`, ids), hyped);
   load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(trim(text)) >= ${HYPE_MINLEN} GROUP BY doc_id`, ids), hypeable);
   load(await qa(`SELECT doc_id d, COUNT(DISTINCT resolved_as) n FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%' GROUP BY doc_id`, ids), clusters);
   // decisions: the docId lives in the JSON payload, so GROUP BY the extracted id (one scan of mention-cluster rows;

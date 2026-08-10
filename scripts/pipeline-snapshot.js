@@ -259,7 +259,7 @@ async function main() {
   const MISSING_TTL_MS = 6 * 60 * 60 * 1000;
   let missingBooks = prevSnapshot.missingBooks ?? null;
   const mbAge = missingBooks?.generated_at ? Date.now() - Date.parse(missingBooks.generated_at) : Infinity;
-  if (mbAge > MISSING_TTL_MS) {
+  if (mbAge > MISSING_TTL_MS || missingBooks?.stubTotal == null) {   // shape v2 (capped + file_url) forces one recompute
     const stubs = await queryAll(`
       SELECT d.id, d.title, d.author, d.paragraph_count AS paras, d.religion, d.collection, d.source_url,
              SUM(CASE WHEN c.text LIKE '%logo_1850x358%' THEN 1 ELSE 0 END) AS logo,
@@ -279,9 +279,22 @@ async function main() {
       FROM docs d WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
         AND NOT EXISTS (SELECT 1 FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL)
       ORDER BY d.title LIMIT 400`).catch(() => []);
+    // Direct source-file link per fetchable stub (the .pdf/.docx of the REAL book) — extracted
+    // from the stub's own content so the admin list links straight to the ingestable file.
+    const fetchableStubs = stubs.filter((s) => s.doclinks > 0).slice(0, 300);
+    for (const s of fetchableStubs) {
+      const row = await queryOne(`SELECT text FROM content WHERE doc_id=? AND deleted_at IS NULL
+        AND (text LIKE '%bahai-library.com/docs/%' OR text LIKE '%.docx%' OR text LIKE '%.pdf%') LIMIT 1`, [s.id]).catch(() => null);
+      const t = String(row?.text || '');
+      const m = t.match(/https?:\/\/[^\s()[\]"']+\.(?:pdf|docx?)\b/i) || t.match(/https?:\/\/bahai-library\.com\/docs\/[^\s()[\]"']+/i);
+      if (m) s.file_url = m[0].replace(/[),.;]+$/, '');
+    }
     missingBooks = {
       generated_at: new Date().toISOString(),
-      stubs: stubs.map((s) => ({ ...s, fetchable: s.doclinks > 0 })),
+      stubTotal: stubs.length,
+      fetchableTotal: stubs.filter((s) => s.doclinks > 0).length,
+      stubs: [...fetchableStubs.map((s) => ({ ...s, fetchable: true })),
+              ...stubs.filter((s) => s.doclinks === 0).slice(0, 500).map((s) => ({ ...s, fetchable: false }))],
       husks, huskTotal,
     };
   }

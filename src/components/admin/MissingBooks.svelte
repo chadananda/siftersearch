@@ -36,7 +36,7 @@
       <p class="text-sm text-muted mb-3">The metadata page links a .docx/.pdf of the real book — prime candidates for ingest via SearchLayerPDF.</p>
       <table class="w-full text-sm">
         <thead><tr class="text-left text-muted border-b border-border">
-          <th class="py-2 pr-3">Title</th><th class="pr-3">Author</th><th class="pr-3 text-right">¶</th><th>Doc</th>
+          <th class="py-2 pr-3">Title</th><th class="pr-3">Author</th><th class="pr-3 text-right">¶</th><th class="pr-3">Source file</th><th>Doc</th>
         </tr></thead>
         <tbody>
           {#each fetchable as s (s.id)}
@@ -47,6 +47,10 @@
               </td>
               <td class="pr-3 text-secondary">{s.author || '—'}</td>
               <td class="pr-3 text-right text-muted">{s.paras}</td>
+              <td class="pr-3">
+                {#if s.file_url}<a class="text-accent hover:text-accent-hover font-medium" href={s.file_url} target="_blank" rel="noopener">{s.file_url.match(/\.pdf\b/i) ? 'PDF' : s.file_url.match(/\.docx?\b/i) ? 'DOC' : 'file'} ↗</a>
+                {:else}<span class="text-muted">—</span>{/if}
+              </td>
               <td class="text-muted">#{s.id}</td>
             </tr>
           {/each}
@@ -56,9 +60,9 @@
 
     <section class="mb-8">
       <h2 class="text-lg font-medium text-primary mb-2">
-        Metadata-page stubs <span class="text-muted font-normal">({plain.length})</span>
+        Metadata-page stubs <span class="text-muted font-normal">({data.stubTotal != null ? `${plain.length} shown of ${data.stubTotal - (data.fetchableTotal ?? 0)}` : plain.length})</span>
       </h2>
-      <p class="text-sm text-muted mb-3">Scrape chrome present, no direct source file linked — needs manual sourcing.</p>
+      <p class="text-sm text-muted mb-3">Scrape chrome present, no direct source file linked — includes genuinely short bahai-library wiki notes; triage judgment needed.</p>
       <table class="w-full text-sm">
         <tbody>
           {#each plain as s (s.id)}
