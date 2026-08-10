@@ -20,11 +20,18 @@ const state = (() => { try { return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8
 const checks = [];   // {name, ok, level: 'critical'|'warn'|'info', detail}
 const add = (name, ok, level, detail = '') => checks.push({ name, ok, level, detail });
 
-async function http(url, { timeout = 8000, headers = {} } = {}) {
-  try {
-    const r = await fetch(url, { headers, signal: AbortSignal.timeout(timeout) });
-    return { status: r.status, body: await r.text() };
-  } catch (e) { return { status: 0, body: String(e.message || e) }; }
+async function http(url, { timeout = 8000, headers = {}, retries = 1 } = {}) {
+  // A single failed probe is a coin-flip (transient network/TLS blips) — never page on one sample.
+  // Retry after a short pause; only a REPEATED failure surfaces.
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const r = await fetch(url, { headers, signal: AbortSignal.timeout(timeout) });
+      return { status: r.status, body: await r.text() };
+    } catch (e) {
+      if (attempt >= retries) return { status: 0, body: String(e.message || e) };
+      await new Promise((res) => setTimeout(res, 4000));
+    }
+  }
 }
 
 // ── 1. Service health ────────────────────────────────────────────────────────
