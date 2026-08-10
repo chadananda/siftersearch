@@ -7,7 +7,7 @@ import NavBar from '../../components/common/NavBar.svelte';
 import DialogScrollSpy from '../../components/dialogue/DialogScrollSpy.svelte';
 import DialogQuoteMarker from '../../components/dialogue/DialogQuoteMarker.svelte';
 import { smartQuotes as sq } from '../../lib/smart-quotes.js';
-import { heroUrl, cardUrl } from '../../lib/imagekit.js';
+import { heroUrl, cardUrl, heroSet, cardSet } from '../../lib/imagekit.js';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const { slug } = Astro.params;
@@ -120,7 +120,7 @@ const TOPIC_LABELS: Record<string, string> = {
   <article class="dialog-page">
     <div class="dialog-hero">
       {data.hero_image ? (
-        <img class="hero-image" src={heroUrl(data.hero_image)} alt={data.title} />
+        <img class="hero-image" src={heroSet(data.hero_image)?.src ?? heroUrl(data.hero_image)} srcset={heroSet(data.hero_image)?.srcset} sizes="(max-width: 900px) 100vw, 900px" alt={data.title} />
       ) : (
         <div class="hero-watercolor" aria-hidden="true">
           <svg viewBox="0 0 1200 480" preserveAspectRatio="xMidYMid slice">
@@ -203,7 +203,7 @@ const TOPIC_LABELS: Record<string, string> = {
                 {related.map(r => (
                   <li>
                     <a href={`/dialogue/${r.slug}/`} class="related-card">
-                      {r.hero_image && <img src={cardUrl(r.hero_image)} alt="" loading="lazy" />}
+                      {r.hero_image && <img src={cardSet(r.hero_image)?.src ?? cardUrl(r.hero_image)} srcset={cardSet(r.hero_image)?.srcset} sizes="(max-width: 640px) 90vw, 320px" alt="" loading="lazy" />}
                       <span class="related-text">
                         <span class="related-title">{sq(r.title)}</span>
                         <span class="related-topic">{TOPIC_LABELS[r.topic] ?? r.topic}</span>

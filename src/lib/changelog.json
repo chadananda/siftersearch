@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T02:26:30.947Z",
+  "generated": "2026-08-10T02:33:15.618Z",
   "entries": [
+    {
+      "hash": "50743bb3",
+      "date": "2026-08-09",
+      "type": "Performance",
+      "description": "Migration 105 — ai_usage (caller, doc) expression index kills the per-book 290ms provider scans seizing the API loop",
+      "scope": null
+    },
     {
       "hash": "9f6f76a3",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Sync_stuck detection uses sync_jobs.status not updated_at — eliminate false positives",
       "scope": null
-    },
-    {
-      "hash": "ff81aa12",
-      "date": "2026-05-24",
-      "type": "Fixed",
-      "description": "Escalate meili HNSW stuck to fail() at 36h + guard embedder re-apply during rebuild",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "50743bb3",
+        "date": "2026-08-09",
+        "type": "Performance",
+        "description": "Migration 105 — ai_usage (caller, doc) expression index kills the per-book 290ms provider scans seizing the API loop",
+        "scope": null
+      },
       {
         "hash": "9f6f76a3",
         "date": "2026-08-09",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-24",
         "type": "Fixed",
         "description": "Sync_stuck detection uses sync_jobs.status not updated_at — eliminate false positives",
-        "scope": null
-      },
-      {
-        "hash": "ff81aa12",
-        "date": "2026-05-24",
-        "type": "Fixed",
-        "description": "Escalate meili HNSW stuck to fail() at 36h + guard embedder re-apply during rebuild",
         "scope": null
       }
     ]

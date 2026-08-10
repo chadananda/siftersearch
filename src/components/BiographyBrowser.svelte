@@ -3,15 +3,19 @@
   // round portraits up top (decorative, independent of search), one large centred search (instant token-filter
   // as you type; press ✦/Enter for AI meaning-search), a portrait-forward grid, and a detail drawer exposing
   // the full dossier (relationships, cross-corpus reach, sourced provenance). Deps: PUBLIC_API_URL. Svelte 5.
-  import { ikUrl } from '../lib/imagekit.js';
+  import { ikUrl, ikSrcset } from '../lib/imagekit.js';
   import { fade } from 'svelte/transition';
   import { flip } from 'svelte/animate';
   const API = import.meta.env.PUBLIC_API_URL || '';
   const PER_PAGE = 60;
-  // ImageKit (webp by default); always an explicit width; fo-face centres the square crop on the face
+  // ImageKit (webp by default); always an explicit width; fo-face centres the square crop on the face.
+  // srcsets: exact per-DPR sizes requested from the CDN (house rule — the browser never resizes).
   const cardImg = (p) => ikUrl(p, 'w-220,h-220,fo-face,q-80');
+  const cardSrc = (p) => ikSrcset(p, [220, 440], { ratio: 1, q: 80, fo: 'face' });
   const heroImg = (p) => ikUrl(p, 'w-260,h-260,fo-face,q-80');
+  const heroSrc = (p) => ikSrcset(p, [260, 520], { ratio: 1, q: 80, fo: 'face' });
   const drawerImg = (p) => ikUrl(p, 'w-340,h-420,fo-face,q-85');   // fixed 3:4 face-crop → reserved box, no reflow
+  const drawerSrc = (p) => ikSrcset(p, [340, 680], { ratio: 340 / 420, q: 85, fo: 'face' });
 
   // SSG: the page prerenders with initialData baked in (instant paint), then this island hydrates into search
   const { initialData = null } = $props();
@@ -297,7 +301,7 @@
     <div class="hero" aria-hidden="true">
       {#each heroSet as p, idx (idx)}
         <button class="orb" onclick={() => open(p)} title={p.name} aria-label={p.name}>
-          {#key p.id}<img src={heroImg(p.portrait)} alt={p.name} loading="lazy" transition:fade={{ duration: 600 }} />{/key}
+          {#key p.id}<img src={heroSrc(p.portrait)?.src ?? heroImg(p.portrait)} srcset={heroSrc(p.portrait)?.srcset} sizes="260px" alt={p.name} loading="lazy" transition:fade={{ duration: 600 }} />{/key}
         </button>
       {/each}
     </div>
@@ -484,7 +488,7 @@
           <button class="card" style={`animation-delay:${Math.min(i, 24) * 16}ms`} onclick={() => open(p)} animate:flip={{ duration: 260 }}>
             <span class="plate" class:empty={!p.portrait}>
               <span class="monogram">{initials(p.name)}</span>
-              {#if p.portrait}<img src={cardImg(p.portrait)} alt={p.name} loading="lazy" />{/if}
+              {#if p.portrait}<img src={cardSrc(p.portrait)?.src ?? cardImg(p.portrait)} srcset={cardSrc(p.portrait)?.srcset} sizes="220px" alt={p.name} loading="lazy" />{/if}
             </span>
             <span class="card-body">
               <span class="name">{p.name}</span>
@@ -512,7 +516,7 @@
       <div class="d-head">
         <span class="plate lg" class:empty={!selected.portrait}>
           <span class="monogram">{initials(selected.name)}</span>
-          {#if selected.portrait}<img src={drawerImg(selected.portrait)} alt={selected.name} />{/if}
+          {#if selected.portrait}<img src={drawerSrc(selected.portrait)?.src ?? drawerImg(selected.portrait)} srcset={drawerSrc(selected.portrait)?.srcset} sizes="340px" alt={selected.name} />{/if}
         </span>
         <h2 class="d-name">{selected.name}</h2>
         {#if selected.side}<span class="side">{selected.side}</span>{/if}

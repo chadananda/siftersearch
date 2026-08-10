@@ -5,7 +5,7 @@ import Layout from '../../layouts/Layout.astro';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
 import { smartQuotes as sq } from '../../lib/smart-quotes.js';
-import { cardUrl } from '../../lib/imagekit.js';
+import { cardUrl, cardSet } from '../../lib/imagekit.js';
 
 // Strip inline markdown (bold, italic, code) for plain-text card display
 const stripMd = (s: string) => sq(
@@ -129,7 +129,7 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
             <article class="card" data-featured={d.featured}>
               {d.hero_image && (
                 <div class="card-image">
-                  <img src={cardUrl(d.hero_image)} alt={d.title} loading="lazy" />
+                  <img src={cardSet(d.hero_image)?.src ?? cardUrl(d.hero_image)} srcset={cardSet(d.hero_image)?.srcset} sizes="(max-width: 640px) 90vw, 360px" alt={d.title} loading="lazy" />
                 </div>
               )}
               {!d.hero_image && (
