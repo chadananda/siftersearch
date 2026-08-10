@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T15:54:57.233Z",
+  "generated": "2026-08-10T15:58:47.323Z",
   "entries": [
+    {
+      "hash": "7e8e2bfa",
+      "date": "2026-08-10",
+      "type": "Other",
+      "description": "Fire web fallback on any non-decisive quote hunt + enter ladder on LLM quoted_span",
+      "scope": null
+    },
     {
       "hash": "28f6e358",
       "date": "2026-08-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Calibrate-deepseek — handle NBSP in GPB title via GLOB + skip HTML paragraphs",
       "scope": null
-    },
-    {
-      "hash": "16078737",
-      "date": "2026-05-26",
-      "type": "Fixed",
-      "description": "Calibrate-deepseek — select GPB by content count, skip image/nav paragraphs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-10": [
+      {
+        "hash": "7e8e2bfa",
+        "date": "2026-08-10",
+        "type": "Other",
+        "description": "Fire web fallback on any non-decisive quote hunt + enter ladder on LLM quoted_span",
+        "scope": null
+      },
       {
         "hash": "28f6e358",
         "date": "2026-08-10",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-26",
         "type": "Fixed",
         "description": "Calibrate-deepseek — handle NBSP in GPB title via GLOB + skip HTML paragraphs",
-        "scope": null
-      },
-      {
-        "hash": "16078737",
-        "date": "2026-05-26",
-        "type": "Fixed",
-        "description": "Calibrate-deepseek — select GPB by content count, skip image/nav paragraphs",
         "scope": null
       }
     ]

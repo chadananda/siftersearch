@@ -268,6 +268,9 @@ async function main() {
       FROM docs d JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL
       WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.language = 'en'
         AND d.paragraph_count BETWEEN 1 AND 35
+        -- Phelps 'Partial Inventory' entries are catalogue rows (tablet metadata), NOT missing books.
+        AND d.title NOT LIKE '%Partial Inventory%'
+        AND d.author NOT LIKE '%Phelps%'
       GROUP BY d.id
       HAVING logo > 0 OR tags > 0
       ORDER BY doclinks DESC, d.title`).catch(() => []);
