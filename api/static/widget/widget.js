@@ -1,5 +1,5 @@
 // SifterChat loader — the one-line embed. Usage on any approved host site:
-//   <script src="https://api.siftersearch.com/widget.js" data-key="wgt_…" async></script>
+//   <script src="https://siftersearch.com/widget.js" data-key="wgt_…" async></script>
 // Reads its own script tag for the profile token, loads the custom-element bundle from the same origin,
 // and mounts <sifter-chat>. Hand-written (no build); the element bundle is built via `npm run build:widget`.
 (function () {

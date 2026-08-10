@@ -7,7 +7,7 @@
   // canonical reply as `chunk` events at the end — we pace the live stream word-by-word (ink onto the
   // page) and swap in the canonical text at settle (it may differ: ungrounded links get stripped).
   // Transcript persists in localStorage per token. Soft WebAudio feedback (synthesized, muteable).
-  let { token = '', api = 'https://api.siftersearch.com' } = $props();
+  let { token = '', api = 'https://siftersearch.com' } = $props();  // ONE public domain; the edge worker proxies /api/* + /widget*
 
   // Ocean mark (public/ocean-noback.svg) — one path constant, used for header roundel,
   // launch bubble, message avatars and the watermark. Keeps the widget self-contained.
@@ -121,6 +121,7 @@
     persist();
     sndDone();
     track('answer_served', { latencyMs: Date.now() - t0, chars: last.content.length });
+    maybeOfferOnetap();
     scroll();
   }
 
@@ -228,6 +229,42 @@
       }).catch(() => {});
     }, 300);
   }
+  // ── One Tap connect ("establish a relationship"): after the 3rd exchange, offer email research
+  // summaries via Google. The Google flow lives in an intermediate iframe on the API origin, so host
+  // sites never register anything. Snoozed 14 days on "Not now"; remembered once connected. ─────────
+  let onetap = $state('hidden');   // hidden | offer | iframe | done
+  let connectedEmail = $state('');
+  try { connectedEmail = localStorage.getItem(`sifter-onetap:${token}`) || ''; } catch { /* private mode */ }
+  const snoozeKey = () => `sifter-onetap-snooze:${token}`;
+  function maybeOfferOnetap() {
+    if (connectedEmail || onetap !== 'hidden') return;
+    if (messages.filter((m) => m.role === 'user').length < 3) return;
+    try { if (Number(localStorage.getItem(snoozeKey()) || 0) > Date.now() - 14 * 864e5) return; } catch { /* ok */ }
+    onetap = 'offer';
+    track('onetap_shown');
+    scroll();
+  }
+  function onetapConnect() { onetap = 'iframe'; scroll(); }
+  function onetapSnooze() {
+    onetap = 'hidden';
+    try { localStorage.setItem(snoozeKey(), String(Date.now())); } catch { /* ok */ }
+    track('onetap_snoozed');
+  }
+  $effect(() => {
+    const onMsg = (e) => {
+      if (e.origin !== api || e.data?.type !== 'sifter-onetap') return;
+      if (e.data.ok && e.data.email) {
+        connectedEmail = e.data.email;
+        try { localStorage.setItem(`sifter-onetap:${token}`, connectedEmail); } catch { /* ok */ }
+        onetap = 'done';
+        track('onetap_connected');
+        setTimeout(() => { onetap = 'hidden'; }, 6000);
+      }
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  });
+
   function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
   let openedOnce = false;
   function togglePanel() {
@@ -303,6 +340,23 @@
               </div>
             {/each}
             {#if errorMsg}<div class="error" role="alert">{errorMsg}</div>{/if}
+            {#if onetap !== 'hidden'}
+              <div class="onetap" role="region" aria-label="Email research summaries">
+                {#if onetap === 'offer'}
+                  <p>Enjoying the research? Receive a <strong>detailed summary</strong> of your conversations by email.</p>
+                  <div class="obtns">
+                    <button class="oconnect" onclick={onetapConnect}>Connect with Google</button>
+                    <button class="olater" onclick={onetapSnooze}>Not now</button>
+                  </div>
+                {:else if onetap === 'iframe'}
+                  <iframe title="Connect with Google" class="oframe" allow="identity-credentials-get"
+                    src="{api}/widget/onetap?key={encodeURIComponent(token)}&session={encodeURIComponent(sid)}"></iframe>
+                  <button class="olater" onclick={onetapSnooze}>Cancel</button>
+                {:else if onetap === 'done'}
+                  <p class="odone">✓ Connected as <strong>{connectedEmail}</strong> — you'll receive research summaries.</p>
+                {/if}
+              </div>
+            {/if}
           </div>
         </div>
         <footer>
@@ -344,6 +398,27 @@
   }
   .root.right { right: 20px; }
   .root.left { left: 20px; align-items: flex-start; }
+
+  /* One Tap invite card — quiet, gold-edged, in the reading column */
+  .onetap {
+    margin: 14px 6px 4px; padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--gold) 7%, transparent);
+    animation: fadeup .45s ease both;
+  }
+  .onetap p { margin: 0 0 10px; font-family: var(--serif); font-size: 14.5px; line-height: 1.45; }
+  .onetap .odone { margin: 0; color: var(--gold); }
+  .obtns { display: flex; gap: 10px; align-items: center; }
+  .oconnect {
+    border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer;
+    background: var(--accent-deep); color: #fff; font-size: 13.5px; font-weight: 600;
+  }
+  .oconnect:hover { filter: brightness(1.12); }
+  .olater { border: 0; background: none; color: inherit; opacity: .6; cursor: pointer; font-size: 13px; }
+  .olater:hover { opacity: .9; }
+  .oframe { width: 100%; height: 120px; border: 0; display: block; background: transparent; }
+  @keyframes fadeup { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
   /* ── Launch bubble: Ocean mark, gentle breathing. Hidden while the panel is open. ── */
   .bubble-btn {

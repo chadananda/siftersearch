@@ -661,6 +661,28 @@ export const migrations = {
     catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
     logger.info('Migration 102 complete');
   },
+
+  103: async () => {
+    // One Tap widget connections: a visitor on a host site connects via Google (intermediate
+    // iframe on api.siftersearch.com) to receive research summaries by email. One row per
+    // (site token, google account); session_id ties the connection to the analytics session.
+    logger.info('Starting migration 103: widget_connections (One Tap)');
+    await query(`CREATE TABLE IF NOT EXISTS widget_connections (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token TEXT NOT NULL,
+      session_id TEXT,
+      email TEXT NOT NULL,
+      google_sub TEXT NOT NULL,
+      name TEXT,
+      picture TEXT,
+      connected_at INTEGER DEFAULT (unixepoch()),
+      last_report_at INTEGER,
+      unsubscribed_at INTEGER,
+      UNIQUE(token, google_sub)
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_wconn_email ON widget_connections(email)`);
+    logger.info('Migration 103 complete: widget_connections');
+  },
 };
 
 export const graphMigrations = {

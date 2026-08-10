@@ -25,7 +25,8 @@ const ADMIN_HTML = loadAsset('admin.html');
 const originHost = (origin) => { try { return new URL(origin).hostname; } catch { return null; } };
 const DEV_HOSTS = new Set(['localhost', '127.0.0.1']);
 const parseJSON = (s, dflt) => { try { return JSON.parse(s); } catch { return dflt; } };
-const EVENT_TYPES = new Set(['widget_load', 'open', 'message_sent', 'answer_served', 'site_link_clicked', 'upgrade_shown']);
+const EVENT_TYPES = new Set(['widget_load', 'open', 'message_sent', 'answer_served', 'site_link_clicked', 'upgrade_shown',
+  'onetap_shown', 'onetap_connected', 'onetap_snoozed']);
 
 // Shape a profile row → the admin-facing object (parsed JSON, embed snippet).
 function profileView(row, apiOrigin) {
@@ -39,7 +40,9 @@ function profileView(row, apiOrigin) {
 
 export default async function widgetRoutes(fastify) {
   const admin = { preHandler: requireInternal };
-  const apiOrigin = () => (process.env.PUBLIC_API_URL || 'https://api.siftersearch.com').replace(/\/$/, '');
+  // ONE public domain: embeds advertise siftersearch.com (the edge worker proxies /widget* + /api/*
+  // to this backend). api.siftersearch.com remains only the internal tunnel leg the worker calls.
+  const apiOrigin = () => (process.env.PUBLIC_WIDGET_ORIGIN || 'https://siftersearch.com').replace(/\/$/, '');
 
   // ── Static assets (long-cached; bundle versioned by deploy) ─────────────────────────────────────────────────
   for (const [file, body] of Object.entries(ASSETS)) {
@@ -56,6 +59,86 @@ export default async function widgetRoutes(fastify) {
   fastify.get('/widget/demo', async (req, reply) => {
     if (!DEMO_HTML) return reply.code(404).send('demo not built');
     return reply.header('content-type', 'text/html; charset=utf-8').send(DEMO_HTML);
+  });
+
+  // ── One Tap intermediate iframe ──────────────────────────────────────────────────────────────────────────────
+  // Reached as siftersearch.com/widget/onetap (worker-proxied; that origin is registered in Google Console),
+  // embedded as an iframe by the widget on ANY host site — so host sites never register anything with Google.
+  // The parent iframe tag must carry
+  // allow="identity-credentials-get" (FedCM). Credential → POST /api/v1/widget/onetap (same-origin) → postMessage
+  // {type:'sifter-onetap', ok, email, name} to the parent widget.
+  fastify.get('/widget/onetap', async (req, reply) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) return reply.code(503).send('One Tap not configured');
+    const key = String(req.query.key || '');
+    const row = await queryOne(`SELECT token FROM widget_profiles WHERE token=?`, [key]);
+    if (!row) return reply.code(403).send('unknown widget key');
+    const sid = String(req.query.session || '').slice(0, 64);
+    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;background:transparent;font:14px/1.4 ui-sans-serif,system-ui,sans-serif;color:#5a6172}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 6px}
+#note{font-size:12px;color:#8b92a1;text-align:center}</style></head><body>
+<div class="wrap"><div id="btn"></div><div id="note"></div></div>
+<script>
+var KEY=${JSON.stringify(row.token)}, SID=${JSON.stringify(sid)}, CID=${JSON.stringify(clientId)};
+function post(m){ try{ parent.postMessage(Object.assign({type:'sifter-onetap'},m),'*'); }catch(e){} }
+function onCred(resp){
+  fetch('/api/v1/widget/onetap',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({credential:resp.credential,token:KEY,sessionId:SID})})
+  .then(function(r){ return r.json().then(function(j){ return {r:r,j:j}; }); })
+  .then(function(x){ if(x.r.ok&&x.j.ok){ post({ok:true,email:x.j.email,name:x.j.name}); }
+    else { document.getElementById('note').textContent='Connection failed — please try again.'; post({ok:false,error:x.j.error||('status '+x.r.status)}); } })
+  .catch(function(e){ post({ok:false,error:String(e&&e.message||e)}); });
+}
+function init(){
+  google.accounts.id.initialize({client_id:CID,callback:onCred,use_fedcm_for_prompt:true,context:'use',cancel_on_tap_outside:false,itp_support:true});
+  google.accounts.id.renderButton(document.getElementById('btn'),{type:'standard',theme:'outline',size:'large',text:'continue_with',shape:'pill',width:270});
+  google.accounts.id.prompt();
+}
+</script>
+<script src="https://accounts.google.com/gsi/client" async onload="init()"></script>
+</body></html>`;
+    return reply.header('content-type', 'text/html; charset=utf-8').header('cache-control', 'no-store').send(html);
+  });
+
+  // Credential sink: verify the Google ID token server-side (Google's tokeninfo validates the signature;
+  // we validate audience + verified email), then upsert the connection and send a welcome email (best-effort).
+  fastify.post('/api/v1/widget/onetap', async (req, reply) => {
+    const { credential, token, sessionId } = req.body || {};
+    if (!credential || !token) return reply.code(400).send({ ok: false, error: 'credential and token required' });
+    const profile = await queryOne(`SELECT token, name FROM widget_profiles WHERE token=?`, [token]);
+    if (!profile) return reply.code(403).send({ ok: false, error: 'unknown widget key' });
+    let info;
+    try {
+      const r = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`,
+        { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) return reply.code(401).send({ ok: false, error: 'invalid credential' });
+      info = await r.json();
+    } catch {
+      return reply.code(502).send({ ok: false, error: 'verification unavailable' });
+    }
+    if (info.aud !== process.env.GOOGLE_CLIENT_ID) return reply.code(401).send({ ok: false, error: 'audience mismatch' });
+    if (info.email_verified !== 'true' && info.email_verified !== true) return reply.code(401).send({ ok: false, error: 'email not verified' });
+    const email = String(info.email || '').slice(0, 254);
+    const sub = String(info.sub || '');
+    if (!email || !sub) return reply.code(401).send({ ok: false, error: 'incomplete credential' });
+    const name = String(info.name || '').slice(0, 120) || null;
+    await query(`INSERT INTO widget_connections (token, session_id, email, google_sub, name, picture)
+                 VALUES (?,?,?,?,?,?)
+                 ON CONFLICT(token, google_sub) DO UPDATE SET
+                   session_id=excluded.session_id, email=excluded.email, name=excluded.name,
+                   picture=excluded.picture, unsubscribed_at=NULL`,
+      [profile.token, String(sessionId || '').slice(0, 64) || null, email, sub, name, String(info.picture || '').slice(0, 500) || null]);
+    logger.info({ token: profile.token, email }, 'widget One Tap connection');
+    try {
+      const { sendEmail } = await import('../services/email.js');
+      await sendEmail({
+        to: email,
+        subject: `You're connected to ${profile.name}`,
+        text: `Hello${name ? ` ${name}` : ''},\n\nYou've connected your Google account to ${profile.name}, powered by Ocean research.\n\nFrom time to time we'll send you a detailed summary of your research conversations — the passages found, the sources cited, and links to read further in the original texts.\n\nIf you'd rather not receive these, just reply to this email with "stop".\n\n— The Ocean Library`,
+      });
+    } catch (e) { logger.warn({ err: e.message }, 'One Tap welcome email failed (connection still saved)'); }
+    return { ok: true, email, name };
   });
 
   // Admin console (self-contained HTML+JS; prompts for the internal key, admin-only).

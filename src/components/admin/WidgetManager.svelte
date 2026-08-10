@@ -135,7 +135,7 @@
   // Demo page lives on the API origin; recover it from the embed snippet so dev/prod both work
   function demoUrl(p) {
     const m = p.embed.match(/src="(.+?)\/widget\.js"/);
-    return `${m ? m[1] : 'https://api.siftersearch.com'}/widget/demo?key=${p.token}`;
+    return `${m ? m[1] : 'https://siftersearch.com'}/widget/demo?key=${p.token}`;
   }
 
   function formatTs(ts) {
