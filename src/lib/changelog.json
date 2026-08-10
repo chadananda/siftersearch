@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T17:12:20.496Z",
+  "generated": "2026-08-10T23:29:33.034Z",
   "entries": [
+    {
+      "hash": "9310444c",
+      "date": "2026-08-10",
+      "type": "Other",
+      "description": "Data-accent / data-name / data-mission per-page overrides",
+      "scope": null
+    },
     {
       "hash": "244a7081",
       "date": "2026-08-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Replace deprecated deepseek-chat/reasoner with deepseek-v4-flash/pro throughout",
       "scope": null
-    },
-    {
-      "hash": "6ebea481",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Doc priority — use tier column (not missing authority), add dedup-library script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-10": [
+      {
+        "hash": "9310444c",
+        "date": "2026-08-10",
+        "type": "Other",
+        "description": "Data-accent / data-name / data-mission per-page overrides",
+        "scope": null
+      },
       {
         "hash": "244a7081",
         "date": "2026-08-10",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Replace deprecated deepseek-chat/reasoner with deepseek-v4-flash/pro throughout",
-        "scope": null
-      },
-      {
-        "hash": "6ebea481",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Doc priority — use tier column (not missing authority), add dedup-library script",
         "scope": null
       }
     ]
