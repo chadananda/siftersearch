@@ -14,9 +14,23 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (isApiPath(url.pathname)) {
-      // Same-zone subrequest: cannot recurse into this worker, hits the API
-      // zone's edge cache per origin Cache-Control, and streams SSE bodies.
-      return fetch(API_ORIGIN + url.pathname + url.search, request);
+      const target = API_ORIGIN + url.pathname + url.search;
+      // Cloudflare doesn't cache /api/* JSON by default even with s-maxage — opt in here.
+      // Only GETs whose response EXPLICITLY sets a public s-maxage are cached (those routes
+      // are public-data by declaration; everything else stays a pure streaming pass-through).
+      if (request.method === 'GET') {
+        const cache = caches.default;
+        const hit = await cache.match(request);
+        if (hit) return hit;
+        const res = await fetch(target, request);
+        const cc = res.headers.get('cache-control') || '';
+        if (res.ok && cc.includes('public') && /s-maxage=[1-9]/.test(cc) && !cc.includes('no-store')) {
+          ctx.waitUntil(cache.put(request, res.clone()));
+        }
+        return res;
+      }
+      // Same-zone subrequest: cannot recurse into this worker, streams SSE bodies straight through.
+      return fetch(target, request);
     }
     return astro.fetch(request, env, ctx);
   },
