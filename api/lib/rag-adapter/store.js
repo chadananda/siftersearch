@@ -85,18 +85,21 @@ export function makeStore() {
     },
 
     // Persist cited claims (INSERT OR IGNORE on the content-addressed claim_hash). entity_id/target stay NULL
-    // (deferred to reconcile). Returns the count offered.
+    // (deferred to reconcile). hay_folded = diacritic/apostrophe-folded statement+proof, the bio-search
+    // SQL-prefilter key (matches bio.js fold() exactly — divergence breaks transliteration-invariant search).
+    // Returns the count offered.
     async saveClaims(rows) {
       if (!rows.length) return 0;
+      const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
       const stmts = rows.map((c) => ({
         sql: `INSERT OR IGNORE INTO entity_claims
                 (claim_hash, entity_id, relation, target_entity_id, statement, proof_verbatim, doc_id, para_id,
                  time_value, time_precision, time_basis, time_anchor, semantic_key, method_version, extractor_version,
-                 confidence, status, proof_ok, import_batch)
-              VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                 confidence, status, proof_ok, import_batch, hay_folded)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         args: [c.claimHash, null, c.relation, null, c.statement, c.proofVerbatim, c.docId, c.paraId,
           c.timeValue, c.timePrecision, c.timeBasis, c.timeAnchor, c.semanticKey, c.methodVersion, c.extractor,
-          c.confidence, c.status, c.proofOk, c.batch],
+          c.confidence, c.status, c.proofOk, c.batch, fold(`${c.statement} ${c.proofVerbatim || ''}`)],
       }));
       await db.transaction(stmts);
       return rows.length;

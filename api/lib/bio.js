@@ -538,12 +538,40 @@ export async function bioSearch(rawQ) {
   const HON = new Set('mirza haji hajji mulla siyyid sayyid aqa shaykh sheikh ustad karbilai karbala mashhadi hajj the of son daughter dervish native known as'.split(' '));
   const tokize = (s) => [...new Set(fold(s).split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !STOP.has(t) && !HON.has(t)))];
 
+  // ── Connection target (resolved BEFORE the claims load so the prefilter can scope typed claims to it):
+  //    does the query name a person the subjects must be CONNECTED to? The group's own name tokens are
+  //    excluded so the SUBJECT group ("Seven Martyrs") can't be mistaken for the OBJECT ("Bahá'u'lláh").
+  const cl = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+  const connQ = /\b(met|meet|with|accompan|knew|know|present|encounter|together|companion|recogni|imprison|attain|visit|serv|correspond)\b/i.test(q);
+  let connTarget = null;
+  if (connQ) {
+    const gtoks = new Set(best ? tokize(best.name) : []);
+    const persons = await queryAll(`SELECT id, canonical_name cn FROM graph_entities WHERE entity_type = 'person'
+      AND (last_assessed_version IS NULL OR last_assessed_version NOT LIKE 'merged-into-%')`);
+    const qf = ' ' + fold(q) + ' ';
+    for (const p of persons) {
+      if (best && p.id === best.id) continue;
+      const pt = tokize(p.cn).filter((t) => !gtoks.has(t)); if (!pt.length) continue;   // ignore tokens shared with the subject group
+      if (pt.every((t) => qf.includes(t))) { const score = pt.join('').length; if (!connTarget || score > connTarget.score) connTarget = { id: p.id, name: p.cn, tok: pt, score }; }
+    }
+  }
+
+  // SQL PREFILTER (migration 104): only claims whose folded statement+proof contain ≥1 query token —
+  // plus claims TYPED to the resolved connection target (tid matches need no text). Loading the ENTIRE
+  // catalog (~611k claims) into JS per request took 40s+ once the pipeline grew the table. Every
+  // downstream use — matchScore, namesTarget, the vividness picker — keys on query-token matches, so
+  // this set is a strict superset of the claims that can influence the result.
+  const preToks = [...new Set(norm(q).split(/\s+/).filter((t) => t.length > 2 && !STOP.has(t)))].slice(0, 8);
+  if (!preToks.length && !connTarget) return { ids: [], q };
+  const tokPreds = [...preToks.map(() => `ec.hay_folded LIKE ?`), ...(connTarget ? ['ec.target_entity_id = ?'] : [])].join(' OR ');
   const claimRows = await queryAll(`SELECT ec.entity_id eid, ge.canonical_name name, ge.importance imp, ec.relation, ec.target_entity_id tid,
       ec.statement, ec.proof_verbatim proof, ec.doc_id doc, ec.para_id pid, ec.time_value tv, ec.time_basis tb
     FROM entity_claims ec JOIN graph_entities ge ON ge.id = ec.entity_id
     WHERE ge.entity_type = 'person' AND ge.religion = '' AND (ec.status IS NULL OR ec.status = 'supported')
       AND ec.proof_verbatim IS NOT NULL AND TRIM(ec.proof_verbatim) <> ''
-      AND (ge.last_assessed_version IS NULL OR ge.last_assessed_version NOT LIKE 'merged-into-%')`);
+      AND (ge.last_assessed_version IS NULL OR ge.last_assessed_version NOT LIKE 'merged-into-%')
+      AND (${tokPreds})`,
+    [...preToks.map((t) => `%${t}%`), ...(connTarget ? [connTarget.id] : [])]);
   // Resolve the SOURCE DOCUMENT for every cited claim from the docs table (NOT a hardcoded book list). Every claim
   // carries doc_id + para_id by construction, so every fact shows its book + paragraph citation; the clickable
   // oceanlibrary link is added when the book has a source_url. A fact without a citation cannot exist here.
@@ -566,24 +594,6 @@ export async function bioSearch(rawQ) {
     (exById[c.eid] || (exById[c.eid] = [])).push(claim);
   }
 
-  // ── Connection target: does the query name a person the subjects must be CONNECTED to? Resolve to an ENTITY. The
-  //    group's own name tokens are excluded so the SUBJECT group ("Seven Martyrs") can't be mistaken for the OBJECT
-  //    ("Bahá'u'lláh"). A connection then counts when a claim's TARGET is that entity OR the claim's verbatim proof
-  //    NAMES it — object_id binding is incomplete, so the proof text carries the cited connection ("visited Bahá'u'lláh").
-  const cl = (s) => String(s || '').replace(/\s+/g, ' ').trim();
-  const connQ = /\b(met|meet|with|accompan|knew|know|present|encounter|together|companion|recogni|imprison|attain|visit|serv|correspond)\b/i.test(q);
-  let connTarget = null;
-  if (connQ) {
-    const gtoks = new Set(best ? tokize(best.name) : []);
-    const persons = await queryAll(`SELECT id, canonical_name cn FROM graph_entities WHERE entity_type = 'person'
-      AND (last_assessed_version IS NULL OR last_assessed_version NOT LIKE 'merged-into-%')`);
-    const qf = ' ' + fold(q) + ' ';
-    for (const p of persons) {
-      if (best && p.id === best.id) continue;
-      const pt = tokize(p.cn).filter((t) => !gtoks.has(t)); if (!pt.length) continue;   // ignore tokens shared with the subject group
-      if (pt.every((t) => qf.includes(t))) { const score = pt.join('').length; if (!connTarget || score > connTarget.score) connTarget = { id: p.id, name: p.cn, tok: pt, score }; }
-    }
-  }
   // a claim connects a subject to the target if it's typed to the target OR its proof/statement names the target
   const namesTarget = (c) => connTarget && (c.tid === connTarget.id || (connTarget.tok.length && connTarget.tok.every((t) => c.hay.includes(t))));
 

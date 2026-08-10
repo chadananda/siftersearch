@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T01:13:45.436Z",
+  "generated": "2026-08-10T02:17:51.906Z",
   "entries": [
+    {
+      "hash": "a4435a79",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Edge-cache public s-maxage API responses (CF skips /api/* by default)",
+      "scope": null
+    },
     {
       "hash": "5020e20b",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Meili_sync_tasks message escalates at 24h — distinguish normal rebuild from overdue",
       "scope": null
-    },
-    {
-      "hash": "69c79256",
-      "date": "2026-05-22",
-      "type": "Fixed",
-      "description": "Await checkMeiliBatchStall in Promise.all — prevent silent result drop",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "a4435a79",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Edge-cache public s-maxage API responses (CF skips /api/* by default)",
+        "scope": null
+      },
       {
         "hash": "5020e20b",
         "date": "2026-08-09",
@@ -7077,15 +7084,6 @@
         "date": "2026-05-23",
         "type": "Fixed",
         "description": "Meili_sync_tasks message escalates at 24h — distinguish normal rebuild from overdue",
-        "scope": null
-      }
-    ],
-    "2026-05-22": [
-      {
-        "hash": "69c79256",
-        "date": "2026-05-22",
-        "type": "Fixed",
-        "description": "Await checkMeiliBatchStall in Promise.all — prevent silent result drop",
         "scope": null
       }
     ]

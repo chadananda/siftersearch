@@ -20,9 +20,13 @@ const toks = (s) => fold(s).split(/[^a-z0-9]+/).filter((t) => t.length > 1);
 
 export default async function peopleRoutes(server) {
   // Phased book-integration roadmap + live grounded counts — powers the biography "progress" popup.
-  server.get('/people/progress', async () => getIntegrationProgress());
+  server.get('/people/progress', async (request, reply) => {
+    reply.header('Cache-Control', 'public, max-age=30, s-maxage=60');
+    return getIntegrationProgress();
+  });
 
-  server.get('/people', async (request) => {
+  server.get('/people', async (request, reply) => {
+    reply.header('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=3600');
     const qs = request.query || {};
     const limit = Math.min(2000, Math.max(1, parseInt(qs.limit, 10) || 50));
     const offset = Math.max(0, parseInt(qs.offset, 10) || 0);
@@ -67,8 +71,12 @@ export default async function peopleRoutes(server) {
   // GET /api/v1/entities/search?q=… — candidate people whose CITED claims match; returns each with evidence.
   server.get('/entities/search', async (request) => await entitySearch(request.query?.q, { limit: request.query?.limit }));
 
-  // GET /api/v1/people/search?q=… — intelligent meaning-search; returns matching ids + per-person evidence + answer
-  server.get('/people/search', async (request) => await bioSearch(request.query?.q));
+  // GET /api/v1/people/search?q=… — intelligent meaning-search; returns matching ids + per-person evidence + answer.
+  // Edge-cached per query string: identical questions serve instantly for 10 min.
+  server.get('/people/search', async (request, reply) => {
+    reply.header('Cache-Control', 'public, max-age=60, s-maxage=600, stale-while-revalidate=3600');
+    return await bioSearch(request.query?.q);
+  });
 
   server.get('/people/:id', async (request, reply) => {
     const person = await getBioPerson(request.params.id);

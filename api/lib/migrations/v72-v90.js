@@ -683,6 +683,17 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_wconn_email ON widget_connections(email)`);
     logger.info('Migration 103 complete: widget_connections');
   },
+
+  104: async () => {
+    // Bio-search scale fix: bioSearch loaded ALL ~611k proof-gated claims into JS per request
+    // (40s+ timeouts once the pipeline grew the table). hay_folded = diacritic/apostrophe-folded
+    // statement+proof, written by the claims adapter on insert and backfilled by
+    // scripts/backfill-claims-fold.mjs — lets the search prefilter claims in SQL by query tokens.
+    logger.info('Starting migration 104: entity_claims.hay_folded');
+    try { await query(`ALTER TABLE entity_claims ADD COLUMN hay_folded TEXT`); }
+    catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    logger.info('Migration 104 complete');
+  },
 };
 
 export const graphMigrations = {
