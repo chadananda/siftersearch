@@ -74,7 +74,10 @@ if (db) {
   done24 = q.find((r) => r.status === 'done')?.n || 0;
   const now2 = db.prepare(`SELECT SUM(status='queued') queued, SUM(status='running') running FROM grounding_queue WHERE status IN ('queued','running')`).get();
   queueDepth = now2?.queued || 0; liveRuns = now2?.running || 0;
-  add('Grounding failure storm', failed24 <= 20, 'critical', `${failed24} failed runs in 24h`);
+  // Storm = CURRENT state (last 3h), not history: a fixed storm earlier today must stop alerting
+  // once failures stop — the 24h figure stays as context in the progress line below.
+  const failed3h = db.prepare(`SELECT COUNT(*) n FROM grounding_queue WHERE status='failed' AND finished_at > ?`).get(Math.floor(Date.now() / 1000) - 3 * 3600)?.n || 0;
+  add('Grounding failure storm', failed3h <= 10, 'critical', `${failed3h} failed runs in last 3h (${failed24} in 24h)`);
   // Stalled: plan mode should ALWAYS keep work flowing until the plan is done. If the plan ever
   // completes for real, switch mode to 'general' — this alert says progress stopped, look why.
   const stalled = mode === 'plan' && liveRuns === 0 && queueDepth === 0 && done24 === 0;

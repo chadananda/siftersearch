@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T02:33:15.618Z",
+  "generated": "2026-08-10T03:03:01.142Z",
   "entries": [
+    {
+      "hash": "4d8b1b22",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Srcsets everywhere via ImageKit (house rule — exact CDN sizes, browser never resizes)",
+      "scope": null
+    },
     {
       "hash": "50743bb3",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Replace undefined drainOldest() call in processSyncJob with pruneCompleted + delay",
       "scope": null
-    },
-    {
-      "hash": "189e5f97",
-      "date": "2026-05-24",
-      "type": "Fixed",
-      "description": "Sync_stuck detection uses sync_jobs.status not updated_at — eliminate false positives",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "4d8b1b22",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Srcsets everywhere via ImageKit (house rule — exact CDN sizes, browser never resizes)",
+        "scope": null
+      },
       {
         "hash": "50743bb3",
         "date": "2026-08-09",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-24",
         "type": "Fixed",
         "description": "Replace undefined drainOldest() call in processSyncJob with pruneCompleted + delay",
-        "scope": null
-      },
-      {
-        "hash": "189e5f97",
-        "date": "2026-05-24",
-        "type": "Fixed",
-        "description": "Sync_stuck detection uses sync_jobs.status not updated_at — eliminate false positives",
         "scope": null
       }
     ]
