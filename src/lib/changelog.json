@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T02:17:51.906Z",
+  "generated": "2026-08-10T02:23:47.360Z",
   "entries": [
+    {
+      "hash": "9f6f76a3",
+      "date": "2026-08-09",
+      "type": "Performance",
+      "description": "Bio-search SQL prefilter (fixes 40s timeouts at 611k claims) + edge caching on people endpoints",
+      "scope": null
+    },
     {
       "hash": "a4435a79",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Escalate meili HNSW stuck to fail() at 36h + guard embedder re-apply during rebuild",
       "scope": null
-    },
-    {
-      "hash": "c6d33233",
-      "date": "2026-05-23",
-      "type": "Fixed",
-      "description": "Meili_sync_tasks message escalates at 24h — distinguish normal rebuild from overdue",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "9f6f76a3",
+        "date": "2026-08-09",
+        "type": "Performance",
+        "description": "Bio-search SQL prefilter (fixes 40s timeouts at 611k claims) + edge caching on people endpoints",
+        "scope": null
+      },
       {
         "hash": "a4435a79",
         "date": "2026-08-09",
@@ -7075,15 +7082,6 @@
         "date": "2026-05-24",
         "type": "Fixed",
         "description": "Escalate meili HNSW stuck to fail() at 36h + guard embedder re-apply during rebuild",
-        "scope": null
-      }
-    ],
-    "2026-05-23": [
-      {
-        "hash": "c6d33233",
-        "date": "2026-05-23",
-        "type": "Fixed",
-        "description": "Meili_sync_tasks message escalates at 24h — distinguish normal rebuild from overdue",
         "scope": null
       }
     ]

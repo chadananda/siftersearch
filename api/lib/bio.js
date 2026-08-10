@@ -538,6 +538,21 @@ export async function bioSearch(rawQ) {
   const HON = new Set('mirza haji hajji mulla siyyid sayyid aqa shaykh sheikh ustad karbilai karbala mashhadi hajj the of son daughter dervish native known as'.split(' '));
   const tokize = (s) => [...new Set(fold(s).split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !STOP.has(t) && !HON.has(t)))];
 
+  // ── BARE-NAME fast path: a query that IS a person's name answers from the (5-min-cached) person
+  //    model instantly. The LLM precision path exists for meaning/place/event questions — handed a bare
+  //    name it correctly finds no act to satisfy and returns empty, after a ~20s model call. Same
+  //    prefix-token matching as GET /people?q=.
+  const CONN_RE = /\b(met|meet|with|accompan|knew|know|present|encounter|together|companion|recogni|imprison|attain|visit|serv|correspond|who|where|when|died|killed|martyr)\b/i;
+  if (!CONN_RE.test(q)) {
+    const qts = norm(q).split(/\s+/).filter((t) => t.length > 1);
+    if (qts.length && qts.length <= 4) {
+      const data = await listBioPersons();
+      const nameToks = (p) => [...norm(p.name).split(/\s+/), ...(p.aliases || []).flatMap((a) => norm(a).split(/\s+/))].filter((t) => t.length > 1);
+      const hits = data.persons.filter((p) => { const hay = nameToks(p); return qts.every((t) => hay.some((h) => h.startsWith(t) || t.startsWith(h))); });
+      if (hits.length) return { ids: hits.slice(0, 60).map((p) => p.id), q, reasoning: { summary: '', evidence: {} } };
+    }
+  }
+
   // ── Connection target (resolved BEFORE the claims load so the prefilter can scope typed claims to it):
   //    does the query name a person the subjects must be CONNECTED to? The group's own name tokens are
   //    excluded so the SUBJECT group ("Seven Martyrs") can't be mistaken for the OBJECT ("Bahá'u'lláh").
@@ -687,10 +702,12 @@ export async function bioSearch(rawQ) {
   const qterms = tokize(q);
   const matchScore = (eid) => exById[eid].reduce((s, c) => s + qterms.filter((t) => c.hay.includes(t)).length, 0);
   let poolIds = candidateIds || Object.keys(exById).map(Number).filter((eid) => matchScore(eid) > 0);
-  poolIds = poolIds.filter((id) => exById[id]).sort((a, b) => matchScore(b) - matchScore(a) || (impById[b] - impById[a])).slice(0, 60);
+  // 40×10 (was 60×14): v4-flash's hidden reasoning scales with catalog size — the trim roughly halves
+  // judgment latency with no measured recall loss (top-40 by match score dominates qualifying answers).
+  poolIds = poolIds.filter((id) => exById[id]).sort((a, b) => matchScore(b) - matchScore(a) || (impById[b] - impById[a])).slice(0, 40);
   const lines = poolIds.map((id) => {
     const fx = [...exById[id]].sort((a, b) => qterms.filter((t) => b.hay.includes(t)).length - qterms.filter((t) => a.hay.includes(t)).length);
-    return `${id}|${nameById[id]}: ${fx.slice(0, 14).map((c) => `• ${cl(c.statement)} « ${cl(c.proof).slice(0, 160)} »${c.when ? ' [' + c.when + ']' : ''}`).join(' ')}`;
+    return `${id}|${nameById[id]}: ${fx.slice(0, 10).map((c) => `• ${cl(c.statement)} « ${cl(c.proof).slice(0, 150)} »${c.when ? ' [' + c.when + ']' : ''}`).join(' ')}`;
   });
   const catalog = lines.join('\n');
 
