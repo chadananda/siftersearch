@@ -2893,7 +2893,33 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   // found=false. A weak semantic 'likely' can latch onto narrator framing ("the son of the
   // Founder") while the actual needle is absent (the Anne-Perry miss); corroborating such a
   // guess against the web, clearly attributed, beats presenting it as the library's answer.
-  const quoteMiss = research.quote_lookup && research.quote_lookup.confidence !== 'high';
+  // A quote-SOURCE hunt SUCCEEDS only if a library passage actually CONTAINS the quote — a
+  // fuzzy 'high' score can collide on scattered common words ("little"…"day by day") without the
+  // phrase being present. So: verbatim-contain check on the span, not the numeric score. If the
+  // span (normalized) doesn't appear near-intact in any top candidate, it's a miss → web fires,
+  // regardless of confidence. (Non-span hunts keep the confidence!=='high' rule.)
+  const normQ = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  let quoteMiss = false;
+  if (research.quote_lookup) {
+    const span = normQ(research.quote_lookup.span);
+    if (span && span.split(' ').length >= 3) {
+      // require most of the span to appear as a contiguous run in some candidate
+      const words = span.split(' ');
+      const spanContained = research.retrieved_quotes.some((q) => {
+        const hay = ' ' + normQ(q.text || q.content || q.statement || '') + ' ';
+        for (let n = words.length; n >= Math.ceil(words.length * 0.7); n--) {
+          for (let i = 0; i + n <= words.length; i++) {
+            if (hay.includes(' ' + words.slice(i, i + n).join(' ') + ' ')) return true;
+          }
+        }
+        return false;
+      });
+      quoteMiss = !spanContained;
+    } else {
+      quoteMiss = research.quote_lookup.confidence !== 'high';   // no usable span → fall back on confidence
+    }
+  }
   if (!research.is_political && (research.retrieved_quotes.length === 0 || quoteMiss)) {
     const webQuestion = research.quote_lookup
       ? `Identify the specific PUBLISHED SOURCE — the exact book title and author — that records this quotation or anecdote, most likely from Bahá'í or other sacred literature. Prefer a published book or authoritative compilation over blogs, forums, or personal websites. If a compilation records it, also name the earlier book it cites. Quotation/passage: ${research.quote_lookup.span ? `"${research.quote_lookup.span}"` : userMessage}`
