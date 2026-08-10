@@ -22,10 +22,9 @@
   let connectionStatus = $state(getConnectionStatus());
   $effect(() => onConnectionStatusChange(s => { connectionStatus = s; }));
 
-  // Local state
+  // Local state — showNavMenu drives the ONE combined pill menu (nav + account)
   let showAuthModal = $state(false);
   let showNavMenu = $state(false);
-  let showUserMenu = $state(false);
   let showSignInPrompt = $state(false);
 
   // Track usage for sign-in prompt (shows after 3 searches or 30 seconds)
@@ -69,17 +68,14 @@
     showNavMenu = false;
   }
 
-  // Close user menu
+  // Close user menu (same combined menu — kept for existing onclick references)
   function closeUserMenu() {
-    showUserMenu = false;
+    showNavMenu = false;
   }
 
   // Handle click outside to close dropdowns
   function handleClickOutside(event) {
-    if (showUserMenu && !event.target.closest('.user-menu-container')) {
-      showUserMenu = false;
-    }
-    if (showNavMenu && !event.target.closest('.nav-hamburger') && !event.target.closest('.nav-dropdown')) {
+    if (showNavMenu && !event.target.closest('.menu-pill-container')) {
       showNavMenu = false;
     }
     if (showSignInPrompt && !event.target.closest('.signin-prompt')) {
@@ -96,6 +92,8 @@
     auth.user?.email?.charAt(0)?.toUpperCase() ||
     '?'
   );
+  // Account image when the auth record carries one (Google-connected accounts); falls back to initial.
+  let userPic = $derived(auth.user?.picture || auth.user?.avatar_url || auth.user?.image || null);
 </script>
 
 <svelte:window onclick={handleClickOutside} />
@@ -181,12 +179,12 @@
         </a>
       </nav>
 
-      <!-- Hamburger menu for collapsed items -->
-      <div class="nav-hamburger">
+      <!-- Combined menu pill: hamburger + account avatar in one control (one menu for nav + account) -->
+      <div class="menu-pill-container">
         <button
-          class="hamburger-btn"
+          class="menu-pill"
           onclick={() => showNavMenu = !showNavMenu}
-          aria-label="Navigation menu"
+          aria-label="Menu and account"
           aria-expanded={showNavMenu}
           aria-haspopup="true"
         >
@@ -197,6 +195,19 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             {/if}
           </svg>
+          {#if auth.isAuthenticated}
+            {#if userPic}
+              <img class="pill-avatar" src={userPic} alt="" referrerpolicy="no-referrer" />
+            {:else}
+              <span class="pill-avatar pill-initial">{userInitial}</span>
+            {/if}
+          {:else}
+            <span class="pill-avatar pill-guest" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </span>
+          {/if}
         </button>
 
         <!-- Dropdown for collapsed nav items -->
@@ -250,30 +261,62 @@
               </svg>
               About
             </a>
+
+            <!-- Account section — same menu, below the nav items -->
+            <div class="dropdown-divider"></div>
+            {#if auth.isAuthenticated}
+              <div class="dropdown-header">
+                <div class="header-user">
+                  {#if userPic}
+                    <img class="header-avatar header-avatar-img" src={userPic} alt="" referrerpolicy="no-referrer" />
+                  {:else}
+                    <span class="header-avatar">{userInitial}</span>
+                  {/if}
+                  <div class="header-info">
+                    <div class="header-email">{auth.user?.email}</div>
+                    <TierBadge compact />
+                  </div>
+                </div>
+              </div>
+              <a href="/profile" class="dropdown-item" role="menuitem" onclick={closeNavMenu}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                Profile
+              </a>
+              <a href="/settings" class="dropdown-item" role="menuitem" onclick={closeNavMenu}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                Settings
+              </a>
+              {#if isAdmin}
+                <a href="/admin" class="dropdown-item admin-item" role="menuitem" onclick={closeNavMenu}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                  Admin Panel
+                </a>
+              {/if}
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item signout-item" role="menuitem" onclick={() => { logout(); closeNavMenu(); }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Sign Out
+              </button>
+            {:else}
+              <button class="dropdown-item connect-item" role="menuitem" onclick={() => { showNavMenu = false; showAuthModal = true; }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                Connect Free — save your research
+              </button>
+            {/if}
           </div>
         {/if}
-      </div>
-
-      <!-- Dark mode only -->
-
-      <!-- User menu -->
-      <div class="user-menu-container">
-        <button
-          class="user-icon-btn"
-          class:authenticated={auth.isAuthenticated}
-          onclick={() => auth.isAuthenticated ? showUserMenu = !showUserMenu : showAuthModal = true}
-          aria-expanded={auth.isAuthenticated ? showUserMenu : undefined}
-          aria-haspopup={auth.isAuthenticated ? "true" : undefined}
-          aria-label={auth.isAuthenticated ? "User menu" : "Account"}
-        >
-          {#if auth.isAuthenticated}
-            <span class="user-avatar">{userInitial}</span>
-          {:else}
-            <svg class="user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-            </svg>
-          {/if}
-        </button>
 
         <!-- Sign-in prompt bubble -->
         {#if showSignInPrompt && !auth.isAuthenticated}
@@ -292,56 +335,6 @@
           </div>
         {/if}
 
-        <!-- User dropdown menu (only for authenticated users) -->
-        {#if showUserMenu && auth.isAuthenticated}
-          <div class="user-dropdown" role="menu">
-            <!-- User info header -->
-            <div class="dropdown-header">
-              <div class="header-user">
-                <span class="header-avatar">{userInitial}</span>
-                <div class="header-info">
-                  <div class="header-email">{auth.user?.email}</div>
-                  <TierBadge compact />
-                </div>
-              </div>
-            </div>
-
-            <div class="dropdown-divider"></div>
-
-            <!-- Account menu items -->
-            <a href="/profile" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-              </svg>
-              Profile
-            </a>
-            <a href="/settings" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
-              Settings
-            </a>
-            <!-- Referrals and Support hidden until multi-user launch -->
-            {#if isAdmin}
-              <div class="dropdown-divider"></div>
-              <a href="/admin" class="dropdown-item admin-item" role="menuitem" onclick={closeUserMenu}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-                Admin Panel
-              </a>
-            {/if}
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item signout-item" role="menuitem" onclick={() => { logout(); closeUserMenu(); }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-              Sign Out
-            </button>
-          </div>
-        {/if}
       </div>
     </div>
   </div>
@@ -497,31 +490,56 @@
     position: relative;
   }
 
-  /* Hide hamburger when all links are visible */
-  @media (min-width: 1280px) {
-    .nav-hamburger { display: none; }
-  }
+  /* Combined menu pill: hamburger lines + account avatar in one control (always visible —
+     it is BOTH the nav overflow menu and the account menu) */
+  .menu-pill-container { position: relative; }
 
-  .hamburger-btn {
-    width: 2.5rem;
-    height: 2.5rem;
+  .menu-pill {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 0.55rem;
+    padding: 0.3rem 0.35rem 0.3rem 0.8rem;
     background: var(--surface-1);
     border: 1px solid var(--border-default);
-    border-radius: 50%;
+    border-radius: 999px;
     cursor: pointer;
     transition: all 0.15s ease;
-    padding: 0;
     color: var(--text-secondary);
   }
 
-  .hamburger-btn:hover {
+  .menu-pill:hover {
     background: var(--surface-2);
     border-color: var(--border-strong);
     color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
   }
+
+  .pill-avatar {
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: 50%;
+    object-fit: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .pill-initial {
+    background: var(--accent);
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .pill-guest {
+    background: var(--surface-3);
+    color: var(--text-muted);
+  }
+
+  .pill-guest svg { width: 1.05rem; height: 1.05rem; }
+
+  .header-avatar-img { object-fit: cover; }
 
   .hamburger-icon {
     width: 1.125rem;

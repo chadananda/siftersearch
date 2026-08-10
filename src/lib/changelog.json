@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T03:40:08.830Z",
+  "generated": "2026-08-10T04:14:15.332Z",
   "entries": [
+    {
+      "hash": "be22e730",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Retry HTTP probes before going critical (one flaky sample must never page)",
+      "scope": null
+    },
     {
       "hash": "9338adfb",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Raise meili_sync_tasks stale threshold 12h→24h/48h, fix queue backlog messaging",
       "scope": null
-    },
-    {
-      "hash": "d96d5302",
-      "date": "2026-05-24",
-      "type": "Fixed",
-      "description": "Exclude embedders from settings diff to prevent false settingsUpdate on restart",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "be22e730",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Retry HTTP probes before going critical (one flaky sample must never page)",
+        "scope": null
+      },
       {
         "hash": "9338adfb",
         "date": "2026-08-09",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-24",
         "type": "Fixed",
         "description": "Raise meili_sync_tasks stale threshold 12h→24h/48h, fix queue backlog messaging",
-        "scope": null
-      },
-      {
-        "hash": "d96d5302",
-        "date": "2026-05-24",
-        "type": "Fixed",
-        "description": "Exclude embedders from settings diff to prevent false settingsUpdate on restart",
         "scope": null
       }
     ]

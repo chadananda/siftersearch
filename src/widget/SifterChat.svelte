@@ -56,6 +56,7 @@
         try { messages = JSON.parse(localStorage.getItem(storeKey()) || '[]'); } catch { messages = []; }
         if (!messages.length && c.greeting) messages = [{ role: 'assistant', content: c.greeting, done: true }];
         track('widget_load');
+        maybeOfferOnetap();   // a restored transcript may already qualify — don't wait for the next answer
       })
       .catch(() => { denied = true; });
   });
@@ -234,7 +235,12 @@
   // sites never register anything. Snoozed 14 days on "Not now"; remembered once connected. ─────────
   let onetap = $state('hidden');   // hidden | offer | iframe | done
   let connectedEmail = $state('');
-  try { connectedEmail = localStorage.getItem(`sifter-onetap:${token}`) || ''; } catch { /* private mode */ }
+  let connectedPic = $state('');
+  let profileOpen = $state(false);
+  try {
+    connectedEmail = localStorage.getItem(`sifter-onetap:${token}`) || '';
+    connectedPic = localStorage.getItem(`sifter-onetap-pic:${token}`) || '';
+  } catch { /* private mode */ }
   const snoozeKey = () => `sifter-onetap-snooze:${token}`;
   function maybeOfferOnetap() {
     if (connectedEmail || onetap !== 'hidden') return;
@@ -250,12 +256,28 @@
     try { localStorage.setItem(snoozeKey(), String(Date.now())); } catch { /* ok */ }
     track('onetap_snoozed');
   }
+  // Header profile button: connected → avatar + popover (email, disconnect); not connected → an
+  // always-available way in (no waiting for the 3rd-exchange invite).
+  function profileClick() {
+    if (connectedEmail) { profileOpen = !profileOpen; return; }
+    profileOpen = false;
+    onetap = onetap === 'hidden' || onetap === 'done' ? 'offer' : onetap;
+    scroll();
+  }
+  function disconnectOnetap() {
+    connectedEmail = ''; connectedPic = ''; profileOpen = false; onetap = 'hidden';
+    try { localStorage.removeItem(`sifter-onetap:${token}`); localStorage.removeItem(`sifter-onetap-pic:${token}`); } catch { /* ok */ }
+  }
   $effect(() => {
     const onMsg = (e) => {
       if (e.origin !== api || e.data?.type !== 'sifter-onetap') return;
       if (e.data.ok && e.data.email) {
         connectedEmail = e.data.email;
-        try { localStorage.setItem(`sifter-onetap:${token}`, connectedEmail); } catch { /* ok */ }
+        connectedPic = e.data.picture || '';
+        try {
+          localStorage.setItem(`sifter-onetap:${token}`, connectedEmail);
+          if (connectedPic) localStorage.setItem(`sifter-onetap-pic:${token}`, connectedPic);
+        } catch { /* ok */ }
         onetap = 'done';
         track('onetap_connected');
         setTimeout(() => { onetap = 'hidden'; }, 6000);

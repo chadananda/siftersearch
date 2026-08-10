@@ -86,7 +86,7 @@ function onCred(resp){
   fetch('/api/v1/widget/onetap',{method:'POST',headers:{'content-type':'application/json'},
     body:JSON.stringify({credential:resp.credential,token:KEY,sessionId:SID})})
   .then(function(r){ return r.json().then(function(j){ return {r:r,j:j}; }); })
-  .then(function(x){ if(x.r.ok&&x.j.ok){ post({ok:true,email:x.j.email,name:x.j.name}); }
+  .then(function(x){ if(x.r.ok&&x.j.ok){ post({ok:true,email:x.j.email,name:x.j.name,picture:x.j.picture||null}); }
     else { document.getElementById('note').textContent='Connection failed — please try again.'; post({ok:false,error:x.j.error||('status '+x.r.status)}); } })
   .catch(function(e){ post({ok:false,error:String(e&&e.message||e)}); });
 }
@@ -138,7 +138,7 @@ function init(){
         text: `Hello${name ? ` ${name}` : ''},\n\nYou've connected your Google account to ${profile.name}, powered by Ocean research.\n\nFrom time to time we'll send you a detailed summary of your research conversations — the passages found, the sources cited, and links to read further in the original texts.\n\nIf you'd rather not receive these, just reply to this email with "stop".\n\n— The Ocean Library`,
       });
     } catch (e) { logger.warn({ err: e.message }, 'One Tap welcome email failed (connection still saved)'); }
-    return { ok: true, email, name };
+    return { ok: true, email, name, picture: String(info.picture || '') || null };
   });
 
   // Admin console (self-contained HTML+JS; prompts for the internal key, admin-only).
