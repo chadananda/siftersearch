@@ -8,7 +8,7 @@
 import { userQuery } from '../db.js';
 import { logger } from '../logger.js';
 
-export const USER_DB_CURRENT_VERSION = 4;
+export const USER_DB_CURRENT_VERSION = 5;
 
 export const userMigrations = {
   // Version 1: Create all user tables in user database
@@ -286,5 +286,12 @@ export const userMigrations = {
     try { await userQuery('ALTER TABLE users ADD COLUMN is_test INTEGER DEFAULT 0'); } catch { /* exists */ }
     await userQuery(`UPDATE users SET is_test = 1 WHERE email LIKE 'test-%@siftersearch.com'`);
     logger.info('User migration 4 complete: users.is_test added, existing test accounts flagged');
+  },
+
+  // Version 5: Google sign-in — profile picture (shown in the nav pill) + stable Google account id
+  5: async () => {
+    try { await userQuery('ALTER TABLE users ADD COLUMN picture TEXT'); } catch { /* exists */ }
+    try { await userQuery('ALTER TABLE users ADD COLUMN google_sub TEXT'); } catch { /* exists */ }
+    logger.info('User migration 5 complete: users.picture + users.google_sub added');
   },
 };

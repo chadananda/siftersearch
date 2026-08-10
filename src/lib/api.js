@@ -273,6 +273,15 @@ export const auth = {
     return data;
   },
 
+  async google(credential) {
+    const data = await request('/api/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential })
+    });
+    accessToken = data.accessToken;
+    return data;
+  },
+
   async logout() {
     await request('/api/auth/logout', { method: 'POST', body: JSON.stringify({}) });
     clearAccessToken();

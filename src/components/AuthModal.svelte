@@ -1,8 +1,16 @@
 <script>
   import { login, signup, getAuthState } from '../lib/auth.svelte.js';
+  import { renderGoogleButton } from '../lib/google-signin.js';
   import { getStoredReferral, clearStoredReferral } from '../lib/referral.js';
 
   let { isOpen = $bindable(false), onClose = () => {} } = $props();
+
+  // Google button renders whenever the modal opens; a successful credential closes the modal
+  // via the auth-state effect below.
+  let gBtnEl = $state(null);
+  $effect(() => { if (isOpen && gBtnEl) renderGoogleButton(gBtnEl); });
+  const authState = getAuthState();
+  $effect(() => { if (isOpen && authState.isAuthenticated) { isOpen = false; onClose(); } });
 
   let mode = $state('login'); // 'login' or 'signup'
   let email = $state('');
@@ -105,6 +113,12 @@
       <p id="auth-modal-desc" class="sr-only">
         {mode === 'login' ? 'Sign in to your account to access personalized features.' : 'Create a new account to get started.'}
       </p>
+      <!-- Google sign-in first (one click, supplies the profile picture); email below -->
+      <div class="google-block">
+        <div bind:this={gBtnEl} class="google-btn-slot"></div>
+        <div class="or-rule"><span>or with email</span></div>
+      </div>
+
       <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="modal-form" aria-label="{mode === 'login' ? 'Sign in' : 'Create account'} form">
         {#if error}
           <div class="error-box" role="alert" aria-live="assertive">
@@ -197,6 +211,29 @@
 {/if}
 
 <style>
+  .google-block {
+    padding: 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .google-btn-slot { min-height: 44px; display: flex; justify-content: center; }
+  .or-rule {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+  .or-rule::before, .or-rule::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-default);
+  }
+
   .modal-backdrop {
     position: fixed;
     inset: 0;

@@ -62,6 +62,24 @@ export async function login(email, password) {
 }
 
 /**
+ * Google sign-in (One Tap or button credential) — same session as email login.
+ */
+export async function googleLogin(credential) {
+  loading = true;
+  error = null;
+  try {
+    const data = await authApi.google(credential);
+    user = data.user;
+    return { success: true };
+  } catch (err) {
+    error = err.message || 'Google sign-in failed';
+    return { success: false, error };
+  } finally {
+    loading = false;
+  }
+}
+
+/**
  * Signup
  */
 export async function signup(email, password, name, referralCode = null) {

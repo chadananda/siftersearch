@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T04:15:45.973Z",
+  "generated": "2026-08-10T04:31:45.477Z",
   "entries": [
+    {
+      "hash": "3b69c4b1",
+      "date": "2026-08-09",
+      "type": "Other",
+      "description": "Header profile button markup + popover (completes One Tap visibility)",
+      "scope": null
+    },
     {
       "hash": "b0e79069",
       "date": "2026-08-09",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Arabic/Chinese embedding crash + cap sidecar cache batch at 200 params",
       "scope": null
-    },
-    {
-      "hash": "c3244787",
-      "date": "2026-05-26",
-      "type": "Fixed",
-      "description": "Prevent library-watcher crash loop — catch all floating promises",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-09": [
+      {
+        "hash": "3b69c4b1",
+        "date": "2026-08-09",
+        "type": "Other",
+        "description": "Header profile button markup + popover (completes One Tap visibility)",
+        "scope": null
+      },
       {
         "hash": "b0e79069",
         "date": "2026-08-09",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-26",
         "type": "Fixed",
         "description": "Arabic/Chinese embedding crash + cap sidecar cache batch at 200 params",
-        "scope": null
-      },
-      {
-        "hash": "c3244787",
-        "date": "2026-05-26",
-        "type": "Fixed",
-        "description": "Prevent library-watcher crash loop — catch all floating promises",
         "scope": null
       }
     ]

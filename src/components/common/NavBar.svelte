@@ -22,6 +22,8 @@
   let connectionStatus = $state(getConnectionStatus());
   $effect(() => onConnectionStatusChange(s => { connectionStatus = s; }));
 
+  import { promptOneTap } from '../../lib/google-signin.js';
+
   // Local state — showNavMenu drives the ONE combined pill menu (nav + account)
   let showAuthModal = $state(false);
   let showNavMenu = $state(false);
@@ -35,6 +37,15 @@
   $effect(() => {
     if (typeof localStorage !== 'undefined') {
       hasShownPrompt = localStorage.getItem('sifter_signin_prompt_shown') === 'true';
+    }
+  });
+
+  // Google One Tap for signed-out visitors (short delay so it never races first paint;
+  // once per browser session, and Google applies its own dismissal cooldowns).
+  $effect(() => {
+    if (!auth.isAuthenticated && typeof window !== 'undefined') {
+      const t = setTimeout(() => { if (!auth.isAuthenticated) promptOneTap(); }, 4000);
+      return () => clearTimeout(t);
     }
   });
 

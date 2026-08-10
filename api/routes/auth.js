@@ -295,6 +295,79 @@ export default async function authRoutes(fastify) {
     reply.send({ user: safeUser, accessToken });
   });
 
+  // Google sign-in (One Tap or button) — verified ID token → find-or-create user → same session as
+  // email login. Email auth remains alongside; a Google login on an existing email account simply
+  // attaches picture/google_sub (and implicitly verifies the email — Google already did).
+  // ADMIN whitelist: emails in ADMIN_EMAILS (comma/space-separated, .env-secrets) are UPGRADED to
+  // admin on sign-in — upgrade only, never a downgrade path.
+  fastify.post('/google', {
+    schema: { body: { type: 'object', required: ['credential'], properties: { credential: { type: 'string' } } } }
+  }, async (request, reply) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) throw ApiError.internal('Google sign-in not configured');
+    let info;
+    try {
+      const r = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(request.body.credential)}`,
+        { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) throw new Error(`tokeninfo ${r.status}`);
+      info = await r.json();
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Google credential verification failed');
+      throw ApiError.unauthorized('Invalid Google credential');
+    }
+    if (info.aud !== clientId) throw ApiError.unauthorized('Credential audience mismatch');
+    if (String(info.email_verified) !== 'true') throw ApiError.unauthorized('Google email not verified');
+    const email = String(info.email || '').toLowerCase();
+    const sub = String(info.sub || '');
+    if (!email || !sub) throw ApiError.unauthorized('Incomplete Google credential');
+    const gName = String(info.name || '').slice(0, 120) || null;
+    const gPic = String(info.picture || '').slice(0, 500) || null;
+
+    let user = await queryOne('SELECT * FROM users WHERE email = ?', [email]);
+    if (user?.tier === 'banned') throw ApiError.forbidden('Account suspended');
+    if (!user) {
+      const result = await query(
+        `INSERT INTO users (email, password_hash, name, email_verified, picture, google_sub)
+         VALUES (?, NULL, ?, 1, ?, ?) RETURNING id`,
+        [email, gName, gPic, sub]
+      );
+      user = await queryOne('SELECT * FROM users WHERE id = ?', [result.rows[0].id]);
+      logger.info({ userId: user.id, email }, 'User created via Google sign-in');
+    } else {
+      await query(
+        `UPDATE users SET email_verified = 1, google_sub = ?, picture = COALESCE(?, picture), name = COALESCE(name, ?) WHERE id = ?`,
+        [sub, gPic, gName, user.id]
+      );
+      user = await queryOne('SELECT * FROM users WHERE id = ?', [user.id]);
+    }
+
+    // Admin whitelist (upgrade only)
+    const whitelist = String(process.env.ADMIN_EMAILS || '').toLowerCase().split(/[\s,]+/).filter(Boolean);
+    if (whitelist.includes(email) && user.tier !== 'admin' && user.tier !== 'superadmin') {
+      await query('UPDATE users SET tier = ? WHERE id = ?', ['admin', user.id]);
+      user = await queryOne('SELECT * FROM users WHERE id = ?', [user.id]);
+      logger.info({ userId: user.id, email }, 'Admin whitelist applied on Google sign-in');
+    }
+
+    // Unify anonymous history, same as email login
+    const anonymousUserId = getAnonymousUserId(request);
+    if (anonymousUserId) {
+      try {
+        await unifyUserId(anonymousUserId, user.id);
+        const memoryAgent = new MemoryAgent();
+        await memoryAgent.unifyMemories(anonymousUserId, user.id.toString());
+      } catch (unifyErr) {
+        logger.warn({ unifyErr, anonymousUserId, userId: user.id }, 'Failed to unify anonymous user on Google login');
+      }
+    }
+
+    const accessToken = createAccessToken(user);
+    const refresh = await createRefreshToken(user.id);
+    const { password_hash, ...safeUser } = user;
+    setRefreshCookie(reply, refresh);
+    reply.send({ user: safeUser, accessToken });
+  });
+
   // Forgot password - request reset
   fastify.post('/forgot-password', {
     schema: {
@@ -434,7 +507,7 @@ export default async function authRoutes(fastify) {
   // Get current user
   fastify.get('/me', { preHandler: authenticate }, async (request) => {
     const user = await queryOne(
-      'SELECT id, email, name, tier, preferred_language, email_verified, created_at, approved_at FROM users WHERE id = ?',
+      'SELECT id, email, name, tier, picture, preferred_language, email_verified, created_at, approved_at FROM users WHERE id = ?',
       [request.user.sub]
     );
 
