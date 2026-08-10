@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T16:33:11.926Z",
+  "generated": "2026-08-10T16:40:29.548Z",
   "entries": [
+    {
+      "hash": "244a7081",
+      "date": "2026-08-10",
+      "type": "Other",
+      "description": "Quote-source miss = span not verbatim-contained (score-independent) → web fires",
+      "scope": null
+    },
     {
       "hash": "1c25feb9",
       "date": "2026-08-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Doc priority — use tier column (not missing authority), add dedup-library script",
       "scope": null
-    },
-    {
-      "hash": "3136b9e1",
-      "date": "2026-05-26",
-      "type": "Fixed",
-      "description": "Calibrate-deepseek cap concurrency at 10 to prevent SQLITE_BUSY; add dedup-library script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-10": [
+      {
+        "hash": "244a7081",
+        "date": "2026-08-10",
+        "type": "Other",
+        "description": "Quote-source miss = span not verbatim-contained (score-independent) → web fires",
+        "scope": null
+      },
       {
         "hash": "1c25feb9",
         "date": "2026-08-10",
@@ -7073,15 +7080,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Doc priority — use tier column (not missing authority), add dedup-library script",
-        "scope": null
-      }
-    ],
-    "2026-05-26": [
-      {
-        "hash": "3136b9e1",
-        "date": "2026-05-26",
-        "type": "Fixed",
-        "description": "Calibrate-deepseek cap concurrency at 10 to prevent SQLITE_BUSY; add dedup-library script",
         "scope": null
       }
     ]
