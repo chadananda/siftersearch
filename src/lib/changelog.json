@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-12T18:26:53.937Z",
+  "generated": "2026-08-12T18:46:40.110Z",
   "entries": [
+    {
+      "hash": "02d82e32",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Storm guard — quarantine books stuck failing \"did not reach verify\"",
+      "scope": null
+    },
     {
       "hash": "ba2b96fd",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Graph-validator extract JSON by lastIndexOf('}') — Haiku appends prose",
       "scope": null
-    },
-    {
-      "hash": "2185a656",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Graph-validator pass system msg in messages array + assistant prefill",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "02d82e32",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Storm guard — quarantine books stuck failing \"did not reach verify\"",
+        "scope": null
+      },
       {
         "hash": "ba2b96fd",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Graph-validator extract JSON by lastIndexOf('}') — Haiku appends prose",
-        "scope": null
-      },
-      {
-        "hash": "2185a656",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Graph-validator pass system msg in messages array + assistant prefill",
         "scope": null
       }
     ]

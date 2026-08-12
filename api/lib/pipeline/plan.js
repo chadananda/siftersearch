@@ -40,7 +40,7 @@ export async function resumeStageFor(docId, deps = {}) {
   const q = deps.queryOne || queryOne;
   const r = await q(
     `SELECT (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) prose,
-            (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND context IS NOT NULL AND context!='') disamb,
+            (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND context IS NOT NULL) disamb,
             (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND hyp_questions IS NOT NULL) hyped,
             (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(trim(text)) >= ${HYPE_MINLEN}) hypeable,
             (SELECT COUNT(*) FROM entity_claims WHERE doc_id=? AND entity_id IS NOT NULL) claimsBound,
@@ -86,16 +86,31 @@ async function refill(orderedIdsFn, { lookahead, deps }) {
     )).map((r) => r.doc_id));
   } catch { /* grounding_queue absent / query failure → fail-open, don't quarantine */ }
 
+  // LANGUAGE-CAPABILITY GATE: never enqueue a doc whose language the extraction models can't handle
+  // (deepseek: en/ar/he; haiku: fa). Feeding e.g. German to the English deepseek path yields garbage and
+  // burns tokens — the exact "churn until it dies" we must avoid. Such docs are PARKED (skipped + flagged),
+  // never enqueued. Relies on docs.language being correct; scripts/relabel-languages.mjs detects + fixes
+  // the `en`-mislabels (German/French/… histories) so this gate can see them.
+  let unsupportedLang = new Set();
+  try {
+    const qAll = deps.queryAll || queryAll;
+    unsupportedLang = new Set((await qAll(
+      `SELECT id FROM docs WHERE language IS NOT NULL AND language NOT IN ('en','ar','he','fa')`
+    )).map((r) => r.id));
+  } catch { /* fail-open → don't gate on language */ }
+
   const resume = deps.resumeStageFor || resumeStageFor;
   const enq = deps.enqueue || enqueue;
   const doTick = deps.tick || tick;
   const ordered = await orderedIdsFn();
   const added = [];
   const skippedQuarantine = [];
+  const skippedLang = [];
   let pending = 0;
   for (let i = 0; i < ordered.length && pending < lookahead; i++) {
     const { id, done } = ordered[i];
     if (done) continue;                        // reliably complete → skip fast (avoids a per-doc query)
+    if (unsupportedLang.has(id)) { skippedLang.push(id); continue; }   // no capable model → park (never churn)
     if (quarantined.has(id) && !active.has(id)) { skippedQuarantine.push(id); continue; }   // storm guard
     const opts = await resume(id);             // authoritative stage decision
     if (opts == null) continue;                // done or empty → not remaining work
@@ -105,11 +120,14 @@ async function refill(orderedIdsFn, { lookahead, deps }) {
     added.push({ docId: id, opts });
   }
   if (added.length) doTick().catch(() => {});
+  if (skippedLang.length) {
+    logger.warn({ parked: skippedLang }, 'processor: parked docs whose language has no capable extraction model (relabel or add routing to enrich)');
+  }
   if (skippedQuarantine.length) {
     logger.warn({ quarantined: skippedQuarantine, threshold: FAIL_QUARANTINE },
       'processor: quarantined repeatedly-failing docs (auto re-enqueue stopped; hand-enqueue in override to retry)');
   }
-  return { added, pending, quarantined: skippedQuarantine };
+  return { added, pending, quarantined: skippedQuarantine, parked: skippedLang };
 }
 
 // PLAN mode: candidate order = the history plan (integration-phases.js), exactly as the UI renders it.

@@ -112,8 +112,13 @@ export function makeStore() {
 
     // Fraction of a doc's prose paragraphs that carry a disambiguation note — the gate's input.
     async getDisambigCoverage(docId) {
+      // DONE = every prose paragraph was PROCESSED by disambiguation, NOT that it produced an entity.
+      // The stage writes context='' for a paragraph it examined and found nothing to disambiguate — a
+      // VALID complete result. Measuring `context!=''` (entity yield) wrongly brands entity-sparse or
+      // low-name paragraphs incomplete, so such a book never reaches the gate threshold and re-runs
+      // forever. `context IS NOT NULL` = "the stage ran here"; NULL = "not yet processed".
       const r = (await db.queryAll(
-        `SELECT COUNT(*) total, SUM(CASE WHEN context IS NOT NULL AND context!='' THEN 1 ELSE 0 END) done
+        `SELECT COUNT(*) total, SUM(CASE WHEN context IS NOT NULL THEN 1 ELSE 0 END) done
            FROM content WHERE doc_id=? AND deleted_at IS NULL AND ${PROSE}`, [docId]
       ))[0];
       return r?.total ? r.done / r.total : 1;

@@ -89,6 +89,40 @@ describe('followPlanTick — keeps the next N incomplete plan books queued, in o
     expect(calls).toEqual([]);
     expect(r.active).toBe(3);
   });
+
+  it('parks docs whose language has no capable extraction model — never enqueued (no token churn)', async () => {
+    const calls = [];
+    const books = [{ id: 1, done: false }, { id: 2, done: false }, { id: 3, done: false }];
+    const deps = {
+      getProgress: async () => ({ phases: [{ books }] }),
+      list: async () => [],
+      // The language-gate query is the one mentioning `language`; id2 is unsupported (e.g. German).
+      queryAll: async (sql) => (sql.includes('language') ? [{ id: 2 }] : []),
+      resumeStageFor: async () => ({}),
+      enqueue: async (a) => calls.push(a),
+      tick: async () => {},
+    };
+    const r = await followPlanTick({ lookahead: 5, deps });
+    expect(calls.map((c) => c.docId)).toEqual([1, 3]);   // id2 parked, never enqueued
+    expect(r.parked).toEqual([2]);
+  });
+
+  it('quarantines docs that repeatedly hit the terminal "did not reach verify" failure (storm guard)', async () => {
+    const calls = [];
+    const books = [{ id: 1, done: false }, { id: 2, done: false }];
+    const deps = {
+      getProgress: async () => ({ phases: [{ books }] }),
+      list: async () => [],
+      // The quarantine query is the one mentioning the terminal error; id1 has failed too many times.
+      queryAll: async (sql) => (sql.includes('did not reach verify') ? [{ doc_id: 1 }] : []),
+      resumeStageFor: async () => ({}),
+      enqueue: async (a) => calls.push(a),
+      tick: async () => {},
+    };
+    const r = await followPlanTick({ lookahead: 5, deps });
+    expect(calls.map((c) => c.docId)).toEqual([2]);      // id1 quarantined, not re-enqueued
+    expect(r.quarantined).toEqual([1]);
+  });
 });
 
 describe('processor mode', () => {

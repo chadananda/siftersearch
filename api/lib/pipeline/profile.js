@@ -94,13 +94,52 @@ export const PROFILE_OVERRIDES = {
 
 const SCRIPT = { hebrew: /[֐-׿]/, arabicPersian: /[؀-ۿ]/, persianOnly: /[پچژگی]/ };
 
-/** Detect language + script from a text sample. Persian and Arabic share a script → use Persian-only chars. */
+// The languages our extraction models can actually process: deepseek-v4-flash does en/ar/he; haiku does fa.
+// Anything else (German, French, Italian, Latin, …) has NO capable model — feeding it to the English
+// deepseek path yields garbage and burns tokens, so such docs must be PARKED, never enriched.
+export const SUPPORTED_LANGS = new Set(['en', 'ar', 'he', 'fa']);
+
+// Distinctive high-frequency function words per Latin-script language. Used ONLY to catch non-English
+// Latin text (books mislabeled `en`); English is the default and we override only on a clear margin, so
+// ordinary English prose is never mislabeled.
+const LATIN_STOPWORDS = {
+  de: ['der', 'die', 'das', 'und', 'ich', 'nicht', 'ein', 'eine', 'mit', 'auf', 'für', 'ist', 'den', 'dem', 'von', 'zu', 'sich', 'auch', 'wird', 'werden', 'über', 'aber', 'durch', 'nach', 'bei', 'nur'],
+  fr: ['le', 'la', 'les', 'des', 'une', 'dans', 'pour', 'est', 'pas', 'que', 'qui', 'avec', 'sur', 'ne', 'plus', 'sont', 'cette', 'être', 'leur', 'aux', 'ont', 'nous', 'vous'],
+  it: ['il', 'la', 'di', 'che', 'non', 'per', 'una', 'con', 'sono', 'gli', 'del', 'della', 'nel', 'alla', 'come', 'anche', 'questo', 'loro', 'più', 'sua'],
+  es: ['el', 'la', 'los', 'las', 'que', 'por', 'con', 'una', 'para', 'como', 'pero', 'este', 'esta', 'son', 'del', 'más', 'muy', 'está', 'sus', 'les'],
+  la: ['et', 'in', 'est', 'non', 'ad', 'qui', 'cum', 'per', 'quod', 'sed', 'ex', 'autem', 'enim', 'esse', 'sunt', 'hoc', 'atque', 'quae', 'quam'],
+};
+const EN_STOPWORDS = ['the', 'and', 'of', 'to', 'in', 'that', 'is', 'was', 'for', 'with', 'as', 'his', 'he', 'on', 'by', 'this', 'which', 'from', 'are', 'were', 'their', 'they'];
+
+/** Detect a Latin-script language from a sample by function-word frequency. Returns 'en' unless another
+ *  language clears a clear margin over English (so English text stays 'en'). Exported for the relabel tool. */
+export function detectLatinLang(sample) {
+  const words = (sample || '').toLowerCase().match(/[a-zà-ÿ']+/g) || [];
+  if (words.length < 40) return 'en';                               // too little text to judge
+  const freq = new Map();
+  for (const w of words) freq.set(w, (freq.get(w) || 0) + 1);
+  const total = words.length;
+  const score = (list) => list.reduce((n, w) => n + (freq.get(w) || 0), 0) / total;
+  const en = score(EN_STOPWORDS);
+  let best = 'en', bestScore = en;
+  for (const [lang, list] of Object.entries(LATIN_STOPWORDS)) {
+    const s = score(list);
+    if (s > bestScore) { best = lang; bestScore = s; }
+  }
+  return (best !== 'en' && bestScore > en * 1.5 && bestScore > 0.05) ? best : 'en';
+}
+
+/** Detect language + script from a text sample. Non-Latin script is definitive; Latin script is
+ *  disambiguated by function words (English default). Persian and Arabic share a script → Persian-only chars. */
 function detectLang(sample, metaLang) {
-  if (metaLang && LANG_ROUTING[metaLang]) return metaLang;
-  if (!sample) return 'en';
-  if (SCRIPT.hebrew.test(sample)) return 'he';
-  if (SCRIPT.arabicPersian.test(sample)) return SCRIPT.persianOnly.test(sample) ? 'fa' : 'ar';
-  return 'en';
+  if (sample) {
+    if (SCRIPT.hebrew.test(sample)) return 'he';
+    if (SCRIPT.arabicPersian.test(sample)) return SCRIPT.persianOnly.test(sample) ? 'fa' : 'ar';
+  }
+  // A non-English NON-LATIN metadata language (he/ar/fa) is trustworthy even without a sample.
+  if (metaLang && metaLang !== 'en' && LANG_ROUTING[metaLang]) return metaLang;
+  if (sample) return detectLatinLang(sample);                       // Latin script: catch de/fr/it/es/la
+  return metaLang || 'en';                                          // no sample → trust metadata (may be unsupported)
 }
 
 /** Derive genre from religion/collection/title keywords (fallback when no override). */
@@ -135,13 +174,16 @@ export function detectProfile(doc, sampleText = '') {
   const script = lang === 'he' ? 'hebrew' : (lang === 'fa' || lang === 'ar') ? 'arabic' : 'latin';
   const genre = ov.genre || detectGenre(doc);
   const domain = ov.domain || detectDomain(doc);
+  // enrichable = a capable extraction model exists for this language. Unsupported languages (de/fr/it/…)
+  // must be PARKED by callers, never routed to the English deepseek path (garbage output + wasted tokens).
+  const enrichable = SUPPORTED_LANGS.has(lang);
   const route = LANG_ROUTING[lang] || LANG_ROUTING.en;
   // A per-doc model override (e.g. Sonnet for a flagship) replaces the disambig model only.
   const disambigModel = ov.model || route.disambig;
   const models = { disambig: disambigModel, hype: ov.model || route.hype, extract: ov.model || route.extract };
   const priority = ov.priority ?? (Number.isFinite(doc.doc_priority) ? 1000 - doc.doc_priority : 1000);
   return {
-    name: `${genre}-${lang}`, lang, script, genre, domain, priority,
+    name: `${genre}-${lang}`, lang, script, genre, domain, priority, enrichable,
     segmentation: [21308, 21310].includes(doc.id) ? 'toc' : 'bounded',
     extract: EXTRACT_GENRES.has(genre),
     eraAnchors: DOMAIN_ANCHORS[domain] || '',
