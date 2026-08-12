@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-12T17:44:50.613Z",
+  "generated": "2026-08-12T17:48:15.114Z",
   "entries": [
+    {
+      "hash": "03ba88f6",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Single \"Admin\" nav link + dashboard health/analytics summary + deep Analytics page",
+      "scope": null
+    },
     {
       "hash": "3ad52c83",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Migration 82 — idx_ev_extraction_id on extraction_validations",
       "scope": null
-    },
-    {
-      "hash": "47f43293",
-      "date": "2026-05-27",
-      "type": "Performance",
-      "description": "Graph-validator two-step fetchBatch + idx_ev_extraction_id index",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "03ba88f6",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Single \"Admin\" nav link + dashboard health/analytics summary + deep Analytics page",
+        "scope": null
+      },
       {
         "hash": "3ad52c83",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Migration 82 — idx_ev_extraction_id on extraction_validations",
-        "scope": null
-      },
-      {
-        "hash": "47f43293",
-        "date": "2026-05-27",
-        "type": "Performance",
-        "description": "Graph-validator two-step fetchBatch + idx_ev_extraction_id index",
         "scope": null
       }
     ]

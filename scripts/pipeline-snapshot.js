@@ -257,7 +257,7 @@ async function main() {
         SUM(CASE WHEN search_type != 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS searches_d7,
         SUM(CASE WHEN search_type = 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS chat_d1,
         SUM(CASE WHEN search_type = 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS chat_d7,
-        AVG(CASE WHEN created_at >= ? THEN duration_ms ELSE NULL END) AS avg_ms_d7,
+        AVG(CASE WHEN search_type != 'api_chat' AND created_at >= ? THEN duration_ms ELSE NULL END) AS avg_ms_d7,
         SUM(CASE WHEN result_count = 0 AND search_type != 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS zero_result_d7
       FROM search_log`, [day1, day7, day1, day7, day7, day7]).catch(() => null);
     // 14-day daily series (searches vs chat) for the Analytics page sparkline/chart.
