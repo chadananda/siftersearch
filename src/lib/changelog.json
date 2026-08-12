@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-12T16:10:53.590Z",
+  "generated": "2026-08-12T17:44:50.613Z",
   "entries": [
+    {
+      "hash": "3ad52c83",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Warn on a non-draining grounding queue (the gap that hid the 2-day idle stall)",
+      "scope": null
+    },
     {
       "hash": "c9614f05",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Graph-validator two-step fetchBatch + idx_ev_extraction_id index",
       "scope": null
-    },
-    {
-      "hash": "f498c8ab",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Extraction over-extraction — add scope boundary, mention cap, dynamic work title",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "3ad52c83",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Warn on a non-draining grounding queue (the gap that hid the 2-day idle stall)",
+        "scope": null
+      },
       {
         "hash": "c9614f05",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Performance",
         "description": "Graph-validator two-step fetchBatch + idx_ev_extraction_id index",
-        "scope": null
-      },
-      {
-        "hash": "f498c8ab",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Extraction over-extraction — add scope boundary, mention cap, dynamic work title",
         "scope": null
       }
     ]

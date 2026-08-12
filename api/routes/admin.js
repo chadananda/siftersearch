@@ -139,6 +139,97 @@ export default async function adminRoutes(fastify) {
     return { ...snap, age_s: ageS, stale: ageS != null && ageS > PIPELINE_STALE_S };
   });
 
+  // Dashboard summary — health + top-line analytics (visits, searches, chat, spend).
+  // Composed entirely from the precomputed admin snapshot (no heavy in-request scans);
+  // only a single light users COUNT runs live. The Analytics page (/analytics/deep)
+  // carries the deeper breakdowns.
+  fastify.get('/dashboard', { preHandler: requireTier('admin') }, async () => {
+    const snap = readAdminSnapshot() || {};
+    const users = await userQueryOne(`
+      SELECT COUNT(*) AS total,
+             SUM(CASE WHEN approved_at IS NULL AND tier = 'verified' THEN 1 ELSE 0 END) AS pending
+      FROM users WHERE ${NOT_TEST_USER}`).catch(() => null);
+
+    // ── Health: derive a red/amber/green per subsystem the monitor already tracks.
+    const ageS = snap.generated_at ? Math.round((Date.now() - Date.parse(snap.generated_at)) / 1000) : null;
+    const stale = ageS != null && ageS > PIPELINE_STALE_S;
+    const workers = snap.workers && !snap.workers.error ? snap.workers : {};
+    // Only the always-on processes are health-critical; the retired enrichment
+    // pollers are intentionally pm2-stopped (see CLAUDE.md) and must not alarm.
+    const CRITICAL = ['api', 'worker'];
+    const criticalDown = CRITICAL.filter((w) => workers[w] && workers[w].status !== 'online');
+    const checks = [
+      { key: 'snapshot', ok: !stale, detail: ageS == null ? 'never generated' : `${ageS}s old` },
+      { key: 'workers', ok: criticalDown.length === 0, detail: criticalDown.length ? `down: ${criticalDown.join(', ')}` : 'core online' },
+      { key: 'meilisearch', ok: !snap.meili?.error, detail: snap.meili?.error || `${snap.meili?.paragraphs_docs ?? '?'} paras` },
+      { key: 'content', ok: !snap.integrity?.alert, detail: snap.integrity?.alert || `${snap.integrity?.live_paras ?? '?'} live paras` },
+    ];
+    const failed = checks.filter((c) => !c.ok);
+    const status = failed.some((c) => ['workers', 'meilisearch', 'content'].includes(c.key)) ? 'down'
+      : failed.length ? 'warn' : 'ok';
+
+    // ── Visits (Cloudflare). Sum the daily buckets for 1d/7d; null if the token
+    // lacks Analytics:Read (cloudflare.error) — the UI shows "unavailable" then.
+    const cf = snap.cloudflare;
+    let visits = null;
+    if (cf && !cf.error && Array.isArray(cf.daily) && cf.daily.length) {
+      const last = cf.daily[cf.daily.length - 1] || {};
+      const last7 = cf.daily.slice(-7);
+      visits = {
+        d1_pageViews: last.pageViews ?? 0,
+        d1_uniques: last.uniques ?? 0,
+        d7_pageViews: last7.reduce((s, d) => s + (d.pageViews ?? 0), 0),
+        d7_uniques: last7.reduce((s, d) => s + (d.uniques ?? 0), 0),
+        d7_requests: last7.reduce((s, d) => s + (d.requests ?? 0), 0),
+      };
+    }
+
+    const a = snap.activity?.totals || {};
+    const ai = snap.aiUsage?.combined || {};
+    return {
+      generated_at: snap.generated_at || null,
+      age_s: ageS,
+      health: { status, checks },
+      users: { total: users?.total ?? 0, pending: users?.pending ?? 0 },
+      visits,
+      visits_available: !!visits,
+      searches: { d1: a.searches_d1 ?? 0, d7: a.searches_d7 ?? 0, zero_result_d7: a.zero_result_d7 ?? 0, avg_ms_d7: a.avg_ms_d7 ? Math.round(a.avg_ms_d7) : null },
+      chat: { d1: a.chat_d1 ?? 0, d7: a.chat_d7 ?? 0 },
+      spend: {
+        today: ai.today_cost ?? 0,
+        week: ai.week_cost ?? 0,
+        month: ai.month_cost ?? 0,
+        failed_week: ai.failed_week ?? 0,
+        byCallerToday: (snap.aiUsage?.byCallerToday || []).slice(0, 6),
+      },
+    };
+  });
+
+  // Deep analytics — full series + breakdowns for the /admin/analytics page.
+  // Cloudflare traffic + sources (from the snapshot) and our own search/indexing/
+  // spend internals. Still snapshot-backed; no live heavy scans.
+  fastify.get('/analytics/deep', { preHandler: requireTier('admin') }, async () => {
+    const snap = readAdminSnapshot() || {};
+    return {
+      generated_at: snap.generated_at || null,
+      cloudflare: snap.cloudflare || null,
+      activity: snap.activity || null,
+      spend: {
+        combined: snap.aiUsage?.combined || null,
+        byProvider: snap.aiUsage?.byProvider || [],
+        byModel: snap.aiUsage?.byModel || [],
+        byCaller: snap.aiUsage?.byCaller || [],
+      },
+      indexing: {
+        extraction_remaining: snap.entity_pipeline?.extraction_remaining ?? null,
+        content_sync_backlog: snap.content_sync_backlog ?? null,
+        embeddings: snap.embeddings || null,
+        meili: snap.meili || null,
+        priority_books: snap.priority_books || [],
+      },
+    };
+  });
+
   // List users with pagination and filtering
   fastify.get('/users', {
     preHandler: requireTier('admin'),

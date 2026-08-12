@@ -242,6 +242,95 @@ async function main() {
     }
   }
 
+  // ── Site activity (search_log) ──────────────────────────────────────────────
+  // search_log is small (tens of thousands of rows, created_at-indexed), so a
+  // 14-day windowed aggregate is cheap. search_type: 'api'/'api_quick'/'keyword'
+  // are library searches; 'api_chat' is a Jafar chat turn. Powers the dashboard
+  // "searches"/"chat" cards and the Analytics daily series.
+  let activity = null;
+  try {
+    const day1 = fmtTs(new Date(Date.now() - 24 * 3600 * 1000));
+    const day7 = fmtTs(weekStart);
+    const totals = await queryOne(`
+      SELECT
+        SUM(CASE WHEN search_type != 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS searches_d1,
+        SUM(CASE WHEN search_type != 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS searches_d7,
+        SUM(CASE WHEN search_type = 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS chat_d1,
+        SUM(CASE WHEN search_type = 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS chat_d7,
+        AVG(CASE WHEN created_at >= ? THEN duration_ms ELSE NULL END) AS avg_ms_d7,
+        SUM(CASE WHEN result_count = 0 AND search_type != 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS zero_result_d7
+      FROM search_log`, [day1, day7, day1, day7, day7, day7]).catch(() => null);
+    // 14-day daily series (searches vs chat) for the Analytics page sparkline/chart.
+    const series = await queryAll(`
+      SELECT substr(created_at, 1, 10) AS day,
+             SUM(CASE WHEN search_type = 'api_chat' THEN 0 ELSE 1 END) AS searches,
+             SUM(CASE WHEN search_type = 'api_chat' THEN 1 ELSE 0 END) AS chat
+      FROM search_log
+      WHERE created_at >= ?
+      GROUP BY day ORDER BY day ASC`, [fmtTs(new Date(Date.now() - 14 * 24 * 3600 * 1000))]).catch(() => []);
+    // Top queries (7d) — what people actually ask. Chat prompts excluded (they're prose, not queries).
+    const topQueries = await queryAll(`
+      SELECT query, COUNT(*) AS n, AVG(result_count) AS avg_results
+      FROM search_log
+      WHERE created_at >= ? AND search_type != 'api_chat' AND length(trim(query)) > 0
+      GROUP BY lower(trim(query)) ORDER BY n DESC LIMIT 25`, [day7]).catch(() => []);
+    activity = { generated_at: new Date().toISOString(), totals, series, topQueries };
+  } catch (err) {
+    activity = { error: err.message };
+  }
+
+  // ── Cloudflare traffic (visits / sources) ───────────────────────────────────
+  // Free-plan zone analytics via the GraphQL API (httpRequests1dGroups). Needs a
+  // token with Analytics:Read on the zone; if the token is deploy-only the query
+  // errors and we store {error} — the dashboard then shows visits as unavailable.
+  // 20-min TTL gate (external call); carried forward otherwise.
+  const CF_TTL_MS = 20 * 60 * 1000;
+  let cloudflare = prevSnapshot.cloudflare ?? null;
+  const cfAge = cloudflare?.generated_at ? Date.now() - Date.parse(cloudflare.generated_at) : Infinity;
+  if (cfAge > CF_TTL_MS && process.env.CLOUDFLARE_API_TOKEN && process.env.CLOUDFLARE_ZONE_ID) {
+    try {
+      const iso = (d) => d.toISOString().slice(0, 10);
+      const since = iso(new Date(Date.now() - 13 * 24 * 3600 * 1000)); // 14 daily buckets
+      const until = iso(new Date(Date.now() + 24 * 3600 * 1000));      // include today
+      const gql = `query {
+        viewer { zones(filter: { zoneTag: "${process.env.CLOUDFLARE_ZONE_ID}" }) {
+          httpRequests1dGroups(limit: 14, orderBy: [date_ASC], filter: { date_geq: "${since}", date_lt: "${until}" }) {
+            dimensions { date }
+            sum { requests pageViews bytes threats
+                  countryMap { clientCountryName requests }
+                  contentTypeMap { edgeResponseContentTypeName requests } }
+            uniq { uniques }
+          } } } }`;
+      const res = await fetch('https://api.cloudflare.com/client/v4/graphql', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: gql }),
+        signal: AbortSignal.timeout(12000),
+      });
+      const json = await res.json();
+      if (json.errors?.length) throw new Error(json.errors.map((e) => e.message).join('; '));
+      const groups = json.data?.viewer?.zones?.[0]?.httpRequests1dGroups ?? [];
+      const daily = groups.map((g) => ({
+        date: g.dimensions.date,
+        requests: g.sum.requests ?? 0,
+        pageViews: g.sum.pageViews ?? 0,
+        uniques: g.uniq?.uniques ?? 0,
+        bytes: g.sum.bytes ?? 0,
+        threats: g.sum.threats ?? 0,
+      }));
+      // Aggregate top countries across the window.
+      const countryTotals = {};
+      for (const g of groups) for (const c of g.sum.countryMap ?? []) {
+        countryTotals[c.clientCountryName] = (countryTotals[c.clientCountryName] ?? 0) + (c.requests ?? 0);
+      }
+      const topCountries = Object.entries(countryTotals).map(([country, requests]) => ({ country, requests }))
+        .sort((a, b) => b.requests - a.requests).slice(0, 12);
+      cloudflare = { generated_at: new Date().toISOString(), daily, topCountries };
+    } catch (err) {
+      cloudflare = { generated_at: new Date().toISOString(), error: err.message };
+    }
+  }
+
   // Answer-cache health: size, per-version composition (stale phase-out visible
   // as the old version's count shrinking), and 24h serve mix with latencies.
   let answerCache = null;
@@ -310,6 +399,8 @@ async function main() {
     missingBooks,
     bottlenecks,
     aiUsage,
+    activity,
+    cloudflare,
     answer_cache: answerCache,
     entity_review_model_at: erGeneratedAt,
     priority_books: books,

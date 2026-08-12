@@ -682,6 +682,20 @@ export const admin = {
   },
 
   /**
+   * Dashboard summary — health + visits/searches/chat/spend top-line.
+   */
+  async getDashboard() {
+    return request('/api/admin/dashboard');
+  },
+
+  /**
+   * Deep analytics — Cloudflare traffic + our search/indexing/spend internals.
+   */
+  async getDeepAnalytics() {
+    return request('/api/admin/analytics/deep');
+  },
+
+  /**
    * List users with pagination and filtering
    */
   async getUsers(options = {}) {

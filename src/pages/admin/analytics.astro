@@ -1,0 +1,9 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
+import AnalyticsPage from '../../components/admin/AnalyticsPage.svelte';
+---
+
+<AdminLayout title="Analytics">
+  <AnalyticsPage client:only="svelte"><IslandSkeleton slot="fallback" /></AnalyticsPage>
+</AdminLayout>

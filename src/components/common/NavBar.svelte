@@ -224,6 +224,15 @@
         <!-- Dropdown for collapsed nav items -->
         {#if showNavMenu}
           <div class="nav-dropdown" role="menu" aria-label="Navigation menu">
+            {#if isAdmin}
+              <!-- Admin: single link at the top → the admin dashboard -->
+              <a href="/admin" class="nav-dropdown-item admin-item" class:active={currentPage === 'admin'} role="menuitem" onclick={closeNavMenu}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                Admin
+              </a>
+            {/if}
             <!-- Chat is always visible in dropdown -->
             <a href="/" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'chat' || currentPage === 'search'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -302,14 +311,6 @@
                 </svg>
                 Settings
               </a>
-              {#if isAdmin}
-                <a href="/admin" class="dropdown-item admin-item" role="menuitem" onclick={closeNavMenu}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                  </svg>
-                  Admin Panel
-                </a>
-              {/if}
               <div class="dropdown-divider"></div>
               <button class="dropdown-item signout-item" role="menuitem" onclick={() => { logout(); closeNavMenu(); }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -1,7 +1,7 @@
 <script>
   /**
-   * AdminDashboard Component
-   * Overview statistics and quick actions
+   * AdminDashboard — health + analytics summary (visits, searches, chat, spend)
+   * plus users/library at a glance. Deep breakdowns live on /admin/analytics.
    */
   import { onMount } from 'svelte';
   import { admin } from '../../lib/api.js';
@@ -10,47 +10,60 @@
   const auth = getAuthState();
 
   let stats = $state(null);
+  let dash = $state(null);
   let loading = $state(true);
   let authReady = $state(false);
   let error = $state(null);
 
-  // Route guard - require admin tier
   $effect(() => {
-    if (!auth.loading) {
-      requireTier(['admin', 'superadmin'], '/');
-    }
+    if (!auth.loading) requireTier(['admin', 'superadmin'], '/');
   });
 
   onMount(async () => {
-    // Wait for auth to initialize before checking permissions or loading data
     await initAuth();
     authReady = true;
-
-    // Only load stats if user is authenticated admin
     if (auth.isAuthenticated && (auth.user?.tier === 'admin' || auth.user?.tier === 'superadmin')) {
-      await loadStats();
+      await load();
     }
   });
 
-  async function loadStats() {
+  async function load() {
     loading = true;
     error = null;
-
     try {
-      stats = await admin.getStats();
+      const [s, d] = await Promise.allSettled([admin.getStats(), admin.getDashboard()]);
+      if (s.status === 'fulfilled') stats = s.value;
+      if (d.status === 'fulfilled') dash = d.value;
+      if (s.status === 'rejected' && d.status === 'rejected') {
+        error = d.reason?.message || 'Failed to load dashboard';
+      }
     } catch (err) {
-      error = err.message || 'Failed to load statistics';
+      error = err.message || 'Failed to load dashboard';
     } finally {
       loading = false;
     }
   }
 
-  function formatNumber(n) {
+  function fmt(n) {
     if (n === undefined || n === null) return '0';
     if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
     if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
     return n.toString();
   }
+  function money(n) {
+    if (n === undefined || n === null) return '$0';
+    if (n >= 1000) return '$' + (n / 1000).toFixed(1) + 'K';
+    if (n >= 1) return '$' + n.toFixed(2);
+    return '$' + n.toFixed(3);
+  }
+  function ago(s) {
+    if (s == null) return 'unknown';
+    if (s < 90) return `${s}s ago`;
+    if (s < 5400) return `${Math.round(s / 60)}m ago`;
+    return `${Math.round(s / 3600)}h ago`;
+  }
+
+  const health = $derived(dash?.health || null);
 </script>
 
 <div class="dashboard">
@@ -69,92 +82,130 @@
     <div class="error-state">
       <h2>Error</h2>
       <p>{error}</p>
-      <button onclick={loadStats} class="btn-primary">Try Again</button>
+      <button onclick={load} class="btn-primary">Try Again</button>
     </div>
   {:else}
     <header class="dashboard-header">
-      <h1>Dashboard</h1>
-      <p class="subtitle">Welcome back, {auth.user?.name || auth.user?.email}</p>
+      <div>
+        <h1>Dashboard</h1>
+        <p class="subtitle">Welcome back, {auth.user?.name || auth.user?.email}</p>
+      </div>
+      {#if health}
+        <div class="health-pill health-{health.status}">
+          <span class="health-dot"></span>
+          {health.status === 'ok' ? 'All systems normal' : health.status === 'warn' ? 'Needs attention' : 'System issue'}
+          {#if dash?.age_s != null}<span class="health-age">· {ago(dash.age_s)}</span>{/if}
+        </div>
+      {/if}
     </header>
 
-    <!-- Stats Grid -->
+    <!-- Health checks -->
+    {#if health?.checks?.length}
+      <section class="health-row">
+        {#each health.checks as c}
+          <div class="check check-{c.ok ? 'ok' : 'bad'}">
+            <span class="check-name">{c.key}</span>
+            <span class="check-detail">{c.detail}</span>
+          </div>
+        {/each}
+      </section>
+    {/if}
+
+    <!-- Top-line analytics -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon users">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-        </div>
         <div class="stat-content">
-          <span class="stat-value">{formatNumber(stats?.users?.total)}</span>
-          <span class="stat-label">Total Users</span>
-        </div>
-      </div>
-
-      <div class="stat-card highlight">
-        <div class="stat-icon pending">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div class="stat-content">
-          <span class="stat-value">{formatNumber(stats?.users?.pending)}</span>
-          <span class="stat-label">Pending Approval</span>
-        </div>
-        {#if stats?.users?.pending > 0}
-          <a href="/admin/pending" class="stat-action">Review</a>
-        {/if}
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon docs">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        </div>
-        <div class="stat-content">
-          <span class="stat-value">{formatNumber(stats?.search?.documents?.numberOfDocuments)}</span>
-          <span class="stat-label">Documents</span>
+          <span class="stat-value">
+            {#if dash?.visits_available}{fmt(dash.visits.d7_uniques)}{:else}—{/if}
+          </span>
+          <span class="stat-label">Visitors · 7d</span>
+          {#if dash?.visits_available}
+            <span class="stat-sub">{fmt(dash.visits.d7_pageViews)} page views</span>
+          {:else}
+            <span class="stat-sub muted">Cloudflare token needs Analytics:Read</span>
+          {/if}
         </div>
       </div>
 
       <div class="stat-card">
-        <div class="stat-icon passages">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-          </svg>
-        </div>
         <div class="stat-content">
-          <span class="stat-value">{formatNumber(stats?.search?.paragraphs?.numberOfDocuments)}</span>
-          <span class="stat-label">Passages</span>
+          <span class="stat-value">{fmt(dash?.searches?.d7)}</span>
+          <span class="stat-label">Searches · 7d</span>
+          <span class="stat-sub">
+            {fmt(dash?.searches?.d1)} today{#if dash?.searches?.avg_ms_d7} · {dash.searches.avg_ms_d7}ms avg{/if}
+          </span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-content">
+          <span class="stat-value">{fmt(dash?.chat?.d7)}</span>
+          <span class="stat-label">Chat turns · 7d</span>
+          <span class="stat-sub">{fmt(dash?.chat?.d1)} today</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-content">
+          <span class="stat-value">{money(dash?.spend?.month)}</span>
+          <span class="stat-label">AI spend · 30d</span>
+          <span class="stat-sub">
+            {money(dash?.spend?.today)} today · {money(dash?.spend?.week)} wk
+            {#if dash?.spend?.failed_week} · <span class="warn-text">{dash.spend.failed_week} failed</span>{/if}
+          </span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-content">
+          <span class="stat-value">{fmt(dash?.users?.total ?? stats?.users?.total)}</span>
+          <span class="stat-label">Users</span>
+          {#if (dash?.users?.pending ?? stats?.users?.pending) > 0}
+            <a href="/admin/pending" class="stat-sub link">{fmt(dash?.users?.pending ?? stats?.users?.pending)} pending review</a>
+          {:else}
+            <span class="stat-sub">no pending</span>
+          {/if}
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-content">
+          <span class="stat-value">{fmt(stats?.search?.paragraphs?.numberOfDocuments)}</span>
+          <span class="stat-label">Passages indexed</span>
+          <span class="stat-sub">{fmt(stats?.search?.documents?.numberOfDocuments)} documents</span>
         </div>
       </div>
     </div>
+
+    <div class="analytics-cta">
+      <a href="/admin/analytics" class="btn-primary">View full analytics →</a>
+    </div>
+
+    <!-- Spend by caller today -->
+    {#if dash?.spend?.byCallerToday?.length}
+      <section class="card">
+        <h2>Top AI spend today</h2>
+        <div class="caller-list">
+          {#each dash.spend.byCallerToday as c}
+            <div class="caller-row">
+              <span class="caller-name">{c.caller}</span>
+              <span class="caller-calls">{fmt(c.calls)} calls</span>
+              <span class="caller-cost">{money(c.cost)}</span>
+            </div>
+          {/each}
+        </div>
+      </section>
+    {/if}
 
     <!-- User Tier Breakdown -->
     <section class="card">
       <h2>User Tiers</h2>
       <div class="tier-grid">
-        <div class="tier-item">
-          <span class="tier-count">{stats?.users?.verified || 0}</span>
-          <span class="tier-label">Verified</span>
-        </div>
-        <div class="tier-item">
-          <span class="tier-count">{stats?.users?.approved || 0}</span>
-          <span class="tier-label">Approved</span>
-        </div>
-        <div class="tier-item">
-          <span class="tier-count">{stats?.users?.patron || 0}</span>
-          <span class="tier-label">Patron</span>
-        </div>
-        <div class="tier-item">
-          <span class="tier-count">{stats?.users?.admin || 0}</span>
-          <span class="tier-label">Admin</span>
-        </div>
-        <div class="tier-item danger">
-          <span class="tier-count">{stats?.users?.banned || 0}</span>
-          <span class="tier-label">Banned</span>
-        </div>
+        <div class="tier-item"><span class="tier-count">{stats?.users?.verified || 0}</span><span class="tier-label">Verified</span></div>
+        <div class="tier-item"><span class="tier-count">{stats?.users?.approved || 0}</span><span class="tier-label">Approved</span></div>
+        <div class="tier-item"><span class="tier-count">{stats?.users?.patron || 0}</span><span class="tier-label">Patron</span></div>
+        <div class="tier-item"><span class="tier-count">{stats?.users?.admin || 0}</span><span class="tier-label">Admin</span></div>
+        <div class="tier-item danger"><span class="tier-count">{stats?.users?.banned || 0}</span><span class="tier-label">Banned</span></div>
       </div>
     </section>
 
@@ -162,240 +213,118 @@
     <section class="card">
       <h2>Quick Actions</h2>
       <div class="actions-grid">
-        <a href="/admin/users" class="action-btn">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          Manage Users
-        </a>
-        <a href="/admin/pending" class="action-btn">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Approve Users
-        </a>
-        <a href="/admin/documents" class="action-btn">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Document Queue
-        </a>
-        <a href="/admin/failures" class="action-btn">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          Rejected Documents
-        </a>
+        <a href="/admin/users" class="action-btn">Manage Users</a>
+        <a href="/admin/pending" class="action-btn">Approve Users</a>
+        <a href="/admin/documents" class="action-btn">Document Queue</a>
+        <a href="/admin/analytics" class="action-btn">Analytics</a>
+        <a href="/admin/companion" class="action-btn">Companion</a>
       </div>
     </section>
   {/if}
 </div>
 
 <style>
-  .dashboard {
-    max-width: 1200px;
-  }
+  .dashboard { max-width: 1200px; }
 
-  .loading, .access-denied, .error-state {
-    text-align: center;
-    padding: 3rem 1rem;
-  }
+  .loading, .access-denied, .error-state { text-align: center; padding: 3rem 1rem; }
 
   .spinner {
-    width: 40px;
-    height: 40px;
+    width: 40px; height: 40px;
     border: 3px solid var(--border-default);
     border-top-color: var(--accent-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 1rem;
   }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   .dashboard-header {
-    margin-bottom: 2rem;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;
   }
+  .dashboard-header h1 { margin: 0; font-size: 1.75rem; color: var(--text-primary); }
+  .subtitle { margin: 0.5rem 0 0; color: var(--text-secondary); }
 
-  .dashboard-header h1 {
-    margin: 0;
-    font-size: 1.75rem;
-    color: var(--text-primary);
+  .health-pill {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.4rem 0.85rem; border-radius: 2rem;
+    font-size: 0.8125rem; font-weight: 500;
+    border: 1px solid transparent;
   }
+  .health-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .health-age { color: var(--text-secondary); font-weight: 400; }
+  .health-ok { color: var(--success); background: color-mix(in srgb, var(--success) 12%, transparent); border-color: color-mix(in srgb, var(--success) 30%, transparent); }
+  .health-warn { color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); border-color: color-mix(in srgb, var(--warning) 30%, transparent); }
+  .health-down { color: var(--error); background: color-mix(in srgb, var(--error) 12%, transparent); border-color: color-mix(in srgb, var(--error) 30%, transparent); }
 
-  .subtitle {
-    margin: 0.5rem 0 0;
-    color: var(--text-secondary);
+  .health-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem; margin-bottom: 1.5rem;
   }
+  .check {
+    display: flex; flex-direction: column; gap: 0.15rem;
+    padding: 0.6rem 0.85rem; border-radius: 0.5rem;
+    background: var(--surface-1); border-left: 3px solid var(--border-default);
+  }
+  .check-ok { border-left-color: var(--success); }
+  .check-bad { border-left-color: var(--error); }
+  .check-name { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+  .check-detail { font-size: 0.875rem; color: var(--text-primary); }
 
   .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem; margin-bottom: 1rem;
   }
-
   .stat-card {
     background: var(--surface-1);
     border: 1px solid var(--border-default);
-    border-radius: 0.75rem;
-    padding: 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    position: relative;
+    border-radius: 0.75rem; padding: 1.25rem;
   }
+  .stat-content { display: flex; flex-direction: column; gap: 0.15rem; }
+  .stat-value { font-size: 1.75rem; font-weight: 600; color: var(--text-primary); line-height: 1.1; }
+  .stat-label { font-size: 0.875rem; color: var(--text-secondary); }
+  .stat-sub { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; }
+  .stat-sub.muted { color: var(--text-tertiary, var(--text-secondary)); font-style: italic; }
+  .stat-sub.link { color: var(--warning); text-decoration: none; }
+  .warn-text { color: var(--warning); }
 
-  .stat-card.highlight {
-    border-color: var(--warning);
-  }
+  .analytics-cta { margin: 0.5rem 0 2rem; }
 
-  .stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+  .caller-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .caller-row {
+    display: grid; grid-template-columns: 1fr auto auto; gap: 1rem;
+    align-items: center; font-size: 0.875rem;
+    padding: 0.3rem 0; border-bottom: 1px solid var(--border-subtle, var(--border-default));
   }
-
-  .stat-icon svg {
-    width: 24px;
-    height: 24px;
-  }
-
-  .stat-icon.users {
-    background: color-mix(in srgb, var(--info) 15%, transparent);
-    color: var(--info);
-  }
-
-  .stat-icon.pending {
-    background: color-mix(in srgb, var(--warning) 15%, transparent);
-    color: var(--warning);
-  }
-
-  .stat-icon.docs {
-    background: color-mix(in srgb, var(--success) 15%, transparent);
-    color: var(--success);
-  }
-
-  .stat-icon.passages {
-    background: color-mix(in srgb, var(--accent-tertiary) 15%, transparent);
-    color: var(--accent-tertiary);
-  }
-
-  .stat-content {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .stat-value {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .stat-label {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-  }
-
-  .stat-action {
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--warning);
-    text-decoration: none;
-    padding: 0.25rem 0.5rem;
-    background: color-mix(in srgb, var(--warning) 10%, transparent);
-    border-radius: 0.25rem;
-  }
+  .caller-name { color: var(--text-primary); font-family: var(--font-mono, monospace); }
+  .caller-calls { color: var(--text-secondary); font-size: 0.8125rem; }
+  .caller-cost { color: var(--accent-tertiary); font-weight: 600; }
 
   .card {
     background: var(--surface-1);
     border: 1px solid var(--border-default);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
+    border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem;
   }
+  .card h2 { margin: 0 0 1rem; font-size: 1.125rem; color: var(--text-primary); }
 
-  .card h2 {
-    margin: 0 0 1rem;
-    font-size: 1.125rem;
-    color: var(--text-primary);
-  }
+  .tier-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+  .tier-item { display: flex; flex-direction: column; align-items: center; min-width: 80px; }
+  .tier-count { font-size: 1.5rem; font-weight: 600; color: var(--text-primary); }
+  .tier-label { font-size: 0.8125rem; color: var(--text-secondary); }
+  .tier-item.danger .tier-count { color: var(--error); }
 
-  .tier-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-  }
-
-  .tier-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 80px;
-  }
-
-  .tier-count {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .tier-label {
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
-  }
-
-  .tier-item.danger .tier-count {
-    color: var(--error);
-  }
-
-  .actions-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
+  .actions-grid { display: flex; flex-wrap: wrap; gap: 1rem; }
   .action-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    background: var(--surface-2);
-    border-radius: 0.5rem;
-    text-decoration: none;
-    color: var(--text-primary);
-    font-size: 0.875rem;
-    transition: all 0.2s;
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.75rem 1rem; background: var(--surface-2);
+    border-radius: 0.5rem; text-decoration: none;
+    color: var(--text-primary); font-size: 0.875rem; transition: background 0.2s;
   }
-
-  .action-btn:hover {
-    background: var(--surface-3);
-  }
-
-  .action-btn svg {
-    width: 20px;
-    height: 20px;
-  }
+  .action-btn:hover { background: var(--surface-3); }
 
   .btn-primary {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    background: var(--accent-primary);
-    color: white;
-    border: none;
-    border-radius: 0.5rem;
-    text-decoration: none;
-    font-size: 0.875rem;
-    cursor: pointer;
+    display: inline-block; padding: 0.5rem 1rem;
+    background: var(--accent-primary); color: white; border: none;
+    border-radius: 0.5rem; text-decoration: none; font-size: 0.875rem; cursor: pointer;
   }
 </style>
