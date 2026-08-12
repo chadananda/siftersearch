@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-12T18:46:40.110Z",
+  "generated": "2026-08-12T18:52:05.216Z",
   "entries": [
+    {
+      "hash": "fc15a602",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Fix \"done\" measure + language-capability gate (stop token churn)",
+      "scope": null
+    },
     {
       "hash": "02d82e32",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Extraction model deepseek-v4-pro → deepseek-v4-flash",
       "scope": null
-    },
-    {
-      "hash": "0819528f",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Graph-validator extract JSON by lastIndexOf('}') — Haiku appends prose",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "fc15a602",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Fix \"done\" measure + language-capability gate (stop token churn)",
+        "scope": null
+      },
       {
         "hash": "02d82e32",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Other",
         "description": "Extraction model deepseek-v4-pro → deepseek-v4-flash",
-        "scope": null
-      },
-      {
-        "hash": "0819528f",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Graph-validator extract JSON by lastIndexOf('}') — Haiku appends prose",
         "scope": null
       }
     ]

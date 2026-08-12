@@ -21,15 +21,12 @@ const APPLY = process.argv.includes('--apply');
 const ALL = process.argv.includes('--all');
 const WRITER = process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849';
 
-const { queryAll, queryOne } = await import('../api/lib/db.js');
-const { detectLatinLang } = await import('../api/lib/pipeline/profile.js');
+const { queryAll } = await import('../api/lib/db.js');
+const { detectLang } = await import('../api/lib/pipeline/profile.js');
 
-const SCRIPT = { hebrew: /[֐-׿]/, arabicPersian: /[؀-ۿ]/, persianOnly: /[پچژگی]/ };
-function detect(sample) {
-  if (SCRIPT.hebrew.test(sample)) return 'he';
-  if (SCRIPT.arabicPersian.test(sample)) return SCRIPT.persianOnly.test(sample) ? 'fa' : 'ar';
-  return detectLatinLang(sample);
-}
+// Same detector the pipeline uses (script-dominance for he/ar/fa, function words for Latin). metaLang=null
+// so the decision rests entirely on the sampled text, never the (suspect) existing label.
+const detect = (sample) => detectLang(sample, null);
 
 async function writeBatch(statements) {
   const res = await fetch(`${WRITER}/write`, {

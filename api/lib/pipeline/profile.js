@@ -129,12 +129,15 @@ export function detectLatinLang(sample) {
   return (best !== 'en' && bestScore > en * 1.5 && bestScore > 0.05) ? best : 'en';
 }
 
-/** Detect language + script from a text sample. Non-Latin script is definitive; Latin script is
- *  disambiguated by function words (English default). Persian and Arabic share a script → Persian-only chars. */
-function detectLang(sample, metaLang) {
+/** Detect language + script from a text sample. A non-Latin script is decisive only when it DOMINATES the
+ *  sample (>20% of letters) — a stray quoted word must not flip an English doc to fa/ar/he. Latin script is
+ *  disambiguated by function words (English default). Persian and Arabic share a script → Persian-only chars.
+ *  Exported so the relabel tool uses the exact same logic. */
+export function detectLang(sample, metaLang) {
   if (sample) {
-    if (SCRIPT.hebrew.test(sample)) return 'he';
-    if (SCRIPT.arabicPersian.test(sample)) return SCRIPT.persianOnly.test(sample) ? 'fa' : 'ar';
+    const letters = (sample.match(/\p{L}/gu) || []).length || 1;
+    if ((sample.match(/[֐-׿]/g) || []).length / letters > 0.2) return 'he';
+    if ((sample.match(/[؀-ۿ]/g) || []).length / letters > 0.2) return SCRIPT.persianOnly.test(sample) ? 'fa' : 'ar';
   }
   // A non-English NON-LATIN metadata language (he/ar/fa) is trustworthy even without a sample.
   if (metaLang && metaLang !== 'en' && LANG_ROUTING[metaLang]) return metaLang;
