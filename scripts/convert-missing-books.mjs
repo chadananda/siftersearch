@@ -108,12 +108,16 @@ const fileUrlOf = (s) => {
   return m ? m[0].replace(/[),.;]+$/, '') : null;
 };
 
-console.log(`stubs (chrome, <36¶): ${stubs.length}${ONLY_ID ? ` (filtered to #${ONLY_ID})` : ''} · mode: ${APPLY ? 'APPLY' : 'DRY'}\n`);
+console.log(`stubs (chrome, <36¶): ${stubs.length}${ONLY_ID ? ` (filtered to #${ONLY_ID})` : ''} · mode: ${APPLY ? 'APPLY (write files, DEFER ingest+retire)' : 'DRY'}\n`);
 const report = { converted: [], skippedType: [], noFile: [], badQuality: [], fetchErr: [] };
+const MANIFEST = '.work/converted-books-manifest.json';
+const manifest = (() => { try { return JSON.parse(fs.readFileSync(MANIFEST, 'utf8')); } catch { return []; } })();
+const alreadyDone = new Set(manifest.map((m) => m.stub_id));   // resume-safe: skip already-converted
 let done = 0;
 
 for (const s of stubs) {
   if (done >= LIMIT) break;
+  if (APPLY && alreadyDone.has(s.id)) continue;   // resume: already converted in a prior run
   if (!isConvertible(s.title)) { report.skippedType.push({ id: s.id, title: s.title }); continue; }
   let url = fileUrlOf(s);
   if (!url && FETCH_FRAMES && s.source_url) url = await findFramedPdf(s.source_url);
@@ -143,11 +147,12 @@ for (const s of stubs) {
       const dest = path.join(LIB, rel);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.writeFileSync(dest, md);
-      // Retire the stub: mark duplicate + soft-delete (guarded — OL docs are never here).
-      await writeViaWriter([
-        { sql: `UPDATE docs SET deleted_at=?, updated_at=? WHERE id=? AND source_site!='oceanlibrary.com'`, args: [Date.now(), Date.now(), s.id] },
-        { sql: `UPDATE content SET deleted_at=?, synced=0 WHERE doc_id=? AND deleted_at IS NULL`, args: [Date.now(), s.id] },
-      ], 'convert-missing-books-retire-stub');
+      // DEFER ingestion + stub-retirement until the history books finish (Chad's sequencing):
+      // write the file now, record the stub↔file mapping in a manifest, and let the separate
+      // post-history ingest step retire the stub + trigger ingestion. The library-watcher is
+      // stopped, so a freshly-written file does NOT auto-ingest — exactly what we want.
+      manifest.push({ stub_id: s.id, rel, source_url: s.source_url || url, file_url: url, title: s.title, words: q.words, pages });
+      fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2));   // incremental (crash-safe)
     }
     console.log(`  ✓ ${s.id} "${(s.title || '').slice(0, 45)}" → ${rel} (${q.words}w/${pages}p)`);
   } catch (e) {

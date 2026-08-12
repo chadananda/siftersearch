@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-12T14:37:24.245Z",
+  "generated": "2026-08-12T14:49:12.933Z",
   "entries": [
+    {
+      "hash": "860cbf41",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Accept refresh_token cookie for API calls (fixes direct-load admin pages)",
+      "scope": null
+    },
     {
       "hash": "d68eb92d",
       "date": "2026-08-10",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Rolling 5-paragraph context window for entity extraction",
       "scope": null
-    },
-    {
-      "hash": "8277939d",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Use deepseek-v4-pro (thinking disabled) — correct model IDs, config in ecosystem not secrets, ORDER BY priority",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-12": [
+      {
+        "hash": "860cbf41",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Accept refresh_token cookie for API calls (fixes direct-load admin pages)",
+        "scope": null
+      }
+    ],
     "2026-08-10": [
       {
         "hash": "d68eb92d",
@@ -7073,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "New",
         "description": "Rolling 5-paragraph context window for entity extraction",
-        "scope": null
-      },
-      {
-        "hash": "8277939d",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Use deepseek-v4-pro (thinking disabled) — correct model IDs, config in ecosystem not secrets, ORDER BY priority",
         "scope": null
       }
     ]
