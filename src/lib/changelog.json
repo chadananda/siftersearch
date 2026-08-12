@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-10T23:29:33.034Z",
+  "generated": "2026-08-12T14:37:24.245Z",
   "entries": [
+    {
+      "hash": "d68eb92d",
+      "date": "2026-08-10",
+      "type": "Other",
+      "description": "Missing-books converter (fetchable stubs → real Markdown books)",
+      "scope": null
+    },
     {
       "hash": "9310444c",
       "date": "2026-08-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use deepseek-v4-pro (thinking disabled) — correct model IDs, config in ecosystem not secrets, ORDER BY priority",
       "scope": null
-    },
-    {
-      "hash": "8e1d7fc3",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Replace deprecated deepseek-chat/reasoner with deepseek-v4-flash/pro throughout",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-10": [
+      {
+        "hash": "d68eb92d",
+        "date": "2026-08-10",
+        "type": "Other",
+        "description": "Missing-books converter (fetchable stubs → real Markdown books)",
+        "scope": null
+      },
       {
         "hash": "9310444c",
         "date": "2026-08-10",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Use deepseek-v4-pro (thinking disabled) — correct model IDs, config in ecosystem not secrets, ORDER BY priority",
-        "scope": null
-      },
-      {
-        "hash": "8e1d7fc3",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Replace deprecated deepseek-chat/reasoner with deepseek-v4-flash/pro throughout",
         "scope": null
       }
     ]

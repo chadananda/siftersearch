@@ -177,7 +177,12 @@ async function request(path, options = {}) {
         }
       }
 
-      if (response.status === 401 && accessToken) {
+      // On a 401, refresh from the httpOnly refresh cookie and retry — EVEN when no access
+      // token is in memory yet. Direct-loading a client-rendered admin page (e.g.
+      // /admin/missing-books) fires its API call before anything has populated accessToken;
+      // the user is authenticated via the cookie, so refresh succeeds and the retry passes.
+      // (refreshToken() returns false for genuinely anonymous users → we fall through to the 401.)
+      if (response.status === 401) {
         const refreshed = await refreshToken();
         if (refreshed) {
           headers['Authorization'] = `Bearer ${accessToken}`;

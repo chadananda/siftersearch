@@ -110,35 +110,51 @@ export async function revokeAllUserTokens(userId) {
   );
 }
 
-// Fastify authentication hook
+// Fastify authentication hook. Two credentials, one identity:
+//   (1) Authorization: Bearer <access-JWT> — stateless; external API consumers, automation, the app's
+//       in-memory token. Verified by signature, no DB hit.
+//   (2) the httpOnly refresh_token COOKIE — the SAME credential the SSR admin middleware validates.
+//       Accepted here as a same-origin session fallback so the admin UI authenticates its API calls with
+//       the cookie the page was already gated on — no separately-loaded access token, no direct-load race
+//       (the /admin/missing-books "Missing or invalid authorization header" bug). Cookie auth hits the DB
+//       (refresh-token lookup) only when there is no Bearer, so normal API calls are unaffected.
 export async function authenticate(request, reply) {
   const authHeader = request.headers.authorization;
 
-  if (!authHeader?.startsWith('Bearer ')) {
-    throw ApiError.unauthorized('Missing or invalid authorization header');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7);
+
+    // DEPLOY_SECRET: authenticate as admin for API/automation calls
+    if (process.env.DEPLOY_SECRET && token === process.env.DEPLOY_SECRET) {
+      request.user = { sub: 'system_admin', email: 'admin@siftersearch.com', tier: 'admin' };
+      return;
+    }
+
+    // Test mode: accept test tokens in development
+    if (TEST_MODE && TEST_USERS[token]) {
+      request.user = TEST_USERS[token];
+      return;
+    }
+
+    const payload = verifyAccessToken(token);
+    if (payload) { request.user = payload; return; }
+    // Bearer present but invalid/expired → fall through to the cookie session before failing.
   }
 
-  const token = authHeader.slice(7);
-
-  // DEPLOY_SECRET: authenticate as admin for API/automation calls
-  if (process.env.DEPLOY_SECRET && token === process.env.DEPLOY_SECRET) {
-    request.user = { sub: 'system_admin', email: 'admin@siftersearch.com', tier: 'admin' };
-    return;
+  // Same-origin session fallback: the refresh_token cookie the admin middleware already trusts.
+  const cookieToken = request.cookies?.refresh_token;
+  if (cookieToken) {
+    const rt = await verifyRefreshToken(cookieToken);
+    if (rt) {
+      const user = await queryOne('SELECT id, email, tier FROM users WHERE id = ?', [rt.user_id]);
+      if (user && user.tier !== 'banned') {
+        request.user = { sub: user.id, email: user.email, tier: user.tier };
+        return;
+      }
+    }
   }
 
-  // Test mode: accept test tokens in development
-  if (TEST_MODE && TEST_USERS[token]) {
-    request.user = TEST_USERS[token];
-    return;
-  }
-
-  const payload = verifyAccessToken(token);
-
-  if (!payload) {
-    throw ApiError.unauthorized('Invalid or expired token');
-  }
-
-  request.user = payload;
+  throw ApiError.unauthorized('Missing or invalid authorization header');
 }
 
 /**
