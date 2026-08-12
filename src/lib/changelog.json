@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-12T18:07:57.382Z",
+  "generated": "2026-08-12T18:26:53.937Z",
   "entries": [
+    {
+      "hash": "ba2b96fd",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Chat card falls back to all-time users when 7d exposure log is new",
+      "scope": null
+    },
     {
       "hash": "0485f72c",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Graph-validator pass system msg in messages array + assistant prefill",
       "scope": null
-    },
-    {
-      "hash": "2028e683",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Graph-validator strip markdown fences before JSON.parse",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "ba2b96fd",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Chat card falls back to all-time users when 7d exposure log is new",
+        "scope": null
+      },
       {
         "hash": "0485f72c",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Graph-validator pass system msg in messages array + assistant prefill",
-        "scope": null
-      },
-      {
-        "hash": "2028e683",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Graph-validator strip markdown fences before JSON.parse",
         "scope": null
       }
     ]

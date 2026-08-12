@@ -68,15 +68,35 @@ async function refill(orderedIdsFn, { lookahead, deps }) {
   const active = new Set(rows.filter((r) => r.status === 'queued' || r.status === 'running').map((r) => r.doc_id));
   if (active.size >= lookahead) return { added: [], active: active.size };   // enough work already queued
 
+  // STORM GUARD: a doc that repeatedly reaches the TERMINAL "did not reach verify" failure (e.g.
+  // un-disambiguatable or mislabeled-language content whose disambiguation never covers the 0.98 bar)
+  // must stop being auto-re-enqueued — otherwise resumeStageFor calls it "not done" every tick, the
+  // follower re-queues it, it fails again, forever: a failure storm that also starves real work of
+  // lookahead slots. Quarantine after GROUNDING_MAX_FAILS such failures. Scoped to the terminal error
+  // ONLY, so transient blips (deepseek socket/fetch errors during an outage) still retry after recovery.
+  // An operator can hand-enqueue (override mode) once the root cause is fixed. Failed rows stay visible.
+  const FAIL_QUARANTINE = Number(process.env.GROUNDING_MAX_FAILS || 3);
+  let quarantined = new Set();
+  try {
+    const qAll = deps.queryAll || queryAll;
+    quarantined = new Set((await qAll(
+      `SELECT doc_id FROM grounding_queue WHERE status='failed'
+         AND (COALESCE(error,'') LIKE '%did not reach verify%' OR COALESCE(note,'') LIKE '%did not reach verify%')
+       GROUP BY doc_id HAVING COUNT(*) >= ?`, [FAIL_QUARANTINE]
+    )).map((r) => r.doc_id));
+  } catch { /* grounding_queue absent / query failure → fail-open, don't quarantine */ }
+
   const resume = deps.resumeStageFor || resumeStageFor;
   const enq = deps.enqueue || enqueue;
   const doTick = deps.tick || tick;
   const ordered = await orderedIdsFn();
   const added = [];
+  const skippedQuarantine = [];
   let pending = 0;
   for (let i = 0; i < ordered.length && pending < lookahead; i++) {
     const { id, done } = ordered[i];
     if (done) continue;                        // reliably complete → skip fast (avoids a per-doc query)
+    if (quarantined.has(id) && !active.has(id)) { skippedQuarantine.push(id); continue; }   // storm guard
     const opts = await resume(id);             // authoritative stage decision
     if (opts == null) continue;                // done or empty → not remaining work
     pending++;
@@ -85,7 +105,11 @@ async function refill(orderedIdsFn, { lookahead, deps }) {
     added.push({ docId: id, opts });
   }
   if (added.length) doTick().catch(() => {});
-  return { added, pending };
+  if (skippedQuarantine.length) {
+    logger.warn({ quarantined: skippedQuarantine, threshold: FAIL_QUARANTINE },
+      'processor: quarantined repeatedly-failing docs (auto re-enqueue stopped; hand-enqueue in override to retry)');
+  }
+  return { added, pending, quarantined: skippedQuarantine };
 }
 
 // PLAN mode: candidate order = the history plan (integration-phases.js), exactly as the UI renders it.
