@@ -9,7 +9,7 @@ import { profileFor } from '../kernel/profile.js';
 import { pool } from '../kernel/run.js';
 
 export async function run(ctx, docId, opts = {}) {
-  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
+  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.98 });
   const version = opts.version ?? ctx.config.versions?.disambig ?? 'disambig-v1';
   const extractor = opts.extractor ?? ctx.config.versions?.conceptExtract ?? 'concept-extract-v1';
   const batch = opts.batch ?? extractor;

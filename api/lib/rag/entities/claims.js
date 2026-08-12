@@ -12,7 +12,7 @@ import { pool } from '../kernel/run.js';
 const DEFAULT_RELATIONS = 'born, died, martyred, converted-by, father-of, son-of, brother-of, wife-of, teacher-of, disciple-of, met, accompanied, participated-in, resided-in, appointed, wrote, titled, related-to';
 
 export async function run(ctx, docId, opts = {}) {
-  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
+  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.98 });
   const version = opts.version ?? ctx.config.versions?.disambig ?? 'disambig-v1';
   const extractor = opts.extractor ?? ctx.config.versions?.extract ?? 'extract-v2';
   const batch = opts.batch ?? extractor;

@@ -14,7 +14,7 @@ Rules: bind ONLY when the context genuinely fits; higher-authority interpretatio
 Return ONLY JSON: {"verdict":"bind|under-bind","lexicon_id":<id or null>,"layer":"literal|metaphorical","decisive":"<=20 words","confidence":0.0-1.0}`;
 
 export async function run(ctx, docId, opts = {}) {
-  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
+  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.98 });
   const profile = await profileFor(ctx, docId);
   const groups = await ctx.store.getConceptGroups(docId, { limit: opts.limit });
   const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };

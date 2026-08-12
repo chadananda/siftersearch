@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-12T15:55:10.607Z",
+  "generated": "2026-08-12T16:06:43.845Z",
   "entries": [
+    {
+      "hash": "47ef7c95",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "User self-service transparency + consent (§7.4) — /api/v1/companion",
+      "scope": null
+    },
     {
       "hash": "d4cc80b5",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Bump max_tokens 8192→16384 for entity-dense paragraphs",
       "scope": null
-    },
-    {
-      "hash": "863a2d8c",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "PickNextDoc 80s→8ms — INDEXED BY idx_docs_priority_active + partial index",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "47ef7c95",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "User self-service transparency + consent (§7.4) — /api/v1/companion",
+        "scope": null
+      },
       {
         "hash": "d4cc80b5",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Bump max_tokens 8192→16384 for entity-dense paragraphs",
-        "scope": null
-      },
-      {
-        "hash": "863a2d8c",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "PickNextDoc 80s→8ms — INDEXED BY idx_docs_priority_active + partial index",
         "scope": null
       }
     ]

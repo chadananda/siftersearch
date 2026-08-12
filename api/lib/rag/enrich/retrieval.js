@@ -41,7 +41,7 @@ const SLICE_CHARS = 4000;       // paragraphs longer than this get sliced
 const SLICE_TARGET = 1500;      // aim ~this many chars of focus text per slice call
 
 export async function run(ctx, docId, opts = {}) {
-  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
+  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.98 });
   const profile = await profileFor(ctx, docId);
   const [meta, all, cast, facts] = await Promise.all([
     ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId), castOf(ctx, docId), factsOf(ctx, docId)]);
