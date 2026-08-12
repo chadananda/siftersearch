@@ -12,7 +12,9 @@ export const MODES = {
   PRACTICAL_COMMUNITY: { evidence: 'Verified practical info; consented human route', behavior: 'Practical facts; AI is not a community authority' },
 };
 
-const has = (re, s) => re.test(String(s || '').toLowerCase());
+// Fold diacritics + curly apostrophes so "Bahá’í"/"Íqán"/"‘Abdu’l-Bahá" match ASCII-written regexes.
+const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’`´]/g, "'");
+const has = (re, s) => re.test(norm(s));
 
 /**
  * Derive the conversation mode from the classifier's intent/entities + the message.

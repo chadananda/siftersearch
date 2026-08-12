@@ -11,7 +11,10 @@ import { decide } from './decision.js';
 import { makePremiseHypothesis, CHALLENGE_FORM, detectConflation } from './premise.js';
 import * as store from './store.js';
 
-const has = (re, s) => re.test(String(s || '').toLowerCase());
+// Fold diacritics + curly apostrophes before matching so "Bahá’ís" matches an ASCII-written regex
+// (baha'?is). Without this, every Bahá'í-name detector silently misses the app's own spelling.
+const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’`´]/g, "'");
+const has = (re, s) => re.test(norm(s));
 
 // Compute relationship stage (§2.2) from consent + account + enrollment (never presumes consent).
 export function relationshipStage({ authed, consentMemory, consentContact, hasPlan, enrolled, quiet } = {}) {
