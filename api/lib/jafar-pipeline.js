@@ -27,6 +27,16 @@ import { getScopeForLocation } from './search/scope.js';
 import { checkDeepResearch, recordQuestionHit } from './deep-research.js';
 import { extractQuotedSpan, phraseQueryVariants, scoreCandidate } from './quote-lookup.js';
 import { perplexityFallback } from './perplexity.js';
+import * as companion from './companion/index.js';
+
+// Admin-set global companion dials, cached 60s (they change rarely; a DB read per turn is wasteful).
+let _companionDials = null, _companionDialsAt = 0;
+async function companionGlobalDials() {
+  if (_companionDials && Date.now() - _companionDialsAt < 60000) return _companionDials;
+  try { _companionDials = await companion.companionStore.getGlobalDials(); } catch { _companionDials = {}; }
+  _companionDialsAt = Date.now();
+  return _companionDials;
+}
 import { checkAnswerCache, storeAnswer, touchEntry, recordServe, queueRevalidation, questionHash, normalizeQuestion, SEARCH_VERSION } from './answer-cache.js';
 import { createEmbedding } from './ai.js';
 import { queryAll } from './db.js';
@@ -2292,7 +2302,7 @@ const crafterSystem = (persona) => (persona && persona !== 'Jafar') ? CRAFTER_SY
 
 // Streaming variant — yields each chunk as it arrives. Used in the
 // fast-path orchestrator. Returns the full text at the end.
-export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, mission, web_context, comparative, quote_lookup }) {
+export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, mission, companion_append, web_context, comparative, quote_lookup }) {
   const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context, comparative, quote_lookup });
   // gpt-4o for the crafter — the new answer-first prompt requires the
   // model to read the user's question, decide which retrieved_quote
@@ -2310,7 +2320,7 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, subag
   const stream = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [
-      { role: 'system', content: crafterSystem(persona_name) + missionBlock },
+      { role: 'system', content: crafterSystem(persona_name) + missionBlock + (companion_append || '') },
       { role: 'user', content: userPayload }
     ],
     temperature: typeof _temperature_override === 'number' ? _temperature_override : 0.2,
@@ -2726,7 +2736,7 @@ function isSocialQuery(msg) {
   return SOCIAL_RE.test((msg || '').trim());
 }
 
-export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location, persona_name, default_tradition = null, mission = null, _skipCache = false, _silent = false }) {
+export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location, persona_name, default_tradition = null, mission = null, participant_id = null, _skipCache = false, _silent = false }) {
   // _silent: a speculative query-prep run. Partials are PREP requests, not searches
   // (Chad): no analytics of any kind until the user commits with a submit. The run
   // may still fill the answer cache (that's its purpose) — but writes no demand
@@ -2960,6 +2970,28 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
       }))
     });
   }
+  // ── Seeker Companion layer (§3–§10): resolve dials, classify mode, authority-label the evidence,
+  //    run the decision engine → a per-turn steering block the crafter renders. Fail-safe: any error
+  //    leaves the existing crafter untouched. Global dials (admin) apply to all chats; per-participant
+  //    consent/memory refine when a participant_id is present.
+  let companionAppend = '', companionPlan = null;
+  try {
+    const globalDials = await companionGlobalDials();
+    const rel = participant_id ? await companion.companionStore.getRelationship(participant_id).catch(() => null) : null;
+    const evidenceDocs = (research.retrieved_quotes || []).map((q) => ({
+      doc_id: q.doc_id, title: q.source_title, author: q.source_author, religion: q.religion, collection: q.collection,
+    }));
+    const built = companion.buildCompanionPlan({
+      participantId: participant_id, authed: !!participant_id, message: userMessage,
+      classifier: entities || {}, evidenceDocs, evidenceCount: evidenceDocs.length,
+      traditionsCovered: new Set(evidenceDocs.map((d) => d.religion).filter(Boolean)).size,
+      relationship: rel, globalDials,
+    });
+    companionPlan = built.plan;
+    companionAppend = `\n\nCOMPANION HARD RULES (never violate): ${companion.FORBIDDEN.join(' ')}${built.systemAppend}`;
+    if (sendEvent && debug) sendEvent({ type: 'debug_companion', plan: { mode: companionPlan.mode, intervention: companionPlan.intervention, challenge_level: companionPlan.challenge_level, authority: built.authorityClasses.map((a) => a.class) } });
+  } catch (e) { logger.warn({ err: e.message }, 'companion layer failed (non-fatal)'); }
+
   if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
   const onChunk = (text) => {
     if (sendEvent) sendEvent({ type: 'text', content: text });
@@ -2974,10 +3006,20 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     onChunk,
     persona_name,
     mission,
+    companion_append: companionAppend,
     web_context: webContext,
     comparative: entities?.comparative,
     quote_lookup: research.quote_lookup
   });
+  // Log the exposure (§11) — reconstruct this answer + its plan. Fire-and-forget; participant only.
+  if (participant_id && companionPlan) {
+    companion.companionStore.logExposure({
+      participant_id, mode: companionPlan.mode, intervention: companionPlan.intervention,
+      challenge_level: companionPlan.challenge_level,
+      authority_classes: (companionPlan.authority_classes || []).map((a) => a.class),
+      plan: companionPlan, policy_version: companionPlan.policy_version,
+    }).catch(() => {});
+  }
   // Web-source links are legitimate when the fallback ran — extend the allowlist.
   const linkAllowlist = webContext
     ? [...research.retrieved_quotes, ...webContext.citations.map((c) => ({ citation_url: c.url }))]

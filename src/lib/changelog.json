@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-12T14:49:12.933Z",
+  "generated": "2026-08-12T15:07:44.183Z",
   "entries": [
+    {
+      "hash": "08e64a7d",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Write-only mode + manifest (defer ingest+stub-retire until history books done)",
+      "scope": null
+    },
     {
       "hash": "860cbf41",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Prose summary rolling context window, 12 preceding paras, DB seed on restart",
       "scope": null
-    },
-    {
-      "hash": "b5bccdbb",
-      "date": "2026-05-27",
-      "type": "New",
-      "description": "Rolling 5-paragraph context window for entity extraction",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "08e64a7d",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Write-only mode + manifest (defer ingest+stub-retire until history books done)",
+        "scope": null
+      },
       {
         "hash": "860cbf41",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "New",
         "description": "Prose summary rolling context window, 12 preceding paras, DB seed on restart",
-        "scope": null
-      },
-      {
-        "hash": "b5bccdbb",
-        "date": "2026-05-27",
-        "type": "New",
-        "description": "Rolling 5-paragraph context window for entity extraction",
         "scope": null
       }
     ]

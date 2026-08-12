@@ -864,6 +864,17 @@ export const admin = {
     return request('/api/admin/library/missing-books');
   },
 
+  // Seeker Companion controls (see /admin/companion)
+  async getCompanionConfig() { return request('/api/admin/companion/config'); },
+  async setCompanionDial(key, value) {
+    return request('/api/admin/companion/dials', { method: 'POST', body: JSON.stringify({ key, value }) });
+  },
+  async previewCompanion(message) {
+    return request('/api/admin/companion/preview', { method: 'POST', body: JSON.stringify({ message }) });
+  },
+  async getCompanionMetrics(days = 30) { return request(`/api/admin/companion/metrics?days=${days}`); },
+  async getCompanionCourses() { return request('/api/admin/companion/courses'); },
+
   // Chat widget profiles (routes/widget.js; requireInternal accepts the admin JWT)
   async getWidgetProfiles() {
     return request('/api/v1/widget/admin/profiles');

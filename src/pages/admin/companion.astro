@@ -1,0 +1,9 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
+import CompanionControls from '../../components/admin/CompanionControls.svelte';
+---
+
+<AdminLayout title="Seeker Companion">
+  <CompanionControls client:only="svelte"><IslandSkeleton slot="fallback" /></CompanionControls>
+</AdminLayout>

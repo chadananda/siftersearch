@@ -1432,7 +1432,8 @@ export default async function chatRoutes(fastify) {
           chatbot_location,
           persona_name,
           default_tradition,
-          mission: mission_prompt
+          mission: mission_prompt,
+          participant_id: userId   // Seeker Companion: relationship/memory/exposure key (user id or anon id)
         });
       }
 

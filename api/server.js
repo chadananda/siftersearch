@@ -23,6 +23,7 @@ import searchRoutes from './routes/search.js';
 import sessionRoutes from './routes/session.js';
 import userRoutes from './routes/user.js';
 import adminRoutes from './routes/admin.js';
+import companionRoutes from './routes/companion.js';
 import entityReviewRoutes from './routes/entity-review.js';
 import documentsRoutes from './routes/documents.js';
 import servicesRoutes from './routes/services.js';
@@ -247,6 +248,7 @@ export async function createServer(opts = {}) {
   await server.register(adminRoutes, { prefix: '/api/admin' });
   await server.register(entityReviewRoutes, { prefix: '/api/admin' });
   await server.register(groundingRoutes, { prefix: '/api/admin' });
+  await server.register(companionRoutes, { prefix: '/api/admin' });
   await server.register(documentsRoutes, { prefix: '/api/documents' });
   await server.register(servicesRoutes, { prefix: '/api/services' });
   await server.register(anonymousRoutes, { prefix: '/api/anonymous' });

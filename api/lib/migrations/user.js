@@ -8,7 +8,7 @@
 import { userQuery } from '../db.js';
 import { logger } from '../logger.js';
 
-export const USER_DB_CURRENT_VERSION = 5;
+export const USER_DB_CURRENT_VERSION = 6;
 
 export const userMigrations = {
   // Version 1: Create all user tables in user database
@@ -293,5 +293,89 @@ export const userMigrations = {
     try { await userQuery('ALTER TABLE users ADD COLUMN picture TEXT'); } catch { /* exists */ }
     try { await userQuery('ALTER TABLE users ADD COLUMN google_sub TEXT'); } catch { /* exists */ }
     logger.info('User migration 5 complete: users.picture + users.google_sub added');
+  },
+
+  // Version 6: Seeker Companion (PRD §2.2, §6, §7, §8, §10, §11). Relationship lifecycle + consent-scoped
+  // memory + premise hypotheses (expiring, never fixed labels) + global dial overrides + the outcome
+  // exposure log + course enrollment/progress. In the USER db — per-user interaction data, directly
+  // writable by the API (no single-writer bottleneck), sensitive, deletable.
+  6: async () => {
+    // participant_id = users.id (authed) OR an anonymous session id string. stage = R0..R5/RQ.
+    await userQuery(`CREATE TABLE IF NOT EXISTS companion_relationship (
+      participant_id TEXT PRIMARY KEY,
+      stage TEXT NOT NULL DEFAULT 'R0_SESSION',
+      consent_memory INTEGER NOT NULL DEFAULT 0,
+      consent_contact INTEGER NOT NULL DEFAULT 0,
+      dials_json TEXT NOT NULL DEFAULT '{}',
+      last_thread_id TEXT,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_at INTEGER DEFAULT (unixepoch())
+    )`);
+    // Consent-scoped memory (§7.1). kind: goal|question|source|tension|followup|preference|correction|boundary.
+    await userQuery(`CREATE TABLE IF NOT EXISTS companion_memory (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      participant_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      content TEXT NOT NULL,
+      thread_id TEXT,
+      source_ref TEXT,
+      confidence REAL,
+      corrected INTEGER NOT NULL DEFAULT 0,
+      expires_at INTEGER,
+      created_at INTEGER DEFAULT (unixepoch())
+    )`);
+    await userQuery(`CREATE INDEX IF NOT EXISTS idx_cmemory_participant ON companion_memory(participant_id, kind)`);
+    // Premise hypotheses (§6) — expiring, correctable, never a fixed personal label.
+    await userQuery(`CREATE TABLE IF NOT EXISTS companion_premise (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      participant_id TEXT NOT NULL,
+      statement TEXT NOT NULL,
+      category TEXT,
+      status TEXT NOT NULL DEFAULT 'hypothesis',
+      confidence REAL DEFAULT 0.5,
+      context TEXT,
+      expires_at INTEGER,
+      created_at INTEGER DEFAULT (unixepoch())
+    )`);
+    await userQuery(`CREATE INDEX IF NOT EXISTS idx_cpremise_participant ON companion_premise(participant_id)`);
+    // Global dial overrides set in the admin (§10). Per-dial rows; precedence layer = 'global'.
+    await userQuery(`CREATE TABLE IF NOT EXISTS companion_dials_global (
+      dial_key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_by TEXT,
+      updated_at INTEGER DEFAULT (unixepoch())
+    )`);
+    // Outcome/exposure log (§11.1) — reconstruct every answer + its plan. Immutable append.
+    await userQuery(`CREATE TABLE IF NOT EXISTS companion_exposure (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      participant_id TEXT,
+      thread_id TEXT,
+      mode TEXT,
+      intervention TEXT,
+      challenge_level INTEGER,
+      authority_classes TEXT,
+      plan_json TEXT,
+      policy_version TEXT,
+      created_at INTEGER DEFAULT (unixepoch())
+    )`);
+    await userQuery(`CREATE INDEX IF NOT EXISTS idx_cexposure_participant ON companion_exposure(participant_id, created_at)`);
+    // Course enrollment + progress (§8).
+    await userQuery(`CREATE TABLE IF NOT EXISTS companion_enrollment (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      participant_id TEXT NOT NULL,
+      track_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      started_at INTEGER DEFAULT (unixepoch()),
+      UNIQUE(participant_id, track_id)
+    )`);
+    await userQuery(`CREATE TABLE IF NOT EXISTS companion_progress (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      enrollment_id INTEGER NOT NULL,
+      section_id TEXT NOT NULL,
+      understood INTEGER NOT NULL DEFAULT 0,
+      note TEXT,
+      created_at INTEGER DEFAULT (unixepoch())
+    )`);
+    logger.info('User migration 6 complete: Seeker Companion tables (relationship, memory, premise, dials, exposure, courses)');
   },
 };
