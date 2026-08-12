@@ -168,7 +168,7 @@
           <span class="stat-value">{fmt(dash?.chat?.d7)}</span>
           <span class="stat-label">Chat turns · 7d</span>
           <span class="stat-sub">
-            {fmt(dash?.chat?.users_d7)} users · {fmt(dash?.chat?.saved)} saved
+            {fmt(dash?.chat?.users_d7 || dash?.chat?.users_all)} users · {fmt(dash?.chat?.saved)} saved
           </span>
         </div>
       </div>
