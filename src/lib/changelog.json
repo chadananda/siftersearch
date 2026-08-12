@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-12T15:07:44.183Z",
+  "generated": "2026-08-12T15:55:10.607Z",
   "entries": [
+    {
+      "hash": "d4cc80b5",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Seeker Companion — relationship-centered chat personality (PRD adapted, tested, admin controls)",
+      "scope": null
+    },
     {
       "hash": "08e64a7d",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "PickNextDoc 80s→8ms — INDEXED BY idx_docs_priority_active + partial index",
       "scope": null
-    },
-    {
-      "hash": "fc8b381f",
-      "date": "2026-05-27",
-      "type": "New",
-      "description": "Prose summary rolling context window, 12 preceding paras, DB seed on restart",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "d4cc80b5",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Seeker Companion — relationship-centered chat personality (PRD adapted, tested, admin controls)",
+        "scope": null
+      },
       {
         "hash": "08e64a7d",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "PickNextDoc 80s→8ms — INDEXED BY idx_docs_priority_active + partial index",
-        "scope": null
-      },
-      {
-        "hash": "fc8b381f",
-        "date": "2026-05-27",
-        "type": "New",
-        "description": "Prose summary rolling context window, 12 preceding paras, DB seed on restart",
         "scope": null
       }
     ]
