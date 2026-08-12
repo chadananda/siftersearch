@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-12T16:06:43.845Z",
+  "generated": "2026-08-12T16:10:53.590Z",
   "entries": [
+    {
+      "hash": "c9614f05",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Align disambiguation gate to 0.98 (was 0.99) — fixes the 98-99% forever-fail loop",
+      "scope": null
+    },
     {
       "hash": "47ef7c95",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Extraction over-extraction — add scope boundary, mention cap, dynamic work title",
       "scope": null
-    },
-    {
-      "hash": "1d47dc0e",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Bump max_tokens 8192→16384 for entity-dense paragraphs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "c9614f05",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Align disambiguation gate to 0.98 (was 0.99) — fixes the 98-99% forever-fail loop",
+        "scope": null
+      },
       {
         "hash": "47ef7c95",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Extraction over-extraction — add scope boundary, mention cap, dynamic work title",
-        "scope": null
-      },
-      {
-        "hash": "1d47dc0e",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Bump max_tokens 8192→16384 for entity-dense paragraphs",
         "scope": null
       }
     ]

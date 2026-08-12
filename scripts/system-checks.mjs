@@ -89,6 +89,12 @@ if (db) {
   // completes for real, switch mode to 'general' — this alert says progress stopped, look why.
   const stalled = mode === 'plan' && liveRuns === 0 && queueDepth === 0 && done24 === 0;
   add('Grounding progress', !stalled, 'critical', stalled ? 'plan mode but nothing queued/running/completed in 24h' : `${done24} done / ${failed24} failed / ${liveRuns} running / ${queueDepth} queued (24h, mode=${mode})`);
+  // Queue-not-draining (the 2026-08-12 gap): a NON-empty queue with nothing running and nothing
+  // completed in 24h means work is stuck — even if failures aren't logged (the off-peak-gate hold,
+  // or a wedged supervisor). WARN not critical (an off-peak hold during peak hours is legitimate),
+  // but it surfaces the state the empty-queue stall check misses.
+  const notDraining = mode === 'plan' && queueDepth > 0 && liveRuns === 0 && done24 === 0;
+  add('Grounding queue draining', !notDraining, 'warn', notDraining ? `${queueDepth} queued but 0 running + 0 done in 24h (off-peak gate? wedged supervisor?)` : 'ok');
 }
 
 // ── 4. AI spend ──────────────────────────────────────────────────────────────
