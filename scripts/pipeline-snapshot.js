@@ -274,9 +274,90 @@ async function main() {
       FROM search_log
       WHERE created_at >= ? AND search_type != 'api_chat' AND length(trim(query)) > 0
       GROUP BY lower(trim(query)) ORDER BY n DESC LIMIT 25`, [day7]).catch(() => []);
+    // Chat users: search_log carries no identifier for chat turns, so distinct
+    // chat *users* come from the companion exposure log (one row per served turn,
+    // keyed by participant_id) — the forward-correct signal. Saved conversations
+    // (published_conversations) are a concrete engagement count.
+    const chatUsers = await queryOne(`
+      SELECT COUNT(DISTINCT participant_id) AS d7,
+             COUNT(DISTINCT CASE WHEN created_at >= ? THEN participant_id END) AS d1
+      FROM companion_exposure WHERE created_at >= ?`, [day1, day7]).catch(() => null);
+    const chatUsersAll = (await queryOne(`SELECT COUNT(DISTINCT participant_id) AS n FROM companion_exposure`).catch(() => null))?.n ?? null;
+    const savedConversations = (await queryOne(`SELECT COUNT(*) AS n FROM published_conversations`).catch(() => null))?.n ?? null;
+    if (totals) {
+      totals.chat_users_d7 = chatUsers?.d7 ?? null;
+      totals.chat_users_d1 = chatUsers?.d1 ?? null;
+      totals.chat_users_all = chatUsersAll;
+      totals.saved_conversations = savedConversations;
+    }
     activity = { generated_at: new Date().toISOString(), totals, series, topQueries };
   } catch (err) {
     activity = { error: err.message };
+  }
+
+  // ── Corpus summary (documents + traditions) ──────────────────────────────────
+  // Sponsor-facing: library size and breadth. Uses the denormalized
+  // docs.paragraph_count (no content join) — a cheap docs-table GROUP BY.
+  let corpus = null;
+  try {
+    const tot = await queryOne(`SELECT COUNT(*) AS docs, COALESCE(SUM(paragraph_count),0) AS paras
+      FROM docs WHERE deleted_at IS NULL AND duplicate_of IS NULL`).catch(() => null);
+    const byReligion = await queryAll(`SELECT COALESCE(NULLIF(religion,''),'General') AS religion,
+        COUNT(*) AS docs, COALESCE(SUM(paragraph_count),0) AS paras
+      FROM docs WHERE deleted_at IS NULL AND duplicate_of IS NULL
+      GROUP BY COALESCE(NULLIF(religion,''),'General') ORDER BY docs DESC LIMIT 14`).catch(() => []);
+    corpus = {
+      generated_at: new Date().toISOString(),
+      docs: tot?.docs ?? null,
+      paras: tot?.paras ?? null,
+      traditions: byReligion.filter((r) => r.religion !== 'General').length,
+      byReligion,
+    };
+  } catch (err) {
+    corpus = { error: err.message };
+  }
+
+  // ── Current activity (what's running right now) ──────────────────────────────
+  // The live signal is ai_usage in the last 15 min grouped by service_type — the
+  // stage actively burning tokens (HyPE, claim extraction, reconcile/merge,
+  // embedding, chat). Cheap: timestamp-indexed narrow window.
+  let currentActivity = null;
+  try {
+    const since15 = fmtTs(new Date(Date.now() - 15 * 60 * 1000));
+    const recent = await queryAll(`
+      SELECT service_type, COUNT(*) AS calls, MAX(timestamp) AS last_at,
+             COALESCE(SUM(estimated_cost_usd),0) AS cost
+      FROM ai_usage WHERE timestamp >= ? GROUP BY service_type ORDER BY calls DESC`, [since15]).catch(() => []);
+    const LABELS = {
+      'grounding:disambiguate': 'Disambiguation',
+      'grounding:hype': 'HyPE question generation',
+      'grounding:claims': 'Entity claim extraction',
+      'grounding:mentions': 'Entity mention extraction',
+      'grounding:reconcile': 'Concept reconciliation',
+      'grounding:merge': 'Entity reconciliation',
+      'grounding:project': 'Entity projection',
+      'grounding:link': 'Concept linking',
+      embedding: 'Embedding generation',
+    };
+    const activities = recent.map((r) => ({
+      service: r.service_type,
+      label: LABELS[r.service_type] || (r.service_type?.startsWith('grounding:')
+        ? 'Grounding · ' + r.service_type.replace('grounding:', '') : (r.service_type || 'AI')),
+      calls: r.calls, cost: r.cost, last_at: r.last_at,
+      kind: r.service_type?.startsWith('grounding:') ? 'enrichment'
+        : (r.service_type === 'embedding' ? 'indexing' : 'serving'),
+    }));
+    currentActivity = {
+      generated_at: new Date().toISOString(),
+      window_min: 15,
+      activities,
+      idle: activities.length === 0,
+      meili_processing: meili.processing ?? null,
+      meili_enqueued: meili.enqueued ?? null,
+      watcher: workers['library-watcher']?.status ?? null,
+    };
+  } catch (err) {
+    currentActivity = { error: err.message };
   }
 
   // ── Cloudflare traffic (visits / sources) ───────────────────────────────────
@@ -400,6 +481,8 @@ async function main() {
     bottlenecks,
     aiUsage,
     activity,
+    corpus,
+    current_activity: currentActivity,
     cloudflare,
     answer_cache: answerCache,
     entity_review_model_at: erGeneratedAt,

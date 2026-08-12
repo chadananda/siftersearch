@@ -97,6 +97,11 @@
   // Check if user is admin
   let isAdmin = $derived(auth.user?.tier === 'admin' || auth.user?.tier === 'superadmin');
 
+  // The role badge doubles as the link to that role's dashboard. Extend this map
+  // as roles gain dashboards (Librarian → /librarian, Student → /student, …).
+  const ROLE_DASHBOARDS = { admin: '/admin', superadmin: '/admin' };
+  let roleDashboard = $derived(ROLE_DASHBOARDS[auth.user?.tier] || null);
+
   // User display
   let userInitial = $derived(
     auth.user?.name?.charAt(0)?.toUpperCase() ||
@@ -224,15 +229,6 @@
         <!-- Dropdown for collapsed nav items -->
         {#if showNavMenu}
           <div class="nav-dropdown" role="menu" aria-label="Navigation menu">
-            {#if isAdmin}
-              <!-- Admin: single link at the top → the admin dashboard -->
-              <a href="/admin" class="nav-dropdown-item admin-item" class:active={currentPage === 'admin'} role="menuitem" onclick={closeNavMenu}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-                Admin
-              </a>
-            {/if}
             <!-- Chat is always visible in dropdown -->
             <a href="/" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'chat' || currentPage === 'search'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -294,7 +290,14 @@
                   {/if}
                   <div class="header-info">
                     <div class="header-email">{auth.user?.email}</div>
-                    <TierBadge compact />
+                    {#if roleDashboard}
+                      <!-- The role IS the link to its dashboard (Admin→/admin; Librarian/Student later). -->
+                      <a href={roleDashboard} class="role-link" role="menuitem" onclick={closeNavMenu} title="Open your dashboard">
+                        <TierBadge compact />
+                      </a>
+                    {:else}
+                      <TierBadge compact />
+                    {/if}
                   </div>
                 </div>
               </div>
@@ -792,6 +795,16 @@
   .dropdown-header {
     padding: 0.5rem 0.75rem;
   }
+
+  /* The role badge is a link to its dashboard — show it's clickable. */
+  .role-link {
+    display: inline-flex;
+    text-decoration: none;
+    border-radius: 0.375rem;
+    transition: opacity 0.15s;
+    cursor: pointer;
+  }
+  .role-link:hover { opacity: 0.8; }
 
   .header-user {
     display: flex;

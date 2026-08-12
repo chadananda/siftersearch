@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-12T17:48:15.114Z",
+  "generated": "2026-08-12T17:58:08.190Z",
   "entries": [
+    {
+      "hash": "0485f72c",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Scope dashboard avg-latency to searches (exclude chat turns)",
+      "scope": null
+    },
     {
       "hash": "03ba88f6",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Graph-validator strip markdown fences before JSON.parse",
       "scope": null
-    },
-    {
-      "hash": "f27bcc00",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Migration 82 — idx_ev_extraction_id on extraction_validations",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "0485f72c",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Scope dashboard avg-latency to searches (exclude chat turns)",
+        "scope": null
+      },
       {
         "hash": "03ba88f6",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Graph-validator strip markdown fences before JSON.parse",
-        "scope": null
-      },
-      {
-        "hash": "f27bcc00",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Migration 82 — idx_ev_extraction_id on extraction_validations",
         "scope": null
       }
     ]

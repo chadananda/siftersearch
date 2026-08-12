@@ -99,6 +99,32 @@
       {/if}
     </header>
 
+    <!-- Current activity — what the pipeline is doing right now -->
+    {#if dash?.current_activity && !dash.current_activity.error}
+      {@const ca = dash.current_activity}
+      <section class="activity-live">
+        <div class="live-head">
+          <span class="live-dot" class:idle={ca.idle}></span>
+          <span class="live-title">{ca.idle ? 'Pipeline idle' : 'Working now'}</span>
+          <span class="live-sub">last {ca.window_min}m
+            {#if ca.meili_processing}· Meili indexing {fmt(ca.meili_processing)}{/if}
+          </span>
+        </div>
+        {#if ca.idle}
+          <p class="live-empty">No AI enrichment running. Ingestion &amp; extraction resume during off-peak (low-billing) hours.</p>
+        {:else}
+          <div class="live-chips">
+            {#each ca.activities as act}
+              <div class="live-chip kind-{act.kind}">
+                <span class="chip-label">{act.label}</span>
+                <span class="chip-calls">{fmt(act.calls)} calls</span>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </section>
+    {/if}
+
     <!-- Health checks -->
     {#if health?.checks?.length}
       <section class="health-row">
@@ -141,7 +167,9 @@
         <div class="stat-content">
           <span class="stat-value">{fmt(dash?.chat?.d7)}</span>
           <span class="stat-label">Chat turns · 7d</span>
-          <span class="stat-sub">{fmt(dash?.chat?.d1)} today</span>
+          <span class="stat-sub">
+            {fmt(dash?.chat?.users_d7)} users · {fmt(dash?.chat?.saved)} saved
+          </span>
         </div>
       </div>
 
@@ -194,6 +222,34 @@
             </div>
           {/each}
         </div>
+      </section>
+    {/if}
+
+    <!-- Corpus / library composition -->
+    {#if dash?.corpus}
+      {@const co = dash.corpus}
+      <section class="card">
+        <div class="corpus-head">
+          <h2>Library</h2>
+          <div class="corpus-totals">
+            <span><strong>{fmt(co.docs)}</strong> documents</span>
+            <span><strong>{fmt(co.paras)}</strong> passages</span>
+            <span><strong>{co.traditions}</strong> traditions</span>
+          </div>
+        </div>
+        {#if co.byReligion?.length}
+          {@const maxDocs = Math.max(...co.byReligion.map((r) => r.docs))}
+          <div class="corpus-rows">
+            {#each co.byReligion as r}
+              <div class="corpus-row">
+                <span class="corpus-name">{r.religion}</span>
+                <div class="corpus-bar"><div class="corpus-fill" style="width: {(r.docs / maxDocs) * 100}%"></div></div>
+                <span class="corpus-docs">{fmt(r.docs)}</span>
+                <span class="corpus-paras">{fmt(r.paras)} ¶</span>
+              </div>
+            {/each}
+          </div>
+        {/if}
       </section>
     {/if}
 
@@ -327,4 +383,52 @@
     background: var(--accent-primary); color: white; border: none;
     border-radius: 0.5rem; text-decoration: none; font-size: 0.875rem; cursor: pointer;
   }
+
+  /* Current activity */
+  .activity-live {
+    background: var(--surface-1); border: 1px solid var(--border-default);
+    border-radius: 0.75rem; padding: 1rem 1.25rem; margin-bottom: 1.5rem;
+  }
+  .live-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .live-dot {
+    width: 10px; height: 10px; border-radius: 50%; background: var(--success);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 60%, transparent);
+    animation: pulse 1.8s infinite;
+  }
+  .live-dot.idle { background: var(--text-secondary); animation: none; box-shadow: none; }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 55%, transparent); }
+    70% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--success) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 0%, transparent); }
+  }
+  .live-title { font-weight: 600; color: var(--text-primary); }
+  .live-sub { font-size: 0.75rem; color: var(--text-secondary); }
+  .live-empty { margin: 0.6rem 0 0; font-size: 0.875rem; color: var(--text-secondary); }
+  .live-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+  .live-chip {
+    display: flex; flex-direction: column; gap: 0.1rem;
+    padding: 0.4rem 0.75rem; border-radius: 0.5rem;
+    background: var(--surface-2); border-left: 3px solid var(--accent-primary);
+  }
+  .live-chip.kind-enrichment { border-left-color: var(--accent-tertiary); }
+  .live-chip.kind-indexing { border-left-color: var(--info); }
+  .live-chip.kind-serving { border-left-color: var(--success); }
+  .chip-label { font-size: 0.8125rem; color: var(--text-primary); font-weight: 500; }
+  .chip-calls { font-size: 0.6875rem; color: var(--text-secondary); }
+
+  /* Corpus */
+  .corpus-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .corpus-head h2 { margin: 0; }
+  .corpus-totals { display: flex; gap: 1.25rem; font-size: 0.8125rem; color: var(--text-secondary); flex-wrap: wrap; }
+  .corpus-totals strong { color: var(--text-primary); font-size: 1rem; }
+  .corpus-rows { display: flex; flex-direction: column; gap: 0.4rem; }
+  .corpus-row {
+    display: grid; grid-template-columns: minmax(90px, 1fr) 3fr auto auto;
+    gap: 0.75rem; align-items: center; font-size: 0.8125rem;
+  }
+  .corpus-name { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .corpus-bar { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+  .corpus-fill { height: 100%; background: var(--accent-tertiary); border-radius: 4px; }
+  .corpus-docs { color: var(--text-primary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .corpus-paras { color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 70px; text-align: right; }
 </style>

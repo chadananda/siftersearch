@@ -190,11 +190,17 @@ export default async function adminRoutes(fastify) {
       generated_at: snap.generated_at || null,
       age_s: ageS,
       health: { status, checks },
+      current_activity: snap.current_activity || null,
+      corpus: snap.corpus && !snap.corpus.error ? snap.corpus : null,
       users: { total: users?.total ?? 0, pending: users?.pending ?? 0 },
       visits,
       visits_available: !!visits,
       searches: { d1: a.searches_d1 ?? 0, d7: a.searches_d7 ?? 0, zero_result_d7: a.zero_result_d7 ?? 0, avg_ms_d7: a.avg_ms_d7 ? Math.round(a.avg_ms_d7) : null },
-      chat: { d1: a.chat_d1 ?? 0, d7: a.chat_d7 ?? 0 },
+      chat: {
+        d1: a.chat_d1 ?? 0, d7: a.chat_d7 ?? 0,
+        users_d7: a.chat_users_d7 ?? 0, users_all: a.chat_users_all ?? 0,
+        saved: a.saved_conversations ?? 0,
+      },
       spend: {
         today: ai.today_cost ?? 0,
         week: ai.week_cost ?? 0,
