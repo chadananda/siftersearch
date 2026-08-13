@@ -1498,8 +1498,26 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       .filter(c => c.length > MAX_PARAGRAPH_LENGTH);
 
     if (oversizedIdxs.length > 0) {
-      if (isEnglish) {
-        // English: auto-recover instead of rejecting.
+      // TRY to auto-recover for ANY non-AI-segmented language, then judge by RESULT. This used to be
+      // English-only, so a French newspaper page (long unbroken columns) was rejected outright with
+      // "split long paragraphs manually" — 12 real books stuck in a retry loop the moment their language
+      // was labelled correctly. Sentence splitting works for any script that ends sentences with . ! ?,
+      // which is every language reaching this branch (RTL/AI-segmented ones returned above). Deciding by
+      // whether the split ACTUALLY worked is safer than an allow-list, which would be wrong for the first
+      // language nobody thought to add.
+      const splitWorked = (() => {
+        if (isEnglish) return true;                    // unchanged path for English
+        return oversizedIdxs.every(({ idx }) => {
+          const text = chunks[idx]?.text || '';
+          const lines = text.split('\n');
+          if (lines.filter((l) => l.trim().startsWith('|')).length / lines.length > 0.5) return true; // table → dropped
+          const parts = parseDocument(text, { maxChunkSize: MAX_PARAGRAPH_LENGTH });
+          return parts.length > 1 && parts.every((t) => t.length <= MAX_PARAGRAPH_LENGTH);
+        });
+      })();
+
+      if (splitWorked) {
+        // Auto-recover instead of rejecting.
         // Markdown tables (majority of lines are |-delimited) are nav/TOC noise — drop them.
         // Genuine oversized prose is sentence-split into MAX_PARAGRAPH_LENGTH chunks.
         let autoChunkedCount = 0;
@@ -1529,7 +1547,8 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
           logger.warn({ relativePath, autoChunkedCount }, 'Document auto-chunked: oversized paragraphs split at sentence boundaries');
         }
       } else {
-        // Non-English LTR: source needs manual fixing — reject and flag.
+        // The splitter found no usable sentence boundaries (or the pieces are still oversized), so the
+        // source genuinely needs manual fixing — reject and flag.
         const errorMessage = `Document has ${oversizedIdxs.length} paragraph(s) exceeding ${MAX_PARAGRAPH_LENGTH} characters. ` +
                              `Longest: ${Math.max(...oversizedIdxs.map(c => c.length))} chars at paragraph ${oversizedIdxs[0].idx + 1}. ` +
                              `Please split long paragraphs manually.`;

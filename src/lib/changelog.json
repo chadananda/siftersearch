@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T14:48:53.213Z",
+  "generated": "2026-08-13T15:30:40.733Z",
   "entries": [
+    {
+      "hash": "3be0180a",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Permanent extraction failures are REJECTIONS, not retries",
+      "scope": null
+    },
     {
       "hash": "0b8b54e9",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Credit David Hunt as creator of ocean-search-testing framework",
       "scope": null
-    },
-    {
-      "hash": "5832ef9a",
-      "date": "2026-05-31",
-      "type": "Test",
-      "description": "Update search quality results — 30/52 (58%), MRR 0.738",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "3be0180a",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Permanent extraction failures are REJECTIONS, not retries",
+        "scope": null
+      },
       {
         "hash": "0b8b54e9",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Docs",
         "description": "Credit David Hunt as creator of ocean-search-testing framework",
-        "scope": null
-      },
-      {
-        "hash": "5832ef9a",
-        "date": "2026-05-31",
-        "type": "Test",
-        "description": "Update search quality results — 30/52 (58%), MRR 0.738",
         "scope": null
       }
     ]
