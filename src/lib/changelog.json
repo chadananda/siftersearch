@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T14:01:06.559Z",
+  "generated": "2026-08-13T14:11:28.860Z",
   "entries": [
+    {
+      "hash": "d3fa96c5",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Make main installable again — realign package.json with the lockfile, lock the converter's deps",
+      "scope": null
+    },
     {
       "hash": "adb3ce1a",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Entity sync runs between doc batches + fix missing waitForMeiliTask",
       "scope": null
-    },
-    {
-      "hash": "fb538663",
-      "date": "2026-05-30",
-      "type": "Fixed",
-      "description": "Isolate sync job DB-lock failures so periodic tasks (entity sync) always run",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "d3fa96c5",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Make main installable again — realign package.json with the lockfile, lock the converter's deps",
+        "scope": null
+      },
       {
         "hash": "adb3ce1a",
         "date": "2026-08-13",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-30",
         "type": "Fixed",
         "description": "Entity sync runs between doc batches + fix missing waitForMeiliTask",
-        "scope": null
-      },
-      {
-        "hash": "fb538663",
-        "date": "2026-05-30",
-        "type": "Fixed",
-        "description": "Isolate sync job DB-lock failures so periodic tasks (entity sync) always run",
         "scope": null
       }
     ]
