@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T13:26:17.226Z",
+  "generated": "2026-08-13T13:48:42.729Z",
   "entries": [
+    {
+      "hash": "20e3e21d",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "An endpoint to READ the proposals a propose-then-approve flow produces",
+      "scope": null
+    },
     {
       "hash": "c64030b9",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Increase entity mention sync batch 200→1000, interval 2min→30s",
       "scope": null
-    },
-    {
-      "hash": "c9d668f4",
-      "date": "2026-05-30",
-      "type": "New",
-      "description": "Wire entity mention sync into sync-processor periodic loop",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "20e3e21d",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "An endpoint to READ the proposals a propose-then-approve flow produces",
+        "scope": null
+      },
       {
         "hash": "c64030b9",
         "date": "2026-08-13",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-30",
         "type": "Performance",
         "description": "Increase entity mention sync batch 200→1000, interval 2min→30s",
-        "scope": null
-      },
-      {
-        "hash": "c9d668f4",
-        "date": "2026-05-30",
-        "type": "New",
-        "description": "Wire entity mention sync into sync-processor periodic loop",
         "scope": null
       }
     ]

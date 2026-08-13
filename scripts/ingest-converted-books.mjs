@@ -22,6 +22,7 @@ const MANIFEST = '.work/converted-books-manifest.json';
 // leaves a run record behind. An explicit API request runs the batch even off-peak.
 const { runStage } = await import('./lib/stage-runner.mjs');
 const stageState = await import('../api/lib/pipeline/stage-state.js');
+const { audit } = await import('../api/lib/audit.js');
 
 const { config } = await import('../api/lib/config.js');
 const { ingestDocument } = await import('../api/services/ingester.js');
@@ -69,6 +70,11 @@ for (const m of pending) {
     const res = await ingestDocument(text, { title: m.title, source_url: m.source_url }, m.rel);
     const newId = res?.documentId ?? res?.docId ?? res?.id;
     if (!newId) throw new Error(`ingest returned no document id: ${JSON.stringify(res).slice(0, 120)}`);
+    await audit({
+      actor: 'ingest-converted-books', action: 'doc.create', target: m.rel, docId: newId,
+      reason: `ingested the converted file for stub ${m.stub_id}`,
+      detail: { stub_id: m.stub_id, rel: m.rel, source_url: m.source_url, bytes: text.length },
+    }).catch(() => {});
     report.ingested.push({ stub_id: m.stub_id, doc_id: newId, rel: m.rel, title: m.title });
 
     // Retire the stub — EXPLICITLY, by the id the manifest recorded. Never a heuristic sweep: a
@@ -81,6 +87,13 @@ for (const m of pending) {
         args: [newId, m.stub_id],
       }], `retire-stub-${m.stub_id}`);
       report.retired.push({ stub_id: m.stub_id, superseded_by: newId });
+      // This path does NOT go through safeSoftDeleteDocs, so it audits itself — otherwise a retired stub is
+      // a doc that vanished with no record of who removed it or what replaced it.
+      await audit({
+        actor: 'ingest-converted-books', action: 'doc.retire', target: `doc:${m.stub_id}`, docId: m.stub_id,
+        reason: `superseded by the converted book (doc ${newId})`,
+        detail: { superseded_by: newId, rel: m.rel, source_url: m.source_url },
+      }).catch(() => {});
     }
     m.ingested_doc_id = newId;
     m.ingested_at = new Date().toISOString();

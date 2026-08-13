@@ -86,6 +86,32 @@ export default async function ingestRoutes(fastify) {
     return { stage: stage || 'all', status: status || 'all', count: items.length, by_reason: byReason, items };
   });
 
+  // ── AUDIT: who changed this file/doc, when, and why ────────────────────────────────────────────────
+  // The question that motivated all of this: "we cannot figure out why files were moved."
+  fastify.get('/audit', admin, async (req) => {
+    const { recentAudit, auditSummary } = await import('../lib/audit.js');
+    const hours = Math.min(Number(req.query?.hours) || 24, 24 * 30);
+    const since = Math.floor(Date.now() / 1000) - hours * 3600;
+    const [entries, summary] = await Promise.all([
+      recentAudit({
+        action: req.query?.action || null, actor: req.query?.actor || null,
+        docId: req.query?.doc_id != null ? Number(req.query.doc_id) : null,
+        sinceEpoch: since, limit: Number(req.query?.limit) || 200,
+      }),
+      auditSummary({ sinceEpoch: since }),
+    ]);
+    return { window_hours: hours, summary, count: entries.length, entries };
+  });
+
+  // The full history of ONE doc, oldest first — "why is this doc gone / different?"
+  fastify.get('/audit/doc/:id', admin, async (req) => {
+    const { docHistory } = await import('../lib/audit.js');
+    const docId = Number(req.params.id);
+    if (!Number.isFinite(docId)) throw ApiError.badRequest('doc id must be a number');
+    const history = await docHistory(docId);
+    return { doc_id: docId, events: history.length, history };
+  });
+
   // ── Control ────────────────────────────────────────────────────────────────────────────────────────
   // Ask a stage to run at its next tick, even outside the peak window. The API records intent only.
   fastify.post('/ingest/run/:stage', admin, async (req) => {

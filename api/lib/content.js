@@ -298,6 +298,14 @@ async function safeSoftDeleteDocs(docIds, { reason = 'unspecified', runId = null
   if (deletable.length) {
     logger.warn({ reason, runId, deleted: deletable.length, protected_ol: olIds.size, sample: deletable.slice(0, 50) },
       'safeSoftDeleteDocs: soft-deleted docs (AUDIT)');
+    // Durable trail. The logger line above cannot be queried from off-box and rotates away, which is exactly
+    // why a doc that disappeared had no recoverable explanation. One row per doc, naming the caller's reason.
+    try {
+      const { audit } = await import('./audit.js');
+      for (const id of deletable) {
+        await audit({ actor: 'safeSoftDeleteDocs', action: 'doc.delete', target: `doc:${id}`, docId: id, reason, runId });
+      }
+    } catch { /* auditing is a witness, never a participant — a deletion that happened must still return */ }
   }
   return { deleted: deletable.length, deletedIds: deletable, protected_ol: olIds.size, aborted: false };
 }

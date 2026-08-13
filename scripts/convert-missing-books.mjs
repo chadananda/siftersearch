@@ -25,6 +25,7 @@ const { detectLang } = await import('../api/lib/pipeline/profile.js');
 // reports identically, and a rejection becomes DATA (a reason with a count) instead of a log line.
 const { runStage } = await import('./lib/stage-runner.mjs');
 const stageState = await import('../api/lib/pipeline/stage-state.js');
+const { audit } = await import('../api/lib/audit.js');
 const CONVERT_VERSION = 'convert-2';   // bump when the quality gate or extraction rules change
 const LIB = config.library?.basePath;
 const WRITER = process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849';
@@ -256,7 +257,15 @@ for (const s of stubs) {
     if (APPLY) {
       const dest = path.join(LIB, rel);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
+      const overwrote = fs.existsSync(dest);
       fs.writeFileSync(dest, md);
+      // Every file this pipeline puts in the library is recorded with its origin — and OVERWROTE says
+      // plainly when a write replaced an existing file, which is the event that silently destroyed a book.
+      await audit({
+        actor: 'convert-missing-books', action: 'file.write', target: rel, docId: s.id,
+        reason: overwrote ? 'converted source file (REPLACED an existing file)' : 'converted source file',
+        detail: { source_url: url, bytes: md.length, words: q.words, pages, language: lang, overwrote },
+      }).catch(() => {});
       // DEFER ingestion + stub-retirement until the history books finish (Chad's sequencing):
       // write the file now, record the stub↔file mapping in a manifest, and let the separate
       // post-history ingest step retire the stub + trigger ingestion. The library-watcher is

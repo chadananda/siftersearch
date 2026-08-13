@@ -769,6 +769,31 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_pipeline_run_stage ON pipeline_run(stage, started_at)`);
     logger.info('Migration 107 complete');
   },
+
+  // ── The audit trail: WHO changed this file/doc, WHEN, and WHY ────────────────────────────────────────
+  // "We cannot figure out why files were moved" is the problem this solves. Mutations were audited only to
+  // the process log (safeSoftDeleteDocs logs 'AUDIT' via logger.warn), which cannot be queried from off-box
+  // and rotates away — so a doc that vanished had no recoverable explanation. Durable + queryable instead.
+  // Append-only by convention: rows are never updated, so the history of a doc is the history.
+  108: async () => {
+    logger.info('Starting migration 108: audit_log (durable file/doc mutation trail)');
+    await query(`CREATE TABLE IF NOT EXISTS audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      at INTEGER NOT NULL DEFAULT (unixepoch()),
+      actor TEXT NOT NULL,           -- who: 'convert-missing-books', 'ingest-converted-books', 'ingester', 'dedupe', 'api:<route>'
+      action TEXT NOT NULL,          -- what: file.write | file.delete | doc.create | doc.update | doc.retire | doc.delete | doc.restore | doc.language
+      target TEXT,                   -- the file path, or doc:<id>
+      doc_id INTEGER,
+      reason TEXT,                   -- WHY, in words a human can act on
+      detail_json TEXT,              -- {from,to,bytes,source_url,superseded_by,…}
+      run_id INTEGER                 -- pipeline_run.id when inside a stage run, so an action ties to its batch
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_audit_doc ON audit_log(doc_id, at)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_audit_at ON audit_log(at)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_log(action, at)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_audit_target ON audit_log(target)`);
+    logger.info('Migration 108 complete');
+  },
 };
 
 export const graphMigrations = {
