@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T02:09:17.166Z",
+  "generated": "2026-08-13T02:14:01.224Z",
   "entries": [
+    {
+      "hash": "df789880",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Actually run migration 7, and never lose a consent to a schema lag",
+      "scope": null
+    },
     {
       "hash": "2857304d",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Remove stale MODEL reference in seedDocContextFromDB",
       "scope": null
-    },
-    {
-      "hash": "19edbfbe",
-      "date": "2026-05-27",
-      "type": "Other",
-      "description": "Move entity pipeline model settings to .env-public for easy tuning",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "df789880",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Actually run migration 7, and never lose a consent to a schema lag",
+        "scope": null
+      },
       {
         "hash": "2857304d",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Remove stale MODEL reference in seedDocContextFromDB",
-        "scope": null
-      },
-      {
-        "hash": "19edbfbe",
-        "date": "2026-05-27",
-        "type": "Other",
-        "description": "Move entity pipeline model settings to .env-public for easy tuning",
         "scope": null
       }
     ]

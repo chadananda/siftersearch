@@ -28,6 +28,7 @@ import {
 } from '../lib/text-normalize.js';
 import { config } from '../lib/config.js';
 import { hashContent, parseMarkdownFrontmatter } from './ingester.js';
+import { carriedEnrichment } from './carried-enrichment.js';
 
 // Re-export for backwards compatibility (tests import from indexer.js)
 export { parseMarkdownFrontmatter };
@@ -120,6 +121,7 @@ const computeNormalizedHash = sharedHashNormalized;
 //   context?: string,
 //   context_model?: string
 // }>
+// The enrichment half of a carried bundle is paired by ./carried-enrichment.js (shared with sites-ingester).
 async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
   const cached = new Map();
 
@@ -151,10 +153,7 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
             cached.set(row.paragraph_index, {
               embedding: new Float32Array(buffer.buffer || buffer),
               embedding_model: row.embedding_model,
-              hyp_thesis: row.hyp_thesis || null,
-              hyp_questions: row.hyp_questions || null,
-              context: row.context || null,
-              context_model: row.context_model || null
+              ...carriedEnrichment(row)
             });
           }
         }
@@ -181,19 +180,17 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
       for (let b = 0; b < uncachedNormalizedHashes.length; b += HASH_BATCH) {
         const batchHashes = uncachedNormalizedHashes.slice(b, b + HASH_BATCH);
         const placeholders = batchHashes.map(() => '?').join(',');
+        // ONE COHERENT ROW per hash (newest), not a column-wise MAX(): MAX() picks each column from whichever
+        // row maximises it, so a note could arrive paired with a DIFFERENT row's version stamp — or a stamp
+        // with no note at all, the row that deadlocks disambiguation (see carriedEnrichment).
         const rows = await queryAll(
-          `SELECT normalized_hash,
-                  MAX(embedding) AS embedding,
-                  MAX(embedding_model) AS embedding_model,
-                  MAX(hyp_thesis) AS hyp_thesis,
-                  MAX(hyp_questions) AS hyp_questions,
-                  MAX(context) AS context,
-                  MAX(context_model) AS context_model
-           FROM content
-           WHERE normalized_hash IN (${placeholders})
-             AND embedding IS NOT NULL
-             AND embedding_model = ?
-           GROUP BY normalized_hash`,
+          `SELECT normalized_hash, embedding, embedding_model, hyp_thesis, hyp_questions, context, context_model
+             FROM content
+            WHERE id IN (SELECT MAX(id) FROM content
+                          WHERE normalized_hash IN (${placeholders})
+                            AND embedding IS NOT NULL
+                            AND embedding_model = ?
+                          GROUP BY normalized_hash)`,
           [...batchHashes, EMBEDDING_MODEL]
         );
         globalMatchRows.push(...rows);
@@ -207,10 +204,7 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
           globalBundles.set(row.normalized_hash, {
             embedding: new Float32Array(row.embedding.buffer || row.embedding),
             embedding_model: row.embedding_model,
-            hyp_thesis: row.hyp_thesis || null,
-            hyp_questions: row.hyp_questions || null,
-            context: row.context || null,
-            context_model: row.context_model || null
+            ...carriedEnrichment(row)
           });
         }
       }

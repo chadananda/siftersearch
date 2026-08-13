@@ -57,8 +57,10 @@ describe('disambiguate — run() on fake ports', () => {
     expect(store.saved[0]).toMatchObject({ paragraphId: 1, methodVersion: 'v1' });
   });
 
+  // "Carrying the version" means stamp AND note: a stamp whose note is gone is NOT done (see
+  // tests/api/grounding-verify-deadlock.test.js — a stamp-only skip strands the book at its next gate).
   it('RESUME skips paragraphs already carrying the current method version', async () => {
-    const done = seedParas.map((p) => ({ ...p, contextModel: 'v1' }));
+    const done = seedParas.map((p) => ({ ...p, context: '@Shíráz, ~1844 — arrival', contextModel: 'v1' }));
     const { rag, store } = makeRag({ seed: { paras: { 9: done } }, llm: fakeLLM([{ content: note, finishReason: 'stop' }]) });
     const stats = await rag.disambiguate(9, { version: 'v1' });
     expect(stats.done).toBe(0);

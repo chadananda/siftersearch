@@ -73,6 +73,10 @@ export const boundStageOf = (opts = {}) => opts.only || opts.to || 'verify';
 //   0-mention/0-claim hyped book is genuinely entity-sparse and DONE, not broken. Gate on the PROCESSING stages
 //   (disamb floor + hype) and reconcile only when there is something to reconcile. Per-paragraph FAILED
 //   (unprocessable, e.g. oversized/mis-segmented) is handled separately (mark book failed → repair queue), not here.
+//   DISAMB = `context IS NOT NULL` — the paragraph was PROCESSED. Byte-identical to the stage gate's own measure
+//   (rag-adapter/store.getDisambigCoverage) and to resumeStageFor, because three definitions of "disambiguated"
+//   is how a book gets called not-done here while the stage calls it done: it never advances and the queue reports
+//   "did not reach verify" forever. An EMPTY note ('' — examined, nothing to resolve) is a complete result.
 export function isDoneFromArtifacts({ prose = 0, disamb = 0, hyped = 0, hypeable = 0, clusters = 0, decisions = 0 } = {}, opts = {}) {
   if (prose === 0) return false;
   if (disamb / prose < 0.98) return false;                                   // the disambiguation floor for EVERY bound
@@ -101,7 +105,7 @@ export async function reachedBound(docId, opts = {}, deps = {}) {
   const q = deps.queryOne || queryOne;
   const row = await q(
     `SELECT (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) prose,
-            (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND context IS NOT NULL AND context!='') disamb,
+            (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND context IS NOT NULL) disamb,
             (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND hyp_questions IS NOT NULL) hyped,
             (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(trim(text)) >= ${HYPE_MINLEN}) hypeable,
             (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
@@ -128,7 +132,7 @@ export async function reachedBoundBulk(docIds, opts = {}, deps = {}) {
   // NUMERATOR = same row-set as the prose DENOMINATOR (live prose only). Counting context/hype on header
   // or deleted rows inflated coverage past 100% → books "done" here while the stage gate's honest ratio
   // failed → endless did-not-reach-verify churn with disambiguate never re-run (2026-08-09).
-  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND context IS NOT NULL AND context!='' GROUP BY doc_id`, ids), disamb);
+  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND context IS NOT NULL GROUP BY doc_id`, ids), disamb);
   load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND hyp_questions IS NOT NULL GROUP BY doc_id`, ids), hyped);
   load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(trim(text)) >= ${HYPE_MINLEN} GROUP BY doc_id`, ids), hypeable);
   load(await qa(`SELECT doc_id d, COUNT(DISTINCT resolved_as) n FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%' GROUP BY doc_id`, ids), clusters);

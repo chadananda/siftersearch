@@ -19,7 +19,7 @@ import { verifyLink } from './verify-link.js';
 export const ADJUDICATOR_VERSION = 3;
 
 export async function run(ctx, docId, opts = {}) {
-  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
+  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.98 });   // ONE bar (kernel/gate) — 0.99 stranded 98–99% books
   const profile = await profileFor(ctx, docId);
   // Three run modes: readjudicate (re-decide ONLY the improvable minority, superseding their old decision) |
   // resume (skip already-decided) | full. readjudicate is the cheap incremental sweep — reuses all prior work.

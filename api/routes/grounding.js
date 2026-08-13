@@ -91,6 +91,29 @@ export default async function groundingRoutes(fastify) {
     return row;
   });
 
+  // Release books the storm-guard parked. The guard quarantines a doc after repeated identical failures so a
+  // broken book cannot burn tokens forever; once the underlying bug is FIXED, the parked set has to be released
+  // or the fix reaches nothing. Needing an ssh + raw-SQL session to do that is a missing endpoint, so: this is
+  // it. `reason` defaults to the storm signature; the follower re-enqueues on its next tick (no restart).
+  // Deliberately NOT automatic — releasing means real model spend on those books, which is an operator's call.
+  fastify.post('/grounding/queue/unquarantine', admin, async (req) => {
+    const reason = req.body?.reason || 'did not reach verify';
+    const note = req.body?.note || `quarantine cleared ${new Date().toISOString().slice(0, 10)}`;
+    const like = `%${reason}%`;
+    const affected = await queryAll(
+      `SELECT id, doc_id FROM grounding_queue
+        WHERE status='failed' AND (COALESCE(error,'') LIKE ? OR COALESCE(note,'') LIKE ?)`, [like, like]);
+    if (!affected.length) return { released: 0, docs: [] };
+    // query() routes writes through the single writer, same as /queue/reset above.
+    await query(
+      `UPDATE grounding_queue SET error = ?,
+         note = CASE WHEN COALESCE(note,'') LIKE ? THEN NULL ELSE note END
+        WHERE status='failed' AND (COALESCE(error,'') LIKE ? OR COALESCE(note,'') LIKE ?)`,
+      [note, like, like, like]);
+    const docs = [...new Set(affected.map((r) => r.doc_id))];
+    return { released: affected.length, docs };
+  });
+
   // Force a supervisor pass (normally on a 20s timer) — useful right after enqueuing or stopping a run.
   fastify.post('/grounding/queue/tick', admin, async () => queue.tick());
 

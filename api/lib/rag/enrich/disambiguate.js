@@ -26,7 +26,13 @@ export async function run(ctx, docId, opts = {}) {
   const profile = await profileFor(ctx, docId);
   const [meta, all, cast] = await Promise.all([ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId), castOf(ctx, docId)]);
   const version = opts.version ?? ctx.config.versions?.disambig ?? 'disambig-v1'; // method tag is host config
-  const remaining = (opts.resume ?? true) ? all.filter((p) => p.contextModel !== version) : all;
+  // RESUME = "already carries a note AT this version". The stamp alone is NOT enough: a paragraph whose note
+  // is gone but whose stamp survives (re-ingest carries the columns forward independently) is skipped by a
+  // stamp-only filter while every coverage measure counts it un-disambiguated — the book then fails its next
+  // stage's gate forever with ZERO model calls ("did not reach verify", 2026-08-12). An EMPTY note stays done:
+  // '' means the stage examined the paragraph and found nothing to resolve.
+  const done = (p) => p.contextModel === version && p.context != null;
+  const remaining = (opts.resume ?? true) ? all.filter((p) => !done(p)) : all;
   const minLen = opts.minLen ?? MIN_LEN;
   const tinyParas = remaining.filter((p) => p.text.length < minLen);
   const paras = remaining.filter((p) => p.text.length >= minLen);

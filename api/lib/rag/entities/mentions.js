@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { assertDisambiguated } from '../kernel/gate.js';
 
 export async function run(ctx, docId, opts = {}) {
-  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.99 });
+  await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.98 });   // ONE bar (kernel/gate) — 0.99 stranded 98–99% books
   const version = opts.version ?? ctx.config.versions?.disambig ?? 'disambig-v1';
   const paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context && p.contextModel === version);
   const mentions = [];

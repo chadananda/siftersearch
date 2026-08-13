@@ -30,6 +30,7 @@ import { aiService } from '../lib/ai-services.js';
 // `import * as content` would land in the wrong namespace.
 import { content } from '../lib/content.js';
 import { adjudicateSameWork } from '../lib/dedup-adjudicator.js';
+import { carriedEnrichment } from './carried-enrichment.js';   // ONE pairing rule for carried note/stamp + HyPE
 import {
   hashNormalized as normalizedHash,
   hashContent as fileHashOf,
@@ -157,19 +158,16 @@ const SITE_DELETE_FRACTION = parseFloat(process.env.SITE_DELETE_FRACTION ?? '0.0
 async function harvestBundles(normalizedHashes) {
   if (normalizedHashes.length === 0) return new Map();
   const placeholders = normalizedHashes.map(() => '?').join(',');
+  // ONE COHERENT ROW per hash (newest) — see indexer.carriedEnrichment: a column-wise MAX() can pair a note
+  // with another row's version stamp, or carry a stamp with no note (the row that deadlocks disambiguation).
   const rows = await queryAll(
-    `SELECT normalized_hash,
-            MAX(embedding) AS embedding,
-            MAX(embedding_model) AS embedding_model,
-            MAX(hyp_thesis) AS hyp_thesis,
-            MAX(hyp_questions) AS hyp_questions,
-            MAX(context) AS context,
-            MAX(context_model) AS context_model
+    `SELECT normalized_hash, embedding, embedding_model, hyp_thesis, hyp_questions, context, context_model
        FROM content
-      WHERE normalized_hash IN (${placeholders})
-        AND embedding IS NOT NULL
-        AND embedding_model = ?
-      GROUP BY normalized_hash`,
+      WHERE id IN (SELECT MAX(id) FROM content
+                    WHERE normalized_hash IN (${placeholders})
+                      AND embedding IS NOT NULL
+                      AND embedding_model = ?
+                    GROUP BY normalized_hash)`,
     [...normalizedHashes, EMBEDDING_MODEL]
   );
   const out = new Map();
@@ -178,10 +176,7 @@ async function harvestBundles(normalizedHashes) {
       out.set(r.normalized_hash, {
         embedding: new Float32Array(r.embedding.buffer || r.embedding),
         embedding_model: r.embedding_model,
-        hyp_thesis: r.hyp_thesis,
-        hyp_questions: r.hyp_questions,
-        context: r.context,
-        context_model: r.context_model
+        ...carriedEnrichment(r)
       });
     }
   }
