@@ -27,17 +27,49 @@ const WRITER_DOWN_STREAK = Number(process.env.SIFTER_WRITER_DOWN_STREAK || 8);
 // POST a batch of {sql,args} to the writer; returns per-statement results.
 // Fails loud — never silently falls back to a direct write (that would
 // reintroduce the contention this whole mechanism exists to prevent).
+// A dropped CONNECTION is not a failed write — it is a write that never got a verdict, and the commonest
+// cause is mundane: the single writer restarted (every deploy does this), or an idle keep-alive socket was
+// reaped between batches. Undici surfaces both as `fetch failed / UND_ERR_SOCKET: other side closed`.
+// Without a retry, ONE such blip killed an entire book: complete-book.mjs is top-level `await runGrounding`,
+// so the rejection escaped as an uncaught module-evaluation error, the process died before its first model
+// call, and the queue recorded "did not reach verify" — six books, twice, with $0.00 of model spend
+// (2026-08-13). Retrying is safe by the same property the 90s abort already relies on: writer transactions
+// are atomic and pipeline resume is idempotent per paragraph, so a maybe-committed batch never duplicates.
+// Only CONNECTION-level failures retry; an HTTP error from the writer is a real verdict and must not.
+const TRANSIENT = new Set(['UND_ERR_SOCKET', 'ECONNRESET', 'ECONNREFUSED', 'EPIPE', 'ETIMEDOUT', 'ENOTFOUND', 'UND_ERR_CONNECT_TIMEOUT']);
+const isTransientWriteError = (e) => {
+  const code = e?.cause?.code || e?.code;
+  return TRANSIENT.has(code) || e?.name === 'TimeoutError' || /other side closed|socket hang up/i.test(e?.cause?.message || e?.message || '');
+};
+const WRITE_ATTEMPTS = Number(process.env.SIFTER_WRITE_ATTEMPTS || 4);
+
 export async function postWriteBatch(statements, name = '') {
   // Bounded write: a slow/stuck write aborts as a catchable TimeoutError instead of an uncaught undici
   // headers-timeout crashing a long grounding run. Safe — writer transactions are atomic and the pipeline's
   // resume is idempotent per paragraph, so an aborted-but-maybe-committed write never duplicates.
   try {
-    const res = await fetch(`${WRITER_URL}/write`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ statements, name }),
-      signal: AbortSignal.timeout(90000),
-    });
+    let res, lastErr;
+    for (let attempt = 1; attempt <= WRITE_ATTEMPTS; attempt++) {
+      try {
+        res = await fetch(`${WRITER_URL}/write`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ statements, name }),
+          signal: AbortSignal.timeout(90000),
+        });
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+        if (!isTransientWriteError(e) || attempt === WRITE_ATTEMPTS) throw e;
+        // Backoff covers a writer restart (pm2 brings it back in a few seconds), not a permanent outage.
+        const waitMs = 500 * 2 ** (attempt - 1);
+        logger.warn({ attempt, of: WRITE_ATTEMPTS, waitMs, name, err: e?.cause?.code || e.message },
+          'writer connection dropped — retrying (writer restart or reaped keep-alive socket)');
+        await new Promise((r) => setTimeout(r, waitMs));
+      }
+    }
+    if (lastErr) throw lastErr;
     if (!res.ok) {
       const detail = await res.text().catch(() => '');
       throw new Error(`writer ${res.status}: ${detail.slice(0, 200)}`);

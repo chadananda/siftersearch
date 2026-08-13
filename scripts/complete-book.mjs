@@ -12,6 +12,24 @@ const doc = Number(argv.find((a) => !a.startsWith('--')));
 const opt = Object.fromEntries(argv.filter((a) => a.startsWith('--')).map((a) => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v ?? true]; }));
 if (!doc) { console.error('usage: complete-book <docId> [--from=stage] [--only=stage] [--cc=N]'); process.exit(1); }
 
+// Every line below is TOP-LEVEL await, so an unhandled rejection is a module-evaluation crash: node prints a
+// bare undici dump with no application frames and exits non-zero, the queue records only "did not reach verify",
+// and the actual cause is invisible. On 2026-08-13 that hid a dropped writer connection for two full runs across
+// six books. Name the failure instead, and distinguish "the environment is broken" (exit 3, retryable — the
+// writer was restarting) from "this book will not ground" (exit 2), so the queue is not told to retry forever.
+process.on('unhandledRejection', (err) => { fail(err, 'unhandled rejection'); });
+
+function fail(err, where) {
+  const code = err?.cause?.code || err?.code;
+  const infra = code === 'UND_ERR_SOCKET' || code === 'ECONNREFUSED' || code === 'ECONNRESET' || err?.name === 'TimeoutError';
+  console.error(`\n❌ BOOK ${doc} ABORTED (${where}): ${err?.message || err}` +
+    (code ? ` [${code}]` : '') +
+    (infra ? `\n   The single writer at ${process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849'} did not complete the request` +
+             ` — it restarts on every deploy. This is INFRASTRUCTURE, not this book.` : ''));
+  if (err?.stack) console.error(err.stack.split('\n').slice(0, 6).join('\n'));
+  process.exit(infra ? 3 : 2);
+}
+
 const res = await runGrounding(doc, {
   from: opt.from === true ? undefined : opt.from,
   only: opt.only === true ? undefined : opt.only,
@@ -21,7 +39,7 @@ const res = await runGrounding(doc, {
   hypeModel: typeof opt['hype-model'] === 'string' ? opt['hype-model'] : undefined,   // hype-stage model override
   cc: Number(opt.cc) || 8,
   onResult: (stage, r) => console.log(`\n▶ ${stage}(${doc}) → ${JSON.stringify(r)}`),
-});
+}).catch((e) => fail(e, 'grounding run'));
 
 if (res.verify && !res.verify.ok) { console.error(`\n❌ BOOK ${doc} NOT DONE — unsearchable: ${res.verify.missing.join('; ')}`); process.exit(2); }
 if (res.verify?.ok) {

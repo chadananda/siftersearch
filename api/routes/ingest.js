@@ -107,6 +107,40 @@ export default async function ingestRoutes(fastify) {
   // per-book grounding log, the converter's output, the ingest run's output. Read-only, tail-only, and the
   // name must match a known shape — never an arbitrary path, so this cannot become a file-read primitive.
 
+
+  // Probe the single writer. Its /health lives on 127.0.0.1:7849 — localhost-only, so diagnosing it used to
+  // mean SSH. The API runs on the same box, so it can ask on our behalf. Read-only: GETs /health, never /write.
+  // Probes several times because the failure being chased is INTERMITTENT (a socket accepted then closed);
+  // a single OK proves nothing.
+  fastify.get('/server/writer', admin, async (req) => {
+    const url = process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849';
+    const n = Math.min(Math.max(Number(req.query?.probes) || 5, 1), 20);
+    const probes = [];
+    for (let i = 0; i < n; i++) {
+      const t0 = Date.now();
+      try {
+        const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(5000) });
+        const body = await res.text().catch(() => '');
+        probes.push({ ok: res.ok, status: res.status, ms: Date.now() - t0, bytes: body.length });
+      } catch (e) {
+        // The exact shape the grounding children die on — record the undici code, not just "failed".
+        probes.push({ ok: false, ms: Date.now() - t0, error: e?.message, code: e?.cause?.code || e?.code || e?.name });
+      }
+      if (i < n - 1) await new Promise((r) => setTimeout(r, 150));
+    }
+    const good = probes.filter((p) => p.ok);
+    return {
+      writerUrl: url,
+      probes: n,
+      okCount: good.length,
+      // Intermittent is the diagnosis that matters: all-ok and all-fail are easy, a mix means the writer is
+      // accepting connections while blocked, which is what closes sockets mid-request.
+      verdict: good.length === n ? 'healthy' : good.length === 0 ? 'down' : 'INTERMITTENT',
+      slowestMs: Math.max(...probes.map((p) => p.ms)),
+      results: probes,
+    };
+  });
+
   // The slow-query detector's missing half: somewhere to READ what it found, across every process.
   // Aggregated by statement shape, worst-total-impact first — one 61s statement that runs each boot
   // matters more than a thousand 200ms reads, and sorting by count alone hides it.

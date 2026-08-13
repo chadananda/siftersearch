@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T17:29:17.067Z",
+  "generated": "2026-08-13T17:37:08.194Z",
   "entries": [
+    {
+      "hash": "79a4ba71",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Give the slow-query detector a consumer (it timed everything and told no one)",
+      "scope": null
+    },
     {
       "hash": "d5cb78df",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Search quality test runner distinguishes infra errors from search failures",
       "scope": null
-    },
-    {
-      "hash": "588e12a4",
-      "date": "2026-05-31",
-      "type": "Fixed",
-      "description": "Add _timing to public-api.js search endpoint (correct handler for POST /api/v1/search)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "79a4ba71",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Give the slow-query detector a consumer (it timed everything and told no one)",
+        "scope": null
+      },
       {
         "hash": "d5cb78df",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Fixed",
         "description": "Search quality test runner distinguishes infra errors from search failures",
-        "scope": null
-      },
-      {
-        "hash": "588e12a4",
-        "date": "2026-05-31",
-        "type": "Fixed",
-        "description": "Add _timing to public-api.js search endpoint (correct handler for POST /api/v1/search)",
         "scope": null
       }
     ]
