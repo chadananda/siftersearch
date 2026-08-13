@@ -43,10 +43,16 @@ function coherentProse(text, { pages = 1 } = {}) {
   // A real text layer: substantial word count, mostly letters, reasonable density per page. Each failure
   // names ITSELF — a reason that misattributes the cause is worse than no reason, because it sends you to
   // tune the wrong threshold (we reported "poor text layer (320 words/page)" for a doc that was simply short).
+  // TUNED 2026-08-13 from the rejection data the new instrumentation produced. words/page was doing the
+  // scan-detection job and doing it badly: it threw away a 6,796-word document at 0.76 letter ratio, plus
+  // 3,243w/0.76, 3,097w/0.78, 1,686w/0.81 and 1,088w/0.80 — all unmistakably real text, all guilty only of
+  // having many pages (poetry, pictorial histories, wide margins). Every ACTUAL scan in the same sample read
+  // 0 words or a 0.14–0.30 letter ratio. So letter ratio is the discriminator; words/page keeps only a low
+  // floor, for the case alphaRatio misses: hundreds of pages yielding a handful of clean header words.
   const checks = [
     words < 300 && `too short (${words} words)`,
     alphaRatio < 0.55 && `low letter ratio (${alphaRatio.toFixed(2)} — likely scanned or tabular)`,
-    wordsPerPage < 120 && `sparse pages (${Math.round(wordsPerPage)} words/page — likely no text layer)`,
+    wordsPerPage < 25 && `almost no text per page (${Math.round(wordsPerPage)} words/page — no text layer)`,
   ].filter(Boolean);
   return { ok: checks.length === 0, why: checks.join('; '), words, alphaRatio: +alphaRatio.toFixed(2), wordsPerPage: Math.round(wordsPerPage) };
 }

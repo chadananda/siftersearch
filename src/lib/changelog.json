@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T06:54:48.396Z",
+  "generated": "2026-08-13T07:20:27.289Z",
   "entries": [
+    {
+      "hash": "42ce9fc8",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Scope the work-list to books that HAVE a source, and make each rejection name its own cause",
+      "scope": null
+    },
     {
       "hash": "f283a1bd",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Content column is paragraph_index not position in entity mentions",
       "scope": null
-    },
-    {
-      "hash": "3e042196",
-      "date": "2026-05-28",
-      "type": "Fixed",
-      "description": "API no longer runs graph migrations — graph workers own graph.db writes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "42ce9fc8",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Scope the work-list to books that HAVE a source, and make each rejection name its own cause",
+        "scope": null
+      },
       {
         "hash": "f283a1bd",
         "date": "2026-08-12",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-28",
         "type": "Fixed",
         "description": "Content column is paragraph_index not position in entity mentions",
-        "scope": null
-      },
-      {
-        "hash": "3e042196",
-        "date": "2026-05-28",
-        "type": "Fixed",
-        "description": "API no longer runs graph migrations — graph workers own graph.db writes",
         "scope": null
       }
     ]
