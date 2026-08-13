@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T17:21:34.096Z",
+  "generated": "2026-08-13T17:29:17.067Z",
   "entries": [
+    {
+      "hash": "d5cb78df",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Delete the boot-time scan that blocked the single writer for 60s (root cause of \"other side closed\")",
+      "scope": null
+    },
     {
       "hash": "ef03a2f2",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add _timing to public-api.js search endpoint (correct handler for POST /api/v1/search)",
       "scope": null
-    },
-    {
-      "hash": "7ea6b36b",
-      "date": "2026-05-31",
-      "type": "Performance",
-      "description": "Server-side timing in search response + preflight check in test runner",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "d5cb78df",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Delete the boot-time scan that blocked the single writer for 60s (root cause of \"other side closed\")",
+        "scope": null
+      },
       {
         "hash": "ef03a2f2",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Fixed",
         "description": "Add _timing to public-api.js search endpoint (correct handler for POST /api/v1/search)",
-        "scope": null
-      },
-      {
-        "hash": "7ea6b36b",
-        "date": "2026-05-31",
-        "type": "Performance",
-        "description": "Server-side timing in search response + preflight check in test runner",
         "scope": null
       }
     ]

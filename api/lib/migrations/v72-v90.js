@@ -786,6 +786,32 @@ export const migrations = {
   // the process log (safeSoftDeleteDocs logs 'AUDIT' via logger.warn), which cannot be queried from off-box
   // and rotates away — so a doc that vanished had no recoverable explanation. Durable + queryable instead.
   // Append-only by convention: rows are never updated, so the history of a doc is the history.
+  109: async () => {
+    logger.info('Starting migration 109: slow_query_log (the slow-query signal finally has somewhere to land)');
+    // db.js has timed every query against SLOW_QUERY_THRESHOLD_MS for a long time and calls itself "the
+    // single source of truth for slow-query visibility" — but the signal had NO consumer: it wrote one
+    // log line and stopped. A 61-SECOND writer-blocking UPDATE and a 151ms read produced the same kind of
+    // line, in a 629MB file nobody reads. That query stalled the single writer's event loop on every boot,
+    // closed /write's sockets mid-request, and killed a whole night of grounding before anyone looked.
+    // Recording it makes it queryable across ALL processes (api, worker, embedding…), which an in-memory
+    // counter cannot do — the worker is a different process from the API that serves the dashboard.
+    await query(`CREATE TABLE IF NOT EXISTS slow_query_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      at INTEGER NOT NULL DEFAULT (unixepoch()),
+      proc TEXT NOT NULL,            -- which process blocked: api | worker | embedding | <script name>
+      db_name TEXT,                  -- content | user | graph
+      kind TEXT NOT NULL,            -- read | write  (a slow WRITE on the worker stalls /write for everyone)
+      duration_ms INTEGER NOT NULL,
+      fingerprint TEXT NOT NULL,     -- statement shape with literals stripped, so repeats aggregate
+      sql_sample TEXT,               -- one real example, truncated
+      query_plan TEXT,               -- EXPLAIN output for reads: usually names the missing index outright
+      name TEXT                      -- caller label when the call site passed one
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_slowq_at ON slow_query_log(at)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_slowq_fp ON slow_query_log(fingerprint, at)`);
+    logger.info('Migration 109 complete: slow_query_log');
+  },
+
   108: async () => {
     logger.info('Starting migration 108: audit_log (durable file/doc mutation trail)');
     await query(`CREATE TABLE IF NOT EXISTS audit_log (

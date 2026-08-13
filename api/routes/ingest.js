@@ -106,6 +106,44 @@ export default async function ingestRoutes(fastify) {
   // is missing an endpoint". Three times in one night the decisive artifact was a log file on the box: the
   // per-book grounding log, the converter's output, the ingest run's output. Read-only, tail-only, and the
   // name must match a known shape — never an arbitrary path, so this cannot become a file-read primitive.
+
+  // The slow-query detector's missing half: somewhere to READ what it found, across every process.
+  // Aggregated by statement shape, worst-total-impact first — one 61s statement that runs each boot
+  // matters more than a thousand 200ms reads, and sorting by count alone hides it.
+  fastify.get('/server/slow-queries', admin, async (req) => {
+    const hours = Math.min(Math.max(Number(req.query?.hours) || 24, 1), 24 * 30);
+    const minMs = Math.max(Number(req.query?.minMs) || 1000, 0);
+    const since = Math.floor(Date.now() / 1000) - hours * 3600;
+    const rows = await queryAll(
+      `SELECT fingerprint, kind, proc, db_name,
+              COUNT(*) n, MAX(duration_ms) worst_ms, SUM(duration_ms) total_ms,
+              CAST(AVG(duration_ms) AS INT) avg_ms, MAX(at) last_at,
+              MAX(sql_sample) sql_sample, MAX(query_plan) query_plan, MAX(name) name
+         FROM slow_query_log
+        WHERE at >= ? AND duration_ms >= ?
+        GROUP BY fingerprint, kind, proc, db_name
+        ORDER BY total_ms DESC
+        LIMIT 50`, [since, minMs]).catch(() => []);
+
+    // A slow WRITE is not just slow: better-sqlite3 is synchronous, so it froze that process. On the
+    // worker — the single writer — that is why /write and /health stop answering and callers see
+    // "other side closed". Surface those separately so they cannot be read as ordinary slowness.
+    const blockingMs = Number(process.env.BLOCKING_QUERY_MS || 5000);
+    const blocking = rows.filter((r) => r.worst_ms >= blockingMs);
+    return {
+      hours,
+      minMs,
+      blockingThresholdMs: blockingMs,
+      blockingCount: blocking.length,
+      blocking: blocking.map((r) => ({
+        proc: r.proc, kind: r.kind, worstMs: r.worst_ms, occurrences: r.n,
+        frozeEventLoopFor: `${(r.worst_ms / 1000).toFixed(1)}s`,
+        lastAt: new Date(r.last_at * 1000).toISOString(), sql: r.sql_sample,
+      })),
+      queries: rows,
+    };
+  });
+
   // Which logs exist, so nobody has to guess a name (or SSH to run `ls logs/`).
   fastify.get('/logs', admin, async () => {
     const { readdir, stat } = await import('node:fs/promises');

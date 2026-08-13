@@ -195,6 +195,55 @@ const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || 
 const IS_SELECT = /^\s*SELECT\b/i;
 const IS_WRITE = /^\s*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|PRAGMA|ANALYZE|VACUUM|REINDEX|ATTACH|DETACH)\b/i;
 
+
+// ── Slow-query recording ───────────────────────────────────────────────────────────────────────────
+// Timing every query is only half a detector; the other half is somewhere for the signal to GO. It used
+// to go to a log line and nowhere else, so a 61-second writer-blocking UPDATE looked exactly like a 151ms
+// read and sat unread in a 629MB file while it stalled the single writer on every boot (2026-08-13).
+//
+// Recorded via the telemetry connection: uninstrumented (no recursive slow-write logging), 50ms busy
+// timeout, best-effort. Recording a slow query must never itself become a slow query, and must never
+// break the query that triggered it — so every failure here is swallowed.
+//
+// Two thresholds, because they answer different questions:
+//   SLOW_QUERY_THRESHOLD_MS (150ms)  — "worth a log line"; too chatty to store.
+//   SLOW_QUERY_RECORD_MS   (1000ms)  — "worth remembering"; these are the ones that hurt.
+//   BLOCKING_QUERY_MS      (5000ms)  — better-sqlite3 is SYNCHRONOUS, so a write this slow has frozen
+//                                      this process's event loop for that long. On the worker that means
+//                                      /write and /health stopped answering and callers' sockets closed.
+//                                      Logged at ERROR so it is greppable and alertable, not a warning
+//                                      among thousands.
+const SLOW_QUERY_RECORD_MS = parseInt(process.env.SLOW_QUERY_RECORD_MS || '1000', 10);
+const BLOCKING_QUERY_MS = parseInt(process.env.BLOCKING_QUERY_MS || '5000', 10);
+
+// Which process is blocking. pm2 sets name; scripts fall back to their filename.
+const PROC_NAME = process.env.pm_id !== undefined && process.env.name
+  ? String(process.env.name).replace(/^siftersearch-/, '')
+  : (process.env.SIFTER_PROC || (process.argv[1] || 'node').split('/').pop());
+
+/** Statement SHAPE — literals, IN-lists and whitespace stripped so repeats of one query aggregate. */
+export function fingerprintSql(sql) {
+  return String(sql || '')
+    .replace(/\s+/g, ' ')
+    .replace(/'[^']*'/g, '?')            // string literals
+    .replace(/\b\d+\b/g, '?')            // numeric literals
+    .replace(/\?(\s*,\s*\?)+/g, '?')     // collapsed placeholder lists
+    .trim()
+    .slice(0, 300);
+}
+
+function recordSlowQuery({ sql, duration, dbName, kind, name, queryPlan }) {
+  if (duration < SLOW_QUERY_RECORD_MS) return;
+  try {
+    telemetryQuery(
+      `INSERT INTO slow_query_log (proc, db_name, kind, duration_ms, fingerprint, sql_sample, query_plan, name)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [PROC_NAME, dbName || null, kind, duration, fingerprintSql(sql),
+        String(sql || '').replace(/\s+/g, ' ').trim().slice(0, 400), queryPlan || null, name || null]
+    );
+  } catch { /* table may predate the migration, or the DB is contended — telemetry is best-effort */ }
+}
+
 // origPrepare is the unwrapped db.prepare — used for EXPLAIN so we don't recurse.
 function logQueryTiming(sql, params, startTime, dbName, name = '', origPrepare = null) {
   const duration = Date.now() - startTime;
@@ -216,8 +265,16 @@ function logQueryTiming(sql, params, startTime, dbName, name = '', origPrepare =
       } catch { /* non-fatal — EXPLAIN may fail on complex CTEs */ }
     }
     const kind = isSelect ? 'read' : 'write';
-    logger.warn({ name, duration, sql: shortSql, params: logParams, db: dbName, queryPlan },
-      `Slow ${kind} (${duration}ms)${name ? ` [${name}]` : ''}`);
+    const blocking = duration >= BLOCKING_QUERY_MS;
+    const fields = { name, duration, sql: shortSql, params: logParams, db: dbName, queryPlan, proc: PROC_NAME };
+    if (blocking) {
+      // better-sqlite3 is synchronous: this process served NOTHING for `duration` ms. Say so plainly.
+      logger.error(fields,
+        `BLOCKING ${kind} (${duration}ms) — ${PROC_NAME} event loop frozen${name ? ` [${name}]` : ''}`);
+    } else {
+      logger.warn(fields, `Slow ${kind} (${duration}ms)${name ? ` [${name}]` : ''}`);
+    }
+    recordSlowQuery({ sql, duration, dbName, kind, name, queryPlan });
   }
 }
 
