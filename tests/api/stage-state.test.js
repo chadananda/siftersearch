@@ -148,3 +148,34 @@ describe('retryFailed', () => {
     expect(await S.retryFailed('convert', {}, deps)).toBe(0);
   });
 });
+
+// The work-list that ignores what previous runs learned. 17 dead URLs were re-fetched 18 times each because
+// the converter builds its list from SQL and never consulted the recorded attempts. This locks the pruning
+// predicate the converter now applies, so the regression is caught here rather than by a 404 counter climbing.
+describe('self-pruning work-list', () => {
+  const settledRefs = (maxAttempts = 3) => new Set(
+    db.prepare(`SELECT item_ref FROM ingest_stage
+                 WHERE stage = 'convert' AND (status IN ('done','rejected') OR attempts >= ?)`)
+      .all(maxAttempts).map((r) => String(r.item_ref)));
+
+  it('drops converted, terminally-rejected and retry-exhausted items, keeping the rest', async () => {
+    await S.markStage('converted', 'convert', { status: 'done' }, deps);
+    await S.markStage('scanned', 'convert', { status: 'rejected', reason: 'no text layer' }, deps);
+    for (let i = 0; i < 3; i++) await S.markStage('dead404', 'convert', { status: 'failed', error: 'fetch 404', bumpAttempt: true }, deps);
+    await S.markStage('tried-once', 'convert', { status: 'failed', error: 'fetch 500', bumpAttempt: true }, deps);
+
+    const settled = settledRefs();
+    const workList = ['converted', 'scanned', 'dead404', 'tried-once', 'never-seen']
+      .filter((ref) => !settled.has(ref));
+    // A transient failure is still retried; a permanent one is not; work never seen is always eligible.
+    expect(workList).toEqual(['tried-once', 'never-seen']);
+  });
+
+  it('keeps retrying below the ceiling, so one bad fetch does not park a good book', async () => {
+    await S.markStage('flaky', 'convert', { status: 'failed', error: 'fetch 503', bumpAttempt: true }, deps);
+    expect(settledRefs().has('flaky')).toBe(false);
+    await S.markStage('flaky', 'convert', { status: 'failed', error: 'fetch 503', bumpAttempt: true }, deps);
+    await S.markStage('flaky', 'convert', { status: 'failed', error: 'fetch 503', bumpAttempt: true }, deps);
+    expect(settledRefs().has('flaky')).toBe(true);        // exhausted at the ceiling
+  });
+});

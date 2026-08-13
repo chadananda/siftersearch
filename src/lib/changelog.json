@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T07:27:48.148Z",
+  "generated": "2026-08-13T08:27:55.239Z",
   "entries": [
+    {
+      "hash": "77706dd4",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Record the real backlog on each run — \"waiting\" was only counting what we'd touched",
+      "scope": null
+    },
     {
       "hash": "29a4724e",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Tier boundary check blocked extractor on arbitrate/reextract backlog",
       "scope": null
-    },
-    {
-      "hash": "89378dd9",
-      "date": "2026-05-28",
-      "type": "New",
-      "description": "Log all reads at debug level + EXPLAIN QUERY PLAN for slow reads",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "77706dd4",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Record the real backlog on each run — \"waiting\" was only counting what we'd touched",
+        "scope": null
+      },
       {
         "hash": "29a4724e",
         "date": "2026-08-13",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-28",
         "type": "Fixed",
         "description": "Tier boundary check blocked extractor on arbitrate/reextract backlog",
-        "scope": null
-      },
-      {
-        "hash": "89378dd9",
-        "date": "2026-05-28",
-        "type": "New",
-        "description": "Log all reads at debug level + EXPLAIN QUERY PLAN for slow reads",
         "scope": null
       }
     ]

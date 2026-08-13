@@ -129,6 +129,26 @@ let stubs = db.prepare(`
 `).all();
 if (ONLY_ID) stubs = stubs.filter((s) => s.id === ONLY_ID);
 
+// SELF-PRUNING WORK-LIST. The list comes from SQL, so it does not know what previous runs learned — which is
+// how 17 dead URLs got re-fetched 18 times each, once every restart, forever ("fetch 404", attempts=18). The
+// attempt ceiling lives in stage-state.claimable(), but a SQL work-list never consults it. So consult the
+// recorded state directly: drop anything already converted, terminally rejected, or past the retry ceiling.
+// A 404 on bahai-library is permanent; retrying it hourly is pure waste.
+const MAX_ATTEMPTS = Number(process.env.CONVERT_MAX_ATTEMPTS || 3);
+if (!ONLY_ID) {
+  const settled = new Set();
+  try {
+    for (const r of db.prepare(
+      `SELECT item_ref FROM ingest_stage
+        WHERE stage = 'convert' AND (status IN ('done','rejected') OR attempts >= ?)`).all(MAX_ATTEMPTS)) {
+      settled.add(String(r.item_ref));
+    }
+  } catch { /* table absent (deploy before migration) → no pruning, same as before */ }
+  const before = stubs.length;
+  stubs = stubs.filter((s) => !settled.has(String(s.id)));
+  if (before !== stubs.length) console.log(`pruned ${before - stubs.length} already-settled or exhausted items (${settled.size} recorded)`);
+}
+
 const fileUrlOf = (s) => {
   const t = s.linktext || '';
   const m = t.match(/https?:\/\/[^\s()[\]"']+\.(?:pdf|docx?|rtf)\b/i) || t.match(/https?:\/\/bahai-library\.com\/docs\/[^\s()[\]"']+/i);
