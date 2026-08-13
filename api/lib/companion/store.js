@@ -4,6 +4,7 @@
 // Every write here is per-user interaction data the user can inspect, correct, pause, export, and delete.
 import { userQuery, userQueryOne, userQueryAll } from '../db.js';
 import { logger } from '../logger.js';
+import { swallow } from '../swallow.js';
 
 const now = () => Math.floor(Date.now() / 1000);
 
@@ -12,14 +13,14 @@ export async function getRelationship(participantId) {
   if (!participantId) return null;
   let r = await userQueryOne('SELECT * FROM companion_relationship WHERE participant_id = ?', [participantId]).catch(() => null);
   if (!r) {
-    await userQuery('INSERT OR IGNORE INTO companion_relationship (participant_id) VALUES (?)', [participantId]).catch(() => {});
+    await userQuery('INSERT OR IGNORE INTO companion_relationship (participant_id) VALUES (?)', [participantId]).catch((e) => swallow(e, 'companion.getRelationship'));
     r = await userQueryOne('SELECT * FROM companion_relationship WHERE participant_id = ?', [participantId]).catch(() => null);
   }
   return r;
 }
 
 export async function setStage(participantId, stage) {
-  await userQuery('UPDATE companion_relationship SET stage = ?, updated_at = ? WHERE participant_id = ?', [stage, now(), participantId]).catch(() => {});
+  await userQuery('UPDATE companion_relationship SET stage = ?, updated_at = ? WHERE participant_id = ?', [stage, now(), participantId]).catch((e) => swallow(e, 'companion.setStage'));
 }
 
 export async function setConsent(participantId, { memory, contact, source = 'explicit' } = {}) {
@@ -54,20 +55,20 @@ export async function mergeParticipant(fromId, toId) {
   const src = await userQueryOne('SELECT * FROM companion_relationship WHERE participant_id = ?', [from]).catch(() => null);
   // Carry the session's own history over. Exposures move too: the account's inquiry did not begin at login.
   for (const t of ['companion_memory', 'companion_premise', 'companion_exposure', 'companion_enrollment']) {
-    await userQuery(`UPDATE OR IGNORE ${t} SET participant_id = ? WHERE participant_id = ?`, [to, from]).catch(() => {});
+    await userQuery(`UPDATE OR IGNORE ${t} SET participant_id = ? WHERE participant_id = ?`, [to, from]).catch((e) => swallow(e, 'companion.mergeParticipant'));
   }
   // Consent is the UNION (a yes already given is not withdrawn by connecting), and the merge is recorded.
   await userQuery(`UPDATE companion_relationship
       SET consent_memory = MAX(consent_memory, ?), consent_contact = MAX(consent_contact, ?),
           merged_from = ?, updated_at = ?
     WHERE participant_id = ?`,
-  [src?.consent_memory ? 1 : 0, src?.consent_contact ? 1 : 0, from, now(), to]).catch(() => {});
+  [src?.consent_memory ? 1 : 0, src?.consent_contact ? 1 : 0, from, now(), to]).catch((e) => swallow(e, 'companion.mergeParticipant'));
   // Per-participant dial preferences the seeker set while anonymous should survive the connect.
   if (src?.dials_json && src.dials_json !== '{}') {
     const dst = await userQueryOne('SELECT dials_json FROM companion_relationship WHERE participant_id = ?', [to]).catch(() => null);
     if (!dst?.dials_json || dst.dials_json === '{}') await setParticipantDials(to, parseDials(src));
   }
-  await userQuery('DELETE FROM companion_relationship WHERE participant_id = ?', [from]).catch(() => {});
+  await userQuery('DELETE FROM companion_relationship WHERE participant_id = ?', [from]).catch((e) => swallow(e, 'companion.mergeParticipant'));
   logger.info({ from, to }, 'companion: merged temporary session into connected account');
   return { merged: true };
 }
@@ -75,7 +76,7 @@ export async function mergeParticipant(fromId, toId) {
 // Per-participant dial overrides (the 'preference' precedence layer). Stored on the relationship row.
 export async function setParticipantDials(participantId, dials) {
   await userQuery('UPDATE companion_relationship SET dials_json = ?, updated_at = ? WHERE participant_id = ?',
-    [JSON.stringify(dials || {}), now(), participantId]).catch(() => {});
+    [JSON.stringify(dials || {}), now(), participantId]).catch((e) => swallow(e, 'companion.setParticipantDials'));
 }
 export function parseDials(rel) { try { return JSON.parse(rel?.dials_json || '{}'); } catch { return {}; } }
 
@@ -96,7 +97,7 @@ export async function setGlobalDial(key, value, by = 'admin') {
 export async function addMemory(participantId, { kind, content, thread_id = null, source_ref = null, confidence = null, ttlHours = null }) {
   const expires = ttlHours ? now() + ttlHours * 3600 : null;
   await userQuery(`INSERT INTO companion_memory (participant_id, kind, content, thread_id, source_ref, confidence, expires_at)
-    VALUES (?,?,?,?,?,?,?)`, [participantId, kind, String(content).slice(0, 2000), thread_id, source_ref, confidence, expires]).catch(() => {});
+    VALUES (?,?,?,?,?,?,?)`, [participantId, kind, String(content).slice(0, 2000), thread_id, source_ref, confidence, expires]).catch((e) => swallow(e, 'companion.addMemory'));
 }
 export async function getMemory(participantId, { includeExpired = false } = {}) {
   const rows = await userQueryAll('SELECT * FROM companion_memory WHERE participant_id = ? AND corrected = 0 ORDER BY created_at DESC LIMIT 200', [participantId]).catch(() => []);
@@ -104,15 +105,15 @@ export async function getMemory(participantId, { includeExpired = false } = {}) 
 }
 // Correction (§7.2) — invalidate memory/premises that conflict with an explicit user correction.
 export async function applyCorrection(participantId, { memoryIds = [], premiseIds = [] }) {
-  for (const id of memoryIds) await userQuery('UPDATE companion_memory SET corrected = 1 WHERE id = ? AND participant_id = ?', [id, participantId]).catch(() => {});
-  for (const id of premiseIds) await userQuery('UPDATE companion_premise SET status = ? WHERE id = ? AND participant_id = ?', ['rejected', id, participantId]).catch(() => {});
+  for (const id of memoryIds) await userQuery('UPDATE companion_memory SET corrected = 1 WHERE id = ? AND participant_id = ?', [id, participantId]).catch((e) => swallow(e, 'companion.applyCorrection'));
+  for (const id of premiseIds) await userQuery('UPDATE companion_premise SET status = ? WHERE id = ? AND participant_id = ?', ['rejected', id, participantId]).catch((e) => swallow(e, 'companion.applyCorrection'));
 }
 
 // ── Premise hypotheses (§6) ─────────────────────────────────────────────────────
 export async function addPremise(participantId, p) {
   const expires = p.expires_at_hours ? now() + p.expires_at_hours * 3600 : now() + 72 * 3600;
   await userQuery(`INSERT INTO companion_premise (participant_id, statement, category, status, confidence, context, expires_at)
-    VALUES (?,?,?,?,?,?,?)`, [participantId, p.statement, p.category, p.status || 'hypothesis', p.confidence ?? 0.5, p.context || '', expires]).catch(() => {});
+    VALUES (?,?,?,?,?,?,?)`, [participantId, p.statement, p.category, p.status || 'hypothesis', p.confidence ?? 0.5, p.context || '', expires]).catch((e) => swallow(e, 'companion.addPremise'));
 }
 export async function getPremises(participantId) {
   return (await userQueryAll('SELECT * FROM companion_premise WHERE participant_id = ? AND status != ? ORDER BY created_at DESC LIMIT 50', [participantId, 'rejected']).catch(() => []))
@@ -124,7 +125,7 @@ export async function logExposure(e) {
   await userQuery(`INSERT INTO companion_exposure (participant_id, thread_id, mode, intervention, challenge_level, authority_classes, plan_json, policy_version)
     VALUES (?,?,?,?,?,?,?,?)`,
     [e.participant_id || null, e.thread_id || null, e.mode || null, e.intervention || null, e.challenge_level ?? null,
-      JSON.stringify(e.authority_classes || []), JSON.stringify(e.plan || {}).slice(0, 20000), e.policy_version || null]).catch(() => {});
+      JSON.stringify(e.authority_classes || []), JSON.stringify(e.plan || {}).slice(0, 20000), e.policy_version || null]).catch((e) => swallow(e, 'companion.logExposure'));
 }
 export async function lastExposure(participantId) {
   return userQueryOne('SELECT * FROM companion_exposure WHERE participant_id = ? ORDER BY created_at DESC LIMIT 1', [participantId]).catch(() => null);
@@ -151,14 +152,14 @@ export async function connectOfferedRecently(participantId, withinHours = 168) {
 
 // ── Courses (§8) ────────────────────────────────────────────────────────────────
 export async function enroll(participantId, trackId) {
-  await userQuery('INSERT OR IGNORE INTO companion_enrollment (participant_id, track_id) VALUES (?,?)', [participantId, trackId]).catch(() => {});
+  await userQuery('INSERT OR IGNORE INTO companion_enrollment (participant_id, track_id) VALUES (?,?)', [participantId, trackId]).catch((e) => swallow(e, 'companion.enroll'));
   return userQueryOne('SELECT * FROM companion_enrollment WHERE participant_id = ? AND track_id = ?', [participantId, trackId]).catch(() => null);
 }
 export async function getEnrollments(participantId) {
   return userQueryAll('SELECT * FROM companion_enrollment WHERE participant_id = ? AND status = ?', [participantId, 'active']).catch(() => []);
 }
 export async function recordProgress(enrollmentId, { sectionId, understood = 0, note = null }) {
-  await userQuery('INSERT INTO companion_progress (enrollment_id, section_id, understood, note) VALUES (?,?,?,?)', [enrollmentId, sectionId, understood ? 1 : 0, note]).catch(() => {});
+  await userQuery('INSERT INTO companion_progress (enrollment_id, section_id, understood, note) VALUES (?,?,?,?)', [enrollmentId, sectionId, understood ? 1 : 0, note]).catch((e) => swallow(e, 'companion.recordProgress'));
 }
 
 // ── Transparency (§1, §7.4) — full inspectable view + hard delete (§14 Deletion) ──
@@ -171,8 +172,8 @@ export async function inquiryMap(participantId) {
 }
 export async function deleteParticipant(participantId) {
   for (const t of ['companion_memory', 'companion_premise', 'companion_exposure', 'companion_progress', 'companion_enrollment', 'companion_relationship']) {
-    await userQuery(`DELETE FROM ${t} WHERE participant_id = ?`, [participantId]).catch(() => {});
+    await userQuery(`DELETE FROM ${t} WHERE participant_id = ?`, [participantId]).catch((e) => swallow(e, 'companion.deleteParticipant'));
   }
   // progress rows are keyed by enrollment; a defensive sweep of orphans
-  await userQuery('DELETE FROM companion_progress WHERE enrollment_id NOT IN (SELECT id FROM companion_enrollment)', []).catch(() => {});
+  await userQuery('DELETE FROM companion_progress WHERE enrollment_id NOT IN (SELECT id FROM companion_enrollment)', []).catch((e) => swallow(e, 'companion.deleteParticipant'));
 }

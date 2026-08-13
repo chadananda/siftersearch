@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T06:44:04.941Z",
+  "generated": "2026-08-13T06:50:57.903Z",
   "entries": [
+    {
+      "hash": "2be9c7b0",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Record pipeline state as FACT — one API call replaces every investigation",
+      "scope": null
+    },
     {
       "hash": "db94fd74",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Entity mentions — pre-filter by doc_id via content_ids before graph.db query",
       "scope": null
-    },
-    {
-      "hash": "fc4dcf50",
-      "date": "2026-05-28",
-      "type": "New",
-      "description": "Entity mentions API — GET /api/graph/entity/search + /entity/:id/mentions",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "2be9c7b0",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Record pipeline state as FACT — one API call replaces every investigation",
+        "scope": null
+      },
       {
         "hash": "db94fd74",
         "date": "2026-08-12",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-28",
         "type": "Fixed",
         "description": "Entity mentions — pre-filter by doc_id via content_ids before graph.db query",
-        "scope": null
-      },
-      {
-        "hash": "fc4dcf50",
-        "date": "2026-05-28",
-        "type": "New",
-        "description": "Entity mentions API — GET /api/graph/entity/search + /entity/:id/mentions",
         "scope": null
       }
     ]

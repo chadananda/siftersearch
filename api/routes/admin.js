@@ -668,6 +668,49 @@ export default async function adminRoutes(fastify) {
     return { available: true, count: procs.length, processes: procs };
   });
 
+  // DECLARED vs ACTUAL, in one call. Every deployment surprise here has been a gap between what the repo
+  // says should run and what does — cron apps declared but unknown to pm2, an updater running stale code, a
+  // migration written but never applied. Each cost an investigation; each is one comparison.
+  fastify.get('/server/reconcile', { preHandler: requireInternal }, async () => {
+    const { reconcile } = await import('../lib/reconcile.js');
+    const { execFile } = await import('node:child_process');
+    const { CURRENT_VERSION, USER_DB_CURRENT_VERSION } = await import('../lib/migrations/runner.js');
+
+    const processes = await new Promise((resolve) => {
+      execFile('pm2', ['jlist'], { timeout: 8000, maxBuffer: 8 * 1024 * 1024 }, (err, stdout) => {
+        if (err) return resolve(null);
+        try {
+          resolve(JSON.parse(stdout).map((p) => ({
+            name: p.name, status: p.pm2_env?.status ?? null, restarts: p.pm2_env?.restart_time ?? null,
+            last_start: p.pm2_env?.created_at ? new Date(p.pm2_env.created_at).toISOString() : null,
+          })));
+        } catch { resolve(null); }
+      });
+    });
+
+    // Applied schema versions, read the same way the runner reads them.
+    const applied = { content: null, user: null };
+    try { applied.content = (await queryOne('PRAGMA user_version'))?.user_version ?? null; } catch { /* unreadable */ }
+    try { applied.user = (await userQueryOne('PRAGMA user_version'))?.user_version ?? null; } catch { /* unreadable */ }
+
+    const result = reconcile({
+      processes,
+      schemaVersion: applied,
+      expectedSchema: { content: CURRENT_VERSION, user: USER_DB_CURRENT_VERSION },
+      // Version skew is deliberately NOT checked here: this process can only report its own version, so
+      // comparing it to itself always passes. The updater owns that comparison (it knows the git HEAD).
+    });
+    // Swallowed-error counters belong in the same place you already look for drift: a path failing silently
+    // 400 times is drift between what the code believes and what the database allows.
+    const { swallowedCounts, swallowedTotal } = await import('../lib/swallow.js');
+    return {
+      ...result,
+      applied_schema: applied,
+      expected_schema: { content: CURRENT_VERSION, user: USER_DB_CURRENT_VERSION },
+      swallowed: { total: swallowedTotal(), worst: swallowedCounts({ limit: 10 }) },
+    };
+  });
+
   fastify.get('/server/status', { preHandler: requireInternal }, async () => {
     const [dbStats, embeddingStats, embeddingDimCheck, searchStats] = await Promise.all([
       // Database stats (content + user databases)
