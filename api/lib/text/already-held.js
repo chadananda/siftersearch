@@ -32,35 +32,39 @@ export function titleTokens(title, author) {
 }
 
 /**
- * @param {Array<{title:string, author?:string}>} heldDocs docs that actually hold their text
- * @returns {{isHeld: (title:string, author?:string) => boolean, size: number}}
+ * "We already hold this" is a CLAIM that hides a book from the missing list, so the matcher returns
+ * the doc it matched — never a bare boolean. An unexplainable drop is then visible, not silent.
+ * @param {Array<{id?:number, title:string, author?:string}>} heldDocs docs that actually hold their text
+ * @returns {{heldMatch: (title:string, author?:string) => object|null, isHeld: Function, size: number}}
  */
 export function buildHeldIndex(heldDocs) {
-  const held = [];
+  const held = [];                      // [{ tokens, doc }]
   const byToken = new Map();            // token → indices, so a candidate probes its rarest word only
   for (const d of heldDocs) {
-    const toks = titleTokens(d.title, d.author);
-    if (toks.size < MIN_TOKENS) continue;
-    const i = held.push(toks) - 1;
-    for (const t of toks) {
+    const tokens = titleTokens(d.title, d.author);
+    if (tokens.size < MIN_TOKENS) continue;
+    const i = held.push({ tokens, doc: d }) - 1;
+    for (const t of tokens) {
       if (!byToken.has(t)) byToken.set(t, []);
       byToken.get(t).push(i);
     }
   }
-  const isHeld = (title, author) => {
+  const heldMatch = (title, author) => {
     const cand = titleTokens(title, author);
-    if (cand.size < MIN_TOKENS) return false;
+    if (cand.size < MIN_TOKENS) return null;
     let probe = null;
     for (const t of cand) {
       const n = byToken.get(t)?.length ?? 0;
-      if (n === 0) return false;                       // a word no held doc has ⇒ no containment
+      if (n === 0) return null;                        // a word no held doc has ⇒ no containment
       if (probe === null || n < probe.n) probe = { t, n };
     }
-    return byToken.get(probe.t).some((i) => {
+    for (const i of byToken.get(probe.t)) {
       const h = held[i];
-      for (const t of cand) if (!h.has(t)) return false;
-      return true;
-    });
+      let all = true;
+      for (const t of cand) if (!h.tokens.has(t)) { all = false; break; }
+      if (all) return h.doc;
+    }
+    return null;
   };
-  return { isHeld, size: held.length };
+  return { heldMatch, isHeld: (t, a) => !!heldMatch(t, a), size: held.length };
 }

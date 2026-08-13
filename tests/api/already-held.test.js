@@ -13,7 +13,13 @@ const HELD = [
 ];
 
 describe('already-held', () => {
-  const { isHeld } = buildHeldIndex(HELD);
+  const { isHeld, heldMatch } = buildHeldIndex(HELD);
+
+  it('names the doc it matched, so hiding a book is an auditable claim', () => {
+    expect(heldMatch('1898, May Maxwell — An Early Pilgrimage', 'May Maxwell'))
+      .toMatchObject({ title: 'An Early Pilgrimage' });
+    expect(heldMatch('Some Entirely Unrelated Work', 'Nobody')).toBeNull();
+  });
 
   it('matches an archival husk to the ingested text it duplicates', () => {
     expect(isHeld('1898, May Maxwell — An Early Pilgrimage', 'May Maxwell')).toBe(true);

@@ -446,9 +446,10 @@ async function main() {
   const SRC_EXTS = ['pdf', 'doc', 'docx', 'html', 'htm', 'txt', 'rtf', 'epub', 'md'];
   const SRC_FILE_RE = new RegExp(`\\.(?:${SRC_EXTS.join('|')})$`, 'i');
   const SHOW_CAP = 600;
+  const MISSING_SHAPE = 4;   // bump to force ONE recompute when this section's shape/rules change
   let missingBooks = prevSnapshot.missingBooks ?? null;
   const mbAge = missingBooks?.generated_at ? Date.now() - Date.parse(missingBooks.generated_at) : Infinity;
-  if (mbAge > MISSING_TTL_MS || missingBooks?.haveSourceTotal == null) {   // shape v3 (two lists) forces one recompute
+  if (mbAge > MISSING_TTL_MS || missingBooks?.shape !== MISSING_SHAPE) {
     const stubs = await queryAll(`
       SELECT d.id, d.title, d.author, d.paragraph_count AS paras, d.religion, d.collection, d.source_url,
              SUM(CASE WHEN c.text LIKE '%logo_1850x358%' THEN 1 ELSE 0 END) AS logo,
@@ -471,10 +472,10 @@ async function main() {
     // ("1898, May Maxwell — An Early Pilgrimage" vs "An Early Pilgrimage" / May Maxwell). Those are
     // NOT missing, and they dominated the list — so match candidates against every doc that holds
     // its text (>35 ¶ = past the stub ceiling) and drop the ones we already have.
-    const heldDocs = await queryAll(`SELECT d.title, d.author FROM docs d
+    const heldDocs = await queryAll(`SELECT d.id, d.title, d.author, d.paragraph_count AS paras FROM docs d
       WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.paragraph_count > 35`).catch(() => []);
-    const { isHeld } = buildHeldIndex(heldDocs);
-    const notHeld = (r) => !isHeld(r.title, r.author);
+    const { heldMatch } = buildHeldIndex(heldDocs);
+    const notHeld = (r) => !heldMatch(r.title, r.author);
 
     const stubsWithSrc = stubs.filter((s) => s.doclinks > 0).filter(notHeld);
     const stubsNoSrc = stubs.filter((s) => s.doclinks === 0).filter(notHeld);
@@ -514,15 +515,21 @@ async function main() {
 
     missingBooks = {
       generated_at: new Date().toISOString(),
+      shape: MISSING_SHAPE,
       haveSourceTotal: stubsWithSrc.length + huskWithFile.length,
       noSourceTotal: stubsNoSrc.length + huskNoFile.length,
       haveSource, noSource,
       stubTotal: stubs.length,
       huskTotal: allHusks.length,
       alreadyHeld: heldOut.length + (allHusks.length - husksMissing.length),
-      // A dropped row is a claim ("we already hold this"); keep a sample so it can be checked.
+      // A dropped row is a claim ("we already hold this"), so the sample names the doc it matched —
+      // an over-eager match is then visible in the data instead of silently hiding a real book.
       alreadyHeldSample: [...heldOut, ...allHusks.filter((h) => !notHeld(h))]
-        .slice(0, 40).map((r) => ({ id: r.id, title: cleanTitle(r.title), author: cleanTitle(r.author) })),
+        .slice(0, 60).map((r) => {
+          const m = heldMatch(r.title, r.author);
+          return { id: r.id, title: cleanTitle(r.title), author: cleanTitle(r.author),
+            matched: m ? { id: m.id, title: cleanTitle(m.title), paras: m.paras } : null };
+        }),
     };
   }
 

@@ -12,7 +12,7 @@
   });
 
   const TABS = [
-    { key: 'have', label: 'Missing — have source', hint: 'A .pdf/.docx of the real book is linked: convert to Markdown and ingest. This list should shrink as we import.' },
+    { key: 'have', label: 'Missing — have source', hint: 'A source file of the real book is linked (.pdf/.docx/.html): convert to Markdown and ingest. This list should shrink as we import.' },
     { key: 'none', label: 'Missing — no source', hint: 'Listed but no source file to fetch — needs sourcing before it can be ingested.' },
   ];
   const active = $derived(TABS.find((t) => t.key === tab));
