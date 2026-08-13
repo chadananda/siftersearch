@@ -30,6 +30,17 @@ async function meiliTaskTotal(status) {
 async function main() {
   const t0 = Date.now();
 
+  // This process is the only one on the box that reliably runs CURRENT code (cron_restart every 5 min,
+  // fresh process each time), so it is where newly-declared cron apps get registered. Without it, an app
+  // added to ecosystem.config.cjs never starts: the updater applies deploys but never restarts itself, so
+  // registration logic placed there can never execute. Allowlisted + KNOWN-only — see ensure-pm2-apps.
+  try {
+    const { ensurePm2Apps } = await import('./lib/ensure-pm2-apps.mjs');
+    const r = await ensurePm2Apps(ROOT);
+    if (r.registered?.length) console.log(`registered new pm2 cron apps: ${r.registered.join(', ')}`);
+    else if (r.error) console.log(`pm2 app check skipped: ${r.error}`);
+  } catch (err) { console.log(`pm2 app check failed (non-fatal): ${err.message}`); }
+
   // deleted_at filters are REQUIRED: orphan entity_mentions linger on content
   // whose doc was later soft-deleted as a duplicate (the forward sync in
   // api/lib/search/entity.js skips deleted content, but never removes mentions
