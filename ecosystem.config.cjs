@@ -441,6 +441,59 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
+      // Peak-window work: the box grounds books only in DeepSeek's cheap off-peak window, so for the
+      // other ~16h it is idle. These two use that time to drain the missing-books backlog, and cost
+      // ZERO model tokens (fetch + convert + ingest only). Each script no-ops immediately when it is
+      // NOT peak, so the cron can fire hourly without knowing the pricing calendar.
+      name: 'siftersearch-converter',
+      script: 'scripts/convert-missing-books.mjs',
+      args: '--apply --limit 40',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: false,
+      cron_restart: '5 * * * *',
+      watch: false,
+      env: { NODE_ENV: 'production' },
+      error_file: './logs/converter-error.log',
+      out_file: './logs/converter-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
+      // Ingest what the converter wrote + retire each replaced stub. Separate process from conversion so
+      // a fetch/convert failure never blocks ingestion of the books already converted, and offset by 30
+      // min so it picks up that hour's conversions.
+      name: 'siftersearch-book-ingest',
+      script: 'scripts/ingest-converted-books.mjs',
+      args: '--apply --limit 40',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: false,
+      cron_restart: '35 * * * *',
+      watch: false,
+      env: { NODE_ENV: 'production' },
+      error_file: './logs/book-ingest-error.log',
+      out_file: './logs/book-ingest-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
+      // ONE hourly digest email that reports whichever job is live: ingestion during peak, entity/
+      // grounding progress off-peak. Quiet when nothing happened in the window.
+      name: 'siftersearch-digest',
+      script: 'scripts/hourly-digest.mjs',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: false,
+      cron_restart: '50 * * * *',
+      watch: false,
+      env: { NODE_ENV: 'production' },
+      error_file: './logs/digest-error.log',
+      out_file: './logs/digest-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
       // One-shot snapshot generator: runs every 5 min via cron_restart, computes
       // the pipeline/Meili status in isolation, writes data/pipeline-status.json,
       // then exits. autorestart:false so PM2 only re-runs it on the cron tick —

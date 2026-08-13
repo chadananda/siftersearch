@@ -5,7 +5,7 @@
 // obvious non-documents (changelogs, fundraising, version notes) are skipped.
 //
 // SAFETY: dry by default (download + convert + quality-gate + REPORT, no writes). --apply writes.
-//   node scripts/convert-missing-books.mjs [--apply] [--limit N] [--id DOCID] [--fetch-frames]
+//   node scripts/convert-missing-books.mjs [--apply] [--limit N] [--id DOCID] [--fetch-frames] [--any-time]
 // PDFs: text-layer ONLY (never OCR) — a coherent-prose gate rejects scanned/sparse PDFs.
 // Run ON tower-nas (library files + writer live there). Writes via SIFTER_WRITER_URL for DB ops.
 import fs from 'fs';
@@ -16,6 +16,13 @@ const APPLY = process.argv.includes('--apply');
 const FETCH_FRAMES = process.argv.includes('--fetch-frames');
 const LIMIT = (() => { const i = process.argv.indexOf('--limit'); return i >= 0 ? parseInt(process.argv[i + 1], 10) : Infinity; })();
 const ONLY_ID = (() => { const i = process.argv.indexOf('--id'); return i >= 0 ? parseInt(process.argv[i + 1], 10) : null; })();
+
+// Convert in the PEAK window only: grounding pauses then for DeepSeek's off-peak pricing, so the box is
+// idle and this competes with nothing. Conversion itself spends no model tokens. --any-time overrides.
+if (!process.argv.includes('--any-time')) {
+  const { nowInPeak } = await import('../api/lib/pipeline/peak.js');
+  if (!nowInPeak()) { console.log('off-peak (grounding is running) → skipping conversion; use --any-time to force'); process.exit(0); }
+}
 
 const db = new Database('data/sifter.db', { readonly: true });
 const { config } = await import('../api/lib/config.js');

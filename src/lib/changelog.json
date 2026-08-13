@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T02:14:01.224Z",
+  "generated": "2026-08-13T02:50:24.479Z",
   "entries": [
+    {
+      "hash": "ffbd9165",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Fix the disambiguation stamp/note deadlock behind \"did not reach verify\"",
+      "scope": null
+    },
     {
       "hash": "df789880",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Rate-limit budget warn logs to 1/hr; bump budget to 3000/mo for full corpus",
       "scope": null
-    },
-    {
-      "hash": "004d5fde",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Remove stale MODEL reference in seedDocContextFromDB",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "ffbd9165",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Fix the disambiguation stamp/note deadlock behind \"did not reach verify\"",
+        "scope": null
+      },
       {
         "hash": "df789880",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Rate-limit budget warn logs to 1/hr; bump budget to 3000/mo for full corpus",
-        "scope": null
-      },
-      {
-        "hash": "004d5fde",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Remove stale MODEL reference in seedDocContextFromDB",
         "scope": null
       }
     ]

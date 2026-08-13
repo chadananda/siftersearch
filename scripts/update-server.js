@@ -361,6 +361,17 @@ async function isProcessRunning(name) {
 }
 
 /**
+ * Does PM2 know this process at all (any status)? A process that has NEVER been registered — e.g. a
+ * cron one-shot just added to ecosystem.config.cjs — must be bootstrapped once; that is different from
+ * one deliberately stopped, which must stay stopped.
+ */
+async function isProcessKnown(name) {
+  const res = await run('pm2 jlist');
+  if (!res.success) return true;                 // unknown → assume known, i.e. do nothing
+  try { return JSON.parse(res.stdout).some(x => x.name === name); } catch { return true; }
+}
+
+/**
  * Swap a PM2 process using graceful reload for zero-downtime deploys.
  * For the API (wait_ready=true), PM2 starts the new process, waits for
  * process.send('ready'), then kills the old one — no gap in service.
@@ -480,6 +491,17 @@ async function applyUpdates() {
   // manually. Left in ecosystem.config.cjs so they remain referenceable.
   for (const name of ['siftersearch-enrichment', 'siftersearch-enrichment-api', 'siftersearch-graph-extractor', 'siftersearch-graph-validator', 'siftersearch-graph-resolver', 'siftersearch-graph-promoter']) {
     if (await isProcessRunning(name)) await swapPm2Process(name);
+  }
+
+  // Cron one-shots (peak-window converter + book ingest, hourly digest): these need registering exactly
+  // ONCE. After that every cron tick spawns a fresh process that reads the current code, so they pick up
+  // deploys without a swap — the same way pipeline-snapshot does. Registering only when PM2 has never
+  // heard of the name means a deliberately-stopped one is never revived.
+  for (const name of ['siftersearch-converter', 'siftersearch-book-ingest', 'siftersearch-digest']) {
+    if (!await isProcessKnown(name)) {
+      log('info', `Registering new cron process ${name}`);
+      await swapPm2Process(name);
+    }
   }
 
   if (failed) {
