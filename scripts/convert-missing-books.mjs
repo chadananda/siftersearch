@@ -40,9 +40,15 @@ function coherentProse(text, { pages = 1 } = {}) {
   const alpha = (t.match(/[a-zA-ZÀ-ɏ]/g) || []).length;
   const alphaRatio = t.length ? alpha / t.length : 0;
   const wordsPerPage = words / Math.max(1, pages);
-  // A real text layer: substantial word count, mostly letters, reasonable density per page.
-  const ok = words >= 300 && alphaRatio >= 0.55 && wordsPerPage >= 120;
-  return { ok, words, alphaRatio: +alphaRatio.toFixed(2), wordsPerPage: Math.round(wordsPerPage) };
+  // A real text layer: substantial word count, mostly letters, reasonable density per page. Each failure
+  // names ITSELF — a reason that misattributes the cause is worse than no reason, because it sends you to
+  // tune the wrong threshold (we reported "poor text layer (320 words/page)" for a doc that was simply short).
+  const checks = [
+    words < 300 && `too short (${words} words)`,
+    alphaRatio < 0.55 && `low letter ratio (${alphaRatio.toFixed(2)} — likely scanned or tabular)`,
+    wordsPerPage < 120 && `sparse pages (${Math.round(wordsPerPage)} words/page — likely no text layer)`,
+  ].filter(Boolean);
+  return { ok: checks.length === 0, why: checks.join('; '), words, alphaRatio: +alphaRatio.toFixed(2), wordsPerPage: Math.round(wordsPerPage) };
 }
 
 // ── Fetch a source file (follows redirects; returns Buffer + content-type) ────
@@ -105,7 +111,15 @@ let stubs = db.prepare(`
   WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.language = 'en'
     AND d.paragraph_count BETWEEN 1 AND 35
     AND d.title NOT LIKE '%Partial Inventory%' AND COALESCE(d.author,'') NOT LIKE '%Phelps%'
+    -- Catalogue rows are not books (Phelps inventory + bibliography); same exclusion as the missing-books queue.
+    AND COALESCE(d.source_url,'') NOT LIKE '%bahai-library.com/inventory/%'
+    AND COALESCE(d.source_url,'') NOT LIKE '%bahai-library.com/bibliography/%'
+    AND COALESCE(d.author,'') NOT LIKE 'inventory-%'
+    AND COALESCE(d.author,'') NOT LIKE 'bibliography-%'
   GROUP BY d.id HAVING SUM(CASE WHEN c.text LIKE '%logo_1850x358%' OR c.text LIKE '%TAGS:%' THEN 1 ELSE 0 END) > 0
+    -- ...AND it must actually have a source file to fetch. This is the have-source half of the queue; the
+    -- no-source half is a sourcing problem, not a conversion one, and processing it only burns the budget.
+    AND linktext IS NOT NULL
 `).all();
 if (ONLY_ID) stubs = stubs.filter((s) => s.id === ONLY_ID);
 
@@ -160,8 +174,8 @@ for (const s of stubs) {
     const q = coherentProse(text, { pages });
     if (!q.ok) {
       report.badQuality.push({ id: s.id, title: s.title, url, ...q });
-      tally.rejected++; tally.reason(`poor text layer (${q.wordsPerPage ?? '?'} words/page)`);
-      await rec(s.id, { status: 'rejected', reason: `poor text layer (${q.wordsPerPage ?? '?'} words/page)`, payload: { url, pages, words: q.words } });
+      tally.rejected++; tally.reason(q.why || 'failed the text-quality gate');
+      await rec(s.id, { status: 'rejected', reason: q.why || 'failed the text-quality gate', payload: { url, pages, words: q.words, alphaRatio: q.alphaRatio, wordsPerPage: q.wordsPerPage } });
       continue;
     }
 

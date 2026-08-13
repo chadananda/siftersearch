@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T06:50:57.903Z",
+  "generated": "2026-08-13T06:54:48.396Z",
   "entries": [
+    {
+      "hash": "f283a1bd",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Reconciler, timestamp contract, and the end of the silent catch",
+      "scope": null
+    },
     {
       "hash": "2be9c7b0",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "API no longer runs graph migrations — graph workers own graph.db writes",
       "scope": null
-    },
-    {
-      "hash": "39a14868",
-      "date": "2026-05-28",
-      "type": "Fixed",
-      "description": "Entity mentions — pre-filter by doc_id via content_ids before graph.db query",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "f283a1bd",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Reconciler, timestamp contract, and the end of the silent catch",
+        "scope": null
+      },
       {
         "hash": "2be9c7b0",
         "date": "2026-08-12",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-28",
         "type": "Fixed",
         "description": "API no longer runs graph migrations — graph workers own graph.db writes",
-        "scope": null
-      },
-      {
-        "hash": "39a14868",
-        "date": "2026-05-28",
-        "type": "Fixed",
-        "description": "Entity mentions — pre-filter by doc_id via content_ids before graph.db query",
         "scope": null
       }
     ]
