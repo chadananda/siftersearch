@@ -102,6 +102,23 @@ export function isDoneFromArtifacts({ prose = 0, disamb = 0, hyped = 0, hypeable
   return true;
 }
 
+
+// Read the verdict a finished run left on disk (scripts/complete-book.mjs writeExit). The reaper otherwise
+// only knows "the pid is gone", so it cannot tell an INFRASTRUCTURE death (writer dropped the socket, exit 3)
+// from a book that genuinely will not ground (exit 2) — and it recorded both as "did not reach verify", the
+// exact string the storm guard counts three of before quarantining a book forever. Six healthy books were
+// quarantined that way on 2026-08-13 for a dropped connection.
+// Only trust a verdict written AFTER this run started, so a stale file from an earlier attempt never counts.
+const INFRA_EXIT = 3;
+function runVerdict(docId, startedAt) {
+  try {
+    const raw = fs.readFileSync(`${process.cwd()}/logs/grounding-${Number(docId)}.exit`, 'utf8');
+    const v = JSON.parse(raw);
+    if (!startedAt || (v.at || 0) + 5 < startedAt) return null;   // predates this run → ignore
+    return v;
+  } catch { return null; }   // no file (old build, or died before it could write) → fall back to inference
+}
+
 export async function reachedBound(docId, opts = {}, deps = {}) {
   const q = deps.queryOne || queryOne;
   const row = await q(
@@ -274,6 +291,17 @@ async function _tick() {
       if (ok) {
         await query(`UPDATE grounding_queue SET status='done', error=NULL, finished_at=unixepoch() WHERE id=?`, [r.id]);
         logger.info({ docId: r.doc_id, id: r.id, outcome: 'done' }, 'grounding queue: run ended');
+      } else if (runVerdict(r.doc_id, r.started_at)?.code === INFRA_EXIT) {
+        // INFRASTRUCTURE, not this book. Requeue WITHOUT the "did not reach verify" wording, so the storm
+        // guard (which keys on that exact string) never quarantines a book for an outage it did not cause.
+        // retry_count is still advanced, so a permanently-broken writer cannot spin the queue forever.
+        const v = runVerdict(r.doc_id, r.started_at);
+        const rc = (r.retry_count || 0) + 1;
+        const backoff = RETRY_BACKOFF_S * rc;
+        await query(`UPDATE grounding_queue SET status='queued', retry_count=?, next_attempt_at=unixepoch()+?, pid=NULL, started_at=NULL, error=? WHERE id=?`,
+          [rc, backoff, `infrastructure (attempt ${rc}): ${String(v.reason || 'writer unreachable').slice(0, 120)} — not a book failure`, r.id]);
+        logger.warn({ docId: r.doc_id, id: r.id, retry: rc, backoff, reason: v.reason },
+          'grounding queue: INFRASTRUCTURE failure → requeued (does NOT count toward quarantine)');
       } else if ((r.retry_count || 0) < MAX_RETRIES) {
         // AUTO-RETRY: a transient death (timeout/killed/flaky) shouldn't strand a book while unattended. Requeue
         // with escalating backoff; the atomic claim + budget gate still apply on the next launch.

@@ -17,6 +17,20 @@ if (!doc) { console.error('usage: complete-book <docId> [--from=stage] [--only=s
 // and the actual cause is invisible. On 2026-08-13 that hid a dropped writer connection for two full runs across
 // six books. Name the failure instead, and distinguish "the environment is broken" (exit 3, retryable — the
 // writer was restarting) from "this book will not ground" (exit 2), so the queue is not told to retry forever.
+
+// The queue reaps a detached run by noticing its pid is gone; it cannot see an exit code, so an
+// infrastructure death (the writer dropped our socket) and a genuine "this book won't ground" were
+// recorded identically as "did not reach verify" — and THREE of those quarantine the book permanently.
+// Six healthy books were quarantined that way on 2026-08-13. Leave the verdict on disk: a file, not a
+// DB row, because the failure we most need to report is precisely the one where the writer is unreachable.
+import fsSync from 'node:fs';
+function writeExit(code, reason) {
+  try {
+    fsSync.writeFileSync(`${process.cwd()}/logs/grounding-${doc}.exit`,
+      JSON.stringify({ code, reason, at: Math.floor(Date.now() / 1000), pid: process.pid }));
+  } catch { /* best-effort: the reaper falls back to its old pid-based inference */ }
+}
+
 process.on('unhandledRejection', (err) => { fail(err, 'unhandled rejection'); });
 
 function fail(err, where) {
@@ -27,6 +41,7 @@ function fail(err, where) {
     (infra ? `\n   The single writer at ${process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849'} did not complete the request` +
              ` — it restarts on every deploy. This is INFRASTRUCTURE, not this book.` : ''));
   if (err?.stack) console.error(err.stack.split('\n').slice(0, 6).join('\n'));
+  writeExit(infra ? 3 : 2, `${where}: ${code || err?.message || err}`);
   process.exit(infra ? 3 : 2);
 }
 
@@ -41,7 +56,11 @@ const res = await runGrounding(doc, {
   onResult: (stage, r) => console.log(`\n▶ ${stage}(${doc}) → ${JSON.stringify(r)}`),
 }).catch((e) => fail(e, 'grounding run'));
 
-if (res.verify && !res.verify.ok) { console.error(`\n❌ BOOK ${doc} NOT DONE — unsearchable: ${res.verify.missing.join('; ')}`); process.exit(2); }
+if (res.verify && !res.verify.ok) {
+  console.error(`\n❌ BOOK ${doc} NOT DONE — unsearchable: ${res.verify.missing.join('; ')}`);
+  writeExit(2, `unsearchable: ${res.verify.missing.join('; ').slice(0, 160)}`);
+  process.exit(2);
+}
 if (res.verify?.ok) {
   const v = res.verify;
   console.log(`\n✅ BOOK ${doc} COMPLETE + SEARCHABLE — cast ${v.castCount}, claims ${v.claimCount}, hype ${v.hypeIndexed}, paras ${v.paragraphsIndexed}`);
@@ -51,4 +70,5 @@ if (res.verify?.ok) {
     console.warn(`   detail: node scripts/entity-read/keystone-gate.mjs`);
   } else console.log('✅ KEYSTONE GATE: all major figures resolve to a single entity');
 }
+writeExit(0, 'complete');
 process.exit(0);

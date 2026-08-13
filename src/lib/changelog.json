@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T17:37:08.194Z",
+  "generated": "2026-08-13T18:30:13.192Z",
   "entries": [
+    {
+      "hash": "0173a14a",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "One dropped writer connection must not kill a book (2nd failure of all 6, $0.00 spend)",
+      "scope": null
+    },
     {
       "hash": "79a4ba71",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Abort background analyzePassagesParallel on timeout — prevent AI call accumulation",
       "scope": null
-    },
-    {
-      "hash": "ec40cb85",
-      "date": "2026-05-31",
-      "type": "Fixed",
-      "description": "Search quality test runner distinguishes infra errors from search failures",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "0173a14a",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "One dropped writer connection must not kill a book (2nd failure of all 6, $0.00 spend)",
+        "scope": null
+      },
       {
         "hash": "79a4ba71",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Fixed",
         "description": "Abort background analyzePassagesParallel on timeout — prevent AI call accumulation",
-        "scope": null
-      },
-      {
-        "hash": "ec40cb85",
-        "date": "2026-05-31",
-        "type": "Fixed",
-        "description": "Search quality test runner distinguishes infra errors from search failures",
         "scope": null
       }
     ]
