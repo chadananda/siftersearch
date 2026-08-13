@@ -99,7 +99,11 @@ export default async function ingestRoutes(fastify) {
     const ok = /^grounding-\d{1,9}$/.test(name)
       || ['converter-out', 'converter-error', 'book-ingest-out', 'book-ingest-error',
         'digest-out', 'digest-error', 'relabel-out', 'relabel-error',
-        'pipeline-snapshot-out', 'pipeline-snapshot-error', 'api-out', 'api-error'].includes(name);
+        'pipeline-snapshot-out', 'pipeline-snapshot-error', 'api-out', 'api-error',
+        // The worker hosts the single writer; when IT crash-loops every writing stage dies with
+        // "other side closed", so its log is the first place to look when writes fail everywhere.
+        'worker-out', 'worker-error', 'embedding-out', 'embedding-error',
+        'deep-research-out', 'deep-research-error', 'updater-out', 'updater-error'].includes(name);
     if (!ok) throw ApiError.badRequest(`log '${name}' is not readable here (expected grounding-<docId> or a known pipeline log)`);
 
     const lines = Math.min(Number(req.query?.lines) || 60, 500);

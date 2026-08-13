@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T16:50:39.862Z",
+  "generated": "2026-08-13T16:56:04.020Z",
   "entries": [
+    {
+      "hash": "8245e739",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Read a pipeline log over the API — \"I need ssh\" means the management API is short an endpoint",
+      "scope": null
+    },
     {
       "hash": "71997c5e",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Add ocean-search-testing scoring model guide + update search quality page",
       "scope": null
-    },
-    {
-      "hash": "7eecbedc",
-      "date": "2026-05-31",
-      "type": "New",
-      "description": "Expand search quality battery to 543 tests (52 core + 491 ocean)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "8245e739",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Read a pipeline log over the API — \"I need ssh\" means the management API is short an endpoint",
+        "scope": null
+      },
       {
         "hash": "71997c5e",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Docs",
         "description": "Add ocean-search-testing scoring model guide + update search quality page",
-        "scope": null
-      },
-      {
-        "hash": "7eecbedc",
-        "date": "2026-05-31",
-        "type": "New",
-        "description": "Expand search quality battery to 543 tests (52 core + 491 ocean)",
         "scope": null
       }
     ]
