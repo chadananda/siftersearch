@@ -126,6 +126,40 @@ export default async function ingestRoutes(fastify) {
     return { stage, requested: true, run_id: row?.id, note: 'the stage picks this up on its next tick and ignores the peak gate' };
   });
 
+  // APPROVE the relabel proposals. The scan proposes (status='pending'); this is the other half — without
+  // it the "gate" is just a stall. Applies ONLY what was already recorded and reviewed, writes through the
+  // single writer, and audits every change with its before/after so it is reversible from the trail.
+  fastify.post('/ingest/relabel/apply', admin, async (req) => {
+    const { audit } = await import('../lib/audit.js');
+    const limit = Math.min(Number(req.body?.limit) || 500, 5000);
+    const only = Array.isArray(req.body?.doc_ids) ? req.body.doc_ids.map(Number).filter(Number.isFinite) : null;
+    let rows = await queryAll(
+      `SELECT item_ref, reason, payload_json FROM ingest_stage
+        WHERE stage = 'relabel' AND status = 'pending' ORDER BY item_ref LIMIT ?`, [limit]);
+    if (only) rows = rows.filter((r) => only.includes(Number(r.item_ref)));
+    if (!rows.length) return { applied: 0, note: 'no pending relabel proposals' };
+
+    const applied = [];
+    for (const r of rows) {
+      let p = {}; try { p = JSON.parse(r.payload_json || '{}'); } catch { /* reason still carries from → to */ }
+      const to = p.to || String(r.reason || '').split('→').pop()?.trim();
+      if (!to || !/^[a-z]{2}$/.test(to)) continue;             // never write a language we cannot parse
+      const docId = Number(r.item_ref);
+      await query('UPDATE docs SET language = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [to, docId]);
+      await query(`UPDATE ingest_stage SET status = 'done', updated_at = unixepoch()
+                    WHERE stage = 'relabel' AND item_ref = ?`, [String(docId)]);
+      await audit({
+        actor: `api:relabel/apply${req.body?.approved_by ? `:${req.body.approved_by}` : ''}`,
+        action: 'doc.language', target: `doc:${docId}`, docId,
+        reason: `approved relabel ${p.from || '?'} → ${to}`,
+        detail: { from: p.from ?? null, to, title: p.title ?? null },
+      }).catch(() => {});
+      applied.push({ doc_id: docId, from: p.from ?? null, to, title: p.title ?? null });
+    }
+    logger.info({ applied: applied.length }, 'relabel proposals applied');
+    return { applied: applied.length, changes: applied };
+  });
+
   // After a fix, put failed items back in the queue. Rejected items are NOT touched: a rejection is a
   // judgement about the source (scanned PDF, no text layer), not a transient error to retry blindly.
   fastify.post('/ingest/retry/:stage', admin, async (req) => {
