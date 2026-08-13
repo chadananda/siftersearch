@@ -161,9 +161,18 @@ export default async function ingestRoutes(fastify) {
     const perProc = await queryAll(
       `SELECT proc, SUM(n) n, SUM(total_ms) total_ms FROM query_stats WHERE hour >= ? GROUP BY proc ORDER BY total_ms DESC`,
       [since]).catch(() => []);
-    const wallMs = hours * 3600 * 1000;
+    // frozenPct must divide by the span actually OBSERVED, not the span requested: query_stats began
+    // collecting when migration 111 landed, so dividing one hour of data by a 24h window reported 0.8%
+    // for a process that was really frozen 10.7% of the time it was measured — an instrument understating
+    // the very problem it exists to find.
+    const span = await queryOne(
+      `SELECT MIN(hour) lo, MAX(hour) hi FROM query_stats WHERE hour >= ?`, [since], 'admin:query-time-span')
+      .catch(() => null);
+    const observedHours = span?.lo != null ? Math.max(1, (span.hi - span.lo) / 3600 + 1) : hours;
+    const wallMs = observedHours * 3600 * 1000;
     return {
       hours,
+      observedHours,                 // how much of the window actually has data — frozenPct is over THIS
       note: 'total_ms is SYNCHRONOUS time: with better-sqlite3 it is time the process could not serve anything else',
       processes: perProc.map((p) => ({
         proc: p.proc, queries: p.n, totalMs: p.total_ms,

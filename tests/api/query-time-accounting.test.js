@@ -62,3 +62,39 @@ describe('shapes aggregate, so per-call cost cannot hide in distinct literals', 
     expect(fingerprintSql('SELECT 1 FROM docs')).not.toBe(fingerprintSql('SELECT 1 FROM content'));
   });
 });
+
+// ── Instrument correctness (2026-08-13) ───────────────────────────────────────────────────────────────
+// Two faults found by reading the instrument's own output rather than trusting it. Both made it lie in the
+// direction of "everything is fine", which is the worst direction for a monitoring tool.
+describe('the instrument does not lie about itself', () => {
+  it('records a query ONCE, not once per logging path', () => {
+    // query() logged with the name AND the statement wrapper logged without it, so every named query
+    // appeared twice — 'budget-check' x304 beside an identical '(unnamed)' x304, doubling every total.
+    const recorded = [];
+    let pendingName = '';
+    const logOnce = (sql, name) => recorded.push({ sql, name });
+    const withName = (name, fn) => { pendingName = name; try { return fn(); } finally { pendingName = ''; } };
+    // The statement wrapper is now the single recording point.
+    const runQuery = (sql) => logOnce(sql, pendingName);
+    withName('budget-check', () => runQuery('SELECT SUM(x) FROM ai_usage WHERE provider=?'));
+    expect(recorded).toHaveLength(1);
+    expect(recorded[0].name).toBe('budget-check');
+  });
+
+  it('leaves the name empty for a direct prepare, without inventing one', () => {
+    let pendingName = '';
+    const recorded = [];
+    const runQuery = (sql) => recorded.push({ sql, name: pendingName });
+    runQuery('SELECT 1');                       // not routed through query()
+    expect(recorded[0].name).toBe('');
+  });
+
+  it('frozenPct divides by the OBSERVED span, not the requested window', () => {
+    const totalMs = 6.39 * 60000;
+    const pct = (hours) => (totalMs / (hours * 3600 * 1000)) * 100;
+    // One hour of collected data reported against a 24h window looked like 0.4% — a process that was
+    // actually inside SQLite for 10.7% of the time it was measured.
+    expect(pct(24)).toBeLessThan(1);
+    expect(pct(1)).toBeGreaterThan(10);
+  });
+});

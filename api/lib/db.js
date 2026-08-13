@@ -336,6 +336,11 @@ function recordSlowQuery({ sql, duration, dbName, kind, name, queryPlan }) {
   } catch { /* table may predate the migration, or the DB is contended — telemetry is best-effort */ }
 }
 
+// Name of the query currently being executed via query()/userQuery()/graphQuery(), consumed by the
+// statement wrapper so a query is recorded exactly once, with its name. Empty for direct db.prepare use.
+let pendingName = '';
+const withName = (name, fn) => { pendingName = name || ''; try { return fn(); } finally { pendingName = ''; } };
+
 // origPrepare is the unwrapped db.prepare — used for EXPLAIN so we don't recurse.
 function logQueryTiming(sql, params, startTime, dbName, name = '', origPrepare = null) {
   const duration = Date.now() - startTime;
@@ -385,6 +390,11 @@ export function instrumentDb(db, dbName) {
   if (db.__instrumented) return db;
 
   const origPrepare = db.prepare.bind(db);
+  // The statement wrapper is the ONE place a query is recorded. query()/userQuery()/graphQuery() used to log
+  // as well, so every named query was counted TWICE — once with its name and once without — inflating every
+  // total by 2x and splitting each query across two report lines (caught 2026-08-13: 'budget-check' x304 and
+  // an identical '(unnamed)' x304). The caller's name is handed over in `pendingName` instead. Safe because
+  // better-sqlite3 is synchronous: prepare+run complete with no await between set and consume.
   db.prepare = (sql) => {
     const stmt = origPrepare(sql);
     for (const method of ['get', 'all', 'run']) {
@@ -392,7 +402,7 @@ export function instrumentDb(db, dbName) {
       stmt[method] = (...args) => {
         const start = Date.now();
         const result = orig(...args);
-        logQueryTiming(sql, args, start, dbName, '', origPrepare);
+        logQueryTiming(sql, args, start, dbName, pendingName, origPrepare);
         return result;
       };
     }
@@ -446,8 +456,7 @@ export async function query(sql, params = [], name = '') {
   }
   const db = await getDb();
   const start = Date.now();
-  const result = runQuery(db, sql, params);
-  logQueryTiming(sql, params, start, 'content', name, db.__origPrepare);
+  const result = withName(name, () => runQuery(db, sql, params));
   return result;
 }
 
@@ -476,8 +485,7 @@ export async function transaction(statements, name = '') {
 export async function userQuery(sql, params = [], name = '') {
   const db = await getUserDb();
   const start = Date.now();
-  const result = runQuery(db, sql, params);
-  logQueryTiming(sql, params, start, 'user', name, db.__origPrepare);
+  const result = withName(name, () => runQuery(db, sql, params));
   return result;
 }
 
@@ -503,8 +511,7 @@ export async function userTransaction(statements, name = '') {
 export async function graphQuery(sql, params = [], name = '') {
   const db = await getGraphDb();
   const start = Date.now();
-  const result = runQuery(db, sql, params);
-  logQueryTiming(sql, params, start, 'graph', name, db.__origPrepare);
+  const result = withName(name, () => runQuery(db, sql, params));
   return result;
 }
 
