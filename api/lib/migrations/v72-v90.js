@@ -786,6 +786,34 @@ export const migrations = {
   // the process log (safeSoftDeleteDocs logs 'AUDIT' via logger.warn), which cannot be queried from off-box
   // and rotates away — so a doc that vanished had no recoverable explanation. Durable + queryable instead.
   // Append-only by convention: rows are never updated, so the history of a doc is the history.
+  113: async () => {
+    logger.info('Starting migration 113: query_stats keyed by LABEL (fixes name/fingerprint key mismatch)');
+    // BUG in 111+112, caught by a flush test before it could mislead anyone: the in-memory counters key on
+    // the query NAME, but the table's primary key was (hour, proc, kind, fingerprint). Two different names
+    // that share a statement shape therefore collided into ONE row and silently merged their costs — an
+    // accounting tool reporting confidently wrong totals, which is worse than no tool.
+    // The persisted key must be the SAME key the counters use: label = name, falling back to fingerprint.
+    // query_stats is hours old and purely derived telemetry, so recreating it is cheaper and clearer than
+    // migrating rows; at most one hour of stats is lost and it refills within the minute.
+    await query(`DROP TABLE IF EXISTS query_stats`);
+    await query(`CREATE TABLE query_stats (
+      hour INTEGER NOT NULL,
+      proc TEXT NOT NULL,
+      db_name TEXT,
+      kind TEXT NOT NULL,            -- read | write
+      label TEXT NOT NULL,           -- the NAME when the call site gave one, else the statement shape
+      name TEXT,                     -- present only when named (label === name); NULL flags "wants a name"
+      fingerprint TEXT NOT NULL,     -- one representative shape, for reading the SQL behind a name
+      n INTEGER NOT NULL DEFAULT 0,
+      total_ms INTEGER NOT NULL DEFAULT 0,
+      max_ms INTEGER NOT NULL DEFAULT 0,
+      sql_sample TEXT,
+      PRIMARY KEY (hour, proc, kind, label)
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_qstats_hour ON query_stats(hour)`);
+    logger.info('Migration 113 complete: one row per (hour, process, query type)');
+  },
+
   112: async () => {
     logger.info('Starting migration 112: query_stats.name — attribute cost to a QUERY TYPE, not a SQL blob');
     // Chad, 2026-08-13: "each query should have a name so we can easily see which query types are consuming

@@ -302,13 +302,16 @@ export function flushQueryStats() {
   let written = 0;
   for (const e of rows) {
     try {
+      // Conflict on LABEL — the same key the in-memory counters use. Keying the table on `fingerprint`
+      // while keying memory on `name` merged distinct query types into one row (migration 113).
       telemetryQuery(
-        `INSERT INTO query_stats (hour, proc, db_name, kind, fingerprint, name, n, total_ms, max_ms, sql_sample)
-         VALUES (?,?,?,?,?,?,?,?,?,?)
-         ON CONFLICT(hour, proc, kind, fingerprint) DO UPDATE SET
+        `INSERT INTO query_stats (hour, proc, db_name, kind, label, name, fingerprint, n, total_ms, max_ms, sql_sample)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?)
+         ON CONFLICT(hour, proc, kind, label) DO UPDATE SET
            n = n + excluded.n, total_ms = total_ms + excluded.total_ms,
-           max_ms = MAX(max_ms, excluded.max_ms), name = COALESCE(excluded.name, name)`,
-        [e.hour, PROC_NAME, e.dbName || null, e.kind, e.fp, e.name, e.n, Math.round(e.total), Math.round(e.max), e.sample]);
+           max_ms = MAX(max_ms, excluded.max_ms)`,
+        [e.hour, PROC_NAME, e.dbName || null, e.kind, e.name || e.fp, e.name, e.fp,
+          e.n, Math.round(e.total), Math.round(e.max), e.sample]);
       written++;
     } catch { /* best-effort: table may predate migration 111, or the DB is briefly contended */ }
   }

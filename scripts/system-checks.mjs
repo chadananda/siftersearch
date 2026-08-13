@@ -144,9 +144,9 @@ if (db) {
     try {
       const since = Math.floor(Date.now() / 1000) - 86400;
       const sinks = db.prepare(
-        `SELECT proc, COALESCE(name, fingerprint) label, MAX(name) name, SUM(n) n, SUM(total_ms) total_ms,
+        `SELECT proc, label, MAX(name) name, SUM(n) n, SUM(total_ms) total_ms,
                 MAX(max_ms) max_ms, MAX(sql_sample) sql_sample
-           FROM query_stats WHERE hour >= ? GROUP BY proc, COALESCE(name, fingerprint) ORDER BY total_ms DESC LIMIT 5`).all(since);
+           FROM query_stats WHERE hour >= ? GROUP BY proc, label ORDER BY total_ms DESC LIMIT 5`).all(since);
       const procs = db.prepare(
         `SELECT proc, SUM(total_ms) total_ms FROM query_stats WHERE hour >= ? GROUP BY proc ORDER BY total_ms DESC LIMIT 3`).all(since);
       if (procs.length) {

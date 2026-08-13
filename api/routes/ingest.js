@@ -153,10 +153,10 @@ export default async function ingestRoutes(fastify) {
     // Group by NAME first — a query TYPE is what you act on. Unnamed statements fall back to their shape
     // and are reported as such, which doubles as a worklist: an expensive line with no name wants one.
     const rows = await queryAll(
-      `SELECT proc, kind, COALESCE(name, fingerprint) label, MAX(name) name,
+      `SELECT proc, kind, label, MAX(name) name,
               SUM(n) n, SUM(total_ms) total_ms, MAX(max_ms) max_ms, MAX(sql_sample) sql_sample
          FROM query_stats WHERE hour >= ?
-        GROUP BY proc, kind, COALESCE(name, fingerprint) ORDER BY total_ms DESC LIMIT 60`, [since],
+        GROUP BY proc, kind, label ORDER BY total_ms DESC LIMIT 60`, [since],
       'admin:query-time-report').catch(() => []);
     const perProc = await queryAll(
       `SELECT proc, SUM(n) n, SUM(total_ms) total_ms FROM query_stats WHERE hour >= ? GROUP BY proc ORDER BY total_ms DESC`,
