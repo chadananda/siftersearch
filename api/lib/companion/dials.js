@@ -22,6 +22,7 @@ export const SEED_DIALS = {
   course_invite_threshold: { type: 'range', min: 0, max: 1, default: 0.78, why: 'No premature funnel' },
   human_offer_threshold: { type: 'range', min: 0, max: 1, default: 0.85, why: 'Voluntary connection' },
   memory_depth: { type: 'enum', values: ['minimal', 'standard', 'extended'], default: 'minimal', why: 'Data minimization' },
+  memory_offer_after_turns: { type: 'range', min: 1, max: 12, default: 3, why: 'Ask to remember only once the inquiry is real — never on a first question' },
   proactive_contacts_week: { type: 'range', min: 0, max: 3, default: 0, why: 'Return is not outreach consent' },
   followup_cooldown_hours: { type: 'range', min: 24, max: 336, default: 96, why: 'Avoid pursuit' },
   no_outreach_bias: { type: 'range', min: 0, max: 1, default: 0.70, why: 'Silence over weak contact' },

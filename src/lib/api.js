@@ -614,6 +614,28 @@ export const chat = {
 };
 
 // ============================================
+// Seeker Companion — the participant's own relationship data (§7 transparency, §14 deletion).
+// Consent is NEVER presumed: durable memory begins only when the seeker accepts here.
+// ============================================
+
+export const companion = {
+  // Everything the companion holds about me — memory, premise hypotheses, courses, recent turns.
+  async me() { return request('/api/v1/companion'); },
+  // Accept the "remember this thread?" offer (the R1→R2 step).
+  async remember() { return request('/api/v1/companion/remember', { method: 'POST' }); },
+  // Set either consent independently; declining is a real, recorded answer, not silence.
+  async setConsent({ memory, contact } = {}) {
+    return request('/api/v1/companion/consent', { method: 'POST', body: JSON.stringify({ memory, contact }) });
+  },
+  // "That's wrong about me" — invalidate remembered items / premise hypotheses.
+  async correct({ memoryIds = [], premiseIds = [] } = {}) {
+    return request('/api/v1/companion/correction', { method: 'POST', body: JSON.stringify({ memoryIds, premiseIds }) });
+  },
+  // Delete everything, including its future influence.
+  async forget() { return request('/api/v1/companion', { method: 'DELETE' }); },
+};
+
+// ============================================
 // User API
 // ============================================
 

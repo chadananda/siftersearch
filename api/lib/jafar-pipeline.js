@@ -2978,6 +2978,14 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   try {
     const globalDials = await companionGlobalDials();
     const rel = participant_id ? await companion.companionStore.getRelationship(participant_id).catch(() => null) : null;
+    // How real the inquiry already is, and whether we asked to remember it lately — both gate the
+    // (single, declinable) memory offer, so it is never sprung on a first question or repeated.
+    const [turnsSoFar, memoryOfferedRecently] = participant_id
+      ? await Promise.all([
+        companion.companionStore.exposureCount(participant_id).catch(() => 0),
+        companion.companionStore.memoryOfferedRecently(participant_id).catch(() => true),
+      ])
+      : [0, true];
     const evidenceDocs = (research.retrieved_quotes || []).map((q) => ({
       doc_id: q.doc_id, title: q.source_title, author: q.source_author, religion: q.religion, collection: q.collection,
     }));
@@ -2985,11 +2993,14 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
       participantId: participant_id, authed: !!participant_id, message: userMessage,
       classifier: entities || {}, evidenceDocs, evidenceCount: evidenceDocs.length,
       traditionsCovered: new Set(evidenceDocs.map((d) => d.religion).filter(Boolean)).size,
-      relationship: rel, globalDials,
+      relationship: rel, globalDials, turnsSoFar, memoryOfferedRecently,
     });
     companionPlan = built.plan;
     companionAppend = `\n\nCOMPANION HARD RULES (never violate): ${companion.FORBIDDEN.join(' ')}${built.systemAppend}`;
     if (sendEvent && debug) sendEvent({ type: 'debug_companion', plan: { mode: companionPlan.mode, intervention: companionPlan.intervention, challenge_level: companionPlan.challenge_level, authority: built.authorityClasses.map((a) => a.class) } });
+    // The SERVER decides whether an offer is permitted this turn (no funnel from a vulnerable turn),
+    // so the interface only ever renders a choice the companion policy already allowed.
+    if (sendEvent && companionPlan.memory_offer) sendEvent({ type: 'companion_offer', offer: 'remember' });
   } catch (e) { logger.warn({ err: e.message }, 'companion layer failed (non-fatal)'); }
 
   if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });

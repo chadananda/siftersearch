@@ -88,6 +88,25 @@ export async function logExposure(e) {
 export async function lastExposure(participantId) {
   return userQueryOne('SELECT * FROM companion_exposure WHERE participant_id = ? ORDER BY created_at DESC LIMIT 1', [participantId]).catch(() => null);
 }
+// How real is this inquiry? (turns already accompanied) — gates the offer to remember, so a first
+// question is never met with a request to store anything.
+export async function exposureCount(participantId) {
+  if (!participantId) return 0;
+  return (await userQueryOne('SELECT COUNT(*) AS n FROM companion_exposure WHERE participant_id = ?', [participantId]).catch(() => null))?.n ?? 0;
+}
+// Did we already ask "remember this?" recently? Asking again is pressure, so once per cooldown only.
+// The plan is the record of what was offered, so the exposure log answers this without a new table.
+export async function memoryOfferedRecently(participantId, withinHours = 168) {
+  if (!participantId) return false;
+  // created_at is an epoch INTEGER — a datetime('now',…) string comparison here silently matches
+  // nothing, which would make the companion re-ask on every single turn.
+  const r = await userQueryOne(
+    `SELECT 1 AS hit FROM companion_exposure
+      WHERE participant_id = ? AND plan_json LIKE '%S09_INQUIRY_MAP%'
+        AND created_at > unixepoch() - ? LIMIT 1`,
+    [participantId, Math.round(withinHours * 3600)]).catch(() => null);
+  return !!r?.hit;
+}
 
 // ── Courses (§8) ────────────────────────────────────────────────────────────────
 export async function enroll(participantId, trackId) {

@@ -53,6 +53,8 @@ function detectAnswerOnly(message) {
  *   relationship,   // the companion_relationship row (dials override + consent + stage)
  *   globalDials,    // admin global dial overrides
  *   sustainedInquiry, courseSignal, humanRequested,
+ *   turnsSoFar,          // exposures logged for this participant — how real the inquiry already is
+ *   memoryOfferedRecently, // we already asked "remember this?" lately; asking again is pressure
  * }
  * @returns {object} { plan, systemAppend, authorityClasses, dials }
  */
@@ -90,6 +92,16 @@ export function buildCompanionPlan(ctx = {}) {
   // Evidence bar (§4.3) — thin/absent authoritative evidence in doctrinal/interfaith mode = a gap.
   const evidenceGap = !meetsEvidenceBar(mode, { retrievedCount: ctx.evidenceCount || authorityClasses.length, traditionsCovered: ctx.traditionsCovered || 0, hasAuthoritative });
 
+  // Offering to remember (§7.1/§7.3): only for a real, ongoing inquiry, only when memory is not already
+  // consented, only once in a while — and NEVER out of a vulnerable turn, where an offer reads as a hook.
+  const turnsNeeded = Number(dials.memory_offer_after_turns ?? 3);
+  const memoryOfferable = !!ctx.participantId
+    && !ctx.relationship?.consent_memory
+    && !ctx.memoryOfferedRecently
+    && (ctx.sustainedInquiry || (ctx.turnsSoFar ?? 0) >= turnsNeeded)
+    && !distress && !answerOnly
+    && mode !== 'PERSONAL_REFLECTIVE';
+
   const decision = decide({
     mode, dials, message,
     evidenceCount: ctx.evidenceCount || authorityClasses.length, hasAuthoritative, traditionsCovered: ctx.traditionsCovered || 0,
@@ -97,6 +109,7 @@ export function buildCompanionPlan(ctx = {}) {
     permission: detectPermission(message), depthRequested: detectDepthRequest(message),
     authorityConflated: detectAuthorityConflation(message, mode),
     evidenceGap, sustainedInquiry: ctx.sustainedInquiry, courseSignal: ctx.courseSignal, humanRequested: ctx.humanRequested,
+    memoryOfferable,
   });
 
   const plan = {
@@ -107,6 +120,7 @@ export function buildCompanionPlan(ctx = {}) {
     distinction: decision.distinction,
     next_step: decision.nextStep,
     support_offer: decision.supportOffer || false,
+    memory_offer: decision.nextStep === 'S09_INQUIRY_MAP',   // the interface renders this choice, not the prose
     evidence_gap: evidenceGap,
     authority_classes: authorityClasses,
     reasons: decision.reasons,
@@ -130,7 +144,8 @@ function renderSystemAppend(plan, dials, mode) {
   }
   if (mode === 'INTERFAITH') lines.push('Represent EACH tradition from ITS OWN primary sources; show convergence, divergence, and category differences without caricature. Never compare from Bahá’í summaries alone.');
   if (mode === 'PERSONAL_REFLECTIVE') lines.push('Acknowledge the stakes with care. Do NOT diagnose or prescribe, and do NOT turn this into a teaching, course, or contact opportunity. Offer voluntary reflection or human support only.');
-  if (plan.next_step) lines.push(`You MAY offer exactly ONE voluntary next step (${plan.next_step}) at the end — never a funnel, never urgent, always declinable.`);
+  if (plan.next_step === 'S09_INQUIRY_MAP') lines.push('The interface itself offers to remember this thread, so do NOT ask about memory, saving, or signing up in your answer — asking as well would be asking twice.');
+  else if (plan.next_step) lines.push(`You MAY offer exactly ONE voluntary next step (${plan.next_step}) at the end — never a funnel, never urgent, always declinable.`);
   else lines.push('Do NOT append a course pitch, human-contact offer, or call to action this turn.');
   const qd = Number(dials.quote_density);
   lines.push(`Use at most ${qd} block quotation${qd === 1 ? '' : 's'}; cite sources so a reader can verify, but do not quote-dump.`);

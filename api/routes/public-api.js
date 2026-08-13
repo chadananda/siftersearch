@@ -36,6 +36,7 @@ import { validateApiKey } from '../lib/api-keys.js';
 import { query, queryOne, queryAll, userQuery, userQueryOne, telemetryQuery } from '../lib/db.js';
 import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billing.js';
 import { slugifyPath, generateDocSlug } from '../lib/slug.js';
+import { getAnonymousUserId } from '../lib/anonymous.js';
 
 const SITE_URL = 'https://siftersearch.com';
 
@@ -1128,10 +1129,17 @@ export default async function publicApiRoutes(fastify) {
 
       sendEvent({ type: 'status', message: 'Searching sacred texts...' });
 
+      // Seeker Companion key. WITHOUT this the site's own chat ran on global dials only and logged no
+      // exposure, so the whole per-participant relationship layer (memory, consent, the offer to
+      // remember, "asked recently?") was inert here — it only ever worked on /api/chat/stream.
+      // apiKeyUserId is the KEY OWNER, not the seeker, so it must never be used: it would pool every
+      // visitor into one shared memory bucket.
+      const participant_id = request.user?.sub?.toString() || getAnonymousUserId(request);
       const result = await runJafarPipeline({
         messages: messages.map(m => ({ role: m.role, content: m.content })),
         sendEvent,
-        debug
+        debug,
+        participant_id,
       });
 
       // Pipeline now streams the crafter's chunks via sendEvent → 'text'

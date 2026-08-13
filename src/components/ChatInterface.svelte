@@ -14,7 +14,7 @@
   import { setThinking } from '../lib/stores/thinking.svelte.js';
   import { updateUsage } from '../lib/usage.svelte.js';
   import { getReferralUrl, captureReferral, generateQRCode } from '../lib/referral.js';
-  import { getUserId } from '../lib/api.js';
+  import { getUserId, companion } from '../lib/api.js';
   import TranslationView from './TranslationView.svelte';
   import AudioPlayer from './AudioPlayer.svelte';
 
@@ -145,6 +145,11 @@
   let researchContext = $state(null); // Background research context for next turn
   let researchLoading = $state(false);
   let researchInput = $state('');
+  // Seeker Companion: the SERVER decides whether offering to remember is permitted this turn (never
+  // out of a distressed or personal turn, never twice), so the UI only renders a choice already allowed.
+  let memoryOffer = $state(false);
+  let memoryOfferBusy = $state(false);
+  let memoryOfferDone = $state('');   // '' | 'remembered' | 'declined'
   let researchInputEl;
   let researchMessagesEl;
 
@@ -1239,6 +1244,23 @@
   // Research Chat Mode
   // ============================================
 
+
+  // Accepting is the ONLY thing that authorizes durable memory (§7.1). Declining is recorded too, so
+  // the companion knows the answer instead of asking again next turn.
+  async function acceptMemoryOffer() {
+    memoryOfferBusy = true;
+    try { await companion.remember(); memoryOfferDone = 'remembered'; }
+    catch { memoryOfferDone = ''; memoryOffer = false; }
+    finally { memoryOfferBusy = false; }
+  }
+  async function declineMemoryOffer() {
+    memoryOfferBusy = true;
+    try { await companion.setConsent({ memory: false }); } catch { /* the decline still stands locally */ }
+    memoryOfferDone = 'declined';
+    memoryOfferBusy = false;
+    setTimeout(() => { memoryOffer = false; }, 2500);
+  }
+
   async function sendResearchMessage() {
     const userText = researchInput.trim();
     if (!userText || researchLoading) return;
@@ -1300,6 +1322,8 @@
           researchMessages = researchMessages.map((m, i) =>
             i === assistantIdx ? { ...m, isStreaming: false, content: streamedContent || 'Done.' } : m
           );
+        } else if (event.type === 'companion_offer' && event.offer === 'remember') {
+          memoryOffer = true; memoryOfferDone = '';
         } else if (event.type === 'error') {
           researchMessages = researchMessages.map((m, i) =>
             i === assistantIdx ? { ...m, isStreaming: false, content: event.message || 'An error occurred.', error: true } : m
@@ -2616,6 +2640,22 @@
       {/if}
     {/if}
   </div>
+
+  <!-- Seeker Companion: one declinable offer to remember this thread. Consent is never presumed, so
+       nothing is stored until "Remember this" is pressed; "Not now" records the answer and moves on. -->
+  {#if memoryOffer && researchMode}
+    <div class="memory-offer" role="status">
+      {#if memoryOfferDone === 'remembered'}
+        <span class="memory-offer-text">Noted — I'll remember this thread. You can review or delete it anytime.</span>
+      {:else if memoryOfferDone === 'declined'}
+        <span class="memory-offer-text">Fine — nothing kept.</span>
+      {:else}
+        <span class="memory-offer-text">Remember this thread, so we can pick it up later?</span>
+        <button class="memory-offer-btn" disabled={memoryOfferBusy} onclick={acceptMemoryOffer}>Remember this</button>
+        <button class="memory-offer-btn memory-offer-btn-quiet" disabled={memoryOfferBusy} onclick={declineMemoryOffer}>Not now</button>
+      {/if}
+    </div>
+  {/if}
 
   <!-- Input area -->
   <div class="input-area" role={researchMode ? 'region' : 'search'} aria-label={researchMode ? 'Research chat input' : 'Search'}>
@@ -4435,6 +4475,47 @@
   }
 
   /* Input Area */
+  /* Seeker Companion memory offer — a quiet strip above the composer, never a modal. It must read as
+     an offer that costs nothing to refuse, so both buttons sit at the same visual weight. */
+  .memory-offer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--border-subtle, var(--border-default));
+    background-color: var(--surface-1);
+    font-size: 0.875rem;
+  }
+
+  .memory-offer-text {
+    color: var(--text-secondary);
+  }
+
+  .memory-offer-btn {
+    padding: 0.2rem 0.7rem;
+    border: 1px solid var(--border-default);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+
+  .memory-offer-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .memory-offer-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .memory-offer-btn-quiet {
+    color: var(--text-muted);
+  }
+
   .input-area {
     display: flex;
     align-items: center;
