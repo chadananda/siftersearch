@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T08:27:55.239Z",
+  "generated": "2026-08-13T09:28:11.513Z",
   "entries": [
+    {
+      "hash": "90788798",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Stop re-fetching dead URLs — the work-list now reads what previous runs learned",
+      "scope": null
+    },
     {
       "hash": "77706dd4",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Batch all sifter.db writes per extraction batch into one transaction",
       "scope": null
-    },
-    {
-      "hash": "a2fd4252",
-      "date": "2026-05-28",
-      "type": "Fixed",
-      "description": "Tier boundary check blocked extractor on arbitrate/reextract backlog",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "90788798",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Stop re-fetching dead URLs — the work-list now reads what previous runs learned",
+        "scope": null
+      },
       {
         "hash": "77706dd4",
         "date": "2026-08-13",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-28",
         "type": "Performance",
         "description": "Batch all sifter.db writes per extraction batch into one transaction",
-        "scope": null
-      },
-      {
-        "hash": "a2fd4252",
-        "date": "2026-05-28",
-        "type": "Fixed",
-        "description": "Tier boundary check blocked extractor on arbitrate/reextract backlog",
         "scope": null
       }
     ]

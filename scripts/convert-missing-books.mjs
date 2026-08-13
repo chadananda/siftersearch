@@ -127,6 +127,27 @@ let stubs = db.prepare(`
     -- no-source half is a sourcing problem, not a conversion one, and processing it only burns the budget.
     AND linktext IS NOT NULL
 `).all();
+// SECOND CANDIDATE CLASS: HUSKS. The query above requires JOIN content, so a doc with ZERO paragraphs is
+// invisible to it — yet the missing-books queue counts husks whose source_url IS itself a fetchable file as
+// have-source. That is why the converter reported in=0 ("nothing to do") while the queue said 6,522 books
+// were available: it had exhausted the only class it could see. Same fetch/convert path, different candidates.
+// (.html husks are left out deliberately: converting a web page needs an HTML→Markdown path this script
+// does not have, and guessing at one produces junk books.)
+const husks = db.prepare(`
+  SELECT d.id, d.title, d.author, d.religion, d.collection, d.source_url, d.file_path,
+         d.source_url AS linktext
+  FROM docs d
+  WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
+    AND NOT EXISTS (SELECT 1 FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL)
+    AND (d.source_url LIKE '%.pdf' OR d.source_url LIKE '%.doc' OR d.source_url LIKE '%.docx' OR d.source_url LIKE '%.rtf')
+    AND COALESCE(d.source_url,'') NOT LIKE '%bahai-library.com/inventory/%'
+    AND COALESCE(d.source_url,'') NOT LIKE '%bahai-library.com/bibliography/%'
+    AND COALESCE(d.author,'') NOT LIKE 'inventory-%'
+    AND COALESCE(d.author,'') NOT LIKE 'bibliography-%'
+`).all();
+if (husks.length) console.log(`+ ${husks.length} husk candidates (no paragraphs, source_url is the file)`);
+stubs = [...stubs, ...husks];
+
 if (ONLY_ID) stubs = stubs.filter((s) => s.id === ONLY_ID);
 
 // SELF-PRUNING WORK-LIST. The list comes from SQL, so it does not know what previous runs learned — which is
