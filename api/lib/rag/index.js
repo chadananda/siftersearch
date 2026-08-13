@@ -75,7 +75,11 @@ export function createCorpusRAG(deps = {}) {
 // Assemble the shared context every stage receives from the injected ports. This is the one place the
 // ports are validated and the model engine is built over them — no host imports, no defaults that reach
 // into an application.
-function buildContext(deps) {
+// Exported so tools that need to run ONE stage's adjudicator directly (e.g. the keystone gate, which
+// gathers candidates across titles that entities/merge's same-name grouping cannot see) get the identical
+// wiring instead of rebuilding it — a second, drifting context is exactly the duplication that has bitten
+// this pipeline before.
+export function buildContext(deps) {
   const need = ['llm', 'models', 'store', 'profiler'];
   for (const k of need) if (!deps[k]) throw new Error(`CorpusRAG: missing required port '${k}'. Supply it via the adapter (see api/lib/rag/ports.js).`);
   const log = deps.log || { info() {}, warn() {}, error() {}, debug() {} }; // silent by default

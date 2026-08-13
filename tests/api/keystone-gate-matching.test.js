@@ -1,67 +1,83 @@
-// The keystone gate answers "is this major figure split across several entities?". Its matcher used plain
-// substring containment, so a keystone whose name is a PROPER PREFIX of a different person's name invented
-// fragments: 'Badí‘' matched 'Mírzá Badí‘u’lláh' — Bahá'u'lláh's son and a Covenant-breaker, a different
-// man — reporting Badí‘ as SPLIT across 27 fragments (2026-08-13). The relational filter cannot catch those:
-// they carry no relational word and no " of ". These lock both directions: real continuations of the SAME
-// name (Persian izafe) must still match, and different people must not.
+// The keystone gate asks "is this major figure split across several entities?" — a question about IDENTITY,
+// which is a judgment on evidence, not a string comparison. People carry many titles and epithets (the Báb:
+// Primal Point, the Remembrance, Siyyid ‘Alí-Muḥammad), so no rule can decide it.
+//
+// The division of labour these tests pin:
+//   strings  → RECALL. Cast a wide net over a figure's known forms. Broad on purpose; a tighter rule loses
+//              real fragments and still never catches a title it was not told about.
+//   rules    → drop only what is structurally NOT an identity claim (relational descriptors, "X of Y").
+//   the LLM  → DECIDES, via the same IDENTITY_DOCTRINE prompt the merge stage uses.
+//
+// A boundary-matching rule was briefly added here (2026-08-13) to suppress one false positive and then
+// reverted: 'Badí‘' vs 'Mírzá Badí‘u’lláh' is precisely a job for the adjudicator, which knows one is a
+// martyred youth and the other a Covenant-breaker son.
 import { describe, it, expect } from 'vitest';
+import { SYSTEM, buildUser, parseMerge } from '../../api/lib/rag/entities/merge.js';
 
-// Mirrors the gate's matcher (scripts/entity-read/keystone-gate.mjs). Kept in the test because the gate is a
-// script, not a module the API imports — see the note at the end.
 const fold = (s) => s.toLowerCase().replace(/[‘’'`ʻʼ]/g, '');
-const IZAFE_OR_BOUNDARY = /^(y?[-‑]i[-‑]|[^a-zà-ÿ]|$)/i;
-const matchesForm = (name, key) => {
-  let at = name.indexOf(key);
-  while (at !== -1) {
-    const before = at === 0 ? '' : name[at - 1];
-    const after = name.slice(at + key.length);
-    if ((!before || !/[a-zà-ÿ]/i.test(before)) && IZAFE_OR_BOUNDARY.test(after)) return true;
-    at = name.indexOf(key, at + 1);
-  }
-  return false;
-};
-const matches = (entityName, rosterForm) => matchesForm(fold(entityName), fold(rosterForm));
+const recalls = (entityName, rosterForm) => fold(entityName).includes(fold(rosterForm));
 
-describe('a different person is not a fragment', () => {
-  it("Badí‘ does NOT match Mírzá Badí‘u'lláh — the martyr vs Bahá'u'lláh's son", () => {
-    expect(matches('Mírzá Badí‘u’lláh', 'Badí‘')).toBe(false);
+// The gate's structural filters (scripts/entity-read/keystone-gate.mjs).
+const RELATIONAL = /\b(sons?|daughters?|father|mother|brothers?|sisters?|wife|servants?|attendants?|companions?|followers?|amanuensis|scribe)\b/i;
+const REL_OF = /\bof\b/i;
+const isName = (n) => !(RELATIONAL.test(n) || REL_OF.test(n));
+
+describe('strings do RECALL — deliberately broad', () => {
+  it('recalls a variant spelling of the same figure', () => {
+    expect(recalls("Badí'", 'Badí‘')).toBe(true);
+    expect(recalls('Mullá Ḥusayn-i-Bushrú’í', 'Mullá Ḥusayn')).toBe(true);
   });
-  it('still matches the figure himself, however the apostrophes are written', () => {
-    expect(matches("Badí'", 'Badí‘')).toBe(true);
-    expect(matches('Badí‘', 'Badí‘')).toBe(true);
+
+  it('recalls a DIFFERENT person as a candidate — and that is correct, not a bug', () => {
+    // The adjudicator, not the matcher, is what keeps Bahá'u'lláh's son out of the martyr's identity.
+    expect(recalls('Mírzá Badí‘u’lláh', 'Badí‘')).toBe(true);
   });
-  it('does not match a key buried inside an unrelated name', () => {
-    expect(matches('Ghazálí', '‘Alí')).toBe(false);          // left edge must be a boundary too
-    expect(matches('Ḥusayn-‘Alíy-i-Ghazálí', 'Ghazálí')).toBe(true);
+
+  it('cannot reach a title it was not given — the reason recall alone is insufficient', () => {
+    expect(recalls('The Primal Point', 'Siyyid ‘Alí-Muḥammad')).toBe(false);
   });
 });
 
-describe('the same name continuing (Persian izafe) IS a fragment', () => {
-  it("Mírzá Ḥusayn-‘Alí matches Mírzá Ḥusayn-‘Alíy-i-Núrí — both Bahá'u'lláh", () => {
-    expect(matches('Mírzá Ḥusayn-‘Alíy-i-Núrí', 'Mírzá Ḥusayn-‘Alí')).toBe(true);
+describe('rules drop only what is structurally not an identity claim', () => {
+  it('drops relational descriptors — a different person defined by their relation', () => {
+    expect(isName('Ḥasan, attendant of Mullá Ḥusayn')).toBe(false);
+    expect(isName("the father of the Báb")).toBe(false);
   });
-  it('matches a plain izafe continuation', () => {
-    expect(matches('Vaḥíd-i-Dárábí', 'Vaḥíd')).toBe(true);
-  });
-  it('matches name + separate title', () => {
-    expect(matches('Quddús the Last Letter', 'Quddús')).toBe(true);
-  });
-});
-
-describe('the figures the gate flagged on 2026-08-13', () => {
-  // Each pair is (entity in the corpus, roster form). Expected = is it really the same person?
-  const cases = [
-    ["Badí'", 'Badí‘', true],
-    ['Mírzá Badí‘u’lláh', 'Badí‘', false],
-    ['Mullá Ḥusayn', 'Mullá Ḥusayn', true],
-    ['Mullá Ḥusayn-i-Bushrú’í', 'Mullá Ḥusayn', true],
-    ["Bahá'u'lláh", "Bahá'u'lláh", true],
-  ];
-  it.each(cases)('%s vs form %s → same person: %s', (entity, form, expected) => {
-    expect(matches(entity, form)).toBe(expected);
+  it('keeps plain names for the adjudicator to judge', () => {
+    expect(isName('Mírzá Badí‘u’lláh')).toBe(true);
+    expect(isName("Badí'")).toBe(true);
   });
 });
 
-// NOTE: the gate lives in scripts/ and reads the live DB, so this test pins the MATCHING RULE rather than
-// importing it. If the rule changes in the gate, change it here — the duplication is deliberate and small,
-// and the alternative (importing a script that opens a DB connection at module scope) is worse.
+describe('the LLM decides, with the evidence it needs', () => {
+  const group = {
+    key: 'Badí‘',
+    entities: [
+      { id: 1, canonical: "Badí'", mentions: 40, summary: 'the youth who bore the Tablet to the Sháh; martyred 1869' },
+      { id: 2, canonical: 'Mírzá Badí‘u’lláh', mentions: 12, summary: "son of Bahá'u'lláh; later a Covenant-breaker" },
+    ],
+  };
+
+  it('puts the distinguishing evidence in the prompt, not just the names', () => {
+    const user = buildUser(group);
+    expect(user).toContain('Covenant-breaker');           // the fact that splits them
+    expect(user).toContain('martyred 1869');
+    expect(user).toContain('40 mentions');                // richness, for choosing canonical
+  });
+
+  it('carries the doctrine that governs the split', () => {
+    expect(SYSTEM).toMatch(/EVIDENCE CONSISTENCY/);
+    expect(SYSTEM).toMatch(/KEEP APART/);
+    expect(SYSTEM).toMatch(/nisba/i);                     // Yazdí vs Turshízí is near-decisive
+  });
+
+  it('reads a verdict that keeps the son distinct from the martyr', () => {
+    const v = parseMerge('{"canonical":1,"same":[],"distinct":[2],"reason":"son and Covenant-breaker, not the martyr"}');
+    expect(v.same).toEqual([]);
+    expect(v.distinct).toEqual([2]);
+  });
+
+  it('returns null on an unparseable verdict so the gate reports UNJUDGED rather than guessing', () => {
+    expect(parseMerge('the model rambled without JSON')).toBeNull();
+  });
+});

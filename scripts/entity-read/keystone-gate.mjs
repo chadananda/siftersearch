@@ -63,35 +63,57 @@ const ALL = await queryAll(
 const FOLDED = ALL.map((r) => ({ ...r, f: fold(r.n) }));
 const isOpponent = (side) => /opponent|enemy|other|covenant|breaker/i.test(side || '');
 
-// A keystone's name is often a PROPER PREFIX of a different person's name, so plain `includes` invents
-// fragments: key 'badí' (Badí‘, the martyr) matches 'Mírzá Badí‘u’lláh' — Bahá'u'lláh's son and a
-// Covenant-breaker, a different man entirely. That inflated Badí‘ to 27 "fragments" (2026-08-13).
-// The relational filter cannot catch these: they carry no relational word and no " of ".
-//
-// So a match must end at a name boundary. The one exception is the Persian IZAFE, where the SAME name
-// legitimately continues: 'Mírzá Ḥusayn-‘Alí' → 'Mírzá Ḥusayn-‘Alíy-i-Núrí' is still Bahá'u'lláh.
-// Allow the remainder to start with an izafe link (optionally the connective -y-), reject any other letter.
-const IZAFE_OR_BOUNDARY = /^(y?[-‑]i[-‑]|[^a-zà-ÿ]|$)/i;
-const matchesForm = (name, key) => {
-  let at = name.indexOf(key);
-  while (at !== -1) {
-    const before = at === 0 ? '' : name[at - 1];
-    const after = name.slice(at + key.length);
-    // Left edge must also be a boundary, else 'alí' would match inside 'ghazálí'.
-    if ((!before || !/[a-zà-ÿ]/i.test(before)) && IZAFE_OR_BOUNDARY.test(after)) return true;
-    at = name.indexOf(key, at + 1);
-  }
-  return false;
-};
-
+// RECALL, not decision. String matching's only job here is to cast a wide net over the forms a keystone
+// is known by; whether two records are the SAME PERSON is a judgment on evidence, and no rule can make it.
+// People carry many titles and epithets (the Báb: Primal Point, the Remembrance, Siyyid ‘Alí-Muḥammad),
+// so a TIGHTER string rule loses real fragments without ever gaining the ones that matter. This was briefly
+// narrowed to a boundary match on 2026-08-13 to kill one false positive (Badí‘ vs Mírzá Badí‘u’lláh) —
+// wrong lever: that pair is a job for the adjudicator, which knows one is a Covenant-breaker son and the
+// other a martyr. Recall stays broad; adjudicateFragments() decides. See feedback_no_literal_name_binding
+// and feedback_evidence_consistency_over_heuristics.
 function candidates(forms) {
   const keys = forms.map(fold);
   const seen = new Map();
-  for (const r of FOLDED) if (keys.some((k) => matchesForm(r.f, k)) && !seen.has(r.id)) seen.set(r.id, r);
+  for (const r of FOLDED) if (keys.some((k) => r.f.includes(k)) && !seen.has(r.id)) seen.set(r.id, r);
   return [...seen.values()];
 }
 
-export const __test = { matchesForm, fold, isName };
+// The DECISION, delegated to the evidence adjudicator the merge stage already uses — same prompt, same
+// IDENTITY_DOCTRINE, same over-merge guards for common given-names. Reused rather than reimplemented so the
+// gate can never drift from the stage that acts on its findings. Candidates here are gathered ACROSS titles
+// and epithets, which is exactly what entities/merge cannot do on its own: it groups by shared NAME, so a
+// figure split between a name and a title is invisible to it. Recall from the roster + judgment from the
+// model is the combination neither half achieves alone.
+async function adjudicateFragments(who, core, cands) {
+  if (!cands.length) return { real: cands, reason: 'no adjudicator (rule fallback)' };
+  try {
+    const [{ SYSTEM, buildUser, parseMerge }, { buildContext }, { sifterDeps }] = await Promise.all([
+      import('../../api/lib/rag/entities/merge.js'),
+      import('../../api/lib/rag/index.js'),
+      import('../../api/lib/rag-adapter/index.js'),
+    ]);
+    const ctx = buildContext(sifterDeps());
+    const group = {
+      key: who,
+      entities: [core, ...cands].map((e) => ({ id: e.id, canonical: e.n, mentions: e.mentions, summary: e.summary })),
+    };
+    const { parsed } = await ctx.model.runLadder({
+      route: { model: ctx.config.models?.merge, fallback: ctx.config.models?.mergeFallback },
+      system: SYSTEM, user: buildUser(group), parse: parseMerge, maxTokens: 500,
+    });
+    if (!parsed) throw new Error('unparseable verdict');
+    const same = new Set(parsed.same || []);
+    return { real: cands.filter((c) => same.has(c.id)), reason: parsed.reason || '' };
+  } catch (err) {
+    // Never fail the gate on an adjudication problem — fall back to reporting every candidate for review,
+    // and SAY that the verdict is unjudged rather than presenting a rule's guess as the model's.
+    return { real: cands, reason: `UNJUDGED (${err.message}) — rule-only candidates`, unjudged: true };
+  }
+}
+
+export const __test = { fold, isName };
+
+const ADJUDICATE = !process.argv.includes('--no-adjudicate');
 
 export async function runGate() {
   const results = [];
@@ -104,6 +126,10 @@ export async function runGate() {
     //  - differing nisba  → namesake (feedback_nisba_disconflation: Yazdí≠Turshízí is near-decisive)
     //  - opponent vs the figure's Bábí/Bahá'í side → a different (hostile) person, never a fragment
     //  - otherwise → a genuine REVIEW candidate; its summary is shown so identity is judged on context
+    // Rules still PRE-FILTER the obvious (a differing nisba is near-decisive; an opponent vs a Bábí is a
+    // different person) — cheap, and it keeps the model's input small. What they no longer do is DECIDE:
+    // everything that survives goes to the adjudicator, because "same person under another title" is not
+    // a question a regex can answer.
     const frags = identity.slice(1).map((e) => {
       const nb = nisbaOf(e.n), cnb = core ? nisbaOf(core.n) : '';
       let cls = 'REVIEW';
@@ -111,8 +137,12 @@ export async function runGate() {
       else if (core && isOpponent(e.side) !== isOpponent(core.side)) cls = 'distinct(side)';
       return { ...e, cls };
     });
-    const real = frags.filter((f) => f.cls === 'REVIEW');
+    const toJudge = frags.filter((f) => f.cls === 'REVIEW');
+    const { real, reason, unjudged } = ADJUDICATE
+      ? await adjudicateFragments(k.who, core, toJudge)
+      : { real: toJudge, reason: 'rules only (--no-adjudicate)', unjudged: true };
     const verdict = identity.length === 0 ? 'MISSING' : real.length ? 'SPLIT' : 'ok';
+    results.push({ who: k.who, verdict, core, frags, real, assoc, reason, unjudged });
     results.push({ who: k.who, verdict, core, frags, real, assoc });
   }
   return results;
