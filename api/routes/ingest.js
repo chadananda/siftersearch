@@ -86,6 +86,34 @@ export default async function ingestRoutes(fastify) {
     return { stage: stage || 'all', status: status || 'all', count: items.length, by_reason: byReason, items };
   });
 
+  // ── LOGS: read a pipeline log without an ssh session ───────────────────────────────────────────────
+  // Written because the answer to "I need ssh to see why this failed" is almost always "the management API
+  // is missing an endpoint". Three times in one night the decisive artifact was a log file on the box: the
+  // per-book grounding log, the converter's output, the ingest run's output. Read-only, tail-only, and the
+  // name must match a known shape — never an arbitrary path, so this cannot become a file-read primitive.
+  fastify.get('/logs/:name', admin, async (req) => {
+    const { readFile, stat } = await import('node:fs/promises');
+    const { join } = await import('node:path');
+    const name = String(req.params.name || '');
+    // Allowed: grounding-<docId>, or one of the pipeline logs. Anchored, no dots, no separators.
+    const ok = /^grounding-\d{1,9}$/.test(name)
+      || ['converter-out', 'converter-error', 'book-ingest-out', 'book-ingest-error',
+        'digest-out', 'digest-error', 'relabel-out', 'relabel-error',
+        'pipeline-snapshot-out', 'pipeline-snapshot-error', 'api-out', 'api-error'].includes(name);
+    if (!ok) throw ApiError.badRequest(`log '${name}' is not readable here (expected grounding-<docId> or a known pipeline log)`);
+
+    const lines = Math.min(Number(req.query?.lines) || 60, 500);
+    const file = join(process.cwd(), 'logs', `${name}.log`);
+    let size = null;
+    try { size = (await stat(file)).size; } catch { throw ApiError.notFound(`no log at logs/${name}.log`); }
+    // Read only the tail: a grounding log can be megabytes and the interesting part is always the end.
+    const MAX_BYTES = 512 * 1024;
+    const buf = await readFile(file);
+    const text = buf.subarray(Math.max(0, buf.length - MAX_BYTES)).toString('utf8');
+    const all = text.split('\n');
+    return { name, file: `logs/${name}.log`, bytes: size, lines: all.length, tail: all.slice(-lines) };
+  });
+
   // ── AUDIT: who changed this file/doc, when, and why ────────────────────────────────────────────────
   // The question that motivated all of this: "we cannot figure out why files were moved."
   fastify.get('/audit', admin, async (req) => {
