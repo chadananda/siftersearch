@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T10:28:11.926Z",
+  "generated": "2026-08-13T11:28:02.002Z",
   "entries": [
+    {
+      "hash": "1fa5e409",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Stop one book from overwriting another — unique destination per source",
+      "scope": null
+    },
     {
       "hash": "e2bdbea2",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Batch graph.db writes per paragraph into single graphTransaction",
       "scope": null
-    },
-    {
-      "hash": "21152d7c",
-      "date": "2026-05-28",
-      "type": "Fixed",
-      "description": "Batch transaction retry — 20 attempts capped at 5s, no idle sleep on failure",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "1fa5e409",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Stop one book from overwriting another — unique destination per source",
+        "scope": null
+      },
       {
         "hash": "e2bdbea2",
         "date": "2026-08-13",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-28",
         "type": "Performance",
         "description": "Batch graph.db writes per paragraph into single graphTransaction",
-        "scope": null
-      },
-      {
-        "hash": "21152d7c",
-        "date": "2026-05-28",
-        "type": "Fixed",
-        "description": "Batch transaction retry — 20 attempts capped at 5s, no idle sleep on failure",
         "scope": null
       }
     ]

@@ -47,7 +47,16 @@ const candidates = ALL
        WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND (d.language IS NULL OR d.language='en')
          AND d.id IN (SELECT DISTINCT doc_id FROM grounding_queue)`);
 
+// Run through the shared harness so a DRY run is not a throwaway console dump: its proposals land in
+// ingest_stage/pipeline_run and are reviewable at /api/admin/ingest/status. Mislabelled languages cost real
+// money the moment grounding starts (an English-labelled French book goes to a model that cannot read it),
+// so the proposals need to be inspectable BEFORE anyone approves the write.
+const { runStage } = await import('./lib/stage-runner.mjs');
+const stageState = await import('../api/lib/pipeline/stage-state.js');
+
+await runStage('relabel', { anyTime: process.argv.includes('--any-time') }, async (tally) => {
 console.log(`Scanning ${candidates.length} candidate docs (${ALL ? 'ALL en/NULL' : 'grounding set'})…\n`);
+tally.backlog = candidates.length;
 
 const changes = [];
 for (const d of candidates) {
@@ -63,17 +72,32 @@ for (const d of candidates) {
 
 changes.sort((a, b) => a.to.localeCompare(b.to) || a.id - b.id);
 for (const c of changes) console.log(`  ${c.id}  ${c.from} → ${c.to}   ${(c.title || '').slice(0, 50)}`);
+// Record every proposal, applied or not: `pending` means "detected, awaiting approval", `done` means written.
+tally.in = candidates.length;
+for (const c of changes) {
+  tally.reason(`${c.from} → ${c.to}`);
+  await stageState.markStage(c.id, 'relabel', {
+    status: APPLY ? 'done' : 'pending',
+    version: 'detectLang-v2',
+    reason: `${c.from} → ${c.to}`,
+    payload: { title: c.title, from: c.from, to: c.to },
+  }).catch(() => {});
+}
 console.log(`\n${changes.length} docs detected as non-English.`);
 
 const byLang = changes.reduce((m, c) => ((m[c.to] = (m[c.to] || 0) + 1), m), {});
 console.log('By language:', JSON.stringify(byLang));
 
-if (!APPLY) { console.log('\nDRY RUN — pass --apply to write these corrections.'); process.exit(0); }
-if (!changes.length) { console.log('\nNothing to change.'); process.exit(0); }
+if (!APPLY) {
+  console.log('\nDRY RUN — proposals recorded at /api/admin/ingest/status (stage=relabel). Pass --apply to write.');
+  return;
+}
+if (!changes.length) { console.log('\nNothing to change.'); return; }
 
 // Write in one batch through the single writer.
 const statements = changes.map((c) => ({ sql: `UPDATE docs SET language=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`, args: [c.to, c.id] }));
 const out = await writeBatch(statements);
 const applied = out.results?.reduce((n, r) => n + (r.changes || 0), 0) ?? 0;
+tally.out = applied;
 console.log(`\nApplied ${applied} language corrections via the single writer.`);
-process.exit(0);
+});

@@ -14,6 +14,7 @@ export const EXPECTED_CRON_APPS = [
   'siftersearch-converter',
   'siftersearch-book-ingest',
   'siftersearch-digest',
+  'siftersearch-relabel',
 ];
 
 export const EXPECTED_ONLINE = ['siftersearch-api', 'siftersearch-worker'];

@@ -7,7 +7,7 @@
 // comparison bugs in one day — one silently matching zero rows, one silently matching every row.
 import { query, queryOne, queryAll } from '../db.js';
 
-export const STAGES = ['convert', 'ingest'];
+export const STAGES = ['convert', 'ingest', 'relabel'];
 export const TERMINAL = ['done', 'rejected'];          // reached an outcome; not retried by a normal pass
 export const RETRYABLE = ['pending', 'failed'];        // eligible for the next run
 

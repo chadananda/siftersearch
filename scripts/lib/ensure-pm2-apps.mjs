@@ -7,7 +7,7 @@
 import { execFile } from 'node:child_process';
 
 // Only these. Not "everything in the ecosystem file": that would revive the retired enrichment/graph workers.
-export const SELF_REGISTERING = ['siftersearch-converter', 'siftersearch-book-ingest', 'siftersearch-digest'];
+export const SELF_REGISTERING = ['siftersearch-converter', 'siftersearch-book-ingest', 'siftersearch-digest', 'siftersearch-relabel'];
 
 const run = (cmd, args, opts = {}) => new Promise((resolve) => {
   execFile(cmd, args, { timeout: 60000, maxBuffer: 8 * 1024 * 1024, ...opts },

@@ -478,6 +478,24 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
+      // Language RELABEL SCAN — dry by default, deliberately. A mislabelled book costs real money the moment
+      // grounding starts (an English-labelled French book routes to a model that cannot read it and churns
+      // until the storm-guard parks it), but a WRONG relabel parks a good English book. So this proposes and
+      // records; a human flips it to --apply after reading /api/admin/ingest/status (stage=relabel).
+      name: 'siftersearch-relabel',
+      script: 'scripts/relabel-languages.mjs',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: false,
+      cron_restart: '40 * * * *',
+      watch: false,
+      env: { NODE_ENV: 'production' },
+      error_file: './logs/relabel-error.log',
+      out_file: './logs/relabel-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
       // ONE hourly digest email that reports whichever job is live: ingestion during peak, entity/
       // grounding progress off-peak. Quiet when nothing happened in the window.
       name: 'siftersearch-digest',
