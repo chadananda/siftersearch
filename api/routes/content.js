@@ -557,6 +557,22 @@ export default async function contentRoutes(fastify) {
       logger.info({ slug, action: 'create' }, 'dialog: saved from conversation');
     }
 
+    // Close the BOTH-WAYS link between the private thread and its public dialog. Both columns already
+    // existed and neither was ever written: published_conversations.conversation_id was declared in
+    // migration 51 and left NULL, and nothing ever set chat_sessions.published_slug — so a published
+    // conversation could not be traced back to the thread it came from, and a thread could not show that
+    // it had been shared. Best-effort: a linkage failure must not fail a publish that already succeeded.
+    if (b.conversation_id) {
+      try {
+        await query('UPDATE published_conversations SET conversation_id = ? WHERE tenant_id = ? AND slug = ?',
+          [b.conversation_id, DIALOG_TENANT, slug]);
+        await query(`UPDATE chat_sessions SET published_slug = ?, status = 'published' WHERE id = ?`,
+          [slug, b.conversation_id]);
+      } catch (e) {
+        logger.warn({ err: e.message, slug, conversation_id: b.conversation_id }, 'dialog: failed to link thread ↔ published slug');
+      }
+    }
+
     reply.header('Cache-Control', ADMIN_NOCACHE);
     return {
       ok: true,
