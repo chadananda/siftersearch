@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T12:27:05.173Z",
+  "generated": "2026-08-13T13:26:17.226Z",
   "entries": [
+    {
+      "hash": "c64030b9",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Scan the books we just ingested, not only the ones already queued",
+      "scope": null
+    },
     {
       "hash": "61ae1fdc",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Wire entity mention sync into sync-processor periodic loop",
       "scope": null
-    },
-    {
-      "hash": "4be9c33b",
-      "date": "2026-05-28",
-      "type": "Fixed",
-      "description": "Batch bulkInsertParagraphs + deleteParagraphsByDoc to prevent SQLITE_BUSY storms",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "c64030b9",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Scan the books we just ingested, not only the ones already queued",
+        "scope": null
+      },
       {
         "hash": "61ae1fdc",
         "date": "2026-08-13",
@@ -7073,15 +7080,6 @@
         "date": "2026-05-30",
         "type": "New",
         "description": "Wire entity mention sync into sync-processor periodic loop",
-        "scope": null
-      }
-    ],
-    "2026-05-28": [
-      {
-        "hash": "4be9c33b",
-        "date": "2026-05-28",
-        "type": "Fixed",
-        "description": "Batch bulkInsertParagraphs + deleteParagraphsByDoc to prevent SQLITE_BUSY storms",
         "scope": null
       }
     ]

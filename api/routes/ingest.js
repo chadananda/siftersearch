@@ -66,6 +66,26 @@ export default async function ingestRoutes(fastify) {
     return { stage, reasons, items };
   });
 
+  // Items by stage+status — the general view the review workflow actually needs. /ingest/rejections only
+  // shows status='rejected', so the relabel scan's PROPOSALS (recorded as 'pending') were unreadable: a
+  // propose-then-approve design with no way to read the proposal is just a delay, not a safeguard.
+  fastify.get('/ingest/items', admin, async (req) => {
+    const stage = String(req.query?.stage || '');
+    const status = String(req.query?.status || '');
+    if (stage && !state.STAGES.includes(stage)) throw ApiError.badRequest(`unknown stage '${stage}'`);
+    const limit = Math.min(Number(req.query?.limit) || 100, 1000);
+    const where = ['1=1'], args = [];
+    if (stage) { where.push('stage = ?'); args.push(stage); }
+    if (status) { where.push('status = ?'); args.push(status); }
+    const items = await queryAll(
+      `SELECT item_ref, stage, status, reason, attempts, doc_id, payload_json, updated_at
+         FROM ingest_stage WHERE ${where.join(' AND ')} ORDER BY updated_at DESC LIMIT ?`, [...args, limit]);
+    const byReason = await queryAll(
+      `SELECT reason, COUNT(*) n FROM ingest_stage WHERE ${where.join(' AND ')} AND reason IS NOT NULL
+        GROUP BY reason ORDER BY n DESC`, args);
+    return { stage: stage || 'all', status: status || 'all', count: items.length, by_reason: byReason, items };
+  });
+
   // ── Control ────────────────────────────────────────────────────────────────────────────────────────
   // Ask a stage to run at its next tick, even outside the peak window. The API records intent only.
   fastify.post('/ingest/run/:stage', admin, async (req) => {
