@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T15:30:40.733Z",
+  "generated": "2026-08-13T16:29:07.756Z",
   "entries": [
+    {
+      "hash": "3eb6004e",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Auto-chunk oversized paragraphs for ANY language whose text can be split",
+      "scope": null
+    },
     {
       "hash": "3be0180a",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add 491 ocean-search-testing fixtures + --ocean/--all runner flags",
       "scope": null
-    },
-    {
-      "hash": "6da70dca",
-      "date": "2026-05-31",
-      "type": "Docs",
-      "description": "Credit David Hunt as creator of ocean-search-testing framework",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "3eb6004e",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Auto-chunk oversized paragraphs for ANY language whose text can be split",
+        "scope": null
+      },
       {
         "hash": "3be0180a",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "New",
         "description": "Add 491 ocean-search-testing fixtures + --ocean/--all runner flags",
-        "scope": null
-      },
-      {
-        "hash": "6da70dca",
-        "date": "2026-05-31",
-        "type": "Docs",
-        "description": "Credit David Hunt as creator of ocean-search-testing framework",
         "scope": null
       }
     ]
