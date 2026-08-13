@@ -11,8 +11,10 @@ if [ -f .env-secrets ]; then
   set +a
 fi
 
-if [ ! -d dist/_worker.js ]; then
-  echo "dist/_worker.js missing — run 'npm run build' first" >&2
+# Astro 7 + adapter v14 emit dist/server/entry.mjs (+ dist/client for assets) and their own deploy config;
+# Astro 5 emitted dist/_worker.js. Accept either so this guard checks that a BUILD happened, not a layout.
+if [ ! -f dist/server/entry.mjs ] && [ ! -d dist/_worker.js ]; then
+  echo "no build output (dist/server/entry.mjs or dist/_worker.js) — run 'npm run build' first" >&2
   exit 1
 fi
 

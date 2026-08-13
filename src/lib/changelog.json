@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T14:17:28.193Z",
+  "generated": "2026-08-13T14:27:26.395Z",
   "entries": [
+    {
+      "hash": "5d6efbb3",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Use the adapter's official entry point — removes the Astro 7 blocker, drops dead PWA dep",
+      "scope": null
+    },
     {
       "hash": "c7b84a4d",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Search Quality Battery page with live results",
       "scope": null
-    },
-    {
-      "hash": "63de106d",
-      "date": "2026-05-31",
-      "type": "Docs",
-      "description": "Add Entity-Aware Search page under Research section",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "5d6efbb3",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Use the adapter's official entry point — removes the Astro 7 blocker, drops dead PWA dep",
+        "scope": null
+      },
       {
         "hash": "c7b84a4d",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Docs",
         "description": "Search Quality Battery page with live results",
-        "scope": null
-      },
-      {
-        "hash": "63de106d",
-        "date": "2026-05-31",
-        "type": "Docs",
-        "description": "Add Entity-Aware Search page under Research section",
         "scope": null
       }
     ]
