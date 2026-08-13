@@ -16,7 +16,7 @@ import { queryOne, queryAll } from '../db.js';
 import { logger } from '../logger.js';
 import { enqueue, list, tick } from './queue.js';
 import { getIntegrationProgress } from '../bio.js';
-import { coverageSelect, meetsDisambBar } from './disambiguation.js';
+import { coverageSelect, meetsDisambBar, meetsHypeBar } from './processed.js';
 
 const HYPE_MINLEN = Number(process.env.HYPE_MINLEN || 60);   // matches reachedBound / hype-book fragment filter
 const MODES = ['plan', 'override', 'general'];
@@ -53,7 +53,7 @@ export async function resumeStageFor(docId, deps = {}) {
   // considers done → the re-grounding grind). HyPE is stage 10 (after the graph tail), so once it covers the
   // hypeable paras the whole pipeline ran → done, EVEN with 0 bound claims (a legitimately entity-sparse book).
   // The old order tested claimsBound===0 FIRST and re-ran such books from 'project' forever.
-  if ((r.hyped || 0) >= 0.9 * (r.hypeable || 0)) return null;                // HyPE complete ⇒ all prior stages ran → done
+  if (meetsHypeBar(r.hyped || 0, r.hypeable || 0)) return null;              // HyPE complete ⇒ all prior stages ran → done
   if ((r.claimsBound || 0) === 0) return { from: 'project' };               // HyPE incomplete + no tail evidence → graph tail + HyPE
   return { from: 'hype' };                                                   // tail done, only HyPE left
 }

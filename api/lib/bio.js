@@ -10,7 +10,7 @@ import { ADJUDICATOR_VERSION } from './rag/index.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './pipeline/peak.js';
 import fs from 'fs';
 import path from 'path';
-import { PROSE_SQL, DISAMB_DONE_SQL } from './pipeline/disambiguation.js';
+import { PROSE_SQL, DISAMB_DONE_SQL, HYPE_DONE_SQL } from './pipeline/processed.js';
 
 export const BIO_ROOT = path.join(process.env.HOME || '/home/chad', 'sifter', 'bio-assets');
 export const readBioManifest = () => { try { return JSON.parse(fs.readFileSync(path.join(BIO_ROOT, 'manifest.json'), 'utf8')); } catch { return {}; } };
@@ -110,7 +110,7 @@ async function computeActiveBook(run, staticDocs, meta) {
   if (si == null) {
     const one = async (sql) => (await queryAll(sql, [docId]))[0]?.n || 0;
     const bound = await one(`SELECT COUNT(*) n FROM entity_mentions_v2 WHERE doc_id=? AND entity_id IS NOT NULL`);
-    const hype = await one(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL} AND hyp_questions IS NOT NULL`);
+    const hype = await one(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL} AND ${HYPE_DONE_SQL}`);
     const ment = await one(`SELECT COUNT(*) n FROM entity_mentions_v2 WHERE doc_id=?`);
     const at = (name) => GROUNDING_STAGES.indexOf(name);
     si = (hype > 0 && bound > 0) ? at('hype') : bound > 0 ? at('link') : claims > 0 ? at('claims') : ment > 0 ? at('mentions') : 0;
@@ -139,7 +139,7 @@ async function computeActiveBook(run, staticDocs, meta) {
   } else if (stageName === 'hype') {
     // HyPE is the other long stage on big books — measure it directly (paragraphs with questions / disambiguated).
     const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL} AND ${DISAMB_DONE_SQL}`, [docId]))[0]?.n || 0;
-    const hypePar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL} AND hyp_questions IS NOT NULL`, [docId]))[0]?.n || 0;
+    const hypePar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL} AND ${HYPE_DONE_SQL}`, [docId]))[0]?.n || 0;
     withinFrac = totalPar ? Math.min(0.99, hypePar / totalPar) : 0.5;
   }
   // Bar weight per stage = its REAL job size (item count), measured PER BOOK. Fixed weights can't be right for

@@ -1,4 +1,10 @@
-// THE definition of "this paragraph is disambiguated", in one place.
+// THE definition of "this stage has PROCESSED this paragraph", in one place, for every stage.
+//
+// The rule that governs all of it: DONE MEANS THE WORK WAS DONE, NEVER THAT IT PRODUCED OUTPUT. We cannot
+// know in advance whether a paragraph HAS a disambiguation to make or a hypothetical question worth asking,
+// and we will not invent one to satisfy a counter. So completion is measured by the stage's VERSION STAMP —
+// proof the stage ran on that paragraph at that version — and the output column is free to be empty.
+// Measuring output instead cost two separate multi-hour outages on 2026-08-13 (disambiguation, then hype).
 //
 // It used to live in five: rag-adapter/store.js (the gate's coverage SQL), pipeline/queue.js
 // (isDoneFromArtifacts + reachedBound), pipeline/plan.js (resumeStageFor), rag/kernel/gate.js (the
@@ -52,6 +58,38 @@ export function coverageSelect(hypeMinLen) {
   const live = `doc_id=? AND ${PROSE_SQL}`;
   return `SELECT (SELECT COUNT(*) FROM content WHERE ${live}) prose,
             (SELECT COUNT(*) FROM content WHERE ${live} AND ${DISAMB_DONE_SQL}) disamb,
-            (SELECT COUNT(*) FROM content WHERE ${live} AND hyp_questions IS NOT NULL) hyped,
+            (SELECT COUNT(*) FROM content WHERE ${live} AND ${HYPE_DONE_SQL}) hyped,
             (SELECT COUNT(*) FROM content WHERE ${live} AND length(trim(text)) >= ${Number(hypeMinLen)}) hypeable`;
+}
+
+
+// ── HYPE ──────────────────────────────────────────────────────────────────────────────────────────────
+// Same doctrine, same shape. content.hyp_model (migration 98) is the generator's version stamp — the
+// analogue of context_model — and it is the ONLY honest completion signal: a paragraph can be legitimately
+// processed and yield no questions (a heading fragment, a publisher line, a list of dates), and inventing
+// questions to make a counter go up would poison the retrieval index it exists to serve.
+//
+// The gate previously counted `hyp_questions IS NOT NULL`, so a paragraph the generator could not handle
+// was indistinguishable from one never attempted; books 519 and 12443 ran every stage, verified searchable,
+// and were re-queued forever (2026-08-13).
+//
+// LEGACY CLAUSE: hyp_model arrived in migration 98, so rows hyped before it carry questions with no stamp.
+// They ARE processed, and re-running millions of paragraphs to prove it would be worse than the bug. The
+// `OR hyp_questions IS NOT NULL` arm covers exactly those, and can be dropped once a backfill stamps them.
+export const HYPE_DONE_SQL = '(hyp_model IS NOT NULL OR hyp_questions IS NOT NULL)';
+
+/** JS predicate for the stage's own resume filter. Stamped at the CURRENT version ⇒ nothing more to do. */
+export function isHyped(paragraph, version) {
+  if (paragraph?.hypModel && paragraph.hypModel === version) return true;   // processed at this version
+  if (paragraph?.hypModel) return false;                                    // older version → upgrade wanted
+  // Unstamped legacy row: fall back to the old evidence (questions present) so it is not redone for nothing.
+  try { const a = JSON.parse(paragraph?.hyp ?? 'null'); return Array.isArray(a) && a.length >= 1; }
+  catch { return false; }
+}
+
+/** The hype completion bar. Separate from the disambiguation bar because the stages differ in nature. */
+export const HYPE_THRESHOLD = 0.9;
+export function meetsHypeBar(hyped, hypeable, threshold = HYPE_THRESHOLD) {
+  if (!hypeable) return true;                 // nothing hypeable ⇒ nothing blocking
+  return hyped / hypeable >= threshold;
 }

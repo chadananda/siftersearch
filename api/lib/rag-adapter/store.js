@@ -6,7 +6,7 @@ import * as db from '../db.js';           // shared SQLite wrapper (reads direct
 import content from '../content.js';      // paragraph write helpers (updateContextOnly routes through the writer)
 import { skeletonKeys, nameKeys, arabicKeys } from '../translit-key.js'; // recall keys: translit skeletons ∪ Arabic-script keys (Persian docs)
 import { loadGazetteer, anchorFor, guardedPair } from './gazetteer.js'; // central-cast identity anchor + ≠guards
-import { DISAMB_DONE_SQL } from '../pipeline/disambiguation.js';
+import { DISAMB_DONE_SQL } from '../pipeline/processed.js';
 
 // Blocktypes that carry readable prose we enrich (skip figures, nav, etc.). App-specific → stays here.
 const PROSE = "blocktype IN ('paragraph','quote')";
@@ -327,7 +327,9 @@ export function makeStore() {
           const hits = (await meili.index(INDEXES.PARAGRAPHS).search(name, { filter: filt, limit: 1 })).estimatedTotalHits || 0;
           probes.push({ kind: 'cast', query: name, hits });
         }
-        const hq = (await db.queryAll(`SELECT hyp_questions FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL AND hyp_questions!='' LIMIT 1`, [docId]))[0]?.hyp_questions;
+        // NOT a completion measure: this reads the questions THEMSELVES, so it legitimately wants rows that
+  // have some. Completion is `${HYPE_DONE_SQL}` (the version stamp) — see pipeline/processed.js.
+  const hq = (await db.queryAll(`SELECT hyp_questions FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL AND hyp_questions!='' LIMIT 1`, [docId]))[0]?.hyp_questions;
         if (hq) {
           let q = String(hq);
           try { const a = JSON.parse(hq); if (Array.isArray(a) && a.length) q = typeof a[0] === 'string' ? a[0] : (a[0].question || a[0].q || q); } catch { q = q.split('\n')[0]; }

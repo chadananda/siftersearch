@@ -16,7 +16,7 @@ import { GROUNDING_STAGES } from './run-grounding.js';
 import { logger } from '../logger.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './peak.js';
 import fs from 'node:fs';
-import { coverageSelect, meetsDisambBar, DISAMB_DONE_SQL } from './disambiguation.js';
+import { coverageSelect, meetsDisambBar, meetsHypeBar, DISAMB_DONE_SQL, HYPE_DONE_SQL } from './processed.js';
 
 export { nowInPeak, peakEndsAt } from './peak.js';   // re-export so callers/tests import peak logic via the queue
 
@@ -74,7 +74,7 @@ export const boundStageOf = (opts = {}) => opts.only || opts.to || 'verify';
 //   0-mention/0-claim hyped book is genuinely entity-sparse and DONE, not broken. Gate on the PROCESSING stages
 //   (disamb floor + hype) and reconcile only when there is something to reconcile. Per-paragraph FAILED
 //   (unprocessable, e.g. oversized/mis-segmented) is handled separately (mark book failed → repair queue), not here.
-//   DISAMB — the paragraph was PROCESSED. Defined ONCE in pipeline/disambiguation.js, shared with the gate
+//   DISAMB — the paragraph was PROCESSED. Defined ONCE in pipeline/processed.js, shared with the gate
 //   (rag-adapter/store.getDisambigCoverage) and to resumeStageFor, because three definitions of "disambiguated"
 //   is how a book gets called not-done here while the stage calls it done: it never advances and the queue reports
 //   "did not reach verify" forever. An EMPTY note ('' — examined, nothing to resolve) is a complete result.
@@ -85,7 +85,7 @@ export function isDoneFromArtifacts({ prose = 0, disamb = 0, hyped = 0, hypeable
     mentions: true,                                                          // yield, not a processing gate (see above)
     claims: true,                                                            // yield, not a processing gate (see above)
     reconcile: decisions >= 0.85 * clusters,                                 // 0 clusters ⇒ nothing to reconcile ⇒ done
-    hype: hyped >= 0.9 * hypeable,                                           // stage-10 processing gate (implies 2–9 ran); 0 hypeable ⇒ nothing to hype ⇒ done
+    hype: meetsHypeBar(hyped, hypeable),                                     // stage-10 processing gate (implies 2–9 ran); 0 hypeable ⇒ nothing to hype ⇒ done
   };
   const artifactStage = (s) => (['research', 'project', 'link', 'merge', 'dedup', 'verify'].includes(s) ? 'reconcile' : s);
   const bound = boundStageOf(opts);
@@ -148,7 +148,7 @@ export async function reachedBoundBulk(docIds, opts = {}, deps = {}) {
   // or deleted rows inflated coverage past 100% → books "done" here while the stage gate's honest ratio
   // failed → endless did-not-reach-verify churn with disambiguate never re-run (2026-08-09).
   load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND ${DISAMB_DONE_SQL} GROUP BY doc_id`, ids), disamb);
-  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND hyp_questions IS NOT NULL GROUP BY doc_id`, ids), hyped);
+  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND ${HYPE_DONE_SQL} GROUP BY doc_id`, ids), hyped);
   load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(trim(text)) >= ${HYPE_MINLEN} GROUP BY doc_id`, ids), hypeable);
   load(await qa(`SELECT doc_id d, COUNT(DISTINCT resolved_as) n FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%' GROUP BY doc_id`, ids), clusters);
   // decisions: the docId lives in the JSON payload, so GROUP BY the extracted id (one scan of mention-cluster rows;

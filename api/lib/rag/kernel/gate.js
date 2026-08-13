@@ -1,4 +1,4 @@
-import { DISAMB_THRESHOLD } from '../../pipeline/disambiguation.js';
+import { DISAMB_THRESHOLD } from '../../pipeline/processed.js';
 // kernel/gate — enforce pipeline order: no entity/concept stage runs on a document whose disambiguation is
 // incomplete (extracting from un-disambiguated text builds on sand). Coverage comes from the store (host
 // schema); the threshold is a config knob. Throws to stop the calling stage.

@@ -10,7 +10,7 @@
 import { profileFor } from '../kernel/profile.js';   // per-doc routing (language → model)
 import { segment } from '../kernel/segment.js';       // partition into cache-friendly, concurrent units
 import { pool } from '../kernel/run.js';              // bounded-concurrency map
-import { isDisambiguated } from '../../pipeline/disambiguation.js';
+import { isDisambiguated } from '../../pipeline/processed.js';
 
 const DENSE_HINT = 'This passage is dense — resolve ONLY the few most ambiguous names (short handles), keep "idea" to one clause, and output ONLY the compact JSON object. Brevity prevents truncation.';
 

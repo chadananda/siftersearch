@@ -91,7 +91,9 @@ describe.skipIf(!HAVE_SQLITE)('reachedBound SQL — "disambiguated" must mean PR
   };
 
   beforeAll(() => {
-    raw.exec(`CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INT, blocktype TEXT, deleted_at TEXT,
+    // hyp_model (migration 98) is the hype VERSION STAMP and now the completion measure — a schema without
+    // it cannot exercise the real coverage SQL.
+    raw.exec(`CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INT, blocktype TEXT, deleted_at TEXT, hyp_model TEXT,
                 text TEXT, context TEXT, hyp_questions TEXT);
               CREATE TABLE entity_mentions_v2 (doc_id INT, resolved_as TEXT);
               CREATE TABLE entity_decisions (target_kind TEXT, payload TEXT);`);

@@ -5,7 +5,7 @@
 
 import { query, queryAll, queryOne } from '../db.js';
 import { PROFILE_OVERRIDES } from './profile.js';
-import { DISAMB_DONE_SQL } from './disambiguation.js';
+import { DISAMB_DONE_SQL } from './processed.js';
 
 // Coverage at/above which a stage counts as "done" for a doc. Tolerant because non-prose blocks
 // (illustration-list captions, dedications) legitimately produce no disambiguation — counting them

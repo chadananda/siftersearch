@@ -347,7 +347,7 @@ describe('Sites ingester (integration)', () => {
     const all = rawDb.prepare(`SELECT * FROM content WHERE doc_id = ? ORDER BY paragraph_index`).all(doc.id);
     // Footnotes are KEPT (as blocktype 'footnote'), not dropped — dropping them was the 2026-06-16
     // ingest data-loss bug. They are stored but excluded from prose, which is the population every
-    // pipeline measure counts (see api/lib/pipeline/disambiguation.js PROSE_SQL).
+    // pipeline measure counts (see api/lib/pipeline/processed.js PROSE_SQL).
     const paras = all.filter((p) => p.blocktype === 'paragraph');
     const footnotes = all.filter((p) => p.blocktype === 'footnote');
     expect(paras.length).toBe(3);                                   // 3 par/preamble blocks; titles + headers skipped

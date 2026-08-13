@@ -1,64 +1,68 @@
-// A book that RUNS every stage, verifies ok:true / missing:[] and prints "COMPLETE + SEARCHABLE" was still
-// recorded "did not reach verify" and re-queued — forever, re-spending on finished work (books 519 and
-// 12443, 2026-08-13). Cause: the completion gate is `hyped >= 0.9 * hypeable` counting
-// `hyp_questions IS NOT NULL`, and a paragraph the generator could not handle was left NULL —
-// indistinguishable from "not tried yet". On a small book a couple of those sit permanently under the bar.
+// DONE MEANS THE WORK WAS DONE, NEVER THAT IT PRODUCED OUTPUT.
 //
-// This is the SAME error the disambiguation measure made and that was fixed earlier the same day: counting
-// OUTPUT instead of PROCESSING. See api/lib/pipeline/disambiguation.js.
+// We cannot know in advance whether a paragraph has a hypothetical question worth asking — a heading
+// fragment, a publisher line and a list of dates legitimately yield none — and fabricating one to satisfy
+// a counter would poison the retrieval index the questions exist to serve. So completion is the stage's
+// VERSION STAMP (content.hyp_model), and the question column is free to be empty.
+//
+// Measuring output instead cost a permanent re-grounding loop on 2026-08-13: books 519 and 12443 ran every
+// stage, verified ok:true / missing:[], printed "COMPLETE + SEARCHABLE", and were re-queued forever,
+// because a paragraph the generator could not handle was left NULL — indistinguishable from "not tried".
 import { describe, it, expect } from 'vitest';
-import { HYPE_EXHAUSTED } from '../../api/lib/rag/enrich/retrieval.js';
-import { meetsDisambBar } from '../../api/lib/pipeline/disambiguation.js';
+import { isHyped, meetsHypeBar, HYPE_DONE_SQL, HYPE_THRESHOLD } from '../../api/lib/pipeline/processed.js';
 
-// The stage's resume predicate (retrieval.js isDone).
-const isDone = (p) => {
-  if (p.hypThesis === HYPE_EXHAUSTED) return true;
-  if (!p.hypThesis) return false;
-  try { const a = JSON.parse(p.hyp); return Array.isArray(a) && a.length >= 1; } catch { return false; }
-};
-// The queue's completion gate (queue.js isDoneFromArtifacts).
-const hypeGateOk = (hyped, hypeable) => hyped >= 0.9 * hypeable;
+const V = 'hype-v3-adaptive';
 
-describe('an exhausted paragraph counts as PROCESSED', () => {
-  it('resume skips it instead of paying for it every run', () => {
-    expect(isDone({ hypThesis: HYPE_EXHAUSTED, hyp: '[]' })).toBe(true);
+describe('processed is the stamp, not the yield', () => {
+  it('a stamped paragraph with NO questions is done — that is a real result, not a failure', () => {
+    expect(isHyped({ hypModel: V, hyp: '[]' }, V)).toBe(true);
   });
 
-  it('a paragraph never attempted is still attempted', () => {
-    expect(isDone({ hypThesis: null, hyp: null })).toBe(false);
+  it('a stamped paragraph with questions is done', () => {
+    expect(isHyped({ hypModel: V, hyp: '["q1","q2"]' }, V)).toBe(true);
   });
 
-  it('a normally generated paragraph is unaffected', () => {
-    expect(isDone({ hypThesis: 'A thesis.', hyp: '["q1","q2"]' })).toBe(true);
+  it('an unprocessed paragraph is not done, however it looks', () => {
+    expect(isHyped({ hypModel: null, hyp: null }, V)).toBe(false);
   });
 
-  it('an empty set WITHOUT the marker is not treated as done — no accidental amnesty', () => {
-    expect(isDone({ hypThesis: 'A thesis.', hyp: '[]' })).toBe(false);
-  });
-});
-
-describe('the books that looped', () => {
-  // 519: 42 prose paragraphs, ~10 hypeable, 1 permanently unprocessable.
-  // 12443: 55 prose, ~20 hypeable, 3 permanently unprocessable.
-  it('519 was stuck below the bar while every stage had in fact run', () => {
-    expect(hypeGateOk(9, 10)).toBe(true);           // counting the exhausted one as processed → clears
-    expect(hypeGateOk(9, 10) && !hypeGateOk(8, 10)).toBe(true);
-    expect(hypeGateOk(8, 10)).toBe(false);          // leaving it NULL → 80% → fails forever
+  it('an OLDER stamp is not done — an upgrade is real remaining work', () => {
+    expect(isHyped({ hypModel: 'hype-v2', hyp: '["q"]' }, V)).toBe(false);
   });
 
-  it('12443, with three unprocessable paragraphs, was further under', () => {
-    expect(hypeGateOk(17, 20)).toBe(false);         // 85% — the loop
-    expect(hypeGateOk(20, 20)).toBe(true);          // all processed (3 of them exhausted) — done
+  it('a legacy row predating the stamp counts on its questions, so millions are not redone', () => {
+    // hyp_model arrived in migration 98; rows hyped before it are processed and must not be re-run.
+    expect(isHyped({ hypModel: null, hyp: '["q1"]' }, V)).toBe(true);
+    expect(isHyped({ hypModel: null, hyp: '[]' }, V)).toBe(false);
   });
 
-  it('the gate still fails a book that genuinely has not been hyped', () => {
-    expect(hypeGateOk(2, 20)).toBe(false);
+  it('the SQL measure counts the stamp, with the legacy arm — never the question count alone', () => {
+    expect(HYPE_DONE_SQL).toContain('hyp_model IS NOT NULL');
+    expect(HYPE_DONE_SQL).toContain('OR');                       // the documented legacy clause
   });
 });
 
-describe('consistency with the disambiguation measure', () => {
-  it('both count PROCESSED, not yield — an examined-but-empty item is complete', () => {
-    expect(meetsDisambBar(98, 100)).toBe(true);     // empty notes count, same doctrine
-    expect(hypeGateOk(18, 20)).toBe(true);
+describe('the loop those two books were stuck in', () => {
+  // 519: ~10 hypeable, 1 unprocessable. 12443: ~20 hypeable, 3 unprocessable.
+  it('519 clears once the unprocessable paragraph counts as processed', () => {
+    expect(meetsHypeBar(8, 10)).toBe(false);     // left NULL → 80% → "did not reach verify", forever
+    expect(meetsHypeBar(9, 10)).toBe(true);      // stamped   → 90% → done
+  });
+
+  it('12443, with three of them, was further under the bar', () => {
+    expect(meetsHypeBar(17, 20)).toBe(false);
+    expect(meetsHypeBar(20, 20)).toBe(true);
+  });
+
+  it('a genuinely un-hyped book still fails the bar — the gate is not defanged', () => {
+    expect(meetsHypeBar(2, 20)).toBe(false);
+  });
+
+  it('a book with nothing hypeable is not held back forever', () => {
+    expect(meetsHypeBar(0, 0)).toBe(true);
+  });
+
+  it('the bar is a named constant, not a number sprinkled through the pipeline', () => {
+    expect(HYPE_THRESHOLD).toBe(0.9);
   });
 });
