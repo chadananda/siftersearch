@@ -17,7 +17,11 @@ describe('resumeStageFor — the stage a book must resume from (inverse of reach
     expect(await resumeStageFor(1, snap({ decisions: 5, clusters: 100 }))).toEqual({}); // 5 < 0.85*100
   });
   it('read-half done but NO entity bindings → {from:project} (graph tail + HyPE)', async () => {
-    expect(await resumeStageFor(1, snap({ claimsBound: 0 }))).toEqual({ from: 'project' });
+    // HyPE must be INCOMPLETE for the book to have remaining work — HyPE is the last stage, so a fully
+    // hyped book is done even with zero bound claims (a legitimately entity-sparse book). The fixture used
+    // to leave hyped=hypeable=100 and still expect a re-run, which is the old claimsBound-first order that
+    // re-ground sparse books forever.
+    expect(await resumeStageFor(1, snap({ claimsBound: 0, hyped: 0 }))).toEqual({ from: 'project' });
   });
   it('everything but HyPE done → {from:hype} (only the retrieval index)', async () => {
     expect(await resumeStageFor(1, snap({ hyped: 50, hypeable: 100 }))).toEqual({ from: 'hype' }); // 50 < 0.9*100

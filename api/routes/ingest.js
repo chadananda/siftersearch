@@ -12,6 +12,21 @@ import { query, queryOne, queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import * as state from '../lib/pipeline/stage-state.js';
 import { nowInPeak, peakEndsAt } from '../lib/pipeline/peak.js';
+import { join } from 'node:path';
+
+// Where logs can live: the app's own ./logs (what ecosystem.config.cjs declares) and PM2's default
+// store (what an app started before that config actually uses). Checked in that order.
+const logDirs = () => [join(process.cwd(), 'logs'), join(process.env.HOME || '/root', '.pm2', 'logs')];
+const KNOWN_LOGS = new Set([
+  'converter-out', 'converter-error', 'book-ingest-out', 'book-ingest-error',
+  'digest-out', 'digest-error', 'relabel-out', 'relabel-error',
+  'pipeline-snapshot-out', 'pipeline-snapshot-error', 'api-out', 'api-error',
+  // The worker hosts the single writer; when IT crash-loops every writing stage dies with
+  // "other side closed", so its log is the first place to look when writes fail everywhere.
+  'worker-out', 'worker-error', 'embedding-out', 'embedding-error',
+  'deep-research-out', 'deep-research-error', 'updater-out', 'updater-error',
+  'library-watcher-out', 'library-watcher-error', 'tunnel-out', 'tunnel-error',
+]);
 
 export default async function ingestRoutes(fastify) {
   const admin = { preHandler: requireInternal };
@@ -91,31 +106,55 @@ export default async function ingestRoutes(fastify) {
   // is missing an endpoint". Three times in one night the decisive artifact was a log file on the box: the
   // per-book grounding log, the converter's output, the ingest run's output. Read-only, tail-only, and the
   // name must match a known shape — never an arbitrary path, so this cannot become a file-read primitive.
+  // Which logs exist, so nobody has to guess a name (or SSH to run `ls logs/`).
+  fastify.get('/logs', admin, async () => {
+    const { readdir, stat } = await import('node:fs/promises');
+    const out = [];
+    for (const dir of logDirs()) {
+      let names = [];
+      try { names = await readdir(dir); } catch { continue; }
+      for (const f of names) {
+        if (!f.endsWith('.log')) continue;
+        try {
+          const st = await stat(join(dir, f));
+          out.push({ name: f.replace(/\.log$/, ''), dir, bytes: st.size, mtime: st.mtime.toISOString() });
+        } catch { /* raced with rotation */ }
+      }
+    }
+    out.sort((a, b) => (a.mtime < b.mtime ? 1 : -1));
+    return { count: out.length, logs: out.slice(0, 300) };
+  });
+
   fastify.get('/logs/:name', admin, async (req) => {
     const { readFile, stat } = await import('node:fs/promises');
-    const { join } = await import('node:path');
     const name = String(req.params.name || '');
-    // Allowed: grounding-<docId>, or one of the pipeline logs. Anchored, no dots, no separators.
-    const ok = /^grounding-\d{1,9}$/.test(name)
-      || ['converter-out', 'converter-error', 'book-ingest-out', 'book-ingest-error',
-        'digest-out', 'digest-error', 'relabel-out', 'relabel-error',
-        'pipeline-snapshot-out', 'pipeline-snapshot-error', 'api-out', 'api-error',
-        // The worker hosts the single writer; when IT crash-loops every writing stage dies with
-        // "other side closed", so its log is the first place to look when writes fail everywhere.
-        'worker-out', 'worker-error', 'embedding-out', 'embedding-error',
-        'deep-research-out', 'deep-research-error', 'updater-out', 'updater-error'].includes(name);
-    if (!ok) throw ApiError.badRequest(`log '${name}' is not readable here (expected grounding-<docId> or a known pipeline log)`);
+    // Anchored allowlist: a doc's grounding log, or a known pipeline/PM2 log. No dots, no separators.
+    const ok = /^grounding-\d{1,9}$/.test(name) || KNOWN_LOGS.has(name)
+      || /^siftersearch-[a-z-]{1,40}-(out|error)$/.test(name);   // PM2's own naming, when it owns the file
+    if (!ok) throw ApiError.badRequest(`log '${name}' is not readable here (expected grounding-<docId> or a known pipeline log; GET /logs lists them)`);
+
+    // PM2 apps declare ./logs/<x>.log, but an app started before that config still writes to
+    // ~/.pm2/logs/siftersearch-<app>-<stream>.log. Try both and SAY which paths were tried — a bare
+    // 404 sent me hunting for a crash-looping worker's log by hand.
+    const m = /^(.*)-(out|error)$/.exec(name);
+    const candidates = [];
+    for (const dir of logDirs()) {
+      candidates.push(join(dir, `${name}.log`));
+      if (m) candidates.push(join(dir, `siftersearch-${m[1]}-${m[2]}.log`));
+    }
+    let file = null; let size = null;
+    for (const c of candidates) {
+      try { size = (await stat(c)).size; file = c; break; } catch { /* try the next */ }
+    }
+    if (!file) throw ApiError.notFound(`no log named '${name}' — looked in: ${candidates.join(', ')}`);
 
     const lines = Math.min(Number(req.query?.lines) || 60, 500);
-    const file = join(process.cwd(), 'logs', `${name}.log`);
-    let size = null;
-    try { size = (await stat(file)).size; } catch { throw ApiError.notFound(`no log at logs/${name}.log`); }
     // Read only the tail: a grounding log can be megabytes and the interesting part is always the end.
     const MAX_BYTES = 512 * 1024;
     const buf = await readFile(file);
     const text = buf.subarray(Math.max(0, buf.length - MAX_BYTES)).toString('utf8');
     const all = text.split('\n');
-    return { name, file: `logs/${name}.log`, bytes: size, lines: all.length, tail: all.slice(-lines) };
+    return { name, file, bytes: size, lines: all.length, tail: all.slice(-lines) };
   });
 
   // ── AUDIT: who changed this file/doc, when, and why ────────────────────────────────────────────────

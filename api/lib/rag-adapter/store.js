@@ -6,6 +6,7 @@ import * as db from '../db.js';           // shared SQLite wrapper (reads direct
 import content from '../content.js';      // paragraph write helpers (updateContextOnly routes through the writer)
 import { skeletonKeys, nameKeys, arabicKeys } from '../translit-key.js'; // recall keys: translit skeletons ∪ Arabic-script keys (Persian docs)
 import { loadGazetteer, anchorFor, guardedPair } from './gazetteer.js'; // central-cast identity anchor + ≠guards
+import { DISAMB_DONE_SQL } from '../pipeline/disambiguation.js';
 
 // Blocktypes that carry readable prose we enrich (skip figures, nav, etc.). App-specific → stays here.
 const PROSE = "blocktype IN ('paragraph','quote')";
@@ -118,7 +119,7 @@ export function makeStore() {
       // low-name paragraphs incomplete, so such a book never reaches the gate threshold and re-runs
       // forever. `context IS NOT NULL` = "the stage ran here"; NULL = "not yet processed".
       const r = (await db.queryAll(
-        `SELECT COUNT(*) total, SUM(CASE WHEN context IS NOT NULL THEN 1 ELSE 0 END) done
+        `SELECT COUNT(*) total, SUM(CASE WHEN ${DISAMB_DONE_SQL} THEN 1 ELSE 0 END) done
            FROM content WHERE doc_id=? AND deleted_at IS NULL AND ${PROSE}`, [docId]
       ))[0];
       return r?.total ? r.done / r.total : 1;

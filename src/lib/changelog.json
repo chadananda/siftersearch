@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T16:56:04.020Z",
+  "generated": "2026-08-13T17:06:31.177Z",
   "entries": [
+    {
+      "hash": "ff952199",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Allow the worker/embedding logs through the log endpoint",
+      "scope": null
+    },
     {
       "hash": "8245e739",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Lighthouse score gauges, full fixture tables, run history tracking",
       "scope": null
-    },
-    {
-      "hash": "5cc85b94",
-      "date": "2026-05-31",
-      "type": "Docs",
-      "description": "Add ocean-search-testing scoring model guide + update search quality page",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "ff952199",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Allow the worker/embedding logs through the log endpoint",
+        "scope": null
+      },
       {
         "hash": "8245e739",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Docs",
         "description": "Lighthouse score gauges, full fixture tables, run history tracking",
-        "scope": null
-      },
-      {
-        "hash": "5cc85b94",
-        "date": "2026-05-31",
-        "type": "Docs",
-        "description": "Add ocean-search-testing scoring model guide + update search quality page",
         "scope": null
       }
     ]

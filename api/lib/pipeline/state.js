@@ -5,6 +5,7 @@
 
 import { query, queryAll, queryOne } from '../db.js';
 import { PROFILE_OVERRIDES } from './profile.js';
+import { DISAMB_DONE_SQL } from './disambiguation.js';
 
 // Coverage at/above which a stage counts as "done" for a doc. Tolerant because non-prose blocks
 // (illustration-list captions, dedications) legitimately produce no disambiguation — counting them
@@ -140,7 +141,7 @@ export async function backfill() {
     FROM docs d
     JOIN (
       SELECT doc_id, COUNT(*) total,
-        SUM(CASE WHEN context_model='${DISAMBIG_VERSION}' AND context IS NOT NULL THEN 1 ELSE 0 END) dis,
+        SUM(CASE WHEN context_model='${DISAMBIG_VERSION}' AND ${DISAMB_DONE_SQL} THEN 1 ELSE 0 END) dis,
         SUM(CASE WHEN ${newFmt} THEN 1 ELSE 0 END) hy
       FROM content WHERE blocktype IN ('paragraph','quote') AND deleted_at IS NULL GROUP BY doc_id
     ) c ON c.doc_id = d.id

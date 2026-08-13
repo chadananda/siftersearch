@@ -10,6 +10,7 @@
 import { profileFor } from '../kernel/profile.js';   // per-doc routing (language → model)
 import { segment } from '../kernel/segment.js';       // partition into cache-friendly, concurrent units
 import { pool } from '../kernel/run.js';              // bounded-concurrency map
+import { isDisambiguated } from '../../pipeline/disambiguation.js';
 
 const DENSE_HINT = 'This passage is dense — resolve ONLY the few most ambiguous names (short handles), keep "idea" to one clause, and output ONLY the compact JSON object. Brevity prevents truncation.';
 
@@ -31,8 +32,8 @@ export async function run(ctx, docId, opts = {}) {
   // stamp-only filter while every coverage measure counts it un-disambiguated — the book then fails its next
   // stage's gate forever with ZERO model calls ("did not reach verify", 2026-08-12). An EMPTY note stays done:
   // '' means the stage examined the paragraph and found nothing to resolve.
-  const done = (p) => p.contextModel === version && p.context != null;
-  const remaining = (opts.resume ?? true) ? all.filter((p) => !done(p)) : all;
+  // The definition lives in ONE place (pipeline/disambiguation) so the worker and every measure cannot drift.
+  const remaining = (opts.resume ?? true) ? all.filter((p) => !isDisambiguated(p, version)) : all;
   const minLen = opts.minLen ?? MIN_LEN;
   const tinyParas = remaining.filter((p) => p.text.length < minLen);
   const paras = remaining.filter((p) => p.text.length >= minLen);

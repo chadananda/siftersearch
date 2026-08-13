@@ -16,6 +16,7 @@ import { queryOne, queryAll } from '../db.js';
 import { logger } from '../logger.js';
 import { enqueue, list, tick } from './queue.js';
 import { getIntegrationProgress } from '../bio.js';
+import { coverageSelect, meetsDisambBar } from './disambiguation.js';
 
 const HYPE_MINLEN = Number(process.env.HYPE_MINLEN || 60);   // matches reachedBound / hype-book fragment filter
 const MODES = ['plan', 'override', 'general'];
@@ -39,17 +40,14 @@ export function setMode(m) {
 export async function resumeStageFor(docId, deps = {}) {
   const q = deps.queryOne || queryOne;
   const r = await q(
-    `SELECT (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) prose,
-            (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND context IS NOT NULL) disamb,
-            (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND hyp_questions IS NOT NULL) hyped,
-            (SELECT COUNT(*) FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(trim(text)) >= ${HYPE_MINLEN}) hypeable,
+    `${coverageSelect(HYPE_MINLEN)},
             (SELECT COUNT(*) FROM entity_claims WHERE doc_id=? AND entity_id IS NOT NULL) claimsBound,
             (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
             (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions`,
     [docId, docId, docId, docId, docId, docId, docId]);
   const prose = r?.prose || 0;
   if (prose === 0) return null;                                              // no groundable content → skip
-  if ((r.disamb || 0) / prose < 0.98) return {};                            // disambiguation incomplete → full
+  if (!meetsDisambBar(r.disamb || 0, prose)) return {};                     // disambiguation incomplete → full
   if ((r.decisions || 0) < 0.85 * (r.clusters || 0)) return {};             // reconcile incomplete → full (0 clusters ⇒ nothing to reconcile ⇒ ok)
   // DONE = fully PROCESSED, not entity OUTPUT (must match reachedBound, else the follower re-queues what the queue
   // considers done → the re-grounding grind). HyPE is stage 10 (after the graph tail), so once it covers the
@@ -69,7 +67,7 @@ async function refill(orderedIdsFn, { lookahead, deps }) {
   if (active.size >= lookahead) return { added: [], active: active.size };   // enough work already queued
 
   // STORM GUARD: a doc that repeatedly reaches the TERMINAL "did not reach verify" failure (e.g.
-  // un-disambiguatable or mislabeled-language content whose disambiguation never covers the 0.98 bar)
+  // un-disambiguatable or mislabeled-language content whose disambiguation never covers the bar)
   // must stop being auto-re-enqueued — otherwise resumeStageFor calls it "not done" every tick, the
   // follower re-queues it, it fails again, forever: a failure storm that also starves real work of
   // lookahead slots. Quarantine after GROUNDING_MAX_FAILS such failures. Scoped to the terminal error

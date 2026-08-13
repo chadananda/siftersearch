@@ -10,6 +10,7 @@ import { ADJUDICATOR_VERSION } from './rag/index.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './pipeline/peak.js';
 import fs from 'fs';
 import path from 'path';
+import { PROSE_SQL, DISAMB_DONE_SQL } from './pipeline/disambiguation.js';
 
 export const BIO_ROOT = path.join(process.env.HOME || '/home/chad', 'sifter', 'bio-assets');
 export const readBioManifest = () => { try { return JSON.parse(fs.readFileSync(path.join(BIO_ROOT, 'manifest.json'), 'utf8')); } catch { return {}; } };
@@ -66,7 +67,7 @@ const _pctFloor = new Map();   // docId → {startedAt, pct}: per-run monotonic 
 async function stageSizes(docId) {
   const hit = _sizeCache.get(docId);
   if (hit && Date.now() - hit.at < 120000) return hit.sizes;
-  const prose = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL`, [docId]))[0]?.n || 0;
+  const prose = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL}`, [docId]))[0]?.n || 0;
   const clusters = (await queryAll(`SELECT COUNT(DISTINCT resolved_as) n FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL`, [docId]))[0]?.n || 0;
   const sizes = {
     disambiguate: prose, mentions: prose ? 30 : 0, claims: prose,
@@ -109,7 +110,7 @@ async function computeActiveBook(run, staticDocs, meta) {
   if (si == null) {
     const one = async (sql) => (await queryAll(sql, [docId]))[0]?.n || 0;
     const bound = await one(`SELECT COUNT(*) n FROM entity_mentions_v2 WHERE doc_id=? AND entity_id IS NOT NULL`);
-    const hype = await one(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL`);
+    const hype = await one(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL} AND hyp_questions IS NOT NULL`);
     const ment = await one(`SELECT COUNT(*) n FROM entity_mentions_v2 WHERE doc_id=?`);
     const at = (name) => GROUNDING_STAGES.indexOf(name);
     si = (hype > 0 && bound > 0) ? at('hype') : bound > 0 ? at('link') : claims > 0 ? at('claims') : ment > 0 ? at('mentions') : 0;
@@ -128,17 +129,17 @@ async function computeActiveBook(run, staticDocs, meta) {
   } else if (stageName === 'disambiguate') {
     // Disambiguate is a full model pass over every prose paragraph — measure it directly (context-filled / total prose)
     // so the bar climbs through it instead of sitting flat.
-    const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL`, [docId]))[0]?.n || 0;
-    const disPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND context IS NOT NULL`, [docId]))[0]?.n || 0;
+    const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL}`, [docId]))[0]?.n || 0;
+    const disPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL} AND ${DISAMB_DONE_SQL}`, [docId]))[0]?.n || 0;
     withinFrac = totalPar ? Math.min(0.99, disPar / totalPar) : 0.5;
   } else if (stageName === 'claims') {
-    const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND context IS NOT NULL`, [docId]))[0]?.n || 0;
+    const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL} AND ${DISAMB_DONE_SQL}`, [docId]))[0]?.n || 0;
     const claimedPar = (await queryAll(`SELECT COUNT(DISTINCT para_id) n FROM entity_claims WHERE doc_id=?`, [docId]))[0]?.n || 0;
     withinFrac = totalPar ? Math.min(0.99, claimedPar / totalPar) : 0.5;
   } else if (stageName === 'hype') {
     // HyPE is the other long stage on big books — measure it directly (paragraphs with questions / disambiguated).
-    const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND context IS NOT NULL`, [docId]))[0]?.n || 0;
-    const hypePar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND hyp_questions IS NOT NULL`, [docId]))[0]?.n || 0;
+    const totalPar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL} AND ${DISAMB_DONE_SQL}`, [docId]))[0]?.n || 0;
+    const hypePar = (await queryAll(`SELECT COUNT(*) n FROM content WHERE doc_id=? AND ${PROSE_SQL} AND hyp_questions IS NOT NULL`, [docId]))[0]?.n || 0;
     withinFrac = totalPar ? Math.min(0.99, hypePar / totalPar) : 0.5;
   }
   // Bar weight per stage = its REAL job size (item count), measured PER BOOK. Fixed weights can't be right for
