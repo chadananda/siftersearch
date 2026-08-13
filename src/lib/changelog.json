@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T04:52:12.560Z",
+  "generated": "2026-08-13T04:56:07.633Z",
   "entries": [
+    {
+      "hash": "85b452aa",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Let newly-declared cron apps register themselves — no ssh, no manual pm2 start",
+      "scope": null
+    },
     {
       "hash": "259657ce",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Layer sort order, algorithmic grounded text, extractor prompt caching",
       "scope": null
-    },
-    {
-      "hash": "6ac4b0bf",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Validator too strict — only flag entity identity errors, not span precision",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "85b452aa",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Let newly-declared cron apps register themselves — no ssh, no manual pm2 start",
+        "scope": null
+      },
       {
         "hash": "259657ce",
         "date": "2026-08-12",
@@ -7073,15 +7080,6 @@
         "date": "2026-05-28",
         "type": "Fixed",
         "description": "Layer sort order, algorithmic grounded text, extractor prompt caching",
-        "scope": null
-      }
-    ],
-    "2026-05-27": [
-      {
-        "hash": "6ac4b0bf",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Validator too strict — only flag entity identity errors, not span precision",
         "scope": null
       }
     ]
