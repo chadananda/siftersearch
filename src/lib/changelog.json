@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T02:04:28.458Z",
+  "generated": "2026-08-13T02:09:17.166Z",
   "entries": [
+    {
+      "hash": "2857304d",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Connect IS the consent — session cookie, One Tap, and merge on connect",
+      "scope": null
+    },
     {
       "hash": "f58139cb",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Move entity pipeline model settings to .env-public for easy tuning",
       "scope": null
-    },
-    {
-      "hash": "a772e339",
-      "date": "2026-05-27",
-      "type": "New",
-      "description": "Tiered extraction — v4-pro for high-authority, v4-flash for rest; process all docs priority-first",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "2857304d",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Connect IS the consent — session cookie, One Tap, and merge on connect",
+        "scope": null
+      },
       {
         "hash": "f58139cb",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Other",
         "description": "Move entity pipeline model settings to .env-public for easy tuning",
-        "scope": null
-      },
-      {
-        "hash": "a772e339",
-        "date": "2026-05-27",
-        "type": "New",
-        "description": "Tiered extraction — v4-pro for high-authority, v4-flash for rest; process all docs priority-first",
         "scope": null
       }
     ]

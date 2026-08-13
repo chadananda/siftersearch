@@ -8,7 +8,7 @@
 import { userQuery } from '../db.js';
 import { logger } from '../logger.js';
 
-export const USER_DB_CURRENT_VERSION = 6;
+export const USER_DB_CURRENT_VERSION = 7;
 
 export const userMigrations = {
   // Version 1: Create all user tables in user database

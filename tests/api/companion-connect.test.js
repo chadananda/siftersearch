@@ -21,10 +21,17 @@ vi.mock('../../api/lib/db.js', () => ({
       if (r) { r.consent_memory = Math.max(r.consent_memory, cm); r.consent_contact = Math.max(r.consent_contact, cc); r.merged_from = from; }
       return;
     }
-    if (/UPDATE companion_relationship SET consent_memory/.test(sql) || /UPDATE companion_relationship SET .*consent_/.test(sql)) {
+    // Provenance is its own statement so a schema lag can never lose the consent flag itself.
+    if (/UPDATE companion_relationship SET consent_source = \?, consent_at = \?/.test(sql)) {
+      if (db.failProvenance) throw new Error('no such column: consent_source');
+      const r = db.relationship.get(args[2]);
+      if (r) { r.consent_source = args[0]; r.consent_at = args[1]; }
+      return;
+    }
+    if (/UPDATE companion_relationship SET consent_memory|UPDATE companion_relationship SET consent_contact/.test(sql)) {
       const to = args[args.length - 1];
       const r = db.relationship.get(to);
-      if (r) { r.consent_memory = args[0] ? 1 : 0; r.consent_source = args[1]; r.consent_at = args[2]; }
+      if (r && /consent_memory = \?/.test(sql)) r.consent_memory = args[0] ? 1 : 0;
       return;
     }
     if (/UPDATE companion_relationship SET dials_json/.test(sql)) {
@@ -38,12 +45,13 @@ vi.mock('../../api/lib/db.js', () => ({
   },
   userQueryAll: async () => [],
 }));
-vi.mock('../../api/lib/logger.js', () => ({ logger: { info() {}, warn() {} } }));
+vi.mock('../../api/lib/logger.js', () => ({ logger: { info() {}, warn() {}, error() {} } }));
 
 const store = await import('../../api/lib/companion/store.js');
 
 beforeEach(() => {
   db.relationship.clear();
+  db.failProvenance = false;
   db.relationship.set('sess_abc', { participant_id: 'sess_abc', consent_memory: 0, consent_contact: 0, dials_json: '{"candor":5}' });
   db.rows.companion_memory = [{ id: 1, participant_id: 'sess_abc' }];
   db.rows.companion_exposure = [{ id: 1, participant_id: 'sess_abc' }, { id: 2, participant_id: 'sess_abc' }];
@@ -94,5 +102,14 @@ describe('consent provenance', () => {
     expect(r.consent_memory).toBe(1);
     expect(r.consent_source).toBe('connect');
     expect(r.consent_at).toBeGreaterThan(0);
+  });
+
+  it('still records the consent when the provenance columns are missing (schema lag)', async () => {
+    // The provenance write is best-effort precisely so a lagging migration cannot silently discard the
+    // single most consequential write in the model.
+    db.relationship.set('42', { participant_id: '42', consent_memory: 0, consent_contact: 0, dials_json: '{}' });
+    db.failProvenance = true;
+    await store.setConsent('42', { memory: true, source: 'connect' });
+    expect(db.relationship.get('42').consent_memory).toBe(1);
   });
 });

@@ -27,12 +27,16 @@ export async function setConsent(participantId, { memory, contact, source = 'exp
   if (memory != null) { sets.push('consent_memory = ?'); args.push(memory ? 1 : 0); }
   if (contact != null) { sets.push('consent_contact = ?'); args.push(contact ? 1 : 0); }
   if (!sets.length) return;
-  // Provenance: a consent flag we cannot explain back to the person is not consent. 'connect' = they
-  // shared an email by connecting; 'explicit' = they answered the self-service endpoint.
-  sets.push('consent_source = ?'); args.push(source);
-  sets.push('consent_at = ?'); args.push(now());
+  // The consent flag is written ALONE, and a failure is logged rather than swallowed: this is the most
+  // consequential write in the model, and it must not be lost to an unrelated problem.
   args.push(now(), participantId);
-  await userQuery(`UPDATE companion_relationship SET ${sets.join(', ')}, updated_at = ? WHERE participant_id = ?`, args).catch(() => {});
+  await userQuery(`UPDATE companion_relationship SET ${sets.join(', ')}, updated_at = ? WHERE participant_id = ?`, args)
+    .catch((e) => logger.error({ err: e.message, participantId }, 'companion: FAILED to record consent'));
+  // Provenance second, best-effort: a consent we cannot explain back to the person is poor, but losing
+  // the consent itself because the provenance columns lag a deploy would be worse.
+  await userQuery('UPDATE companion_relationship SET consent_source = ?, consent_at = ? WHERE participant_id = ?',
+    [source, now(), participantId])
+    .catch((e) => logger.warn({ err: e.message, participantId }, 'companion: consent recorded without provenance'));
 }
 
 /**
