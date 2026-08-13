@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T14:31:21.954Z",
+  "generated": "2026-08-13T14:46:39.188Z",
   "entries": [
+    {
+      "hash": "736b87a1",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Unpdf + mammoth are PRODUCTION deps — the converter runs on the server",
+      "scope": null
+    },
     {
       "hash": "5d6efbb3",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Update fixtures for canonical OL doc_ids + tablet-of-ahmad fix",
       "scope": null
-    },
-    {
-      "hash": "248af39e",
-      "date": "2026-05-31",
-      "type": "Docs",
-      "description": "Search Quality Battery page with live results",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "736b87a1",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Unpdf + mammoth are PRODUCTION deps — the converter runs on the server",
+        "scope": null
+      },
       {
         "hash": "5d6efbb3",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Fixed",
         "description": "Update fixtures for canonical OL doc_ids + tablet-of-ahmad fix",
-        "scope": null
-      },
-      {
-        "hash": "248af39e",
-        "date": "2026-05-31",
-        "type": "Docs",
-        "description": "Search Quality Battery page with live results",
         "scope": null
       }
     ]
