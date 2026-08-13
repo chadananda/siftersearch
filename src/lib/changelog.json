@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T03:10:46.788Z",
+  "generated": "2026-08-13T03:39:27.055Z",
   "entries": [
+    {
+      "hash": "3e0e996a",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Peak-only (stop duplicating the crontab's email) + fix the hour window",
+      "scope": null
+    },
     {
       "hash": "114b6d1e",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Authority tiers + doc priority — use real author/religion fields",
       "scope": null
-    },
-    {
-      "hash": "c288a77f",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Institutional ranks below scholarly; tier thresholds match doc_priority scale",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "3e0e996a",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Peak-only (stop duplicating the crontab's email) + fix the hour window",
+        "scope": null
+      },
       {
         "hash": "114b6d1e",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Authority tiers + doc priority — use real author/religion fields",
-        "scope": null
-      },
-      {
-        "hash": "c288a77f",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Institutional ranks below scholarly; tier thresholds match doc_priority scale",
         "scope": null
       }
     ]

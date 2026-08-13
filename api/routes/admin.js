@@ -640,6 +640,34 @@ export default async function adminRoutes(fastify) {
   /**
    * Get server status - database stats, Meilisearch stats, etc.
    */
+  // PM2 process roster — is the thing that is supposed to be running actually running? Every other way to
+  // answer that needs an ssh session, which the control-plane rule rules out (and a cron one-shot newly added
+  // to ecosystem.config.cjs is exactly the case where "did it register?" is unanswerable otherwise). Read-only:
+  // shells `pm2 jlist` and returns the essentials. Cheap — no DB work, unlike /server/status.
+  fastify.get('/server/processes', { preHandler: requireInternal }, async () => {
+    const { execFile } = await import('node:child_process');
+    const jlist = await new Promise((resolve) => {
+      execFile('pm2', ['jlist'], { timeout: 8000, maxBuffer: 8 * 1024 * 1024 }, (err, stdout) => {
+        if (err) return resolve(null);
+        try { resolve(JSON.parse(stdout)); } catch { resolve(null); }
+      });
+    });
+    if (!jlist) return { available: false, note: 'pm2 jlist unavailable from the API process' };
+    const procs = jlist.map((p) => ({
+      name: p.name,
+      status: p.pm2_env?.status ?? null,
+      pid: p.pid || null,
+      restarts: p.pm2_env?.restart_time ?? null,
+      cron: p.pm2_env?.cron_restart ?? null,
+      // A cron one-shot spends most of its life 'stopped'; created_at moving is how you see it firing.
+      last_start: p.pm2_env?.created_at ? new Date(p.pm2_env.created_at).toISOString() : null,
+      uptime_s: p.pm2_env?.pm_uptime && p.pm2_env?.status === 'online'
+        ? Math.round((Date.now() - p.pm2_env.pm_uptime) / 1000) : null,
+      memory_mb: p.monit?.memory ? Math.round(p.monit.memory / 1048576) : null,
+    })).sort((a, b) => a.name.localeCompare(b.name));
+    return { available: true, count: procs.length, processes: procs };
+  });
+
   fastify.get('/server/status', { preHandler: requireInternal }, async () => {
     const [dbStats, embeddingStats, embeddingDimCheck, searchStats] = await Promise.all([
       // Database stats (content + user databases)
