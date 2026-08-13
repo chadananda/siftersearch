@@ -1,8 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "siftersearch",
-  // Custom entry wraps the Astro worker to proxy /api/* → tower-nas tunnel (see worker/index.js).
-  "main": "worker/index.js",
+  // The adapter COMPILES worker/index.js (registered as its workerEntryPoint in astro.config.mjs) into
+  // this output, so wrangler deploys the built artifact rather than the source wrapper.
+  "main": "dist/_worker.js/index.js",
   "compatibility_date": "2025-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {

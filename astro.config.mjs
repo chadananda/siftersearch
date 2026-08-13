@@ -38,6 +38,12 @@ export default defineConfig({
   adapter: cloudflare({
     platformProxy: {
       enabled: true
+    },
+    // Our worker wraps Astro to proxy /api/*, /widget*, /health to the tunnel. Registering it as the
+    // adapter's entry point (rather than as wrangler's `main`) means the adapter hands it the manifest
+    // instead of the worker importing the build output — the circular reference that blocks adapter v14.
+    workerEntryPoint: {
+      path: 'worker/index.js'
     }
   }),
 

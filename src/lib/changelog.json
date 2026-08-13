@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T14:11:28.860Z",
+  "generated": "2026-08-13T14:17:28.193Z",
   "entries": [
+    {
+      "hash": "c7b84a4d",
+      "date": "2026-08-13",
+      "type": "Docs",
+      "description": "What actually blocks the Astro 7 upgrade — two false blockers corrected, one real one found",
+      "scope": null
+    },
     {
       "hash": "d3fa96c5",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Add Entity-Aware Search page under Research section",
       "scope": null
-    },
-    {
-      "hash": "42c2618d",
-      "date": "2026-05-30",
-      "type": "Fixed",
-      "description": "Entity sync runs between doc batches + fix missing waitForMeiliTask",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "c7b84a4d",
+        "date": "2026-08-13",
+        "type": "Docs",
+        "description": "What actually blocks the Astro 7 upgrade — two false blockers corrected, one real one found",
+        "scope": null
+      },
       {
         "hash": "d3fa96c5",
         "date": "2026-08-13",
@@ -7071,15 +7078,6 @@
         "date": "2026-05-31",
         "type": "Docs",
         "description": "Add Entity-Aware Search page under Research section",
-        "scope": null
-      }
-    ],
-    "2026-05-30": [
-      {
-        "hash": "42c2618d",
-        "date": "2026-05-30",
-        "type": "Fixed",
-        "description": "Entity sync runs between doc batches + fix missing waitForMeiliTask",
         "scope": null
       }
     ]
