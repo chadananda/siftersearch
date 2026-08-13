@@ -52,10 +52,18 @@ vi.mock('../../api/lib/ai.js', () => ({
   createEmbeddings: vi.fn(async (texts) => ({ embeddings: texts.map(() => new Array(512).fill(0.1)) })),
 }));
 
+// Search HYDRATES hits against the docs table and drops any hit whose doc row is missing — correct
+// behavior (a hit pointing at a deleted doc must not surface), but it means a db mock returning nothing
+// silently empties every result set. The fan-out assertions above only inspect index NAMES so they never
+// noticed; the resilience test below asserts hits actually SURVIVE a failing index, and needs doc 1 to exist.
+const DOC_1 = {
+  id: 1, doc_id: 1, title: 'Test Doc', author: 'Test Author', religion: 'test',
+  collection: 'test', language: 'en', slug: 'test-doc', source_url: 'https://example.test/doc',
+};
 vi.mock('../../api/lib/db.js', () => ({
   query: vi.fn(async () => ({ rows: [] })),
-  queryAll: vi.fn(async () => []),
-  queryOne: vi.fn(async () => null),
+  queryAll: vi.fn(async (sql) => (/from\s+docs/i.test(String(sql)) ? [DOC_1] : [])),
+  queryOne: vi.fn(async (sql) => (/from\s+docs/i.test(String(sql)) ? DOC_1 : null)),
 }));
 
 // MUST mock authority before search.js imports it, else search.js calls real
@@ -133,20 +141,25 @@ describe('hybridSearch fan-out (Phase E2)', () => {
   });
 
   it('per-index search failure does NOT fail the whole query', async () => {
-    // Make the second index throw
+    // A filter is REQUIRED to reach the fan-out. Unfiltered queries take the cross-tradition
+    // multiSearch path instead (search.js: isCrossTradition = no religion/collection/author filter and
+    // offset 0), where meili.index().search is never called — so without this filter the test made an
+    // index throw that the code under test never touches, and asserted on a path it never ran.
     meiliMock.index.mockImplementation((name) => ({
       search: vi.fn(async (q) => {
         if (name === 'siftersearch_balib_paragraphs') throw new Error('index missing');
         searchCalls.push({ name, query: q });
-        return { hits: [{ id: 'h', _rankingScore: 0.5, doc_id: 1 }], processingTimeMs: 1 };
+        return { hits: [{ id: 'h', _rankingScore: 0.5, doc_id: 1, religion: 'test' }], processingTimeMs: 1, estimatedTotalHits: 1, query: q };
       }),
       getDocuments: vi.fn(async () => ({ results: [] })),
     }));
 
     const result = await hybridSearch('test query', {
+      filters: { religion: 'test' },
       scope_config: { primary: true, sites: ['balib'] },
     });
-    // Primary still returned hits even though balib failed
+    // Both indexes were asked; only the healthy one answered, and its hits survived.
+    expect(searchCalls.map((c) => c.name)).toContain('paragraphs');
     expect(result.hits.length).toBeGreaterThan(0);
   });
 });

@@ -3,6 +3,10 @@
 
 import { query, graphQuery } from '../db.js';
 import { logger } from '../logger.js';
+import { ensureIndex, onTable } from './ensure.js';
+
+
+const onGraphTable = (table, label, fn) => onTable(graphQuery, table, label, fn);
 
 export const migrations = {
   72: async () => {
@@ -196,14 +200,18 @@ export const migrations = {
   },
   82: async () => {
     // idx_ev_extraction_id: covers the NOT EXISTS subquery in graph-validator fetchBatch (graph.db).
-    await graphQuery(`CREATE INDEX IF NOT EXISTS idx_ev_extraction_id ON extraction_validations(extraction_id)`);
-    logger.info('Migration 82 complete: idx_ev_extraction_id on extraction_validations');
+    await ensureIndex(graphQuery, {
+      label: 'Migration 82 (idx_ev_extraction_id)', table: 'extraction_validations', columns: ['extraction_id'],
+      sql: `CREATE INDEX IF NOT EXISTS idx_ev_extraction_id ON extraction_validations(extraction_id)`,
+    });
   },
 
   83: async () => {
     // Correct authority_tiers ranks (graph.db).
-    await graphQuery(`UPDATE authority_tiers SET rank=25, description='Letters and pronouncements of the Universal House of Justice — legislative authority, not doctrinal' WHERE tier='institutional'`);
-    await graphQuery(`UPDATE authority_tiers SET rank=50, description='Modern academic scholarship — historical and analytical value' WHERE tier='scholarly'`);
+    await onGraphTable('authority_tiers', 'migration 83', async () => {
+      await graphQuery(`UPDATE authority_tiers SET rank=25, description='Letters and pronouncements of the Universal House of Justice — legislative authority, not doctrinal' WHERE tier='institutional'`);
+      await graphQuery(`UPDATE authority_tiers SET rank=50, description='Modern academic scholarship — historical and analytical value' WHERE tier='scholarly'`);
+    });
     logger.info('Migration 83 complete: corrected authority_tiers ranks (institutional 70→25, scholarly 40→50)');
   },
 
@@ -254,8 +262,11 @@ export const migrations = {
     // Entity-facet indexes (found by scripts/entity-read/test-index-coverage.mjs). The person-list query
     // (WHERE entity_type=? ORDER BY importance DESC) was doing a TEMP B-TREE sort of every entity on every
     // search — fine at 36k, fatal at millions. Composite index serves the facet + ordered scan.
-    await query(`CREATE INDEX IF NOT EXISTS idx_ge_type_importance ON graph_entities(entity_type, importance)`);
-    logger.info('Migration 85 complete: idx_ge_type_importance (kills the person-list TEMP B-TREE sort)');
+    await ensureIndex(query, {
+      label: 'Migration 85 (idx_ge_type_importance — kills the person-list TEMP B-TREE sort)',
+      table: 'graph_entities', columns: ['entity_type', 'importance'],
+      sql: `CREATE INDEX IF NOT EXISTS idx_ge_type_importance ON graph_entities(entity_type, importance)`,
+    });
   },
 
   86: async () => {

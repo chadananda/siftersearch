@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T17:06:31.177Z",
+  "generated": "2026-08-13T17:15:50.322Z",
   "entries": [
+    {
+      "hash": "dcc75f5b",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "One owner for \"is this paragraph disambiguated\" (was five, drifting)",
+      "scope": null
+    },
     {
       "hash": "ff952199",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "AI analysis + change log for search quality page",
       "scope": null
-    },
-    {
-      "hash": "c22894ba",
-      "date": "2026-05-31",
-      "type": "Docs",
-      "description": "Lighthouse score gauges, full fixture tables, run history tracking",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "dcc75f5b",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "One owner for \"is this paragraph disambiguated\" (was five, drifting)",
+        "scope": null
+      },
       {
         "hash": "ff952199",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Other",
         "description": "AI analysis + change log for search quality page",
-        "scope": null
-      },
-      {
-        "hash": "c22894ba",
-        "date": "2026-05-31",
-        "type": "Docs",
-        "description": "Lighthouse score gauges, full fixture tables, run history tracking",
         "scope": null
       }
     ]

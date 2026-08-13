@@ -129,8 +129,13 @@ export default async function ingestRoutes(fastify) {
     const { readFile, stat } = await import('node:fs/promises');
     const name = String(req.params.name || '');
     // Anchored allowlist: a doc's grounding log, or a known pipeline/PM2 log. No dots, no separators.
-    const ok = /^grounding-\d{1,9}$/.test(name) || KNOWN_LOGS.has(name)
-      || /^siftersearch-[a-z-]{1,40}-(out|error)$/.test(name);   // PM2's own naming, when it owns the file
+    // PM2 appends the app's instance id to the configured filename (worker-out-1, converter-error-25) and
+    // uses its own siftersearch-<app>-<stream> naming when it owns the file. Accept both shapes; still
+    // anchored, still no dots or path separators, so nothing outside the log dirs is reachable.
+    const ok = /^grounding-\d{1,9}$/.test(name)
+      || KNOWN_LOGS.has(name)
+      || /^[a-z][a-z0-9-]{0,48}-(out|error)(-\d{1,4})?$/.test(name)
+      || /^[a-z][a-z0-9-]{0,48}$/.test(name);   // plain script logs: system-checks, stall-guard, digest…
     if (!ok) throw ApiError.badRequest(`log '${name}' is not readable here (expected grounding-<docId> or a known pipeline log; GET /logs lists them)`);
 
     // PM2 apps declare ./logs/<x>.log, but an app started before that config still writes to
