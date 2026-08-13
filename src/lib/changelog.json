@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T20:35:54.826Z",
+  "generated": "2026-08-13T21:42:08.406Z",
   "entries": [
+    {
+      "hash": "24b77398",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Raise keepAliveTimeout above the client's idle gap — the actual cause of \"other side closed\"",
+      "scope": null
+    },
     {
       "hash": "7e3131cf",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "TelemetryDb busy_timeout 0→50ms — prevent WAL init crash on contended startup",
       "scope": null
-    },
-    {
-      "hash": "06c414d2",
-      "date": "2026-05-31",
-      "type": "Fixed",
-      "description": "Telemetry DB uses busy_timeout=0 — zero event loop blocking",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "24b77398",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Raise keepAliveTimeout above the client's idle gap — the actual cause of \"other side closed\"",
+        "scope": null
+      },
       {
         "hash": "7e3131cf",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Fixed",
         "description": "TelemetryDb busy_timeout 0→50ms — prevent WAL init crash on contended startup",
-        "scope": null
-      },
-      {
-        "hash": "06c414d2",
-        "date": "2026-05-31",
-        "type": "Fixed",
-        "description": "Telemetry DB uses busy_timeout=0 — zero event loop blocking",
         "scope": null
       }
     ]

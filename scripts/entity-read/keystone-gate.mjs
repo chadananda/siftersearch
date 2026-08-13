@@ -63,12 +63,35 @@ const ALL = await queryAll(
 const FOLDED = ALL.map((r) => ({ ...r, f: fold(r.n) }));
 const isOpponent = (side) => /opponent|enemy|other|covenant|breaker/i.test(side || '');
 
+// A keystone's name is often a PROPER PREFIX of a different person's name, so plain `includes` invents
+// fragments: key 'badí' (Badí‘, the martyr) matches 'Mírzá Badí‘u’lláh' — Bahá'u'lláh's son and a
+// Covenant-breaker, a different man entirely. That inflated Badí‘ to 27 "fragments" (2026-08-13).
+// The relational filter cannot catch these: they carry no relational word and no " of ".
+//
+// So a match must end at a name boundary. The one exception is the Persian IZAFE, where the SAME name
+// legitimately continues: 'Mírzá Ḥusayn-‘Alí' → 'Mírzá Ḥusayn-‘Alíy-i-Núrí' is still Bahá'u'lláh.
+// Allow the remainder to start with an izafe link (optionally the connective -y-), reject any other letter.
+const IZAFE_OR_BOUNDARY = /^(y?[-‑]i[-‑]|[^a-zà-ÿ]|$)/i;
+const matchesForm = (name, key) => {
+  let at = name.indexOf(key);
+  while (at !== -1) {
+    const before = at === 0 ? '' : name[at - 1];
+    const after = name.slice(at + key.length);
+    // Left edge must also be a boundary, else 'alí' would match inside 'ghazálí'.
+    if ((!before || !/[a-zà-ÿ]/i.test(before)) && IZAFE_OR_BOUNDARY.test(after)) return true;
+    at = name.indexOf(key, at + 1);
+  }
+  return false;
+};
+
 function candidates(forms) {
   const keys = forms.map(fold);
   const seen = new Map();
-  for (const r of FOLDED) if (keys.some((k) => r.f.includes(k)) && !seen.has(r.id)) seen.set(r.id, r);
+  for (const r of FOLDED) if (keys.some((k) => matchesForm(r.f, k)) && !seen.has(r.id)) seen.set(r.id, r);
   return [...seen.values()];
 }
+
+export const __test = { matchesForm, fold, isName };
 
 export async function runGate() {
   const results = [];
