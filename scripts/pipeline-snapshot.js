@@ -16,6 +16,8 @@ dotenv.config({ path: join(ROOT, '.env-public') });
 
 const { queryAll, queryOne } = await import('../api/lib/db.js');
 const { config } = await import('../api/lib/config.js');
+const { cleanTitle } = await import('../api/lib/text/clean-title.js');
+const { buildHeldIndex } = await import('../api/lib/text/already-held.js');
 
 async function meiliTaskTotal(status) {
   const r = await fetch(`${config.search.host}/tasks?statuses=${status}&limit=0`, {
@@ -421,15 +423,32 @@ async function main() {
   } catch (err) { answerCache = { error: err.message }; }
 
   // ── Missing-books triage ───────────────────────────────────────────────────
-  // Two failure classes surfaced for /admin/missing-books: (1) STUBS — docs whose "content"
-  // is a scraped bahai-library.com metadata page (logo/TAGS chrome, <36 paras, no real text);
-  // the ones carrying .docx/.pdf source links are directly fetchable real books. (2) HUSKS —
-  // live doc rows with ZERO live content paragraphs. The stub scan LIKEs across low-¶ docs'
+  // Books the library LISTS but does not HOLD, split the only way that matters for the work
+  // queue: do we have a fetchable source file (→ convert to MD + ingest, so that list drains)
+  // or not (→ needs sourcing). Two underlying shapes feed both sides: STUBS (docs whose
+  // "content" is a scraped bahai-library.com metadata page — logo/TAGS chrome, <36 paras) and
+  // HUSKS (live doc rows with ZERO live content). The stub scan LIKEs across low-¶ docs'
   // content (~6s) → snapshot-only, 6h gate (the list changes only on ingest activity).
+  //
+  // Catalogue rows are NOT missing books and are excluded outright: bahai-library.com/inventory/*
+  // is the Phelps Partial Inventory (one row per tablet code, AB/BB/BH — we already hold these)
+  // and /bibliography/* is its bibliography index; both carry opaque codes as titles and would
+  // otherwise crowd out real books (they were ~500 of the first 500 listed).
   const MISSING_TTL_MS = 6 * 60 * 60 * 1000;
+  const NOT_CATALOGUE = `
+        AND d.title NOT LIKE '%Partial Inventory%'
+        AND COALESCE(d.source_url,'') NOT LIKE '%bahai-library.com/inventory/%'
+        AND COALESCE(d.source_url,'') NOT LIKE '%bahai-library.com/bibliography/%'
+        AND COALESCE(d.author,'') NOT LIKE 'inventory-%'
+        AND COALESCE(d.author,'') NOT LIKE 'bibliography-%'`;
+  // A source_url naming a document file is a source we can convert and ingest; a bare
+  // bahai-library.com/<slug> metadata page is not.
+  const SRC_EXTS = ['pdf', 'doc', 'docx', 'html', 'htm', 'txt', 'rtf', 'epub', 'md'];
+  const SRC_FILE_RE = new RegExp(`\\.(?:${SRC_EXTS.join('|')})$`, 'i');
+  const SHOW_CAP = 600;
   let missingBooks = prevSnapshot.missingBooks ?? null;
   const mbAge = missingBooks?.generated_at ? Date.now() - Date.parse(missingBooks.generated_at) : Infinity;
-  if (mbAge > MISSING_TTL_MS || missingBooks?.stubTotal == null) {   // shape v2 (capped + file_url) forces one recompute
+  if (mbAge > MISSING_TTL_MS || missingBooks?.haveSourceTotal == null) {   // shape v3 (two lists) forces one recompute
     const stubs = await queryAll(`
       SELECT d.id, d.title, d.author, d.paragraph_count AS paras, d.religion, d.collection, d.source_url,
              SUM(CASE WHEN c.text LIKE '%logo_1850x358%' THEN 1 ELSE 0 END) AS logo,
@@ -437,38 +456,73 @@ async function main() {
              SUM(CASE WHEN c.text LIKE '%bahai-library.com/docs/%' OR c.text LIKE '%.docx%' OR c.text LIKE '%.pdf%' THEN 1 ELSE 0 END) AS doclinks
       FROM docs d JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL
       WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.language = 'en'
-        AND d.paragraph_count BETWEEN 1 AND 35
-        -- Phelps 'Partial Inventory' entries are catalogue rows (tablet metadata), NOT missing books.
-        AND d.title NOT LIKE '%Partial Inventory%'
-        AND d.author NOT LIKE '%Phelps%'
+        AND d.paragraph_count BETWEEN 1 AND 35${NOT_CATALOGUE}
       GROUP BY d.id
       HAVING logo > 0 OR tags > 0
-      ORDER BY doclinks DESC, d.title`).catch(() => []);
-    const huskTotal = (await queryOne(`
-      SELECT COUNT(*) AS n FROM docs d WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
-        AND NOT EXISTS (SELECT 1 FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL)`).catch(() => null))?.n ?? null;
-    const husks = await queryAll(`
-      SELECT d.id, d.title, d.author, d.religion, d.collection, d.source_url
-      FROM docs d WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
-        AND NOT EXISTS (SELECT 1 FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL)
-      ORDER BY d.title LIMIT 400`).catch(() => []);
+      ORDER BY d.title`).catch(() => []);
+
+    const HUSK = `FROM docs d WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
+        AND NOT EXISTS (SELECT 1 FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL)${NOT_CATALOGUE}`;
+    const listHusks = async () => await queryAll(
+      `SELECT d.id, d.title, d.author, d.religion, d.collection, d.source_url ${HUSK}
+       ORDER BY d.title`).catch(() => []);
+
+    // Same work, two rows: an archival stub/husk next to the doc that actually holds the text
+    // ("1898, May Maxwell — An Early Pilgrimage" vs "An Early Pilgrimage" / May Maxwell). Those are
+    // NOT missing, and they dominated the list — so match candidates against every doc that holds
+    // its text (>35 ¶ = past the stub ceiling) and drop the ones we already have.
+    const heldDocs = await queryAll(`SELECT d.title, d.author FROM docs d
+      WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.paragraph_count > 35`).catch(() => []);
+    const { isHeld } = buildHeldIndex(heldDocs);
+    const notHeld = (r) => !isHeld(r.title, r.author);
+
+    const stubsWithSrc = stubs.filter((s) => s.doclinks > 0).filter(notHeld);
+    const stubsNoSrc = stubs.filter((s) => s.doclinks === 0).filter(notHeld);
+    const heldOut = stubs.filter((r) => !notHeld(r));   // kept as a sample so the filter is auditable
+
     // Direct source-file link per fetchable stub (the .pdf/.docx of the REAL book) — extracted
     // from the stub's own content so the admin list links straight to the ingestable file.
-    const fetchableStubs = stubs.filter((s) => s.doclinks > 0).slice(0, 300);
-    for (const s of fetchableStubs) {
+    const shownStubs = stubsWithSrc.slice(0, SHOW_CAP);
+    for (const s of shownStubs) {
       const row = await queryOne(`SELECT text FROM content WHERE doc_id=? AND deleted_at IS NULL
         AND (text LIKE '%bahai-library.com/docs/%' OR text LIKE '%.docx%' OR text LIKE '%.pdf%') LIMIT 1`, [s.id]).catch(() => null);
       const t = String(row?.text || '');
       const m = t.match(/https?:\/\/[^\s()[\]"']+\.(?:pdf|docx?)\b/i) || t.match(/https?:\/\/bahai-library\.com\/docs\/[^\s()[\]"']+/i);
       if (m) s.file_url = m[0].replace(/[),.;]+$/, '');
     }
+
+    // Titles/authors are raw scraped metadata (<u>Kh</u> digraphs, %20 escapes) — clean for display.
+    const toRow = (r, kind) => ({
+      id: r.id, kind,
+      title: cleanTitle(r.title) || `#${r.id}`,
+      author: cleanTitle(r.author),
+      paras: r.paras ?? 0,
+      religion: r.religion, collection: r.collection,
+      source_url: r.source_url,
+      file_url: r.file_url || (SRC_FILE_RE.test(r.source_url || '') ? r.source_url : null),
+    });
+    // Husks are scanned in full (title+author only) so the totals are real, not a capped guess.
+    const allHusks = await listHusks();
+    const husksMissing = allHusks.filter(notHeld);
+    const huskWithFile = husksMissing.filter((h) => SRC_FILE_RE.test(h.source_url || ''));
+    const huskNoFile = husksMissing.filter((h) => !SRC_FILE_RE.test(h.source_url || ''));
+
+    const haveSource = [...shownStubs.map((s) => toRow(s, 'stub')),
+                        ...huskWithFile.slice(0, Math.max(0, SHOW_CAP - shownStubs.length)).map((h) => toRow(h, 'husk'))];
+    const noSource = [...stubsNoSrc.slice(0, SHOW_CAP).map((s) => toRow(s, 'stub')),
+                      ...huskNoFile.slice(0, Math.max(0, SHOW_CAP - Math.min(stubsNoSrc.length, SHOW_CAP))).map((h) => toRow(h, 'husk'))];
+
     missingBooks = {
       generated_at: new Date().toISOString(),
+      haveSourceTotal: stubsWithSrc.length + huskWithFile.length,
+      noSourceTotal: stubsNoSrc.length + huskNoFile.length,
+      haveSource, noSource,
       stubTotal: stubs.length,
-      fetchableTotal: stubs.filter((s) => s.doclinks > 0).length,
-      stubs: [...fetchableStubs.map((s) => ({ ...s, fetchable: true })),
-              ...stubs.filter((s) => s.doclinks === 0).slice(0, 500).map((s) => ({ ...s, fetchable: false }))],
-      husks, huskTotal,
+      huskTotal: allHusks.length,
+      alreadyHeld: heldOut.length + (allHusks.length - husksMissing.length),
+      // A dropped row is a claim ("we already hold this"); keep a sample so it can be checked.
+      alreadyHeldSample: [...heldOut, ...allHusks.filter((h) => !notHeld(h))]
+        .slice(0, 40).map((r) => ({ id: r.id, title: cleanTitle(r.title), author: cleanTitle(r.author) })),
     };
   }
 

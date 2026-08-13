@@ -3490,7 +3490,10 @@ Collection: ${paragraph.collection || 'Unknown'}
   // NEVER run in-request). Serves whatever the cron last computed; `pending` until the first pass.
   fastify.get('/library/missing-books', { preHandler: requireTier('admin') }, async () => {
     const mb = readAdminSnapshot()?.missingBooks;
-    return mb || { pending: true, message: 'Snapshot not generated yet — the pipeline-snapshot cron computes this section within ~5 minutes.' };
+    // haveSource is the current shape; a snapshot written by an older build has no two-list split,
+    // so report pending rather than rendering empty queues until the next cron pass.
+    if (!mb?.haveSource) return { pending: true, message: 'Snapshot not generated yet — the pipeline-snapshot cron computes this section within ~5 minutes.' };
+    return mb;
   });
 
   fastify.get('/library/overview', { preHandler: requireTier('admin') }, async () => {

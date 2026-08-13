@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-12T19:04:30.896Z",
+  "generated": "2026-08-13T01:28:39.948Z",
   "entries": [
+    {
+      "hash": "cbfefc89",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Behavioral test harness + fix diacritic-blind detectors",
+      "scope": null
+    },
     {
       "hash": "fc15a602",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Entity pipeline cost optimizations — scope floor + cheaper models",
       "scope": null
-    },
-    {
-      "hash": "433f4535",
-      "date": "2026-05-27",
-      "type": "Other",
-      "description": "Extraction model deepseek-v4-pro → deepseek-v4-flash",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "cbfefc89",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Behavioral test harness + fix diacritic-blind detectors",
+        "scope": null
+      },
       {
         "hash": "fc15a602",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Performance",
         "description": "Entity pipeline cost optimizations — scope floor + cheaper models",
-        "scope": null
-      },
-      {
-        "hash": "433f4535",
-        "date": "2026-05-27",
-        "type": "Other",
-        "description": "Extraction model deepseek-v4-pro → deepseek-v4-flash",
         "scope": null
       }
     ]
