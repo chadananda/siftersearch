@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T17:15:50.322Z",
+  "generated": "2026-08-13T17:21:34.096Z",
   "entries": [
+    {
+      "hash": "ef03a2f2",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Accept PM2 instance-suffixed names; migrations: never abort on an optional index",
+      "scope": null
+    },
     {
       "hash": "dcc75f5b",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Server-side timing in search response + preflight check in test runner",
       "scope": null
-    },
-    {
-      "hash": "18942deb",
-      "date": "2026-05-31",
-      "type": "Other",
-      "description": "AI analysis + change log for search quality page",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "ef03a2f2",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Accept PM2 instance-suffixed names; migrations: never abort on an optional index",
+        "scope": null
+      },
       {
         "hash": "dcc75f5b",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Performance",
         "description": "Server-side timing in search response + preflight check in test runner",
-        "scope": null
-      },
-      {
-        "hash": "18942deb",
-        "date": "2026-05-31",
-        "type": "Other",
-        "description": "AI analysis + change log for search quality page",
         "scope": null
       }
     ]

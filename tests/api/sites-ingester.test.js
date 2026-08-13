@@ -84,6 +84,15 @@ const fakeConfig = {
 };
 vi.mock('../../api/lib/config.js', () => ({ config: fakeConfig, default: fakeConfig }));
 
+// Supersession is candidate-generation (shared paragraph hashes) → AI adjudication → mark. The AI half
+// cannot be deterministic in a unit test, so stub the verdict and let the test cover the WIRING: that
+// real content overlap produces a candidate and a positive verdict marks our copy duplicate_of the
+// OceanLibrary canonical. `adjudicateVerdict` is set per-test.
+let adjudicateVerdict = { same: false, confidence: 0, reason: 'default: distinct' };
+vi.mock('../../api/lib/dedup-adjudicator.js', () => ({
+  adjudicateSameWork: vi.fn(async () => adjudicateVerdict),
+}));
+
 // ─── Schema setup (subset matching what sites-ingester touches) ───────────
 
 const SCHEMA = `
@@ -335,8 +344,14 @@ describe('Sites ingester (integration)', () => {
     expect(doc.external_id).toBe('test_doc_v1');
     expect(doc.duplicate_of).toBeNull();
 
-    const paras = rawDb.prepare(`SELECT * FROM content WHERE doc_id = ? ORDER BY paragraph_index`).all(doc.id);
-    expect(paras.length).toBe(3);                                   // 3 par/preamble blocks; titles + headers + footnotes skipped
+    const all = rawDb.prepare(`SELECT * FROM content WHERE doc_id = ? ORDER BY paragraph_index`).all(doc.id);
+    // Footnotes are KEPT (as blocktype 'footnote'), not dropped — dropping them was the 2026-06-16
+    // ingest data-loss bug. They are stored but excluded from prose, which is the population every
+    // pipeline measure counts (see api/lib/pipeline/disambiguation.js PROSE_SQL).
+    const paras = all.filter((p) => p.blocktype === 'paragraph');
+    const footnotes = all.filter((p) => p.blocktype === 'footnote');
+    expect(paras.length).toBe(3);                                   // 3 par/preamble blocks; titles + headers skipped
+    expect(footnotes.map((f) => f.external_para_id)).toEqual(['fn_1', 'fn_2']);
     // external_para_id round-trips for deep links
     expect(paras[0].external_para_id).toBe('para_3');
     expect(paras[1].external_para_id).toBe('para_4');
@@ -349,10 +364,24 @@ describe('Sites ingester (integration)', () => {
   });
 
   it('marks our existing doc as duplicate_of when an OL version supersedes it', async () => {
-    // Pre-seed our corpus with a doc that matches the OL fixture by title+author.
+    // Pre-seed our corpus with the SAME WORK — and with its paragraphs. Candidates are generated from
+    // shared normalized_hash values, NOT from title+author: keyword matching mislabeled distinct works
+    // (Analects→Epistle of James) and was removed. A doc row with no content therefore produces no
+    // candidate at all, which is what this fixture used to do.
     rawDb.prepare(`INSERT INTO docs (file_path, title, author, religion, paragraph_count) VALUES (?, ?, ?, ?, ?)`)
       .run('Bahai/test-doc-ours.md', 'Selections from the Test Tablets', 'The Test Author', "Baha'i", 3);
     const oursId = rawDb.prepare(`SELECT id FROM docs WHERE source_site IS NULL`).get().id;
+
+    const { hashNormalized } = await import('../../api/lib/text-normalize.js');
+    const OUR_PARAS = [
+      'The first paragraph of substantive content. Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+      'The second paragraph speaks of justice and the unity of humankind.',
+      'A third substantive paragraph, completing the section.',
+    ];
+    const ins = rawDb.prepare(`INSERT INTO content (doc_id, paragraph_index, text, normalized_hash, blocktype) VALUES (?, ?, ?, ?, 'paragraph')`);
+    OUR_PARAS.forEach((t, i) => ins.run(oursId, i, t, hashNormalized(t)));
+
+    adjudicateVerdict = { same: true, confidence: 0.95, reason: 'identical text' };
 
     const result = await ingester.ingestSite('testsite', { force: true });
     expect(result.stats.errors).toBe(0);

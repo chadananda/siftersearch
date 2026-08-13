@@ -248,7 +248,12 @@ describe('Scenario 4 — Cross-index merging by relevance score', () => {
       makeHit(11, 'balib', 0.30),
     ]);
 
+    // A filter is REQUIRED to exercise cross-index MERGING. An unfiltered query is "cross-tradition"
+    // (search.js: no religion/collection/author filter, offset 0) and goes down the multiSearch path,
+    // which applies a per-RELIGION quota — every fixture hit here is Bahá'í, so all four collapsed to
+    // one and the merge order this test exists to pin was never evaluated.
     const result = await hybridSearch('test', {
+      filters: { religion: "Baha'i" },
       scope_config: { primary: true, sites: ['balib'] },
     });
     const ordered = result.hits.map(h => h.id);

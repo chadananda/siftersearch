@@ -58,11 +58,6 @@ const ENTITY_SYNC_INTERVAL_MS = 30 * 1000;   // 30s — drain backlog faster
 const ENTITY_SYNC_BATCH = 1000;
 const ALIAS_SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 min — synonym refresh
 const WAL_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000; // 15 min — TRUNCATE keeps WAL near-zero
-// Pre-wipe reset disabled: it created an infinite loop fighting the sync worker
-// (sync marks synced=1, reset marks synced=0, repeat forever on 3.45M rows).
-// Paragraphs are re-indexed via normal synced=0 processing when needed.
-const PRE_WIPE_CUTOFF = '2020-01-01'; // effectively disabled — no rows match
-const PRE_WIPE_BATCH = 500;
 
 // ============================================================
 // State
@@ -78,8 +73,6 @@ let lastEntitySyncTime = 0;
 let lastAliasSyncTime = 0;
 let lastWalCheckpointTime = 0;
 let activeHeartbeatInterval = null;
-let preWipeResetDone = false;
-let preWipeResetTotal = 0;
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -730,27 +723,16 @@ async function syncOneSiteOnlyDb(meili, cfg) {
   return total;
 }
 
-async function resetPreWipeBatch() {
-  if (preWipeResetDone) return;
-  try {
-    const result = await query(
-      `UPDATE content SET synced = 0 WHERE rowid IN (
-         SELECT rowid FROM content WHERE synced = 1 AND created_at < ? LIMIT ?
-       )`,
-      [PRE_WIPE_CUTOFF, PRE_WIPE_BATCH]
-    );
-    const changed = result?.changes ?? 0;
-    preWipeResetTotal += changed;
-    if (changed > 0) {
-      logger.info({ changed, total: preWipeResetTotal }, 'Pre-wipe sync reset batch');
-    } else {
-      logger.info({ total: preWipeResetTotal }, 'Pre-wipe sync reset complete');
-      preWipeResetDone = true;
-    }
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Pre-wipe sync reset batch failed (non-fatal)');
-  }
-}
+// REMOVED (2026-08-13): resetPreWipeBatch. It was already disabled by making its cutoff ('2020-01-01')
+// match no rows — but "matches nothing" is not "does nothing": the statement
+//   UPDATE content SET synced=0 WHERE rowid IN (SELECT rowid FROM content WHERE synced=1 AND created_at<? LIMIT ?)
+// still scanned 4.4M rows to prove the emptiness, and better-sqlite3 is SYNCHRONOUS — so it blocked this
+// process's event loop for 52-61 SECONDS on every boot. While blocked, /write and /health cannot answer:
+// callers' sockets time out and close (UND_ERR_SOCKET "other side closed", which killed every grounding
+// stage that writes), and the watchdog sees a dead health check and restarts the worker — straight back
+// into the same 60s scan. Deleting the task breaks that loop. Do not reintroduce it: paragraphs are
+// re-indexed through normal synced=0 processing, and any bulk backfill belongs in a script run off-peak,
+// never in the single writer's boot path.
 
 // SAFEGUARD (2026-07-28): a background maintenance op that never resolves (a Meili/HTTP call with no
 // timeout, a stuck async handle) would idle the single-writer's event loop → /write + /health stop
@@ -777,7 +759,6 @@ const PERIODIC_TASK_TIMEOUT_MS = 90_000;   // < watchdog GRACE (240s) so the tim
 
 async function runPeriodicTasks() {
   const T = PERIODIC_TASK_TIMEOUT_MS;
-  await withTimeout(() => resetPreWipeBatch(), T, 'resetPreWipeBatch');
   const now = Date.now();
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await withTimeout(() => runCleanupCycle(), T, 'cleanupCycle');
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await withTimeout(() => runFullSyncCheck(), T, 'fullSyncCheck');

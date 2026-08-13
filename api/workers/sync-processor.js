@@ -61,8 +61,6 @@ const RECONCILE_ENABLED = process.env.SYNC_RECONCILE === '1';
 const LOG_PROGRESS_EVERY = 10;    // Log every N documents
 // Pre-wipe reset: rows created before April Meili wipe still have synced=1 but aren't in Meili.
 // Reset them 5000/cycle inside this process (single-writer) to avoid write contention.
-const PRE_WIPE_CUTOFF = '2026-04-04';
-const PRE_WIPE_BATCH = 5000;
 
 // Shutdown flag — set on SIGTERM, causes worker to stop after current document
 let isShuttingDown = false;
@@ -75,8 +73,6 @@ let lastWalCheckpointTime = 0;
 let lastMeiliReconcileTime = 0;
 let lastEntityMentionsSyncTime = 0;
 // Pre-wipe reset state
-let preWipeResetDone = false;
-let preWipeResetTotal = 0;
 
 // Small delay to yield event loop
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -782,27 +778,16 @@ async function reconcileMeiliSyncTasks() {
  * Reset a batch of pre-April-wipe rows that still have synced=1 but aren't in Meili.
  * Runs inside this process to avoid competing for the write lock with other workers.
  */
-async function resetPreWipeBatch() {
-  if (preWipeResetDone) return;
-  try {
-    const result = await query(
-      `UPDATE content SET synced = 0 WHERE rowid IN (
-         SELECT rowid FROM content WHERE synced = 1 AND created_at < ? LIMIT ?
-       )`,
-      [PRE_WIPE_CUTOFF, PRE_WIPE_BATCH]
-    );
-    const changed = result?.changes ?? 0;
-    preWipeResetTotal += changed;
-    if (changed > 0) {
-      logger.info({ changed, total: preWipeResetTotal }, 'Pre-wipe sync reset batch');
-    } else {
-      logger.info({ total: preWipeResetTotal }, 'Pre-wipe sync reset complete');
-      preWipeResetDone = true;
-    }
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Pre-wipe sync reset batch failed (non-fatal)');
-  }
-}
+// REMOVED (2026-08-13): resetPreWipeBatch. It was already disabled by making its cutoff ('2020-01-01')
+// match no rows — but "matches nothing" is not "does nothing": the statement
+//   UPDATE content SET synced=0 WHERE rowid IN (SELECT rowid FROM content WHERE synced=1 AND created_at<? LIMIT ?)
+// still scanned 4.4M rows to prove the emptiness, and better-sqlite3 is SYNCHRONOUS — so it blocked this
+// process's event loop for 52-61 SECONDS on every boot. While blocked, /write and /health cannot answer:
+// callers' sockets time out and close (UND_ERR_SOCKET "other side closed", which killed every grounding
+// stage that writes), and the watchdog sees a dead health check and restarts the worker — straight back
+// into the same 60s scan. Deleting the task breaks that loop. Do not reintroduce it: paragraphs are
+// re-indexed through normal synced=0 processing, and any bulk backfill belongs in a script run off-peak,
+// never in the single writer's boot path.
 
 /**
  * Run periodic tasks if their intervals have elapsed
@@ -826,7 +811,6 @@ async function ensureEntityMentionsIndex() {
 }
 
 async function runPeriodicTasksIfDue() {
-  await resetPreWipeBatch();
   const now = Date.now();
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await runCleanupCycle();
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await runFullSyncCheck();
