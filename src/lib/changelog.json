@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T04:58:55.068Z",
+  "generated": "2026-08-13T05:03:16.337Z",
   "entries": [
+    {
+      "hash": "679abc43",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Drop the duplicate /library route, declare AbortController",
+      "scope": null
+    },
     {
       "hash": "e57010d5",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Trim title/author/subtitle from OceanLibrary frontmatter on ingest",
       "scope": null
-    },
-    {
-      "hash": "7f47e9fd",
-      "date": "2026-05-28",
-      "type": "Fixed",
-      "description": "Trim doc title before exact-match in apply-doc-priority",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "679abc43",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Drop the duplicate /library route, declare AbortController",
+        "scope": null
+      },
       {
         "hash": "e57010d5",
         "date": "2026-08-12",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-28",
         "type": "Fixed",
         "description": "Trim title/author/subtitle from OceanLibrary frontmatter on ingest",
-        "scope": null
-      },
-      {
-        "hash": "7f47e9fd",
-        "date": "2026-05-28",
-        "type": "Fixed",
-        "description": "Trim doc title before exact-match in apply-doc-priority",
         "scope": null
       }
     ]

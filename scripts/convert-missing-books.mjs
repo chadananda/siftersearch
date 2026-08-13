@@ -26,6 +26,7 @@ if (!process.argv.includes('--any-time')) {
 
 const db = new Database('data/sifter.db', { readonly: true });
 const { config } = await import('../api/lib/config.js');
+const { detectLang } = await import('../api/lib/pipeline/profile.js');
 const LIB = config.library?.basePath;
 const WRITER = process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849';
 
@@ -146,7 +147,12 @@ for (const s of stubs) {
     const collection = s.collection || 'Books';
     const slug = slugify(s.title);
     const rel = path.join(religion, collection, `${slug}.md`);
-    const frontmatter = `---\ntitle: "${(s.title || '').replace(/"/g, "'")}"\nauthor: "${(s.author || '').replace(/"/g, "'")}"\nsource_url: ${s.source_url || url}\nsource_file: ${url}\nconverted: true\n---\n\n`;
+    // DETECT THE LANGUAGE FROM THE TEXT. The stub row says 'en' because bahai-library's metadata page is
+    // in English — but the BOOK may not be ("Abdu'l-Bahá à Londres", "Tratado sobre gobernanza"). Ingesting
+    // those as English is what sends them to a model that cannot read them and burns tokens until the
+    // storm-guard parks the book (2026-08-12). Detect once, here, at the earliest point the real text exists.
+    const lang = detectLang(text.slice(0, 6000), null) || 'en';
+    const frontmatter = `---\ntitle: "${(s.title || '').replace(/"/g, "'")}"\nauthor: "${(s.author || '').replace(/"/g, "'")}"\nlanguage: ${lang}\nsource_url: ${s.source_url || url}\nsource_file: ${url}\nconverted: true\n---\n\n`;
     const md = frontmatter + text.replace(/\n{3,}/g, '\n\n').trim() + '\n';
 
     report.converted.push({ id: s.id, title: s.title, rel, words: q.words, pages });
