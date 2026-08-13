@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T04:41:32.804Z",
+  "generated": "2026-08-13T04:47:25.866Z",
   "entries": [
+    {
+      "hash": "259657ce",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "A conversation belongs to a PARTICIPANT — ownership, list, load-back, merge on connect",
+      "scope": null
+    },
     {
       "hash": "fe09ad9a",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Validator too strict — only flag entity identity errors, not span precision",
       "scope": null
-    },
-    {
-      "hash": "9d74e18c",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Use transaction() not manual BEGIN/COMMIT in apply-doc-priority",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "259657ce",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "A conversation belongs to a PARTICIPANT — ownership, list, load-back, merge on connect",
+        "scope": null
+      },
       {
         "hash": "fe09ad9a",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Validator too strict — only flag entity identity errors, not span precision",
-        "scope": null
-      },
-      {
-        "hash": "9d74e18c",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Use transaction() not manual BEGIN/COMMIT in apply-doc-priority",
         "scope": null
       }
     ]

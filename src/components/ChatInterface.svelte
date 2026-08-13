@@ -150,6 +150,14 @@
   // (never out of a distressed or personal turn, never twice), so the UI only renders a choice already
   // allowed. Connecting — sharing an email through One Tap — is itself the permission to retain, and
   // the server then merges this session's conversation into the account's history.
+  // Threads: the server mints a conversation_id and announces it in the FIRST `session` event. Sending it
+  // back on the next turn is what makes this one continuing thread instead of a new one every message.
+  let conversationId = $state(null);
+  let threads = $state([]);
+  let threadsOpen = $state(false);
+  let threadsLoading = $state(false);
+  let threadsError = $state(null);
+
   let connectOffer = $state(false);
   let connectOfferBusy = $state(false);
   let connectOfferDismissed = $state(false);
@@ -1291,7 +1299,7 @@
       let streamedContent = '';
       let pendingCitations = [];
 
-      for await (const event of chat.stream(history, researchContext)) {
+      for await (const event of chat.stream(history, researchContext, conversationId)) {
         if (event.type === 'search_start' || event.type === 'tool_call') {
           researchMessages = researchMessages.map((m, i) =>
             i === assistantIdx ? { ...m, isSearching: true, searchQuery: event.query } : m
@@ -1319,6 +1327,8 @@
           researchMessages = researchMessages.map((m, i) =>
             i === assistantIdx ? { ...m, isStreaming: false, content: streamedContent || 'Done.' } : m
           );
+        } else if (event.type === 'session' && event.conversation_id) {
+          conversationId = event.conversation_id;      // hold it for every later turn in this thread
         } else if (event.type === 'companion_offer' && event.offer === 'connect') {
           connectOffer = true; connectOfferDismissed = false;
         } else if (event.type === 'error') {
@@ -1355,7 +1365,38 @@
   function clearResearchChat() {
     researchMessages = [];
     researchInput = '';
+    conversationId = null;          // a new conversation, not a continuation of the last thread
+    researchContext = null;
     researchInputEl?.focus();
+  }
+
+  // ── Conversation history ──────────────────────────────────────────────────────────────────────────
+  async function loadThreads() {
+    threadsLoading = true; threadsError = null;
+    try { threads = (await chat.sessions()).sessions || []; }
+    catch (e) { threadsError = e.message || 'Could not load your conversations'; }
+    finally { threadsLoading = false; }
+  }
+
+  function toggleThreads() {
+    threadsOpen = !threadsOpen;
+    if (threadsOpen) loadThreads();
+  }
+
+  // Open a past thread: replay its rounds into the transcript and continue it in place.
+  async function openThread(id) {
+    threadsLoading = true; threadsError = null;
+    try {
+      const { messages } = await chat.session(id);
+      researchMessages = (messages || []).map((m) => ({ role: m.role, content: m.content, citations: [] }));
+      conversationId = id;
+      researchContext = null;
+      threadsOpen = false;
+      await tick();
+      researchMessagesEl?.scrollTo({ top: researchMessagesEl.scrollHeight });
+    } catch (e) {
+      threadsError = e.message || 'Could not open that conversation';
+    } finally { threadsLoading = false; }
   }
 
   function toggleResearchMode() {
@@ -2637,6 +2678,55 @@
       {/if}
     {/if}
   </div>
+
+  <!-- Conversation history. ARIA is the ONLY locator strategy here (accessibility AND testability, per the
+       threads testing contract): navigation landmark + labelled list, aria-current on the open thread. -->
+  {#if researchMode}
+    <div class="threads-bar">
+      <button
+        class="threads-toggle"
+        aria-expanded={threadsOpen}
+        aria-controls="conversation-history"
+        onclick={toggleThreads}>
+        {threadsOpen ? '▾' : '▸'} Your conversations
+      </button>
+      {#if researchMessages.length}
+        <button class="threads-toggle threads-toggle-quiet" onclick={clearResearchChat}>New conversation</button>
+      {/if}
+    </div>
+
+    {#if threadsOpen}
+      <nav id="conversation-history" aria-label="Conversation history" class="threads-panel">
+        {#if threadsLoading}
+          <p class="threads-empty" aria-live="polite">Loading…</p>
+        {:else if threadsError}
+          <p class="threads-empty text-error" role="alert">{threadsError}</p>
+        {:else if !threads.length}
+          <p class="threads-empty">No saved conversations yet. Once you've had an exchange, it'll appear here.</p>
+        {:else}
+          <ul role="list" class="threads-list">
+            {#each threads as t (t.id)}
+              <li role="listitem">
+                <button
+                  class="thread-item"
+                  aria-label={t.title || 'Untitled conversation'}
+                  aria-current={conversationId === t.id ? 'true' : undefined}
+                  onclick={() => openThread(t.id)}>
+                  <span class="thread-title">{t.title || 'Untitled conversation'}</span>
+                  <span class="thread-meta">
+                    {t.message_count} message{t.message_count === 1 ? '' : 's'}
+                    {#if t.published_slug}
+                      · <a href={`/dialogue/${t.published_slug}/`} target="_blank" rel="noopener" aria-label="View the shared version of this conversation">shared ↗</a>
+                    {/if}
+                  </span>
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </nav>
+    {/if}
+  {/if}
 
   <!-- Seeker Companion: ONE declinable invitation to connect, and only when the server permitted it.
        Connecting is what allows this conversation to be kept and continued from another browser. -->
@@ -4470,6 +4560,57 @@
   }
 
   /* Input Area */
+  /* Conversation history — a disclosure strip + panel above the composer, not a sidebar: the chat is the
+     page's main column and a permanent rail would crowd it on the phone. */
+  .threads-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.35rem 1rem;
+    border-top: 1px solid var(--border-subtle, var(--border-default));
+  }
+
+  .threads-toggle {
+    background: none;
+    border: none;
+    padding: 0.15rem 0;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+
+  .threads-toggle:hover { color: var(--text-primary); }
+  .threads-toggle-quiet { color: var(--text-muted); margin-left: auto; }
+
+  .threads-panel {
+    max-height: 40vh;
+    overflow-y: auto;
+    padding: 0.25rem 0.5rem 0.5rem;
+    background-color: var(--surface-1);
+    border-top: 1px solid var(--border-subtle, var(--border-default));
+  }
+
+  .threads-empty { padding: 0.5rem 0.75rem; color: var(--text-muted); font-size: 0.875rem; }
+
+  .threads-list { list-style: none; margin: 0; padding: 0; }
+
+  .thread-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-radius: 0.375rem;
+    padding: 0.45rem 0.75rem;
+    cursor: pointer;
+  }
+
+  .thread-item:hover { background-color: var(--surface-2); }
+  .thread-item[aria-current='true'] { background-color: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+
+  .thread-title { display: block; color: var(--text-primary); font-size: 0.875rem; }
+  .thread-meta { display: block; color: var(--text-muted); font-size: 0.75rem; }
+
   /* Seeker Companion memory offer — a quiet strip above the composer, never a modal. It must read as
      an offer that costs nothing to refuse, so both buttons sit at the same visual weight. */
   .memory-offer {

@@ -541,6 +541,12 @@ export const session = {
 // ============================================
 
 export const chat = {
+  /** My conversation threads (newest first). Keyed server-side on the participant — an anonymous caller
+   *  sees only their own session's threads, and connecting an account merges them in. */
+  async sessions(limit = 30) { return request(`/api/v1/chat/sessions?limit=${limit}`); },
+  /** Replay one thread. 404s for a thread that isn't mine — the id is not a capability. */
+  async session(id) { return request(`/api/v1/chat/sessions/${encodeURIComponent(id)}`); },
+
   /**
    * Streaming research assistant chat
    * Accepts message history and streams SSE events:
