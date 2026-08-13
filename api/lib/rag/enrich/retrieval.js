@@ -90,17 +90,43 @@ export async function run(ctx, docId, opts = {}) {
           if (questions.length && thesis) parsed = { questions: questions.slice(0, QUESTION_CEILING).map((e) => e.q), thesis };
           stats.sliced = (stats.sliced || 0) + 1;
         }
-        if (!parsed) { stats.failed++; report(); continue; }
+        if (!parsed) { await markHypeExhausted(ctx, p, opts, stats); report(); continue; }
         if (!opts.dryRun) await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
         stats.done++; if (escalated) stats.escalated++; report();
       } catch (e) {
         if (e?.fatal) throw e;
-        stats.failed++; report();
+        await markHypeExhausted(ctx, p, opts, stats);
+        report();
       }
     }
   });
   ctx.log.info?.({ docId, ...stats }, 'retrieval/hype');
   return stats;
+}
+
+
+/**
+ * A paragraph the generator could not produce questions for, after its full ladder, is EXHAUSTED — the
+ * pipeline has done everything it can with it. Record that as an empty question set, exactly as
+ * disambiguation records an empty note for a paragraph it examined and found nothing to resolve.
+ *
+ * Why this matters (2026-08-13): the completion gate is `hyped >= 0.9 * hypeable`, and it counts
+ * hyp_questions IS NOT NULL. A failure left the column NULL, which is INDISTINGUISHABLE from "not tried
+ * yet" — so a book with a couple of unprocessable paragraphs could never reach the bar. Books 519 (1
+ * failure) and 12443 (3 failures) each ran the entire pipeline, verified ok:true / missing:[] and printed
+ * "COMPLETE + SEARCHABLE", and were still recorded "did not reach verify" and re-queued — a permanent
+ * re-grounding loop, re-spending on finished work. The two books with 0 failures completed normally.
+ * This is the same error the disambiguation measure made: counting OUTPUT rather than PROCESSING.
+ * An empty set is honest — the paragraph is indexed with no hypothetical questions, which is what it has.
+ */
+async function markHypeExhausted(ctx, p, opts, stats) {
+  stats.failed++;
+  stats.exhausted = (stats.exhausted || 0) + 1;
+  if (opts.dryRun) return;
+  // Best-effort: if this write fails the paragraph simply stays NULL and is retried next run — the old
+  // behaviour — so a storage blip can never lose a paragraph that DID generate questions.
+  try { await ctx.store.saveHype(p.id, [], HYPE_EXHAUSTED, HYPE_VERSION); }
+  catch (e) { ctx.log.warn?.({ paraId: p.id, err: e.message }, 'retrieval/hype: could not mark paragraph exhausted'); }
 }
 
 const castOf = (ctx, docId) => (ctx.store.getCastSeed ? Promise.resolve(ctx.store.getCastSeed(docId)).catch(() => '') : Promise.resolve(''));
@@ -109,7 +135,16 @@ const factsOf = (ctx, docId) => (ctx.store.getParaClaims ? Promise.resolve(ctx.s
 // A paragraph is HyPE-done with ANY generator format: v3 adaptive (1-40), v2 (2-5), v1 (exactly 5) — all are
 // JSON arrays ≥1 with a thesis. Old newline-joined HyPE (no thesis / not JSON) fails → gets regenerated. Older
 // versions are NOT auto-regenerated; upgrading a book is an explicit resume:false (rehype) run.
-const isDone = (p) => { if (!p.hypThesis) return false; try { const a = JSON.parse(p.hyp); return Array.isArray(a) && a.length >= 1; } catch { return false; } };
+// EXHAUSTED sentinel: the generator ran its full ladder on this paragraph and produced nothing usable.
+// It must be recognised in BOTH directions or it makes things worse rather than better — the completion
+// gate would count the paragraph (hyp_questions IS NOT NULL) while resume retried it every run, paying for
+// the same hopeless paragraph forever. Explicit rehype (resume:false) still regenerates it.
+export const HYPE_EXHAUSTED = '(exhausted: no hypothetical questions could be generated)';
+const isDone = (p) => {
+  if (p.hypThesis === HYPE_EXHAUSTED) return true;          // processed; nothing more this version can do
+  if (!p.hypThesis) return false;
+  try { const a = JSON.parse(p.hyp); return Array.isArray(a) && a.length >= 1; } catch { return false; }
+};
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 

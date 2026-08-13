@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T22:32:42.143Z",
+  "generated": "2026-08-13T23:08:13.180Z",
   "entries": [
+    {
+      "hash": "ba53f420",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Key the table the way the counters are keyed (fixes silent merging of query types)",
+      "scope": null
+    },
     {
       "hash": "fec4f573",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Author authority is a fallback default, not an override",
       "scope": null
-    },
-    {
-      "hash": "e847e83b",
-      "date": "2026-05-31",
-      "type": "Fixed",
-      "description": "Thread AbortSignal to ollama/OpenAI calls — cancel background analysis on timeout",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "ba53f420",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Key the table the way the counters are keyed (fixes silent merging of query types)",
+        "scope": null
+      },
       {
         "hash": "fec4f573",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Fixed",
         "description": "Author authority is a fallback default, not an override",
-        "scope": null
-      },
-      {
-        "hash": "e847e83b",
-        "date": "2026-05-31",
-        "type": "Fixed",
-        "description": "Thread AbortSignal to ollama/OpenAI calls — cancel background analysis on timeout",
         "scope": null
       }
     ]
