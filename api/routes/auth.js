@@ -11,7 +11,7 @@
  * GET /api/auth/me - Get current user
  */
 
-import { userQuery as query, userQueryOne as queryOne } from '../lib/db.js';
+import { userQuery as query, userQueryOne as queryOne, query as contentQuery } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import {
@@ -80,6 +80,17 @@ async function connectParticipant(request, user) {
     await companionStore.setStage(account, relationshipStage({ authed: true, consentMemory: true }));
   } catch (err) {
     logger.warn({ err: err.message, userId: user.id }, 'connect: failed to record retention consent');
+  }
+  // The conversations themselves move too, so "connect" means the threads from this browser join the
+  // account's history instead of being orphaned under a session id that is about to be discarded.
+  // chat_sessions lives in the CONTENT db (single writer), hence contentQuery, not the user-db alias.
+  for (const anonId of temporaryIds(request)) {
+    try {
+      await contentQuery('UPDATE chat_sessions SET participant_id = ?, user_id = ? WHERE participant_id = ?',
+        [account, user.id, anonId]);
+    } catch (err) {
+      logger.warn({ err: err.message, anonId, userId: user.id }, 'connect: failed to move threads to the account');
+    }
   }
 }
 

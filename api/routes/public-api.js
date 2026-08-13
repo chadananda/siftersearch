@@ -37,6 +37,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne, telemetryQuery } fr
 import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billing.js';
 import { slugifyPath, generateDocSlug } from '../lib/slug.js';
 import { participantId as resolveParticipant } from '../lib/anonymous.js';
+import { deriveThreadTitle, ownsThread, ownThreadsFilter, TITLE_AFTER_ROUNDS } from '../lib/threads.js';
 
 const SITE_URL = 'https://siftersearch.com';
 
@@ -1042,6 +1043,44 @@ export default async function publicApiRoutes(fastify) {
    * AI research assistant. Streams responses via Server-Sent Events.
    * The assistant searches sacred texts and provides cited answers.
    */
+  // MY THREADS. Keyed on the participant, never on the API key owner. An anonymous caller sees only the
+  // threads from their own session cookie; connecting an account merges those in (see connectParticipant),
+  // so the list survives signing in rather than starting the person over as a stranger.
+  fastify.get('/chat/sessions', async (request) => {
+    const participantId = resolveParticipant(request);
+    const userId = request.user?.sub ? Number(request.user.sub) : null;
+    const filter = ownThreadsFilter({ participantId, userId });
+    if (!filter) return { sessions: [], total: 0 };        // no identity ⇒ no threads (never "all")
+    const tenantId = request.apiKeyTenantId || 'siftersearch';
+    const limit = Math.min(Number(request.query?.limit) || 30, 100);
+    const sessions = await queryAll(
+      `SELECT id, title, started_at, last_activity, message_count, status, published_slug
+         FROM chat_sessions
+        WHERE tenant_id = ? AND ${filter.where} AND status != 'deleted' AND message_count > 0
+        ORDER BY last_activity DESC LIMIT ?`, [tenantId, ...filter.args, limit]);
+    return { sessions, total: sessions.length };
+  });
+
+  // Load one thread back (replay its rounds). Ownership is checked against the ROW — a conversation_id is
+  // not a capability, so guessing one must not open a stranger's conversation.
+  fastify.get('/chat/sessions/:id', async (request, reply) => {
+    const participantId = resolveParticipant(request);
+    const userId = request.user?.sub ? Number(request.user.sub) : null;
+    const tenantId = request.apiKeyTenantId || 'siftersearch';
+    const session = await queryOne(
+      `SELECT id, title, participant_id, user_id, started_at, last_activity, message_count, status, published_slug
+         FROM chat_sessions WHERE id = ? AND tenant_id = ?`, [request.params.id, tenantId]);
+    // 404 (not 403) for someone else's thread: a 403 would confirm the id exists.
+    if (!session || !ownsThread(session, { participantId, userId })) {
+      return reply.code(404).send({ error: 'Conversation not found' });
+    }
+    const messages = await queryAll(
+      `SELECT round_index, role, content, created_at FROM chat_messages
+        WHERE session_id = ? ORDER BY round_index, id`, [session.id]);
+    const { participant_id, user_id, ...safe } = session;   // never echo the owner keys back
+    return { session: safe, messages };
+  });
+
   fastify.post('/chat', {
     schema: {
       description: 'AI research assistant that searches sacred texts and provides cited answers. Streams responses via SSE. Optionally pass conversation_id to persist the session for later /save.',
@@ -1071,6 +1110,7 @@ export default async function publicApiRoutes(fastify) {
     const { messages: clientMessages, researchContext } = request.body;
     let { conversation_id } = request.body;
     const tenantId = request.apiKeyTenantId || 'siftersearch';
+    const threadParticipant = resolveParticipant(request);   // account → x-user-id → sifter_sid cookie
     const startTime = Date.now();
 
     // Session management. If conversation_id provided, load prior messages
@@ -1079,10 +1119,14 @@ export default async function publicApiRoutes(fastify) {
     let priorRoundIndex = -1;
     if (conversation_id) {
       const session = await queryOne(
-        `SELECT id, message_count FROM chat_sessions WHERE id = ? AND tenant_id = ?`,
+        `SELECT id, message_count, participant_id, user_id FROM chat_sessions WHERE id = ? AND tenant_id = ?`,
         [conversation_id, tenantId]
       );
       if (!session) return reply.code(404).send({ error: 'Conversation not found' });
+      // Knowing (or guessing) a conversation_id must not be enough to continue someone else's thread.
+      if (!ownsThread(session, { participantId: threadParticipant, userId: request.user?.sub ? Number(request.user.sub) : null })) {
+        return reply.code(404).send({ error: 'Conversation not found' });
+      }
       const priorRows = await queryAll(
         `SELECT round_index, role, content FROM chat_messages
          WHERE session_id = ? ORDER BY round_index, id`,
@@ -1096,10 +1140,13 @@ export default async function publicApiRoutes(fastify) {
     } else {
       // Generate a fresh conversation_id and create the session row
       conversation_id = 'conv_' + (globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2));
+      // The thread belongs to the PARTICIPANT (account, else temporary session) — the same key the
+      // companion uses. It must NOT be apiKeyUserId: that is the key OWNER, so every visitor's
+      // conversations would pool under one account and a "my conversations" list would leak them all.
       await query(
-        `INSERT INTO chat_sessions (id, tenant_id, user_id, started_at, last_activity, message_count, status)
-         VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'active')`,
-        [conversation_id, tenantId, request.apiKeyUserId || null]
+        `INSERT INTO chat_sessions (id, tenant_id, user_id, participant_id, started_at, last_activity, message_count, status)
+         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'active')`,
+        [conversation_id, tenantId, request.user?.sub ? Number(request.user.sub) : null, threadParticipant]
       );
     }
 
@@ -1175,6 +1222,18 @@ export default async function publicApiRoutes(fastify) {
              last_activity = CURRENT_TIMESTAMP WHERE id = ?`,
           [conversation_id]
         );
+        // Name the thread once there is an exchange to name (round >= 2). An unnamed thread is
+        // unfindable in a list, so this uses the deterministic derivation rather than risking an AI
+        // call in the response path — the title is a handle, not prose.
+        if (newRound + 1 >= TITLE_AFTER_ROUNDS) {
+          const first = await queryOne(
+            `SELECT content FROM chat_messages WHERE session_id = ? AND role = 'user'
+              ORDER BY round_index, id LIMIT 1`, [conversation_id]);
+          if (first?.content) {
+            await query('UPDATE chat_sessions SET title = ? WHERE id = ? AND (title IS NULL OR title = \'\')',
+              [deriveThreadTitle(first.content), conversation_id]);
+          }
+        }
       } catch (persistErr) {
         logger.warn({ err: persistErr.message, conversation_id }, 'failed to persist chat turn');
       }

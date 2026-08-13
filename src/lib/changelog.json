@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T03:39:27.055Z",
+  "generated": "2026-08-13T04:41:32.804Z",
   "entries": [
+    {
+      "hash": "fe09ad9a",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Read-only PM2 process roster — answer \"is it actually running?\" without ssh",
+      "scope": null
+    },
     {
       "hash": "3e0e996a",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use transaction() not manual BEGIN/COMMIT in apply-doc-priority",
       "scope": null
-    },
-    {
-      "hash": "e529d0d2",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Authority tiers + doc priority — use real author/religion fields",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "fe09ad9a",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Read-only PM2 process roster — answer \"is it actually running?\" without ssh",
+        "scope": null
+      },
       {
         "hash": "3e0e996a",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Use transaction() not manual BEGIN/COMMIT in apply-doc-priority",
-        "scope": null
-      },
-      {
-        "hash": "e529d0d2",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Authority tiers + doc priority — use real author/religion fields",
         "scope": null
       }
     ]

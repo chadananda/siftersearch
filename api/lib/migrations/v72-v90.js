@@ -706,6 +706,18 @@ export const migrations = {
     await query(`ANALYZE idx_ai_usage_caller_docid`);
     logger.info('Migration 105 complete');
   },
+
+  // Threads: who a conversation BELONGS to. chat_sessions.user_id is INTEGER, so an anonymous
+  // participant (a 'sess_…' cookie id / 'user_…' client id) cannot live there — and the site chat was
+  // storing the API KEY OWNER in it, which pools every visitor's conversations under one account. A
+  // TEXT participant_id is the same key the companion uses, so a thread and its remembered context
+  // belong to the same person, and connecting an account can merge both in one step.
+  106: async () => {
+    logger.info('Starting migration 106: chat_sessions.participant_id (thread ownership)');
+    try { await query('ALTER TABLE chat_sessions ADD COLUMN participant_id TEXT'); } catch { /* exists */ }
+    await query('CREATE INDEX IF NOT EXISTS idx_chat_sessions_participant ON chat_sessions(participant_id, last_activity)');
+    logger.info('Migration 106 complete');
+  },
 };
 
 export const graphMigrations = {
