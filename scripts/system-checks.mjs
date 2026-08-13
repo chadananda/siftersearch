@@ -134,6 +134,34 @@ if (db) {
         AND ((SELECT COUNT(*) FROM entity_mentions_v2 WHERE doc_id=p.d)=0 OR (SELECT COUNT(*) FROM entity_claims WHERE doc_id=p.d)=0)`)?.n;
     if (metrics.hollow != null) add('Hollow-done books', metrics.hollow === 0, 'warn', `${metrics.hollow} disambiguated books with zero extraction yield`);
   }
+  // ── 5c. Where query time goes (DAILY) ────────────────────────────────────────
+  // Chad, 2026-08-13: "I want to spend some of our resources monitoring and improving our pipeline every
+  // day." This is that budget line. It reports the TOP TIME SINKS by total synchronous cost, so each day
+  // starts with a ranked, actionable list instead of a vague sense that things are slow. Two shapes are
+  // named explicitly because the pipeline has been hurt by BOTH: one enormous scan, and a small query on a
+  // hot loop. Daily-only — it is a report, not an alarm.
+  if (MODE === 'daily') {
+    try {
+      const since = Math.floor(Date.now() / 1000) - 86400;
+      const sinks = db.prepare(
+        `SELECT proc, fingerprint, SUM(n) n, SUM(total_ms) total_ms, MAX(max_ms) max_ms, MAX(sql_sample) sql_sample
+           FROM query_stats WHERE hour >= ? GROUP BY proc, fingerprint ORDER BY total_ms DESC LIMIT 5`).all(since);
+      const procs = db.prepare(
+        `SELECT proc, SUM(total_ms) total_ms FROM query_stats WHERE hour >= ? GROUP BY proc ORDER BY total_ms DESC LIMIT 3`).all(since);
+      if (procs.length) {
+        metrics.queryTime = procs.map((p) => `${p.proc} ${(p.total_ms / 60000).toFixed(0)}min`).join(' · ');
+        add('Query time by process (24h)', true, 'info', metrics.queryTime);
+      }
+      for (const q of sinks) {
+        const min = q.total_ms / 60000;
+        const shape = q.max_ms >= 5000 ? 'BLOCKING scan' : (q.n >= 200 ? 'hot-loop' : '');
+        // >30 min/day inside SQLite for a single statement is a design problem, not a slow disk.
+        add(`Time sink: ${q.proc}`, min < 30, min >= 30 ? 'warn' : 'info',
+          `${min.toFixed(0)} min/day · ${q.n} calls · worst ${(q.max_ms / 1000).toFixed(0)}s ${shape} — ${String(q.sql_sample || '').slice(0, 70)}`);
+      }
+    } catch { /* query_stats predates migration 111 on an un-upgraded DB */ }
+  }
+
   // ── 5b. Blocking queries ─────────────────────────────────────────────────────
   // better-sqlite3 is SYNCHRONOUS: a multi-second statement freezes its whole process. On the worker —
   // the single writer — that means /write and /health stop answering mid-request, callers' sockets close

@@ -786,6 +786,56 @@ export const migrations = {
   // the process log (safeSoftDeleteDocs logs 'AUDIT' via logger.warn), which cannot be queried from off-box
   // and rotates away — so a doc that vanished had no recoverable explanation. Durable + queryable instead.
   // Append-only by convention: rows are never updated, so the history of a doc is the history.
+  111: async () => {
+    logger.info('Starting migration 111: query_stats — total time attribution for EVERY query');
+    // slow_query_log (migration 109) records OUTLIERS (>=1s). That answers "what froze the process" but not
+    // "where does the time actually go": a 200ms query run 10,000×/day costs 33 min and never appears. Both
+    // failure shapes have bitten this system — a 152s scan AND a 1.3s budget check on a 20s tick — so the
+    // instrument has to measure TOTAL time, not just tail latency.
+    // Aggregated per (hour, process, statement shape): counters are incremented in memory and flushed
+    // periodically, so recording costs one upsert per distinct shape per minute rather than a row per query.
+    await query(`CREATE TABLE IF NOT EXISTS query_stats (
+      hour INTEGER NOT NULL,         -- unixepoch() truncated to the hour: keeps the table small and trendable
+      proc TEXT NOT NULL,
+      db_name TEXT,
+      kind TEXT NOT NULL,            -- read | write
+      fingerprint TEXT NOT NULL,     -- statement shape, literals stripped (shared with slow_query_log)
+      n INTEGER NOT NULL DEFAULT 0,
+      total_ms INTEGER NOT NULL DEFAULT 0,
+      max_ms INTEGER NOT NULL DEFAULT 0,
+      sql_sample TEXT,
+      PRIMARY KEY (hour, proc, kind, fingerprint)
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_qstats_hour ON query_stats(hour)`);
+    logger.info('Migration 111 complete: query_stats');
+  },
+
+  110: async () => {
+    logger.info('Starting migration 110: bounded budget accounting (baseline_at) + provider/time index');
+    // THE SCALING BUG (measured 2026-08-13). The budget gate computed spend as
+    //   SUM(estimated_cost_usd) over ALL ai_usage for a provider  −  baseline_usd
+    // The arithmetic is right, but it rescans the ENTIRE billing history to derive a number that only
+    // depends on rows written since the baseline was taken. ai_usage grows ~76k rows PER BOOK, and
+    // budgetStatus() runs on the supervisor's 20s tick and on every monitor poll: 672 calls in 24h,
+    // averaging 1.3s each = ~15 min/day of a SYNCHRONOUS freeze in the API process — and it gets
+    // linearly worse with every book ever ground. That is a self-throttling pipeline: the more you
+    // ground, the slower grounding's own budget check becomes.
+    //
+    // baseline_at records WHEN the baseline was captured, so the sum can be bounded to rows after it.
+    // Backfilled from updated_at — the moment the budget row was written, which is exactly when the
+    // baseline was measured, so existing rows stay arithmetically identical.
+    const addCol = async (sql) => { try { await query(sql); } catch (err) { if (!err.message?.includes('duplicate column')) throw err; } };
+    await addCol(`ALTER TABLE grounding_budget ADD COLUMN baseline_at TEXT`);
+    await query(`UPDATE grounding_budget SET baseline_at = datetime(COALESCE(updated_at, 0), 'unixepoch') WHERE baseline_at IS NULL`);
+    // ai_usage.timestamp is TEXT datetime('now'), so lexicographic compare works and an index on
+    // (provider, timestamp) turns the scan into a range seek over just the current budget period.
+    await ensureIndex(query, {
+      label: 'Migration 110 (idx_ai_usage_provider_ts)', table: 'ai_usage', columns: ['provider', 'timestamp'],
+      sql: `CREATE INDEX IF NOT EXISTS idx_ai_usage_provider_ts ON ai_usage(provider, timestamp)`,
+    });
+    logger.info('Migration 110 complete: budget spend is now bounded to the current period');
+  },
+
   109: async () => {
     logger.info('Starting migration 109: slow_query_log (the slow-query signal finally has somewhere to land)');
     // db.js has timed every query against SLOW_QUERY_THRESHOLD_MS for a long time and calls itself "the

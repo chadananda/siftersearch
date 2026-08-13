@@ -264,6 +264,61 @@ export function fingerprintSql(sql) {
     .slice(0, 300);
 }
 
+
+// ── Total query-time accounting ────────────────────────────────────────────────────────────────────
+// slow_query_log answers "what froze the process". It cannot answer "where does the time GO", because it
+// only stores outliers: a 200ms query run 10,000×/day costs 33 minutes and never appears. Both shapes have
+// hurt this system — a 152s snapshot scan AND a 1.3s budget check on a 20s tick — so every query is counted.
+//
+// Counters live in memory (O(1) per query, no I/O) and flush on a timer as one upsert per distinct shape,
+// so the instrument cannot become the thing it measures. Bucketed by hour so the table stays small and the
+// history is trendable — "which stage got slower this week" is answerable, not just "what is slow now".
+const QSTATS_FLUSH_MS = Number(process.env.QUERY_STATS_FLUSH_MS || 60000);
+const QSTATS_MAX_SHAPES = 2000;        // runaway guard: distinct shapes are bounded in practice
+const qstats = new Map();
+let qstatsOverflow = 0;
+
+function accrueQueryTime(sql, duration, dbName, kind) {
+  const hour = Math.floor(Date.now() / 3600000) * 3600;
+  const fp = fingerprintSql(sql);
+  const key = `${hour}|${kind}|${fp}`;
+  let e = qstats.get(key);
+  if (!e) {
+    // Never let the accounting grow without bound; overflow is COUNTED, not silently dropped, so the
+    // report can say it is incomplete rather than quietly under-reporting.
+    if (qstats.size >= QSTATS_MAX_SHAPES) { qstatsOverflow++; return; }
+    e = { hour, kind, fp, dbName, n: 0, total: 0, max: 0, sample: String(sql || '').replace(/\s+/g, ' ').trim().slice(0, 300) };
+    qstats.set(key, e);
+  }
+  e.n++; e.total += duration; if (duration > e.max) e.max = duration;
+}
+
+export function flushQueryStats() {
+  if (!qstats.size) return 0;
+  const rows = [...qstats.values()];
+  qstats.clear();
+  let written = 0;
+  for (const e of rows) {
+    try {
+      telemetryQuery(
+        `INSERT INTO query_stats (hour, proc, db_name, kind, fingerprint, n, total_ms, max_ms, sql_sample)
+         VALUES (?,?,?,?,?,?,?,?,?)
+         ON CONFLICT(hour, proc, kind, fingerprint) DO UPDATE SET
+           n = n + excluded.n, total_ms = total_ms + excluded.total_ms,
+           max_ms = MAX(max_ms, excluded.max_ms)`,
+        [e.hour, PROC_NAME, e.dbName || null, e.kind, e.fp, e.n, Math.round(e.total), Math.round(e.max), e.sample]);
+      written++;
+    } catch { /* best-effort: table may predate migration 111, or the DB is briefly contended */ }
+  }
+  if (qstatsOverflow) { logger.warn({ dropped: qstatsOverflow, cap: QSTATS_MAX_SHAPES }, 'query-stats: shape cap hit — accounting incomplete this window'); qstatsOverflow = 0; }
+  return written;
+}
+
+// unref'd so this timer never holds a short-lived script open; scripts also flush on exit below.
+const qstatsTimer = setInterval(flushQueryStats, QSTATS_FLUSH_MS);
+if (typeof qstatsTimer.unref === 'function') qstatsTimer.unref();
+process.on('exit', () => { try { flushQueryStats(); } catch { /* shutting down */ } });
+
 function recordSlowQuery({ sql, duration, dbName, kind, name, queryPlan }) {
   if (duration < SLOW_QUERY_RECORD_MS) return;
   try {
@@ -282,6 +337,9 @@ function logQueryTiming(sql, params, startTime, dbName, name = '', origPrepare =
   const isSelect = IS_SELECT.test(sql);
   const shortSql = (sql || '').replace(/\s+/g, ' ').trim().slice(0, 200);
   const logParams = params?.length > 5 ? `[${params.length} params]` : params;
+
+  // EVERY query is accounted for, regardless of duration — that is the point (see accrueQueryTime).
+  accrueQueryTime(sql, duration, dbName, isSelect ? 'read' : 'write');
 
   // All reads visible at debug level — filter with LOG_LEVEL=debug to see index usage
   if (isSelect) {

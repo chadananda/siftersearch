@@ -183,10 +183,14 @@ export default async function groundingRoutes(fastify) {
     if (!provider || !(Number(ceilingUsd) > 0)) throw ApiError.badRequest('provider + positive ceilingUsd required');
     const pw = Array.isArray(peakWindows) ? JSON.stringify(peakWindows) : null;   // NULL → server DEFAULT_PEAK_WINDOWS
     const base = await queryOne(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage WHERE provider=? AND caller='corpus-rag'`, [provider]);
-    await query(`INSERT INTO grounding_budget (provider, ceiling_usd, baseline_usd, warn_frac, offpeak_only, peak_windows, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, unixepoch())
+    // baseline_at is what makes the spend check BOUNDED: every later read sums only rows after this moment
+    // instead of rescanning all billing history (migration 110). Captured from the DB clock, not the app's,
+    // so it is comparable to ai_usage.timestamp even if the two ever disagree.
+    await query(`INSERT INTO grounding_budget (provider, ceiling_usd, baseline_usd, warn_frac, offpeak_only, peak_windows, updated_at, baseline_at)
+                 VALUES (?, ?, ?, ?, ?, ?, unixepoch(), datetime('now'))
                  ON CONFLICT(provider) DO UPDATE SET ceiling_usd=excluded.ceiling_usd, baseline_usd=excluded.baseline_usd,
-                   warn_frac=excluded.warn_frac, offpeak_only=excluded.offpeak_only, peak_windows=excluded.peak_windows, updated_at=unixepoch()`,
+                   warn_frac=excluded.warn_frac, offpeak_only=excluded.offpeak_only, peak_windows=excluded.peak_windows,
+                   updated_at=unixepoch(), baseline_at=datetime('now')`,
       [provider, Number(ceilingUsd), base?.s || 0, Number(warnFrac) > 0 ? Number(warnFrac) : 0.8, offpeakOnly ? 1 : 0, pw]);
     logger.info({ provider, ceilingUsd, baseline: base?.s || 0, offpeakOnly: !!offpeakOnly }, 'grounding budget set');
     return { provider, ceilingUsd: Number(ceilingUsd), baselineUsd: base?.s || 0, offpeakOnly: !!offpeakOnly, budget: await queue.budgetStatus() };

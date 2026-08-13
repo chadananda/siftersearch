@@ -151,9 +151,12 @@ async function main() {
   // read these from the snapshot instead of scanning content/ai_usage in the API
   // process — one admin page-load used to block the whole API for 60s+.
 
-  // Full-corpus aggregates (two complete passes over ~4.6M content rows): only
-  // recompute when the carried-forward copy is older than 30 min.
-  const LIBRARY_TTL_MS = 30 * 60 * 1000;
+  // Full-corpus aggregates (two complete passes over ~4.6M content rows). MEASURED 2026-08-13 via
+  // /api/admin/server/slow-queries: the byLanguage aggregate peaks at 152s and the embedding rollup at 49s,
+  // and better-sqlite3 is SYNCHRONOUS, so each run freezes this process for that long. At a 30-min TTL that
+  // was ~16 runs/day ≈ 40 min/day frozen for numbers that shift by fractions of a percent in an hour.
+  // 6h keeps them fresh enough for a dashboard and costs 4 runs/day.
+  const LIBRARY_TTL_MS = Number(process.env.SNAPSHOT_LIBRARY_TTL_MS || 6 * 60 * 60 * 1000);
   let library = prevSnapshot.library ?? null;
   const libAge = library?.generated_at ? Date.now() - Date.parse(library.generated_at) : Infinity;
   if (libAge > LIBRARY_TTL_MS) {
@@ -181,8 +184,15 @@ async function main() {
     library = { generated_at: new Date().toISOString(), byLanguage, embeddingStats };
   }
 
-  // Bottleneck lists ride the selective partial indexes (cheap in the steady
-  // state where backlogs ≈ 0); recomputed every run for freshness.
+  // Bottleneck lists. The original note said these "ride the selective partial indexes (cheap in the steady
+  // state where backlogs ≈ 0)" and recomputed them EVERY run. That premise expired: with a real backlog the
+  // unsynced-paragraph list measured 54s worst-case and ran 113 times in 24h — ~1.7 HOURS/day of frozen
+  // process, the single largest blocking-query cost in the system. They are a diagnostic list, not a live
+  // control signal, so they carry a TTL like every other full-corpus aggregate here.
+  const BOTTLENECK_TTL_MS = Number(process.env.SNAPSHOT_BOTTLENECK_TTL_MS || 60 * 60 * 1000);
+  let bottlenecks = prevSnapshot.bottlenecks ?? null;
+  const bnAge = bottlenecks?.generated_at ? Date.now() - Date.parse(bottlenecks.generated_at) : Infinity;
+  if (bnAge > BOTTLENECK_TTL_MS) {
   const [pendingEmbedding, pendingSync] = await Promise.all([
     queryAll(`
       SELECT d.id, d.title, d.author, d.language, d.file_path, COUNT(c.id) as pending_paragraphs
@@ -197,7 +207,8 @@ async function main() {
       WHERE d.deleted_at IS NULL
       GROUP BY d.id ORDER BY unsynced_paragraphs DESC LIMIT 50`).catch(() => []),
   ]);
-  const bottlenecks = { generated_at: new Date().toISOString(), pendingEmbedding, pendingSync };
+    bottlenecks = { generated_at: new Date().toISOString(), pendingEmbedding, pendingSync };
+  }
 
   // ai_usage rollups (timestamp/caller/model indexed; a few seconds on the big table).
   const fmtTs = (d) => d.toISOString().replace('T', ' ').slice(0, 19);

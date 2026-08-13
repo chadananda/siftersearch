@@ -141,6 +141,43 @@ export default async function ingestRoutes(fastify) {
     };
   });
 
+
+  // WHERE THE QUERY TIME GOES — the whole picture, not just the outliers. Ranked by TOTAL time, because the
+  // two ways this pipeline has actually hurt itself are opposite shapes: one 152s scan, and a 1.3s check run
+  // 672×. Sorting by worst-case hides the second; sorting by count hides the first. Total catches both.
+  // `frozenPct` is the number that matters operationally: better-sqlite3 is synchronous, so total query time
+  // IS time that process spent unable to do anything else.
+  fastify.get('/server/query-time', admin, async (req) => {
+    const hours = Math.min(Math.max(Number(req.query?.hours) || 24, 1), 24 * 30);
+    const since = Math.floor(Date.now() / 1000) - hours * 3600;
+    const rows = await queryAll(
+      `SELECT proc, kind, fingerprint, SUM(n) n, SUM(total_ms) total_ms, MAX(max_ms) max_ms, MAX(sql_sample) sql_sample
+         FROM query_stats WHERE hour >= ?
+        GROUP BY proc, kind, fingerprint ORDER BY total_ms DESC LIMIT 60`, [since]).catch(() => []);
+    const perProc = await queryAll(
+      `SELECT proc, SUM(n) n, SUM(total_ms) total_ms FROM query_stats WHERE hour >= ? GROUP BY proc ORDER BY total_ms DESC`,
+      [since]).catch(() => []);
+    const wallMs = hours * 3600 * 1000;
+    return {
+      hours,
+      note: 'total_ms is SYNCHRONOUS time: with better-sqlite3 it is time the process could not serve anything else',
+      processes: perProc.map((p) => ({
+        proc: p.proc, queries: p.n, totalMs: p.total_ms,
+        totalMin: Math.round(p.total_ms / 600) / 100,
+        frozenPct: Math.round((p.total_ms / wallMs) * 1000) / 10,   // share of wall-clock spent inside SQLite
+      })),
+      queries: rows.map((r) => ({
+        proc: r.proc, kind: r.kind, calls: r.n,
+        totalMin: Math.round(r.total_ms / 600) / 100,
+        avgMs: Math.round(r.total_ms / Math.max(1, r.n)),
+        worstMs: r.max_ms,
+        // The shape of the problem, named — so the fix is obvious from the report alone.
+        pattern: r.max_ms >= 5000 ? 'BLOCKING scan' : (r.n >= 200 && r.total_ms >= 60000 ? 'death by a thousand cuts' : 'ok'),
+        sql: r.sql_sample,
+      })),
+    };
+  });
+
   // The slow-query detector's missing half: somewhere to READ what it found, across every process.
   // Aggregated by statement shape, worst-total-impact first — one 61s statement that runs each boot
   // matters more than a thousand 200ms reads, and sorting by count alone hides it.

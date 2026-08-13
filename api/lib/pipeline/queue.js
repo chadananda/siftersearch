@@ -214,11 +214,18 @@ export async function budgetStatus(deps = {}) {
   const qa = deps.queryAll || queryAll;
   const qo = deps.queryOne || queryOne;
   const now = deps.now || new Date();
-  const rows = await qa(`SELECT provider, ceiling_usd, baseline_usd, warn_frac, offpeak_only, peak_windows FROM grounding_budget`);
+  const rows = await qa(`SELECT provider, ceiling_usd, baseline_usd, warn_frac, offpeak_only, peak_windows, baseline_at FROM grounding_budget`);
   const out = [];
   for (const b of rows) {
-    const spentRow = await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage WHERE provider=? AND caller='corpus-rag'`, [b.provider]);
-    const spent = Math.max(0, (spentRow?.s || 0) - (b.baseline_usd || 0));
+    // Sum ONLY the current budget period. Summing all history and subtracting a stored baseline gives the
+    // same answer but rescans every row ever billed — 1.3s and growing, on a 20s tick (migration 110).
+    // When baseline_at is present the baseline is already accounted for by the time bound, so do NOT
+    // subtract baseline_usd as well; without it (pre-migration row) fall back to the old arithmetic.
+    const spentRow = b.baseline_at
+      ? await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage
+                   WHERE provider=? AND caller='corpus-rag' AND timestamp > ?`, [b.provider, b.baseline_at])
+      : await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage WHERE provider=? AND caller='corpus-rag'`, [b.provider]);
+    const spent = Math.max(0, (spentRow?.s || 0) - (b.baseline_at ? 0 : (b.baseline_usd || 0)));
     const frac = b.ceiling_usd > 0 ? spent / b.ceiling_usd : 0;
     let windows = DEFAULT_PEAK_WINDOWS;
     try { if (b.peak_windows) windows = JSON.parse(b.peak_windows); } catch { /* keep default */ }
