@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T05:51:22.925Z",
+  "generated": "2026-08-13T06:28:04.198Z",
   "entries": [
+    {
+      "hash": "a265b80b",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Write the thread ↔ published-dialog link that both columns were waiting for",
+      "scope": null
+    },
     {
       "hash": "bafb7215",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Separate graph.db from sifter.db + startup model logging",
       "scope": null
-    },
-    {
-      "hash": "c3a8c07b",
-      "date": "2026-05-28",
-      "type": "Fixed",
-      "description": "Extraction model deepseek-v4-flash for all tiers, pro for adjudication only",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "a265b80b",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Write the thread ↔ published-dialog link that both columns were waiting for",
+        "scope": null
+      },
       {
         "hash": "bafb7215",
         "date": "2026-08-12",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-28",
         "type": "New",
         "description": "Separate graph.db from sifter.db + startup model logging",
-        "scope": null
-      },
-      {
-        "hash": "c3a8c07b",
-        "date": "2026-05-28",
-        "type": "Fixed",
-        "description": "Extraction model deepseek-v4-flash for all tiers, pro for adjudication only",
         "scope": null
       }
     ]

@@ -34,12 +34,17 @@ async function main() {
   // fresh process each time), so it is where newly-declared cron apps get registered. Without it, an app
   // added to ecosystem.config.cjs never starts: the updater applies deploys but never restarts itself, so
   // registration logic placed there can never execute. Allowlisted + KNOWN-only — see ensure-pm2-apps.
+  let pm2Apps = null;
   try {
     const { ensurePm2Apps } = await import('./lib/ensure-pm2-apps.mjs');
-    const r = await ensurePm2Apps(ROOT);
-    if (r.registered?.length) console.log(`registered new pm2 cron apps: ${r.registered.join(', ')}`);
-    else if (r.error) console.log(`pm2 app check skipped: ${r.error}`);
-  } catch (err) { console.log(`pm2 app check failed (non-fatal): ${err.message}`); }
+    pm2Apps = await ensurePm2Apps(ROOT);
+    pm2Apps.at = new Date().toISOString();
+    if (pm2Apps.registered?.length) console.log(`registered new pm2 cron apps: ${pm2Apps.registered.join(', ')}`);
+    else if (pm2Apps.error) console.log(`pm2 app check skipped: ${pm2Apps.error}`);
+  } catch (err) {
+    pm2Apps = { error: err.message, at: new Date().toISOString() };
+    console.log(`pm2 app check failed (non-fatal): ${err.message}`);
+  }
 
   // deleted_at filters are REQUIRED: orphan entity_mentions linger on content
   // whose doc was later soft-deleted as a duplicate (the forward sync in
@@ -577,6 +582,10 @@ async function main() {
     content_sync_backlog: backlog?.n ?? null,        // content synced=0 (left to push to paragraphs index)
     meili,
     workers,
+    // What the cron-app registration check DECIDED this tick. Without this, "is the snapshot restarting the
+    // converter every 5 minutes?" is unanswerable from off-box — and that question has a real answer that
+    // changes whether ingestion can ever finish a batch.
+    pm2_apps: pm2Apps,
   };
 
   const dataDir = join(ROOT, 'data');
