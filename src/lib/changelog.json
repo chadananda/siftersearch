@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T13:52:48.357Z",
+  "generated": "2026-08-13T14:01:06.559Z",
   "entries": [
+    {
+      "hash": "adb3ce1a",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Build the APPROVE half of propose-then-approve",
+      "scope": null
+    },
     {
       "hash": "7b8cdc54",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Isolate sync job DB-lock failures so periodic tasks (entity sync) always run",
       "scope": null
-    },
-    {
-      "hash": "17bfe0ba",
-      "date": "2026-05-30",
-      "type": "Fixed",
-      "description": "Disable pre-wipe reset that caused infinite DB-lock loop",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "adb3ce1a",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Build the APPROVE half of propose-then-approve",
+        "scope": null
+      },
       {
         "hash": "7b8cdc54",
         "date": "2026-08-13",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-30",
         "type": "Fixed",
         "description": "Isolate sync job DB-lock failures so periodic tasks (entity sync) always run",
-        "scope": null
-      },
-      {
-        "hash": "17bfe0ba",
-        "date": "2026-05-30",
-        "type": "Fixed",
-        "description": "Disable pre-wipe reset that caused infinite DB-lock loop",
         "scope": null
       }
     ]
