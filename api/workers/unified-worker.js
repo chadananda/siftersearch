@@ -1022,7 +1022,22 @@ function startWriteServer() {
   server.on('error', (err) => {
     logger.error({ err: err.message, port }, 'Single-writer HTTP server failed to bind — continuing without write endpoint');
   });
-  server.listen(port, '127.0.0.1', () => logger.info({ port }, 'Single-writer HTTP server listening'));
+  // ROOT CAUSE of `fetch failed / UND_ERR_SOCKET: other side closed` on POST /write (2026-08-13).
+  // Node's default server.keepAliveTimeout is 5s. undici keeps pooled sockets alive and reuses them, so
+  // whenever a caller's gap between write batches crosses that 5s line, the client can put a request onto
+  // the very socket the server is closing — the request goes out (bytesWritten ~846), nothing valid comes
+  // back, and undici reports "other side closed". It is a RACE, which is why it looked mysterious:
+  //   · GET /health probes fired 150ms apart never idle long enough to hit it — 10/10 healthy, always.
+  //   · grounding writes arrive in bursts separated by model calls (seconds), so they hit it constantly.
+  //   · it correlated with nothing (only 2 of 9 crashes fell inside the writer's blocking-scan windows).
+  // The fix is the documented one: the SERVER's keep-alive must outlive the CLIENT's idle reuse, and
+  // headersTimeout must exceed keepAliveTimeout or the server can time out a request it just accepted.
+  // postWriteBatch's retry stays as defence in depth — this removes the race that made it necessary.
+  server.keepAliveTimeout = Number(process.env.SIFTER_WRITER_KEEPALIVE_MS || 76000);
+  server.headersTimeout = server.keepAliveTimeout + 4000;
+  server.listen(port, '127.0.0.1', () => logger.info(
+    { port, keepAliveTimeout: server.keepAliveTimeout, headersTimeout: server.headersTimeout },
+    'Single-writer HTTP server listening'));
 }
 
 process.on('SIGTERM', shutdown);

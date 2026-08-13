@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T20:27:44.963Z",
+  "generated": "2026-08-13T20:35:54.826Z",
   "entries": [
+    {
+      "hash": "7e3131cf",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Label spawned-stage output with script+pid (the gap that stopped tonight's trace cold)",
+      "scope": null
+    },
     {
       "hash": "c2ae4573",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Telemetry DB uses busy_timeout=0 — zero event loop blocking",
       "scope": null
-    },
-    {
-      "hash": "1f9fd698",
-      "date": "2026-05-31",
-      "type": "Fixed",
-      "description": "Telemetry writes use fail-fast DB connection — unblocks search timeouts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "7e3131cf",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Label spawned-stage output with script+pid (the gap that stopped tonight's trace cold)",
+        "scope": null
+      },
       {
         "hash": "c2ae4573",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Fixed",
         "description": "Telemetry DB uses busy_timeout=0 — zero event loop blocking",
-        "scope": null
-      },
-      {
-        "hash": "1f9fd698",
-        "date": "2026-05-31",
-        "type": "Fixed",
-        "description": "Telemetry writes use fail-fast DB connection — unblocks search timeouts",
         "scope": null
       }
     ]
