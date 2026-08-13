@@ -286,3 +286,49 @@ export default {
   VERIFIED_QUERY_LIMIT,
   UNLIMITED_TIERS
 };
+
+// ── Temporary session identity (the companion's "we've only just met" relationship) ──────────────
+// A seeker who has not connected still deserves continuity WITHIN a visit, without anything durable
+// being kept: a plain session cookie (no expiry — it dies with the browser session) carries the
+// relationship until they connect, at which point it is merged into their account and deleted.
+export const SESSION_COOKIE = 'sifter_sid';
+
+/**
+ * Ensure the request has a temporary session id, minting the cookie when absent.
+ * SameSite=None+Secure because the widget runs in a third-party frame; when a browser blocks that
+ * cookie entirely, the x-user-id header path still provides continuity, so nothing breaks.
+ * @returns {string|null} the session id (null only when no reply is available to set it on)
+ */
+export function ensureSessionId(request, reply) {
+  const existing = request.cookies?.[SESSION_COOKIE];
+  if (existing && /^sess_[a-f0-9-]{8,}$/i.test(existing)) return existing;
+  if (!reply || reply.raw?.headersSent) return existing || null;
+  const id = 'sess_' + (globalThis.crypto?.randomUUID?.() || `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`);
+  // Secure+None is required for the third-party widget frame, but a Secure cookie is rejected over
+  // plain http — so local dev falls back to Lax and keeps working.
+  const cross = process.env.NODE_ENV === 'production';
+  try {
+    reply.setCookie(SESSION_COOKIE, id, {
+      httpOnly: true, path: '/',
+      secure: cross, sameSite: cross ? 'none' : 'lax',
+    });
+  } catch { return existing || null; }
+  return id;
+}
+
+/**
+ * Who is this turn FOR? A verified account first; otherwise the temporary session. The x-user-id
+ * header stays ahead of the cookie because it is the id the rest of the app already unifies on —
+ * switching keys mid-visit would split one person's history in two.
+ */
+export function participantId(request) {
+  return request.user?.sub?.toString()
+    || getAnonymousUserId(request)
+    || request.cookies?.[SESSION_COOKIE]
+    || null;
+}
+
+/** Every temporary id this browser might have used, so connecting merges all of them, not just one. */
+export function temporaryIds(request) {
+  return [...new Set([getAnonymousUserId(request), request.cookies?.[SESSION_COOKIE]].filter(Boolean))];
+}

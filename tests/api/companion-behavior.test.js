@@ -125,56 +125,60 @@ describe('Companion behavior — consent never presumed (§10.2)', () => {
   });
 });
 
-describe('Companion behavior — the offer to remember (§7.1/§7.3)', () => {
-  // Memory is the doorway to the whole relationship layer, so the offer has to exist — but it is the
-  // one thing most easily turned into a hook. These lock BOTH halves: it does get offered, and it never
-  // gets offered out of vulnerability, pressure, or a first hello.
+describe('Companion behavior — the invitation to connect (§7.1/§7.3)', () => {
+  // Connecting an account (sharing an email through One Tap) IS the permission to retain, so this is
+  // the one invitation that opens the whole relationship layer — and the one most easily turned into a
+  // hook. These lock BOTH halves: it does get offered, and never out of vulnerability or pressure.
   const seeker = (over = {}) => ctx({
     message: 'How does the Covenant relate to the unity of the Faith?',
-    participantId: 'u42', relationship: { consent_memory: 0 }, turnsSoFar: 4, ...over,
+    participantId: 'sess_ab12cd34', authed: false, relationship: { consent_memory: 0 }, turnsSoFar: 4, ...over,
   });
 
-  it('offers to remember once the inquiry is real, as the ONE next step', () => {
+  it('invites connecting once the inquiry is real, as the ONE next step', () => {
     const { plan, systemAppend } = buildCompanionPlan(seeker());
-    expect(plan.memory_offer).toBe(true);
+    expect(plan.connect_offer).toBe(true);
     expect(plan.next_step).toBe('S09_INQUIRY_MAP');
     // The interface asks; the prose must not ask as well, or the seeker is asked twice.
-    expect(systemAppend).toContain('do NOT ask about memory');
+    expect(systemAppend).toContain('do NOT ask about signing in');
   });
 
-  it('does NOT ask on a first question — an inquiry has to exist before it is worth remembering', () => {
+  it('never invites a seeker who has already connected — the account granted retention', () => {
+    expect(buildCompanionPlan(seeker({ authed: true, participantId: '42' })).plan.connect_offer).toBe(false);
+  });
+
+  it('does NOT ask on a first question — an inquiry has to exist before it is worth keeping', () => {
     const { plan } = buildCompanionPlan(seeker({ turnsSoFar: 0 }));
-    expect(plan.memory_offer).toBe(false);
+    expect(plan.connect_offer).toBe(false);
     expect(plan.next_step).toBeNull();
   });
 
   it('honours the memory_offer_after_turns dial rather than a number buried in code', () => {
-    expect(buildCompanionPlan(seeker({ turnsSoFar: 4, globalDials: { memory_offer_after_turns: 8 } })).plan.memory_offer).toBe(false);
-    expect(buildCompanionPlan(seeker({ turnsSoFar: 9, globalDials: { memory_offer_after_turns: 8 } })).plan.memory_offer).toBe(true);
+    expect(buildCompanionPlan(seeker({ turnsSoFar: 4, globalDials: { memory_offer_after_turns: 8 } })).plan.connect_offer).toBe(false);
+    expect(buildCompanionPlan(seeker({ turnsSoFar: 9, globalDials: { memory_offer_after_turns: 8 } })).plan.connect_offer).toBe(true);
   });
 
   it('never asks out of distress or a personal-reflective turn', () => {
-    expect(buildCompanionPlan(seeker({ message: 'I feel hopeless and I want to die.' })).plan.memory_offer).toBe(false);
-    expect(buildCompanionPlan(seeker({ message: "I'm struggling with my grief after my father died." })).plan.memory_offer).toBe(false);
+    expect(buildCompanionPlan(seeker({ message: 'I feel hopeless and I want to die.' })).plan.connect_offer).toBe(false);
+    expect(buildCompanionPlan(seeker({ message: "I'm struggling with my grief after my father died." })).plan.connect_offer).toBe(false);
   });
 
   it('never asks when the seeker asked for the answer only', () => {
-    expect(buildCompanionPlan(seeker({ message: 'Just tell me the year the Báb was martyred. No lecture.' })).plan.memory_offer).toBe(false);
+    expect(buildCompanionPlan(seeker({ message: 'Just tell me the year the Báb was martyred. No lecture.' })).plan.connect_offer).toBe(false);
   });
 
-  it('does not ask again once memory is consented, nor twice in a row', () => {
-    expect(buildCompanionPlan(seeker({ relationship: { consent_memory: 1 } })).plan.memory_offer).toBe(false);
-    expect(buildCompanionPlan(seeker({ memoryOfferedRecently: true })).plan.memory_offer).toBe(false);
+  it('does not ask again once retention is consented, nor twice in a row', () => {
+    expect(buildCompanionPlan(seeker({ relationship: { consent_memory: 1 } })).plan.connect_offer).toBe(false);
+    expect(buildCompanionPlan(seeker({ connectOfferedRecently: true })).plan.connect_offer).toBe(false);
   });
 
-  it('has nothing to offer when there is no participant to remember for', () => {
-    expect(buildCompanionPlan(seeker({ participantId: null })).plan.memory_offer).toBe(false);
+  it('has nothing to offer when there is no session to carry over', () => {
+    expect(buildCompanionPlan(seeker({ participantId: null })).plan.connect_offer).toBe(false);
   });
 
   it('yields to a higher-precedence offer so only one thing is ever asked', () => {
     const { plan } = buildCompanionPlan(seeker({ humanRequested: true }));
     expect(plan.next_step).toBe('S11_HUMAN');
-    expect(plan.memory_offer).toBe(false);
+    expect(plan.connect_offer).toBe(false);
   });
 });
 

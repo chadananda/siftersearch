@@ -14,7 +14,7 @@ import OpenAI from 'openai';
 import { hybridSearch, keywordSearch, multiIndexSearch } from '../lib/search.js';
 import { entityLookup, entityDossier, entitySearch } from '../lib/entity-api.js';
 import { optionalAuthenticate } from '../lib/auth.js';
-import { getAnonymousUserId } from '../lib/anonymous.js';
+import { participantId } from '../lib/anonymous.js';
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
 import { queryOne, queryAll } from '../lib/db.js';
@@ -1389,7 +1389,7 @@ export default async function chatRoutes(fastify) {
     // Per-page data-* overrides win over the profile (display name) + carry the mission.
     if (typeof name === 'string' && name.trim()) persona_name = name.trim().slice(0, 60);
     const mission_prompt = (typeof mission === 'string' && mission.trim()) ? mission.trim().slice(0, 400) : null;
-    const userId = request.user?.sub?.toString() || getAnonymousUserId(request);
+    const userId = participantId(request);   // account → x-user-id → sifter_sid session cookie
 
     // Set headers directly on raw response — reply.header() doesn't survive flushHeaders()
     const origin = request.headers.origin;
@@ -1433,7 +1433,8 @@ export default async function chatRoutes(fastify) {
           persona_name,
           default_tradition,
           mission: mission_prompt,
-          participant_id: userId   // Seeker Companion: relationship/memory/exposure key (user id or anon id)
+          participant_id: userId,  // Seeker Companion: relationship/memory/exposure key (user id or anon id)
+          authed: !!request.user?.sub   // connecting is what grants retention, so "has an id" is not "connected"
         });
       }
 

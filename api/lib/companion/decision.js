@@ -21,7 +21,7 @@ export const INTERVENTIONS = [
  *   sustainedInquiry,     // multi-session → S09 eligible
  *   courseSignal,         // course_invite_threshold met
  *   humanRequested,       // explicit request or offer accepted
- *   memoryOfferable,      // sustained inquiry, no memory consent yet, not asked recently → S09 eligible
+ *   memoryOfferable,      // unconnected seeker, real inquiry, not asked recently → S09 (invite to connect)
  * }
  * @returns {object} { intervention, challengeLevel, distinction, addAuthorityLayer, nextStep, reasons }
  */
@@ -65,9 +65,9 @@ export function decide(state = {}) {
   if (state.humanRequested) { nextStep = 'S11_HUMAN'; reasons.push('human connection requested/accepted'); }
   else if (state.courseSignal && (d.relationship_mode === 'study' || state.sustainedInquiry)) { nextStep = 'S10_COURSE'; reasons.push('sustained interest → offer 1–2 tracks (not vulnerability-triggered)'); }
   else if (state.sustainedInquiry && state.mode === 'STUDY') { nextStep = 'S08_READING'; reasons.push('study → one exact passage advances inquiry'); }
-  // Offering to remember IS the one voluntary step for this turn — it never rides along with another,
-  // so the seeker is asked for at most one thing at a time (§3 answer order, §7.3 no pressure).
-  else if (state.memoryOfferable) { nextStep = 'S09_INQUIRY_MAP'; reasons.push('sustained inquiry, memory not consented → offer to remember (declinable, asked once)'); }
+  // The invitation to connect IS the one voluntary step for this turn — it never rides along with
+  // another, so the seeker is asked for at most one thing at a time (§3 answer order, §7.3 no pressure).
+  else if (state.memoryOfferable) { nextStep = 'S09_INQUIRY_MAP'; reasons.push('sustained inquiry, not connected → invite to connect (declinable, asked once)'); }
 
   // Never attach a course/human step in a personal-reflective/distress turn (§3 FORBIDDEN).
   if (state.mode === 'PERSONAL_REFLECTIVE' && ['S10_COURSE', 'S11_HUMAN', 'S09_INQUIRY_MAP'].includes(nextStep) && !state.humanRequested) {

@@ -34,10 +34,12 @@ async function ensureInit() {
   return gsi;
 }
 
-// One Tap prompt for signed-out visitors — once per browser session (Google applies its own cooldowns too).
-export async function promptOneTap() {
+// One Tap prompt for signed-out visitors — once per browser session (Google applies its own cooldowns
+// too). `force` is for a prompt the visitor ASKED for (e.g. "Connect" in the chat): their own click
+// must not be swallowed by the drive-by cooldown.
+export async function promptOneTap({ force = false } = {}) {
   try {
-    if (sessionStorage.getItem('gsi_prompted')) return;
+    if (!force && sessionStorage.getItem('gsi_prompted')) return;
     sessionStorage.setItem('gsi_prompted', '1');
   } catch { /* private mode */ }
   const gsi = await ensureInit();

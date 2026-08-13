@@ -22,13 +22,50 @@ export async function setStage(participantId, stage) {
   await userQuery('UPDATE companion_relationship SET stage = ?, updated_at = ? WHERE participant_id = ?', [stage, now(), participantId]).catch(() => {});
 }
 
-export async function setConsent(participantId, { memory, contact } = {}) {
+export async function setConsent(participantId, { memory, contact, source = 'explicit' } = {}) {
   const sets = []; const args = [];
   if (memory != null) { sets.push('consent_memory = ?'); args.push(memory ? 1 : 0); }
   if (contact != null) { sets.push('consent_contact = ?'); args.push(contact ? 1 : 0); }
   if (!sets.length) return;
+  // Provenance: a consent flag we cannot explain back to the person is not consent. 'connect' = they
+  // shared an email by connecting; 'explicit' = they answered the self-service endpoint.
+  sets.push('consent_source = ?'); args.push(source);
+  sets.push('consent_at = ?'); args.push(now());
   args.push(now(), participantId);
   await userQuery(`UPDATE companion_relationship SET ${sets.join(', ')}, updated_at = ? WHERE participant_id = ?`, args).catch(() => {});
+}
+
+/**
+ * Connecting an account IS the retention consent (sharing an email is the permission to retain), and it
+ * is also the moment a temporary session becomes part of a longer history: fold the anonymous
+ * participant's relationship into the account rather than starting the person over as a stranger.
+ * Idempotent — reconnecting from the same browser re-runs harmlessly.
+ * @param {string} fromId anonymous/session participant id
+ * @param {string} toId   the account participant id (users.id as a string)
+ */
+export async function mergeParticipant(fromId, toId) {
+  if (!fromId || !toId || String(fromId) === String(toId)) return { merged: false };
+  const from = String(fromId), to = String(toId);
+  await getRelationship(to);                       // the account row must exist to merge into
+  const src = await userQueryOne('SELECT * FROM companion_relationship WHERE participant_id = ?', [from]).catch(() => null);
+  // Carry the session's own history over. Exposures move too: the account's inquiry did not begin at login.
+  for (const t of ['companion_memory', 'companion_premise', 'companion_exposure', 'companion_enrollment']) {
+    await userQuery(`UPDATE OR IGNORE ${t} SET participant_id = ? WHERE participant_id = ?`, [to, from]).catch(() => {});
+  }
+  // Consent is the UNION (a yes already given is not withdrawn by connecting), and the merge is recorded.
+  await userQuery(`UPDATE companion_relationship
+      SET consent_memory = MAX(consent_memory, ?), consent_contact = MAX(consent_contact, ?),
+          merged_from = ?, updated_at = ?
+    WHERE participant_id = ?`,
+  [src?.consent_memory ? 1 : 0, src?.consent_contact ? 1 : 0, from, now(), to]).catch(() => {});
+  // Per-participant dial preferences the seeker set while anonymous should survive the connect.
+  if (src?.dials_json && src.dials_json !== '{}') {
+    const dst = await userQueryOne('SELECT dials_json FROM companion_relationship WHERE participant_id = ?', [to]).catch(() => null);
+    if (!dst?.dials_json || dst.dials_json === '{}') await setParticipantDials(to, parseDials(src));
+  }
+  await userQuery('DELETE FROM companion_relationship WHERE participant_id = ?', [from]).catch(() => {});
+  logger.info({ from, to }, 'companion: merged temporary session into connected account');
+  return { merged: true };
 }
 
 // Per-participant dial overrides (the 'preference' precedence layer). Stored on the relationship row.
@@ -94,9 +131,9 @@ export async function exposureCount(participantId) {
   if (!participantId) return 0;
   return (await userQueryOne('SELECT COUNT(*) AS n FROM companion_exposure WHERE participant_id = ?', [participantId]).catch(() => null))?.n ?? 0;
 }
-// Did we already ask "remember this?" recently? Asking again is pressure, so once per cooldown only.
+// Did we already invite them to connect recently? Asking again is pressure, so once per cooldown only.
 // The plan is the record of what was offered, so the exposure log answers this without a new table.
-export async function memoryOfferedRecently(participantId, withinHours = 168) {
+export async function connectOfferedRecently(participantId, withinHours = 168) {
   if (!participantId) return false;
   // created_at is an epoch INTEGER — a datetime('now',…) string comparison here silently matches
   // nothing, which would make the companion re-ask on every single turn.

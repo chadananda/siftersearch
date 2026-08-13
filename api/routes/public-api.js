@@ -36,7 +36,7 @@ import { validateApiKey } from '../lib/api-keys.js';
 import { query, queryOne, queryAll, userQuery, userQueryOne, telemetryQuery } from '../lib/db.js';
 import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billing.js';
 import { slugifyPath, generateDocSlug } from '../lib/slug.js';
-import { getAnonymousUserId } from '../lib/anonymous.js';
+import { participantId as resolveParticipant } from '../lib/anonymous.js';
 
 const SITE_URL = 'https://siftersearch.com';
 
@@ -1134,12 +1134,14 @@ export default async function publicApiRoutes(fastify) {
       // remember, "asked recently?") was inert here — it only ever worked on /api/chat/stream.
       // apiKeyUserId is the KEY OWNER, not the seeker, so it must never be used: it would pool every
       // visitor into one shared memory bucket.
-      const participant_id = request.user?.sub?.toString() || getAnonymousUserId(request);
+      // Verified account, else the temporary session (x-user-id, else the sifter_sid cookie).
+      const participant_id = resolveParticipant(request);
       const result = await runJafarPipeline({
         messages: messages.map(m => ({ role: m.role, content: m.content })),
         sendEvent,
         debug,
         participant_id,
+        authed: !!request.user?.sub,
       });
 
       // Pipeline now streams the crafter's chunks via sendEvent → 'text'

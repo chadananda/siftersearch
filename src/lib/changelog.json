@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T01:46:28.549Z",
+  "generated": "2026-08-13T02:04:28.458Z",
   "entries": [
+    {
+      "hash": "f58139cb",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "The offer to remember — server-decided, declinable, and actually reachable",
+      "scope": null
+    },
     {
       "hash": "cbfefc89",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Tiered extraction — v4-pro for high-authority, v4-flash for rest; process all docs priority-first",
       "scope": null
-    },
-    {
-      "hash": "32471228",
-      "date": "2026-05-27",
-      "type": "Performance",
-      "description": "Entity pipeline cost optimizations — scope floor + cheaper models",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "f58139cb",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "The offer to remember — server-decided, declinable, and actually reachable",
+        "scope": null
+      },
       {
         "hash": "cbfefc89",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "New",
         "description": "Tiered extraction — v4-pro for high-authority, v4-flash for rest; process all docs priority-first",
-        "scope": null
-      },
-      {
-        "hash": "32471228",
-        "date": "2026-05-27",
-        "type": "Performance",
-        "description": "Entity pipeline cost optimizations — scope floor + cheaper models",
         "scope": null
       }
     ]

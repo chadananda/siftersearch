@@ -43,6 +43,7 @@ import deepResearchRoutes from './routes/deep-research.js';
 import groundingRoutes from './routes/grounding.js';
 import widgetRoutes from './routes/widget.js';
 import { config } from './lib/config.js';
+import { ensureSessionId } from './lib/anonymous.js';
 
 export async function createServer(opts = {}) {
   const server = Fastify({
@@ -130,6 +131,14 @@ export async function createServer(opts = {}) {
       origin,
       userAgent
     });
+  });
+
+  // Temporary relationship identity: mint the session cookie once per browser session so an
+  // unconnected seeker keeps continuity within the visit and nothing durable is stored. Runs before
+  // route handlers (and before SSE routes flush their own headers) so Set-Cookie is never too late.
+  server.addHook('onRequest', async (request, reply) => {
+    if (request.method === 'OPTIONS') return;
+    try { ensureSessionId(request, reply); } catch { /* identity is best-effort, never fatal */ }
   });
 
   // Add server version to every response for client-side auto-reload detection

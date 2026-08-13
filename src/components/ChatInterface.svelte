@@ -14,7 +14,8 @@
   import { setThinking } from '../lib/stores/thinking.svelte.js';
   import { updateUsage } from '../lib/usage.svelte.js';
   import { getReferralUrl, captureReferral, generateQRCode } from '../lib/referral.js';
-  import { getUserId, companion } from '../lib/api.js';
+  import { getUserId } from '../lib/api.js';
+  import { promptOneTap } from '../lib/google-signin.js';
   import TranslationView from './TranslationView.svelte';
   import AudioPlayer from './AudioPlayer.svelte';
 
@@ -145,11 +146,13 @@
   let researchContext = $state(null); // Background research context for next turn
   let researchLoading = $state(false);
   let researchInput = $state('');
-  // Seeker Companion: the SERVER decides whether offering to remember is permitted this turn (never
-  // out of a distressed or personal turn, never twice), so the UI only renders a choice already allowed.
-  let memoryOffer = $state(false);
-  let memoryOfferBusy = $state(false);
-  let memoryOfferDone = $state('');   // '' | 'remembered' | 'declined'
+  // Seeker Companion: the SERVER decides whether inviting them to connect is permitted this turn
+  // (never out of a distressed or personal turn, never twice), so the UI only renders a choice already
+  // allowed. Connecting — sharing an email through One Tap — is itself the permission to retain, and
+  // the server then merges this session's conversation into the account's history.
+  let connectOffer = $state(false);
+  let connectOfferBusy = $state(false);
+  let connectOfferDismissed = $state(false);
   let researchInputEl;
   let researchMessagesEl;
 
@@ -1245,21 +1248,15 @@
   // ============================================
 
 
-  // Accepting is the ONLY thing that authorizes durable memory (§7.1). Declining is recorded too, so
-  // the companion knows the answer instead of asking again next turn.
-  async function acceptMemoryOffer() {
-    memoryOfferBusy = true;
-    try { await companion.remember(); memoryOfferDone = 'remembered'; }
-    catch { memoryOfferDone = ''; memoryOffer = false; }
-    finally { memoryOfferBusy = false; }
+  // Connecting is the consent: /api/auth/google records retention (source 'connect') and merges this
+  // session's history into the account. Nothing is stored here, so there is no local "yes" to send.
+  async function acceptConnectOffer() {
+    connectOfferBusy = true;
+    try { await promptOneTap({ force: true }); } finally { connectOfferBusy = false; }
   }
-  async function declineMemoryOffer() {
-    memoryOfferBusy = true;
-    try { await companion.setConsent({ memory: false }); } catch { /* the decline still stands locally */ }
-    memoryOfferDone = 'declined';
-    memoryOfferBusy = false;
-    setTimeout(() => { memoryOffer = false; }, 2500);
-  }
+  // "Not now" is a local dismissal only. The server already logged that it asked, and won't ask again
+  // for a week — so declining needs no record of its own, and writes nothing about the person.
+  function dismissConnectOffer() { connectOfferDismissed = true; }
 
   async function sendResearchMessage() {
     const userText = researchInput.trim();
@@ -1322,8 +1319,8 @@
           researchMessages = researchMessages.map((m, i) =>
             i === assistantIdx ? { ...m, isStreaming: false, content: streamedContent || 'Done.' } : m
           );
-        } else if (event.type === 'companion_offer' && event.offer === 'remember') {
-          memoryOffer = true; memoryOfferDone = '';
+        } else if (event.type === 'companion_offer' && event.offer === 'connect') {
+          connectOffer = true; connectOfferDismissed = false;
         } else if (event.type === 'error') {
           researchMessages = researchMessages.map((m, i) =>
             i === assistantIdx ? { ...m, isStreaming: false, content: event.message || 'An error occurred.', error: true } : m
@@ -2641,18 +2638,16 @@
     {/if}
   </div>
 
-  <!-- Seeker Companion: one declinable offer to remember this thread. Consent is never presumed, so
-       nothing is stored until "Remember this" is pressed; "Not now" records the answer and moves on. -->
-  {#if memoryOffer && researchMode}
+  <!-- Seeker Companion: ONE declinable invitation to connect, and only when the server permitted it.
+       Connecting is what allows this conversation to be kept and continued from another browser. -->
+  {#if connectOffer && researchMode && !connectOfferDismissed}
     <div class="memory-offer" role="status">
-      {#if memoryOfferDone === 'remembered'}
-        <span class="memory-offer-text">Noted — I'll remember this thread. You can review or delete it anytime.</span>
-      {:else if memoryOfferDone === 'declined'}
-        <span class="memory-offer-text">Fine — nothing kept.</span>
+      {#if auth.isAuthenticated}
+        <span class="memory-offer-text">Connected — this conversation is part of your history now.</span>
       {:else}
-        <span class="memory-offer-text">Remember this thread, so we can pick it up later?</span>
-        <button class="memory-offer-btn" disabled={memoryOfferBusy} onclick={acceptMemoryOffer}>Remember this</button>
-        <button class="memory-offer-btn memory-offer-btn-quiet" disabled={memoryOfferBusy} onclick={declineMemoryOffer}>Not now</button>
+        <span class="memory-offer-text">Connect an account and I can keep this conversation and pick it up with you anywhere.</span>
+        <button class="memory-offer-btn" disabled={connectOfferBusy} onclick={acceptConnectOffer}>Connect</button>
+        <button class="memory-offer-btn memory-offer-btn-quiet" disabled={connectOfferBusy} onclick={dismissConnectOffer}>Not now</button>
       {/if}
     </div>
   {/if}

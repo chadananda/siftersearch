@@ -23,7 +23,8 @@ import {
   revokeRefreshToken,
   authenticate
 } from '../lib/auth.js';
-import { getAnonymousUserId, unifyUserId } from '../lib/anonymous.js';
+import { unifyUserId, temporaryIds } from '../lib/anonymous.js';
+import { companionStore, relationshipStage } from '../lib/companion/index.js';
 import { MemoryAgent } from '../agents/agent-memory.js';
 import {
   sendVerificationCode,
@@ -55,6 +56,31 @@ const LEGACY_COOKIE_OPTIONS = { path: '/api/auth' };
 function setRefreshCookie(reply, refresh) {
   reply.clearCookie(REFRESH_COOKIE, LEGACY_COOKIE_OPTIONS);
   reply.setCookie(REFRESH_COOKIE, refresh.id, { ...COOKIE_OPTIONS, expires: refresh.expiresAt });
+}
+
+// ── Connecting an account ────────────────────────────────────────────────────────────────────────
+// Sharing an email by connecting IS the permission to retain: it is the one moment where a temporary
+// visit becomes a history the person owns. So every login path does the same three things — fold the
+// anonymous session in (so a seeker who connects from a new browser continues rather than restarts),
+// record retention consent WITH its source, and set the relationship stage. Best-effort throughout:
+// a merge failure must never block a sign-in.
+async function connectParticipant(request, user) {
+  const account = user.id.toString();
+  for (const anonId of temporaryIds(request)) {
+    try {
+      await unifyUserId(anonId, user.id);
+      await new MemoryAgent().unifyMemories(anonId, account);
+      await companionStore.mergeParticipant(anonId, account);
+    } catch (err) {
+      logger.warn({ err: err.message, anonId, userId: user.id }, 'connect: failed to merge temporary session');
+    }
+  }
+  try {
+    await companionStore.setConsent(account, { memory: true, source: 'connect' });
+    await companionStore.setStage(account, relationshipStage({ authed: true, consentMemory: true }));
+  } catch (err) {
+    logger.warn({ err: err.message, userId: user.id }, 'connect: failed to record retention consent');
+  }
 }
 
 export default async function authRoutes(fastify) {
@@ -173,18 +199,7 @@ export default async function authRoutes(fastify) {
       throw ApiError.notFound('User not found');
     }
 
-    // Unify anonymous user data
-    const anonymousUserId = getAnonymousUserId(request);
-    if (anonymousUserId) {
-      try {
-        await unifyUserId(anonymousUserId, user.id);
-        const memory = new MemoryAgent();
-        await memory.unifyMemories(anonymousUserId, user.id.toString());
-        logger.info({ anonymousUserId, userId: user.id }, 'Unified anonymous user after verification');
-      } catch (unifyErr) {
-        logger.warn({ unifyErr, anonymousUserId, userId: user.id }, 'Failed to unify anonymous user');
-      }
-    }
+    await connectParticipant(request, user);
 
     // Generate tokens
     const accessToken = createAccessToken(user);
@@ -271,18 +286,8 @@ export default async function authRoutes(fastify) {
       });
     }
 
-    // Unify anonymous user data with existing account (on login from new device)
-    const anonymousUserId = getAnonymousUserId(request);
-    if (anonymousUserId) {
-      try {
-        await unifyUserId(anonymousUserId, user.id);
-        const memoryAgent = new MemoryAgent();
-        await memoryAgent.unifyMemories(anonymousUserId, user.id.toString());
-        logger.info({ anonymousUserId, userId: user.id }, 'Unified anonymous user on login');
-      } catch (unifyErr) {
-        logger.warn({ unifyErr, anonymousUserId, userId: user.id }, 'Failed to unify anonymous user on login');
-      }
-    }
+    // Login from a new browser: merge that session's conversation into the existing history.
+    await connectParticipant(request, user);
 
     // Generate tokens
     const accessToken = createAccessToken(user);
@@ -349,17 +354,8 @@ export default async function authRoutes(fastify) {
       logger.info({ userId: user.id, email }, 'Admin whitelist applied on Google sign-in');
     }
 
-    // Unify anonymous history, same as email login
-    const anonymousUserId = getAnonymousUserId(request);
-    if (anonymousUserId) {
-      try {
-        await unifyUserId(anonymousUserId, user.id);
-        const memoryAgent = new MemoryAgent();
-        await memoryAgent.unifyMemories(anonymousUserId, user.id.toString());
-      } catch (unifyErr) {
-        logger.warn({ unifyErr, anonymousUserId, userId: user.id }, 'Failed to unify anonymous user on Google login');
-      }
-    }
+    // One Tap: the connect itself is the retention permission (§7.1) — see connectParticipant.
+    await connectParticipant(request, user);
 
     const accessToken = createAccessToken(user);
     const refresh = await createRefreshToken(user.id);

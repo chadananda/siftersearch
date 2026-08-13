@@ -378,4 +378,19 @@ export const userMigrations = {
     )`);
     logger.info('User migration 6 complete: Seeker Companion tables (relationship, memory, premise, dials, exposure, courses)');
   },
+
+  // Version 7: consent provenance. Retention consent now arrives by CONNECTING (Google One Tap): sharing
+  // an email is the permission to retain. A consent flag with no recorded source cannot be explained back
+  // to the person it belongs to, so record how it was given and when, plus which temporary session was
+  // merged in on connect (so a merged relationship can be traced, and unpicked if ever disputed).
+  7: async () => {
+    for (const col of [
+      'consent_source TEXT',        // 'connect' (One Tap / login) | 'explicit' (self-service endpoint)
+      'consent_at INTEGER',
+      'merged_from TEXT',           // the anonymous session participant_id folded into this account
+    ]) {
+      try { await userQuery(`ALTER TABLE companion_relationship ADD COLUMN ${col}`); } catch { /* exists */ }
+    }
+    logger.info('User migration 7 complete: companion_relationship consent provenance (consent_source, consent_at, merged_from)');
+  },
 };
