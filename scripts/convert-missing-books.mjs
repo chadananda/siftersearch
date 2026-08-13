@@ -58,6 +58,20 @@ function coherentProse(text, { pages = 1 } = {}) {
   return { ok: checks.length === 0, why: checks.join('; '), words, alphaRatio: +alphaRatio.toFixed(2), wordsPerPage: Math.round(wordsPerPage) };
 }
 
+// Which extraction failures will NEVER succeed on a retry? Returns a rejection reason, or null when the
+// error is worth retrying (network blips, 5xx, timeouts).
+function classifyExtractionError(msg = '') {
+  const m = String(msg);
+  if (/Invalid PDF structure|FormatError|InvalidPDFException/i.test(m)) return 'unreadable PDF (invalid structure)';
+  // mammoth reads .docx (a zip); a legacy binary .doc trips one of these two.
+  if (/Could not find the body element|end of central directory|is this a zip file/i.test(m)) {
+    return 'legacy .doc format — needs a binary-doc converter, mammoth reads .docx only';
+  }
+  if (/fetch 4\d\d/.test(m)) return `source gone (${(m.match(/fetch (4\d\d)/) || [, '4xx'])[1]})`;
+  if (/unsupported ext/i.test(m)) return m;
+  return null;                                   // transient: 5xx, ECONNRESET, timeouts → retry
+}
+
 // ── Fetch a source file (follows redirects; returns Buffer + content-type) ────
 async function fetchFile(url) {
   const r = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(45000), headers: { 'user-agent': 'SifterSearch/1.0 (library ingest)' } });
@@ -278,8 +292,18 @@ for (const s of stubs) {
     console.log(`  ✓ ${s.id} "${(s.title || '').slice(0, 45)}" → ${rel} (${q.words}w/${pages}p, ${lang})`);
   } catch (e) {
     report.fetchErr.push({ id: s.id, title: s.title, url, err: e.message });
-    tally.failed++;
-    await rec(s.id, { status: 'failed', error: e.message, bumpAttempt: true, payload: { url } });
+    // PERMANENT vs TRANSIENT. A corrupt PDF and a legacy binary .doc will fail identically on every retry,
+    // so recording them as 'failed' burns three attempts each and then silently exhausts the work-list.
+    // Terminal ones become REJECTIONS with a reason, which also turns them into data: /ingest/rejections
+    // then says how many books an OCR path or a .doc converter would actually unlock.
+    const permanent = classifyExtractionError(e.message);
+    if (permanent) {
+      tally.rejected++; tally.reason(permanent);
+      await rec(s.id, { status: 'rejected', reason: permanent, payload: { url } });
+    } else {
+      tally.failed++;
+      await rec(s.id, { status: 'failed', error: e.message, bumpAttempt: true, payload: { url } });
+    }
   }
 }
 
