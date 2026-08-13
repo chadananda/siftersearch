@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T11:28:02.002Z",
+  "generated": "2026-08-13T12:27:05.173Z",
   "entries": [
+    {
+      "hash": "61ae1fdc",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "A language scan that PROPOSES and records, instead of guessing or writing blind",
+      "scope": null
+    },
     {
       "hash": "1fa5e409",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Batch bulkInsertParagraphs + deleteParagraphsByDoc to prevent SQLITE_BUSY storms",
       "scope": null
-    },
-    {
-      "hash": "c913ede6",
-      "date": "2026-05-28",
-      "type": "Performance",
-      "description": "Batch graph.db writes per paragraph into single graphTransaction",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "61ae1fdc",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "A language scan that PROPOSES and records, instead of guessing or writing blind",
+        "scope": null
+      },
       {
         "hash": "1fa5e409",
         "date": "2026-08-13",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-28",
         "type": "Fixed",
         "description": "Batch bulkInsertParagraphs + deleteParagraphsByDoc to prevent SQLITE_BUSY storms",
-        "scope": null
-      },
-      {
-        "hash": "c913ede6",
-        "date": "2026-05-28",
-        "type": "Performance",
-        "description": "Batch graph.db writes per paragraph into single graphTransaction",
         "scope": null
       }
     ]

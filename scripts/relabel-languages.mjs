@@ -4,8 +4,10 @@
 // lets the language-capability gate (api/lib/pipeline/plan.js) PARK them instead of churning.
 //
 // Read-only on sifter.db for samples; writes docs.language ONLY via the single writer (/write :7849).
-// Dry-run by default; pass --apply to write. Scope: enrichment candidates (docs that have grounding_queue
-// rows) — the set the pipeline actually tries to process. --all widens to every en/NULL doc (slower).
+// Dry-run by default; pass --apply to write. Scope: docs already queued for grounding (they cost money on
+// the next tick) PLUS every doc this pipeline has ingested (from ingest_stage) — a book ingested tonight has
+// no grounding_queue row yet, so the queued-only scope missed exactly the books at risk. --all widens to
+// every en/NULL doc with >=10 paragraphs (slow: samples 40 paragraphs per doc).
 //
 //   node scripts/relabel-languages.mjs            # dry run over grounding candidates
 //   node scripts/relabel-languages.mjs --apply    # write the corrections
@@ -39,13 +41,25 @@ async function writeBatch(statements) {
 
 // Candidate docs: enrichment set (has grounding_queue rows) unless --all. Only en/NULL are suspect —
 // a doc already tagged a non-English language is trusted (someone labeled it deliberately).
+// SCOPE. The default was "docs with grounding_queue rows" — which made the scan vacuous the moment it
+// mattered: it reported in=852 out=0 while four freshly-ingested French/Spanish books sat mislabelled, because
+// a book we ingested TONIGHT has no grounding_queue row yet. The books at risk are precisely the ones we just
+// created, and catching them BEFORE they get queued is what makes the fix free rather than a refund.
+// So the default is now the union: already-queued docs (they cost money next tick) + everything this
+// pipeline has ingested (recorded in ingest_stage, so no guessing about which those are).
 const candidates = ALL
   ? await queryAll(`SELECT id, title, language FROM docs
        WHERE deleted_at IS NULL AND duplicate_of IS NULL AND (language IS NULL OR language='en')
          AND coalesce(paragraph_count,0) >= 10`)
   : await queryAll(`SELECT d.id, d.title, d.language FROM docs d
        WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND (d.language IS NULL OR d.language='en')
-         AND d.id IN (SELECT DISTINCT doc_id FROM grounding_queue)`);
+         AND coalesce(d.paragraph_count,0) >= 5
+         AND (d.id IN (SELECT DISTINCT doc_id FROM grounding_queue)
+              OR d.id IN (SELECT doc_id FROM ingest_stage
+                           WHERE stage = 'ingest' AND status = 'done' AND doc_id IS NOT NULL))`)
+    .catch(() => queryAll(`SELECT d.id, d.title, d.language FROM docs d
+       WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND (d.language IS NULL OR d.language='en')
+         AND d.id IN (SELECT DISTINCT doc_id FROM grounding_queue)`));
 
 // Run through the shared harness so a DRY run is not a throwaway console dump: its proposals land in
 // ingest_stage/pipeline_run and are reviewable at /api/admin/ingest/status. Mislabelled languages cost real
