@@ -2,6 +2,7 @@
 // paused for off-peak pricing), entity/grounding progress off-peak. These lock the phase split and the
 // "stay quiet when nothing happened" rule, so an hourly digest never becomes noise the reader ignores.
 import { describe, it, expect, vi } from 'vitest';
+import Database from 'better-sqlite3';
 import { nowInPeak, peakEndsAt, DEFAULT_PEAK_WINDOWS } from '../../api/lib/pipeline/peak.js';
 
 vi.mock('../../api/lib/db.js', () => ({ queryAll: async () => [], queryOne: async () => ({ n: 0 }) }));
@@ -28,6 +29,37 @@ describe('peak window — which job owns the hour', () => {
     expect(ends.getUTCHours()).toBe(16);
     expect(ends.getUTCMinutes()).toBe(30);
     expect(peakEndsAt(DEFAULT_PEAK_WINDOWS, at(17, 0))).toBeNull();  // not peak → nothing to wait for
+  });
+});
+
+// The window bound must be compared as TEXT: docs.created_at is ISO-8601, and SQLite sorts every integer
+// below every text value, so passing an epoch number silently matched EVERY row and reported the whole
+// LIMIT as "ingested this hour". Driven against real in-memory SQLite so the semantics are actually tested,
+// not just the argument shape.
+describe('ingest digest — the hour window is a real window', () => {
+  const db = new Database(':memory:');
+  db.exec(`CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, author TEXT, paragraph_count INTEGER,
+             religion TEXT, collection TEXT, created_at TEXT, deleted_at TEXT, duplicate_of INTEGER)`);
+  const iso = (minsAgo) => new Date(Date.now() - minsAgo * 60000).toISOString();
+  db.prepare('INSERT INTO docs (id,title,author,paragraph_count,created_at) VALUES (?,?,?,?,?)')
+    .run(1, 'Just Ingested', 'A', 120, iso(20));
+  db.prepare('INSERT INTO docs (id,title,author,paragraph_count,created_at) VALUES (?,?,?,?,?)')
+    .run(2, 'Ingested Last Week', 'B', 300, iso(60 * 24 * 7));
+  const deps = {
+    queryAll: async (sql, args) => db.prepare(sql).all(...(args || [])),
+    queryOne: async (sql, args) => db.prepare(sql).get(...(args || [])),
+  };
+
+  it('returns only the docs from inside the window', async () => {
+    const since = Math.floor(Date.now() / 1000) - 3600;
+    const d = await buildIngestDigest(since, deps);
+    expect(d.books.map((b) => b.title)).toEqual(['Just Ingested']);
+    expect(d.paras).toBe(120);
+  });
+
+  it('reports an empty hour as empty, not as the whole table', async () => {
+    const d = await buildIngestDigest(Math.floor(Date.now() / 1000) - 60, deps);   // last minute only
+    expect(d.books).toHaveLength(0);
   });
 });
 

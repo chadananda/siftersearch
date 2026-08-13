@@ -19,6 +19,10 @@ const commas = (n) => Number(n || 0).toLocaleString('en-US');
 export async function buildIngestDigest(sinceEpoch, deps = {}) {
   const qAll = deps.queryAll || queryAll;
   const qOne = deps.queryOne || queryOne;
+  // docs.created_at / deleted_at are ISO-8601 TEXT, not epoch integers. Comparing them to a number
+  // silently matches EVERY row (SQLite sorts every integer below every text), which reported the whole
+  // LIMIT as "ingested this hour". Compare text to text.
+  const sinceIso = new Date(sinceEpoch * 1000).toISOString();
   // A converted book arrives as a NEW doc carrying real prose. `converted` in the frontmatter is the
   // marker the converter writes, so this counts our own work rather than any unrelated ingest.
   const books = await qAll(
@@ -26,9 +30,9 @@ export async function buildIngestDigest(sinceEpoch, deps = {}) {
        FROM docs d
       WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
         AND d.created_at > ? AND d.paragraph_count > 0
-      ORDER BY d.paragraph_count DESC LIMIT 60`, [sinceEpoch]).catch(() => []);
+      ORDER BY d.paragraph_count DESC LIMIT 60`, [sinceIso]).catch(() => []);
   const retired = (await qOne(
-    `SELECT COUNT(*) n FROM docs WHERE duplicate_of IS NOT NULL AND deleted_at > ?`, [sinceEpoch]).catch(() => null))?.n ?? 0;
+    `SELECT COUNT(*) n FROM docs WHERE duplicate_of IS NOT NULL AND deleted_at > ?`, [sinceIso]).catch(() => null))?.n ?? 0;
   const paras = books.reduce((a, b) => a + (b.paras || 0), 0);
 
   // What's LEFT comes from the admin snapshot's missing-books section (already computed, never rescanned

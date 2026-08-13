@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T02:50:24.479Z",
+  "generated": "2026-08-13T03:10:46.788Z",
   "entries": [
+    {
+      "hash": "114b6d1e",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Use the peak window to drain the missing-books backlog + phase-aware hourly digest",
+      "scope": null
+    },
     {
       "hash": "ffbd9165",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Institutional ranks below scholarly; tier thresholds match doc_priority scale",
       "scope": null
-    },
-    {
-      "hash": "d36d171d",
-      "date": "2026-05-27",
-      "type": "Fixed",
-      "description": "Rate-limit budget warn logs to 1/hr; bump budget to 3000/mo for full corpus",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "114b6d1e",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Use the peak window to drain the missing-books backlog + phase-aware hourly digest",
+        "scope": null
+      },
       {
         "hash": "ffbd9165",
         "date": "2026-08-12",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-27",
         "type": "Fixed",
         "description": "Institutional ranks below scholarly; tier thresholds match doc_priority scale",
-        "scope": null
-      },
-      {
-        "hash": "d36d171d",
-        "date": "2026-05-27",
-        "type": "Fixed",
-        "description": "Rate-limit budget warn logs to 1/hr; bump budget to 3000/mo for full corpus",
         "scope": null
       }
     ]
