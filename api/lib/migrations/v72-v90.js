@@ -718,6 +718,57 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_chat_sessions_participant ON chat_sessions(participant_id, last_activity)');
     logger.info('Migration 106 complete');
   },
+
+  // ── Pipeline state as RECORDED FACT, not inference ──────────────────────────────────────────────────
+  // Every pipeline bug this project has had traces to the same root: no stage records what it did, so every
+  // consumer RE-DERIVES doneness by counting columns. Disambiguation ended up with three different
+  // definitions of "done" and the work-selector disagreed with the gate, so books retried forever having
+  // made zero model calls. And because progress was only ever inferred from side effects (spend, row
+  // counts), "never started", "running", and "nothing to do" were indistinguishable from outside.
+  //
+  // ingest_stage  = one row per (thing, stage): what happened to it, why, and at which version.
+  // pipeline_run  = one row per RUN of a stage: items in/out/rejected/failed + reasons + last error.
+  // Together they answer, in ONE query: what stage is each item in, what was rejected and why, what is
+  // stuck and for how long, and when did this stage last actually run.
+  //
+  // TIMESTAMP CONVENTION: epoch INTEGER (unixepoch()) everywhere. Mixing epoch ints and ISO text is what
+  // produced three separate comparison bugs in one day — one matching zero rows, one matching every row.
+  107: async () => {
+    logger.info('Starting migration 107: ingest_stage + pipeline_run (recorded pipeline state)');
+    await query(`CREATE TABLE IF NOT EXISTS ingest_stage (
+      item_ref TEXT NOT NULL,              -- stable id of the thing: stub doc id, or library-relative path
+      stage TEXT NOT NULL,                 -- 'convert' | 'ingest' (extensible)
+      status TEXT NOT NULL,                -- pending | running | done | rejected | failed
+      version TEXT,                        -- the rule/code version that produced this outcome
+      attempts INTEGER NOT NULL DEFAULT 0,
+      reason TEXT,                         -- WHY rejected (quality gate, unsupported ext, no source…)
+      last_error TEXT,
+      doc_id INTEGER,                      -- the resulting doc, once there is one
+      payload_json TEXT,                   -- small: source url, rel path, words/pages
+      started_at INTEGER,
+      updated_at INTEGER DEFAULT (unixepoch()),
+      PRIMARY KEY (item_ref, stage)
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ingest_stage_status ON ingest_stage(stage, status, updated_at)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ingest_stage_doc ON ingest_stage(doc_id)`);
+
+    await query(`CREATE TABLE IF NOT EXISTS pipeline_run (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      stage TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'running',   -- running | ok | error
+      started_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      finished_at INTEGER,
+      items_in INTEGER NOT NULL DEFAULT 0,
+      items_out INTEGER NOT NULL DEFAULT 0,
+      items_rejected INTEGER NOT NULL DEFAULT 0,
+      items_failed INTEGER NOT NULL DEFAULT 0,
+      reasons_json TEXT,                        -- {reason: count} — rejection is data, not a log line
+      last_error TEXT,
+      note TEXT
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_pipeline_run_stage ON pipeline_run(stage, started_at)`);
+    logger.info('Migration 107 complete');
+  },
 };
 
 export const graphMigrations = {

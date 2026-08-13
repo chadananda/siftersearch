@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T06:28:04.198Z",
+  "generated": "2026-08-13T06:44:04.941Z",
   "entries": [
+    {
+      "hash": "db94fd74",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Record what the pm2 cron-app check DECIDED each tick",
+      "scope": null
+    },
     {
       "hash": "a265b80b",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Entity mentions API — GET /api/graph/entity/search + /entity/:id/mentions",
       "scope": null
-    },
-    {
-      "hash": "3879cf2e",
-      "date": "2026-05-28",
-      "type": "New",
-      "description": "Separate graph.db from sifter.db + startup model logging",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "db94fd74",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Record what the pm2 cron-app check DECIDED each tick",
+        "scope": null
+      },
       {
         "hash": "a265b80b",
         "date": "2026-08-12",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-28",
         "type": "New",
         "description": "Entity mentions API — GET /api/graph/entity/search + /entity/:id/mentions",
-        "scope": null
-      },
-      {
-        "hash": "3879cf2e",
-        "date": "2026-05-28",
-        "type": "New",
-        "description": "Separate graph.db from sifter.db + startup model logging",
         "scope": null
       }
     ]

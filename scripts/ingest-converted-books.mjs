@@ -9,7 +9,6 @@
 // Run ON tower-nas (library files + writer live there).
 import fs from 'fs';
 import path from 'path';
-import { nowInPeak } from '../api/lib/pipeline/peak.js';
 
 const APPLY = process.argv.includes('--apply');
 const ANY_TIME = process.argv.includes('--any-time');
@@ -19,13 +18,10 @@ const ONLY_ID = argOf('--id', Number);
 
 const MANIFEST = '.work/converted-books-manifest.json';
 
-// Ingest belongs in the window where grounding ISN'T running: they share one box, and a big ingest
-// competing with live model runs slows the expensive half. --any-time overrides for a manual run.
-if (!ANY_TIME && !nowInPeak()) {
-  console.log('off-peak (grounding is running) → skipping ingest; use --any-time to force');
-  process.exit(0);
-}
-if (!fs.existsSync(MANIFEST)) { console.log(`no manifest at ${MANIFEST} — run convert-missing-books.mjs first`); process.exit(0); }
+// Window + API-request handling live in the shared harness, so every stage decides the same way and always
+// leaves a run record behind. An explicit API request runs the batch even off-peak.
+const { runStage } = await import('./lib/stage-runner.mjs');
+const stageState = await import('../api/lib/pipeline/stage-state.js');
 
 const { config } = await import('../api/lib/config.js');
 const { ingestDocument } = await import('../api/services/ingester.js');
@@ -41,18 +37,33 @@ async function write(statements, name) {
   return r.json();
 }
 
+await runStage('ingest', { anyTime: ANY_TIME }, async (tally) => {
+if (!fs.existsSync(MANIFEST)) {
+  // A missing manifest is a REPORTABLE state, not a silent exit: it means conversion has produced nothing
+  // for this stage to do, which is exactly the "is it stuck or idle?" question that used to need a human.
+  console.log(`no manifest at ${MANIFEST} — nothing converted yet`);
+  return;
+}
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
 const pending = manifest.filter((m) => !m.ingested_doc_id && (!ONLY_ID || m.stub_id === ONLY_ID));
 console.log(`manifest: ${manifest.length} converted · ${pending.length} awaiting ingest${APPLY ? '' : ' (DRY RUN)'}`);
+tally.in = pending.length;
 
 const report = { ingested: [], missingFile: [], failed: [], retired: [] };
 let n = 0;
 for (const m of pending) {
   if (n >= LIMIT) break;
+  const ref = String(m.stub_id ?? m.rel);
   const abs = path.join(LIB, m.rel);
-  if (!fs.existsSync(abs)) { report.missingFile.push(m); continue; }
+  if (!fs.existsSync(abs)) {
+    report.missingFile.push(m);
+    tally.rejected++; tally.reason('converted file missing from library');
+    if (APPLY) await stageState.markStage(ref, 'ingest', { status: 'rejected', reason: 'converted file missing from library', payload: { rel: m.rel } }).catch(() => {});
+    continue;
+  }
   n++;
   if (!APPLY) { report.ingested.push({ stub_id: m.stub_id, rel: m.rel, title: m.title }); continue; }
+  await stageState.markStage(ref, 'ingest', { status: 'running', payload: { rel: m.rel, title: m.title } }).catch(() => {});
   try {
     const text = fs.readFileSync(abs, 'utf8');
     const res = await ingestDocument(text, { title: m.title, source_url: m.source_url }, m.rel);
@@ -74,12 +85,17 @@ for (const m of pending) {
     m.ingested_doc_id = newId;
     m.ingested_at = new Date().toISOString();
     fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2));   // incremental → crash-safe/resumable
+    await stageState.markStage(ref, 'ingest', { status: 'done', docId: newId, payload: { rel: m.rel, title: m.title } }).catch(() => {});
+    tally.out++;
     console.log(`  ✓ ${m.stub_id} → doc ${newId} "${(m.title || '').slice(0, 45)}"`);
   } catch (e) {
     report.failed.push({ stub_id: m.stub_id, title: m.title, err: e.message });
+    tally.failed++;
+    await stageState.markStage(ref, 'ingest', { status: 'failed', error: e.message, bumpAttempt: true, payload: { rel: m.rel } }).catch(() => {});
     console.log(`  ✗ ${m.stub_id} "${(m.title || '').slice(0, 40)}": ${e.message}`);
   }
 }
 
 console.log(`\nSUMMARY (${APPLY ? 'APPLIED' : 'DRY'}): ingested ${report.ingested.length} · retired ${report.retired.length} · missing file ${report.missingFile.length} · failed ${report.failed.length}`);
 fs.writeFileSync('.work/ingest-converted-books-report.json', JSON.stringify(report, null, 2));
+});
