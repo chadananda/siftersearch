@@ -31,14 +31,42 @@ async function docProfile(docId) {
   return detectProfile(doc || { id: docId }, sample);
 }
 
+// Spawned stage scripts used to inherit the parent's stdio, so their output landed UNLABELLED in whatever
+// log the parent was writing — the same grounding-<doc>.log the in-process path uses. Chasing the
+// 2026-08-13 crash I could see a stack trace and the queries before it, but had no way to tell WHICH
+// process emitted them, because two execution paths (in-process rag.* and these spawned scripts) share one
+// file and a raw stderr dump carries no pid. That single missing label is what stopped a static trace cold.
+// Piping and prefixing costs nothing and makes every line attributable to script + pid.
 function runScript(script, env) {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [script], {
       env: { ...process.env, ...env, SIFTER_WRITER_URL: WRITER, WRITE: '1' },
-      stdio: ['ignore', 'inherit', 'inherit'],
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
-    child.on('exit', (code) => resolve(code === 0));
-    child.on('error', () => resolve(false));
+    const tag = `[${script.split('/').pop()}:${child.pid}]`;
+    // Line-buffer so a prefix never lands mid-line; flush any partial tail on close.
+    const label = (stream, out) => {
+      let buf = '';
+      stream.on('data', (chunk) => {
+        buf += chunk;
+        const lines = buf.split('\n');
+        buf = lines.pop();                                  // keep the incomplete tail
+        for (const l of lines) out.write(`${tag} ${l}\n`);
+      });
+      stream.on('close', () => { if (buf) out.write(`${tag} ${buf}\n`); });
+    };
+    label(child.stdout, process.stdout);
+    label(child.stderr, process.stderr);
+    // Say how it ended, in the same log — a stage that dies on a signal (OOM-killed) otherwise looks
+    // identical to one that exited non-zero, and the two need completely different responses.
+    child.on('exit', (code, signal) => {
+      process.stderr.write(`${tag} exited ${signal ? `on signal ${signal}` : `code ${code}`}\n`);
+      resolve(code === 0);
+    });
+    child.on('error', (err) => {
+      process.stderr.write(`${tag} failed to spawn: ${err.message}\n`);
+      resolve(false);
+    });
   });
 }
 
