@@ -125,7 +125,7 @@ export async function reachedBound(docId, opts = {}, deps = {}) {
     `${coverageSelect(HYPE_MINLEN)},
             (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
             (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions`,
-    [docId, docId, docId, docId, docId, docId]);
+    [docId, docId, docId, docId, docId, docId], 'grounding:coverage-one-doc');
   return isDoneFromArtifacts(row || {}, opts);
 }
 
@@ -223,8 +223,8 @@ export async function budgetStatus(deps = {}) {
     // subtract baseline_usd as well; without it (pre-migration row) fall back to the old arithmetic.
     const spentRow = b.baseline_at
       ? await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage
-                   WHERE provider=? AND caller='corpus-rag' AND timestamp > ?`, [b.provider, b.baseline_at])
-      : await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage WHERE provider=? AND caller='corpus-rag'`, [b.provider]);
+                   WHERE provider=? AND caller='corpus-rag' AND timestamp > ?`, [b.provider, b.baseline_at], 'budget-check')
+      : await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage WHERE provider=? AND caller='corpus-rag'`, [b.provider], 'budget-check:unbounded-legacy');
     const spent = Math.max(0, (spentRow?.s || 0) - (b.baseline_at ? 0 : (b.baseline_usd || 0)));
     const frac = b.ceiling_usd > 0 ? spent / b.ceiling_usd : 0;
     let windows = DEFAULT_PEAK_WINDOWS;

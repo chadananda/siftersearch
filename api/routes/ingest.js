@@ -150,10 +150,14 @@ export default async function ingestRoutes(fastify) {
   fastify.get('/server/query-time', admin, async (req) => {
     const hours = Math.min(Math.max(Number(req.query?.hours) || 24, 1), 24 * 30);
     const since = Math.floor(Date.now() / 1000) - hours * 3600;
+    // Group by NAME first — a query TYPE is what you act on. Unnamed statements fall back to their shape
+    // and are reported as such, which doubles as a worklist: an expensive line with no name wants one.
     const rows = await queryAll(
-      `SELECT proc, kind, fingerprint, SUM(n) n, SUM(total_ms) total_ms, MAX(max_ms) max_ms, MAX(sql_sample) sql_sample
+      `SELECT proc, kind, COALESCE(name, fingerprint) label, MAX(name) name,
+              SUM(n) n, SUM(total_ms) total_ms, MAX(max_ms) max_ms, MAX(sql_sample) sql_sample
          FROM query_stats WHERE hour >= ?
-        GROUP BY proc, kind, fingerprint ORDER BY total_ms DESC LIMIT 60`, [since]).catch(() => []);
+        GROUP BY proc, kind, COALESCE(name, fingerprint) ORDER BY total_ms DESC LIMIT 60`, [since],
+      'admin:query-time-report').catch(() => []);
     const perProc = await queryAll(
       `SELECT proc, SUM(n) n, SUM(total_ms) total_ms FROM query_stats WHERE hour >= ? GROUP BY proc ORDER BY total_ms DESC`,
       [since]).catch(() => []);
@@ -166,8 +170,13 @@ export default async function ingestRoutes(fastify) {
         totalMin: Math.round(p.total_ms / 600) / 100,
         frozenPct: Math.round((p.total_ms / wallMs) * 1000) / 10,   // share of wall-clock spent inside SQLite
       })),
+      // The named lines are the actionable ones; unnamed are listed too so nothing hides.
+      unnamedShare: (() => {
+        const tot = rows.reduce((a, r) => a + r.total_ms, 0) || 1;
+        return Math.round((rows.filter((r) => !r.name).reduce((a, r) => a + r.total_ms, 0) / tot) * 100);
+      })(),
       queries: rows.map((r) => ({
-        proc: r.proc, kind: r.kind, calls: r.n,
+        query: r.name || '(unnamed)', proc: r.proc, kind: r.kind, calls: r.n,
         totalMin: Math.round(r.total_ms / 600) / 100,
         avgMs: Math.round(r.total_ms / Math.max(1, r.n)),
         worstMs: r.max_ms,

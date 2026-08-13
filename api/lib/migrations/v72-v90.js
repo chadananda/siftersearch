@@ -786,6 +786,18 @@ export const migrations = {
   // the process log (safeSoftDeleteDocs logs 'AUDIT' via logger.warn), which cannot be queried from off-box
   // and rotates away — so a doc that vanished had no recoverable explanation. Durable + queryable instead.
   // Append-only by convention: rows are never updated, so the history of a doc is the history.
+  112: async () => {
+    logger.info('Starting migration 112: query_stats.name — attribute cost to a QUERY TYPE, not a SQL blob');
+    // Chad, 2026-08-13: "each query should have a name so we can easily see which query types are consuming
+    // resources, not just individual slow queries." A fingerprint tells you WHAT ran; a name tells you WHY,
+    // which is the thing you act on — "budget-check" and "snapshot:bottlenecks" are decisions, a 300-char
+    // SELECT is homework. db.query(sql, params, name) has always accepted a name; almost nothing passed one.
+    const addCol = async (sql) => { try { await query(sql); } catch (err) { if (!err.message?.includes('duplicate column')) throw err; } };
+    await addCol(`ALTER TABLE query_stats ADD COLUMN name TEXT`);
+    await addCol(`ALTER TABLE slow_query_log ADD COLUMN name_backfill TEXT`);   // no-op if 109 already added `name`
+    logger.info('Migration 112 complete: query cost is attributable by name');
+  },
+
   111: async () => {
     logger.info('Starting migration 111: query_stats — total time attribution for EVERY query');
     // slow_query_log (migration 109) records OUTLIERS (>=1s). That answers "what froze the process" but not

@@ -278,16 +278,18 @@ const QSTATS_MAX_SHAPES = 2000;        // runaway guard: distinct shapes are bou
 const qstats = new Map();
 let qstatsOverflow = 0;
 
-function accrueQueryTime(sql, duration, dbName, kind) {
+function accrueQueryTime(sql, duration, dbName, kind, name) {
   const hour = Math.floor(Date.now() / 3600000) * 3600;
   const fp = fingerprintSql(sql);
-  const key = `${hour}|${kind}|${fp}`;
+  // Key on the NAME when the call site gave one: that is the unit a human reasons about ("budget-check"),
+  // and it keeps one logical query together even if its SQL is built in variants.
+  const key = `${hour}|${kind}|${name || fp}`;
   let e = qstats.get(key);
   if (!e) {
     // Never let the accounting grow without bound; overflow is COUNTED, not silently dropped, so the
     // report can say it is incomplete rather than quietly under-reporting.
     if (qstats.size >= QSTATS_MAX_SHAPES) { qstatsOverflow++; return; }
-    e = { hour, kind, fp, dbName, n: 0, total: 0, max: 0, sample: String(sql || '').replace(/\s+/g, ' ').trim().slice(0, 300) };
+    e = { hour, kind, fp, name: name || null, dbName, n: 0, total: 0, max: 0, sample: String(sql || '').replace(/\s+/g, ' ').trim().slice(0, 300) };
     qstats.set(key, e);
   }
   e.n++; e.total += duration; if (duration > e.max) e.max = duration;
@@ -301,12 +303,12 @@ export function flushQueryStats() {
   for (const e of rows) {
     try {
       telemetryQuery(
-        `INSERT INTO query_stats (hour, proc, db_name, kind, fingerprint, n, total_ms, max_ms, sql_sample)
-         VALUES (?,?,?,?,?,?,?,?,?)
+        `INSERT INTO query_stats (hour, proc, db_name, kind, fingerprint, name, n, total_ms, max_ms, sql_sample)
+         VALUES (?,?,?,?,?,?,?,?,?,?)
          ON CONFLICT(hour, proc, kind, fingerprint) DO UPDATE SET
            n = n + excluded.n, total_ms = total_ms + excluded.total_ms,
-           max_ms = MAX(max_ms, excluded.max_ms)`,
-        [e.hour, PROC_NAME, e.dbName || null, e.kind, e.fp, e.n, Math.round(e.total), Math.round(e.max), e.sample]);
+           max_ms = MAX(max_ms, excluded.max_ms), name = COALESCE(excluded.name, name)`,
+        [e.hour, PROC_NAME, e.dbName || null, e.kind, e.fp, e.name, e.n, Math.round(e.total), Math.round(e.max), e.sample]);
       written++;
     } catch { /* best-effort: table may predate migration 111, or the DB is briefly contended */ }
   }
@@ -339,7 +341,7 @@ function logQueryTiming(sql, params, startTime, dbName, name = '', origPrepare =
   const logParams = params?.length > 5 ? `[${params.length} params]` : params;
 
   // EVERY query is accounted for, regardless of duration — that is the point (see accrueQueryTime).
-  accrueQueryTime(sql, duration, dbName, isSelect ? 'read' : 'write');
+  accrueQueryTime(sql, duration, dbName, isSelect ? 'read' : 'write', name);
 
   // All reads visible at debug level — filter with LOG_LEVEL=debug to see index usage
   if (isSelect) {

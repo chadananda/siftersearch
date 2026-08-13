@@ -172,14 +172,14 @@ async function main() {
         LEFT JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL
         WHERE d.deleted_at IS NULL
         GROUP BY d.language
-        ORDER BY paragraph_count DESC`).catch(() => []),
+        ORDER BY paragraph_count DESC`, [], 'snapshot:by-language').catch(() => []),
       queryOne(`
         SELECT COUNT(*) as total,
           SUM(CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END) as with_embedding,
           SUM(CASE WHEN embedding IS NULL THEN 1 ELSE 0 END) as missing_embeddings,
           SUM(CASE WHEN synced = 0 THEN 1 ELSE 0 END) as dirty
         FROM content
-        WHERE deleted_at IS NULL`).catch(() => null),
+        WHERE deleted_at IS NULL`, [], 'snapshot:embedding-stats').catch(() => null),
     ]);
     library = { generated_at: new Date().toISOString(), byLanguage, embeddingStats };
   }
@@ -199,13 +199,13 @@ async function main() {
       FROM docs d
       JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL AND c.embedding IS NULL
       WHERE d.deleted_at IS NULL
-      GROUP BY d.id ORDER BY pending_paragraphs DESC LIMIT 50`).catch(() => []),
+      GROUP BY d.id ORDER BY pending_paragraphs DESC LIMIT 50`, [], 'snapshot:pending-embedding').catch(() => []),
     queryAll(`
       SELECT d.id, d.title, d.author, d.language, COUNT(c.id) as unsynced_paragraphs
       FROM docs d
       JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL AND c.synced = 0 AND c.embedding IS NOT NULL
       WHERE d.deleted_at IS NULL
-      GROUP BY d.id ORDER BY unsynced_paragraphs DESC LIMIT 50`).catch(() => []),
+      GROUP BY d.id ORDER BY unsynced_paragraphs DESC LIMIT 50`, [], 'snapshot:pending-sync').catch(() => []),
   ]);
     bottlenecks = { generated_at: new Date().toISOString(), pendingEmbedding, pendingSync };
   }

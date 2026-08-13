@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T22:23:51.596Z",
+  "generated": "2026-08-13T22:29:05.801Z",
   "entries": [
+    {
+      "hash": "fec4f573",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Fix the freezing, and account for ALL query time (not just outliers)",
+      "scope": null
+    },
     {
       "hash": "24b77398",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Thread AbortSignal to ollama/OpenAI calls — cancel background analysis on timeout",
       "scope": null
-    },
-    {
-      "hash": "06a6579d",
-      "date": "2026-05-31",
-      "type": "Fixed",
-      "description": "TelemetryDb busy_timeout 0→50ms — prevent WAL init crash on contended startup",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "fec4f573",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Fix the freezing, and account for ALL query time (not just outliers)",
+        "scope": null
+      },
       {
         "hash": "24b77398",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Fixed",
         "description": "Thread AbortSignal to ollama/OpenAI calls — cancel background analysis on timeout",
-        "scope": null
-      },
-      {
-        "hash": "06a6579d",
-        "date": "2026-05-31",
-        "type": "Fixed",
-        "description": "TelemetryDb busy_timeout 0→50ms — prevent WAL init crash on contended startup",
         "scope": null
       }
     ]

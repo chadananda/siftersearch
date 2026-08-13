@@ -144,8 +144,9 @@ if (db) {
     try {
       const since = Math.floor(Date.now() / 1000) - 86400;
       const sinks = db.prepare(
-        `SELECT proc, fingerprint, SUM(n) n, SUM(total_ms) total_ms, MAX(max_ms) max_ms, MAX(sql_sample) sql_sample
-           FROM query_stats WHERE hour >= ? GROUP BY proc, fingerprint ORDER BY total_ms DESC LIMIT 5`).all(since);
+        `SELECT proc, COALESCE(name, fingerprint) label, MAX(name) name, SUM(n) n, SUM(total_ms) total_ms,
+                MAX(max_ms) max_ms, MAX(sql_sample) sql_sample
+           FROM query_stats WHERE hour >= ? GROUP BY proc, COALESCE(name, fingerprint) ORDER BY total_ms DESC LIMIT 5`).all(since);
       const procs = db.prepare(
         `SELECT proc, SUM(total_ms) total_ms FROM query_stats WHERE hour >= ? GROUP BY proc ORDER BY total_ms DESC LIMIT 3`).all(since);
       if (procs.length) {
@@ -156,8 +157,10 @@ if (db) {
         const min = q.total_ms / 60000;
         const shape = q.max_ms >= 5000 ? 'BLOCKING scan' : (q.n >= 200 ? 'hot-loop' : '');
         // >30 min/day inside SQLite for a single statement is a design problem, not a slow disk.
-        add(`Time sink: ${q.proc}`, min < 30, min >= 30 ? 'warn' : 'info',
-          `${min.toFixed(0)} min/day · ${q.n} calls · worst ${(q.max_ms / 1000).toFixed(0)}s ${shape} — ${String(q.sql_sample || '').slice(0, 70)}`);
+        // Lead with the NAME: "budget-check 15 min/day" is a decision; a SELECT blob is homework.
+        add(`Time sink: ${q.name || '(unnamed)'} [${q.proc}]`, min < 30, min >= 30 ? 'warn' : 'info',
+          `${min.toFixed(0)} min/day · ${q.n} calls · worst ${(q.max_ms / 1000).toFixed(0)}s ${shape}` +
+          (q.name ? '' : ` — UNNAMED: ${String(q.sql_sample || '').slice(0, 60)}`));
       }
     } catch { /* query_stats predates migration 111 on an un-upgraded DB */ }
   }
