@@ -2,17 +2,13 @@
 import { getCollection, render } from 'astro:content';
 import DocsLayout from '../../../layouts/DocsLayout.astro';
 
-export const prerender = true;
 
-export async function getStaticPaths() {
-  const agents = await getCollection('agents');
-  return agents.map((agent) => ({
-    params: { slug: agent.id.replace('agent-', '') },
-    props: { agent },
-  }));
-}
-
-const { agent } = Astro.props;
+// SSR (worker-based): resolve the agent doc by slug at request time. (Was getStaticPaths/prerender under Astro 5;
+// Astro 7's prerender-in-Workers path can't bundle the CJS `createRequire` shim, so the whole site renders on-demand.)
+const { slug: slugParam } = Astro.params;
+const agents = await getCollection('agents');
+const agent = agents.find((a) => a.id.replace('agent-', '') === slugParam);
+if (!agent) return Astro.redirect('/404');
 const { Content } = await render(agent);
 
 // Extract title from frontmatter or derive from filename

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T04:56:07.633Z",
+  "generated": "2026-08-13T04:58:55.068Z",
   "entries": [
+    {
+      "hash": "e57010d5",
+      "date": "2026-08-12",
+      "type": "Other",
+      "description": "Build the RSS feed the sitemap has been advertising into a 302",
+      "scope": null
+    },
     {
       "hash": "85b452aa",
       "date": "2026-08-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Trim doc title before exact-match in apply-doc-priority",
       "scope": null
-    },
-    {
-      "hash": "971d740d",
-      "date": "2026-05-28",
-      "type": "Fixed",
-      "description": "Layer sort order, algorithmic grounded text, extractor prompt caching",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-12": [
+      {
+        "hash": "e57010d5",
+        "date": "2026-08-12",
+        "type": "Other",
+        "description": "Build the RSS feed the sitemap has been advertising into a 302",
+        "scope": null
+      },
       {
         "hash": "85b452aa",
         "date": "2026-08-12",
@@ -7073,13 +7080,6 @@
         "date": "2026-05-28",
         "type": "Fixed",
         "description": "Trim doc title before exact-match in apply-doc-priority",
-        "scope": null
-      },
-      {
-        "hash": "971d740d",
-        "date": "2026-05-28",
-        "type": "Fixed",
-        "description": "Layer sort order, algorithmic grounded text, extractor prompt caching",
         "scope": null
       }
     ]

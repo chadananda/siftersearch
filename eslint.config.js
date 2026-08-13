@@ -31,6 +31,7 @@ export default [
         TextDecoder: 'readonly',
         TextEncoder: 'readonly',
         AbortSignal: 'readonly',
+        AbortController: 'readonly',   // sibling of AbortSignal; its absence was the repo's only lint ERROR
         Uint8Array: 'readonly',
         ReadableStream: 'readonly',
         navigator: 'readonly',
