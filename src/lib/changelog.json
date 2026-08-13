@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T07:20:27.289Z",
+  "generated": "2026-08-13T07:27:48.148Z",
   "entries": [
+    {
+      "hash": "29a4724e",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Tune the quality gate from the rejection data — it was discarding real books",
+      "scope": null
+    },
     {
       "hash": "42ce9fc8",
       "date": "2026-08-12",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Log all reads at debug level + EXPLAIN QUERY PLAN for slow reads",
       "scope": null
-    },
-    {
-      "hash": "856ea36c",
-      "date": "2026-05-28",
-      "type": "Fixed",
-      "description": "Content column is paragraph_index not position in entity mentions",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-13": [
+      {
+        "hash": "29a4724e",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Tune the quality gate from the rejection data — it was discarding real books",
+        "scope": null
+      }
+    ],
     "2026-08-12": [
       {
         "hash": "42ce9fc8",
@@ -7073,13 +7082,6 @@
         "date": "2026-05-28",
         "type": "New",
         "description": "Log all reads at debug level + EXPLAIN QUERY PLAN for slow reads",
-        "scope": null
-      },
-      {
-        "hash": "856ea36c",
-        "date": "2026-05-28",
-        "type": "Fixed",
-        "description": "Content column is paragraph_index not position in entity mentions",
         "scope": null
       }
     ]

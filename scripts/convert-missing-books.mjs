@@ -135,7 +135,7 @@ const fileUrlOf = (s) => {
   return m ? m[0].replace(/[),.;]+$/, '') : null;
 };
 
-console.log(`stubs (chrome, <36¶): ${stubs.length}${ONLY_ID ? ` (filtered to #${ONLY_ID})` : ''} · mode: ${APPLY ? 'APPLY (write files, DEFER ingest+retire)' : 'DRY'}\n`);
+console.log(`stubs (chrome, <36¶, with a source file): ${stubs.length}${ONLY_ID ? ` (filtered to #${ONLY_ID})` : ''} · mode: ${APPLY ? 'APPLY (write files, DEFER ingest+retire)' : 'DRY'}\n`);
 const report = { converted: [], skippedType: [], noFile: [], badQuality: [], fetchErr: [] };
 const MANIFEST = '.work/converted-books-manifest.json';
 const manifest = (() => { try { return JSON.parse(fs.readFileSync(MANIFEST, 'utf8')); } catch { return []; } })();
@@ -143,6 +143,10 @@ const alreadyDone = new Set(manifest.map((m) => m.stub_id));   // resume-safe: s
 let done = 0;
 
 await runStage('convert', { anyTime: process.argv.includes('--any-time') }, async (tally) => {
+// The BACKLOG, recorded on the run: /ingest/status' "waiting" counts only items already touched, because the
+// work-list comes from SQL rather than from ingest_stage. Without this, "how many books are left?" is
+// invisible — the exact class of unanswerable question this whole exercise exists to remove.
+tally.backlog = stubs.length;
 const rec = async (id, o) => { if (APPLY) await stageState.markStage(id, 'convert', { version: CONVERT_VERSION, ...o }).catch(() => {}); };
 
 for (const s of stubs) {

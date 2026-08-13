@@ -57,7 +57,10 @@ export async function runStage(stage, opts, body) {
     if (runId != null) {
       await state.endRun(runId, {
         itemsIn: tally.in, itemsOut: tally.out, rejected: tally.rejected, failed: tally.failed,
-        reasons, lastError, note: decision.why,
+        reasons, lastError,
+        // Carry the backlog into the note so "how many are left?" is answerable from the run record alone:
+        // /ingest/status' "waiting" counts only items already touched, because the work-list comes from SQL.
+        note: tally.backlog != null ? `${decision.why} · backlog ${tally.backlog}` : decision.why,
       }).catch((e) => console.log(`${stage}: failed to close run record: ${e.message}`));
     }
     console.log(`${stage}: in=${tally.in} out=${tally.out} rejected=${tally.rejected} failed=${tally.failed}${lastError ? ` error=${lastError}` : ''}`);
