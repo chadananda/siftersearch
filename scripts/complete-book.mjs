@@ -5,6 +5,27 @@
 //   SIFTER_WRITER_URL=http://127.0.0.1:7849 node scripts/complete-book.mjs 21310 [--from=reconcile] [--only=verify] [--cc=N]
 // Exit 0 = complete+searchable; 2 = a stage left it unsearchable (missing[] printed); 1 = usage.
 import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
+// `TypeError: fetch failed` deliberately carries NO URL, so a crash tells you a loopback call died and
+// nothing more. Chasing the 2026-08-13 grounding deaths, that one missing fact let three different
+// hypotheses (single writer / Meilisearch / local model) all fit the same crash dump, and I "explained"
+// it twice from correlation instead of evidence. Wrap fetch ONCE, here at the entry, so every failure
+// names its own method + URL. Cheap (one try/catch per request) and it turns an unfalsifiable crash into
+// a fact. Installed BEFORE run-grounding is imported so it covers module-evaluation calls too.
+const _fetch = globalThis.fetch;
+globalThis.fetch = async function namedFetch(input, init) {
+  const url = typeof input === 'string' ? input : (input?.url ?? String(input));
+  try {
+    return await _fetch(input, init);
+  } catch (err) {
+    const code = err?.cause?.code || err?.code || err?.name;
+    // Attach to the message so it survives into the crash dump, the .exit verdict and the queue error.
+    err.message = `${err.message} [${(init?.method || 'GET').toUpperCase()} ${url}${code ? ` — ${code}` : ''}]`;
+    err.failedUrl = url;
+    console.error(`\n⚠ fetch failed: ${(init?.method || 'GET').toUpperCase()} ${url} — ${code || err.message}`);
+    throw err;
+  }
+};
+
 const { runGrounding } = await import('../api/lib/pipeline/run-grounding.js');
 
 const argv = process.argv.slice(2);

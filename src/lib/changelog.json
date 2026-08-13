@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T18:30:13.192Z",
+  "generated": "2026-08-13T18:53:27.303Z",
   "entries": [
+    {
+      "hash": "a527462b",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "An outage must not be recorded as a bad book (6 books quarantined for a dropped socket)",
+      "scope": null
+    },
     {
       "hash": "0173a14a",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Cap hybridSearch embedding call at 5s to prevent hang under concurrent load",
       "scope": null
-    },
-    {
-      "hash": "e8953c32",
-      "date": "2026-05-31",
-      "type": "Fixed",
-      "description": "Abort background analyzePassagesParallel on timeout — prevent AI call accumulation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "a527462b",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "An outage must not be recorded as a bad book (6 books quarantined for a dropped socket)",
+        "scope": null
+      },
       {
         "hash": "0173a14a",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Fixed",
         "description": "Cap hybridSearch embedding call at 5s to prevent hang under concurrent load",
-        "scope": null
-      },
-      {
-        "hash": "e8953c32",
-        "date": "2026-05-31",
-        "type": "Fixed",
-        "description": "Abort background analyzePassagesParallel on timeout — prevent AI call accumulation",
         "scope": null
       }
     ]
