@@ -233,7 +233,17 @@ for (const s of stubs) {
     const religion = s.religion || 'Baha\'i';
     const collection = s.collection || 'Books';
     const slug = slugify(s.title);
-    const rel = path.join(religion, collection, `${slug}.md`);
+    // UNIQUE DESTINATION PER SOURCE. Two different books can share a title — the queue holds "A Pictorial
+    // History of the Baha'i Faith in South Africa" twice, as docs 24035 and 328015 — and slugify() maps both
+    // to the same path. ingestDocument keys on file_path, so the second conversion silently OVERWRITES the
+    // first book's content and the first stub is retired anyway: one book destroyed, two stubs gone. Suffix
+    // the source id when the path is already taken by a DIFFERENT source, so both books survive.
+    let rel = path.join(religion, collection, `${slug}.md`);
+    const takenBy = manifest.find((m) => m.rel === rel && m.stub_id !== s.id);
+    if (takenBy || (fs.existsSync(path.join(LIB, rel)) && !manifest.some((m) => m.rel === rel && m.stub_id === s.id))) {
+      rel = path.join(religion, collection, `${slug}-${s.id}.md`);
+      console.log(`  ~ ${s.id} path collision on "${slug}" → ${rel}`);
+    }
     // DETECT THE LANGUAGE FROM THE TEXT. The stub row says 'en' because bahai-library's metadata page is
     // in English — but the BOOK may not be ("Abdu'l-Bahá à Londres", "Tratado sobre gobernanza"). Ingesting
     // those as English is what sends them to a model that cannot read them and burns tokens until the

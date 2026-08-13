@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-13T09:28:11.513Z",
+  "generated": "2026-08-13T10:28:11.926Z",
   "entries": [
+    {
+      "hash": "e2bdbea2",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Reach the husks — the class the work-list could never see",
+      "scope": null
+    },
     {
       "hash": "90788798",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Batch transaction retry — 20 attempts capped at 5s, no idle sleep on failure",
       "scope": null
-    },
-    {
-      "hash": "647125b3",
-      "date": "2026-05-28",
-      "type": "Performance",
-      "description": "Batch all sifter.db writes per extraction batch into one transaction",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "e2bdbea2",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Reach the husks — the class the work-list could never see",
+        "scope": null
+      },
       {
         "hash": "90788798",
         "date": "2026-08-13",
@@ -7075,13 +7082,6 @@
         "date": "2026-05-28",
         "type": "Fixed",
         "description": "Batch transaction retry — 20 attempts capped at 5s, no idle sleep on failure",
-        "scope": null
-      },
-      {
-        "hash": "647125b3",
-        "date": "2026-05-28",
-        "type": "Performance",
-        "description": "Batch all sifter.db writes per extraction batch into one transaction",
         "scope": null
       }
     ]
