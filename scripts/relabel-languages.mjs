@@ -15,6 +15,7 @@
 import dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { checkRelabelProposal } from '../api/lib/text/relabel-guard.js';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
 dotenv.config({ path: join(ROOT, '.env-public') });
@@ -90,12 +91,20 @@ for (const c of changes) console.log(`  ${c.id}  ${c.from} → ${c.to}   ${(c.ti
 tally.in = candidates.length;
 for (const c of changes) {
   tally.reason(`${c.from} → ${c.to}`);
+  // GUARD: an English work ABOUT foreign sources (a bibliography, an index) reads as foreign by word
+  // frequency. Relabelling one PARKS it from grounding forever under the language-capability gate, so a
+  // proposal the title contradicts is held for a human instead of applied (api/lib/text/relabel-guard.js).
+  const guard = checkRelabelProposal({ title: c.title, to: c.to });
   await stageState.markStage(c.id, 'relabel', {
-    status: APPLY ? 'done' : 'pending',
-    version: 'detectLang-v2',
-    reason: `${c.from} → ${c.to}`,
-    payload: { title: c.title, from: c.from, to: c.to },
+    // doc_id was missing from these rows, so a proposal could not be traced back to its document —
+    // an approval queue you cannot audit is one you cannot safely approve.
+    docId: c.id,
+    status: !guard.apply ? 'held' : (APPLY ? 'done' : 'pending'),
+    version: 'detectLang-v3',
+    reason: guard.apply ? `${c.from} → ${c.to}` : `HELD ${c.from} → ${c.to}: ${guard.reason}`,
+    payload: { docId: c.id, title: c.title, from: c.from, to: c.to, guard },
   }).catch(() => {});
+  if (!guard.apply) console.log(`  ⚠ HELD ${c.id} ${c.from} → ${c.to}: ${guard.reason}`);
 }
 console.log(`\n${changes.length} docs detected as non-English.`);
 
