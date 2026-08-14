@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T17:26:39.226Z",
+  "generated": "2026-08-14T18:29:47.057Z",
   "entries": [
+    {
+      "hash": "b85cdd99",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Data-bearing pages must revalidate — a stale tab is indistinguishable from a broken fix",
+      "scope": null
+    },
     {
       "hash": "70fa1154",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Route 4 graph workers through worker write endpoint",
       "scope": "single-writer"
-    },
-    {
-      "hash": "fc271ae4",
-      "date": "2026-06-03",
-      "type": "Fixed",
-      "description": "Move single-writer port 7841 to 7849 + crash-proof the bind",
-      "scope": "worker"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "b85cdd99",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Data-bearing pages must revalidate — a stale tab is indistinguishable from a broken fix",
+        "scope": null
+      },
       {
         "hash": "70fa1154",
         "date": "2026-08-14",
@@ -7068,13 +7075,6 @@
         "type": "New",
         "description": "Route 4 graph workers through worker write endpoint",
         "scope": "single-writer"
-      },
-      {
-        "hash": "fc271ae4",
-        "date": "2026-06-03",
-        "type": "Fixed",
-        "description": "Move single-writer port 7841 to 7849 + crash-proof the bind",
-        "scope": "worker"
       }
     ]
   }

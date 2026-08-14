@@ -18,6 +18,12 @@ const API_ORIGIN = 'https://api.siftersearch.com';
 // Path prefixes owned by the backend API; everything else is the Astro app.
 const isApiPath = (p) => p.startsWith('/api/') || p.startsWith('/widget') || p === '/health';
 
+// LIVE OPERATIONAL STATE — never served from the edge cache. These endpoints exist to say what is true
+// RIGHT NOW; a cached answer is not a stale convenience, it is a wrong answer that looks authoritative.
+// Admin is operational by definition; progress/status/monitor/health report live pipeline state.
+const isLiveState = (p) => p.startsWith('/api/admin/')
+  || /\/(progress|status|monitor|health)$/.test(p);
+
 export function createExports(manifest) {
   const app = new App(manifest);
   return {
@@ -29,14 +35,22 @@ export function createExports(manifest) {
           // Cloudflare doesn't cache /api/* JSON by default even with s-maxage — opt in here.
           // Only GETs whose response EXPLICITLY sets a public s-maxage are cached (those routes
           // are public-data by declaration; everything else stays a pure streaming pass-through).
-          if (request.method === 'GET') {
+          if (request.method === 'GET' && !isLiveState(url.pathname)) {
             const cache = caches.default;
             const hit = await cache.match(request);
             if (hit) return hit;
             const res = await fetch(target, request);
             const cc = res.headers.get('cache-control') || '';
             if (res.ok && cc.includes('public') && /s-maxage=[1-9]/.test(cc) && !cc.includes('no-store')) {
-              ctx.waitUntil(cache.put(request, res.clone()));
+              // Store with the ORIGIN's s-maxage as the ceiling. A zone-level cache rule was rewriting
+              // browser TTL to max-age=14400, so a route the origin declared fresh for 60s was served from
+              // this cache for FOUR HOURS — /biography showed 645/893 long after the API returned 881/893,
+              // and every fix looked like it had failed (2026-08-14). Pinning it here means no dashboard
+              // setting can silently outlive the origin's own declaration.
+              const ttl = Number((cc.match(/s-maxage=(\d+)/) || [])[1] || 60);
+              const stored = new Response(res.clone().body, res);
+              stored.headers.set('cache-control', `public, max-age=${ttl}, s-maxage=${ttl}`);
+              ctx.waitUntil(cache.put(request, stored));
             }
             return res;
           }
