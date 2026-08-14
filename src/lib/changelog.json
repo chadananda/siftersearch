@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T20:10:16.906Z",
+  "generated": "2026-08-14T20:34:43.523Z",
   "entries": [
+    {
+      "hash": "be55086d",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Stamp every paragraph with the extractor version (migration 115)",
+      "scope": null
+    },
     {
       "hash": "6588c78d",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Count graph_enriched=0 (indexed) not =1 (full scan)",
       "scope": "status"
-    },
-    {
-      "hash": "380a0649",
-      "date": "2026-06-05",
-      "type": "Refactor",
-      "description": "Generate pipeline snapshot out-of-process, API reads file",
-      "scope": "status"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "be55086d",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Stamp every paragraph with the extractor version (migration 115)",
+        "scope": null
+      },
       {
         "hash": "6588c78d",
         "date": "2026-08-14",
@@ -7065,13 +7072,6 @@
         "date": "2026-06-05",
         "type": "Performance",
         "description": "Count graph_enriched=0 (indexed) not =1 (full scan)",
-        "scope": "status"
-      },
-      {
-        "hash": "380a0649",
-        "date": "2026-06-05",
-        "type": "Refactor",
-        "description": "Generate pipeline snapshot out-of-process, API reads file",
         "scope": "status"
       }
     ]
