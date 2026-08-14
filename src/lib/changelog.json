@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T10:27:49.900Z",
+  "generated": "2026-08-14T11:27:22.656Z",
   "entries": [
+    {
+      "hash": "5a98746d",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "The chapter runner (Phase B complete, still no model call)",
+      "scope": null
+    },
     {
       "hash": "79195b04",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Write entity_mentions to sifter.db not graph.db",
       "scope": "resolver"
-    },
-    {
-      "hash": "c2c6fe58",
-      "date": "2026-06-01",
-      "type": "Fixed",
-      "description": "Process 'arbitrate' extractions alongside 'accept'",
-      "scope": "resolver"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "5a98746d",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "The chapter runner (Phase B complete, still no model call)",
+        "scope": null
+      },
       {
         "hash": "79195b04",
         "date": "2026-08-14",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-01",
         "type": "Fixed",
         "description": "Write entity_mentions to sifter.db not graph.db",
-        "scope": "resolver"
-      },
-      {
-        "hash": "c2c6fe58",
-        "date": "2026-06-01",
-        "type": "Fixed",
-        "description": "Process 'arbitrate' extractions alongside 'accept'",
         "scope": "resolver"
       }
     ]
