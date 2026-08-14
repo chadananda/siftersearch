@@ -1,6 +1,7 @@
 // Shared biography data layer — the single source of truth for person records (list + dossier) and source-book
 // facets, used by BOTH the internal /api/graph/bio/* routes and the official /api/v1/people API.
 import { queryAll, queryOne } from './db.js';
+import { swallow } from './swallow.js';
 import { INTEGRATION_PHASES } from './integration-phases.js';
 import { chatCompletion } from './ai.js';
 import * as pipelineState from './pipeline/state.js';
@@ -456,9 +457,13 @@ export async function listBioPersons() {
     ORDER BY (ge.importance IS NULL), ge.importance DESC, ge.canonical_name`);
   const persons = rows.map(r => {
     let aliases = [], kinship = [], death = null;
-    try { aliases = JSON.parse(r.aliases || '[]'); } catch {}
-    try { kinship = JSON.parse(r.kinship || '[]'); } catch {}
-    try { death = JSON.parse(r.research_notes || '{}').death || null; } catch {}
+    // Malformed JSON here does not crash the page — it silently DELETES a person's aliases, kin, or death
+    // from the archive, which looks identical to a person who simply has none. Falling back is right; doing
+    // it invisibly is not, because nobody would ever think to suspect it. swallow() keeps the fallback and
+    // adds a counter, so "this is failing for 400 rows" shows up in /server/reconcile (2026-08-14).
+    try { aliases = JSON.parse(r.aliases || '[]'); } catch (err) { swallow(err, 'bio.person.aliases', { id: r.id }); }
+    try { kinship = JSON.parse(r.kinship || '[]'); } catch (err) { swallow(err, 'bio.person.kinship', { id: r.id }); }
+    try { death = JSON.parse(r.research_notes || '{}').death || null; } catch (err) { swallow(err, 'bio.person.research_notes', { id: r.id }); }
     const m = man[r.id]; const hasPortrait = !!(m && m.cdn);
     return { id: r.id, name: r.name, importance: r.importance || 0, side: r.side || null,
       summary: r.summary || null, aliases, kinship, death, hasPortrait, sources: [...(bookOf[r.id] || [])],

@@ -8,6 +8,7 @@
 //
 // candidate = { names:[surface forms], origin?, nisba?, kin?:[{relation,who}], era?, roles?:[], importance? }
 
+import { swallow } from './swallow.js';
 const HON = new Set(['mirza', 'mulla', 'siyyid', 'sayyid', 'haji', 'shaykh', 'aqa', 'khan', 'khanum', 'mir', 'the', 'son', 'of', 'and', 'his', 'her', 'karbilai', 'mashhadi', 'aqay', 'jinab', 'ustad', 'hajji']);
 export const nkey = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ"“”]/g, '').toLowerCase().replace(/[^a-z0-9 -]/g, ' ').replace(/\s+/g, ' ').trim().replace(/^the /, '');
 // transliteration-tolerant tokens (Marághihí≈Marághi'í; collapse doubled letters + fold trailing -ih/-iy/-i/-y)
@@ -19,8 +20,10 @@ const NISBA = (s) => [...String(s).matchAll(/[-y]i-([A-ZÁÉÍÓÚÀ-ÿ][A-Za-z�
 export function buildIndex(people) {
   const byId = new Map(), canon = new Map(), alias = new Map(), tokIdx = [];
   for (const p of people) {
-    let aliases = []; try { aliases = JSON.parse(p.aliases || '[]'); } catch {}
-    let kin = []; try { kin = JSON.parse(p.kinship || '[]'); } catch {}
+    // A person whose aliases fail to parse silently becomes unfindable by every name but their canonical
+    // one — a retrieval hole that presents as "search is bad", not as an error. Fall back, but count it.
+    let aliases = []; try { aliases = JSON.parse(p.aliases || '[]'); } catch (err) { swallow(err, 'person-resolution.aliases', { id: p.id }); }
+    let kin = []; try { kin = JSON.parse(p.kinship || '[]'); } catch (err) { swallow(err, 'person-resolution.kinship', { id: p.id }); }
     const forms = [p.cn, ...aliases];
     const tset = new Set(); for (const f of forms) for (const t of toks(f)) tset.add(t);
     const nis = new Set(forms.flatMap(NISBA));

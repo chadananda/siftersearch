@@ -592,6 +592,36 @@ async function checkSchemaVersion() {
   ok('schema_version', 0, details);
 }
 
+// ─── Swallowed errors ─────────────────────────────────────────────────────
+// swallow() already counts every deliberately-ignored error and /server/reconcile already reports the tally.
+// Nothing ALARMED on it, so the counter had the same problem as the errors it was invented to expose: it was
+// only visible to someone who already suspected a problem. A path failing silently 400 times is drift between
+// what the code believes and what the database allows, and that is worth a warning (2026-08-14).
+async function checkSwallowed() {
+  const key = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY;
+  if (!key) return skip('swallowed_errors', 'no internal key available');
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/server/reconcile`, {
+      headers: { 'X-Internal-Key': key }, signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) return warn('swallowed_errors', `reconcile endpoint HTTP ${res.status}`);
+    const body = await res.json();
+    const sw = body?.swallowed;
+    if (!sw || sw.total == null) return skip('swallowed_errors', 'API predates swallowed-error counters');
+    const total = Number(sw.total) || 0;
+    // Counters are per-process and reset on restart, so a handful after a deploy is noise. A sustained
+    // count means a path is failing every time it runs.
+    if (total === 0) return ok('swallowed_errors', 0, { total: 0 });
+    const worst = (sw.worst || []).slice(0, 3).map((w) => `${w.context} x${w.count}`).join(', ');
+    const detail = { total, worst: sw.worst?.slice(0, 5) };
+    return total >= 100
+      ? fail('swallowed_errors', `${total} errors swallowed since boot — a path is failing every run: ${worst}`, detail)
+      : warn('swallowed_errors', `${total} errors swallowed since boot: ${worst}`, detail);
+  } catch (err) {
+    return warn('swallowed_errors', `swallowed-error check failed: ${err.message}`);
+  }
+}
+
 // ─── Snapshot probe integrity ─────────────────────────────────────────────
 // A DETECTOR WITH NO CONSUMER IS NOT A DETECTOR. pipeline-snapshot records every probe that failed while
 // building the snapshot (probe_errors), because each of those probes falls back to an empty value and an
@@ -834,6 +864,7 @@ const probes = [
   ['entity_pipeline', checkEntityPipeline],       // catches lock-storm pattern
   ['schema_version', checkSchemaVersion],         // catches pending migrations
   ['snapshot_probes', checkSnapshotProbes],       // catches a broken probe reporting zeros as "all clear"
+  ['swallowed_errors', checkSwallowed],           // catches a path that fails silently on every run
   ['deep_research', checkDeepResearch],           // deep_research_queue stuck/failing
   // enrichment + graph_pipeline: only meaningful on tower-nas; skip when api is down.
   ...(!apiDown ? [
