@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T01:39:03.256Z",
+  "generated": "2026-08-14T01:42:47.260Z",
   "entries": [
+    {
+      "hash": "c9a63be3",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Bill the off-peak rate the scheduler pauses to earn (estimate was 4-6x the invoice)",
+      "scope": null
+    },
     {
       "hash": "385f75ac",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Search quality 79% (41/52) — fixture fixes + page explanations",
       "scope": null
-    },
-    {
-      "hash": "a6edb488",
-      "date": "2026-05-31",
-      "type": "Chore",
-      "description": "Update search quality results — 37/52 (71%), MRR 0.798",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "c9a63be3",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Bill the off-peak rate the scheduler pauses to earn (estimate was 4-6x the invoice)",
+        "scope": null
+      },
       {
         "hash": "385f75ac",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Chore",
         "description": "Search quality 79% (41/52) — fixture fixes + page explanations",
-        "scope": null
-      },
-      {
-        "hash": "a6edb488",
-        "date": "2026-05-31",
-        "type": "Chore",
-        "description": "Update search quality results — 37/52 (71%), MRR 0.798",
         "scope": null
       }
     ]

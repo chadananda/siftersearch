@@ -108,6 +108,36 @@ export default async function ingestRoutes(fastify) {
   // name must match a known shape — never an arbitrary path, so this cannot become a file-read primitive.
 
 
+
+  // WHY IS THIS BOOK NOT BEING WORKED ON? The question that cost a full off-peak window (2026-08-13): the
+  // roadmap said 241 plan books were not done while the follower enqueued none of them, and the numbers each
+  // side used were computed in-process and thrown away. This returns the SAME row both decisions read, both
+  // verdicts, and the gate that blocks — so a disagreement is one GET away instead of a night of inference.
+  fastify.get('/grounding/why/:docId', admin, async (req) => {
+    const docId = Number(req.params.docId);
+    if (!Number.isFinite(docId)) throw ApiError.badRequest('numeric docId required');
+    const { coverageOf, blockingGate, isDoneFromArtifacts } = await import('../lib/pipeline/queue.js');
+    const { resumeStageFor } = await import('../lib/pipeline/plan.js');
+    const row = await coverageOf(docId);
+    const pipelineDone = isDoneFromArtifacts(row, {});
+    const resume = await resumeStageFor(docId);
+    const blocked = blockingGate(row, {});
+    // resumeStageFor returning null means "nothing to do" — which is the follower's SKIP. If the pipeline
+    // also says done, the two agree. If they disagree, that is the bug, and naming it here is the point.
+    const followerWouldEnqueue = resume !== null;
+    return {
+      docId,
+      coverage: row,
+      pipelineDone,
+      followerWouldEnqueue,
+      resumeFrom: resume === null ? null : (resume.from || 'full run'),
+      blockingGate: blocked,
+      verdict: pipelineDone === !followerWouldEnqueue
+        ? (pipelineDone ? 'agreed: done' : 'agreed: needs work')
+        : 'DISAGREEMENT — the roadmap and the follower read the same row differently',
+    };
+  });
+
   // Probe the single writer. Its /health lives on 127.0.0.1:7849 — localhost-only, so diagnosing it used to
   // mean SSH. The API runs on the same box, so it can ask on our behalf. Read-only: GETs /health, never /write.
   // Probes several times because the failure being chased is INTERMITTENT (a socket accepted then closed);

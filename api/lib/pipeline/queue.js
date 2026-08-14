@@ -119,14 +119,33 @@ function runVerdict(docId, startedAt) {
   } catch { return null; }   // no file (old build, or died before it could write) → fall back to inference
 }
 
-export async function reachedBound(docId, opts = {}, deps = {}) {
+/**
+ * The raw artifact counts a completion decision is made from. Split out of reachedBound because that
+ * function computed all of this and then returned a BOOLEAN, discarding the evidence — so when the roadmap
+ * and the follower disagreed about 241 books, there was no way to see WHICH number they disagreed on
+ * without direct DB access (2026-08-13). Exposed read-only via GET /api/admin/grounding/why/:docId.
+ */
+export async function coverageOf(docId, deps = {}) {
   const q = deps.queryOne || queryOne;
-  const row = await q(
+  return (await q(
     `${coverageSelect(HYPE_MINLEN)},
             (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
             (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions`,
-    [docId, docId, docId, docId, docId, docId], 'grounding:coverage-one-doc');
-  return isDoneFromArtifacts(row || {}, opts);
+    [docId, docId, docId, docId, docId, docId], 'grounding:coverage-one-doc')) || {};
+}
+
+/** Which gate blocks completion, in the order the decision applies them. null = nothing blocks. */
+export function blockingGate(row = {}, opts = {}) {
+  const { prose = 0, disamb = 0, hyped = 0, hypeable = 0, clusters = 0, decisions = 0 } = row;
+  if (prose === 0) return { gate: 'prose', why: 'no live prose paragraphs — nothing to ground' };
+  if (!meetsDisambBar(disamb, prose)) return { gate: 'disambiguate', why: `${disamb}/${prose} disambiguated, below the bar` };
+  if (decisions < 0.85 * clusters) return { gate: 'reconcile', why: `${decisions} decisions for ${clusters} clusters` };
+  if (!meetsHypeBar(hyped, hypeable)) return { gate: 'hype', why: `${hyped}/${hypeable} hyped, below the bar` };
+  return null;
+}
+
+export async function reachedBound(docId, opts = {}, deps = {}) {
+  return isDoneFromArtifacts(await coverageOf(docId, deps), opts);
 }
 
 // Batched reachedBound over MANY docs — the roadmap (bio.js getIntegrationProgress) grades ~898 plan docs, and doing
