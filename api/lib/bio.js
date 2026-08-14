@@ -223,10 +223,10 @@ export async function getIntegrationProgress() {
   // genreOf is DISPLAY-ONLY now (the biographies/histories genre labels) — it no longer decides membership.
   const genreOf = Object.fromEntries(readHistoryCatalog().map(b => [b.id, b.genre]));
   // Membership is EXPLICIT: a doc is in the plan IFF its id is listed in integration-phases.js. No author-routing,
-  // no collection sweep, no genre auto-classification — nothing rides in on a rule. (Pilgrim-group docs, primary.groups,
-  // render as a separate tree below and are intentionally NOT part of phaseByDoc / the graded metrics.)
-  const phaseByDoc = {};
-  for (const p of INTEGRATION_PHASES) for (const id of (p.docs || [])) phaseByDoc[id] = p.key;
+  // no collection sweep, no genre auto-classification — nothing rides in on a rule. NESTED docs (primary.groups)
+  // are ordinary members: the grouping is how the page renders them, not what they are, so planPhaseByDoc()
+  // resolves them here exactly as it does for every other reader of the plan.
+  const phaseByDoc = planPhaseByDoc();
   const allDocs = [...new Set(Object.keys(phaseByDoc).map(Number))];
 
   // Size + title/author for EVERY book (chunked to stay under the SQLite param limit).
