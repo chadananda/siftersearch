@@ -195,16 +195,25 @@ async function computeActiveBooks(staticDocs, meta) {
 let _progCache = null, _progAt = 0;
 // The curated (non-dynamic) plan doc ids the roadmap grades for "done" — same membership getIntegrationProgress
 // uses (integration-phases.js, curated phases only). Exported so a verifier can compare bulk vs single done-checks.
-export function gradedPlanDocIds() {
-  // NESTING IS PRESENTATION ONLY (Chad, 2026-08-14): "We nested for UI purposes. That does not in any way
-  // impact stats... The nesting has zero implications for anything but visual organization."
-  // A doc listed inside a group is a plan doc of that phase, full stop — it is graded, counted, ordered and
-  // displayed exactly like any other book. The groups exist so the page can render 600 pilgrim notes in
-  // period sections instead of one wall. Treating the nesting as a membership boundary is what left those
-  // books with a `done` flag and no cast, reading as processed-but-empty.
-  const phaseDocIds = (p) => [...(p.docs || []), ...((p.groups || []).flatMap((g) => g.docs || []))];
+// NESTING IS PRESENTATION ONLY (Chad, 2026-08-14): "We nested for UI purposes. That does not in any way
+// impact stats... The nesting has zero implications for anything but visual organization."
+// A doc listed inside a group is a plan doc of that phase, full stop — graded, counted, ordered and
+// displayed exactly like any other book. The groups exist so the page can render 600 pilgrim notes in
+// period sections instead of one wall.
+// MODULE scope, deliberately: every reader of the plan must resolve membership the same way. It briefly
+// lived inside gradedPlanDocIds(), which left getIntegrationProgress() referencing an undefined name — a
+// 500 on the roadmap endpoint that the UI renders as zeros, i.e. an outage disguised as data.
+export const phaseDocIds = (p) => [...(p.docs || []), ...((p.groups || []).flatMap((g) => g.docs || []))];
+
+/** Every doc listed in the plan → its phase key. One membership map, nested docs included. */
+export function planPhaseByDoc() {
   const phaseByDoc = {};
   for (const p of INTEGRATION_PHASES) for (const id of phaseDocIds(p)) phaseByDoc[id] = p.key;
+  return phaseByDoc;
+}
+
+export function gradedPlanDocIds() {
+  const phaseByDoc = planPhaseByDoc();
   const allDocs = [...new Set(Object.keys(phaseByDoc).map(Number))];
   const curatedKeys = new Set(INTEGRATION_PHASES.filter((p) => !p.dynamic).map((p) => p.key));
   return allDocs.filter((id) => curatedKeys.has(phaseByDoc[id]));

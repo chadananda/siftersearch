@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T16:01:38.931Z",
+  "generated": "2026-08-14T16:12:20.604Z",
   "entries": [
+    {
+      "hash": "ca389282",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Nesting is PRESENTATION — a nested doc is a plan doc, graded and displayed like any other",
+      "scope": null
+    },
     {
       "hash": "65612907",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Enable write API host on siftersearch-worker",
       "scope": "single-writer"
-    },
-    {
-      "hash": "2d251f8b",
-      "date": "2026-06-02",
-      "type": "Fixed",
-      "description": "ExtractHeading(bodyText) not imported content object — 2nd occurrence",
-      "scope": "indexer"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "ca389282",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Nesting is PRESENTATION — a nested doc is a plan doc, graded and displayed like any other",
+        "scope": null
+      },
       {
         "hash": "65612907",
         "date": "2026-08-14",
@@ -7068,15 +7075,6 @@
         "type": "New",
         "description": "Enable write API host on siftersearch-worker",
         "scope": "single-writer"
-      }
-    ],
-    "2026-06-02": [
-      {
-        "hash": "2d251f8b",
-        "date": "2026-06-02",
-        "type": "Fixed",
-        "description": "ExtractHeading(bodyText) not imported content object — 2nd occurrence",
-        "scope": "indexer"
       }
     ]
   }
