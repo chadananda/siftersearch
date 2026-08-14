@@ -81,6 +81,13 @@ function ok(component, latencyMs, details = {}) {
 function warn(component, message, details = {}) {
   checks[component] = { ok: false, severity: 'warn', message, ...details };
 }
+// NOT-APPLICABLE-HERE is not a warning. Run from a laptop, every Meili/pm2/vLLM probe is unreachable by
+// design, so the pre-commit gate printed "9 warnings" of which 8 were "you are not on tower-nas" — noise that
+// trains everyone to ignore the gate, including on the one line that matters. These report as n/a and are
+// excluded from the warning tally; a real problem is now the only thing that shows up (2026-08-14).
+function skip(component, message, details = {}) {
+  checks[component] = { ok: true, severity: 'skip', message, ...details };
+}
 function fail(component, message, details = {}) {
   checks[component] = { ok: false, severity: 'fail', message, ...details };
 }
@@ -179,7 +186,7 @@ async function checkMeiliBatchStall() {
 async function checkMeili() {
   if (!await meiliReachable()) {
     for (const c of ['meili_paragraphs', 'meili_hype', 'meili_batch_stall'])
-      warn(c, 'remote_only (run on tower-nas to check Meili)');
+      skip(c, 'remote_only (run on tower-nas to check Meili)');
     return;
   }
   // Run all three checks in parallel — batch stall was fire-and-forget before, causing
@@ -231,7 +238,7 @@ async function checkVllm() {
     // Only meaningful on tower-nas (where Meili is also local).
     // On a dev machine, boss is not on Tailscale — treat as remote_only.
     const onServer = await meiliReachable();
-    if (!onServer) { warn('boss_vllm', 'remote_only (run on tower-nas to check vLLM)'); return; }
+    if (!onServer) { skip('boss_vllm', 'remote_only (run on tower-nas to check vLLM)'); return; }
     const reachable = await isLocalhostReachable(VLLM_URL.replace(/\/v1.*/, ''));
     if (!reachable) { warn('boss_vllm', 'boss unreachable — llama-server down? (check port 8080 on boss)'); return; }
   }
@@ -266,12 +273,12 @@ async function checkPm2() {
     const raw = pm2result.stdout || pm2result.stderr || '';
     const jsonStart = raw.indexOf('[');
     if (jsonStart === -1) {
-      return warn('pm2', 'pm2 not available locally (run on tower-nas to verify)');
+      return skip('pm2', 'not applicable locally (run on tower-nas to verify)');
     }
     const procs = JSON.parse(raw.slice(jsonStart));
     // Empty list = pm2 running locally but no siftersearch processes — dev machine
     if (procs.length === 0) {
-      return warn('pm2', 'pm2 not available locally (run on tower-nas to verify)');
+      return skip('pm2', 'not applicable locally (run on tower-nas to verify)');
     }
     const expected = ['siftersearch-api', 'siftersearch-worker',
       'siftersearch-library-watcher', 'siftersearch-enrichment-api',
@@ -519,7 +526,7 @@ async function checkWal() {
 
 async function checkMeiliVsDb() {
   if (!await meiliReachable()) {
-    return warn('meili_vs_db', 'remote_only (run on tower-nas to check Meili)');
+    return skip('meili_vs_db', 'remote_only (run on tower-nas to check Meili)');
   }
   const ph = await fetchPipelineHealth();
   if (ph._error) return warn('meili_vs_db', `pipeline endpoint unavailable: ${ph._error}`);
@@ -589,7 +596,7 @@ async function checkSchemaVersion() {
 // Uses pipeline health endpoint (server-side partial-index queries) — no local
 // better-sqlite3 which would block the event loop and cause Meili fetch timeouts.
 async function checkEnrichment() {
-  if (!await meiliReachable()) return warn('enrichment', 'remote_only (run on tower-nas to check enrichment)');
+  if (!await meiliReachable()) return skip('enrichment', 'remote_only (run on tower-nas to check enrichment)');
   const ph = await fetchPipelineHealth();
   if (ph._error) return warn('enrichment', `pipeline endpoint unavailable: ${ph._error}`);
   // enrichment stats are skipped in pipeline endpoint when WAL is large (would block).
@@ -693,7 +700,7 @@ async function checkDeepResearch() {
 // ─── Entity-mentions Meili sidecar ───────────────────────────────────────
 async function checkEntityMentionsIndex() {
   if (!await meiliReachable()) {
-    return warn('entity_mentions_idx', 'remote_only (run on tower-nas to check Meili)');
+    return skip('entity_mentions_idx', 'remote_only (run on tower-nas to check Meili)');
   }
   try {
     const headers = MEILI_KEY ? { Authorization: `Bearer ${MEILI_KEY}` } : {};
@@ -724,7 +731,7 @@ async function checkLogFiles() {
   const pm2bin = [process.env.PM2_BIN, '/usr/bin/pm2', '/usr/local/bin/pm2', 'pm2'].find(Boolean);
   const pm2test = spawnSync(pm2bin, ['jlist'], { timeout: 5000, maxBuffer: 256, encoding: 'utf8' });
   if (pm2test.stdout?.indexOf('[') === -1) {
-    return warn('log_files', 'remote_only (run on tower-nas to check log files)');
+    return skip('log_files', 'remote_only (run on tower-nas to check log files)');
   }
   try {
     const logDir = join(PROJECT_ROOT, 'logs');
@@ -750,7 +757,7 @@ async function checkGraphPipeline() {
   const ph = await fetchPipelineHealth();
   if (ph._error) return warn('graph_pipeline', `pipeline endpoint error: ${ph._error}`);
   const g = ph.graph;
-  if (!g) return warn('graph_pipeline', 'remote_only (run on tower-nas)');
+  if (!g) return skip('graph_pipeline', 'remote_only (run on tower-nas)');
 
   const total = (g.extracted || 0) + (g.pending || 0);
   const pct = total > 0 ? Math.round(g.extracted / total * 100) : 0;
@@ -829,12 +836,14 @@ if (JSON_ONLY) {
 } else {
   // Human-readable summary
   console.log('═'.repeat(60));
-  console.log(`Health Check — ${allOk ? '✅ all systems operational' : (failed.length > 0 ? '🔴 FAILURES' : '⚠️  WARNINGS')}`);
+  const skipCount = Object.values(checks).filter(c => c.severity === 'skip').length;
+  const greenLabel = skipCount ? `✅ all checks that apply here passed (${skipCount} n/a)` : '✅ all systems operational';
+  console.log(`Health Check — ${allOk ? greenLabel : (failed.length > 0 ? '🔴 FAILURES' : '⚠️  WARNINGS')}`);
   console.log(`Probed in ${totalMs}ms · ${Object.keys(checks).length} components`);
   console.log('═'.repeat(60));
   for (const [name, c] of Object.entries(checks)) {
-    const icon = c.ok ? '✓' : (c.severity === 'fail' ? '✗' : '⚠');
-    const status = c.ok ? 'ok' : c.message;
+    const icon = c.severity === 'skip' ? '–' : (c.ok ? '✓' : (c.severity === 'fail' ? '✗' : '⚠'));
+    const status = c.severity === 'skip' ? c.message : (c.ok ? 'ok' : c.message);
     const lat = c.latency_ms != null ? ` (${c.latency_ms}ms)` : '';
     console.log(`  ${icon} ${name.padEnd(22)} ${status}${lat}`);
     if (VERBOSE && Object.keys(c).length > 2) {
@@ -847,6 +856,8 @@ if (JSON_ONLY) {
   console.log('═'.repeat(60));
   if (failed.length) console.log(`${failed.length} failures: ${failed.map(([n]) => n).join(', ')}`);
   if (warned.length) console.log(`${warned.length} warnings: ${warned.map(([n]) => n).join(', ')}`);
+  const skipped = Object.entries(checks).filter(([, c]) => c.severity === 'skip');
+  if (skipped.length) console.log(`${skipped.length} not applicable here: ${skipped.map(([n]) => n).join(', ')}`);
 }
 
 process.exit(allOk ? 0 : 1);
