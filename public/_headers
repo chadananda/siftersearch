@@ -2,13 +2,27 @@
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
 
-# HTML pages — always revalidate with edge
+# HTML pages — always revalidate with edge.
+# Any page that DISPLAYS LIVE DATA must be listed here. A page with no Cache-Control is cached
+# heuristically by the browser, so an open tab keeps serving an old copy indefinitely — on 2026-08-14
+# /biography showed 645/893 for half an hour after the deploy that made it 881/893, and the stale page was
+# indistinguishable from a broken fix. Costing a reader an unexplained wrong number is worse than costing
+# a revalidation request.
 /
   Cache-Control: public, max-age=0, must-revalidate
 /library/*
   Cache-Control: public, max-age=0, must-revalidate
 /docs/*
   Cache-Control: public, max-age=0, must-revalidate
+/biography
+  Cache-Control: public, max-age=0, must-revalidate
+/biography/*
+  Cache-Control: public, max-age=0, must-revalidate
+# Admin is operational state — never serve it from a cache at all.
+/admin
+  Cache-Control: no-store
+/admin/*
+  Cache-Control: no-store
 
 # Images and fonts — long cache
 /*.png
