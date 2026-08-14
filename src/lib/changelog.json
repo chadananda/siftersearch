@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T15:55:35.154Z",
+  "generated": "2026-08-14T16:01:38.931Z",
   "entries": [
+    {
+      "hash": "65612907",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "The pilgrim-note groups get their detail too (a separate exclusion from the last fix)",
+      "scope": null
+    },
     {
       "hash": "6c20c24a",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "ExtractHeading(bodyText) not imported content object — 2nd occurrence",
       "scope": "indexer"
-    },
-    {
-      "hash": "523378e7",
-      "date": "2026-06-02",
-      "type": "New",
-      "description": "Single-writer foundation — route writes through worker-hosted write API",
-      "scope": "db"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "65612907",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "The pilgrim-note groups get their detail too (a separate exclusion from the last fix)",
+        "scope": null
+      },
       {
         "hash": "6c20c24a",
         "date": "2026-08-14",
@@ -7070,13 +7077,6 @@
         "type": "Fixed",
         "description": "ExtractHeading(bodyText) not imported content object — 2nd occurrence",
         "scope": "indexer"
-      },
-      {
-        "hash": "523378e7",
-        "date": "2026-06-02",
-        "type": "New",
-        "description": "Single-writer foundation — route writes through worker-hosted write API",
-        "scope": "db"
       }
     ]
   }
