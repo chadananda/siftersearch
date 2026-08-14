@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T07:28:10.276Z",
+  "generated": "2026-08-14T08:27:29.367Z",
   "entries": [
+    {
+      "hash": "2ba7be6f",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Phase A — the persistent research-notes database and ledger",
+      "scope": null
+    },
     {
       "hash": "2ecba7e6",
       "date": "2026-08-13",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Doc-tier-priority — add Saiedi/Momen, move Momen above scripture, pilgrim notes above catch-all",
       "scope": null
-    },
-    {
-      "hash": "7381e5b5",
-      "date": "2026-06-01",
-      "type": "Fixed",
-      "description": "Use deepseek-v4 across all graph workers, drop old models",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-14": [
+      {
+        "hash": "2ba7be6f",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Phase A — the persistent research-notes database and ledger",
+        "scope": null
+      }
+    ],
     "2026-08-13": [
       {
         "hash": "2ecba7e6",
@@ -7069,13 +7078,6 @@
         "date": "2026-06-01",
         "type": "Fixed",
         "description": "Doc-tier-priority — add Saiedi/Momen, move Momen above scripture, pilgrim notes above catch-all",
-        "scope": null
-      },
-      {
-        "hash": "7381e5b5",
-        "date": "2026-06-01",
-        "type": "Fixed",
-        "description": "Use deepseek-v4 across all graph workers, drop old models",
         "scope": null
       }
     ]
