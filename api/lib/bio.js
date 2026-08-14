@@ -392,7 +392,13 @@ export async function getIntegrationProgress() {
       SELECT entity_id e FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL
       UNION SELECT entity_id FROM entity_claims WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL)`, [...gradedDocs, ...gradedDocs]))[0]?.n || 0;
   const totalParas = phases.reduce((s, p) => s + p.paras, 0);
-  _progCache = { phases, doneBooks, totalBooks, doneParas, cumulativeUnique, totalParas, goal: 'all history absorbed' };
+  // Books that GRADE done but contributed nobody. Counted and published because the alternative is what
+  // happened: 53 such books sat behind a ✓ with a blank cast cell, indistinguishable from books nobody had
+  // reached yet. A done book with zero mentions is a re-extraction candidate — completion says the stage RAN,
+  // and that is exactly why the zero-yield cases have to be surfaced rather than absorbed into the ✓ (2026-08-14).
+  const allBooks = phases.flatMap((p) => [...p.books, ...(p.groups || []).flatMap((g) => g.books)]);
+  const doneNoCast = allBooks.filter((b) => b.done && !b.persons).length;
+  _progCache = { phases, doneBooks, totalBooks, doneParas, cumulativeUnique, totalParas, doneNoCast, goal: 'all history absorbed' };
   _progAt = Date.now();
   return { ..._progCache, active, actives, offPeak };
 }
