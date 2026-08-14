@@ -109,6 +109,25 @@ export default async function ingestRoutes(fastify) {
 
 
 
+
+  // Locator metadata: 'pdf-z-zwemer' as an author, a filename as a title. Read-only AUDIT so the repair can
+  // be reviewed without a shell — recoveryRate is the number that decides whether the rule is good enough to
+  // run on ~2,058 live documents.
+  fastify.get('/ingest/metadata-audit', admin, async (req) => {
+    const { auditLocatorMetadata } = await import('../lib/ingest/metadata-repair.js');
+    return auditLocatorMetadata({ limit: Math.min(Number(req.query?.limit) || 300, 5000), apply: false });
+  });
+
+  // The repair. Rewrites what live documents claim about their authorship, so it demands an explicit
+  // confirm — a mistyped curl must not silently rewrite the library.
+  fastify.post('/ingest/metadata-backfill', admin, async (req) => {
+    if (req.body?.confirm !== 'rewrite-author-metadata') {
+      throw ApiError.badRequest("pass {\"confirm\":\"rewrite-author-metadata\"} — this rewrites author/title on live documents");
+    }
+    const { auditLocatorMetadata } = await import('../lib/ingest/metadata-repair.js');
+    return auditLocatorMetadata({ limit: Math.min(Number(req.body?.limit) || 500, 5000), apply: true });
+  });
+
   // WHY IS THIS BOOK NOT BEING WORKED ON? The question that cost a full off-peak window (2026-08-13): the
   // roadmap said 241 plan books were not done while the follower enqueued none of them, and the numbers each
   // side used were computed in-process and thrown away. This returns the SAME row both decisions read, both

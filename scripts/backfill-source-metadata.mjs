@@ -13,55 +13,28 @@
 //   node scripts/backfill-source-metadata.mjs --apply    # write via the single writer
 //   node scripts/backfill-source-metadata.mjs --limit=50 # bound the pass
 import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
-const { queryAll, query } = await import('../api/lib/db.js');
-const { resolveSourceMetadata, isLocatorAuthor, isFilenameTitle } = await import('../api/lib/text/source-metadata.js');
+const { auditLocatorMetadata } = await import('../api/lib/ingest/metadata-repair.js');
 
 const APPLY = process.argv.includes('--apply');
 const LIMIT = Number((process.argv.find((a) => a.startsWith('--limit=')) || '').split('=')[1]) || 5000;
 
-// The locator shape, as SQL: '<ext>-' prefix. Kept broad here and confirmed per-row by isLocatorAuthor(),
-// so the SQL never has to encode the full rule twice.
-const docs = await queryAll(
-  `SELECT id, title, author, file_path FROM docs
-    WHERE deleted_at IS NULL
-      AND (author LIKE 'pdf-%' OR author LIKE 'doc-%' OR author LIKE 'docx-%'
-           OR author LIKE 'html-%' OR author LIKE 'txt-%' OR author LIKE 'epub-%')
-    ORDER BY id LIMIT ?`, [LIMIT], 'backfill:locator-docs');
+// The rule lives in api/lib/ingest/metadata-repair.js, shared with GET/POST /api/admin/ingest/metadata-*.
+// A CLI copy would be a second implementation of a rule that decides what live documents claim about their
+// own authorship — exactly the drift this codebase has been paying for all week.
+const r = await auditLocatorMetadata({ limit: LIMIT, apply: APPLY });
 
-console.log(`Documents carrying a locator author: ${docs.length}${APPLY ? '' : '  (DRY RUN)'}\n`);
-
-const tally = { recovered: 0, authorOnly: 0, titleOnly: 0, unknown: 0, skipped: 0 };
-const samples = [];
-
-for (const d of docs) {
-  if (!isLocatorAuthor(d.author) && !isFilenameTitle(d.title)) { tally.skipped++; continue; }
-  // The document's own opening — the only honest source for what it is.
-  const head = await queryAll(
-    `SELECT text FROM content WHERE doc_id=? AND deleted_at IS NULL AND blocktype IN ('paragraph','quote')
-      ORDER BY paragraph_index LIMIT 12`, [d.id], 'backfill:doc-head');
-  const text = head.map((r) => r.text).join('\n');
-  const meta = resolveSourceMetadata({ stubTitle: d.title, stubAuthor: d.author, text });
-
-  if (meta.author && meta.title) tally.recovered++;
-  else if (meta.author) tally.authorOnly++;
-  else if (meta.title) tally.titleOnly++;
-  else tally.unknown++;
-
-  if (samples.length < 12) samples.push({ id: d.id, was: `${d.author} / ${d.title}`.slice(0, 60), now: `${meta.author || '—'} / ${meta.title || '—'}`.slice(0, 60) });
-
-  if (APPLY) {
-    // NULL, never a placeholder: an empty author is honest and fixable; a fabricated one is neither.
-    await query(`UPDATE docs SET author=?, title=COALESCE(?, title), updated_at=CURRENT_TIMESTAMP WHERE id=?`,
-      [meta.author, meta.title, d.id], 'backfill:write-metadata');
-  }
-}
-
-console.log('  recovered both  :', tally.recovered);
-console.log('  author only     :', tally.authorOnly);
-console.log('  title only      :', tally.titleOnly);
-console.log('  neither (NULLed):', tally.unknown, '← need a human or a better source');
-console.log('  skipped (clean) :', tally.skipped);
+console.log(`Candidates: ${r.candidates}${APPLY ? '' : '  (DRY RUN)'}\n`);
+console.log('  recovered both  :', r.recoveredBoth);
+console.log('  author only     :', r.authorOnly);
+console.log('  title only      :', r.titleOnly);
+console.log('  neither (NULLed):', r.neither, '\u2190 need a human or a better source');
+console.log('  skipped (clean) :', r.skipped);
+console.log('  recovery rate   :', r.recoveryRate + '%');
+if (APPLY) console.log('  WRITTEN         :', r.written);
 console.log('\n  samples:');
-for (const s of samples) console.log(`    ${s.id}  ${s.was}\n        → ${s.now}`);
-if (!APPLY) console.log('\n  DRY RUN — nothing written. Re-run with --apply to write via the single writer.');
+for (const s of r.samples) {
+  console.log(`    ${s.id}  ${s.fromAuthor} / ${s.fromTitle}`);
+  console.log(`        \u2192 ${s.toAuthor || '\u2014 (null)'} / ${s.toTitle}`);
+}
+if (!APPLY) console.log('\n  DRY RUN — nothing written. Re-run with --apply, or POST /api/admin/ingest/metadata-backfill.');
 process.exit(0);
