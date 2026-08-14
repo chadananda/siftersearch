@@ -21,6 +21,7 @@ import { query, telemetryQuery } from './db.js';
 import { getModel } from './model-registry.js';
 import { currentAIContext } from './ai-context.js';
 import { assertAnthropicAllowed } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
+import { nowInPeak } from './pipeline/peak.js';
 
 // =============================================================================
 // MODEL PRICING (per 1K tokens, Jan 2025)
@@ -272,8 +273,19 @@ export function logAIUsage({
       // promptTokens is the WHOLE prompt (clients normalise this), so the cached portion is a subset of it.
       // Cache reads bill ~0.1x; a cache WRITE bills ~1.25x (paid once per prefix, then amortised over the book).
       const fresh = Math.max(0, inputTokens - cachedTokens - cacheWriteTokens);
-      const cost = (fresh * pricing.input + cachedTokens * pricing.input * 0.1
-        + cacheWriteTokens * pricing.input * 1.25 + completionTokens * pricing.output) / 1000;
+      // OFF-PEAK RATES. The scheduler PAUSES grounding through DeepSeek's full-price hours specifically to buy
+      // the discount (pipeline/peak.js), and the estimator then billed every one of those calls at list price.
+      // Result: $1,854 estimated all-time against an invoice of a few hundred (Chad, 2026-08-13) — a 4-6x
+      // overstatement in the number the BUDGET GATE stops work on. Reuse nowInPeak so the rate can never
+      // disagree with the schedule that earned it; a model with no offPeak block is unaffected.
+      const off = getModel(model)?.offPeak;
+      const inMult = off && !nowInPeak() ? off.input : 1;
+      const outMult = off && !nowInPeak() ? off.output : 1;
+      // Residual calibration against the real invoice: token counts are stored per call, so this is a dial,
+      // not a guess baked into history — and history can be recosted from the stored tokens at any time.
+      const cal = Number(process.env.AI_COST_CALIBRATION || 1);
+      const cost = cal * ((fresh * pricing.input + cachedTokens * pricing.input * 0.1
+        + cacheWriteTokens * pricing.input * 1.25) * inMult + completionTokens * pricing.output * outMult) / 1000;
       // document_id is a TEXT column, so a bound JS number lands as '15254.0' and `WHERE document_id=15254`
       // then matches NOTHING (int vs text storage classes). Normalise to a clean integer string on write so a
       // book's spend is actually findable; readers additionally CAST for the legacy dotted-zero rows.

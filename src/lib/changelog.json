@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T01:27:51.134Z",
+  "generated": "2026-08-14T01:39:03.256Z",
   "entries": [
+    {
+      "hash": "385f75ac",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "Never write a file locator as the author (stops it mid-run)",
+      "scope": null
+    },
     {
       "hash": "a80470d6",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Update search quality results — 37/52 (71%), MRR 0.798",
       "scope": null
-    },
-    {
-      "hash": "299166ed",
-      "date": "2026-05-31",
-      "type": "Fixed",
-      "description": "API crash under concurrent load — busy_timeout + promise-singleton",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "385f75ac",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "Never write a file locator as the author (stops it mid-run)",
+        "scope": null
+      },
       {
         "hash": "a80470d6",
         "date": "2026-08-13",
@@ -7071,13 +7078,6 @@
         "date": "2026-05-31",
         "type": "Chore",
         "description": "Update search quality results — 37/52 (71%), MRR 0.798",
-        "scope": null
-      },
-      {
-        "hash": "299166ed",
-        "date": "2026-05-31",
-        "type": "Fixed",
-        "description": "API crash under concurrent load — busy_timeout + promise-singleton",
         "scope": null
       }
     ]

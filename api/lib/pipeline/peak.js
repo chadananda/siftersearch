@@ -30,3 +30,10 @@ export function peakEndsAt(windows = DEFAULT_PEAK_WINDOWS, at = new Date()) {
   }
   return null;
 }
+
+/**
+ * Is `at` in the DISCOUNTED window? The cost estimator needs exactly the inverse of the scheduler's question,
+ * and it must be the SAME window — pausing for a discount and then billing at full price is how a $1,854
+ * estimate sat beside a few-hundred-dollar invoice (2026-08-13).
+ */
+export const inOffPeak = (windows = DEFAULT_PEAK_WINDOWS, at = new Date()) => !nowInPeak(windows, at);

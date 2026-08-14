@@ -294,7 +294,13 @@ export const MODEL_REGISTRY = {
     quality: 'quality',
     speed: 'fast',
     recommended: ['entity_extraction', 'classification', 'resolution'],
-    notes: 'Primary bulk extraction model. Supports response_format json_schema. Cache hits ~98% discount.'
+    // OFF-PEAK: DeepSeek discounts 16:30-00:30 UTC — the window the whole pipeline is scheduled around
+    // (pipeline/peak.js). Multipliers are the published chat rate; override per-model from an invoice via
+    // DEEPSEEK_OFFPEAK_INPUT / _OUTPUT rather than editing code, because the vendor changes these.
+    // CACHE: hits bill at 10% of the input rate (already applied in logAIUsage). The previous note here
+    // claimed "~98% discount", which contradicted the code and overstated how cheap cached input is.
+    offPeak: { input: Number(process.env.DEEPSEEK_OFFPEAK_INPUT || 0.5), output: Number(process.env.DEEPSEEK_OFFPEAK_OUTPUT || 0.5) },
+    notes: 'Primary bulk extraction model. Supports response_format json_schema. Cache hits bill at 10% of input.'
   },
 
   'deepseek-v4-pro': {
