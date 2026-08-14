@@ -94,17 +94,14 @@ describe.skipIf(!HAVE_SQLITE)('reachedBound SQL — "disambiguated" must mean PR
     // hyp_model (migration 98) is the hype VERSION STAMP and now the completion measure — a schema without
     // it cannot exercise the real coverage SQL.
     raw.exec(`CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INT, blocktype TEXT, deleted_at TEXT, hyp_model TEXT,
-                text TEXT, context TEXT, hyp_questions TEXT, extract_model TEXT);
+                text TEXT, context TEXT, hyp_questions TEXT);
               CREATE TABLE entity_mentions_v2 (doc_id INT, resolved_as TEXT);
               CREATE TABLE entity_decisions (target_kind TEXT, payload TEXT);`);
     // Doc 1: every prose paragraph processed, but most notes are EMPTY — "examined, nothing to resolve", the
     // valid complete result getDisambigCoverage/resumeStageFor already count as done.
     const long = 'x'.repeat(80);
     for (let i = 1; i <= 45; i++) {
-      // extract_model set: this doc's subject is the DISAMBIGUATION measure (empty note = processed), and it
-      // is a book that ran the whole pipeline. Leaving the extraction stamp off would fail it for an
-      // unrelated reason and hide what this case is actually asserting.
-      raw.prepare(`INSERT INTO content (doc_id, blocktype, text, context, hyp_questions, extract_model) VALUES (1,'paragraph',?,?,'["q"]','extract-v2')`)
+      raw.prepare(`INSERT INTO content (doc_id, blocktype, text, context, hyp_questions) VALUES (1,'paragraph',?,?,'["q"]')`)
         .run(long, i <= 43 ? '' : '@Shíráz, ~1844 — arrival');
     }
   });
@@ -120,10 +117,7 @@ describe.skipIf(!HAVE_SQLITE)('reachedBound SQL — "disambiguated" must mean PR
 });
 
 describe('reachedBound — the shapes that were failing "did not reach verify"', () => {
-  // `extracted` mirrors `prose` unless a case overrides it: every book here is a real one that had been
-  // through the pipeline, and these cases exist to prove the disamb/hype bars do not false-fail them. The
-  // extraction gate is exercised on its own in tests/api/extraction-stamp.test.js.
-  const artifacts = (o) => ({ queryOne: async () => ({ prose: 0, disamb: 0, hyped: 0, hypeable: 0, clusters: 0, decisions: 0, extracted: o.prose ?? 0, ...o }) });
+  const artifacts = (o) => ({ queryOne: async () => ({ prose: 0, disamb: 0, hyped: 0, hypeable: 0, clusters: 0, decisions: 0, ...o }) });
 
   it('a 92-paragraph book with 91 disambiguated + HyPE complete IS done (doc 12428)', async () => {
     expect(await reachedBound(1, {}, artifacts({ prose: 92, disamb: 91, hyped: 77, hypeable: 77 }))).toBe(true);

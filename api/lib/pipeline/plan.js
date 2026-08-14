@@ -16,7 +16,7 @@ import { queryOne, queryAll } from '../db.js';
 import { logger } from '../logger.js';
 import { enqueue, list, tick } from './queue.js';
 import { getIntegrationProgress } from '../bio.js';
-import { coverageSelect, meetsDisambBar, meetsHypeBar, meetsExtractBar } from './processed.js';
+import { coverageSelect, meetsDisambBar, meetsHypeBar } from './processed.js';
 
 const HYPE_MINLEN = Number(process.env.HYPE_MINLEN || 60);   // matches reachedBound / hype-book fragment filter
 const MODES = ['plan', 'override', 'general'];
@@ -44,8 +44,7 @@ export async function resumeStageFor(docId, deps = {}) {
             (SELECT COUNT(*) FROM entity_claims WHERE doc_id=? AND entity_id IS NOT NULL) claimsBound,
             (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
             (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions`,
-    // 8 = 5 coverageSelect subqueries (prose, disamb, hyped, extracted, hypeable) + claimsBound + clusters + decisions.
-    [docId, docId, docId, docId, docId, docId, docId, docId], 'grounding:resume-stage');
+    [docId, docId, docId, docId, docId, docId, docId], 'grounding:resume-stage');
   const prose = r?.prose || 0;
   if (prose === 0) return null;                                              // no groundable content → skip
   if (!meetsDisambBar(r.disamb || 0, prose)) return {};                     // disambiguation incomplete → full
@@ -54,15 +53,7 @@ export async function resumeStageFor(docId, deps = {}) {
   // considers done → the re-grounding grind). HyPE is stage 10 (after the graph tail), so once it covers the
   // hypeable paras the whole pipeline ran → done, EVEN with 0 bound claims (a legitimately entity-sparse book).
   // The old order tested claimsBound===0 FIRST and re-ran such books from 'project' forever.
-  // EXTRACTION FIRST, and never resume downstream of it. This branch used to read "HyPE complete ⇒ all prior
-  // stages ran ⇒ done", which is true of a straight run and FALSE of a resumed one: the line below sent a
-  // book with no tail evidence to 'project' (stage 5), downstream of mentions (1) and claims (2), so a book
-  // missing its extraction could never acquire it — and hype completing then certified it done, permanently,
-  // with an empty cast. 53 books were absorbed that way. Extraction is now measured by its own stamp
-  // (migration 115) and, when unmet, the resume starts AT extraction (2026-08-14).
-  const extractionMissing = !meetsExtractBar(r.extracted || 0, prose) && (r.clusters || 0) === 0;
-  if (extractionMissing) return { from: 'mentions' };                       // re-run extraction, then everything after it
-  if (meetsHypeBar(r.hyped || 0, r.hypeable || 0)) return null;              // extraction done + HyPE complete → done
+  if (meetsHypeBar(r.hyped || 0, r.hypeable || 0)) return null;              // HyPE complete ⇒ all prior stages ran → done
   if ((r.claimsBound || 0) === 0) return { from: 'project' };               // HyPE incomplete + no tail evidence → graph tail + HyPE
   return { from: 'hype' };                                                   // tail done, only HyPE left
 }

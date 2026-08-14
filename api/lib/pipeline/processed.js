@@ -59,7 +59,6 @@ export function coverageSelect(hypeMinLen) {
   return `SELECT (SELECT COUNT(*) FROM content WHERE ${live}) prose,
             (SELECT COUNT(*) FROM content WHERE ${live} AND ${DISAMB_DONE_SQL}) disamb,
             (SELECT COUNT(*) FROM content WHERE ${live} AND ${HYPE_DONE_SQL}) hyped,
-            (SELECT COUNT(*) FROM content WHERE ${live} AND ${EXTRACT_DONE_SQL}) extracted,
             (SELECT COUNT(*) FROM content WHERE ${live} AND length(trim(text)) >= ${Number(hypeMinLen)}) hypeable`;
 }
 
@@ -93,37 +92,4 @@ export const HYPE_THRESHOLD = 0.9;
 export function meetsHypeBar(hyped, hypeable, threshold = HYPE_THRESHOLD) {
   if (!hypeable) return true;                 // nothing hypeable ⇒ nothing blocking
   return hyped / hypeable >= threshold;
-}
-
-
-// ── EXTRACTION ────────────────────────────────────────────────────────────────────────────────────────
-// The stage that had NO stamp, and the gap that cost 53 books their cast (2026-08-14).
-//
-// Disambiguation writes context_model; hype writes hyp_model; extraction wrote only its OUTPUT
-// (entity_mentions_v2 rows). So "was this paragraph extracted?" was answerable only by two bad proxies:
-//   - YIELD — did it produce a mention? Forbidden by rule 1: a paragraph naming nobody is still processed,
-//     and grading on yield is what brands sparse books incomplete forever.
-//   - STAGE ORDER — extraction is stage 1 and hype is stage 9, so a hyped book "must" have been extracted.
-//     False for a RESUMED run: plan.js resumed cast-less books from 'project' (stage 5), downstream of
-//     extraction, so they could never acquire the mentions whose absence sent them there. Hype then
-//     completed and certified the book done, permanently, with an empty cast.
-// Both proxies are now unnecessary: the stage stamps the row it processed, exactly like its two siblings.
-//
-// The version also makes an extractor UPGRADE targetable. Without it, "re-extract with the better model"
-// means all 6.7M paragraphs or none; with it, the work is `WHERE extract_model <> current`, the same way
-// the adjudicator version drives re-adjudication.
-
-/** DONE for SQL. The stamp, never the entity rows. */
-export const EXTRACT_DONE_SQL = 'extract_model IS NOT NULL';
-
-/** JS predicate for the stage's own resume filter. Older stamp ⇒ an upgrade is wanted, so NOT done. */
-export function isExtracted(paragraph, version) {
-  return Boolean(paragraph?.extractModel) && paragraph.extractModel === version;
-}
-
-/** Same bar as disambiguation: these are both per-paragraph processing passes over live prose. */
-export const EXTRACT_THRESHOLD = 0.98;
-export function meetsExtractBar(extracted, prose, threshold = EXTRACT_THRESHOLD) {
-  if (!prose) return true;                    // nothing to extract ⇒ nothing blocking
-  return extracted / prose >= threshold;
 }

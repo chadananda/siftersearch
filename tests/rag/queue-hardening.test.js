@@ -47,10 +47,7 @@ describe('graph-band mutex — atomic claim via the single writer', () => {
 });
 
 // reachedBound with an injected queryOne returning a canned artifact snapshot.
-// `extracted` defaults to FULL coverage: these fixtures were written to exercise the disambiguation,
-// reconcile and hype bars, and a book that has been through extraction is the normal case. The extraction
-// gate itself is varied deliberately in tests/api/extraction-stamp.test.js.
-const snap = (o) => ({ queryOne: async () => ({ prose: 100, disamb: 100, hyped: 0, hypeable: 100, extracted: 100, mentions: 0, claims: 0, clusters: 0, decisions: 0, ...o }) });
+const snap = (o) => ({ queryOne: async () => ({ prose: 100, disamb: 100, hyped: 0, hypeable: 100, mentions: 0, claims: 0, clusters: 0, decisions: 0, ...o }) });
 
 describe('reachedBound — verifies the run\'s OWN bound stage, not just disambiguation', () => {
   it('bound stage = the last stage asked (only, else to, else verify)', () => {

@@ -786,36 +786,6 @@ export const migrations = {
   // the process log (safeSoftDeleteDocs logs 'AUDIT' via logger.warn), which cannot be queried from off-box
   // and rotates away — so a doc that vanished had no recoverable explanation. Durable + queryable instead.
   // Append-only by convention: rows are never updated, so the history of a doc is the history.
-  // ── The extraction stamp: the one stage that never recorded that it ran ─────────────────────────────
-  // Disambiguation writes context_model, hype writes hyp_model, extraction wrote only its OUTPUT. So
-  // "has this paragraph been extracted, and by which extractor?" had no answer, and completion was inferred
-  // from yield or from stage order — both wrong, and together they certified 53 books done with no cast.
-  // The version also makes an extractor upgrade targetable (WHERE extract_model <> current) instead of
-  // all-or-nothing across 6.7M paragraphs.
-  //
-  // Column only — NO backfill. Rewriting every live prose row of ~800 already-extracted books would be a
-  // multi-million-row UPDATE holding the single writer at API start. Legacy rows are grandfathered in the
-  // completion rule instead (a doc with mentions but no stamp is treated as extracted), so the gate targets
-  // exactly the books that have neither.
-  115: async () => {
-    logger.info('Starting migration 115: content.extract_model — the extraction version stamp');
-    // ALTER ... ADD COLUMN throws if it already exists; a migration must be safe to re-run.
-    try { await query(`ALTER TABLE content ADD COLUMN extract_model TEXT`); }
-    catch (err) {
-      if (!/duplicate column/i.test(err.message)) throw err;
-      logger.info('Migration 115: content.extract_model already present');
-    }
-    // Partial index: the coverage query counts stamped live prose per doc, and the stamped set is the
-    // minority during rollout, so a partial index stays small while answering exactly that question.
-    await ensureIndex(query, {
-      label: 'Migration 115 (idx_content_extract_model — per-doc extraction coverage)',
-      table: 'content', columns: ['extract_model', 'doc_id'],
-      sql: `CREATE INDEX IF NOT EXISTS idx_content_extract_model ON content(doc_id)
-              WHERE extract_model IS NOT NULL AND deleted_at IS NULL`,
-    });
-    logger.info('Migration 115 complete');
-  },
-
   114: async () => {
     logger.info('Starting migration 114: study_notes — the instructor-notes companion (planning/dawn-breakers-notes-plan.md)');
     // Chad's one requested feature for the notes companion: "a persistent research-notes database. Before

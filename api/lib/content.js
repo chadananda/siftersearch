@@ -578,24 +578,6 @@ async function updateContextOnly(id, context, model) {
 }
 
 /**
- * Stamp paragraphs as EXTRACTED at a given extractor version (migration 115).
- *
- * The stamp is what makes "processed" observable for the one stage that never recorded it: extraction's
- * only trace was the mentions it happened to produce, so a paragraph naming nobody was indistinguishable
- * from one never attempted. Written per paragraph, in ONE statement for the batch, because the stage
- * processes a whole book's prose at once. Touches nothing else — extraction changes no indexed text, so
- * enhanced_synced is deliberately NOT cleared and Meili is not disturbed.
- */
-async function markExtracted(ids, version) {
-  const list = (ids || []).map(Number).filter(Number.isFinite);
-  if (!list.length) return { changes: 0 };
-  const ts = now();
-  return query(
-    `UPDATE content SET extract_model = ?, updated_at = ? WHERE id IN (${list.map(() => '?').join(',')})`,
-    [version, ts, ...list]);
-}
-
-/**
  * Update hyp_questions WITHOUT touching synced or embedding.
  */
 async function updateHypQuestions(id, questions) {
@@ -1181,7 +1163,6 @@ export const content = {
   clearAllTranslations,
   updateContext,
   updateContextOnly,
-  markExtracted,
   updateHype,
   updateHypQuestions,
   markEnhancedSynced,
