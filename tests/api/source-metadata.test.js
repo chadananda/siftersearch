@@ -75,3 +75,42 @@ describe('recovering from the document, or not at all', () => {
     expect(titleFromText('This is clearly a running sentence of prose that goes on and on and should not be a title.')).toBeNull();
   });
 });
+
+// ── Backfill safety (scripts/backfill-source-metadata.mjs) ────────────────────────────────────────────
+// The backfill rewrites author/title on ~2,058 live documents, so its selection and its writes both have to
+// be conservative: touch only what is genuinely a locator, and never replace real metadata with a guess.
+describe('backfill selection and writes', () => {
+  const decide = (d, text) => {
+    if (!isLocatorAuthor(d.author) && !isFilenameTitle(d.title)) return { action: 'skip' };
+    const m = resolveSourceMetadata({ stubTitle: d.title, stubAuthor: d.author, text });
+    return { action: 'write', author: m.author, title: m.title ?? d.title };
+  };
+
+  it('skips a document that already has real metadata', () => {
+    expect(decide({ author: 'Lady Blomfield', title: 'The Chosen Highway' }, 'x').action).toBe('skip');
+  });
+
+  it('clears a locator author to NULL when the text offers no byline', () => {
+    const r = decide({ author: 'pdf-x-xavier', title: 'x_y_z' }, 'A Title\n\nprose without a byline');
+    expect(r.action).toBe('write');
+    expect(r.author).toBeNull();          // never 'Xavier', never 'pdf-x-xavier'
+  });
+
+  it('keeps the existing title when none can be recovered, rather than nulling a usable one', () => {
+    const r = decide({ author: 'pdf-b-brown', title: 'Some Readable Title' }, 'prose only');
+    expect(r.title).toBe('Some Readable Title');
+  });
+
+  it('recovers both when the document states both', () => {
+    const text = 'Islam: A Challenge to Faith\n\nby Samuel M. Zwemer\n\nprose';
+    const r = decide({ author: 'pdf-z-zwemer', title: 'zwemer_islam_challenge_faith' }, text);
+    expect(r.author).toBe('Samuel M. Zwemer');
+    expect(r.title).toBe('Islam: A Challenge to Faith');
+  });
+
+  it('a locator author whose surname the text contradicts is cleared, not swapped', () => {
+    const text = 'A Title\n\nby Winston Churchill\n\nprose';
+    const r = decide({ author: 'pdf-z-zwemer', title: 'zwemer_islam' }, text);
+    expect(r.author).toBeNull();
+  });
+});

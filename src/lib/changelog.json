@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T01:42:47.260Z",
+  "generated": "2026-08-14T03:27:30.084Z",
   "entries": [
+    {
+      "hash": "a19a447d",
+      "date": "2026-08-13",
+      "type": "Other",
+      "description": "GET /grounding/why/:docId — make a completion disagreement visible instead of inferable",
+      "scope": null
+    },
     {
       "hash": "c9a63be3",
       "date": "2026-08-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Update analysis.json suite label to Ocean (504 fixtures)",
       "scope": null
-    },
-    {
-      "hash": "fc17a7a1",
-      "date": "2026-05-31",
-      "type": "Chore",
-      "description": "Search quality 79% (41/52) — fixture fixes + page explanations",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-13": [
+      {
+        "hash": "a19a447d",
+        "date": "2026-08-13",
+        "type": "Other",
+        "description": "GET /grounding/why/:docId — make a completion disagreement visible instead of inferable",
+        "scope": null
+      },
       {
         "hash": "c9a63be3",
         "date": "2026-08-13",
@@ -7069,15 +7076,6 @@
         "date": "2026-06-01",
         "type": "Fixed",
         "description": "Update analysis.json suite label to Ocean (504 fixtures)",
-        "scope": null
-      }
-    ],
-    "2026-05-31": [
-      {
-        "hash": "fc17a7a1",
-        "date": "2026-05-31",
-        "type": "Chore",
-        "description": "Search quality 79% (41/52) — fixture fixes + page explanations",
         "scope": null
       }
     ]
