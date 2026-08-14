@@ -12,6 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import Database from 'better-sqlite3';
 import { resolveSourceMetadata } from '../api/lib/text/source-metadata.js';
+import { classifyCandidate } from '../api/lib/text/not-a-book.js';
 
 const APPLY = process.argv.includes('--apply');
 const FETCH_FRAMES = process.argv.includes('--fetch-frames');
@@ -27,7 +28,7 @@ const { detectLang } = await import('../api/lib/pipeline/profile.js');
 const { runStage } = await import('./lib/stage-runner.mjs');
 const stageState = await import('../api/lib/pipeline/stage-state.js');
 const { audit } = await import('../api/lib/audit.js');
-const CONVERT_VERSION = 'convert-2';   // bump when the quality gate or extraction rules change
+const CONVERT_VERSION = 'convert-3';   // 3: reject web error pages; recover metadata instead of copying locators   // bump when the quality gate or extraction rules change
 const LIB = config.library?.basePath;
 const WRITER = process.env.SIFTER_WRITER_URL || 'http://127.0.0.1:7849';
 
@@ -215,6 +216,16 @@ for (const s of stubs) {
     await rec(s.id, { status: 'rejected', reason: 'not a document (changelog/fundraising/etc)', payload: { title: s.title } });
     continue;
   }
+  // A web error or support page is never a book. The 08-13 run ingested 'Error 404' and 'PDF Support' as
+  // library documents, complete with paragraph counts — cheaper to refuse here than to retire later.
+  const cls = classifyCandidate({ title: s.title });
+  if (cls.reject) {
+    report.skippedType.push({ id: s.id, title: s.title, why: cls.reason });
+    tally.rejected++; tally.reason(cls.reason);
+    await rec(s.id, { status: 'rejected', reason: cls.reason, payload: { title: s.title } });
+    continue;
+  }
+  if (cls.apparatus) tally.reason(cls.reason);   // counted, NOT dropped — a librarian's call, not a regex's
   let url = fileUrlOf(s);
   if (!url && FETCH_FRAMES && s.source_url) url = await findFramedPdf(s.source_url);
   if (!url) {
@@ -238,6 +249,14 @@ for (const s of stubs) {
       continue;
     }
 
+    // The title can look like a book while the FILE 404s and returns an error page body.
+    const bodyCls = classifyCandidate({ title: s.title, text });
+    if (bodyCls.reject) {
+      report.badQuality.push({ id: s.id, title: s.title, url, why: bodyCls.reason });
+      tally.rejected++; tally.reason(bodyCls.reason);
+      await rec(s.id, { status: 'rejected', reason: bodyCls.reason, payload: { url, pages } });
+      continue;
+    }
     const q = coherentProse(text, { pages });
     if (!q.ok) {
       report.badQuality.push({ id: s.id, title: s.title, url, ...q });
