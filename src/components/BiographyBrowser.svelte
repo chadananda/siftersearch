@@ -418,7 +418,8 @@
                               <span class="pbp-track" title="{stageLabel(live.stage)}"><span class="pbp-fill" style="width:{pctOf(b.id)}%"></span></span><span class="pbp-pct">{pctOf(b.id).toFixed(1)}%</span>
                             {:else if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}
                           </span>
-                          <span class="col-new" title="people first grounded via this book">{#if b.done && b.newInSequence}+{b.newInSequence.toLocaleString()}{/if}</span>
+                          <span class="col-cast" title="people identified in this book">{#if b.done && b.persons}{b.persons.toLocaleString()}{/if}</span>
+                          <span class="col-new" title="of those, first grounded via this book">{#if b.done && b.newInSequence}+{b.newInSequence.toLocaleString()}{/if}</span>
                           <span class="col-un" title="mentioned here but not yet resolved — revisited as later books are absorbed">{#if b.done && b.unresolved}{b.unresolved.toLocaleString()}?{/if}</span>
                           <span class="col-ver">{#if b.adjVersion > 0}<span class="ver-chip {b.adjVersion >= b.adjCurrent ? 'ver-ok' : 'ver-behind'}" title={b.adjVersion >= b.adjCurrent ? `Adjudicator v${b.adjVersion} — up to date` : `Adjudicator v${b.adjVersion} — re-adjudication to v${b.adjCurrent} due`}>v{b.adjVersion}</span>{/if}</span>
                         </li>
@@ -450,7 +451,9 @@
                                       <span class="pbp-track" title="{stageLabel(live.stage)}"><span class="pbp-fill" style="width:{pctOf(b.id)}%"></span></span><span class="pbp-pct">{pctOf(b.id).toFixed(1)}%</span>
                                     {:else if b.size}<span class="pb-num" title="{b.size.toLocaleString()} paragraphs">{fmtK(b.size)}</span>{/if}
                                   </span>
-                                  <span class="col-new"></span><span class="col-un"></span>
+                                  <span class="col-cast" title="people identified in this book">{#if b.done && b.persons}{b.persons.toLocaleString()}{/if}</span>
+                                  <span class="col-new" title="of those, first grounded via this book">{#if b.done && b.newInSequence}+{b.newInSequence.toLocaleString()}{/if}</span>
+                                  <span class="col-un" title="mentioned here but not yet resolved — revisited as later books are absorbed">{#if b.done && b.unresolved}{b.unresolved.toLocaleString()}?{/if}</span>
                                   <span class="col-ver">{#if b.adjVersion > 0}<span class="ver-chip {b.adjVersion >= b.adjCurrent ? 'ver-ok' : 'ver-behind'}" title={b.adjVersion >= b.adjCurrent ? `Adjudicator v${b.adjVersion} — up to date` : `Adjudicator v${b.adjVersion} — re-adjudication to v${b.adjCurrent} due`}>v{b.adjVersion}</span>{/if}</span>
                                 </li>
                               {/each}
@@ -882,6 +885,7 @@
   .prog-book.done .prog-book-title, .prog-book.active .prog-book-title { color: var(--text-primary); }
   /* Fixed right-hand COLUMNS so every row lines up vertically: [size/progress] [+new] [unresolved]. */
   .col-size { flex: 0 0 6rem; display: flex; align-items: center; justify-content: flex-end; gap: .4rem; }
+  .col-cast { flex: 0 0 3.2rem; text-align: right; font-size: .72rem; font-weight: 600; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
   .col-new { flex: 0 0 3.2rem; text-align: right; font-size: .72rem; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
   .col-un { flex: 0 0 3rem; text-align: right; font-size: .72rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
   .col-ver { flex: 0 0 auto; text-align: right; }

@@ -342,7 +342,11 @@ export async function getIntegrationProgress() {
     cost: costByDoc[id] || { usd: 0, calls: 0, byProvider: {} }, ...extra });
   const phases = INTEGRATION_PHASES.map(p => {
     const books = phaseBookIds[p.key].map(id => book(id, p.dynamic ? { genre: genreOf[id] } : {}));
-    return { key: p.key, label: p.label, blurb: p.blurb, upcoming: !!p.upcoming, books,
+    // `upcoming` is DERIVED, never a hand-maintained flag. Biographies and General Histories carried
+    // upcoming:true from the day they were listed and kept it after being fully ground, so the page greyed
+    // out 236 finished books. A status the data can contradict will eventually contradict it.
+    const anyDone = books.some((b) => b.done);
+    return { key: p.key, label: p.label, blurb: p.blurb, upcoming: !anyDone, books,
       done: books.filter(b => b.done).length, total: books.length,
       persons: books.reduce((s, b) => s + b.persons, 0), paras: books.reduce((s, b) => s + b.size, 0),
       usd: Math.round(books.reduce((s, b) => s + b.cost.usd, 0) * 100) / 100 };
@@ -371,6 +375,7 @@ export async function getIntegrationProgress() {
       primary.done += gb.filter((b) => b.done).length;
       primary.paras += gb.reduce((s, b) => s + b.size, 0);
       primary.persons += gb.reduce((s, b) => s + b.persons, 0);
+      if (gb.some((b) => b.done)) primary.upcoming = false;   // nested books count toward the phase's status too
       primary.usd = Math.round((primary.usd + gb.reduce((s, b) => s + b.cost.usd, 0)) * 100) / 100;
     }
   }

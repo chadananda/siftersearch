@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T16:28:55.202Z",
+  "generated": "2026-08-14T17:07:10.235Z",
   "entries": [
+    {
+      "hash": "70fa1154",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "One membership map for every reader (restores the 607 nested pilgrim notes)",
+      "scope": null
+    },
     {
       "hash": "ca389282",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Move single-writer port 7841 to 7849 + crash-proof the bind",
       "scope": "worker"
-    },
-    {
-      "hash": "7d36178f",
-      "date": "2026-06-03",
-      "type": "New",
-      "description": "Enable write API host on siftersearch-worker",
-      "scope": "single-writer"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "70fa1154",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "One membership map for every reader (restores the 607 nested pilgrim notes)",
+        "scope": null
+      },
       {
         "hash": "ca389282",
         "date": "2026-08-14",
@@ -7068,13 +7075,6 @@
         "type": "Fixed",
         "description": "Move single-writer port 7841 to 7849 + crash-proof the bind",
         "scope": "worker"
-      },
-      {
-        "hash": "7d36178f",
-        "date": "2026-06-03",
-        "type": "New",
-        "description": "Enable write API host on siftersearch-worker",
-        "scope": "single-writer"
       }
     ]
   }
