@@ -786,6 +786,55 @@ export const migrations = {
   // the process log (safeSoftDeleteDocs logs 'AUDIT' via logger.warn), which cannot be queried from off-box
   // and rotates away — so a doc that vanished had no recoverable explanation. Durable + queryable instead.
   // Append-only by convention: rows are never updated, so the history of a doc is the history.
+  114: async () => {
+    logger.info('Starting migration 114: study_notes — the instructor-notes companion (planning/dawn-breakers-notes-plan.md)');
+    // Chad's one requested feature for the notes companion: "a persistent research-notes database. Before
+    // researching each paragraph, the AI searches that database so it knows what it has already covered."
+    // That search is what makes "avoid repetition" enforceable instead of a plea in a prompt.
+    //
+    // One row per NOTE, not per paragraph: a paragraph may warrant a name note and a connection note, or
+    // none at all. Notes are anchored to external_para_id, which IS OceanLibrary's paragraph anchor
+    // (${source_url}?paraId=para_NNNN), so a future exporter is a mapping rather than a rewrite.
+    await query(`CREATE TABLE IF NOT EXISTS study_notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      doc_id INTEGER NOT NULL,
+      para_id TEXT NOT NULL,             -- external_para_id: the citable, exportable anchor
+      paragraph_index INTEGER NOT NULL,
+      chapter_num TEXT, chapter_title TEXT,
+      category TEXT NOT NULL,            -- profile-defined: name|person|place|connection|islamic|detail|…
+      subject_key TEXT NOT NULL,         -- what the note TEACHES: 'entity:1247564' | 'term:babu-l-bab'
+      subject_entity_id INTEGER,         -- when the subject is a resolved entity (preferred over a string)
+      body TEXT NOT NULL,                -- the model's note
+      edited_body TEXT,                  -- a human's correction, kept SEPARATE so the prompt can be judged
+                                         -- against what Chad actually keeps rather than what it produced
+      claim_kind TEXT,                   -- explicit_teaching | strong_parallel | interpretive | fact
+      sources_json TEXT,                 -- [{docId,paraId,url,quote}] — required for fact/quotation
+      new_dimension TEXT,                -- when re-touching a taught subject: what this adds. NULL = first
+      review TEXT NOT NULL DEFAULT 'pending',   -- pending | accepted | edited | rejected
+      model TEXT, version TEXT,
+      created_at INTEGER DEFAULT (unixepoch()),
+      reviewed_at INTEGER
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_study_notes_doc_para ON study_notes(doc_id, paragraph_index)`);
+    // The repetition lookup: "have we already taught this subject in this book?" Review state is IN the index
+    // because only ACCEPTED notes count as taught — a rejected note must never suppress a later good one.
+    await query(`CREATE INDEX IF NOT EXISTS idx_study_notes_subject ON study_notes(doc_id, subject_key, review)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_study_notes_entity ON study_notes(subject_entity_id)`);
+
+    // COMPLETION IS A STAMP, NEVER A NOTE COUNT. Chad's first rule is "many paragraphs may need only one
+    // note or no note", so an empty result is COMMON and correct — and measuring done-ness by output is the
+    // bug that cost 2026-08-13 twice over (disambiguation, then hype). See api/lib/pipeline/processed.js.
+    await query(`CREATE TABLE IF NOT EXISTS study_note_pass (
+      doc_id INTEGER NOT NULL,
+      para_id TEXT NOT NULL,
+      version TEXT NOT NULL,
+      notes_written INTEGER NOT NULL DEFAULT 0,
+      at INTEGER DEFAULT (unixepoch()),
+      PRIMARY KEY (doc_id, para_id, version)
+    )`);
+    logger.info('Migration 114 complete: study_notes + study_note_pass');
+  },
+
   113: async () => {
     logger.info('Starting migration 113: query_stats keyed by LABEL (fixes name/fingerprint key mismatch)');
     // BUG in 111+112, caught by a flush test before it could mislead anyone: the in-memory counters key on
