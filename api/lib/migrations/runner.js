@@ -15,7 +15,11 @@ import { userMigrations, USER_DB_CURRENT_VERSION } from './user.js';
 
 // Combined dispatch table — version => async () => void
 export const migrations = { ...v1to25, ...v26to45, ...v46to58, ...v72to90 };
-export const CURRENT_VERSION = 114;
+// BUMP THIS WITH EVERY NEW MIGRATION. The runner applies fromVersion+1..CURRENT_VERSION, so a migration
+// added to the map without raising this constant is DEAD CODE that silently never runs — and code shipped
+// alongside it then reads a column that will never exist (2026-08-14: migration 115 sat unreachable while
+// the API 500'd on `no such column: extract_model` and the roadmap rendered 0/893).
+export const CURRENT_VERSION = 115;
 export const GRAPH_DB_CURRENT_VERSION = 1;
 export { USER_DB_CURRENT_VERSION, userMigrations, getMigration44SQL, graphMigrations };
 
