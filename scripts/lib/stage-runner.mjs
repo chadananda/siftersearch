@@ -18,8 +18,26 @@ export async function shouldRun(stage, { anyTime = false } = {}) {
   if (req) return { run: true, why: 'requested via API', requestId: req.id };
   if (anyTime) return { run: true, why: '--any-time', requestId: null };
   if (nowInPeak()) return { run: true, why: 'peak window (grounding paused)', requestId: null };
+  // "grounding owns the box" is a claim about grounding, not about the clock — so CHECK IT. With the plan at
+  // 881/893 the grounding queue is empty, so every off-peak tick skipped for an owner that was not there:
+  // an 8-hour window (16:30–00:30 UTC) idle on both sides while 4,023 books sat holding sources. Neither
+  // convert nor ingest makes an AI call (pure fs + sqlite), so an idle box costs nothing but CPU to use.
+  // The guard is unchanged whenever grounding IS working, and the next tick hands the box straight back
+  // (batches are --limit bounded), so this can defer but never contend (2026-08-14).
+  const busy = await queryOne(
+    `SELECT COUNT(*) AS n FROM grounding_queue WHERE status IN ('queued','running')`, [],
+    'stage-runner:grounding-depth')
+    // Fail CLOSED. This catch is deliberate and directional: an unreadable guard yields null, which falls
+    // through to the skip below. Swallowing to null is only safe because null means "do less", not "do more".
+    .catch(() => null);
   const ends = peakEndsAt();
-  return { run: false, why: `off-peak — grounding owns the box${ends ? `, until ${ends.toISOString()}` : ''}`, requestId: null };
+  if (busy && Number(busy.n) === 0) {
+    return { run: true, why: 'off-peak, but the grounding queue is EMPTY — using an otherwise idle box', requestId: null };
+  }
+  // busy===null means the depth could not be READ (missing table, DB blip). An unreadable guard must never
+  // authorise work, so fall through to the original skip rather than assume the box is free.
+  const depth = busy ? `${busy.n} queued/running` : 'depth unreadable';
+  return { run: false, why: `off-peak — grounding owns the box (${depth})${ends ? `, until ${ends.toISOString()}` : ''}`, requestId: null };
 }
 
 /**

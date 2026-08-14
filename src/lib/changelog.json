@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T21:35:24.487Z",
+  "generated": "2026-08-14T22:29:59.982Z",
   "entries": [
+    {
+      "hash": "3ca6a36e",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "A failed probe must not read as \"nothing pending\"",
+      "scope": null
+    },
     {
       "hash": "7a5ddb85",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Disable self-amplifying reconcile storm (root cause of Meili never indexing)",
       "scope": "sync"
-    },
-    {
-      "hash": "e2e71cc9",
-      "date": "2026-06-05",
-      "type": "New",
-      "description": "Enrich pipeline snapshot into single source of truth",
-      "scope": "status"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "3ca6a36e",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "A failed probe must not read as \"nothing pending\"",
+        "scope": null
+      },
       {
         "hash": "7a5ddb85",
         "date": "2026-08-14",
@@ -7064,15 +7071,6 @@
         "type": "Fixed",
         "description": "Disable self-amplifying reconcile storm (root cause of Meili never indexing)",
         "scope": "sync"
-      }
-    ],
-    "2026-06-05": [
-      {
-        "hash": "e2e71cc9",
-        "date": "2026-06-05",
-        "type": "New",
-        "description": "Enrich pipeline snapshot into single source of truth",
-        "scope": "status"
       }
     ]
   }
