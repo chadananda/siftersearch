@@ -141,12 +141,27 @@ export default async function ingestRoutes(fastify) {
     const pipelineDone = isDoneFromArtifacts(row, {});
     const resume = await resumeStageFor(docId);
     const blocked = blockingGate(row, {});
+    // `clusters` counts RESOLVED mentions only, so clusters:0 is ambiguous in the one way that matters:
+    // a book nobody appears in and a book whose extraction ran but never resolved look identical, and the
+    // first is legitimately done while the second is silently unfinished. Split them (2026-08-14): raw =
+    // mentions extracted at all, unresolved = extracted but never bound to an entity. raw:0 => genuinely
+    // entity-sparse; raw>0 with unresolved==raw => extraction ran, resolution did not.
+    const m = (await queryOne(
+      `SELECT COUNT(*) raw, SUM(CASE WHEN entity_id IS NULL THEN 1 ELSE 0 END) unresolved
+         FROM entity_mentions_v2 WHERE doc_id=?`, [docId], 'grounding:why-mention-split')) || {};
+    const mentions = { raw: m.raw || 0, unresolved: m.unresolved || 0 };
+    const extractionVerdict = mentions.raw === 0
+      ? 'no mentions extracted — entity-sparse, or extraction never ran on this book'
+      : (row.clusters ? 'extraction and resolution both produced output'
+        : 'extraction produced mentions but NONE resolved — resolution did not finish');
     // resumeStageFor returning null means "nothing to do" — which is the follower's SKIP. If the pipeline
     // also says done, the two agree. If they disagree, that is the bug, and naming it here is the point.
     const followerWouldEnqueue = resume !== null;
     return {
       docId,
       coverage: row,
+      mentions,
+      extractionVerdict,
       pipelineDone,
       followerWouldEnqueue,
       resumeFrom: resume === null ? null : (resume.from || 'full run'),
