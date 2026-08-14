@@ -161,6 +161,19 @@ export default async function ingestRoutes(fastify) {
         GROUP BY 1 ORDER BY n DESC`, [docId], 'grounding:why-context-models');
     // The version the mentions stage compares against lives in the rag adapter's ctx.config.versions,
     // not in api/lib/config.js — read it from the same place the stage does.
+    // What disambiguation ACTUALLY WROTE. mentions.js parses «"surface" = resolved» pairs out of the note, so a
+    // note that is empty or carries no quoted pairs yields no mentions no matter how complete coverage looks.
+    // Two hypotheses (never-ran, version-mismatch) were refuted by inference before this was simply shown.
+    const notes = await queryAll(
+      `SELECT paragraph_index pidx, substr(COALESCE(context,''),1,240) note, length(COALESCE(context,'')) len
+         FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL
+          AND context IS NOT NULL ORDER BY length(COALESCE(context,'')) DESC LIMIT 3`,
+      [docId], 'grounding:why-note-sample');
+    const noteStats = (await queryOne(
+      `SELECT COUNT(*) n, SUM(CASE WHEN trim(COALESCE(context,''))='' THEN 1 ELSE 0 END) empty,
+              SUM(CASE WHEN context LIKE '%=%' THEN 1 ELSE 0 END) withPairs
+         FROM content WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL
+          AND context IS NOT NULL`, [docId], 'grounding:why-note-stats')) || {};
     const { RAG_VERSIONS } = await import('../lib/rag-adapter/index.js');
     const currentDisambig = RAG_VERSIONS.disambig;
     const eligible = models.find((r) => r.model === currentDisambig)?.n || 0;
@@ -176,6 +189,7 @@ export default async function ingestRoutes(fastify) {
       coverage: row,
       mentions,
       contextModels: models,
+      notes: { ...noteStats, longest: notes },
       currentDisambig,
       mentionsEligibleParas: eligible,
       extractionVerdict,
