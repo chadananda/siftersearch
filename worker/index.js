@@ -35,6 +35,19 @@ export function createExports(manifest) {
           // Cloudflare doesn't cache /api/* JSON by default even with s-maxage — opt in here.
           // Only GETs whose response EXPLICITLY sets a public s-maxage are cached (those routes
           // are public-data by declaration; everything else stays a pure streaming pass-through).
+          // LIVE STATE: force no-store on the way OUT. The origin says max-age=30, but a zone-level
+          // Browser Cache TTL rewrites it to max-age=14400 — so the BROWSER held /api/v1/people/progress
+          // for four hours and the request never left the tab. Three identical responses 400ms apart with a
+          // frozen `age: 29` is what that looks like. Skipping the edge cache is not enough when the client
+          // is the thing caching; the response has to say, explicitly, do not keep this (2026-08-14).
+          if (request.method === 'GET' && isLiveState(url.pathname)) {
+            const res = await fetch(target, request);
+            const out = new Response(res.body, res);
+            out.headers.set('cache-control', 'no-store, no-cache, must-revalidate, max-age=0');
+            out.headers.delete('expires');
+            out.headers.set('pragma', 'no-cache');
+            return out;
+          }
           if (request.method === 'GET' && !isLiveState(url.pathname)) {
             const cache = caches.default;
             const hit = await cache.match(request);

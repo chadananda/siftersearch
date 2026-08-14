@@ -31,14 +31,14 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
   beforeAll(() => {
     raw.exec(`
       CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, author TEXT, religion TEXT, collection TEXT, year INT, description TEXT, lang TEXT);
-      CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INT, external_para_id TEXT, paragraph_index INT, heading TEXT, text TEXT, context TEXT, context_model TEXT, blocktype TEXT, deleted_at TEXT);
+      CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INT, external_para_id TEXT, paragraph_index INT, heading TEXT, text TEXT, context TEXT, context_model TEXT, blocktype TEXT, deleted_at TEXT, hyp_questions TEXT, hyp_thesis TEXT, hyp_model TEXT);
       INSERT INTO docs VALUES (7, 'God Passes By', 'Shoghi Effendi', 'bahai', 'History', 1944, 'A history.', 'en');
-      INSERT INTO content VALUES (100, 7, 'para_1', 1, 'Chapter I', '${'the Báb declared His mission in Shíráz. '.repeat(8)}', NULL, NULL, 'paragraph', NULL);
-      INSERT INTO content VALUES (101, 7, NULL,      2, 'Chapter I', 'short', NULL, NULL, 'paragraph', NULL);
-      INSERT INTO content VALUES (102, 7, 'para_3', 3, 'Chapter I', 'a deleted line', NULL, NULL, 'paragraph', '2026-01-01');
+      INSERT INTO content VALUES (100, 7, 'para_1', 1, 'Chapter I', '${'the Báb declared His mission in Shíráz. '.repeat(8)}', NULL, NULL, 'paragraph', NULL, NULL, NULL, NULL);
+      INSERT INTO content VALUES (101, 7, NULL,      2, 'Chapter I', 'short', NULL, NULL, 'paragraph', NULL, NULL, NULL, NULL);
+      INSERT INTO content VALUES (102, 7, 'para_3', 3, 'Chapter I', 'a deleted line', NULL, NULL, 'paragraph', '2026-01-01', NULL, NULL, NULL);
 
       CREATE TABLE graph_entities (id INTEGER PRIMARY KEY, name TEXT, canonical_name TEXT, entity_type TEXT, importance INT, last_assessed_version TEXT);
-      CREATE TABLE entity_research (canonical_name TEXT, entity_type TEXT, summary TEXT);
+      CREATE TABLE entity_research (canonical_name TEXT, entity_type TEXT, summary TEXT, aliases TEXT);
       CREATE TABLE entity_lookup_keys (entity_id INT, skeleton_key TEXT);
       CREATE TABLE entity_decisions (id INTEGER PRIMARY KEY, kind TEXT, target_kind TEXT, target_ids TEXT, payload TEXT, evidence TEXT, rationale TEXT, actor TEXT, actor_tier INT, confidence REAL, status TEXT, method_version TEXT, supersedes INTEGER, valid_time TEXT, decided_at INTEGER DEFAULT (unixepoch()));
       CREATE TABLE entity_claims (id INTEGER PRIMARY KEY, claim_hash TEXT UNIQUE, claim_group TEXT, entity_id INTEGER, relation TEXT NOT NULL, target_entity_id INTEGER, statement TEXT NOT NULL, proof_verbatim TEXT, doc_id INTEGER, para_id TEXT, valid_from TEXT, valid_to TEXT, asserted_at INTEGER DEFAULT (unixepoch()), superseded_at INTEGER, rank TEXT DEFAULT 'normal', status TEXT DEFAULT 'supported', proof_ok INTEGER, subject_ok INTEGER, consistency_ok INTEGER, confidence REAL, provenance_tier INTEGER, extractor_version TEXT, import_batch TEXT, time_value TEXT, time_precision TEXT, time_basis TEXT, time_anchor TEXT, method_version TEXT, semantic_key TEXT);

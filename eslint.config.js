@@ -60,6 +60,28 @@ export default [
     }
   },
   {
+    // Cloudflare Workers runtime (worker/) — these are platform globals, not Node's.
+    // Without this the worker's own fetch/Response/caches read as undefined vars and the
+    // pre-commit lint gate blocks every worker change.
+    files: ['worker/**/*.js'],
+    languageOptions: {
+      globals: {
+        Response: 'readonly',
+        Request: 'readonly',
+        Headers: 'readonly',
+        URL: 'readonly',
+        caches: 'readonly',
+        fetch: 'readonly',
+        crypto: 'readonly',
+        addEventListener: 'readonly',
+        console: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        ReadableStream: 'readonly'
+      }
+    }
+  },
+  {
     // CommonJS files (.cjs) need module and exports globals
     files: ['**/*.cjs'],
     languageOptions: {

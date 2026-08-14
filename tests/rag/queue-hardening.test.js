@@ -64,10 +64,21 @@ describe('reachedBound — verifies the run\'s OWN bound stage, not just disambi
     expect(await reachedBound(1, { to: 'research' }, snap({ clusters: 500, decisions: 450, claims: 10, mentions: 50 }))).toBe(true);
   });
 
-  it('a claims-bounded run needs claims rows; a mentions-bounded run needs mentions', async () => {
-    expect(await reachedBound(1, { to: 'claims' }, snap({ mentions: 50, claims: 0 }))).toBe(false);
+  // mentions/claims are YIELDS, not processing gates. This test used to assert the opposite (0 claims =>
+  // not done), which is exactly what produced the re-grounding grind: a book that legitimately contains no
+  // resolvable entities could never satisfy an output gate, so it was re-selected forever and burned tokens
+  // on every pass. "Done" means the stage PROCESSED the book, not that the book yielded rows.
+  it('a yield of zero mentions/claims is DONE, not incomplete — the stage still ran', async () => {
+    expect(await reachedBound(1, { to: 'claims' }, snap({ mentions: 50, claims: 0 }))).toBe(true);
     expect(await reachedBound(1, { to: 'claims' }, snap({ mentions: 50, claims: 10 }))).toBe(true);
-    expect(await reachedBound(1, { to: 'mentions' }, snap({ mentions: 0 }))).toBe(false);
+    expect(await reachedBound(1, { to: 'mentions' }, snap({ mentions: 0 }))).toBe(true);
+  });
+
+  // The counterweight: dropping the yield gates must NOT make everything trivially done. The PROCESSING
+  // gates still bite on the same book that has zero yield.
+  it('but a zero-yield book still fails when a PROCESSING gate is unmet', async () => {
+    expect(await reachedBound(1, { to: 'claims' }, snap({ mentions: 0, claims: 0, disamb: 40 }))).toBe(false);
+    expect(await reachedBound(1, { to: 'research' }, snap({ mentions: 0, claims: 0, clusters: 500, decisions: 0 }))).toBe(false);
   });
 
   it('an only:hype run needs most prose to have questions', async () => {

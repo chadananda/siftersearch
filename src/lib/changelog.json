@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T18:29:47.057Z",
+  "generated": "2026-08-14T19:42:20.949Z",
   "entries": [
+    {
+      "hash": "51e48f1d",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Live-state endpoints must never come from the edge cache (THE reason nothing I fixed was visible)",
+      "scope": null
+    },
     {
       "hash": "b85cdd99",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Route 4 graph workers through worker write endpoint",
       "scope": "single-writer"
-    },
-    {
-      "hash": "a571982c",
-      "date": "2026-06-03",
-      "type": "New",
-      "description": "Route 4 graph workers through worker write endpoint",
-      "scope": "single-writer"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "51e48f1d",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Live-state endpoints must never come from the edge cache (THE reason nothing I fixed was visible)",
+        "scope": null
+      },
       {
         "hash": "b85cdd99",
         "date": "2026-08-14",
@@ -7064,13 +7071,6 @@
     "2026-06-03": [
       {
         "hash": "22f0277a",
-        "date": "2026-06-03",
-        "type": "New",
-        "description": "Route 4 graph workers through worker write endpoint",
-        "scope": "single-writer"
-      },
-      {
-        "hash": "a571982c",
         "date": "2026-06-03",
         "type": "New",
         "description": "Route 4 graph workers through worker write endpoint",
