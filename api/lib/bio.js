@@ -199,6 +199,12 @@ export function gradedPlanDocIds() {
   const phaseByDoc = {};
   for (const p of INTEGRATION_PHASES) for (const id of (p.docs || [])) phaseByDoc[id] = p.key;
   const allDocs = [...new Set(Object.keys(phaseByDoc).map(Number))];
+  // The pilgrim-note GROUPS (primary.groups) render as their own tree and were excluded from the graded
+  // metrics — so their books could show `done` but never a cast, which reads as "processed but empty".
+  // They are 600+ genuinely grounded primary sources; excluding them from the counts hides exactly the
+  // evidence a reader wants. Metrics now cover them; MEMBERSHIP and absorption order are unchanged.
+  const groupDocIds = [...new Set((INTEGRATION_PHASES.find((p) => p.key === 'primary')?.groups || [])
+    .flatMap((g) => g.docs || []))];
   const curatedKeys = new Set(INTEGRATION_PHASES.filter((p) => !p.dynamic).map((p) => p.key));
   return allDocs.filter((id) => curatedKeys.has(phaseByDoc[id]));
 }
@@ -230,7 +236,7 @@ export async function getIntegrationProgress() {
   // database. The Chosen Highway shows 61 people and 1,994 claims in its verify output while its card said
   // zero (Chad, 2026-08-14). A dashboard that reports finished work as untouched is worse than no dashboard:
   // it sent me hunting a "stall" that did not exist. Cost is one extra bulk GROUP BY over ~241 more ids.
-  const gradedDocs = allDocs.filter(id => phaseByDoc[id]);
+  const gradedDocs = [...new Set([...allDocs.filter(id => phaseByDoc[id]), ...groupDocIds])];
   // `actives` = every book grounding right now (parallel runs are normal); `active` = the first, kept so existing
   // callers/UI keep working. Always fresh (cheap) → live polling.
   const actives = await computeActiveBooks(curatedDocs, meta);
@@ -334,7 +340,7 @@ export async function getIntegrationProgress() {
   // flag per id; a soft-deleted/duplicate id drops out (meta filter), so the tree only shows live, listed docs.
   const primarySpec = INTEGRATION_PHASES.find((p) => p.key === 'primary');
   if (primarySpec?.groups?.length) {
-    const groupIds = [...new Set(primarySpec.groups.flatMap((g) => g.docs || []))];
+    const groupIds = groupDocIds;   // hoisted above so the graded metrics could include them
     const gmeta = {}; const grounded = new Set();
     for (let i = 0; i < groupIds.length; i += 800) {
       const c = groupIds.slice(i, i + 800), cp = c.map(() => '?').join(',');
@@ -349,6 +355,8 @@ export async function getIntegrationProgress() {
     } catch { /* never throw the roadmap; an empty set just shows books as pending */ }
     const groups = primarySpec.groups.map((g) => {
       const books = (g.docs || []).filter((id) => gmeta[id]).map((id) => ({ id, title: gmeta[id].title, size: gmeta[id].paragraph_count || 0,
+        // Same detail as any other book: a pilgrim note with a real cast should show it.
+        persons: counts[id] || 0, unresolved: unresolved[id] || 0, cost: costByDoc[id] || null,
         done: grounded.has(Number(id)), adjVersion: adjVerByDoc[id] ?? 0, adjCurrent: ADJUDICATOR_VERSION }));
       return { label: g.label, books, total: books.length, done: books.filter((b) => b.done).length, paras: books.reduce((s, b) => s + b.size, 0) };
     });

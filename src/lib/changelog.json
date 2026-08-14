@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T15:50:38.069Z",
+  "generated": "2026-08-14T15:55:35.154Z",
   "entries": [
+    {
+      "hash": "6c20c24a",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Grade EVERY listed book — Biographies and General Histories were finished but displayed as untouched",
+      "scope": null
+    },
     {
       "hash": "97f13c01",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Single-writer foundation — route writes through worker-hosted write API",
       "scope": "db"
-    },
-    {
-      "hash": "2e11dd70",
-      "date": "2026-06-02",
-      "type": "Fixed",
-      "description": "Hash bodyText not imported content namespace object",
-      "scope": "indexer"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "6c20c24a",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Grade EVERY listed book — Biographies and General Histories were finished but displayed as untouched",
+        "scope": null
+      },
       {
         "hash": "97f13c01",
         "date": "2026-08-14",
@@ -7070,13 +7077,6 @@
         "type": "New",
         "description": "Single-writer foundation — route writes through worker-hosted write API",
         "scope": "db"
-      },
-      {
-        "hash": "2e11dd70",
-        "date": "2026-06-02",
-        "type": "Fixed",
-        "description": "Hash bodyText not imported content namespace object",
-        "scope": "indexer"
       }
     ]
   }
