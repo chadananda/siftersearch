@@ -161,15 +161,28 @@ async function main() {
   const libAge = library?.generated_at ? Date.now() - Date.parse(library.generated_at) : Infinity;
   if (libAge > LIBRARY_TTL_MS) {
     const [byLanguage, embeddingStats] = await Promise.all([
+      // This one HAS to read every paragraph — it is a whole-corpus tally by language — but it does not have
+      // to do it the expensive way. Joining docs to content first produced 6.7M wide rows and then asked for
+      // COUNT(DISTINCT d.id) across them, forcing a temp B-tree over the lot: 151.9s per run, the worst single
+      // query in the system. Rolling content up per doc_id first (one indexed pass, ~158k output rows) and
+      // then joining docs turns the DISTINCT into a plain COUNT over docs. Same numbers: docs with no
+      // paragraphs still count, via the LEFT JOIN + COALESCE, exactly as the LEFT JOIN gave them before.
       queryAll(`
+        WITH per_doc AS (
+          SELECT doc_id,
+            COUNT(*) AS paras,
+            SUM(CASE WHEN embedding IS NULL THEN 1 ELSE 0 END) AS pend_emb,
+            SUM(CASE WHEN synced = 0 AND embedding IS NOT NULL THEN 1 ELSE 0 END) AS pend_sync,
+            SUM(CASE WHEN synced = 1 THEN 1 ELSE 0 END) AS synced
+          FROM content WHERE deleted_at IS NULL GROUP BY doc_id)
         SELECT d.language,
-          COUNT(DISTINCT d.id) as doc_count,
-          COUNT(c.id) as paragraph_count,
-          SUM(CASE WHEN c.embedding IS NULL THEN 1 ELSE 0 END) as pending_embedding,
-          SUM(CASE WHEN c.synced = 0 AND c.embedding IS NOT NULL THEN 1 ELSE 0 END) as pending_sync,
-          SUM(CASE WHEN c.synced = 1 THEN 1 ELSE 0 END) as synced
+          COUNT(d.id) as doc_count,
+          COALESCE(SUM(pd.paras), 0) as paragraph_count,
+          COALESCE(SUM(pd.pend_emb), 0) as pending_embedding,
+          COALESCE(SUM(pd.pend_sync), 0) as pending_sync,
+          COALESCE(SUM(pd.synced), 0) as synced
         FROM docs d
-        LEFT JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL
+        LEFT JOIN per_doc pd ON pd.doc_id = d.id
         WHERE d.deleted_at IS NULL
         GROUP BY d.language
         ORDER BY paragraph_count DESC`, [], 'snapshot:by-language').catch(() => []),
@@ -194,18 +207,34 @@ async function main() {
   const bnAge = bottlenecks?.generated_at ? Date.now() - Date.parse(bottlenecks.generated_at) : Infinity;
   if (bnAge > BOTTLENECK_TTL_MS) {
   const [pendingEmbedding, pendingSync] = await Promise.all([
+    // AGGREGATE FIRST, JOIN SECOND. Written as `FROM docs JOIN content ... GROUP BY d.id ... LIMIT 50`, the
+    // LIMIT applies AFTER the grouping, so SQLite joined and grouped the WHOLE 6.7M-row content table to
+    // return 50 rows: 64.3s a run, 56 runs a day — ~3,600s/day, the single most expensive query in the
+    // system by total time, and a hard freeze each time because better-sqlite3 is synchronous. Grouping
+    // content on its own first lets the PARTIAL indexes (idx_content_unsynced_partial on synced=0,
+    // idx_content_needs_embedding on embedding IS NULL) drive the scan, touching only pending rows, after
+    // which docs is hit 50 times by primary key (2026-08-14).
+    // The doc-level `deleted_at IS NULL` filter moves after the limit, so a soft-deleted doc with pending
+    // rows can shorten the list rather than being replaced. That is correct for a bottleneck display: such
+    // a doc IS a real backlog entry, and hiding it while its rows sit unsynced is what we want to see.
     queryAll(`
-      SELECT d.id, d.title, d.author, d.language, d.file_path, COUNT(c.id) as pending_paragraphs
-      FROM docs d
-      JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL AND c.embedding IS NULL
-      WHERE d.deleted_at IS NULL
-      GROUP BY d.id ORDER BY pending_paragraphs DESC LIMIT 50`, [], 'snapshot:pending-embedding').catch(() => []),
+      WITH pending AS (
+        SELECT doc_id, COUNT(*) n FROM content
+         WHERE embedding IS NULL AND deleted_at IS NULL
+         GROUP BY doc_id ORDER BY n DESC LIMIT 50)
+      SELECT d.id, d.title, d.author, d.language, d.file_path, pending.n AS pending_paragraphs
+        FROM pending JOIN docs d ON d.id = pending.doc_id
+       WHERE d.deleted_at IS NULL
+       ORDER BY pending_paragraphs DESC`, [], 'snapshot:pending-embedding').catch(() => []),
     queryAll(`
-      SELECT d.id, d.title, d.author, d.language, COUNT(c.id) as unsynced_paragraphs
-      FROM docs d
-      JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL AND c.synced = 0 AND c.embedding IS NOT NULL
-      WHERE d.deleted_at IS NULL
-      GROUP BY d.id ORDER BY unsynced_paragraphs DESC LIMIT 50`, [], 'snapshot:pending-sync').catch(() => []),
+      WITH unsynced AS (
+        SELECT doc_id, COUNT(*) n FROM content
+         WHERE synced = 0 AND deleted_at IS NULL AND embedding IS NOT NULL
+         GROUP BY doc_id ORDER BY n DESC LIMIT 50)
+      SELECT d.id, d.title, d.author, d.language, unsynced.n AS unsynced_paragraphs
+        FROM unsynced JOIN docs d ON d.id = unsynced.doc_id
+       WHERE d.deleted_at IS NULL
+       ORDER BY unsynced_paragraphs DESC`, [], 'snapshot:pending-sync').catch(() => []),
   ]);
     bottlenecks = { generated_at: new Date().toISOString(), pendingEmbedding, pendingSync };
   }

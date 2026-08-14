@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T21:01:20.572Z",
+  "generated": "2026-08-14T21:09:01.966Z",
   "entries": [
+    {
+      "hash": "35f325b9",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Stop re-running the two heaviest API queries every 2.4 minutes",
+      "scope": null
+    },
     {
       "hash": "f184b65a",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Side-rebuild script for paragraphs index (build fresh + atomic swap)",
       "scope": "meili"
-    },
-    {
-      "hash": "bccb4efd",
-      "date": "2026-06-05",
-      "type": "Fixed",
-      "description": "Restore the embedding worker to PM2 (root cause of stalled embeddings)",
-      "scope": "embeddings"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "35f325b9",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Stop re-running the two heaviest API queries every 2.4 minutes",
+        "scope": null
+      },
       {
         "hash": "f184b65a",
         "date": "2026-08-14",
@@ -7066,13 +7073,6 @@
         "type": "New",
         "description": "Side-rebuild script for paragraphs index (build fresh + atomic swap)",
         "scope": "meili"
-      },
-      {
-        "hash": "bccb4efd",
-        "date": "2026-06-05",
-        "type": "Fixed",
-        "description": "Restore the embedding worker to PM2 (root cause of stalled embeddings)",
-        "scope": "embeddings"
       }
     ]
   }
