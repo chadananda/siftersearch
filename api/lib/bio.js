@@ -193,6 +193,13 @@ async function computeActiveBooks(staticDocs, meta) {
 // book in sequence with its SIZE (paragraph_count), LIVE grounded-person count, and the currently-active book.
 // The phase structure is cached briefly; the `active` block is recomputed on EVERY call so polling stays live.
 let _progCache = null, _progAt = 0;
+// Per-book spend gets its OWN, much longer cache. Its query is a full scan of ai_usage (millions of rows:
+// the OR across service_type/caller and the CAST in the GROUP BY defeat every index), and it was the single
+// most expensive thing the API did — 605 executions/day at up to 5.1s each, ~3,060s/day of FROZEN event loop,
+// because better-sqlite3 is synchronous. Cumulative spend per book moves slowly and is display-only, so it
+// does not belong on the roadmap's refresh cadence (2026-08-14).
+let _costCache = null, _costAt = 0;
+const COST_TTL_MS = 15 * 60 * 1000;
 // The curated (non-dynamic) plan doc ids the roadmap grades for "done" — same membership getIntegrationProgress
 // uses (integration-phases.js, curated phases only). Exported so a verifier can compare bulk vs single done-checks.
 // NESTING IS PRESENTATION ONLY (Chad, 2026-08-14): "We nested for UI purposes. That does not in any way
@@ -253,7 +260,13 @@ export async function getIntegrationProgress() {
   const active = actives[0] || null;
   const offPeak = await computeOffPeakHint();   // {waiting, resumesAt} — books held for cheap DeepSeek hours (fresh, cheap)
 
-  if (_progCache && Date.now() - _progAt < 60000) return { ..._progCache, active, actives, offPeak };
+  // 5 min, not 1. Everything live — the book being ground, its %, the off-peak hold — is computed ABOVE this
+  // line and returned fresh on every call; what this caches is the ROADMAP (which books are done, their casts),
+  // which changes on the timescale of a book finishing, i.e. minutes to hours. At 60s the whole heavy block
+  // (a 900-id IN-list scan, the reachedBoundBulk counters, the ai_usage aggregate) re-ran every ~2.4 minutes
+  // and accounted for the top API entries in the slow-query log. Freshness the UI cannot perceive, paid for in
+  // event-loop freezes (2026-08-14).
+  if (_progCache && Date.now() - _progAt < 300000) return { ..._progCache, active, actives, offPeak };
 
   // Grounded metrics run over EVERY listed doc. (They once ran over curated docs only, on the assumption
   // that biographies/histories were not grounded yet — an assumption that expired without the code noticing.)
@@ -288,18 +301,22 @@ export async function getIntegrationProgress() {
   // CAST: document_id is a TEXT column, so numeric ids are stored as text — historically as '15254.0' (a bound
   // JS number under TEXT affinity). Grouping on the raw column would key this map by a string that never matches
   // an integer book id → every book reads $0. Cast on read so both new ('15254') and legacy ('15254.0') rows roll up.
-  const costByDoc = {};
+  const costByDoc = (_costCache && Date.now() - _costAt < COST_TTL_MS) ? _costCache : {};
+  const costIsFresh = costByDoc === _costCache;
   // 6dp, not 2: an individual call costs ~1e-5, so rounding to cents floors a real cost to $0 — under-reporting
   // is the same failure as not reporting. Sum first, round once.
   // Match on the CALLER as well as the stage tag: a grounding call is a corpus-rag call whatever its stage
   // label, so a row logged before the stage tag existed (or from a stage-less path) still counts toward its book.
-  (await queryAll(`SELECT CAST(document_id AS INT) d, provider p, ROUND(SUM(estimated_cost_usd), 6) usd, COUNT(*) calls
-      FROM ai_usage WHERE (service_type LIKE 'grounding:%' OR caller = 'corpus-rag') AND document_id IS NOT NULL
-      GROUP BY d, p`))
-    .forEach(({ d, p, usd, calls }) => {
-      const c = (costByDoc[d] ||= { usd: 0, calls: 0, byProvider: {} });
-      c.usd = Math.round((c.usd + usd) * 1e6) / 1e6; c.calls += calls; c.byProvider[p] = usd;
-    });
+  if (!costIsFresh) {
+    (await queryAll(`SELECT CAST(document_id AS INT) d, provider p, ROUND(SUM(estimated_cost_usd), 6) usd, COUNT(*) calls
+        FROM ai_usage WHERE (service_type LIKE 'grounding:%' OR caller = 'corpus-rag') AND document_id IS NOT NULL
+        GROUP BY d, p`, [], 'bio:cost-by-doc'))
+      .forEach(({ d, p, usd, calls }) => {
+        const c = (costByDoc[d] ||= { usd: 0, calls: 0, byProvider: {} });
+        c.usd = Math.round((c.usd + usd) * 1e6) / 1e6; c.calls += calls; c.byProvider[p] = usd;
+      });
+    _costCache = costByDoc; _costAt = Date.now();
+  }
   // Done ⇔ the book reached FULL grounding, tested by the SAME reachedBound() the queue uses to decide a run
   // finished — one definition of "done", so the roadmap ✓ can never disagree with the pipeline. Reconcile alone
   // is NOT enough: a read-half-only book (disambiguate→reconcile done, but the graph tail + HyPE never ran → 0
