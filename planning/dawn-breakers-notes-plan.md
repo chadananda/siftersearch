@@ -48,9 +48,31 @@ Two things the Íqán profile needs that the historical one does not:
 - **Aligned original text.** Notes referring to the original require the Arabic/Persian aligned to the
   English paragraph. CTAI is the aligned-source channel ([[project_conceptual_track_ctai_bilingual]]);
   its doctrine — **Guardian translations alone are authoritative, everything else is recall-only** —
-  carries over unchanged. ⚠ PREREQUISITE TO VERIFY before building this profile: does the corpus hold the
-  Íqán's original-language text at paragraph granularity, and does it align to the English paragraphs?
-  If not, that alignment is its own piece of work and the profile waits on it.
+  carries over unchanged.
+
+  **⚠ VERIFIED 2026-08-14 — THE PREREQUISITE FAILS. Profile E is a DATA PROJECT before it is a profile.**
+
+  | doc | lang | ¶ | what it actually is |
+  |---|---|---|---|
+  | 20810 | en | **291** | the real English Íqán — usable today |
+  | 445534, 445532 | fa | **1** | `حضرت بهاءالله, كتاب ايقان` — catalogue stubs, no text |
+  | 445529 | en | 1 | stub |
+  | 15176, 16709 | en | 4, 6 | stubs |
+
+  The original exists in the catalogue and **not** in the corpus: one-paragraph rows, nothing to align to.
+  So the `original` category — "what the English renders, and where he renders the same term differently" —
+  cannot be built at all yet, and it is the category that justifies the profile.
+
+  Work required before profile E, in order:
+  1. **Source and ingest the Persian/Arabic Íqán** at paragraph granularity (the stub names it; the text is
+     missing). Same "have source / no source" problem as the missing-books queue.
+  2. **Align** original ¶ to English ¶. Not necessarily 1:1 — Shoghi Effendi's paragraphing is his own, so
+     this is a real alignment task, which is precisely what CTAI is for.
+  3. Only then the profile.
+
+  Until then a **reduced Íqán profile is still worth having**: `quranic`, `hadith`, `theological`,
+  `antecedent` and `crossref` all work from the English text plus the corpus. Only `original` is blocked.
+  That is the honest scope for a first pass, and it is a decision for Chad rather than an assumption here.
 - **A citation-fidelity gate.** A note asserting "this cites Qur'án 2:23" must be checkable against the
   original, not asserted from the English. Same shape as the source gate in §5, higher stakes: a wrong
   scriptural attribution in an instructor's notes is worse than no note.
@@ -229,8 +251,9 @@ already addressable in OceanLibrary's scheme without any translation step.
 ## 9. Open questions
 
 1. **Chapter 1 sample size** — annotate one chapter and review before spending the book? (assumed yes)
-2. **Íqán prerequisite** (§1.1): does the corpus hold the Íqán's original-language text at paragraph
-   granularity, aligned to the English? Decides whether E is a profile or a data project.
+2. ~~**Íqán prerequisite**~~ — ANSWERED 2026-08-14: the original is a 1-¶ stub, so E is a data project
+   (source + ingest + align) before it is a profile. Open decision: run a REDUCED Íqán profile now
+   (everything except `original`), or wait for the aligned text?
 3. **Cross-book later**: the ledger is book-scoped by Chad's decision. When GPB is annotated, do notes
    cross-reference Dawn-Breakers notes, or stay independent? (Deferred — the schema supports either.)
 4. **Public surfacing**: instructor-only for now. If notes ever appear beside the text on the site, that is

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T12:27:58.406Z",
+  "generated": "2026-08-14T13:27:59.416Z",
   "entries": [
+    {
+      "hash": "543054fd",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Phase C — the Book Notes admin API (and the run becomes an API call, not a shell command)",
+      "scope": null
+    },
     {
       "hash": "c3a28458",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Cap maxTokens at 4096 and track API timeout failures",
       "scope": "graph-extractor"
-    },
-    {
-      "hash": "8e5fdb40",
-      "date": "2026-06-01",
-      "type": "Fixed",
-      "description": "Mirror entity_mentions to sifter.db for sync worker coverage",
-      "scope": "extractor"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "543054fd",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Phase C — the Book Notes admin API (and the run becomes an API call, not a shell command)",
+        "scope": null
+      },
       {
         "hash": "c3a28458",
         "date": "2026-08-14",
@@ -7070,15 +7077,6 @@
         "type": "Fixed",
         "description": "Cap maxTokens at 4096 and track API timeout failures",
         "scope": "graph-extractor"
-      }
-    ],
-    "2026-06-01": [
-      {
-        "hash": "8e5fdb40",
-        "date": "2026-06-01",
-        "type": "Fixed",
-        "description": "Mirror entity_mentions to sifter.db for sync worker coverage",
-        "scope": "extractor"
       }
     ]
   }
