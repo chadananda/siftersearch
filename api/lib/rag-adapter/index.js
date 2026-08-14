@@ -43,8 +43,13 @@ const profiler = (meta, sample) => detectProfile(meta, sample);
 
 // Host config that names concrete values the library must not hard-code — the method-version tags stamped on
 // enriched rows. Kept equal to the existing corpus tags so re-runs are idempotent against current data.
+// EXPORTED so diagnostics compare against the SAME string the stages use. entities/mentions.js keeps only
+// paragraphs whose context_model === versions.disambig; a second hardcoded copy elsewhere is how the two
+// definitions drift apart, which is the bug this value is used to diagnose (2026-08-14).
+export const RAG_VERSIONS = { disambig: 'deepseek-disambig-v1', hype: 'deepseek-hype-v1', extract: 'extract-v2' };
+
 const config = {
-  versions: { disambig: 'deepseek-disambig-v1', hype: 'deepseek-hype-v1', extract: 'extract-v2' },
+  versions: RAG_VERSIONS,
   // Dedup/merge/research adjudication is NOT doc-scoped, so it never sees the per-language routing — which made
   // a paid `mergeFallback` reachable from EVERY language, English included (the one path that could bill Anthropic
   // for an English book). These stages read English summaries/facts, so deepseek is correct for every language;

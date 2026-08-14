@@ -150,6 +150,20 @@ export default async function ingestRoutes(fastify) {
       `SELECT COUNT(*) raw, SUM(CASE WHEN entity_id IS NULL THEN 1 ELSE 0 END) unresolved
          FROM entity_mentions_v2 WHERE doc_id=?`, [docId], 'grounding:why-mention-split')) || {};
     const mentions = { raw: m.raw || 0, unresolved: m.unresolved || 0 };
+    // WHICH disambig version wrote these notes? entities/mentions.js only reads paragraphs whose
+    // context_model EQUALS the current version, while the coverage measure counts context IS NOT NULL with no
+    // version check. A book disambiguated by an older version therefore reads 100% disambiguated, gives the
+    // mentions stage an EMPTY paragraph list, writes nothing, and reports success. Surfacing the actual
+    // context_model spread makes that visible instead of inferable (2026-08-14).
+    const models = await queryAll(
+      `SELECT COALESCE(context_model,'(null)') model, COUNT(*) n FROM content
+        WHERE doc_id=? AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND context IS NOT NULL
+        GROUP BY 1 ORDER BY n DESC`, [docId], 'grounding:why-context-models');
+    // The version the mentions stage compares against lives in the rag adapter's ctx.config.versions,
+    // not in api/lib/config.js — read it from the same place the stage does.
+    const { RAG_VERSIONS } = await import('../lib/rag-adapter/index.js');
+    const currentDisambig = RAG_VERSIONS.disambig;
+    const eligible = models.find((r) => r.model === currentDisambig)?.n || 0;
     const extractionVerdict = mentions.raw === 0
       ? 'no mentions extracted — entity-sparse, or extraction never ran on this book'
       : (row.clusters ? 'extraction and resolution both produced output'
@@ -161,6 +175,9 @@ export default async function ingestRoutes(fastify) {
       docId,
       coverage: row,
       mentions,
+      contextModels: models,
+      currentDisambig,
+      mentionsEligibleParas: eligible,
       extractionVerdict,
       pipelineDone,
       followerWouldEnqueue,

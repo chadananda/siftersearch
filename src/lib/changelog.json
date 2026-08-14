@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T19:55:31.521Z",
+  "generated": "2026-08-14T20:05:49.455Z",
   "entries": [
+    {
+      "hash": "6588c78d",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "A done book with no cast now says 0, not blank",
+      "scope": null
+    },
     {
       "hash": "f379c756",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Refactor",
       "description": "Generate pipeline snapshot out-of-process, API reads file",
       "scope": "status"
-    },
-    {
-      "hash": "de962d91",
-      "date": "2026-06-05",
-      "type": "New",
-      "description": "Add cached /server/pipeline status snapshot endpoint",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "6588c78d",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "A done book with no cast now says 0, not blank",
+        "scope": null
+      },
       {
         "hash": "f379c756",
         "date": "2026-08-14",
@@ -7066,13 +7073,6 @@
         "type": "Refactor",
         "description": "Generate pipeline snapshot out-of-process, API reads file",
         "scope": "status"
-      },
-      {
-        "hash": "de962d91",
-        "date": "2026-06-05",
-        "type": "New",
-        "description": "Add cached /server/pipeline status snapshot endpoint",
-        "scope": "admin"
       }
     ]
   }
