@@ -11,6 +11,7 @@
 import fs from 'fs';
 import path from 'path';
 import Database from 'better-sqlite3';
+import { resolveSourceMetadata } from '../api/lib/text/source-metadata.js';
 
 const APPLY = process.argv.includes('--apply');
 const FETCH_FRAMES = process.argv.includes('--fetch-frames');
@@ -264,7 +265,20 @@ for (const s of stubs) {
     // those as English is what sends them to a model that cannot read them and burns tokens until the
     // storm-guard parks the book (2026-08-12). Detect once, here, at the earliest point the real text exists.
     const lang = detectLang(text.slice(0, 6000), null) || 'en';
-    const frontmatter = `---\ntitle: "${(s.title || '').replace(/"/g, "'")}"\nauthor: "${(s.author || '').replace(/"/g, "'")}"\nlanguage: ${lang}\nsource_url: ${s.source_url || url}\nsource_file: ${url}\nconverted: true\n---\n\n`;
+    // NEVER propagate a file locator as metadata. bahai-library stubs derive title/author from the SOURCE
+    // PATH, so /pdf/z/zwemer_islam_challenge_faith.pdf arrives as author "pdf-z-zwemer", title
+    // "zwemer_islam_challenge_faith". That is a filename wearing an author's clothes — it names the FORMAT,
+    // an alphabetical bucket and a surname — and once ingested it is indistinguishable from a real person in
+    // citations, search facets and the entity layer (Chad, 2026-08-13; 58 of the 60 newest docs carried one).
+    // Recover what the DOCUMENT states; where it states nothing, write nothing. An absent author is honest and
+    // fixable; a fabricated one silently corrupts everything downstream.
+    const meta = resolveSourceMetadata({ stubTitle: s.title, stubAuthor: s.author, text });
+    if (meta.notes.length) console.log(`  · ${s.id} metadata: ${meta.notes.join(' | ')}`);
+    const fmLine = (k, v) => (v ? `${k}: "${String(v).replace(/"/g, "'")}"\n` : '');
+    const frontmatter = `---\n${fmLine('title', meta.title)}${fmLine('author', meta.author)}language: ${lang}\n`
+      + `source_url: ${s.source_url || url}\nsource_file: ${url}\nconverted: true\n`
+      + (meta.needsReview ? `metadata_review: "${(meta.notes.join('; ') || 'incomplete').replace(/"/g, "'")}"\n` : '')
+      + `---\n\n`;
     const md = frontmatter + text.replace(/\n{3,}/g, '\n\n').trim() + '\n';
 
     report.converted.push({ id: s.id, title: s.title, rel, words: q.words, pages });
