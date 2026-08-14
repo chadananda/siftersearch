@@ -16,7 +16,7 @@ import { GROUNDING_STAGES } from './run-grounding.js';
 import { logger } from '../logger.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './peak.js';
 import fs from 'node:fs';
-import { coverageSelect, meetsDisambBar, meetsHypeBar, DISAMB_DONE_SQL, HYPE_DONE_SQL } from './processed.js';
+import { coverageSelect, meetsDisambBar, meetsHypeBar, DISAMB_DONE_SQL, HYPE_DONE_SQL, meetsExtractBar, EXTRACT_DONE_SQL } from './processed.js';
 
 export { nowInPeak, peakEndsAt } from './peak.js';   // re-export so callers/tests import peak logic via the queue
 
@@ -78,11 +78,20 @@ export const boundStageOf = (opts = {}) => opts.only || opts.to || 'verify';
 //   (rag-adapter/store.getDisambigCoverage) and to resumeStageFor, because three definitions of "disambiguated"
 //   is how a book gets called not-done here while the stage calls it done: it never advances and the queue reports
 //   "did not reach verify" forever. An EMPTY note ('' — examined, nothing to resolve) is a complete result.
-export function isDoneFromArtifacts({ prose = 0, disamb = 0, hyped = 0, hypeable = 0, clusters = 0, decisions = 0 } = {}, opts = {}) {
+export function isDoneFromArtifacts({ prose = 0, disamb = 0, hyped = 0, hypeable = 0, clusters = 0, decisions = 0, extracted = 0 } = {}, opts = {}) {
   if (prose === 0) return false;
   if (!meetsDisambBar(disamb, prose)) return false;                          // the disambiguation floor for EVERY bound
   const artifactOk = {
-    mentions: true,                                                          // yield, not a processing gate (see above)
+    // EXTRACTION is a PROCESSING gate, measured by its version stamp — not by mention rows. Its yield stays
+    // ungated (a paragraph naming nobody is still extracted); what is gated is whether the pass RAN. Before
+    // the stamp existed this could only be inferred from "hype ran, so stage 1 must have", which a resumed
+    // run falsifies — 53 books were certified done having never been extracted (2026-08-14).
+    // GRANDFATHER CLAUSE (transitional): the stamp arrived with migration 115, so books extracted before it
+    // carry no stamps and would all read 0-extracted — mass-requeuing ~800 finished books and their spend.
+    // A doc with mentions demonstrably ran extraction, so it counts as extracted until it is next re-run.
+    // What remains gated is the case the stamp was added for: NO stamps and NO mentions, i.e. never
+    // extracted. Once re-extraction stamps a book, the stamp alone governs and this clause stops applying.
+    mentions: meetsExtractBar(extracted, prose) || clusters > 0,
     claims: true,                                                            // yield, not a processing gate (see above)
     reconcile: decisions >= 0.85 * clusters,                                 // 0 clusters ⇒ nothing to reconcile ⇒ done
     hype: meetsHypeBar(hyped, hypeable),                                     // stage-10 processing gate (implies 2–9 ran); 0 hypeable ⇒ nothing to hype ⇒ done
@@ -96,7 +105,7 @@ export function isDoneFromArtifacts({ prose = 0, disamb = 0, hyped = 0, hypeable
   }
   // A full/`to` run did every stage up to the bound: require each PROCESSING-gate stage at or before it.
   const bi = GROUNDING_STAGES.indexOf(bound);
-  for (const s of ['reconcile', 'hype']) {
+  for (const s of ['mentions', 'reconcile', 'hype']) {
     if (GROUNDING_STAGES.indexOf(s) <= bi && artifactOk[s] === false) return false;
   }
   return true;
@@ -131,7 +140,8 @@ export async function coverageOf(docId, deps = {}) {
     `${coverageSelect(HYPE_MINLEN)},
             (SELECT COUNT(DISTINCT resolved_as) FROM entity_mentions_v2 WHERE doc_id=? AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%') clusters,
             (SELECT COUNT(*) FROM entity_decisions WHERE target_kind='mention-cluster' AND CAST(json_extract(payload,'$.docId') AS INT)=?) decisions`,
-    [docId, docId, docId, docId, docId, docId], 'grounding:coverage-one-doc')) || {};
+    // 7 = 5 coverageSelect subqueries (prose, disamb, hyped, extracted, hypeable) + clusters + decisions.
+    [docId, docId, docId, docId, docId, docId, docId], 'grounding:coverage-one-doc')) || {};
 }
 
 /** Which gate blocks completion, in the order the decision applies them. null = nothing blocks. */
@@ -159,7 +169,7 @@ export async function reachedBoundBulk(docIds, opts = {}, deps = {}) {
   if (!ids.length) return done;
   const ph = ids.map(() => '?').join(',');
   const blank = () => Object.fromEntries(ids.map((id) => [id, 0]));
-  const prose = blank(), disamb = blank(), hyped = blank(), hypeable = blank(), clusters = blank(), decisions = blank();
+  const prose = blank(), disamb = blank(), hyped = blank(), hypeable = blank(), clusters = blank(), decisions = blank(), extracted = blank();
   const load = (rows, map) => rows.forEach((r) => { if (r.d != null && r.d in map) map[r.d] = r.n; });
   // Same WHERE clauses as reachedBound's per-doc subqueries — kept identical so bulk === single.
   load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL GROUP BY doc_id`, ids), prose);
@@ -169,12 +179,16 @@ export async function reachedBoundBulk(docIds, opts = {}, deps = {}) {
   load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND ${DISAMB_DONE_SQL} GROUP BY doc_id`, ids), disamb);
   load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND ${HYPE_DONE_SQL} GROUP BY doc_id`, ids), hyped);
   load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND length(trim(text)) >= ${HYPE_MINLEN} GROUP BY doc_id`, ids), hypeable);
+  // The extraction stamp, over the SAME live-prose row-set as every other numerator. Omitting it here while
+  // the per-doc measure gates on it is precisely the roadmap-vs-queue divergence this function exists to
+  // prevent — the bulk path grades ~893 plan books and must apply the identical decision.
+  load(await qa(`SELECT doc_id d, COUNT(*) n FROM content WHERE doc_id IN (${ph}) AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND ${EXTRACT_DONE_SQL} GROUP BY doc_id`, ids), extracted);
   load(await qa(`SELECT doc_id d, COUNT(DISTINCT resolved_as) n FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND resolved_as IS NOT NULL AND resolved_as NOT LIKE '%?%' GROUP BY doc_id`, ids), clusters);
   // decisions: the docId lives in the JSON payload, so GROUP BY the extracted id (one scan of mention-cluster rows;
   // idx_edec_cluster_docid accelerates the target_kind narrowing). Keep only our ids.
   load(await qa(`SELECT CAST(json_extract(payload,'$.docId') AS INT) d, COUNT(*) n FROM entity_decisions WHERE target_kind='mention-cluster' GROUP BY d`), decisions);
   for (const id of ids) {
-    if (isDoneFromArtifacts({ prose: prose[id], disamb: disamb[id], hyped: hyped[id], hypeable: hypeable[id], clusters: clusters[id], decisions: decisions[id] }, opts)) done.add(id);
+    if (isDoneFromArtifacts({ prose: prose[id], disamb: disamb[id], hyped: hyped[id], hypeable: hypeable[id], clusters: clusters[id], decisions: decisions[id], extracted: extracted[id] }, opts)) done.add(id);
   }
   return done;
 }
