@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T11:27:22.656Z",
+  "generated": "2026-08-14T12:27:58.406Z",
   "entries": [
+    {
+      "hash": "c3a28458",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Wire the real loader + model, and the chapter CLI (dry-run by default)",
+      "scope": null
+    },
     {
       "hash": "5a98746d",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Mirror entity_mentions to sifter.db for sync worker coverage",
       "scope": "extractor"
-    },
-    {
-      "hash": "abc485b9",
-      "date": "2026-06-01",
-      "type": "Fixed",
-      "description": "Write entity_mentions to sifter.db not graph.db",
-      "scope": "resolver"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "c3a28458",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Wire the real loader + model, and the chapter CLI (dry-run by default)",
+        "scope": null
+      },
       {
         "hash": "5a98746d",
         "date": "2026-08-14",
@@ -7072,13 +7079,6 @@
         "type": "Fixed",
         "description": "Mirror entity_mentions to sifter.db for sync worker coverage",
         "scope": "extractor"
-      },
-      {
-        "hash": "abc485b9",
-        "date": "2026-06-01",
-        "type": "Fixed",
-        "description": "Write entity_mentions to sifter.db not graph.db",
-        "scope": "resolver"
       }
     ]
   }

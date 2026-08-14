@@ -43,6 +43,7 @@ import deepResearchRoutes from './routes/deep-research.js';
 import groundingRoutes from './routes/grounding.js';
 import widgetRoutes from './routes/widget.js';
 import ingestRoutes from './routes/ingest.js';
+import bookNotesRoutes from './routes/book-notes.js';
 import { config } from './lib/config.js';
 import { ensureSessionId } from './lib/anonymous.js';
 
@@ -260,6 +261,7 @@ export async function createServer(opts = {}) {
   await server.register(entityReviewRoutes, { prefix: '/api/admin' });
   await server.register(groundingRoutes, { prefix: '/api/admin' });
   await server.register(ingestRoutes, { prefix: '/api/admin' });
+  await server.register(bookNotesRoutes, { prefix: '/api/admin' });
   await server.register(companionRoutes, { prefix: '/api/admin' });
   await server.register(companionMeRoutes, { prefix: '/api/v1/companion' });
   await server.register(documentsRoutes, { prefix: '/api/documents' });
