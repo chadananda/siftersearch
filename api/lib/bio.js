@@ -221,16 +221,26 @@ export async function getIntegrationProgress() {
       .forEach(d => { meta[d.id] = d; });
   }
   const curatedKeys = new Set(INTEGRATION_PHASES.filter(p => !p.dynamic).map(p => p.key));
-  const gradedDocs = allDocs.filter(id => curatedKeys.has(phaseByDoc[id])); // curated docs that may be grounded
+  // ABSORPTION ORDER is defined by the curated phases only — "new in sequence" means new relative to the
+  // planned reading order, so a dynamic long-tail book must not shift it.
+  const curatedDocs = allDocs.filter(id => curatedKeys.has(phaseByDoc[id]));
+  // GRADING covers EVERY listed book, curated or not. The dynamic phases (Biographies, General Histories)
+  // were written when they were an ungrounded long tail, and grading skipped them — so once the pipeline
+  // actually ground them, all 241 rendered as `persons: 0, done: false` regardless of what was in the
+  // database. The Chosen Highway shows 61 people and 1,994 claims in its verify output while its card said
+  // zero (Chad, 2026-08-14). A dashboard that reports finished work as untouched is worse than no dashboard:
+  // it sent me hunting a "stall" that did not exist. Cost is one extra bulk GROUP BY over ~241 more ids.
+  const gradedDocs = allDocs.filter(id => phaseByDoc[id]);
   // `actives` = every book grounding right now (parallel runs are normal); `active` = the first, kept so existing
   // callers/UI keep working. Always fresh (cheap) → live polling.
-  const actives = await computeActiveBooks(gradedDocs, meta);
+  const actives = await computeActiveBooks(curatedDocs, meta);
   const active = actives[0] || null;
   const offPeak = await computeOffPeakHint();   // {waiting, resumesAt} — books held for cheap DeepSeek hours (fresh, cheap)
 
   if (_progCache && Date.now() - _progAt < 60000) return { ..._progCache, active, actives, offPeak };
 
-  // Grounded metrics run over the curated (non-dynamic) docs in phase order — biographies/histories aren't grounded yet.
+  // Grounded metrics run over EVERY listed doc. (They once ran over curated docs only, on the assumption
+  // that biographies/histories were not grounded yet — an assumption that expired without the code noticing.)
   const ph = gradedDocs.map(() => '?').join(',');
   const counts = {}, unresolved = {};
   (await queryAll(`SELECT doc_id, COUNT(*) n FROM (
@@ -298,7 +308,7 @@ export async function getIntegrationProgress() {
   const phaseBookIds = {};
   for (const p of INTEGRATION_PHASES) phaseBookIds[p.key] = (p.docs || []).filter((id) => meta[id]);
   // New-in-sequence: the first book (in ABSORPTION order) to ground each entity → each book's NET contribution.
-  const orderedGraded = INTEGRATION_PHASES.filter(p => !p.dynamic).flatMap(p => phaseBookIds[p.key]);
+  const orderedGraded = INTEGRATION_PHASES.filter(p => !p.dynamic).flatMap(p => phaseBookIds[p.key]);   // curated order only
   const order = {}; orderedGraded.forEach((d, i) => { order[d] = i; });
   const firstSeen = {}, newBy = {};
   (await queryAll(`SELECT doc_id d, entity_id e FROM entity_mentions_v2 WHERE doc_id IN (${ph}) AND entity_id IS NOT NULL

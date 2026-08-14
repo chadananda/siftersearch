@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T15:44:36.601Z",
+  "generated": "2026-08-14T15:50:38.069Z",
   "entries": [
+    {
+      "hash": "97f13c01",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Hold a language change the TITLE contradicts, and record which document it belongs to",
+      "scope": null
+    },
     {
       "hash": "b12a0ff6",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Hash bodyText not imported content namespace object",
       "scope": "indexer"
-    },
-    {
-      "hash": "3540b914",
-      "date": "2026-06-02",
-      "type": "Fixed",
-      "description": "Pass DeepSeek thinking param via extra_body not top-level",
-      "scope": "ai"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "97f13c01",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Hold a language change the TITLE contradicts, and record which document it belongs to",
+        "scope": null
+      },
       {
         "hash": "b12a0ff6",
         "date": "2026-08-14",
@@ -7070,13 +7077,6 @@
         "type": "Fixed",
         "description": "Hash bodyText not imported content namespace object",
         "scope": "indexer"
-      },
-      {
-        "hash": "3540b914",
-        "date": "2026-06-02",
-        "type": "Fixed",
-        "description": "Pass DeepSeek thinking param via extra_body not top-level",
-        "scope": "ai"
       }
     ]
   }
