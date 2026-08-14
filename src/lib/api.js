@@ -906,6 +906,25 @@ export const admin = {
     return request('/api/admin/library/missing-books');
   },
 
+  // Book Notes — the instructor-notes companion (/admin/book-notes). Read paths are free; runChapter is
+  // the only call here that spends model tokens, so it is a DRY RUN unless confirm is passed.
+  async getBookNotes() {
+    return request('/api/admin/book-notes');
+  },
+  async getBookNotesBook(docId) {
+    return request(`/api/admin/book-notes/${docId}`);
+  },
+  async getBookNotesChapter(docId, chapter, { markdown = false } = {}) {
+    return request(`/api/admin/book-notes/${docId}/chapter/${encodeURIComponent(chapter)}${markdown ? '?format=markdown' : ''}`);
+  },
+  async reviewBookNote(id, review, editedBody = null) {
+    return request(`/api/admin/book-notes/note/${id}/review`, { method: 'POST', body: JSON.stringify({ review, editedBody }) });
+  },
+  async runBookNotesChapter(docId, chapter, { apply = false } = {}) {
+    return request(`/api/admin/book-notes/${docId}/chapter/${encodeURIComponent(chapter)}/run`,
+      { method: 'POST', body: JSON.stringify(apply ? { confirm: 'write-notes' } : {}) });
+  },
+
   // Seeker Companion controls (see /admin/companion)
   async getCompanionConfig() { return request('/api/admin/companion/config'); },
   async setCompanionDial(key, value) {

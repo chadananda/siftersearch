@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T13:27:59.416Z",
+  "generated": "2026-08-14T14:28:40.463Z",
   "entries": [
+    {
+      "hash": "e73fe68e",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "The Íqán original is NOT in the corpus — profile E is a data project first",
+      "scope": null
+    },
     {
       "hash": "543054fd",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Explicitly set DeepSeek thinking mode via API parameter",
       "scope": "ai"
-    },
-    {
-      "hash": "20b8cb91",
-      "date": "2026-06-02",
-      "type": "Fixed",
-      "description": "Cap maxTokens at 4096 and track API timeout failures",
-      "scope": "graph-extractor"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "e73fe68e",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "The Íqán original is NOT in the corpus — profile E is a data project first",
+        "scope": null
+      },
       {
         "hash": "543054fd",
         "date": "2026-08-14",
@@ -7070,13 +7077,6 @@
         "type": "Fixed",
         "description": "Explicitly set DeepSeek thinking mode via API parameter",
         "scope": "ai"
-      },
-      {
-        "hash": "20b8cb91",
-        "date": "2026-06-02",
-        "type": "Fixed",
-        "description": "Cap maxTokens at 4096 and track API timeout failures",
-        "scope": "graph-extractor"
       }
     ]
   }
