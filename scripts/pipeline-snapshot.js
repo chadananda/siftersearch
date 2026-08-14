@@ -10,6 +10,20 @@ import { fileURLToPath } from 'url';
 import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { execSync } from 'child_process';
 
+// EVERY probe below falls back to an empty value so one broken query cannot take the whole snapshot down.
+// That resilience quietly became a liability: a bare `.catch` returning [] makes a FAILED query indistinguishable from
+// a query that legitimately found nothing, so a snapshot built on broken probes reports zeros and every
+// consumer — the dashboard, the health check, the overnight watch — reads it as "nothing pending, all fine".
+// Tonight's `no such column: extract_model` is exactly what this shape hides. Keep the fallback, record the
+// failure: probeFail returns the same value as before AND remembers why, so a broken probe reads as broken
+// rather than as good news (2026-08-14).
+const probeErrors = [];
+const probeFail = (fallback) => (err) => {
+  probeErrors.push({ error: String(err?.message || err).slice(0, 300) });
+  return fallback;
+};
+
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
 dotenv.config({ path: join(ROOT, '.env-public') });
@@ -60,7 +74,7 @@ async function main() {
      JOIN docs d ON d.id = c.doc_id
      WHERE d.doc_priority >= 600 AND c.deleted_at IS NULL AND d.deleted_at IS NULL
      GROUP BY d.id ORDER BY d.doc_priority DESC, synced DESC LIMIT 40`
-  ).catch(() => []);
+  ).catch(probeFail([]));
   const books = rows.map(b => ({
     title: b.title, priority: b.priority, mentions: b.mentions, synced: b.synced,
     fully_synced: b.mentions > 0 && b.synced === b.mentions,
@@ -70,8 +84,8 @@ async function main() {
   // idx_content_graph_unsync on =0) — fast. Counting graph_enriched=1 instead
   // would full-scan 3.3M rows (~3 min), so we report what REMAINS to extract.
   const [backlog, remaining] = await Promise.all([
-    queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced=0 AND deleted_at IS NULL`).catch(() => ({ n: null })),
-    queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched=0 AND deleted_at IS NULL`).catch(() => ({ n: null })),
+    queryOne(`SELECT COUNT(*) AS n FROM content WHERE synced=0 AND deleted_at IS NULL`).catch(probeFail({ n: null })),
+    queryOne(`SELECT COUNT(*) AS n FROM content WHERE graph_enriched=0 AND deleted_at IS NULL`).catch(probeFail({ n: null })),
   ]);
 
   let meili = {};
@@ -80,7 +94,7 @@ async function main() {
       meiliTaskTotal('enqueued'), meiliTaskTotal('processing'), meiliTaskTotal('failed'),
       fetch(`${config.search.host}/indexes/paragraphs/stats`, {
         headers: { Authorization: `Bearer ${config.search.apiKey}` }, signal: AbortSignal.timeout(8000),
-      }).then(r => r.json()).catch(() => ({})),
+      }).then(r => r.json()).catch(probeFail({})),
     ]);
     meili = {
       enqueued, processing, failed,
@@ -94,11 +108,11 @@ async function main() {
 
   // Embedding coverage: embedding IS NULL uses idx_content_needs_embedding_v2 (fast).
   // This is the authoritative "are embeddings generated?" number — DB is source of truth.
-  const embMissing = await queryOne(`SELECT COUNT(*) AS n FROM content WHERE embedding IS NULL AND deleted_at IS NULL`).catch(() => ({ n: null }));
+  const embMissing = await queryOne(`SELECT COUNT(*) AS n FROM content WHERE embedding IS NULL AND deleted_at IS NULL`).catch(probeFail({ n: null }));
 
   // Entity-mention sidecar: em_synced=0 uses idx_em_unsynced partial index (fast).
   // mentions_unsynced = backlog waiting to reach entity_mentions_idx.
-  const emUnsynced = await queryOne(`SELECT COUNT(*) AS n FROM entity_mentions WHERE em_synced=0`).catch(() => ({ n: null }));
+  const emUnsynced = await queryOne(`SELECT COUNT(*) AS n FROM entity_mentions WHERE em_synced=0`).catch(probeFail({ n: null }));
   let entityIdxDocs = null;
   try {
     const s = await fetch(`${config.search.host}/indexes/entity_mentions_idx/stats`, {
@@ -128,7 +142,7 @@ async function main() {
   // high-water baseline. A sharp unexplained drop = something is deleting en
   // masse → raise an alert the monitor surfaces. deleted_at IS NULL uses the
   // partial index, so this is cheap. See project_canonical_gutted_by_dedupe_20260609.
-  const liveParas = (await queryOne(`SELECT COUNT(*) AS n FROM content WHERE deleted_at IS NULL`).catch(() => ({ n: null })))?.n ?? null;
+  const liveParas = (await queryOne(`SELECT COUNT(*) AS n FROM content WHERE deleted_at IS NULL`).catch(probeFail({ n: null })))?.n ?? null;
   let prevSnapshot = {};
   try { prevSnapshot = JSON.parse(readFileSync(join(ROOT, 'data', 'pipeline-status.json'), 'utf8')) ?? {}; } catch { /* first run */ }
   const prev = prevSnapshot.integrity ?? {};
@@ -185,14 +199,14 @@ async function main() {
         LEFT JOIN per_doc pd ON pd.doc_id = d.id
         WHERE d.deleted_at IS NULL
         GROUP BY d.language
-        ORDER BY paragraph_count DESC`, [], 'snapshot:by-language').catch(() => []),
+        ORDER BY paragraph_count DESC`, [], 'snapshot:by-language').catch(probeFail([])),
       queryOne(`
         SELECT COUNT(*) as total,
           SUM(CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END) as with_embedding,
           SUM(CASE WHEN embedding IS NULL THEN 1 ELSE 0 END) as missing_embeddings,
           SUM(CASE WHEN synced = 0 THEN 1 ELSE 0 END) as dirty
         FROM content
-        WHERE deleted_at IS NULL`, [], 'snapshot:embedding-stats').catch(() => null),
+        WHERE deleted_at IS NULL`, [], 'snapshot:embedding-stats').catch(probeFail(null)),
     ]);
     library = { generated_at: new Date().toISOString(), byLanguage, embeddingStats };
   }
@@ -225,7 +239,7 @@ async function main() {
       SELECT d.id, d.title, d.author, d.language, d.file_path, pending.n AS pending_paragraphs
         FROM pending JOIN docs d ON d.id = pending.doc_id
        WHERE d.deleted_at IS NULL
-       ORDER BY pending_paragraphs DESC`, [], 'snapshot:pending-embedding').catch(() => []),
+       ORDER BY pending_paragraphs DESC`, [], 'snapshot:pending-embedding').catch(probeFail([])),
     queryAll(`
       WITH unsynced AS (
         SELECT doc_id, COUNT(*) n FROM content
@@ -234,7 +248,7 @@ async function main() {
       SELECT d.id, d.title, d.author, d.language, unsynced.n AS unsynced_paragraphs
         FROM unsynced JOIN docs d ON d.id = unsynced.doc_id
        WHERE d.deleted_at IS NULL
-       ORDER BY unsynced_paragraphs DESC`, [], 'snapshot:pending-sync').catch(() => []),
+       ORDER BY unsynced_paragraphs DESC`, [], 'snapshot:pending-sync').catch(probeFail([])),
   ]);
     bottlenecks = { generated_at: new Date().toISOString(), pendingEmbedding, pendingSync };
   }
@@ -258,17 +272,17 @@ async function main() {
         COALESCE(SUM(estimated_cost_usd), 0) as month_cost,
         SUM(CASE WHEN success = 0 AND timestamp >= ? THEN 1 ELSE 0 END) as failed_week
       FROM ai_usage WHERE timestamp >= ?`,
-      [fmtTs(dayStart), fmtTs(dayStart), fmtTs(dayStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(monthStart)]).catch(() => null),
+      [fmtTs(dayStart), fmtTs(dayStart), fmtTs(dayStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(weekStart), fmtTs(monthStart)]).catch(probeFail(null)),
     queryAll(`SELECT model, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
-      FROM ai_usage WHERE timestamp >= ? GROUP BY model ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(() => []),
+      FROM ai_usage WHERE timestamp >= ? GROUP BY model ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(probeFail([])),
     queryAll(`SELECT provider, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
-      FROM ai_usage WHERE timestamp >= ? GROUP BY provider ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(() => []),
+      FROM ai_usage WHERE timestamp >= ? GROUP BY provider ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(probeFail([])),
     queryAll(`SELECT COALESCE(caller,'unknown') as caller, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
-      FROM ai_usage WHERE timestamp >= ? GROUP BY caller ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(() => []),
+      FROM ai_usage WHERE timestamp >= ? GROUP BY caller ORDER BY cost DESC`, [fmtTs(monthStart)]).catch(probeFail([])),
     queryAll(`SELECT COALESCE(caller,'unknown') as caller, COUNT(*) as calls, COALESCE(SUM(total_tokens),0) as tokens, COALESCE(SUM(estimated_cost_usd),0) as cost
-      FROM ai_usage WHERE timestamp >= ? GROUP BY caller ORDER BY cost DESC`, [fmtTs(dayStart)]).catch(() => []),
-    queryAll(`SELECT DISTINCT model FROM ai_usage ORDER BY model`).catch(() => []),
-    queryAll(`SELECT DISTINCT caller FROM ai_usage WHERE caller IS NOT NULL ORDER BY caller`).catch(() => []),
+      FROM ai_usage WHERE timestamp >= ? GROUP BY caller ORDER BY cost DESC`, [fmtTs(dayStart)]).catch(probeFail([])),
+    queryAll(`SELECT DISTINCT model FROM ai_usage ORDER BY model`).catch(probeFail([])),
+    queryAll(`SELECT DISTINCT caller FROM ai_usage WHERE caller IS NOT NULL ORDER BY caller`).catch(probeFail([])),
   ]);
   const aiUsage = {
     generated_at: new Date().toISOString(),
@@ -317,7 +331,7 @@ async function main() {
         SUM(CASE WHEN search_type = 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS chat_d7,
         AVG(CASE WHEN search_type != 'api_chat' AND created_at >= ? THEN duration_ms ELSE NULL END) AS avg_ms_d7,
         SUM(CASE WHEN result_count = 0 AND search_type != 'api_chat' AND created_at >= ? THEN 1 ELSE 0 END) AS zero_result_d7
-      FROM search_log`, [day1, day7, day1, day7, day7, day7]).catch(() => null);
+      FROM search_log`, [day1, day7, day1, day7, day7, day7]).catch(probeFail(null));
     // 14-day daily series (searches vs chat) for the Analytics page sparkline/chart.
     const series = await queryAll(`
       SELECT substr(created_at, 1, 10) AS day,
@@ -325,13 +339,13 @@ async function main() {
              SUM(CASE WHEN search_type = 'api_chat' THEN 1 ELSE 0 END) AS chat
       FROM search_log
       WHERE created_at >= ?
-      GROUP BY day ORDER BY day ASC`, [fmtTs(new Date(Date.now() - 14 * 24 * 3600 * 1000))]).catch(() => []);
+      GROUP BY day ORDER BY day ASC`, [fmtTs(new Date(Date.now() - 14 * 24 * 3600 * 1000))]).catch(probeFail([]));
     // Top queries (7d) — what people actually ask. Chat prompts excluded (they're prose, not queries).
     const topQueries = await queryAll(`
       SELECT query, COUNT(*) AS n, AVG(result_count) AS avg_results
       FROM search_log
       WHERE created_at >= ? AND search_type != 'api_chat' AND length(trim(query)) > 0
-      GROUP BY lower(trim(query)) ORDER BY n DESC LIMIT 25`, [day7]).catch(() => []);
+      GROUP BY lower(trim(query)) ORDER BY n DESC LIMIT 25`, [day7]).catch(probeFail([]));
     // Chat users: search_log carries no identifier for chat turns, so distinct
     // chat *users* come from the companion exposure log (one row per served turn,
     // keyed by participant_id) — the forward-correct signal. Saved conversations
@@ -339,9 +353,9 @@ async function main() {
     const chatUsers = await queryOne(`
       SELECT COUNT(DISTINCT participant_id) AS d7,
              COUNT(DISTINCT CASE WHEN created_at >= ? THEN participant_id END) AS d1
-      FROM companion_exposure WHERE created_at >= ?`, [day1, day7]).catch(() => null);
-    const chatUsersAll = (await queryOne(`SELECT COUNT(DISTINCT participant_id) AS n FROM companion_exposure`).catch(() => null))?.n ?? null;
-    const savedConversations = (await queryOne(`SELECT COUNT(*) AS n FROM published_conversations`).catch(() => null))?.n ?? null;
+      FROM companion_exposure WHERE created_at >= ?`, [day1, day7]).catch(probeFail(null));
+    const chatUsersAll = (await queryOne(`SELECT COUNT(DISTINCT participant_id) AS n FROM companion_exposure`).catch(probeFail(null)))?.n ?? null;
+    const savedConversations = (await queryOne(`SELECT COUNT(*) AS n FROM published_conversations`).catch(probeFail(null)))?.n ?? null;
     if (totals) {
       totals.chat_users_d7 = chatUsers?.d7 ?? null;
       totals.chat_users_d1 = chatUsers?.d1 ?? null;
@@ -359,11 +373,11 @@ async function main() {
   let corpus = null;
   try {
     const tot = await queryOne(`SELECT COUNT(*) AS docs, COALESCE(SUM(paragraph_count),0) AS paras
-      FROM docs WHERE deleted_at IS NULL AND duplicate_of IS NULL`).catch(() => null);
+      FROM docs WHERE deleted_at IS NULL AND duplicate_of IS NULL`).catch(probeFail(null));
     const byReligion = await queryAll(`SELECT COALESCE(NULLIF(religion,''),'General') AS religion,
         COUNT(*) AS docs, COALESCE(SUM(paragraph_count),0) AS paras
       FROM docs WHERE deleted_at IS NULL AND duplicate_of IS NULL
-      GROUP BY COALESCE(NULLIF(religion,''),'General') ORDER BY docs DESC LIMIT 14`).catch(() => []);
+      GROUP BY COALESCE(NULLIF(religion,''),'General') ORDER BY docs DESC LIMIT 14`).catch(probeFail([]));
     corpus = {
       generated_at: new Date().toISOString(),
       docs: tot?.docs ?? null,
@@ -385,7 +399,7 @@ async function main() {
     const recent = await queryAll(`
       SELECT service_type, COUNT(*) AS calls, MAX(timestamp) AS last_at,
              COALESCE(SUM(estimated_cost_usd),0) AS cost
-      FROM ai_usage WHERE timestamp >= ? GROUP BY service_type ORDER BY calls DESC`, [since15]).catch(() => []);
+      FROM ai_usage WHERE timestamp >= ? GROUP BY service_type ORDER BY calls DESC`, [since15]).catch(probeFail([]));
     const LABELS = {
       'grounding:disambiguate': 'Disambiguation',
       'grounding:hype': 'HyPE question generation',
@@ -516,20 +530,20 @@ async function main() {
         AND d.paragraph_count BETWEEN 1 AND 35${NOT_CATALOGUE}
       GROUP BY d.id
       HAVING logo > 0 OR tags > 0
-      ORDER BY d.title`).catch(() => []);
+      ORDER BY d.title`).catch(probeFail([]));
 
     const HUSK = `FROM docs d WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
         AND NOT EXISTS (SELECT 1 FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL)${NOT_CATALOGUE}`;
     const listHusks = async () => await queryAll(
       `SELECT d.id, d.title, d.author, d.religion, d.collection, d.source_url ${HUSK}
-       ORDER BY d.title`).catch(() => []);
+       ORDER BY d.title`).catch(probeFail([]));
 
     // Same work, two rows: an archival stub/husk next to the doc that actually holds the text
     // ("1898, May Maxwell — An Early Pilgrimage" vs "An Early Pilgrimage" / May Maxwell). Those are
     // NOT missing, and they dominated the list — so match candidates against every doc that holds
     // its text (>35 ¶ = past the stub ceiling) and drop the ones we already have.
     const heldDocs = await queryAll(`SELECT d.id, d.title, d.author, d.paragraph_count AS paras FROM docs d
-      WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.paragraph_count > 35`).catch(() => []);
+      WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.paragraph_count > 35`).catch(probeFail([]));
     const { heldMatch } = buildHeldIndex(heldDocs);
     const notHeld = (r) => !heldMatch(r.title, r.author);
 
@@ -542,7 +556,7 @@ async function main() {
     const shownStubs = stubsWithSrc.slice(0, SHOW_CAP);
     for (const s of shownStubs) {
       const row = await queryOne(`SELECT text FROM content WHERE doc_id=? AND deleted_at IS NULL
-        AND (text LIKE '%bahai-library.com/docs/%' OR text LIKE '%.docx%' OR text LIKE '%.pdf%') LIMIT 1`, [s.id]).catch(() => null);
+        AND (text LIKE '%bahai-library.com/docs/%' OR text LIKE '%.docx%' OR text LIKE '%.pdf%') LIMIT 1`, [s.id]).catch(probeFail(null));
       const t = String(row?.text || '');
       const m = t.match(/https?:\/\/[^\s()[\]"']+\.(?:pdf|docx?)\b/i) || t.match(/https?:\/\/bahai-library\.com\/docs\/[^\s()[\]"']+/i);
       if (m) s.file_url = m[0].replace(/[),.;]+$/, '');
@@ -626,12 +640,21 @@ async function main() {
     // converter every 5 minutes?" is unanswerable from off-box — and that question has a real answer that
     // changes whether ingestion can ever finish a batch.
     pm2_apps: pm2Apps,
+    // How many probes FAILED building this snapshot, and why. Zero is the normal case and cheap to assert;
+    // non-zero means some number in this file is a fallback rather than a measurement, and every consumer
+    // should treat it that way instead of reading a zero as good news.
+    probe_errors: probeErrors,
+    probe_error_count: probeErrors.length,
   };
 
   const dataDir = join(ROOT, 'data');
   try { mkdirSync(dataDir, { recursive: true }); } catch { /* exists */ }
   writeFileSync(join(dataDir, 'pipeline-status.json'), JSON.stringify(snapshot, null, 2));
   console.log(`pipeline snapshot written in ${snapshot.computed_in_ms}ms (${books.length} books)`);
+  if (probeErrors.length) {
+    console.log(`  ${probeErrors.length} PROBE(S) FAILED — those figures are fallbacks, not measurements:`);
+    for (const e of probeErrors.slice(0, 10)) console.log(`    ${e.error}`);
+  }
 }
 
 main().then(() => process.exit(0)).catch(err => { console.error('Fatal:', err); process.exit(1); });

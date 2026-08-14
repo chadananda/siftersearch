@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T21:09:01.966Z",
+  "generated": "2026-08-14T21:35:24.487Z",
   "entries": [
+    {
+      "hash": "7a5ddb85",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Aggregate content BEFORE joining docs (4,500s/day of freeze)",
+      "scope": null
+    },
     {
       "hash": "35f325b9",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Enrich pipeline snapshot into single source of truth",
       "scope": "status"
-    },
-    {
-      "hash": "49b216c0",
-      "date": "2026-06-05",
-      "type": "New",
-      "description": "Side-rebuild script for paragraphs index (build fresh + atomic swap)",
-      "scope": "meili"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "7a5ddb85",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Aggregate content BEFORE joining docs (4,500s/day of freeze)",
+        "scope": null
+      },
       {
         "hash": "35f325b9",
         "date": "2026-08-14",
@@ -7066,13 +7073,6 @@
         "type": "New",
         "description": "Enrich pipeline snapshot into single source of truth",
         "scope": "status"
-      },
-      {
-        "hash": "49b216c0",
-        "date": "2026-06-05",
-        "type": "New",
-        "description": "Side-rebuild script for paragraphs index (build fresh + atomic swap)",
-        "scope": "meili"
       }
     ]
   }

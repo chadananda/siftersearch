@@ -592,6 +592,33 @@ async function checkSchemaVersion() {
   ok('schema_version', 0, details);
 }
 
+// ─── Snapshot probe integrity ─────────────────────────────────────────────
+// A DETECTOR WITH NO CONSUMER IS NOT A DETECTOR. pipeline-snapshot records every probe that failed while
+// building the snapshot (probe_errors), because each of those probes falls back to an empty value and an
+// empty value reads downstream as "nothing pending" — good news. Nobody would ever open the raw JSON to
+// look, so the count is asserted here: if any probe failed, the dashboard's numbers are fallbacks rather
+// than measurements, and that is worth saying out loud (2026-08-14).
+async function checkSnapshotProbes() {
+  const key = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY;
+  if (!key) return skip('snapshot_probes', 'no internal key available to read the snapshot');
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/server/pipeline`, {
+      headers: { 'X-Internal-Key': key }, signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) return warn('snapshot_probes', `snapshot endpoint HTTP ${res.status}`);
+    const snap = await res.json();
+    // An OLDER snapshot predates the field entirely; absent is not the same as zero, so say so.
+    if (snap.probe_error_count == null) return skip('snapshot_probes', 'snapshot predates probe-error tracking');
+    const n = Number(snap.probe_error_count) || 0;
+    if (n === 0) return ok('snapshot_probes', 0, { probes_failed: 0 });
+    const first = (snap.probe_errors || []).slice(0, 3).map((e) => e.error).join(' | ');
+    return warn('snapshot_probes', `${n} snapshot probe(s) FAILED — those figures are fallbacks, not measurements: ${first}`,
+      { probes_failed: n });
+  } catch (err) {
+    return warn('snapshot_probes', `snapshot probe check failed: ${err.message}`);
+  }
+}
+
 // ─── Enrichment progress ──────────────────────────────────────────────────
 // Uses pipeline health endpoint (server-side partial-index queries) — no local
 // better-sqlite3 which would block the event loop and cause Meili fetch timeouts.
@@ -806,6 +833,7 @@ const probes = [
   ['wal_size', checkWal],                          // catches WAL bloat blocking checkpoints
   ['entity_pipeline', checkEntityPipeline],       // catches lock-storm pattern
   ['schema_version', checkSchemaVersion],         // catches pending migrations
+  ['snapshot_probes', checkSnapshotProbes],       // catches a broken probe reporting zeros as "all clear"
   ['deep_research', checkDeepResearch],           // deep_research_queue stuck/failing
   // enrichment + graph_pipeline: only meaningful on tower-nas; skip when api is down.
   ...(!apiDown ? [
