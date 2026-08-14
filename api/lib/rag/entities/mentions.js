@@ -9,7 +9,12 @@ import { assertDisambiguated } from '../kernel/gate.js';
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.98 });   // ONE bar (kernel/gate) — 0.99 stranded 98–99% books
   const version = opts.version ?? ctx.config.versions?.disambig ?? 'disambig-v1';
-  const paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context && p.contextModel === version);
+  // `p.context != null`, NOT `p.context` — an EMPTY note is "examined, nothing to resolve", a complete
+  // disambiguation result (pipeline/processed.js rule 1). Truthiness dropped exactly those paragraphs, so on
+  // a sparse book they would never be stamped as extracted, coverage could never reach the bar, and the book
+  // would be re-extracted forever: the yield-based grind rebuilt one layer down. Parsing an empty note simply
+  // yields no pairs, which is the correct outcome for it.
+  const paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context != null && p.contextModel === version);
   const mentions = [];
   const seen = new Set();
   for (const p of paras) {
@@ -23,7 +28,19 @@ export async function run(ctx, docId, opts = {}) {
     }
   }
   const written = opts.dryRun ? 0 : await ctx.store.saveMentions(mentions);
-  const stats = { paras: paras.length, mentions: mentions.length, written };
+  // STAMP EVERY PARAGRAPH READ, not just the ones that yielded a mention. This stage's only trace used to be
+  // its output, so a paragraph naming nobody looked exactly like a paragraph never attempted — completion had
+  // to be guessed from yield or from the fact that a later stage ran, and both guesses certified 53 books
+  // done having never been extracted. The stamp also carries the extractor VERSION, which is what makes an
+  // upgrade targetable (re-run WHERE extract_model <> current) instead of all-or-nothing (2026-08-14).
+  const extractVersion = opts.extractVersion ?? ctx.config.versions?.extract ?? 'extract-v2';
+  let stamped = 0;
+  if (!opts.dryRun && ctx.store.markExtracted) {
+    const ids = paras.map((p) => p.id).filter((id) => id != null);
+    await ctx.store.markExtracted(ids, extractVersion);
+    stamped = ids.length;
+  }
+  const stats = { paras: paras.length, mentions: mentions.length, written, stamped, extractVersion };
   ctx.log.info?.({ docId, ...stats }, 'entities/mentions');
   return stats;
 }

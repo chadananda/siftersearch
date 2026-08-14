@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-14T20:47:20.666Z",
+  "generated": "2026-08-14T20:52:55.532Z",
   "entries": [
+    {
+      "hash": "f184b65a",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Bump CURRENT_VERSION to 115 + test that it can never lag again",
+      "scope": null
+    },
     {
       "hash": "be55086d",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Restore the embedding worker to PM2 (root cause of stalled embeddings)",
       "scope": "embeddings"
-    },
-    {
-      "hash": "a8f18403",
-      "date": "2026-06-05",
-      "type": "Performance",
-      "description": "Count graph_enriched=0 (indexed) not =1 (full scan)",
-      "scope": "status"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "f184b65a",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Bump CURRENT_VERSION to 115 + test that it can never lag again",
+        "scope": null
+      },
       {
         "hash": "be55086d",
         "date": "2026-08-14",
@@ -7066,13 +7073,6 @@
         "type": "Fixed",
         "description": "Restore the embedding worker to PM2 (root cause of stalled embeddings)",
         "scope": "embeddings"
-      },
-      {
-        "hash": "a8f18403",
-        "date": "2026-06-05",
-        "type": "Performance",
-        "description": "Count graph_enriched=0 (indexed) not =1 (full scan)",
-        "scope": "status"
       }
     ]
   }

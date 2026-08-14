@@ -47,6 +47,13 @@ export function makeStore() {
       await content.updateContextOnly(paragraphId, note, methodVersion);
     },
 
+    // Stamp the paragraphs extraction PROCESSED, at the extractor's version. The mentions stage writes this
+    // for every paragraph it read — including the ones that named nobody — because completion is the pass
+    // having run, not the rows it produced (see pipeline/processed.js).
+    async markExtracted(paragraphIds, version) {
+      await content.markExtracted(paragraphIds, version);
+    },
+
     // Persist HyPE questions (array) + thesis for a paragraph, stamped with the generator version
     // (hyp_model — mirrors context_model); flags the row for Meili re-index.
     async saveHype(paragraphId, questions, thesis, version) {
