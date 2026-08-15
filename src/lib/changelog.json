@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-15T12:16:18.137Z",
+  "generated": "2026-08-15T15:29:49.092Z",
   "entries": [
+    {
+      "hash": "92a7498d",
+      "date": "2026-08-15",
+      "type": "Other",
+      "description": "EXPLAIN QUERY PLAN for the snapshot's expensive queries",
+      "scope": null
+    },
     {
       "hash": "0d0020cb",
       "date": "2026-08-14",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Route siftersearch-api writes through the single writer",
       "scope": "infra"
-    },
-    {
-      "hash": "51b0297d",
-      "date": "2026-06-15",
-      "type": "Docs",
-      "description": "Nav label + order tweaks (Search Quality Testing, Davids Search Tests, Entity-Aware Search down one)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-15": [
+      {
+        "hash": "92a7498d",
+        "date": "2026-08-15",
+        "type": "Other",
+        "description": "EXPLAIN QUERY PLAN for the snapshot's expensive queries",
+        "scope": null
+      }
+    ],
     "2026-08-14": [
       {
         "hash": "0d0020cb",
@@ -7062,13 +7071,6 @@
         "type": "Fixed",
         "description": "Route siftersearch-api writes through the single writer",
         "scope": "infra"
-      },
-      {
-        "hash": "51b0297d",
-        "date": "2026-06-15",
-        "type": "Docs",
-        "description": "Nav label + order tweaks (Search Quality Testing, Davids Search Tests, Entity-Aware Search down one)",
-        "scope": null
       }
     ]
   }

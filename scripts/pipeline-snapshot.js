@@ -9,7 +9,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { execSync } from 'child_process';
-import { BY_LANGUAGE_SQL } from '../api/lib/pipeline/snapshot-queries.js';
+import { LANG_TOTALS_SQL, LANG_PENDING_EMBEDDING_SQL, LANG_PENDING_SYNC_SQL, mergeByLanguage } from '../api/lib/pipeline/snapshot-queries.js';
 
 // EVERY probe below falls back to an empty value so one broken query cannot take the whole snapshot down.
 // That resilience quietly became a liability: a bare `.catch` returning [] makes a FAILED query indistinguishable from
@@ -182,7 +182,13 @@ async function main() {
       // query in the system. Rolling content up per doc_id first (one indexed pass, ~158k output rows) and
       // then joining docs turns the DISTINCT into a plain COUNT over docs. Same numbers: docs with no
       // paragraphs still count, via the LEFT JOIN + COALESCE, exactly as the LEFT JOIN gave them before.
-      queryAll(BY_LANGUAGE_SQL, [], 'snapshot:by-language').catch(probeFail([])),
+      // Three cheap queries instead of one 55-second scan: totals from docs (158k rows), backlog from the
+      // partial indexes (~34k pending rows). Merged in JS so the published shape is unchanged.
+      Promise.all([
+        queryAll(LANG_TOTALS_SQL, [], 'snapshot:lang-totals').catch(probeFail([])),
+        queryAll(LANG_PENDING_EMBEDDING_SQL, [], 'snapshot:lang-pending-embedding').catch(probeFail([])),
+        queryAll(LANG_PENDING_SYNC_SQL, [], 'snapshot:lang-pending-sync').catch(probeFail([])),
+      ]).then(([t, e, sy]) => mergeByLanguage(t, e, sy)).catch(probeFail([])),
       queryOne(`
         SELECT COUNT(*) as total,
           SUM(CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END) as with_embedding,

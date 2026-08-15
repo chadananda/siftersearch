@@ -813,6 +813,20 @@ export const migrations = {
   //
   // NB the diagnosis is a hypothesis — no query plan was captured for the slow run — so this is verified by
   // MEASURING the query afterwards, not by assuming (Chad chose this over a docs-only rewrite, 2026-08-14).
+  // ── Drop the index that EXPLAIN proved is never used ────────────────────────────────────────────────
+  // 116 added idx_content_lang_rollup on the theory that by-language was reading wide rows. EXPLAIN QUERY
+  // PLAN says otherwise: the query was ALREADY an index scan (SCAN content USING INDEX
+  // idx_content_doc_id_cover) and never touched the new index — and a control with the embedding
+  // expression removed produced an identical plan, so that suspicion was wrong too. The 55s is simply the
+  // cost of visiting ~6.7M index entries to GROUP BY doc_id, which no index can shortcut.
+  // An unused index is not free: it is written on every content insert and update. Remove it, and fix the
+  // query by not counting every row (see snapshot-queries.js). Measured, not assumed, this time.
+  117: async () => {
+    logger.info('Starting migration 117: drop idx_content_lang_rollup (proven unused by EXPLAIN QUERY PLAN)');
+    await query(`DROP INDEX IF EXISTS idx_content_lang_rollup`);
+    logger.info('Migration 117 complete');
+  },
+
   116: async () => {
     logger.info('Starting migration 116: covering index for the per-language rollup');
     await ensureIndex(query, {
