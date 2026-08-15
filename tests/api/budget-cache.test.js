@@ -70,4 +70,19 @@ describe('budgetStatus caching', () => {
     await budgetStatus(d); await budgetStatus(d);
     expect(c.sum).toBe(2);
   });
+
+  it('NEVER caches the clock: peakBlocked is recomputed even when the spend is reused', async () => {
+    // The regression this file now guards. budgetStatus also returns inPeak/peakBlocked/offPeakResumesAt,
+    // which move with the CLOCK, not with spend. Caching them held peakBlocked=true for ~4.5 minutes past
+    // the 16:30Z boundary and delayed the launch of 23 queued books by exactly that long.
+    setup({ live: 0 });
+    const inPeakTime = new Date('2026-08-15T12:00:00Z');    // inside the 00:30-16:30 peak window
+    const offPeakTime = new Date('2026-08-15T17:00:00Z');   // after it
+
+    const during = await budgetStatus({ now: inPeakTime });
+    const after = await budgetStatus({ now: offPeakTime });  // warm cache, later clock
+
+    expect(during[0].inPeak).toBe(true);
+    expect(after[0].inPeak).toBe(false);                     // the clock won, not the cache
+  });
 });

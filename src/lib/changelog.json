@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-15T15:40:23.021Z",
+  "generated": "2026-08-15T16:41:04.474Z",
   "entries": [
+    {
+      "hash": "a04bc8f6",
+      "date": "2026-08-15",
+      "type": "Other",
+      "description": "A CTE is a READ — the mislabel that hid the query plan",
+      "scope": null
+    },
     {
       "hash": "92a7498d",
       "date": "2026-08-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Stop dropping OceanLibrary list items + footnotes",
       "scope": "ingester"
-    },
-    {
-      "hash": "40286ae6",
-      "date": "2026-06-15",
-      "type": "Fixed",
-      "description": "Route siftersearch-api writes through the single writer",
-      "scope": "infra"
     }
   ],
   "grouped": {
     "2026-08-15": [
+      {
+        "hash": "a04bc8f6",
+        "date": "2026-08-15",
+        "type": "Other",
+        "description": "A CTE is a READ — the mislabel that hid the query plan",
+        "scope": null
+      },
       {
         "hash": "92a7498d",
         "date": "2026-08-15",
@@ -7062,15 +7069,6 @@
         "type": "Fixed",
         "description": "Stop dropping OceanLibrary list items + footnotes",
         "scope": "ingester"
-      }
-    ],
-    "2026-06-15": [
-      {
-        "hash": "40286ae6",
-        "date": "2026-06-15",
-        "type": "Fixed",
-        "description": "Route siftersearch-api writes through the single writer",
-        "scope": "infra"
       }
     ]
   }

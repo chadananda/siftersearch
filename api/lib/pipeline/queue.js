@@ -272,7 +272,13 @@ export async function budgetStatus(deps = {}) {
   const liveRow = await qo(`SELECT COUNT(*) n FROM grounding_queue WHERE status='running'`, [], 'budget-check:live-probe')
     .catch(() => null);
   const anythingBilling = liveRow ? Number(liveRow.n) > 0 : true;   // unreadable ⇒ assume billing ⇒ stay fresh
-  if (!injected && !anythingBilling && _budgetCache && Date.now() - _budgetAt < BUDGET_IDLE_TTL_MS) return _budgetCache;
+  // Reuse only the SPEND, never the whole row. The payload also carries inPeak / peakBlocked /
+  // offPeakResumesAt, which move with the CLOCK, not with spend — caching those held peakBlocked=true for
+  // ~4.5 minutes past the 16:30Z boundary on 2026-08-15 and delayed the launch of 23 queued books by that
+  // much. Spend cannot change while nothing bills; the time of day very much can.
+  const cachedSpend = (!injected && !anythingBilling && _budgetCache && Date.now() - _budgetAt < BUDGET_IDLE_TTL_MS)
+    ? Object.fromEntries(_budgetCache.map((r) => [r.provider, r.spent]))
+    : null;
   const rows = await qa(`SELECT provider, ceiling_usd, baseline_usd, warn_frac, offpeak_only, peak_windows, baseline_at FROM grounding_budget`);
   const out = [];
   for (const b of rows) {
@@ -280,11 +286,15 @@ export async function budgetStatus(deps = {}) {
     // same answer but rescans every row ever billed — 1.3s and growing, on a 20s tick (migration 110).
     // When baseline_at is present the baseline is already accounted for by the time bound, so do NOT
     // subtract baseline_usd as well; without it (pre-migration row) fall back to the old arithmetic.
-    const spentRow = b.baseline_at
+    // A cached spend skips the SUM; everything below it is recomputed from `now` on every call.
+    const cached = cachedSpend ? cachedSpend[b.provider] : undefined;
+    const spentRow = cached !== undefined ? { s: cached, _cached: true } : b.baseline_at
       ? await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage
                    WHERE provider=? AND caller='corpus-rag' AND timestamp > ?`, [b.provider, b.baseline_at], 'budget-check')
       : await qo(`SELECT COALESCE(SUM(estimated_cost_usd),0) s FROM ai_usage WHERE provider=? AND caller='corpus-rag'`, [b.provider], 'budget-check:unbounded-legacy');
-    const spent = Math.max(0, (spentRow?.s || 0) - (b.baseline_at ? 0 : (b.baseline_usd || 0)));
+    const spent = spentRow?._cached
+      ? spentRow.s                                    // already baseline-adjusted when it was computed
+      : Math.max(0, (spentRow?.s || 0) - (b.baseline_at ? 0 : (b.baseline_usd || 0)));
     const frac = b.ceiling_usd > 0 ? spent / b.ceiling_usd : 0;
     let windows = DEFAULT_PEAK_WINDOWS;
     try { if (b.peak_windows) windows = JSON.parse(b.peak_windows); } catch { /* keep default */ }
