@@ -797,6 +797,33 @@ export const migrations = {
   // multi-million-row UPDATE holding the single writer at API start. Legacy rows are grandfathered in the
   // completion rule instead (a doc with mentions but no stamp is treated as extracted), so the gate targets
   // exactly the books that have neither.
+  // ── Covering index for the per-language rollup ──────────────────────────────────────────────────────
+  // pipeline-snapshot's by-language tally reads every live paragraph to produce per-language doc counts and
+  // an embedding/sync breakdown. Rewriting it to roll up per doc_id first took it from 95.8s to 50.8s —
+  // better, still a 50-second synchronous freeze ~6x a day, and still over the 5s alert threshold.
+  //
+  // The remaining cost is believed to be the row reads: content rows are wide (they carry the paragraph
+  // text), and the rollup needs only doc_id, synced, and whether embedding IS NULL. An index carrying
+  // exactly those lets the whole scan run index-only, never touching the table — and because doc_id leads,
+  // the GROUP BY gets its ordering for free instead of building a temp B-tree.
+  //
+  // `(embedding IS NULL)` is indexed as an EXPRESSION, not the column: embedding is a vector BLOB and
+  // indexing it would be enormous, while the boolean is one byte and is all the query actually asks.
+  // Partial on deleted_at IS NULL to match the query's own population and keep the index off dead rows.
+  //
+  // NB the diagnosis is a hypothesis — no query plan was captured for the slow run — so this is verified by
+  // MEASURING the query afterwards, not by assuming (Chad chose this over a docs-only rewrite, 2026-08-14).
+  116: async () => {
+    logger.info('Starting migration 116: covering index for the per-language rollup');
+    await ensureIndex(query, {
+      label: 'Migration 116 (idx_content_lang_rollup — index-only per-language rollup)',
+      table: 'content', columns: ['doc_id', 'synced', 'embedding', 'deleted_at'],
+      sql: `CREATE INDEX IF NOT EXISTS idx_content_lang_rollup
+              ON content(doc_id, synced, (embedding IS NULL)) WHERE deleted_at IS NULL`,
+    });
+    logger.info('Migration 116 complete');
+  },
+
   115: async () => {
     logger.info('Starting migration 115: content.extract_model — the extraction version stamp');
     // ALTER ... ADD COLUMN throws if it already exists; a migration must be safe to re-run.
