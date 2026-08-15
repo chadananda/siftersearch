@@ -91,15 +91,13 @@ export function isDoneFromArtifacts({ prose = 0, disamb = 0, hyped = 0, hypeable
     // A doc with mentions demonstrably ran extraction, so it counts as extracted until it is next re-run.
     // What remains gated is the case the stamp was added for: NO stamps and NO mentions, i.e. never
     // extracted. Once re-extraction stamps a book, the stamp alone governs and this clause stops applying.
-    // PHASE 2 (measure only). `extracted` is now counted and published, but completion does NOT yet gate on
-    // it: switching the gate on flips the 53 never-extracted books to not-done, which makes the follower
-    // enqueue them and spend on re-extraction — Chad's decision, not something to start unattended. The
-    // gated form, ready to swap in, is:
-    //     mentions: meetsExtractBar(extracted, prose) || clusters > 0,
-    // (the `|| clusters > 0` grandfathers books extracted before the stamp existed, so the ~800 finished
-    // books are not mass-requeued). Un-comment together with the resume branch in plan.js and the skipped
-    // assertion in tests/api/extraction-stamp.test.js.
-    mentions: true,
+    // EXTRACTION is a PROCESSING gate, measured by its version stamp — not by mention rows (Chad approved
+    // switching this on 2026-08-14). Its YIELD stays ungated: a paragraph naming nobody is still extracted.
+    // What is gated is whether the pass RAN. `|| clusters > 0` is the transitional grandfather clause: the
+    // stamp arrived with migration 115, so books extracted before it carry none, and without this the ~800
+    // finished books would all read 0-extracted and be mass-requeued. A book with mentions demonstrably ran
+    // extraction. Once re-extraction stamps a book, the stamp alone governs and the clause stops applying.
+    mentions: meetsExtractBar(extracted, prose) || clusters > 0,
     claims: true,                                                            // yield, not a processing gate (see above)
     reconcile: decisions >= 0.85 * clusters,                                 // 0 clusters ⇒ nothing to reconcile ⇒ done
     hype: meetsHypeBar(hyped, hypeable),                                     // stage-10 processing gate (implies 2–9 ran); 0 hypeable ⇒ nothing to hype ⇒ done

@@ -60,12 +60,13 @@ export async function resumeStageFor(docId, deps = {}) {
   // missing its extraction could never acquire it — and hype completing then certified it done, permanently,
   // with an empty cast. 53 books were absorbed that way. Extraction is now measured by its own stamp
   // (migration 115) and, when unmet, the resume starts AT extraction (2026-08-14).
-  // PHASE 2 (measure only) — the redirect is held back with the completion gate in queue.js, because it is
-  // what would start re-extraction spend. Ready to swap in:
-  //     const extractionMissing = !meetsExtractBar(r.extracted || 0, prose) && (r.clusters || 0) === 0;
-  //     if (extractionMissing) return { from: 'mentions' };
-  // Until then a book missing extraction still resumes from 'project' — downstream of extraction, so it
-  // stays cast-less. That is a KNOWN, deliberate hold, visible in the roadmap as an explicit 0 cast.
+  // EXTRACTION FIRST, and never resume downstream of it. The branch below used to send a book with no tail
+  // evidence to 'project' (stage 5) — downstream of mentions (1) and claims (2) — so a book missing its
+  // extraction could never acquire it, and hype completing then certified it done, permanently, with an
+  // empty cast. 53 books were absorbed that way. Extraction is now measured by its own stamp (migration
+  // 115) and, when unmet, the resume starts AT extraction (enabled 2026-08-14).
+  const extractionMissing = !meetsExtractBar(r.extracted || 0, prose) && (r.clusters || 0) === 0;
+  if (extractionMissing) return { from: 'mentions' };                       // re-run extraction, then everything after it
   if (meetsHypeBar(r.hyped || 0, r.hypeable || 0)) return null;              // extraction done + HyPE complete → done
   if ((r.claimsBound || 0) === 0) return { from: 'project' };               // HyPE incomplete + no tail evidence → graph tail + HyPE
   return { from: 'hype' };                                                   // tail done, only HyPE left

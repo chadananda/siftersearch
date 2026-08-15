@@ -44,12 +44,7 @@ describe('extraction stamp — the missing version column', () => {
 describe('completion: extraction is a PROCESSING gate', () => {
   const full = { prose: 100, disamb: 100, hyped: 95, hypeable: 100, clusters: 0, decisions: 0 };
 
-  // SKIPPED DELIBERATELY — this is PHASE 3, and it is the assertion that changes behaviour rather than
-  // observation. Turning the gate on flips the 53 never-extracted books to not-done, which makes the
-  // follower enqueue them and spend money re-extracting. That is Chad's call, not a thing to start
-  // overnight, so the stamp lands first (write + measure) and the gate follows on his go-ahead. Un-skip
-  // together with the `mentions:` gate in queue.js and the extraction resume branch in plan.js.
-  it.skip('a book whose paragraphs were never extracted is NOT done, even at full hype', () => {
+  it('a book whose paragraphs were never extracted is NOT done, even at full hype', () => {
     // This is the 53-book case: disambiguated, hyped, zero extraction — previously graded done because
     // hype is stage 9 and "must" imply stages 1-8 ran. A resumed run makes that false.
     expect(isDoneFromArtifacts({ ...full, extracted: 0 }, {})).toBe(false);
