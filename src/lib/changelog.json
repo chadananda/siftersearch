@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-15T20:35:54.195Z",
+  "generated": "2026-08-15T21:21:58.881Z",
   "entries": [
+    {
+      "hash": "1db20323",
+      "date": "2026-08-15",
+      "type": "Other",
+      "description": "Enumerate the books that can never satisfy the extraction gate",
+      "scope": null
+    },
     {
       "hash": "a04bc8f6",
       "date": "2026-08-15",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add --skip-empty to scope the repair to partial docs",
       "scope": "patch-ol"
-    },
-    {
-      "hash": "39b8a876",
-      "date": "2026-06-16",
-      "type": "Fixed",
-      "description": "Stop dropping OceanLibrary list items + footnotes",
-      "scope": "ingester"
     }
   ],
   "grouped": {
     "2026-08-15": [
+      {
+        "hash": "1db20323",
+        "date": "2026-08-15",
+        "type": "Other",
+        "description": "Enumerate the books that can never satisfy the extraction gate",
+        "scope": null
+      },
       {
         "hash": "a04bc8f6",
         "date": "2026-08-15",
@@ -7062,13 +7069,6 @@
         "type": "New",
         "description": "Add --skip-empty to scope the repair to partial docs",
         "scope": "patch-ol"
-      },
-      {
-        "hash": "39b8a876",
-        "date": "2026-06-16",
-        "type": "Fixed",
-        "description": "Stop dropping OceanLibrary list items + footnotes",
-        "scope": "ingester"
       }
     ]
   }

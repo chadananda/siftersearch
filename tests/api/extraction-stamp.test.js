@@ -96,3 +96,47 @@ describe('the mentions stage stamps what it READ, not what it yielded', () => {
     expect(calls).toHaveLength(0);
   });
 });
+
+describe('a note is extractable whatever version stamped it', () => {
+  // The 30-failure storm this closes. 710 books hold notes with context_model NULL (written before the
+  // stamp existed). Coverage counted them disambiguated (`context IS NOT NULL`) while the mentions stage
+  // required contextModel === version and saw nothing to read — so no mentions AND no stamps, the
+  // completion gate could never be met, and each book was re-queued until the storm guard parked it.
+  const ctxWith = (paras, calls) => ({
+    config: { versions: { disambig: 'deepseek-disambig-v1', extract: 'extract-v2' } },
+    log: { info: () => {} },
+    store: {
+      getParagraphs: async () => paras,
+      saveMentions: async (m) => m.length,
+      markExtracted: async (ids, version) => { calls.push({ ids, version }); },
+      getDisambigCoverage: async () => ({ prose: paras.length, disamb: paras.length }),
+    },
+  });
+
+  it('an UNSTAMPED legacy note is read and stamped, not skipped forever', async () => {
+    const { run } = await import('../../api/lib/rag/entities/mentions.js');
+    const calls = [];
+    const paras = [
+      { id: 51, pid: 'p1', context: 'The constant awareness of an exhilaration…', contextModel: null },
+      { id: 52, pid: 'p2', context: '@Paris — "the Master" = ‘Abdu’l-Bahá', contextModel: null },
+    ];
+    const stats = await run(ctxWith(paras, calls), 2115);
+    expect(calls[0].ids).toEqual([51, 52]);     // both stamped ⇒ the gate is now satisfiable
+    expect(stats.stamped).toBe(2);
+  });
+
+  it('an OLDER stamped version is read too — a note is a note', async () => {
+    const { run } = await import('../../api/lib/rag/entities/mentions.js');
+    const calls = [];
+    const paras = [{ id: 60, pid: 'p1', context: '@Shíráz — "the Báb" = Sayyid ‘Alí-Muḥammad', contextModel: 'deepseek-disambig-v0' }];
+    await run(ctxWith(paras, calls), 7);
+    expect(calls[0].ids).toEqual([60]);
+  });
+
+  it('a paragraph with NO note is still skipped — there is nothing to read', async () => {
+    const { run } = await import('../../api/lib/rag/entities/mentions.js');
+    const calls = [];
+    const stats = await run(ctxWith([{ id: 70, pid: 'p1', context: null, contextModel: null }], calls), 7);
+    expect(stats.stamped).toBe(0);
+  });
+});

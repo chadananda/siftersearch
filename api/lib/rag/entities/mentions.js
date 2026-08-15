@@ -14,7 +14,21 @@ export async function run(ctx, docId, opts = {}) {
   // a sparse book they would never be stamped as extracted, coverage could never reach the bar, and the book
   // would be re-extracted forever: the yield-based grind rebuilt one layer down. Parsing an empty note simply
   // yields no pairs, which is the correct outcome for it.
-  const paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context != null && p.contextModel === version);
+  // A NOTE IS EXTRACTABLE WHATEVER STAMPED IT (Chad's call, 2026-08-15, after the class turned out to be
+  // 710 books / 83,899 paragraphs rather than the 8 I first reported).
+  //
+  // This required contextModel === version, which made a whole class of book IMPOSSIBLE: paragraphs whose
+  // notes predate the version stamp carry context_model NULL, so disambiguation coverage calls the book
+  // 100% done (`context IS NOT NULL`) while this stage sees ZERO eligible paragraphs. No mentions, and no
+  // extraction stamps either — so the completion gate can never be met, resumeStageFor sends the book back
+  // here, and it fails identically until the storm guard parks it. That produced a 30-failure storm.
+  //
+  // The version filter was an optimisation for re-derivation, not a correctness rule: each mention records
+  // its own methodVersion, so a later pass can still re-derive from better notes. The known cost, stated
+  // plainly: anchors are stable and saveMentions is INSERT OR IGNORE, so a mention derived from an older
+  // note will not be overwritten by a better one later — re-derivation has to clear them first. At 710
+  // books that trade beats re-disambiguating 84k paragraphs.
+  const paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context != null);
   const mentions = [];
   const seen = new Set();
   for (const p of paras) {

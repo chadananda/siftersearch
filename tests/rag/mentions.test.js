@@ -32,14 +32,19 @@ describe('mentions — run() on fake ports', () => {
   const paras = [
     { id: 1, pid: 'para_1', text: 't', context: '@Shíráz, ~1844 — Declaration · "He" = the Báb; "Vaḥíd" = Siyyid Yaḥyá', contextModel: 'v1' },
     { id: 2, pid: 'para_2', text: 't', context: 'no note here', contextModel: 'v1' },      // no resolves
-    { id: 3, pid: 'para_3', text: 't', context: '@x — y · "A" = B', contextModel: 'other' }, // wrong version → skipped
+    { id: 3, pid: 'para_3', text: 't', context: '@x — y · "A" = B', contextModel: 'other' }, // older version → STILL read
   ];
 
-  it('records deferred, source-anchored mentions from disambiguated paragraphs only', async () => {
+  // Changed deliberately on 2026-08-15: this used to assert that a paragraph stamped with a different
+  // version was SKIPPED. That rule made 710 books unextractable — notes predating the stamp carry
+  // context_model NULL, so coverage called them disambiguated while this stage saw nothing to read, and
+  // they failed forever. A note is extractable whatever stamped it; the mention carries its own
+  // methodVersion for later re-derivation.
+  it('records deferred, source-anchored mentions from every paragraph carrying a note', async () => {
     const { rag, store } = makeRag({ seed: { paras: { 5: paras }, coverage: { 5: 1 } }, llm: fakeLLM([]) });
     const stats = await rag.entities.mentions(5, { version: 'v1' });
-    expect(stats.mentions).toBe(2);                       // only para_1's two resolves (para_2 empty, para_3 wrong version)
-    expect(store.mentions.map((m) => m.surface)).toEqual(['He', 'Vaḥíd']);
+    expect(stats.mentions).toBe(3);                       // para_1's two resolves + para_3's (para_2 has no resolves)
+    expect(store.mentions.map((m) => m.surface)).toEqual(['He', 'Vaḥíd', 'A']);
     for (const m of store.mentions) {
       expect(m).not.toHaveProperty('entity_id');          // LAW: identity is deferred — never bound here
       expect(m.anchor).toMatch(/^[0-9a-f]{16}$/);         // stable content-addressed id
