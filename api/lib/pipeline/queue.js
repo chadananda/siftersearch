@@ -249,10 +249,25 @@ export async function cancel(id) {
  * launching; `warn` (default 80%) is a heads-up the health-check surfaces. Empty table = no gate (fail-open on
  * config, fail-closed on spend once a row exists).
  */
+// SPEND CANNOT CHANGE WHILE NOTHING IS BILLING. budgetStatus runs on a 20s supervisor tick against two
+// providers — ~8,600 SUM(ai_usage) queries a day, 52 minutes of API time, and it polled just as hard through
+// the fourteen hours the queue sat peak-blocked with live=0. The sum is already time-bounded; the waste is
+// the CADENCE. So the cache TTL is keyed on whether anything can bill: while runs are live the answer stays
+// fresh at the tick rate (the gate exists to stop an overspend, and a stale ceiling is how one gets through),
+// and while nothing runs the previous answer is still exactly correct, so it is reused (2026-08-15).
+const BUDGET_IDLE_TTL_MS = 5 * 60 * 1000;
+let _budgetCache = null, _budgetAt = 0;
+export function resetBudgetCache() { _budgetCache = null; _budgetAt = 0; }
+
 export async function budgetStatus(deps = {}) {
   const qa = deps.queryAll || queryAll;
   const qo = deps.queryOne || queryOne;
   const now = deps.now || new Date();
+  // A live run is the only thing that can move spend. Cheap: grounding_queue is small and status-indexed.
+  const liveRow = await qo(`SELECT COUNT(*) n FROM grounding_queue WHERE status='running'`, [], 'budget-check:live-probe')
+    .catch(() => null);
+  const anythingBilling = liveRow ? Number(liveRow.n) > 0 : true;   // unreadable ⇒ assume billing ⇒ stay fresh
+  if (!anythingBilling && _budgetCache && Date.now() - _budgetAt < BUDGET_IDLE_TTL_MS) return _budgetCache;
   const rows = await qa(`SELECT provider, ceiling_usd, baseline_usd, warn_frac, offpeak_only, peak_windows, baseline_at FROM grounding_budget`);
   const out = [];
   for (const b of rows) {
@@ -277,6 +292,8 @@ export async function budgetStatus(deps = {}) {
       offpeakOnly, inPeak, peakBlocked,
       offPeakResumesAt: endsAt ? Math.floor(endsAt.getTime() / 1000) : null });  // epoch s → the UI's countdown target
   }
+  // Cached only for the idle path above; a live run recomputes every tick regardless of what is stored here.
+  _budgetCache = out; _budgetAt = Date.now();
   return out;
 }
 
