@@ -3724,7 +3724,17 @@ Collection: ${paragraph.collection || 'Unknown'}
     // Group by date for timeline view
     const byDate = {};
     for (const change of (changes || [])) {
-      const date = (change.deleted_at || change.updated_at || change.created_at || '').slice(0, 10);
+      // BUCKET BY THE DATE THE CHANGE ACTUALLY HAPPENED, not by last touch. This keyed every row on
+      // deleted_at||updated_at||created_at while change_type says 'created' for anything created inside the
+      // window — so ANY later edit to a recently-created doc dragged it into today's bucket and it still
+      // counted as "created". Relabelling 38 docs' language on 2026-08-14 moved 38 books from the 08-14
+      // bucket to 08-15 and made the newest row read created=38 on a day when nothing was ingested. The
+      // overnight watch reads exactly that number as "books are landing", so it was reporting arrivals that
+      // never happened. Each change_type now buckets on its own timestamp (2026-08-15).
+      const stamp = change.change_type === 'deleted' ? change.deleted_at
+        : change.change_type === 'created' ? change.created_at
+          : (change.updated_at || change.created_at);
+      const date = String(stamp || '').slice(0, 10);
       if (!byDate[date]) byDate[date] = { date, created: 0, updated: 0, deleted: 0, items: [] };
       byDate[date][change.change_type]++;
       byDate[date].items.push(change);
