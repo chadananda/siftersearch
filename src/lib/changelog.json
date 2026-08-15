@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-15T21:21:58.881Z",
+  "generated": "2026-08-15T21:28:46.318Z",
   "entries": [
+    {
+      "hash": "b4662153",
+      "date": "2026-08-15",
+      "type": "Other",
+      "description": "A note is extractable whatever version stamped it (ends the storm)",
+      "scope": null
+    },
     {
       "hash": "1db20323",
       "date": "2026-08-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Insert with null embeddings; worker backfills vectors",
       "scope": "patch-ol"
-    },
-    {
-      "hash": "8fbb8ed0",
-      "date": "2026-06-16",
-      "type": "New",
-      "description": "Add --skip-empty to scope the repair to partial docs",
-      "scope": "patch-ol"
     }
   ],
   "grouped": {
     "2026-08-15": [
+      {
+        "hash": "b4662153",
+        "date": "2026-08-15",
+        "type": "Other",
+        "description": "A note is extractable whatever version stamped it (ends the storm)",
+        "scope": null
+      },
       {
         "hash": "1db20323",
         "date": "2026-08-15",
@@ -7061,13 +7068,6 @@
         "date": "2026-06-16",
         "type": "Fixed",
         "description": "Insert with null embeddings; worker backfills vectors",
-        "scope": "patch-ol"
-      },
-      {
-        "hash": "8fbb8ed0",
-        "date": "2026-06-16",
-        "type": "New",
-        "description": "Add --skip-empty to scope the repair to partial docs",
         "scope": "patch-ol"
       }
     ]

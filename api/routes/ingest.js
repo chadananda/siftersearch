@@ -134,6 +134,11 @@ export default async function ingestRoutes(fastify) {
   // stamps, the gate can never be met, the resume sends it back to `mentions`, and it fails identically
   // until the storm guard quarantines it. Found one book at a time as each failed (2115, then 1882 two
   // failures later); enumerate the class instead so it can be re-disambiguated in one pass (2026-08-15).
+  // NOTE (2026-08-15, same day): since v2.186.198 the mentions stage reads a note whatever version stamped
+  // it, so these books are NO LONGER BLOCKED — they extract on their next run. The query is kept because
+  // "notes that predate the version stamp" is still a real data-quality signal worth seeing, but it must
+  // not be read as "broken", and the response says so. An endpoint that keeps measuring a constraint which
+  // no longer exists is exactly the stale definition this session spent its time removing.
   fastify.get('/grounding/unstampable', admin, async (req) => {
     const { RAG_VERSIONS } = await import('../lib/rag-adapter/index.js');
     const limit = Math.min(Number(req.query?.limit) || 200, 2000);
@@ -149,6 +154,8 @@ export default async function ingestRoutes(fastify) {
        HAVING prose > 0 AND noted >= 0.98 * prose AND eligible = 0 AND extracted = 0
         ORDER BY prose DESC LIMIT ?`, [RAG_VERSIONS.disambig, limit], 'diag:unstampable-books');
     return {
+      blocked: false,
+      note: 'legacy notes predating the version stamp; NOT blocking since v2.186.198 — the mentions stage reads a note whatever stamped it',
       count: rows.length,
       currentDisambig: RAG_VERSIONS.disambig,
       totalProse: rows.reduce((n, r) => n + (r.prose || 0), 0),
