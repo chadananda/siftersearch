@@ -128,6 +128,32 @@ export default async function ingestRoutes(fastify) {
     return auditLocatorMetadata({ limit: Math.min(Number(req.body?.limit) || 500, 5000), apply: true });
   });
 
+  // EXPLAIN QUERY PLAN for the snapshot's expensive queries. Two rounds of reasoning about what SQLite
+  // "must" be doing were both wrong — a rewrite that helped less than hoped, then a covering index that did
+  // nothing at all (55.0s with it in place vs 50.8s without). This reads the planner's ACTUAL output.
+  //
+  // NAMED queries only, never arbitrary SQL: an admin endpoint that EXPLAINs whatever it is handed is an
+  // injection and schema-exfiltration surface, and nothing here needs that. The SQL comes from the same
+  // module pipeline-snapshot runs, so the plan always describes the query that actually executes.
+  // EXPLAIN QUERY PLAN does not execute the statement, so this is genuinely read-only.
+  fastify.get('/server/query-plan/:name', admin, async (req) => {
+    const { NAMED_QUERIES } = await import('../lib/pipeline/snapshot-queries.js');
+    const name = String(req.params.name || '');
+    const sql = NAMED_QUERIES[name];
+    if (!sql) throw ApiError.badRequest(`unknown query '${name}' (known: ${Object.keys(NAMED_QUERIES).join(', ')})`);
+    const plan = await queryAll(`EXPLAIN QUERY PLAN ${sql}`, [], 'diag:explain-query-plan');
+    // `detail` is the human-readable line ("SCAN content", "SEARCH ... USING COVERING INDEX ...") — the
+    // presence or absence of the word COVERING is the whole question here.
+    const lines = plan.map((r) => r.detail || JSON.stringify(r));
+    return {
+      name,
+      plan: lines,
+      usesCoveringIndex: lines.some((l) => /COVERING INDEX/i.test(l)),
+      usesLangRollupIndex: lines.some((l) => /idx_content_lang_rollup/i.test(l)),
+      scansContent: lines.some((l) => /SCAN content/i.test(l)),
+    };
+  });
+
   // ── entity_research JSON repair ────────────────────────────────────────────────────────────────────
   // 20 rows hold PROSE where bio.js parses JSON, so those people silently lose their death/kin. DRY RUN by
   // default and via GET: the list is worth seeing before anything is written, and a repair you cannot

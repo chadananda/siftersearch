@@ -9,6 +9,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { execSync } from 'child_process';
+import { BY_LANGUAGE_SQL } from '../api/lib/pipeline/snapshot-queries.js';
 
 // EVERY probe below falls back to an empty value so one broken query cannot take the whole snapshot down.
 // That resilience quietly became a liability: a bare `.catch` returning [] makes a FAILED query indistinguishable from
@@ -181,25 +182,7 @@ async function main() {
       // query in the system. Rolling content up per doc_id first (one indexed pass, ~158k output rows) and
       // then joining docs turns the DISTINCT into a plain COUNT over docs. Same numbers: docs with no
       // paragraphs still count, via the LEFT JOIN + COALESCE, exactly as the LEFT JOIN gave them before.
-      queryAll(`
-        WITH per_doc AS (
-          SELECT doc_id,
-            COUNT(*) AS paras,
-            SUM(CASE WHEN embedding IS NULL THEN 1 ELSE 0 END) AS pend_emb,
-            SUM(CASE WHEN synced = 0 AND embedding IS NOT NULL THEN 1 ELSE 0 END) AS pend_sync,
-            SUM(CASE WHEN synced = 1 THEN 1 ELSE 0 END) AS synced
-          FROM content WHERE deleted_at IS NULL GROUP BY doc_id)
-        SELECT d.language,
-          COUNT(d.id) as doc_count,
-          COALESCE(SUM(pd.paras), 0) as paragraph_count,
-          COALESCE(SUM(pd.pend_emb), 0) as pending_embedding,
-          COALESCE(SUM(pd.pend_sync), 0) as pending_sync,
-          COALESCE(SUM(pd.synced), 0) as synced
-        FROM docs d
-        LEFT JOIN per_doc pd ON pd.doc_id = d.id
-        WHERE d.deleted_at IS NULL
-        GROUP BY d.language
-        ORDER BY paragraph_count DESC`, [], 'snapshot:by-language').catch(probeFail([])),
+      queryAll(BY_LANGUAGE_SQL, [], 'snapshot:by-language').catch(probeFail([])),
       queryOne(`
         SELECT COUNT(*) as total,
           SUM(CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END) as with_embedding,
