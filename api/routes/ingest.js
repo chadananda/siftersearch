@@ -482,6 +482,26 @@ export default async function ingestRoutes(fastify) {
     return { stage, requested: true, run_id: row?.id, note: 'the stage picks this up on its next tick and ignores the peak gate' };
   });
 
+  // PREVIEW the relabel proposals. The apply endpoint existed with no way to READ what it would do, so the
+  // only way to inspect a proposal was to apply it — which is not a review gate, it is a leap. Read-only,
+  // grouped by from→to so the shape of the change is visible before anyone approves it (2026-08-14).
+  fastify.get('/ingest/relabel/pending', admin, async (req) => {
+    const limit = Math.min(Number(req.query?.limit) || 200, 2000);
+    const rows = await queryAll(
+      `SELECT item_ref, reason, payload_json, created_at FROM ingest_stage
+        WHERE stage = 'relabel' AND status = 'pending' ORDER BY item_ref LIMIT ?`, [limit],
+      'relabel:list-pending');
+    const byMove = {};
+    const items = rows.map((r) => {
+      let p = {}; try { p = JSON.parse(r.payload_json || '{}'); } catch { /* reason still carries from → to */ }
+      const move = `${p.from || '?'} → ${p.to || '?'}`;
+      byMove[move] = (byMove[move] || 0) + 1;
+      return { doc_id: Number(r.item_ref), move, from: p.from ?? null, to: p.to ?? null,
+        title: p.title ?? null, reason: r.reason, confidence: p.confidence ?? null };
+    });
+    return { count: items.length, byMove, items };
+  });
+
   // APPROVE the relabel proposals. The scan proposes (status='pending'); this is the other half — without
   // it the "gate" is just a stall. Applies ONLY what was already recorded and reviewed, writes through the
   // single writer, and audits every change with its before/after so it is reversible from the trail.
