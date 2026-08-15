@@ -128,6 +128,35 @@ export default async function ingestRoutes(fastify) {
     return auditLocatorMetadata({ limit: Math.min(Number(req.body?.limit) || 500, 5000), apply: true });
   });
 
+  // BOOKS THAT CAN NEVER SATISFY THE EXTRACTION GATE. A doc whose paragraphs carry notes but NO
+  // context_model is counted 100% disambiguated (`context IS NOT NULL`) while entities/mentions.js reads
+  // only paragraphs stamped with the CURRENT version — so it yields zero mentions AND zero extraction
+  // stamps, the gate can never be met, the resume sends it back to `mentions`, and it fails identically
+  // until the storm guard quarantines it. Found one book at a time as each failed (2115, then 1882 two
+  // failures later); enumerate the class instead so it can be re-disambiguated in one pass (2026-08-15).
+  fastify.get('/grounding/unstampable', admin, async (req) => {
+    const { RAG_VERSIONS } = await import('../lib/rag-adapter/index.js');
+    const limit = Math.min(Number(req.query?.limit) || 200, 2000);
+    const rows = await queryAll(
+      `SELECT c.doc_id,
+              COUNT(*) AS prose,
+              SUM(CASE WHEN c.context IS NOT NULL THEN 1 ELSE 0 END) AS noted,
+              SUM(CASE WHEN c.context IS NOT NULL AND c.context_model = ? THEN 1 ELSE 0 END) AS eligible,
+              SUM(CASE WHEN c.extract_model IS NOT NULL THEN 1 ELSE 0 END) AS extracted
+         FROM content c
+        WHERE c.blocktype IN ('paragraph','quote') AND c.deleted_at IS NULL
+        GROUP BY c.doc_id
+       HAVING prose > 0 AND noted >= 0.98 * prose AND eligible = 0 AND extracted = 0
+        ORDER BY prose DESC LIMIT ?`, [RAG_VERSIONS.disambig, limit], 'diag:unstampable-books');
+    return {
+      count: rows.length,
+      currentDisambig: RAG_VERSIONS.disambig,
+      totalProse: rows.reduce((n, r) => n + (r.prose || 0), 0),
+      docIds: rows.map((r) => r.doc_id),
+      items: rows,
+    };
+  });
+
   // EXPLAIN QUERY PLAN for the snapshot's expensive queries. Two rounds of reasoning about what SQLite
   // "must" be doing were both wrong — a rewrite that helped less than hoped, then a covering index that did
   // nothing at all (55.0s with it in place vs 50.8s without). This reads the planner's ACTUAL output.
