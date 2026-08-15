@@ -128,6 +128,56 @@ export default async function ingestRoutes(fastify) {
     return auditLocatorMetadata({ limit: Math.min(Number(req.body?.limit) || 500, 5000), apply: true });
   });
 
+  // ── entity_research JSON repair ────────────────────────────────────────────────────────────────────
+  // 20 rows hold PROSE where bio.js parses JSON, so those people silently lose their death/kin. DRY RUN by
+  // default and via GET: the list is worth seeing before anything is written, and a repair you cannot
+  // preview is a repair you cannot check. Writes go through query() → the single writer, like everything
+  // else (2026-08-14).
+  const RESEARCH_JSON_COLS = ['aliases', 'kinship', 'research_notes'];
+  const findMalformed = async () => {
+    const rows = await queryAll(
+      `SELECT rowid AS rid, canonical_name, entity_type, aliases, kinship, research_notes
+         FROM entity_research`, [], 'repair:scan-entity-research');
+    const { parsedOrUndefined, repairJsonColumn } = await import('../lib/text/repair-json-column.js');
+    const out = [];
+    for (const r of rows) {
+      for (const col of RESEARCH_JSON_COLS) {
+        const raw = r[col];
+        if (raw == null || String(raw).trim() === '') continue;
+        if (parsedOrUndefined(raw) !== undefined) continue;         // valid → not ours
+        const fix = repairJsonColumn(col, raw);
+        if (!fix.changed) continue;
+        out.push({ rid: r.rid, canonical_name: r.canonical_name, entity_type: r.entity_type,
+          column: col, raw: String(raw).slice(0, 300), next: fix.next, why: fix.why });
+      }
+    }
+    return out;
+  };
+
+  fastify.get('/entity-research/malformed', admin, async () => {
+    const items = await findMalformed();
+    const byColumn = {};
+    for (const i of items) byColumn[i.column] = (byColumn[i.column] || 0) + 1;
+    return { count: items.length, byColumn, items };
+  });
+
+  fastify.post('/entity-research/repair-json', admin, async (req) => {
+    const items = await findMalformed();
+    if (!req.body?.apply) return { dryRun: true, count: items.length, items };
+    let repaired = 0;
+    const failed = [];
+    for (const i of items) {
+      try {
+        // Keyed by rowid: canonical_name is not unique across entity_type, and a repair that hits the wrong
+        // row is worse than the corruption it is fixing.
+        await query(`UPDATE entity_research SET ${i.column} = ? WHERE rowid = ?`, [i.next, i.rid],
+          'repair:entity-research-json');
+        repaired += 1;
+      } catch (err) { failed.push({ rid: i.rid, column: i.column, error: err.message }); }
+    }
+    return { applied: true, repaired, failed, total: items.length };
+  });
+
   // WHY IS THIS BOOK NOT BEING WORKED ON? The question that cost a full off-peak window (2026-08-13): the
   // roadmap said 241 plan books were not done while the follower enqueued none of them, and the numbers each
   // side used were computed in-process and thrown away. This returns the SAME row both decisions read, both
