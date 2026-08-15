@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-15T04:12:26.875Z",
+  "generated": "2026-08-15T12:11:49.854Z",
   "entries": [
+    {
+      "hash": "0d0020cb",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "PII sanitizer now fails CLOSED, not open",
+      "scope": null
+    },
     {
       "hash": "d72021ed",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Nav label + order tweaks (Search Quality Testing, Davids Search Tests, Entity-Aware Search down one)",
       "scope": null
-    },
-    {
-      "hash": "2465f637",
-      "date": "2026-06-15",
-      "type": "Docs",
-      "description": "Restore file-based docs pages in dynamic sidebar",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "0d0020cb",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "PII sanitizer now fails CLOSED, not open",
+        "scope": null
+      },
       {
         "hash": "d72021ed",
         "date": "2026-08-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-06-15",
         "type": "Docs",
         "description": "Nav label + order tweaks (Search Quality Testing, Davids Search Tests, Entity-Aware Search down one)",
-        "scope": null
-      },
-      {
-        "hash": "2465f637",
-        "date": "2026-06-15",
-        "type": "Docs",
-        "description": "Restore file-based docs pages in dynamic sidebar",
         "scope": null
       }
     ]
