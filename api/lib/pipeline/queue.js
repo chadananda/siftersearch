@@ -264,10 +264,15 @@ export async function budgetStatus(deps = {}) {
   const qo = deps.queryOne || queryOne;
   const now = deps.now || new Date();
   // A live run is the only thing that can move spend. Cheap: grounding_queue is small and status-indexed.
+  // The cache is for the PRODUCTION path only. A caller supplying its own queryAll/queryOne is reading a
+  // different data source, so a value cached from someone else's source is not merely stale — it is an
+  // answer to a different question. (Found the honest way: this leaked across fixtures in
+  // queue-hardening.test.js and returned the first caller's numbers to the next.)
+  const injected = !!(deps.queryAll || deps.queryOne);
   const liveRow = await qo(`SELECT COUNT(*) n FROM grounding_queue WHERE status='running'`, [], 'budget-check:live-probe')
     .catch(() => null);
   const anythingBilling = liveRow ? Number(liveRow.n) > 0 : true;   // unreadable ⇒ assume billing ⇒ stay fresh
-  if (!anythingBilling && _budgetCache && Date.now() - _budgetAt < BUDGET_IDLE_TTL_MS) return _budgetCache;
+  if (!injected && !anythingBilling && _budgetCache && Date.now() - _budgetAt < BUDGET_IDLE_TTL_MS) return _budgetCache;
   const rows = await qa(`SELECT provider, ceiling_usd, baseline_usd, warn_frac, offpeak_only, peak_windows, baseline_at FROM grounding_budget`);
   const out = [];
   for (const b of rows) {
@@ -292,8 +297,8 @@ export async function budgetStatus(deps = {}) {
       offpeakOnly, inPeak, peakBlocked,
       offPeakResumesAt: endsAt ? Math.floor(endsAt.getTime() / 1000) : null });  // epoch s → the UI's countdown target
   }
-  // Cached only for the idle path above; a live run recomputes every tick regardless of what is stored here.
-  _budgetCache = out; _budgetAt = Date.now();
+  // Cached only for the idle production path above; a live run recomputes every tick regardless.
+  if (!injected) { _budgetCache = out; _budgetAt = Date.now(); }
   return out;
 }
 
