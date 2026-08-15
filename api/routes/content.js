@@ -17,6 +17,7 @@ import { marked } from 'marked';
 import { query, queryAll, queryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { generatePublishMetadata, generateRoundSummaries, anonymizeUserTurns, pairRounds } from '../lib/publish-pipeline.js';
+import { swallow } from '../lib/swallow.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const BATCH_RUNNER = join(__dirname, '../../scripts/jafar-batch-runner.js');
@@ -569,7 +570,10 @@ export default async function contentRoutes(fastify) {
         await query(`UPDATE chat_sessions SET published_slug = ?, status = 'published' WHERE id = ?`,
           [slug, b.conversation_id]);
       } catch (e) {
-        logger.warn({ err: e.message, slug, conversation_id: b.conversation_id }, 'dialog: failed to link thread ↔ published slug');
+        // COUNTED, not just logged. This write is best-effort by design, so its failure mode is silence —
+        // and silence is exactly how both columns sat unwritten for months. A warn line scrolls away; a
+        // swallow() counter shows up in /server/reconcile and trips the health check (2026-08-14).
+        swallow(e, 'dialog.link-thread-to-slug', { slug, conversation_id: b.conversation_id });
       }
     }
 
