@@ -460,9 +460,22 @@ export default async function contentRoutes(fastify) {
       return reply.code(400).send({ error: 'messages array with at least 2 entries required' });
     }
 
-    // Always sanitize before publishing — PII must not appear in public conversations
-    try { messages = await anonymizeUserTurns(messages); }
-    catch (e) { logger.warn({ err: e.message }, 'sanitize failed, using original'); }
+    // Always sanitize before publishing — PII must not appear in public conversations.
+    // FAIL CLOSED. This used to catch the failure and publish the ORIGINAL messages, which is the exact
+    // opposite of what the line above promises: a sanitizer that throws would push un-redacted user turns
+    // onto a public page, and the only trace was a warn line. A privacy control that degrades to "publish
+    // it anyway" is not a control. Refusing costs an operator a retry; failing open costs someone their
+    // personal information, permanently and publicly (2026-08-15).
+    try {
+      messages = await anonymizeUserTurns(messages);
+    } catch (e) {
+      logger.error({ err: e.message }, 'publish REFUSED: PII sanitizer failed');
+      swallow(e, 'dialog.publish-sanitizer-failed');   // counted, so a repeatedly-failing sanitizer surfaces
+      return reply.code(503).send({
+        error: 'publish refused: the PII sanitizer failed, so nothing was published',
+        detail: e.message,
+      });
+    }
 
     // Generate metadata if title not provided
     let meta;
