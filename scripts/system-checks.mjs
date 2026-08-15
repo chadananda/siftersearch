@@ -111,6 +111,7 @@ if (db) {
 const metrics = {};
 if (db) {
   const g = (sql, label) => { try { return db.prepare(sql).get(); } catch { return null; } };
+  const a = (sql) => { try { return db.prepare(sql).all(); } catch { return null; } };
   metrics.embedBacklog = g(`SELECT COUNT(*) n FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND length(trim(text)) > 20`)?.n;
   if (metrics.embedBacklog != null) {
     const prev = state.embedBacklog;
@@ -127,12 +128,30 @@ if (db) {
   // but with ZERO extracted people or claims is a silent extraction failure being grandfathered as done,
   // never a "sparse book". These docs are full of historical gems; surface them instead of hiding them.
   if (MODE === 'daily') {
-    metrics.hollow = g(`SELECT COUNT(*) n FROM (SELECT DISTINCT doc_id d FROM grounding_queue) p
+    // The disambiguation predicate MUST be the one in api/lib/pipeline/processed.js: `context IS NOT NULL`.
+    // This used to add `AND context != ''`, making it a FOURTH definition of "disambiguated" — and the wrong
+    // one, because an empty note means "examined, nothing to resolve", a complete result. Five separate
+    // definitions of that word are what stalled books for a night in August; the file exists so there is
+    // exactly one. Counting empty notes as un-disambiguated made this detector under-report (2026-08-15).
+    const hollowRows = a(`SELECT p.d AS doc_id,
+        (SELECT COUNT(*) FROM content WHERE doc_id=p.d AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) AS prose,
+        (SELECT COUNT(*) FROM entity_mentions_v2 WHERE doc_id=p.d) AS mentions,
+        (SELECT COUNT(*) FROM entity_claims WHERE doc_id=p.d) AS claims
+      FROM (SELECT DISTINCT doc_id d FROM grounding_queue) p
       WHERE (SELECT COUNT(*) FROM content WHERE doc_id=p.d AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL) >= 40
-        AND (SELECT COUNT(*) FROM content WHERE doc_id=p.d AND context IS NOT NULL AND context!='') >=
+        AND (SELECT COUNT(*) FROM content WHERE doc_id=p.d AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL AND context IS NOT NULL) >=
             0.98*(SELECT COUNT(*) FROM content WHERE doc_id=p.d AND blocktype IN ('paragraph','quote') AND deleted_at IS NULL)
-        AND ((SELECT COUNT(*) FROM entity_mentions_v2 WHERE doc_id=p.d)=0 OR (SELECT COUNT(*) FROM entity_claims WHERE doc_id=p.d)=0)`)?.n;
-    if (metrics.hollow != null) add('Hollow-done books', metrics.hollow === 0, 'warn', `${metrics.hollow} disambiguated books with zero extraction yield`);
+        AND ((SELECT COUNT(*) FROM entity_mentions_v2 WHERE doc_id=p.d)=0 OR (SELECT COUNT(*) FROM entity_claims WHERE doc_id=p.d)=0)
+      ORDER BY prose DESC LIMIT 25`);
+    metrics.hollow = hollowRows ? hollowRows.length : null;
+    if (metrics.hollow != null) {
+      // NAME them. "5 books somewhere" is a number to feel bad about; doc ids with their shape are a work
+      // list — and the mentions/claims split says WHICH stage came up empty, which is the actual question.
+      const detail = (hollowRows || []).slice(0, 6)
+        .map((r) => `${r.doc_id}(${r.prose}¶ m=${r.mentions} c=${r.claims})`).join(' ');
+      add('Hollow-done books', metrics.hollow === 0, 'warn',
+        `${metrics.hollow} disambiguated books with zero extraction yield${detail ? ` — ${detail}` : ''}`);
+    }
   }
   // ── 5c. Where query time goes (DAILY) ────────────────────────────────────────
   // Chad, 2026-08-13: "I want to spend some of our resources monitoring and improving our pipeline every

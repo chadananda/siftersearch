@@ -224,7 +224,13 @@ export const getBatchDb = getDb;
 // to tune. All SELECT reads are also logged at debug level so LOG_LEVEL=debug
 // exposes every read with its duration for index analysis.
 const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '150', 10);
-const IS_SELECT = /^\s*SELECT\b/i;
+// A CTE is a READ. This matched only /^SELECT/, so every `WITH ... SELECT` was filed as a write — which
+// mislabelled the alert email ("worst 55.0s write" for a SELECT) and, far worse, suppressed the query plan:
+// plan capture is gated on isSelect, so the one query we most needed to understand never recorded one. Two
+// rounds of guessing about that query followed, both wrong, and EXPLAIN answered it in a minute once it was
+// available. SQLite does allow data-modifying CTEs (WITH ... INSERT/UPDATE/DELETE), so those stay writes.
+const WITH_WRITE = /^\s*WITH\b[\s\S]*?\b(INSERT|UPDATE|DELETE)\b/i;
+const IS_SELECT = /^\s*(SELECT|WITH)\b/i;
 const IS_WRITE = /^\s*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|PRAGMA|ANALYZE|VACUUM|REINDEX|ATTACH|DETACH)\b/i;
 
 
@@ -344,7 +350,7 @@ const withName = (name, fn) => { pendingName = name || ''; try { return fn(); } 
 // origPrepare is the unwrapped db.prepare — used for EXPLAIN so we don't recurse.
 function logQueryTiming(sql, params, startTime, dbName, name = '', origPrepare = null) {
   const duration = Date.now() - startTime;
-  const isSelect = IS_SELECT.test(sql);
+  const isSelect = IS_SELECT.test(sql) && !WITH_WRITE.test(sql);
   const shortSql = (sql || '').replace(/\s+/g, ' ').trim().slice(0, 200);
   const logParams = params?.length > 5 ? `[${params.length} params]` : params;
 
