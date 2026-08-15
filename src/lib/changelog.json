@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-15T02:27:54.202Z",
+  "generated": "2026-08-15T02:30:02.196Z",
   "entries": [
+    {
+      "hash": "a186f388",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Add the preview half of the review gate",
+      "scope": null
+    },
     {
       "hash": "0381ab6e",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "DB-driven sidebar nav; publish GPB Seed page",
       "scope": null
-    },
-    {
-      "hash": "321bde59",
-      "date": "2026-06-07",
-      "type": "Fixed",
-      "description": "Gate the LIVE reconcile storm in unified-worker (the running copy)",
-      "scope": "sync"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "a186f388",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Add the preview half of the review gate",
+        "scope": null
+      },
       {
         "hash": "0381ab6e",
         "date": "2026-08-14",
@@ -7062,15 +7069,6 @@
         "type": "Docs",
         "description": "DB-driven sidebar nav; publish GPB Seed page",
         "scope": null
-      }
-    ],
-    "2026-06-07": [
-      {
-        "hash": "321bde59",
-        "date": "2026-06-07",
-        "type": "Fixed",
-        "description": "Gate the LIVE reconcile storm in unified-worker (the running copy)",
-        "scope": "sync"
       }
     ]
   }

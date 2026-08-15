@@ -488,7 +488,7 @@ export default async function ingestRoutes(fastify) {
   fastify.get('/ingest/relabel/pending', admin, async (req) => {
     const limit = Math.min(Number(req.query?.limit) || 200, 2000);
     const rows = await queryAll(
-      `SELECT item_ref, reason, payload_json, created_at FROM ingest_stage
+      `SELECT item_ref, reason, payload_json, updated_at FROM ingest_stage
         WHERE stage = 'relabel' AND status = 'pending' ORDER BY item_ref LIMIT ?`, [limit],
       'relabel:list-pending');
     const byMove = {};
@@ -497,7 +497,7 @@ export default async function ingestRoutes(fastify) {
       const move = `${p.from || '?'} → ${p.to || '?'}`;
       byMove[move] = (byMove[move] || 0) + 1;
       return { doc_id: Number(r.item_ref), move, from: p.from ?? null, to: p.to ?? null,
-        title: p.title ?? null, reason: r.reason, confidence: p.confidence ?? null };
+        title: p.title ?? null, reason: r.reason, confidence: p.confidence ?? null, updated_at: r.updated_at };
     });
     return { count: items.length, byMove, items };
   });
