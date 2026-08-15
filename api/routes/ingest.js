@@ -164,7 +164,18 @@ export default async function ingestRoutes(fastify) {
     for (const i of items) {
       (samples[i.cls] ||= []).length < 3 && samples[i.cls].push(i.last_error || i.reason || '(no text)');
     }
-    return { count: items.length, maxAttempts, byClass, samples, items: items.slice(0, 100) };
+    // THE WHOLE settled set, not just the exhausted slice. The converter prunes done + rejected +
+    // attempts>=ceiling, and only ONE item turned out to be at the ceiling — so the ceiling is not what
+    // empties the candidate pool, and a retry there recovers nothing. The composition below is what
+    // actually answers "why does the converter find no work?" (2026-08-15).
+    const settled = await queryAll(
+      `SELECT status, COUNT(*) n FROM ingest_stage WHERE stage = 'convert' GROUP BY status ORDER BY n DESC`,
+      [], 'convert:settled-composition');
+    const rejectReasons = await queryAll(
+      `SELECT COALESCE(reason,'(none)') reason, COUNT(*) n FROM ingest_stage
+        WHERE stage = 'convert' AND status = 'rejected' GROUP BY reason ORDER BY n DESC LIMIT 12`,
+      [], 'convert:reject-reasons');
+    return { count: items.length, maxAttempts, byClass, samples, settled, rejectReasons, items: items.slice(0, 100) };
   });
 
   // BOOKS THAT CAN NEVER SATISFY THE EXTRACTION GATE. A doc whose paragraphs carry notes but NO

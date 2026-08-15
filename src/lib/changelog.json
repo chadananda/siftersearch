@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-15T22:26:52.610Z",
+  "generated": "2026-08-15T22:30:08.699Z",
   "entries": [
+    {
+      "hash": "cd3368cc",
+      "date": "2026-08-15",
+      "type": "Other",
+      "description": "Read the exhausted convert items before retrying any of them",
+      "scope": null
+    },
     {
       "hash": "b4662153",
       "date": "2026-08-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Revive Buffer args; patch-ol drops renumber + adds retry",
       "scope": "writer"
-    },
-    {
-      "hash": "31aa8dc4",
-      "date": "2026-06-16",
-      "type": "Fixed",
-      "description": "Insert with null embeddings; worker backfills vectors",
-      "scope": "patch-ol"
     }
   ],
   "grouped": {
     "2026-08-15": [
+      {
+        "hash": "cd3368cc",
+        "date": "2026-08-15",
+        "type": "Other",
+        "description": "Read the exhausted convert items before retrying any of them",
+        "scope": null
+      },
       {
         "hash": "b4662153",
         "date": "2026-08-15",
@@ -7062,13 +7069,6 @@
         "type": "Fixed",
         "description": "Revive Buffer args; patch-ol drops renumber + adds retry",
         "scope": "writer"
-      },
-      {
-        "hash": "31aa8dc4",
-        "date": "2026-06-16",
-        "type": "Fixed",
-        "description": "Insert with null embeddings; worker backfills vectors",
-        "scope": "patch-ol"
       }
     ]
   }
