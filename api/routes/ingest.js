@@ -134,10 +134,17 @@ export default async function ingestRoutes(fastify) {
   // preview is a repair you cannot check. Writes go through query() → the single writer, like everything
   // else (2026-08-14).
   const RESEARCH_JSON_COLS = ['aliases', 'kinship', 'research_notes'];
-  const findMalformed = async () => {
+  // SCOPED TO WHERE A PARSE ACTUALLY HAPPENS. A first scan found 140 malformed rows, but 117 are `work`
+  // entities whose research_notes holds a curated prose description — and bio.js reads research_notes ONLY
+  // for persons (`WHERE ge.entity_type = 'person'`). Nothing parses the work rows as JSON, so that prose is
+  // not corrupt, it is the format its consumers expect. Rewriting it would be damage dressed as a repair.
+  // Default therefore = person only; ?types=all still lists everything for diagnosis (2026-08-14).
+  const findMalformed = async ({ types = ['person'] } = {}) => {
+    const all = types === 'all';
     const rows = await queryAll(
       `SELECT rowid AS rid, canonical_name, entity_type, aliases, kinship, research_notes
-         FROM entity_research`, [], 'repair:scan-entity-research');
+         FROM entity_research${all ? '' : ` WHERE entity_type IN (${types.map(() => '?').join(',')})`}`,
+      all ? [] : types, 'repair:scan-entity-research');
     const { parsedOrUndefined, repairJsonColumn } = await import('../lib/text/repair-json-column.js');
     const out = [];
     for (const r of rows) {
@@ -154,14 +161,15 @@ export default async function ingestRoutes(fastify) {
     return out;
   };
 
-  fastify.get('/entity-research/malformed', admin, async () => {
-    const items = await findMalformed();
+  fastify.get('/entity-research/malformed', admin, async (req) => {
+    const items = await findMalformed(req.query?.types === 'all' ? { types: 'all' } : {});
     const byColumn = {};
     for (const i of items) byColumn[i.column] = (byColumn[i.column] || 0) + 1;
     return { count: items.length, byColumn, items };
   });
 
   fastify.post('/entity-research/repair-json', admin, async (req) => {
+    // apply is person-scoped ALWAYS: `types:'all'` is a diagnostic view, never a write target.
     const items = await findMalformed();
     if (!req.body?.apply) return { dryRun: true, count: items.length, items };
     let repaired = 0;

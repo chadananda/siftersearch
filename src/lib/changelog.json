@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-15T02:05:41.872Z",
+  "generated": "2026-08-15T02:08:52.566Z",
   "entries": [
+    {
+      "hash": "0381ab6e",
+      "date": "2026-08-14",
+      "type": "Other",
+      "description": "Repair prose-in-JSON columns (dry-run first)",
+      "scope": null
+    },
     {
       "hash": "3ca6a36e",
       "date": "2026-08-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Gate the LIVE reconcile storm in unified-worker (the running copy)",
       "scope": "sync"
-    },
-    {
-      "hash": "672b4978",
-      "date": "2026-06-07",
-      "type": "Fixed",
-      "description": "Disable self-amplifying reconcile storm (root cause of Meili never indexing)",
-      "scope": "sync"
     }
   ],
   "grouped": {
     "2026-08-14": [
+      {
+        "hash": "0381ab6e",
+        "date": "2026-08-14",
+        "type": "Other",
+        "description": "Repair prose-in-JSON columns (dry-run first)",
+        "scope": null
+      },
       {
         "hash": "3ca6a36e",
         "date": "2026-08-14",
@@ -7063,13 +7070,6 @@
         "date": "2026-06-07",
         "type": "Fixed",
         "description": "Gate the LIVE reconcile storm in unified-worker (the running copy)",
-        "scope": "sync"
-      },
-      {
-        "hash": "672b4978",
-        "date": "2026-06-07",
-        "type": "Fixed",
-        "description": "Disable self-amplifying reconcile storm (root cause of Meili never indexing)",
         "scope": "sync"
       }
     ]
