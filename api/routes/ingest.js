@@ -128,6 +128,45 @@ export default async function ingestRoutes(fastify) {
     return auditLocatorMetadata({ limit: Math.min(Number(req.body?.limit) || 500, 5000), apply: true });
   });
 
+  // CONVERT ITEMS PAST THE ATTEMPT CEILING. convert-missing-books prunes anything done/rejected/attempts>=3,
+  // which is why the converter finds zero candidates while the triage queue still counts 4,023 books with
+  // sources. Some of those exhausted items died of transient causes (a fetch timeout, a 5xx, an outage) and
+  // would succeed today; others are permanently dead (404). Retrying the first group is nearly free, and
+  // retrying the second burns three more attempts each for nothing — so the error text is what decides, and
+  // it has to be READ before anything is reset. Read-only; grouped by cause (2026-08-15).
+  const TRANSIENT_RE = /timeout|timed out|ETIMEDOUT|ECONNRESET|ENOTFOUND|socket|network|fetch failed|EAI_AGAIN|50\d|too many requests|429/i;
+  const PERMANENT_RE = /404|not found|403|forbidden|410|gone|unsupported|no source|scanned|poor text/i;
+  const classifyFailure = (text) => {
+    const t = String(text || '');
+    if (!t) return 'unknown';
+    if (PERMANENT_RE.test(t)) return 'permanent';
+    if (TRANSIENT_RE.test(t)) return 'transient';
+    return 'unknown';
+  };
+
+  fastify.get('/ingest/convert/exhausted', admin, async (req) => {
+    const limit = Math.min(Number(req.query?.limit) || 500, 5000);
+    const maxAttempts = Number(process.env.CONVERT_MAX_ATTEMPTS || 3);
+    const rows = await queryAll(
+      `SELECT item_ref, attempts, status, reason, last_error, updated_at FROM ingest_stage
+        WHERE stage = 'convert' AND status NOT IN ('done') AND attempts >= ?
+        ORDER BY attempts DESC, item_ref LIMIT ?`, [maxAttempts, limit], 'convert:list-exhausted');
+    const byClass = {};
+    const items = rows.map((r) => {
+      const cls = classifyFailure(r.last_error || r.reason);
+      byClass[cls] = (byClass[cls] || 0) + 1;
+      return { item_ref: r.item_ref, attempts: r.attempts, status: r.status, cls,
+        reason: r.reason, last_error: (r.last_error || '').slice(0, 200), updated_at: r.updated_at };
+    });
+    // A few verbatim samples per class: the regexes are a guess at the failure vocabulary, and the only way
+    // to know whether they match reality is to look at the strings they are sorting.
+    const samples = {};
+    for (const i of items) {
+      (samples[i.cls] ||= []).length < 3 && samples[i.cls].push(i.last_error || i.reason || '(no text)');
+    }
+    return { count: items.length, maxAttempts, byClass, samples, items: items.slice(0, 100) };
+  });
+
   // BOOKS THAT CAN NEVER SATISFY THE EXTRACTION GATE. A doc whose paragraphs carry notes but NO
   // context_model is counted 100% disambiguated (`context IS NOT NULL`) while entities/mentions.js reads
   // only paragraphs stamped with the CURRENT version — so it yields zero mentions AND zero extraction
