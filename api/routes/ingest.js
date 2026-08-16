@@ -128,6 +128,38 @@ export default async function ingestRoutes(fastify) {
     return auditLocatorMetadata({ limit: Math.min(Number(req.body?.limit) || 500, 5000), apply: true });
   });
 
+  // WHY "no source file linked" FOR 2,807 ITEMS? That single reason is 75% of every convert rejection and
+  // the largest cause of the converter finding no work. It has two completely different meanings, and they
+  // point opposite ways: the doc may carry NO url at all (widening the matcher helps nobody), or a url the
+  // matcher does not recognise (widening helps thousands). Tests candidates against the SHARED matcher the
+  // converter itself uses, and groups the unmatched ones by host+extension so the widening, if any, is
+  // aimed at real shapes rather than guessed ones (2026-08-15).
+  fastify.get('/ingest/convert/no-source-sample', admin, async (req) => {
+    const limit = Math.min(Number(req.query?.limit) || 400, 3000);
+    const { classifySource, anyUrlOf, urlShape } = await import('../lib/text/source-file-url.js');
+    const rows = await queryAll(
+      `SELECT s.item_ref, d.title, d.source_url, d.file_path
+         FROM ingest_stage s JOIN docs d ON d.id = CAST(s.item_ref AS INTEGER)
+        WHERE s.stage = 'convert' AND s.status = 'rejected' AND s.reason LIKE 'no source file linked%'
+        ORDER BY s.item_ref LIMIT ?`, [limit], 'convert:no-source-sample');
+    const byClass = {};
+    const byShape = {};
+    const examples = {};
+    for (const r of rows) {
+      const link = r.source_url || '';
+      const cls = classifySource(link);
+      byClass[cls] = (byClass[cls] || 0) + 1;
+      if (cls === 'unmatched-shape') {
+        const shape = urlShape(anyUrlOf(link)) || '(none)';
+        byShape[shape] = (byShape[shape] || 0) + 1;
+        (examples[shape] ||= []).length < 2 && examples[shape].push(anyUrlOf(link));
+      }
+    }
+    const shapes = Object.entries(byShape).sort((a, b) => b[1] - a[1]).slice(0, 15)
+      .map(([shape, n]) => ({ shape, n, examples: examples[shape] }));
+    return { sampled: rows.length, byClass, shapes };
+  });
+
   // CONVERT ITEMS PAST THE ATTEMPT CEILING. convert-missing-books prunes anything done/rejected/attempts>=3,
   // which is why the converter finds zero candidates while the triage queue still counts 4,023 books with
   // sources. Some of those exhausted items died of transient causes (a fetch timeout, a 5xx, an outage) and

@@ -13,6 +13,7 @@ import path from 'path';
 import Database from 'better-sqlite3';
 import { resolveSourceMetadata } from '../api/lib/text/source-metadata.js';
 import { classifyCandidate } from '../api/lib/text/not-a-book.js';
+import { fileUrlOf as matchFileUrl } from '../api/lib/text/source-file-url.js';
 
 const APPLY = process.argv.includes('--apply');
 const FETCH_FRAMES = process.argv.includes('--fetch-frames');
@@ -187,11 +188,9 @@ if (!ONLY_ID) {
   if (before !== stubs.length) console.log(`pruned ${before - stubs.length} already-settled or exhausted items (${settled.size} recorded)`);
 }
 
-const fileUrlOf = (s) => {
-  const t = s.linktext || '';
-  const m = t.match(/https?:\/\/[^\s()[\]"']+\.(?:pdf|docx?|rtf)\b/i) || t.match(/https?:\/\/bahai-library\.com\/docs\/[^\s()[\]"']+/i);
-  return m ? m[0].replace(/[),.;]+$/, '') : null;
-};
+// The rule now lives in api/lib/text/source-file-url.js so the diagnostic that asks "would widening this
+// help?" tests the SAME rule the converter enforces, instead of a copy that drifts from it.
+const fileUrlOf = (s) => matchFileUrl(s.linktext || '');
 
 console.log(`stubs (chrome, <36¶, with a source file): ${stubs.length}${ONLY_ID ? ` (filtered to #${ONLY_ID})` : ''} · mode: ${APPLY ? 'APPLY (write files, DEFER ingest+retire)' : 'DRY'}\n`);
 const report = { converted: [], skippedType: [], noFile: [], badQuality: [], fetchErr: [] };

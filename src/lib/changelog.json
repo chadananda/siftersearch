@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-15T22:30:08.699Z",
+  "generated": "2026-08-16T00:52:54.272Z",
   "entries": [
+    {
+      "hash": "cb762088",
+      "date": "2026-08-15",
+      "type": "Other",
+      "description": "Report the whole settled set, not just the exhausted slice",
+      "scope": null
+    },
     {
       "hash": "cd3368cc",
       "date": "2026-08-15",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Purge-out-of-scope + apply-corrections scripts (research-driven foundation)",
       "scope": "entities"
-    },
-    {
-      "hash": "4283c8cc",
-      "date": "2026-06-16",
-      "type": "Fixed",
-      "description": "Revive Buffer args; patch-ol drops renumber + adds retry",
-      "scope": "writer"
     }
   ],
   "grouped": {
     "2026-08-15": [
+      {
+        "hash": "cb762088",
+        "date": "2026-08-15",
+        "type": "Other",
+        "description": "Report the whole settled set, not just the exhausted slice",
+        "scope": null
+      },
       {
         "hash": "cd3368cc",
         "date": "2026-08-15",
@@ -7060,15 +7067,6 @@
         "type": "New",
         "description": "Purge-out-of-scope + apply-corrections scripts (research-driven foundation)",
         "scope": "entities"
-      }
-    ],
-    "2026-06-16": [
-      {
-        "hash": "4283c8cc",
-        "date": "2026-06-16",
-        "type": "Fixed",
-        "description": "Revive Buffer args; patch-ol drops renumber + adds retry",
-        "scope": "writer"
       }
     ]
   }
