@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-17T01:40:41.808Z",
+  "generated": "2026-08-17T01:47:58.267Z",
   "entries": [
+    {
+      "hash": "f213994a",
+      "date": "2026-08-16",
+      "type": "Other",
+      "description": "Landing-page resolver + DRY RUN (no writes)",
+      "scope": null
+    },
     {
       "hash": "b380270a",
       "date": "2026-08-15",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Sidecar content_id is float-string (parseInt to match content.id)",
       "scope": "purge"
-    },
-    {
-      "hash": "6344de36",
-      "date": "2026-06-17",
-      "type": "Fixed",
-      "description": "Import query primitives from db.js not graph-db.js",
-      "scope": "entities"
     }
   ],
   "grouped": {
+    "2026-08-16": [
+      {
+        "hash": "f213994a",
+        "date": "2026-08-16",
+        "type": "Other",
+        "description": "Landing-page resolver + DRY RUN (no writes)",
+        "scope": null
+      }
+    ],
     "2026-08-15": [
       {
         "hash": "b380270a",
@@ -7060,13 +7069,6 @@
         "type": "Fixed",
         "description": "Sidecar content_id is float-string (parseInt to match content.id)",
         "scope": "purge"
-      },
-      {
-        "hash": "6344de36",
-        "date": "2026-06-17",
-        "type": "Fixed",
-        "description": "Import query primitives from db.js not graph-db.js",
-        "scope": "entities"
       }
     ]
   }

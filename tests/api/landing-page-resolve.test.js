@@ -3,7 +3,7 @@
 // conversion — and these lock the two judgements that matter: which urls are landing pages, and which link
 // to take once we are on one.
 import { describe, it, expect } from 'vitest';
-import { isLandingPage, fileLinkOnLandingPage, fileUrlOf, classifySource } from '../../api/lib/text/source-file-url.js';
+import { isLandingPage, fileLinkOnLandingPage, fileUrlOf, classifySource, fileMatchesSlug } from '../../api/lib/text/source-file-url.js';
 
 describe('isLandingPage', () => {
   it('recognises the blocked shape', () => {
@@ -36,12 +36,12 @@ describe('fileLinkOnLandingPage', () => {
   it('PREFERS a word-processor format over the PDF', () => {
     // ~250 items in this corpus are already rejected for a bad PDF text layer ("low letter ratio").
     // Taking the rtf/docx when one is offered avoids walking into that failure on purpose.
-    const html = page('/pdf/k/x.pdf', '/docs/k/x.rtf');
+    const html = page('/pdf/k/khianra_immortals.pdf', '/docs/k/khianra_immortals.rtf');
     expect(fileLinkOnLandingPage(html, base)).toMatch(/\.rtf$/);
   });
 
   it('falls back to the PDF when that is all there is', () => {
-    expect(fileLinkOnLandingPage(page('/pdf/k/x.pdf'), base)).toMatch(/\.pdf$/);
+    expect(fileLinkOnLandingPage(page('/pdf/k/khianra_immortals.pdf'), base)).toMatch(/\.pdf$/);
   });
 
   it('returns null when the page links to no file at all', () => {
@@ -53,5 +53,28 @@ describe('fileLinkOnLandingPage', () => {
     const resolved = fileLinkOnLandingPage(page('/docs/k/khianra_immortals.docx'), base);
     expect(fileUrlOf(resolved)).toBe(resolved);
     expect(classifySource(resolved)).toBe('matchable');
+  });
+});
+
+describe('fileMatchesSlug — the compilation trap', () => {
+  // The dry run surfaced this before anything was written: /kluge_which_world resolved to
+  // /pdf/l/lights_irfan_complete_21.pdf — the anthology the article sits in, not the article. Filing a
+  // whole compilation under one article's doc id is corpus corruption that looks like a successful ingest.
+  it('REJECTS a file belonging to the containing volume', () => {
+    expect(fileMatchesSlug('/pdf/l/lights_irfan_complete_21.pdf', 'https://bahai-library.com/kluge_which_world')).toBe(false);
+  });
+
+  it('accepts the page own file', () => {
+    expect(fileMatchesSlug('/docs/k/khianra_immortals.docx', 'https://bahai-library.com/khianra_immortals')).toBe(true);
+    expect(fileMatchesSlug('/docs/k/khanum_horace_hotchkiss_holley.rtf', 'https://bahai-library.com/khanum_horace_hotchkiss_holley')).toBe(true);
+  });
+
+  it('tolerates a truncated filename (one contains the other)', () => {
+    expect(fileMatchesSlug('/docs/l/lee_abdul-bahas_response.docx', 'https://bahai-library.com/lee_abdul-bahas_response_racism')).toBe(true);
+  });
+
+  it('the resolver itself now skips the mismatched file rather than returning it', () => {
+    const html = '<a href="/pdf/l/lights_irfan_complete_21.pdf">vol</a>';
+    expect(fileLinkOnLandingPage(html, 'https://bahai-library.com/kluge_which_world')).toBeNull();
   });
 });

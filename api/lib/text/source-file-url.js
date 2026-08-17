@@ -72,8 +72,30 @@ export function fileLinkOnLandingPage(html, pageUrl) {
   const abs = (h) => { try { return new URL(h, pageUrl).toString(); } catch { return null; } };
   const rx = [/\.(rtf|docx?)(?:[?#]|$)/i, /\.pdf(?:[?#]|$)/i];
   for (const re of rx) {
-    const hit = hrefs.find((h) => re.test(h));
+    const hit = hrefs.find((h) => re.test(h) && fileMatchesSlug(h, pageUrl));
     if (hit) return abs(hit);
   }
   return null;
+}
+
+/**
+ * Does this file belong to THIS page, or to the volume the page sits inside?
+ *
+ * Caught by the dry run before anything was written: /kluge_which_world resolves to
+ * /pdf/l/lights_irfan_complete_21.pdf — the whole Lights of Irfan anthology the article appears in, not the
+ * article. Taking it would file an entire compilation under one article's doc id, which is corpus
+ * corruption dressed as a successful ingest. So the file's basename must agree with the page's slug;
+ * anything else is a different document and is skipped (2026-08-16).
+ */
+export function fileMatchesSlug(href, pageUrl) {
+  let slug = '';
+  try { slug = new URL(pageUrl).pathname.replace(/^\/+|\/+$/g, ''); } catch { return false; }
+  if (!slug) return false;
+  const base = String(href).split(/[?#]/)[0].split('/').pop().replace(/\.[a-z0-9]{2,5}$/i, '');
+  if (!base) return false;
+  const norm = (x) => x.toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const a = norm(slug), b = norm(base);
+  // Exact, or one contains the other — bahai-library truncates some filenames, but a compilation name
+  // ("lightsirfancomplete21") shares no such relationship with an article slug ("klugewhichworld").
+  return a === b || a.includes(b) || b.includes(a);
 }
