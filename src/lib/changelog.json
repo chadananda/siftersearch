@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-17T22:38:01.684Z",
+  "generated": "2026-08-17T23:33:20.994Z",
   "entries": [
+    {
+      "hash": "a1902981",
+      "date": "2026-08-17",
+      "type": "Other",
+      "description": "Answer-path decision battery (Phase 1, offline half)",
+      "scope": null
+    },
     {
       "hash": "35474ce5",
       "date": "2026-08-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Range-driven extractor, kinship in description not relations",
       "scope": "rolls"
-    },
-    {
-      "hash": "fb266a70",
-      "date": "2026-06-17",
-      "type": "Other",
-      "description": "Drop nonexistent source_doc_ids column from insert",
-      "scope": "rolls"
     }
   ],
   "grouped": {
     "2026-08-17": [
+      {
+        "hash": "a1902981",
+        "date": "2026-08-17",
+        "type": "Other",
+        "description": "Answer-path decision battery (Phase 1, offline half)",
+        "scope": null
+      },
       {
         "hash": "35474ce5",
         "date": "2026-08-17",
@@ -7063,13 +7070,6 @@
         "date": "2026-06-17",
         "type": "Other",
         "description": "Range-driven extractor, kinship in description not relations",
-        "scope": "rolls"
-      },
-      {
-        "hash": "fb266a70",
-        "date": "2026-06-17",
-        "type": "Other",
-        "description": "Drop nonexistent source_doc_ids column from insert",
         "scope": "rolls"
       }
     ]

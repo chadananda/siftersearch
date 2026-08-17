@@ -527,6 +527,13 @@ export default async function publicApiRoutes(fastify) {
       text: result.excerpt,
       highlightedText: result.highlightedText,
       title: result.title,
+      // CHAPTER/SECTION, so a citation can name WHERE in the work — and so the answer layer can tell a
+      // chapter apart from a book. Meili has indexed and searched this all along (search.js searchableAttributes,
+      // indexer.js heading) and the API simply never returned it, which had a concrete cost: asked where
+      // 'Abdu'l-Bahá defines justice, we could not say "Some Answered Questions, chapter 'The Justice and Mercy
+      // of God'" from our own data, and a web answer mistook that chapter title for a separate US compilation.
+      // Naming the chapter is also what turns a bare "here" into a citation worth following (2026-08-17).
+      heading: result.heading || null,
       author: result.author,
       religion: result.religion,
       collection: result.collection,
