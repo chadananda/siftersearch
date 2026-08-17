@@ -27,6 +27,7 @@ import { getScopeForLocation } from './search/scope.js';
 import { checkDeepResearch, recordQuestionHit } from './deep-research.js';
 import { extractQuotedSpan, phraseQueryVariants, scoreCandidate } from './quote-lookup.js';
 import { perplexityFallback } from './perplexity.js';
+import { createSearchExplain } from './search-explain.js';
 import * as companion from './companion/index.js';
 
 // Admin-set global companion dials, cached 60s (they change rarely; a DB read per turn is wasteful).
@@ -2989,7 +2990,31 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   // phrase being present. So: verbatim-contain check on the span, not the numeric score. If the
   // span (normalized) doesn't appear near-intact in any top candidate, it's a miss → web fires,
   // regardless of confidence. (Non-span hunts keep the confidence!=='high' rule.)
+  // EXPLAIN, for search (Chad, 2026-08-17): record the decision chain so a bad answer can be dissected from
+  // one record instead of hours of re-running queries by hand. Logged on success too — a trace kept only for
+  // failures cannot show what a GOOD search looks like, and without that baseline "was this flawed?" has no
+  // answer. Never allowed to break the request.
+  const explain = createSearchExplain(userMessage, { intent: research.user_intent || null });
+  explain.candidates(research.retrieved_quotes);
+  if (research.quote_lookup) {
+    explain.step('quote-hunt', {
+      span: research.quote_lookup.span,
+      confidence: research.quote_lookup.confidence,
+      found: research.quote_lookup.found,
+      top_score: research.retrieved_quotes[0]?._score,
+    });
+    explain.decide('span_verbatim_contained',
+      spanIsContained(research.quote_lookup.span, research.retrieved_quotes),
+      'does the remembered wording appear as a contiguous run? (FACT ONLY — no longer a verdict on the library)',
+      { span: research.quote_lookup.span });
+  }
   const quoteMiss = research.quote_lookup ? isQuoteMiss(research.quote_lookup, research.retrieved_quotes) : false;
+  if (research.quote_lookup) {
+    explain.decide('quote_miss', quoteMiss,
+      quoteMiss ? 'retrieval found nothing usable (no candidates, or confidence low/none)'
+        : 'a usable semantic hit exists — a paraphrase is not an absence',
+      { confidence: research.quote_lookup.confidence, candidates: research.retrieved_quotes.length });
+  }
 
   if (!research.is_political && (research.retrieved_quotes.length === 0 || quoteMiss)) {
     // ASK THE USER'S QUESTION. This used to discard it and send a rewritten source-hunt prompt instead;
@@ -3004,9 +3029,16 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     // back to Roman law. The user's own phrasing carries the context; the remembered span is supporting
     // detail, not a replacement for the question.
     const webQuestion = buildWebQuestion(userMessage, research.quote_lookup);
+    explain.decide('web_fallback', true,
+      research.retrieved_quotes.length === 0 ? 'library returned nothing' : 'quote hunt missed',
+      { question_sent: webQuestion.slice(0, 200) });
     webContext = await perplexityFallback(webQuestion);
+    explain.step('web_result', { answered: !!webContext, sources: webContext?.citations?.length || 0 });
     if (webContext && sendEvent) sendEvent({ type: 'debug_web_fallback', sources: webContext.citations.length });
   }
+
+  explain.decide('web_fallback', !!webContext, webContext ? 'web consulted' : 'library answered — no web needed', {});
+  explain.log(logger, { retrieved: research.retrieved_quotes.length });
 
   // Conversation summary
   const conversationSummary = summarizeConversation(messages);
