@@ -128,6 +128,70 @@ export default async function ingestRoutes(fastify) {
     return auditLocatorMetadata({ limit: Math.min(Number(req.body?.limit) || 500, 5000), apply: true });
   });
 
+  // DRY RUN for junk-metadata recovery. 1,605 docs carry filename-derived author/title ('pdf-b-batebi',
+  // 'batebi_bahais_higher_education') and some are outright 'PDF Support' / 'Error 404'. Recovery from the
+  // documents' own text scores 3%, but the junk TITLE is a valid bahai-library slug and the landing page
+  // states both fields properly. Chad asked to measure before changing anything, so: RANDOM sample, real
+  // fetch, nothing written. Reports recovery rate with an interval, and separates repair candidates from
+  // DEAD slugs (which are 404 pages ingested as documents — retire, not repair) (2026-08-17).
+  fastify.get('/ingest/metadata-recover-preview', admin, async (req) => {
+    const { parseLandingMetadata } = await import('../lib/text/landing-metadata.js');
+    const limit = Math.min(Number(req.query?.limit) || 25, 150);
+    const rows = await queryAll(
+      `SELECT id, title, author FROM docs
+        WHERE deleted_at IS NULL AND author LIKE 'pdf-%'
+        ORDER BY RANDOM() LIMIT ?`, [limit], 'metadata:recover-preview-sample');
+    const popRow = await queryOne(
+      `SELECT COUNT(*) n FROM docs WHERE deleted_at IS NULL AND author LIKE 'pdf-%'`, [],
+      'metadata:recover-population');
+    const population = popRow?.n || 0;
+
+    const outcome = { repairable: 0, deadSlug: 0, titleOnly: 0, httpError: 0 };
+    const samples = [];
+    let idx = 0;
+    const worker = async () => {
+      while (idx < rows.length) {
+        const r = rows[idx++];
+        // The junk title IS the slug. Non-slug junk ('PDF Support') cannot address a page at all.
+        const slug = String(r.title || '').trim();
+        if (!slug || /\s/.test(slug)) { outcome.deadSlug += 1; continue; }
+        try {
+          const res = await fetch(`https://bahai-library.com/${encodeURIComponent(slug)}`, {
+            headers: { 'User-Agent': 'SifterSearch/1.0 (metadata survey)' },
+            signal: AbortSignal.timeout(15000),
+          });
+          if (!res.ok) { outcome.httpError += 1; continue; }
+          const md = parseLandingMetadata(await res.text());
+          if (md.dead) { outcome.deadSlug += 1; }
+          else if (md.title && md.author) { outcome.repairable += 1; }
+          else if (md.title) { outcome.titleOnly += 1; }
+          else { outcome.deadSlug += 1; }
+          if (samples.length < 6) {
+            samples.push({ id: r.id, fromAuthor: r.author, fromTitle: slug.slice(0, 40),
+              toTitle: md.title, toAuthor: md.author, dead: md.dead });
+          }
+        } catch (err) { outcome.httpError += 1; }
+      }
+    };
+    await Promise.all(Array.from({ length: 3 }, worker));
+
+    const n = rows.length;
+    const rate = n ? outcome.repairable / n : 0;
+    const margin = n ? 1.96 * Math.sqrt((rate * (1 - rate)) / n) : 1;
+    return {
+      dryRun: true,
+      sampling: 'random',
+      sampled: n,
+      population,
+      outcome,
+      repairRate: Math.round(rate * 1000) / 1000,
+      repairRate95ci: [Math.max(0, Math.round((rate - margin) * 1000) / 1000), Math.min(1, Math.round((rate + margin) * 1000) / 1000)],
+      projectedRepairable: Math.round(rate * population),
+      projectedRange: [Math.round(Math.max(0, rate - margin) * population), Math.round(Math.min(1, rate + margin) * population)],
+      samples,
+    };
+  });
+
   // DRY RUN for the landing-page resolver. 2,789 docs store a bahai-library.com landing page in source_url
   // instead of the file it links to; the converter's matcher already accepts /docs/ links, so this is link
   // resolution, not document conversion. Before any of that runs for real, ANSWER THE QUESTION WITH DATA:
