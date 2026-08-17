@@ -13,7 +13,8 @@
 # 8. Stage version files for commit
 #
 # Skip with: git commit --no-verify
-# Skip quality checks only: SKIP_CHECKS=1 git commit ...
+# Skip lint only (tests STILL run):  SKIP_LINT=1 git commit ...
+# Skip all quality checks:           SKIP_CHECKS=1 git commit ...   (last resort — disables the test gate)
 
 set -e
 
@@ -52,16 +53,35 @@ fi
 # PHASE 1: Quality Checks (fail fast)
 # ============================================
 
-if [ "$SKIP_CHECKS" != "1" ]; then
+# SKIP_LINT vs SKIP_CHECKS — the distinction exists because the coarse escape hatch was being used for the
+# wrong reason. The repo carries ~266 PRE-EXISTING lint errors, so any commit touching unrelated files needs
+# lint bypassed; the only available switch was SKIP_CHECKS=1, which ALSO disables the tests. The result was
+# predictable and it happened three times in one session: a commit pushed while the suite reported failures,
+# once a temporal-dead-zone bug that would have crashed the snapshot cron on its next run.
+#
+#   SKIP_LINT=1    → skip ONLY lint. TESTS STILL RUN AND STILL BLOCK.   ← use this one
+#   SKIP_CHECKS=1  → skip everything. Now warns loudly about what it is really disabling.
+#
+# A gate that has to be turned off for an unrelated reason will be turned off, so the fix is to make the
+# narrow bypass available rather than to resolve never to use the wide one (2026-08-17).
+if [ "$SKIP_CHECKS" = "1" ]; then
+  echo -e "${YELLOW}[pre-commit]${NC} SKIP_CHECKS=1 — skipping lint AND TESTS AND import check."
+  echo -e "${YELLOW}[pre-commit]${NC} If you only meant to bypass the pre-existing lint errors, use SKIP_LINT=1 instead — it keeps the test gate."
+else
   # Run linting
-  echo -e "${GREEN}[pre-commit]${NC} Running linter..."
-  if ! npm run lint 2>&1; then
-    echo -e "${RED}[pre-commit]${NC} Linting failed! Commit aborted."
-    exit 1
+  if [ "$SKIP_LINT" = "1" ]; then
+    echo -e "${YELLOW}[pre-commit]${NC} SKIP_LINT=1, skipping linter (tests still run)"
+  else
+    echo -e "${GREEN}[pre-commit]${NC} Running linter..."
+    if ! npm run lint 2>&1; then
+      echo -e "${RED}[pre-commit]${NC} Linting failed! Commit aborted."
+      echo -e "${YELLOW}[pre-commit]${NC} Pre-existing unrelated errors? SKIP_LINT=1 git commit … (keeps the test gate)"
+      exit 1
+    fi
+    echo -e "${GREEN}[pre-commit]${NC} ✓ Linting passed"
   fi
-  echo -e "${GREEN}[pre-commit]${NC} ✓ Linting passed"
 
-  # Run unit tests
+  # Run unit tests — NOT skippable by SKIP_LINT, deliberately.
   echo -e "${GREEN}[pre-commit]${NC} Running unit tests..."
   if ! npm run test 2>&1; then
     echo -e "${RED}[pre-commit]${NC} Tests failed! Commit aborted."
@@ -69,15 +89,14 @@ if [ "$SKIP_CHECKS" != "1" ]; then
   fi
   echo -e "${GREEN}[pre-commit]${NC} ✓ Tests passed"
 
-  # Verify server imports (catches missing dependencies)
+  # Verify server imports (catches missing dependencies). Also catches a module that cannot be IMPORTED,
+  # which node --check cannot see — the exact shape of the snapshot-crashing bug mentioned above.
   echo -e "${GREEN}[pre-commit]${NC} Checking server imports..."
   if ! node scripts/check-server-imports.js 2>&1; then
     echo -e "${RED}[pre-commit]${NC} Server import check failed! Commit aborted."
     exit 1
   fi
   echo -e "${GREEN}[pre-commit]${NC} ✓ Server imports OK"
-else
-  echo -e "${YELLOW}[pre-commit]${NC} SKIP_CHECKS=1, skipping quality checks"
 fi
 
 # ============================================
