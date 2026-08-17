@@ -3037,7 +3037,41 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     if (webContext && sendEvent) sendEvent({ type: 'debug_web_fallback', sources: webContext.citations.length });
   }
 
-  explain.decide('web_fallback', !!webContext, webContext ? 'web consulted' : 'library answered — no web needed', {});
+  // USE THE WEB AS A LEAD, NOT AN ANSWER (Chad, 2026-08-17: "Let's not repeat perplexity results but use
+  // those results for our answering logic"; "we still should have translated such a common canonical book
+  // into a OceanLibrary link").
+  //
+  // A good web answer hands us the two things our own search lacked: the VERBATIM wording — which our corpus
+  // can match exactly, unlike the user's paraphrase — and the WORK NAME, often a book we hold in full. So
+  // mine it for search terms and re-query. If our own library then yields the passage, the web has done its
+  // job as a research aid and drops out entirely: we answer from our text, with our paragraph anchors, rather
+  // than relaying someone else's prose behind a bare "here".
+  if (webContext?.text) {
+    const { extractWebLeads } = await import('./web-lead.js');
+    const leads = extractWebLeads(webContext.text);
+    explain.step('web_leads', { phrases: leads.phrases.slice(0, 2), works: leads.works.slice(0, 3) });
+    let recovered = [];
+    for (const phrase of leads.phrases.slice(0, 2)) {
+      try {
+        const res = await executeTool('search', { query: phrase, mode: 'passages', limit: 5, phrase: true }, { scope_config });
+        const hits = (res?.results || res?.passages || []).filter(Boolean);
+        if (hits.length) { recovered = hits; break; }
+      } catch (err) { explain.step('web_lead_search_failed', { phrase: phrase.slice(0, 60), error: err.message }); }
+    }
+    if (recovered.length) {
+      research.retrieved_quotes = [...recovered, ...research.retrieved_quotes].slice(0, 8);
+      explain.decide('web_lead_recovered_in_library', true,
+        'the web named the verbatim wording; OUR corpus holds it — answering from our text with our anchors',
+        { hits: recovered.length, from: (recovered[0]?.title || '').slice(0, 60) });
+      webContext = null;                       // the web was the lead, not the source
+      explain.candidates(research.retrieved_quotes);
+    } else {
+      explain.decide('web_lead_recovered_in_library', false,
+        'no library passage matched the web-named wording — the web stays an UNVERIFIED lead', {});
+    }
+  }
+
+  explain.decide('web_fallback', !!webContext, webContext ? 'web relayed (unverified)' : 'answered from the library', {});
   explain.log(logger, { retrieved: research.retrieved_quotes.length });
 
   // Conversation summary
