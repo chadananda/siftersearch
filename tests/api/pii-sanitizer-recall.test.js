@@ -44,21 +44,39 @@ describe('PII sanitizer — regex fallback: what it DOES catch', () => {
   });
 });
 
-describe('PII sanitizer — regex fallback: MEASURED GAPS (these ship when the LLM is down)', () => {
-  // Each of these is real PII that survives the fallback untouched. Recorded so the exposure is a number
-  // someone can act on, not a vague worry — and so closing a gap fails loudly here.
-  const gaps = [
+describe('PII sanitizer — the seven categories that used to leak are now CAUGHT', () => {
+  // This block previously asserted the leaks, to make the exposure a number rather than a worry. The
+  // categories are now closed in regexScrub, so it asserts the closure instead — and it stays measured:
+  // if a rule regresses, the specific category names itself here.
+  const closed = [
     ['bare self-identification', "I'm Layli. Does the Faith teach reincarnation?", 'Layli'],
     ['name mid-sentence', 'My daughter Nadia asked me about prayer', 'Nadia'],
     ['city / location', 'I live in Tucson and there is no community here', 'Tucson'],
     ['employer', 'I work at Raytheon and my colleagues ask about my faith', 'Raytheon'],
-    ['age + profession', 'I am a 34-year-old nurse considering the Faith', 'nurse'],
+    ['age + profession', 'I am a 34-year-old nurse considering the Faith', '34-year-old'],
     ['street address', 'I am at 42 Oak Street, apartment 3B', 'Oak Street'],
     ['family relation + name', 'my husband Kamran does not believe', 'Kamran'],
   ];
-  for (const [label, text, leak] of gaps) {
-    it(`STILL LEAKS: ${label}`, async () => {
-      expect(await scrub(text)).toContain(leak);
+  for (const [label, text, leak] of closed) {
+    it(`CAUGHT: ${label}`, async () => {
+      expect(await scrub(text)).not.toContain(leak);
+    });
+  }
+});
+
+describe('PII sanitizer — over-redaction has limits: the corpus vocabulary survives', () => {
+  // Over-redaction is the safe direction for a privacy floor, but not at any price: a sanitizer that
+  // shreds "Bahá'u'lláh" or "the Kitáb-i-Íqán" would make published dialogue worthless. These hold the line.
+  const keeps = [
+    ['a Manifestation named', 'What did Bahá’u’lláh teach about detachment?', 'Bahá’u’lláh'],
+    ['a book title', 'I am reading the Kitáb-i-Íqán right now', 'Kitáb-i-Íqán'],
+    ['a holy place as subject', 'Why is the Shrine of the Báb in Haifa significant?', 'Haifa'],
+    ['a historical figure', 'Tell me about Mullá Ḥusayn and Shaykh Ṭabarsí', 'Mullá Ḥusayn'],
+    ['an ordinary doctrinal question', 'What is the station of the Manifestation of God?', 'Manifestation'],
+  ];
+  for (const [label, text, keep] of keeps) {
+    it(`KEEPS: ${label}`, async () => {
+      expect(await scrub(text)).toContain(keep);
     });
   }
 });

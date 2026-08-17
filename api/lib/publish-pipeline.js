@@ -117,15 +117,41 @@ Output ONLY JSON: {"rounds":[{"question":"...","answer":"..."},...]} with EXACTL
 }
 
 // Regex pre-pass: strip mechanically-identifiable PII before the LLM sees it.
-// Catches emails, phone numbers, and "my name is X" patterns reliably without
-// needing a model call. LLM pass handles names woven into prose.
+// THE FALLBACK IS WHAT ACTUALLY SHIPS when the LLM pass fails, and anonymizeUserTurns catches its own
+// failure and returns this text — so "the model handles prose" was never a guarantee, it was a hope. A
+// measured battery (tests/api/pii-sanitizer-recall.test.js) found this caught 3 categories and leaked 7:
+// bare self-identification, a name mid-sentence, city, employer, age+profession, street address, and
+// family-relation+name. Those are closed below.
+//
+// OVER-REDACTION IS THE SAFE DIRECTION HERE. This is a privacy floor for public publication, so a lost
+// nuance costs readability while a missed name costs someone their identity. Where a pattern is ambiguous
+// ("I live in Haifa" — a place a seeker lives, and also a world-known religious site) this redacts and lets
+// the LLM pass, when it works, restore the nuance. Guarded by the tests, which assert both that the seven
+// categories are caught AND that doctrinal/place references the corpus needs are not shredded (2026-08-17).
+const RELATION = 'husband|wife|son|daughter|mother|father|brother|sister|partner|fianc(?:e|é|ée)|aunt|uncle|cousin|niece|nephew|grandmother|grandfather|boss|neighbou?r|friend|colleague';
+const STREET = 'street|st|avenue|ave|road|rd|lane|ln|drive|dr|court|ct|boulevard|blvd|way|place|pl|terrace|close';
+
 function regexScrub(text) {
   return text
     .replace(/\b[\w.+-]+@[\w-]+\.[a-z]{2,}\b/gi, '[email]')
     .replace(/\b(\+?1[\s.-]?)?(\(?\d{3}\)?[\s.-]?)(\d{3}[\s.-]?\d{4})\b/g, '[phone]')
     .replace(/\bmy name is\s+\w+/gi, 'I am a seeker')
     .replace(/\bcall me\s+\w+/gi, 'call me a seeker')
-    .replace(/\bI(?:'m| am)\s+([A-Z][a-z]+)(?=\s+and\b|\s+from\b|,)/g, 'I am someone');
+    // Street address: a number followed by a street word, plus any apartment/unit tail.
+    .replace(new RegExp(`\\b\\d{1,5}\\s+(?:[A-Z][\\w'-]+\\s+){0,3}(?:${STREET})\\b(?:[,\\s]+(?:apt\\.?|apartment|unit|suite|ste\\.?|#)\\s*[\\w-]+)?`, 'gi'), '[address]')
+    // Age, alone or paired with a profession: "34-year-old nurse", "I am 34 years old".
+    .replace(/\b\d{1,3}[\s-]?year[\s-]?old\b(?:\s+[a-z]+)?/gi, '[age]')
+    .replace(/\bI(?:'m| am)\s+\d{1,3}\s+years?\s+old\b/gi, 'I am [age]')
+    // Employer / school: "I work at X", "I teach at X", "I study at X".
+    .replace(/\b(I\s+(?:work|worked|teach|taught|study|studied)\s+(?:at|for))\s+(?:the\s+)?[A-Z][\w&'.-]*(?:\s+[A-Z][\w&'.-]*){0,3}/g, '$1 [employer]')
+    // Where the speaker lives or is from — a stated personal location.
+    .replace(/\b(I\s+(?:live|lived|grew up|was born)\s+(?:in|near|at))\s+(?:the\s+)?[A-Z][\w'.-]*(?:[\s,]+[A-Z][\w'.-]*){0,2}/g, '$1 [location]')
+    .replace(/\b(I(?:'m| am)\s+from)\s+(?:the\s+)?[A-Z][\w'.-]*(?:[\s,]+[A-Z][\w'.-]*){0,2}/g, '$1 [location]')
+    // A named family member or associate: "my daughter Nadia", "my husband Kamran".
+    .replace(new RegExp(`\\b(my\\s+(?:${RELATION}))\\s+[A-Z][\\w'-]+`, 'gi'), '$1')
+    // Bare self-identification. The old rule required a following "and"/"from"/comma, so a plain
+    // "I'm Layli." — the commonest way a person gives their name — sailed straight through.
+    .replace(/\bI(?:'m| am)\s+[A-Z][a-z']+(?=\s*[.,!?;]|\s+and\b|\s+from\b|$)/g, 'I am someone');
 }
 
 // Sanitize all messages for public publication. Runs a regex pre-pass for
