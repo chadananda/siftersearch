@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-17T18:18:36.565Z",
+  "generated": "2026-08-17T18:53:18.252Z",
   "entries": [
+    {
+      "hash": "1937e270",
+      "date": "2026-08-17",
+      "type": "Other",
+      "description": "Recover real title/author from the landing page (dry run, nothing written)",
+      "scope": null
+    },
     {
       "hash": "91451479",
       "date": "2026-08-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Subscription extractor for Dawn-Breakers martyr rolls (Míyámay seeded, dry-run default)",
       "scope": "rolls"
-    },
-    {
-      "hash": "a7db44d7",
-      "date": "2026-06-17",
-      "type": "New",
-      "description": "Env-gated scope lock for controlled two-books backfill",
-      "scope": "graph-extractor"
     }
   ],
   "grouped": {
     "2026-08-17": [
+      {
+        "hash": "1937e270",
+        "date": "2026-08-17",
+        "type": "Other",
+        "description": "Recover real title/author from the landing page (dry run, nothing written)",
+        "scope": null
+      },
       {
         "hash": "91451479",
         "date": "2026-08-17",
@@ -7064,13 +7071,6 @@
         "type": "Other",
         "description": "Subscription extractor for Dawn-Breakers martyr rolls (Míyámay seeded, dry-run default)",
         "scope": "rolls"
-      },
-      {
-        "hash": "a7db44d7",
-        "date": "2026-06-17",
-        "type": "New",
-        "description": "Env-gated scope lock for controlled two-books backfill",
-        "scope": "graph-extractor"
       }
     ]
   }

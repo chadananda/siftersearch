@@ -2302,6 +2302,31 @@ const crafterSystem = (persona) => (persona && persona !== 'Jafar') ? CRAFTER_SY
 
 // Streaming variant — yields each chunk as it arrives. Used in the
 // fast-path orchestrator. Returns the full text at the end.
+/**
+ * The question we actually send to the web (Perplexity). EXPORTED so it can be tested, because getting it
+ * wrong is invisible: the call succeeds, an answer comes back, and it is confidently about the wrong thing.
+ *
+ * It used to DISCARD the user's question and send a rewritten source-hunt prompt built from the remembered
+ * span alone. Measured side by side against the same model (2026-08-17):
+ *   the rewrite   → "Ulpian's Digest of Justinian … echoed in Aquinas's Summa Theologica"    (Roman law)
+ *   the user's Q  → "'Abdu'l-Bahá … 'justice consists in rendering to each his due', Some Answered
+ *                    Questions, chapter 'The Justice and the Mercy of God'"                   (correct)
+ * Three things did the damage: dropping the SUBJECT ("Abdu'l-Baha defines…"), which is what aims the search
+ * at Bahá'í literature at all; "prefer a published book or authoritative COMPILATION"; and "also name the
+ * earlier book it cites", the instruction that walks a Bahá'í quotation back to Roman law.
+ *
+ * So: lead with the user's own words, offer the remembered span as supporting detail explicitly marked as a
+ * possible paraphrase, and prefer the ORIGINAL work over a compilation rather than the reverse.
+ */
+export function buildWebQuestion(userMessage, quote_lookup) {
+  if (!quote_lookup) return userMessage;
+  const hint = quote_lookup.span
+    ? `\n\nThe wording they recall is: "${quote_lookup.span}" (possibly a paraphrase).`
+    : '';
+  return `${userMessage}${hint}\n\nName the work, its author, and where the passage appears (chapter or section). `
+    + 'Prefer the ORIGINAL work over a later compilation that merely reprints it, and prefer a published book over blogs or quote sites.';
+}
+
 export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, mission, companion_append, web_context, comparative, quote_lookup }) {
   const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context, comparative, quote_lookup });
   // gpt-4o for the crafter — the new answer-first prompt requires the
@@ -2937,9 +2962,18 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     }
   }
   if (!research.is_political && (research.retrieved_quotes.length === 0 || quoteMiss)) {
-    const webQuestion = research.quote_lookup
-      ? `Identify the specific PUBLISHED SOURCE — the exact book title and author — that records this quotation or anecdote, most likely from Bahá'í or other sacred literature. Prefer a published book or authoritative compilation over blogs, forums, or personal websites. If a compilation records it, also name the earlier book it cites. Quotation/passage: ${research.quote_lookup.span ? `"${research.quote_lookup.span}"` : userMessage}`
-      : userMessage;
+    // ASK THE USER'S QUESTION. This used to discard it and send a rewritten source-hunt prompt instead;
+    // measured side by side against the same Perplexity model, that rewrite turned a correct answer into a
+    // wrong one (2026-08-17):
+    //   our rewrite  → "Ulpian's Digest of Justinian … echoed in Aquinas's Summa Theologica"   (Roman law)
+    //   the user's Q → "'Abdu'l-Bahá … 'justice consists in rendering to each his due', Some Answered
+    //                   Questions, chapter 'The Justice and the Mercy of God'"                  (correct)
+    // Three things did the damage: it dropped the SUBJECT ("Abdu'l-Baha defines…"), which is what points the
+    // search at Bahá'í literature at all; it said "prefer a published book or authoritative COMPILATION";
+    // and it asked for "the earlier book it cites", which is the instruction that walks a Bahá'í quotation
+    // back to Roman law. The user's own phrasing carries the context; the remembered span is supporting
+    // detail, not a replacement for the question.
+    const webQuestion = buildWebQuestion(userMessage, research.quote_lookup);
     webContext = await perplexityFallback(webQuestion);
     if (webContext && sendEvent) sendEvent({ type: 'debug_web_fallback', sources: webContext.citations.length });
   }
