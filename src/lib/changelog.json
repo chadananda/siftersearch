@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-17T08:27:33.571Z",
+  "generated": "2026-08-17T09:28:22.900Z",
   "entries": [
+    {
+      "hash": "91451479",
+      "date": "2026-08-17",
+      "type": "Other",
+      "description": "Remove an echoed name from ASSISTANT turns, without touching the model pass",
+      "scope": null
+    },
     {
       "hash": "71c03099",
       "date": "2026-08-16",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Env-gated scope lock for controlled two-books backfill",
       "scope": "graph-extractor"
-    },
-    {
-      "hash": "2c09b7f5",
-      "date": "2026-06-17",
-      "type": "Fixed",
-      "description": "Scope mentions/quotes by two-books CONTENT not entity (no other-book extraction)",
-      "scope": "rebuild"
     }
   ],
   "grouped": {
+    "2026-08-17": [
+      {
+        "hash": "91451479",
+        "date": "2026-08-17",
+        "type": "Other",
+        "description": "Remove an echoed name from ASSISTANT turns, without touching the model pass",
+        "scope": null
+      }
+    ],
     "2026-08-16": [
       {
         "hash": "71c03099",
@@ -7062,13 +7071,6 @@
         "type": "New",
         "description": "Env-gated scope lock for controlled two-books backfill",
         "scope": "graph-extractor"
-      },
-      {
-        "hash": "2c09b7f5",
-        "date": "2026-06-17",
-        "type": "Fixed",
-        "description": "Scope mentions/quotes by two-books CONTENT not entity (no other-book extraction)",
-        "scope": "rebuild"
       }
     ]
   }

@@ -16,7 +16,7 @@ import { queryOne, queryAll } from '../db.js';
 import { logger } from '../logger.js';
 import { enqueue, list, tick } from './queue.js';
 import { getIntegrationProgress } from '../bio.js';
-import { coverageSelect, meetsDisambBar, meetsHypeBar, meetsExtractBar } from './processed.js';
+import { coverageSelect, meetsDisambBar, meetsHypeBar, meetsExtractBar, meetsReconcileBar } from './processed.js';
 
 const HYPE_MINLEN = Number(process.env.HYPE_MINLEN || 60);   // matches reachedBound / hype-book fragment filter
 const MODES = ['plan', 'override', 'general'];
@@ -49,7 +49,7 @@ export async function resumeStageFor(docId, deps = {}) {
   const prose = r?.prose || 0;
   if (prose === 0) return null;                                              // no groundable content → skip
   if (!meetsDisambBar(r.disamb || 0, prose)) return {};                     // disambiguation incomplete → full
-  if ((r.decisions || 0) < 0.85 * (r.clusters || 0)) return {};             // reconcile incomplete → full (0 clusters ⇒ nothing to reconcile ⇒ ok)
+  if (!meetsReconcileBar(r.decisions || 0, r.clusters || 0)) return {};     // reconcile incomplete → full (processed.js owns the bar)
   // DONE = fully PROCESSED, not entity OUTPUT (must match reachedBound, else the follower re-queues what the queue
   // considers done → the re-grounding grind). HyPE is stage 10 (after the graph tail), so once it covers the
   // hypeable paras the whole pipeline ran → done, EVEN with 0 bound claims (a legitimately entity-sparse book).

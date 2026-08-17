@@ -127,3 +127,25 @@ export function meetsExtractBar(extracted, prose, threshold = EXTRACT_THRESHOLD)
   if (!prose) return true;                    // nothing to extract ⇒ nothing blocking
   return extracted / prose >= threshold;
 }
+
+
+// ── RECONCILE ─────────────────────────────────────────────────────────────────────────────────────────
+// The bar exists to catch "reconcile never ran" — 0 decisions against 500 clusters, the Vols 6/7/9 bug.
+// As a bare ratio it is unachievable on SMALL books: with 5 clusters, 0.85 demands 5/5, so a tiny book must
+// reconcile PERFECTLY while a 500-cluster book may leave 75 undecided. Two books sat quarantined on exactly
+// that arithmetic — 9065 at 4/5 and 1193 at 3/4 — each one decision short of a bar they could not reach.
+//
+// And one undecided cluster is not a failure by our own doctrine: a bare name with no supporting evidence is
+// supposed to be HELD rather than forced into an identity. So: the ratio, OR at most one cluster outstanding.
+// For a large book the ratio still governs (it is far more permissive than "one"); for a small one the
+// tolerance makes the gate achievable without weakening what it was built to catch (2026-08-17).
+//
+// It lived in THREE places — queue.isDoneFromArtifacts, queue.blockingGate, plan.resumeStageFor — which is
+// how "done" drifts. One definition, three callers.
+export const RECONCILE_THRESHOLD = 0.85;
+export const RECONCILE_SLACK = 1;
+export function meetsReconcileBar(decisions = 0, clusters = 0) {
+  if (!clusters) return true;                                   // nothing to reconcile ⇒ nothing blocking
+  if (decisions >= RECONCILE_THRESHOLD * clusters) return true; // the ratio, for books with many clusters
+  return clusters - decisions <= RECONCILE_SLACK;               // …or a single held-back cluster
+}

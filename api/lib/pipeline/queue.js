@@ -16,7 +16,7 @@ import { GROUNDING_STAGES } from './run-grounding.js';
 import { logger } from '../logger.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './peak.js';
 import fs from 'node:fs';
-import { coverageSelect, meetsDisambBar, meetsHypeBar, DISAMB_DONE_SQL, HYPE_DONE_SQL, meetsExtractBar, EXTRACT_DONE_SQL } from './processed.js';
+import { coverageSelect, meetsDisambBar, meetsHypeBar, DISAMB_DONE_SQL, HYPE_DONE_SQL, meetsExtractBar, EXTRACT_DONE_SQL, meetsReconcileBar } from './processed.js';
 
 export { nowInPeak, peakEndsAt } from './peak.js';   // re-export so callers/tests import peak logic via the queue
 
@@ -99,7 +99,7 @@ export function isDoneFromArtifacts({ prose = 0, disamb = 0, hyped = 0, hypeable
     // extraction. Once re-extraction stamps a book, the stamp alone governs and the clause stops applying.
     mentions: meetsExtractBar(extracted, prose) || clusters > 0,
     claims: true,                                                            // yield, not a processing gate (see above)
-    reconcile: decisions >= 0.85 * clusters,                                 // 0 clusters ⇒ nothing to reconcile ⇒ done
+    reconcile: meetsReconcileBar(decisions, clusters),                       // ratio, or one held cluster (processed.js)
     hype: meetsHypeBar(hyped, hypeable),                                     // stage-10 processing gate (implies 2–9 ran); 0 hypeable ⇒ nothing to hype ⇒ done
   };
   const artifactStage = (s) => (['research', 'project', 'link', 'merge', 'dedup', 'verify'].includes(s) ? 'reconcile' : s);
@@ -155,7 +155,7 @@ export function blockingGate(row = {}, opts = {}) {
   const { prose = 0, disamb = 0, hyped = 0, hypeable = 0, clusters = 0, decisions = 0 } = row;
   if (prose === 0) return { gate: 'prose', why: 'no live prose paragraphs — nothing to ground' };
   if (!meetsDisambBar(disamb, prose)) return { gate: 'disambiguate', why: `${disamb}/${prose} disambiguated, below the bar` };
-  if (decisions < 0.85 * clusters) return { gate: 'reconcile', why: `${decisions} decisions for ${clusters} clusters` };
+  if (!meetsReconcileBar(decisions, clusters)) return { gate: 'reconcile', why: `${decisions} decisions for ${clusters} clusters` };
   if (!meetsHypeBar(hyped, hypeable)) return { gate: 'hype', why: `${hyped}/${hypeable} hyped, below the bar` };
   return null;
 }
