@@ -39,3 +39,41 @@ export function classifySource(linktext) {
   if (fileUrlOf(linktext)) return 'matchable';
   return anyUrlOf(linktext) ? 'unmatched-shape' : 'no-url';
 }
+
+
+// ── Landing pages ──────────────────────────────────────────────────────────────────────────────────────
+// 2,789 docs store a bahai-library.com LANDING page in source_url — an abstract page of ~1.4k characters
+// that links to the real file. The converter's matcher already accepts /docs/ links; it simply never had
+// one to look at. So this is link resolution, not document conversion: follow the landing page, take the
+// file it points to, and hand the existing pipeline an RTF/DOCX/PDF it already knows how to read.
+//
+// Verified against live pages: /khanum_horace_hotchkiss_holley → /docs/k/….rtf + /pdf/k/….pdf;
+// /khianra_immortals → /docs/k/….docx + /pdf/k/….pdf (2026-08-16).
+
+/** A bahai-library.com page with no file extension and not already a /docs/ link. */
+export function isLandingPage(url) {
+  if (!url) return false;
+  let u;
+  try { u = new URL(url); } catch { return false; }
+  if (!/(^|\.)bahai-library\.com$/i.test(u.host)) return false;
+  if (/^\/(docs|pdf)\//i.test(u.pathname)) return false;              // already a file path
+  return !/\.[a-z0-9]{2,5}$/i.test(u.pathname);                       // no extension ⇒ landing page
+}
+
+/**
+ * Best file link on a landing page, absolutised.
+ *
+ * PREFERENCE ORDER IS DELIBERATE: rtf/doc/docx before pdf. ~250 items in this corpus are already rejected
+ * as "low letter ratio (likely scanned or tabular)" — that is a PDF text-layer problem, and choosing a
+ * word-processor format when one is offered avoids walking straight into it.
+ */
+export function fileLinkOnLandingPage(html, pageUrl) {
+  const hrefs = [...String(html || '').matchAll(/href="([^"]+)"/gi)].map((m) => m[1]);
+  const abs = (h) => { try { return new URL(h, pageUrl).toString(); } catch { return null; } };
+  const rx = [/\.(rtf|docx?)(?:[?#]|$)/i, /\.pdf(?:[?#]|$)/i];
+  for (const re of rx) {
+    const hit = hrefs.find((h) => re.test(h));
+    if (hit) return abs(hit);
+  }
+  return null;
+}

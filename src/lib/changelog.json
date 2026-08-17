@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-16T00:52:54.272Z",
+  "generated": "2026-08-17T01:40:41.808Z",
   "entries": [
+    {
+      "hash": "b380270a",
+      "date": "2026-08-15",
+      "type": "Other",
+      "description": "Is 'no source file linked' a missing URL or an unrecognised one?",
+      "scope": null
+    },
     {
       "hash": "cb762088",
       "date": "2026-08-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Import query primitives from db.js not graph-db.js",
       "scope": "entities"
-    },
-    {
-      "hash": "a594dfa4",
-      "date": "2026-06-17",
-      "type": "New",
-      "description": "Purge-out-of-scope + apply-corrections scripts (research-driven foundation)",
-      "scope": "entities"
     }
   ],
   "grouped": {
     "2026-08-15": [
+      {
+        "hash": "b380270a",
+        "date": "2026-08-15",
+        "type": "Other",
+        "description": "Is 'no source file linked' a missing URL or an unrecognised one?",
+        "scope": null
+      },
       {
         "hash": "cb762088",
         "date": "2026-08-15",
@@ -7059,13 +7066,6 @@
         "date": "2026-06-17",
         "type": "Fixed",
         "description": "Import query primitives from db.js not graph-db.js",
-        "scope": "entities"
-      },
-      {
-        "hash": "a594dfa4",
-        "date": "2026-06-17",
-        "type": "New",
-        "description": "Purge-out-of-scope + apply-corrections scripts (research-driven foundation)",
         "scope": "entities"
       }
     ]

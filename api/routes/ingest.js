@@ -128,6 +128,64 @@ export default async function ingestRoutes(fastify) {
     return auditLocatorMetadata({ limit: Math.min(Number(req.body?.limit) || 500, 5000), apply: true });
   });
 
+  // DRY RUN for the landing-page resolver. 2,789 docs store a bahai-library.com landing page in source_url
+  // instead of the file it links to; the converter's matcher already accepts /docs/ links, so this is link
+  // resolution, not document conversion. Before any of that runs for real, ANSWER THE QUESTION WITH DATA:
+  // over a sample, how many landing pages actually yield a file, in which formats, and how many are dead?
+  // Writes NOTHING — no conversion, no docs update, no queue row (2026-08-16).
+  //
+  // Polite by construction: small default sample, hard cap, 3-at-a-time, per-request timeout. This reads
+  // someone else's server, and a diagnostic has no business hammering it.
+  fastify.get('/ingest/convert/resolve-preview', admin, async (req) => {
+    const { isLandingPage, fileLinkOnLandingPage } = await import('../lib/text/source-file-url.js');
+    const limit = Math.min(Number(req.query?.limit) || 25, 200);
+    const rows = await queryAll(
+      `SELECT s.item_ref, d.source_url, d.title
+         FROM ingest_stage s JOIN docs d ON d.id = CAST(s.item_ref AS INTEGER)
+        WHERE s.stage = 'convert' AND s.status = 'rejected' AND s.reason LIKE 'no source file linked%'
+          AND d.source_url IS NOT NULL
+        ORDER BY s.item_ref LIMIT ?`, [limit * 2], 'convert:resolve-preview-candidates');
+    const candidates = rows.filter((r) => isLandingPage(r.source_url)).slice(0, limit);
+
+    const outcome = { resolved: 0, noFileLink: 0, httpError: 0 };
+    const byExt = {};
+    const samples = [];
+    const CONCURRENCY = 3;
+    let idx = 0;
+    const worker = async () => {
+      while (idx < candidates.length) {
+        const c = candidates[idx++];
+        try {
+          const res = await fetch(c.source_url, {
+            headers: { 'User-Agent': 'SifterSearch/1.0 (library ingest survey)' },
+            signal: AbortSignal.timeout(12000),
+          });
+          if (!res.ok) { outcome.httpError += 1; continue; }
+          const file = fileLinkOnLandingPage(await res.text(), c.source_url);
+          if (!file) { outcome.noFileLink += 1; continue; }
+          outcome.resolved += 1;
+          const ext = (file.match(/\.([a-z0-9]{2,5})(?:[?#]|$)/i) || [null, '?'])[1].toLowerCase();
+          byExt[ext] = (byExt[ext] || 0) + 1;
+          if (samples.length < 5) samples.push({ doc_id: c.item_ref, from: c.source_url, to: file });
+        } catch (err) {
+          outcome.httpError += 1;
+          if (samples.length < 5) samples.push({ doc_id: c.item_ref, from: c.source_url, error: err.message });
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+    const rate = candidates.length ? outcome.resolved / candidates.length : 0;
+    return {
+      dryRun: true,
+      sampled: candidates.length,
+      outcome,
+      byExt,
+      resolveRate: Math.round(rate * 1000) / 1000,
+      projectedOver2789: Math.round(rate * 2789),
+      samples,
+    };
+  });
+
   // WHY "no source file linked" FOR 2,807 ITEMS? That single reason is 75% of every convert rejection and
   // the largest cause of the converter finding no work. It has two completely different meanings, and they
   // point opposite ways: the doc may carry NO url at all (widening the matcher helps nobody), or a url the
