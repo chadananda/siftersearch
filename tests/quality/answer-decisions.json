@@ -1,0 +1,56 @@
+[
+  {
+    "id": "justice-paraphrase",
+    "why": "THE reported failure. Retrieval had SAQ at rank 1; we announced absence and went to the web.",
+    "question": "Abdu'l-Baha defines \"justice\" as every man receiving his due. Where?",
+    "span": "justice as every man receiving his due",
+    "confidence": "high",
+    "candidates": ["KNOW THAT JUSTICE consists in rendering to each his due. For example, when a workman labours from morning till evening, justice requires that he be paid his wage."],
+    "expect": { "quote_miss": false, "reason": "paraphrase of a passage we hold" }
+  },
+  {
+    "id": "justice-paraphrase-likely",
+    "why": "Same case at a merely 'likely' score — my first fix would still have discarded this.",
+    "question": "Where does Abdu'l-Baha say justice means each person getting what they are owed?",
+    "span": "justice means each person getting what they are owed",
+    "confidence": "likely",
+    "candidates": ["Know that justice consists in rendering to each his due."],
+    "expect": { "quote_miss": false, "reason": "loose paraphrase, real hit" }
+  },
+  {
+    "id": "verbatim-hit",
+    "why": "Copy-pasted wording; the easy case must keep working.",
+    "question": "Where is \"justice consists in rendering to each his due\"?",
+    "span": "justice consists in rendering to each his due",
+    "confidence": "high",
+    "candidates": ["Know that justice consists in rendering to each his due."],
+    "expect": { "quote_miss": false, "reason": "verbatim present" }
+  },
+  {
+    "id": "genuine-absence",
+    "why": "Nothing retrieved: this is what the web fallback is actually for.",
+    "question": "Where does Baha'u'llah give the exact population of heaven?",
+    "span": "the exact population of heaven",
+    "confidence": "none",
+    "candidates": [],
+    "expect": { "quote_miss": true, "reason": "library returned nothing" }
+  },
+  {
+    "id": "weak-collision",
+    "why": "The Anne-Perry shape: common words collide while the needle is absent. Low confidence must still miss.",
+    "question": "Where is the quote 'little by little, day by day'?",
+    "span": "little by little day by day",
+    "confidence": "low",
+    "candidates": ["He spoke of little things, and of the day of God, day after day."],
+    "expect": { "quote_miss": true, "reason": "low confidence, needle absent" }
+  },
+  {
+    "id": "no-span-high",
+    "why": "Described from memory with no wording given, but retrieval is decisive.",
+    "question": "There's a passage where Abdu'l-Baha compares justice to a workman's wage — where?",
+    "span": null,
+    "confidence": "high",
+    "candidates": ["Know that justice consists in rendering to each his due. For example, when a workman labours..."],
+    "expect": { "quote_miss": false, "reason": "no span, decisive retrieval" }
+  }
+]

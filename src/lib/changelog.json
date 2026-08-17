@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-17T21:31:33.107Z",
+  "generated": "2026-08-17T22:38:01.684Z",
   "entries": [
+    {
+      "hash": "35474ce5",
+      "date": "2026-08-17",
+      "type": "Other",
+      "description": "Systematic search quality, grounded in the justice-miss evidence",
+      "scope": null
+    },
     {
       "hash": "1937e270",
       "date": "2026-08-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Drop nonexistent source_doc_ids column from insert",
       "scope": "rolls"
-    },
-    {
-      "hash": "fb816cb8",
-      "date": "2026-06-17",
-      "type": "Other",
-      "description": "Subscription extractor for Dawn-Breakers martyr rolls (Míyámay seeded, dry-run default)",
-      "scope": "rolls"
     }
   ],
   "grouped": {
     "2026-08-17": [
+      {
+        "hash": "35474ce5",
+        "date": "2026-08-17",
+        "type": "Other",
+        "description": "Systematic search quality, grounded in the justice-miss evidence",
+        "scope": null
+      },
       {
         "hash": "1937e270",
         "date": "2026-08-17",
@@ -7063,13 +7070,6 @@
         "date": "2026-06-17",
         "type": "Other",
         "description": "Drop nonexistent source_doc_ids column from insert",
-        "scope": "rolls"
-      },
-      {
-        "hash": "fb816cb8",
-        "date": "2026-06-17",
-        "type": "Other",
-        "description": "Subscription extractor for Dawn-Breakers martyr rolls (Míyámay seeded, dry-run default)",
         "scope": "rolls"
       }
     ]
