@@ -139,13 +139,27 @@ export default async function ingestRoutes(fastify) {
   fastify.get('/ingest/convert/resolve-preview', admin, async (req) => {
     const { isLandingPage, fileLinkOnLandingPage } = await import('../lib/text/source-file-url.js');
     const limit = Math.min(Number(req.query?.limit) || 25, 200);
+    // RANDOM, not the head of the list. The first pass ordered by item_ref and reported 12/12 resolving,
+    // which is a number about the first twelve rows, not about the 2,789 — and twice this session I have
+    // generalised a class from too few, too-similar examples and been badly wrong (8 books that were 710).
+    // A rate used to authorise thousands of conversions has to come from a random draw. Filtering to
+    // landing pages happens in SQL too, so the sample is drawn from the population being projected onto,
+    // not from whatever the first rows happened to be (2026-08-17).
     const rows = await queryAll(
       `SELECT s.item_ref, d.source_url, d.title
          FROM ingest_stage s JOIN docs d ON d.id = CAST(s.item_ref AS INTEGER)
         WHERE s.stage = 'convert' AND s.status = 'rejected' AND s.reason LIKE 'no source file linked%'
           AND d.source_url IS NOT NULL
-        ORDER BY s.item_ref LIMIT ?`, [limit * 2], 'convert:resolve-preview-candidates');
+          AND d.source_url LIKE 'http%://bahai-library.com/%'
+        ORDER BY RANDOM() LIMIT ?`, [limit * 3], 'convert:resolve-preview-candidates');
     const candidates = rows.filter((r) => isLandingPage(r.source_url)).slice(0, limit);
+    // How big is the population this rate will be projected onto? Measured, not carried forward from an
+    // earlier count that may no longer hold.
+    const popRow = await queryOne(
+      `SELECT COUNT(*) n FROM ingest_stage s JOIN docs d ON d.id = CAST(s.item_ref AS INTEGER)
+        WHERE s.stage = 'convert' AND s.status = 'rejected' AND s.reason LIKE 'no source file linked%'
+          AND d.source_url LIKE 'http%://bahai-library.com/%'`, [], 'convert:resolve-population');
+    const population = popRow?.n || 0;
 
     const outcome = { resolved: 0, noFileLink: 0, httpError: 0 };
     const byExt = {};
@@ -175,13 +189,22 @@ export default async function ingestRoutes(fastify) {
     };
     await Promise.all(Array.from({ length: CONCURRENCY }, worker));
     const rate = candidates.length ? outcome.resolved / candidates.length : 0;
+    // Wilson-ish margin: a rate from n samples is not a fact, and the projection should carry its own
+    // uncertainty rather than be quoted as a single confident number.
+    const margin = candidates.length ? 1.96 * Math.sqrt((rate * (1 - rate)) / candidates.length) : 1;
     return {
       dryRun: true,
+      sampling: 'random',
       sampled: candidates.length,
+      population,
       outcome,
       byExt,
       resolveRate: Math.round(rate * 1000) / 1000,
-      projectedOver2789: Math.round(rate * 2789),
+      resolveRate95ci: [Math.max(0, Math.round((rate - margin) * 1000) / 1000),
+        Math.min(1, Math.round((rate + margin) * 1000) / 1000)],
+      projected: Math.round(rate * population),
+      projectedRange: [Math.round(Math.max(0, rate - margin) * population),
+        Math.round(Math.min(1, rate + margin) * population)],
       samples,
     };
   });
