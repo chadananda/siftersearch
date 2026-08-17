@@ -2318,6 +2318,56 @@ const crafterSystem = (persona) => (persona && persona !== 'Jafar') ? CRAFTER_SY
  * So: lead with the user's own words, offer the remembered span as supporting detail explicitly marked as a
  * possible paraphrase, and prefer the ORIGINAL work over a compilation rather than the reverse.
  */
+// Should the web be consulted for a quote hunt? EXPORTED and tested, because this is the single decision
+// that made us tell Chad the library lacked a passage sitting at rank 1 in our own retrieval.
+//
+// Two failure modes pull in opposite directions:
+//   - a fuzzy score collides on scattered common words while the needle is absent  (the Anne-Perry miss)
+//   - the user remembers the wording loosely and the real passage IS there         (the SAQ justice miss)
+// Verbatim containment catches the first. It must not veto the second: a DECISIVE hit (top score >= 0.75 →
+// 'high') is a hit, paraphrase or not. Containment still governs merely 'likely' scores (2026-08-17).
+const normQuoteText = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+/** Does most of the span appear as a contiguous run in any candidate? */
+export function spanIsContained(span, candidates = []) {
+  const words = normQuoteText(span).split(' ').filter(Boolean);
+  if (words.length < 3) return false;
+  return candidates.some((q) => {
+    const hay = ' ' + normQuoteText(q.text || q.content || q.statement || '') + ' ';
+    for (let n = words.length; n >= Math.ceil(words.length * 0.7); n--) {
+      for (let i = 0; i + n <= words.length; i++) {
+        if (hay.includes(' ' + words.slice(i, i + n).join(' ') + ' ')) return true;
+      }
+    }
+    return false;
+  });
+}
+
+/**
+ * @returns {boolean} true ⇒ the LIBRARY HAS NOTHING for this. Only then is the web worth consulting.
+ *
+ * Chad, 2026-08-17: "there was NO verbatim hit. we discarded the semantic hit for no reason."
+ *
+ * That is the whole bug, and my first fix was too timid — it only stopped containment overruling a 'high'
+ * score, which would have left a 'likely' hit still discarded. A user asking "where does 'Abdu'l-Bahá define
+ * justice as every man receiving his due?" is NOT asking for a string match; they are asking where a
+ * statement appears, from memory. Absence of a verbatim run says nothing about whether we have the passage.
+ *
+ * So: a miss means the retrieval layer found NOTHING USABLE (confidence low/none, or no candidates). A
+ * paraphrase with a real semantic hit is never a miss.
+ *
+ * This does re-expose the Anne-Perry case (a weak match latching onto narrator framing while the needle is
+ * absent). That is handled where it belongs — by LABELLING confidence honestly in the answer, offering the
+ * passage as the likely source rather than a certainty — not by telling the user the library lacks something
+ * it has. Discarding real evidence to avoid overclaiming is the worse error of the two.
+ */
+export function isQuoteMiss(quote_lookup, candidates = []) {
+  if (!quote_lookup) return false;
+  if (!candidates.length) return true;                                   // genuinely nothing retrieved
+  return quote_lookup.confidence !== 'high' && quote_lookup.confidence !== 'likely';
+}
+
 export function buildWebQuestion(userMessage, quote_lookup) {
   if (!quote_lookup) return userMessage;
   const hint = quote_lookup.span
@@ -2939,28 +2989,8 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   // phrase being present. So: verbatim-contain check on the span, not the numeric score. If the
   // span (normalized) doesn't appear near-intact in any top candidate, it's a miss → web fires,
   // regardless of confidence. (Non-span hunts keep the confidence!=='high' rule.)
-  const normQ = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
-  let quoteMiss = false;
-  if (research.quote_lookup) {
-    const span = normQ(research.quote_lookup.span);
-    if (span && span.split(' ').length >= 3) {
-      // require most of the span to appear as a contiguous run in some candidate
-      const words = span.split(' ');
-      const spanContained = research.retrieved_quotes.some((q) => {
-        const hay = ' ' + normQ(q.text || q.content || q.statement || '') + ' ';
-        for (let n = words.length; n >= Math.ceil(words.length * 0.7); n--) {
-          for (let i = 0; i + n <= words.length; i++) {
-            if (hay.includes(' ' + words.slice(i, i + n).join(' ') + ' ')) return true;
-          }
-        }
-        return false;
-      });
-      quoteMiss = !spanContained;
-    } else {
-      quoteMiss = research.quote_lookup.confidence !== 'high';   // no usable span → fall back on confidence
-    }
-  }
+  const quoteMiss = research.quote_lookup ? isQuoteMiss(research.quote_lookup, research.retrieved_quotes) : false;
+
   if (!research.is_political && (research.retrieved_quotes.length === 0 || quoteMiss)) {
     // ASK THE USER'S QUESTION. This used to discard it and send a rewritten source-hunt prompt instead;
     // measured side by side against the same Perplexity model, that rewrite turned a correct answer into a
