@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-17T01:47:58.267Z",
+  "generated": "2026-08-17T02:26:26.539Z",
   "entries": [
+    {
+      "hash": "ebe89859",
+      "date": "2026-08-16",
+      "type": "Other",
+      "description": "Reject a file that belongs to the containing volume, not the page",
+      "scope": null
+    },
     {
       "hash": "f213994a",
       "date": "2026-08-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Drop graph_relations JSON dump (3M-row stack overflow); stream entity dump",
       "scope": "purge"
-    },
-    {
-      "hash": "2777d76e",
-      "date": "2026-06-17",
-      "type": "Fixed",
-      "description": "Sidecar content_id is float-string (parseInt to match content.id)",
-      "scope": "purge"
     }
   ],
   "grouped": {
     "2026-08-16": [
+      {
+        "hash": "ebe89859",
+        "date": "2026-08-16",
+        "type": "Other",
+        "description": "Reject a file that belongs to the containing volume, not the page",
+        "scope": null
+      },
       {
         "hash": "f213994a",
         "date": "2026-08-16",
@@ -7061,13 +7068,6 @@
         "date": "2026-06-17",
         "type": "Fixed",
         "description": "Drop graph_relations JSON dump (3M-row stack overflow); stream entity dump",
-        "scope": "purge"
-      },
-      {
-        "hash": "2777d76e",
-        "date": "2026-06-17",
-        "type": "Fixed",
-        "description": "Sidecar content_id is float-string (parseInt to match content.id)",
         "scope": "purge"
       }
     ]

@@ -45,6 +45,14 @@ export const NAMED_QUERIES = {
   'by-language': BY_LANGUAGE_SQL,
   'per-doc-rollup': PER_DOC_ROLLUP_SQL,
   'per-doc-no-embedding': PER_DOC_NO_EMBEDDING_SQL,
+  // The REPLACEMENT queries. lang-pending-embedding is now the slowest thing in the system (50.1s), i.e.
+  // the fix I shipped for by-language became the worst query it was meant to cure. I assumed the partial
+  // index on `embedding IS NULL` would drive it and touch only ~34k pending rows. That is an assumption,
+  // and assumptions about this exact query family have been wrong four times running — so it gets EXPLAINed
+  // before it gets edited (2026-08-17).
+  'lang-totals': LANG_TOTALS_SQL,
+  'lang-pending-embedding': LANG_PENDING_EMBEDDING_SQL,
+  'lang-pending-sync': LANG_PENDING_SYNC_SQL,
 };
 
 
