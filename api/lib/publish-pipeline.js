@@ -131,6 +131,45 @@ Output ONLY JSON: {"rounds":[{"question":"...","answer":"..."},...]} with EXACTL
 const RELATION = 'husband|wife|son|daughter|mother|father|brother|sister|partner|fianc(?:e|é|ée)|aunt|uncle|cousin|niece|nephew|grandmother|grandfather|boss|neighbou?r|friend|colleague';
 const STREET = 'street|st|avenue|ave|road|rd|lane|ln|drive|dr|court|ct|boulevard|blvd|way|place|pl|terrace|close';
 
+// NAMES THE USER GAVE, SO THEY CAN BE REMOVED WHEREVER THEY ECHO. The file header has always warned that
+// "Jafar may echo the name back", and the implementation routes only USER turns through the LLM because a
+// model pass shreds markdown citation links — so an assistant turn saying "Welcome, Roya" was protected by
+// regex alone, and regex on the assistant turn has no "my name is" to anchor to.
+//
+// The insight that dissolves the trade-off: the assistant can only echo a name the USER supplied. Collect
+// what the user-turn patterns identify, then delete those exact strings from every turn. No model call on
+// assistant turns, so citation links survive untouched, and no cost (2026-08-17).
+const NAME_PATTERNS = [
+  /\bmy name is\s+([A-Z][\w'-]+)/gi,
+  /\bcall me\s+([A-Z][\w'-]+)/gi,
+  /\bI(?:'m| am)\s+([A-Z][a-z']+)(?=\s*[.,!?;]|\s+and\b|\s+from\b|$)/g,
+  new RegExp(`\\bmy\\s+(?:${RELATION})\\s+([A-Z][\\w'-]+)`, 'gi'),
+];
+
+/** Personal names a user turn discloses. Deduped, and short/common words dropped as too risky to blanket-delete. */
+export function collectPersonalNames(text) {
+  const found = new Set();
+  for (const re of NAME_PATTERNS) {
+    for (const m of String(text || '').matchAll(re)) {
+      const n = (m[1] || '').trim();
+      // 3+ chars, and never a word that also does grammatical work — deleting every "The"/"And" from a
+      // published dialogue would be worse than the leak it prevents.
+      if (n.length >= 3 && !/^(the|and|not|but|for|from|with|that|this|here|just|only|very)$/i.test(n)) found.add(n);
+    }
+  }
+  return [...found];
+}
+
+/** Remove specific disclosed names from any text — used on ASSISTANT turns, which never see the LLM pass. */
+export function redactNames(text, names) {
+  let out = String(text || '');
+  for (const n of names || []) {
+    const esc = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp(`\\b${esc}\\b`, 'g'), 'someone');
+  }
+  return out;
+}
+
 function regexScrub(text) {
   return text
     .replace(/\b[\w.+-]+@[\w-]+\.[a-z]{2,}\b/gi, '[email]')
@@ -167,6 +206,17 @@ export async function anonymizeUserTurns(messages) {
     ...m,
     content: typeof m.content === 'string' ? regexScrub(m.content) : m.content
   }));
+
+  // Then delete the user's OWN disclosed names from every turn — the only way an assistant turn can name a
+  // seeker is by echoing what they said, and assistant turns never reach the LLM pass (citation links).
+  const disclosed = messages
+    .filter((m) => m.role === 'user' && typeof m.content === 'string')
+    .flatMap((m) => collectPersonalNames(m.content));
+  if (disclosed.length) {
+    for (const m of preScrubbedMessages) {
+      if (typeof m.content === 'string') m.content = redactNames(m.content, disclosed);
+    }
+  }
 
   // LLM pass on USER turns only — assistant (Jafar) turns never contain PII,
   // and running them through the LLM destroys markdown citation links [text](url).

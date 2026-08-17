@@ -81,16 +81,53 @@ describe('PII sanitizer — over-redaction has limits: the corpus vocabulary sur
   }
 });
 
-describe('PII sanitizer — assistant turns get regex ONLY, ever', () => {
-  // The file header says "Jafar may echo the name back" and the implementation then routes only USER turns
-  // through the LLM. So an echoed name in an assistant turn is protected by regex alone.
-  it('an assistant turn echoing a name keeps it', async () => {
+describe('PII sanitizer — an echoed name is removed from ASSISTANT turns too', () => {
+  // The file header has always warned "Jafar may echo the name back", and assistant turns deliberately skip
+  // the LLM pass because it shreds markdown citation links. The resolution: the assistant can only echo a
+  // name the USER gave, so names collected from user turns are deleted from every turn — no model call on
+  // assistant turns, so the links survive.
+  it('the echoed name is gone from the assistant turn, not just the user turn', async () => {
     const fn = await load();
     const out = await fn([
       { role: 'user', content: 'my name is Roya' },
       { role: 'assistant', content: 'Welcome, Roya — you asked about the Covenant.' },
     ]);
-    expect(out[0].content).not.toContain('Roya');       // user turn scrubbed by regex
-    expect(out[1].content).toContain('Roya');           // assistant turn NOT — the documented risk, unhandled
+    expect(out[0].content).not.toContain('Roya');
+    expect(out[1].content).not.toContain('Roya');      // the documented risk, now closed
+  });
+
+  it('CITATION LINKS SURVIVE — the reason assistant turns skip the model pass', async () => {
+    const fn = await load();
+    const link = '[Gleanings](https://oceanlibrary.com/gleanings?paraId=para_1130)';
+    const out = await fn([
+      { role: 'user', content: "I'm Layli. Where is that written?" },
+      { role: 'assistant', content: `See ${link} for the passage.` },
+    ]);
+    expect(out[1].content).toContain(link);
+  });
+
+  it('does not delete a name the user never disclosed', async () => {
+    const fn = await load();
+    const out = await fn([
+      { role: 'user', content: 'Tell me about Mullá Ḥusayn' },
+      { role: 'assistant', content: 'Mullá Ḥusayn was the first to believe.' },
+    ]);
+    expect(out[1].content).toContain('Mullá Ḥusayn');   // a historical figure, not a seeker
+  });
+});
+
+describe('collectPersonalNames — what counts as a disclosed name', () => {
+  it('picks up the disclosure forms', async () => {
+    const { collectPersonalNames } = await import('../../api/lib/publish-pipeline.js');
+    expect(collectPersonalNames('my name is Roya')).toContain('Roya');
+    expect(collectPersonalNames('call me Farid')).toContain('Farid');
+    expect(collectPersonalNames("I'm Layli.")).toContain('Layli');
+    expect(collectPersonalNames('my husband Kamran does not believe')).toContain('Kamran');
+  });
+
+  it('refuses short and grammatical words — blanket-deleting "The" would be worse than the leak', async () => {
+    const { collectPersonalNames } = await import('../../api/lib/publish-pipeline.js');
+    expect(collectPersonalNames("I'm The one who asked.")).not.toContain('The');
+    expect(collectPersonalNames("I'm Jo.")).toEqual([]);          // under 3 chars
   });
 });
