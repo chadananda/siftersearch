@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-17T02:26:26.539Z",
+  "generated": "2026-08-17T02:30:07.966Z",
   "entries": [
+    {
+      "hash": "16fe3cfd",
+      "date": "2026-08-16",
+      "type": "Other",
+      "description": "Register the split's queries so the slow one can be EXPLAINed",
+      "scope": null
+    },
     {
       "hash": "ebe89859",
       "date": "2026-08-16",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Rebuild-entity-graph — purge whole-corpus auto-NER bloat to two books",
       "scope": "entities"
-    },
-    {
-      "hash": "66fc989b",
-      "date": "2026-06-17",
-      "type": "Fixed",
-      "description": "Drop graph_relations JSON dump (3M-row stack overflow); stream entity dump",
-      "scope": "purge"
     }
   ],
   "grouped": {
     "2026-08-16": [
+      {
+        "hash": "16fe3cfd",
+        "date": "2026-08-16",
+        "type": "Other",
+        "description": "Register the split's queries so the slow one can be EXPLAINed",
+        "scope": null
+      },
       {
         "hash": "ebe89859",
         "date": "2026-08-16",
@@ -7062,13 +7069,6 @@
         "type": "New",
         "description": "Rebuild-entity-graph — purge whole-corpus auto-NER bloat to two books",
         "scope": "entities"
-      },
-      {
-        "hash": "66fc989b",
-        "date": "2026-06-17",
-        "type": "Fixed",
-        "description": "Drop graph_relations JSON dump (3M-row stack overflow); stream entity dump",
-        "scope": "purge"
       }
     ]
   }

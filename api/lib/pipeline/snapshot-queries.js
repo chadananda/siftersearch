@@ -41,19 +41,6 @@ export const PER_DOC_NO_EMBEDDING_SQL = `
           SELECT doc_id, COUNT(*) AS paras, SUM(CASE WHEN synced = 1 THEN 1 ELSE 0 END) AS synced
           FROM content WHERE deleted_at IS NULL GROUP BY doc_id`;
 
-export const NAMED_QUERIES = {
-  'by-language': BY_LANGUAGE_SQL,
-  'per-doc-rollup': PER_DOC_ROLLUP_SQL,
-  'per-doc-no-embedding': PER_DOC_NO_EMBEDDING_SQL,
-  // The REPLACEMENT queries. lang-pending-embedding is now the slowest thing in the system (50.1s), i.e.
-  // the fix I shipped for by-language became the worst query it was meant to cure. I assumed the partial
-  // index on `embedding IS NULL` would drive it and touch only ~34k pending rows. That is an assumption,
-  // and assumptions about this exact query family have been wrong four times running — so it gets EXPLAINed
-  // before it gets edited (2026-08-17).
-  'lang-totals': LANG_TOTALS_SQL,
-  'lang-pending-embedding': LANG_PENDING_EMBEDDING_SQL,
-  'lang-pending-sync': LANG_PENDING_SYNC_SQL,
-};
 
 
 // ── The by-language rollup, WITHOUT scanning every paragraph ────────────────────────────────────────────
@@ -112,3 +99,22 @@ export function mergeByLanguage(totals = [], pendingEmb = [], pendingSync = []) 
     })
     .sort((a, b) => b.paragraph_count - a.paragraph_count);
 }
+
+// ── The registry ───────────────────────────────────────────────────────────────────────────────────────
+// LAST in the file, deliberately: this object references every SQL const above it, and `const` is not
+// hoisted. Declared earlier it threw "Cannot access 'LANG_TOTALS_SQL' before initialization" at import
+// time — and scripts/pipeline-snapshot.js imports this module at top level, so that would have crashed the
+// snapshot cron outright, not merely failed a test (2026-08-17).
+export const NAMED_QUERIES = {
+  'by-language': BY_LANGUAGE_SQL,
+  'per-doc-rollup': PER_DOC_ROLLUP_SQL,
+  'per-doc-no-embedding': PER_DOC_NO_EMBEDDING_SQL,
+  // The REPLACEMENT queries. lang-pending-embedding is now the slowest thing in the system (50.1s), i.e.
+  // the fix I shipped for by-language became the worst query it was meant to cure. I assumed the partial
+  // index on `embedding IS NULL` would drive it and touch only ~34k pending rows. That is an assumption,
+  // and assumptions about this exact query family have been wrong four times running — so it gets EXPLAINed
+  // before it gets edited (2026-08-17).
+  'lang-totals': LANG_TOTALS_SQL,
+  'lang-pending-embedding': LANG_PENDING_EMBEDDING_SQL,
+  'lang-pending-sync': LANG_PENDING_SYNC_SQL,
+};
