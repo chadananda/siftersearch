@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-18T00:30:27.291Z",
+  "generated": "2026-08-18T21:16:39.932Z",
   "entries": [
+    {
+      "hash": "fe574664",
+      "date": "2026-08-17",
+      "type": "Other",
+      "description": "Is content.heading populated, or just not reaching the index?",
+      "scope": null
+    },
     {
       "hash": "a1902981",
       "date": "2026-08-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Batch writes (2 writer txns/roll) to avoid flooding single-writer",
       "scope": "rolls"
-    },
-    {
-      "hash": "86b91d8f",
-      "date": "2026-06-17",
-      "type": "Other",
-      "description": "Range-driven extractor, kinship in description not relations",
-      "scope": "rolls"
     }
   ],
   "grouped": {
     "2026-08-17": [
+      {
+        "hash": "fe574664",
+        "date": "2026-08-17",
+        "type": "Other",
+        "description": "Is content.heading populated, or just not reaching the index?",
+        "scope": null
+      },
       {
         "hash": "a1902981",
         "date": "2026-08-17",
@@ -7063,13 +7070,6 @@
         "date": "2026-06-17",
         "type": "Other",
         "description": "Batch writes (2 writer txns/roll) to avoid flooding single-writer",
-        "scope": "rolls"
-      },
-      {
-        "hash": "86b91d8f",
-        "date": "2026-06-17",
-        "type": "Other",
-        "description": "Range-driven extractor, kinship in description not relations",
         "scope": "rolls"
       }
     ]

@@ -2106,6 +2106,40 @@ Collection: ${paragraph.collection || 'Unknown'}
   /**
    * Get Meilisearch task queue status
    */
+  /**
+   * GET /server/meili-doc — read the STORED Meilisearch document for a paragraph.
+   *
+   * Exists because a field can verify at every code layer (DB column populated, worker
+   * SELECT includes it, push payload includes it, Meili task 'succeeded', API mapping
+   * deployed) and STILL come back null — at which point the only remaining unknown is
+   * what Meili actually holds. Black-box searching cannot distinguish "field absent"
+   * from "field present but empty". Read-only; no mutation. (2026-08-18, chapter-heading bug)
+   */
+  fastify.get('/server/meili-doc/:paraId', { preHandler: requireInternal }, async (request) => {
+    const { paraId } = request.params;
+    const { index = 'paragraphs', fields } = request.query || {};
+    try {
+      const meili = getMeili();
+      const opts = {};
+      if (fields) opts.fields = String(fields).split(',').map((f) => f.trim()).filter(Boolean);
+      const doc = await meili.index(index).getDocument(paraId, opts);
+      // _vectors is huge (512 floats) — report its shape, never its contents.
+      const { _vectors, ...rest } = doc || {};
+      return {
+        index,
+        paraId,
+        found: true,
+        fieldNames: Object.keys(rest).sort(),
+        hasHeading: Object.prototype.hasOwnProperty.call(rest, 'heading'),
+        heading: rest.heading ?? null,
+        vectorDims: _vectors?.default?.length ?? (Array.isArray(_vectors?.default?.embeddings) ? _vectors.default.embeddings.length : null),
+        doc: rest
+      };
+    } catch (err) {
+      return { index, paraId, found: false, error: err.message };
+    }
+  });
+
   fastify.get('/server/meili-tasks', { preHandler: requireInternal }, async (request) => {
     try {
       const meili = getMeili();
