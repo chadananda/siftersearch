@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-18T21:50:37.109Z",
+  "generated": "2026-08-18T22:33:27.381Z",
   "entries": [
+    {
+      "hash": "4a5985a7",
+      "date": "2026-08-18",
+      "type": "Other",
+      "description": "Add the Doctrinal Spine phase - the conceptual track's seed",
+      "scope": null
+    },
     {
       "hash": "a41d8355",
       "date": "2026-08-18",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Direct better-sqlite3 writes (worker-stopped sole-writer), bypass flaky HTTP writer",
       "scope": "rolls"
-    },
-    {
-      "hash": "47dba04e",
-      "date": "2026-06-17",
-      "type": "Other",
-      "description": "Strip em-dash trailing notes from names",
-      "scope": "rolls"
     }
   ],
   "grouped": {
     "2026-08-18": [
+      {
+        "hash": "4a5985a7",
+        "date": "2026-08-18",
+        "type": "Other",
+        "description": "Add the Doctrinal Spine phase - the conceptual track's seed",
+        "scope": null
+      },
       {
         "hash": "a41d8355",
         "date": "2026-08-18",
@@ -7065,13 +7072,6 @@
         "date": "2026-06-17",
         "type": "Other",
         "description": "Direct better-sqlite3 writes (worker-stopped sole-writer), bypass flaky HTTP writer",
-        "scope": "rolls"
-      },
-      {
-        "hash": "47dba04e",
-        "date": "2026-06-17",
-        "type": "Other",
-        "description": "Strip em-dash trailing notes from names",
         "scope": "rolls"
       }
     ]
