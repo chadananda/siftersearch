@@ -13,6 +13,7 @@ import { logger } from '../lib/logger.js';
 import * as state from '../lib/pipeline/stage-state.js';
 import { nowInPeak, peakEndsAt } from '../lib/pipeline/peak.js';
 import { join } from 'node:path';
+import { PROSE_SQL } from '../lib/pipeline/processed.js';
 
 // Where logs can live: the app's own ./logs (what ecosystem.config.cjs declares) and PM2's default
 // store (what an app started before that config actually uses). Checked in that order.
@@ -126,6 +127,47 @@ export default async function ingestRoutes(fastify) {
     }
     const { auditLocatorMetadata } = await import('../lib/ingest/metadata-repair.js');
     return auditLocatorMetadata({ limit: Math.min(Number(req.body?.limit) || 500, 5000), apply: true });
+  });
+
+  // IS content.heading POPULATED? The search API returns heading=null for every work tested (Some Answered
+  // Questions, Dawn-Breakers, God Passes By…), which means our citations can never name a chapter and the
+  // answer layer cannot tell a chapter from a book — the defect that let "The Justice and Mercy of God",
+  // chapter 78 of SAQ, be reported as a separate US compilation.
+  //
+  // Two very different causes, and they need opposite fixes: the DB column is empty (re-ingest, extract
+  // headings) or it is populated and not reaching Meili (re-index). Guessing between layers is the mistake
+  // that has cost this session the most, so: measure the DB directly (2026-08-18).
+  fastify.get('/ingest/heading-coverage', admin, async (req) => {
+    const limit = Math.min(Number(req.query?.limit) || 20, 200);
+    const totals = await queryOne(
+      `SELECT COUNT(*) prose,
+              SUM(CASE WHEN heading IS NOT NULL AND trim(heading) <> '' THEN 1 ELSE 0 END) with_heading
+         FROM content WHERE ${PROSE_SQL}`, [], 'diag:heading-coverage-total');
+    // Which docs DO have headings? If the answer is "none", it is an ingest gap; if it is "some", the
+    // extractor works and the gap is per-document or per-format.
+    const byDoc = await queryAll(
+      `SELECT c.doc_id, d.title, COUNT(*) prose,
+              SUM(CASE WHEN c.heading IS NOT NULL AND trim(c.heading) <> '' THEN 1 ELSE 0 END) with_heading
+         FROM content c JOIN docs d ON d.id = c.doc_id
+        WHERE c.blocktype IN ('paragraph','quote') AND c.deleted_at IS NULL
+        GROUP BY c.doc_id HAVING with_heading > 0
+        ORDER BY with_heading DESC LIMIT ?`, [limit], 'diag:heading-coverage-by-doc');
+    const sample = await queryAll(
+      `SELECT doc_id, heading FROM content
+        WHERE heading IS NOT NULL AND trim(heading) <> '' AND deleted_at IS NULL LIMIT 5`, [],
+      'diag:heading-sample');
+    const prose = totals?.prose || 0;
+    const withHeading = totals?.with_heading || 0;
+    return {
+      prose,
+      with_heading: withHeading,
+      coverage: prose ? Math.round((withHeading / prose) * 10000) / 10000 : 0,
+      verdict: withHeading === 0
+        ? 'DB column is empty corpus-wide → INGEST gap (headings were never extracted)'
+        : 'DB has headings → the gap is between the DB and Meili/the API → REINDEX or mapping gap',
+      docs_with_headings: byDoc,
+      sample,
+    };
   });
 
   // DRY RUN for junk-metadata recovery. 1,605 docs carry filename-derived author/title ('pdf-b-batebi',
