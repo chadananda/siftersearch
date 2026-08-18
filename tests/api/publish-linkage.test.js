@@ -12,24 +12,17 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { swallowedTotal, resetSwallowed, swallowedCounts } from '../../api/lib/swallow.js';
+import { linkThreadToDialog as _link } from '../../api/lib/threads.js';
+import { swallow } from '../../api/lib/swallow.js';
+// Adapter: the production signature takes tenantId + swallow explicitly (no module-level globals).
+const linkThreadToDialog = (query, { slug, conversationId }) =>
+  _link(query, { slug, conversationId, tenantId: DIALOG_TENANT, swallow });
 
 const DIALOG_TENANT = 'siftersearch';
 
-// The exact statement pair routes/content.js issues after a successful publish.
-async function linkThreadToDialog(query, { slug, conversationId }) {
-  if (!conversationId) return { linked: false, why: 'no conversation_id — publish was not from a thread' };
-  try {
-    await query('UPDATE published_conversations SET conversation_id = ? WHERE tenant_id = ? AND slug = ?',
-      [conversationId, DIALOG_TENANT, slug]);
-    await query(`UPDATE chat_sessions SET published_slug = ?, status = 'published' WHERE id = ?`,
-      [slug, conversationId]);
-    return { linked: true };
-  } catch (err) {
-    const { swallow } = await import('../../api/lib/swallow.js');
-    swallow(err, 'dialog.link-thread-to-slug', { slug, conversationId });
-    return { linked: false, why: err.message };
-  }
-}
+// linkThreadToDialog is imported from PRODUCTION (api/lib/threads.js) — this file used to carry its own
+// copy of the statement pair, which passes whatever production does and so could never catch drift.
+
 
 describe('thread ↔ published dialog linkage', () => {
   let db, query;

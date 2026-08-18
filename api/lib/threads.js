@@ -50,3 +50,25 @@ export function ownThreadsFilter({ participantId = null, userId = null } = {}) {
   if (!or.length) return null;                        // no identity ⇒ no threads, NOT "all threads"
   return { where: `(${or.join(' OR ')})`, args };
 }
+
+// Close the BOTH-WAYS link between a private thread and its public dialog. Extracted from
+// routes/content.js so the publish path and its test exercise ONE implementation: the test used to carry
+// its own copy of this statement pair, which passes whatever production does — a mirror test cannot catch
+// drift, and drift in exactly these two writes is why both columns sat NULL for months.
+//
+// Best-effort BY DESIGN: a linkage failure must never fail a publish that already succeeded. That makes its
+// failure mode silence, so the failure is COUNTED (swallow) rather than logged — a warn line scrolls away,
+// a counter trips the health check.
+export async function linkThreadToDialog(query, { slug, conversationId, tenantId, swallow }) {
+  if (!conversationId) return { linked: false, why: 'no conversation_id — publish was not from a thread' };
+  try {
+    await query('UPDATE published_conversations SET conversation_id = ? WHERE tenant_id = ? AND slug = ?',
+      [conversationId, tenantId, slug]);
+    await query(`UPDATE chat_sessions SET published_slug = ?, status = 'published' WHERE id = ?`,
+      [slug, conversationId]);
+    return { linked: true };
+  } catch (err) {
+    swallow?.(err, 'dialog.link-thread-to-slug', { slug, conversationId });
+    return { linked: false, why: err.message };
+  }
+}

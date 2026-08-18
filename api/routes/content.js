@@ -18,6 +18,7 @@ import { query, queryAll, queryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { generatePublishMetadata, generateRoundSummaries, anonymizeUserTurns, pairRounds } from '../lib/publish-pipeline.js';
 import { swallow } from '../lib/swallow.js';
+import { linkThreadToDialog } from '../lib/threads.js';   // ONE implementation of the thread<->dialog link
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const BATCH_RUNNER = join(__dirname, '../../scripts/jafar-batch-runner.js');
@@ -576,19 +577,7 @@ export default async function contentRoutes(fastify) {
     // migration 51 and left NULL, and nothing ever set chat_sessions.published_slug — so a published
     // conversation could not be traced back to the thread it came from, and a thread could not show that
     // it had been shared. Best-effort: a linkage failure must not fail a publish that already succeeded.
-    if (b.conversation_id) {
-      try {
-        await query('UPDATE published_conversations SET conversation_id = ? WHERE tenant_id = ? AND slug = ?',
-          [b.conversation_id, DIALOG_TENANT, slug]);
-        await query(`UPDATE chat_sessions SET published_slug = ?, status = 'published' WHERE id = ?`,
-          [slug, b.conversation_id]);
-      } catch (e) {
-        // COUNTED, not just logged. This write is best-effort by design, so its failure mode is silence —
-        // and silence is exactly how both columns sat unwritten for months. A warn line scrolls away; a
-        // swallow() counter shows up in /server/reconcile and trips the health check (2026-08-14).
-        swallow(e, 'dialog.link-thread-to-slug', { slug, conversation_id: b.conversation_id });
-      }
-    }
+    await linkThreadToDialog(query, { slug, conversationId: b.conversation_id, tenantId: DIALOG_TENANT, swallow });
 
     reply.header('Cache-Control', ADMIN_NOCACHE);
     return {
