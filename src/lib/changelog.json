@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-18T21:23:28.893Z",
+  "generated": "2026-08-18T21:50:37.109Z",
   "entries": [
+    {
+      "hash": "a41d8355",
+      "date": "2026-08-18",
+      "type": "Other",
+      "description": "Carry the chapter heading through the passage projection",
+      "scope": null
+    },
     {
       "hash": "00c396fa",
       "date": "2026-08-18",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Strip em-dash trailing notes from names",
       "scope": "rolls"
-    },
-    {
-      "hash": "da553bff",
-      "date": "2026-06-17",
-      "type": "Other",
-      "description": "Add Savád-Kúh/Ardistán/Iṣfahán/Zanján/Qáyin rolls + enemy officers",
-      "scope": "rolls"
     }
   ],
   "grouped": {
     "2026-08-18": [
+      {
+        "hash": "a41d8355",
+        "date": "2026-08-18",
+        "type": "Other",
+        "description": "Carry the chapter heading through the passage projection",
+        "scope": null
+      },
       {
         "hash": "00c396fa",
         "date": "2026-08-18",
@@ -7065,13 +7072,6 @@
         "date": "2026-06-17",
         "type": "Other",
         "description": "Strip em-dash trailing notes from names",
-        "scope": "rolls"
-      },
-      {
-        "hash": "da553bff",
-        "date": "2026-06-17",
-        "type": "Other",
-        "description": "Add Savád-Kúh/Ardistán/Iṣfahán/Zanján/Qáyin rolls + enemy officers",
         "scope": "rolls"
       }
     ]

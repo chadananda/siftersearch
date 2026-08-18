@@ -16,6 +16,13 @@ export const INTEGRATION_PHASES = [
     ],
   },
   {
+    key: 'doctrine', label: "Doctrinal Spine",
+    blurb: `The interpretive spine, top-down by AUTHORITY rather than chronology — the seed of the Conceptual Track (docs/architecture/conceptual-track.md §4). Shoghi Effendi's World Order of Bahá'u'lláh (whose "Dispensation of Bahá'u'lláh" chapter is the ontology keystone: Manifestation vs. Interpreter, the stations, the Covenant), then his general letters, then 'Abdu'l-Bahá's Some Answered Questions (authoritative for prophetic symbols), then Bahá'u'lláh's Kitáb-i-Íqán and Kitáb-i-Aqdas in the Guardian's canonical renderings. ORDER IS LOAD-BEARING: the interpretive lexicon must accumulate before the lower texts whose symbols draw on it are extracted — reading upward first yields only the literal story.`,
+    docs: [
+    20894, 20890, 20893, 20911, 20810, 21307, 28628,
+    ],
+  },
+  {
     key: 'foundation', label: "Foundation",
     blurb: `The trustworthy Bahá'í scholars — that is what makes this the authoritative historical foundation. Careful, well-documented research: Saiedi's Gate of the Heart (the Báb's tablets) and Taherzadeh's Revelation of Bahá'u'lláh, Balyuzi's biographies of the Central Figures, Mázindarání's Ẓuhúru'l-Ḥaqq, Momen's Western accounts, and Ahdieh's Awakening. The bedrock beneath the seed that the whole cast resolves against.`,
     docs: [
