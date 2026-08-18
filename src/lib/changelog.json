@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-18T21:16:39.932Z",
+  "generated": "2026-08-18T21:23:28.893Z",
   "entries": [
+    {
+      "hash": "00c396fa",
+      "date": "2026-08-18",
+      "type": "Other",
+      "description": "Read-only endpoint for the STORED Meili document",
+      "scope": null
+    },
     {
       "hash": "fe574664",
       "date": "2026-08-17",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Add Savád-Kúh/Ardistán/Iṣfahán/Zanján/Qáyin rolls + enemy officers",
       "scope": "rolls"
-    },
-    {
-      "hash": "835814db",
-      "date": "2026-06-17",
-      "type": "Other",
-      "description": "Batch writes (2 writer txns/roll) to avoid flooding single-writer",
-      "scope": "rolls"
     }
   ],
   "grouped": {
+    "2026-08-18": [
+      {
+        "hash": "00c396fa",
+        "date": "2026-08-18",
+        "type": "Other",
+        "description": "Read-only endpoint for the STORED Meili document",
+        "scope": null
+      }
+    ],
     "2026-08-17": [
       {
         "hash": "fe574664",
@@ -7063,13 +7072,6 @@
         "date": "2026-06-17",
         "type": "Other",
         "description": "Add Savád-Kúh/Ardistán/Iṣfahán/Zanján/Qáyin rolls + enemy officers",
-        "scope": "rolls"
-      },
-      {
-        "hash": "835814db",
-        "date": "2026-06-17",
-        "type": "Other",
-        "description": "Batch writes (2 writer txns/roll) to avoid flooding single-writer",
         "scope": "rolls"
       }
     ]

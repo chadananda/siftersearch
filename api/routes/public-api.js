@@ -470,6 +470,14 @@ export default async function publicApiRoutes(fastify) {
       paragraph_index: hit.paragraph_index,
       text: hit.text,
       title: hit.title,
+      // Chapter/section. THIS PROJECTION IS A WHITELIST — a field absent here is invisible to
+      // everything downstream, however correctly the rest of the chain carries it. Omitting
+      // heading cost a day of diagnosis: content.heading was populated, the worker SELECT and
+      // Meili payload both carried it, the sync ran clean, the stored Meili document HAD
+      // heading='The Justice and Mercy of God', the analyzer spread ...original and the response
+      // mapped result.heading — every layer verified, because each faithfully passed along an
+      // object that never had the field. Add new fields HERE first. (2026-08-18)
+      heading: hit.heading,
       author: hit.author,
       religion: hit.religion,
       collection: hit.collection,
