@@ -9,7 +9,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { execSync } from 'child_process';
-import { LANG_TOTALS_SQL, LANG_PENDING_EMBEDDING_SQL, LANG_PENDING_SYNC_SQL, mergeByLanguage, EMB_WITH_SQL, EMB_MISSING_SQL, EMB_DIRTY_SQL } from '../api/lib/pipeline/snapshot-queries.js';
+import { LANG_TOTALS_SQL, LANG_PENDING_EMBEDDING_SQL, LANG_PENDING_SYNC_SQL, mergeByLanguage, EMB_TOTAL_SQL, EMB_MISSING_SQL, EMB_DIRTY_SQL } from '../api/lib/pipeline/snapshot-queries.js';
 
 // EVERY probe below falls back to an empty value so one broken query cannot take the whole snapshot down.
 // That resilience quietly became a liability: a bare `.catch` returning [] makes a FAILED query indistinguishable from
@@ -193,13 +193,19 @@ async function main() {
       // ~50s freeze of the process, not just a slow read. The cost was `embedding IS NOT NULL` dereferencing a
       // 512-float BLOB on ~4M rows. Three partial indexes that already existed answer the same question
       // without touching a row; `total` is with+missing, which is the SAME population the old COUNT(*) had.
+      // All three EXPLAINed against PRODUCTION before being trusted — the rule this query family earned after
+      // four wrong assumptions. Plans: emb-total → COVERING INDEX idx_content_deleted_at, emb-missing →
+      // COVERING INDEX idx_content_needs_embedding_v2, emb-dirty → COVERING INDEX idx_content_unsynced_partial.
+      // Counting `embedding IS NOT NULL` directly was tried and REJECTED: production plans it as SCAN content
+      // because idx_content_has_embedding was never built there (its migration is annotated as a 17GB scan to
+      // run by hand). So with_embedding is DERIVED — total and missing partition the same population exactly.
       Promise.all([
-        queryOne(EMB_WITH_SQL, [], 'snapshot:emb-with').catch(probeFail(null)),
+        queryOne(EMB_TOTAL_SQL, [], 'snapshot:emb-total').catch(probeFail(null)),
         queryOne(EMB_MISSING_SQL, [], 'snapshot:emb-missing').catch(probeFail(null)),
         queryOne(EMB_DIRTY_SQL, [], 'snapshot:emb-dirty').catch(probeFail(null)),
-      ]).then(([w, m, dty]) => (w == null && m == null ? null : {
-        total: (w?.n || 0) + (m?.n || 0),
-        with_embedding: w?.n || 0,
+      ]).then(([t, m, dty]) => (t == null ? null : {
+        total: t?.n || 0,
+        with_embedding: Math.max(0, (t?.n || 0) - (m?.n || 0)),
         missing_embeddings: m?.n || 0,
         dirty: dty?.n || 0,
       })).catch(probeFail(null)),

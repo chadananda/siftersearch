@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T15:48:41.582Z",
+  "generated": "2026-08-19T15:54:38.918Z",
   "entries": [
+    {
+      "hash": "a8b2e106",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "EXPLAIN condemned one of the three replacements",
+      "scope": null
+    },
     {
       "hash": "ff9c62ba",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "MergeEntities repoints ALL sifter.db FK refs (pipeline tables + stale dups) before delete",
       "scope": "graph-db"
-    },
-    {
-      "hash": "093ecc1a",
-      "date": "2026-06-18",
-      "type": "Fixed",
-      "description": "MergeEntities OR IGNORE + drop leftovers (avoid UNIQUE conflict on shared mentions/aliases)",
-      "scope": "graph-db"
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "a8b2e106",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "EXPLAIN condemned one of the three replacements",
+        "scope": null
+      },
       {
         "hash": "ff9c62ba",
         "date": "2026-08-19",
@@ -7065,13 +7072,6 @@
         "date": "2026-06-18",
         "type": "Fixed",
         "description": "MergeEntities repoints ALL sifter.db FK refs (pipeline tables + stale dups) before delete",
-        "scope": "graph-db"
-      },
-      {
-        "hash": "093ecc1a",
-        "date": "2026-06-18",
-        "type": "Fixed",
-        "description": "MergeEntities OR IGNORE + drop leftovers (avoid UNIQUE conflict on shared mentions/aliases)",
         "scope": "graph-db"
       }
     ]
