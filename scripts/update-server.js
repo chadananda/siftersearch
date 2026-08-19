@@ -389,6 +389,9 @@ async function swapPm2Process(name) {
   //
   // Fix: use `pm2 startOrReload ecosystem.config.cjs --only <name>`, which
   // reads the canonical config file every time and applies all settings.
+  //
+  // EXCEPT cron_restart, which it does NOT apply — see ensureCronSchedule below. Four cron apps ran on the
+  // wrong schedule for months because this comment was believed to cover that case too.
   // It's graceful (new process starts before old is killed) AND picks up
   // config changes.
   const result = await run(`pm2 startOrReload ecosystem.config.cjs --only ${name} --update-env`);
@@ -403,6 +406,42 @@ async function swapPm2Process(name) {
     return false;
   }
   return true;
+}
+
+/**
+ * startOrReload does NOT apply cron_restart — measured, not assumed.
+ *
+ * The comment on swapPm2Process says startOrReload "reads the canonical config file every time and applies
+ * all settings". That is true of max_memory_restart and friends, and FALSE of cron_restart: on 2026-08-19 all
+ * four cron apps were found running every 5 minutes while ecosystem.config.cjs declared hourly schedules
+ * (converter '5 * * * *', book-ingest '35', relabel '40', digest '50'). PM2 had kept the schedule from
+ * whenever each app was first registered, and every deploy since had silently left it alone.
+ *
+ * Cost of the drift: the relabel stage re-evaluated 1,814 rows ~288 times a day instead of 24, and the
+ * deliberate 30-minute offset between convert and ingest was not in effect at all. A too-FREQUENT cron never
+ * looks broken, so nothing surfaced it for months.
+ *
+ * Only touches apps that DECLARE a cron_restart — i.e. one-shots that sit stopped between runs, where
+ * delete+start costs nothing. Long-running services are never deleted here; that would be downtime.
+ */
+async function ensureCronSchedule(name) {
+  let want;
+  try {
+    const eco = readFileSync(join(PROJECT_ROOT, 'ecosystem.config.cjs'), 'utf8');
+    const m = new RegExp(`name:\\s*'${name}'[\\s\\S]{0,600}?cron_restart:\\s*'([^']+)'`).exec(eco);
+    want = m?.[1];
+  } catch { return; }
+  if (!want) return;                                  // not a cron app → nothing to enforce
+  const res = await run('pm2 jlist');
+  if (!res.success) return;
+  let live;
+  try { live = JSON.parse(res.stdout).find((x) => x.name === name)?.pm2_env?.cron_restart; } catch { return; }
+  if (!live || String(live).trim() === String(want).trim()) return;
+  log('warn', `${name}: pm2 cron '${live}' != ecosystem '${want}' — re-registering to apply the declared schedule`);
+  await run(`pm2 delete ${name}`);
+  const started = await run(`pm2 start ecosystem.config.cjs --only ${name}`);
+  if (started.success) { await run('pm2 save'); log('info', `${name}: schedule corrected to '${want}'`); }
+  else log('error', `${name}: re-registration failed: ${started.error}`);
 }
 
 /**
@@ -497,10 +536,17 @@ async function applyUpdates() {
   // ONCE. After that every cron tick spawns a fresh process that reads the current code, so they pick up
   // deploys without a swap — the same way pipeline-snapshot does. Registering only when PM2 has never
   // heard of the name means a deliberately-stopped one is never revived.
-  for (const name of ['siftersearch-converter', 'siftersearch-book-ingest', 'siftersearch-digest']) {
+  // 'siftersearch-relabel' was missing here while lib/ensure-pm2-apps.mjs already listed it — the two
+  // allowlists must agree or a new cron app registers from one path and not the other.
+  for (const name of ['siftersearch-converter', 'siftersearch-book-ingest', 'siftersearch-digest', 'siftersearch-relabel']) {
     if (!await isProcessKnown(name)) {
       log('info', `Registering new cron process ${name}`);
       await swapPm2Process(name);
+    } else {
+      // "Registered exactly ONCE and never swapped again" (above) has a corollary nobody drew: NOTHING ever
+      // re-applies their config. That is how all four ended up running every 5 minutes while the ecosystem
+      // declared hourly schedules — for months, unnoticed, because a too-frequent cron never looks broken.
+      await ensureCronSchedule(name);
     }
   }
 
