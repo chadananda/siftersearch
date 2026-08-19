@@ -43,7 +43,17 @@ export function conceptDoc(row) {
  */
 export async function syncConcepts({ limit = 20000 } = {}) {
   const rows = await queryAll(`${CONCEPT_SELECT} LIMIT ?`, [limit], 'concepts:sync-read');
-  if (!rows.length) return { indexed: 0, skipped: 'no concept entities yet' };
+  // Ensure the index EXISTS even with nothing to write. Meili creates an index lazily on first document
+  // write, so an empty concepts table left the index absent — a query for it 404s rather than returning
+  // "no results", and the settings registered in search.js had nothing to attach to. Verified: the API had
+  // restarted after those settings shipped and the index still did not exist. Don't depend on startup-loop
+  // timing for something a caller can guarantee directly.
+  try {
+    await getMeili().createIndex(INDEXES.CONCEPTS, { primaryKey: 'id' });
+  } catch (err) {
+    if (!/already exists|index_already_exists/i.test(err?.message || '')) throw err;
+  }
+  if (!rows.length) return { indexed: 0, skipped: 'no concept entities yet', indexReady: true };
   const docs = rows.map(conceptDoc);
   const task = await getMeili().index(INDEXES.CONCEPTS).addDocuments(docs, { primaryKey: 'id' });
   return { indexed: docs.length, taskUid: task?.taskUid };

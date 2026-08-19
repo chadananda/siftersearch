@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T22:28:51.880Z",
+  "generated": "2026-08-19T23:27:43.186Z",
   "entries": [
+    {
+      "hash": "704bd477",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "A detached runner, so a real book can actually finish",
+      "scope": null
+    },
     {
       "hash": "f5d8edea",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Era from graph_entities in persons dump",
       "scope": null
-    },
-    {
-      "hash": "ebe5815d",
-      "date": "2026-06-19",
-      "type": "Other",
-      "description": "Force white background in print (override dark theme)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "704bd477",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "A detached runner, so a real book can actually finish",
+        "scope": null
+      },
       {
         "hash": "f5d8edea",
         "date": "2026-08-19",
@@ -7063,13 +7070,6 @@
         "date": "2026-06-19",
         "type": "Fixed",
         "description": "Era from graph_entities in persons dump",
-        "scope": null
-      },
-      {
-        "hash": "ebe5815d",
-        "date": "2026-06-19",
-        "type": "Other",
-        "description": "Force white background in print (override dark theme)",
         "scope": null
       }
     ]
