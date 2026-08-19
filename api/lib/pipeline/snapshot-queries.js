@@ -119,7 +119,14 @@ export function mergeByLanguage(totals = [], pendingEmb = [], pendingSync = []) 
 //
 // `total` is derived as with + missing, which is the SAME population the old COUNT(*) measured: the two
 // embedding indexes partition `deleted_at IS NULL` between them. No drift, no change of meaning.
+// EMB_WITH_SQL is kept ONLY as the EXPLAIN control that condemned it: production reports `SCAN content` for
+// it, because idx_content_has_embedding does not exist on that box — the migration that would build it is
+// annotated "scans the full 17GB table, causing D-state hangs on swap-starved servers. Run manually when
+// memory frees up." So `with_embedding` is DERIVED as total - missing instead of counted directly.
 export const EMB_WITH_SQL = `SELECT COUNT(*) AS n FROM content WHERE embedding IS NOT NULL AND deleted_at IS NULL`;
+// Candidate for `total`. Whether this is index-only or another full scan is NOT assumed — it is registered
+// and EXPLAINed against production before anything depends on it.
+export const EMB_TOTAL_SQL = `SELECT COUNT(*) AS n FROM content WHERE deleted_at IS NULL`;
 export const EMB_MISSING_SQL = `SELECT COUNT(*) AS n FROM content WHERE embedding IS NULL AND deleted_at IS NULL`;
 export const EMB_DIRTY_SQL = `SELECT COUNT(*) AS n FROM content WHERE synced = 0 AND deleted_at IS NULL`;
 
@@ -136,6 +143,7 @@ export const NAMED_QUERIES = {
   // Registered so the plan can be EXPLAINed in production before anyone trusts it — same discipline the
   // comment above demands, applied to its own replacement.
   'emb-with': EMB_WITH_SQL,
+  'emb-total': EMB_TOTAL_SQL,
   'emb-missing': EMB_MISSING_SQL,
   'emb-dirty': EMB_DIRTY_SQL,
   'lang-pending-embedding': LANG_PENDING_EMBEDDING_SQL,

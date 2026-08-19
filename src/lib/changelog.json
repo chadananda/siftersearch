@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T15:41:50.260Z",
+  "generated": "2026-08-19T15:48:41.582Z",
   "entries": [
+    {
+      "hash": "ff9c62ba",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "Kill the 49.8s embedding-stats scan (blob deref, not row count)",
+      "scope": null
+    },
     {
       "hash": "4bca3e4d",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "MergeEntities OR IGNORE + drop leftovers (avoid UNIQUE conflict on shared mentions/aliases)",
       "scope": "graph-db"
-    },
-    {
-      "hash": "b0b1bfaa",
-      "date": "2026-06-18",
-      "type": "Other",
-      "description": "Entity merge executor (same-name compute + cross-name explicit)",
-      "scope": "step3"
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "ff9c62ba",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "Kill the 49.8s embedding-stats scan (blob deref, not row count)",
+        "scope": null
+      },
       {
         "hash": "4bca3e4d",
         "date": "2026-08-19",
@@ -7066,13 +7073,6 @@
         "type": "Fixed",
         "description": "MergeEntities OR IGNORE + drop leftovers (avoid UNIQUE conflict on shared mentions/aliases)",
         "scope": "graph-db"
-      },
-      {
-        "hash": "b0b1bfaa",
-        "date": "2026-06-18",
-        "type": "Other",
-        "description": "Entity merge executor (same-name compute + cross-name explicit)",
-        "scope": "step3"
       }
     ]
   }
