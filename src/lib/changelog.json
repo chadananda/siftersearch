@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T23:27:43.186Z",
+  "generated": "2026-08-19T23:44:35.092Z",
   "entries": [
+    {
+      "hash": "ab27a461",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "Create the index even when there is nothing to write",
+      "scope": null
+    },
     {
       "hash": "704bd477",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Building Entities from Seed — living best-practices playbook",
       "scope": null
-    },
-    {
-      "hash": "4a5f1750",
-      "date": "2026-06-19",
-      "type": "Fixed",
-      "description": "Era from graph_entities in persons dump",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "ab27a461",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "Create the index even when there is nothing to write",
+        "scope": null
+      },
       {
         "hash": "704bd477",
         "date": "2026-08-19",
@@ -7061,15 +7068,6 @@
         "date": "2026-06-20",
         "type": "Docs",
         "description": "Building Entities from Seed — living best-practices playbook",
-        "scope": null
-      }
-    ],
-    "2026-06-19": [
-      {
-        "hash": "4a5f1750",
-        "date": "2026-06-19",
-        "type": "Fixed",
-        "description": "Era from graph_entities in persons dump",
         "scope": null
       }
     ]

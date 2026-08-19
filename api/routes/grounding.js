@@ -154,6 +154,32 @@ export default async function groundingRoutes(fastify) {
     return { started: true, docId: Number(docId), pid, log: `logs/concepts-${docId}.log`, dry };
   });
 
+  /**
+   * GET /concepts/status — what the conceptual track has actually produced.
+   *
+   * Without this a concept run is invisible: extract writes concept_claims, lexicon writes concept_lexicon,
+   * and only later stages create concept_entities — so /concepts/sync reporting 0 entities says nothing about
+   * whether extraction worked. Counting each table separately is the difference between "it ran" and "it
+   * produced something", which is the distinction this pipeline keeps losing.
+   */
+  fastify.get('/concepts/status', admin, async (req) => {
+    const docId = req.query?.docId ? Number(req.query.docId) : null;
+    const scope = docId ? ' WHERE doc_id = ?' : '';
+    const args = docId ? [docId] : [];
+    const one = async (sql, a = args) => (await queryOne(sql, a, 'diag:concepts-status'))?.n ?? 0;
+    const [claims, proofOk, lexicon, entities, decisions, links] = await Promise.all([
+      one(`SELECT COUNT(*) n FROM concept_claims${scope}`),
+      one(`SELECT COUNT(*) n FROM concept_claims${scope ? scope + ' AND' : ' WHERE'} proof_ok = 1`),
+      docId ? one(`SELECT COUNT(*) n FROM concept_lexicon WHERE proof_doc_id = ?`) : one(`SELECT COUNT(*) n FROM concept_lexicon`, []),
+      one(`SELECT COUNT(*) n FROM concept_entities`, []),
+      one(`SELECT COUNT(*) n FROM concept_decisions`, []),
+      one(`SELECT COUNT(*) n FROM concept_links`, []),
+    ]);
+    const byDoc = docId ? null : await queryAll(
+      `SELECT doc_id, COUNT(*) n FROM concept_claims GROUP BY doc_id ORDER BY n DESC LIMIT 20`, [], 'diag:concepts-bydoc');
+    return { docId, claims, claims_proof_ok: proofOk, lexicon_entries: lexicon, entities, decisions, links, byDoc };
+  });
+
   /** POST /concepts/sync — reindex concept entities without re-extracting. Full refresh; cheap, no model calls. */
   fastify.post('/concepts/sync', admin, async () => {
     const { syncConcepts } = await import('../lib/search/concepts.js');
