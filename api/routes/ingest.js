@@ -153,6 +153,44 @@ export default async function ingestRoutes(fastify) {
    * Read-only. Reports what a relabel WOULD find; changes nothing. Uses detectLang — the same detector the
    * pipeline routes on — so this audit and the relabel cannot disagree.
    */
+  /**
+   * GET /ingest/unresolvable-notes — how many paragraphs store a disambiguation FAILURE as their note?
+   *
+   * DISAMB_DONE_SQL is `context IS NOT NULL`, so a note reading
+   * "@?, ~? — [unresolvable: no valid disambiguation after retries]" satisfies done. It is not empty, so
+   * every coverage measure counts it; HyPE then reads the failure marker AS its context and produces surface
+   * paraphrases of the passage's own wording. Found 2026-08-19 on the Íqán's clouds/Matthew-24 passage — the
+   * single most important symbol passage in the corpus, and the design's own worked example.
+   *
+   * SCOPED BY doc_id ON PURPOSE. A corpus-wide `context LIKE '%unresolvable%'` is a full scan of 6.7M rows,
+   * which is exactly the 49.8s freeze just removed from the snapshot. Defaults to the doctrinal spine — the
+   * population concept extraction will actually run on, and the one whose failure markers would be baked a
+   * layer deeper by running concepts over them.
+   */
+  fastify.get('/ingest/unresolvable-notes', admin, async (req) => {
+    const DOCTRINE = [20894, 20890, 20893, 20911, 20810, 21307, 28628];
+    const ids = String(req.query?.docIds || '').split(',').map((x) => Number(x.trim())).filter(Boolean);
+    const docIds = ids.length ? ids.slice(0, 50) : DOCTRINE;
+    const ph = docIds.map(() => '?').join(',');
+    const rows = await queryAll(
+      `SELECT c.doc_id, d.title,
+              COUNT(*) AS prose,
+              SUM(CASE WHEN c.context IS NULL OR trim(c.context) = '' THEN 1 ELSE 0 END) AS no_note,
+              SUM(CASE WHEN c.context LIKE '%unresolvable%' THEN 1 ELSE 0 END) AS unresolvable
+         FROM content c JOIN docs d ON d.id = c.doc_id
+        WHERE c.doc_id IN (${ph}) AND ${PROSE_SQL}
+        GROUP BY c.doc_id, d.title ORDER BY unresolvable DESC`, docIds, 'diag:unresolvable-notes');
+    const tot = rows.reduce((a, r) => ({
+      prose: a.prose + (r.prose || 0), no_note: a.no_note + (r.no_note || 0), unresolvable: a.unresolvable + (r.unresolvable || 0),
+    }), { prose: 0, no_note: 0, unresolvable: 0 });
+    return {
+      scope: ids.length ? 'requested' : 'doctrinal-spine',
+      docIds, byDoc: rows, totals: tot,
+      usable_rate: tot.prose ? Number(((tot.prose - tot.no_note - tot.unresolvable) / tot.prose).toFixed(4)) : null,
+      note: 'unresolvable notes satisfy DISAMB_DONE_SQL (context IS NOT NULL) and are counted as disambiguated everywhere.',
+    };
+  });
+
   fastify.get('/ingest/language-audit', admin, async (req) => {
     const sampleSize = Math.min(Number(req.query?.sample) || 120, 400);
     const paras = Math.min(Number(req.query?.paras) || 12, 40);

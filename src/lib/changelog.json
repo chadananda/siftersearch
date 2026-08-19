@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T18:56:17.811Z",
+  "generated": "2026-08-19T19:26:55.658Z",
   "entries": [
+    {
+      "hash": "91d1fb27",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "A control-plane path to run the conceptual track",
+      "scope": null
+    },
     {
       "hash": "5bac53f3",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Restrict GPB gather to person+work entities",
       "scope": "step3"
-    },
-    {
-      "hash": "f5fb7eff",
-      "date": "2026-06-18",
-      "type": "Other",
-      "description": "Gather verbatim GPB descriptors into entity descriptions",
-      "scope": "step3"
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "91d1fb27",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "A control-plane path to run the conceptual track",
+        "scope": null
+      },
       {
         "hash": "5bac53f3",
         "date": "2026-08-19",
@@ -7065,13 +7072,6 @@
         "date": "2026-06-18",
         "type": "Other",
         "description": "Restrict GPB gather to person+work entities",
-        "scope": "step3"
-      },
-      {
-        "hash": "f5fb7eff",
-        "date": "2026-06-18",
-        "type": "Other",
-        "description": "Gather verbatim GPB descriptors into entity descriptions",
         "scope": "step3"
       }
     ]
