@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T19:29:56.945Z",
+  "generated": "2026-08-19T20:30:41.740Z",
   "entries": [
+    {
+      "hash": "61449041",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "Fix ambiguous deleted_at in the unresolvable-notes count",
+      "scope": null
+    },
     {
       "hash": "b2a11e85",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Step3 merge done + GPB-description approach corrected (reading not matching)",
       "scope": null
-    },
-    {
-      "hash": "6f62dbf4",
-      "date": "2026-06-18",
-      "type": "Other",
-      "description": "Rank GPB sentences by characterization texture (superlatives/station words)",
-      "scope": "step3"
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "61449041",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "Fix ambiguous deleted_at in the unresolvable-notes count",
+        "scope": null
+      },
       {
         "hash": "b2a11e85",
         "date": "2026-08-19",
@@ -7066,13 +7073,6 @@
         "type": "Docs",
         "description": "Step3 merge done + GPB-description approach corrected (reading not matching)",
         "scope": null
-      },
-      {
-        "hash": "6f62dbf4",
-        "date": "2026-06-18",
-        "type": "Other",
-        "description": "Rank GPB sentences by characterization texture (superlatives/station words)",
-        "scope": "step3"
       }
     ]
   }

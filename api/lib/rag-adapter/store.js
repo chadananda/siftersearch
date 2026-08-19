@@ -73,6 +73,26 @@ export function makeStore() {
       return byPara;
     },
 
+    // Concept claims per paragraph — the CONCEPT twin of getParaClaims, and the port that lets HyPE ask about
+    // what a doctrinal passage MEANS rather than paraphrase its wording (conceptual-track §7). Same keying as
+    // getParagraphs uses, so retrieval can look up by pid. Renders subject/relation/target into one readable
+    // line because that is what the prompt consumes.
+    //
+    // Returns {} until concepts/extract has run on the doc, which is exactly right: the port is optional and
+    // an empty result leaves every existing book's prompt byte-identical.
+    async getParaConceptClaims(docId) {
+      const rows = await db.queryAll(
+        `SELECT para_id pid, subject, relation, target, statement FROM concept_claims
+          WHERE doc_id=? AND para_id IS NOT NULL AND status != 'rejected'
+          ORDER BY para_id, id`, [docId]);
+      const byPara = {};
+      for (const r of rows) {
+        const line = r.subject && r.target ? `${r.subject} ${r.relation || '—'} ${r.target}` : (r.statement || '');
+        if (line) (byPara[r.pid] ||= []).push(String(line).slice(0, 180));
+      }
+      return byPara;
+    },
+
     // Persist source-anchored mentions (INSERT OR IGNORE on the stable anchor). entity_id stays NULL —
     // identity is bound later by evidence at reconcile, never here. Returns the count offered.
     async saveMentions(mentions) {

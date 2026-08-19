@@ -44,8 +44,8 @@ const SLICE_TARGET = 1500;      // aim ~this many chars of focus text per slice 
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? DISAMB_THRESHOLD });
   const profile = await profileFor(ctx, docId);
-  const [meta, all, cast, facts] = await Promise.all([
-    ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId), castOf(ctx, docId), factsOf(ctx, docId)]);
+  const [meta, all, cast, facts, conceptClaims] = await Promise.all([
+    ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId), castOf(ctx, docId), factsOf(ctx, docId), conceptsOf(ctx, docId)]);
   const long = all.filter((p) => p.text.length >= (opts.minLen ?? MIN_LEN));
   // upgrade: version-aware resume — "done" means at the CURRENT generator version, so re-hyping a book skips
   // paragraphs already upgraded and redoes the rest. A killed upgrade run therefore RESUMES where it died on
@@ -77,12 +77,12 @@ export async function run(ctx, docId, opts = {}) {
         const slices = sliceParagraph(p.text);
         let parsed = null, escalated = false;
         if (slices.length === 1) {
-          ({ parsed, escalated } = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts), parse: parseHype, maxTokens, temperature: 0.3, denseHint: DENSE_HINT }));
+          ({ parsed, escalated } = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts, null, conceptClaims?.[p.pid]), parse: parseHype, maxTokens, temperature: 0.3, denseHint: DENSE_HINT }));
         } else {
           // One bounded call per sentence-group; slice 1 also writes the whole-paragraph thesis.
           const questions = []; let thesis = '';
           for (let si = 0; si < slices.length; si++) {
-            const r = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts, { focus: slices[si], part: si + 1, parts: slices.length }), parse: si === 0 ? parseHype : parseHypeSlice, maxTokens, temperature: 0.3, denseHint: DENSE_HINT });
+            const r = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts, { focus: slices[si], part: si + 1, parts: slices.length }, conceptClaims?.[p.pid]), parse: si === 0 ? parseHype : parseHypeSlice, maxTokens, temperature: 0.3, denseHint: DENSE_HINT });
             if (r.escalated) escalated = true;
             if (!r.parsed) continue;                       // a lost slice costs coverage, not the paragraph
             if (si === 0) thesis = r.parsed.thesis;
@@ -132,6 +132,10 @@ async function markHypeExhausted(ctx, p, opts, stats) {
 const castOf = (ctx, docId) => (ctx.store.getCastSeed ? Promise.resolve(ctx.store.getCastSeed(docId)).catch(() => '') : Promise.resolve(''));
 // Cited claims per paragraph (optional port; {} = fact-blind, prompt degrades gracefully to v2-without-facts).
 const factsOf = (ctx, docId) => (ctx.store.getParaClaims ? Promise.resolve(ctx.store.getParaClaims(docId)).catch(() => ({})) : Promise.resolve({}));
+// Concept claims per paragraph (optional port; {} = concept-blind, exactly as fact-blind above). OPTIONAL is
+// deliberate: the conceptual track runs on doctrinal works only, so every historical book must keep producing
+// byte-identical prompts. A missing port must never change an existing book's HyPE.
+const conceptsOf = (ctx, docId) => (ctx.store.getParaConceptClaims ? Promise.resolve(ctx.store.getParaConceptClaims(docId)).catch(() => ({})) : Promise.resolve({}));
 // A paragraph is HyPE-done with ANY generator format: v3 adaptive (1-40), v2 (2-5), v1 (exactly 5) — all are
 // JSON arrays ≥1 with a thesis. Old newline-joined HyPE (no thesis / not JSON) fails → gets regenerated. Older
 // versions are NOT auto-regenerated; upgrading a book is an explicit resume:false (rehype) run.
@@ -207,13 +211,25 @@ export function parseHypeSlice(raw) {
   return p ? { questions: p.questions, thesis: '' } : null;
 }
 
-export function buildUser(p, facts = null, slice = null) {
+// The concept layer (conceptual-track §7). HyPE is the RETRIEVAL level of the same idea the lexicon holds,
+// so a doctrinal passage needs its concepts fed back exactly as v2 feeds back person claims — otherwise the
+// questions restate the passage's own wording. Measured on the Íqán's clouds/Matthew-24 passage (the design's
+// worked example): with no concept layer it produced "What will men lament when the tribes of the earth
+// mourn?" — a paraphrase that only matches a query already using the passage's vocabulary.
+//
+// Framed as ASK-ABOUT, unlike CONTEXT which is explicitly reference-resolution only: the concept IS the thing
+// a reader searches for. Bounded, so a large lexicon cannot crowd out the paragraph itself.
+const MAX_CONCEPTS_PER_PARA = 8;
+export function buildUser(p, facts = null, slice = null, concepts = null) {
   const factBlock = facts?.length
     ? `\n\nESTABLISHED FACTS (cited claims from this paragraph — make each retrievable):\n${facts.slice(0, MAX_FACTS_PER_PARA).map((f) => `- ${f}`).join('\n')}`
     : '';
-  if (!slice) return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${factBlock}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
+  const conceptBlock = concepts?.length
+    ? `\n\nAUTHORITATIVE INTERPRETATIONS this passage develops (ASK ABOUT THESE — name the concept, do not echo the wording):\n${concepts.slice(0, MAX_CONCEPTS_PER_PARA).map((c) => `- ${c}`).join('\n')}`
+    : '';
+  if (!slice) return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${factBlock}${conceptBlock}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
   const thesisNote = slice.part === 1
     ? 'Include the "thesis" for the WHOLE paragraph.'
     : 'Set "thesis" to "" — it was written with part 1.';
-  return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${factBlock}\n\nFULL PARAGRAPH [${p.pid}] (for context only):\n${p.text}\n\nFOCUS (part ${slice.part}/${slice.parts}) — write questions ONLY for what these sentences state (facts covered by other parts are handled there). ${thesisNote}\nFOCUS SENTENCES:\n${slice.focus}`;
+  return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${factBlock}${conceptBlock}\n\nFULL PARAGRAPH [${p.pid}] (for context only):\n${p.text}\n\nFOCUS (part ${slice.part}/${slice.parts}) — write questions ONLY for what these sentences state (facts covered by other parts are handled there). ${thesisNote}\nFOCUS SENTENCES:\n${slice.focus}`;
 }
