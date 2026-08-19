@@ -128,3 +128,12 @@ for (const m of pending) {
 console.log(`\nSUMMARY (${APPLY ? 'APPLIED' : 'DRY'}): ingested ${report.ingested.length} · retired ${report.retired.length} · missing file ${report.missingFile.length} · failed ${report.failed.length}`);
 fs.writeFileSync('.work/ingest-converted-books-report.json', JSON.stringify(report, null, 2));
 });
+
+// EXIT EXPLICITLY. This stage finishes its work and then does not die: the ingester pulls in clients
+// (Meili / embedding / writer) whose keep-alive handles hold the event loop open, so the process sits at
+// pm2 status 'online' burning ~200MB until the next cron tick KILLS it. Measured 2026-08-19: 1,758 restarts,
+// +12 every hour, while the converter and relabel stages — same runStage harness, no ingester import — exit
+// cleanly and sit at restarts=1. Two costs beyond the waste: a run with real work that takes longer than the
+// cron interval gets killed mid-ingest, and "still online" is indistinguishable from "still working".
+// Everything above is awaited (manifest written, stage marked, report flushed), so exiting here is safe.
+process.exit(0);

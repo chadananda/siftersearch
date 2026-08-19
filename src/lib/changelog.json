@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T06:27:05.095Z",
+  "generated": "2026-08-19T07:30:16.203Z",
   "entries": [
+    {
+      "hash": "da34d3fa",
+      "date": "2026-08-18",
+      "type": "Docs",
+      "description": "Conceptual track is built — the status line said otherwise and cost real damage",
+      "scope": null
+    },
     {
       "hash": "53b5abb5",
       "date": "2026-08-18",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Entity Review page in admin panel (auth-only, live-refresh, no key in URL)",
       "scope": "admin"
-    },
-    {
-      "hash": "73977814",
-      "date": "2026-06-17",
-      "type": "Docs",
-      "description": "Step4 review page live; step2 narrative done",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-18": [
+      {
+        "hash": "da34d3fa",
+        "date": "2026-08-18",
+        "type": "Docs",
+        "description": "Conceptual track is built — the status line said otherwise and cost real damage",
+        "scope": null
+      },
       {
         "hash": "53b5abb5",
         "date": "2026-08-18",
@@ -7066,13 +7073,6 @@
         "type": "New",
         "description": "Entity Review page in admin panel (auth-only, live-refresh, no key in URL)",
         "scope": "admin"
-      },
-      {
-        "hash": "73977814",
-        "date": "2026-06-17",
-        "type": "Docs",
-        "description": "Step4 review page live; step2 narrative done",
-        "scope": null
       }
     ]
   }

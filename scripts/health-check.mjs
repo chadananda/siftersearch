@@ -602,6 +602,43 @@ async function checkSchemaVersion() {
 // Persian-only rule forbids. /ingest/language-audit measures it; nothing consumed that measurement, which is
 // the same shape as the swallowed-error counter above — a detector only visible to someone already
 // suspicious is not a detector. Sampled + bounded, so this costs ~1s and no model tokens. (2026-08-19)
+// PM2 keeps its OWN copy of each app's config from whenever it was first started, and `startOrReload` does
+// not reliably refresh cron_restart (see the comment in scripts/update-server.js about it refreshing env vars
+// only). So the ecosystem file and the live schedule drift silently. Measured 2026-08-19: all four cron apps
+// declare an hourly schedule and PM2 was running every one of them every 5 MINUTES — 12x the intended rate,
+// which is how siftersearch-book-ingest reached 1,758 restarts and how the relabel stage came to re-evaluate
+// 1,814 rows 288 times a day instead of 24. Nothing noticed for months, because a too-FREQUENT cron never
+// looks broken. (2026-08-19)
+async function checkCronDrift() {
+  const key = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY;
+  if (!key) return skip('cron_drift', 'no internal key available');
+  let declared;
+  try {
+    const { readFileSync } = await import('node:fs');
+    const eco = readFileSync('ecosystem.config.cjs', 'utf8');
+    declared = {};
+    for (const m of eco.matchAll(/name:\s*'([^']+)'[\s\S]{0,600}?cron_restart:\s*'([^']+)'/g)) declared[m[1]] = m[2];
+  } catch (err) { return skip('cron_drift', `ecosystem.config.cjs unreadable: ${err.message}`); }
+  if (!Object.keys(declared).length) return skip('cron_drift', 'no cron_restart entries declared');
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/server/processes`, {
+      headers: { 'X-Internal-Key': key }, signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) return warn('cron_drift', `processes endpoint HTTP ${res.status}`);
+    const live = (await res.json())?.processes || [];
+    const drifted = [];
+    for (const p of live) {
+      const want = declared[p.name];
+      if (!want || !p.cron) continue;
+      if (String(p.cron).trim() !== String(want).trim()) drifted.push(`${p.name}: pm2 '${p.cron}' vs ecosystem '${want}'`);
+    }
+    if (drifted.length) return warn('cron_drift', `${drifted.length} app(s) on the wrong schedule — ${drifted.join(' · ')}`, { drifted });
+    return ok('cron_drift', null, { checked: Object.keys(declared).length });
+  } catch (err) {
+    return warn('cron_drift', err.message);
+  }
+}
+
 async function checkLanguageLabels() {
   const key = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY;
   if (!key) return skip('language_labels', 'no internal key available');
@@ -899,6 +936,7 @@ const probes = [
   ['snapshot_probes', checkSnapshotProbes],       // catches a broken probe reporting zeros as "all clear"
   ['swallowed_errors', checkSwallowed],           // catches a path that fails silently on every run
   ['language_labels', checkLanguageLabels],       // catches Persian/Arabic books routed as English (spend-policy breach)
+  ['cron_drift', checkCronDrift],                 // catches pm2 running a cron app 12x more often than declared
   ['deep_research', checkDeepResearch],           // deep_research_queue stuck/failing
   // enrichment + graph_pipeline: only meaningful on tower-nas; skip when api is down.
   ...(!apiDown ? [
