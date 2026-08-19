@@ -21,6 +21,23 @@
  *   (Replace STAR with asterisk)
  */
 
+// ────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ⚠ CODE ADDED HERE DOES NOT RUN UNTIL siftersearch-updater IS RESTARTED.
+//
+// This process applies every deploy and never restarts ITSELF — there is no swapPm2Process('siftersearch-
+// updater') anywhere in this file, by design (it must not kill itself mid-deploy). So a change committed here
+// sits inert on disk while the OLD updater keeps running: same failure shape as a migration added without
+// bumping CURRENT_VERSION, which cost an 8-minute outage on 2026-08-17.
+//
+// Walked into on 2026-08-19: cron-schedule enforcement was added here to fix four apps running 12x too often,
+// deployed, and changed nothing — the running updater predated it. scripts/lib/ensure-pm2-apps.mjs already
+// documents this trap in its first paragraph.
+//
+// If a change here must take effect on its own, put it in a process that runs FRESH code every tick
+// (pipeline-snapshot: autorestart:false + cron_restart */5, which is why ensure-pm2-apps lives there).
+// Otherwise: `pm2 restart siftersearch-updater` once, deliberately, after deploying.
+// ────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 import { exec, execSync, spawn } from 'child_process';
 import { promisify } from 'util';
 import { readFileSync } from 'fs';
