@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T20:30:41.740Z",
+  "generated": "2026-08-19T21:28:06.426Z",
   "entries": [
+    {
+      "hash": "2ed54c5c",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "Let questions ask about the CONCEPT, not echo the wording",
+      "scope": null
+    },
     {
       "hash": "61449041",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Plain SSR entity-review page + server-side /admin gating + print CSS",
       "scope": null
-    },
-    {
-      "hash": "3aec7ec2",
-      "date": "2026-06-18",
-      "type": "Docs",
-      "description": "Step3 merge done + GPB-description approach corrected (reading not matching)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "2ed54c5c",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "Let questions ask about the CONCEPT, not echo the wording",
+        "scope": null
+      },
       {
         "hash": "61449041",
         "date": "2026-08-19",
@@ -7063,15 +7070,6 @@
         "date": "2026-06-19",
         "type": "Other",
         "description": "Plain SSR entity-review page + server-side /admin gating + print CSS",
-        "scope": null
-      }
-    ],
-    "2026-06-18": [
-      {
-        "hash": "3aec7ec2",
-        "date": "2026-06-18",
-        "type": "Docs",
-        "description": "Step3 merge done + GPB-description approach corrected (reading not matching)",
         "scope": null
       }
     ]

@@ -123,7 +123,25 @@ export default async function groundingRoutes(fastify) {
         break;
       }
     }
+    // Index what was just extracted. Without this the concepts exist only as rows: searchable claims hanging
+    // off paragraphs, but not concepts a reader can query in their own right across traditions (§6). Indexing
+    // as part of the run means "extracted" and "findable" cannot drift apart — the failure mode that left
+    // `context` written-but-unindexed for a month.
+    if (!dryRun && out.ran.length) {
+      try {
+        const { syncConcepts } = await import('../lib/search/concepts.js');
+        out.indexed = await syncConcepts();
+      } catch (err) {
+        out.indexed = { error: err.message };   // reported, never silent — the run still succeeded
+      }
+    }
     return out;
+  });
+
+  /** POST /concepts/sync — reindex concept entities without re-extracting. Full refresh; cheap, no model calls. */
+  fastify.post('/concepts/sync', admin, async () => {
+    const { syncConcepts } = await import('../lib/search/concepts.js');
+    return syncConcepts();
   });
 
   fastify.get('/grounding/queue', admin, async () => ({ items: await queue.list() }));

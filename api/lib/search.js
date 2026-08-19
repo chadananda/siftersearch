@@ -500,7 +500,18 @@ export async function initializeIndexes() {
   };
 
   // Entity-mentions sidecar — one row per resolved entity mention
-  const entityMentionsSettings = {
+  // Concepts. searchable on the English canonical AND the original-language root + the spectrum of renderings,
+// because one English word collapses distinct concepts (insáf vs ‘adl both gloss "justice") and the root is
+// what tells them apart — the concept twin of a person's Arabic-script name being the identity, not the
+// romanization. tradition is filterable so one concept can be asked across religions (§6).
+const conceptSettings = {
+    searchableAttributes: ['canonical', 'root', 'renderings', 'summary'],
+    filterableAttributes: ['concept_type', 'tradition', 'importance', 'root'],
+    sortableAttributes: ['importance'],
+    rankingRules: buildRankingRules(),
+    pagination: { maxTotalHits: 10000 },
+  };
+const entityMentionsSettings = {
     searchableAttributes: ['entity_canonical_name'],
     filterableAttributes: ['entity_id', 'paragraph_id', 'doc_id', 'religion', 'collection', 'role', 'authority', 'encumbered'],
     sortableAttributes: ['authority'],
@@ -539,7 +550,7 @@ export async function initializeIndexes() {
   // fields (e.g. {type, source, dimensions}) that don't round-trip cleanly through
   // JSON.stringify, causing false positives. Embedder settings are managed exclusively
   // in the setTimeout block below which reads and compares them correctly.
-  for (const [indexName, settings] of [[INDEXES.PARAGRAPHS, paragraphSettings], [INDEXES.DOCUMENTS, documentSettings], [INDEXES.HYPE_QUESTIONS, hypeSettings], [INDEXES.DEEP_RESEARCH, deepResearchSettings], [INDEXES.ENTITY_MENTIONS, entityMentionsSettings]]) {
+  for (const [indexName, settings] of [[INDEXES.PARAGRAPHS, paragraphSettings], [INDEXES.DOCUMENTS, documentSettings], [INDEXES.HYPE_QUESTIONS, hypeSettings], [INDEXES.DEEP_RESEARCH, deepResearchSettings], [INDEXES.ENTITY_MENTIONS, entityMentionsSettings], [INDEXES.CONCEPTS, conceptSettings]]) {
     try {
       const currentRes = await fetchWithTimeout(`${meiliUrl}/indexes/${indexName}/settings`, { headers }, 5000);
       const current = currentRes.ok ? await currentRes.json() : null;

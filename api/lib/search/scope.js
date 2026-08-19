@@ -15,6 +15,10 @@ export const INDEXES = {
   HYPE_QUESTIONS: 'hype_questions',
   DEEP_RESEARCH: 'deep_research',
   ENTITY_MENTIONS: 'entity_mentions_idx',
+  // Concept entities (conceptual-track §6). Separate from ENTITY_MENTIONS because a concept is not a person:
+  // its identity is the original-language ROOT, not a name, and the payoff is cross-tradition — asking about
+  // "the Covenant" or "the Word" should reach the corresponding concept in each tradition, in its own terms.
+  CONCEPTS: 'concepts',
 };
 
 let siteRegistry = null;
