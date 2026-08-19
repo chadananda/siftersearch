@@ -570,11 +570,20 @@ async function updateContext(id, context) {
  * Update context and context_model WITHOUT touching synced or embedding.
  * Used by enhancement worker — disambiguation is a separate sync pass.
  */
+// Clearing BOTH flags is load-bearing. enhanced_synced lost its consumer when siftersearch-enrichment was
+// retired (2026-07-10) — getEnhancedUnsynced/markEnhancedSynced are referenced nowhere outside this file and
+// a test — so a note that cleared only enhanced_synced was invisible to the sync that actually runs. The
+// unified worker polls `synced = 0` (getDirtyParagraphsForDoc) and its Meili payload already carries
+// `context`, so the note simply had to be offered to it. Measured 2026-08-19: 0 of 3 sampled doctrinal
+// paragraphs had context in Meili while the DB held notes for all 292 of the Íqán, and books_fully_synced
+// was 0. enhanced_synced is still cleared so a restored enhanced cycle keeps working.
+// Exported so the test asserts on the SHIPPED statement rather than a copy of it.
+export const UPDATE_CONTEXT_SQL = `
+    UPDATE content SET context = ?, context_model = ?, synced = 0, enhanced_synced = 0, updated_at = ? WHERE id = ?
+  `;
 async function updateContextOnly(id, context, model) {
   const ts = now();
-  return query(`
-    UPDATE content SET context = ?, context_model = ?, enhanced_synced = 0, updated_at = ? WHERE id = ?
-  `, [context, model || null, ts, id]);
+  return query(UPDATE_CONTEXT_SQL, [context, model || null, ts, id]);
 }
 
 /**

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T15:54:38.918Z",
+  "generated": "2026-08-19T18:50:27.315Z",
   "entries": [
+    {
+      "hash": "25f96619",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "Embedding-stats now index-only, every plan verified in production",
+      "scope": null
+    },
     {
       "hash": "a8b2e106",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "MergeEntities graph_relations OR IGNORE + drop leftover (UNIQUE on source,target,type)",
       "scope": "graph-db"
-    },
-    {
-      "hash": "9cdf4a58",
-      "date": "2026-06-18",
-      "type": "Fixed",
-      "description": "MergeEntities repoints ALL sifter.db FK refs (pipeline tables + stale dups) before delete",
-      "scope": "graph-db"
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "25f96619",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "Embedding-stats now index-only, every plan verified in production",
+        "scope": null
+      },
       {
         "hash": "a8b2e106",
         "date": "2026-08-19",
@@ -7065,13 +7072,6 @@
         "date": "2026-06-18",
         "type": "Fixed",
         "description": "MergeEntities graph_relations OR IGNORE + drop leftover (UNIQUE on source,target,type)",
-        "scope": "graph-db"
-      },
-      {
-        "hash": "9cdf4a58",
-        "date": "2026-06-18",
-        "type": "Fixed",
-        "description": "MergeEntities repoints ALL sifter.db FK refs (pipeline tables + stale dups) before delete",
         "scope": "graph-db"
       }
     ]
