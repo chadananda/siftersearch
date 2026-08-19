@@ -607,10 +607,17 @@ export default async function publicApiRoutes(fastify) {
 
     const searchResults = await keywordSearch(query, { limit, filters });
 
+    // ANOTHER whitelist projection — same shape as the one in POST /search that silently dropped `heading`
+    // for months (2026-08-18). documentId and paragraphIndex were likewise absent, so a caller holding a quick
+    // result could not say WHICH document or WHERE in it without re-parsing the URL. Additive only: existing
+    // fields are untouched, so no consumer breaks. Add new fields HERE as well as in the /search projection.
     const results = searchResults.hits.map(hit => ({
       id: hit.id,
+      documentId: hit.doc_id,
+      paragraphIndex: hit.paragraph_index,
       text: hit._formatted?.text || hit.text,
       title: hit.title,
+      heading: hit.heading || null,
       author: hit.author,
       religion: hit.religion,
       collection: hit.collection,

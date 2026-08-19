@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T00:29:37.657Z",
+  "generated": "2026-08-19T01:28:13.071Z",
   "entries": [
+    {
+      "hash": "954f0903",
+      "date": "2026-08-18",
+      "type": "Other",
+      "description": "\"table may not exist\" must swallow ONLY that",
+      "scope": null
+    },
     {
       "hash": "56c7db63",
       "date": "2026-08-18",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Synchronous=NORMAL for content connection (WAL-safe, ~4x faster writes; env-overridable)",
       "scope": "db"
-    },
-    {
-      "hash": "bafa8803",
-      "date": "2026-06-17",
-      "type": "Fixed",
-      "description": "Default MIN_TEXT_LEN=0 (no silent length-skip) + EXTRACT_REQUEUE_FAILED lever for -1 paragraphs",
-      "scope": "graph-extractor"
     }
   ],
   "grouped": {
     "2026-08-18": [
+      {
+        "hash": "954f0903",
+        "date": "2026-08-18",
+        "type": "Other",
+        "description": "\"table may not exist\" must swallow ONLY that",
+        "scope": null
+      },
       {
         "hash": "56c7db63",
         "date": "2026-08-18",
@@ -7066,13 +7073,6 @@
         "type": "Performance",
         "description": "Synchronous=NORMAL for content connection (WAL-safe, ~4x faster writes; env-overridable)",
         "scope": "db"
-      },
-      {
-        "hash": "bafa8803",
-        "date": "2026-06-17",
-        "type": "Fixed",
-        "description": "Default MIN_TEXT_LEN=0 (no silent length-skip) + EXTRACT_REQUEUE_FAILED lever for -1 paragraphs",
-        "scope": "graph-extractor"
       }
     ]
   }
