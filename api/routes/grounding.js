@@ -138,6 +138,22 @@ export default async function groundingRoutes(fastify) {
     return out;
   });
 
+  /**
+   * POST /concepts/start — launch a DETACHED concept run and return immediately.
+   *
+   * /concepts/run executes in-request, which only works for bounded runs: the disambiguate stage is
+   * sequential, so a whole book exceeds the edge timeout. This is the path for a real book, and it mirrors
+   * how grounding has always been launched (detached CLI + per-doc log), so an operator-launched run and an
+   * API-launched one are the same thing.
+   */
+  fastify.post('/concepts/start', admin, async (req) => {
+    const { docId, only, from, limit, dry = false } = req.body || {};
+    if (!docId) throw ApiError.badRequest('docId required');
+    const { spawnConcepts } = await import('../lib/pipeline/spawn.js');
+    const pid = spawnConcepts(Number(docId), { only, from, limit, dry });
+    return { started: true, docId: Number(docId), pid, log: `logs/concepts-${docId}.log`, dry };
+  });
+
   /** POST /concepts/sync — reindex concept entities without re-extracting. Full refresh; cheap, no model calls. */
   fastify.post('/concepts/sync', admin, async () => {
     const { syncConcepts } = await import('../lib/search/concepts.js');
