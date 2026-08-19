@@ -72,7 +72,12 @@ export async function run(ctx, docId, opts = {}) {
   const version = opts.version ?? ctx.config?.versions?.conceptDisambig ?? 'concept-disambig-v1';
   const system = buildSystem(meta, profile);
   const route = { model: opts.model ?? profile.models?.disambig, fallback: opts.fallback ?? profile.fallback };
-  const todo = all.filter((p) => opts.force || !isDisambiguated(p, version));
+  // `limit` bounds a run. This stage is SEQUENTIAL (the carried argument makes it so), so an unbounded run
+  // over a whole book cannot finish inside an HTTP request — a 292-paragraph Íqán run through the control
+  // API died on a Cloudflare 524. Bounded runs make the endpoint usable for verification; a full book belongs
+  // on the queue, like grounding, not in a request.
+  const todo = all.filter((p) => opts.force || !isDisambiguated(p, version))
+    .slice(0, opts.limit && opts.limit > 0 ? opts.limit : undefined);
   const stats = { paras: all.length, todo: todo.length, written: 0, failed: 0, empty: 0 };
   // SEQUENTIAL by design. Every other stage pools for throughput; this one cannot — paragraph N's note is
   // only correct if N-1's argument is already in hand, so concurrency here would silently produce notes that

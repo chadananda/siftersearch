@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T21:28:06.426Z",
+  "generated": "2026-08-19T21:39:42.374Z",
   "entries": [
+    {
+      "hash": "f5d8edea",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "Index them, so a concept is searchable in its own right",
+      "scope": null
+    },
     {
       "hash": "2ed54c5c",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Force white background in print (override dark theme)",
       "scope": null
-    },
-    {
-      "hash": "6dd589ed",
-      "date": "2026-06-19",
-      "type": "Other",
-      "description": "Plain SSR entity-review page + server-side /admin gating + print CSS",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "f5d8edea",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "Index them, so a concept is searchable in its own right",
+        "scope": null
+      },
       {
         "hash": "2ed54c5c",
         "date": "2026-08-19",
@@ -7063,13 +7070,6 @@
         "date": "2026-06-19",
         "type": "Other",
         "description": "Force white background in print (override dark theme)",
-        "scope": null
-      },
-      {
-        "hash": "6dd589ed",
-        "date": "2026-06-19",
-        "type": "Other",
-        "description": "Plain SSR entity-review page + server-side /admin gating + print CSS",
         "scope": null
       }
     ]
