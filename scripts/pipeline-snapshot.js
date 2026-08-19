@@ -9,7 +9,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { execSync } from 'child_process';
-import { LANG_TOTALS_SQL, LANG_PENDING_EMBEDDING_SQL, LANG_PENDING_SYNC_SQL, mergeByLanguage } from '../api/lib/pipeline/snapshot-queries.js';
+import { LANG_TOTALS_SQL, LANG_PENDING_EMBEDDING_SQL, LANG_PENDING_SYNC_SQL, mergeByLanguage, EMB_WITH_SQL, EMB_MISSING_SQL, EMB_DIRTY_SQL } from '../api/lib/pipeline/snapshot-queries.js';
 
 // EVERY probe below falls back to an empty value so one broken query cannot take the whole snapshot down.
 // That resilience quietly became a liability: a bare `.catch` returning [] makes a FAILED query indistinguishable from
@@ -189,13 +189,20 @@ async function main() {
         queryAll(LANG_PENDING_EMBEDDING_SQL, [], 'snapshot:lang-pending-embedding').catch(probeFail([])),
         queryAll(LANG_PENDING_SYNC_SQL, [], 'snapshot:lang-pending-sync').catch(probeFail([])),
       ]).then(([t, e, sy]) => mergeByLanguage(t, e, sy)).catch(probeFail([])),
-      queryOne(`
-        SELECT COUNT(*) as total,
-          SUM(CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END) as with_embedding,
-          SUM(CASE WHEN embedding IS NULL THEN 1 ELSE 0 END) as missing_embeddings,
-          SUM(CASE WHEN synced = 0 THEN 1 ELSE 0 END) as dirty
-        FROM content
-        WHERE deleted_at IS NULL`, [], 'snapshot:embedding-stats').catch(probeFail(null)),
+      // Was ONE query with plan `SCAN content`: 49.8s worst, and better-sqlite3 is SYNCHRONOUS so that is a
+      // ~50s freeze of the process, not just a slow read. The cost was `embedding IS NOT NULL` dereferencing a
+      // 512-float BLOB on ~4M rows. Three partial indexes that already existed answer the same question
+      // without touching a row; `total` is with+missing, which is the SAME population the old COUNT(*) had.
+      Promise.all([
+        queryOne(EMB_WITH_SQL, [], 'snapshot:emb-with').catch(probeFail(null)),
+        queryOne(EMB_MISSING_SQL, [], 'snapshot:emb-missing').catch(probeFail(null)),
+        queryOne(EMB_DIRTY_SQL, [], 'snapshot:emb-dirty').catch(probeFail(null)),
+      ]).then(([w, m, dty]) => (w == null && m == null ? null : {
+        total: (w?.n || 0) + (m?.n || 0),
+        with_embedding: w?.n || 0,
+        missing_embeddings: m?.n || 0,
+        dirty: dty?.n || 0,
+      })).catch(probeFail(null)),
     ]);
     library = { generated_at: new Date().toISOString(), byLanguage, embeddingStats };
   }

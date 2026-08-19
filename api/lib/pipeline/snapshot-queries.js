@@ -105,6 +105,24 @@ export function mergeByLanguage(totals = [], pendingEmb = [], pendingSync = []) 
 // hoisted. Declared earlier it threw "Cannot access 'LANG_TOTALS_SQL' before initialization" at import
 // time — and scripts/pipeline-snapshot.js imports this module at top level, so that would have crashed the
 // snapshot cron outright, not merely failed a test (2026-08-17).
+
+// ── embedding-stats replacement ──────────────────────────────────────────────────────────────────────────
+// The original was ONE query: COUNT(*) + SUM(CASE WHEN embedding IS NOT NULL…) + SUM(…IS NULL) + SUM(synced=0)
+// over content WHERE deleted_at IS NULL. Plan: SCAN content. Worst 49.8s, and because better-sqlite3 is
+// SYNCHRONOUS that is a ~50-second freeze of the whole process, not merely slow. The cost is not the row
+// count — it is that `embedding IS NOT NULL` dereferences a 512-float BLOB on every one of ~4M rows.
+//
+// Three partial indexes already existed and were not being used: idx_content_has_embedding (embedding IS NOT
+// NULL AND deleted_at IS NULL), idx_content_needs_embedding_v2 (embedding IS NULL AND deleted_at IS NULL) and
+// idx_content_unsynced (synced = 0 AND deleted_at IS NULL). Each COUNT below matches a partial predicate
+// exactly, so it can be answered from the index without touching a row — no blob is ever read.
+//
+// `total` is derived as with + missing, which is the SAME population the old COUNT(*) measured: the two
+// embedding indexes partition `deleted_at IS NULL` between them. No drift, no change of meaning.
+export const EMB_WITH_SQL = `SELECT COUNT(*) AS n FROM content WHERE embedding IS NOT NULL AND deleted_at IS NULL`;
+export const EMB_MISSING_SQL = `SELECT COUNT(*) AS n FROM content WHERE embedding IS NULL AND deleted_at IS NULL`;
+export const EMB_DIRTY_SQL = `SELECT COUNT(*) AS n FROM content WHERE synced = 0 AND deleted_at IS NULL`;
+
 export const NAMED_QUERIES = {
   'by-language': BY_LANGUAGE_SQL,
   'per-doc-rollup': PER_DOC_ROLLUP_SQL,
@@ -115,6 +133,11 @@ export const NAMED_QUERIES = {
   // and assumptions about this exact query family have been wrong four times running — so it gets EXPLAINed
   // before it gets edited (2026-08-17).
   'lang-totals': LANG_TOTALS_SQL,
+  // Registered so the plan can be EXPLAINed in production before anyone trusts it — same discipline the
+  // comment above demands, applied to its own replacement.
+  'emb-with': EMB_WITH_SQL,
+  'emb-missing': EMB_MISSING_SQL,
+  'emb-dirty': EMB_DIRTY_SQL,
   'lang-pending-embedding': LANG_PENDING_EMBEDDING_SQL,
   'lang-pending-sync': LANG_PENDING_SYNC_SQL,
 };
