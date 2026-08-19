@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-18T23:30:28.338Z",
+  "generated": "2026-08-19T00:29:37.657Z",
   "entries": [
+    {
+      "hash": "56c7db63",
+      "date": "2026-08-18",
+      "type": "Other",
+      "description": "One implementation of the thread<->dialog link, not two",
+      "scope": null
+    },
     {
       "hash": "6763a978",
       "date": "2026-08-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Default MIN_TEXT_LEN=0 (no silent length-skip) + EXTRACT_REQUEUE_FAILED lever for -1 paragraphs",
       "scope": "graph-extractor"
-    },
-    {
-      "hash": "6a434232",
-      "date": "2026-06-17",
-      "type": "Other",
-      "description": "Companion-of-Mullá-Ḥusayn stragglers + colophon (Nabíl alias)",
-      "scope": "rolls"
     }
   ],
   "grouped": {
     "2026-08-18": [
+      {
+        "hash": "56c7db63",
+        "date": "2026-08-18",
+        "type": "Other",
+        "description": "One implementation of the thread<->dialog link, not two",
+        "scope": null
+      },
       {
         "hash": "6763a978",
         "date": "2026-08-18",
@@ -7066,13 +7073,6 @@
         "type": "Fixed",
         "description": "Default MIN_TEXT_LEN=0 (no silent length-skip) + EXTRACT_REQUEUE_FAILED lever for -1 paragraphs",
         "scope": "graph-extractor"
-      },
-      {
-        "hash": "6a434232",
-        "date": "2026-06-17",
-        "type": "Other",
-        "description": "Companion-of-Mullá-Ḥusayn stragglers + colophon (Nabíl alias)",
-        "scope": "rolls"
       }
     ]
   }

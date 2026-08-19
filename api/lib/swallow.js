@@ -43,3 +43,14 @@ export function swallowedTotal() {
 }
 
 export function resetSwallowed() { counts.clear(); }
+
+// "The table may not exist yet" is a legitimate reason to continue — an optional feature table, a migration
+// that has not run on this box. But a bare `catch { /* table may not exist */ }` swallows EVERY error with
+// it: a typo'd column, a locked database, a permission failure all look identical to the caller and vanish.
+// This narrows the silence to the one expected shape and COUNTS everything else, so the benign case stays
+// quiet and a real failure shows up in health output instead of becoming a mystery. (2026-08-19)
+const MISSING_SCHEMA = /no such table|no such column|does not exist/i;
+export function ignoreMissingTable(err, where, ctx) {
+  if (err?.message && MISSING_SCHEMA.test(err.message)) return;   // expected: schema simply is not there yet
+  swallow(err, where, ctx);
+}

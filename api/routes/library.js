@@ -18,6 +18,7 @@
  */
 
 import { getMeili, INDEXES } from '../lib/search.js';
+import { ignoreMissingTable } from '../lib/swallow.js';   // narrow the silence to a genuinely absent table
 import { getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
@@ -186,8 +187,9 @@ export default async function libraryRoutes(fastify) {
           authorityMap[`${row.religion_name}:${row.collection_name}`] = row.authority_default;
         }
       }
-    } catch {
+    } catch (err) {
       // library_nodes table doesn't exist - continue without authority sorting
+      ignoreMissingTable(err, 'library.authority-map');
     }
 
     // Get religion and collection counts from docs table (exclude soft-deleted)
@@ -333,8 +335,9 @@ export default async function libraryRoutes(fastify) {
           processing: queueStats.processing || 0
         };
       }
-    } catch {
+    } catch (err) {
       // Table may not exist yet
+      ignoreMissingTable(err, 'library.optional-table');
     }
 
     // Get translation queue status
@@ -359,8 +362,9 @@ export default async function libraryRoutes(fastify) {
           totalItems: transStats.total_items || 0
         };
       }
-    } catch {
+    } catch (err) {
       // Table may not exist yet
+      ignoreMissingTable(err, 'library.optional-table');
     }
 
     // Pipeline status — use background-refreshed cache (COUNT queries can take 10s+ during bulk embedding)
@@ -795,8 +799,9 @@ export default async function libraryRoutes(fastify) {
         FROM library_nodes
         ORDER BY display_order, name
       `);
-    } catch {
+    } catch (err) {
       // Table doesn't exist yet - will fall back to docs table
+      ignoreMissingTable(err, 'library.nodes-fallback');
     }
 
     // Get document counts from docs table (exclude soft-deleted)
@@ -1557,9 +1562,10 @@ Return ONLY the description text, no quotes or formatting.`;
             processingDocs.add(item.target_document_id);
           }
         }
-      } catch {
-        // Table may not exist
-      }
+      } catch (err) {
+      // Table may not exist
+      ignoreMissingTable(err, 'library.optional-table');
+    }
     }
 
     // Add status and parse preview JSON for each document
@@ -1654,8 +1660,9 @@ Return ONLY the description text, no quotes or formatting.`;
         FROM document_assets
         WHERE document_id = ?
       `, [id]);
-    } catch {
+    } catch (err) {
       // Table may not exist
+      ignoreMissingTable(err, 'library.optional-table');
     }
 
     return {
@@ -2147,8 +2154,9 @@ Return ONLY the description text, no quotes or formatting.`;
           logger.warn({ err: fetchErr, url: originalAsset.storage_url }, 'Failed to fetch original content');
         }
       }
-    } catch {
+    } catch (err) {
       // Table may not exist
+      ignoreMissingTable(err, 'library.optional-table');
     }
 
     return {
