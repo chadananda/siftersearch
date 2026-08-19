@@ -172,14 +172,20 @@ export default async function ingestRoutes(fastify) {
     const ids = String(req.query?.docIds || '').split(',').map((x) => Number(x.trim())).filter(Boolean);
     const docIds = ids.length ? ids.slice(0, 50) : DOCTRINE;
     const ph = docIds.map(() => '?').join(',');
+    // No join to docs: PROSE_SQL is unqualified and both tables have deleted_at, so joining makes it
+    // ambiguous. Duplicating a qualified copy of the predicate here would break its single-owner rule
+    // (pipeline/processed.js), so titles come from a separate cheap lookup instead.
     const rows = await queryAll(
-      `SELECT c.doc_id, d.title,
+      `SELECT doc_id,
               COUNT(*) AS prose,
-              SUM(CASE WHEN c.context IS NULL OR trim(c.context) = '' THEN 1 ELSE 0 END) AS no_note,
-              SUM(CASE WHEN c.context LIKE '%unresolvable%' THEN 1 ELSE 0 END) AS unresolvable
-         FROM content c JOIN docs d ON d.id = c.doc_id
-        WHERE c.doc_id IN (${ph}) AND ${PROSE_SQL}
-        GROUP BY c.doc_id, d.title ORDER BY unresolvable DESC`, docIds, 'diag:unresolvable-notes');
+              SUM(CASE WHEN context IS NULL OR trim(context) = '' THEN 1 ELSE 0 END) AS no_note,
+              SUM(CASE WHEN context LIKE '%unresolvable%' THEN 1 ELSE 0 END) AS unresolvable
+         FROM content
+        WHERE doc_id IN (${ph}) AND ${PROSE_SQL}
+        GROUP BY doc_id ORDER BY unresolvable DESC`, docIds, 'diag:unresolvable-notes');
+    const titles = Object.fromEntries((await queryAll(
+      `SELECT id, title FROM docs WHERE id IN (${ph})`, docIds, 'diag:unresolvable-titles')).map((r) => [r.id, r.title]));
+    for (const r of rows) r.title = titles[r.doc_id] || null;
     const tot = rows.reduce((a, r) => ({
       prose: a.prose + (r.prose || 0), no_note: a.no_note + (r.no_note || 0), unresolvable: a.unresolvable + (r.unresolvable || 0),
     }), { prose: 0, no_note: 0, unresolvable: 0 });

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T19:26:55.658Z",
+  "generated": "2026-08-19T19:29:56.945Z",
   "entries": [
+    {
+      "hash": "b2a11e85",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "Count the disambiguation failures that pass as done",
+      "scope": null
+    },
     {
       "hash": "91d1fb27",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Rank GPB sentences by characterization texture (superlatives/station words)",
       "scope": "step3"
-    },
-    {
-      "hash": "58fe48d5",
-      "date": "2026-06-18",
-      "type": "Other",
-      "description": "Restrict GPB gather to person+work entities",
-      "scope": "step3"
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "b2a11e85",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "Count the disambiguation failures that pass as done",
+        "scope": null
+      },
       {
         "hash": "91d1fb27",
         "date": "2026-08-19",
@@ -7065,13 +7072,6 @@
         "date": "2026-06-18",
         "type": "Other",
         "description": "Rank GPB sentences by characterization texture (superlatives/station words)",
-        "scope": "step3"
-      },
-      {
-        "hash": "58fe48d5",
-        "date": "2026-06-18",
-        "type": "Other",
-        "description": "Restrict GPB gather to person+work entities",
         "scope": "step3"
       }
     ]
