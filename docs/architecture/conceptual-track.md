@@ -1,6 +1,7 @@
 # The Conceptual Track
 
-Status: DESIGN (2026-07-11). The second of two independent pipelines; the other is the
+Status: DESIGNED 2026-07-11 · **CODE-COMPLETE 2026-08-19, never run on real data** (see §8 — verify against
+the tree, not this line). The second of two independent pipelines; the other is the
 [Historical Track](history-track.md). They share only the disambiguated text upstream and **link at the
 graph** (a concept-claim references the `person`/`work` entities the Historical Track built) — no shared
 logic, no shared ordering.
@@ -176,10 +177,36 @@ enumeration, not an AI guess.
 
 ## 8. Build status
 
-Not yet built — a deliberate separate effort. Prerequisite: the Guardian's works (in the §4 internal order) must
-be in the corpus and seeded, since they head the chain. Components, in authority order:
-1. the **interpretive-lexicon seed** — cumulative, authority-ranked, cited (the concept twin of the person seed);
-2. the **concept-carrying disambiguation** variant (carries the running argument + the lexicon);
-3. **concept extraction** — concept entities + interpretation-claims (this *populates* the lexicon from the higher texts);
-4. **concept reconciliation** — evidence-based, authority-weighted binding of symbol-occurrences to lexicon
-   interpretations, proof-gated, literal + metaphorical kept as separate layers (the concept twin of person reconciliation).
+**BUILT, never run against real data** (status verified 2026-08-19 by reading the tree, not the prose).
+
+This section previously read "Not yet built — a deliberate separate effort", which was true when written and
+false by the time it was believed. It cost real damage: a session read it, concluded the concept extractor did
+not exist, reported that upstream, and overwrote `concepts/lexicon.js` with a fresh implementation before
+checking the directory. Only the pre-commit test gate caught it. **Verify status against the tree; this
+paragraph is a claim, not evidence.**
+
+| Component (authority order) | Where | State |
+|---|---|---|
+| interpretive-lexicon seed | `api/lib/rag/concepts/lexicon.js` | built + tested |
+| concept-carrying disambiguation | `api/lib/rag/concepts/disambiguate.js` | built 2026-08-19 (was imported by `rag/index.js` but ABSENT on disk — the call threw) |
+| concept extraction | `api/lib/rag/concepts/extract.js` | built + tested |
+| concept reconciliation | `api/lib/rag/concepts/reconcile.js` | built + tested |
+| interfaith linking | `api/lib/rag/concepts/link.js` | built + tested |
+| store ports (9) | `api/lib/rag-adapter/store.js` | all implemented (`clearLexicon`, `findLexiconEntries`, `getConcept`, `getConceptGroups`, `getConceptInterpretations`, `saveConceptClaims`, `saveConceptDecisions`, `saveConceptLinks`, `saveLexiconEntries`) |
+| schema | migration **90** | live (`concept_entities`, `concept_lexicon`, `concept_claims`, `concept_mentions`, `concept_decisions`, `concept_links`) |
+| CLI | `scripts/rag.mjs` | `concept-extract`, `concept-lexicon`, `concept-reconcile`, `concept-link`, `concept-disambiguate` |
+
+**What genuinely remains:** the pipeline has never been run on a real document, so `concept_lexicon` is empty
+and no interpretation has ever been extracted. Every component is exercised only against the fake ports in
+`tests/rag/kit.js`. The first real run costs model calls, so it is a spend decision, not a build task.
+
+**Prerequisite — now met.** The §4 doctrinal spine was seeded 2026-08-18/19 as the plan's `doctrine` phase
+(`api/lib/integration-phases.js`): 20894 The World Order of Bahá'u'lláh (whose *Dispensation* chapter is the
+ontology keystone), 20890 The Advent of Divine Justice, 20893 The Promised Day is Come, 20911 Some Answered
+Questions, 20810 the Kitáb-i-Íqán, 21307 the Kitáb-i-Aqdas, 28628 The Hidden Words. Six completed; 21307
+hit its retry ceiling mid-hype and needs a re-enqueue. Note the corpus DOES hold *The World Order of
+Bahá'u'lláh* (doc 20894) — an earlier note claiming it was missing was wrong, the fuzzy title search simply
+failed to surface it.
+
+**Still absent from the spine:** *Gleanings* — doc 28445 is a husk (`prose=0`) and 28928 holds 11 paragraphs,
+so the real text has yet to be located.

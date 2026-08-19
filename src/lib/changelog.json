@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T05:27:36.633Z",
+  "generated": "2026-08-19T06:27:05.095Z",
   "entries": [
+    {
+      "hash": "53b5abb5",
+      "date": "2026-08-18",
+      "type": "Other",
+      "description": "Count the AI quality assessment failing, do not just fall back",
+      "scope": null
+    },
     {
       "hash": "092eaea8",
       "date": "2026-08-18",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Step4 review page live; step2 narrative done",
       "scope": null
-    },
-    {
-      "hash": "2bb25159",
-      "date": "2026-06-17",
-      "type": "New",
-      "description": "Live-build entity-review page for manual entity review (Dawn-Breakers+GPB)",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-08-18": [
+      {
+        "hash": "53b5abb5",
+        "date": "2026-08-18",
+        "type": "Other",
+        "description": "Count the AI quality assessment failing, do not just fall back",
+        "scope": null
+      },
       {
         "hash": "092eaea8",
         "date": "2026-08-18",
@@ -7066,13 +7073,6 @@
         "type": "Docs",
         "description": "Step4 review page live; step2 narrative done",
         "scope": null
-      },
-      {
-        "hash": "2bb25159",
-        "date": "2026-06-17",
-        "type": "New",
-        "description": "Live-build entity-review page for manual entity review (Dawn-Breakers+GPB)",
-        "scope": "admin"
       }
     ]
   }
