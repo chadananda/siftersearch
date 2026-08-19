@@ -46,6 +46,22 @@ if (!fs.existsSync(MANIFEST)) {
   return;
 }
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
+// SELF-HEALING BOOKKEEPING. A convert row still 'pending' whose ingest row reached 'done' is a PHANTOM: the
+// book is in the library, so the converter's SQL work-list correctly skips it forever while /ingest/status
+// keeps reporting it as outstanding work. Ten such rows survived the journal-de-constantinople run — the
+// convert row was never settled when ingestion succeeded. Settle them from the fact ingestion succeeded: a
+// file cannot be ingested unless it was converted first. A counter permanently stuck above zero is worse
+// than no counter, because it teaches everyone to ignore the dashboard. (2026-08-19)
+if (APPLY) {
+  const settled = await write([{
+    sql: `UPDATE ingest_stage SET status = 'done', updated_at = unixepoch()
+           WHERE stage = 'convert' AND status = 'pending' AND item_ref IN (
+             SELECT item_ref FROM ingest_stage WHERE stage = 'ingest' AND status = 'done' AND doc_id IS NOT NULL)`,
+    args: [],
+  }], 'ingest.settle-phantom-convert').catch((e) => { console.log(`phantom-settle skipped: ${e.message}`); return null; });
+  if (settled) console.log('settled any phantom convert rows whose ingest already finished');
+}
+
 const pending = manifest.filter((m) => !m.ingested_doc_id && (!ONLY_ID || m.stub_id === ONLY_ID));
 console.log(`manifest: ${manifest.length} converted · ${pending.length} awaiting ingest${APPLY ? '' : ' (DRY RUN)'}`);
 tally.in = pending.length;
