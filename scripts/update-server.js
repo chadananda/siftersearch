@@ -444,9 +444,8 @@ async function swapPm2Process(name) {
 async function ensureCronSchedule(name) {
   let want;
   try {
-    const eco = readFileSync(join(PROJECT_ROOT, 'ecosystem.config.cjs'), 'utf8');
-    const m = new RegExp(`name:\\s*'${name}'[\\s\\S]{0,600}?cron_restart:\\s*'([^']+)'`).exec(eco);
-    want = m?.[1];
+    const { declaredCrons } = await import('./lib/cron-drift.mjs');
+    want = declaredCrons(readFileSync(join(PROJECT_ROOT, 'ecosystem.config.cjs'), 'utf8'))[name];
   } catch { return; }
   if (!want) return;                                  // not a cron app → nothing to enforce
   const res = await run('pm2 jlist');

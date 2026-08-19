@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T09:28:01.795Z",
+  "generated": "2026-08-19T14:28:21.389Z",
   "entries": [
+    {
+      "hash": "4bca3e4d",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "Warn that code added here is inert until the updater restarts",
+      "scope": null
+    },
     {
       "hash": "b82eb28b",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Entity merge executor (same-name compute + cross-name explicit)",
       "scope": "step3"
-    },
-    {
-      "hash": "4607baf1",
-      "date": "2026-06-18",
-      "type": "Docs",
-      "description": "Entity merge plan for review (85 dup groups classified)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "4bca3e4d",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "Warn that code added here is inert until the updater restarts",
+        "scope": null
+      },
       {
         "hash": "b82eb28b",
         "date": "2026-08-19",
@@ -7066,13 +7073,6 @@
         "type": "Other",
         "description": "Entity merge executor (same-name compute + cross-name explicit)",
         "scope": "step3"
-      },
-      {
-        "hash": "4607baf1",
-        "date": "2026-06-18",
-        "type": "Docs",
-        "description": "Entity merge plan for review (85 dup groups classified)",
-        "scope": null
       }
     ]
   }

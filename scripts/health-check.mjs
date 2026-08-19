@@ -615,9 +615,8 @@ async function checkCronDrift() {
   let declared;
   try {
     const { readFileSync } = await import('node:fs');
-    const eco = readFileSync('ecosystem.config.cjs', 'utf8');
-    declared = {};
-    for (const m of eco.matchAll(/name:\s*'([^']+)'[\s\S]{0,600}?cron_restart:\s*'([^']+)'/g)) declared[m[1]] = m[2];
+    const { declaredCrons } = await import('./lib/cron-drift.mjs');
+    declared = declaredCrons(readFileSync('ecosystem.config.cjs', 'utf8'));
   } catch (err) { return skip('cron_drift', `ecosystem.config.cjs unreadable: ${err.message}`); }
   if (!Object.keys(declared).length) return skip('cron_drift', 'no cron_restart entries declared');
   try {
@@ -626,12 +625,8 @@ async function checkCronDrift() {
     });
     if (!res.ok) return warn('cron_drift', `processes endpoint HTTP ${res.status}`);
     const live = (await res.json())?.processes || [];
-    const drifted = [];
-    for (const p of live) {
-      const want = declared[p.name];
-      if (!want || !p.cron) continue;
-      if (String(p.cron).trim() !== String(want).trim()) drifted.push(`${p.name}: pm2 '${p.cron}' vs ecosystem '${want}'`);
-    }
+    const { driftedApps } = await import('./lib/cron-drift.mjs');
+    const drifted = driftedApps(declared, live).map((d) => `${d.name}: pm2 '${d.live}' vs ecosystem '${d.declared}'`);
     if (drifted.length) return warn('cron_drift', `${drifted.length} app(s) on the wrong schedule — ${drifted.join(' · ')}`, { drifted });
     return ok('cron_drift', null, { checked: Object.keys(declared).length });
   } catch (err) {
