@@ -177,7 +177,13 @@ export default async function groundingRoutes(fastify) {
     ]);
     const byDoc = docId ? null : await queryAll(
       `SELECT doc_id, COUNT(*) n FROM concept_claims GROUP BY doc_id ORDER BY n DESC LIMIT 20`, [], 'diag:concepts-bydoc');
-    return { docId, claims, claims_proof_ok: proofOk, lexicon_entries: lexicon, entities, decisions, links, byDoc };
+    // A SAMPLE, not just counts. 740 lexicon entries tells you the stage ran; reading five of them tells you
+    // whether it produced authoritative interpretations or restatements — which is the actual question.
+    const sample = await queryAll(
+      `SELECT symbol, interpretation, authority, authority_tier, layer, proof_verbatim
+         FROM concept_lexicon${docId ? ' WHERE proof_doc_id = ?' : ''}
+        ORDER BY (authority_tier IS NULL), authority_tier, id DESC LIMIT 8`, args, 'diag:concepts-sample');
+    return { docId, claims, claims_proof_ok: proofOk, lexicon_entries: lexicon, entities, decisions, links, byDoc, sample };
   });
 
   /** POST /concepts/sync — reindex concept entities without re-extracting. Full refresh; cheap, no model calls. */

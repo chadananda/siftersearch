@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T23:44:35.092Z",
+  "generated": "2026-08-19T23:55:13.383Z",
   "entries": [
+    {
+      "hash": "f049276f",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "Report what the track actually produced",
+      "scope": null
+    },
     {
       "hash": "ab27a461",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Gpb-seed.md — reference for the GPB authority seed (state, structure, build, attach)",
       "scope": null
-    },
-    {
-      "hash": "c07cbf4e",
-      "date": "2026-06-20",
-      "type": "Docs",
-      "description": "Building Entities from Seed — living best-practices playbook",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "f049276f",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "Report what the track actually produced",
+        "scope": null
+      },
       {
         "hash": "ab27a461",
         "date": "2026-08-19",
@@ -7061,13 +7068,6 @@
         "date": "2026-06-20",
         "type": "Docs",
         "description": "Gpb-seed.md — reference for the GPB authority seed (state, structure, build, attach)",
-        "scope": null
-      },
-      {
-        "hash": "c07cbf4e",
-        "date": "2026-06-20",
-        "type": "Docs",
-        "description": "Building Entities from Seed — living best-practices playbook",
         "scope": null
       }
     ]
