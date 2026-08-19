@@ -597,6 +597,39 @@ async function checkSchemaVersion() {
 // Nothing ALARMED on it, so the counter had the same problem as the errors it was invented to expose: it was
 // only visible to someone who already suspected a problem. A path failing silently 400 times is drift between
 // what the code believes and what the database allows, and that is worth a warning (2026-08-14).
+// Mislabelled language is a SPEND-POLICY breach, not a cosmetic metadata problem: a Persian book carrying
+// language='en' routes down the English DeepSeek path, which produces garbage AND spends on a provider the
+// Persian-only rule forbids. /ingest/language-audit measures it; nothing consumed that measurement, which is
+// the same shape as the swallowed-error counter above — a detector only visible to someone already
+// suspicious is not a detector. Sampled + bounded, so this costs ~1s and no model tokens. (2026-08-19)
+async function checkLanguageLabels() {
+  const key = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY;
+  if (!key) return skip('language_labels', 'no internal key available');
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/ingest/language-audit?sample=120`, {
+      headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(25000),
+    });
+    if (res.status === 404) return skip('language_labels', 'API predates the language audit');
+    if (!res.ok) return warn('language_labels', `language-audit HTTP ${res.status}`);
+    const b = await res.json();
+    if (b?.population == null) return skip('language_labels', 'audit returned no population');
+    if (!b.decidable) return skip('language_labels', 'no decidable docs in sample');
+    // Alarm on the LOWER bound, never the point estimate: the conservative claim is the one worth acting on,
+    // and reporting a point estimate as if it were a count is how "2,789 unlockable books" became ~93.
+    const [lo, hi] = b.projected_ci95 || [0, 0];
+    const detail = { population: b.population, sampled: b.sampled, decidable: b.decidable,
+      undecidable: b.undecidable, rate: b.rate, projected: b.projected, ci95: b.projected_ci95, byLang: b.byLang };
+    if (lo >= 200) {
+      return warn('language_labels',
+        `~${b.projected} books mislabelled (95% CI ${lo}-${hi} of ${b.population}) — ` +
+        `${Object.entries(b.byLang || {}).map(([l, n]) => `${l}:${n}`).join(' ')} routed as English`, detail);
+    }
+    return ok('language_labels', null, detail);
+  } catch (err) {
+    return warn('language_labels', err.message);
+  }
+}
+
 async function checkSwallowed() {
   const key = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY;
   if (!key) return skip('swallowed_errors', 'no internal key available');
@@ -865,6 +898,7 @@ const probes = [
   ['schema_version', checkSchemaVersion],         // catches pending migrations
   ['snapshot_probes', checkSnapshotProbes],       // catches a broken probe reporting zeros as "all clear"
   ['swallowed_errors', checkSwallowed],           // catches a path that fails silently on every run
+  ['language_labels', checkLanguageLabels],       // catches Persian/Arabic books routed as English (spend-policy breach)
   ['deep_research', checkDeepResearch],           // deep_research_queue stuck/failing
   // enrichment + graph_pipeline: only meaningful on tower-nas; skip when api is down.
   ...(!apiDown ? [
