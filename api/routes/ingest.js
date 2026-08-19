@@ -137,6 +137,77 @@ export default async function ingestRoutes(fastify) {
   // Two very different causes, and they need opposite fixes: the DB column is empty (re-ingest, extract
   // headings) or it is populated and not reaching Meili (re-index). Guessing between layers is the mistake
   // that has cost this session the most, so: measure the DB directly (2026-08-18).
+  /**
+   * GET /ingest/language-audit — how many en/NULL-labelled BOOKS are actually another language?
+   *
+   * Exists because the number could not be got any other way without a mutation or a server-side script
+   * run. The hourly relabel only inspects docs already in the grounding queue or ingested by this pipeline
+   * (~1,814), so `relabel/pending: 0` says nothing about the rest of the corpus; relabel-languages.mjs --all
+   * has never run. A wrong label routes a Persian book down the English DeepSeek path, which is both garbage
+   * output and a spend-policy breach — so the size of the backlog is worth knowing before deciding.
+   *
+   * SAMPLED, never a full scan. better-sqlite3 is synchronous: a scan over ~130k docs x N paragraphs would
+   * hold the single writer for minutes, which is exactly how a 61s query froze the pipeline before. Bounded
+   * sample + reported interval beats a precise number that costs an outage.
+   *
+   * Read-only. Reports what a relabel WOULD find; changes nothing. Uses detectLang — the same detector the
+   * pipeline routes on — so this audit and the relabel cannot disagree.
+   */
+  fastify.get('/ingest/language-audit', admin, async (req) => {
+    const sampleSize = Math.min(Number(req.query?.sample) || 120, 400);
+    const paras = Math.min(Number(req.query?.paras) || 12, 40);
+    const { detectLang } = await import('../lib/pipeline/profile.js');
+    // Books only. The en label is dominated by inventory/bibliography stubs and fragments (a random sample
+    // found ~82% of them are not books at all), and relabelling a 3-line catalogue row means nothing.
+    const SUSPECT = `d.deleted_at IS NULL AND d.duplicate_of IS NULL
+      AND (d.language IS NULL OR d.language = 'en')
+      AND COALESCE(d.paragraph_count,0) >= 10
+      AND COALESCE(d.author,'') NOT LIKE 'inventory-%'
+      AND COALESCE(d.author,'') NOT LIKE 'bibliography-%'`;
+    const pop = await queryOne(`SELECT COUNT(*) n FROM docs d WHERE ${SUSPECT}`, [], 'diag:lang-audit-pop');
+    const docs = await queryAll(
+      `SELECT d.id, d.title, d.language FROM docs d WHERE ${SUSPECT} ORDER BY RANDOM() LIMIT ?`,
+      [sampleSize], 'diag:lang-audit-sample');
+    const byLang = {}; const examples = [];
+    let checked = 0, mismatched = 0, undecidable = 0;
+    for (const d of docs) {
+      const rows = await queryAll(
+        `SELECT text FROM content WHERE doc_id=? AND ${PROSE_SQL} AND deleted_at IS NULL
+           AND length(trim(text)) > 30 ORDER BY paragraph_index LIMIT ?`, [d.id, paras], 'diag:lang-audit-text');
+      if (!rows.length) continue;
+      checked++;
+      const text = rows.map((r) => r.text).join('\n');
+      // detectLatinLang returns 'en' for BOTH "this is English" and "under 40 words, too little to judge".
+      // Counting the second as English would quietly understate the backlog, so undecidable is its own
+      // bucket — the honest answer to "how many are mislabelled?" excludes the ones nobody can classify.
+      if ((text.toLowerCase().match(/[a-z\u00e0-\u00ff']+/g) || []).length < 40) { undecidable++; continue; }
+      // metaLang null: the decision rests on the text alone, never the label being audited.
+      const got = detectLang(text, null);
+      if (got && got !== 'en') {
+        mismatched++;
+        byLang[got] = (byLang[got] || 0) + 1;
+        if (examples.length < 15) examples.push({ id: d.id, title: d.title, labelled: d.language, detected: got });
+      }
+    }
+    // Rate is over the DECIDABLE docs only — projecting a rate measured on one population onto another
+    // is the single most repeated error in this pipeline's history.
+    const decidable = checked - undecidable;
+    const rate = decidable ? mismatched / decidable : 0;
+    const se = decidable ? Math.sqrt((rate * (1 - rate)) / decidable) : 0;
+    const lo = Math.max(0, rate - 1.96 * se), hi = Math.min(1, rate + 1.96 * se);
+    return {
+      population: pop?.n || 0, sampled: docs.length, checked, decidable, undecidable, mismatched,
+      rate: Number(rate.toFixed(4)),
+      ci95: [Number(lo.toFixed(4)), Number(hi.toFixed(4))],
+      projected: Math.round(rate * (pop?.n || 0)),
+      projected_ci95: [Math.round(lo * (pop?.n || 0)), Math.round(hi * (pop?.n || 0))],
+      byLang, examples,
+      note: 'Sampled estimate, not a census. Rate is over DECIDABLE docs (>=40 words); '
+        + 'projection assumes the undecidable share behaves the same, which is unverified. '
+        + 'Report the interval, never the point estimate alone.',
+    };
+  });
+
   fastify.get('/ingest/heading-coverage', admin, async (req) => {
     const limit = Math.min(Number(req.query?.limit) || 20, 200);
     const totals = await queryOne(

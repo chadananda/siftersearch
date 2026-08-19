@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T02:20:08.637Z",
+  "generated": "2026-08-19T03:28:54.056Z",
   "entries": [
+    {
+      "hash": "e02c477a",
+      "date": "2026-08-18",
+      "type": "Other",
+      "description": "Settle phantom convert rows instead of reporting them forever",
+      "scope": null
+    },
     {
       "hash": "954f0903",
       "date": "2026-08-18",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Overnight run plan + A400/migration outcome",
       "scope": null
-    },
-    {
-      "hash": "dc336e57",
-      "date": "2026-06-17",
-      "type": "Performance",
-      "description": "Synchronous=NORMAL for content connection (WAL-safe, ~4x faster writes; env-overridable)",
-      "scope": "db"
     }
   ],
   "grouped": {
     "2026-08-18": [
+      {
+        "hash": "e02c477a",
+        "date": "2026-08-18",
+        "type": "Other",
+        "description": "Settle phantom convert rows instead of reporting them forever",
+        "scope": null
+      },
       {
         "hash": "954f0903",
         "date": "2026-08-18",
@@ -7066,13 +7073,6 @@
         "type": "Docs",
         "description": "Overnight run plan + A400/migration outcome",
         "scope": null
-      },
-      {
-        "hash": "dc336e57",
-        "date": "2026-06-17",
-        "type": "Performance",
-        "description": "Synchronous=NORMAL for content connection (WAL-safe, ~4x faster writes; env-overridable)",
-        "scope": "db"
       }
     ]
   }
