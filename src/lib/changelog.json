@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T04:28:12.346Z",
+  "generated": "2026-08-19T05:27:36.633Z",
   "entries": [
+    {
+      "hash": "092eaea8",
+      "date": "2026-08-18",
+      "type": "Other",
+      "description": "Alarm on mislabelled language, not just measure it",
+      "scope": null
+    },
     {
       "hash": "27afa7bc",
       "date": "2026-08-18",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Live-build entity-review page for manual entity review (Dawn-Breakers+GPB)",
       "scope": "admin"
-    },
-    {
-      "hash": "fd048f3a",
-      "date": "2026-06-17",
-      "type": "Other",
-      "description": "Content-entity extractor (resolve to existing, queue new, enrich all)",
-      "scope": "step2"
     }
   ],
   "grouped": {
     "2026-08-18": [
+      {
+        "hash": "092eaea8",
+        "date": "2026-08-18",
+        "type": "Other",
+        "description": "Alarm on mislabelled language, not just measure it",
+        "scope": null
+      },
       {
         "hash": "27afa7bc",
         "date": "2026-08-18",
@@ -7066,13 +7073,6 @@
         "type": "New",
         "description": "Live-build entity-review page for manual entity review (Dawn-Breakers+GPB)",
         "scope": "admin"
-      },
-      {
-        "hash": "fd048f3a",
-        "date": "2026-06-17",
-        "type": "Other",
-        "description": "Content-entity extractor (resolve to existing, queue new, enrich all)",
-        "scope": "step2"
       }
     ]
   }

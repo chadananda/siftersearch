@@ -17,6 +17,7 @@
  */
 
 import { BaseAgent } from './base-agent.js';
+import { swallow } from '../lib/swallow.js';   // a silent AI failure must not look like a clean library
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { getMeili, INDEXES, hybridSearch } from '../lib/search.js';
 import { aiService } from '../lib/ai-services.js';
@@ -249,8 +250,11 @@ Respond with JSON:
         ], { maxTokens: 500 });
 
         aiAssessment = this.parseJSON(response.content);
-      } catch {
-        // Use heuristic results only
+      } catch (err) {
+        // Falling back to heuristics is right — an AI outage must not block a quality assessment. But the
+        // caller cannot tell "the model ran and found nothing" from "the model never ran", so a persistent
+        // outage looked exactly like a clean library. COUNTED, not silent (2026-08-19).
+        swallow(err, 'librarian.ai-quality-assessment', { excerptLen: excerpt?.length });
       }
     }
 
