@@ -26,12 +26,25 @@ const stages = only ? [only] : ORDER.slice(fromI < 0 ? 0 : fromI);
 const unknown = stages.filter((s) => !ORDER.includes(s));
 if (unknown.length) { console.error(`unknown stage(s): ${unknown.join(', ')} — known: ${ORDER.join(', ')}`); process.exit(1); }
 
-const { rag } = await import('../api/lib/rag-adapter/index.js');
+const { rag, langOf } = await import('../api/lib/rag-adapter/index.js');
+const { withUsageScope } = await import('../api/lib/rag-adapter/usage.js');
+const { setAIContext } = await import('../api/lib/ai-context.js');
+
+// METERING SCOPE — the same one run-grounding establishes, and for the same reason. Without it a concept run
+// is UNMETERED: its model calls are not costed against (docId, stage) in ai_usage, do not appear in byBook,
+// and — the part that matters — are not checked against the spend policy that authorises Anthropic for
+// PERSIAN ONLY. Measured on the first GPB run: 3,753 claims extracted while the doc's byBook total did not
+// move at all. An unmetered path around a fail-closed policy is the policy not existing.
+const scope = { docId, lang: null, stage: null };
+try { scope.lang = await langOf(docId); } catch { /* unknown language → policy fails closed on paid providers */ }
+
 const started = Date.now();
 console.log(`[concepts] doc ${docId} — stages: ${stages.join(' → ')}${dryRun ? ' (DRY)' : ''}${limit ? ` limit=${limit}` : ''}`);
 
 let failed = null;
+await withUsageScope(scope, async () => {
 for (const stage of stages) {
+  setAIContext({ stage: `concept:${stage}` });   // cost each stage separately, as grounding does
   const t0 = Date.now();
   try {
     const fn = stage === 'lexicon' ? rag.concepts.lexicon.seed : rag.concepts[stage];
@@ -46,6 +59,7 @@ for (const stage of stages) {
     break;
   }
 }
+});
 
 if (!failed && !dryRun) {
   try {
