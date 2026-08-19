@@ -83,6 +83,49 @@ export default async function groundingRoutes(fastify) {
     return { queued: rows.length, items: rows.map(({ opts_json, ...r }) => r) };
   });
 
+  /**
+   * POST /concepts/run — run the CONCEPTUAL track on one document.
+   *
+   * The conceptual track has been code-complete since 08-19 and had never run on a single document, because
+   * the only way to invoke it was scripts/rag.mjs on the box — and control belongs on the internal API, not
+   * SSH. GROUNDING_STAGES has no concept stage either, so the person pipeline could never reach it.
+   *
+   * ORDER IS LOAD-BEARING (conceptual-track §3, §7): the lexicon must accumulate from the higher texts BEFORE
+   * lower texts bind their symbols to it, and HyPE reads the disambiguation context, so a concept-carrying
+   * note has to exist before questions are generated. Hence the default order below, and hence `stages` is
+   * validated against it rather than accepted as free text.
+   *
+   * SPENDS. Every stage makes model calls; dryRun runs the read side and writes nothing.
+   */
+  fastify.post('/concepts/run', admin, async (req) => {
+    const ORDER = ['disambiguate', 'extract', 'lexicon', 'reconcile'];
+    const { docId, stages, dryRun = false, ...opts } = req.body || {};
+    if (!docId) throw ApiError.badRequest('docId required');
+    const want = stages?.length ? stages : ORDER;
+    const unknown = want.filter((s) => !ORDER.includes(s));
+    if (unknown.length) throw ApiError.badRequest(`unknown concept stage(s): ${unknown.join(', ')} — known: ${ORDER.join(', ')}`);
+    // Run in canonical order regardless of the order asked for: a caller who lists extract before
+    // disambiguate is asking for concepts off an un-disambiguated text, which the design forbids outright.
+    const ordered = ORDER.filter((s) => want.includes(s));
+    const { rag } = await import('../lib/rag-adapter/index.js');
+    const out = { docId, dryRun, ran: [], stats: {} };
+    for (const stage of ordered) {
+      const fn = stage === 'lexicon' ? rag.concepts.lexicon.seed : rag.concepts[stage];
+      if (typeof fn !== 'function') { out.stats[stage] = { error: 'stage not available in this build' }; break; }
+      try {
+        out.stats[stage] = await fn.call(rag.concepts, docId, { ...opts, dryRun });
+        out.ran.push(stage);
+      } catch (err) {
+        // Stop at the first failure: a later stage consuming a half-built lexicon produces confidently wrong
+        // bindings, which is worse than no bindings.
+        out.stats[stage] = { error: err.message };
+        out.stoppedAt = stage;
+        break;
+      }
+    }
+    return out;
+  });
+
   fastify.get('/grounding/queue', admin, async () => ({ items: await queue.list() }));
 
   fastify.delete('/grounding/queue/:id', admin, async (req) => {

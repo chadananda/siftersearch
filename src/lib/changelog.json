@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-19T18:50:27.315Z",
+  "generated": "2026-08-19T18:56:17.811Z",
   "entries": [
+    {
+      "hash": "5bac53f3",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "A disambiguation note must reach the index",
+      "scope": null
+    },
     {
       "hash": "25f96619",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Gather verbatim GPB descriptors into entity descriptions",
       "scope": "step3"
-    },
-    {
-      "hash": "34bdf386",
-      "date": "2026-06-18",
-      "type": "Fixed",
-      "description": "MergeEntities graph_relations OR IGNORE + drop leftover (UNIQUE on source,target,type)",
-      "scope": "graph-db"
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "5bac53f3",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "A disambiguation note must reach the index",
+        "scope": null
+      },
       {
         "hash": "25f96619",
         "date": "2026-08-19",
@@ -7066,13 +7073,6 @@
         "type": "Other",
         "description": "Gather verbatim GPB descriptors into entity descriptions",
         "scope": "step3"
-      },
-      {
-        "hash": "34bdf386",
-        "date": "2026-06-18",
-        "type": "Fixed",
-        "description": "MergeEntities graph_relations OR IGNORE + drop leftover (UNIQUE on source,target,type)",
-        "scope": "graph-db"
       }
     ]
   }
