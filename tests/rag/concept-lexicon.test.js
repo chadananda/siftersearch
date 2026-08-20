@@ -4,12 +4,18 @@ import { describe, it, expect } from 'vitest';
 import { lexiconEntry } from '../../api/lib/rag/concepts/lexicon.js';
 import { makeRag } from './kit.js';
 
+// NOTE (2026-08-20): this expectation was 'metaphorical' only because lexiconEntry HARDCODED that value —
+// every entry claimed to be a metaphor, including "Chicago = the first Bahá'í center in the Western world".
+// The relation here is `means`, which spans both layers ("the Sun of Truth MEANS Bahá'u'lláh" vs "Chicago
+// MEANS..."), so the honest answer is null: under-bind rather than assert (§6). The clouds ARE metaphorical
+// and the design says so — but that judgement belongs to the extractor, which sees the passage. Restoring it
+// properly needs `layer` emitted per claim and a column on concept_claims to carry it.
 describe('concepts/lexicon — pure', () => {
   it('lexiconEntry maps an interpretation claim to a cited, authority-stamped lexicon row', () => {
     const e = lexiconEntry(
       { subject: 'the clouds', relation: 'means', target: 'that which veils recognition of the Manifestation', proof_verbatim: 'the clouds of heaven', para_id: 'p9', doc_id: 21310 },
       { authority: 'God Passes By', authorityTier: 0, methodVersion: 'v1' });
-    expect(e).toMatchObject({ symbol: 'the clouds', interpretation: 'that which veils recognition of the Manifestation', authority: 'God Passes By', authorityTier: 0, layer: 'metaphorical', proofParaId: 'p9', proofVerbatim: 'the clouds of heaven' });
+    expect(e).toMatchObject({ symbol: 'the clouds', interpretation: 'that which veils recognition of the Manifestation', authority: 'God Passes By', authorityTier: 0, layer: null, proofParaId: 'p9', proofVerbatim: 'the clouds of heaven' });
   });
 });
 

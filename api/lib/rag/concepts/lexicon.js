@@ -19,11 +19,28 @@ export async function seed(ctx, docId, opts = {}) {
 }
 
 // An interpretation claim (symbol → what an authority says it means) becomes a cited lexicon entry.
+// §6 requires literal and metaphorical to be DISTINCT, ATTRIBUTED layers. This used to be hardcoded to
+// 'metaphorical', so every entry claimed to be a metaphor — including "Chicago = the first Bahá'í center in
+// the Western world", a plain fact about a city, which is precisely the over-binding §6 warns against.
+//
+// Only three of the extractor's relations are unambiguously figurative. `means` and `teaches` span both —
+// "the Sun of Truth MEANS Bahá'u'lláh" is metaphor, "Chicago MEANS the first Bahá'í center" is not — and only
+// the extractor sees enough to tell. So an undetermined layer is NULL, never a default guess: under-bind
+// rather than assert. A claim that states its own layer is always honoured.
+//
+// The complete fix is for the extractor to emit `layer` per claim; that needs a column on concept_claims
+// (migration 90 has none) and so a migration + CURRENT_VERSION bump. Deliberately not smuggled in here.
+const FIGURATIVE = new Set(['symbolizes', 'interprets', 'fulfills']);
+export function layerOf(c) {
+  if (c?.layer === 'literal' || c?.layer === 'metaphorical') return c.layer;
+  return FIGURATIVE.has(String(c?.relation || '').toLowerCase()) ? 'metaphorical' : null;
+}
+
 export function lexiconEntry(c, { authority, authorityTier, methodVersion }) {
   return {
     symbol: c.subject,
     interpretation: c.target || c.statement || '',
-    authority, authorityTier, layer: 'metaphorical',
+    authority, authorityTier, layer: layerOf(c),
     proofDocId: c.doc_id, proofParaId: c.para_id, proofVerbatim: c.proof_verbatim,
     methodVersion,
   };
