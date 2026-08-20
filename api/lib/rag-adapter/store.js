@@ -73,6 +73,25 @@ export function makeStore() {
       return byPara;
     },
 
+    // Persist promoted concept records. FULL REBUILD, not an append: promotion is deterministic, so
+    // re-running must converge rather than accumulate duplicates. concept_entities had never held a row
+    // before this — nothing wrote it (verified 2026-08-20), which is why entities was 0 and concepts/link
+    // could never bind anything.
+    async saveConceptEntities(concepts) {
+      if (!concepts?.length) return 0;
+      const stmts = [{ sql: `DELETE FROM concept_entities`, args: [] }];
+      for (const c of concepts) {
+        stmts.push({
+          sql: `INSERT INTO concept_entities (canonical, root, renderings, concept_type, tradition, importance, summary, last_assessed_version)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          args: [c.canonical, c.root ?? null, JSON.stringify(c.renderings || []), c.concept_type || 'concept',
+            c.tradition ?? null, c.importance ?? null, c.summary ?? null, 'promote-v1'],
+        });
+      }
+      await db.transaction(stmts);   // same batch writer every other save port uses; routes to the single writer
+      return concepts.length;
+    },
+
     // Concept claims per paragraph — the CONCEPT twin of getParaClaims, and the port that lets HyPE ask about
     // what a doctrinal passage MEANS rather than paraphrase its wording (conceptual-track §7). Same keying as
     // getParagraphs uses, so retrieval can look up by pid. Renders subject/relation/target into one readable

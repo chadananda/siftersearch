@@ -10,7 +10,9 @@
 // Order is FIXED (conceptual-track §3/§7): disambiguate → extract → lexicon → reconcile. The lexicon must
 // accumulate from the higher texts before lower texts bind to it, and HyPE reads the note, so a
 // concept-carrying note must exist before questions are written.
-const ORDER = ['disambiguate', 'extract', 'lexicon', 'reconcile'];
+// promote is LAST: it rebuilds concept records from the lexicon, so it must see everything the earlier
+// stages wrote. Deterministic and idempotent, so re-running converges rather than duplicating.
+const ORDER = ['disambiguate', 'extract', 'lexicon', 'reconcile', 'promote'];
 
 const argv = process.argv.slice(2);
 const docId = Number(argv[0]);

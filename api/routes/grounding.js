@@ -98,7 +98,7 @@ export default async function groundingRoutes(fastify) {
    * SPENDS. Every stage makes model calls; dryRun runs the read side and writes nothing.
    */
   fastify.post('/concepts/run', admin, async (req) => {
-    const ORDER = ['disambiguate', 'extract', 'lexicon', 'reconcile'];
+    const ORDER = ['disambiguate', 'extract', 'lexicon', 'reconcile', 'promote'];
     const { docId, stages, dryRun = false, ...opts } = req.body || {};
     if (!docId) throw ApiError.badRequest('docId required');
     const want = stages?.length ? stages : ORDER;

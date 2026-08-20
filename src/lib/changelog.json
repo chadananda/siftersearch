@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-20T04:26:54.823Z",
+  "generated": "2026-08-20T14:21:11.550Z",
   "entries": [
+    {
+      "hash": "5528fbb6",
+      "date": "2026-08-19",
+      "type": "Docs",
+      "description": "The conceptual track HAS run — correcting my own correction",
+      "scope": null
+    },
     {
       "hash": "898b23a3",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Inspect roster new-martyr proposals before create",
       "scope": null
-    },
-    {
-      "hash": "b850127a",
-      "date": "2026-06-23",
-      "type": "Other",
-      "description": "Per-input decision filenames, concurrency 8",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "5528fbb6",
+        "date": "2026-08-19",
+        "type": "Docs",
+        "description": "The conceptual track HAS run — correcting my own correction",
+        "scope": null
+      },
       {
         "hash": "898b23a3",
         "date": "2026-08-19",
@@ -7059,13 +7066,6 @@
         "date": "2026-06-23",
         "type": "Other",
         "description": "Inspect roster new-martyr proposals before create",
-        "scope": null
-      },
-      {
-        "hash": "b850127a",
-        "date": "2026-06-23",
-        "type": "Other",
-        "description": "Per-input decision filenames, concurrency 8",
         "scope": null
       }
     ]

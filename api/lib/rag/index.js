@@ -62,6 +62,7 @@ export function createCorpusRAG(deps = {}) {
       async disambiguate(docId, opts) { return (await import('./concepts/disambiguate.js')).run(ctx, docId, opts); }, // argument-carrying
       async extract(docId, opts)      { return (await import('./concepts/extract.js')).run(ctx, docId, opts); },      // concept entities + claims
       async reconcile(docId, opts)    { return (await import('./concepts/reconcile.js')).run(ctx, docId, opts); },    // bind symbols to lexicon
+      async promote(_docId, opts)     { return (await import('./concepts/promote.js')).run(ctx, opts); },          // lexicon → one record per concept
       async link(a, b, opts)          { return (await import('./concepts/link.js')).link(ctx, a, b, opts); },         // analogical / bridge
     },
 
