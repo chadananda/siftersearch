@@ -1,7 +1,7 @@
 # The Conceptual Track
 
-Status: DESIGNED 2026-07-11 · **CODE-COMPLETE 2026-08-19, never run on real data** (see §8 — verify against
-the tree, not this line). The second of two independent pipelines; the other is the
+Status: DESIGNED 2026-07-11 · CODE-COMPLETE 2026-08-19 · **RUN on real data: 2026-07-12 (4 books) and
+2026-08-20 (2 more)** — see §8. Verify against the DATA, not this line. The second of two independent pipelines; the other is the
 [Historical Track](history-track.md). They share only the disambiguated text upstream and **link at the
 graph** (a concept-claim references the `person`/`work` entities the Historical Track built) — no shared
 logic, no shared ordering.
@@ -196,9 +196,35 @@ paragraph is a claim, not evidence.**
 | schema | migration **90** | live (`concept_entities`, `concept_lexicon`, `concept_claims`, `concept_mentions`, `concept_decisions`, `concept_links`) |
 | CLI | `scripts/rag.mjs` | `concept-extract`, `concept-lexicon`, `concept-reconcile`, `concept-link`, `concept-disambiguate` |
 
-**What genuinely remains:** the pipeline has never been run on a real document, so `concept_lexicon` is empty
-and no interpretation has ever been extracted. Every component is exercised only against the fake ports in
-`tests/rag/kit.js`. The first real run costs model calls, so it is a spend decision, not a build task.
+**It HAS run — twice, and I got this wrong.** On 2026-08-19 this section said the pipeline had "never been run
+on a real document". That was false, and it was believed for a day. The track ran on **2026-07-12** over four
+books — God Passes By (3,753 claims / 740 lexicon entries), The World Order of Bahá'u'lláh (1,229/198),
+Citadel of Faith (1,092/172), Messages to the Bahá'í World (994/162) — and again on **2026-08-20** over The
+Advent of Divine Justice (469/86) and The Promised Day is Come (1,254/293).
+
+The error: `concept_entities` was empty, and I concluded from it that nothing had run. Entities are written by
+a stage that does not exist (below); `concept_claims` and `concept_lexicon` are written by extract and
+lexicon, and both were populated. **Check the table the stage actually writes.** Timestamps settle it —
+`GET /api/admin/concepts/status?docId=N` reports `first_at`/`last_at` for exactly this reason.
+
+**What genuinely remains:**
+1. **The promotion stage does not exist.** NOTHING in the codebase writes `concept_entities` — verified
+   2026-08-20 by scanning every `.js`/`.mjs`: zero INSERT/UPDATE, three readers. So `entities` is 0 by
+   construction, and `concepts/link` is dead in practice: it calls `getConcept(a)`/`getConcept(b)`, which read
+   that empty table, so `links` can never be non-zero. This is the concept twin of the person pipeline's
+   `createEntity`/apply-decisions, and it was never built.
+2. **The extractor does not emit `layer`.** `lexiconEntry` hardcoded `layer:'metaphorical'`, so every entry
+   claimed to be a metaphor — including "Chicago = the first Bahá'í center in the Western world". Now derived
+   only from unambiguously figurative relations (`symbolizes|interprets|fulfills`) and NULL otherwise, because
+   `means` spans both. The real fix needs `layer` per claim and so a column on `concept_claims` (migration 90
+   has none) plus a `CURRENT_VERSION` bump.
+3. **Four books of the doctrinal spine are still un-run**: Some Answered Questions, the Kitáb-i-Íqán, the
+   Kitáb-i-Aqdas, the Hidden Words — the ones carrying the Bible and Qur'án interpretations that Matthew 24
+   and the Súrihs will later bind against (§3, §6).
+
+**Interim indexing:** because entities can never fill, the `concepts` index carries LEXICON records
+(`kind='lexicon'`, ids namespaced `lex_N`) — 1,651 live as of 2026-08-20. Promoted entities can share the
+index later without collision.
 
 **Prerequisite — now met.** The §4 doctrinal spine was seeded 2026-08-18/19 as the plan's `doctrine` phase
 (`api/lib/integration-phases.js`): 20894 The World Order of Bahá'u'lláh (whose *Dispensation* chapter is the

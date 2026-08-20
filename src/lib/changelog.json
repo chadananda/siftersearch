@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-20T03:28:06.372Z",
+  "generated": "2026-08-20T04:26:54.823Z",
   "entries": [
+    {
+      "hash": "898b23a3",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "Index the lexicon, because entities have no writer",
+      "scope": null
+    },
     {
       "hash": "853bb2cf",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Per-input decision filenames, concurrency 8",
       "scope": null
-    },
-    {
-      "hash": "57b7ae47",
-      "date": "2026-06-20",
-      "type": "Docs",
-      "description": "Rewrite entity-extraction as a terse PRD — Building Entities from Seed",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "898b23a3",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "Index the lexicon, because entities have no writer",
+        "scope": null
+      },
       {
         "hash": "853bb2cf",
         "date": "2026-08-19",
@@ -7059,15 +7066,6 @@
         "date": "2026-06-23",
         "type": "Other",
         "description": "Per-input decision filenames, concurrency 8",
-        "scope": null
-      }
-    ],
-    "2026-06-20": [
-      {
-        "hash": "57b7ae47",
-        "date": "2026-06-20",
-        "type": "Docs",
-        "description": "Rewrite entity-extraction as a terse PRD — Building Entities from Seed",
         "scope": null
       }
     ]
