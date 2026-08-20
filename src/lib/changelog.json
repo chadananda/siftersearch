@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-20T01:31:24.385Z",
+  "generated": "2026-08-20T03:28:06.372Z",
   "entries": [
+    {
+      "hash": "853bb2cf",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "Stop claiming every entry is a metaphor",
+      "scope": null
+    },
     {
       "hash": "75bbb915",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Rewrite entity-extraction as a terse PRD — Building Entities from Seed",
       "scope": null
-    },
-    {
-      "hash": "2153d149",
-      "date": "2026-06-20",
-      "type": "Docs",
-      "description": "Consolidate entity docs into terse entity-extraction.md (why-GPB, pitfalls, two-pass + research pattern)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "853bb2cf",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "Stop claiming every entry is a metaphor",
+        "scope": null
+      },
       {
         "hash": "75bbb915",
         "date": "2026-08-19",
@@ -7061,13 +7068,6 @@
         "date": "2026-06-20",
         "type": "Docs",
         "description": "Rewrite entity-extraction as a terse PRD — Building Entities from Seed",
-        "scope": null
-      },
-      {
-        "hash": "2153d149",
-        "date": "2026-06-20",
-        "type": "Docs",
-        "description": "Consolidate entity docs into terse entity-extraction.md (why-GPB, pitfalls, two-pass + research pattern)",
         "scope": null
       }
     ]

@@ -130,7 +130,8 @@ export default async function groundingRoutes(fastify) {
     if (!dryRun && out.ran.length) {
       try {
         const { syncConcepts } = await import('../lib/search/concepts.js');
-        out.indexed = await syncConcepts();
+        const { syncLexicon } = await import('../lib/search/concepts.js');
+        out.indexed = { entities: await syncConcepts(), lexicon: await syncLexicon() };
       } catch (err) {
         out.indexed = { error: err.message };   // reported, never silent — the run still succeeded
       }
@@ -195,8 +196,11 @@ export default async function groundingRoutes(fastify) {
 
   /** POST /concepts/sync — reindex concept entities without re-extracting. Full refresh; cheap, no model calls. */
   fastify.post('/concepts/sync', admin, async () => {
-    const { syncConcepts } = await import('../lib/search/concepts.js');
-    return syncConcepts();
+    // BOTH kinds. Entities have no writer yet (nothing in the codebase INSERTs concept_entities), so syncing
+    // only those would keep reporting 0 while 1,651 real cited interpretations sat unindexed.
+    const { syncConcepts, syncLexicon } = await import('../lib/search/concepts.js');
+    const [entities, lexicon] = await Promise.all([syncConcepts(), syncLexicon()]);
+    return { entities, lexicon };
   });
 
   fastify.get('/grounding/queue', admin, async () => ({ items: await queue.list() }));

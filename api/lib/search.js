@@ -505,9 +505,12 @@ export async function initializeIndexes() {
 // what tells them apart — the concept twin of a person's Arabic-script name being the identity, not the
 // romanization. tradition is filterable so one concept can be asked across religions (§6).
 const conceptSettings = {
-    searchableAttributes: ['canonical', 'root', 'renderings', 'summary'],
-    filterableAttributes: ['concept_type', 'tradition', 'importance', 'root'],
-    sortableAttributes: ['importance'],
+    // Two record kinds share this index: promoted ENTITIES (canonical/root/renderings) and LEXICON entries
+    // (symbol/interpretation). Entities have no writer yet, so today every record is a lexicon entry — but
+    // searching only the entity fields would have made the index look broken rather than empty.
+    searchableAttributes: ['canonical', 'root', 'renderings', 'summary', 'symbol', 'interpretation'],
+    filterableAttributes: ['concept_type', 'tradition', 'importance', 'root', 'kind', 'authority_tier', 'layer', 'proof_doc_id'],
+    sortableAttributes: ['importance', 'authority_tier'],
     rankingRules: buildRankingRules(),
     pagination: { maxTotalHits: 10000 },
   };

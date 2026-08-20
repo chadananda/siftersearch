@@ -58,3 +58,46 @@ export async function syncConcepts({ limit = 20000 } = {}) {
   const task = await getMeili().index(INDEXES.CONCEPTS).addDocuments(docs, { primaryKey: 'id' });
   return { indexed: docs.length, taskUid: task?.taskUid };
 }
+
+// ── lexicon entries as index records ─────────────────────────────────────────────────────────────────────
+// concept_entities has NO WRITER anywhere in this codebase (verified 2026-08-20: zero INSERT/UPDATE against
+// it; the promotion stage that would create entities was never built). An index reading only that table can
+// therefore never fill, however many concepts are extracted.
+//
+// The LEXICON does exist and is the thing worth searching: 1,651 cited interpretations, each with its
+// authority, tier and verbatim proof. That is what makes §6's "ask one concept across traditions" possible
+// today. Records are tagged kind='lexicon' and their ids namespaced, so promoted entity records can share the
+// index later without either overwriting the other.
+export const LEXICON_SELECT = `
+  SELECT id, symbol, interpretation, authority, authority_tier, layer, proof_doc_id, proof_para_id, proof_verbatim
+    FROM concept_lexicon`;
+
+/** DB row → index document. Pure. */
+export function lexiconDoc(row) {
+  return {
+    id: `lex_${row.id}`,
+    kind: 'lexicon',
+    symbol: row.symbol || '',
+    interpretation: row.interpretation || '',
+    authority: row.authority || null,
+    authority_tier: typeof row.authority_tier === 'number' ? row.authority_tier : null,
+    layer: row.layer ?? null,
+    proof_doc_id: row.proof_doc_id ?? null,
+    proof_para_id: row.proof_para_id ?? null,
+    proof_verbatim: row.proof_verbatim || null,
+  };
+}
+
+/** Push lexicon entries into the concepts index. Full refresh, same reasoning as syncConcepts. */
+export async function syncLexicon({ limit = 50000 } = {}) {
+  const rows = await queryAll(`${LEXICON_SELECT} LIMIT ?`, [limit], 'concepts:sync-lexicon');
+  try {
+    await getMeili().createIndex(INDEXES.CONCEPTS, { primaryKey: 'id' });
+  } catch (err) {
+    if (!/already exists|index_already_exists/i.test(err?.message || '')) throw err;
+  }
+  if (!rows.length) return { indexed: 0, skipped: 'no lexicon entries yet', indexReady: true };
+  const docs = rows.map(lexiconDoc);
+  const task = await getMeili().index(INDEXES.CONCEPTS).addDocuments(docs, { primaryKey: 'id' });
+  return { indexed: docs.length, taskUid: task?.taskUid };
+}
