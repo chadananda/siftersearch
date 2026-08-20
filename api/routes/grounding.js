@@ -183,7 +183,14 @@ export default async function groundingRoutes(fastify) {
       `SELECT symbol, interpretation, authority, authority_tier, layer, proof_verbatim
          FROM concept_lexicon${docId ? ' WHERE proof_doc_id = ?' : ''}
         ORDER BY (authority_tier IS NULL), authority_tier, id DESC LIMIT 8`, args, 'diag:concepts-sample');
-    return { docId, claims, claims_proof_ok: proofOk, lexicon_entries: lexicon, entities, decisions, links, byDoc, sample };
+    // WHEN, not just how many. I asserted the track "had never run" on the strength of entities=0 — the wrong
+    // table — and then found 2,086 claims on two books I never launched. A count without a timestamp cannot
+    // tell tonight's work from someone else's, so the ages ship with the counts (2026-08-20).
+    const ages = await queryOne(
+      `SELECT MIN(created_at) first_at, MAX(created_at) last_at FROM concept_lexicon${docId ? ' WHERE proof_doc_id = ?' : ''}`,
+      args, 'diag:concepts-ages');
+    return { docId, claims, claims_proof_ok: proofOk, lexicon_entries: lexicon, entities, decisions, links,
+      first_at: ages?.first_at ?? null, last_at: ages?.last_at ?? null, byDoc, sample };
   });
 
   /** POST /concepts/sync — reindex concept entities without re-extracting. Full refresh; cheap, no model calls. */

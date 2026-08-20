@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-20T00:00:41.884Z",
+  "generated": "2026-08-20T00:28:07.635Z",
   "entries": [
+    {
+      "hash": "75bbb915",
+      "date": "2026-08-19",
+      "type": "Other",
+      "description": "Meter the run — it was spending outside the policy",
+      "scope": null
+    },
     {
       "hash": "f049276f",
       "date": "2026-08-19",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Consolidate entity docs into terse entity-extraction.md (why-GPB, pitfalls, two-pass + research pattern)",
       "scope": null
-    },
-    {
-      "hash": "48fea851",
-      "date": "2026-06-20",
-      "type": "Docs",
-      "description": "Gpb-seed.md — reference for the GPB authority seed (state, structure, build, attach)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-19": [
+      {
+        "hash": "75bbb915",
+        "date": "2026-08-19",
+        "type": "Other",
+        "description": "Meter the run — it was spending outside the policy",
+        "scope": null
+      },
       {
         "hash": "f049276f",
         "date": "2026-08-19",
@@ -7061,13 +7068,6 @@
         "date": "2026-06-20",
         "type": "Docs",
         "description": "Consolidate entity docs into terse entity-extraction.md (why-GPB, pitfalls, two-pass + research pattern)",
-        "scope": null
-      },
-      {
-        "hash": "48fea851",
-        "date": "2026-06-20",
-        "type": "Docs",
-        "description": "Gpb-seed.md — reference for the GPB authority seed (state, structure, build, attach)",
         "scope": null
       }
     ]
