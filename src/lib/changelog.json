@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-21T00:21:04.885Z",
+  "generated": "2026-08-21T14:16:19.720Z",
   "entries": [
+    {
+      "hash": "e8e1dde7",
+      "date": "2026-08-20",
+      "type": "Other",
+      "description": "Swap in the rewritten lang-pending-sync — plan verified first",
+      "scope": null
+    },
     {
       "hash": "cb3b09f0",
       "date": "2026-08-20",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Meili evidence for held disambiguation",
       "scope": null
-    },
-    {
-      "hash": "6b0a97ab",
-      "date": "2026-06-23",
-      "type": "Other",
-      "description": "Verify p781 Harátí bind + recovery targets",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-20": [
+      {
+        "hash": "e8e1dde7",
+        "date": "2026-08-20",
+        "type": "Other",
+        "description": "Swap in the rewritten lang-pending-sync — plan verified first",
+        "scope": null
+      },
       {
         "hash": "cb3b09f0",
         "date": "2026-08-20",
@@ -7061,13 +7068,6 @@
         "date": "2026-06-23",
         "type": "Other",
         "description": "Meili evidence for held disambiguation",
-        "scope": null
-      },
-      {
-        "hash": "6b0a97ab",
-        "date": "2026-06-23",
-        "type": "Other",
-        "description": "Verify p781 Harátí bind + recovery targets",
         "scope": null
       }
     ]

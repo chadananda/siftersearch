@@ -184,7 +184,17 @@ if (db) {
     } catch { /* query_stats predates migration 111 on an un-upgraded DB */ }
   }
 
-  // ── 5b. Blocking queries ─────────────────────────────────────────────────────
+  // "3h ago" beats a bare count: the 24h window keeps reporting a statement long after its cause is fixed,
+// and without an age there is no way to tell a live problem from history.
+const agoOf = (at) => {
+  if (!at) return '';
+  const mins = Math.max(0, Math.round((Date.now() / 1000 - at) / 60));
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  return hrs >= 20 ? `${hrs}h ago (ageing out of the 24h window)` : `${hrs}h ago`;
+};
+
+// ── 5b. Blocking queries ─────────────────────────────────────────────────────
   // better-sqlite3 is SYNCHRONOUS: a multi-second statement freezes its whole process. On the worker —
   // the single writer — that means /write and /health stop answering mid-request, callers' sockets close
   // ("other side closed"), every writing pipeline stage dies, and the watchdog restarts the worker into
@@ -192,16 +202,22 @@ if (db) {
   // hours: db.js had timed and logged it all along, but nothing ever READ the signal. This is the read.
   try {
     const blockMs = Number(process.env.BLOCKING_QUERY_MS || 5000);
-    const worst = g(`SELECT proc, kind, MAX(duration_ms) worst, COUNT(*) n, MAX(sql_sample) sql
+    // Take the whole ROW of the worst statement, not independent aggregates. The previous form paired
+    // MAX(duration_ms) with MAX(sql_sample) — two unrelated aggregates, so the reported SQL was whichever
+    // sample sorted highest ALPHABETICALLY, not the statement that actually took that long. It sent the
+    // wrong query to be investigated twice on 2026-08-20/21: a 48.6s language-rollup join was reported
+    // under the text of an unrelated 8.5s docs query. Also report WHEN, so a fix can be told from a stale
+    // entry still inside the rolling 24h window — that alarm fired for 14h after the cause was gone.
+    const worst = g(`SELECT proc, kind, duration_ms worst, sql_sample sql, at
                        FROM slow_query_log WHERE at > unixepoch() - 86400 AND duration_ms >= ${blockMs}
-                      GROUP BY proc, kind ORDER BY worst DESC LIMIT 1`);
+                      ORDER BY duration_ms DESC LIMIT 1`);
     const total = g(`SELECT COUNT(*) n FROM slow_query_log WHERE at > unixepoch() - 86400 AND duration_ms >= ${blockMs}`)?.n ?? 0;
     // A blocking WRITE on the writer is critical (it breaks other processes, not just itself); a blocking
     // read is a warning (slow, but it does not close anyone's socket).
     const isWriter = worst && /worker|write/i.test(String(worst.proc || ''));
     add('Blocking queries (24h)', total === 0, worst && worst.kind === 'write' && isWriter ? 'critical' : 'warn',
       total === 0 ? 'none over ' + blockMs + 'ms'
-        : `${total} over ${blockMs}ms — worst ${(worst.worst / 1000).toFixed(1)}s ${worst.kind} in '${worst.proc}': ${String(worst.sql || '').slice(0, 90)}`);
+        : `${total} over ${blockMs}ms — worst ${(worst.worst / 1000).toFixed(1)}s ${worst.kind} in '${worst.proc}' ${agoOf(worst.at)}: ${String(worst.sql || '').slice(0, 90)}`);
   } catch { /* table predates migration 109 on an un-upgraded DB */ }
 }
 

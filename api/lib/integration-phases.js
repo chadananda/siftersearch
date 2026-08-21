@@ -7,6 +7,15 @@
 // A soft-deleted or duplicate_of doc is still dropped at render (bio.js filters deleted/duplicate), so removing a
 // book = delete its id here (and, if desired, soft-delete the doc). `dynamic` marks the display-only long-tail
 // phases (biographies/histories): shown upcoming + genre-labelled + not yet graded; membership is still this list.
+// EMPTY-DUPLICATE SWAPS (2026-08-21). Two plan entries pointed at documents with ZERO paragraphs while a
+// full copy of the same book sat in the corpus under another id — same title AND same author, so the plan
+// was grinding at husks and reporting them as un-processable work:
+//   516 -> 20878  The Priceless Pearl (Rúḥíyyih Rabbání)            0 paras -> 1,212
+//   486 -> 545    The Bahá'í House of Worship in Europe             0 paras -> 59
+// Found because the "6 remaining books are structurally blocked" story was wrong: they were not blocked,
+// the plan was pointing at the wrong copies. NOT swapped, because no good copy was found: 420 The Life of
+// the Báb (Mazandarání) and 11498 The Astonishing Events... Nayríz — the near matches were different books
+// (Memories of Nine Years in 'Akka, a pilgrimage account), and a wrong swap is worse than a missing book.
 export const INTEGRATION_PHASES = [
   {
     key: 'seed', label: "Seed",
@@ -95,7 +104,7 @@ export const INTEGRATION_PHASES = [
     blurb: `Individual lives — biographies of believers, martyrs, and figures, tightly focused on specific people. Grounded BEFORE the general histories: the clean per-person cast disentangles identities before the broader (and sometimes non-Bahá'í) narrative histories are absorbed.`,
     docs: [
     11266, 7132, 8633, 11256, 11228, 11196, 11182, 11251, 7147, 7226, 11340, 7173, 11179, 539, 7164, 8467,
-    11180, 516, 11237, 11174, 11236, 14896, 11372, 8310, 11170, 8258, 7179, 16740, 11243, 11193, 11231, 7143,
+    11180, 20878, 11237, 11174, 11236, 14896, 11372, 8310, 11170, 8258, 7179, 16740, 11243, 11193, 11231, 7143,
     11280, 515, 11363, 11338, 11295, 7144, 11300, 7223, 11206, 11197, 11343, 11262, 11183, 11283, 11213, 11264,
     11226, 7142, 11358, 8290, 11208, 16739, 11375, 537, 11255, 11336, 16742, 11330, 15952, 11345, 11307, 11297,
     11263, 11282, 11290, 11341, 11332, 11298, 8208, 11204, 15953, 11361, 16730, 16737, 11320, 7129, 11321,
@@ -115,7 +124,7 @@ export const INTEGRATION_PHASES = [
     11333, 15643, 11356, 7220, 11278, 15938, 16729, 15973, 15950, 422, 11324, 11192, 11241, 11329, 8219, 8228,
     11292, 11181, 11185, 11377, 11323, 16551, 11349, 11354, 12378, 11235, 15939, 11312, 12367, 11277, 11187,
     15930, 545, 11250, 11373, 11225, 11227, 11239, 12428, 11252, 11351, 12373, 11346, 11498, 11325, 15965,
-    11220, 11305, 11257, 11279, 11331, 16732, 11296, 11357, 12368, 8059, 12443, 486, 11286, 519, 7116, 12344,
+    11220, 11305, 11257, 11279, 11331, 16732, 11296, 11357, 12368, 8059, 12443, 545, 11286, 519, 7116, 12344,
     11342, 12441,
     ],
   },
