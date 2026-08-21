@@ -9,7 +9,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { execSync } from 'child_process';
-import { LANG_TOTALS_SQL, LANG_PENDING_EMBEDDING_SQL, LANG_PENDING_SYNC_SQL, mergeByLanguage, EMB_TOTAL_SQL, EMB_MISSING_SQL, EMB_DIRTY_SQL } from '../api/lib/pipeline/snapshot-queries.js';
+import { LANG_TOTALS_SQL, LANG_PENDING_EMBEDDING_SQL, LANG_PENDING_SYNC_SQL, LANG_PENDING_SYNC_V2_SQL, mergeByLanguage, EMB_TOTAL_SQL, EMB_MISSING_SQL, EMB_DIRTY_SQL } from '../api/lib/pipeline/snapshot-queries.js';
 
 // EVERY probe below falls back to an empty value so one broken query cannot take the whole snapshot down.
 // That resilience quietly became a liability: a bare `.catch` returning [] makes a FAILED query indistinguishable from
@@ -187,7 +187,7 @@ async function main() {
       Promise.all([
         queryAll(LANG_TOTALS_SQL, [], 'snapshot:lang-totals').catch(probeFail([])),
         queryAll(LANG_PENDING_EMBEDDING_SQL, [], 'snapshot:lang-pending-embedding').catch(probeFail([])),
-        queryAll(LANG_PENDING_SYNC_SQL, [], 'snapshot:lang-pending-sync').catch(probeFail([])),
+        queryAll(LANG_PENDING_SYNC_V2_SQL, [], 'snapshot:lang-pending-sync').catch(probeFail([])),
       ]).then(([t, e, sy]) => mergeByLanguage(t, e, sy)).catch(probeFail([])),
       // Was ONE query with plan `SCAN content`: 49.8s worst, and better-sqlite3 is SYNCHRONOUS so that is a
       // ~50s freeze of the process, not just a slow read. The cost was `embedding IS NOT NULL` dereferencing a

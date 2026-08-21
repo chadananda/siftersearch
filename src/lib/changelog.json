@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-21T00:15:37.754Z",
+  "generated": "2026-08-21T00:21:04.885Z",
   "entries": [
+    {
+      "hash": "cb3b09f0",
+      "date": "2026-08-20",
+      "type": "Other",
+      "description": "Register a rewrite for the 46.9s lang-pending-sync",
+      "scope": null
+    },
     {
       "hash": "8330e471",
       "date": "2026-08-20",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Verify p781 Harátí bind + recovery targets",
       "scope": null
-    },
-    {
-      "hash": "11d99065",
-      "date": "2026-06-23",
-      "type": "Other",
-      "description": "Show roster section place markers",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-20": [
+      {
+        "hash": "cb3b09f0",
+        "date": "2026-08-20",
+        "type": "Other",
+        "description": "Register a rewrite for the 46.9s lang-pending-sync",
+        "scope": null
+      },
       {
         "hash": "8330e471",
         "date": "2026-08-20",
@@ -7061,13 +7068,6 @@
         "date": "2026-06-23",
         "type": "Other",
         "description": "Verify p781 Harátí bind + recovery targets",
-        "scope": null
-      },
-      {
-        "hash": "11d99065",
-        "date": "2026-06-23",
-        "type": "Other",
-        "description": "Show roster section place markers",
         "scope": null
       }
     ]
