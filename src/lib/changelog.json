@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-20T14:21:11.550Z",
+  "generated": "2026-08-21T00:15:37.754Z",
   "entries": [
+    {
+      "hash": "8330e471",
+      "date": "2026-08-20",
+      "type": "Other",
+      "description": "Promotion — one record per concept, so a concept can be asked about",
+      "scope": null
+    },
     {
       "hash": "5528fbb6",
       "date": "2026-08-19",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Show roster section place markers",
       "scope": null
-    },
-    {
-      "hash": "810752f7",
-      "date": "2026-06-23",
-      "type": "Other",
-      "description": "Inspect roster new-martyr proposals before create",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-20": [
+      {
+        "hash": "8330e471",
+        "date": "2026-08-20",
+        "type": "Other",
+        "description": "Promotion — one record per concept, so a concept can be asked about",
+        "scope": null
+      }
+    ],
     "2026-08-19": [
       {
         "hash": "5528fbb6",
@@ -7059,13 +7068,6 @@
         "date": "2026-06-23",
         "type": "Other",
         "description": "Show roster section place markers",
-        "scope": null
-      },
-      {
-        "hash": "810752f7",
-        "date": "2026-06-23",
-        "type": "Other",
-        "description": "Inspect roster new-martyr proposals before create",
         "scope": null
       }
     ]

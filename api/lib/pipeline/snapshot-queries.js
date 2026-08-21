@@ -130,6 +130,29 @@ export const EMB_TOTAL_SQL = `SELECT COUNT(*) AS n FROM content WHERE deleted_at
 export const EMB_MISSING_SQL = `SELECT COUNT(*) AS n FROM content WHERE embedding IS NULL AND deleted_at IS NULL`;
 export const EMB_DIRTY_SQL = `SELECT COUNT(*) AS n FROM content WHERE synced = 0 AND deleted_at IS NULL`;
 
+
+// ── lang-pending-sync, rewritten ─────────────────────────────────────────────────────────────────────────
+// The original drives from docs: `SEARCH d USING idx_docs_deleted_at | SEARCH c USING idx_content_doc_deleted`
+// — i.e. for each of ~158k live docs, probe that doc's paragraphs and filter. Cost scales with the CORPUS,
+// not with the backlog, so it is slowest exactly when there is least work to find: 46.9s to count a handful
+// of unsynced rows.
+//
+// Aggregate-before-join instead, the same rewrite that took the by-language query from 151.9s to nothing:
+// roll content up per doc_id FIRST, driven by the partial index on (synced = 0 AND deleted_at IS NULL) so it
+// touches only unsynced rows, then join docs — which is now a handful of rows, not a table scan.
+// Same numbers, same shape.
+//
+// NOT ASSUMED TO BE FASTER. Registered below so its plan is EXPLAINed against production before anything
+// depends on it; a covering index for this same family was added in migration 116, proved never to be used,
+// and dropped in 117.
+export const LANG_PENDING_SYNC_V2_SQL = `
+  SELECT COALESCE(d.language, '') AS language, SUM(c.n) AS n
+    FROM (SELECT doc_id, COUNT(*) AS n FROM content
+           WHERE synced = 0 AND embedding IS NOT NULL AND deleted_at IS NULL
+           GROUP BY doc_id) c
+    JOIN docs d ON d.id = c.doc_id AND d.deleted_at IS NULL
+   GROUP BY COALESCE(d.language, '')`;
+
 export const NAMED_QUERIES = {
   'by-language': BY_LANGUAGE_SQL,
   'per-doc-rollup': PER_DOC_ROLLUP_SQL,
@@ -148,4 +171,5 @@ export const NAMED_QUERIES = {
   'emb-dirty': EMB_DIRTY_SQL,
   'lang-pending-embedding': LANG_PENDING_EMBEDDING_SQL,
   'lang-pending-sync': LANG_PENDING_SYNC_SQL,
+  'lang-pending-sync-v2': LANG_PENDING_SYNC_V2_SQL,
 };
