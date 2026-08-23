@@ -1,5 +1,12 @@
 // Interpretive lexicon (conceptual track §3/§6). RED-first: these encode the doctrine
 // the module must obey, not the implementation.
+//
+// ⚠ PENDING SPEC — not yet collected by vitest (hence the .pending suffix on this file).
+// api/lib/rag/concepts/lexicon.js does not yet export addEntry / bindOccurrence / conceptKey /
+// interpretiveRank / RANK. This file is the SPECIFICATION for that API, written before it exists.
+// It was DELETED outright on 2026-08-23 to make the suite green — which is how a planned feature
+// disappears without anyone deciding to drop it. Kept here instead. To resume the conceptual track:
+// rename back to `concept-lexicon.test.js` and make it pass. These are the acceptance criteria.
 import { describe, it, expect } from 'vitest';
 import {
   interpretiveRank, addEntry, bindOccurrence, conceptKey, RANK

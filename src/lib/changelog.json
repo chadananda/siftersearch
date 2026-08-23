@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-23T18:45:52.677Z",
+  "generated": "2026-08-23T18:48:31.229Z",
   "entries": [
+    {
+      "hash": "9601a5b0",
+      "date": "2026-08-23",
+      "type": "Other",
+      "description": "Tell \"plan exhausted\" apart from \"pipeline stalled\" (kills the permanent CRITICAL)",
+      "scope": null
+    },
     {
       "hash": "cdfea4e4",
       "date": "2026-08-21",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Cluster cast by name-core, flag fabricated-nisba artifacts",
       "scope": null
-    },
-    {
-      "hash": "9dc58554",
-      "date": "2026-06-23",
-      "type": "Other",
-      "description": "Size the Dawn-Breakers cast for full identity+enrichment pass",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-23": [
+      {
+        "hash": "9601a5b0",
+        "date": "2026-08-23",
+        "type": "Other",
+        "description": "Tell \"plan exhausted\" apart from \"pipeline stalled\" (kills the permanent CRITICAL)",
+        "scope": null
+      }
+    ],
     "2026-08-21": [
       {
         "hash": "cdfea4e4",
@@ -7063,13 +7072,6 @@
         "date": "2026-06-23",
         "type": "Other",
         "description": "Cluster cast by name-core, flag fabricated-nisba artifacts",
-        "scope": null
-      },
-      {
-        "hash": "9dc58554",
-        "date": "2026-06-23",
-        "type": "Other",
-        "description": "Size the Dawn-Breakers cast for full identity+enrichment pass",
         "scope": null
       }
     ]
