@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-21T14:16:19.720Z",
+  "generated": "2026-08-23T18:45:52.677Z",
   "entries": [
+    {
+      "hash": "cdfea4e4",
+      "date": "2026-08-21",
+      "type": "Other",
+      "description": "Point at the copies that actually have text",
+      "scope": null
+    },
     {
       "hash": "e8e1dde7",
       "date": "2026-08-20",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Size the Dawn-Breakers cast for full identity+enrichment pass",
       "scope": null
-    },
-    {
-      "hash": "72d24f95",
-      "date": "2026-06-23",
-      "type": "Other",
-      "description": "Meili evidence for held disambiguation",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-21": [
+      {
+        "hash": "cdfea4e4",
+        "date": "2026-08-21",
+        "type": "Other",
+        "description": "Point at the copies that actually have text",
+        "scope": null
+      }
+    ],
     "2026-08-20": [
       {
         "hash": "e8e1dde7",
@@ -7061,13 +7070,6 @@
         "date": "2026-06-23",
         "type": "Other",
         "description": "Size the Dawn-Breakers cast for full identity+enrichment pass",
-        "scope": null
-      },
-      {
-        "hash": "72d24f95",
-        "date": "2026-06-23",
-        "type": "Other",
-        "description": "Meili evidence for held disambiguation",
         "scope": null
       }
     ]

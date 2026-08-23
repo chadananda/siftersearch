@@ -75,6 +75,55 @@ export async function resumeStageFor(docId, deps = {}) {
 // Keep the next `lookahead` incomplete books queued, in the given order, each resuming from its real stage.
 // Idempotent: already-queued books are respected (never duplicated); position is pinned to the source index so
 // order can never drift. `orderedIds()` supplies the candidate order (plan order or library order per mode).
+// The reasons the follower will NOT enqueue a nominally-remaining plan book. Computed in one place and
+// shared by refill() (which acts on them) and planExhaustion() (which reports them), so "remaining work"
+// can never come to mean two different things in the pipeline and in the alarm that watches the pipeline.
+// That drift is exactly what produced the 2026-08-23 permanent CRITICAL, and what the five competing
+// definitions of `disambiguated` produced before it.
+async function skipSets(deps = {}) {
+  const qAll = deps.queryAll || queryAll;
+  // STORM GUARD: a doc that repeatedly reaches the TERMINAL "did not reach verify" failure (e.g.
+  // un-disambiguatable or mislabeled-language content whose disambiguation never covers the bar) must stop
+  // being auto-re-enqueued — otherwise resumeStageFor calls it "not done" every tick, the follower re-queues
+  // it, it fails again, forever: a failure storm that also starves real work of lookahead slots. Scoped to the
+  // terminal error ONLY, so transient blips (deepseek socket errors during an outage) still retry on recovery.
+  const FAIL_QUARANTINE = Number(process.env.GROUNDING_MAX_FAILS || 3);
+  let quarantined = new Set();
+  try {
+    quarantined = new Set((await qAll(
+      `SELECT doc_id FROM grounding_queue WHERE status='failed'
+         AND (COALESCE(error,'') LIKE '%did not reach verify%' OR COALESCE(note,'') LIKE '%did not reach verify%')
+       GROUP BY doc_id HAVING COUNT(*) >= ?`, [FAIL_QUARANTINE]
+    )).map((r) => r.doc_id));
+  } catch { /* grounding_queue absent / query failure → fail-open, don't quarantine */ }
+
+  // LANGUAGE-CAPABILITY GATE: never enqueue a doc whose language the extraction models can't handle
+  // (deepseek: en/ar/he; haiku: fa). Feeding e.g. German to the English deepseek path yields garbage and burns
+  // tokens. Such docs are PARKED (skipped + flagged), never enqueued — permanently, until a capable model is
+  // routed. Relies on docs.language being correct; scripts/relabel-languages.mjs fixes the `en`-mislabels.
+  let unsupportedLang = new Set();
+  try {
+    unsupportedLang = new Set((await qAll(
+      `SELECT id FROM docs WHERE language IS NOT NULL AND language NOT IN ('en','ar','he','fa')`
+    )).map((r) => r.id));
+  } catch { /* fail-open → don't gate on language */ }
+
+  return { quarantined, unsupportedLang };
+}
+
+// PLAN candidate order = the history plan (integration-phases.js), exactly as the UI renders it. A phase's
+// work = its listed `books` PLUS its `groups` (e.g. the hundreds of Pilgrim-Notes primary sources grouped by
+// period under Primary Sources — they're NOT in `books`). Both must be followed, in phase order, so the 600+
+// primary docs are grounded BEFORE biographies. Group `done` is a weak has-claims flag, so force
+// resumeStageFor to decide (done:false) rather than fast-skip.
+async function planOrderedIds(deps = {}) {
+  const prog = deps.getProgress ? await deps.getProgress() : await getIntegrationProgress();
+  return (prog.phases || []).flatMap((p) => [
+    ...(p.books || []).map((b) => ({ id: b.id, done: !!b.done })),
+    ...(p.groups || []).flatMap((g) => (g.books || []).map((b) => ({ id: b.id, done: false }))),
+  ]).filter((b) => b && b.id);
+}
+
 async function refill(orderedIdsFn, { lookahead, deps }) {
   const rows = deps.list ? await deps.list() : await list({ limit: 100000 });   // list() returns the array itself
   const active = new Set(rows.filter((r) => r.status === 'queued' || r.status === 'running').map((r) => r.doc_id));
@@ -87,29 +136,13 @@ async function refill(orderedIdsFn, { lookahead, deps }) {
   // lookahead slots. Quarantine after GROUNDING_MAX_FAILS such failures. Scoped to the terminal error
   // ONLY, so transient blips (deepseek socket/fetch errors during an outage) still retry after recovery.
   // An operator can hand-enqueue (override mode) once the root cause is fixed. Failed rows stay visible.
-  const FAIL_QUARANTINE = Number(process.env.GROUNDING_MAX_FAILS || 3);
-  let quarantined = new Set();
-  try {
-    const qAll = deps.queryAll || queryAll;
-    quarantined = new Set((await qAll(
-      `SELECT doc_id FROM grounding_queue WHERE status='failed'
-         AND (COALESCE(error,'') LIKE '%did not reach verify%' OR COALESCE(note,'') LIKE '%did not reach verify%')
-       GROUP BY doc_id HAVING COUNT(*) >= ?`, [FAIL_QUARANTINE]
-    )).map((r) => r.doc_id));
-  } catch { /* grounding_queue absent / query failure → fail-open, don't quarantine */ }
+  const { quarantined, unsupportedLang } = await skipSets(deps);
 
   // LANGUAGE-CAPABILITY GATE: never enqueue a doc whose language the extraction models can't handle
   // (deepseek: en/ar/he; haiku: fa). Feeding e.g. German to the English deepseek path yields garbage and
   // burns tokens — the exact "churn until it dies" we must avoid. Such docs are PARKED (skipped + flagged),
   // never enqueued. Relies on docs.language being correct; scripts/relabel-languages.mjs detects + fixes
   // the `en`-mislabels (German/French/… histories) so this gate can see them.
-  let unsupportedLang = new Set();
-  try {
-    const qAll = deps.queryAll || queryAll;
-    unsupportedLang = new Set((await qAll(
-      `SELECT id FROM docs WHERE language IS NOT NULL AND language NOT IN ('en','ar','he','fa')`
-    )).map((r) => r.id));
-  } catch { /* fail-open → don't gate on language */ }
 
   const resume = deps.resumeStageFor || resumeStageFor;
   const enq = deps.enqueue || enqueue;
@@ -136,7 +169,7 @@ async function refill(orderedIdsFn, { lookahead, deps }) {
     logger.warn({ parked: skippedLang }, 'processor: parked docs whose language has no capable extraction model (relabel or add routing to enrich)');
   }
   if (skippedQuarantine.length) {
-    logger.warn({ quarantined: skippedQuarantine, threshold: FAIL_QUARANTINE },
+    logger.warn({ quarantined: skippedQuarantine, threshold: Number(process.env.GROUNDING_MAX_FAILS || 3) },
       'processor: quarantined repeatedly-failing docs (auto re-enqueue stopped; hand-enqueue in override to retry)');
   }
   return { added, pending, quarantined: skippedQuarantine, parked: skippedLang };
@@ -144,18 +177,7 @@ async function refill(orderedIdsFn, { lookahead, deps }) {
 
 // PLAN mode: candidate order = the history plan (integration-phases.js), exactly as the UI renders it.
 export async function followPlanTick({ lookahead = 3, deps = {} } = {}) {
-  const orderedIds = async () => {
-    const prog = deps.getProgress ? await deps.getProgress() : await getIntegrationProgress();
-    // A phase's work = its listed `books` PLUS its `groups` (e.g. the hundreds of Pilgrim-Notes primary sources
-    // grouped by period under Primary Sources — they're NOT in `books`). Both must be followed, in phase order,
-    // so the 600+ primary docs are grounded BEFORE biographies. Group `done` is a weak has-claims flag, so force
-    // resumeStageFor to decide (done:false) rather than fast-skip.
-    return (prog.phases || []).flatMap((p) => [
-      ...(p.books || []).map((b) => ({ id: b.id, done: !!b.done })),
-      ...(p.groups || []).flatMap((g) => (g.books || []).map((b) => ({ id: b.id, done: false }))),
-    ]).filter((b) => b && b.id);
-  };
-  return refill(orderedIds, { lookahead, deps });
+  return refill(() => planOrderedIds(deps), { lookahead, deps });
 }
 
 // GENERAL mode: candidate order = every substantial library document (biggest first as a rough priority). The
@@ -190,4 +212,29 @@ export function startProcessor() {
   _timer = setInterval(run, Number(process.env.GROUNDING_FOLLOW_INTERVAL_MS || 180000));   // every 3 min
   run();
   logger.info({ mode: _mode }, 'grounding processor started');
+}
+
+// Is the plan's remaining work actually ENQUEUEABLE, or only nominally remaining? The roadmap grades a book
+// "not done" from its claim coverage; the follower decides separately whether it can ground it at all. When
+// every remaining book is a husk (zero prose), language-parked, or quarantined, those two views disagree and
+// the queue drains to empty and STAYS empty — which a queue-depth alarm cannot distinguish from a wedged
+// pipeline. This reports the difference using the SAME predicates refill() enqueues by.
+//
+// `exhausted: true` means "there is no work the follower could start" — the plan is finished in every sense
+// that matters, and it is time to switch mode to 'general' (a spend decision, so never automatic).
+export async function planExhaustion({ deps = {} } = {}) {
+  const { quarantined, unsupportedLang } = await skipSets(deps);
+  const resume = deps.resumeStageFor || resumeStageFor;
+  const ordered = await planOrderedIds(deps);
+  const counts = { enqueueable: 0, husks: 0, parked: 0, quarantined: 0 };
+  const detail = { husks: [], parked: [], quarantined: [] };
+  for (const { id, done } of ordered) {
+    if (done) continue;                                       // roadmap is confident → don't re-probe
+    if (unsupportedLang.has(id)) { counts.parked++; detail.parked.push(id); continue; }
+    if (quarantined.has(id)) { counts.quarantined++; detail.quarantined.push(id); continue; }
+    const opts = await resume(id);                            // authoritative stage decision
+    if (opts == null) { counts.husks++; detail.husks.push(id); continue; }   // no prose → nothing to ground
+    counts.enqueueable++;
+  }
+  return { ...counts, exhausted: counts.enqueueable === 0, detail };
 }

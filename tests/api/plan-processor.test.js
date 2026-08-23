@@ -141,3 +141,91 @@ describe('processor mode', () => {
     expect(() => setMode('bogus')).toThrow(/invalid grounding mode/);
   });
 });
+
+// ── planExhaustion ───────────────────────────────────────────────────────────
+// The 2026-08-23 permanent-CRITICAL bug. The roadmap graded 11 plan books "not done" while the
+// follower could enqueue NONE of them (9 husks with zero prose, 2 non-English parked by the
+// language gate). Queue stayed empty → system-checks read "0 live / 0 queued / 0 done in 24h" and
+// fired `Grounding progress` CRITICAL on every status update, forever. The alarm could not tell
+// "the plan is EXHAUSTED" from "the pipeline is STALLED".
+//
+// planExhaustion answers that question using the SAME skip predicates refill() enqueues by, so the
+// two can never drift into disagreeing about what counts as remaining work (the five-definitions
+// trap that already bit `disambiguated`).
+describe('planExhaustion — is remaining plan work actually enqueueable, or only nominally remaining?', () => {
+  const base = {
+    list: async () => [],
+    queryAll: async (sql) => (/FROM docs WHERE language/.test(sql) ? [] : []),
+    resumeStageFor: async () => ({}),
+  };
+
+  it('all remaining books groundable → exhausted:false, alarm is a REAL stall', async () => {
+    const { planExhaustion } = await import('../../api/lib/pipeline/plan.js');
+    const r = await planExhaustion({ deps: {
+      ...base,
+      getProgress: async () => ({ phases: [{ books: [{ id: 1, done: false }, { id: 2, done: false }] }] }),
+    } });
+    expect(r.enqueueable).toBe(2);
+    expect(r.exhausted).toBe(false);
+  });
+
+  it('husks only (resumeStageFor → null) → exhausted:true, counted as husks not enqueueable', async () => {
+    const { planExhaustion } = await import('../../api/lib/pipeline/plan.js');
+    const r = await planExhaustion({ deps: {
+      ...base,
+      getProgress: async () => ({ phases: [{ books: [{ id: 420, done: false }, { id: 2647, done: false }] }] }),
+      resumeStageFor: async () => null,                       // zero prose → nothing to ground
+    } });
+    expect(r.husks).toBe(2);
+    expect(r.enqueueable).toBe(0);
+    expect(r.exhausted).toBe(true);
+  });
+
+  it('language-parked books are NOT enqueueable work (11323 de / 16551 fr)', async () => {
+    const { planExhaustion } = await import('../../api/lib/pipeline/plan.js');
+    const r = await planExhaustion({ deps: {
+      ...base,
+      getProgress: async () => ({ phases: [{ books: [{ id: 11323, done: false }, { id: 16551, done: false }] }] }),
+      queryAll: async (sql) => (/FROM docs WHERE language/.test(sql) ? [{ id: 11323 }, { id: 16551 }] : []),
+    } });
+    expect(r.parked).toBe(2);
+    expect(r.enqueueable).toBe(0);
+    expect(r.exhausted).toBe(true);
+  });
+
+  it('quarantined books are NOT enqueueable work (storm guard)', async () => {
+    const { planExhaustion } = await import('../../api/lib/pipeline/plan.js');
+    const r = await planExhaustion({ deps: {
+      ...base,
+      getProgress: async () => ({ phases: [{ books: [{ id: 21307, done: false }] }] }),
+      queryAll: async (sql) => (/grounding_queue/.test(sql) ? [{ doc_id: 21307 }] : []),
+    } });
+    expect(r.quarantined).toBe(1);
+    expect(r.enqueueable).toBe(0);
+    expect(r.exhausted).toBe(true);
+  });
+
+  it('counts GROUPED plan books too, not just phase.books (600+ primary sources live in groups)', async () => {
+    const { planExhaustion } = await import('../../api/lib/pipeline/plan.js');
+    const r = await planExhaustion({ deps: {
+      ...base,
+      getProgress: async () => ({ phases: [{ books: [], groups: [{ books: [{ id: 2446, done: false }] }] }] }),
+      resumeStageFor: async () => null,
+    } });
+    expect(r.husks).toBe(1);
+    expect(r.exhausted).toBe(true);
+  });
+
+  it('books the roadmap already grades done are not re-examined', async () => {
+    const { planExhaustion } = await import('../../api/lib/pipeline/plan.js');
+    let probed = 0;
+    const r = await planExhaustion({ deps: {
+      ...base,
+      getProgress: async () => ({ phases: [{ books: [{ id: 1, done: true }, { id: 2, done: true }] }] }),
+      resumeStageFor: async () => { probed++; return {}; },
+    } });
+    expect(probed).toBe(0);
+    expect(r.enqueueable).toBe(0);
+    expect(r.exhausted).toBe(true);
+  });
+});

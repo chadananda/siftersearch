@@ -377,6 +377,13 @@ export default async function groundingRoutes(fastify) {
   });
 
   fastify.get('/grounding/mode', admin, async () => ({ mode: processor.getMode(), modes: ['plan', 'override', 'general'] }));
+
+  // GET /grounding/exhaustion — is there any plan work the follower could actually START?
+  // The roadmap grades a book "not done" from claim coverage; the follower separately decides whether it can
+  // ground it at all. When every remaining book is a husk (zero prose), language-parked, or quarantined, the
+  // queue drains to empty and STAYS empty — indistinguishable, to a queue-depth alarm, from a wedged pipeline.
+  // system-checks reads this so `Grounding progress` can say "plan exhausted" instead of crying CRITICAL forever.
+  fastify.get('/grounding/exhaustion', admin, async () => processor.planExhaustion());
   fastify.post('/grounding/mode', admin, async (req) => {
     const m = (req.body || {}).mode;
     if (!m) throw ApiError.badRequest('mode required (plan|override|general)');

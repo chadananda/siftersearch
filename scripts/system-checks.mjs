@@ -87,8 +87,24 @@ if (db) {
   add('Grounding failure storm', failed3h <= 10, 'critical', `${failed3h} failed runs in last 3h (${failed24} in 24h)`);
   // Stalled: plan mode should ALWAYS keep work flowing until the plan is done. If the plan ever
   // completes for real, switch mode to 'general' — this alert says progress stopped, look why.
-  const stalled = mode === 'plan' && liveRuns === 0 && queueDepth === 0 && done24 === 0;
-  add('Grounding progress', !stalled, 'critical', stalled ? 'plan mode but nothing queued/running/completed in 24h' : `${done24} done / ${failed24} failed / ${liveRuns} running / ${queueDepth} queued (24h, mode=${mode})`);
+  // An idle queue is only a FAULT if there is work the follower could have started. Ask the follower itself
+  // (same predicates it enqueues by) rather than inferring from queue depth — on 2026-08-23 all 11 remaining
+  // plan books were unenqueueable (9 husks with zero prose, 2 non-English parked), so the queue was correctly
+  // empty and this alarm fired CRITICAL on every status update with nothing wrong and nothing to do.
+  let exh = null;
+  try { exh = JSON.parse((await http('http://127.0.0.1:7839/api/admin/grounding/exhaustion', { headers: H })).body); }
+  catch { /* endpoint unreachable → fall back to the old queue-depth-only reading (fail loud, not silent) */ }
+  const idle = mode === 'plan' && liveRuns === 0 && queueDepth === 0 && done24 === 0;
+  const stalled = idle && !exh?.exhausted;
+  // Exhausted is a PASS carrying the reason, not an alarm: nothing is broken and there is nothing to fix, but
+  // grounding will do nothing until an operator switches to 'general' — a spend decision. Reporting it in the
+  // detail line keeps that fact in front of the operator every run without crying wolf on every run.
+  const detail = stalled
+    ? `${mode} mode but nothing queued/running/completed in 24h${exh ? '' : ' (exhaustion endpoint unreachable — cause unverified)'}`
+    : idle && exh?.exhausted
+      ? `plan exhausted — no enqueueable work left (${exh.husks} husks, ${exh.parked} language-parked, ${exh.quarantined} quarantined); switch mode to 'general' when ready to spend`
+      : `${done24} done / ${failed24} failed / ${liveRuns} running / ${queueDepth} queued (24h, mode=${mode})`;
+  add('Grounding progress', !stalled, 'critical', detail);
   // Queue-not-draining (the 2026-08-12 gap): a NON-empty queue with nothing running and nothing
   // completed in 24h means work is stuck — even if failures aren't logged (the off-peak-gate hold,
   // or a wedged supervisor). WARN not critical (an off-peak hold during peak hours is legitimate),
