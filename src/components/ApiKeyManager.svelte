@@ -26,58 +26,13 @@
   // call api.siftersearch.com directly, not through the site's worker proxy.
   const API_BASE = 'https://api.siftersearch.com/api/v1';
 
-  const apiGuide = `# SifterSearch API Quick Start
-# Base URL: ${API_BASE}
-# Auth: pass your key via X-API-Key header
-# Set your key: export SIFTER_API_KEY="sk_..."
-
-## Endpoints
-# POST /search/quick  — Fast keyword search
-# POST /search        — AI-powered hybrid search (slower, with scoring + highlights)
-# GET  /paragraph/:id — Get a specific passage by ID
-# GET  /collections   — List available collections
-# GET  /health        — API health check
-
-## curl — keyword search
-curl -X POST ${API_BASE}/search/quick \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: $SIFTER_API_KEY" \\
-  -d '{"query": "justice", "limit": 5}'
-
-## curl — AI-powered search
-curl -X POST ${API_BASE}/search \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: $SIFTER_API_KEY" \\
-  -d '{"query": "what do the scriptures say about justice?", "limit": 10}'
-
-## JavaScript / Node.js
-# const SIFTER_API_KEY = process.env.SIFTER_API_KEY;
-#
-# const response = await fetch("${API_BASE}/search/quick", {
-#   method: "POST",
-#   headers: {
-#     "Content-Type": "application/json",
-#     "X-API-Key": SIFTER_API_KEY
-#   },
-#   body: JSON.stringify({ query: "justice", limit: 10 })
-# });
-# const data = await response.json();
-# console.log(data.results);
-
-## Python
-# import os, requests
-#
-# API_KEY = os.environ["SIFTER_API_KEY"]
-# response = requests.post("${API_BASE}/search/quick",
-#     headers={"X-API-Key": API_KEY},
-#     json={"query": "justice", "limit": 10})
-# data = response.json()
-# print(data["results"])
-
-## Filters (optional, add to request body)
-# "filters": { "religion": "Baha'i", "author": "Shoghi Effendi", "collection": "Letters" }
-
-## Full docs: https://siftersearch.com/docs/api`;
+  // The API is self-describing (OpenAPI 3.0, 68 documented paths, generated from the running
+  // server). A hand-written quick-start duplicates that and immediately drifts — the previous one
+  // listed five endpoints and three languages, all maintained by hand. Two lines replace it: a
+  // client generator or agent framework needs the spec URL and a key, and nothing else.
+  const OPENAPI_URL = `${API_BASE}/docs/json`;
+  const apiGuide = `SIFTERSEARCH_API_KEY=your-key-here
+SIFTERSEARCH_OPENAPI_URL=${OPENAPI_URL}`;
 
   async function copyExample(text, name) {
     try {
@@ -150,9 +105,14 @@ curl -X POST ${API_BASE}/search \\
     }
   }
 
+  // The API is self-describing, so a new project needs exactly two things: the key, and where to
+  // find the spec. Copying the bare key made the caller go hunting for the second half — so the
+  // copy button hands over BOTH, in a form that pastes straight into a .env.
+  const credentialBlock = (key) => `SIFTERSEARCH_API_KEY=${key}\nSIFTERSEARCH_OPENAPI_URL=${OPENAPI_URL}`;
+
   async function copyKey(keyValue = null, keyId = null) {
     try {
-      await navigator.clipboard.writeText(keyValue || newlyCreatedKey);
+      await navigator.clipboard.writeText(credentialBlock(keyValue || newlyCreatedKey));
       if (keyId) {
         copiedKeyId = keyId;
         setTimeout(() => { copiedKeyId = null; }, 2000);
@@ -238,7 +198,7 @@ curl -X POST ${API_BASE}/search \\
       <div class="key-display">
         <code class="key-text">{newlyCreatedKey}</code>
         <button class="btn-copy" onclick={() => copyKey()}>
-          {copiedKey ? 'Copied!' : 'Copy'}
+          {copiedKey ? 'Copied key + spec URL' : 'Copy key + spec URL'}
         </button>
       </div>
       <button class="btn-link" onclick={dismissNewKey}>Done</button>
@@ -282,7 +242,7 @@ curl -X POST ${API_BASE}/search \\
                     class="btn-copy-sm"
                     onclick={() => copyKey(key.key_value, key.id)}
                   >
-                    {copiedKeyId === key.id ? 'Copied!' : 'Copy'}
+                    {copiedKeyId === key.id ? 'Copied key + spec URL' : 'Copy key + spec URL'}
                   </button>
                 {/if}
                 {#if confirmRevokeId === key.id}
@@ -329,9 +289,9 @@ curl -X POST ${API_BASE}/search \\
     <div class="api-guide">
       <div class="example-block">
         <div class="example-header">
-          <span class="example-label">API Quick Start</span>
+          <span class="example-label">Everything a new project needs</span>
           <button class="btn-copy-sm" onclick={() => copyExample(apiGuide, 'guide')}>
-            {copiedExample === 'guide' ? 'Copied!' : 'Copy All'}
+            {copiedExample === 'guide' ? 'Copied!' : 'Copy'}
           </button>
         </div>
         <pre class="example-code">{apiGuide}</pre>

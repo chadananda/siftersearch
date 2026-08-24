@@ -16,11 +16,44 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     research tools, or integrate sacred text search into your own applications.
   </p>
 
+  <h2>Machine-readable spec (start here)</h2>
+
   <p>
-    An interactive Swagger UI is available at
-    <a href="https://api.siftersearch.com/api/v1/docs" target="_blank" rel="noopener">https://api.siftersearch.com/api/v1/docs</a>
-    for exploring and testing all endpoints directly in your browser.
+    The API describes itself. Point your client generator, agent framework, or IDE at the OpenAPI
+    document below and give it your key &mdash; you do not need to read the rest of this page. The
+    spec is generated from the running server, so it is never out of date with the deployed API.
   </p>
+
+  <table>
+    <thead>
+      <tr><th>What</th><th>URL</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>OpenAPI 3.0 (JSON)</td>
+        <td><a href="https://api.siftersearch.com/api/v1/docs/json" target="_blank" rel="noopener"><code>https://api.siftersearch.com/api/v1/docs/json</code></a></td>
+      </tr>
+      <tr>
+        <td>OpenAPI 3.0 (YAML)</td>
+        <td><a href="https://api.siftersearch.com/api/v1/docs/yaml" target="_blank" rel="noopener"><code>https://api.siftersearch.com/api/v1/docs/yaml</code></a></td>
+      </tr>
+      <tr>
+        <td>Interactive explorer</td>
+        <td><a href="https://api.siftersearch.com/api/v1/docs" target="_blank" rel="noopener"><code>https://api.siftersearch.com/api/v1/docs</code></a></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Authentication is a single header, <code>X-API-Key</code>, declared in the spec as the
+    <code>apiKey</code> security scheme &mdash; most tools will prompt you for it automatically once
+    the spec is loaded. Get a key at <a href="/settings">Settings &rarr; API Keys</a>.
+  </p>
+
+  <pre><code>SIFTERSEARCH_API_KEY=your-api-key-here
+SIFTERSEARCH_OPENAPI_URL=https://api.siftersearch.com/api/v1/docs/json</code></pre>
+
+  <hr />
 
   <h2>API Endpoints</h2>
 
@@ -657,7 +690,7 @@ data: &#123;"type":"done"&#125;</code></pre>
   method: 'POST',
   headers: &#123;
     'Content-Type': 'application/json',
-    'X-API-Key': process.env.SIFTER_API_KEY
+    'X-API-Key': process.env.SIFTERSEARCH_API_KEY
   &#125;,
   body: JSON.stringify(&#123;
     messages: [&#123; role: 'user', content: 'What is the Baha\'i view on science and religion?' &#125;]
@@ -739,7 +772,7 @@ while (true) &#123;
   method: 'POST',
   headers: &#123;
     'Content-Type': 'application/json',
-    'X-API-Key': process.env.SIFTER_API_KEY
+    'X-API-Key': process.env.SIFTERSEARCH_API_KEY
   &#125;,
   body: JSON.stringify(&#123;
     query: 'what is the purpose of life',
@@ -758,7 +791,7 @@ response = requests.post(
     'https://api.siftersearch.com/api/v1/search',
     headers=&#123;
         'Content-Type': 'application/json',
-        'X-API-Key': os.environ['SIFTER_API_KEY']
+        'X-API-Key': os.environ['SIFTERSEARCH_API_KEY']
     &#125;,
     json=&#123;
         'query': 'what is the purpose of life',
@@ -774,7 +807,7 @@ for result in data['results']:
   <h4>cURL</h4>
   <pre><code>curl -X POST https://api.siftersearch.com/api/v1/search \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: $SIFTER_API_KEY" \
+  -H "X-API-Key: $SIFTERSEARCH_API_KEY" \
   -d '&#123;"query": "what is the purpose of life", "limit": 10, "filters": &#123;"religion": "Buddhism"&#125;&#125;'</code></pre>
 
   <hr />
