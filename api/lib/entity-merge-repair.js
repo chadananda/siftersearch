@@ -162,3 +162,77 @@ export async function naturalKeyCollisions(deps = {}) {
       : `${collisions} natural keys map to more than one LIVE entity — external id re-resolution is ambiguous for these`,
   };
 }
+
+/**
+ * Break merge CYCLES — rows that were merged into each other (A→B, B→A), so no chain can terminate.
+ * 53 such rows survived the 2026-08-24 repair. Left alone they stay served as live phantoms forever.
+ *
+ * The rule is evidence, not id order: within each cycle the member holding the most claims+mentions is
+ * the survivor (applyMerge repointed evidence onto exactly one of them), ties broken by lowest id for
+ * determinism. The survivor is restored to a live entity; every other member tombstones to it.
+ *
+ * Reported, never silent: the chosen survivor and the evidence counts that chose it are returned.
+ */
+export async function breakMergeCycles({ dryRun = true, deps = {} } = {}) {
+  const qAll = deps.queryAll || queryAll;
+  const tx = deps.transaction || transaction;
+  const { unresolved } = await planMergeRepair(deps);
+  if (!unresolved.length) return { dryRun, cycles: [], applied: 0, detail: 'no merge cycles remain' };
+
+  const ids = unresolved.map((u) => u.id);
+  const ph = ids.map(() => '?').join(',');
+  const rows = await qAll(
+    `SELECT ge.id, ge.canonical_name, ge.last_assessed_version,
+            (SELECT COUNT(*) FROM entity_claims c WHERE c.entity_id=ge.id) claims,
+            (SELECT COUNT(*) FROM entity_mentions_v2 m WHERE m.entity_id=ge.id) mentions
+       FROM graph_entities ge WHERE ge.id IN (${ph})`, ids);
+  const info = new Map(rows.map((r) => [r.id, r]));
+
+  // Connected components over the merge edges (undirected — a cycle is mutual by definition).
+  const adj = new Map(ids.map((i) => [i, new Set()]));
+  for (const u of unresolved) {
+    for (const t of u.targets) {
+      if (!adj.has(u.id)) adj.set(u.id, new Set());
+      adj.get(u.id).add(t);
+      if (adj.has(t)) adj.get(t).add(u.id);
+    }
+  }
+  const seen = new Set();
+  const components = [];
+  for (const id of ids) {
+    if (seen.has(id)) continue;
+    const stack = [id], comp = [];
+    seen.add(id);
+    while (stack.length) {
+      const cur = stack.pop();
+      comp.push(cur);
+      for (const nb of (adj.get(cur) || [])) if (adj.has(nb) && !seen.has(nb)) { seen.add(nb); stack.push(nb); }
+    }
+    components.push(comp);
+  }
+
+  const cycles = [];
+  const statements = [];
+  for (const comp of components) {
+    const scored = comp.map((i) => {
+      const r = info.get(i) || {};
+      return { id: i, claims: r.claims || 0, mentions: r.mentions || 0,
+        evidence: (r.claims || 0) + (r.mentions || 0), name: stripMergeMarkers(r.canonical_name || '') };
+    }).sort((a, b) => b.evidence - a.evidence || a.id - b.id);
+    const survivor = scored[0];
+    cycles.push({ members: scored, survivor: survivor.id, survivorEvidence: survivor.evidence,
+      allEmpty: survivor.evidence === 0 });
+    // Survivor becomes a live entity again: markers stripped, no tombstone.
+    statements.push({ sql: `UPDATE graph_entities SET canonical_name=?, last_assessed_version=NULL WHERE id=?`,
+      args: [survivor.name, survivor.id] });
+    for (const m of scored.slice(1)) {
+      statements.push({ sql: `UPDATE graph_entities SET canonical_name=?, last_assessed_version=? WHERE id=?`,
+        args: [m.name, tombstoneFor(survivor.id), m.id] });
+    }
+  }
+
+  if (dryRun) return { dryRun: true, cycles, applied: 0, statements: statements.length };
+  await tx(statements, 'entity-merge-cycle-break');
+  logger.info({ cycles: cycles.length, rows: statements.length }, 'merge cycles broken');
+  return { dryRun: false, cycles, applied: statements.length };
+}

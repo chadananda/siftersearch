@@ -14,7 +14,7 @@ import { graphBandHolder } from '../lib/pipeline/lock.js';
 import { spawn } from 'node:child_process';   // used by /grounding/backup (was missing → endpoint threw ReferenceError)
 import { spawnGrounding } from '../lib/pipeline/spawn.js';
 import { makeStore } from '../lib/rag-adapter/store.js';
-import { repairMergeTombstones, mergeTombstoneDivergence, naturalKeyCollisions } from '../lib/entity-merge-repair.js';
+import { repairMergeTombstones, mergeTombstoneDivergence, naturalKeyCollisions, breakMergeCycles } from '../lib/entity-merge-repair.js';
 import { getIntegrationProgress, gradedPlanDocIds } from '../lib/bio.js';
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
@@ -397,6 +397,10 @@ export default async function groundingRoutes(fastify) {
   //      and restores canonical_name. Idempotent; dry-run by default; unresolvable rows are reported, never guessed.
   fastify.get('/entities/merge-divergence', admin, async () => mergeTombstoneDivergence());
   fastify.get('/entities/key-collisions', admin, async () => naturalKeyCollisions());
+  // Rows merged into EACH OTHER (A→B, B→A) — no chain terminates, so the main repair skips them.
+  // Survivor is chosen by evidence (claims+mentions), ties by lowest id; the rest tombstone to it.
+  fastify.post('/entities/break-merge-cycles', admin, async (request) =>
+    breakMergeCycles({ dryRun: (request.body || {}).dryRun !== false }));
   fastify.post('/entities/repair-merge-tombstones', admin, async (request) => {
     const b = request.body || {};
     return repairMergeTombstones({ dryRun: b.dryRun !== false, chunkSize: Math.min(500, +b.chunkSize || 200) });

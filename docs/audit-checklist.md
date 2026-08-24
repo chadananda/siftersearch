@@ -130,7 +130,7 @@ runs is the failure mode this file exists to prevent.
 
 ## Sync bookkeeping
 
-### 11. Cleanup never depends on the work continuing — **MANUAL**
+### 10. Cleanup never depends on the work continuing — **MANUAL**
 
 - **Invariant:** any reconciler that resolves residue from a work path must run on a **timer**, not from
   inside that work path. The rows needing cleanup are precisely what is left over when work stops.
@@ -149,7 +149,7 @@ runs is the failure mode this file exists to prevent.
 
 ## Publication safety
 
-### 10. The PII sanitizer fails closed — **AUTO** (covered by tests)
+### 11. The PII sanitizer fails closed — **AUTO** (covered by tests)
 
 - **Invariant:** if sanitization throws, publication refuses; it never emits the un-redacted original.
 - **Incident (2026-08-17):** `routes/content.js` published the unredacted text on sanitizer failure —
