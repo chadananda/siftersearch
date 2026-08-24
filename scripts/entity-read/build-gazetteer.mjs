@@ -10,6 +10,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env-secrets' });
 dotenv.config({ path: '.env-public' });
 import fs from 'node:fs';
+import { LIVE_SQL } from '../../api/lib/entity-live.js';   // ONE definition of live/merged — never inline it
 const { queryAll } = await import('../../api/lib/db.js');
 
 const opt = Object.fromEntries(process.argv.slice(2).flatMap((a, i, A) =>
@@ -47,7 +48,7 @@ const rows = await queryAll(
           (SELECT COUNT(*) FROM entity_mentions_v2 m WHERE m.entity_id=ge.id) mentions
      FROM graph_entities ge
      LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type='person'
-    WHERE ge.entity_type='person' AND ge.canonical_name NOT LIKE '%⟨merged%'
+    WHERE ge.entity_type='person' AND ${LIVE_SQL('ge.')}
     ORDER BY COALESCE(er.importance,0) DESC, mentions DESC
     LIMIT ${TOP}`);
 

@@ -12,6 +12,7 @@ import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './pipeline/peak.js'
 import fs from 'fs';
 import path from 'path';
 import { PROSE_SQL, DISAMB_DONE_SQL, HYPE_DONE_SQL } from './pipeline/processed.js';
+import { LIVE_SQL, isMergedRow } from './entity-live.js';   // ONE definition of live/merged (see entity-live.js header)
 
 export const BIO_ROOT = path.join(process.env.HOME || '/home/chad', 'sifter', 'bio-assets');
 export const readBioManifest = () => { try { return JSON.parse(fs.readFileSync(path.join(BIO_ROOT, 'manifest.json'), 'utf8')); } catch { return {}; } };
@@ -453,7 +454,7 @@ export async function listBioPersons() {
       er.side, er.summary, er.aliases, er.kinship, er.research_notes
     FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name
     WHERE ge.entity_type = 'person' AND ge.religion = ''
-      AND (ge.last_assessed_version IS NULL OR ge.last_assessed_version NOT LIKE 'merged-into-%')
+      AND ${LIVE_SQL('ge.')}
     ORDER BY (ge.importance IS NULL), ge.importance DESC, ge.canonical_name`);
   const persons = rows.map(r => {
     let aliases = [], kinship = [], death = null;
@@ -487,7 +488,7 @@ export async function getBioPerson(rawId) {
   const row = await queryOne(`SELECT ge.id, ge.canonical_name AS name, ge.importance, ge.last_assessed_version AS lav, er.side, er.summary,
       er.aliases, er.kinship, er.relations, er.research_notes, er.dates
     FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.id = ?`, [id]);
-  if (!row || /^merged-into-/.test(row.lav || '')) return null;   // merged duplicate → gone (references live on the survivor)
+  if (!row || isMergedRow({ canonical_name: row.canonical_name ?? row.name, last_assessed_version: row.lav })) return null;   // merged duplicate → gone (references live on the survivor)
   const arr = s => { try { return JSON.parse(s || '[]'); } catch { return []; } };
   const obj = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
   let wiki = null, portrait = null, portraitFull = null, bahai = null;
@@ -620,7 +621,7 @@ export async function bioSearch(rawQ) {
   if (connQ) {
     const gtoks = new Set(best ? tokize(best.name) : []);
     const persons = await queryAll(`SELECT id, canonical_name cn FROM graph_entities WHERE entity_type = 'person'
-      AND (last_assessed_version IS NULL OR last_assessed_version NOT LIKE 'merged-into-%')`);
+      AND ${LIVE_SQL()}`);
     const qf = ' ' + fold(q) + ' ';
     for (const p of persons) {
       if (best && p.id === best.id) continue;
@@ -642,7 +643,7 @@ export async function bioSearch(rawQ) {
     FROM entity_claims ec JOIN graph_entities ge ON ge.id = ec.entity_id
     WHERE ge.entity_type = 'person' AND ge.religion = '' AND (ec.status IS NULL OR ec.status = 'supported')
       AND ec.proof_verbatim IS NOT NULL AND TRIM(ec.proof_verbatim) <> ''
-      AND (ge.last_assessed_version IS NULL OR ge.last_assessed_version NOT LIKE 'merged-into-%')
+      AND ${LIVE_SQL('ge.')}
       AND (${tokPreds})`,
     [...preToks.map((t) => `%${t}%`), ...(connTarget ? [connTarget.id] : [])]);
   // Resolve the SOURCE DOCUMENT for every cited claim from the docs table (NOT a hardcoded book list). Every claim

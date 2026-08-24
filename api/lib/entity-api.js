@@ -5,9 +5,9 @@
 // are excluded everywhere.
 import { queryOne, queryAll } from './db.js';
 import { skeletonKeys } from './translit-key.js';
+import { LIVE_SQL, isMergedRow } from './entity-live.js';   // ONE definition of live/merged (see entity-live.js header)
 
 const parse = (s) => { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
-const isMerged = (lav) => /^merged-into-/.test(String(lav || ''));
 const abbrOf = (t) => t === 'The Dawn-Breakers' ? 'DB' : t === 'God Passes By' ? 'GPB' : (String(t || '').split(/\s+/).filter(Boolean).map((w) => w[0]).join('').toUpperCase().slice(0, 4) || null);
 // Resolve source documents (title + public url) from the docs table — NOT a hardcoded book list. Every claim carries
 // doc_id + para_id by construction, so a citation always exists; the clickable oceanlibrary link is added when the
@@ -29,7 +29,7 @@ export async function entityLookup(q, { type = null, limit = 20 } = {}) {
             COUNT(DISTINCT lk.skeleton_key) shared, MAX(lk.is_canonical) canon
        FROM entity_lookup_keys lk JOIN graph_entities ge ON ge.id=lk.entity_id
       WHERE lk.skeleton_key IN (${keys.map(() => '?').join(',')})${type ? ' AND ge.entity_type=?' : ''}
-        AND (ge.last_assessed_version IS NULL OR ge.last_assessed_version NOT LIKE 'merged-into-%')
+        AND ${LIVE_SQL('ge.')}
       GROUP BY lk.entity_id ORDER BY canon DESC, shared DESC, (ge.importance IS NULL), ge.importance DESC LIMIT ?`,
     [...keys, ...(type ? [type] : []), Math.min(50, +limit || 20)]);
   return rows.map((r) => ({ id: r.id, name: r.name, type: r.type, importance: r.importance, shared_keys: r.shared, canonical_match: !!r.canon }));
@@ -39,7 +39,7 @@ export async function entityLookup(q, { type = null, limit = 20 } = {}) {
 export async function entityDossier(rawId) {
   const id = +String(rawId).replace(/\D/g, '');
   const ge = await queryOne(`SELECT id, canonical_name cn, entity_type et, importance, last_assessed_version lav FROM graph_entities WHERE id=?`, [id]);
-  if (!ge || isMerged(ge.lav)) return null;
+  if (!ge || isMergedRow({ canonical_name: ge.cn, last_assessed_version: ge.lav })) return null;
   const er = await queryOne(`SELECT side, summary, aliases FROM entity_research WHERE canonical_name=? AND entity_type=?`, [ge.cn, ge.et]);
   const rows = await queryAll(`SELECT relation, target_entity_id tid, statement, proof_verbatim proof, doc_id, para_id, time_value tv, time_basis tb
      FROM entity_claims WHERE entity_id=? AND (status IS NULL OR status='supported') ORDER BY (tv IS NULL), tv, relation`, [id]);
@@ -74,7 +74,7 @@ export async function entitySearch(q, { limit = 12 } = {}) {
     `SELECT ec.entity_id id, ge.canonical_name name, ge.importance imp, ec.statement, ec.relation, ec.doc_id, ec.para_id
        FROM entity_claims ec JOIN graph_entities ge ON ge.id=ec.entity_id
       WHERE (ec.status IS NULL OR ec.status='supported') AND ge.entity_type='person'
-        AND (ge.last_assessed_version IS NULL OR ge.last_assessed_version NOT LIKE 'merged-into-%')
+        AND ${LIVE_SQL('ge.')}
         AND ${like} LIMIT 200`, terms.map((t) => `%${t}%`));
   const dmap = await resolveDocs(rows.map((r) => r.doc_id));
   const byEnt = new Map();

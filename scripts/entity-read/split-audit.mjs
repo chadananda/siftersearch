@@ -8,6 +8,7 @@
 //         node scripts/entity-read/split-audit.mjs --save     # persist proposals to entity_decisions (status=proposed)
 //         node scripts/entity-read/split-audit.mjs --limit 100 --cc 6
 import dotenv from 'dotenv';
+import { LIVE_SQL } from '../../api/lib/entity-live.js';   // ONE definition of live/merged — never inline it
 dotenv.config({ path: '.env-secrets' });
 dotenv.config({ path: '.env-public' });
 const { queryAll } = await import('../../api/lib/db.js');
@@ -24,7 +25,7 @@ const rows = await queryAll(
   `SELECT ge.id, ge.canonical_name n,
           (SELECT COUNT(*) FROM entity_mentions_v2 m WHERE m.entity_id=ge.id) mentions
      FROM graph_entities ge
-    WHERE ge.entity_type='person' AND ge.canonical_name NOT LIKE '%⟨merged%'
+    WHERE ge.entity_type='person' AND ${LIVE_SQL('ge.')}
       AND EXISTS (SELECT 1 FROM entity_claims c WHERE c.entity_id=ge.id)
     ORDER BY mentions DESC` + (LIMIT ? ` LIMIT ${LIMIT}` : ''));
 const ids = rows.map((r) => r.id);

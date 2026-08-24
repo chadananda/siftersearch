@@ -11,8 +11,10 @@ import * as queue from '../lib/pipeline/queue.js';
 import * as processor from '../lib/pipeline/plan.js';   // plan/override/general mode processor (chooses next work)
 import * as digest from '../lib/pipeline/digest.js';    // hourly progress-digest email
 import { graphBandHolder } from '../lib/pipeline/lock.js';
+import { spawn } from 'node:child_process';   // used by /grounding/backup (was missing → endpoint threw ReferenceError)
 import { spawnGrounding } from '../lib/pipeline/spawn.js';
 import { makeStore } from '../lib/rag-adapter/store.js';
+import { repairMergeTombstones, mergeTombstoneDivergence, naturalKeyCollisions } from '../lib/entity-merge-repair.js';
 import { getIntegrationProgress, gradedPlanDocIds } from '../lib/bio.js';
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
@@ -384,6 +386,21 @@ export default async function groundingRoutes(fastify) {
   // queue drains to empty and STAYS empty — indistinguishable, to a queue-depth alarm, from a wedged pipeline.
   // system-checks reads this so `Grounding progress` can say "plan exhausted" instead of crying CRITICAL forever.
   fastify.get('/grounding/exhaustion', admin, async () => processor.planExhaustion());
+
+  // ── Merge-tombstone integrity (2026-08-24). applyMerge used to mark merged duplicates by appending
+  //    ' ⟨merged→N⟩' to canonical_name — a form no API reader checked — so 6,668 hollow entities were served
+  //    as live people. The writer is fixed; these repair the rows it already wrote.
+  //
+  // GET  /entities/merge-divergence   — the DETECTOR. servedButMerged must be 0.
+  // POST /entities/repair-merge-tombstones {dryRun=true, chunkSize=200}
+  //      Rewrites each marked row to `last_assessed_version='merged-into-<finalSurvivor>'` (chain-resolved)
+  //      and restores canonical_name. Idempotent; dry-run by default; unresolvable rows are reported, never guessed.
+  fastify.get('/entities/merge-divergence', admin, async () => mergeTombstoneDivergence());
+  fastify.get('/entities/key-collisions', admin, async () => naturalKeyCollisions());
+  fastify.post('/entities/repair-merge-tombstones', admin, async (request) => {
+    const b = request.body || {};
+    return repairMergeTombstones({ dryRun: b.dryRun !== false, chunkSize: Math.min(500, +b.chunkSize || 200) });
+  });
   fastify.post('/grounding/mode', admin, async (req) => {
     const m = (req.body || {}).mode;
     if (!m) throw ApiError.badRequest('mode required (plan|override|general)');

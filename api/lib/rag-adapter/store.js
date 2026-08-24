@@ -7,6 +7,7 @@ import content from '../content.js';      // paragraph write helpers (updateCont
 import { skeletonKeys, nameKeys, arabicKeys } from '../translit-key.js'; // recall keys: translit skeletons ∪ Arabic-script keys (Persian docs)
 import { loadGazetteer, anchorFor, guardedPair } from './gazetteer.js'; // central-cast identity anchor + ≠guards
 import { DISAMB_DONE_SQL } from '../pipeline/processed.js';
+import { LIVE_SQL, tombstoneFor } from '../entity-live.js'; // ONE definition of live/merged — never inline it
 
 // Blocktypes that carry readable prose we enrich (skip figures, nav, etc.). App-specific → stays here.
 const PROSE = "blocktype IN ('paragraph','quote')";
@@ -644,7 +645,7 @@ export function makeStore() {
         `SELECT ge.id, ge.canonical_name canonical, er.summary,
                 (SELECT COUNT(*) FROM entity_mentions_v2 m WHERE m.entity_id=ge.id) mentions
            FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type
-          WHERE ge.entity_type=? AND ge.canonical_name NOT LIKE '%⟨merged%'`, [type]); // exclude already-merged (dead) entities
+          WHERE ge.entity_type=? AND ${LIVE_SQL('ge.')}`, [type]);   // exclude already-merged (dead) entities
       const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
       const groups = {};
       for (const e of ents) { const k = norm(e.canonical); if (!k) continue; (groups[k] = groups[k] || []).push(e); }
@@ -656,8 +657,13 @@ export function makeStore() {
     },
 
     // Merge: repoint mentions + claims from the merged ids onto the canonical, record an append-only merge
-    // decision (reversible), and mark the merged graph_entities rows (canonical_name suffixed) so the bio
-    // browser stops surfacing them. Returns count merged.
+    // decision (reversible), and TOMBSTONE the merged graph_entities rows. Returns count merged.
+    //
+    // The tombstone is `last_assessed_version='merged-into-<id>'` — the one column every reader checks
+    // (entity-live.js owns the definition). This used to append ' ⟨merged→N⟩' to canonical_name instead,
+    // which no API-layer filter looked at, so 6,668 merged rows were served as live people until 2026-08-24.
+    // It also concatenated onto the previous value, so re-merging stacked markers up to nine deep. Assigning
+    // a constant makes the write idempotent: merging the same id twice leaves the identical tombstone.
     async applyMerge(canonicalId, mergeIds, reason) {
       if (!mergeIds.length) return 0;
       const ph = mergeIds.map(() => '?').join(',');
@@ -665,7 +671,7 @@ export function makeStore() {
         { sql: `UPDATE entity_mentions_v2 SET entity_id=? WHERE entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
         { sql: `UPDATE entity_claims SET entity_id=? WHERE entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
         { sql: `UPDATE entity_claims SET target_entity_id=? WHERE target_entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
-        { sql: `UPDATE graph_entities SET canonical_name=canonical_name||' ⟨merged→${canonicalId}⟩' WHERE id IN (${ph})`, args: mergeIds },
+        { sql: `UPDATE graph_entities SET last_assessed_version=? WHERE id IN (${ph})`, args: [tombstoneFor(canonicalId), ...mergeIds] },
         { sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, rationale, actor, actor_tier, status, valid_time) VALUES ('merge','entity',?,?,?, 'model', 2, 'applied', NULL)`,
           args: [JSON.stringify(mergeIds), JSON.stringify({ canonical: canonicalId, merged: mergeIds }), reason || null] },
       ]);

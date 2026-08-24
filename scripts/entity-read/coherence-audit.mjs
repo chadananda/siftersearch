@@ -6,6 +6,7 @@
 //
 // Usage:  node scripts/entity-read/coherence-audit.mjs [--min 8] [--top 150] [--cc 5]
 import dotenv from 'dotenv';
+import { LIVE_SQL } from '../../api/lib/entity-live.js';   // ONE definition of live/merged — never inline it
 dotenv.config({ path: '.env-secrets' });
 dotenv.config({ path: '.env-public' });
 const { queryAll } = await import('../../api/lib/db.js');
@@ -37,7 +38,7 @@ export function parseCoh(raw) {
 const ents = await queryAll(
   `SELECT ge.id, ge.canonical_name n, COUNT(m.id) mm
      FROM graph_entities ge JOIN entity_mentions_v2 m ON m.entity_id=ge.id
-    WHERE ge.entity_type='person' AND ge.canonical_name NOT LIKE '%⟨merged%'
+    WHERE ge.entity_type='person' AND ${LIVE_SQL('ge.')}
     GROUP BY ge.id HAVING mm>=${CUT} ORDER BY mm DESC` + (TOP ? ` LIMIT ${TOP}` : ''));
 console.log(`COHERENCE / CONFLATION AUDIT — ${ents.length} entities with ≥${CUT} mentions (top-down), cc=${CC}\n`);
 
