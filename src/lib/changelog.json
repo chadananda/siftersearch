@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-23T18:48:31.229Z",
+  "generated": "2026-08-24T14:17:23.640Z",
   "entries": [
+    {
+      "hash": "06d19a2a",
+      "date": "2026-08-23",
+      "type": "Other",
+      "description": "Preserve the interpretive-lexicon RED spec instead of deleting it",
+      "scope": null
+    },
     {
       "hash": "9601a5b0",
       "date": "2026-08-23",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Dossier-grounded cluster merge-adjudication engine (proposals only)",
       "scope": null
-    },
-    {
-      "hash": "a3f5b3c6",
-      "date": "2026-06-23",
-      "type": "Other",
-      "description": "Cluster cast by name-core, flag fabricated-nisba artifacts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-23": [
+      {
+        "hash": "06d19a2a",
+        "date": "2026-08-23",
+        "type": "Other",
+        "description": "Preserve the interpretive-lexicon RED spec instead of deleting it",
+        "scope": null
+      },
       {
         "hash": "9601a5b0",
         "date": "2026-08-23",
@@ -7065,13 +7072,6 @@
         "date": "2026-06-23",
         "type": "Other",
         "description": "Dossier-grounded cluster merge-adjudication engine (proposals only)",
-        "scope": null
-      },
-      {
-        "hash": "a3f5b3c6",
-        "date": "2026-06-23",
-        "type": "Other",
-        "description": "Cluster cast by name-core, flag fabricated-nisba artifacts",
         "scope": null
       }
     ]
