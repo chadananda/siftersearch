@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-24T14:17:23.640Z",
+  "generated": "2026-08-24T18:30:56.978Z",
   "entries": [
+    {
+      "hash": "d5313162",
+      "date": "2026-08-24",
+      "type": "Other",
+      "description": "Drop two phantom entries — empty duplicates of books already ground",
+      "scope": null
+    },
     {
       "hash": "06d19a2a",
       "date": "2026-08-23",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Conservative merge adjudication (enumeration/kin = hard distinct; flag when unsure)",
       "scope": null
-    },
-    {
-      "hash": "891596aa",
-      "date": "2026-06-23",
-      "type": "Other",
-      "description": "Dossier-grounded cluster merge-adjudication engine (proposals only)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-24": [
+      {
+        "hash": "d5313162",
+        "date": "2026-08-24",
+        "type": "Other",
+        "description": "Drop two phantom entries — empty duplicates of books already ground",
+        "scope": null
+      }
+    ],
     "2026-08-23": [
       {
         "hash": "06d19a2a",
@@ -7065,13 +7074,6 @@
         "date": "2026-06-23",
         "type": "Other",
         "description": "Conservative merge adjudication (enumeration/kin = hard distinct; flag when unsure)",
-        "scope": null
-      },
-      {
-        "hash": "891596aa",
-        "date": "2026-06-23",
-        "type": "Other",
-        "description": "Dossier-grounded cluster merge-adjudication engine (proposals only)",
         "scope": null
       }
     ]
