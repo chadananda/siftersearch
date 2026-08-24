@@ -128,6 +128,25 @@ runs is the failure mode this file exists to prevent.
 
 ---
 
+## Sync bookkeeping
+
+### 11. Cleanup never depends on the work continuing — **MANUAL**
+
+- **Invariant:** any reconciler that resolves residue from a work path must run on a **timer**, not from
+  inside that work path. The rows needing cleanup are precisely what is left over when work stops.
+- **Incident (2026-08-24):** `reconcileSyncTasks()` was called only from `processSyncJob()`, which only
+  runs when `countUnsyncedParagraphs() > 0`. The corpus went fully synced on 2026-08-21, so no sync job
+  was created again and 72 `meili_sync_tasks` rows sat `processing` for 74 hours — while every one of
+  their Meilisearch tasks had actually **succeeded**. The hourly reconcile existed only in
+  `sync-processor.js`, the dead duplicate; consolidating into `unified-worker.js` dropped it.
+- **Second failure:** the health check advised "consider restoring Meilisearch from backup" — a
+  destructive response to a bookkeeping bug, against a perfectly healthy search engine.
+- **Check:** compare the two sides. They must agree.
+  - API: `SELECT COUNT(*) FROM meili_sync_tasks WHERE status='processing'`
+  - Meili: `curl -s -H "Authorization: Bearer $KEY" 'http://localhost:7700/tasks?statuses=processing,enqueued' | jq .total`
+- **Expected:** if Meili reports 0 and the API reports >0, the reconciler is not firing. A worker restart
+  forces it; if it recurs, the timer is broken again.
+
 ## Publication safety
 
 ### 10. The PII sanitizer fails closed — **AUTO** (covered by tests)

@@ -54,6 +54,12 @@ const HEARTBEAT_INTERVAL_MS = 30000;
 const USAGE_REPORT_INTERVAL_MS = 5 * 60 * 1000;
 const HYPE_SYNC_INTERVAL_MS = 60 * 1000;  // 60s — keep new HyPE indexed promptly
 const HYPE_SYNC_BATCH = 100;              // paragraphs per batch (~500 questions = 1 OpenAI batch call)
+const MEILI_RECONCILE_INTERVAL_MS = 60 * 60 * 1000;   // 1h — resolve orphaned meili_sync_tasks rows.
+// MUST be periodic, not nested inside sync work: reconcileSyncTasks() used to run ONLY from
+// processSyncJob(), which only runs when countUnsyncedParagraphs() > 0. Once the corpus went fully
+// synced (2026-08-21) no sync job was ever created, so 72 rows sat 'processing' for 74h while every
+// one of their Meilisearch tasks had actually SUCCEEDED. The rows needing cleanup are precisely the
+// residue left when work stops, so the cleanup can never be gated on work continuing.
 const ENTITY_SYNC_INTERVAL_MS = 30 * 1000;   // 30s — drain backlog faster
 const ENTITY_SYNC_BATCH = 1000;
 const ALIAS_SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 min — synonym refresh
@@ -69,6 +75,7 @@ let lastFullSyncTime = 0;
 let lastJobCleanupTime = 0;
 let lastUsageReportTime = 0;
 let lastHypeSyncTime = 0;
+let lastMeiliReconcileTime = 0;
 let lastEntitySyncTime = 0;
 let lastAliasSyncTime = 0;
 let lastWalCheckpointTime = 0;
@@ -120,7 +127,17 @@ async function reconcileSyncTasks(meili, minAgeSeconds = 3600) {
       }
       // Still processing — leave it; will be checked again next reconcile pass.
     } catch (err) {
-      logger.warn({ taskUid: row.task_uid, err: err.message }, 'Task reconciliation check failed — will retry');
+      // A task Meilisearch no longer has can NEVER resolve — retrying it forever is how a row becomes
+      // immortal and how the health check ends up crying wolf. Give it a terminal state instead.
+      const gone = err?.code === 'task_not_found' || err?.httpStatus === 404 || /not found/i.test(err?.message || '');
+      if (gone) {
+        const paraIds = JSON.parse(row.para_ids);
+        await content.markUnsynced(paraIds);   // provably-indexed is unknowable → re-sync is the safe answer
+        await query(`UPDATE meili_sync_tasks SET status = 'orphaned', resolved_at = unixepoch() WHERE task_uid = ?`, [row.task_uid]);
+        logger.warn({ taskUid: row.task_uid, count: paraIds.length }, 'Meili task no longer exists — marked orphaned, paragraphs re-queued');
+      } else {
+        logger.warn({ taskUid: row.task_uid, err: err.message }, 'Task reconciliation check failed — will retry');
+      }
     }
   }
 }
@@ -205,7 +222,8 @@ async function processSyncJob(job) {
     // completed tasks (non-blocking) before submitting more. If still at
     // limit (all tasks still processing), yield briefly and retry.
     //
-    // Recovery: on startup, reconcileSyncTasks() checks tasks older than 1h.
+    // Recovery: reconcileSyncTasks() checks tasks older than 1h. Also runs on an hourly timer in
+    // runPeriodicTasks() — this call only covers the case where a sync job starts sooner.
     // Failed tasks mark their paragraph IDs back to synced=0 for retry.
     const PIPELINE_LIMIT = 20;  // more headroom since we don't block on completion
     const FLUSH_PARAS = 500;    // larger batches = fewer HNSW rebuilds = faster overall
@@ -757,6 +775,14 @@ async function withTimeout(fn, ms, label) {
 }
 const PERIODIC_TASK_TIMEOUT_MS = 90_000;   // < watchdog GRACE (240s) so the timeout fires before a restart
 
+// Resolve meili_sync_tasks rows left 'processing'. Runs on a timer so it fires when the corpus is
+// IDLE — which is exactly when orphans exist and nothing else would clear them.
+async function runMeiliReconcileCycle() {
+  const meili = await getMeili();
+  if (!meili) return;
+  await reconcileSyncTasks(meili);
+}
+
 async function runPeriodicTasks() {
   const T = PERIODIC_TASK_TIMEOUT_MS;
   const now = Date.now();
@@ -765,6 +791,10 @@ async function runPeriodicTasks() {
   if (now - lastHypeSyncTime >= HYPE_SYNC_INTERVAL_MS) await withTimeout(() => runHypeSyncCycle(), T, 'hypeSyncCycle');
   if (now - lastEntitySyncTime >= ENTITY_SYNC_INTERVAL_MS) await withTimeout(() => runEntitySyncCycle(), T, 'entitySyncCycle');
   if (now - lastAliasSyncTime >= ALIAS_SYNC_INTERVAL_MS) await withTimeout(() => runAliasSyncCycle(), T, 'aliasSyncCycle');
+  if (now - lastMeiliReconcileTime >= MEILI_RECONCILE_INTERVAL_MS) {
+    await withTimeout(() => runMeiliReconcileCycle(), T, 'meiliReconcile');
+    lastMeiliReconcileTime = now;
+  }
   // Site-only DBs live outside main DB; periodic pump every cycle (cheap
   // when the queue is empty).
   await withTimeout(() => runSiteOnlySyncCycle(), T, 'siteOnlySyncCycle');

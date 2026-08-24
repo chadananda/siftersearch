@@ -484,9 +484,10 @@ async function checkMeiliSyncTasks() {
 
       if (growing) {
         return fail('meili_sync_tasks',
-          `GROWING: ${stale_count} processing task(s) for ${ageH}h and count is INCREASING — ` +
-          `Meilisearch queue not draining. On tower-nas: check ` +
-          `'curl -s -H "Authorization: Bearer $KEY" http://localhost:7700/tasks?statuses=processing | jq'`,
+          `GROWING: ${stale_count} unresolved sync-task row(s) for ${ageH}h and rising. Confirm which side ` +
+          `is behind before acting: ` +
+          `'curl -s -H "Authorization: Bearer $KEY" http://localhost:7700/tasks?statuses=processing,enqueued | jq .total'. ` +
+          `Non-zero there = Meilisearch genuinely not draining; 0 = API bookkeeping drift (reconciler).`,
           details);
       }
       if (allSame) {
@@ -497,9 +498,12 @@ async function checkMeiliSyncTasks() {
       }
       // First time seeing ≥48h or count recently changed — raise FAIL until pattern is confirmed
       return fail('meili_sync_tasks',
-        `STUCK: ${stale_count} processing task(s) for ${ageH}h — Meilisearch queue may be hung. ` +
-        `On tower-nas: check 'curl -s -H "Authorization: Bearer $KEY" http://localhost:7700/tasks?statuses=processing | jq' ` +
-        `then consider restoring Meilisearch from backup (see scripts/CLAUDE.md)`,
+        `${stale_count} sync-task row(s) unresolved for ${ageH}h. This is usually API BOOKKEEPING, not ` +
+        `Meilisearch: verify before acting — ` +
+        `'curl -s -H "Authorization: Bearer $KEY" http://localhost:7700/tasks?statuses=processing,enqueued | jq .total'. ` +
+        `If that is 0, Meilisearch is healthy and the rows are stale (the hourly reconciler in ` +
+        `unified-worker.js clears them; a worker restart forces it immediately). Do NOT restore ` +
+        `Meilisearch from backup for this — on 2026-08-24 all 72 "stuck" tasks had actually SUCCEEDED.`,
         details);
     }
     const context = oldest_age_hours >= 36
