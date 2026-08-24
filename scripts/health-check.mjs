@@ -452,67 +452,52 @@ async function checkMeiliSyncTasks() {
   const { sync_tasks } = ph;
   if (!sync_tasks) return warn('meili_sync_tasks', 'pipeline endpoint missing sync_tasks — API may need restart');
 
-  const { stale_count, oldest_age_hours, total_processing } = sync_tasks;
-  const details = { stale_count, oldest_age_hours, total_processing };
+  const { stale_count, oldest_age_hours, total_processing, meili_queue } = sync_tasks;
+  const details = { stale_count, oldest_age_hours, total_processing, meili_queue };
 
-  if (stale_count > 0) {
-    const ageH = oldest_age_hours?.toFixed(1);
-    if (oldest_age_hours >= 48) {
-      // Read count history to distinguish static (draining) from growing (stuck).
-      // A static count behind a large Meili queue is expected; growing = genuinely stuck.
-      const cacheFile = join(PROJECT_ROOT, 'tmp', 'meili-task-count-history.json');
-      let history = { counts: [] };
-      try {
-        const { readFile } = await import('fs/promises');
-        history = JSON.parse(await readFile(cacheFile, 'utf8'));
-      } catch { /* first run or missing */ }
+  // TWO INDEPENDENT THINGS, and conflating them is why this check cried wolf for weeks:
+  //   meili_queue = Meilisearch's OWN queue. The only evidence Meilisearch is behind.
+  //   stale_count = rows in our meili_sync_tasks table still marked 'processing'. API BOOKKEEPING.
+  // On 2026-08-24 stale_count was 72 for 74h while meili_queue was {processing:0, enqueued:0} and every
+  // one of those tasks had SUCCEEDED. The old check reported that as "Meilisearch queue may be hung"
+  // and advised restoring Meilisearch from backup — against a perfectly healthy engine.
+  const meiliBehind = meili_queue && meili_queue.depth > 0;
 
-      history.counts.push({ count: stale_count, ts: Date.now() });
-      if (history.counts.length > 10) history.counts = history.counts.slice(-10);
-
-      try {
-        const { writeFile } = await import('fs/promises');
-        await writeFile(cacheFile, JSON.stringify(history));
-      } catch { /* non-fatal */ }
-
-      // Static: all recent samples have the same count (queue draining behind backlog)
-      const allSame = history.counts.length >= 2 &&
-        history.counts.every(s => s.count === history.counts[0].count);
-      // Growing: latest count is higher than oldest recorded count
-      const growing = history.counts.length >= 2 &&
-        stale_count > history.counts[0].count;
-
-      if (growing) {
-        return fail('meili_sync_tasks',
-          `GROWING: ${stale_count} unresolved sync-task row(s) for ${ageH}h and rising. Confirm which side ` +
-          `is behind before acting: ` +
-          `'curl -s -H "Authorization: Bearer $KEY" http://localhost:7700/tasks?statuses=processing,enqueued | jq .total'. ` +
-          `Non-zero there = Meilisearch genuinely not draining; 0 = API bookkeeping drift (reconciler).`,
-          details);
-      }
-      if (allSame) {
-        return warn('meili_sync_tasks',
-          `${stale_count} processing task(s) for ${ageH}h — count STATIC across ${history.counts.length} checks; ` +
-          `queue draining behind Meilisearch backlog (not stuck)`,
-          details);
-      }
-      // First time seeing ≥48h or count recently changed — raise FAIL until pattern is confirmed
-      return fail('meili_sync_tasks',
-        `${stale_count} sync-task row(s) unresolved for ${ageH}h. This is usually API BOOKKEEPING, not ` +
-        `Meilisearch: verify before acting — ` +
-        `'curl -s -H "Authorization: Bearer $KEY" http://localhost:7700/tasks?statuses=processing,enqueued | jq .total'. ` +
-        `If that is 0, Meilisearch is healthy and the rows are stale (the hourly reconciler in ` +
-        `unified-worker.js clears them; a worker restart forces it immediately). Do NOT restore ` +
-        `Meilisearch from backup for this — on 2026-08-24 all 72 "stuck" tasks had actually SUCCEEDED.`,
-        details);
-    }
-    const context = oldest_age_hours >= 36
-      ? `Meilisearch task queue backed up ${ageH}h — approaching alert threshold (48h); monitor`
-      : `Meilisearch task queue backed up (${ageH}h); tasks will complete as queue drains`;
+  // 1. Meilisearch genuinely behind → the real alarm, and the ONLY branch that names Meilisearch.
+  if (meiliBehind && meili_queue.depth > 500) {
+    return fail('meili_sync_tasks',
+      `Meilisearch queue depth ${meili_queue.depth} (${meili_queue.processing} processing, ` +
+      `${meili_queue.enqueued} enqueued) — the engine is genuinely behind.`, details);
+  }
+  if (meiliBehind && meili_queue.depth > 50) {
     return warn('meili_sync_tasks',
-      `${stale_count} processing task(s) older than 24h (oldest: ${ageH}h) — ${context}`,
+      `Meilisearch queue depth ${meili_queue.depth} — draining, not yet a problem.`, details);
+  }
+
+  // 2. Meilisearch idle but our rows are stale → bookkeeping only. The hourly reconciler clears these.
+  //    Never a Meilisearch problem, never worth waking anyone.
+  if (stale_count > 0 && meili_queue && meili_queue.depth === 0) {
+    // Two reconcile cycles is the honest patience threshold: the reconciler runs hourly and only
+    // considers rows older than 1h, so anything under ~2h has not had its chance yet.
+    if (oldest_age_hours >= 3) {
+      return warn('meili_sync_tasks',
+        `${stale_count} sync-task row(s) unresolved for ${oldest_age_hours?.toFixed(1)}h while Meilisearch ` +
+        `is IDLE (0 processing, 0 enqueued) — API bookkeeping, not Meilisearch. The hourly reconciler ` +
+        `should clear these; if it does not, the timer in unified-worker.js runPeriodicTasks() is broken. ` +
+        `Do NOT touch Meilisearch.`, details);
+    }
+    return ok('meili_sync_tasks', 0, details);   // young rows the reconciler has not reached yet
+  }
+
+  // 3. Could not reach Meilisearch to ask. Unknown is not healthy — say so, but do not accuse
+  //    Meilisearch of being hung on the strength of our own bookkeeping.
+  if (stale_count > 0 && !meili_queue) {
+    return warn('meili_sync_tasks',
+      `${stale_count} sync-task row(s) unresolved for ${oldest_age_hours?.toFixed(1)}h and Meilisearch's own ` +
+      `queue could not be read — cause UNVERIFIED. Check Meilisearch's /tasks endpoint before concluding.`,
       details);
   }
+
   ok('meili_sync_tasks', 0, details);
 }
 

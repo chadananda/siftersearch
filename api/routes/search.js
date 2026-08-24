@@ -9,6 +9,7 @@
 
 import { readFile, stat, realpath } from 'fs/promises';
 import { join } from 'path';
+import { getMeili } from '../lib/search.js';   // /health/pipeline probes Meili's OWN queue (see meili_queue below)
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence, multiIndexSearch, getSearchSourceStats } from '../lib/search.js';
 import { requireInternal } from '../lib/auth.js';
 import { queryOne, userQuery } from '../lib/db.js';
@@ -493,6 +494,20 @@ export default async function searchRoutes(fastify) {
 
   // Pipeline health — exposes sync staleness, entity health, schema version.
   // Public read-only (no sensitive data). Used by health-check.mjs remotely.
+  // Ask Meilisearch how deep its own task queue is. Cheap: limit=0 returns only the total.
+  async function meiliQueueDepth() {
+    try {
+      const meili = getMeili();
+      if (!meili) return null;
+      const [p, e] = await Promise.all([
+        meili.tasks.getTasks({ statuses: ['processing'], limit: 0 }),
+        meili.tasks.getTasks({ statuses: ['enqueued'], limit: 0 }),
+      ]);
+      const processing = p?.total ?? 0, enqueued = e?.total ?? 0;
+      return { processing, enqueued, depth: processing + enqueued };
+    } catch { return null; }
+  }
+
   fastify.get('/health/pipeline', async () => {
     // All heavy COUNT(*) queries on large tables are pre-computed in the background (progress.js).
     // This endpoint ONLY reads from caches or hits tiny tables — zero blocking event loop.
@@ -556,7 +571,13 @@ export default async function searchRoutes(fastify) {
         stale_count: staleSyncTasks?.stale_count ?? 0,
         oldest_age_hours: staleSyncTasks?.oldest_submitted
           ? ((Date.now() / 1000 - staleSyncTasks.oldest_submitted) / 3600)
-          : null
+          : null,
+        // MEILISEARCH'S OWN QUEUE — the only thing that can tell you Meilisearch is actually behind.
+        // sync_tasks above is API BOOKKEEPING; on 2026-08-24 it read 72 stale for 74h while Meili had
+        // 0 processing and 0 enqueued and every one of those tasks had SUCCEEDED. Reporting the
+        // bookkeeping as "Meilisearch may be hung" sent every investigation to the wrong machine.
+        // null = could not ask (never treat null as healthy, and never as broken either).
+        meili_queue: await meiliQueueDepth(),
       },
       wal: {
         size_gb: walStat ? Math.round(walStat.size / 1073741824 * 10) / 10 : null,
