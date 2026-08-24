@@ -52,13 +52,16 @@ const INVARIANTS = [
     incident: '2026-08-23 — plan entries pointed at empty duplicates (6555→12511, 15342→14870); "plan exhausted" masked it',
     run: async () => {
       const d = await get('/api/admin/grounding/exhaustion');
+      // `husks` means NO PROSE — a genuine defect. `complete` means finished-but-not-yet-graded, which is
+      // normal and must never be counted here: conflating the two produced a 607-item false alarm.
       const husks = Number(d.husks || 0);
       return {
         ok: husks === 0,
         detail: husks === 0
-          ? 'every plan id resolves to a copy holding prose'
-          : `${husks} plan ids resolve to husks (no prose) — resolve each by file_path and title, never by semantic search`,
-        data: { husks, parked: d.parked, quarantined: d.quarantined, ids: d.detail?.husks?.slice(0, 20) },
+          ? `every plan id resolves to a copy holding prose (${d.complete || 0} finished, ${d.enqueueable || 0} enqueueable)`
+          : `${husks} plan ids resolve to husks (no prose at all) — resolve each by file_path and title, never by semantic search`,
+        data: { husks, complete: d.complete, enqueueable: d.enqueueable, parked: d.parked,
+          quarantined: d.quarantined, ids: d.detail?.husks?.slice(0, 20) },
       };
     },
   },

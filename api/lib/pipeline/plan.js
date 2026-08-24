@@ -16,7 +16,7 @@ import { queryOne, queryAll } from '../db.js';
 import { logger } from '../logger.js';
 import { enqueue, list, tick } from './queue.js';
 import { getIntegrationProgress } from '../bio.js';
-import { coverageSelect, meetsDisambBar, meetsHypeBar, meetsExtractBar, meetsReconcileBar } from './processed.js';
+import { PROSE_SQL, coverageSelect, meetsDisambBar, meetsHypeBar, meetsExtractBar, meetsReconcileBar } from './processed.js';
 
 const HYPE_MINLEN = Number(process.env.HYPE_MINLEN || 60);   // matches reachedBound / hype-book fragment filter
 const MODES = ['plan', 'override', 'general'];
@@ -224,17 +224,33 @@ export function startProcessor() {
 // that matters, and it is time to switch mode to 'general' (a spend decision, so never automatic).
 export async function planExhaustion({ deps = {} } = {}) {
   const { quarantined, unsupportedLang } = await skipSets(deps);
+  const qAll = deps.queryAll || queryAll;
   const resume = deps.resumeStageFor || resumeStageFor;
   const ordered = await planOrderedIds(deps);
-  const counts = { enqueueable: 0, husks: 0, parked: 0, quarantined: 0 };
-  const detail = { husks: [], parked: [], quarantined: [] };
+  const counts = { enqueueable: 0, husks: 0, complete: 0, parked: 0, quarantined: 0 };
+  const detail = { husks: [], complete: [], parked: [], quarantined: [] };
+  const nullResume = [];
   for (const { id, done } of ordered) {
     if (done) continue;                                       // roadmap is confident → don't re-probe
     if (unsupportedLang.has(id)) { counts.parked++; detail.parked.push(id); continue; }
     if (quarantined.has(id)) { counts.quarantined++; detail.quarantined.push(id); continue; }
     const opts = await resume(id);                            // authoritative stage decision
-    if (opts == null) { counts.husks++; detail.husks.push(id); continue; }   // no prose → nothing to ground
+    if (opts == null) { nullResume.push(id); continue; }
     counts.enqueueable++;
+  }
+  // resumeStageFor() returns null for TWO different reasons, and conflating them turns a healthy plan
+  // into a 607-item alarm (2026-08-24): a book with NO PROSE is a husk, but a book that is simply
+  // FINISHED also has nothing to resume. Only the first is a defect. Separate them by actually looking
+  // at the prose count instead of inferring from the null.
+  if (nullResume.length) {
+    const ph = nullResume.map(() => '?').join(',');
+    const withProse = new Set((await qAll(
+      `SELECT doc_id FROM content WHERE doc_id IN (${ph}) AND ${PROSE_SQL} AND deleted_at IS NULL
+        GROUP BY doc_id`, nullResume)).map((r) => r.doc_id));
+    for (const id of nullResume) {
+      if (withProse.has(id)) { counts.complete++; detail.complete.push(id); }
+      else { counts.husks++; detail.husks.push(id); }
+    }
   }
   return { ...counts, exhausted: counts.enqueueable === 0, detail };
 }

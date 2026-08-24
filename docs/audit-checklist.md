@@ -95,6 +95,10 @@ runs is the failure mode this file exists to prevent.
 - **Check:** `GET /api/admin/grounding/exhaustion` → inspect `detail.husks`; resolve each by `file_path`
   and title, **not** by semantic search.
 - **Expected:** `husks: 0`, or every husk explained.
+- **Do not confuse `husks` with `complete`.** `resumeStageFor()` returns null both for a book with no
+  prose (a defect) and for a book that is simply finished (normal). Conflating them reported 607 broken
+  plan ids on 2026-08-24 when the real number was near zero — a check that always fails is the alarm
+  fatigue this file exists to prevent.
 
 ### 7. Ingestion drops nothing — **MANUAL**
 
