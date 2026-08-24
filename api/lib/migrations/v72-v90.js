@@ -857,6 +857,85 @@ export const migrations = {
     logger.info('Migration 115 complete');
   },
 
+  119: async () => {
+    // The entity catalog reads these on every query. They were added to graph_entities by ad-hoc ALTERs
+    // that did not reach every database — the local dev DB has last_assessed_version but NOT importance.
+    // This must be its OWN migration: 118 had already been applied when the gap was found, and the runner
+    // applies each version exactly once, so amending 118 would have been dead code everywhere it had run.
+    for (const [col, decl] of [['importance', 'INTEGER'], ['summary', 'TEXT'], ['significance', 'TEXT'],
+                               ['name_meaning', 'TEXT'], ['research_notes', 'TEXT']]) {
+      try { await query(`ALTER TABLE graph_entities ADD COLUMN ${col} ${decl}`); }
+      catch (err) { if (!/duplicate column/i.test(err?.message || '')) throw err; }
+    }
+    try {
+      await query(`CREATE INDEX IF NOT EXISTS idx_ge_type_imp_id ON graph_entities(entity_type, importance DESC, id)`);
+      await query(`ANALYZE graph_entities`);
+    } catch (err) {
+      if (!/no such (column|table)/i.test(err?.message || '')) throw err;
+    }
+    logger.info('Migration 119 complete: graph_entities catalog columns guaranteed');
+  },
+
+  118: async () => {
+    // R5 change feed for external entity consumers. Append-only; a monotonic seq is the cursor.
+    // Populated by triggers so no writer path can forget to record a change.
+    await query(`CREATE TABLE IF NOT EXISTS graph_entity_changes (
+      seq INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_id INTEGER NOT NULL,
+      op TEXT NOT NULL,                 -- insert | update | delete
+      canonical_name TEXT, entity_type TEXT, religion TEXT,
+      merged_into INTEGER,              -- set when the change tombstoned the row
+      changed_at INTEGER DEFAULT (unixepoch())
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_gec_entity ON graph_entity_changes(entity_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_gec_changed ON graph_entity_changes(changed_at)`);
+
+    // Only columns an external consumer can observe. Importance/mention churn would flood the feed
+    // without telling anyone anything they could act on.
+    try {
+    await query(`DROP TRIGGER IF EXISTS trg_ge_insert`);
+    await query(`CREATE TRIGGER trg_ge_insert AFTER INSERT ON graph_entities BEGIN
+      INSERT INTO graph_entity_changes (entity_id, op, canonical_name, entity_type, religion, merged_into)
+      VALUES (NEW.id, 'insert', NEW.canonical_name, NEW.entity_type, NEW.religion,
+              CASE WHEN NEW.last_assessed_version LIKE 'merged-into-%'
+                   THEN CAST(REPLACE(NEW.last_assessed_version,'merged-into-','') AS INTEGER) END);
+    END`);
+    await query(`DROP TRIGGER IF EXISTS trg_ge_update`);
+    await query(`CREATE TRIGGER trg_ge_update AFTER UPDATE ON graph_entities
+      WHEN OLD.canonical_name IS NOT NEW.canonical_name
+        OR OLD.entity_type IS NOT NEW.entity_type
+        OR OLD.religion IS NOT NEW.religion
+        OR OLD.last_assessed_version IS NOT NEW.last_assessed_version
+      BEGIN
+      INSERT INTO graph_entity_changes (entity_id, op, canonical_name, entity_type, religion, merged_into)
+      VALUES (NEW.id, 'update', NEW.canonical_name, NEW.entity_type, NEW.religion,
+              CASE WHEN NEW.last_assessed_version LIKE 'merged-into-%'
+                   THEN CAST(REPLACE(NEW.last_assessed_version,'merged-into-','') AS INTEGER) END);
+    END`);
+    await query(`DROP TRIGGER IF EXISTS trg_ge_delete`);
+    await query(`CREATE TRIGGER trg_ge_delete AFTER DELETE ON graph_entities BEGIN
+      INSERT INTO graph_entity_changes (entity_id, op, canonical_name, entity_type, religion, merged_into)
+      VALUES (OLD.id, 'delete', OLD.canonical_name, OLD.entity_type, OLD.religion, NULL);
+    END`);
+    } catch (err) {
+      if (!/no such (column|table)/i.test(err?.message || '')) throw err;
+      logger.warn({ err: err.message }, 'Migration 118: change-feed triggers skipped — older graph_entities schema variant');
+    }
+
+    // R1/R3: keyset pagination and type+importance ordering over LIVE rows.
+    // Tolerated failure ONLY for a schema variant that predates the column (in-memory test DBs build a
+    // minimal graph_entities). A missing index costs speed, never correctness — but anything else must
+    // still surface, so we re-throw whatever is not a known-shape mismatch.
+    try {
+      await query(`CREATE INDEX IF NOT EXISTS idx_ge_type_imp_id ON graph_entities(entity_type, importance DESC, id)`);
+      await query(`ANALYZE graph_entities`);
+    } catch (err) {
+      if (!/no such (column|table)/i.test(err?.message || '')) throw err;
+      logger.warn({ err: err.message }, 'Migration 118: catalog index skipped — graph_entities lacks the column (older schema variant)');
+    }
+    logger.info('Migration 118 complete: graph_entity_changes + triggers + catalog index');
+  },
+
   114: async () => {
     logger.info('Starting migration 114: study_notes — the instructor-notes companion (planning/dawn-breakers-notes-plan.md)');
     // Chad's one requested feature for the notes companion: "a persistent research-notes database. Before

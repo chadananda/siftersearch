@@ -41,7 +41,7 @@ export async function entityDossier(rawId) {
   const ge = await queryOne(`SELECT id, canonical_name cn, entity_type et, importance, last_assessed_version lav FROM graph_entities WHERE id=?`, [id]);
   if (!ge || isMergedRow({ canonical_name: ge.cn, last_assessed_version: ge.lav })) return null;
   const er = await queryOne(`SELECT side, summary, aliases FROM entity_research WHERE canonical_name=? AND entity_type=?`, [ge.cn, ge.et]);
-  const rows = await queryAll(`SELECT relation, target_entity_id tid, statement, proof_verbatim proof, doc_id, para_id, time_value tv, time_basis tb
+  const rows = await queryAll(`SELECT relation, target_entity_id tid, statement, proof_verbatim proof, doc_id, para_id, time_value tv, time_basis tb, time_precision tp, time_anchor ta
      FROM entity_claims WHERE entity_id=? AND (status IS NULL OR status='supported') ORDER BY (tv IS NULL), tv, relation`, [id]);
   const tids = [...new Set(rows.map((c) => c.tid).filter(Boolean))];
   const tname = new Map();
@@ -52,6 +52,12 @@ export async function entityDossier(rawId) {
     relation: c.relation, object_id: c.tid || null, object: c.tid ? (tname.get(c.tid) || null) : null,
     statement: c.statement, proof: c.proof || null,
     when: c.tv ? `${c.tv}${c.tb ? ' [' + c.tb + ']' : ''}` : null,
+    // R6 — the structured form alongside the prose one. These columns were always stored; only
+    // `when` was ever serialized, so consumers had to parse a display string to get a date back.
+    // `when` is kept unchanged for existing clients. ~26% of claims carry value+precision; 99% carry basis.
+    time: (c.tv || c.tb || c.tp || c.ta)
+      ? { value: c.tv ?? null, precision: c.tp ?? null, basis: c.tb ?? null, anchor: c.ta ?? null }
+      : null,
     source: d.title || null, sourceAbbr: abbrOf(d.title), paraId: c.para_id,
     url: d.url && c.para_id ? `${d.url}?paraId=${c.para_id}` : null,
   }; });
