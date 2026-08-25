@@ -135,3 +135,50 @@ describe('binding an occurrence — return every sense, never pick one', () => {
     expect(b.every((s) => s.score === 0.5)).toBe(true);
   });
 });
+
+// ── Authority ladder: "non-authoritative" is RELATIVE, and getting the relation backwards is the
+// live risk. Chad, 2026-08-25:
+//   "Pilgrim notes are not authoritative. But they are more authoritative than everyone in the world
+//    and every institution that comes after, since Shoghi Effendi is the last authoritative interpreter.
+//    Many scholars and institutions push ideas and we tend to treat them with some degree of authority,
+//    but this is only correct if we understand them to be BENEATH the level of Shoghi Effendi pilgrim
+//    notes — which are themselves beneath his written works."
+// So the ordering that matters is: written interpretation > REPORTED interpretation > everyone after.
+// The old ladder had SCHOLAR as a real tier and no pilgrim tier at all, which encodes the inversion.
+describe('authority ladder — pilgrim notes outrank every later scholar and institution', () => {
+  it('ranks a pilgrim note BELOW the same authority\'s written works', () => {
+    expect(interpretiveRank('shoghi-effendi-pilgrim')).toBeLessThan(interpretiveRank('shoghi-effendi'));
+    expect(interpretiveRank('abdul-baha-pilgrim')).toBeLessThan(interpretiveRank('abdul-baha'));
+  });
+
+  it('ranks a pilgrim note ABOVE any scholar — the inversion this ladder exists to prevent', () => {
+    expect(interpretiveRank('shoghi-effendi-pilgrim')).toBeGreaterThan(interpretiveRank('scholar'));
+    expect(interpretiveRank('abdul-baha-pilgrim')).toBeGreaterThan(interpretiveRank('scholar'));
+  });
+
+  it('ranks a pilgrim note ABOVE institutions postdating the last authorized interpreter', () => {
+    expect(interpretiveRank('shoghi-effendi-pilgrim')).toBeGreaterThan(interpretiveRank('institution'));
+  });
+
+  it('keeps every authorized interpreter above every reported source', () => {
+    for (const a of ['shoghi-effendi', 'abdul-baha', 'bahaullah', 'the-bab']) {
+      expect(interpretiveRank(a)).toBeGreaterThan(interpretiveRank('shoghi-effendi-pilgrim'));
+    }
+  });
+
+  it('still ranks the LAST authorized interpreter highest — role and timeline, not station', () => {
+    expect(interpretiveRank('shoghi-effendi')).toBeGreaterThan(interpretiveRank('abdul-baha'));
+  });
+
+  it('resolves a BOOK TITLE to its interpreter — storing the title left 938 entries at tier 0', () => {
+    expect(interpretiveRank('God Passes By')).toBe(interpretiveRank('shoghi-effendi'));
+    expect(interpretiveRank('The World Order of Bahá’u’lláh')).toBe(interpretiveRank('shoghi-effendi'));
+    expect(interpretiveRank('The Kitáb-i-Íqán')).toBe(interpretiveRank('bahaullah'));
+    expect(interpretiveRank('Some Answered Questions')).toBe(interpretiveRank('abdul-baha'));
+  });
+
+  it('still returns NONE for a genuinely unknown source — an unattributed reading wins no ties', () => {
+    expect(interpretiveRank('some blog')).toBe(RANK.NONE);
+    expect(interpretiveRank(null)).toBe(RANK.NONE);
+  });
+});

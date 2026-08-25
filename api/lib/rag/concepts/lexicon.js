@@ -63,9 +63,25 @@ export function lexiconEntry(c, { authority, authorityTier, methodVersion }) {
 //
 // Every authorized voice outranks every scholar. Scholars fill gaps the authorized texts leave;
 // they never re-characterize what those texts have characterized.
+// INTERPRETIVE authority — a claim about designated ROLE and TIMELINE, never about station. Authorized
+// interpretation ended with Shoghi Effendi, the last authorized interpreter, so his written word ranks
+// highest FOR INTERPRETATION. That is not a statement about the rank of the Revelation itself.
+//
+// The subtle part, and the one the first version of this ladder got backwards (Chad, 2026-08-25):
+// "non-authoritative" is RELATIVE. A pilgrim's note is non-authoritative *relative to the written works*
+// of the same figure — it is unauthenticated recollection. But it remains more authoritative than every
+// human and every institution that comes AFTER Shoghi Effendi, because none of them holds the
+// interpretive role at all. Scholars and later institutions constantly advance readings, and treating
+// those readings as carrying weight is only defensible if they are understood to sit BENEATH even a
+// pilgrim's note. The old ladder had SCHOLAR as a real tier with no pilgrim tier above it, which encodes
+// precisely the inversion this comment exists to forbid.
 export const RANK = Object.freeze({
-  NONE: 0,          // unrecognized source — carries no interpretive weight at all
-  SCHOLAR: 10,      // Balyuzi, Momen, Saiedi, Lawson… authoritative for FACTS, never for characterization
+  NONE: 0,             // unrecognized / unattributed — carries no interpretive weight at all
+  SCHOLAR: 5,          // Balyuzi, Momen, Saiedi… and every institution postdating the Guardian.
+                       // Authoritative for FACTS, never for interpretation, and BELOW any pilgrim note.
+  PILGRIM: 12,         // reported words of an authorized interpreter, source not further specified
+  PILGRIM_ABDUL_BAHA: 14,
+  PILGRIM_SHOGHI: 16,  // reported words of the LAST interpreter — highest of the reported tiers
   THE_BAB: 20,
   BAHAULLAH: 30,
   ABDUL_BAHA: 40,
@@ -77,14 +93,51 @@ const AUTHORITY = new Map([
   ['abdul-baha', RANK.ABDUL_BAHA], ['abdulbaha', RANK.ABDUL_BAHA], ["'abdu'l-baha", RANK.ABDUL_BAHA],
   ['bahaullah', RANK.BAHAULLAH], ["baha'u'llah", RANK.BAHAULLAH],
   ['the-bab', RANK.THE_BAB], ['bab', RANK.THE_BAB],
-  ['scholar', RANK.SCHOLAR],
+  ['shoghi-effendi-pilgrim', RANK.PILGRIM_SHOGHI], ['pilgrim-shoghi', RANK.PILGRIM_SHOGHI],
+  ['abdul-baha-pilgrim', RANK.PILGRIM_ABDUL_BAHA], ['pilgrim-abdul-baha', RANK.PILGRIM_ABDUL_BAHA],
+  ['pilgrim', RANK.PILGRIM], ['pilgrim-note', RANK.PILGRIM],
+  ['scholar', RANK.SCHOLAR], ['institution', RANK.SCHOLAR],
 ]);
+
+// Works whose AUTHOR is the authority. The lexicon stored the BOOK TITLE in its `authority` column, so
+// interpretiveRank('God Passes By') found no key and fell to NONE — leaving 938 entries, including the
+// whole of GPB, at tier 0 while four other Shoghi Effendi works sat at 50 (found 2026-08-25). Resolving
+// titles here fixes the ordering without a schema change.
+const WORK_AUTHOR = new Map([
+  ['god passes by', RANK.SHOGHI_EFFENDI], ['the world order of bahaullah', RANK.SHOGHI_EFFENDI],
+  ['the promised day is come', RANK.SHOGHI_EFFENDI], ['the advent of divine justice', RANK.SHOGHI_EFFENDI],
+  ['citadel of faith', RANK.SHOGHI_EFFENDI], ['messages to the bahai world', RANK.SHOGHI_EFFENDI],
+  ['the dispensation of bahaullah', RANK.SHOGHI_EFFENDI],
+  ['some answered questions', RANK.ABDUL_BAHA], ['paris talks', RANK.ABDUL_BAHA],
+  ['the secret of divine civilization', RANK.ABDUL_BAHA], ['tablets of the divine plan', RANK.ABDUL_BAHA],
+  ['the kitab-i-iqan', RANK.BAHAULLAH], ['the kitab-i-aqdas', RANK.BAHAULLAH],
+  ['the hidden words', RANK.BAHAULLAH], ['hidden words', RANK.BAHAULLAH],
+  ['gleanings from the writings of bahaullah', RANK.BAHAULLAH],
+  ['the seven valleys', RANK.BAHAULLAH], ['the four valleys', RANK.BAHAULLAH],
+  ['the persian bayan', RANK.THE_BAB], ['the arabic bayan', RANK.THE_BAB],
+  ['selections from the writings of the bab', RANK.THE_BAB],
+]);
+
+// Title normalisation for WORK_AUTHOR: fold diacritics and drop the punctuation that varies between
+// editions, so "The World Order of Bahá'u'lláh" and "the world order of bahaullah" are one key.
+const titleKey = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[''`\u2018\u2019".,:;]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
 
 // Unknown sources return NONE rather than a floor value: an unattributed interpretation must not be
 // able to win a tie against a cited one merely by existing.
 export function interpretiveRank(authority) {
   const k = String(authority || '').toLowerCase().replace(/[‘’]/g, "'").trim();
-  return AUTHORITY.get(k) ?? RANK.NONE;
+  const direct = AUTHORITY.get(k);
+  if (direct !== undefined) return direct;
+  // Fall back to resolving a work title to its author. A pilgrim-note source is detected by marker so a
+  // note ABOUT an interpreter never inherits that interpreter's written-work rank.
+  const t = titleKey(authority);
+  if (/pilgrim/.test(t)) {
+    if (/shoghi|guardian/.test(t)) return RANK.PILGRIM_SHOGHI;
+    if (/abdu.?l.?baha|master/.test(t)) return RANK.PILGRIM_ABDUL_BAHA;
+    return RANK.PILGRIM;
+  }
+  return WORK_AUTHOR.get(t) ?? RANK.NONE;
 }
 
 // Concept identity is the ORIGINAL-LANGUAGE ROOT, never the English gloss. Two distinct concepts
