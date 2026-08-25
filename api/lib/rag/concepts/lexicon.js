@@ -5,7 +5,12 @@
 // carries its authority + interpretive tier + verbatim proof.
 export async function seed(ctx, docId, opts = {}) {
   const authority = opts.authority ?? (await ctx.store.getDocMeta(docId)).title ?? String(docId);
-  const authorityTier = opts.authorityTier ?? ctx.config.authorityTiers?.[docId] ?? 50; // lower = higher authority
+  // Tier comes from the interpretive ladder (higher = more authoritative), resolved from the work's title
+  // via interpretiveRank. It used to default to a hardcoded 50 with a comment claiming "lower = higher
+  // authority" — the opposite convention — so every entry got the same meaningless number and the stored
+  // data held only two values, 0 and 50, for six different authorities (2026-08-25). A book we cannot
+  // place still gets NONE rather than a flattering default.
+  const authorityTier = opts.authorityTier ?? ctx.config.authorityTiers?.[docId] ?? interpretiveRank(authority);
   const version = opts.version ?? ctx.config.versions?.conceptExtract ?? 'concept-extract-v1';
   const claims = await ctx.store.getConceptInterpretations(docId);
   const entries = claims.map((c) => lexiconEntry(c, { authority, authorityTier, methodVersion: version }));

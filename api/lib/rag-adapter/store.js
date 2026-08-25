@@ -7,6 +7,7 @@ import content from '../content.js';      // paragraph write helpers (updateCont
 import { skeletonKeys, nameKeys, arabicKeys } from '../translit-key.js'; // recall keys: translit skeletons ∪ Arabic-script keys (Persian docs)
 import { loadGazetteer, anchorFor, guardedPair } from './gazetteer.js'; // central-cast identity anchor + ≠guards
 import { DISAMB_DONE_SQL } from '../pipeline/processed.js';
+import { INTERPRETATION_RELATIONS, unknownRelations } from '../rag/concepts/relations.js';
 import { LIVE_SQL, tombstoneFor } from '../entity-live.js'; // ONE definition of live/merged — never inline it
 
 // Blocktypes that carry readable prose we enrich (skip figures, nav, etc.). App-specific → stays here.
@@ -584,10 +585,21 @@ export function makeStore() {
     },
 
     // Interpretation claims (a higher text's stated meaning of a symbol) — the lexicon seed input.
+    // Relations come from concepts/relations.js — the ONE classification — never an inlined list. The
+    // whitelist used to live in this SQL string and silently dropped 'signifies', losing the Íqán's
+    // "the clouds signifies the annulment of laws" from the lexicon entirely (2026-08-25).
     async getConceptInterpretations(docId) {
+      const ph = INTERPRETATION_RELATIONS.map(() => '?').join(',');
       return db.queryAll(
         `SELECT subject, relation, target, statement, proof_verbatim, para_id, doc_id FROM concept_claims
-          WHERE doc_id=? AND relation IN ('means','interprets','symbolizes','is-station-of','fulfills')`, [docId]);
+          WHERE doc_id=? AND relation IN (${ph})`, [docId, ...INTERPRETATION_RELATIONS]);
+    },
+
+    // DETECTOR for the open-producer/closed-consumer gap: relations present in concept_claims that the
+    // lexicon classifies neither way. Non-empty means the extractor invented a verb we are dropping.
+    async getUnclassifiedRelations() {
+      const rows = await db.queryAll(`SELECT DISTINCT relation FROM concept_claims WHERE relation IS NOT NULL`);
+      return unknownRelations(rows.map((r) => r.relation));
     },
 
     // Clear a doc's prior lexicon entries (same method version) — makes lexicon.seed idempotent on re-run.
