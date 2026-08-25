@@ -115,44 +115,71 @@ export function addEntry(lex = [], entry) {
 // Positive evidence that a passage is speaking in the interpretive/eschatological register, and
 // evidence that it is speaking plainly about the physical world. Deliberately NOT a general
 // classifier — see judgeFit below for why this stays small and why it is only a fallback.
+// Registers that RAISE the likelihood of a doctrinal reading. Their absence lowers a score; it never
+// zeroes one, because a symbolic work can carry a symbolic sense in an ordinary-sounding sentence.
 const REGISTER = /\b(advent|manifestation|revelation|prophec|promised|awaited|son of man|day of god|resurrection|dispensation|the qa'im|covenant|divine|spiritual)/i;
-const MUNDANE = /\b(rain|sky|weather|storm|fields|grey|gray|drizzle|forecast|umbrella|thunder|overcast)/i;
+// Concrete/physical vocabulary. This USED TO BE A VETO (`if (MUNDANE.test(ctx)) return false`), which is
+// precisely the error Chad corrected on 2026-08-23: in a symbolic work the weather is also a sign, so a
+// concrete reading must never be allowed to delete the symbolic one. It now only shifts the RANKING.
+const CONCRETE = /\b(rain|sky|weather|storm|fields|grey|gray|drizzle|forecast|umbrella|thunder|overcast)/i;
+// A sense whose own wording is literal/physical — used to tell which way CONCRETE context should tilt.
+const LITERAL_SENSE = /\b(literal|physical|natural world|actual)\b/i;
 
-// DEFAULT JUDGE — a deterministic BACKSTOP, not an understanding of the text.
-//
-// Deciding whether "clouds" carries the authoritative sense or just means weather is a judgment call,
-// and judgment belongs to a model with the passage in front of it (inject `judge`). This fallback
-// exists so the doctrine is testable offline and so a model outage degrades to silence rather than to
-// guessing. It therefore UNDER-BINDS by construction: it binds only on positive register evidence and
-// refuses whenever the passage looks plainly physical. A missed binding costs recall, which a later
-// pass can recover; a wrong binding puts a fabricated interpretation into the corpus, which nothing
-// downstream can detect. Those costs are not symmetric, so the tie goes to refusing.
-function judgeFit(entry, occ) {
+/**
+ * DEFAULT SCORER — a deterministic BACKSTOP, not an understanding of the text.
+ *
+ * Returns a fit score in (0,1]. Never returns 0 for a real lexicon sense: under this doctrine a sense
+ * can be less likely, but a concrete context is not evidence that the symbolic reading is absent.
+ * Real sense-scoring is a judgment call and belongs to a model with the passage in front of it —
+ * inject `judge` for that. This exists so the pipeline degrades to something honest without one.
+ */
+export function scoreSense(entry, occ = {}) {
   const ctx = String(occ?.context || '');
-  if (MUNDANE.test(ctx)) return false;
-  return REGISTER.test(ctx);
+  const literalSense = LITERAL_SENSE.test(String(entry?.sense || ''));
+  const doctrinalCtx = REGISTER.test(ctx);
+  const concreteCtx = CONCRETE.test(ctx);
+
+  let score = 0.35;                                  // every catalogued sense stays on the table
+  if (literalSense) {
+    if (concreteCtx) score = 0.85;                   // concrete words, literal sense → strong fit
+    else if (doctrinalCtx) score = 0.40;             // still available, just less likely
+  } else {
+    if (doctrinalCtx) score = 0.90;                  // doctrinal words, symbolic sense → strong fit
+    else if (concreteCtx) score = 0.45;              // LOWERED, never eliminated — the whole correction
+  }
+  return score;
 }
 
-// Bind an occurrence of a surface form to its authoritative interpretation — or to nothing.
-// Returns null rather than a low-confidence guess; callers must handle null as the normal case.
-export function bindOccurrence(lex = [], occ = {}, { judge = judgeFit } = {}) {
+/**
+ * Bind an occurrence to EVERY sense it may carry, ranked by fit then interpretive authority.
+ *
+ * Returns an ARRAY, always — `[]` when the surface is unknown. It deliberately does NOT choose: a
+ * symbolic text means several things at once, and collapsing that to a winner destroys the thing we
+ * are trying to index. Callers that need a headline sense take the first element and must keep the
+ * rest; callers that search should index all of them.
+ *
+ * Ranking is presentation. Membership is the claim.
+ */
+export function bindSenses(lex = [], occ = {}, { judge = scoreSense, minScore = 0 } = {}) {
   const surface = String(occ.surface || '').toLowerCase().trim();
-  if (!surface) return null;
+  if (!surface) return [];
   const candidates = lex.filter((e) =>
     String(e.gloss || '').toLowerCase() === surface ||
     (e.aliases || []).some((a) => String(a).toLowerCase() === surface));
-  if (!candidates.length) return null;
-  // Highest interpretive authority wins among candidates that fit; an unfit candidate never binds.
-  const fit = candidates.filter((e) => judge(e, occ)).sort((a, b) => interpretiveRank(b.authority) - interpretiveRank(a.authority));
-  if (!fit.length) return null;
-  const e = fit[0];
-  // §6: the interpretive layer is ADDITIVE. Scripture read metaphorically does not thereby become
-  // false read literally, and this structure must never encode that it does — hence replacesLiteral
-  // is a stated false, not an omission a caller could read either way.
-  return {
-    root: e.root, gloss: e.gloss, sense: e.sense,
-    authority: e.authority, rank: interpretiveRank(e.authority),
-    citation: e.citation, key: conceptKey(e),
-    layer: 'metaphorical', replacesLiteral: false,
-  };
+  if (!candidates.length) return [];
+
+  return candidates
+    .map((e) => ({
+      root: e.root, gloss: e.gloss, sense: e.sense,
+      authority: e.authority, rank: interpretiveRank(e.authority),
+      citation: e.citation, key: conceptKey(e),
+      score: judge(e, occ),
+      // §6: the interpretive layer is ADDITIVE. Scripture read metaphorically does not thereby become
+      // false read literally, and this structure must never encode that it does — hence replacesLiteral
+      // is a stated false, not an omission a caller could read either way.
+      layer: LITERAL_SENSE.test(String(e.sense || '')) ? 'literal' : 'metaphorical',
+      replacesLiteral: false,
+    }))
+    .filter((s) => s.score > minScore)
+    .sort((a, b) => b.score - a.score || b.rank - a.rank);
 }
