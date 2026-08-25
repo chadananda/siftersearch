@@ -1,0 +1,127 @@
+{
+  "_doc": "Gold standard for concept SENSE extraction. Ground truth is Shoghi Effendi's own usage: his English rendering is authoritative interpretation, so where he fixes a sense we do not have to invent one. Each fixture names the DISTINCT senses a symbol carries — never a single 'correct' answer, because symbolic works mean several things at once. `instantiations` are phrasings that belong to a listed sense rather than being senses of their own; they exist to measure the inflation defect found 2026-08-25, where per-passage glosses were being stored as if they were separate senses.",
+  "_scoring": "recall = distinct senses found / senses expected. distinctness = 1 - (recorded entries that collapse onto an already-covered sense / total recorded). A high sense COUNT with low distinctness is the failure this file was built to expose.",
+  "fixtures": [
+    {
+      "symbol": "the clouds",
+      "root": "سحاب",
+      "senses": [
+        {
+          "id": "veiling-trial",
+          "gloss": "that which veils or obscures recognition of the Manifestation — trials, crises, opposition",
+          "authority": "bahaullah",
+          "basis": "Kitáb-i-Íqán treats the clouds as the veils that prevent recognition"
+        },
+        {
+          "id": "advent",
+          "gloss": "the advent itself — the coming of the Lord in majesty, the overshadowing of His appearance",
+          "authority": "bahaullah",
+          "basis": "the Gospel 'coming in the clouds of heaven', reinterpreted in the Íqán"
+        },
+        {
+          "id": "human-learning",
+          "gloss": "the veils of human learning and ecclesiastical authority that darken the horizon",
+          "authority": "shoghi-effendi",
+          "basis": "God Passes By on the darkening horizon of Christian ecclesiasticism"
+        },
+        {
+          "id": "abrogation",
+          "gloss": "the abrogation of former laws and ordinances",
+          "authority": "bahaullah",
+          "basis": "Íqán: the clouds are the annulment of laws"
+        }
+      ],
+      "instantiations": [
+        "The clouds represent obscurity or opposition that enveloped the Manifestation in Baghdád.",
+        "the darkening horizon of Christian ecclesiasticism",
+        "represent trials or crises that obscure the Faith"
+      ]
+    },
+    {
+      "symbol": "the Sun of Truth",
+      "senses": [
+        {
+          "id": "manifestation",
+          "gloss": "the Manifestation of God Himself, whose Revelation illumines the world as the sun does",
+          "authority": "shoghi-effendi",
+          "basis": "God Passes By likens Bahá'u'lláh's Revelation to the sun throughout"
+        },
+        {
+          "id": "continuity",
+          "gloss": "the unbroken succession of Manifestations — sunrise and sunset as a continuous, eternal process",
+          "authority": "shoghi-effendi",
+          "basis": "progressive revelation stated as the sun's recurring cycle"
+        }
+      ],
+      "instantiations": [
+        "Its rays burst forth above Baghdad's horizon, signifying the revelation of Bahá'u'lláh.",
+        "the ascension of Bahá'u'lláh is the setting of the Sun of Truth",
+        "it suffered a momentary eclipse due to Bahá'u'lláh's banishment and withdrawal",
+        "Bahá'u'lláh, the world's greatest Luminary, experienced a momentary eclipse due to banishment",
+        "the Manifestation of God whose setting (ascension) causes immense grief among believers"
+      ],
+      "_note": "rising / eclipse / setting are PHASES of one metaphor keyed to events, not separate senses. Counting them as senses is the inflation this fixture exists to catch."
+    },
+    {
+      "symbol": "Bayán",
+      "senses": [
+        {
+          "id": "persian-bayan",
+          "gloss": "the Persian Bayán — a specific work of the Báb",
+          "authority": "shoghi-effendi",
+          "basis": "named as a distinct work in God Passes By"
+        },
+        {
+          "id": "arabic-bayan",
+          "gloss": "the Arabic Bayán — a separate work from the Persian",
+          "authority": "shoghi-effendi",
+          "basis": "distinguished from the Persian Bayán"
+        },
+        {
+          "id": "whole-revelation",
+          "gloss": "the entire Revelation of the Báb taken as one",
+          "authority": "shoghi-effendi",
+          "basis": "used for the Báb's Dispensation as a whole"
+        },
+        {
+          "id": "the-community",
+          "gloss": "the followers of the Báb — 'the people of the Bayán'",
+          "authority": "shoghi-effendi",
+          "basis": "'people of the Bayán' denotes the Bábí community"
+        },
+        {
+          "id": "utterance",
+          "gloss": "generic elucidation or utterance — NOT an entity at all",
+          "authority": "shoghi-effendi",
+          "basis": "ordinary sense in the Íqán; the trap case for entity binding"
+        }
+      ],
+      "instantiations": [],
+      "_note": "The canonical polysemy trap. A binder that resolves every 'Bayán' to one work is wrong five ways; one that resolves the generic 'utterance' sense to a WORK invents an entity."
+    },
+    {
+      "symbol": "the Covenant",
+      "senses": [
+        {
+          "id": "greater",
+          "gloss": "the Greater Covenant — God's eternal promise to send successive Manifestations",
+          "authority": "shoghi-effendi",
+          "basis": "The Dispensation of Bahá'u'lláh"
+        },
+        {
+          "id": "lesser",
+          "gloss": "the Lesser Covenant — Bahá'u'lláh's appointment of 'Abdu'l-Bahá and the line of authority",
+          "authority": "shoghi-effendi",
+          "basis": "The Dispensation of Bahá'u'lláh, the authoritative statement on succession"
+        },
+        {
+          "id": "individual",
+          "gloss": "the believer's own covenant of faithfulness and obedience",
+          "authority": "shoghi-effendi",
+          "basis": "used for individual steadfastness"
+        }
+      ],
+      "instantiations": []
+    }
+  ]
+}

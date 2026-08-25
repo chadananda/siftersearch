@@ -197,6 +197,28 @@ export default async function groundingRoutes(fastify) {
   });
 
   /** POST /concepts/sync — reindex concept entities without re-extracting. Full refresh; cheap, no model calls. */
+  // GET /concepts/lexicon?symbol=…&limit= — every recorded interpretation of one symbol.
+  // Feeds tests/quality/score-concepts.mjs, which measures TWO things the lexicon conflates: whether we
+  // captured all the senses a symbol genuinely carries (recall), and whether what we stored are distinct
+  // senses or restatements of one (distinctness). Without symbol-level read-out neither is measurable.
+  fastify.get('/concepts/lexicon', admin, async (req) => {
+    const symbol = String(req.query?.symbol || '').trim();
+    const limit = Math.min(500, Number(req.query?.limit) || 200);
+    if (!symbol) {
+      // No symbol → the polysemy overview: which symbols carry the most recorded interpretations.
+      const rows = await queryAll(
+        `SELECT symbol, COUNT(*) entries, COUNT(DISTINCT interpretation) distinctText
+           FROM concept_lexicon GROUP BY symbol HAVING entries > 1
+          ORDER BY entries DESC LIMIT ?`, [limit]);
+      return { overview: true, symbols: rows };
+    }
+    const entries = await queryAll(
+      `SELECT id, symbol, interpretation, authority, authority_tier, layer, proof_doc_id, proof_verbatim
+         FROM concept_lexicon WHERE symbol = ? ORDER BY authority_tier IS NULL, authority_tier, id LIMIT ?`,
+      [symbol, limit]);
+    return { symbol, count: entries.length, entries };
+  });
+
   fastify.post('/concepts/sync', admin, async () => {
     // BOTH kinds. Entities have no writer yet (nothing in the codebase INSERTs concept_entities), so syncing
     // only those would keep reporting 0 while 1,651 real cited interpretations sat unindexed.
