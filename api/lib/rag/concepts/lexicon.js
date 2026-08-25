@@ -77,8 +77,15 @@ export function lexiconEntry(c, { authority, authorityTier, methodVersion }) {
 // precisely the inversion this comment exists to forbid.
 export const RANK = Object.freeze({
   NONE: 0,             // unrecognized / unattributed — carries no interpretive weight at all
-  SCHOLAR: 5,          // Balyuzi, Momen, Saiedi… and every institution postdating the Guardian.
-                       // Authoritative for FACTS, never for interpretation, and BELOW any pilgrim note.
+  // The NON-DOCTRINAL tier. Scholars (Balyuzi, Momen, Saiedi…), every House of Justice, and the
+  // appointed branch that advises it (Hands of the Cause, Counsellors, Auxiliary Board).
+  // A House of Justice HAS authority — legislative, real and binding — but doctrinal authority is a
+  // different kind, and it ended with the Guardian: "Any house of justice has legislative authority but
+  // no doctrinal authority. They are even guided by the appointed branch of scholars who act as advisors
+  // who also have no doctrinal authority" (Chad, 2026-08-25). So for deciding what a symbol MEANS they
+  // carry no interpretive weight — above unattributed, because a cited institutional statement is not
+  // nothing, and below a pilgrim note, because none of them holds the interpretive role at all.
+  SCHOLAR: 5,
   PILGRIM: 12,         // reported words of an authorized interpreter, source not further specified
   PILGRIM_ABDUL_BAHA: 14,
   PILGRIM_SHOGHI: 16,  // reported words of the LAST interpreter — highest of the reported tiers
@@ -97,6 +104,14 @@ const AUTHORITY = new Map([
   ['abdul-baha-pilgrim', RANK.PILGRIM_ABDUL_BAHA], ['pilgrim-abdul-baha', RANK.PILGRIM_ABDUL_BAHA],
   ['pilgrim', RANK.PILGRIM], ['pilgrim-note', RANK.PILGRIM],
   ['scholar', RANK.SCHOLAR], ['institution', RANK.SCHOLAR],
+  // Houses of Justice — legislative authority, no doctrinal authority.
+  ['universal-house-of-justice', RANK.SCHOLAR], ['uhj', RANK.SCHOLAR],
+  ['house-of-justice', RANK.SCHOLAR], ['national-spiritual-assembly', RANK.SCHOLAR],
+  ['local-spiritual-assembly', RANK.SCHOLAR], ['spiritual-assembly', RANK.SCHOLAR],
+  // The appointed branch — advisers to the Houses, and no more doctrinally authoritative than they are.
+  ['hands-of-the-cause', RANK.SCHOLAR], ['hand-of-the-cause', RANK.SCHOLAR],
+  ['counsellor', RANK.SCHOLAR], ['counselor', RANK.SCHOLAR],
+  ['auxiliary-board', RANK.SCHOLAR], ['auxiliary-board-member', RANK.SCHOLAR],
 ]);
 
 // Works whose AUTHOR is the authority. The lexicon stored the BOOK TITLE in its `authority` column, so
@@ -136,6 +151,11 @@ export function interpretiveRank(authority) {
     if (/shoghi|guardian/.test(t)) return RANK.PILGRIM_SHOGHI;
     if (/abdu.?l.?baha|master/.test(t)) return RANK.PILGRIM_ABDUL_BAHA;
     return RANK.PILGRIM;
+  }
+  // Free-text institutional attributions ("The Universal House of Justice, 1968") must not fall to NONE
+  // and thereby lose a tie to an unattributed reading.
+  if (/house of justice|spiritual assembly|hand of the cause|hands of the cause|counsell?or|auxiliary board/.test(t)) {
+    return RANK.SCHOLAR;
   }
   return WORK_AUTHOR.get(t) ?? RANK.NONE;
 }

@@ -182,3 +182,42 @@ describe('authority ladder — pilgrim notes outrank every later scholar and ins
     expect(interpretiveRank(null)).toBe(RANK.NONE);
   });
 });
+
+// Chad's ruling, 2026-08-25: "Any house of justice has legislative authority but no doctrinal authority.
+// They are even guided by the appointed branch of scholars who act as advisors who also have no doctrinal
+// authority." So for an INTERPRETIVE lexicon every post-Guardian body sits on the non-doctrinal tier —
+// not because they lack authority, but because their authority is of a different kind. Legislative
+// authority is real and binding; it simply does not decide what a symbol MEANS.
+describe('post-Guardian institutions — legislative authority is not doctrinal authority', () => {
+  const NON_DOCTRINAL = [
+    'universal-house-of-justice', 'house-of-justice', 'national-spiritual-assembly',
+    'local-spiritual-assembly', 'hands-of-the-cause', 'counsellor', 'auxiliary-board', 'scholar',
+  ];
+
+  it('gives every post-Guardian body the SAME non-doctrinal rank', () => {
+    const ranks = new Set(NON_DOCTRINAL.map(interpretiveRank));
+    expect(ranks.size).toBe(1);
+  });
+
+  it('ranks all of them BELOW a pilgrim note — the inversion doctrine, applied to institutions', () => {
+    for (const a of NON_DOCTRINAL) {
+      expect(interpretiveRank(a)).toBeLessThan(interpretiveRank('shoghi-effendi-pilgrim'));
+    }
+  });
+
+  it('ranks the appointed branch no higher than the House it advises — advisers hold no doctrinal authority either', () => {
+    expect(interpretiveRank('hands-of-the-cause')).toBe(interpretiveRank('universal-house-of-justice'));
+    expect(interpretiveRank('counsellor')).toBe(interpretiveRank('universal-house-of-justice'));
+  });
+
+  it('still ranks them ABOVE unattributed — a cited institutional statement is not nothing', () => {
+    for (const a of NON_DOCTRINAL) expect(interpretiveRank(a)).toBeGreaterThan(RANK.NONE);
+  });
+
+  it('keeps every authorized interpreter far above them', () => {
+    for (const a of NON_DOCTRINAL) {
+      expect(interpretiveRank('shoghi-effendi')).toBeGreaterThan(interpretiveRank(a));
+      expect(interpretiveRank('bahaullah')).toBeGreaterThan(interpretiveRank(a));
+    }
+  });
+});
