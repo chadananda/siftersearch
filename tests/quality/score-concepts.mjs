@@ -62,15 +62,18 @@ async function fetchLexicon(symbol) {
   const r = await fetch(url, { headers: { 'X-Internal-Key': KEY || '' }, signal: AbortSignal.timeout(30000) });
   if (!r.ok) throw new Error(`${url} → HTTP ${r.status}`);
   const body = await r.json();
-  return body.entries || body.lexicon || body.rows || [];
+  // matchedSurfaces tells us WHICH stored surface answered — a variant hit is not the same claim as an
+  // exact hit, and silently treating them alike is how "Bayán" read as 0 entries when "the Bayán" existed.
+  return { entries: body.entries || [], matchedSurfaces: body.matchedSurfaces || [] };
 }
 
 const results = [];
 for (const f of FIX.fixtures) {
   if (ONLY && f.symbol !== ONLY) continue;
-  let stored = [];
+  let stored = [], surfaces = [];
   let error = null;
-  try { stored = await fetchLexicon(f.symbol); } catch (err) { error = err.message; }
+  try { const got = await fetchLexicon(f.symbol); stored = got.entries; surfaces = got.matchedSurfaces; }
+  catch (err) { error = err.message; }
   const glosses = stored.map((r) => r.interpretation || r.gloss || '').filter(Boolean);
 
   // RECALL — which expected senses does at least one stored entry express?
@@ -92,6 +95,7 @@ for (const f of FIX.fixtures) {
 
   results.push({
     symbol: f.symbol,
+    matchedSurfaces: surfaces,
     error,
     expectedSenses: f.senses.length,
     storedEntries: glosses.length,
@@ -111,7 +115,8 @@ if (JSON_OUT) {
   console.log('  symbol                    expect  stored  distinct   recall  distinctness');
   for (const r of results) {
     if (r.error) { console.log(`  ${r.symbol.padEnd(24)}  ERROR: ${r.error}`); continue; }
-    console.log(`  ${r.symbol.padEnd(24)}  ${String(r.expectedSenses).padStart(6)}  ${String(r.storedEntries).padStart(6)}  ${String(r.distinctBuckets).padStart(8)}   ${pct(r.recall)}         ${pct(r.distinctness)}`);
+    const via = r.matchedSurfaces.length && !r.matchedSurfaces.includes(r.symbol) ? `  (via "${r.matchedSurfaces[0]}")` : '';
+    console.log(`  ${r.symbol.padEnd(24)}  ${String(r.expectedSenses).padStart(6)}  ${String(r.storedEntries).padStart(6)}  ${String(r.distinctBuckets).padStart(8)}   ${pct(r.recall)}         ${pct(r.distinctness)}${via}`);
   }
   console.log('');
   for (const r of results) {
@@ -124,9 +129,12 @@ if (JSON_OUT) {
     console.log(`  ${r.symbol} — stored entries that restate a sense already covered:`);
     for (const c of r.collapsedExamples) console.log(`     · ${c.slice(0, 92)}`);
   }
-  console.log('\n  Method: content-word containment ≥0.34. A floor, not an understanding of meaning —');
-  console.log('  it under-credits a correct sense worded very differently. Read it as a regression');
-  console.log('  signal across runs, never as an absolute grade.\n');
+  console.log('\n  Method: content-word containment ≥0.34. A floor, not an understanding of meaning.');
+  console.log('  RECALL is the trustworthy axis: a miss means no stored gloss shares a third of the');
+  console.log('  expected sense\'s content words, which is a real gap.');
+  console.log('  DISTINCTNESS is an UPPER BOUND only. Two entries restating one sense in different');
+  console.log('  words score as distinct, so a high figure may be flattering — "the clouds" reads 100%');
+  console.log('  while manual reading finds ~3 senses across its 6 entries. Never quote it as a grade.\n');
 }
 
 const failed = results.filter((r) => r.error);

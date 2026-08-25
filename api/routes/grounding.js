@@ -212,11 +212,24 @@ export default async function groundingRoutes(fastify) {
           ORDER BY entries DESC LIMIT ?`, [limit]);
       return { overview: true, symbols: rows };
     }
+    // Surface forms drift: the fixture says "Bayán", the lexicon stores "the Bayán". Matching exactly
+    // reported 0 entries and read as "never extracted" (2026-08-25) — an empty result that was our own
+    // lookup's fault, not the data's. So match on a NORMALISED surface: article stripped, diacritics
+    // folded, case-insensitive. `matched` reports which stored surfaces answered, so a caller can see
+    // that it was a variant rather than assuming an exact hit.
+    const norm = (v) => `LOWER(TRIM(REPLACE(REPLACE(${v}, char(8217), ''''), '"', '')))`;
+    const stripArticle = (t) => String(t).replace(/^\s*(the|a|an)\s+/i, '').trim();
+    const bare = stripArticle(symbol);
     const entries = await queryAll(
       `SELECT id, symbol, interpretation, authority, authority_tier, layer, proof_doc_id, proof_verbatim
-         FROM concept_lexicon WHERE symbol = ? ORDER BY authority_tier IS NULL, authority_tier, id LIMIT ?`,
-      [symbol, limit]);
-    return { symbol, count: entries.length, entries };
+         FROM concept_lexicon
+        WHERE ${norm('symbol')} = ${norm('?')}
+           OR ${norm('symbol')} = ${norm("'the ' || ?")}
+           OR ${norm("REPLACE(REPLACE(symbol,'The ',''),'the ','')")} = ${norm('?')}
+        ORDER BY authority_tier IS NULL, authority_tier, id LIMIT ?`,
+      [symbol, bare, bare, limit]);
+    return { symbol, requested: symbol, count: entries.length,
+      matchedSurfaces: [...new Set(entries.map((e) => e.symbol))], entries };
   });
 
   fastify.post('/concepts/sync', admin, async () => {
