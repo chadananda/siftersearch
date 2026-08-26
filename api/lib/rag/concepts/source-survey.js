@@ -58,6 +58,27 @@ const NO_AUTHORED_ORIGINAL = [
  */
 const NO_OFFICIAL_TRANSLATION = [/persian bay[áa]n/i];
 
+/**
+ * Translations with NO PARALLEL PUBLICATION — the original was never published alongside them, so there is
+ * nothing to align against however hard we look. Chad, 2026-08-26, naming them directly.
+ *
+ * This is a THIRD kind of "no original", distinct from the other two: the work IS a translation of a real
+ * original, and that original exists somewhere — it simply has no published parallel edition. Kept apart
+ * because if such an edition ever appears, these become reachable again, whereas a talk taken down in
+ * English never will.
+ */
+const NO_PARALLEL_PUBLICATION = [
+  /bah[áa].?[íi] sacred writings/i,
+  /divine philosophy/i,
+  /bah[áa].?[íi] world faith/i,
+  /light of the world/i,
+  /japan will turn ablaze/i,
+  /additional tablets, extracts and talks/i,
+  /call of the divine beloved/i,
+];
+
+export const hasNoParallelPublication = (title) => NO_PARALLEL_PUBLICATION.some((re) => re.test(String(title || '')));
+
 export const hasNoAuthoredOriginal = (title) => NO_AUTHORED_ORIGINAL.some((re) => re.test(String(title || '')));
 export const hasNoOfficialTranslation = (title) => NO_OFFICIAL_TRANSLATION.some((re) => re.test(String(title || '')));
 
@@ -217,12 +238,13 @@ export async function originalsGapReport({ query = queryAll, limit = 500 } = {})
     // `-sites/oceanlibrary.com/…` is the canonical copy, `Baha'i/Tablet Translations/…` a translation
     // variant — which an id hides entirely.
     const entry = { path: d.file_path, docId: d.id, title: d.title, paras: d.paras, aligned: d.aligned,
-      pct: Math.round(pct * 100), ctai: ctaiDocs.has(d.id) || Boolean(CTAI_DOC_BY_WORK[d.id]) };
+      pct: Math.round(pct * 100), ctai: ctaiDocs.has(d.id) || Boolean(CTAI_DOC_BY_WORK[d.id]),
+    };
     if (pct >= 0.9) out.covered.push(entry);
     else if (d.aligned > 0) out.partial.push(entry);
     else if (entry.ctai) out.reachable.push({ ...entry, via: 'ctai' });
     else if (hasNoAuthoredOriginal(d.title) || hasNoOfficialTranslation(d.title)
-             || isEnglishComposed(d)) out.noOriginalExists.push(entry);
+             || hasNoParallelPublication(d.title) || isEnglishComposed(d)) out.noOriginalExists.push(entry);
     else out.unreachable.push(entry);
   }
   const sum = (a) => a.reduce((n, x) => n + x.paras, 0);
