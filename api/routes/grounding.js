@@ -411,9 +411,14 @@ export default async function groundingRoutes(fastify) {
     }
     const en = await fetchPageParagraphs(stem, 'en', { log: logger });
     if (!en?.length) throw ApiError.badRequest(`oceanoflights served no English for '${stem}'`);
-    let src = await fetchPageParagraphs(stem, 'ar', { log: logger });
-    if (!src?.length) src = await fetchPageParagraphs(stem, 'fa', { log: logger });
-    if (!src?.length) throw ApiError.badRequest(`oceanoflights served no original for '${stem}'`);
+    // ASK THE SITE which language is the original rather than preferring Arabic. Arabic-first would have
+    // filed oceanoflights' ARABIC TRANSLATION of the Secret of Divine Civilization as its "original" — the
+    // work is Persian — and nothing downstream could ever have detected it.
+    const { findOriginalLanguage } = await import('../lib/rag/concepts/ool-page.js');
+    const orig = await findOriginalLanguage(stem, { log: logger });
+    if (!orig) throw ApiError.badRequest(`no page of '${stem}' declares itself the original`);
+    const src = await fetchPageParagraphs(stem, orig.lang, { log: logger });
+    if (!src?.length) throw ApiError.badRequest(`oceanoflights served no original for '${stem}' (${orig.lang})`);
 
     const paired = pairByVerse(en, src);
     if (!paired.rows.length) {
@@ -434,7 +439,7 @@ export default async function groundingRoutes(fastify) {
           basis: paired.basis, score: m.score, alignedAt: new Date().toISOString() }) };
     }).filter((r) => r.originalLang);
 
-    const out = { docId: resolved, stem, basis: paired.basis, paired: paired.rows.length,
+    const out = { docId: resolved, stem, originalLang: orig.lang, declared: orig.role, basis: paired.basis, paired: paired.rows.length,
       ...stats, candidates: rows.length, dryRun, written: 0,
       samples: rows.slice(0, 2).map((r) => ({ lang: r.originalLang, original: r.originalText.slice(0, 60) })) };
     if (dryRun || !rows.length) return out;

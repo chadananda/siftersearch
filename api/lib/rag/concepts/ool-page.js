@@ -42,6 +42,46 @@ export function splitVerseNumber(text) {
   return { n: Number(m[1]), text: stripped };
 }
 
+/**
+ * THE PAGE DECLARES WHETHER IT IS THE ORIGINAL. Read it; do not guess.
+ *
+ *   نسخه اصل فارسی        — "Persian original text"
+ *   النسخة العربية الأصلية — "the original Arabic version"
+ *   ترجمه شده / مترجم     — "translated"
+ *
+ * This matters because preferring Arabic by default is WRONG for a Persian work, and wrong in the way that
+ * cannot be detected afterwards. The Secret of Divine Civilization was written in Persian; oceanoflights
+ * also publishes an ARABIC TRANSLATION of it, and my ar-first rule would have stored that translation in
+ * `original_text` — a translation filed as the original, silently (caught 2026-08-26, Chad pointing at the
+ * -fa URL).
+ */
+export function declaredRole(html) {
+  const t = String(html).replace(/<[^>]+>/g, ' ');
+  if (/نسخه اصل فارسی|النسخة العربية الأصلية|نسخه اصل عربی|النسخة الأصلية/.test(t)) return 'original';
+  if (/ترجمه شده|مترجم|الترجمة/.test(t)) return 'translation';
+  return 'unknown';
+}
+
+/**
+ * Which language of this work is the ORIGINAL, by the site's own declaration.
+ * Returns { lang, role } or null when neither page claims to be one.
+ */
+export async function findOriginalLanguage(stem, { log, langs = ['ar', 'fa'] } = {}) {
+  const seen = [];
+  for (const lang of langs) {
+    try {
+      const res = await fetch(`${PAGE}/${stem}-${lang}/`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+      if (!res.ok) continue;
+      const role = declaredRole(await res.text());
+      seen.push({ lang, role });
+      if (role === 'original') return { lang, role };
+    } catch (err) { log?.warn?.({ stem, lang, err: err.message }, 'ool-page: role probe failed'); }
+  }
+  // Nothing declared itself the original — say so rather than falling back to a language preference, which
+  // is the guess this function exists to remove.
+  return seen.find((x) => x.role !== 'translation') ?? null;
+}
+
 /** Fetch and extract the body paragraphs of one language of one work. */
 export async function fetchPageParagraphs(stem, lang, { log, minLen = 40 } = {}) {
   try {
