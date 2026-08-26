@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T13:47:52.603Z",
+  "generated": "2026-08-26T15:22:34.285Z",
   "entries": [
+    {
+      "hash": "9ab04c38",
+      "date": "2026-08-26",
+      "type": "Other",
+      "description": "Pair on the RAW lists — the parallel printing shares our paragraphing",
+      "scope": null
+    },
     {
       "hash": "b9d3def2",
       "date": "2026-08-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Transliteration-tolerant token filter (strip apostrophes → Ni'matu'lláh/Nimatu'lláh/Ni'matu'lláhi all match)",
       "scope": null
-    },
-    {
-      "hash": "a10e29ee",
-      "date": "2026-06-24",
-      "type": "Other",
-      "description": "Bigger accent loupe, orbiting conic-halo AI-thinking animation, always-visible clear button, clearer Ask AI button (touch-friendly/responsive), extraction-approach docs link under methodology",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-26": [
+      {
+        "hash": "9ab04c38",
+        "date": "2026-08-26",
+        "type": "Other",
+        "description": "Pair on the RAW lists — the parallel printing shares our paragraphing",
+        "scope": null
+      },
       {
         "hash": "b9d3def2",
         "date": "2026-08-26",
@@ -7069,13 +7076,6 @@
         "date": "2026-06-24",
         "type": "Other",
         "description": "Transliteration-tolerant token filter (strip apostrophes → Ni'matu'lláh/Nimatu'lláh/Ni'matu'lláhi all match)",
-        "scope": null
-      },
-      {
-        "hash": "a10e29ee",
-        "date": "2026-06-24",
-        "type": "Other",
-        "description": "Bigger accent loupe, orbiting conic-halo AI-thinking animation, always-visible clear button, clearer Ask AI button (touch-friendly/responsive), extraction-approach docs link under methodology",
         "scope": null
       }
     ]

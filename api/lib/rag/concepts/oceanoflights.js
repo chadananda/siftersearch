@@ -129,21 +129,37 @@ export function pairStem(enParas, srcParas, { minBody = 60 } = {}) {
  * `ours` is [{ key, text }]. Returns the rows the caller should persist, plus the stats that say how much of
  * the book was reached — never a bare count, so a thin result is visible as thin.
  */
-export async function originalsForDoc(ours, stems, { log, minScore = 0.7, cache = new Map(), onProgress } = {}) {
-  const parallel = [];
-  let fetched = 0, served = 0;
-  for (const stem of stems) {
-    const en = await fetchStem(stem, 'en', { log, cache });
-    fetched++;
-    onProgress?.(fetched, stems.length);
-    if (!en?.length) continue;
-    for (const lang of ['ar', 'fa']) {
-      const src = await fetchStem(stem, lang, { log, cache });
-      if (!src?.length) continue;
-      const rows = pairStem(en, src);
-      if (rows.length) { served++; parallel.push(...rows.map((r) => ({ ...r, stem }))); break; }
+export async function originalsForDoc(ours, stems, { log, minScore = 0.7, cache = new Map(), concurrency = 8 } = {}) {
+  // POOLED, and for the same reason the CTAI fetch is pooled: 237 stems at ~1s each is four minutes
+  // sequential, which is past the edge proxy's request timeout — the caller gets a 524 and the work is lost
+  // with no result and no error. I fixed exactly this for CTAI and then re-introduced it here by writing
+  // this path serially (2026-08-26). Concurrency brings a whole book inside one request.
+  const results = new Array(stems.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < stems.length) {
+      const i = next++;
+      const stem = stems[i];
+      const en = await fetchStem(stem, 'en', { log, cache });
+      if (!en?.length) { results[i] = null; continue; }
+      let rows = [];
+      for (const lang of ['ar', 'fa']) {
+        const src = await fetchStem(stem, lang, { log, cache });
+        if (!src?.length) continue;
+        rows = pairStem(en, src);
+        if (rows.length) break;
+      }
+      results[i] = rows.length ? rows.map((r) => ({ ...r, stem })) : null;
     }
-  }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, stems.length) }, worker));
+
+  // Order is restored by STEM ORDER, not completion order: the alignment that consumes these is a monotonic
+  // sequence match, so shuffled input would break the one property keeping the book in register.
+  const parallel = results.filter(Boolean).flat();
+  const served = results.filter(Boolean).length;
+  const fetched = stems.length;
+
   if (!parallel.length) return { matches: [], stats: { stems: stems.length, fetched, served, parallel: 0, matched: 0 } };
 
   // ENGLISH-to-ENGLISH against our own copy — the same length-aware, monotonic alignment used for CTAI.
