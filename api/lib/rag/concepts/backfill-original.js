@@ -69,12 +69,19 @@ export async function fetchWorkPairs(work, maxPairs, { log, concurrency = 8 } = 
   // TRUNCATION GUARD. A pair count that is too LOW does not fail — it quietly fetches part of the book and
   // reports the fraction as coverage. Prayers and Meditations was entered as an estimated 700 against an
   // actual 858, so the last 158 pairs were never fetched and 79% read as though it were the whole work.
-  // If the last index we asked for answered, there is more beyond it and the count is wrong.
+  //
+  // The test must PROBE ONE BEYOND the ceiling. Checking "did the highest requested pair answer?" cannot
+  // distinguish a work of exactly maxPairs from one that continues — it fires on the correct count too, and
+  // a guard that cries wolf on every correct run is worse than none, because it teaches the reader to
+  // ignore it. Asking for maxPairs+1 separates the two cases outright, at the cost of one request.
   if (pairs.length && pairs[pairs.length - 1].key >= maxPairs) {
-    log?.warn?.({ work, maxPairs, got: pairs.length },
-      'ctai/fetchWorkPairs: TRUNCATED — the highest requested pair exists, so the work continues past maxPairs. ' +
-      'Re-measure CTAI_PAIR_COUNT for this work; coverage from this run understates the book.');
-    pairs.truncated = true;
+    const beyond = await fetchPair(work, maxPairs + 1, { log });
+    if (beyond) {
+      log?.warn?.({ work, maxPairs, got: pairs.length },
+        'ctai/fetchWorkPairs: TRUNCATED — pair ' + (maxPairs + 1) + ' exists, so the work continues past ' +
+        'maxPairs. Re-measure CTAI_PAIR_COUNT; coverage from this run understates the book.');
+      pairs.truncated = true;
+    }
   }
   return pairs;
 }

@@ -26,6 +26,25 @@ is why `content` now stores both sides plus `translation_authority`.
 
 ---
 
+## PRIORITY ORDER — non-Shoghi-Effendi works come FIRST
+
+Chad, 2026-08-25: *"Non-Shoghi-Effendi translations have no doctrinal weight in the translation, so the
+original is more load-bearing… with non-Shoghi-Effendi translations it is in some ways more critical, since
+the translation cannot be trusted as much."*
+
+This **inverts** the naive ordering. Where his rendering exists, the English can be leaned on — his
+word-choice fixes which sense is operative. Where it does not, the English is one translator's reading with
+no interpretive standing, and the original is the only corrective. So:
+
+| priority | works | why |
+|---|---|---|
+| **1 (highest)** | Aqdas · Some Answered Questions · Tablets of the Divine Plan · every provisional rendering | the English carries no doctrinal weight; the original is the only authority |
+| 2 | prayers and tablets with no located original | same, and heavily used by readers |
+| 3 | Shoghi Effendi's renderings | valuable for comparison, but the English already carries weight |
+
+The extraction prompt enforces the same distinction rather than merely recording it: for a rendering that
+is **not** his, the original GOVERNS and the translation is orientation only.
+
 ## Tier 1 — CTAI (Shoghi Effendi's renderings). **DOING NOW**
 
 CTAI is a concordance of his translations. Enumerated exhaustively (70 probe queries, stable at 11 works):
@@ -40,10 +59,11 @@ CTAI is a concordance of his translations. Enumerated exhaustively (70 probe que
 | will-and-testament | ~? | ʻAbdu'l-Bahá |
 | tablet-of-the-holy-mariner · tablet-of-ahmad · tablet-of-carmel · kitab-i-ahd · fire-tablet | small | likely **sections inside compilations**, not standalone docs |
 
-**Hidden Words' 50% is a segmentation artifact, not missing data.** Our doc splits each verse into an
-invocation row ("O Son of Spirit!") and a body row — 314 ≈ 2×157 — while CTAI keeps the verse as one pair.
-Every verse *body* matched. Options: bind the invocation row to its verse's pair (both rows then carry the
-verse original), or leave invocation rows NULL. **Decision needed.**
+**Hidden Words' 50% was a segmentation artifact, not missing data** — and it is being fixed at the source.
+Our doc split each verse into an invocation row ("O Son of Spirit!") and a body row (314 ≈ 2×157) while CTAI
+keeps the verse as one pair. Chad: *"I would merge the openings of each hidden words to the body."* Done via
+`POST /docs/:id/merge-lead-ins` — the opening's text is preserved at the head of the merged row and the old
+row soft-deleted, so the edit is reversible. Expect ~157 paragraphs and near-total coverage after re-align.
 
 **Short tablets inside compilations** are handled by the existing alignment without change: the monotonic
 matcher advances its cursor only on a match, so a 20-pair tablet embedded in a 664-paragraph compilation
