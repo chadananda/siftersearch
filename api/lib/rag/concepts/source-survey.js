@@ -143,6 +143,13 @@ export async function surveyTranslatedCanonicals({ query = queryAll, minTitleSco
  *                  the first.
  */
 export async function originalsGapReport({ query = queryAll, limit = 500 } = {}) {
+  // FILTER TO TRANSLATIONS IN SQL, THEN LIMIT. The first version ordered ALL canonical English docs by
+  // paragraph count, took 500, and filtered to translations afterwards — so the limit fell on the wrong
+  // population and dropped every book we had actually finished. It reported "0 covered" while the Íqán,
+  // Gleanings and Prayers and Meditations were sitting at 99%, 94% and 96%. A truncation applied before the
+  // selection is the same error as measuring one population and concluding about another (2026-08-26).
+  const AUTHOR_SQL = `(d.author LIKE '%Bah%u%ll%h%' OR d.author LIKE '%Abdu%l-Bah%'
+                       OR d.author LIKE '%The B%b%' OR d.author LIKE '%Shoghi%')`;
   const rows = await query(`
     SELECT d.id, d.title, d.author, d.collection,
            (SELECT COUNT(*) FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL
@@ -153,6 +160,7 @@ export async function originalsGapReport({ query = queryAll, limit = 500 } = {})
      WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
        AND (d.source_site = 'oceanlibrary.com' OR d.source_site IS NULL)
        AND COALESCE(d.language,'en') = 'en'
+       AND ${AUTHOR_SQL}
      ORDER BY paras DESC LIMIT ?`, [limit], 'survey:gap-report');
 
   const ctaiDocs = new Set(Object.keys(CTAI_WORK_BY_DOC).map(Number));
@@ -170,6 +178,8 @@ export async function originalsGapReport({ query = queryAll, limit = 500 } = {})
   }
   const sum = (a) => a.reduce((n, x) => n + x.paras, 0);
   return {
+    // If the limit was actually hit, SAY SO — a coverage report that silently omits books is worse than none.
+    ...(rows.length >= limit ? { truncated: true, warning: `hit the ${limit}-doc limit; raise ?limit= for the full picture` } : {}),
     translations: out.covered.length + out.partial.length + out.reachable.length + out.unreachable.length,
     counts: { covered: out.covered.length, partial: out.partial.length,
       reachable: out.reachable.length, unreachable: out.unreachable.length },
