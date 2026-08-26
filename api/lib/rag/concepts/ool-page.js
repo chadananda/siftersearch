@@ -12,6 +12,22 @@
 // deterministic anchor, not a similarity guess: the source states which verse each paragraph is.
 // Deps: none (regex over HTML; no parser dependency for a shape this fixed).
 
+// ── THE ORIGINAL HAS NO PARAGRAPHS ──────────────────────────────────────────────────────────────────────
+// Chad, 2026-08-26: "the original has no original paragraph segmentation. if it has any, they are
+// artificial."
+//
+// This invalidates paragraph-COUNT matching for most works, and explains every failure of it here. The
+// revealed text is continuous; whatever breaks a printed edition shows are an editor's. So when the Seven
+// Valleys' Persian shows 52 paragraphs against the English's 125, that is not a mismatch to be reconciled —
+// they are two unrelated segmentations, one meaningful (the translator's) and one arbitrary.
+//
+// What follows from it:
+//   • Equal counts are a COINCIDENCE worth exploiting when present, never a requirement to insist on.
+//   • VERSE NUMBERS are different: they are a shared citation system both editions agree on, which is why
+//     the Aqdas aligned 190/190 while everything else scored zero.
+//   • For the rest, the original must be treated as a CONTINUOUS STREAM and segmented TO the English —
+//     Chad: "we might have to segment some paragraphs in the original to map to the English, that is fine."
+//     Splitting an arbitrary boundary costs nothing, because it was never meaningful.
 const PAGE = 'https://oceanoflights.org';
 const TIMEOUT_MS = 45000;
 
