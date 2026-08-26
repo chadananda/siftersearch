@@ -913,6 +913,24 @@ export const migrations = {
     logger.info('Migration 120 complete: content bilingual layer (original_text/translation_text/authority/align_ref)');
   },
 
+  121: async () => {
+    // WORD-LEVEL ALIGNMENT. Migration 120 stored the original paragraph beside the translation, which is
+    // enough for extraction but not for the question Chad actually wants answered (2026-08-25):
+    //
+    //   "What is the original word for 'justice' in the passage 'the best beloved of all things...'?"
+    //
+    // That needs the word-to-word map, not the paragraph. And the answer matters doctrinally: in Hidden
+    // Words Arabic #2 "Justice" renders الإنْصاف (inṣáf, equity) — NOT العدل (ʿadl, rectitude). The two are
+    // different roots carrying different obligations, and English shows only one word. Storing the paragraph
+    // alone leaves a reader unable to tell which of them is meant.
+    //
+    // JSON, not a table: the spans are read as a unit with their paragraph, never queried across paragraphs,
+    // and a 4.2M-row content table does not need a join for something only ~1,400 rows carry today.
+    try { await query('ALTER TABLE content ADD COLUMN word_alignment TEXT'); }
+    catch (err) { if (!/duplicate column/i.test(err?.message || '')) throw err; }
+    logger.info('Migration 121 complete: content.word_alignment (word-level original↔translation spans)');
+  },
+
   118: async () => {
     // R5 change feed for external entity consumers. Append-only; a monotonic seq is the cursor.
     // Populated by triggers so no writer path can forget to record a change.

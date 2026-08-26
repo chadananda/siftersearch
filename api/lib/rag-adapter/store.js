@@ -577,9 +577,10 @@ export function makeStore() {
     async saveParagraphOriginals(rows) {
       if (!rows.length) return 0;
       const stmts = rows.map((r) => ({
-        sql: `UPDATE content SET original_text=?, original_lang=?, translation_authority=?, align_ref=?
+        sql: `UPDATE content SET original_text=?, original_lang=?, translation_authority=?, align_ref=?,
+                                 word_alignment=?
                WHERE id=? AND deleted_at IS NULL`,
-        args: [r.originalText, r.originalLang, r.translationAuthority, r.alignRef, r.paraId],
+        args: [r.originalText, r.originalLang, r.translationAuthority, r.alignRef, r.wordAlignment ?? null, r.paraId],
       }));
       await db.transaction(stmts);
       return rows.length;

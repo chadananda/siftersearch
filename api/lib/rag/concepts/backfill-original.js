@@ -53,7 +53,8 @@ export async function fetchWorkPairs(work, maxPairs, { log, concurrency = 8 } = 
   const fetched = await pool(concurrency, indexes, async (pi) => {
     const p = await fetchPair(work, pi, { log });
     if (!p) return null;                             // a gap in the index is not an error
-    return { key: p.pair_index, text: p.translation, source: p.source_text, section: p.section };
+    return { key: p.pair_index, text: p.translation, source: p.source_text, section: p.section,
+      aligned: p.aligned || [] };
   });
   return fetched.filter(Boolean).sort((a, b) => a.key - b.key);
 }
@@ -90,6 +91,10 @@ export async function backfillDoc(ctx, docId, { maxPairs, minScore = 0.7, dryRun
       // Persian part, and Gleanings is compiled from tablets in both. CTAI labels the Íqán 'ar'; trusting
       // that stamped 290 Persian paragraphs as Arabic, which misroutes them to a model that cannot read them.
       originalLang: detectSourceLang(t.source),
+      // The word-to-word map, kept so a reader can ask which ORIGINAL term a given English word renders.
+      // In Hidden Words Arabic #2 "Justice" is إنصاف (inṣáf, equity), NOT عدل (ʿadl) — different roots,
+      // different obligations, one English word. Without these spans that distinction is unrecoverable.
+      wordAlignment: t.aligned?.length ? JSON.stringify(t.aligned) : null,
       translationAuthority: authority,
       alignRef: JSON.stringify({ source: 'ctai', work, pairIndex: m.theirKey, section: t.section,
         score: m.score, alignedAt: new Date().toISOString() }),

@@ -13,6 +13,7 @@
 import { requireInternal } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
 import * as repo from '../lib/docs-repo.js';
+import { originalTermForParagraph, originalTermForQuote } from '../lib/original-term.js';
 
 export default async function docsRoutes(fastify) {
   const admin = { preHandler: requireInternal };
@@ -84,5 +85,20 @@ export default async function docsRoutes(fastify) {
     if (!ids?.length) throw ApiError.badRequest('ids required');
     if (!reason) throw ApiError.badRequest('reason required — a deletion with no stated reason is unauditable');
     return repo.softDeleteDocs(ids, { reason, runId, allowLastCopy: allowLastCopy === true });
+  });
+
+  /**
+   * GET /docs/original-term?term=justice&quote=…  (or ?paraId=…)
+   *
+   * "What is the original word for 'justice' in the passage 'the best beloved of all things...'?"
+   * A pure lookup over the stored word alignment — no model call, no network, so the answer is evidence
+   * rather than inference. Returns ALL matches: one English word can render two different originals in the
+   * same passage, and collapsing that hides the distinction the field exists to surface.
+   */
+  fastify.get('/docs/original-term', admin, async (req) => {
+    const { term, quote, paraId } = req.query || {};
+    if (!term) throw ApiError.badRequest('term required');
+    if (!quote && !paraId) throw ApiError.badRequest('quote or paraId required');
+    return paraId ? originalTermForParagraph(paraId, term) : originalTermForQuote(quote, term);
   });
 }
