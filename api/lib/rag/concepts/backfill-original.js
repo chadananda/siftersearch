@@ -18,7 +18,7 @@
 // Deps: align.js (pure), ctai.js (transport), the injected store.
 
 import { alignSequences, detectSourceLang } from './align.js';
-import { CTAI_WORK_BY_DOC, CTAI_PAIR_COUNT, fetchPair } from './ctai.js';
+import { CTAI_DOC_BY_WORK, CTAI_WORKS_FOR_DOC, CTAI_PAIR_COUNT, fetchPair } from './ctai.js';
 import { CLASS, coreEntry } from './core-roster.js';
 import { pool } from '../kernel/run.js';
 
@@ -65,9 +65,19 @@ export async function fetchWorkPairs(work, maxPairs, { log, concurrency = 8 } = 
  * `dryRun` runs the whole read side and reports exactly what WOULD be written — including the coverage and
  * score spread — so a bad alignment is caught before it touches 4.2M rows of content.
  */
-export async function backfillDoc(ctx, docId, { maxPairs, minScore = 0.7, dryRun = false, log } = {}) {
-  const work = CTAI_WORK_BY_DOC[Number(docId)];
-  if (!work) return { docId, skipped: 'no aligned original for this doc', written: 0 };
+export async function backfillDoc(ctx, docId, { work: wantWork, maxPairs, minScore = 0.7, dryRun = false, log } = {}) {
+  // A doc may hold SEVERAL works (Bahá'í Prayers holds the Tablet of Aḥmad and the Fire Tablet), so the
+  // caller may name which one. Naming none aligns the doc's single work, or reports the ambiguity rather
+  // than silently picking one and leaving the others unaligned.
+  const works = wantWork ? [wantWork] : CTAI_WORKS_FOR_DOC(docId);
+  if (!works.length) return { docId, skipped: 'no aligned original for this doc', written: 0 };
+  if (works.length > 1) {
+    return { docId, skipped: `doc holds ${works.length} works — name one via {work}`, works, written: 0 };
+  }
+  const work = works[0];
+  if (wantWork && CTAI_DOC_BY_WORK[wantWork] && CTAI_DOC_BY_WORK[wantWork] !== Number(docId)) {
+    log?.warn?.({ docId, work, mappedTo: CTAI_DOC_BY_WORK[wantWork] }, 'ctai/backfill: aligning a work against a doc other than its mapped one');
+  }
 
   const authority = translationAuthorityFor(docId);
   const paras = await ctx.store.getParagraphs(docId);          // already prose-only (paragraph|quote)
@@ -107,6 +117,11 @@ export async function backfillDoc(ctx, docId, { maxPairs, minScore = 0.7, dryRun
   const result = {
     docId, work, authority, dryRun, ...stats, originalLangs: langs,
     unmatchedOurs: unmatchedOurs.length, unmatchedTheirs: unmatchedTheirs.length,
+    // TWO coverage numbers, because they answer different questions. `coverage` (matched/ours) asks how much
+    // of OUR DOCUMENT got an original — the right measure for a whole book. `workCoverage` (matched/theirs)
+    // asks how much of THE WORK we placed — the only meaningful measure for a 20-pair tablet sitting inside
+    // a 900-paragraph compilation, where matched/ours is 2% and means nothing.
+    workCoverage: theirs.length ? Number((matches.length / theirs.length).toFixed(3)) : 0,
     // Name them: an unmatched paragraph is a thing to look at, not a rounding error.
     unmatchedSamples: unmatchedOurs.slice(0, 5).map((u) => ({ index: u.index, text: String(u.text).slice(0, 90) })),
     written: 0,

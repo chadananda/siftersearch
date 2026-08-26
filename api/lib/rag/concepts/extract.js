@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 import { assertDisambiguated } from '../kernel/gate.js';
 import { profileFor } from '../kernel/profile.js';
 import { pool } from '../kernel/run.js';
+import { buildBilingualSystem, buildBilingualUser } from './bilingual.js';
 
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.98 });
@@ -17,14 +18,27 @@ export async function run(ctx, docId, opts = {}) {
   let paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context && p.contextModel === version && (p.kind ?? 'paragraph') === 'paragraph');
   if (opts.limit) paras = paras.slice(0, opts.limit);          // small reviewed slices before a full run
   const system = buildSystem(profile);
+  // BILINGUAL WHERE WE HAVE IT. A paragraph carrying its aligned original is read with BOTH texts in view:
+  // the original fixes WHICH TERM (English collapses Ṣalát/Duʿá/Dhikr into "prayer", ʿadl/inṣáf into
+  // "justice"), and an authorised rendering fixes WHICH SENSE. Per paragraph, not per book — a book's
+  // alignment is never complete, and a paragraph without one must degrade honestly rather than be skipped.
+  const bilingualSystem = buildBilingualSystem(profile, await ctx.store.getDocMeta(docId));
   const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
-  const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0 };
+  const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, bilingual: 0 };
 
   const rows = [];   // dry-run review buffer only
   // Write INCREMENTALLY per paragraph so a long run is resilient (a crash keeps prior work) and observable.
   await pool(opts.concurrency ?? 5, paras, async (p) => {
-    const { parsed, escalated } = await ctx.model.runLadder({ route, system, user: buildUser(p), parse: parseConceptClaims, maxTokens });
+    const hasOriginal = Boolean(p.original);
+    const { parsed, escalated } = await ctx.model.runLadder({
+      route,
+      system: hasOriginal ? bilingualSystem : system,
+      user: hasOriginal
+        ? buildBilingualUser(p, { source: p.original, translation: p.text })
+        : buildUser(p),
+      parse: parseConceptClaims, maxTokens });
+    if (hasOriginal) stats.bilingual++;
     if (escalated) stats.escalated++;
     if (!parsed || !parsed.length) { stats.failed++; return; }
     const textNorm = proofNorm(p.text);

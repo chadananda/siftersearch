@@ -248,10 +248,11 @@ export default async function groundingRoutes(fastify) {
    * is written. Idempotent and re-runnable either way.
    */
   fastify.post('/concepts/align-originals', admin, async (req) => {
-    const { docId, dryRun = true, minScore } = req.body || {};
+    const { docId, work, dryRun = true, minScore } = req.body || {};
     if (!docId) throw ApiError.badRequest('docId required');
     const { rag } = await import('../lib/rag-adapter/index.js');
     return rag.concepts.alignOriginals(Number(docId), {
+      work,                                   // a doc may hold several works; name one
       dryRun: dryRun !== false,
       ...(minScore ? { minScore: Number(minScore) } : {}),
       log: logger,
@@ -316,8 +317,8 @@ export default async function groundingRoutes(fastify) {
 
   /** GET /concepts/original-coverage?docId= — how much of the bilingual layer is actually populated. */
   fastify.get('/concepts/original-coverage', admin, async (req) => {
-    const { CTAI_WORK_BY_DOC } = await import('../lib/rag/concepts/ctai.js');
-    const ids = req.query?.docId ? [Number(req.query.docId)] : Object.keys(CTAI_WORK_BY_DOC).map(Number);
+    const { CTAI_DOC_BY_WORK, CTAI_WORK_BY_DOC } = await import('../lib/rag/concepts/ctai.js');
+    const ids = req.query?.docId ? [Number(req.query.docId)] : [...new Set(Object.values(CTAI_DOC_BY_WORK))];
     const store = makeStore();
     const docs = [];
     for (const id of ids) docs.push({ ...(await store.getOriginalCoverage(id)), work: CTAI_WORK_BY_DOC[id] || null });

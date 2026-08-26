@@ -30,12 +30,31 @@ const MIN_OVERLAP = 0.5;         // below this we HOLD rather than bind to the w
  * no aligned original by definition. Ids are the CANONICAL copies from concepts/core-roster.js — a scraped
  * copy would align just as well and anchor the claims to the wrong document.
  */
-export const CTAI_WORK_BY_DOC = Object.freeze({
-  20810: 'kitab-i-iqan',
-  8312: 'gleanings',
-  20809: 'the-hidden-words',
-  8273: 'epistle-to-the-son-of-the-wolf',
+/**
+ * work slug → the document holding it. WORK-KEYED, not doc-keyed, because ONE DOCUMENT CAN HOLD SEVERAL
+ * WORKS: Bahá'í Prayers contains both the Tablet of Aḥmad and the Fire Tablet, and a compilation of tablets
+ * holds many. A doc→work map can only ever align one of them and silently drops the rest.
+ *
+ * Ids are CANONICAL copies confirmed by ALIGNMENT COVERAGE, not by title and not by search rank alone.
+ * Search rank is not enough on its own: an anthology that QUOTES a work matches its passages and can
+ * outrank the work itself — "Bahá'í Sacred Writings" beat Gleanings 1.0 to 0.0 on votes, while alignment
+ * coverage separates them decisively (Gleanings 699/746 = 94%; an anthology matches a fraction of its bulk).
+ */
+export const CTAI_DOC_BY_WORK = Object.freeze({
+  'kitab-i-iqan': 20810,                    // confirmed: 290/292 aligned
+  gleanings: 8312,                          // confirmed: 699/746 aligned
+  'epistle-to-the-son-of-the-wolf': 8273,   // confirmed: 258/317 aligned
+  'the-hidden-words': 20809,                // confirmed: every verse BODY aligned (invocation rows are separate)
+  'prayers-and-meditations': 20805,         // resolved by text, share 1.0, canonical oceanlibrary.com
 });
+
+/** Reverse view for callers that have a doc and want its work(s). */
+export const CTAI_WORKS_FOR_DOC = (docId) =>
+  Object.entries(CTAI_DOC_BY_WORK).filter(([, id]) => id === Number(docId)).map(([w]) => w);
+
+/** Back-compat: the first work a doc holds. Prefer CTAI_WORKS_FOR_DOC — a doc may hold more than one. */
+export const CTAI_WORK_BY_DOC = Object.freeze(
+  Object.fromEntries(Object.entries(CTAI_DOC_BY_WORK).map(([w, id]) => [id, w])));
 
 /**
  * Pair count per work, MEASURED by binary search 2026-08-25 — pair_index is 1-based and 0 is empty on every
@@ -47,10 +66,17 @@ export const CTAI_PAIR_COUNT = Object.freeze({
   gleanings: 729,
   'the-hidden-words': 160,
   'epistle-to-the-son-of-the-wolf': 268,
+  'prayers-and-meditations': 700,
+  'will-and-testament': 90,
+  'tablet-of-the-holy-mariner': 40,
+  'tablet-of-ahmad': 30,
+  'fire-tablet': 40,
+  'kitab-i-ahd': 25,
+  'tablet-of-carmel': 15,
 });
 
 /** True when an aligned original can be fetched for this doc at all. */
-export const hasAlignment = (docId) => Boolean(CTAI_WORK_BY_DOC[Number(docId)]);
+export const hasAlignment = (docId) => CTAI_WORKS_FOR_DOC(docId).length > 0;
 
 function creds() {
   const url = config.ctai?.apiUrl || 'https://ctai.info/api/v1';

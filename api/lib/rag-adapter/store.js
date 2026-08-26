@@ -39,7 +39,8 @@ export function makeStore() {
     async getParagraphs(docId) {
       const rows = await db.queryAll(
         `SELECT id, COALESCE(external_para_id, 'p' || id) pid, paragraph_index pidx, heading, blocktype AS kind, text,
-                context, context_model AS contextModel, hyp_questions AS hyp, hyp_thesis AS hypThesis, hyp_model AS hypModel
+                context, context_model AS contextModel, hyp_questions AS hyp, hyp_thesis AS hypThesis, hyp_model AS hypModel,
+                original_text AS original, original_lang AS originalLang, translation_authority AS translationAuthority
            FROM content WHERE doc_id=? AND deleted_at IS NULL AND ${PROSE} ORDER BY paragraph_index`, [docId]);
       return rows.map((p) => ({ ...p, text: String(p.text).replace(/\s+/g, ' ').trim() }));
     },

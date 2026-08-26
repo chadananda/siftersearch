@@ -31,11 +31,11 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
   beforeAll(() => {
     raw.exec(`
       CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, author TEXT, religion TEXT, collection TEXT, year INT, description TEXT, lang TEXT);
-      CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INT, external_para_id TEXT, paragraph_index INT, heading TEXT, text TEXT, context TEXT, context_model TEXT, blocktype TEXT, deleted_at TEXT, hyp_questions TEXT, hyp_thesis TEXT, hyp_model TEXT);
+      CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INT, external_para_id TEXT, paragraph_index INT, heading TEXT, text TEXT, context TEXT, context_model TEXT, blocktype TEXT, deleted_at TEXT, hyp_questions TEXT, hyp_thesis TEXT, hyp_model TEXT, original_text TEXT, original_lang TEXT, translation_text TEXT, translation_authority TEXT, align_ref TEXT, word_alignment TEXT);
       INSERT INTO docs VALUES (7, 'God Passes By', 'Shoghi Effendi', 'bahai', 'History', 1944, 'A history.', 'en');
-      INSERT INTO content VALUES (100, 7, 'para_1', 1, 'Chapter I', '${'the Báb declared His mission in Shíráz. '.repeat(8)}', NULL, NULL, 'paragraph', NULL, NULL, NULL, NULL);
-      INSERT INTO content VALUES (101, 7, NULL,      2, 'Chapter I', 'short', NULL, NULL, 'paragraph', NULL, NULL, NULL, NULL);
-      INSERT INTO content VALUES (102, 7, 'para_3', 3, 'Chapter I', 'a deleted line', NULL, NULL, 'paragraph', '2026-01-01', NULL, NULL, NULL);
+      INSERT INTO content VALUES (100, 7, 'para_1', 1, 'Chapter I', '${'the Báb declared His mission in Shíráz. '.repeat(8)}', NULL, NULL, 'paragraph', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+      INSERT INTO content VALUES (101, 7, NULL,      2, 'Chapter I', 'short', NULL, NULL, 'paragraph', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+      INSERT INTO content VALUES (102, 7, 'para_3', 3, 'Chapter I', 'a deleted line', NULL, NULL, 'paragraph', '2026-01-01', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
       CREATE TABLE graph_entities (id INTEGER PRIMARY KEY, name TEXT, canonical_name TEXT, entity_type TEXT, importance INT, last_assessed_version TEXT);
       CREATE TABLE entity_research (canonical_name TEXT, entity_type TEXT, summary TEXT, aliases TEXT);
