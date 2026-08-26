@@ -157,3 +157,24 @@ describe('detectSourceLang', () => {
     expect(detectSourceLang('')).toBeNull();
   });
 });
+
+describe('translationAuthorityFor', () => {
+  it("attributes a CTAI-aligned work to Shoghi Effendi even when the roster omits it", async () => {
+    // CTAI is a concordance OF HIS RENDERINGS, so presence there settles authorship of the English.
+    // Prayers and Meditations is not in the 14-work core roster: 692 paragraphs aligned and every one was
+    // stamped with NO authority. Chad: "always note a Shoghi Effendi translation when available."
+    const { translationAuthorityFor } = await import('../../api/lib/rag/concepts/backfill-original.js');
+    expect(translationAuthorityFor(20805, { viaCtai: true })).toBe('shoghi-effendi');
+    expect(translationAuthorityFor(20805)).toBeNull();          // not via CTAI → no claim made
+  });
+
+  it('keeps a committee rendering distinct from his — it fixes no sense', async () => {
+    const { translationAuthorityFor } = await import('../../api/lib/rag/concepts/backfill-original.js');
+    expect(translationAuthorityFor(21307, { viaCtai: true })).toBe('committee');   // the Kitáb-i-Aqdas
+  });
+
+  it('claims no rendering for a work he WROTE in English', async () => {
+    const { translationAuthorityFor } = await import('../../api/lib/rag/concepts/backfill-original.js');
+    expect(translationAuthorityFor(21310, { viaCtai: true })).toBeNull();          // God Passes By
+  });
+});

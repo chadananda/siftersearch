@@ -30,11 +30,19 @@ import { pool } from '../kernel/run.js';
  * authoritative TEXT with no such sense-fixing power, and a provisional translation is neither. Downstream
  * analysis must be able to tell those apart, which is why this is a string and not a boolean.
  */
-export function translationAuthorityFor(docId) {
+export function translationAuthorityFor(docId, { viaCtai = false } = {}) {
   const cls = coreEntry(docId)?.cls;
   if (cls === CLASS.GUARDIAN_TRANSLATION) return 'shoghi-effendi';
   if (cls === CLASS.DESIGNATED) return 'committee';
-  return null;                                       // GUARDIAN_ORIGINAL has no translation; nor does anything else
+  if (cls === CLASS.GUARDIAN_ORIGINAL) return null;  // he wrote it in English; there is no rendering to attribute
+  // NOT IN THE ROSTER, BUT ALIGNED FROM CTAI. CTAI is a concordance OF SHOGHI EFFENDI'S RENDERINGS — that is
+  // what the corpus is — so a work present there is his translation whether or not the curated roster lists
+  // it. Prayers and Meditations is exactly this case: 692 paragraphs aligned and every one stamped with NO
+  // authority, because the roster holds 14 works and this is not one of them. Chad, 2026-08-25: "always note
+  // a Shoghi Effendi translation when available. this is very significant for any analysis." Deriving the
+  // authority from the SOURCE rather than from roster membership is what makes that hold for every work.
+  if (viaCtai) return 'shoghi-effendi';
+  return null;
 }
 
 /**
@@ -79,7 +87,7 @@ export async function backfillDoc(ctx, docId, { work: wantWork, maxPairs, minSco
     log?.warn?.({ docId, work, mappedTo: CTAI_DOC_BY_WORK[wantWork] }, 'ctai/backfill: aligning a work against a doc other than its mapped one');
   }
 
-  const authority = translationAuthorityFor(docId);
+  const authority = translationAuthorityFor(docId, { viaCtai: true });
   const paras = await ctx.store.getParagraphs(docId);          // already prose-only (paragraph|quote)
   // Measured pair count, not a blanket ceiling: probing 2,000 indexes for a 160-pair book is ~12x the
   // needed traffic against someone else's API for nothing.
