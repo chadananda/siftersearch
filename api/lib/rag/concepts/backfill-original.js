@@ -17,7 +17,7 @@
 // first pair) and a trailing footnote-definitions block.
 // Deps: align.js (pure), ctai.js (transport), the injected store.
 
-import { alignSequences } from './align.js';
+import { alignSequences, detectSourceLang } from './align.js';
 import { CTAI_WORK_BY_DOC, CTAI_PAIR_COUNT, fetchPair } from './ctai.js';
 import { CLASS, coreEntry } from './core-roster.js';
 import { pool } from '../kernel/run.js';
@@ -86,15 +86,21 @@ export async function backfillDoc(ctx, docId, { maxPairs, minScore = 0.7, dryRun
     return {
       paraId: m.ourKey,
       originalText: t.source,
-      originalLang: 'ar',                            // CTAI reports source_lang 'ar' for this corpus
+      // PER-PARAGRAPH, never per-work: the Íqán is Persian, the Hidden Words has an Arabic part and a
+      // Persian part, and Gleanings is compiled from tablets in both. CTAI labels the Íqán 'ar'; trusting
+      // that stamped 290 Persian paragraphs as Arabic, which misroutes them to a model that cannot read them.
+      originalLang: detectSourceLang(t.source),
       translationAuthority: authority,
       alignRef: JSON.stringify({ source: 'ctai', work, pairIndex: m.theirKey, section: t.section,
         score: m.score, alignedAt: new Date().toISOString() }),
     };
   });
 
+  const langs = {};
+  for (const r of rows) langs[r.originalLang ?? 'unknown'] = (langs[r.originalLang ?? 'unknown'] || 0) + 1;
+
   const result = {
-    docId, work, authority, dryRun, ...stats,
+    docId, work, authority, dryRun, ...stats, originalLangs: langs,
     unmatchedOurs: unmatchedOurs.length, unmatchedTheirs: unmatchedTheirs.length,
     // Name them: an unmatched paragraph is a thing to look at, not a rounding error.
     unmatchedSamples: unmatchedOurs.slice(0, 5).map((u) => ({ index: u.index, text: String(u.text).slice(0, 90) })),

@@ -14,7 +14,7 @@
 //
 // Measured result with both properties in place: 290/292 matched, 0 non-monotonic, 0 pairs claimed twice.
 import { describe, it, expect } from 'vitest';
-import { alignSequences, dice, contentWords, normalizeEn } from '../../api/lib/rag/concepts/align.js';
+import { alignSequences, dice, contentWords, normalizeEn, detectSourceLang } from '../../api/lib/rag/concepts/align.js';
 
 const seq = (texts, prefix = 'a') => texts.map((text, i) => ({ key: `${prefix}${i}`, text }));
 
@@ -131,5 +131,29 @@ describe('alignSequences', () => {
 
   it('handles empty input without throwing', () => {
     expect(alignSequences([], []).stats).toMatchObject({ matched: 0, coverage: 0 });
+  });
+});
+
+describe('detectSourceLang', () => {
+  it('reads the Kitáb-i-Íqán as PERSIAN, not Arabic', () => {
+    // "A model of Persian prose" (Chad, 2026-08-25). CTAI's own source_lang says 'ar', and trusting that
+    // label stamped 290 Persian paragraphs as Arabic. 288 of the Íqán's 291 pairs carry Persian-only letters.
+    expect(detectSourceLang('و همچنين کلمات منزله که از غمام قدرت صمدانيّه و سماء عزّت ربّانيّه نازل شده')).toBe('fa');
+  });
+
+  it('reads Arabic as Arabic', () => {
+    expect(detectSourceLang('الصلاة والدعاء والذكر')).toBe('ar');
+  });
+
+  it('decides PER PASSAGE, because one book holds both', () => {
+    // The Hidden Words has an Arabic part and a Persian part; Gleanings is compiled from tablets in both.
+    // A per-work answer is therefore wrong for one half of the book whichever way it is set.
+    expect(detectSourceLang('العدل والإنصاف')).toBe('ar');
+    expect(detectSourceLang('ای پسر روح')).toBe('fa');
+  });
+
+  it('returns null for text that is not in Arabic script, rather than guessing', () => {
+    expect(detectSourceLang('In the name of our Lord, the Exalted')).toBeNull();
+    expect(detectSourceLang('')).toBeNull();
   });
 });

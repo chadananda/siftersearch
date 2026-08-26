@@ -22,6 +22,29 @@
 
 const STOP_SHORT = 4;            // words this long or shorter carry no discriminative signal
 
+// Persian and Arabic share a script; only these four letters are Persian-exclusive. Same rule the app's
+// language detector uses — duplicated deliberately, because this library takes no app imports, and the
+// alternative (trusting the upstream source's own label) is what got it wrong.
+const PERSIAN_ONLY = /[پچژگ]/;
+const ARABIC_SCRIPT = /[؀-ۿ]/;
+
+/**
+ * Language of an original-language passage: 'fa', 'ar', or null when the text is not in Arabic script.
+ *
+ * MUST BE PER-PARAGRAPH, not per-work. The Kitáb-i-Íqán is Persian — "a model of Persian prose" (Chad,
+ * 2026-08-25) — while the Hidden Words has an Arabic part AND a Persian part, and Gleanings is compiled
+ * from tablets in both. So there is no single answer for a book, only for a passage.
+ *
+ * Do NOT take this from the upstream source's own label: CTAI reports source_lang 'ar' for the Íqán, and
+ * trusting that stamped 290 Persian paragraphs as Arabic. Language drives model routing and the Anthropic
+ * spend policy, so a wrong label is not cosmetic — it misroutes the text to a model that cannot read it.
+ */
+export function detectSourceLang(text) {
+  const s = String(text || '');
+  if (!ARABIC_SCRIPT.test(s)) return null;
+  return PERSIAN_ONLY.test(s) ? 'fa' : 'ar';
+}
+
 export function normalizeEn(s) {
   return String(s || '')
     .replace(/^\s*\[\d+\]\s*/, '')                    // our own paragraph marker, not the text
