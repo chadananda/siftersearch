@@ -380,6 +380,56 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * POST /concepts/align-ool-work {docId, stem, dryRun=true}
+   *
+   * Enrich OUR document from a WHOLE WORK on oceanoflights, read from the PAGE (Chad, 2026-08-26: "you can
+   * always download the page… and extract content"). The page separates what the .docx flattens: footnotes
+   * sit in their own blocks and can be removed, and the ORIGINAL states its verse numbers.
+   *
+   * TWO independent anchors before anything is written — the source's verse number pairs original to
+   * English, then our own paragraph is found by ENGLISH-to-ENGLISH match against that pairing.
+   */
+  fastify.post('/concepts/align-ool-work', admin, async (req) => {
+    const { docId, stem, dryRun = true, minScore = 0.7 } = req.body || {};
+    if (!docId || !stem) throw ApiError.badRequest('docId and stem required');
+    const { fetchPageParagraphs, pairByVerse } = await import('../lib/rag/concepts/ool-page.js');
+    const { alignSequences, detectSourceLang } = await import('../lib/rag/concepts/align.js');
+    const store = makeStore();
+
+    const en = await fetchPageParagraphs(stem, 'en', { log: logger });
+    if (!en?.length) throw ApiError.badRequest(`oceanoflights served no English for '${stem}'`);
+    let src = await fetchPageParagraphs(stem, 'ar', { log: logger });
+    if (!src?.length) src = await fetchPageParagraphs(stem, 'fa', { log: logger });
+    if (!src?.length) throw ApiError.badRequest(`oceanoflights served no original for '${stem}'`);
+
+    const paired = pairByVerse(en, src);
+    if (!paired.rows.length) {
+      return { docId: Number(docId), stem, paired: 0, basis: paired.basis, reason: paired.reason, written: 0 };
+    }
+
+    const resolved = await store.resolveCanonicalDoc(Number(docId));
+    const ours = (await store.getParagraphs(resolved)).map((p) => ({ key: p.id, text: p.text }));
+    const theirs = paired.rows.map((r, i) => ({ key: i, text: r.en }));
+    const { matches, stats } = alignSequences(ours, theirs, { minScore, window: theirs.length });
+
+    const rows = matches.map((m) => {
+      const r = paired.rows[m.theirKey];
+      return { paraId: m.ourKey, originalText: r.source, originalLang: detectSourceLang(r.source),
+        translationAuthority: 'committee', wordAlignment: null,
+        alignRef: JSON.stringify({ source: 'oceanoflights.org', stem, verse: r.n,
+          basis: paired.basis, score: m.score, alignedAt: new Date().toISOString() }) };
+    }).filter((r) => r.originalLang);
+
+    const out = { docId: resolved, stem, basis: paired.basis, paired: paired.rows.length,
+      ...stats, candidates: rows.length, dryRun, written: 0,
+      samples: rows.slice(0, 2).map((r) => ({ lang: r.originalLang, original: r.originalText.slice(0, 60) })) };
+    if (dryRun || !rows.length) return out;
+    out.written = await store.saveParagraphOriginals(rows);
+    return out;
+  });
+
+
+  /**
    * GET /concepts/originals-gap — for EVERY canonical translation: has it got its original, and if not, is
    * one reachable? Chad, 2026-08-26: "I want to be sure we have found the original for all the documents
    * that are translations (and where original exists)." This counts it rather than asserting it.
