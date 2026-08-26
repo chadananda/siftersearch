@@ -43,9 +43,18 @@ describe('the system prompt states the doctrine, not just the task', () => {
     expect(sys).toMatch(/never|do not/i);
   });
 
-  it('requires a root on every concept — identity is the root, never the English gloss', () => {
-    expect(sys).toMatch(/root/i);
-    expect(ROOT_REQUIRED_NOTE).toMatch(/root/i);
+  it('keys concept identity to the ORIGINAL TERM, quoted from the text — never the English gloss', () => {
+    // Identity must not rest on the English: one English word hides several distinct concepts.
+    expect(ROOT_REQUIRED_NOTE).toMatch(/original term/i);
+    expect(ROOT_REQUIRED_NOTE).toMatch(/never the English gloss/i);
+    expect(sys).toMatch(/verbatim from the original text/i);
+  });
+
+  it('requires the original term to come from the text SHOWN, not the model\'s memory', () => {
+    // The paragraph ingest supplies both texts and no lexicon (Chad, 2026-08-25: the per-word concordance
+    // is a translator's tool). A term quoted from the passage is checkable against it; a term recalled
+    // from memory is an invented citation wearing the same shape.
+    expect(ROOT_REQUIRED_NOTE).toMatch(/omit it rather than supplying one from memory/i);
   });
 
   it('still demands a verbatim proof span, like every other extractor', () => {
@@ -66,10 +75,12 @@ describe('the user message carries BOTH texts, aligned', () => {
     expect(buildBilingualUser(p, aligned)).toContain('غمام امتحانات ربّانی');
   });
 
-  it('includes the CTAI root gloss so the model need not guess at morphology', () => {
+  it('carries ONLY the two texts — no per-word concordance gloss', () => {
+    // Scope is the side-by-side paragraph. The model reads the original itself; it is not handed a lexicon.
     const u = buildBilingualUser(p, aligned);
-    expect(u).toContain('غ-م-م');
-    expect(u).toContain('ghmm-cloud');
+    expect(u).toContain(aligned.source);
+    expect(u).not.toMatch(/root [^\n]*\(/i);
+    expect(u).not.toContain('ghmm-cloud');
   });
 
   it('labels the English explicitly as Shoghi Effendi\'s rendering, not as "the text"', () => {
@@ -79,6 +90,6 @@ describe('the user message carries BOTH texts, aligned', () => {
   it('degrades honestly when no alignment is available — says so rather than inventing a root', () => {
     const u = buildBilingualUser(p, null);
     expect(u).toMatch(/no aligned original|unavailable/i);
-    expect(u).not.toContain('غ-م-م');
+    expect(u).not.toContain(aligned.source);
   });
 });

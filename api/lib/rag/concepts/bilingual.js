@@ -21,8 +21,11 @@
 // Neither alone is sufficient, so the prompt states both roles explicitly rather than implying a ranking.
 // Deps: none (pure prompt construction).
 
+// The concept's ORIGINAL TERM must be quoted verbatim from the source text above — which is checkable
+// against that text, unlike a root the model derives from memory. No external lexicon is consulted here
+// (Chad, 2026-08-25: the per-word concordance is a translator's tool, not part of paragraph ingest).
 export const ROOT_REQUIRED_NOTE =
-  'Every concept MUST carry the original-language root it derives from. Concept identity is the ROOT, never the English gloss.';
+  'Quote the concept\'s ORIGINAL TERM verbatim from the original text above. Concept identity is the original term, never the English gloss. If the term is not present in the text shown, omit it rather than supplying one from memory.';
 
 export function buildBilingualSystem(profile = {}, meta = {}) {
   const book = [meta.title, meta.author].filter(Boolean).join(' — ');
@@ -39,7 +42,7 @@ TWO SOURCES, TWO DIFFERENT AUTHORITIES. You need both; neither outranks the othe
 WHAT TO EXTRACT
 For each significant doctrinal concept or symbol the passage DEVELOPS:
 - the concept, named in English as Shoghi Effendi renders it
-- its ORIGINAL term and ROOT (${ROOT_REQUIRED_NOTE})
+- its ORIGINAL term, copied verbatim from the original text (${ROOT_REQUIRED_NOTE})
 - what the passage says it means or teaches
 - a VERBATIM proof span, quoted exactly from the passage — never paraphrased
 
@@ -53,8 +56,8 @@ Return ONLY JSON: {"concepts":[{"concept","root","root_translit","original_term"
 }
 
 /**
- * The user message. Carries the original, CTAI's root gloss, and the SE rendering — explicitly labelled,
- * so the model is never left to infer which text is which.
+ * The user message. Carries the original and Shoghi Effendi's rendering side by side, each explicitly
+ * labelled, so the model is never left to infer which text is which.
  */
 export function buildBilingualUser(p = {}, aligned = null) {
   const ctx = `CONTEXT (for resolving references only): ${p.context || '(none)'}`;
@@ -70,18 +73,10 @@ SHOGHI EFFENDI'S RENDERING [${p.pid}]:
 ${p.text}`;
   }
 
-  const glossLines = (aligned.terms || [])
-    .filter((t) => t && t.root)
-    .map((t) => `- ${t.term} — root ${t.root} (${t.transliteration || '?'}) · literal: ${t.literal || '?'} · key: ${t.root_slug || '?'}`)
-    .join('\n');
-
   return `${ctx}
 
 ORIGINAL TEXT:
 ${aligned.source}
-
-ROOTS in the original (from the aligned lexical gloss — use these, do not derive morphology yourself):
-${glossLines || '(none identified)'}
 
 SHOGHI EFFENDI'S AUTHORISED RENDERING [${p.pid}] — his word-choice fixes which sense is meant:
 ${aligned.translation || p.text}`;

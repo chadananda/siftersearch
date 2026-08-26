@@ -1,35 +1,28 @@
-// concepts/ctai — the aligned-original client. Two endpoints, two distinct jobs (Chad, 2026-08-25):
+// concepts/ctai — fetch the SIDE-BY-SIDE PARAGRAPH: the original beside Shoghi Effendi's rendering.
 //
-//   /passages  → the SIDE-BY-SIDE PARAGRAPH. The original beside Shoghi Effendi's rendering, plus word-level
-//                alignment pairs with character spans on both sides. This is the unit of extraction.
-//   /jafar     → the IN-DEPTH REPORT ON ONE WORD. Root, transliteration, literal senses, root_slug, and the
-//                corpus-wide rendering spectrum for a single term.
+// SCOPE IS DELIBERATELY NARROW (Chad, 2026-08-25). This client uses ONE endpoint, /passages, to get a
+// paragraph pair — source text, translation, and word-level alignment spans. That pair is what we store in
+// the database, so later processing can read whichever side it needs without any network call at all.
 //
-// So the flow is: fetch the SBS paragraph, extract concepts from it, then root-key each concept by asking
-// jafar about the ONE original term the alignment says it renders. Roots attach to the concepts we keep,
-// not to every word we saw — which also makes the root lookup cacheable across the whole corpus, since the
-// distinct significant-term vocabulary is small and repeats endlessly.
+// It does NOT use /jafar. That endpoint is a per-word concordance report — many corpus examples of how one
+// term has been rendered — which is a TRANSLATOR'S tool, not a paragraph-ingest tool. Nothing here needs it:
+// once both sides of a paragraph are in the database, a model reading the original can identify its own
+// terms directly from the text in front of it.
 //
-// WHY THE ROOT MATTERS AT ALL (doctrine lives in concepts/bilingual.js; this file is transport): English
-// silently merges distinct concepts. Ṣalát (ص-ل-و), Duʿá (د-ع-و) and Dhikr (ذ-ك-ر) all surface as "prayer";
-// ʿadl (ع-د-ل) and insáf (ن-ص-ف) both as "justice". Only the root keeps them apart, so concept identity is
-// keyed to root_slug, never to the English gloss.
+// WHY BOTH SIDES ARE WORTH STORING: English merges concepts the original keeps apart. Salat, Du'a and Dhikr
+// all surface as "prayer"; 'adl and insaf both as "justice". A process that only ever sees the English
+// cannot recover that distinction. Equally, Shoghi Effendi's rendering is not a lossy copy to be corrected —
+// as authorised interpreter his word-choice FIXES which sense of a polysemous term is operative. Neither
+// side is sufficient alone, which is exactly why the schema now holds both.
 //
-// ⚠ /jafar RETURNS HTTP 200 WITH ZERO TERMS WHEN OVERFED. Measured 2026-08-25: a term or short phrase always
-// works; ~40 words works; past roughly 50 words it returns a well-formed body with `enriched_terms: []` —
-// indistinguishable from an honest "no roots here". Since we only ever send it one term, this is a guard
-// rather than a workaround, but it is why glossTerm refuses long input outright instead of trusting silence.
-//
-// COVERAGE is Shoghi Effendi's translations only — CTAI is a concordance of them. Measured pair counts:
-// Íqán 291 · Gleanings 729 · Hidden Words 160 · Epistle 268. The Aqdas, Some Answered Questions and the
-// Tablets of the Divine Plan are absent because he did not translate them, so those docs have no aligned
-// original and extract from the English alone. That is a fact about the corpus, not a failure to handle.
+// COVERAGE is his translations only, since CTAI is a concordance of them. Measured pair counts below. The
+// Kitab-i-Aqdas, Some Answered Questions and the Tablets of the Divine Plan are absent because he did not
+// translate them — a fact about the corpus, not a gap to work around.
 // Deps: config (ctai.apiUrl/apiKey), global fetch.
 
 import { config } from '../../config.js';
 
 const TIMEOUT_MS = 25000;
-const MAX_GLOSS_WORDS = 12;      // a term or short phrase; see the silent-empty note above
 const MIN_OVERLAP = 0.5;         // below this we HOLD rather than bind to the wrong original
 
 /**
@@ -148,75 +141,4 @@ export async function findAligned(docId, paraText, { log } = {}) {
     source: best.source_text, translation: best.translation,
     aligned: best.aligned || [], matchScore: Number(bestScore.toFixed(3)),
   };
-}
-
-// ── /jafar — the in-depth report on ONE word ─────────────────────────────────
-
-// Cached across the process: the significant-term vocabulary is small and repeats across the whole corpus,
-// so the same dozen doctrinal terms would otherwise be re-fetched thousands of times.
-const glossCache = new Map();
-
-/**
- * Root report for ONE original-language term (or very short phrase). Returns the enriched term object —
- * { term, root, transliteration, root_slug, literal, rendering_spectrum, occurrence_count } — or null.
- *
- * Refuses input longer than MAX_GLOSS_WORDS rather than sending it: jafar answers 200-with-nothing when
- * overfed, which would be recorded as "this term has no root" — a false negative that looks like data.
- */
-export async function glossTerm(term, { log } = {}) {
-  const t = String(term || '').trim();
-  if (!t) return null;
-  if (t.split(/\s+/).length > MAX_GLOSS_WORDS) {
-    log?.warn?.({ words: t.split(/\s+/).length }, 'ctai/gloss refused — jafar is a per-WORD report, not a passage gloss');
-    return null;
-  }
-  if (glossCache.has(t)) return glossCache.get(t);
-  const j = await ctaiFetch('/jafar', { method: 'POST', body: { text: t, filter: false }, log });
-  const terms = (j?.enriched_terms || []).filter((x) => x?.root && !x.is_stop);
-  // A multi-word phrase glosses to several terms; the head term is the one carrying the concept.
-  const best = terms.sort((a, b) => (b.occurrence_count || 0) - (a.occurrence_count || 0))[0] || null;
-  glossCache.set(t, best);
-  return best;
-}
-
-// ── Locating the original term behind an English concept ─────────────────────
-
-/**
- * Given a concept's English surface and the paragraph's alignment pairs, return the ORIGINAL term(s) that
- * render it — by character-span overlap in the translation, not by guessing morphology.
- *
- * This is what makes the root deterministic rather than model-invented: the extractor names a concept in
- * English, the alignment says which original words occupy that span, and jafar reports that word's root.
- */
-export function sourceTermsFor(englishSurface, aligned = [], translation = '') {
-  const surface = String(englishSurface || '').trim();
-  if (!surface || !aligned.length) return [];
-  const hay = String(translation || '').toLowerCase();
-  const at = hay.indexOf(surface.toLowerCase());
-  if (at < 0) return [];
-  const end = at + surface.length;
-  return aligned
-    .filter((a) => Array.isArray(a.target_span) && a.target_span[0] < end && a.target_span[1] > at)
-    .map((a) => a.source)
-    .filter(Boolean);
-}
-
-/**
- * Root-key one extracted concept. Returns { root, rootSlug, transliteration, literal, originalTerm,
- * renderingSpectrum } or null when the original term cannot be located — in which case the caller must OMIT
- * the root, never invent one.
- */
-export async function rootForConcept(concept, alignedPair, { log } = {}) {
-  if (!alignedPair) return null;
-  const candidates = sourceTermsFor(concept, alignedPair.aligned, alignedPair.translation);
-  for (const term of candidates) {
-    const g = await glossTerm(term, { log });
-    if (!g) continue;
-    return {
-      originalTerm: g.term, root: g.root, rootSlug: g.root_slug,
-      transliteration: g.transliteration, literal: g.literal,
-      renderingSpectrum: (g.rendering_spectrum || []).slice(0, 6),
-    };
-  }
-  return null;
 }
