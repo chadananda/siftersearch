@@ -304,22 +304,27 @@ export function lineWindowFor({ floorLine = 1, paraCount, englishCount, lineCoun
  * THE OFFSET RULE, in one place because it has already been got wrong once: English numbers are CHUNK-LOCAL
  * ([1] restarts every chunk) and are made absolute here; LINE numbers are not, because renderLines prints
  * each line's own `n`, so the model answers in absolute numbers from the start.
+ *
+ * RESUMABLE. `floorLine` in and `lastLine` out let a caller drive a long book across SEVERAL requests —
+ * necessary rather than nice: the tunnel in front of this API closes a connection at ~125 seconds, so Some
+ * Answered Questions (789 paragraphs, four chunks, ~45s each) cannot finish inside one. A book that must be
+ * split is split explicitly by the caller, never silently truncated here.
  */
 export async function segmentToEnglish({ englishTexts, originalText, lines: given, callModel,
-  parasPerChunk = 150, wordsPerLine = 12, anchorWords = 4 } = {}) {
+  parasPerChunk = 150, wordsPerLine = 12, anchorWords = 4, floorLine: startLine = 1, indexOffset = 0 } = {}) {
   const lines = given ?? numberLines(originalText, { wordsPerLine });
   const chunks = planChunks(englishTexts.length, { parasPerChunk });
   const anchors = [];
-  let floorLine = 1;
+  let floorLine = startLine;
   for (const ch of chunks) {
     const win = lineWindowFor({ floorLine, paraCount: ch.end - ch.start,
       englishCount: englishTexts.length, lineCount: lines.length });
     const shown = lines.slice(win.from - 1, win.to);
     const reply = await callModel(buildSegmentPrompt(englishTexts.slice(ch.start, ch.end), shown, { anchorWords }));
-    for (const a of parseAnchors(reply)) anchors.push({ ...a, index: a.index + ch.start });
+    for (const a of parseAnchors(reply)) anchors.push({ ...a, index: a.index + ch.start + indexOffset });
     const last = anchors.filter((a) => a.line != null).at(-1);
     if (last) floorLine = last.line;
   }
   return { ...spansFromAnchors(originalText, anchors, englishTexts.length, { wordsPerLine, lines }),
-    chunks: chunks.length, anchors: anchors.length, lineCount: lines.length };
+    chunks: chunks.length, anchors: anchors.length, lineCount: lines.length, lastLine: floorLine };
 }

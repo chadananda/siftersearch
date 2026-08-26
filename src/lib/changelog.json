@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T21:26:09.553Z",
+  "generated": "2026-08-26T21:33:32.521Z",
   "entries": [
+    {
+      "hash": "e56ce7e5",
+      "date": "2026-08-26",
+      "type": "Other",
+      "description": "Read Some Answered Questions' original from bahai.org, anchored on the source's own paragraphs",
+      "scope": null
+    },
     {
       "hash": "046a6c6a",
       "date": "2026-08-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Move death off cards → end of detail popup (Passing section)",
       "scope": null
-    },
-    {
-      "hash": "72465833",
-      "date": "2026-06-25",
-      "type": "Test",
-      "description": "Standing search-quality battery (student-voice questions → coverage map)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-26": [
+      {
+        "hash": "e56ce7e5",
+        "date": "2026-08-26",
+        "type": "Other",
+        "description": "Read Some Answered Questions' original from bahai.org, anchored on the source's own paragraphs",
+        "scope": null
+      },
       {
         "hash": "046a6c6a",
         "date": "2026-08-26",
@@ -7067,13 +7074,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Move death off cards → end of detail popup (Passing section)",
-        "scope": null
-      },
-      {
-        "hash": "72465833",
-        "date": "2026-06-25",
-        "type": "Test",
-        "description": "Standing search-quality battery (student-voice questions → coverage map)",
         "scope": null
       }
     ]

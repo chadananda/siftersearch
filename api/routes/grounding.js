@@ -598,7 +598,8 @@ export default async function groundingRoutes(fastify) {
    *     matter is expected to come back SKIP. That is what SKIP is for.
    */
   fastify.post('/concepts/segment-bahai-org', admin, async (req) => {
-    const { docId, path, lang = 'fa', dryRun = true, force = false, parasPerChunk = 150, sections = 12 } = req.body || {};
+    const { docId, path, lang = 'fa', dryRun = true, force = false, parasPerChunk = 150, sections = 12,
+      fromIndex = 0, toIndex, floorLine = 1 } = req.body || {};
     if (!docId || !path) throw ApiError.badRequest('docId and path required (e.g. "abdul-baha/some-answered-questions")');
     const { fetchWorkParagraphs } = await import('../lib/rag/concepts/bahai-org.js');
     const { detectSourceLang } = await import('../lib/rag/concepts/align.js');
@@ -622,8 +623,13 @@ export default async function groundingRoutes(fastify) {
     const originalText = originalParas.join(' ');
     const lines = seg.linesFromParagraphs(originalParas);
 
+    // A SLICE OF OUR PARAGRAPHS, because the tunnel closes at ~125s and this book needs four model calls.
+    // The caller advances fromIndex and carries `lastLine` forward as the next floorLine, so the monotonic
+    // guarantee survives the split — each request starts where the previous one genuinely ended.
+    const slice = ours.slice(fromIndex, toIndex ?? ours.length);
     const result = await seg.segmentToEnglish({
-      englishTexts: ours.map((p) => p.text), originalText, lines, parasPerChunk,
+      englishTexts: slice.map((p) => p.text), originalText, lines, parasPerChunk,
+      floorLine, indexOffset: fromIndex,
       callModel: (prompt) => withAIContext(
         { docId: resolved, stage: 'concept-segment-original', sourceLang: lang, caller: 'segment-bahai-org' },
         async () => {
@@ -658,7 +664,8 @@ export default async function groundingRoutes(fastify) {
     }
 
     const out = { docId: resolved, path, lang, dryRun, model: BILINGUAL_MODEL,
-      ourParagraphs: ours.length, sourceParagraphs: paragraphs.length, perSection,
+      ourParagraphs: ours.length, slice: [fromIndex, toIndex ?? ours.length], lastLine: result.lastLine,
+      sourceParagraphs: paragraphs.length, perSection,
       chunks: result.chunks, anchors: result.anchors, spans: result.spans.length,
       unconfirmed: result.unconfirmed, exact: result.exact, rejected: result.rejected.length,
       coverage: result.coverage, candidates: rows.length, written: 0,
