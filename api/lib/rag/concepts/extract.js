@@ -8,6 +8,7 @@ import { assertDisambiguated } from '../kernel/gate.js';
 import { profileFor } from '../kernel/profile.js';
 import { pool } from '../kernel/run.js';
 import { buildBilingualSystem, buildBilingualUser } from './bilingual.js';
+import { englishIsOriginal } from './core-roster.js';
 
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.98 });
@@ -39,7 +40,11 @@ export async function run(ctx, docId, opts = {}) {
     if (!systemFor.has(authority)) systemFor.set(authority, buildBilingualSystem(profile, docMeta, { translationAuthority: authority }));
     return systemFor.get(authority);
   };
+  // TWO routes, chosen PER PARAGRAPH below. A book is not uniformly bilingual — the Íqán is fa 272 / ar 18,
+  // and paragraphs with no aligned original at all stay on the cheap English path.
   const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };
+  const bilingualRoute = { model: opts.bilingualModel ?? profile.models.bilingualExtract ?? route.model,
+    fallback: opts.bilingualModel ?? profile.models.bilingualExtract ?? route.fallback };
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
   const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, bilingual: 0 };
   // A bare `paras: 0` is indistinguishable from "this book has no concepts". Name the reason.
@@ -58,16 +63,26 @@ export async function run(ctx, docId, opts = {}) {
     // case: deepseek cannot read Persian at all. Without this the gate has only the DOC's language (English)
     // and refuses the very call the exception exists to permit.
     const { withAIContext } = await import('../../ai-context.js');
+    // Route by the ORIGINAL's language, not the document's: showing a Persian original to a model that
+    // cannot read Persian is paying for a context window nobody uses.
+    //
+    // EXCEPT where the English IS the original (Chad, 2026-08-26: "unless we are referring to books
+    // originally composed in English, like Nabil or Shoghi Effendi's letters"). God Passes By, The World
+    // Order of Bahá'u'lláh, The Advent of Divine Justice, Citadel of Faith and the Messages were written by
+    // him in English — there is no other text to consult, so the cheap English path is not a compromise
+    // there, it is the correct reading. Checked explicitly rather than relying on original_text simply
+    // being absent, so a stray alignment written onto such a book can never buy it a paid model.
+    const bilingual = hasOriginal && ['ar', 'fa'].includes(p.originalLang) && !englishIsOriginal(docId);
     const { parsed, escalated } = await withAIContext(
-      { stage: 'concept-extract', docId, originalLang: hasOriginal ? (p.originalLang ?? null) : null },
+      { stage: 'concept-extract', docId, originalLang: bilingual ? p.originalLang : null },
       () => ctx.model.runLadder({
-      route,
-      system: hasOriginal ? bilingualSystemFor(p.translationAuthority ?? null) : system,
-      user: hasOriginal
+      route: bilingual ? bilingualRoute : route,
+      system: bilingual ? bilingualSystemFor(p.translationAuthority ?? null) : system,
+      user: bilingual
         ? buildBilingualUser(p, { source: p.original, translation: p.text })
         : buildUser(p),
       parse: parseConceptClaims, maxTokens }));
-    if (hasOriginal) stats.bilingual++;
+    if (bilingual) stats.bilingual++;
     if (escalated) stats.escalated++;
     if (!parsed || !parsed.length) { stats.failed++; return; }
     const textNorm = proofNorm(p.text);

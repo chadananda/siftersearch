@@ -183,7 +183,20 @@ export function detectProfile(doc, sampleText = '') {
   const route = LANG_ROUTING[lang] || LANG_ROUTING.en;
   // A per-doc model override (e.g. Sonnet for a flagship) replaces the disambig model only.
   const disambigModel = ov.model || route.disambig;
-  const models = { disambig: disambigModel, hype: ov.model || route.hype, extract: ov.model || route.extract };
+  // BILINGUAL EXTRACT — the model used when a paragraph carries its ORIGINAL in Arabic or Persian.
+  //
+  // Routing by the DOCUMENT's language is wrong for this one case, and wrong in the expensive direction.
+  // Every one of these books is English-language, so `extract` resolves to deepseek-flash — which cannot
+  // read Persian AT ALL (it returns silently empty) and is weak on Arabic. Handing it a bilingual prompt
+  // means the original is in the context window and unread: we pay to show the model a text it cannot see.
+  // Measured 2026-08-26 on the Persian Íqán: 2 of 3 paragraphs failed and the surviving claims were
+  // degenerate ("the Exalted teaches God is the Exalted", no root).
+  //
+  // So the model follows the ORIGINAL's language, not the document's. Sonnet reads both Persian and Arabic;
+  // the spend is gated separately and narrowly by anthropic-policy.js (core roster + concept stage + a
+  // stored ar/fa original), so this cannot widen beyond the paragraphs that genuinely need it.
+  const models = { disambig: disambigModel, hype: ov.model || route.hype, extract: ov.model || route.extract,
+    bilingualExtract: SONNET };
   const priority = ov.priority ?? (Number.isFinite(doc.doc_priority) ? 1000 - doc.doc_priority : 1000);
   return {
     name: `${genre}-${lang}`, lang, script, genre, domain, priority, enrichable,
@@ -191,7 +204,8 @@ export function detectProfile(doc, sampleText = '') {
     extract: EXTRACT_GENRES.has(genre),
     eraAnchors: DOMAIN_ANCHORS[domain] || '',
     models,
-    providers: { disambig: providerOf(models.disambig), hype: providerOf(models.hype), extract: providerOf(models.extract) },
+    providers: { disambig: providerOf(models.disambig), hype: providerOf(models.hype), extract: providerOf(models.extract),
+      bilingualExtract: providerOf(models.bilingualExtract) },
     fallback: route.fallback, fallbackProvider: providerOf(route.fallback),
   };
 }

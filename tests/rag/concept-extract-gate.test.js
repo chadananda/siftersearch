@@ -5,13 +5,14 @@
 // 'deepseek-disambig-v1' alone. A fully-noted book therefore reported `paras: 0`: a stage reporting success
 // having read nothing. Same open-producer/closed-consumer shape as the heading whitelist and the phrase
 // re-rank. Found 2026-08-26 while preparing the core books for extraction.
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { run } from '../../api/lib/rag/concepts/extract.js';
 
 vi.mock('../../api/lib/rag/kernel/gate.js', () => ({ assertDisambiguated: async () => {} }));
-vi.mock('../../api/lib/rag/kernel/profile.js', () => ({
-  profileFor: async () => ({ genre: 'doctrinal', lang: 'en', models: { extract: 'm' }, fallback: 'm' }),
-}));
+// Mutable so a test can set the routing it needs; profileFor is module-mocked, so a per-call `profiler`
+// would never be consulted.
+const PROFILE = { current: { genre: 'doctrinal', lang: 'en', models: { extract: 'm' }, fallback: 'm' } };
+vi.mock('../../api/lib/rag/kernel/profile.js', () => ({ profileFor: async () => PROFILE.current }));
 
 const para = (contextModel) => ({
   id: 1, pid: 'p1', kind: 'paragraph', context: 'the running argument', contextModel,
@@ -51,5 +52,57 @@ describe('concept extraction disambiguation gate', () => {
   it('distinguishes an unnoted book from a book with no prose at all', async () => {
     const r = await run(makeCtx([]), 1);
     expect(r.skippedReason).toMatch(/no prose paragraphs/i);
+  });
+});
+
+describe('the model follows the ORIGINAL language, not the document language', () => {
+  // Chad, 2026-08-26: "Why would you use Deepseek for something with Arabic or Farsi original_text field?"
+  // He is right, and permission alone did not fix it. The spend POLICY allowed Anthropic for such a
+  // paragraph, but the model CHOICE still came from profile.models.extract — which, because every one of
+  // these books is an English-language document, resolved to deepseek. The original would have sat in the
+  // context window unread: paying to show a model a text it cannot see.
+  //
+  // "Unless we are referring to books originally composed in English (like Nabil or Shoghi Effendi's
+  // letters)" — for those the English IS the original, so the cheap path is the CORRECT reading, not a
+  // compromise.
+  const profile = { genre: 'doctrinal', lang: 'en',
+    models: { extract: 'deepseek-v4-flash', bilingualExtract: 'claude-sonnet-4-6' }, fallback: 'deepseek-v4-flash' };
+  beforeEach(() => { PROFILE.current = profile; });
+  afterEach(() => { PROFILE.current = { genre: 'doctrinal', lang: 'en', models: { extract: 'm' }, fallback: 'm' }; });
+
+  const spyCtx = (paragraphs, docId, seen) => ({
+    config: { versions: { disambig: 'deepseek-disambig-v1', conceptDisambig: 'concept-disambig-v1' } },
+    catalog: { get: () => ({ capabilities: [] }) },
+    log: { info: () => {} },
+    model: { runLadder: async ({ route }) => { seen.push(route.model); return { parsed: [], escalated: false }; } },
+    store: { getParagraphs: async () => paragraphs, getDocMeta: async () => ({ id: docId }), saveConceptClaims: async () => 0 },
+  });
+  const para = (o) => ({ id: 1, pid: 'p1', kind: 'paragraph', context: 'note',
+    contextModel: 'deepseek-disambig-v1', text: 'A passage about the Covenant of God and its station.', ...o });
+
+  it('sends a PERSIAN original to a model that can read Persian', async () => {
+    const seen = [];
+    await run(spyCtx([para({ original: 'کلمات', originalLang: 'fa' })], 20810, seen), 20810);
+    expect(seen[0]).toMatch(/claude/);
+  });
+
+  it('sends an ARABIC original to the same capable model', async () => {
+    const seen = [];
+    await run(spyCtx([para({ original: 'الكلمات', originalLang: 'ar' })], 21307, seen), 21307);
+    expect(seen[0]).toMatch(/claude/);
+  });
+
+  it('keeps a paragraph with NO original on the cheap English path', async () => {
+    const seen = [];
+    await run(spyCtx([para({ original: null, originalLang: null })], 21307, seen), 21307);
+    expect(seen[0]).toMatch(/deepseek/);
+  });
+
+  it('keeps a book COMPOSED IN ENGLISH on deepseek even if an original is somehow present', async () => {
+    // God Passes By is his own English. A stray alignment written onto such a book must never buy it a
+    // paid model — hence the explicit englishIsOriginal() check rather than relying on absence.
+    const seen = [];
+    await run(spyCtx([para({ original: 'کلمات', originalLang: 'fa' })], 21310, seen), 21310);
+    expect(seen[0]).toMatch(/deepseek/);
   });
 });
