@@ -91,17 +91,30 @@ export const ORIGINALS_TARGETS = Object.freeze({
     note: 'probe-stems: 15 disjoint tablets in sequence covering 75% of the document' },
 
   20907: { work: 'Memorials of the Faithful', stems: [
-    'abdul-baha-bkw26-02', 'abdul-baha-bkw26-07', 'abdul-baha-bkw26-13', 'abdul-baha-bkw26-18',
-    'abdul-baha-bkw26-20', 'abdul-baha-bkw26-21', 'abdul-baha-bkw26-22', 'abdul-baha-bkw26-23',
-    'abdul-baha-bkw26-27', 'abdul-baha-bkw26-30', 'abdul-baha-bkw26-31', 'abdul-baha-bkw26-32',
-    'abdul-baha-bkw26-33', 'abdul-baha-bkw26-34', 'abdul-baha-bkw26-35', 'abdul-baha-bkw26-41',
-    'abdul-baha-bkw26-46', 'abdul-baha-bkw26-48', 'abdul-baha-bkw26-51', 'abdul-baha-bkw26-60',
-    'abdul-baha-bkw26-63', 'abdul-baha-bkw26-64', 'abdul-baha-bkw26-67', 'abdul-baha-bkw26-69',
+    'abdul-baha-bkw26-01', 'abdul-baha-bkw26-02', 'abdul-baha-bkw26-03', 'abdul-baha-bkw26-04',
+    'abdul-baha-bkw26-05', 'abdul-baha-bkw26-06', 'abdul-baha-bkw26-07', 'abdul-baha-bkw26-08',
+    'abdul-baha-bkw26-09', 'abdul-baha-bkw26-10', 'abdul-baha-bkw26-11', 'abdul-baha-bkw26-12',
+    'abdul-baha-bkw26-13', 'abdul-baha-bkw26-14', 'abdul-baha-bkw26-15', 'abdul-baha-bkw26-16',
+    'abdul-baha-bkw26-17', 'abdul-baha-bkw26-18', 'abdul-baha-bkw26-19', 'abdul-baha-bkw26-20',
+    'abdul-baha-bkw26-21', 'abdul-baha-bkw26-22', 'abdul-baha-bkw26-23', 'abdul-baha-bkw26-24',
+    'abdul-baha-bkw26-25', 'abdul-baha-bkw26-26', 'abdul-baha-bkw26-27', 'abdul-baha-bkw26-28',
+    'abdul-baha-bkw26-29', 'abdul-baha-bkw26-30', 'abdul-baha-bkw26-31', 'abdul-baha-bkw26-32',
+    'abdul-baha-bkw26-33', 'abdul-baha-bkw26-34', 'abdul-baha-bkw26-35', 'abdul-baha-bkw26-36',
+    'abdul-baha-bkw26-37', 'abdul-baha-bkw26-38', 'abdul-baha-bkw26-39', 'abdul-baha-bkw26-40',
+    'abdul-baha-bkw26-41', 'abdul-baha-bkw26-42', 'abdul-baha-bkw26-43', 'abdul-baha-bkw26-44',
+    'abdul-baha-bkw26-45', 'abdul-baha-bkw26-46', 'abdul-baha-bkw26-47', 'abdul-baha-bkw26-48',
+    'abdul-baha-bkw26-49', 'abdul-baha-bkw26-50', 'abdul-baha-bkw26-51', 'abdul-baha-bkw26-52',
+    'abdul-baha-bkw26-53', 'abdul-baha-bkw26-54', 'abdul-baha-bkw26-55', 'abdul-baha-bkw26-56',
+    'abdul-baha-bkw26-57', 'abdul-baha-bkw26-58', 'abdul-baha-bkw26-59', 'abdul-baha-bkw26-60',
+    'abdul-baha-bkw26-61', 'abdul-baha-bkw26-62', 'abdul-baha-bkw26-63', 'abdul-baha-bkw26-64',
+    'abdul-baha-bkw26-65', 'abdul-baha-bkw26-66', 'abdul-baha-bkw26-67', 'abdul-baha-bkw26-68',
+    'abdul-baha-bkw26-69',
   ], lang: 'fa', basis: 'segment',
-    // PARTIAL BY THE SOURCE'S OWN LIMIT, and said so here rather than discovered as a disappointing number
-    // later: the book has 77 memorials and the catalogue publishes 24. The other 53 are not missing from our
-    // fetch, they are absent from oceanoflights.
-    note: '24 of the book’s 77 memorials are published, each as its own chapter page with a declared Persian original' },
+    // ALL 69 CHAPTERS THE SITE PUBLISHES, taken from its SITE MAP. I first took them from the catalogue
+    // page Chad linked, which lists 24, and reported "24 of the book's 77 memorials are published" — a
+    // limitation of the source that was really a limitation of the index I happened to read. The sitemap
+    // carries bkw26-01 through bkw26-69, every one with a Persian original.
+    note: '69 chapter pages, each declaring a Persian original' },
 });
 
 /**

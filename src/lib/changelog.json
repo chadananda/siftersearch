@@ -1,6 +1,20 @@
 {
-  "generated": "2026-08-26T23:01:17.486Z",
+  "generated": "2026-08-26T23:32:03.624Z",
   "entries": [
+    {
+      "hash": "be7dddba",
+      "date": "2026-08-26",
+      "type": "Other",
+      "description": "The retrieval chunker is overwriting canonical paragraphing",
+      "scope": null
+    },
+    {
+      "hash": "d08a0225",
+      "date": "2026-08-26",
+      "type": "Test",
+      "description": "Assert the stem-pair property, not a stem count",
+      "scope": null
+    },
     {
       "hash": "3538f96f",
       "date": "2026-08-26",
@@ -3486,24 +3500,24 @@
       "type": "Other",
       "description": "Evidence is now the verified verbatim source extract (the proof) with citation, not the summary; reason over extracts not summaries",
       "scope": null
-    },
-    {
-      "hash": "a6c99d1e",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Require span be ABOUT the target (not a co-mentioned other)",
-      "scope": null
-    },
-    {
-      "hash": "e62e72ee",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Broaden to useful references (facts/relationships/connections, not only descriptions)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-26": [
+      {
+        "hash": "be7dddba",
+        "date": "2026-08-26",
+        "type": "Other",
+        "description": "The retrieval chunker is overwriting canonical paragraphing",
+        "scope": null
+      },
+      {
+        "hash": "d08a0225",
+        "date": "2026-08-26",
+        "type": "Test",
+        "description": "Assert the stem-pair property, not a stem count",
+        "scope": null
+      },
       {
         "hash": "3538f96f",
         "date": "2026-08-26",
@@ -7060,20 +7074,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Evidence is now the verified verbatim source extract (the proof) with citation, not the summary; reason over extracts not summaries",
-        "scope": null
-      },
-      {
-        "hash": "a6c99d1e",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Require span be ABOUT the target (not a co-mentioned other)",
-        "scope": null
-      },
-      {
-        "hash": "e62e72ee",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Broaden to useful references (facts/relationships/connections, not only descriptions)",
         "scope": null
       }
     ]
