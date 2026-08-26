@@ -159,8 +159,11 @@ export async function getDoc(docId, { scope = 'live', follow = true, fields } = 
 export async function getParagraphs(docId, { proseOnly = true, limit = 100000, offset = 0 } = {}) {
   const kinds = proseOnly ? `AND COALESCE(c.blocktype,'paragraph') IN ('paragraph','quote')` : '';
   return queryAll(
+    // align_ref included: it records WHERE an original came from (source, stem, verse, score). Leaving it
+    // out made the provenance unreadable — an audit of what had been written could see the Arabic but not
+    // which page it came from, and reported "no stems" when every row had one (2026-08-26).
     `SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype, c.language,
-            c.original_text, c.original_lang, c.translation_text, c.translation_authority
+            c.original_text, c.original_lang, c.translation_text, c.translation_authority, c.align_ref
        FROM content c WHERE c.doc_id = ? AND c.deleted_at IS NULL ${kinds}
       ORDER BY c.paragraph_index LIMIT ? OFFSET ?`,
     [Number(docId), limit, offset], 'docs-repo:paragraphs');
