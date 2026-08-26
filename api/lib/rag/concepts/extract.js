@@ -11,11 +11,20 @@ import { buildBilingualSystem, buildBilingualUser } from './bilingual.js';
 
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.98 });
+  // ACCEPT EITHER DISAMBIGUATION. concepts/disambiguate is documented as "an ALTERNATIVE gate for doctrinal
+  // works, not a second pass" and writes to the SAME context column — but it stamps 'concept-disambig-v1'
+  // while this stage filtered for 'deepseek-disambig-v1' alone. So the concept track's own disambiguation
+  // produced notes its own extractor silently skipped, leaving `paras: 0` on a fully-noted book: a stage
+  // that reports success having read nothing. Same open-producer/closed-consumer shape as the heading
+  // whitelist and the phrase re-rank. Verified 2026-08-26.
   const version = opts.version ?? ctx.config.versions?.disambig ?? 'disambig-v1';
+  const conceptVersion = ctx.config.versions?.conceptDisambig ?? 'concept-disambig-v1';
+  const acceptedVersions = new Set([version, conceptVersion]);
   const extractor = opts.extractor ?? ctx.config.versions?.conceptExtract ?? 'concept-extract-v1';
   const batch = opts.batch ?? extractor;
   const profile = await profileFor(ctx, docId);
-  let paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context && p.contextModel === version && (p.kind ?? 'paragraph') === 'paragraph');
+  let paras = (await ctx.store.getParagraphs(docId))
+    .filter((p) => p.context && acceptedVersions.has(p.contextModel) && (p.kind ?? 'paragraph') === 'paragraph');
   if (opts.limit) paras = paras.slice(0, opts.limit);          // small reviewed slices before a full run
   const system = buildSystem(profile);
   // BILINGUAL WHERE WE HAVE IT. A paragraph carrying its aligned original is read with BOTH texts in view:
@@ -33,6 +42,13 @@ export async function run(ctx, docId, opts = {}) {
   const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
   const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, bilingual: 0 };
+  // A bare `paras: 0` is indistinguishable from "this book has no concepts". Name the reason.
+  if (!paras.length) {
+    const all = await ctx.store.getParagraphs(docId);
+    stats.skippedReason = all.length
+      ? `no paragraph carries an accepted disambiguation note (${[...acceptedVersions].join(' | ')}); run disambiguate first`
+      : 'document has no prose paragraphs';
+  }
 
   const rows = [];   // dry-run review buffer only
   // Write INCREMENTALLY per paragraph so a long run is resilient (a crash keeps prior work) and observable.
