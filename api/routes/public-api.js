@@ -336,6 +336,9 @@ export default async function publicApiRoutes(fastify) {
         properties: {
           query: { type: 'string', minLength: 1, maxLength: 500 },
           limit: { type: 'integer', minimum: 1, maximum: 50, default: 10 },
+          // Opt-in exact-phrase re-rank. Fastify strips unknown body properties, so the flag must be
+          // declared here or it never reaches the handler.
+          phraseBoost: { type: 'boolean', default: false, description: 'Rank exact phrase matches first, then by authority. Off by default.' },
           filters: {
             type: 'object',
             properties: {
@@ -410,6 +413,28 @@ export default async function publicApiRoutes(fastify) {
       : Promise.resolve({ hits: [] });
 
     let [searchResults, traditionResults] = await Promise.all([mainSearchPromise, traditionSearchPromise]);
+
+    // ── OPT-IN EXACT-PHRASE RE-RANK (2026-08-26) ────────────────────────────────────────────────────────
+    // Searching a VERBATIM sentence from Gleanings returns Gleanings THIRD, behind the Qur'án and Psalms;
+    // one probe did not return it in the top 5 at all. The cause is not authority weighting — this path
+    // blends 50% embedding similarity, and praise-of-God language is thematically identical across every
+    // scripture in the corpus, so the true source is out-competed by its own neighbours.
+    //
+    // The fix already exists: calculatePhraseScore ranks exact phrase matches first and breaks ties by
+    // authority ("so canonical sources outrank citing works at the same phrase-match tier" — its own
+    // comment). It is only wired into keywordSearch, which this endpoint uses ONLY as a fallback.
+    //
+    // OFF BY DEFAULT. Ranking is what every user sees, so this ships as a measurable proposal rather than a
+    // silent change: pass phraseBoost:true (the quality battery does) to measure the delta before adopting it.
+    if (request.body?.phraseBoost === true && searchResults.hits?.length) {
+      const { calculatePhraseScore } = await import('../lib/search/fuzzy.js');
+      const terms = String(query).split(/\s+/).filter((t) => t.length > 2);
+      searchResults.hits = searchResults.hits
+        .map((h) => ({ ...h, _phraseScore: calculatePhraseScore(h.text || '', query, terms) }))
+        .sort((a, b) => (b._phraseScore - a._phraseScore)
+          || ((b._authorityScore || 0) - (a._authorityScore || 0))
+          || ((b._score || 0) - (a._score || 0)));
+    }
 
     // Merge tradition hits not already in main results (dedup by paragraph id)
     if (traditionResults.hits && traditionResults.hits.length > 0) {

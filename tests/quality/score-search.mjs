@@ -40,6 +40,9 @@ const CATEGORY = args.find(a => a.startsWith('--category='))?.split('=')[1] || n
 // HyPE's retrieval value requires this mode. Hits carry _layerRanks {main,hype,entity}; the report gains
 // a `hype` block (touched/led shares). Needs DEPLOY_SECRET (or INTERNAL_API_KEY) in .env-secrets.
 const MULTI = args.includes('--multi');
+// --phrase-boost: ask the API for the opt-in exact-phrase re-rank, so its effect can be MEASURED against
+// the same fixtures before anyone changes what users see.
+const PHRASE_BOOST = args.includes('--phrase-boost');
 
 const API_BASE = process.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const API_KEY = process.env.PUBLIC_SIFTER_API_KEY;
@@ -87,7 +90,7 @@ async function runOnce(fix) {
   const t0 = Date.now();
   const filters = {};
   if (fix.religion_filter) filters.religion = fix.religion_filter;
-  const reqBody = { query: fix.query, limit: TOP_K, filters };
+  const reqBody = { query: fix.query, limit: TOP_K, filters, ...(PHRASE_BOOST ? { phraseBoost: true } : {}) };
 
   let res, body;
   try {
@@ -356,6 +359,7 @@ const report = {
   top_k: TOP_K,
   api_base: API_BASE,
   endpoint: MULTI ? 'multi' : 'public',
+  phrase_boost: PHRASE_BOOST,
   categories,
   failure_breakdown: failBreakdown,
   ...(hypeAgg ? { hype: hypeAgg } : {}),
