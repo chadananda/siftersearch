@@ -109,8 +109,21 @@ describe('a stem may name TWO pages', () => {
     expect(haykal).toMatchObject({ en: 'bahaullah-st-121', src: 'bahaullah-pub06-090', lang: 'ar' });
   });
 
-  it('keeps the plain stems as plain strings, so the common case stays simple', () => {
-    expect(targetFor(20806).stems.filter((x) => typeof x === 'string')).toHaveLength(4);
+  it('keeps the common case a plain string — only the odd one out needs a pair', () => {
+    const stems = targetFor(20806).stems;
+    expect(stems.filter((x) => typeof x === 'object')).toHaveLength(1);
+    expect(stems.filter((x) => typeof x === 'string').length).toBeGreaterThan(1);
+  });
+
+  it('puts the nested king-tablets BEFORE the Haykal, so the tighter source wins a collision', () => {
+    // pub06-090 is 7,419 Arabic words against ~36,000 English: the Haykal proper, not the tablets printed
+    // inside it. Each nested tablet has its own page and its own tight range.
+    const stems = targetFor(20806).stems;
+    const haykal = stems.findIndex((x) => typeof x === 'object');
+    for (const king of ['bahaullah-st-065', 'bahaullah-st-062', 'bahaullah-st-054', 'bahaullah-st-053', 'bahaullah-st-018']) {
+      expect(stems.indexOf(king)).toBeGreaterThanOrEqual(0);
+      expect(stems.indexOf(king)).toBeLessThan(haykal);
+    }
   });
 
   it('records the superseded stub as superseded rather than deleting the reasoning', () => {
