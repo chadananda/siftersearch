@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { splitVerseNumber, declaredRole, pairByVerse, isPageFooter }
   from '../../api/lib/rag/concepts/ool-page.js';
-import { NOT_THE_ORIGINAL, targetFor } from '../../api/lib/rag/concepts/originals-targets.js';
+import { NOT_THE_ORIGINAL, STUB_ONLY, targetFor } from '../../api/lib/rag/concepts/originals-targets.js';
 
 describe('splitVerseNumber — the source states its own correspondence', () => {
   it('reads an Arabic-Indic verse number and strips it without touching the script', () => {
@@ -97,5 +97,26 @@ describe('NOT_THE_ORIGINAL is keyed by PAGE, not by work', () => {
   it('bars the Arabic rendering of the Persian Secret of Divine Civilization', () => {
     expect(NOT_THE_ORIGINAL['abdul-baha-bkw19-ar']).toBeTruthy();
     expect(targetFor(20919).stems).toEqual(['abdul-baha-bkw19']);
+  });
+});
+
+describe('a stem may name TWO pages', () => {
+  // The site keeps single tablets (`st`) apart from published volumes (`pub`), and they do not always both
+  // carry both languages: the Súriy-i-Haykal's English is bahaullah-st-121-en while its Arabic is
+  // bahaullah-pub06-090-ar, and each 404s in the other's language.
+  it('carries the Haykal as an english/source pair, not a single stem', () => {
+    const haykal = targetFor(20806).stems.find((x) => typeof x === 'object');
+    expect(haykal).toMatchObject({ en: 'bahaullah-st-121', src: 'bahaullah-pub06-090', lang: 'ar' });
+  });
+
+  it('keeps the plain stems as plain strings, so the common case stays simple', () => {
+    expect(targetFor(20806).stems.filter((x) => typeof x === 'string')).toHaveLength(4);
+  });
+
+  it('records the superseded stub as superseded rather than deleting the reasoning', () => {
+    // Controls proved a PAGE was empty; they could not prove the WORK was unpublished, because the
+    // hypothesis space was only ever one series of the site.
+    expect(STUB_ONLY['bahaullah-st-121']).toBeUndefined();
+    expect(STUB_ONLY['bahaullah-st-121__page-only'].supersededBy).toBe('bahaullah-pub06-090');
   });
 });

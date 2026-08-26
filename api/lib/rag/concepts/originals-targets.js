@@ -60,11 +60,14 @@ export const ORIGINALS_TARGETS = Object.freeze({
   // that oceanoflights publishes separately; the deterministic English-to-English match found which ones and
   // in what order, at no cost. The ranges below came back disjoint and sequential, which is the check.
   20806: { work: 'The Summons of the Lord of Hosts', stems: [
-    // The Súriy-i-Haykal (bahaullah-st-121) is DELIBERATELY ABSENT — see STUB_ONLY. It is ours[2..277], the
-    // largest part of this book, and its original is not published anywhere we can reach.
+    // THE HAYKAL NEEDS TWO PAGES. Its English is the single-tablet page and its Arabic is the
+    // published-VOLUME page, and each 404s in the other's language (Chad supplied the pub06 URL). The `st`
+    // catalogue I was sweeping never contained the `pub` series at all, which is why the probe could not
+    // find it and why I concluded from the st-121 pages alone that the original was unpublished.
+    { en: 'bahaullah-st-121', src: 'bahaullah-pub06-090', lang: 'ar' },   // 7,419 Arabic words, ours[2..277]
     'bahaullah-st-070-1', 'bahaullah-st-070-2', 'bahaullah-st-117', 'bahaullah-st-131',
   ], lang: 'ar', basis: 'segment',
-    note: 'probe-stems found 5 top-level works covering 98.6% of the doc; 4 are reachable, the Haykal is a stub' },
+    note: 'probe-stems found 5 top-level works covering 98.6% of the doc; the Haykal is the largest and needs a paired stem' },
 
   20781: { work: 'Fountain of Wisdom / Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas', stems: [
     'bahaullah-st-051', 'bahaullah-st-026', 'bahaullah-st-005', 'bahaullah-st-148', 'bahaullah-st-147',
@@ -102,7 +105,13 @@ export const ORIGINALS_TARGETS = Object.freeze({
  * usually a bug in the reader — and what IS served explains the absence positively rather than by silence.
  */
 export const STUB_ONLY = Object.freeze({
-  'bahaullah-st-121': { work: 'Súriy-i-Haykal', lang: 'ar',
+  // ⚠ SUPERSEDED, kept because the reasoning is worth not repeating. Everything measured below is true of
+  // the `bahaullah-st-121` PAGES — and the conclusion I drew from it ("this original is not published") was
+  // still wrong. The Súriy-i-Haykal's Arabic is at `bahaullah-pub06-090-ar`, 7,419 words, in a different
+  // SERIES: the site keeps single tablets (`st`) apart from published volumes (`pub`), and my catalogue held
+  // only the first. Controls prove a page is empty; they cannot prove a work is unpublished, because the
+  // hypothesis space was never the whole site.
+  'bahaullah-st-121__page-only': { work: 'Súriy-i-Haykal', lang: 'ar', supersededBy: 'bahaullah-pub06-090',
     serves: 'سورة الهيكل – حضرة بهاءالله – آثار قلم اعلى، ١٥٣ بديع، جلد ١، الصفحات ١ – ٨٨, plus the opening line',
     // MEASURED AGAINST KNOWN-GOOD STEMS, because an empty result is usually a bug in the reader and Chad was
     // right to push back twice ("all the pages are the same", "and they all have docx files too"). They are,

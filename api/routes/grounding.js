@@ -491,9 +491,18 @@ export default async function groundingRoutes(fastify) {
     }
     // A stub is skipped rather than refused: the rest of the book is still worth doing, and re-fetching a
     // known-empty page every run is the waste this record exists to prevent.
-    const stubbed = stems.filter((x) => STUB_ONLY[x]);
-    stems = stems.filter((x) => !STUB_ONLY[x]);
+    const stubbed = stems.filter((x) => typeof x === 'string' && STUB_ONLY[x]);
+    stems = stems.filter((x) => !(typeof x === 'string' && STUB_ONLY[x]));
     if (!stems.length) throw ApiError.badRequest(`every stem given is a stub: ${stubbed.join(', ')}`);
+
+    // A STEM MAY NAME TWO PAGES. The site keeps its single-tablet series (`st`) and its published-volume
+    // series (`pub`) apart, and they do not always both carry both languages: the Súriy-i-Haykal's English is
+    // bahaullah-st-121-en (279 paragraphs) while its Arabic is bahaullah-pub06-090-ar (7,419 words) and each
+    // stem 404s in the other's language. So `en` (which BOUNDS our paragraphs) and `src` (which supplies the
+    // ORIGINAL) are separable, defaulting to the same page when only one is given.
+    const pairs = stems.map((x) => (typeof x === 'string'
+      ? { key: x, en: x, src: x }
+      : { key: `${x.en ?? x.src}→${x.src ?? x.en}`, en: x.en ?? x.src, src: x.src ?? x.en, lang: x.lang }));
 
     const resolved = await store.resolveCanonicalDoc(Number(docId));
     const cov = await store.getOriginalCoverage(resolved);
@@ -508,18 +517,19 @@ export default async function groundingRoutes(fastify) {
     // paragraphs — so nothing is shared across them but the document. This is also what brings a 14-chapter
     // work inside the tunnel's ~125s ceiling, which serially it could not be.
     const perStem = [];
-    const stemRows = await pool(concurrency, stems, async (stem) => {
-      const orig = await findOriginalLanguage(stem, { log: logger });
-      if (orig?.role !== 'original') {
+    const stemRows = await pool(concurrency, pairs, async ({ key: stem, en: enStem, src: srcStem, lang: wantLang }) => {
+      const orig = wantLang ? { lang: wantLang, role: 'declared-by-target' }
+        : await findOriginalLanguage(srcStem, { log: logger });
+      if (!orig || (orig.role !== 'original' && orig.role !== 'declared-by-target')) {
         perStem.push({ stem, skipped: `no page declares itself the original (${orig?.lang || 'none'}: ${orig?.role || 'none'})` });
         return [];
       }
       const [srcParas, enParas] = await Promise.all([
-        fetchPageParagraphs(stem, orig.lang, { log: logger }),
-        fetchPageParagraphs(stem, 'en', { log: logger }),
+        fetchPageParagraphs(srcStem, orig.lang, { log: logger }),
+        fetchPageParagraphs(enStem, 'en', { log: logger }),
       ]);
       if (!srcParas?.length || !enParas?.length) {
-        perStem.push({ stem, skipped: `page served no ${!srcParas?.length ? orig.lang : 'en'} text` });
+        perStem.push({ stem, skipped: `page served no ${!srcParas?.length ? `${orig.lang} (${srcStem})` : `en (${enStem})`} text` });
         return [];
       }
       // The stream. Their paragraph breaks are discarded deliberately — they are the arbitrary ones.
@@ -575,7 +585,7 @@ export default async function groundingRoutes(fastify) {
         if (!lang) continue;
         rows.push({ paraId: para.key, originalText: sp.text, originalLang: lang,
           translationAuthority: 'committee', wordAlignment: null,
-          alignRef: JSON.stringify({ source: 'oceanoflights.org', stem, basis: 'ai-segmentation',
+          alignRef: JSON.stringify({ source: 'oceanoflights.org', stem: srcStem, englishStem: enStem, basis: 'ai-segmentation',
             model, line: sp.line, confirmed: sp.confirmed, exact: sp.exact, alignedAt: new Date().toISOString() }) });
       }
       perStem.push({ stem, originalLang: orig.lang, originalWords: originalText.split(/\s+/).length,
@@ -596,12 +606,12 @@ export default async function groundingRoutes(fastify) {
     for (const [i, list] of (stemRows || []).entries()) {
       for (const r of list || []) {
         const prior = claimed.get(r.paraId);
-        if (prior !== undefined) { collisions.push({ paraId: r.paraId, stems: [stems[prior], stems[i]] }); continue; }
+        if (prior !== undefined) { collisions.push({ paraId: r.paraId, stems: [pairs[prior].key, pairs[i].key] }); continue; }
         claimed.set(r.paraId, i);
         rows.push(r);
       }
     }
-    perStem.sort((a, b) => stems.indexOf(a.stem) - stems.indexOf(b.stem));
+    perStem.sort((a, b) => pairs.findIndex((p) => p.key === a.stem) - pairs.findIndex((p) => p.key === b.stem));
 
     for (const x of stubbed) perStem.push({ stem: x, skipped: `stub only — ${STUB_ONLY[x].why}` });
     const out = { docId: resolved, work: target?.work ?? null, dryRun, model, concurrency,
