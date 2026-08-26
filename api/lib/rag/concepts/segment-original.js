@@ -123,6 +123,33 @@ export function parseAnchors(raw) {
 }
 
 /**
+ * Find the model's quoted words NEAR the line it named, and return their exact word offset.
+ *
+ * THIS IS WHERE THE WORDS EARN THEIR KEEP. The line number alone cuts on a 12-word boundary, so a span
+ * begins up to eleven words before its paragraph does — measured on the Seven Valleys, where all 20 pairs I
+ * read were content-correct and most carried a short lead-in from the previous passage. Locating the quoted
+ * words turns the line into an exact cut, using data the model already returned at no extra cost.
+ *
+ * Searched over the named line and its NEIGHBOURS, because the model quotes the words its PARAGRAPH begins
+ * with, which need not be the words the line begins with. That is why 25 of 119 Seven Valleys spans came
+ * back "unconfirmed" while every one I checked was right: the check was too narrow, not the answer wrong.
+ *
+ * Matching is on the first three normalised words: enough to be unambiguous in a 25-word neighbourhood, few
+ * enough that one drifted spelling later in the phrase does not lose a correct location.
+ */
+export function refineWordStart(words, lines, lineNo, anchorWords, { lookaround = 1 } = {}) {
+  const target = normalizeArabic(anchorWords || '').split(' ').filter(Boolean).slice(0, 3);
+  if (target.length < 2) return null;
+  const first = lines[Math.max(0, lineNo - 1 - lookaround)];
+  const last = lines[Math.min(lines.length - 1, lineNo - 1 + lookaround)];
+  const to = Math.min(words.length, last.wordStart + last.text.split(/\s+/).length);
+  for (let i = first.wordStart; i <= to - target.length; i++) {
+    if (target.every((t, j) => normalizeArabic(words[i + j]) === t)) return i;
+  }
+  return null;
+}
+
+/**
  * Turn line-numbered anchors into spans of the original.
  *
  * The LINE NUMBER places the cut. The words are checked against that line only as CONFIRMATION, and a
@@ -136,23 +163,37 @@ export function spansFromAnchors(originalText, anchors, englishCount, { wordsPer
   const found = [];
   const rejected = [];
   let lastLine = 0;
+  let lastStart = 0;
   for (const a of [...anchors].sort((x, y) => x.index - y.index)) {
     if (a.line == null) { rejected.push({ ...a, why: 'model skipped' }); continue; }
     if (a.line < 1 || a.line > lines.length) { rejected.push({ ...a, why: `line ${a.line} out of range (1..${lines.length})` }); continue; }
     if (a.line < lastLine) { rejected.push({ ...a, why: `line ${a.line} runs backwards from ${lastLine}` }); continue; }
     const line = lines[a.line - 1];
-    // Confirmation only: did the model's words actually come from that line?
-    const confirmed = !a.words || normalizeArabic(line.text).includes(normalizeArabic(a.words).slice(0, 12));
-    found.push({ index: a.index, wordStart: line.wordStart, line: a.line, confirmed });
+    // Refine the line to an exact word offset where the quoted words can be found near it; fall back to the
+    // line start otherwise. Never allowed to move BACKWARDS past the previous span — a refinement that
+    // reorders the book would undo the one property the line numbers are here to guarantee.
+    const refined = refineWordStart(words, lines, a.line, a.words);
+    const wordStart = refined != null && refined >= lastStart ? refined : line.wordStart;
+    // Two paragraphs resolving to the same position is a REJECTION, not an empty span quietly dropped by the
+    // length filter: it means the model placed both in one spot, and that is worth seeing.
+    if (found.length && wordStart <= lastStart) {
+      rejected.push({ ...a, why: `resolves at or before ¶${found.at(-1).index}` });
+      continue;
+    }
+    found.push({ index: a.index, wordStart, line: a.line, confirmed: refined != null, exact: wordStart === refined });
+    lastStart = wordStart;
     lastLine = a.line;
   }
   const spans = found.map((f, i) => ({
-    index: f.index, line: f.line, confirmed: f.confirmed,
+    index: f.index, line: f.line, confirmed: f.confirmed, exact: f.exact,
     text: words.slice(f.wordStart, i + 1 < found.length ? found[i + 1].wordStart : undefined).join(' ').trim(),
   })).filter((s) => s.text.length > 20);
   return {
     spans, rejected,
     unconfirmed: spans.filter((s) => !s.confirmed).length,
+    // How many cuts landed on the exact word rather than the enclosing line — the quality number that
+    // matters for a bilingual layer, since an inexact cut carries a lead-in from the previous passage.
+    exact: spans.filter((s) => s.exact).length,
     coverage: englishCount ? Number((spans.length / englishCount).toFixed(3)) : 0,
   };
 }

@@ -8,7 +8,7 @@
 // substring test, where a re-emitted segment would have to be trusted.
 import { describe, it, expect } from 'vitest';
 import { normalizeArabic, findAnchor, numberLines, renderLines, buildSegmentPrompt, parseAnchors, spansFromAnchors,
-  planChunks, lineWindowFor }
+  planChunks, lineWindowFor, refineWordStart }
   from '../../api/lib/rag/concepts/segment-original.js';
 
 const ORIGINAL = 'انّ اوّل ما کتب الله علی العباد عرفان مشرق وحيه و مطلع امره '
@@ -95,6 +95,28 @@ describe('parseAnchors', () => {
   });
 });
 
+describe('refineWordStart — where the quoted words earn their keep', () => {
+  const lines = numberLines(ORIGINAL, { wordsPerLine: 6 });
+  const words = ORIGINAL.split(/\s+/);
+
+  it('finds the quoted words and returns their exact word offset', () => {
+    expect(refineWordStart(words, lines, 4, 'يرون حدود الله')).toBe(words.indexOf('يرون'));
+  });
+
+  it('searches the NEIGHBOUR lines too — the model quotes where its PARAGRAPH starts, not where the line does', () => {
+    // This is why 25 of 119 Seven Valleys spans read "unconfirmed" while every one checked was correct.
+    expect(refineWordStart(words, lines, 5, 'يرون حدود الله')).toBe(words.indexOf('يرون'));
+  });
+
+  it('returns null when the words are nowhere near — so the line start is used instead', () => {
+    expect(refineWordStart(words, lines, 1, 'كلمات غريبة تماما')).toBe(null);
+  });
+
+  it('refuses to act on too few words to be unambiguous', () => {
+    expect(refineWordStart(words, lines, 1, 'و')).toBe(null);
+  });
+});
+
 describe('spansFromAnchors', () => {
   const opts = { wordsPerLine: 6 };
 
@@ -112,6 +134,24 @@ describe('spansFromAnchors', () => {
       [{ index: 1, line: 1, words: 'ان اول ما كتب' }], 1, opts);
     expect(spans).toHaveLength(1);
     expect(unconfirmed).toBe(0);          // normalisation confirms it despite the spelling drift
+  });
+
+  it('CUTS AT THE QUOTED WORDS, not the line boundary, when it can find them', () => {
+    // A line boundary is up to wordsPerLine-1 words early, so the span carries a lead-in from the previous
+    // passage. The words the model already returned remove that, for free.
+    const { spans, exact } = spansFromAnchors(ORIGINAL,
+      [{ index: 1, line: 4, words: 'يرون حدود الله' }], 1, opts);
+    expect(spans[0].text).toMatch(/^يرون حدود/);   // not the line's first word, the paragraph's
+    expect(exact).toBe(1);
+  });
+
+  it('REJECTS a second paragraph that resolves at or before the first', () => {
+    // Neighbour lines are searched, so a later paragraph could otherwise be cut BEFORE an earlier one and
+    // undo the ordering the line numbers exist to guarantee. Rejected out loud, not dropped as an empty span.
+    const { spans, rejected } = spansFromAnchors(ORIGINAL,
+      [{ index: 1, line: 4, words: 'يرون حدود الله' }, { index: 2, line: 4, words: 'انّ الّذين اوتوا' }], 2, opts);
+    expect(spans.map((s) => s.index)).toEqual([1]);
+    expect(rejected[0].why).toMatch(/resolves at or before/);
   });
 
   it('REPORTS an unconfirmed line rather than discarding it', () => {

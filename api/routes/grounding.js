@@ -549,7 +549,7 @@ export default async function groundingRoutes(fastify) {
         if (last) floorLine = last.line;
       }
 
-      const { spans, rejected, unconfirmed, coverage } = seg.spansFromAnchors(originalText, anchors, slice.length);
+      const { spans, rejected, unconfirmed, exact, coverage } = seg.spansFromAnchors(originalText, anchors, slice.length);
       // READABLE PAIRS, on the dry run. A coverage number cannot tell a correct alignment from a confidently
       // wrong one — only reading the two texts side by side can, and that is the whole check this stage has.
       // Evenly spaced across the work, plus every UNCONFIRMED span, since those are where the model's own
@@ -560,7 +560,7 @@ export default async function groundingRoutes(fastify) {
         const step = want ? Math.max(1, Math.floor(spans.length / want)) : 1;
         const pick = new Set(spans.filter((_, i) => i % step === 0).slice(0, want).map((s) => s.index));
         for (const sp of spans) if (pick.has(sp.index) || !sp.confirmed) {
-          pairs.push({ index: sp.index, line: sp.line, confirmed: sp.confirmed,
+          pairs.push({ index: sp.index, line: sp.line, confirmed: sp.confirmed, exact: sp.exact,
             en: String(slice[sp.index - 1]?.text || '').slice(0, 220),
             original: sp.text.slice(0, 220) });
         }
@@ -573,12 +573,12 @@ export default async function groundingRoutes(fastify) {
         rows.push({ paraId: para.key, originalText: sp.text, originalLang: lang,
           translationAuthority: 'committee', wordAlignment: null,
           alignRef: JSON.stringify({ source: 'oceanoflights.org', stem, basis: 'ai-segmentation',
-            model, line: sp.line, confirmed: sp.confirmed, alignedAt: new Date().toISOString() }) });
+            model, line: sp.line, confirmed: sp.confirmed, exact: sp.exact, alignedAt: new Date().toISOString() }) });
       }
       perStem.push({ stem, originalLang: orig.lang, originalWords: originalText.split(/\s+/).length,
         lines: lines.length, chunks: chunks.length, ourParagraphsInWork: slice.length,
         boundRange: [idx[0], idx.at(-1)], anchors: anchors.length, spans: spans.length,
-        unconfirmed, rejected: rejected.length, coverage,
+        unconfirmed, exact, rejected: rejected.length, coverage,
         rejectedSamples: rejected.slice(0, 4).map((r) => ({ index: r.index, why: r.why })),
         ...(pairs.length ? { pairs } : {}) });
     }
