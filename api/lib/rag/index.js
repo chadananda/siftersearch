@@ -59,6 +59,9 @@ export function createCorpusRAG(deps = {}) {
       lexicon: {
         async seed(docId, opts) { return (await import('./concepts/lexicon.js')).seed(ctx, docId, opts); },     // grow interpretive lexicon
       },
+      // Populate the bilingual layer BEFORE extraction: an extractor that runs first sees only English, and
+      // English merges distinct concepts (Ṣalát/Duʿá/Dhikr all → "prayer"). Idempotent + re-runnable.
+      async alignOriginals(docId, opts) { return (await import('./concepts/backfill-original.js')).backfillDoc(ctx, docId, opts); },
       async disambiguate(docId, opts) { return (await import('./concepts/disambiguate.js')).run(ctx, docId, opts); }, // argument-carrying
       async extract(docId, opts)      { return (await import('./concepts/extract.js')).run(ctx, docId, opts); },      // concept entities + claims
       async reconcile(docId, opts)    { return (await import('./concepts/reconcile.js')).run(ctx, docId, opts); },    // bind symbols to lexicon

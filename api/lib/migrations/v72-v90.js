@@ -876,6 +876,43 @@ export const migrations = {
     logger.info('Migration 119 complete: graph_entities catalog columns guaranteed');
   },
 
+  120: async () => {
+    // THE BILINGUAL LAYER. A paragraph of a translated work is one passage in two languages, but the schema
+    // only ever held one side of it, so every consumer that needed the other side had to go fetch it live —
+    // and a live fetch cannot be audited, cached, or asked "where did this come from?".
+    //
+    // Chad, 2026-08-25: store the original on translations and the translation on originals, then let each
+    // processing stage use either or both according to what its model can actually read. And ALWAYS record
+    // when a rendering is Shoghi Effendi's — that fact is load-bearing for every downstream analysis.
+    //
+    // WHY translation_authority IS A STRING, NOT A BOOLEAN: his renderings are an authoritative interpretive
+    // act — his word-choice FIXES which sense of a polysemous original is operative. A committee rendering
+    // (the Kitáb-i-Aqdas) is authoritative as a text but carries no such sense-fixing power, and a
+    // provisional translation carries neither. A boolean would collapse those three into two.
+    //
+    // WHY align_ref: the pairing is a DERIVED claim about two texts and can be wrong. Storing the source,
+    // the pair id and the match score makes a bad alignment findable and re-runnable rather than permanent.
+    for (const [col, decl] of [
+      ['original_text', 'TEXT'],            // source-language text of THIS passage (when `text` is a translation)
+      ['original_lang', 'TEXT'],            // 'ar' | 'fa' | 'he' — of original_text
+      ['translation_text', 'TEXT'],         // English rendering of THIS passage (when `text` is the original)
+      ['translation_authority', 'TEXT'],    // 'shoghi-effendi' | 'committee' | 'provisional' | NULL
+      ['align_ref', 'TEXT'],                // JSON provenance: {source,work,pair_index,score,aligned_at}
+    ]) {
+      try { await query(`ALTER TABLE content ADD COLUMN ${col} ${decl}`); }
+      catch (err) { if (!/duplicate column/i.test(err?.message || '')) throw err; }
+    }
+    // Partial index: the aligned rows are a small minority of 4.2M and are always queried as "which
+    // paragraphs have an original?" — a full index would be mostly NULLs.
+    try {
+      await query(`CREATE INDEX IF NOT EXISTS idx_content_has_original
+                     ON content(doc_id) WHERE original_text IS NOT NULL`);
+    } catch (err) {
+      if (!/no such (column|table)/i.test(err?.message || '')) throw err;
+    }
+    logger.info('Migration 120 complete: content bilingual layer (original_text/translation_text/authority/align_ref)');
+  },
+
   118: async () => {
     // R5 change feed for external entity consumers. Append-only; a monotonic seq is the cursor.
     // Populated by triggers so no writer path can forget to record a change.

@@ -15,6 +15,7 @@ import { spawn } from 'node:child_process';   // used by /grounding/backup (was 
 import { spawnGrounding } from '../lib/pipeline/spawn.js';
 import { makeStore } from '../lib/rag-adapter/store.js';
 import { repairMergeTombstones, mergeTombstoneDivergence, naturalKeyCollisions, breakMergeCycles } from '../lib/entity-merge-repair.js';
+import { guttedCanonicals } from '../lib/canonical-integrity.js';
 import { getIntegrationProgress, gradedPlanDocIds } from '../lib/bio.js';
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
@@ -232,6 +233,41 @@ export default async function groundingRoutes(fastify) {
       matchedSurfaces: [...new Set(entries.map((e) => e.symbol))], entries };
   });
 
+  /**
+   * POST /concepts/align-originals {docId, dryRun=true} — populate the bilingual layer (migration 120).
+   *
+   * Stores the ORIGINAL beside Shoghi Effendi's rendering on each paragraph, and records that the rendering
+   * is his — which downstream analysis needs, because his word-choice authoritatively FIXES which sense of a
+   * polysemous original is operative (Chad, 2026-08-25).
+   *
+   * MUST RUN HERE, not from a workstation: the dev DB is a stale 7,622-doc copy that does not contain these
+   * books, so a local run reports 0/0 and reads exactly like "nothing to align".
+   *
+   * dryRun DEFAULTS TRUE. The pairing is a derived claim about two texts; the dry run reports coverage, the
+   * score spread and the unmatched paragraphs by name, which is what tells you the pairing is real before it
+   * is written. Idempotent and re-runnable either way.
+   */
+  fastify.post('/concepts/align-originals', admin, async (req) => {
+    const { docId, dryRun = true, minScore } = req.body || {};
+    if (!docId) throw ApiError.badRequest('docId required');
+    const { rag } = await import('../lib/rag-adapter/index.js');
+    return rag.concepts.alignOriginals(Number(docId), {
+      dryRun: dryRun !== false,
+      ...(minScore ? { minScore: Number(minScore) } : {}),
+      log: logger,
+    });
+  });
+
+  /** GET /concepts/original-coverage?docId= — how much of the bilingual layer is actually populated. */
+  fastify.get('/concepts/original-coverage', admin, async (req) => {
+    const { CTAI_WORK_BY_DOC } = await import('../lib/rag/concepts/ctai.js');
+    const ids = req.query?.docId ? [Number(req.query.docId)] : Object.keys(CTAI_WORK_BY_DOC).map(Number);
+    const store = makeStore();
+    const docs = [];
+    for (const id of ids) docs.push({ ...(await store.getOriginalCoverage(id)), work: CTAI_WORK_BY_DOC[id] || null });
+    return { docs };
+  });
+
   fastify.post('/concepts/sync', admin, async () => {
     // BOTH kinds. Entities have no writer yet (nothing in the codebase INSERTs concept_entities), so syncing
     // only those would keep reporting 0 while 1,651 real cited interpretations sat unindexed.
@@ -432,6 +468,13 @@ export default async function groundingRoutes(fastify) {
   //      and restores canonical_name. Idempotent; dry-run by default; unresolvable rows are reported, never guessed.
   fastify.get('/entities/merge-divergence', admin, async () => mergeTombstoneDivergence());
   fastify.get('/entities/key-collisions', admin, async () => naturalKeyCollisions());
+
+  // GET /content/gutted-canonicals — the DETECTOR for a canonical work emptied of its content.
+  // 20 OceanLibrary canonicals sat with all 14,588 paragraphs soft-deleted for two months (2026-06-12 →
+  // 08-25) because the existing tripwire alarms on live-content DROPS and these were already-deleted rows
+  // sitting still. `orphaned` must be 0; `suppressed` (a duplicate_of target that genuinely holds prose) is
+  // the one benign case and is counted separately, never summed into the alarm.
+  fastify.get('/content/gutted-canonicals', admin, async () => guttedCanonicals());
   // Rows merged into EACH OTHER (A→B, B→A) — no chain terminates, so the main repair skips them.
   // Survivor is chosen by evidence (claims+mentions), ties by lowest id; the rest tombstone to it.
   fastify.post('/entities/break-merge-cycles', admin, async (request) =>

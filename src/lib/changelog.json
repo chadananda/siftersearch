@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T01:16:48.054Z",
+  "generated": "2026-08-26T02:01:44.667Z",
   "entries": [
+    {
+      "hash": "67f2d44f",
+      "date": "2026-08-25",
+      "type": "Other",
+      "description": "Canonical restore + conceptual extraction plan",
+      "scope": null
+    },
     {
       "hash": "235b1727",
       "date": "2026-08-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "R2 upload script (wrangler -> cdn-assets/siftersearch.com/biography)",
       "scope": null
-    },
-    {
-      "hash": "53d1ccb9",
-      "date": "2026-06-24",
-      "type": "Other",
-      "description": "Full-run mode for card gatherer + card-apply (fields + anchor queue)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-25": [
+      {
+        "hash": "67f2d44f",
+        "date": "2026-08-25",
+        "type": "Other",
+        "description": "Canonical restore + conceptual extraction plan",
+        "scope": null
+      },
       {
         "hash": "235b1727",
         "date": "2026-08-25",
@@ -7067,13 +7074,6 @@
         "date": "2026-06-24",
         "type": "Other",
         "description": "R2 upload script (wrangler -> cdn-assets/siftersearch.com/biography)",
-        "scope": null
-      },
-      {
-        "hash": "53d1ccb9",
-        "date": "2026-06-24",
-        "type": "Other",
-        "description": "Full-run mode for card gatherer + card-apply (fields + anchor queue)",
         "scope": null
       }
     ]

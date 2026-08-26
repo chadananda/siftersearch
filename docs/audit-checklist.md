@@ -109,6 +109,29 @@ runs is the failure mode this file exists to prevent.
   source markdown's block count.
 - **Expected:** equal, or the difference fully explained by intentional filtering.
 
+### 12. No canonical doc has been emptied of its content — **AUTO**
+
+- **Invariant:** no doc with `source_site='oceanlibrary.com'` (or the main library, `source_site IS NULL`)
+  holds zero live content — unless its `duplicate_of` target genuinely **has** live prose.
+- **Incident (2026-06-12, found 2026-08-25):** the sites-ingester's `reconcileDeletes` soft-deleted every
+  paragraph of 20 canonicals — 14,588 paragraphs, including the Epistle to the Son of the Wolf, Bahá'í
+  Administration, Paris Talks and the Secret of Divine Civilization. Source files were on disk the whole
+  time. `patience`, `prayer`, `purity` returned **nothing found**.
+- **Why it survived two months:** the June tripwire alarms on live-content **drops**. These were
+  already-deleted rows sitting still, so every later run saw a stable zero and reported health. A detector
+  that only sees transitions cannot see a steady-state defect.
+- **The subtle half:** four of the twenty were invisible to the obvious query because `duplicate_of` pointed
+  at a doc with **zero live content** — an empty shell. Their only real copy was suppressed in favour of
+  nothing. So "it has a duplicate_of" explains an empty doc **only** when that target actually holds prose.
+- **Check:** `scripts/audit-invariants.mjs` → `gutted-canonicals`, or
+  `GET /api/admin/content/gutted-canonicals`.
+- **Expected:** `orphaned: 0`. `suppressed` (target holds prose) is correct and is counted separately —
+  never sum the two, or you restore the blind spot.
+- **Repair:** clear `deleted_at` via the single writer, one bounded `UPDATE` per doc. Rows are soft-deleted,
+  so the text is still there — the June restore recovered 14,588 paragraphs without re-ingesting anything.
+- ⚠ **Never blanket-delete "duplicates".** `duplicate_of` flags are corrupted by the same bug. Restore
+  first, adjudicate second.
+
 ---
 
 ## Writer / performance

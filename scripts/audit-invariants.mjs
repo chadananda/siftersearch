@@ -65,6 +65,21 @@ const INVARIANTS = [
       };
     },
   },
+  {
+    id: 'gutted-canonicals',
+    title: 'No canonical doc has been emptied of its content',
+    incident: '2026-06-12→08-25 — 20 OceanLibrary canonicals sat with all 14,588 paragraphs soft-deleted; basic queries (patience, prayer, purity) returned nothing found',
+    run: async () => {
+      const d = await get('/api/admin/content/gutted-canonicals');
+      // `suppressed` — a duplicate_of target that genuinely holds prose — is correct and is NOT a violation.
+      // Four of the twenty were invisible precisely because their target was an EMPTY shell, so "has a
+      // duplicate_of" is only an explanation when that target actually has content. guttedCanonicals()
+      // makes that split; summing the two here would restore the blind spot this check exists to close.
+      return { ok: d.ok, detail: d.detail,
+        data: { orphaned: d.orphaned, suppressed: d.suppressed, recoverable: d.recoverable,
+          recoverableParagraphs: d.recoverableParagraphs, sample: d.sample?.slice(0, 5) } };
+    },
+  },
 ];
 
 const results = [];

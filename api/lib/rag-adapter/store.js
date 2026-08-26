@@ -568,6 +568,36 @@ export function makeStore() {
       return rows.length;
     },
 
+    // THE BILINGUAL LAYER (migration 120). Store the ORIGINAL beside a translated paragraph, and record who
+    // rendered the English — 'shoghi-effendi' marks a rendering whose word-choice authoritatively FIXES
+    // which sense of a polysemous original is operative, which downstream analysis must be able to see.
+    //
+    // synced is NOT touched: this adds a parallel-text layer, it does not change `text`, so nothing needs
+    // re-indexing and a backfill of 1,400 paragraphs must not queue a Meilisearch re-sync of all of them.
+    async saveParagraphOriginals(rows) {
+      if (!rows.length) return 0;
+      const stmts = rows.map((r) => ({
+        sql: `UPDATE content SET original_text=?, original_lang=?, translation_authority=?, align_ref=?
+               WHERE id=? AND deleted_at IS NULL`,
+        args: [r.originalText, r.originalLang, r.translationAuthority, r.alignRef, r.paraId],
+      }));
+      await db.transaction(stmts);
+      return rows.length;
+    },
+
+    // Coverage read-out for the bilingual layer. Counting the doc's paragraphs alongside the aligned ones is
+    // the difference between "the backfill ran" and "the backfill covered the book" — the distinction this
+    // pipeline keeps losing.
+    async getOriginalCoverage(docId) {
+      const [row] = await db.queryAll(
+        `SELECT COUNT(*) total,
+                SUM(original_text IS NOT NULL) aligned,
+                SUM(translation_authority='shoghi-effendi') se_rendered
+           FROM content WHERE doc_id=? AND deleted_at IS NULL AND COALESCE(blocktype,'paragraph')='paragraph'`,
+        [docId]);
+      return { docId, total: row?.total ?? 0, aligned: row?.aligned ?? 0, seRendered: row?.se_rendered ?? 0 };
+    },
+
     // A concept entity (for the interfaith link stage).
     async getConcept(id) {
       return (await db.queryAll(`SELECT id, canonical, root, tradition, summary FROM concept_entities WHERE id=?`, [id]))[0] || { id };
