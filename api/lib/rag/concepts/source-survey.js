@@ -23,6 +23,7 @@
 
 import { queryAll } from '../../db.js';
 import { CTAI_WORK_BY_DOC, CTAI_DOC_BY_WORK } from './ctai.js';
+import { englishIsOriginal } from './core-roster.js';
 
 // Authors who wrote in Arabic or Persian. An English document by one of these is BY DEFINITION a
 // translation, whoever rendered it — which is the population Chad asked to cover, not just the six works
@@ -50,7 +51,28 @@ const NO_AUTHORED_ORIGINAL = [
   /abdu.?l.?bah[áa] in london/i,
 ];
 
+/**
+ * Works with no ORIGINAL TO PAIR, for a different reason: there is no authorised English rendering, so the
+ * work is not a translation we can enrich. Chad, 2026-08-26: "The Persian Bayan… has no official
+ * translation, so skip that."
+ */
+const NO_OFFICIAL_TRANSLATION = [/persian bay[áa]n/i];
+
 export const hasNoAuthoredOriginal = (title) => NO_AUTHORED_ORIGINAL.some((re) => re.test(String(title || '')));
+export const hasNoOfficialTranslation = (title) => NO_OFFICIAL_TRANSLATION.some((re) => re.test(String(title || '')));
+
+/**
+ * Written by its author IN ENGLISH — so there is no original to find, and counting it as a gap is noise.
+ *
+ * Shoghi Effendi's own works are the bulk of this: God Passes By, Bahá'í Administration, Messages to the
+ * Bahá'í World, Unfolding Destiny, Lights of Guidance. core-roster already records the ones it lists as
+ * GUARDIAN_ORIGINAL; the author test catches his letters and compilations that the roster does not
+ * enumerate. Without this the report claimed 716 books were missing originals when many never had one.
+ */
+export function isEnglishComposed(doc) {
+  if (englishIsOriginal(doc.id)) return true;
+  return /shoghi/i.test(String(doc.author || ''));
+}
 
 /** Title key for cross-language recall: strip diacritics, articles, punctuation. RECALL ONLY. */
 export function titleKey(title) {
@@ -195,7 +217,8 @@ export async function originalsGapReport({ query = queryAll, limit = 500 } = {})
     if (pct >= 0.9) out.covered.push(entry);
     else if (d.aligned > 0) out.partial.push(entry);
     else if (entry.ctai) out.reachable.push({ ...entry, via: 'ctai' });
-    else if (hasNoAuthoredOriginal(d.title)) out.noOriginalExists.push(entry);
+    else if (hasNoAuthoredOriginal(d.title) || hasNoOfficialTranslation(d.title)
+             || isEnglishComposed(d)) out.noOriginalExists.push(entry);
     else out.unreachable.push(entry);
   }
   const sum = (a) => a.reduce((n, x) => n + x.paras, 0);

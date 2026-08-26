@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T17:14:51.782Z",
+  "generated": "2026-08-26T17:47:14.966Z",
   "entries": [
+    {
+      "hash": "00d205ae",
+      "date": "2026-08-26",
+      "type": "Other",
+      "description": "Skip books that already have their originals — decided BEFORE any fetch",
+      "scope": null
+    },
     {
       "hash": "3ef5ccab",
       "date": "2026-08-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Reusable group-membership applier (graph_relations)",
       "scope": null
-    },
-    {
-      "hash": "d8da167d",
-      "date": "2026-06-24",
-      "type": "Other",
-      "description": "Page now consumes the official /api/v1/people API (list, detail, meaning-search) — proof of concept on the public contract",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-26": [
+      {
+        "hash": "00d205ae",
+        "date": "2026-08-26",
+        "type": "Other",
+        "description": "Skip books that already have their originals — decided BEFORE any fetch",
+        "scope": null
+      },
       {
         "hash": "3ef5ccab",
         "date": "2026-08-26",
@@ -7069,13 +7076,6 @@
         "date": "2026-06-24",
         "type": "Other",
         "description": "Reusable group-membership applier (graph_relations)",
-        "scope": null
-      },
-      {
-        "hash": "d8da167d",
-        "date": "2026-06-24",
-        "type": "Other",
-        "description": "Page now consumes the official /api/v1/people API (list, detail, meaning-search) — proof of concept on the public contract",
         "scope": null
       }
     ]
