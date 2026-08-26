@@ -65,7 +65,25 @@ function normalize(s) {
     .replace(/colour/g, 'color');
 }
 
+// A 5xx is TRANSIENT, not a verdict on search quality. An API restart mid-run (a deploy landing, a worker
+// recycle) produced 226 consecutive HTTP 502s on 2026-08-26 — fixtures 283..509, the entire phrase-match
+// category — and the report still printed a headline "127/516 (25%)" as though it were a measurement.
+// Retry with backoff so a brief restart costs seconds instead of invalidating the run.
+const TRANSIENT = new Set([429, 500, 502, 503, 504]);
+const RETRIES = 4;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function runOne(fix) {
+  let last;
+  for (let attempt = 0; attempt <= RETRIES; attempt++) {
+    last = await runOnce(fix);
+    if (!last.transient) return last;
+    if (attempt < RETRIES) await sleep(2000 * (attempt + 1));   // 2s, 4s, 6s, 8s — covers a pm2 restart
+  }
+  return last;
+}
+
+async function runOnce(fix) {
   const t0 = Date.now();
   const filters = {};
   if (fix.religion_filter) filters.religion = fix.religion_filter;
@@ -83,7 +101,7 @@ async function runOne(fix) {
     if (!ct.includes('application/json')) {
       const preview = await res.text().then(t => t.slice(0, 120));
       return { id: fix.id, category: fix.category || 'uncategorized', ok: false,
-        error: `HTTP ${res.status} non-JSON`, errorType: 'http_error',
+        error: `HTTP ${res.status} non-JSON`, errorType: 'http_error', transient: TRANSIENT.has(res.status),
         latency_ms: Date.now() - t0, intent: fix.intent };
     }
     body = await res.json();
@@ -97,7 +115,7 @@ async function runOne(fix) {
   // Prefer server-reported timing (no network noise) if available
   const latency_ms = body?._timing?.total_ms ?? round_trip_ms;
   if (!res.ok) return { id: fix.id, category: fix.category || 'uncategorized', ok: false,
-    error: `HTTP ${res.status}`, errorType: 'http_error',
+    error: `HTTP ${res.status}`, errorType: 'http_error', transient: TRANSIENT.has(res.status),
     latency_ms: round_trip_ms, intent: fix.intent };
 
   const hits = body.results || body.hits || body.passages || [];
@@ -294,8 +312,40 @@ const hypeAgg = (() => {
   };
 })();
 
+// VALIDITY GATE. pass_rate divides by every fixture, so an errored fixture is counted as a FAILURE — which
+// silently turns an outage into a quality regression. On 2026-08-26 a deploy restarted the API mid-run and
+// 227 of 516 fixtures 502'd; the report said "25%" with no hint that 44% of the run never reached search,
+// and that phrase-match — 168 fixtures, the largest category — had contributed ZERO valid results.
+//
+// So the run reports what it actually measured: which categories are complete enough to read, and whether
+// the headline is trustworthy at all. A number that cannot be trusted must SAY SO, next to itself.
+const errored = results.filter((r) => r.errorType);
+const measured = results.length - errored.length;
+const errorRate = results.length ? errored.length / results.length : 0;
+const perCategoryValidity = Object.fromEntries(
+  Object.entries(categoryMap).map(([k, v]) => {
+    const errs = errored.filter((r) => (r.category || 'uncategorized') === k).length;
+    return [k, { measured: v.total - errs, total: v.total, errored: errs,
+      // Under half the category answering means its rate is a sample, not the category's rate.
+      readable: v.total > 0 && (v.total - errs) / v.total >= 0.5 }];
+  })
+);
+const valid = errorRate <= 0.02;
+if (!valid && !JSON_ONLY) {
+  console.error(`\n!! RUN NOT VALID — ${errored.length}/${results.length} fixtures errored ` +
+    `(${Math.round(errorRate * 100)}%). pass_rate counts an errored fixture as a failure, so the headline ` +
+    `understates quality. Categories with <50% measured cannot be read at all. Re-run when the API is stable ` +
+    `— and do not deploy during a battery run.\n`);
+}
+
 const report = {
   run_at: new Date().toISOString(),
+  valid,
+  measured,
+  errored: errored.length,
+  error_rate: Math.round(errorRate * 1000) / 1000,
+  category_validity: perCategoryValidity,
+  ...(valid ? {} : { warning: `${errored.length}/${results.length} fixtures errored; pass_rate counts those as failures and UNDERSTATES quality. Categories with readable:false have too few measured fixtures to interpret.` }),
   total: results.length,
   passed,
   fail: results.length - passed,
