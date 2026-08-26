@@ -12,14 +12,20 @@
 // everywhere and is right nowhere in particular — the worst property for something whose errors are
 // undetectable afterwards.
 //
-// ── WHY ANCHORS, NOT SEGMENTS ───────────────────────────────────────────────────────────────────────────
-// The model returns ONLY the first few words of each original span. Two reasons, and the second matters
-// more than the saving:
-//   1. Output is a few words per paragraph instead of the whole book re-emitted — the difference between a
-//      cheap call and an unaffordable one, on texts of 6,000+ words.
-//   2. An anchor is CHECKABLE. Every returned anchor must occur VERBATIM in the original and the offsets
-//      must strictly increase; a model that invents a plausible phrase is caught by a substring test rather
-//      than believed. Asking for the segments themselves would mean trusting a rewrite of scripture.
+// ── WHY A LINE NUMBER, NOT COPIED TEXT ──────────────────────────────────────────────────────────────────
+// Chad, 2026-08-26: "if you provide line numbers and have it return the line number and some words, that is
+// the best. Otherwise it will output slightly wrong text and you will not be able to find it."
+//
+// My first version asked only for the opening WORDS and located the cut by finding them. That fails in the
+// most damaging way available: a model copying Arabic back will drop a hamza, normalise a yá or modernise a
+// spelling, the search then finds nothing, and a CORRECT alignment is discarded by its own verification. The
+// output looks careful and quietly loses good work.
+//
+// The line number is an exact locus that survives any such drift. The words stay, but demoted to
+// CONFIRMATION of the line — so a mismatch is reported, not fatal.
+//
+// Output stays tiny either way: one short line per English paragraph rather than a 6,000-word book
+// re-emitted, which is the difference between a cheap call and an unaffordable one.
 // Deps: none (pure); the caller supplies the model call.
 
 /** Normalise Arabic/Persian for anchor lookup: strip diacritics and unify letters that vary by edition. */
@@ -51,63 +57,102 @@ export function findAnchor(text, anchor, from = 0) {
 }
 
 /**
- * The prompt. Asks for anchors ONLY — an index and the first few words of the original at that point.
+ * Break the continuous original into NUMBERED LINES for the prompt.
  *
- * Deliberately says the original is unsegmented and that its printed breaks mean nothing, because that is
- * the fact the task turns on and a model shown a pre-broken text will otherwise respect those breaks.
+ * Chad, 2026-08-26: "if you provide line numbers and have it return the line number and some words, that is
+ * the best. Otherwise it will output slightly wrong text and you will not be able to find it."
+ *
+ * That is the difference between a locator and a hope. A model asked to copy Arabic back will drop a
+ * hamza, normalise a yá, or silently modernise a spelling — and then the anchor cannot be found, so a
+ * CORRECT alignment is thrown away by the verification step. The line number pins the position exactly and
+ * survives any such drift; the words become CONFIRMATION of the line rather than the means of finding it.
+ *
+ * Lines are cut at ~`wordsPerLine` on whitespace: short enough that a line number is precise, long enough
+ * that the numbering does not swamp the text.
  */
-export function buildSegmentPrompt(englishParas, originalText, { anchorWords = 4 } = {}) {
+export function numberLines(originalText, { wordsPerLine = 12 } = {}) {
+  const words = String(originalText || '').split(/\s+/).filter(Boolean);
+  const lines = [];
+  for (let i = 0; i < words.length; i += wordsPerLine) {
+    lines.push({ n: lines.length + 1, text: words.slice(i, i + wordsPerLine).join(' '), wordStart: i });
+  }
+  return lines;
+}
+
+/** Render numbered lines for the prompt. Pure. */
+export const renderLines = (lines) => lines.map((l) => `${l.n}| ${l.text}`).join('\n');
+
+/**
+ * The prompt. Asks for a LINE NUMBER plus a few words — the number locates, the words confirm.
+ *
+ * States outright that the original is continuous and its printed breaks are an editor's, because a model
+ * shown a pre-broken text will otherwise respect those breaks, which is the error being corrected.
+ */
+export function buildSegmentPrompt(englishParas, lines, { anchorWords = 4 } = {}) {
   const numbered = englishParas.map((t, i) => `[${i + 1}] ${t}`).join('\n\n');
   return {
     system: `You align a translation to its ORIGINAL text.
 
-The original below is CONTINUOUS. Any paragraph breaks in it are an editor's, not the author's — ignore them entirely. The English paragraphing is the meaningful one.
+The original is given as NUMBERED LINES. It is CONTINUOUS prose — the line breaks are mechanical and the paragraph breaks of any printed edition are an editor's, not the author's. The English paragraphing is the meaningful one.
 
-For each numbered English paragraph, find where in the ORIGINAL that paragraph's content BEGINS, and report the first ${anchorWords} words of the original at that point — copied EXACTLY, character for character, from the original text.
+For each numbered English paragraph, find the LINE NUMBER in the original where that paragraph's content BEGINS.
+
+Output ONE line per English paragraph, tab-separated:
+<english number><TAB><original line number><TAB><first ${anchorWords} words of that line>
 
 Rules:
-• Output ONE line per English paragraph: the number, a tab, then the ${anchorWords} words. Nothing else — no translation, no explanation, no restating the passage.
-• The anchors must appear in the SAME ORDER as the original text runs.
-• If you cannot locate a paragraph with confidence, output its number, a tab, and the single word SKIP. A skipped paragraph is expected and harmless; a guessed one corrupts the alignment.
-• Never write words that are not present verbatim in the original.`,
-    user: `ORIGINAL (continuous):\n${originalText}\n\n---\nENGLISH PARAGRAPHS:\n${numbered}`,
+• Nothing else — no translation, no explanation, no restating the passage.
+• Line numbers must INCREASE down your answer, because both texts run in the same order.
+• If you cannot locate a paragraph confidently, output its number, a tab, and SKIP. A skipped paragraph is expected and harmless; a guessed one corrupts the alignment.
+• The words are only to confirm the line — the LINE NUMBER is what matters.`,
+    user: `ORIGINAL (numbered lines):\n${renderLines(lines)}\n\n---\nENGLISH PARAGRAPHS:\n${numbered}`,
   };
 }
 
-/** Parse "12\tانّ اوّل ما کتب" lines. Tolerant of stray prose around them. Pure. */
+/** Parse "12\t340\tانّ اوّل ما کتب" lines. Tolerant of stray prose around them. Pure. */
 export function parseAnchors(raw) {
   const out = [];
   for (const line of String(raw || '').split('\n')) {
-    const m = line.match(/^\s*\[?(\d{1,4})\]?\s*[\t:.\-—]\s*(.+?)\s*$/);
+    const skip = line.match(/^\s*\[?(\d{1,4})\]?\s*[\t:.\-—]\s*SKIP\s*$/i);
+    if (skip) { out.push({ index: Number(skip[1]), line: null, words: null }); continue; }
+    const m = line.match(/^\s*\[?(\d{1,4})\]?\s*[\t|:.\-—]\s*(\d{1,5})\s*[\t|:.\-—]?\s*(.*)$/);
     if (!m) continue;
-    const text = m[2].trim();
-    out.push({ index: Number(m[1]), anchor: /^SKIP$/i.test(text) ? null : text });
+    out.push({ index: Number(m[1]), line: Number(m[2]), words: (m[3] || '').trim() || null });
   }
   return out;
 }
 
 /**
- * Turn verified anchors into spans of the original.
+ * Turn line-numbered anchors into spans of the original.
  *
- * Every anchor is checked to occur VERBATIM (diacritics-insensitively) and to advance monotonically. One
- * that fails either test is dropped, and its English paragraph simply gets no original — which is the
- * outcome this whole design protects: a paragraph with no original is recordable, one bound to the wrong
- * span is not.
+ * The LINE NUMBER places the cut. The words are checked against that line only as CONFIRMATION, and a
+ * mismatch is REPORTED rather than fatal — because the words are the part the model gets slightly wrong,
+ * and discarding a correct line number over a dropped diacritic is exactly the failure this design removes.
+ * An out-of-range or backwards line number IS fatal to that paragraph: those are mis-locations.
  */
-export function spansFromAnchors(originalText, anchors, englishCount) {
+export function spansFromAnchors(originalText, anchors, englishCount, { wordsPerLine = 12 } = {}) {
+  const lines = numberLines(originalText, { wordsPerLine });
+  const words = String(originalText || '').split(/\s+/).filter(Boolean);
   const found = [];
-  let cursor = 0;
   const rejected = [];
-  for (const a of anchors.sort((x, y) => x.index - y.index)) {
-    if (!a.anchor) { rejected.push({ ...a, why: 'model skipped' }); continue; }
-    const at = findAnchor(originalText, a.anchor, cursor);
-    if (at < 0) { rejected.push({ ...a, why: 'anchor not present in the original' }); continue; }
-    found.push({ index: a.index, start: at });
-    cursor = at + 1;
+  let lastLine = 0;
+  for (const a of [...anchors].sort((x, y) => x.index - y.index)) {
+    if (a.line == null) { rejected.push({ ...a, why: 'model skipped' }); continue; }
+    if (a.line < 1 || a.line > lines.length) { rejected.push({ ...a, why: `line ${a.line} out of range (1..${lines.length})` }); continue; }
+    if (a.line < lastLine) { rejected.push({ ...a, why: `line ${a.line} runs backwards from ${lastLine}` }); continue; }
+    const line = lines[a.line - 1];
+    // Confirmation only: did the model's words actually come from that line?
+    const confirmed = !a.words || normalizeArabic(line.text).includes(normalizeArabic(a.words).slice(0, 12));
+    found.push({ index: a.index, wordStart: line.wordStart, line: a.line, confirmed });
+    lastLine = a.line;
   }
   const spans = found.map((f, i) => ({
-    index: f.index,
-    text: originalText.slice(f.start, i + 1 < found.length ? found[i + 1].start : undefined).trim(),
+    index: f.index, line: f.line, confirmed: f.confirmed,
+    text: words.slice(f.wordStart, i + 1 < found.length ? found[i + 1].wordStart : undefined).join(' ').trim(),
   })).filter((s) => s.text.length > 20);
-  return { spans, rejected, coverage: englishCount ? Number((spans.length / englishCount).toFixed(3)) : 0 };
+  return {
+    spans, rejected,
+    unconfirmed: spans.filter((s) => !s.confirmed).length,
+    coverage: englishCount ? Number((spans.length / englishCount).toFixed(3)) : 0,
+  };
 }

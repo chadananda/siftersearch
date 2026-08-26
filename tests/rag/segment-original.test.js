@@ -7,7 +7,7 @@
 // The anchors-not-segments choice is what makes the model's answer CHECKABLE: an invented phrase fails a
 // substring test, where a re-emitted segment would have to be trusted.
 import { describe, it, expect } from 'vitest';
-import { normalizeArabic, findAnchor, buildSegmentPrompt, parseAnchors, spansFromAnchors }
+import { normalizeArabic, findAnchor, numberLines, renderLines, buildSegmentPrompt, parseAnchors, spansFromAnchors }
   from '../../api/lib/rag/concepts/segment-original.js';
 
 const ORIGINAL = 'انّ اوّل ما کتب الله علی العباد عرفان مشرق وحيه و مطلع امره '
@@ -42,17 +42,31 @@ describe('findAnchor', () => {
   });
 });
 
+describe('numberLines — the locator', () => {
+  it('cuts the continuous text into numbered lines', () => {
+    const lines = numberLines(ORIGINAL, { wordsPerLine: 6 });
+    expect(lines[0]).toMatchObject({ n: 1, wordStart: 0 });
+    expect(lines[1].wordStart).toBe(6);
+    expect(renderLines(lines)).toMatch(/^1\| /);
+  });
+});
+
 describe('buildSegmentPrompt', () => {
-  const { system, user } = buildSegmentPrompt(['First paragraph.', 'Second paragraph.'], ORIGINAL);
+  const lines = numberLines(ORIGINAL, { wordsPerLine: 6 });
+  const { system, user } = buildSegmentPrompt(['First paragraph.', 'Second paragraph.'], lines);
 
   it('tells the model the original is continuous and its breaks are meaningless', () => {
-    // A model shown a pre-broken text will otherwise respect those breaks — the exact error to avoid.
     expect(system).toMatch(/CONTINUOUS/);
     expect(system).toMatch(/editor's, not the author's/);
   });
 
-  it('demands anchors only — never the passage restated', () => {
-    expect(system).toMatch(/ONE line per English paragraph/);
+  it('asks for a LINE NUMBER, and says the number is what matters', () => {
+    // The words are what a model gets slightly wrong; the number is what can be trusted.
+    expect(system).toMatch(/LINE NUMBER in the original/);
+    expect(system).toMatch(/the LINE NUMBER is what matters/);
+  });
+
+  it('demands nothing but the cut points', () => {
     expect(system).toMatch(/no translation, no explanation, no restating/);
   });
 
@@ -61,64 +75,72 @@ describe('buildSegmentPrompt', () => {
     expect(system).toMatch(/a guessed one corrupts the alignment/);
   });
 
-  it('numbers the English so the reply can be matched back', () => {
+  it('shows the original AS numbered lines and numbers the English', () => {
+    expect(user).toMatch(/1\| /);
     expect(user).toContain('[1] First paragraph.');
-    expect(user).toContain('[2] Second paragraph.');
   });
 });
 
 describe('parseAnchors', () => {
-  it('reads the tab-separated form and tolerates stray prose', () => {
-    const a = parseAnchors('Here you go:\n1\tانّ اوّل ما\n2\tيا ملأ الأرض\n\nhope that helps');
+  it('reads english-number, line-number, words', () => {
+    const a = parseAnchors('Sure:\n1\t1\tانّ اوّل ما\n2\t3\tيا ملأ الأرض');
     expect(a).toHaveLength(2);
-    expect(a[1]).toMatchObject({ index: 2 });
+    expect(a[0]).toMatchObject({ index: 1, line: 1 });
+    expect(a[1]).toMatchObject({ index: 2, line: 3 });
   });
 
-  it('records SKIP as a null anchor rather than dropping the line', () => {
-    expect(parseAnchors('3\tSKIP')[0]).toEqual({ index: 3, anchor: null });
+  it('records SKIP as a null line rather than dropping the paragraph', () => {
+    expect(parseAnchors('3\tSKIP')[0]).toMatchObject({ index: 3, line: null });
   });
 });
 
 describe('spansFromAnchors', () => {
-  it('cuts the original at the verified anchors', () => {
-    const { spans, rejected } = spansFromAnchors(ORIGINAL, [
-      { index: 1, anchor: 'انّ اوّل ما کتب' },
-      { index: 3, anchor: 'يا ملأ الأرض' },
-    ], 3);
-    expect(spans.map((s) => s.index)).toEqual([1, 3]);
+  const opts = { wordsPerLine: 6 };
+
+  it('cuts the original at the given line numbers', () => {
+    const { spans, rejected } = spansFromAnchors(ORIGINAL,
+      [{ index: 1, line: 1, words: 'انّ اوّل ما کتب' }, { index: 2, line: 4, words: null }], 2, opts);
+    expect(spans.map((s) => s.index)).toEqual([1, 2]);
     expect(spans[0].text).toMatch(/^انّ اوّل/);
     expect(rejected).toHaveLength(0);
   });
 
-  it('DROPS an anchor that is not in the original instead of placing it', () => {
-    const { spans, rejected } = spansFromAnchors(ORIGINAL, [
-      { index: 1, anchor: 'انّ اوّل ما کتب' },
-      { index: 2, anchor: 'نص مخترع تماما لا وجود له' },
-    ], 2);
+  it('KEEPS a correct line number whose words are slightly wrong — merely unconfirmed', () => {
+    // The whole point of the redesign: a dropped diacritic must not discard a correct alignment.
+    const { spans, unconfirmed } = spansFromAnchors(ORIGINAL,
+      [{ index: 1, line: 1, words: 'ان اول ما كتب' }], 1, opts);
     expect(spans).toHaveLength(1);
-    expect(rejected[0].why).toMatch(/not present/);
+    expect(unconfirmed).toBe(0);          // normalisation confirms it despite the spelling drift
   });
 
-  it('DROPS an anchor that would run backwards', () => {
-    // Order is the one structural fact we can rely on; a backwards anchor is a mis-location, not a finding.
-    const { spans, rejected } = spansFromAnchors(ORIGINAL, [
-      { index: 1, anchor: 'يا ملأ الأرض' },
-      { index: 2, anchor: 'انّ اوّل ما کتب' },
-    ], 2);
+  it('REPORTS an unconfirmed line rather than discarding it', () => {
+    const { spans, unconfirmed } = spansFromAnchors(ORIGINAL,
+      [{ index: 1, line: 1, words: 'كلمات ليست في هذا السطر' }], 1, opts);
+    expect(spans).toHaveLength(1);
+    expect(unconfirmed).toBe(1);
+  });
+
+  it('REJECTS a line number out of range — that is a mis-location, not drift', () => {
+    const { spans, rejected } = spansFromAnchors(ORIGINAL, [{ index: 1, line: 9999 }], 1, opts);
+    expect(spans).toHaveLength(0);
+    expect(rejected[0].why).toMatch(/out of range/);
+  });
+
+  it('REJECTS a line number that runs backwards', () => {
+    const { spans, rejected } = spansFromAnchors(ORIGINAL,
+      [{ index: 1, line: 4 }, { index: 2, line: 1 }], 2, opts);
     expect(spans.map((s) => s.index)).toEqual([1]);
-    expect(rejected).toHaveLength(1);
+    expect(rejected[0].why).toMatch(/backwards/);
+  });
+
+  it('treats a model SKIP as a recorded gap', () => {
+    const { rejected } = spansFromAnchors(ORIGINAL,
+      [{ index: 1, line: 1 }, { index: 2, line: null }], 2, opts);
+    expect(rejected[0].why).toMatch(/skipped/);
   });
 
   it('reports coverage, so a thin segmentation is visible as thin', () => {
-    const { coverage } = spansFromAnchors(ORIGINAL, [{ index: 1, anchor: 'انّ اوّل ما کتب' }], 4);
+    const { coverage } = spansFromAnchors(ORIGINAL, [{ index: 1, line: 1 }], 4, opts);
     expect(coverage).toBe(0.25);
-  });
-
-  it('treats a model SKIP as a recorded gap, not a failure', () => {
-    const { spans, rejected } = spansFromAnchors(ORIGINAL, [
-      { index: 1, anchor: 'انّ اوّل ما کتب' }, { index: 2, anchor: null },
-    ], 2);
-    expect(spans).toHaveLength(1);
-    expect(rejected[0].why).toMatch(/skipped/);
   });
 });
