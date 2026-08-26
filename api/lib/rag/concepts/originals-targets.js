@@ -53,10 +53,17 @@ export const ORIGINALS_TARGETS = Object.freeze({
 
 /** Works whose original is real but NOT on oceanoflights — a different source, not a dead end. */
 export const ORIGINALS_ELSEWHERE = Object.freeze({
-  20911: { work: 'Some Answered Questions', lang: 'fa',
-    url: 'https://www.bahai.org/fa/library/authoritative-texts/abdul-baha/some-answered-questions/',
-    why: 'oceanoflights publishes only the English (abdul-baha-bkw22-{ar,fa} → 404); Chad supplied the bahai.org Persian text' },
+  20911: { work: 'Some Answered Questions', lang: 'fa', source: 'bahai.org',
+    path: 'abdul-baha/some-answered-questions',
+    why: 'oceanoflights publishes only the English (abdul-baha-bkw22-{ar,fa} → 404); Chad supplied the bahai.org Persian text',
+    // MEASURED: 781 numbered Persian paragraphs, 61,261 words, against our 789 English ones. The source's
+    // paragraphing is real here, so the anchors are whole paragraphs rather than word-runs.
+    note: 'sections 4-8 carry the body; 1-3 and 9+ are front matter and yield no numbered paragraphs' },
 });
+
+/** Every doc id we are actively sourcing an original for, from either place. */
+export const ALL_ORIGINAL_TARGET_IDS = Object.freeze([
+  ...Object.keys(ORIGINALS_TARGETS), ...Object.keys(ORIGINALS_ELSEWHERE)].map(Number));
 
 export const isOriginalsTarget = (docId) => Object.hasOwn(ORIGINALS_TARGETS, Number(docId));
 export const targetFor = (docId) => ORIGINALS_TARGETS[Number(docId)] ?? null;

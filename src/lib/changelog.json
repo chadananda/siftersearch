@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T21:08:21.655Z",
+  "generated": "2026-08-26T21:26:09.553Z",
   "entries": [
+    {
+      "hash": "046a6c6a",
+      "date": "2026-08-26",
+      "type": "Other",
+      "description": "Make monotonicity a conclusion, not a ratchet — resilience to spurious matches",
+      "scope": null
+    },
     {
       "hash": "4c2c146e",
       "date": "2026-08-26",
@@ -3493,17 +3500,17 @@
       "type": "Test",
       "description": "Standing search-quality battery (student-voice questions → coverage map)",
       "scope": null
-    },
-    {
-      "hash": "eac4a924",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Sample buttons immune to teardown race (CSS-hide + microtask defer); surface AI-search errors instead of silent failure",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-26": [
+      {
+        "hash": "046a6c6a",
+        "date": "2026-08-26",
+        "type": "Other",
+        "description": "Make monotonicity a conclusion, not a ratchet — resilience to spurious matches",
+        "scope": null
+      },
       {
         "hash": "4c2c146e",
         "date": "2026-08-26",
@@ -7067,13 +7074,6 @@
         "date": "2026-06-25",
         "type": "Test",
         "description": "Standing search-quality battery (student-voice questions → coverage map)",
-        "scope": null
-      },
-      {
-        "hash": "eac4a924",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Sample buttons immune to teardown race (CSS-hide + microtask defer); surface AI-search errors instead of silent failure",
         "scope": null
       }
     ]

@@ -531,35 +531,18 @@ export default async function groundingRoutes(fastify) {
       const [lo, hi] = largestCluster(idx);
       const slice = ours.slice(lo, hi + 1);
 
-      const lines = seg.numberLines(originalText);
-      const chunks = seg.planChunks(slice.length, { parasPerChunk });
-      const anchors = [];
-      let floorLine = 1;
-      for (const ch of chunks) {
-        const win = seg.lineWindowFor({ floorLine, paraCount: ch.end - ch.start,
-          englishCount: slice.length, lineCount: lines.length });
-        const shown = lines.slice(win.from - 1, win.to);
-        const prompt = seg.buildSegmentPrompt(slice.slice(ch.start, ch.end).map((p) => p.text), shown);
-        const reply = await withAIContext(
-          // sourceLang is what authorises the spend: the model is being handed Persian, which deepseek cannot read.
+      const { spans, rejected, unconfirmed, exact, coverage, chunks, anchors } = await seg.segmentToEnglish({
+        englishTexts: slice.map((p) => p.text), originalText, parasPerChunk,
+        // sourceLang is what authorises the spend: the model is being handed Persian, which deepseek cannot read.
+        callModel: (prompt) => withAIContext(
           { docId: resolved, stage: 'concept-segment-original', sourceLang: orig.lang, caller: 'segment-ool-work' },
-          () => chatCompletion([{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }],
-            { provider: 'anthropic', model, temperature: 0, maxTokens: 8000 }),
-        );
-        const text = reply?.content ?? reply?.text ?? '';
-        for (const a of seg.parseAnchors(text)) {
-          // English numbers ARE chunk-local ([1] restarts each chunk) and become book-absolute here. LINE
-          // numbers are NOT: renderLines emits each line's own `n`, so a window starting at line 1297 shows
-          // "1297|" and the model answers in absolute numbers already. Shifting them too put chunk 2 of the
-          // Secret of Divine Civilization at lines 2488-2501 of an 1833-line book — every anchor past the
-          // first chunk rejected as out of range, which is the good outcome of a bad bug.
-          anchors.push({ ...a, index: a.index + ch.start });
-        }
-        const last = anchors.filter((a) => a.line != null).at(-1);
-        if (last) floorLine = last.line;
-      }
-
-      const { spans, rejected, unconfirmed, exact, coverage } = seg.spansFromAnchors(originalText, anchors, slice.length);
+          async () => {
+            const reply = await chatCompletion(
+              [{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }],
+              { provider: 'anthropic', model, temperature: 0, maxTokens: 8000 });
+            return reply?.content ?? reply?.text ?? '';
+          }),
+      });
       // READABLE PAIRS, on the dry run. A coverage number cannot tell a correct alignment from a confidently
       // wrong one — only reading the two texts side by side can, and that is the whole check this stage has.
       // Evenly spaced across the work, plus every UNCONFIRMED span, since those are where the model's own
@@ -586,9 +569,9 @@ export default async function groundingRoutes(fastify) {
             model, line: sp.line, confirmed: sp.confirmed, exact: sp.exact, alignedAt: new Date().toISOString() }) });
       }
       perStem.push({ stem, originalLang: orig.lang, originalWords: originalText.split(/\s+/).length,
-        lines: lines.length, chunks: chunks.length, ourParagraphsInWork: slice.length,
+        chunks, ourParagraphsInWork: slice.length,
         boundRange: [lo, hi], matchedOutsideCluster: idx.filter((i) => i < lo || i > hi).length,
-        anchors: anchors.length, spans: spans.length,
+        anchors, spans: spans.length,
         unconfirmed, exact, rejected: rejected.length, coverage,
         rejectedSamples: rejected.slice(0, 4).map((r) => ({ index: r.index, why: r.why })),
         ...(pairs.length ? { pairs } : {}) });
@@ -597,6 +580,90 @@ export default async function groundingRoutes(fastify) {
     const out = { docId: resolved, work: target?.work ?? null, dryRun, model,
       ourParagraphs: ours.length, candidates: rows.length, perStem, written: 0,
       samples: rows.slice(0, 3).map((r) => ({ paraId: r.paraId, lang: r.originalLang, original: r.originalText.slice(0, 80) })) };
+    if (dryRun || !rows.length) return out;
+    out.written = await store.saveParagraphOriginals(rows);
+    return out;
+  });
+
+  /**
+   * POST /concepts/segment-bahai-org {docId, path, lang='fa', dryRun=true}
+   *
+   * The same segmentation, against bahai.org's library. Chad, 2026-08-26, supplying the source: "Here is Some
+   * Answered Questions: https://www.bahai.org/fa/library/authoritative-texts/abdul-baha/some-answered-questions/5"
+   *
+   * TWO THINGS DIFFER from the oceanoflights path, and both make this the easier case:
+   *   • The source's paragraphing is REAL — 781 numbered Persian paragraphs against our 789 English ones —
+   *     so the anchors are whole paragraphs and no span can carry a lead-in from the passage before it.
+   *   • There is no parallel English to bound our paragraphs with, so all of them are offered and the front
+   *     matter is expected to come back SKIP. That is what SKIP is for.
+   */
+  fastify.post('/concepts/segment-bahai-org', admin, async (req) => {
+    const { docId, path, lang = 'fa', dryRun = true, force = false, parasPerChunk = 150, sections = 12 } = req.body || {};
+    if (!docId || !path) throw ApiError.badRequest('docId and path required (e.g. "abdul-baha/some-answered-questions")');
+    const { fetchWorkParagraphs } = await import('../lib/rag/concepts/bahai-org.js');
+    const { detectSourceLang } = await import('../lib/rag/concepts/align.js');
+    const seg = await import('../lib/rag/concepts/segment-original.js');
+    const { withAIContext } = await import('../lib/ai-context.js');
+    const { chatCompletion } = await import('../lib/ai.js');
+    const { BILINGUAL_MODEL } = await import('../lib/pipeline/profile.js');
+    const store = makeStore();
+
+    const resolved = await store.resolveCanonicalDoc(Number(docId));
+    const cov = await store.getOriginalCoverage(resolved);
+    if (!force && cov.total && cov.aligned / cov.total >= 0.9) {
+      return { docId: resolved, path, skipped: 'already covered', ...cov, written: 0 };
+    }
+
+    const { paragraphs, perSection } = await fetchWorkParagraphs(path, { lang, sections, log: logger });
+    if (!paragraphs.length) throw ApiError.badRequest(`bahai.org served no numbered paragraphs for '${path}' (${lang})`);
+
+    const ours = (await store.getParagraphs(resolved)).map((p) => ({ key: p.id, text: p.text }));
+    const originalParas = paragraphs.map((p) => p.text);
+    const originalText = originalParas.join(' ');
+    const lines = seg.linesFromParagraphs(originalParas);
+
+    const result = await seg.segmentToEnglish({
+      englishTexts: ours.map((p) => p.text), originalText, lines, parasPerChunk,
+      callModel: (prompt) => withAIContext(
+        { docId: resolved, stage: 'concept-segment-original', sourceLang: lang, caller: 'segment-bahai-org' },
+        async () => {
+          const reply = await chatCompletion(
+            [{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }],
+            { provider: 'anthropic', model: BILINGUAL_MODEL, temperature: 0, maxTokens: 8000 });
+          return reply?.content ?? reply?.text ?? '';
+        }),
+    });
+
+    const rows = [];
+    for (const sp of result.spans) {
+      const para = ours[sp.index - 1];
+      if (!para) continue;
+      const srcLang = detectSourceLang(sp.text);
+      if (!srcLang) continue;
+      rows.push({ paraId: para.key, originalText: sp.text, originalLang: srcLang,
+        translationAuthority: 'committee', wordAlignment: null,
+        alignRef: JSON.stringify({ source: 'bahai.org', path, basis: 'ai-segmentation-paragraph',
+          model: BILINGUAL_MODEL, sourceParagraph: sp.line, confirmed: sp.confirmed,
+          alignedAt: new Date().toISOString() }) });
+    }
+
+    const pairs = [];
+    if (dryRun) {
+      const want = Math.min(Number(req.body?.preview) || 10, result.spans.length);
+      const step = want ? Math.max(1, Math.floor(result.spans.length / want)) : 1;
+      for (const sp of result.spans.filter((_, i) => i % step === 0).slice(0, want)) {
+        pairs.push({ index: sp.index, sourceParagraph: sp.line, confirmed: sp.confirmed,
+          en: String(ours[sp.index - 1]?.text || '').slice(0, 220), original: sp.text.slice(0, 220) });
+      }
+    }
+
+    const out = { docId: resolved, path, lang, dryRun, model: BILINGUAL_MODEL,
+      ourParagraphs: ours.length, sourceParagraphs: paragraphs.length, perSection,
+      chunks: result.chunks, anchors: result.anchors, spans: result.spans.length,
+      unconfirmed: result.unconfirmed, exact: result.exact, rejected: result.rejected.length,
+      coverage: result.coverage, candidates: rows.length, written: 0,
+      rejectedSamples: result.rejected.slice(0, 5).map((r) => ({ index: r.index, why: r.why })),
+      ...(pairs.length ? { pairs } : {}) };
     if (dryRun || !rows.length) return out;
     out.written = await store.saveParagraphOriginals(rows);
     return out;

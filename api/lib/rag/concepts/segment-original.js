@@ -83,6 +83,24 @@ export function numberLines(originalText, { wordsPerLine = 12 } = {}) {
 export const renderLines = (lines) => lines.map((l) => `${l.n}| ${l.text}`).join('\n');
 
 /**
+ * Numbered units built from the source's OWN paragraphs instead of arbitrary word-runs.
+ *
+ * Reach for this when the source's paragraphing is real rather than an artefact. bahai.org prints the
+ * Persian Some Answered Questions in 781 numbered paragraphs against our 789 English ones — that is the
+ * author's own division, not an editor's, and cutting it into 12-word lines would throw away a better
+ * anchor than any we could construct. The unit becomes a whole paragraph, so a cut cannot land mid-sentence
+ * and no span carries a lead-in.
+ */
+export function linesFromParagraphs(paras) {
+  let at = 0;
+  return paras.map((text, i) => {
+    const line = { n: i + 1, text: String(text), wordStart: at };
+    at += String(text).split(/\s+/).filter(Boolean).length;
+    return line;
+  });
+}
+
+/**
  * The prompt. Asks for a LINE NUMBER plus a few words — the number locates, the words confirm.
  *
  * States outright that the original is continuous and its printed breaks are an editor's, because a model
@@ -192,8 +210,10 @@ export function longestIncreasingRun(values) {
  * and discarding a correct line number over a dropped diacritic is exactly the failure this design removes.
  * An out-of-range or backwards line number IS fatal to that paragraph: those are mis-locations.
  */
-export function spansFromAnchors(originalText, anchors, englishCount, { wordsPerLine = 12 } = {}) {
-  const lines = numberLines(originalText, { wordsPerLine });
+export function spansFromAnchors(originalText, anchors, englishCount, { wordsPerLine = 12, lines: given } = {}) {
+  // `lines` may be supplied by the caller (linesFromParagraphs) when the source's own paragraphing is the
+  // better unit. Re-deriving them here would silently disagree with what the model was actually shown.
+  const lines = given ?? numberLines(originalText, { wordsPerLine });
   const words = String(originalText || '').split(/\s+/).filter(Boolean);
   const found = [];
   const rejected = [];
@@ -272,4 +292,34 @@ export function lineWindowFor({ floorLine = 1, paraCount, englishCount, lineCoun
   const from = Math.max(1, floorLine - lookback);
   const to = Math.min(lineCount, Math.ceil(from + paraCount * linesPerPara * slack));
   return { from, to };
+}
+
+/**
+ * The whole segmentation, once, so the two sources (oceanoflights pages, bahai.org library) cannot drift
+ * apart in how they chunk, offset, or verify. The caller supplies only the model call.
+ *
+ * `lines` is optional: pass linesFromParagraphs(...) where the source's own paragraphing is real, and leave
+ * it out to cut a continuous stream into word-runs.
+ *
+ * THE OFFSET RULE, in one place because it has already been got wrong once: English numbers are CHUNK-LOCAL
+ * ([1] restarts every chunk) and are made absolute here; LINE numbers are not, because renderLines prints
+ * each line's own `n`, so the model answers in absolute numbers from the start.
+ */
+export async function segmentToEnglish({ englishTexts, originalText, lines: given, callModel,
+  parasPerChunk = 150, wordsPerLine = 12, anchorWords = 4 } = {}) {
+  const lines = given ?? numberLines(originalText, { wordsPerLine });
+  const chunks = planChunks(englishTexts.length, { parasPerChunk });
+  const anchors = [];
+  let floorLine = 1;
+  for (const ch of chunks) {
+    const win = lineWindowFor({ floorLine, paraCount: ch.end - ch.start,
+      englishCount: englishTexts.length, lineCount: lines.length });
+    const shown = lines.slice(win.from - 1, win.to);
+    const reply = await callModel(buildSegmentPrompt(englishTexts.slice(ch.start, ch.end), shown, { anchorWords }));
+    for (const a of parseAnchors(reply)) anchors.push({ ...a, index: a.index + ch.start });
+    const last = anchors.filter((a) => a.line != null).at(-1);
+    if (last) floorLine = last.line;
+  }
+  return { ...spansFromAnchors(originalText, anchors, englishTexts.length, { wordsPerLine, lines }),
+    chunks: chunks.length, anchors: anchors.length, lineCount: lines.length };
 }

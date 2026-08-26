@@ -8,7 +8,7 @@
 // substring test, where a re-emitted segment would have to be trusted.
 import { describe, it, expect } from 'vitest';
 import { normalizeArabic, findAnchor, numberLines, renderLines, buildSegmentPrompt, parseAnchors, spansFromAnchors,
-  planChunks, lineWindowFor, refineWordStart, longestIncreasingRun }
+  planChunks, lineWindowFor, refineWordStart, longestIncreasingRun, linesFromParagraphs }
   from '../../api/lib/rag/concepts/segment-original.js';
 
 const ORIGINAL = 'انّ اوّل ما کتب الله علی العباد عرفان مشرق وحيه و مطلع امره '
@@ -232,5 +232,29 @@ describe('planChunks / lineWindowFor — fitting a long book, without letting le
 
   it('never runs past the end of the original', () => {
     expect(lineWindowFor({ floorLine: 490, paraCount: 150, englishCount: 121, lineCount: 517 }).to).toBe(517);
+  });
+});
+
+describe('linesFromParagraphs — when the source’s own paragraphing is real', () => {
+  const paras = ['اول ما کتب الله علی العباد', 'يا ملأ الأرض اعلموا انّ اوامری', 'انّ الّذين اوتوا بصآئر'];
+
+  it('numbers whole paragraphs and tracks where each begins', () => {
+    const lines = linesFromParagraphs(paras);
+    expect(lines.map((l) => l.n)).toEqual([1, 2, 3]);
+    expect(lines[1].wordStart).toBe(6);
+    expect(lines[2].wordStart).toBe(12);
+  });
+
+  it('cuts on paragraph boundaries, so no span carries a lead-in', () => {
+    const lines = linesFromParagraphs(paras);
+    const { spans } = spansFromAnchors(paras.join(' '), [{ index: 1, line: 2 }], 1, { lines });
+    expect(spans[0].text).toBe('يا ملأ الأرض اعلموا انّ اوامری انّ الّذين اوتوا بصآئر');
+  });
+
+  it('uses the caller’s units rather than re-deriving different ones', () => {
+    // Re-deriving would silently disagree with what the model was actually shown.
+    const lines = linesFromParagraphs(paras);
+    const { rejected } = spansFromAnchors(paras.join(' '), [{ index: 1, line: 4 }], 1, { lines });
+    expect(rejected[0].why).toMatch(/out of range \(1\.\.3\)/);
   });
 });

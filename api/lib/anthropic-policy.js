@@ -17,7 +17,7 @@
 // new Persian book, pin it lang:'fa' in PROFILE_OVERRIDES and it becomes eligible automatically.
 import { PROFILE_OVERRIDES } from './pipeline/profile.js';
 import { CORE_ROSTER } from './rag/concepts/core-roster.js';
-import { ORIGINALS_TARGETS } from './rag/concepts/originals-targets.js';
+import { ALL_ORIGINAL_TARGET_IDS } from './rag/concepts/originals-targets.js';
 
 /** The curated core books — the ONE list, never a second copy that can drift from it. */
 const CORE_ROSTER_IDS = new Set(CORE_ROSTER.map((r) => r.docId));
@@ -76,7 +76,7 @@ export function isConceptCoreAllowed({ docId, stage, originalLang } = {}) {
 // The doc-set is the curated roster PLUS the explicit target list, and nothing else: an id must have been
 // written down by hand in one of two reviewed files before a paid model can see it.
 const SEGMENT_STAGES = new Set(['concept-segment-original']);
-const ORIGINALS_TARGET_IDS = new Set(Object.keys(ORIGINALS_TARGETS).map(Number));
+const ORIGINALS_TARGET_IDS = new Set(ALL_ORIGINAL_TARGET_IDS);
 
 /** True when this is original-segmentation on a named book, over Arabic/Persian source text. */
 export function isOriginalSegmentAllowed({ docId, stage, sourceLang } = {}) {
