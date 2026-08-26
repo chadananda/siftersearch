@@ -327,23 +327,34 @@ export default async function groundingRoutes(fastify) {
    * which is where the original carries the most weight because the English fixes no sense.
    */
   fastify.post('/concepts/align-oceanoflights', admin, async (req) => {
-    const { docId, stemPrefix, dryRun = true, limit } = req.body || {};
+    const { docId, stemPrefix, stems: explicitStems, dryRun = true, limit } = req.body || {};
     if (!docId) throw ApiError.badRequest('docId required');
-    if (!stemPrefix) throw ApiError.badRequest('stemPrefix required (e.g. abdul-baha-selections-writings)');
+    if (!stemPrefix && !explicitStems?.length) {
+      throw ApiError.badRequest('stemPrefix or stems[] required');
+    }
     const { originalsForDoc } = await import('../lib/rag/concepts/oceanoflights.js');
     const { rag } = await import('../lib/rag-adapter/index.js');
     const store = makeStore();
 
     // Stems come from the SCRAPED pages we already hold — those pages are navigation chrome, but their
     // filenames are the parallel-corpus index. The text itself is fetched from the linked file.
-    const rows = await queryAll(
-      `SELECT DISTINCT file_path FROM docs
-        WHERE source_site='oceanoflights.org' AND deleted_at IS NULL AND file_path LIKE ?
-        ORDER BY file_path`, [`%${stemPrefix}%`], 'ool:stems');
-    const { stemOf } = await import('../lib/rag/concepts/oceanoflights.js');
-    let stems = [...new Set(rows.map((r) => stemOf(r.file_path)).filter(Boolean))].sort();
+    // EXPLICIT STEMS take priority. The site's WHOLE-BOOK files (bahaullah-st-015 = the Kitáb-i-Aqdas) are
+    // NOT in our scraped corpus — we only ever scraped its topical excerpt pages — so mining file_path can
+    // never find them. Their ids come from the site's own best-known-works tables, captured in
+    // data/oceanoflights-works.json (Chad, 2026-08-26: "all books have their titles at the top of the book").
+    let stems;
+    if (explicitStems?.length) {
+      stems = [...new Set(explicitStems.map((x) => String(x).trim()).filter(Boolean))];
+    } else {
+      const rows = await queryAll(
+        `SELECT DISTINCT file_path FROM docs
+          WHERE source_site='oceanoflights.org' AND deleted_at IS NULL AND file_path LIKE ?
+          ORDER BY file_path`, [`%${stemPrefix}%`], 'ool:stems');
+      const { stemOf } = await import('../lib/rag/concepts/oceanoflights.js');
+      stems = [...new Set(rows.map((r) => stemOf(r.file_path)).filter(Boolean))].sort();
+    }
     if (limit) stems = stems.slice(0, Number(limit));
-    if (!stems.length) throw ApiError.badRequest(`no oceanoflights stems match '${stemPrefix}'`);
+    if (!stems.length) throw ApiError.badRequest(`no oceanoflights stems for '${stemPrefix || 'the given list'}'`);
 
     const resolved = await store.resolveCanonicalDoc(Number(docId));
     const paras = await store.getParagraphs(resolved);
@@ -351,7 +362,7 @@ export default async function groundingRoutes(fastify) {
     const { matches, stats } = await originalsForDoc(ours, stems, { log: logger });
 
     const out = { docId: resolved, ...(resolved !== Number(docId) ? { resolvedFrom: Number(docId) } : {}),
-      stemPrefix, dryRun, ...stats, written: 0,
+      stemPrefix: stemPrefix || null, stemCount: stems.length, dryRun, ...stats, written: 0,
       samples: matches.slice(0, 3).map((m) => ({ score: m.score, lang: m.originalLang, stem: m.stem })) };
     if (dryRun || !matches.length) return out;
 
