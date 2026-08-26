@@ -22,7 +22,14 @@ export async function run(ctx, docId, opts = {}) {
   // the original fixes WHICH TERM (English collapses Ṣalát/Duʿá/Dhikr into "prayer", ʿadl/inṣáf into
   // "justice"), and an authorised rendering fixes WHICH SENSE. Per paragraph, not per book — a book's
   // alignment is never complete, and a paragraph without one must degrade honestly rather than be skipped.
-  const bilingualSystem = buildBilingualSystem(profile, await ctx.store.getDocMeta(docId));
+  // Built PER AUTHORITY, not once: whose rendering the English is decides which text governs, so a doc whose
+  // paragraphs carry different authorities must not share one prompt.
+  const docMeta = await ctx.store.getDocMeta(docId);
+  const systemFor = new Map();
+  const bilingualSystemFor = (authority) => {
+    if (!systemFor.has(authority)) systemFor.set(authority, buildBilingualSystem(profile, docMeta, { translationAuthority: authority }));
+    return systemFor.get(authority);
+  };
   const route = { model: opts.model ?? profile.models.extract, fallback: opts.fallback ?? profile.fallback };
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
   const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, bilingual: 0 };
@@ -33,7 +40,7 @@ export async function run(ctx, docId, opts = {}) {
     const hasOriginal = Boolean(p.original);
     const { parsed, escalated } = await ctx.model.runLadder({
       route,
-      system: hasOriginal ? bilingualSystem : system,
+      system: hasOriginal ? bilingualSystemFor(p.translationAuthority ?? null) : system,
       user: hasOriginal
         ? buildBilingualUser(p, { source: p.original, translation: p.text })
         : buildUser(p),

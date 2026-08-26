@@ -18,7 +18,9 @@ const profile = { genre: 'doctrinal', lang: 'en' };
 const meta = { title: 'Gleanings', author: "Bahá'u'lláh" };
 
 describe('the system prompt states the doctrine, not just the task', () => {
-  const sys = buildBilingualSystem(profile, meta);
+  // The doctrine block below is about HIS rendering, so the fixture must say so: with no authority given,
+  // the prompt correctly falls back to the cautious reading in which the original governs.
+  const sys = buildBilingualSystem(profile, meta, { translationAuthority: 'shoghi-effendi' });
 
   it('names Shoghi Effendi\'s rendering as AUTHORITATIVE interpretation, not approximation', () => {
     expect(sys).toMatch(/authoritative/i);
@@ -91,5 +93,34 @@ describe('the user message carries BOTH texts, aligned', () => {
     const u = buildBilingualUser(p, null);
     expect(u).toMatch(/no aligned original|unavailable/i);
     expect(u).not.toContain(aligned.source);
+  });
+});
+
+describe('the weight of the English depends on WHO rendered it', () => {
+  // Chad, 2026-08-25: "Shoghi Effendi originals are important for comparison but the english carries weight
+  // as well. Non-Shoghi-Effendi translations have no doctrinal weight in the translation, so the original is
+  // MORE load-bearing." The two cases INVERT which text governs — this is not one prompt with a footnote.
+  const se = buildBilingualSystem({}, { title: 'The Hidden Words' }, { translationAuthority: 'shoghi-effendi' });
+  const committee = buildBilingualSystem({}, { title: 'The Kitáb-i-Aqdas' }, { translationAuthority: 'committee' });
+
+  it('gives his rendering equal standing with the original', () => {
+    expect(se).toMatch(/neither outranks the other/i);
+    expect(se).toMatch(/WHICH SENSE/);
+  });
+
+  it('makes the ORIGINAL govern for a rendering that is not his', () => {
+    expect(committee).toMatch(/THE ORIGINAL GOVERNS HERE/);
+    expect(committee).toMatch(/THE ORIGINAL DECIDES/);
+  });
+
+  it('never grants sense-fixing authority to a translator who lacks it', () => {
+    // Telling the model a committee rendering "fixes which sense is operative" would grant an interpretive
+    // power that belongs only to the authorised interpreter — and bake it into every concept from that book.
+    expect(committee).not.toMatch(/authoritative interpretation/i);
+    expect(committee).toMatch(/only the authorised interpreter has/i);
+  });
+
+  it('defaults to the cautious reading when authority is unknown', () => {
+    expect(buildBilingualSystem({}, {})).toMatch(/THE ORIGINAL GOVERNS HERE/);
   });
 });

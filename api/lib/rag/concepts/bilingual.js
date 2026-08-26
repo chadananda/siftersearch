@@ -27,16 +27,26 @@
 export const ROOT_REQUIRED_NOTE =
   'Quote the concept\'s ORIGINAL TERM verbatim from the original text above. Concept identity is the original term, never the English gloss. If the term is not present in the text shown, omit it rather than supplying one from memory.';
 
-export function buildBilingualSystem(profile = {}, meta = {}) {
+export function buildBilingualSystem(profile = {}, meta = {}, { translationAuthority = null } = {}) {
   const book = [meta.title, meta.author].filter(Boolean).join(' — ');
+  // THE WEIGHT OF THE ENGLISH DEPENDS ON WHO RENDERED IT (Chad, 2026-08-25): "Shoghi Effendi originals are
+  // important for comparison but the english carries weight as well. Non-Shoghi-Effendi translations have no
+  // doctrinal weight in the translation, so the original is MORE load-bearing."
+  //
+  // So this is not one prompt with a footnote — the two cases invert which text governs. Telling the model
+  // that a committee's or a provisional rendering "fixes which sense is operative" would grant a translator
+  // an interpretive authority they do not have, and bake it into every concept extracted from that book.
+  const authoritative = translationAuthority === 'shoghi-effendi';
   return `You extract DOCTRINAL CONCEPTS from a passage of ${book || 'a sacred text'}, reading the ORIGINAL and Shoghi Effendi's authorised English rendering TOGETHER.
 
-TWO SOURCES, TWO DIFFERENT AUTHORITIES. You need both; neither outranks the other, because they answer different questions.
+${authoritative
+  ? `TWO SOURCES, TWO DIFFERENT AUTHORITIES. You need both; neither outranks the other, because they answer different questions.`
+  : `THE ORIGINAL GOVERNS HERE. This English is NOT Shoghi Effendi's rendering, so it carries no interpretive authority of its own — it is a careful reading by a translator, useful for orientation and nothing more. Where the English and the original diverge, or where the English is vaguer or more specific than the original, THE ORIGINAL DECIDES. Never treat this translator's word-choice as fixing which sense of a term is meant; that is a power only the authorised interpreter has.`}
 
 1. THE ORIGINAL tells you WHICH TERM — the concept's identity.
    English is broader than the original and silently merges distinct concepts. "Prayer" renders Ṣalát (ص-ل-و, obligatory prayer), Duʿá (د-ع-و, supplication) and Dhikr (ذ-ك-ر, remembrance) — three different roots, three different concepts, with different laws attached. "Justice" renders both ʿadl (ع-د-ل, rectitude) and insáf (ن-ص-ف, equity). Treating these as one concept because English uses one word is a doctrinal error created by translation. ALWAYS key the concept to its root.
 
-2. SHOGHI EFFENDI'S RENDERING tells you WHICH SENSE — the authoritative interpretation.
+2. ${authoritative ? "SHOGHI EFFENDI'S RENDERING tells you WHICH SENSE — the authoritative interpretation." : 'THE TRANSLATION is a guide to meaning, not a determination of it.'}
    His English is not an approximation of the original and is NEVER something to correct, improve, or read past. As the authorised interpreter his word-choice FIXES which sense of a polysemous term is operative in this passage. When he renders غمام as "clouds of Heaven-sent trials", he is telling you which of that term's senses is meant here. Treat his rendering as interpretive evidence of equal standing to the original, not as a lossy copy of it.
 
 WHAT TO EXTRACT

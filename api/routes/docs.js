@@ -14,6 +14,7 @@ import { requireInternal } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
 import * as repo from '../lib/docs-repo.js';
 import { originalTermForParagraph, originalTermForQuote } from '../lib/original-term.js';
+import { mergeLeadIns } from '../lib/lead-in-merge.js';
 
 export default async function docsRoutes(fastify) {
   const admin = { preHandler: requireInternal };
@@ -100,5 +101,20 @@ export default async function docsRoutes(fastify) {
     if (!term) throw ApiError.badRequest('term required');
     if (!quote && !paraId) throw ApiError.badRequest('quote or paraId required');
     return paraId ? originalTermForParagraph(paraId, term) : originalTermForQuote(quote, term);
+  });
+
+  /**
+   * POST /docs/:id/merge-lead-ins {dryRun} — rejoin a vocative opening to the passage it opens.
+   *
+   * The Hidden Words are stored as 314 paragraphs for ~157 verses because the source markdown puts a blank
+   * line after "O SON OF SPIRIT!". They are one utterance; the split is a formatting artifact that leaves
+   * the opening row unalignable, pollutes search with 16-character hits, and halves every coverage figure.
+   *
+   * dryRun DEFAULTS TRUE — this rewrites scripture. The opening is retired with a SOFT delete and its text
+   * is preserved at the head of the merged row, so the edit is reversible and loses nothing.
+   */
+  fastify.post('/docs/:id/merge-lead-ins', admin, async (req) => {
+    const { dryRun = true } = req.body || {};
+    return mergeLeadIns(req.params.id, { dryRun: dryRun !== false });
   });
 }

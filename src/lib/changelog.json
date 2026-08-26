@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T03:36:48.153Z",
+  "generated": "2026-08-26T03:43:59.632Z",
   "entries": [
+    {
+      "hash": "13d8d6bf",
+      "date": "2026-08-25",
+      "type": "Other",
+      "description": "Measure every pair count, and make a truncated fetch impossible to mistake for a full one",
+      "scope": null
+    },
     {
       "hash": "980b2548",
       "date": "2026-08-25",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Drop invalid source_authority_tier from relation insert",
       "scope": null
-    },
-    {
-      "hash": "5c6c3ed8",
-      "date": "2026-06-24",
-      "type": "Other",
-      "description": "Model 18 Letters of the Living (group relations + station floor) + group-membership search resolution",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-25": [
+      {
+        "hash": "13d8d6bf",
+        "date": "2026-08-25",
+        "type": "Other",
+        "description": "Measure every pair count, and make a truncated fetch impossible to mistake for a full one",
+        "scope": null
+      },
       {
         "hash": "980b2548",
         "date": "2026-08-25",
@@ -7067,13 +7074,6 @@
         "date": "2026-06-24",
         "type": "Fixed",
         "description": "Drop invalid source_authority_tier from relation insert",
-        "scope": null
-      },
-      {
-        "hash": "5c6c3ed8",
-        "date": "2026-06-24",
-        "type": "Other",
-        "description": "Model 18 Letters of the Living (group relations + station floor) + group-membership search resolution",
         "scope": null
       }
     ]
