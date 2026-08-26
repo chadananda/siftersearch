@@ -89,7 +89,7 @@ export async function chatCompletion(messages, options = {}) {
   // lang/docId ride the ambient ai-context opened by the grounding driver; a call with no such context → refused.
   if (provider === 'anthropic') {
     const g = currentAIContext() || {};
-    assertAnthropicAllowed({ provider, model, lang: g.lang, docId: g.docId, caller: g.caller || options.caller, stage: g.stage });
+    assertAnthropicAllowed({ provider, model, lang: g.lang, docId: g.docId, caller: g.caller || options.caller, stage: g.stage, originalLang: g.originalLang });
   }
 
   const dispatch = () => {

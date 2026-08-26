@@ -54,13 +54,19 @@ export async function run(ctx, docId, opts = {}) {
   // Write INCREMENTALLY per paragraph so a long run is resilient (a crash keeps prior work) and observable.
   await pool(opts.concurrency ?? 5, paras, async (p) => {
     const hasOriginal = Boolean(p.original);
-    const { parsed, escalated } = await ctx.model.runLadder({
+    // Declare the ORIGINAL's language for this paragraph, so the spend policy can see the actual capability
+    // case: deepseek cannot read Persian at all. Without this the gate has only the DOC's language (English)
+    // and refuses the very call the exception exists to permit.
+    const { withAIContext } = await import('../../ai-context.js');
+    const { parsed, escalated } = await withAIContext(
+      { stage: 'concept-extract', docId, originalLang: hasOriginal ? (p.originalLang ?? null) : null },
+      () => ctx.model.runLadder({
       route,
       system: hasOriginal ? bilingualSystemFor(p.translationAuthority ?? null) : system,
       user: hasOriginal
         ? buildBilingualUser(p, { source: p.original, translation: p.text })
         : buildUser(p),
-      parse: parseConceptClaims, maxTokens });
+      parse: parseConceptClaims, maxTokens }));
     if (hasOriginal) stats.bilingual++;
     if (escalated) stats.escalated++;
     if (!parsed || !parsed.length) { stats.failed++; return; }

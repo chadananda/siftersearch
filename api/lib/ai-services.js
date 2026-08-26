@@ -594,7 +594,7 @@ async function chatAnthropic(messages, opts) {
   // Fail-closed backstop: even though the service configs route quality/creative to DeepSeek, refuse any Anthropic
   // call that isn't the approved grounding-Persian-plan use (mirrors the ai.js chatCompletion gate).
   const g = currentAIContext() || {};
-  assertAnthropicAllowed({ provider: 'anthropic', model: opts.model, lang: g.lang, docId: g.docId, caller: g.caller || opts.caller, stage: g.stage });
+  assertAnthropicAllowed({ provider: 'anthropic', model: opts.model, lang: g.lang, docId: g.docId, caller: g.caller || opts.caller, stage: g.stage, originalLang: g.originalLang });
   const client = getClient('anthropic');
 
   // Convert to Anthropic format

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T15:22:34.285Z",
+  "generated": "2026-08-26T15:32:28.945Z",
   "entries": [
+    {
+      "hash": "9a5ce9cf",
+      "date": "2026-08-26",
+      "type": "Other",
+      "description": "Pool the fetches — I re-introduced the timeout I had already fixed once",
+      "scope": null
+    },
     {
       "hash": "9ab04c38",
       "date": "2026-08-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "AI search returns reasoning — one-sentence answer banner + per-person evidence chips on result cards",
       "scope": null
-    },
-    {
-      "hash": "1333dea7",
-      "date": "2026-06-24",
-      "type": "Other",
-      "description": "Transliteration-tolerant token filter (strip apostrophes → Ni'matu'lláh/Nimatu'lláh/Ni'matu'lláhi all match)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-26": [
+      {
+        "hash": "9a5ce9cf",
+        "date": "2026-08-26",
+        "type": "Other",
+        "description": "Pool the fetches — I re-introduced the timeout I had already fixed once",
+        "scope": null
+      },
       {
         "hash": "9ab04c38",
         "date": "2026-08-26",
@@ -7069,13 +7076,6 @@
         "date": "2026-06-24",
         "type": "Other",
         "description": "AI search returns reasoning — one-sentence answer banner + per-person evidence chips on result cards",
-        "scope": null
-      },
-      {
-        "hash": "1333dea7",
-        "date": "2026-06-24",
-        "type": "Other",
-        "description": "Transliteration-tolerant token filter (strip apostrophes → Ni'matu'lláh/Nimatu'lláh/Ni'matu'lláhi all match)",
         "scope": null
       }
     ]
