@@ -17,6 +17,9 @@ import Database from 'better-sqlite3';
 const APPLY = process.argv.includes('--apply');
 const db = new Database('data/sifter.db', { readonly: true });
 const { content } = await import('../api/lib/content.js');
+// The guarded document path: markDuplicate refuses a target holding no live prose (the empty-shell case
+// that hid four canonicals), softDeleteDocs refuses the last live copy of a work.
+const { markDuplicate, softDeleteDocs } = await import('../api/lib/docs-repo.js');
 const { query } = await import('../api/lib/db.js');
 const { config } = await import('../api/lib/config.js');
 const { execFileSync } = await import('node:child_process');
@@ -118,8 +121,17 @@ const retry = async (fn) => {
 };
 for (let i = 0; i < work.length; i += 10) {
   const batch = work.slice(i, i + 10);
-  for (const r of batch) if (r.olId) await retry(() => query('UPDATE docs SET duplicate_of = ? WHERE id = ?', [r.olId, r.id]));
-  const res = await retry(() => content.safeSoftDeleteDocs(batch.map((r) => r.id), { reason: 'ol-canonical-dedupe', maxDelete: 10 }));
+  // GUARDED: markDuplicate refuses an OL target that holds no live prose (the empty-shell case), and
+  // softDeleteDocs refuses the last live copy of a work. The raw UPDATE this replaces had neither check.
+  const ok = [];
+  for (const r of batch) {
+    if (!r.olId) continue;
+    try { await retry(() => markDuplicate(r.id, r.olId, { reason: 'ol-canonical-dedupe' })); ok.push(r.id); }
+    catch (err) { console.warn(`  REFUSED ${r.id} → ${r.olId}: ${err.message}`); }
+  }
+  if (!ok.length) continue;
+  const res = await retry(() => softDeleteDocs(ok, { reason: 'ol-canonical-dedupe' }));
+  if (res.refused?.length) for (const x of res.refused) console.warn(`  REFUSED delete ${x.id}: ${x.why}`);
   deactivated += res.deleted;
   if (i % 200 === 0) console.log(`${deactivated}/${work.length}`);
 }

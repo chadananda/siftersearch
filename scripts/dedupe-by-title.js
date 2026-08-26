@@ -65,9 +65,21 @@ async function main() {
       console.log(`   DELETE: ${doc.id} (${doc.paragraph_count} paragraphs, updated: ${doc.updated_at?.substring(0, 10)})`);
       console.log(`          ${doc.file_path?.substring(0, 80)}`);
       if (!DRY_RUN) {
-        db.prepare('UPDATE docs SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?').run(doc.id);
-        db.prepare('UPDATE content SET deleted_at = CURRENT_TIMESTAMP WHERE doc_id = ?').run(doc.id);
-        totalDeleted++;
+        // THROUGH THE GUARDED PATH, and through the SINGLE WRITER. These two statements previously ran as
+        // raw better-sqlite3 writes on a directly-opened handle: no last-copy check, no check that the
+        // keeper holds anything, and bypassing the one writer that owns sifter.db. This script's own header
+        // records that an earlier version of this rule gutted 155 OceanLibrary canonicals — the survivor
+        // rule was fixed then, but the WRITE stayed unguarded.
+        const { markDuplicate, softDeleteDocs } = await import('../api/lib/docs-repo.js');
+        try {
+          await markDuplicate(doc.id, keepDoc.id, { reason: 'dedupe-by-title' });
+        } catch (err) {
+          console.log(`   REFUSED to point ${doc.id} at ${keepDoc.id}: ${err.message}`);
+          continue;
+        }
+        const del = await softDeleteDocs([doc.id], { reason: 'dedupe-by-title' });
+        if (del.refused?.length) { console.log(`   REFUSED delete ${doc.id}: ${del.refused[0].why}`); continue; }
+        totalDeleted += del.deleted;
       }
     }
     console.log('');

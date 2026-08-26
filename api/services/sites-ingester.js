@@ -324,7 +324,18 @@ async function findMetadataCandidates(incomingTitle, incomingAuthor, limit = 5) 
 // ─── Mark / unmark a supersession ───────────────────────────────────────
 
 async function markSuperseded(oldDocId, newDocId) {
-  await query('UPDATE docs SET duplicate_of = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newDocId, oldDocId]);
+  // GUARDED. A supersession pointer at a document holding no live prose does not redirect the reader — it
+  // hides the work behind an empty shell, which is how four canonicals became invisible (8317→20896 and
+  // three more, found 2026-08-25). docs-repo refuses that target; a refusal here means the NEW doc has no
+  // content yet, and superseding the old one would lose the text entirely.
+  const { markDuplicate } = await import('../lib/docs-repo.js');
+  try {
+    await markDuplicate(oldDocId, newDocId, { reason: 'sites-ingester:supersede' });
+  } catch (err) {
+    logger.warn({ oldDocId, newDocId, err: err.message },
+      'sites-ingester: REFUSED to supersede — target is not a safe canonical; leaving the old doc live');
+    return;
+  }
   // Propagate to paragraphs so search/enrichment filters respect it without a join
   await query('UPDATE content SET is_duplicate = 1, synced = 0 WHERE doc_id = ?', [oldDocId]);
 }

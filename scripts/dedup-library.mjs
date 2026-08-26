@@ -19,6 +19,13 @@
 import { readFileSync, mkdirSync, renameSync, existsSync } from 'fs';
 import { join, basename, resolve } from 'path';
 import { queryAll, query, queryOne } from '../api/lib/db.js';
+// THE GUARDED PATH. This script previously did its own
+//   UPDATE docs SET deleted_at = datetime('now'), duplicate_of = ? WHERE id = ?
+// in two places — no last-copy check, no check that the keeper actually HOLDS anything. That is the exact
+// shape that soft-deleted 155 canonical documents on 2026-06-09 and suppressed four more behind empty
+// shells. docs-repo refuses both: markDuplicate rejects a keeper with no live prose, and softDeleteDocs
+// rejects the last live copy of a work and anything other live docs depend on.
+import { markDuplicate, softDeleteDocs } from '../api/lib/docs-repo.js';
 import { logger } from '../api/lib/logger.js';
 import { runMigrations } from '../api/lib/migrations/runner.js';
 
@@ -84,15 +91,20 @@ for (const group of hashGroups) {
     if (DRY_RUN) {
       logger.info({ action: 'soft-delete', docId: dupe.id, title: dupe.title, keeperId: group.keeper_id });
     } else {
-      await query(
-        `UPDATE docs SET deleted_at = datetime('now'), duplicate_of = ? WHERE id = ?`,
-        [group.keeper_id, dupe.id]
-      );
-      // Also soft-delete associated content rows
-      await query(
-        `UPDATE content SET deleted_at = datetime('now') WHERE doc_id = ? AND deleted_at IS NULL`,
-        [dupe.id]
-      );
+      // Point at the keeper FIRST — this refuses if the keeper holds no live prose, which is how a real
+      // copy ends up suppressed in favour of an empty shell.
+      try {
+        await markDuplicate(dupe.id, group.keeper_id, { reason: 'dedup-library:content-hash' });
+      } catch (err) {
+        logger.warn({ docId: dupe.id, keeperId: group.keeper_id, err: err.message },
+          'dedup-library: REFUSED to mark duplicate — keeper is not a safe target; skipping this pair');
+        continue;
+      }
+      const del = await softDeleteDocs([dupe.id], { reason: 'dedup-library:content-hash' });
+      if (del.refused?.length) {
+        logger.warn({ refused: del.refused }, 'dedup-library: REFUSED to soft-delete (see reason)');
+        continue;
+      }
       dbSoftDeleted++;
     }
   }
@@ -132,14 +144,18 @@ for (const group of siteDupGroups) {
     if (DRY_RUN) {
       logger.info({ action: 'site-soft-delete', docId: dupe.id, keeperId: keeperRow.id, title: group.title, site: group.source_site });
     } else {
-      await query(
-        `UPDATE docs SET deleted_at = datetime('now'), duplicate_of = ? WHERE id = ?`,
-        [keeperRow.id, dupe.id]
-      );
-      await query(
-        `UPDATE content SET deleted_at = datetime('now') WHERE doc_id = ? AND deleted_at IS NULL`,
-        [dupe.id]
-      );
+      try {
+        await markDuplicate(dupe.id, keeperRow.id, { reason: `dedup-library:site:${group.source_site}` });
+      } catch (err) {
+        logger.warn({ docId: dupe.id, keeperId: keeperRow.id, err: err.message },
+          'dedup-library: REFUSED to mark duplicate — keeper is not a safe target; skipping this pair');
+        continue;
+      }
+      const del2 = await softDeleteDocs([dupe.id], { reason: `dedup-library:site:${group.source_site}` });
+      if (del2.refused?.length) {
+        logger.warn({ refused: del2.refused }, 'dedup-library: REFUSED to soft-delete (see reason)');
+        continue;
+      }
       dbSoftDeleted++;
     }
   }
