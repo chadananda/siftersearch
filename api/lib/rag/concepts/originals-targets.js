@@ -64,10 +64,21 @@ export const ORIGINALS_TARGETS = Object.freeze({
     // published-VOLUME page, and each 404s in the other's language (Chad supplied the pub06 URL). The `st`
     // catalogue I was sweeping never contained the `pub` series at all, which is why the probe could not
     // find it and why I concluded from the st-121 pages alone that the original was unpublished.
-    { en: 'bahaullah-st-121', src: 'bahaullah-pub06-090', lang: 'ar' },   // 7,419 Arabic words, ours[2..277]
+    // THE EMBEDDED TABLETS COME FIRST, deliberately. probe-stems found them nested inside the Haykal's
+    // English range, and I first excluded them believing their text sat inside the Haykal's Arabic. The
+    // arithmetic says otherwise: pub06-090 is 7,419 Arabic words against ~36,000 English in st-121, a 4.9:1
+    // ratio no translation has. It is the Haykal PROPER — the kings' tablets are separate publications.
+    // Listing them before the Haykal means the specific, tightly-bounded source wins any overlap, since the
+    // collision guard keeps the first claim.
+    'bahaullah-st-065',      // to the Pope — ours[102..130]
+    'bahaullah-st-062',      // to Napoleon III — ours[131..157]
+    'bahaullah-st-054',      // to the Czar — ours[158..170]
+    'bahaullah-st-053',      // to Queen Victoria — ours[171..185]
+    'bahaullah-st-018',      // Kitáb-i-Sulṭán, to the Sháh — ours[186..276]
+    { en: 'bahaullah-st-121', src: 'bahaullah-pub06-090', lang: 'ar' },   // the Haykal proper — ours[2..101]
     'bahaullah-st-070-1', 'bahaullah-st-070-2', 'bahaullah-st-117', 'bahaullah-st-131',
   ], lang: 'ar', basis: 'segment',
-    note: 'probe-stems found 5 top-level works covering 98.6% of the doc; the Haykal is the largest and needs a paired stem' },
+    note: 'probe-stems found 13 hits; the nesting is real structure, and each nested tablet has its own original' },
 
   20781: { work: 'Fountain of Wisdom / Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas', stems: [
     'bahaullah-st-051', 'bahaullah-st-026', 'bahaullah-st-005', 'bahaullah-st-148', 'bahaullah-st-147',
