@@ -466,26 +466,28 @@ export default async function groundingRoutes(fastify) {
    *   3. an already-covered book is skipped before any fetch
    */
   fastify.post('/concepts/segment-ool-work', admin, async (req) => {
-    const { docId, stems: wantStems, dryRun = true, force = false, parasPerChunk = 150, minScore = 0.55 } = req.body || {};
+    const { docId, stems: wantStems, dryRun = true, force = false, parasPerChunk = 150, minScore = 0.55,
+      concurrency = 6 } = req.body || {};
     if (!docId) throw ApiError.badRequest('docId required');
     const { targetFor, NOT_THE_ORIGINAL } = await import('../lib/rag/concepts/originals-targets.js');
     const { fetchPageParagraphs, findOriginalLanguage } = await import('../lib/rag/concepts/ool-page.js');
     const { alignSequences, detectSourceLang, largestCluster, matchedRegion } = await import('../lib/rag/concepts/align.js');
     const seg = await import('../lib/rag/concepts/segment-original.js');
+    const { pool } = await import('../lib/rag/kernel/run.js');
     const { withAIContext } = await import('../lib/ai-context.js');
     const { chatCompletion } = await import('../lib/ai.js');
     const { BILINGUAL_MODEL } = await import('../lib/pipeline/profile.js');
     const store = makeStore();
 
-    const notOriginal = NOT_THE_ORIGINAL[Number(docId)];
     const target = targetFor(docId);
     const stems = wantStems?.length ? wantStems : target?.stems;
-    if (!stems?.length) {
-      // Name the reason. "No stems" and "the only source is a translation" are different situations, and the
-      // second is a finding rather than a gap.
-      throw ApiError.badRequest(notOriginal
-        ? `doc ${docId} (${notOriginal.work}): ${notOriginal.why}`
-        : `doc ${docId} is not in ORIGINALS_TARGETS and no stems[] was given`);
+    if (!stems?.length) throw ApiError.badRequest(`doc ${docId} is not in ORIGINALS_TARGETS and no stems[] was given`);
+    // A stem KNOWN to be a rendering is refused by name. Keyed by stem rather than by doc, because a work
+    // can have both: the Tablets of the Divine Plan's whole-book Arabic page is a translation while its
+    // fourteen chapter pages are the Persian original.
+    const barred = stems.filter((x) => NOT_THE_ORIGINAL[x]);
+    if (barred.length) {
+      throw ApiError.badRequest(barred.map((x) => `'${x}': ${NOT_THE_ORIGINAL[x].why}`).join('; '));
     }
 
     const resolved = await store.resolveCanonicalDoc(Number(docId));
@@ -496,14 +498,16 @@ export default async function groundingRoutes(fastify) {
 
     const ours = (await store.getParagraphs(resolved)).map((p) => ({ key: p.id, text: p.text }));
     const model = BILINGUAL_MODEL;
+    // PARALLEL ACROSS STEMS (Chad, 2026-08-26: "you can process those in parallel"). Stems are genuinely
+    // independent — each has its own original text, its own line numbering and its own bounded slice of our
+    // paragraphs — so nothing is shared across them but the document. This is also what brings a 14-chapter
+    // work inside the tunnel's ~125s ceiling, which serially it could not be.
     const perStem = [];
-    const rows = [];
-
-    for (const stem of stems) {
+    const stemRows = await pool(concurrency, stems, async (stem) => {
       const orig = await findOriginalLanguage(stem, { log: logger });
       if (orig?.role !== 'original') {
         perStem.push({ stem, skipped: `no page declares itself the original (${orig?.lang || 'none'}: ${orig?.role || 'none'})` });
-        continue;
+        return [];
       }
       const [srcParas, enParas] = await Promise.all([
         fetchPageParagraphs(stem, orig.lang, { log: logger }),
@@ -511,7 +515,7 @@ export default async function groundingRoutes(fastify) {
       ]);
       if (!srcParas?.length || !enParas?.length) {
         perStem.push({ stem, skipped: `page served no ${!srcParas?.length ? orig.lang : 'en'} text` });
-        continue;
+        return [];
       }
       // The stream. Their paragraph breaks are discarded deliberately — they are the arbitrary ones.
       const originalText = srcParas.map((p) => p.text).join(' ');
@@ -523,7 +527,7 @@ export default async function groundingRoutes(fastify) {
       // forbade every later match from using their ¶0-28 — silently costing the 25 paragraphs at the head of
       // the Four Valleys, which then looked like text the site did not publish.
       const idx = matchedRegion(ours, theirEn, { minScore });
-      if (!idx.length) { perStem.push({ stem, skipped: 'none of our paragraphs match this work' }); continue; }
+      if (!idx.length) { perStem.push({ stem, skipped: 'none of our paragraphs match this work' }); return []; }
       // The outer range of the matches is NOT the work: doc 20811 holds both Valleys, and a handful of
       // coincidental matches inside the Seven Valleys stretched the Four Valleys' bound to [90, 209],
       // re-offering 32 paragraphs that had already been aligned to a different original. Take the dense
@@ -558,6 +562,7 @@ export default async function groundingRoutes(fastify) {
             original: sp.text.slice(0, 220) });
         }
       }
+      const rows = [];
       for (const sp of spans) {
         const para = slice[sp.index - 1];
         if (!para) continue;
@@ -575,10 +580,27 @@ export default async function groundingRoutes(fastify) {
         unconfirmed, exact, rejected: rejected.length, coverage,
         rejectedSamples: rejected.slice(0, 4).map((r) => ({ index: r.index, why: r.why })),
         ...(pairs.length ? { pairs } : {}) });
-    }
+      return rows;
+    });
 
-    const out = { docId: resolved, work: target?.work ?? null, dryRun, model,
+    // TWO STEMS CLAIMING ONE PARAGRAPH is a bounding failure, and silent last-write-wins would hide it.
+    // Report it and keep the FIRST claim, since stems are processed in the order they were listed.
+    const rows = [];
+    const claimed = new Map();
+    const collisions = [];
+    for (const [i, list] of (stemRows || []).entries()) {
+      for (const r of list || []) {
+        const prior = claimed.get(r.paraId);
+        if (prior !== undefined) { collisions.push({ paraId: r.paraId, stems: [stems[prior], stems[i]] }); continue; }
+        claimed.set(r.paraId, i);
+        rows.push(r);
+      }
+    }
+    perStem.sort((a, b) => stems.indexOf(a.stem) - stems.indexOf(b.stem));
+
+    const out = { docId: resolved, work: target?.work ?? null, dryRun, model, concurrency,
       ourParagraphs: ours.length, candidates: rows.length, perStem, written: 0,
+      ...(collisions.length ? { collisions: collisions.length, collisionSamples: collisions.slice(0, 5) } : {}),
       samples: rows.slice(0, 3).map((r) => ({ paraId: r.paraId, lang: r.originalLang, original: r.originalText.slice(0, 80) })) };
     if (dryRun || !rows.length) return out;
     out.written = await store.saveParagraphOriginals(rows);

@@ -3,6 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { splitVerseNumber, declaredRole, pairByVerse, isPageFooter }
   from '../../api/lib/rag/concepts/ool-page.js';
+import { NOT_THE_ORIGINAL, targetFor } from '../../api/lib/rag/concepts/originals-targets.js';
 
 describe('splitVerseNumber — the source states its own correspondence', () => {
   it('reads an Arabic-Indic verse number and strips it without touching the script', () => {
@@ -79,5 +80,22 @@ describe('pairByVerse — prefer the source’s own claim over our assumption', 
     const r = pairByVerse([{ n: null, text: 'a' }, { n: null, text: 'b' }], [{ n: null, text: 'ا' }]);
     expect(r.basis).toBe('none');
     expect(r.reason).toMatch(/lengths differ/);
+  });
+});
+
+describe('NOT_THE_ORIGINAL is keyed by PAGE, not by work', () => {
+  // I recorded the Tablets of the Divine Plan as having no original online because its whole-book Arabic
+  // page says مترجم and its whole-book Persian page 404s. The site publishes that work BY CHAPTER, and all
+  // fourteen chapter pages declare a Persian original. A missing whole-book page is a fact about one URL.
+  it('bars the whole-book rendering without barring the work', () => {
+    expect(NOT_THE_ORIGINAL['abdul-baha-bkw02']).toBeTruthy();
+    expect(NOT_THE_ORIGINAL['abdul-baha-bkw02-1-01']).toBeUndefined();
+    expect(targetFor(20914).stems).toContain('abdul-baha-bkw02-1-01');
+    expect(targetFor(20914).lang).toBe('fa');
+  });
+
+  it('bars the Arabic rendering of the Persian Secret of Divine Civilization', () => {
+    expect(NOT_THE_ORIGINAL['abdul-baha-bkw19-ar']).toBeTruthy();
+    expect(targetFor(20919).stems).toEqual(['abdul-baha-bkw19']);
   });
 });

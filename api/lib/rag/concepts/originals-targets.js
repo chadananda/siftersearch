@@ -11,13 +11,22 @@
 // of Divine Civilization as its "original", and nothing downstream could ever have detected it.
 // Deps: none (data).
 
-/** A source that exists but is NOT the original, recorded so it is never mistaken for one. */
+/**
+ * Pages that exist but are NOT the original, recorded so one is never mistaken for one.
+ *
+ * Keyed by STEM, not by doc: this is a fact about a page, and the same work can have other pages that are
+ * originals. That distinction is the whole lesson of the entry below.
+ */
 export const NOT_THE_ORIGINAL = Object.freeze({
-  // Chad pointed at https://oceanoflights.org/abdul-baha-bkw02-ar/ for the Tablets of the Divine Plan. The
-  // page itself says مترجم — translated. The Tablets were revealed in Persian; oceanoflights publishes only
-  // an Arabic RENDERING and no Persian page (fa → 404). Using it would put a translation in `original_text`.
-  20914: { work: 'Tablets of the Divine Plan', stem: 'abdul-baha-bkw02',
-    found: 'ar', declared: 'translation', why: 'oceanoflights holds only an Arabic translation; no Persian page exists there' },
+  // The Tablets of the Divine Plan's WHOLE-BOOK Arabic page says مترجم — translated — and its whole-book
+  // Persian page 404s. I concluded from those two facts that the work had no original online. WRONG, and
+  // wrong in a way worth remembering: the site publishes this work BY CHAPTER, and all fourteen chapter
+  // pages declare a Persian original (Chad, 2026-08-26: "it's split by chapter here… The source is Farsi").
+  // A missing whole-book page is a fact about ONE URL, never about the work.
+  'abdul-baha-bkw02': { work: 'Tablets of the Divine Plan', found: 'ar', declared: 'translation',
+    why: 'the whole-book Arabic page is a rendering; the ORIGINAL is published per chapter (abdul-baha-bkw02-N-NN-fa)' },
+  'abdul-baha-bkw19-ar': { work: 'The Secret of Divine Civilization', found: 'ar', declared: 'translation',
+    why: 'the work is Persian; this Arabic page is a translation of it' },
 });
 
 /**
@@ -37,6 +46,16 @@ export const ORIGINALS_TARGETS = Object.freeze({
     note: 'Persian originals 6,177 + 2,113 words in arbitrary blocks; the two works must be bound to disjoint stretches of the doc, which is what largestCluster is for' },
   20919: { work: 'The Secret of Divine Civilization', stems: ['abdul-baha-bkw19'], lang: 'fa', basis: 'segment',
     note: 'Persian original 21,989 words in 26 blocks; oceanoflights ALSO publishes an Arabic translation (abdul-baha-bkw19-ar) which must never be read as the original' },
+  // FOURTEEN CHAPTER STEMS, each declaring a Persian original — measured, after the whole-book page had me
+  // record this work as having none. 95 Persian paragraphs against our 221 English ones, so the source's
+  // paragraphing is not usable and this is a segmentation job.
+  20914: { work: 'Tablets of the Divine Plan', stems: [
+    'abdul-baha-bkw02-1-01', 'abdul-baha-bkw02-1-02', 'abdul-baha-bkw02-1-03', 'abdul-baha-bkw02-1-04',
+    'abdul-baha-bkw02-1-05', 'abdul-baha-bkw02-1-06', 'abdul-baha-bkw02-1-07', 'abdul-baha-bkw02-1-08',
+    'abdul-baha-bkw02-2-01', 'abdul-baha-bkw02-2-02', 'abdul-baha-bkw02-2-03', 'abdul-baha-bkw02-2-04',
+    'abdul-baha-bkw02-2-05', 'abdul-baha-bkw02-2-06',
+  ], lang: 'fa', basis: 'segment',
+    note: '11,084 Persian words in 95 blocks; the Arabic pages are translations and must never be read as the original' },
   20907: { work: 'Memorials of the Faithful', stems: [
     'abdul-baha-bkw26-02', 'abdul-baha-bkw26-07', 'abdul-baha-bkw26-13', 'abdul-baha-bkw26-18',
     'abdul-baha-bkw26-20', 'abdul-baha-bkw26-21', 'abdul-baha-bkw26-22', 'abdul-baha-bkw26-23',
