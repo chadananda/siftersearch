@@ -199,7 +199,7 @@ export function largestCluster(indexes, { maxGap = 12 } = {}) {
  * head of the Four Valleys. A lone outlier is harmless here because largestCluster discards it; a poisoned
  * monotonic chain is not, because it looks like an absence of text.
  */
-export function matchedRegion(ours, theirs, { minScore = 0.55, ourWords } = {}) {
+export function matchedRegion(ours, theirs, { minScore = 0.55, ourWords, hitTheirs } = {}) {
   const theirWords = theirs.map((t) => contentWords(t.text));
   // `ourWords` is hoistable because the DOCUMENT is fixed while the candidate work varies. Sweeping the
   // 112-stem catalogue against one book re-tokenised all of our paragraphs 112 times and pushed a
@@ -212,7 +212,7 @@ export function matchedRegion(ours, theirs, { minScore = 0.55, ourWords } = {}) 
     for (const b of theirWords) {
       // Dice cannot exceed 2·min/(|a|+|b|), so a length check rejects most pairs without touching a word.
       if ((2 * Math.min(a.length, b.length)) / (a.length + b.length) < minScore) continue;
-      if (dice(a, b) >= minScore) { out.push(i); break; }
+      if (dice(a, b) >= minScore) { out.push(i); hitTheirs?.add(theirWords.indexOf(b)); break; }
     }
   }
   return out;

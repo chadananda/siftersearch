@@ -644,15 +644,21 @@ export default async function groundingRoutes(fastify) {
       const en = await fetchPageParagraphs(stem, 'en', { log: logger });
       if (!en?.length) return null;
       const theirs = en.map((p, i) => ({ key: i, text: p.text }));
-      const idx = matchedRegion(ours, theirs, { minScore, ourWords });
+      const hitTheirs = new Set();
+      const idx = matchedRegion(ours, theirs, { minScore, ourWords, hitTheirs });
       if (idx.length < minMatches) return null;
       const [lo, hi] = largestCluster(idx);
       const inCluster = idx.filter((i) => i >= lo && i <= hi).length;
       return { stem, theirParagraphs: theirs.length, matched: idx.length, inCluster,
         boundRange: [lo, hi], span: hi - lo + 1,
-        // How much of THEIR work we hold. A compilation excerpting one tablet scores low here and that is
-        // the honest reading — it is not a failure to locate, it is a partial inclusion.
-        theirCoverage: Number((idx.length / theirs.length).toFixed(3)) };
+        // How much of THEIR work we hold. Counted over THEIR paragraphs, not ours: dividing our match count
+        // by their paragraph count reported 1.10 and 1.077 — impossible values, produced whenever our
+        // edition breaks a passage more finely than theirs. A coverage figure that can exceed 1 is not
+        // measuring coverage.
+        //
+        // A compilation excerpting one tablet scores low here, and that is the honest reading — a partial
+        // inclusion, not a failure to locate.
+        theirCoverage: Number((hitTheirs.size / theirs.length).toFixed(3)) };
     });
 
     const hits = (found || []).filter(Boolean).sort((a, b) => a.boundRange[0] - b.boundRange[0]);

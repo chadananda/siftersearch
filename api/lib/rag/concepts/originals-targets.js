@@ -56,6 +56,28 @@ export const ORIGINALS_TARGETS = Object.freeze({
     'abdul-baha-bkw02-2-05', 'abdul-baha-bkw02-2-06',
   ], lang: 'fa', basis: 'segment',
     note: '11,084 Persian words in 95 blocks; the Arabic pages are translations and must never be read as the original' },
+  // ── COMPILATIONS, discovered by probe-stems rather than recalled. Each of these is a gathering of tablets
+  // that oceanoflights publishes separately; the deterministic English-to-English match found which ones and
+  // in what order, at no cost. The ranges below came back disjoint and sequential, which is the check.
+  20806: { work: 'The Summons of the Lord of Hosts', stems: [
+    'bahaullah-st-121',      // Súriy-i-Haykal — ours[2..277]; NESTS the five tablets to the kings, so those
+    'bahaullah-st-070-1',    //   stems (065 Pope, 062 Napoleon, 054 Czar, 053 Victoria, 018 Sháh) are NOT
+    'bahaullah-st-070-2',    //   listed: their text is already inside the Haykal's Persian.
+    'bahaullah-st-117',
+    'bahaullah-st-131',
+  ], lang: 'ar', basis: 'segment',
+    note: 'probe-stems: 13 hits, 5 top-level works covering 98.6% of the document; the rest were nested or quoted' },
+
+  20781: { work: 'Fountain of Wisdom / Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas', stems: [
+    'bahaullah-st-051', 'bahaullah-st-026', 'bahaullah-st-005', 'bahaullah-st-148', 'bahaullah-st-147',
+    'bahaullah-st-012', 'bahaullah-st-036', 'bahaullah-st-011', 'bahaullah-st-043', 'bahaullah-st-002',
+    'bahaullah-st-057', 'bahaullah-st-140', 'bahaullah-st-035', 'bahaullah-st-014', 'bahaullah-st-046-1',
+  ], lang: 'ar', basis: 'segment',
+    // TWO PAIRS OF STEMS CLAIMED IDENTICAL RANGES with identical counts — st-005/st-132 and st-035/st-110.
+    // That is the site listing one tablet under two names, not two tablets in one place. Only one of each is
+    // listed here; the collision guard in segment-ool-work would catch it either way.
+    note: 'probe-stems: 15 disjoint tablets in sequence covering 75% of the document' },
+
   20907: { work: 'Memorials of the Faithful', stems: [
     'abdul-baha-bkw26-02', 'abdul-baha-bkw26-07', 'abdul-baha-bkw26-13', 'abdul-baha-bkw26-18',
     'abdul-baha-bkw26-20', 'abdul-baha-bkw26-21', 'abdul-baha-bkw26-22', 'abdul-baha-bkw26-23',
