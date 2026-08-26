@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T17:03:29.226Z",
+  "generated": "2026-08-26T17:14:51.782Z",
   "entries": [
+    {
+      "hash": "3ef5ccab",
+      "date": "2026-08-26",
+      "type": "Other",
+      "description": "Endpoint for whole-work page alignment (align-ool-work)",
+      "scope": null
+    },
     {
       "hash": "2a4d3250",
       "date": "2026-08-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Page now consumes the official /api/v1/people API (list, detail, meaning-search) — proof of concept on the public contract",
       "scope": null
-    },
-    {
-      "hash": "e6175a7f",
-      "date": "2026-06-24",
-      "type": "Other",
-      "description": "BioSearch in shared layer + /api/v1/people/search; list includes kinship + raised limit; graph /bio/search delegates",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-26": [
+      {
+        "hash": "3ef5ccab",
+        "date": "2026-08-26",
+        "type": "Other",
+        "description": "Endpoint for whole-work page alignment (align-ool-work)",
+        "scope": null
+      },
       {
         "hash": "2a4d3250",
         "date": "2026-08-26",
@@ -7069,13 +7076,6 @@
         "date": "2026-06-24",
         "type": "Other",
         "description": "Page now consumes the official /api/v1/people API (list, detail, meaning-search) — proof of concept on the public contract",
-        "scope": null
-      },
-      {
-        "hash": "e6175a7f",
-        "date": "2026-06-24",
-        "type": "Other",
-        "description": "BioSearch in shared layer + /api/v1/people/search; list includes kinship + raised limit; graph /bio/search delegates",
         "scope": null
       }
     ]

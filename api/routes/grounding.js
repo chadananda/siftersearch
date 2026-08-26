@@ -390,12 +390,25 @@ export default async function groundingRoutes(fastify) {
    * English, then our own paragraph is found by ENGLISH-to-ENGLISH match against that pairing.
    */
   fastify.post('/concepts/align-ool-work', admin, async (req) => {
-    const { docId, stem, dryRun = true, minScore = 0.7 } = req.body || {};
+    const { docId, stem, dryRun = true, minScore = 0.7, force = false } = req.body || {};
     if (!docId || !stem) throw ApiError.badRequest('docId and stem required');
     const { fetchPageParagraphs, pairByVerse } = await import('../lib/rag/concepts/ool-page.js');
     const { alignSequences, detectSourceLang } = await import('../lib/rag/concepts/align.js');
     const store = makeStore();
 
+    // ALREADY COVERED? Then do not go looking for a source we do not need — and decide this BEFORE any
+    // network call, so a covered book costs zero fetches. The Kitáb-i-Íqán is 290/292 from CTAI and I still
+    // put it in a hand-typed list and pulled two pages for it (Chad, 2026-08-26: "Iqan is not needed… Why is
+    // this even in the list?"). The target list belongs to the DATA — what is actually missing — not to my
+    // memory of which books exist. force:true overrides for a deliberate re-run.
+    {
+      const pre = await store.resolveCanonicalDoc(Number(docId));
+      const c = await store.getOriginalCoverage(pre);
+      if (!force && c.total && c.aligned / c.total >= 0.9) {
+        return { docId: pre, stem, skipped: 'already covered', aligned: c.aligned, total: c.total,
+          pct: Math.round((100 * c.aligned) / c.total), written: 0 };
+      }
+    }
     const en = await fetchPageParagraphs(stem, 'en', { log: logger });
     if (!en?.length) throw ApiError.badRequest(`oceanoflights served no English for '${stem}'`);
     let src = await fetchPageParagraphs(stem, 'ar', { log: logger });
@@ -408,6 +421,7 @@ export default async function groundingRoutes(fastify) {
     }
 
     const resolved = await store.resolveCanonicalDoc(Number(docId));
+
     const ours = (await store.getParagraphs(resolved)).map((p) => ({ key: p.id, text: p.text }));
     const theirs = paired.rows.map((r, i) => ({ key: i, text: r.en }));
     const { matches, stats } = alignSequences(ours, theirs, { minScore, window: theirs.length });
