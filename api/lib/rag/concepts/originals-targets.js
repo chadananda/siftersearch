@@ -60,13 +60,11 @@ export const ORIGINALS_TARGETS = Object.freeze({
   // that oceanoflights publishes separately; the deterministic English-to-English match found which ones and
   // in what order, at no cost. The ranges below came back disjoint and sequential, which is the check.
   20806: { work: 'The Summons of the Lord of Hosts', stems: [
-    'bahaullah-st-121',      // Súriy-i-Haykal — ours[2..277]; NESTS the five tablets to the kings, so those
-    'bahaullah-st-070-1',    //   stems (065 Pope, 062 Napoleon, 054 Czar, 053 Victoria, 018 Sháh) are NOT
-    'bahaullah-st-070-2',    //   listed: their text is already inside the Haykal's Persian.
-    'bahaullah-st-117',
-    'bahaullah-st-131',
+    // The Súriy-i-Haykal (bahaullah-st-121) is DELIBERATELY ABSENT — see STUB_ONLY. It is ours[2..277], the
+    // largest part of this book, and its original is not published anywhere we can reach.
+    'bahaullah-st-070-1', 'bahaullah-st-070-2', 'bahaullah-st-117', 'bahaullah-st-131',
   ], lang: 'ar', basis: 'segment',
-    note: 'probe-stems: 13 hits, 5 top-level works covering 98.6% of the document; the rest were nested or quoted' },
+    note: 'probe-stems found 5 top-level works covering 98.6% of the doc; 4 are reachable, the Haykal is a stub' },
 
   20781: { work: 'Fountain of Wisdom / Tablets of Bahá’u’lláh Revealed After the Kitáb-i-Aqdas', stems: [
     'bahaullah-st-051', 'bahaullah-st-026', 'bahaullah-st-005', 'bahaullah-st-148', 'bahaullah-st-147',
@@ -90,6 +88,31 @@ export const ORIGINALS_TARGETS = Object.freeze({
     // later: the book has 77 memorials and the catalogue publishes 24. The other 53 are not missing from our
     // fetch, they are absent from oceanoflights.
     note: '24 of the book’s 77 memorials are published, each as its own chapter page with a declared Persian original' },
+});
+
+/**
+ * Stems the site LISTS but does not publish — the page and the .docx contain only a title and a
+ * bibliographic citation pointing at a printed volume.
+ *
+ * Distinguished from NOT_THE_ORIGINAL because the failure is different and so is the remedy: that one is a
+ * translation masquerading as an original (never use it), this one is an original nobody has digitised
+ * here (use another source, or accept the gap).
+ *
+ * Recorded so it is not re-chased. Both transports were checked before concluding, since an empty result is
+ * usually a bug in the reader — and what IS served explains the absence positively rather than by silence.
+ */
+export const STUB_ONLY = Object.freeze({
+  'bahaullah-st-121': { work: 'Súriy-i-Haykal', lang: 'ar',
+    serves: 'سورة الهيكل – حضرة بهاءالله – آثار قلم اعلى، ١٥٣ بديع، جلد ١، الصفحات ١ – ٨٨, plus the opening line',
+    // MEASURED AGAINST KNOWN-GOOD STEMS, because an empty result is usually a bug in the reader and Chad was
+    // right to push back twice ("all the pages are the same", "and they all have docx files too"). They are,
+    // and applying that correctly is what proves this stem is the exception:
+    //   st-131_ar  document.xml 65,804 chars → 7,214 words       st-011_fa 49,415 → 5,891
+    //   st-015_ar  document.xml 83,117 chars → 10,952 words      st-121_ar  4,108 → 33
+    // The .docx files are all ~130-155KB; that weight is images and styles, not text. What the Haykal's
+    // 4KB body holds is a CITATION to the printed volume, which explains the absence positively.
+    why: 'the site publishes only a citation for this work — page and .docx agree, and both differ from every other stem tested',
+    costs: 'the Summons of the Lord of Hosts ours[2..277] — 275 paragraphs, the bulk of that book' },
 });
 
 /** Works whose original is real but NOT on oceanoflights — a different source, not a dead end. */

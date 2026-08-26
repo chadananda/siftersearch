@@ -469,7 +469,7 @@ export default async function groundingRoutes(fastify) {
     const { docId, stems: wantStems, dryRun = true, force = false, parasPerChunk = 150, minScore = 0.55,
       concurrency = 6 } = req.body || {};
     if (!docId) throw ApiError.badRequest('docId required');
-    const { targetFor, NOT_THE_ORIGINAL } = await import('../lib/rag/concepts/originals-targets.js');
+    const { targetFor, NOT_THE_ORIGINAL, STUB_ONLY } = await import('../lib/rag/concepts/originals-targets.js');
     const { fetchPageParagraphs, findOriginalLanguage } = await import('../lib/rag/concepts/ool-page.js');
     const { alignSequences, detectSourceLang, largestCluster, matchedRegion } = await import('../lib/rag/concepts/align.js');
     const seg = await import('../lib/rag/concepts/segment-original.js');
@@ -480,7 +480,7 @@ export default async function groundingRoutes(fastify) {
     const store = makeStore();
 
     const target = targetFor(docId);
-    const stems = wantStems?.length ? wantStems : target?.stems;
+    let stems = wantStems?.length ? wantStems : target?.stems;
     if (!stems?.length) throw ApiError.badRequest(`doc ${docId} is not in ORIGINALS_TARGETS and no stems[] was given`);
     // A stem KNOWN to be a rendering is refused by name. Keyed by stem rather than by doc, because a work
     // can have both: the Tablets of the Divine Plan's whole-book Arabic page is a translation while its
@@ -489,6 +489,11 @@ export default async function groundingRoutes(fastify) {
     if (barred.length) {
       throw ApiError.badRequest(barred.map((x) => `'${x}': ${NOT_THE_ORIGINAL[x].why}`).join('; '));
     }
+    // A stub is skipped rather than refused: the rest of the book is still worth doing, and re-fetching a
+    // known-empty page every run is the waste this record exists to prevent.
+    const stubbed = stems.filter((x) => STUB_ONLY[x]);
+    stems = stems.filter((x) => !STUB_ONLY[x]);
+    if (!stems.length) throw ApiError.badRequest(`every stem given is a stub: ${stubbed.join(', ')}`);
 
     const resolved = await store.resolveCanonicalDoc(Number(docId));
     const cov = await store.getOriginalCoverage(resolved);
@@ -598,6 +603,7 @@ export default async function groundingRoutes(fastify) {
     }
     perStem.sort((a, b) => stems.indexOf(a.stem) - stems.indexOf(b.stem));
 
+    for (const x of stubbed) perStem.push({ stem: x, skipped: `stub only — ${STUB_ONLY[x].why}` });
     const out = { docId: resolved, work: target?.work ?? null, dryRun, model, concurrency,
       ourParagraphs: ours.length, candidates: rows.length, perStem, written: 0,
       ...(collisions.length ? { collisions: collisions.length, collisionSamples: collisions.slice(0, 5) } : {}),
