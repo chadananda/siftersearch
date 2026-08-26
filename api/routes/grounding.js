@@ -258,6 +258,22 @@ export default async function groundingRoutes(fastify) {
     });
   });
 
+  /**
+   * GET /concepts/source-survey — which canonical works are translations, and where each one's original
+   * can actually be got (in-corpus original-language doc · CTAI · nothing found).
+   *
+   * Answers "can we fetch the source for every translated canonical?" with measurement instead of a guess.
+   * `route: 'none'` is reported explicitly: a work we cannot source is a fact the extraction plan has to
+   * account for, not a blank to skip quietly.
+   */
+  fastify.get('/concepts/source-survey', admin, async (req) => {
+    const { surveyTranslatedCanonicals } = await import('../lib/rag/concepts/source-survey.js');
+    return surveyTranslatedCanonicals({
+      limit: Math.min(1000, Number(req.query?.limit) || 500),
+      ...(req.query?.minTitleScore ? { minTitleScore: Number(req.query.minTitleScore) } : {}),
+    });
+  });
+
   /** GET /concepts/original-coverage?docId= — how much of the bilingual layer is actually populated. */
   fastify.get('/concepts/original-coverage', admin, async (req) => {
     const { CTAI_WORK_BY_DOC } = await import('../lib/rag/concepts/ctai.js');
