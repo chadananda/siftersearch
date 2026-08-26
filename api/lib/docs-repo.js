@@ -167,6 +167,40 @@ export async function getParagraphs(docId, { proseOnly = true, limit = 100000, o
 }
 
 /**
+ * Enrichment coverage for one document: how many paragraphs carry a disambiguation note, HyPE, and an
+ * aligned original — broken down by the VERSION that stamped them.
+ *
+ * Exists because there was no way to ask. `/grounding/books/:id` reported `disambig=pending` for books that
+ * were ~100% disambiguated, because that row tracks the ENTITY pipeline and the conceptual track writes the
+ * same column under a different version. The stage's own `todo` count is capped by whatever `limit` the
+ * caller passed, so it cannot answer either. Counting the artifact directly is the only honest measure
+ * (2026-08-26).
+ */
+export async function enrichmentCoverage(docId) {
+  const id = (await resolveCanonical(docId)).resolved ?? Number(docId);
+  const [row] = await query(
+    `SELECT COUNT(*) total,
+            SUM(context IS NOT NULL AND context != '') noted,
+            SUM(hyp_questions IS NOT NULL) hyped,
+            SUM(original_text IS NOT NULL) aligned
+       FROM content
+      WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(blocktype,'paragraph') IN ('paragraph','quote')`,
+    [id], 'docs-repo:enrichment-coverage');
+  const byVersion = await query(
+    `SELECT COALESCE(context_model,'(none)') version, COUNT(*) n
+       FROM content
+      WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(blocktype,'paragraph') IN ('paragraph','quote')
+        AND context IS NOT NULL AND context != ''
+      GROUP BY version ORDER BY n DESC`, [id], 'docs-repo:enrichment-by-version');
+  return {
+    docId: id, ...(id !== Number(docId) ? { resolvedFrom: Number(docId) } : {}),
+    total: row?.total ?? 0, noted: row?.noted ?? 0, hyped: row?.hyped ?? 0, aligned: row?.aligned ?? 0,
+    notedPct: row?.total ? Math.round((100 * (row.noted ?? 0)) / row.total) : 0,
+    byVersion,
+  };
+}
+
+/**
  * Mark one document a duplicate of another.
  *
  * GUARDED, because the ungated version is what made four canonicals invisible: it will not point a document

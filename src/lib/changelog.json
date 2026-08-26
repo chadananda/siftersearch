@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T04:07:53.368Z",
+  "generated": "2026-08-26T04:13:43.104Z",
   "entries": [
+    {
+      "hash": "0311fd38",
+      "date": "2026-08-25",
+      "type": "Other",
+      "description": "Extraction must accept EITHER disambiguation, and say why it read nothing",
+      "scope": null
+    },
     {
       "hash": "04ef3d6a",
       "date": "2026-08-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "SSR-bake cast content at build (cards+hero in static HTML, instant paint, no client content-fill); fail build if API unreachable rather than ship empty shell",
       "scope": null
-    },
-    {
-      "hash": "cc4bd048",
-      "date": "2026-06-24",
-      "type": "Other",
-      "description": "AI-search activity animation (spinner + scan-line + dots), drop \"wider histories\" from methodology; bake corrected portraits + Letters-of-the-Living importances",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-25": [
+      {
+        "hash": "0311fd38",
+        "date": "2026-08-25",
+        "type": "Other",
+        "description": "Extraction must accept EITHER disambiguation, and say why it read nothing",
+        "scope": null
+      },
       {
         "hash": "04ef3d6a",
         "date": "2026-08-25",
@@ -7067,13 +7074,6 @@
         "date": "2026-06-24",
         "type": "Other",
         "description": "SSR-bake cast content at build (cards+hero in static HTML, instant paint, no client content-fill); fail build if API unreachable rather than ship empty shell",
-        "scope": null
-      },
-      {
-        "hash": "cc4bd048",
-        "date": "2026-06-24",
-        "type": "Other",
-        "description": "AI-search activity animation (spinner + scan-line + dots), drop \"wider histories\" from methodology; bake corrected portraits + Letters-of-the-Living importances",
         "scope": null
       }
     ]

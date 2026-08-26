@@ -63,6 +63,13 @@ export default async function docsRoutes(fastify) {
   });
 
   /**
+   * GET /docs/:id/enrichment — how many paragraphs carry a disambiguation note (by version), HyPE, and an
+   * aligned original. /grounding/books/:id reports the ENTITY pipeline's view and said "pending" for books
+   * that were ~100% disambiguated by the conceptual track; this counts the artifact itself.
+   */
+  fastify.get('/docs/:id/enrichment', admin, async (req) => repo.enrichmentCoverage(req.params.id));
+
+  /**
    * GET /docs/:id/canonical — where does this document's work actually live?
    * Reports `brokenPointer` when `duplicate_of` aims at a deleted or empty target instead of following it.
    */
