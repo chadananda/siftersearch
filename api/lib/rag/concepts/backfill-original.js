@@ -64,7 +64,19 @@ export async function fetchWorkPairs(work, maxPairs, { log, concurrency = 8 } = 
     return { key: p.pair_index, text: p.translation, source: p.source_text, section: p.section,
       aligned: p.aligned || [] };
   });
-  return fetched.filter(Boolean).sort((a, b) => a.key - b.key);
+  const pairs = fetched.filter(Boolean).sort((a, b) => a.key - b.key);
+
+  // TRUNCATION GUARD. A pair count that is too LOW does not fail — it quietly fetches part of the book and
+  // reports the fraction as coverage. Prayers and Meditations was entered as an estimated 700 against an
+  // actual 858, so the last 158 pairs were never fetched and 79% read as though it were the whole work.
+  // If the last index we asked for answered, there is more beyond it and the count is wrong.
+  if (pairs.length && pairs[pairs.length - 1].key >= maxPairs) {
+    log?.warn?.({ work, maxPairs, got: pairs.length },
+      'ctai/fetchWorkPairs: TRUNCATED — the highest requested pair exists, so the work continues past maxPairs. ' +
+      'Re-measure CTAI_PAIR_COUNT for this work; coverage from this run understates the book.');
+    pairs.truncated = true;
+  }
+  return pairs;
 }
 
 /**
@@ -124,6 +136,9 @@ export async function backfillDoc(ctx, docId, { work: wantWork, maxPairs, minSco
 
   const result = {
     docId, work, authority, dryRun, ...stats, originalLangs: langs,
+    // Surfaced in the RESULT, not only the log: a truncated fetch otherwise reports a plausible coverage
+    // number with nothing to distinguish it from a complete one.
+    ...(theirs.truncated ? { truncated: true, warning: `pair fetch hit the ${work} ceiling — CTAI_PAIR_COUNT is too low, coverage understates the work` } : {}),
     unmatchedOurs: unmatchedOurs.length, unmatchedTheirs: unmatchedTheirs.length,
     // TWO coverage numbers, because they answer different questions. `coverage` (matched/ours) asks how much
     // of OUR DOCUMENT got an original — the right measure for a whole book. `workCoverage` (matched/theirs)

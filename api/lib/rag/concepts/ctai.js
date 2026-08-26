@@ -57,22 +57,27 @@ export const CTAI_WORK_BY_DOC = Object.freeze(
   Object.fromEntries(Object.entries(CTAI_DOC_BY_WORK).map(([w, id]) => [id, w])));
 
 /**
- * Pair count per work, MEASURED by binary search 2026-08-25 — pair_index is 1-based and 0 is empty on every
- * work tested. Without this a backfill probes a fixed ceiling (2,000 requests for a 160-pair book), which is
- * ~12× the needed traffic against someone else's API for no gain.
+ * Pair count per work, EVERY ONE MEASURED by binary search (2026-08-25). pair_index is 1-based; 0 is empty
+ * on every work tested.
+ *
+ * MEASURED, NOT ESTIMATED — and the difference is not academic. Prayers and Meditations was first entered
+ * here as a guessed 700; it is actually 858, so the backfill silently truncated the last 158 pairs and
+ * reported 79% coverage as though that were the book. An estimate low by 18% does not fail, it under-fills
+ * and looks finished. (A ceiling has the opposite cost: probing 2,000 indexes for a 5-pair tablet is 400×
+ * the needed traffic against someone else's API.)
  */
 export const CTAI_PAIR_COUNT = Object.freeze({
   'kitab-i-iqan': 291,
   gleanings: 729,
   'the-hidden-words': 160,
   'epistle-to-the-son-of-the-wolf': 268,
-  'prayers-and-meditations': 700,
-  'will-and-testament': 90,
-  'tablet-of-the-holy-mariner': 40,
-  'tablet-of-ahmad': 30,
-  'fire-tablet': 40,
-  'kitab-i-ahd': 25,
-  'tablet-of-carmel': 15,
+  'prayers-and-meditations': 858,
+  'will-and-testament': 59,
+  'tablet-of-the-holy-mariner': 57,
+  'fire-tablet': 50,
+  'tablet-of-ahmad': 17,
+  'kitab-i-ahd': 16,
+  'tablet-of-carmel': 5,
 });
 
 /** True when an aligned original can be fetched for this doc at all. */
