@@ -1,0 +1,429 @@
+{
+  "at": "2026-07-21T18:27:43.033Z",
+  "api": "https://api.siftersearch.com",
+  "pass": 3,
+  "total": 20,
+  "linkCoverage": {
+    "linked": 21,
+    "points": 39
+  },
+  "results": [
+    {
+      "id": "lotl-met-baha",
+      "category": "connection",
+      "query": "Letters of the Living who met Bahá'u'lláh",
+      "intent": "Subset of the 18 Letters with a cited meeting; no unsupported members",
+      "expect_names": [
+        "Mullá Ḥusayn",
+        "Quddús",
+        "Ṭáhirih"
+      ],
+      "min_results": 3,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 9961,
+      "results": 9,
+      "linked": 6,
+      "evTotal": 9,
+      "group": 1247655,
+      "fails": [
+        "unlinked: 3/9 points without a source link"
+      ],
+      "summary": "Mullá Ḥusayn [the Báb — prophesied Bahá'u'lláh](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_397); Quddús [met Bahá’u’lláh](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_526); Ṭáhirih [Fáṭimih Baraghání (Ṭáhirih) — hosted Mírzá Ḥusayn-‘Alíy-i-Núrí (Bahá’u’lláh)](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_803); Mullá Báqir-i-Tabrízí [praised-by Bahá’u’lláh](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_1305); Siyyid Ḥusayn-i-Yazdí [fellow-prisoner Bahá'u'lláh](https://oceanlibrary.com/god-passes-by_shoghi-effendi?paraId=para_169); Mullá ‘Alíy-i-Basṭámí Mullá 'Alíy-i-Basṭámí — addressed-by Bahá'u'lláh — Ẓuhúru'l-Ḥaqq Vol 3 (Babi Biographies); Mullá Aḥmad-i-Ibdál-i-Marág̱hi’í Mullá Aḥmad-i-Ibdál-i-Marághí’í — teacher-of Bábí community — The Revelation of Bahá’u’lláh vol. 2; Mullá Yúsuf-i-Ardibílí proclaimed the Báb and Bahá'u'lláh as the two Promised Manifestations — Ẓuhúru'l-Ḥaqq Vol 3 (Babi Biographies); Mírzá Hádí, son of Mullá ‘Abdu’l-Vahháb-i-Qazvíní [Mírzá Hádí — appointed-by Bahá'u'lláh](https://bahai-library.com/balyuzi_bab_herald_days?paraId=h568)."
+    },
+    {
+      "id": "accompanied-mecca",
+      "category": "connection",
+      "query": "who accompanied the Báb on His pilgrimage to Mecca",
+      "intent": "Quddús accompanied the Báb to Mecca/Ḥijáz",
+      "expect_names": [
+        "Quddús"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 8467,
+      "results": 1,
+      "linked": 0,
+      "evTotal": 1,
+      "group": null,
+      "fails": [
+        "unlinked: 1/1 points without a source link"
+      ],
+      "summary": "Quddús accompanied the Báb on pilgrimage to Mecca and Medina — Bahá’u’lláh -- The King of Glory."
+    },
+    {
+      "id": "siyah-chal-companions",
+      "category": "connection",
+      "query": "companions imprisoned with Bahá'u'lláh in the Síyáh-Chál",
+      "intent": "Fellow prisoners of the Black Pit, 1852",
+      "expect_names": [
+        "Siyyid Ḥusayn"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": true,
+      "ms": 16036,
+      "results": 1,
+      "linked": 1,
+      "evTotal": 1,
+      "group": 1249027,
+      "fails": [],
+      "summary": "Siyyid Ḥusayn-i-Yazdí [fellow-prisoner of Bahá’u’lláh in the Síyáh-C̱hál of Ṭihrán](https://oceanlibrary.com/god-passes-by_shoghi-effendi?paraId=para_169)."
+    },
+    {
+      "id": "met-bab-shiraz",
+      "category": "connection",
+      "query": "who met the Báb in Shíráz",
+      "intent": "Mullá Ḥusayn, the first to believe",
+      "expect_names": [
+        "Mullá Ḥusayn"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 39561,
+      "results": 5,
+      "linked": 4,
+      "evTotal": 5,
+      "group": null,
+      "fails": [
+        "unlinked: 1/5 points without a source link"
+      ],
+      "summary": "Mullá Ḥusayn [met the Báb in His house in Shíráz on the night of His Declaration](https://bahai-library.com/balyuzi_bab_herald_days?paraId=h125); Quddús met the Báb in Shíráz — The Bábí and Bahá’í Religions 1844-1944: Some Contemporary Western Accounts; Vaḥíd [met the Báb in Shíráz](https://oceanlibrary.com/god-passes-by_shoghi-effendi?paraId=para_41); Mírzá Hádí, son of Mullá ‘Abdu’l-Vahháb-i-Qazvíní [attained the presence of the Báb in Shíráz](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_1292); Muqaddas [attained the presence of the Báb in Shíráz after His arrival](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_518)."
+    },
+    {
+      "id": "tabarsi-martyrs",
+      "category": "place-death",
+      "query": "who was martyred at Fort Ṭabarsí",
+      "intent": "Ṭabarsí martyrs — Mullá Ḥusayn, Quddús, others",
+      "expect_names": [
+        "Mullá Ḥusayn"
+      ],
+      "min_results": 3,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 27558,
+      "results": 6,
+      "linked": 3,
+      "evTotal": 6,
+      "group": 1249007,
+      "fails": [
+        "unlinked: 3/6 points without a source link"
+      ],
+      "summary": "the Báb [martyred at Fort Shaykh Ṭabarsí](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_1430); Quddús [martyred at Shaykh Ṭabarsí](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_1032); Mullá Ḥusayn died and was buried inside the shrine at Shaykh Ṭabarsí fort — Ẓuhúru'l-Ḥaqq Vol 2 (The Bab); Anís martyred at Fort Ṭabarsí — Ẓuhúru'l-Ḥaqq Vol 3 (Babi Biographies); Mullá Yúsuf-i-Ardibílí martyred at Fort Ṭabarsí — Ẓuhúru'l-Ḥaqq Vol 2 (The Bab); Mírzá Muḥammad-Báqir-i-Qá’iní [fell a martyr at the fort of S̱hayḵh Ṭabarsí](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_390)."
+    },
+    {
+      "id": "zanjan-martyrs",
+      "category": "place-death",
+      "query": "Bábís who died at Zanján",
+      "intent": "Ḥujjat and the Zanján upheaval martyrs",
+      "expect_names": [
+        "Ḥujjat"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 24247,
+      "results": 0,
+      "linked": 0,
+      "evTotal": 0,
+      "group": 1283117,
+      "fails": [
+        "coverage: 0 < 1",
+        "missing: Ḥujjat"
+      ],
+      "summary": ""
+    },
+    {
+      "id": "nayriz-martyrs",
+      "category": "place-death",
+      "query": "the martyrs of Nayríz",
+      "intent": "Vaḥíd and the 1850 Nayríz cohort; not 1853/1909 namesakes",
+      "expect_names": [
+        "Vaḥíd"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 14824,
+      "results": 3,
+      "linked": 1,
+      "evTotal": 3,
+      "group": null,
+      "fails": [
+        "unlinked: 2/3 points without a source link"
+      ],
+      "summary": "Vaḥíd met a martyr's death during the first episode of Nayríz (1850) — The Báb - The Herald of the Days; Áḵhúnd Mullá ‘Abdu’l-Ḥusayn martyred at a Siyyidán village as part of the Nayríz episode — The Bábís of Nayriz: History and Documents; Siyyid Murtaḍá-i-Zanjání [martyred Nayríz](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_568)."
+    },
+    {
+      "id": "beheaded",
+      "category": "death-cause",
+      "query": "who was beheaded",
+      "intent": "Persons whose cited death cause is beheading",
+      "expect_names": [
+        "Khál-i-A‘ẓam"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 24956,
+      "results": 0,
+      "linked": 0,
+      "evTotal": 0,
+      "group": null,
+      "fails": [
+        "coverage: 0 < 1",
+        "missing: Khál-i-A‘ẓam",
+        "explanation: empty"
+      ],
+      "summary": ""
+    },
+    {
+      "id": "seven-martyrs-tihran",
+      "category": "group",
+      "query": "the seven martyrs of Tihran",
+      "intent": "The Seven Martyrs group roster (deterministic)",
+      "expect_group": true,
+      "min_results": 5,
+      "require_all_linked": false,
+      "ok": true,
+      "ms": 114,
+      "results": 7,
+      "linked": 0,
+      "evTotal": 0,
+      "group": 1247672,
+      "fails": [],
+      "summary": "the Seven Martyrs of Ṭihrán — 7 members."
+    },
+    {
+      "id": "bab-amanuensis",
+      "category": "role",
+      "query": "the Báb's amanuensis",
+      "intent": "Siyyid Ḥusayn-i-Yazdí (distinct from Bahá'u'lláh's amanuensis)",
+      "expect_names": [
+        "Siyyid Ḥusayn"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": true,
+      "ms": 8646,
+      "results": 1,
+      "linked": 1,
+      "evTotal": 1,
+      "group": null,
+      "fails": [],
+      "summary": "Siyyid Ḥusayn-i-Yazdí [the Báb’s amanuensis](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_1846)."
+    },
+    {
+      "id": "women-dawnbreakers",
+      "category": "attribute",
+      "query": "women in the Dawn-Breakers",
+      "intent": "Ṭáhirih and other cited female figures",
+      "expect_names": [
+        "Ṭáhirih"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 26482,
+      "results": 0,
+      "linked": 0,
+      "evTotal": 0,
+      "group": null,
+      "fails": [
+        "coverage: 0 < 1",
+        "missing: Ṭáhirih",
+        "explanation: empty"
+      ],
+      "summary": ""
+    },
+    {
+      "id": "clerics-converted",
+      "category": "attribute",
+      "query": "clerics who embraced the Bábí Faith",
+      "intent": "Mullás/Siyyids who converted",
+      "expect_names": [
+        "Vaḥíd"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 25923,
+      "results": 0,
+      "linked": 0,
+      "evTotal": 0,
+      "group": 1248951,
+      "fails": [
+        "coverage: 0 < 1",
+        "missing: Vaḥíd"
+      ],
+      "summary": ""
+    },
+    {
+      "id": "first-recognized-bab",
+      "category": "significance",
+      "query": "who first recognized the Báb",
+      "intent": "Mullá Ḥusayn — the first Letter of the Living",
+      "expect_names": [
+        "Mullá Ḥusayn"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 28579,
+      "results": 4,
+      "linked": 2,
+      "evTotal": 4,
+      "group": 1247655,
+      "fails": [
+        "unlinked: 2/4 points without a source link"
+      ],
+      "summary": "Mullá Ḥusayn [the first to believe in Him](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_232); Ṭáhirih the first to recognize Him — Martha Root: Herald of the Kingdom; Vaḥíd [the first to believe in the Báb](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_501); Muḥammad the first to recognize Him was Muḥammad — Gate of the Heart: Understanding the Writings of the Báb."
+    },
+    {
+      "id": "barfurush-with-quddus",
+      "category": "connection",
+      "query": "disciples martyred alongside Quddús at Bárfurúsh",
+      "intent": "Ṭabarsí survivors killed at Bárfurúsh with Quddús",
+      "expect_names": [
+        "Quddús"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 6670,
+      "results": 0,
+      "linked": 0,
+      "evTotal": 0,
+      "group": null,
+      "fails": [
+        "coverage: 0 < 1",
+        "missing: Quddús",
+        "explanation: empty"
+      ],
+      "summary": ""
+    },
+    {
+      "id": "conferred-title-baha",
+      "category": "significance",
+      "query": "who conferred the title Bahá'u'lláh",
+      "intent": "The Báb conferred the title",
+      "expect_names": [
+        "Báb"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 29979,
+      "results": 0,
+      "linked": 0,
+      "evTotal": 0,
+      "group": 1249027,
+      "fails": [
+        "coverage: 0 < 1",
+        "missing: Báb"
+      ],
+      "summary": ""
+    },
+    {
+      "id": "bab-mother-wife",
+      "category": "kinship",
+      "query": "the mother and wife of the Báb",
+      "intent": "Khadíjih-Bagum (wife) and His mother",
+      "expect_names": [],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 26575,
+      "results": 2,
+      "linked": 1,
+      "evTotal": 2,
+      "group": null,
+      "fails": [
+        "unlinked: 1/2 points without a source link"
+      ],
+      "summary": "the Báb [mother of the Báb, Fáṭimih Begum](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_554); Khadíjih-Bagum wife of the Báb, Khadíjih Bagum — The Revelation of Bahá’u’lláh vol. 2."
+    },
+    {
+      "id": "bab-uncle",
+      "category": "kinship",
+      "query": "who was the Báb's uncle",
+      "intent": "Ḥájí Mírzá Siyyid ‘Alí, Khál-i-A‘ẓam",
+      "expect_names": [
+        "Khál-i-A‘ẓam"
+      ],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 8967,
+      "results": 2,
+      "linked": 1,
+      "evTotal": 2,
+      "group": null,
+      "fails": [
+        "unlinked: 1/2 points without a source link"
+      ],
+      "summary": "Khál-i-A‘ẓam [the Báb's maternal uncle](https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_435); Khál Akbar the Báb's maternal uncle — The Revelation of Bahá’u’lláh vol. 1."
+    },
+    {
+      "id": "governors-persecuted",
+      "category": "opponent",
+      "query": "governors who persecuted the Bábís",
+      "intent": "Opponent-side officials with cited persecution acts",
+      "expect_names": [],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 24495,
+      "results": 0,
+      "linked": 0,
+      "evTotal": 0,
+      "group": null,
+      "fails": [
+        "coverage: 0 < 1",
+        "explanation: empty"
+      ],
+      "summary": ""
+    },
+    {
+      "id": "badasht",
+      "category": "event",
+      "query": "who declared his mission at Badasht",
+      "intent": "The Badasht three — Ṭáhirih, Bahá'u'lláh, Quddús",
+      "expect_names": [],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 14696,
+      "results": 0,
+      "linked": 0,
+      "evTotal": 0,
+      "group": null,
+      "fails": [
+        "coverage: 0 < 1",
+        "explanation: empty"
+      ],
+      "summary": ""
+    },
+    {
+      "id": "baghdad-presence",
+      "category": "connection",
+      "query": "believers who attained the presence of Bahá'u'lláh in Baghdád",
+      "intent": "Baghdád-period companions, period-correct",
+      "expect_names": [],
+      "min_results": 1,
+      "require_all_linked": true,
+      "ok": false,
+      "ms": 22291,
+      "results": 5,
+      "linked": 1,
+      "evTotal": 5,
+      "group": 1248242,
+      "fails": [
+        "unlinked: 4/5 points without a source link"
+      ],
+      "summary": "Khál Akbar attained the presence of Baháʾuʾlláh in Baghdad — The Genesis of the Bábí-Bahá’í Faiths in Shíráz and Fárs; Mírzá Muḥammad-Javád-i-Qazvíní first attained the presence of Bahá’u’lláh in Bag_hdád — The Covenant of Bahá’u’lláh; Muqaddas [came to Bag̱hdád and attained the presence of Bahá’u’lláh](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha?paraId=para_31); Nabíl-i-Akbar met Bahá’u’lláh in Baghdad and became a believer — The Revelation of Bahá’u’lláh vol. 3; Shaykh Muḥammad-Báqir (the Wolf) attaining the presence of Bahá’u’lláh in Bag_hdád — Eminent Bahá’ís in the Time of Bahá’u’lláh."
+    }
+  ]
+}

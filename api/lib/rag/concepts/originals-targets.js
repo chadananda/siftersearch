@@ -29,8 +29,12 @@ export const NOT_THE_ORIGINAL = Object.freeze({
  *                     comprehension (Chad: "the original has no original paragraph segmentation")
  */
 export const ORIGINALS_TARGETS = Object.freeze({
-  20811: { work: 'The Seven Valleys and the Four Valleys', stems: ['bahaullah-st-006'], lang: 'fa', basis: 'segment',
-    note: 'Persian original 6,177 words in 51 arbitrary blocks against 125 English paragraphs; our doc also carries the Four Valleys, which this stem does not cover' },
+  // TWO STEMS FOR ONE DOC: our copy prints the Seven Valleys and the Four Valleys together, and the site
+  // publishes them as separate works (Haft-Vádí and Chihár-Vádí). Aligning only the first left the second
+  // half of the document with no original at all — 55% doc coverage that reads like a failure and is really
+  // a missing stem.
+  20811: { work: 'The Seven Valleys and the Four Valleys', stems: ['bahaullah-st-006', 'bahaullah-st-007'], lang: 'fa', basis: 'segment',
+    note: 'Persian originals 6,177 + 2,113 words in arbitrary blocks; the two works must be bound to disjoint stretches of the doc, which is what largestCluster is for' },
   20919: { work: 'The Secret of Divine Civilization', stems: ['abdul-baha-bkw19'], lang: 'fa', basis: 'segment',
     note: 'Persian original 21,989 words in 26 blocks; oceanoflights ALSO publishes an Arabic translation (abdul-baha-bkw19-ar) which must never be read as the original' },
   20907: { work: 'Memorials of the Faithful', stems: [

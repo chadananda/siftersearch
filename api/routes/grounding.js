@@ -393,7 +393,7 @@ export default async function groundingRoutes(fastify) {
     const { docId, stem, dryRun = true, minScore = 0.7, force = false } = req.body || {};
     if (!docId || !stem) throw ApiError.badRequest('docId and stem required');
     const { fetchPageParagraphs, pairByVerse } = await import('../lib/rag/concepts/ool-page.js');
-    const { alignSequences, detectSourceLang } = await import('../lib/rag/concepts/align.js');
+    const { alignSequences, detectSourceLang, largestCluster } = await import('../lib/rag/concepts/align.js');
     const store = makeStore();
 
     // ALREADY COVERED? Then do not go looking for a source we do not need — and decide this BEFORE any
@@ -522,7 +522,12 @@ export default async function groundingRoutes(fastify) {
       const inWork = new Set(bound.matches.map((m) => m.ourKey));
       const idx = ours.map((o, i) => (inWork.has(o.key) ? i : -1)).filter((i) => i >= 0);
       if (!idx.length) { perStem.push({ stem, skipped: 'none of our paragraphs match this work' }); continue; }
-      const slice = ours.slice(idx[0], idx.at(-1) + 1);
+      // The outer range of the matches is NOT the work: doc 20811 holds both Valleys, and a handful of
+      // coincidental matches inside the Seven Valleys stretched the Four Valleys' bound to [90, 209],
+      // re-offering 32 paragraphs that had already been aligned to a different original. Take the dense
+      // cluster instead — a work occupies a contiguous stretch, a lone distant match is a coincidence.
+      const [lo, hi] = largestCluster(idx);
+      const slice = ours.slice(lo, hi + 1);
 
       const lines = seg.numberLines(originalText);
       const chunks = seg.planChunks(slice.length, { parasPerChunk });
@@ -541,9 +546,12 @@ export default async function groundingRoutes(fastify) {
         );
         const text = reply?.content ?? reply?.text ?? '';
         for (const a of seg.parseAnchors(text)) {
-          // Chunk-local English numbers and window-local line numbers both become book-absolute here; leaving
-          // either relative would silently mis-place every chunk after the first.
-          anchors.push({ ...a, index: a.index + ch.start, line: a.line == null ? null : a.line + win.from - 1 });
+          // English numbers ARE chunk-local ([1] restarts each chunk) and become book-absolute here. LINE
+          // numbers are NOT: renderLines emits each line's own `n`, so a window starting at line 1297 shows
+          // "1297|" and the model answers in absolute numbers already. Shifting them too put chunk 2 of the
+          // Secret of Divine Civilization at lines 2488-2501 of an 1833-line book — every anchor past the
+          // first chunk rejected as out of range, which is the good outcome of a bad bug.
+          anchors.push({ ...a, index: a.index + ch.start });
         }
         const last = anchors.filter((a) => a.line != null).at(-1);
         if (last) floorLine = last.line;
@@ -577,7 +585,8 @@ export default async function groundingRoutes(fastify) {
       }
       perStem.push({ stem, originalLang: orig.lang, originalWords: originalText.split(/\s+/).length,
         lines: lines.length, chunks: chunks.length, ourParagraphsInWork: slice.length,
-        boundRange: [idx[0], idx.at(-1)], anchors: anchors.length, spans: spans.length,
+        boundRange: [lo, hi], matchedOutsideCluster: idx.filter((i) => i < lo || i > hi).length,
+        anchors: anchors.length, spans: spans.length,
         unconfirmed, exact, rejected: rejected.length, coverage,
         rejectedSamples: rejected.slice(0, 4).map((r) => ({ index: r.index, why: r.why })),
         ...(pairs.length ? { pairs } : {}) });

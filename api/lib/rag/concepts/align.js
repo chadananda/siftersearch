@@ -122,3 +122,28 @@ export function alignSequences(ours, theirs, { minScore = 0.7, window = 12 } = {
     },
   };
 }
+
+/**
+ * The densest contiguous stretch of matched indexes — where a WORK sits inside a document.
+ *
+ * A work occupies one continuous run of a book's paragraphs; a match far from the rest is a coincidence of
+ * shared vocabulary, not a second location. Taking the outer range instead bound the Four Valleys to
+ * [90, 209] of doc 20811 because a few of its phrases also match the Seven Valleys — re-offering 32
+ * paragraphs that had already been aligned to a different original (2026-08-26).
+ *
+ * `maxGap` is in paragraphs: a run continues across short unmatched stretches (a poem, a heading, a passage
+ * our edition paragraphs differently) and breaks at a real discontinuity.
+ */
+export function largestCluster(indexes, { maxGap = 12 } = {}) {
+  const sorted = [...indexes].sort((a, b) => a - b);
+  if (!sorted.length) return [0, -1];
+  let best = [sorted[0], sorted[0]], bestN = 1;
+  let start = sorted[0], n = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] - sorted[i - 1] <= maxGap) { n += 1; continue; }
+    if (n > bestN) { bestN = n; best = [start, sorted[i - 1]]; }
+    start = sorted[i]; n = 1;
+  }
+  if (n > bestN) best = [start, sorted.at(-1)];
+  return best;
+}

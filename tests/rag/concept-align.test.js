@@ -14,7 +14,7 @@
 //
 // Measured result with both properties in place: 290/292 matched, 0 non-monotonic, 0 pairs claimed twice.
 import { describe, it, expect } from 'vitest';
-import { alignSequences, dice, contentWords, normalizeEn, detectSourceLang } from '../../api/lib/rag/concepts/align.js';
+import { alignSequences, dice, contentWords, normalizeEn, detectSourceLang, largestCluster } from '../../api/lib/rag/concepts/align.js';
 
 const seq = (texts, prefix = 'a') => texts.map((text, i) => ({ key: `${prefix}${i}`, text }));
 
@@ -176,5 +176,26 @@ describe('translationAuthorityFor', () => {
   it('claims no rendering for a work he WROTE in English', async () => {
     const { translationAuthorityFor } = await import('../../api/lib/rag/concepts/backfill-original.js');
     expect(translationAuthorityFor(21310, { viaCtai: true })).toBeNull();          // God Passes By
+  });
+});
+
+describe('largestCluster — where a WORK sits inside a document', () => {
+  it('ignores a coincidental match far from the rest', () => {
+    // Doc 20811 holds both Valleys. A few Four Valleys phrases also match the Seven Valleys, and taking the
+    // outer range bound it to [90, 209] — re-offering 32 paragraphs already aligned to a different original.
+    expect(largestCluster([90, 95, ...Array.from({ length: 88 }, (_, i) => 122 + i)])).toEqual([122, 209]);
+  });
+
+  it('continues a run across a short unmatched stretch — a poem, a heading, a differently-broken passage', () => {
+    expect(largestCluster([1, 2, 3, 14, 15, 16])).toEqual([1, 16]);
+  });
+
+  it('breaks at a real discontinuity and keeps the bigger side', () => {
+    expect(largestCluster([1, 2, 3, 200, 201, 202, 203, 204])).toEqual([200, 204]);
+  });
+
+  it('handles a single match and an empty list without inventing a range', () => {
+    expect(largestCluster([7])).toEqual([7, 7]);
+    expect(largestCluster([])).toEqual([0, -1]);          // an empty slice, not a whole-document slice
   });
 });

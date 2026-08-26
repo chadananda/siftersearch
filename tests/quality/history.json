@@ -322,5 +322,46 @@
         "pass_rate": 56
       }
     }
+  },
+  {
+    "run_at": "2026-08-26T02:08:25.122Z",
+    "total": 516,
+    "passed": 127,
+    "pass_rate": 25,
+    "mrr": 0.137,
+    "latency_p50_ms": 7186,
+    "latency_p95_ms": 10942,
+    "categories": {
+      "concept-match": {
+        "passed": 119,
+        "total": 271,
+        "pass_rate": 44
+      },
+      "cross-tradition": {
+        "passed": 3,
+        "total": 52,
+        "pass_rate": 6
+      },
+      "phrase-match": {
+        "passed": 0,
+        "total": 168,
+        "pass_rate": 0
+      },
+      "authority-ranking": {
+        "passed": 0,
+        "total": 4,
+        "pass_rate": 0
+      },
+      "entity-aware": {
+        "passed": 0,
+        "total": 9,
+        "pass_rate": 0
+      },
+      "lay-paraphrase": {
+        "passed": 5,
+        "total": 12,
+        "pass_rate": 42
+      }
+    }
   }
 ]
