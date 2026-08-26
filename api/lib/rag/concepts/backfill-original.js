@@ -107,7 +107,13 @@ export async function backfillDoc(ctx, docId, { work: wantWork, maxPairs, minSco
   }
 
   const authority = translationAuthorityFor(docId, { viaCtai: true });
-  const paras = await ctx.store.getParagraphs(docId);          // already prose-only (paragraph|quote)
+  // RESOLVE THE DUPLICATE FIRST. Asked to align the Will and Testament against doc 8202, this returned 0
+  // matched and read as "the work isn't in that document" — 8202 is a DUPLICATE whose content was retired
+  // when it was deduped, and the live canonical is 20920. Pointed at 20920 the same call aligns 57 of 57.
+  // An empty shell and a genuine mismatch are indistinguishable from the coverage number alone, so the
+  // resolution has to happen before the alignment, not be left to the caller to remember.
+  const resolvedId = await ctx.store.resolveCanonicalDoc?.(docId) ?? Number(docId);
+  const paras = await ctx.store.getParagraphs(resolvedId);     // already prose-only (paragraph|quote)
   // Measured pair count, not a blanket ceiling: probing 2,000 indexes for a 160-pair book is ~12x the
   // needed traffic against someone else's API for nothing.
   const theirs = await fetchWorkPairs(work, maxPairs ?? CTAI_PAIR_COUNT[work] ?? 2000, { log });
@@ -142,7 +148,9 @@ export async function backfillDoc(ctx, docId, { work: wantWork, maxPairs, minSco
   for (const r of rows) langs[r.originalLang ?? 'unknown'] = (langs[r.originalLang ?? 'unknown'] || 0) + 1;
 
   const result = {
-    docId, work, authority, dryRun, ...stats, originalLangs: langs,
+    docId: resolvedId, requestedDocId: Number(docId),
+    ...(resolvedId !== Number(docId) ? { resolvedFromDuplicate: Number(docId) } : {}),
+    work, authority, dryRun, ...stats, originalLangs: langs,
     // Surfaced in the RESULT, not only the log: a truncated fetch otherwise reports a plausible coverage
     // number with nothing to distinguish it from a complete one.
     ...(theirs.truncated ? { truncated: true, warning: `pair fetch hit the ${work} ceiling — CTAI_PAIR_COUNT is too low, coverage understates the work` } : {}),

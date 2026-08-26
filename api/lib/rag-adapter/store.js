@@ -18,6 +18,14 @@ const GAZETTEER_PATH = process.env.SIFTER_GAZETTEER || 'data/siftersearch-gazett
 
 export function makeStore() {
   return {
+    // Follow duplicate_of to the copy that actually holds the text — the ONE owner of that rule is
+    // docs-repo, never a second implementation here.
+    async resolveCanonicalDoc(docId) {
+      const { resolveCanonical } = await import('../docs-repo.js');
+      const r = await resolveCanonical(docId);
+      return r?.resolved ?? Number(docId);
+    },
+
     // Document metadata for profiling. Maps DB columns → the port's neutral DocMeta shape.
     async getDocMeta(docId) {
       return (await db.queryAll(

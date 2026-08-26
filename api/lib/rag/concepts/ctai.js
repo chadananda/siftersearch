@@ -41,12 +41,30 @@ const MIN_OVERLAP = 0.5;         // below this we HOLD rather than bind to the w
  * coverage separates them decisively (Gleanings 699/746 = 94%; an anthology matches a fraction of its bulk).
  */
 export const CTAI_DOC_BY_WORK = Object.freeze({
-  'kitab-i-iqan': 20810,                    // confirmed: 290/292 aligned
-  gleanings: 8312,                          // confirmed: 699/746 aligned
-  'epistle-to-the-son-of-the-wolf': 8273,   // confirmed: 258/317 aligned
-  'the-hidden-words': 20809,                // confirmed: every verse BODY aligned (invocation rows are separate)
-  'prayers-and-meditations': 20805,         // resolved by text, share 1.0, canonical oceanlibrary.com
+  'kitab-i-iqan': 20810,                    // 290/292 · fa 272 / ar 18
+  gleanings: 8312,                          // 699/746
+  'epistle-to-the-son-of-the-wolf': 8273,   // 258/317
+  'the-hidden-words': 20809,                // 157/163 after the lead-in merge · ar 78 / fa 79
+  'prayers-and-meditations': 20805,         // 846/878 · ar 834 / fa 12
+  'will-and-testament': 20920,              // 57/57 — the WHOLE work. ⚠ NOT 8202: that is a duplicate whose
+                                            //   content was retired at dedupe, and aligning against it
+                                            //   returned 0 and read as "the work isn't here".
+  'tablet-of-ahmad': 20762,                 // inside Bahá'í Prayers, 16/17
+  'fire-tablet': 20762,                     // inside Bahá'í Prayers, 50/50
+  'kitab-i-ahd': 20781,                     // inside Fountain of Wisdom, 14/16
+  'tablet-of-carmel': 20781,                // ALSO in Gleanings — see CTAI_EXTRA_HOSTS
+  'tablet-of-the-holy-mariner': 20762,      // partial: Bahá'í Prayers carries 16 of its 57 pairs
 });
+
+/**
+ * A short tablet legitimately appears in SEVERAL compilations, and each copy deserves its original. The map
+ * above names one host per work so defaults and coverage listings stay simple; these are the additional
+ * confirmed hosts, every one verified by alignment coverage rather than by title.
+ */
+export const CTAI_EXTRA_HOSTS = Object.freeze([
+  { work: 'tablet-of-carmel', docId: 8312 },            // 5/5 in Gleanings
+  { work: 'will-and-testament', docId: 20777 },         // 28/59 in Bahá'í Sacred Writings
+]);
 
 /** Reverse view for callers that have a doc and want its work(s). */
 export const CTAI_WORKS_FOR_DOC = (docId) =>

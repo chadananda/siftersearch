@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T03:47:24.116Z",
+  "generated": "2026-08-26T04:01:57.658Z",
   "entries": [
+    {
+      "hash": "143b8336",
+      "date": "2026-08-25",
+      "type": "Other",
+      "description": "The truncation guard must probe one BEYOND the ceiling, not test the ceiling itself",
+      "scope": null
+    },
     {
       "hash": "60bb39dd",
       "date": "2026-08-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Wrangler-free R2 uploader via Cloudflare REST API",
       "scope": null
-    },
-    {
-      "hash": "1412104f",
-      "date": "2026-06-24",
-      "type": "Other",
-      "description": "Bio-set-portrait helper (set one portrait from bahai.media file or local image)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-25": [
+      {
+        "hash": "143b8336",
+        "date": "2026-08-25",
+        "type": "Other",
+        "description": "The truncation guard must probe one BEYOND the ceiling, not test the ceiling itself",
+        "scope": null
+      },
       {
         "hash": "60bb39dd",
         "date": "2026-08-25",
@@ -7067,13 +7074,6 @@
         "date": "2026-06-24",
         "type": "Other",
         "description": "Wrangler-free R2 uploader via Cloudflare REST API",
-        "scope": null
-      },
-      {
-        "hash": "1412104f",
-        "date": "2026-06-24",
-        "type": "Other",
-        "description": "Bio-set-portrait helper (set one portrait from bahai.media file or local image)",
         "scope": null
       }
     ]
