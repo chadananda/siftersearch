@@ -31,6 +31,27 @@ const ORIGINAL_LANGUAGE_AUTHORS = /(bah[áa].?u.?ll[áa]h|abdu.?l.?bah[áa]|the 
 
 const ORIGINAL_LANGS = ['ar', 'fa'];
 
+/**
+ * Works with NO AUTHORED ORIGINAL — searching for one is wasted effort, permanently.
+ *
+ * Chad, 2026-08-26: "promulgation, paris talks and Abdu'l-Baha in London have no originals."
+ *
+ * These are talks TAKEN DOWN BY OTHERS, in English or from notes: there is no authored Persian or Arabic
+ * text behind them to find. That is a different fact from "we have not located the original yet", and
+ * collapsing the two is how a gap report stays permanently red and stops being read. Recorded here by
+ * TITLE PATTERN rather than doc id, since the same work appears under several ids across the corpus.
+ *
+ * ⚠ This is Chad's domain knowledge, not something the data reveals — a document's own metadata cannot say
+ * "this was recorded from a talk". Add to it when he identifies more; never infer membership.
+ */
+const NO_AUTHORED_ORIGINAL = [
+  /promulgation of universal peace/i,
+  /paris talks/i,
+  /abdu.?l.?bah[áa] in london/i,
+];
+
+export const hasNoAuthoredOriginal = (title) => NO_AUTHORED_ORIGINAL.some((re) => re.test(String(title || '')));
+
 /** Title key for cross-language recall: strip diacritics, articles, punctuation. RECALL ONLY. */
 export function titleKey(title) {
   return String(title || '')
@@ -164,7 +185,7 @@ export async function originalsGapReport({ query = queryAll, limit = 500 } = {})
      ORDER BY paras DESC LIMIT ?`, [limit], 'survey:gap-report');
 
   const ctaiDocs = new Set(Object.keys(CTAI_WORK_BY_DOC).map(Number));
-  const out = { covered: [], partial: [], reachable: [], unreachable: [] };
+  const out = { covered: [], partial: [], reachable: [], unreachable: [], noOriginalExists: [] };
   for (const d of rows) {
     if (!d.paras) continue;
     if (!ORIGINAL_LANGUAGE_AUTHORS.test(d.author || '')) continue;   // English-composed → no original to find
@@ -174,17 +195,22 @@ export async function originalsGapReport({ query = queryAll, limit = 500 } = {})
     if (pct >= 0.9) out.covered.push(entry);
     else if (d.aligned > 0) out.partial.push(entry);
     else if (entry.ctai) out.reachable.push({ ...entry, via: 'ctai' });
+    else if (hasNoAuthoredOriginal(d.title)) out.noOriginalExists.push(entry);
     else out.unreachable.push(entry);
   }
   const sum = (a) => a.reduce((n, x) => n + x.paras, 0);
   return {
     // If the limit was actually hit, SAY SO — a coverage report that silently omits books is worse than none.
     ...(rows.length >= limit ? { truncated: true, warning: `hit the ${limit}-doc limit; raise ?limit= for the full picture` } : {}),
-    translations: out.covered.length + out.partial.length + out.reachable.length + out.unreachable.length,
+    translations: out.covered.length + out.partial.length + out.reachable.length
+      + out.unreachable.length + out.noOriginalExists.length,
     counts: { covered: out.covered.length, partial: out.partial.length,
-      reachable: out.reachable.length, unreachable: out.unreachable.length },
+      reachable: out.reachable.length, unreachable: out.unreachable.length,
+      // Counted apart from `unreachable` on purpose: nothing anyone does will ever close this one.
+      noOriginalExists: out.noOriginalExists.length },
     paragraphs: { covered: sum(out.covered), partial: sum(out.partial),
-      reachable: sum(out.reachable), unreachable: sum(out.unreachable) },
+      reachable: sum(out.reachable), unreachable: sum(out.unreachable),
+      noOriginalExists: sum(out.noOriginalExists) },
     ...out,
   };
 }
