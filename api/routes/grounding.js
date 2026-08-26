@@ -315,6 +315,59 @@ export default async function groundingRoutes(fastify) {
     return { works: out };
   });
 
+  /**
+   * POST /concepts/align-oceanoflights {docId, stemPrefix, dryRun=true, limit}
+   *
+   * Enrich OUR document with the original-language text, using oceanoflights.org as a RESEARCH SOURCE.
+   * Chad, 2026-08-26: "use it as a research point to find the parallel content" — nothing is ingested,
+   * replaced or re-pointed; the only field written is original_text on paragraphs we already own.
+   *
+   * Reaches the books CTAI cannot: the Aqdas, Some Answered Questions, Selections from the Writings of
+   * ‘Abdu’l-Bahá and of the Báb, the Tablets of the Divine Plan — every one a NON-Shoghi-Effendi rendering,
+   * which is where the original carries the most weight because the English fixes no sense.
+   */
+  fastify.post('/concepts/align-oceanoflights', admin, async (req) => {
+    const { docId, stemPrefix, dryRun = true, limit } = req.body || {};
+    if (!docId) throw ApiError.badRequest('docId required');
+    if (!stemPrefix) throw ApiError.badRequest('stemPrefix required (e.g. abdul-baha-selections-writings)');
+    const { originalsForDoc } = await import('../lib/rag/concepts/oceanoflights.js');
+    const { rag } = await import('../lib/rag-adapter/index.js');
+    const store = makeStore();
+
+    // Stems come from the SCRAPED pages we already hold — those pages are navigation chrome, but their
+    // filenames are the parallel-corpus index. The text itself is fetched from the linked file.
+    const rows = await queryAll(
+      `SELECT DISTINCT file_path FROM docs
+        WHERE source_site='oceanoflights.org' AND deleted_at IS NULL AND file_path LIKE ?
+        ORDER BY file_path`, [`%${stemPrefix}%`], 'ool:stems');
+    const { stemOf } = await import('../lib/rag/concepts/oceanoflights.js');
+    let stems = [...new Set(rows.map((r) => stemOf(r.file_path)).filter(Boolean))].sort();
+    if (limit) stems = stems.slice(0, Number(limit));
+    if (!stems.length) throw ApiError.badRequest(`no oceanoflights stems match '${stemPrefix}'`);
+
+    const resolved = await store.resolveCanonicalDoc(Number(docId));
+    const paras = await store.getParagraphs(resolved);
+    const ours = paras.map((p) => ({ key: p.id, text: p.text }));
+    const { matches, stats } = await originalsForDoc(ours, stems, { log: logger });
+
+    const out = { docId: resolved, ...(resolved !== Number(docId) ? { resolvedFrom: Number(docId) } : {}),
+      stemPrefix, dryRun, ...stats, written: 0,
+      samples: matches.slice(0, 3).map((m) => ({ score: m.score, lang: m.originalLang, stem: m.stem })) };
+    if (dryRun || !matches.length) return out;
+
+    out.written = await store.saveParagraphOriginals(matches.map((m) => ({
+      paraId: m.ourKey, originalText: m.originalText, originalLang: m.originalLang,
+      // NOT shoghi-effendi: these are the works he did not translate. Claiming his authority for a rendering
+      // that is not his would grant a translator sense-fixing power they do not have.
+      translationAuthority: 'committee',
+      wordAlignment: null,
+      alignRef: JSON.stringify({ source: 'oceanoflights.org', stem: m.stem, score: m.score,
+        alignedAt: new Date().toISOString() }),
+    })));
+    void rag;
+    return out;
+  });
+
   /** GET /concepts/original-coverage?docId= — how much of the bilingual layer is actually populated. */
   fastify.get('/concepts/original-coverage', admin, async (req) => {
     const { CTAI_DOC_BY_WORK, CTAI_WORK_BY_DOC } = await import('../lib/rag/concepts/ctai.js');

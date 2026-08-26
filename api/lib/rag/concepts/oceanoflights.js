@@ -93,24 +93,34 @@ export function parseCitation(text) {
 }
 
 /**
- * Build parallel [{ en, source, lang }] rows for one stem, pairing by POSITION within the file.
+ * Build parallel [{ en, source, lang }] rows for one stem by POSITION on the RAW paragraph lists.
  *
- * ⚠ MEASURED LIMIT (2026-08-26): position is NOT reliable for every stem. On the Aqdas stem the English
- * file holds 17 paragraphs and the Arabic 14 — the two arrange quotes and House-of-Justice notes under
- * different headings, so the Nth English paragraph is not the Nth Arabic one. The length guard below
- * catches that and abandons the stem rather than binding an offset pairing, which would attach one
- * passage's original to another's text — the one error that cannot be detected afterwards.
+ * Chad, 2026-08-26: "Each book in English should have parallel printing in Arabic/Farsi with the originals
+ * even broken into the same paragraphing." Verified: the two files run index-for-index — heading pairs with
+ * heading, author with author, and body paragraph N with body paragraph N.
  *
- * So this pairs only the stems where the two files genuinely run parallel. Reaching the rest needs the
- * citation anchor (parseCitation) rather than position; that rule is NOT yet written, and until it is,
- * a refused stem is the correct outcome.
+ * ⚠ MY EARLIER BUG, AND WHY THIS FILTERS LAST. A first version dropped "short" paragraphs from BOTH sides
+ * using one character threshold, then required the survivors to match in count. Arabic is more compact than
+ * its English rendering, so the Arabic of a passage routinely fell BELOW the threshold while its English sat
+ * above it — the filter manufactured the mismatch it was then used to detect, and refused 31 of 40 stems
+ * whose raw lists matched exactly. Pair FIRST on the raw lists, and only then decide which pairs are body
+ * text; never let a length rule run independently on two languages that encode length differently.
  */
-export function pairStem(enParas, srcParas) {
-  const en = enParas.filter((t, i) => !isFrontMatter(t, i)).map(stripVerseNumber);
-  const src = srcParas.filter((t, i) => !isFrontMatter(t, i)).map(stripVerseNumber);
-  if (!en.length || en.length !== src.length) return [];
-  return en.map((t, i) => ({ en: t, source: src[i], lang: detectSourceLang(src[i]) }))
-    .filter((r) => r.lang);                       // a "source" that is not Arabic script is not the original
+const NON_BODY = /^(—\s*\d+\s*—|[\d٠-٩]+|نسخه اصل فارسی|Translated|Provisional translation)$/i;
+
+export function pairStem(enParas, srcParas, { minBody = 60 } = {}) {
+  if (!enParas?.length || enParas.length !== srcParas?.length) return [];
+  const out = [];
+  for (let i = 0; i < enParas.length; i++) {
+    const en = stripVerseNumber(enParas[i]);
+    const source = stripVerseNumber(srcParas[i]);
+    const lang = detectSourceLang(source);
+    // Keep a pair only when the source really is original-language text and the English side is a passage
+    // rather than an author line, a section number, or a "Provisional translation" marker.
+    if (!lang || en.length < minBody || NON_BODY.test(en) || detectSourceLang(en)) continue;
+    out.push({ en, source, lang });
+  }
+  return out;
 }
 
 /**

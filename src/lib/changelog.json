@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T13:34:41.720Z",
+  "generated": "2026-08-26T13:47:52.603Z",
   "entries": [
+    {
+      "hash": "b9d3def2",
+      "date": "2026-08-26",
+      "type": "Other",
+      "description": "A research source for parallel originals — the route to the books CTAI cannot reach",
+      "scope": null
+    },
     {
       "hash": "f3bd06ce",
       "date": "2026-08-25",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Bigger accent loupe, orbiting conic-halo AI-thinking animation, always-visible clear button, clearer Ask AI button (touch-friendly/responsive), extraction-approach docs link under methodology",
       "scope": null
-    },
-    {
-      "hash": "d52ed3de",
-      "date": "2026-06-24",
-      "type": "Other",
-      "description": "Stronger search-bar styling (accent border, layered accent shadow, focus glow ring + lift)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-26": [
+      {
+        "hash": "b9d3def2",
+        "date": "2026-08-26",
+        "type": "Other",
+        "description": "A research source for parallel originals — the route to the books CTAI cannot reach",
+        "scope": null
+      }
+    ],
     "2026-08-25": [
       {
         "hash": "f3bd06ce",
@@ -7067,13 +7076,6 @@
         "date": "2026-06-24",
         "type": "Other",
         "description": "Bigger accent loupe, orbiting conic-halo AI-thinking animation, always-visible clear button, clearer Ask AI button (touch-friendly/responsive), extraction-approach docs link under methodology",
-        "scope": null
-      },
-      {
-        "hash": "d52ed3de",
-        "date": "2026-06-24",
-        "type": "Other",
-        "description": "Stronger search-bar styling (accent border, layered accent shadow, focus glow ring + lift)",
         "scope": null
       }
     ]
