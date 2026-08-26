@@ -178,7 +178,7 @@ export async function getParagraphs(docId, { proseOnly = true, limit = 100000, o
  */
 export async function enrichmentCoverage(docId) {
   const id = (await resolveCanonical(docId)).resolved ?? Number(docId);
-  const [row] = await query(
+  const row = await queryOne(
     `SELECT COUNT(*) total,
             SUM(context IS NOT NULL AND context != '') noted,
             SUM(hyp_questions IS NOT NULL) hyped,
@@ -186,7 +186,7 @@ export async function enrichmentCoverage(docId) {
        FROM content
       WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(blocktype,'paragraph') IN ('paragraph','quote')`,
     [id], 'docs-repo:enrichment-coverage');
-  const byVersion = await query(
+  const byVersion = await queryAll(
     `SELECT COALESCE(context_model,'(none)') version, COUNT(*) n
        FROM content
       WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(blocktype,'paragraph') IN ('paragraph','quote')
