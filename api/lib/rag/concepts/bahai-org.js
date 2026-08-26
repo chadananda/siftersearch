@@ -52,20 +52,25 @@ export function bodyParagraphs(html) {
  * fall out on their own — which is why the section list can be a plain range rather than a curated one.
  */
 export async function fetchWorkParagraphs(path, { lang = 'fa', sections = 12, log } = {}) {
-  const out = [];
-  const perSection = [];
-  for (let n = 1; n <= sections; n++) {
+  // CONCURRENT, and not as an optimisation. Twelve serial fetches cost ~35 seconds before the model is even
+  // called, and the tunnel in front of this API closes the connection at ~125s — so the fetch alone was
+  // spending a quarter of the budget for the whole request. Order is restored from the section number.
+  const results = await Promise.all(Array.from({ length: sections }, async (_, i) => {
+    const n = i + 1;
     try {
       const res = await fetch(`${HOST}/${lang}/library/authoritative-texts/${path}/${n}`,
         { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(TIMEOUT_MS) });
-      if (!res.ok) { perSection.push({ n, status: res.status, paragraphs: 0 }); continue; }
+      if (!res.ok) return { n, status: res.status, paras: [] };
       const paras = bodyParagraphs(await res.text());
-      perSection.push({ n, paragraphs: paras.length, words: paras.reduce((a, p) => a + p.text.split(/\s+/).length, 0) });
-      out.push(...paras);
+      return { n, paras, words: paras.reduce((a, p) => a + p.text.split(/\s+/).length, 0) };
     } catch (err) {
       log?.warn?.({ path, lang, n, err: err.message }, 'bahai-org: section fetch failed');
-      perSection.push({ n, error: err.message, paragraphs: 0 });
+      return { n, error: err.message, paras: [] };
     }
-  }
-  return { paragraphs: out, perSection };
+  }));
+  results.sort((a, b) => a.n - b.n);
+  return {
+    paragraphs: results.flatMap((r) => r.paras),
+    perSection: results.map(({ paras, ...rest }) => ({ ...rest, paragraphs: paras.length })),
+  };
 }

@@ -311,14 +311,18 @@ export function lineWindowFor({ floorLine = 1, paraCount, englishCount, lineCoun
  * split is split explicitly by the caller, never silently truncated here.
  */
 export async function segmentToEnglish({ englishTexts, originalText, lines: given, callModel,
-  parasPerChunk = 150, wordsPerLine = 12, anchorWords = 4, floorLine: startLine = 1, indexOffset = 0 } = {}) {
+  parasPerChunk = 150, wordsPerLine = 12, anchorWords = 4, floorLine: startLine = 1, indexOffset = 0,
+  totalEnglish } = {}) {
   const lines = given ?? numberLines(originalText, { wordsPerLine });
   const chunks = planChunks(englishTexts.length, { parasPerChunk });
   const anchors = [];
   let floorLine = startLine;
   for (const ch of chunks) {
+    // englishCount is the WHOLE BOOK, not this slice. Using the slice made lines-per-paragraph five times
+    // too large when a book was driven in pieces, so every request offered the entire original — a 95k-token
+    // prompt that the tunnel then timed out on.
     const win = lineWindowFor({ floorLine, paraCount: ch.end - ch.start,
-      englishCount: englishTexts.length, lineCount: lines.length });
+      englishCount: totalEnglish ?? englishTexts.length, lineCount: lines.length });
     const shown = lines.slice(win.from - 1, win.to);
     const reply = await callModel(buildSegmentPrompt(englishTexts.slice(ch.start, ch.end), shown, { anchorWords }));
     for (const a of parseAnchors(reply)) anchors.push({ ...a, index: a.index + ch.start + indexOffset });

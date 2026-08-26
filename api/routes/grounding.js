@@ -629,7 +629,7 @@ export default async function groundingRoutes(fastify) {
     const slice = ours.slice(fromIndex, toIndex ?? ours.length);
     const result = await seg.segmentToEnglish({
       englishTexts: slice.map((p) => p.text), originalText, lines, parasPerChunk,
-      floorLine, indexOffset: fromIndex,
+      floorLine, indexOffset: fromIndex, totalEnglish: ours.length,
       callModel: (prompt) => withAIContext(
         { docId: resolved, stage: 'concept-segment-original', sourceLang: lang, caller: 'segment-bahai-org' },
         async () => {

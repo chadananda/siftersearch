@@ -258,3 +258,14 @@ describe('linesFromParagraphs — when the source’s own paragraphing is real',
     expect(rejected[0].why).toMatch(/out of range \(1\.\.3\)/);
   });
 });
+
+describe('lineWindowFor when a book is driven in slices', () => {
+  it('scales the window to the WHOLE book, not to the slice being processed', () => {
+    // Using the slice made lines-per-paragraph five times too large, so every request offered the entire
+    // original — a 95k-token prompt the tunnel then timed out on.
+    const whole = lineWindowFor({ floorLine: 1, paraCount: 100, englishCount: 789, lineCount: 781 });
+    const slice = lineWindowFor({ floorLine: 1, paraCount: 100, englishCount: 100, lineCount: 781 });
+    expect(whole.to).toBeLessThan(300);
+    expect(slice.to).toBe(781);                 // what the bug looked like
+  });
+});
