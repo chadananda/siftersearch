@@ -194,7 +194,7 @@ export async function originalsGapReport({ query = queryAll, limit = 500 } = {})
   const AUTHOR_SQL = `(d.author LIKE '%Bah%u%ll%h%' OR d.author LIKE '%Abdu%l-Bah%'
                        OR d.author LIKE '%The B%b%' OR d.author LIKE '%Shoghi%')`;
   const rows = await query(`
-    SELECT d.id, d.title, d.author, d.collection,
+    SELECT d.id, d.title, d.author, d.collection, d.file_path,
            (SELECT COUNT(*) FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL
                                              AND COALESCE(c.blocktype,'paragraph') IN ('paragraph','quote')) paras,
            (SELECT COUNT(*) FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL
@@ -212,7 +212,11 @@ export async function originalsGapReport({ query = queryAll, limit = 500 } = {})
     if (!d.paras) continue;
     if (!ORIGINAL_LANGUAGE_AUTHORS.test(d.author || '')) continue;   // English-composed → no original to find
     const pct = d.aligned / d.paras;
-    const entry = { docId: d.id, title: d.title, paras: d.paras, aligned: d.aligned,
+    // FILE PATH, not just the id. Chad, 2026-08-26: "document ids are not meaningful to me. showing me
+    // file paths or partial file paths is meaningful." The path also carries the provenance at a glance —
+    // `-sites/oceanlibrary.com/…` is the canonical copy, `Baha'i/Tablet Translations/…` a translation
+    // variant — which an id hides entirely.
+    const entry = { path: d.file_path, docId: d.id, title: d.title, paras: d.paras, aligned: d.aligned,
       pct: Math.round(pct * 100), ctai: ctaiDocs.has(d.id) || Boolean(CTAI_DOC_BY_WORK[d.id]) };
     if (pct >= 0.9) out.covered.push(entry);
     else if (d.aligned > 0) out.partial.push(entry);

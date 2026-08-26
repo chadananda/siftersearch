@@ -178,6 +178,7 @@ export async function getParagraphs(docId, { proseOnly = true, limit = 100000, o
  */
 export async function enrichmentCoverage(docId) {
   const id = (await resolveCanonical(docId)).resolved ?? Number(docId);
+  const doc = await queryOne(`SELECT file_path, title FROM docs WHERE id = ?`, [id], 'docs-repo:enrichment-doc');
   const row = await queryOne(
     `SELECT COUNT(*) total,
             SUM(context IS NOT NULL AND context != '') noted,
@@ -193,6 +194,8 @@ export async function enrichmentCoverage(docId) {
         AND context IS NOT NULL AND context != ''
       GROUP BY version ORDER BY n DESC`, [id], 'docs-repo:enrichment-by-version');
   return {
+    // Path first: an id says nothing about which copy of a work this is; the path says both.
+    path: doc?.file_path ?? null, title: doc?.title ?? null,
     docId: id, ...(id !== Number(docId) ? { resolvedFrom: Number(docId) } : {}),
     total: row?.total ?? 0, noted: row?.noted ?? 0, hyped: row?.hyped ?? 0, aligned: row?.aligned ?? 0,
     notedPct: row?.total ? Math.round((100 * (row.noted ?? 0)) / row.total) : 0,
