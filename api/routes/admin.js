@@ -1234,18 +1234,41 @@ export default async function adminRoutes(fastify) {
       querystring: {
         type: 'object',
         properties: {
-          keepMeili: { type: 'boolean', default: false, description: 'Keep Meilisearch entries' }
+          keepMeili: { type: 'boolean', default: false, description: 'Keep Meilisearch entries' },
+          force: { type: 'boolean', default: false, description: 'Purge even a canonical doc holding live content (IRREVERSIBLE)' }
         }
       }
     }
   }, async (request) => {
     const { documentId } = request.params;
-    const { keepMeili = false } = request.query || {};
+    const { keepMeili = false, force = false } = request.query || {};
 
     // Check document exists
     const doc = await queryOne('SELECT id, title FROM docs WHERE id = ?', [documentId]);
     if (!doc) {
       throw ApiError.notFound(`Document not found: ${documentId}`);
+    }
+
+    // GUARD THE IRREVERSIBLE CASE (2026-08-26). This endpoint HARD-deletes: the row and its paragraphs are
+    // gone, not soft-deleted. Soft deletion is the only reason the June restore was possible at all —
+    // 14,588 paragraphs of 20 canonicals came back because the rows were still there. A hard purge of a
+    // canonical forecloses that permanently, and this path had no check of any kind.
+    //
+    // The capability is kept; the dangerous case now has to be stated. force=true purges anyway.
+    if (!force) {
+      const { purgeSafety } = await import('../lib/docs-repo.js');
+      const s = await purgeSafety(documentId);
+      if (s.exists && s.canonical && s.live > 0) {
+        throw ApiError.badRequest(
+          `REFUSED: doc ${documentId} ("${doc.title}") is a CANONICAL document holding ${s.live} live ` +
+          `paragraphs, and this endpoint deletes PERMANENTLY. Soft-delete via POST /api/admin/docs/delete ` +
+          `(reversible, guarded), or pass force=true if you truly mean to purge it.`);
+      }
+      if (s.exists && s.dependants > 0) {
+        throw ApiError.badRequest(
+          `REFUSED: ${s.dependants} live document(s) point at doc ${documentId} as their canonical; ` +
+          `purging it orphans them. Re-point them first, or pass force=true.`);
+      }
     }
 
     // Delete from content table

@@ -227,6 +227,30 @@ export async function markDuplicate(dupId, canonicalId, { reason = 'unspecified'
 }
 
 /**
+ * The facts a caller needs before an IRREVERSIBLE purge: is this canonical, does it hold live prose, and
+ * does anything else depend on it.
+ *
+ * Exists because the admin hard-delete endpoint was about to grow its own copy of these predicates — and a
+ * new hand-rolled `FROM docs` is the exact thing the ratchet test forbids. Extending the interface is the
+ * answer to "I need SQL it can't express" (Chad, 2026-08-25).
+ */
+export async function purgeSafety(docId) {
+  const row = await queryOne(
+    `SELECT d.id, d.title, d.source_site, d.duplicate_of, ${HAS_PROSE} has_prose,
+            (SELECT COUNT(*) FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL) live,
+            (SELECT COUNT(*) FROM docs o WHERE o.duplicate_of = d.id AND o.deleted_at IS NULL) dependants
+       FROM docs d WHERE d.id = ?`, [Number(docId)], 'docs-repo:purge-safety');
+  if (!row) return { exists: false };
+  const canonical = row.source_site === 'oceanlibrary.com' || row.source_site === null;
+  return {
+    exists: true, docId: row.id, title: row.title, canonical,
+    live: row.live ?? 0, dependants: row.dependants ?? 0,
+    // A purge is safe only when it destroys no live canonical text and orphans nobody.
+    safe: !(canonical && (row.live ?? 0) > 0) && (row.dependants ?? 0) === 0,
+  };
+}
+
+/**
  * Soft-delete documents, refusing when it would remove the last copy of a work.
  *
  * Delegates the existing protections (OceanLibrary never auto-deleted, batch circuit breaker, audit trail)

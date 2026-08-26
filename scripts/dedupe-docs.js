@@ -64,30 +64,29 @@ console.log(`\nSummary: Keep ${toKeep.length} docs, delete ${toDelete.length} do
 
 // Dry run by default
 if (process.argv.includes('--execute')) {
-  const deleteStmt = db.prepare('DELETE FROM docs WHERE id = ?');
-  const deleteContentStmt = db.prepare('DELETE FROM content WHERE doc_id = ?');
-
+  // GUARDED + REVERSIBLE (2026-08-26). This block previously ran two raw better-sqlite3 statements —
+  //   DELETE FROM content WHERE doc_id = ?;  DELETE FROM docs WHERE id = ?
+  // — a PERMANENT purge, on a directly-opened handle, bypassing the single writer, with no check that the
+  // survivor held anything or that the victim was the last copy of its work. Soft deletion is the only
+  // reason the June restore was possible: 14,588 paragraphs of 20 canonicals came back because the rows
+  // were still there. A hard delete forecloses that.
+  const { markDuplicate, softDeleteDocs } = await import('../api/lib/docs-repo.js');
   let deletedDocs = 0;
-  let deletedContent = 0;
-
-  db.exec('BEGIN TRANSACTION');
-  try {
-    for (const doc of toDelete) {
-      // Delete content first
-      const contentResult = deleteContentStmt.run(doc.id);
-      deletedContent += contentResult.changes;
-
-      // Delete doc
-      const docResult = deleteStmt.run(doc.id);
-      deletedDocs += docResult.changes;
+  for (const doc of toDelete) {
+    const keeper = toKeep.find((k) => k.slug === doc.slug);
+    if (keeper) {
+      try {
+        await markDuplicate(doc.id, keeper.id, { reason: 'dedupe-docs:slug' });
+      } catch (err) {
+        console.log(`  REFUSED to point ${doc.id} at ${keeper.id}: ${err.message}`);
+        continue;
+      }
     }
-    db.exec('COMMIT');
-    console.log(`\n✓ Deleted ${deletedDocs} duplicate docs and ${deletedContent} orphaned content rows`);
-  } catch (err) {
-    db.exec('ROLLBACK');
-    console.error('Error:', err.message);
-    process.exit(1);
+    const res = await softDeleteDocs([doc.id], { reason: 'dedupe-docs:slug' });
+    if (res.refused?.length) { console.log(`  REFUSED ${doc.id}: ${res.refused[0].why}`); continue; }
+    deletedDocs += res.deleted;
   }
+  console.log(`\n✓ Soft-deleted ${deletedDocs} duplicate docs (reversible; content retained)`);
 } else {
   console.log('\nDry run - use --execute to apply changes');
 }
