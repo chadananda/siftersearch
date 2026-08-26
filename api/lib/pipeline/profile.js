@@ -210,4 +210,9 @@ export function detectProfile(doc, sampleText = '') {
   };
 }
 
+// The ONE name for the model that reads an original alongside its translation. Exported so a caller outside
+// detectProfile() (segmenting an original, where there is no doc profile yet) uses the same id rather than a
+// second literal that can drift from `models.bilingualExtract`.
+export const BILINGUAL_MODEL = SONNET;
+
 export { providerOf };

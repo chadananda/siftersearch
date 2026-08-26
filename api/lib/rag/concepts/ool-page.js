@@ -98,6 +98,18 @@ export async function findOriginalLanguage(stem, { log, langs = ['ar', 'fa'] } =
   return seen.find((x) => x.role !== 'translation') ?? null;
 }
 
+/**
+ * A PAGE FOOTER THAT LOOKS LIKE SCRIPTURE. Every oceanoflights work page ends with a block of the form
+ * "6100 words الحمد لله الذی اظهر الوجود من العدم…" — a word count followed by the work's incipit. It appears
+ * IDENTICALLY on the English page and the original page, so it is not caught by any cross-language check: on
+ * the Seven Valleys it was the last "paragraph" of both the 125-item English list and the 52-item Persian
+ * list, and would have been aligned to itself and stored as a paragraph's original (found 2026-08-26).
+ *
+ * Anchored to the START of the block and requiring the literal word "words", so a genuine passage that
+ * happens to open with a number (a verse number, a date) is untouched.
+ */
+export const isPageFooter = (t) => /^\d{2,6}\s+words\b/.test(t);
+
 /** Fetch and extract the body paragraphs of one language of one work. */
 export async function fetchPageParagraphs(stem, lang, { log, minLen = 40 } = {}) {
   try {
@@ -110,7 +122,7 @@ export async function fetchPageParagraphs(stem, lang, { log, minLen = 40 } = {})
       .replace(/<li[\s\S]*?<\/li>/g, '');
     const paras = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)]
       .map((m) => clean(m[1]))
-      .filter((t) => t.length >= minLen);
+      .filter((t) => t.length >= minLen && !isPageFooter(t));
     return paras.map(splitVerseNumber);
   } catch (err) {
     log?.warn?.({ stem, lang, err: err.message }, 'ool-page: fetch failed');

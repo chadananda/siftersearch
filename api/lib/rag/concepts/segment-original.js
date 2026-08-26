@@ -156,3 +156,36 @@ export function spansFromAnchors(originalText, anchors, englishCount, { wordsPer
     coverage: englishCount ? Number((spans.length / englishCount).toFixed(3)) : 0,
   };
 }
+
+/**
+ * Split a long book into chunks of English paragraphs.
+ *
+ * A whole work in one call is the honest default and is what runs for anything up to `parasPerChunk` — the
+ * model sees the entire original and cannot mis-place a paragraph by not having been shown its home. Chunking
+ * exists only because some books do not fit: Some Answered Questions is 789 paragraphs against ~78,000 words.
+ */
+export function planChunks(englishCount, { parasPerChunk = 150 } = {}) {
+  const chunks = [];
+  for (let start = 0; start < englishCount; start += parasPerChunk) {
+    chunks.push({ start, end: Math.min(start + parasPerChunk, englishCount) });
+  }
+  return chunks.length ? chunks : [{ start: 0, end: 0 }];
+}
+
+/**
+ * Which lines of the original to show a chunk.
+ *
+ * Bounded BELOW by where the previous chunk ended, because the alignment is monotonic — offering lines the
+ * previous chunk already consumed invites the model to place a paragraph backwards, which is the one error
+ * the verifier can catch but should not have to. `lookback` keeps a little context behind the floor so a
+ * paragraph straddling the seam is still findable.
+ *
+ * Bounded ABOVE generously (`slack`), because a proportional estimate of where a chunk ends is exactly the
+ * length assumption this module rejects: it is used to decide how much text to SHOW, never where to cut.
+ */
+export function lineWindowFor({ floorLine = 1, paraCount, englishCount, lineCount, slack = 2.5, lookback = 3 } = {}) {
+  const linesPerPara = englishCount ? lineCount / englishCount : lineCount;
+  const from = Math.max(1, floorLine - lookback);
+  const to = Math.min(lineCount, Math.ceil(from + paraCount * linesPerPara * slack));
+  return { from, to };
+}

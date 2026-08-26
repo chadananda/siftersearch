@@ -17,6 +17,7 @@
 // new Persian book, pin it lang:'fa' in PROFILE_OVERRIDES and it becomes eligible automatically.
 import { PROFILE_OVERRIDES } from './pipeline/profile.js';
 import { CORE_ROSTER } from './rag/concepts/core-roster.js';
+import { ORIGINALS_TARGETS } from './rag/concepts/originals-targets.js';
 
 /** The curated core books — the ONE list, never a second copy that can drift from it. */
 const CORE_ROSTER_IDS = new Set(CORE_ROSTER.map((r) => r.docId));
@@ -62,18 +63,41 @@ export function isConceptCoreAllowed({ docId, stage, originalLang } = {}) {
   return CORE_ROSTER_IDS.has(Number(docId));
 }
 
+// SEGMENTING AN ORIGINAL (Chad, 2026-08-26: "we might have to segment some paragraphs in the original to map
+// to the English… Length is not relevant. Comprehension must be used.").
+//
+// This is the SAME capability case as above, one step earlier: cutting a continuous Persian stream to the
+// English paragraphing requires a model that can read the Persian, and deepseek-flash cannot. The condition
+// that differs is WHERE the language comes from — there is no stored `original_text` yet, because producing
+// it is the point, so the gate reads the language of the SOURCE TEXT the model is being handed. That keeps
+// the allowance tied to capability rather than to a book's importance, which is the property that makes it
+// safe to widen at all.
+//
+// The doc-set is the curated roster PLUS the explicit target list, and nothing else: an id must have been
+// written down by hand in one of two reviewed files before a paid model can see it.
+const SEGMENT_STAGES = new Set(['concept-segment-original']);
+const ORIGINALS_TARGET_IDS = new Set(Object.keys(ORIGINALS_TARGETS).map(Number));
+
+/** True when this is original-segmentation on a named book, over Arabic/Persian source text. */
+export function isOriginalSegmentAllowed({ docId, stage, sourceLang } = {}) {
+  if (docId == null || !SEGMENT_STAGES.has(String(stage || ''))) return false;
+  if (!ORIGINAL_LANGS.has(String(sourceLang || ''))) return false;
+  return CORE_ROSTER_IDS.has(Number(docId)) || ORIGINALS_TARGET_IDS.has(Number(docId));
+}
+
 /**
  * Throw (fatal) unless an Anthropic call is the one approved use: grounding a Persian paragraph of an approved
  * plan book. Not an Anthropic call → returns immediately (no effect on deepseek/openai/ollama/local).
  * lang + docId are read from the caller's ambient ai-context; missing/other → refused.
  */
-export function assertAnthropicAllowed({ provider, model, lang, docId, caller, stage, originalLang } = {}) {
+export function assertAnthropicAllowed({ provider, model, lang, docId, caller, stage, originalLang, sourceLang } = {}) {
   if (!isAnthropicProvider(provider) && !isAnthropicModel(model)) return;   // not Anthropic → not our concern
   const okLang = lang === 'fa';
   const okDoc = docId != null && APPROVED_PERSIAN_DOCS.has(Number(docId));
   if (okLang && okDoc) return;                                              // the ONE authorised case
   if (docId != null && PAID_DOC_ALLOWLIST.has(Number(docId))) return;       // flagship exception (see note above)
   if (isConceptCoreAllowed({ docId, stage, originalLang })) return;         // concept core (see note above)
+  if (isOriginalSegmentAllowed({ docId, stage, sourceLang })) return;       // segmenting an original (see note)
   const e = new Error(
     `Anthropic spend policy: ${model || 'claude'} REFUSED — Anthropic is authorised only for grounding the ` +
     `approved Persian plan books (Mázandarání Ẓuhúru'l-Ḥaqq). Got lang=${lang || 'none'}, doc=${docId ?? 'none'}, ` +

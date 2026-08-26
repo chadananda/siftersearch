@@ -8,7 +8,8 @@
 // This module exists because a past leak billed Sonnet on ~421K non-Persian paragraphs. Every test here is
 // about keeping that from recurring: the allowance must not widen by accident.
 import { describe, it, expect } from 'vitest';
-import { assertAnthropicAllowed, isConceptCoreAllowed } from '../../api/lib/anthropic-policy.js';
+import { assertAnthropicAllowed, isConceptCoreAllowed, isOriginalSegmentAllowed } from '../../api/lib/anthropic-policy.js';
+import { ORIGINALS_TARGETS } from '../../api/lib/rag/concepts/originals-targets.js';
 import { CORE_ROSTER } from '../../api/lib/rag/concepts/core-roster.js';
 
 const CORE = CORE_ROSTER[0].docId;          // a genuine core-roster id, not a guess
@@ -68,5 +69,44 @@ describe('assertAnthropicAllowed — the gate itself', () => {
 
   it('fails FATALLY, so a breach aborts rather than becoming partial work', () => {
     try { call({ lang: 'en' })(); } catch (e) { expect(e.fatal).toBe(true); }
+  });
+});
+
+// ── SEGMENTING AN ORIGINAL ────────────────────────────────────────────────────────────────────────────────
+// The same capability case one step earlier. There is no stored original yet — producing it is the point —
+// so the gate reads the language of the SOURCE TEXT handed to the model, not a column.
+describe('isOriginalSegmentAllowed', () => {
+  const SEVEN_VALLEYS = Number(Object.keys(ORIGINALS_TARGETS)[0]);
+
+  it('allows segmentation of a named target’s Persian original', () => {
+    expect(isOriginalSegmentAllowed({ docId: SEVEN_VALLEYS, stage: 'concept-segment-original', sourceLang: 'fa' })).toBe(true);
+  });
+
+  it('allows it for a core-roster book too', () => {
+    expect(isOriginalSegmentAllowed({ docId: CORE, stage: 'concept-segment-original', sourceLang: 'ar' })).toBe(true);
+  });
+
+  it('REFUSES a doc named in neither reviewed file', () => {
+    // An id has to have been written down by hand before a paid model can see it.
+    expect(isOriginalSegmentAllowed({ docId: NOT_CORE, stage: 'concept-segment-original', sourceLang: 'fa' })).toBe(false);
+  });
+
+  it('REFUSES English source text — that is not the capability case', () => {
+    for (const sourceLang of ['en', null, undefined, '']) {
+      expect(isOriginalSegmentAllowed({ docId: SEVEN_VALLEYS, stage: 'concept-segment-original', sourceLang })).toBe(false);
+    }
+  });
+
+  it('does NOT leak into any other stage', () => {
+    for (const stage of ['concept-extract', 'hype', 'grounding', undefined]) {
+      expect(isOriginalSegmentAllowed({ docId: SEVEN_VALLEYS, stage, sourceLang: 'fa' })).toBe(false);
+    }
+  });
+
+  it('is reachable through the gate, and only with all of it', () => {
+    const call = (o) => () => assertAnthropicAllowed({ provider: 'anthropic', model: 'claude-sonnet-4-6', ...o });
+    expect(call({ docId: SEVEN_VALLEYS, stage: 'concept-segment-original', sourceLang: 'fa' })).not.toThrow();
+    expect(call({ docId: SEVEN_VALLEYS, stage: 'concept-segment-original', sourceLang: 'en' })).toThrow(/REFUSED/);
+    expect(call({ docId: NOT_CORE, stage: 'concept-segment-original', sourceLang: 'fa' })).toThrow(/REFUSED/);
   });
 });

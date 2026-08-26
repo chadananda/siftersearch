@@ -7,7 +7,8 @@
 // The anchors-not-segments choice is what makes the model's answer CHECKABLE: an invented phrase fails a
 // substring test, where a re-emitted segment would have to be trusted.
 import { describe, it, expect } from 'vitest';
-import { normalizeArabic, findAnchor, numberLines, renderLines, buildSegmentPrompt, parseAnchors, spansFromAnchors }
+import { normalizeArabic, findAnchor, numberLines, renderLines, buildSegmentPrompt, parseAnchors, spansFromAnchors,
+  planChunks, lineWindowFor }
   from '../../api/lib/rag/concepts/segment-original.js';
 
 const ORIGINAL = 'انّ اوّل ما کتب الله علی العباد عرفان مشرق وحيه و مطلع امره '
@@ -142,5 +143,35 @@ describe('spansFromAnchors', () => {
   it('reports coverage, so a thin segmentation is visible as thin', () => {
     const { coverage } = spansFromAnchors(ORIGINAL, [{ index: 1, line: 1 }], 4, opts);
     expect(coverage).toBe(0.25);
+  });
+});
+
+describe('planChunks / lineWindowFor — fitting a long book, without letting length decide a cut', () => {
+  it('keeps a whole work in ONE call when it fits', () => {
+    // The honest default: the model sees the entire original and cannot mis-place a paragraph by never
+    // having been shown its home.
+    expect(planChunks(121)).toEqual([{ start: 0, end: 121 }]);
+  });
+
+  it('splits only what does not fit, covering every paragraph exactly once', () => {
+    const chunks = planChunks(789, { parasPerChunk: 150 });
+    expect(chunks[0]).toEqual({ start: 0, end: 150 });
+    expect(chunks.at(-1).end).toBe(789);
+    for (let i = 1; i < chunks.length; i++) expect(chunks[i].start).toBe(chunks[i - 1].end);
+  });
+
+  it('bounds a chunk BELOW by where the last one ended, so the model cannot go backwards', () => {
+    const w = lineWindowFor({ floorLine: 200, paraCount: 150, englishCount: 789, lineCount: 6000 });
+    expect(w.from).toBe(197);          // floor minus a little lookback for a paragraph straddling the seam
+  });
+
+  it('bounds it ABOVE generously — the estimate decides what to SHOW, never where to cut', () => {
+    const w = lineWindowFor({ floorLine: 1, paraCount: 150, englishCount: 789, lineCount: 6000 });
+    expect(w.to).toBeGreaterThan(150 * (6000 / 789));   // comfortably past the proportional guess
+    expect(w.to).toBeLessThanOrEqual(6000);
+  });
+
+  it('never runs past the end of the original', () => {
+    expect(lineWindowFor({ floorLine: 490, paraCount: 150, englishCount: 121, lineCount: 517 }).to).toBe(517);
   });
 });

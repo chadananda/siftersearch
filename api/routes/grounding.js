@@ -449,6 +449,133 @@ export default async function groundingRoutes(fastify) {
 
 
   /**
+   * POST /concepts/segment-ool-work {docId, stems?, dryRun=true, force=false}
+   *
+   * Populate the bilingual layer for a work whose original is a CONTINUOUS STREAM — no verse numbers, no
+   * meaningful paragraphing to pair against. Chad, 2026-08-26: "the original has no original paragraph
+   * segmentation. if it has any, they are artificial… Length is not relevant. Comprehension must be used."
+   *
+   * So a model reads both and says where each English paragraph BEGINS in the original, answering with a LINE
+   * NUMBER (Chad: "Otherwise it will output slightly wrong text and you will not be able to find it").
+   *
+   * THREE THINGS ARE ESTABLISHED BEFORE THE MODEL IS PAID, each of which has already failed once here:
+   *   1. the source page must DECLARE itself the original — preferring Arabic filed a translation as an
+   *      original for the Secret of Divine Civilization, undetectably
+   *   2. our paragraphs are bounded to the work by a deterministic English-to-English match — doc 20811 holds
+   *      the Four Valleys as well, and the model must not be asked to place it in a Seven Valleys stream
+   *   3. an already-covered book is skipped before any fetch
+   */
+  fastify.post('/concepts/segment-ool-work', admin, async (req) => {
+    const { docId, stems: wantStems, dryRun = true, force = false, parasPerChunk = 150, minScore = 0.55 } = req.body || {};
+    if (!docId) throw ApiError.badRequest('docId required');
+    const { targetFor, NOT_THE_ORIGINAL } = await import('../lib/rag/concepts/originals-targets.js');
+    const { fetchPageParagraphs, findOriginalLanguage } = await import('../lib/rag/concepts/ool-page.js');
+    const { alignSequences, detectSourceLang } = await import('../lib/rag/concepts/align.js');
+    const seg = await import('../lib/rag/concepts/segment-original.js');
+    const { withAIContext } = await import('../lib/ai-context.js');
+    const { chatCompletion } = await import('../lib/ai.js');
+    const { BILINGUAL_MODEL } = await import('../lib/pipeline/profile.js');
+    const store = makeStore();
+
+    const notOriginal = NOT_THE_ORIGINAL[Number(docId)];
+    const target = targetFor(docId);
+    const stems = wantStems?.length ? wantStems : target?.stems;
+    if (!stems?.length) {
+      // Name the reason. "No stems" and "the only source is a translation" are different situations, and the
+      // second is a finding rather than a gap.
+      throw ApiError.badRequest(notOriginal
+        ? `doc ${docId} (${notOriginal.work}): ${notOriginal.why}`
+        : `doc ${docId} is not in ORIGINALS_TARGETS and no stems[] was given`);
+    }
+
+    const resolved = await store.resolveCanonicalDoc(Number(docId));
+    const cov = await store.getOriginalCoverage(resolved);
+    if (!force && cov.total && cov.aligned / cov.total >= 0.9) {
+      return { docId: resolved, skipped: 'already covered', ...cov, written: 0 };
+    }
+
+    const ours = (await store.getParagraphs(resolved)).map((p) => ({ key: p.id, text: p.text }));
+    const model = BILINGUAL_MODEL;
+    const perStem = [];
+    const rows = [];
+
+    for (const stem of stems) {
+      const orig = await findOriginalLanguage(stem, { log: logger });
+      if (orig?.role !== 'original') {
+        perStem.push({ stem, skipped: `no page declares itself the original (${orig?.lang || 'none'}: ${orig?.role || 'none'})` });
+        continue;
+      }
+      const [srcParas, enParas] = await Promise.all([
+        fetchPageParagraphs(stem, orig.lang, { log: logger }),
+        fetchPageParagraphs(stem, 'en', { log: logger }),
+      ]);
+      if (!srcParas?.length || !enParas?.length) {
+        perStem.push({ stem, skipped: `page served no ${!srcParas?.length ? orig.lang : 'en'} text` });
+        continue;
+      }
+      // The stream. Their paragraph breaks are discarded deliberately — they are the arbitrary ones.
+      const originalText = srcParas.map((p) => p.text).join(' ');
+
+      // BOUND OUR PARAGRAPHS TO THIS WORK, deterministically, before spending anything.
+      const theirEn = enParas.map((p, i) => ({ key: i, text: p.text }));
+      const bound = alignSequences(ours, theirEn, { minScore, window: theirEn.length });
+      const inWork = new Set(bound.matches.map((m) => m.ourKey));
+      const idx = ours.map((o, i) => (inWork.has(o.key) ? i : -1)).filter((i) => i >= 0);
+      if (!idx.length) { perStem.push({ stem, skipped: 'none of our paragraphs match this work' }); continue; }
+      const slice = ours.slice(idx[0], idx.at(-1) + 1);
+
+      const lines = seg.numberLines(originalText);
+      const chunks = seg.planChunks(slice.length, { parasPerChunk });
+      const anchors = [];
+      let floorLine = 1;
+      for (const ch of chunks) {
+        const win = seg.lineWindowFor({ floorLine, paraCount: ch.end - ch.start,
+          englishCount: slice.length, lineCount: lines.length });
+        const shown = lines.slice(win.from - 1, win.to);
+        const prompt = seg.buildSegmentPrompt(slice.slice(ch.start, ch.end).map((p) => p.text), shown);
+        const reply = await withAIContext(
+          // sourceLang is what authorises the spend: the model is being handed Persian, which deepseek cannot read.
+          { docId: resolved, stage: 'concept-segment-original', sourceLang: orig.lang, caller: 'segment-ool-work' },
+          () => chatCompletion([{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }],
+            { provider: 'anthropic', model, temperature: 0, maxTokens: 8000 }),
+        );
+        const text = reply?.content ?? reply?.text ?? '';
+        for (const a of seg.parseAnchors(text)) {
+          // Chunk-local English numbers and window-local line numbers both become book-absolute here; leaving
+          // either relative would silently mis-place every chunk after the first.
+          anchors.push({ ...a, index: a.index + ch.start, line: a.line == null ? null : a.line + win.from - 1 });
+        }
+        const last = anchors.filter((a) => a.line != null).at(-1);
+        if (last) floorLine = last.line;
+      }
+
+      const { spans, rejected, unconfirmed, coverage } = seg.spansFromAnchors(originalText, anchors, slice.length);
+      for (const sp of spans) {
+        const para = slice[sp.index - 1];
+        if (!para) continue;
+        const lang = detectSourceLang(sp.text);
+        if (!lang) continue;
+        rows.push({ paraId: para.key, originalText: sp.text, originalLang: lang,
+          translationAuthority: 'committee', wordAlignment: null,
+          alignRef: JSON.stringify({ source: 'oceanoflights.org', stem, basis: 'ai-segmentation',
+            model, line: sp.line, confirmed: sp.confirmed, alignedAt: new Date().toISOString() }) });
+      }
+      perStem.push({ stem, originalLang: orig.lang, originalWords: originalText.split(/\s+/).length,
+        lines: lines.length, chunks: chunks.length, ourParagraphsInWork: slice.length,
+        boundRange: [idx[0], idx.at(-1)], anchors: anchors.length, spans: spans.length,
+        unconfirmed, rejected: rejected.length, coverage,
+        rejectedSamples: rejected.slice(0, 4).map((r) => ({ index: r.index, why: r.why })) });
+    }
+
+    const out = { docId: resolved, work: target?.work ?? null, dryRun, model,
+      ourParagraphs: ours.length, candidates: rows.length, perStem, written: 0,
+      samples: rows.slice(0, 3).map((r) => ({ paraId: r.paraId, lang: r.originalLang, original: r.originalText.slice(0, 80) })) };
+    if (dryRun || !rows.length) return out;
+    out.written = await store.saveParagraphOriginals(rows);
+    return out;
+  });
+
+  /**
    * GET /concepts/originals-gap — for EVERY canonical translation: has it got its original, and if not, is
    * one reachable? Chad, 2026-08-26: "I want to be sure we have found the original for all the documents
    * that are translations (and where original exists)." This counts it rather than asserting it.
