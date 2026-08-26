@@ -15,7 +15,6 @@ import { ApiError } from '../lib/errors.js';
 import * as repo from '../lib/docs-repo.js';
 import { originalTermForParagraph, originalTermForQuote } from '../lib/original-term.js';
 import { mergeLeadIns } from '../lib/lead-in-merge.js';
-import { queryAll, queryOne } from '../lib/db.js';
 
 export default async function docsRoutes(fastify) {
   const admin = { preHandler: requireInternal };
@@ -121,66 +120,6 @@ export default async function docsRoutes(fastify) {
    * dryRun DEFAULTS TRUE — this rewrites scripture. The opening is retired with a SOFT delete and its text
    * is preserved at the head of the merged row, so the edit is reversible and loses nothing.
    */
-  /**
-   * GET /docs/chunk-damage?limit= — where the RETRIEVAL CHUNKER has overwritten the canonical paragraphing.
-   *
-   * Chad, 2026-08-26: "I did not ask for split paragraphs. That was a feature you decided to add."
-   *
-   * ingester.js and indexer.js both carry CHUNK_CONFIG { maxChunkSize: 1500, overlapSize: 150 } and write
-   * the resulting windows into `content` as though they were the document's paragraphs. They are not
-   * paragraphs — they are retrieval chunks, and storing them here does four things:
-   *   1. DUPLICATES text: ~150 characters appear at the end of one row and the start of the next
-   *   2. begins rows MID-SENTENCE, so a quotation or a concept claim anchored there cites a fragment
-   *   3. inflates every per-document count (the Epistle holds 317 rows for 268 real paragraphs)
-   *   4. makes near-duplicate search hits out of one passage
-   *
-   * DETECTED BY THE OVERLAP ITSELF, not by a length heuristic: consecutive rows whose tail is repeated at
-   * the next row's head can only be a sliding window. A long paragraph that was merely split would not
-   * repeat anything, and a genuinely repeated phrase would not sit exactly at both boundaries.
-   */
-  fastify.get('/docs/chunk-damage', admin, async (req) => {
-    const limit = Math.min(500, Number(req.query?.limit) || 100);
-    const minOverlap = Math.max(24, Number(req.query?.minOverlap) || 40);
-    // The chunker's SIGNATURE is a row close to its ceiling. Cheap pre-filter so the scan touches candidate
-    // documents only; the overlap test below is what actually decides.
-    const candidates = await queryAll(
-      `SELECT doc_id, COUNT(*) n FROM content
-        WHERE deleted_at IS NULL AND LENGTH(text) BETWEEN 1400 AND 1500
-          AND COALESCE(blocktype,'paragraph') IN ('paragraph','quote')
-        GROUP BY doc_id HAVING n >= 2 ORDER BY n DESC LIMIT ?`, [limit], 'docs:chunk-damage-candidates');
-
-    const docs = [];
-    let totalRows = 0;
-    for (const c of candidates) {
-      const rows = await queryAll(
-        `SELECT id, text FROM content
-          WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(blocktype,'paragraph') IN ('paragraph','quote')
-          ORDER BY position, id`, [c.doc_id], 'docs:chunk-damage-rows');
-      const overlaps = [];
-      for (let i = 1; i < rows.length; i++) {
-        const prev = String(rows[i - 1].text || ''), cur = String(rows[i].text || '');
-        // Longest suffix of `prev` that is a prefix of `cur`, capped: the window overlap is ~150 chars.
-        let best = 0;
-        for (let k = Math.min(400, prev.length, cur.length); k >= minOverlap; k--) {
-          if (prev.endsWith(cur.slice(0, k))) { best = k; break; }
-        }
-        if (best) overlaps.push({ id: rows[i].id, index: i, overlap: best });
-      }
-      if (!overlaps.length) continue;
-      totalRows += overlaps.length;
-      const doc = await queryOne(`SELECT file_path, title FROM docs WHERE id = ?`, [c.doc_id], 'docs:chunk-damage-doc');
-      docs.push({ docId: c.doc_id, path: doc?.file_path ?? null, title: doc?.title ?? null,
-        paragraphs: rows.length, overlappingRows: overlaps.length,
-        duplicatedChars: overlaps.reduce((a, o) => a + o.overlap, 0),
-        sample: overlaps.slice(0, 2).map((o) => ({ ...o,
-          repeated: String(rows[o.index].text).slice(0, o.overlap) })) });
-    }
-    docs.sort((a, b) => b.overlappingRows - a.overlappingRows);
-    return { scanned: candidates.length, damagedDocs: docs.length, overlappingRows: totalRows,
-      note: 'rows whose head repeats the previous row\'s tail — the signature of CHUNK_CONFIG{maxChunkSize:1500,overlapSize:150} writing retrieval windows into content',
-      docs };
-  });
-
   fastify.post('/docs/:id/merge-lead-ins', admin, async (req) => {
     const { dryRun = true } = req.body || {};
     return mergeLeadIns(req.params.id, { dryRun: dryRun !== false });
