@@ -295,3 +295,19 @@ describe('bestOrdinalOffset — try the free, deterministic pairing first', () =
     expect(lengthCorrelation([10, 20], [10, 20], 0)).toMatchObject({ r: 0 });
   });
 });
+
+describe('matchedRegion performance contract', () => {
+  const theirs = [{ key: 0, text: 'the first duty prescribed by God for his servants everywhere' }];
+  const ours = [{ key: 'a', text: 'the first duty prescribed by God for his servants everywhere' },
+    { key: 'b', text: 'short' }];
+
+  it('accepts pre-tokenised document words and returns the same answer', () => {
+    const ourWords = ours.map((o) => contentWords(o.text));
+    expect(matchedRegion(ours, theirs, { ourWords })).toEqual(matchedRegion(ours, theirs));
+  });
+
+  it('the length prefilter cannot change a verdict, only skip work', () => {
+    // Dice cannot exceed 2·min/(|a|+|b|), so anything the prefilter drops was already below threshold.
+    expect(matchedRegion(ours, theirs, { minScore: 0.55 })).toEqual([0]);
+  });
+});

@@ -624,7 +624,7 @@ export default async function groundingRoutes(fastify) {
     const { docId, stems: wantStems, all = false, minScore = 0.55, concurrency = 8, minMatches = 3 } = req.body || {};
     if (!docId) throw ApiError.badRequest('docId required');
     const { fetchPageParagraphs } = await import('../lib/rag/concepts/ool-page.js');
-    const { matchedRegion, largestCluster } = await import('../lib/rag/concepts/align.js');
+    const { matchedRegion, largestCluster, contentWords } = await import('../lib/rag/concepts/align.js');
     const { pool } = await import('../lib/rag/kernel/run.js');
     const store = makeStore();
 
@@ -638,12 +638,13 @@ export default async function groundingRoutes(fastify) {
 
     const resolved = await store.resolveCanonicalDoc(Number(docId));
     const ours = (await store.getParagraphs(resolved)).map((p) => ({ key: p.id, text: p.text }));
+    const ourWords = ours.map((p) => contentWords(p.text));      // tokenise the document ONCE, not per stem
 
     const found = await pool(concurrency, stems, async (stem) => {
       const en = await fetchPageParagraphs(stem, 'en', { log: logger });
       if (!en?.length) return null;
       const theirs = en.map((p, i) => ({ key: i, text: p.text }));
-      const idx = matchedRegion(ours, theirs, { minScore });
+      const idx = matchedRegion(ours, theirs, { minScore, ourWords });
       if (idx.length < minMatches) return null;
       const [lo, hi] = largestCluster(idx);
       const inCluster = idx.filter((i) => i >= lo && i <= hi).length;
