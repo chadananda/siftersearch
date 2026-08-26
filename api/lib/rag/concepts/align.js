@@ -72,41 +72,81 @@ export function dice(a, b) {
 }
 
 /**
+ * The strictly-increasing run through `values` with the greatest total weight, as indexes into the input.
+ *
+ * Weighted rather than longest, because "most matches" is the wrong objective when the matches differ in
+ * confidence: two weak pairings should not evict one strong one. O(n²), which is nothing at book scale.
+ */
+export function heaviestIncreasingRun(values, weights) {
+  const n = values.length;
+  if (!n) return [];
+  const best = weights.slice();
+  const prev = new Array(n).fill(-1);
+  for (let i = 1; i < n; i++) {
+    for (let j = 0; j < i; j++) {
+      if (values[j] < values[i] && best[j] + weights[i] > best[i]) { best[i] = best[j] + weights[i]; prev[i] = j; }
+    }
+  }
+  let end = 0;
+  for (let i = 1; i < n; i++) if (best[i] > best[end]) end = i;
+  const out = [];
+  for (let i = end; i >= 0; i = prev[i]) out.push(i);
+  return out.reverse();
+}
+
+/**
  * Align two sequences of the same work, in order.
  *
  * `ours` and `theirs` are arrays of { key, text } — `text` being the ENGLISH on both sides (for a translated
  * work, the aligned source's own translation field), since that is the only common language.
  *
- * Monotonic by construction: a book's paragraphs do not reorder, so a match that would move backwards is a
- * mis-match, not a discovery. Enforcing it is what turns a per-paragraph guess into a sequence alignment.
- * `window` bounds the search around the running offset, which also makes the pass O(n·window) rather than
- * O(n·m).
+ * Monotonic, but NOT greedily so. A book's paragraphs do not reorder, so a match that moves backwards is a
+ * mis-match — yet enforcing that with a hard cursor makes one bad match catastrophic instead of merely
+ * wrong: the cursor jumps, and every correct match in the skipped stretch becomes unreachable. Measured on
+ * doc 20811, where a single coincidental pairing (dice 0.67) advanced the cursor past their ¶0-28 and cost
+ * 25 real alignments at the head of the Four Valleys — which then read as text the source had not published.
+ *
+ * Chad, 2026-08-26: "spurious matches are going to happen. we need to make our approach resilient to
+ * occasional spurious matches."
+ *
+ * So it runs in two passes: propose a best candidate per paragraph over a SOFT window, then keep the
+ * heaviest strictly-increasing run through those candidates. Monotonicity still holds absolutely in the
+ * output, but the anomaly is now the thing discarded rather than the thing obeyed.
  *
  * Returns { matches, unmatchedOurs, unmatchedTheirs, stats }. Anything below `minScore` is left UNMATCHED
  * rather than bound to its best-available candidate — a paragraph with no original is a fact we can record;
  * a paragraph bound to the wrong original is a fact we cannot detect later.
  */
 export function alignSequences(ours, theirs, { minScore = 0.7, window = 12 } = {}) {
-  const matches = [];
-  const takenTheirs = new Set();
-  let cursor = 0;                                     // lowest index in `theirs` still available
-
+  // PASS 1 — propose. The cursor still tracks the running offset (that is what keeps this O(n·window)), but
+  // it is SOFT: the window reaches back as well as forward, so a bad jump costs a little accuracy in the
+  // next few paragraphs instead of erasing everything the jump skipped.
+  const cand = [];
+  let cursor = 0;
   for (let i = 0; i < ours.length; i++) {
     let best = -1, bestScore = 0;
-    const from = Math.max(cursor, 0);
+    const from = Math.max(0, cursor - window);
     const to = Math.min(theirs.length - 1, cursor + window);
     for (let j = from; j <= to; j++) {
-      if (takenTheirs.has(j)) continue;
       const s = dice(ours[i].text, theirs[j].text);
       if (s > bestScore) { bestScore = s; best = j; }
     }
     if (best >= 0 && bestScore >= minScore) {
-      matches.push({ ourKey: ours[i].key, theirKey: theirs[best].key, ourIndex: i, theirIndex: best,
-        score: Number(bestScore.toFixed(3)) });
-      takenTheirs.add(best);
-      cursor = best + 1;                              // monotonic: never look back
+      cand.push({ ourIndex: i, theirIndex: best, score: bestScore });
+      if (best >= cursor) cursor = best + 1;
     }
   }
+
+  // PASS 2 — decide. The heaviest strictly-increasing run restores absolute monotonicity and uniqueness on
+  // their side, choosing by total match STRENGTH so a confident pairing is not dropped to preserve two weak
+  // ones. Everything not on that run is a contradiction of the majority, which is what a spurious match is.
+  const keep = heaviestIncreasingRun(cand.map((c) => c.theirIndex), cand.map((c) => c.score));
+  const matches = keep.map((k) => {
+    const c = cand[k];
+    return { ourKey: ours[c.ourIndex].key, theirKey: theirs[c.theirIndex].key,
+      ourIndex: c.ourIndex, theirIndex: c.theirIndex, score: Number(c.score.toFixed(3)) };
+  });
+  const takenTheirs = new Set(matches.map((m) => m.theirIndex));
 
   const matchedOurs = new Set(matches.map((m) => m.ourIndex));
   const scores = matches.map((m) => m.score).sort((a, b) => a - b);
@@ -146,4 +186,25 @@ export function largestCluster(indexes, { maxGap = 12 } = {}) {
   }
   if (n > bestN) best = [start, sorted.at(-1)];
   return best;
+}
+
+/**
+ * Which of OUR paragraphs appear anywhere in `theirs` — used to locate a WORK inside a document.
+ *
+ * Deliberately NOT monotonic, which is the opposite of what alignSequences does and the reason this exists.
+ * Binding content must be monotonic: a backwards pairing there attaches one passage's original to another's
+ * doctrine. But locating a work only needs a neighbourhood, and monotonicity makes that job fragile —
+ * measured on doc 20811, where ONE coincidental match (our ¶90 to their ¶29, dice 0.67) came early in the
+ * sequence and forbade every later match from using their ¶0-28, silently costing 25 real alignments at the
+ * head of the Four Valleys. A lone outlier is harmless here because largestCluster discards it; a poisoned
+ * monotonic chain is not, because it looks like an absence of text.
+ */
+export function matchedRegion(ours, theirs, { minScore = 0.55 } = {}) {
+  const theirWords = theirs.map((t) => contentWords(t.text));
+  const out = [];
+  ours.forEach((o, i) => {
+    const ow = contentWords(o.text);
+    if (theirWords.some((tw) => dice(ow, tw) >= minScore)) out.push(i);
+  });
+  return out;
 }

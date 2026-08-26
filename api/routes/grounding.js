@@ -470,7 +470,7 @@ export default async function groundingRoutes(fastify) {
     if (!docId) throw ApiError.badRequest('docId required');
     const { targetFor, NOT_THE_ORIGINAL } = await import('../lib/rag/concepts/originals-targets.js');
     const { fetchPageParagraphs, findOriginalLanguage } = await import('../lib/rag/concepts/ool-page.js');
-    const { alignSequences, detectSourceLang, largestCluster } = await import('../lib/rag/concepts/align.js');
+    const { alignSequences, detectSourceLang, largestCluster, matchedRegion } = await import('../lib/rag/concepts/align.js');
     const seg = await import('../lib/rag/concepts/segment-original.js');
     const { withAIContext } = await import('../lib/ai-context.js');
     const { chatCompletion } = await import('../lib/ai.js');
@@ -518,9 +518,11 @@ export default async function groundingRoutes(fastify) {
 
       // BOUND OUR PARAGRAPHS TO THIS WORK, deterministically, before spending anything.
       const theirEn = enParas.map((p, i) => ({ key: i, text: p.text }));
-      const bound = alignSequences(ours, theirEn, { minScore, window: theirEn.length });
-      const inWork = new Set(bound.matches.map((m) => m.ourKey));
-      const idx = ours.map((o, i) => (inWork.has(o.key) ? i : -1)).filter((i) => i >= 0);
+      // matchedRegion, NOT alignSequences: locating a work needs a neighbourhood, and the monotonic aligner
+      // is fragile for that job. One coincidental match (our ¶90 to their ¶29) came early in the sequence and
+      // forbade every later match from using their ¶0-28 — silently costing the 25 paragraphs at the head of
+      // the Four Valleys, which then looked like text the site did not publish.
+      const idx = matchedRegion(ours, theirEn, { minScore });
       if (!idx.length) { perStem.push({ stem, skipped: 'none of our paragraphs match this work' }); continue; }
       // The outer range of the matches is NOT the work: doc 20811 holds both Valleys, and a handful of
       // coincidental matches inside the Seven Valleys stretched the Four Valleys' bound to [90, 209],

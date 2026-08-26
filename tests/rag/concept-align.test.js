@@ -14,7 +14,7 @@
 //
 // Measured result with both properties in place: 290/292 matched, 0 non-monotonic, 0 pairs claimed twice.
 import { describe, it, expect } from 'vitest';
-import { alignSequences, dice, contentWords, normalizeEn, detectSourceLang, largestCluster } from '../../api/lib/rag/concepts/align.js';
+import { alignSequences, dice, contentWords, normalizeEn, detectSourceLang, largestCluster, matchedRegion, heaviestIncreasingRun } from '../../api/lib/rag/concepts/align.js';
 
 const seq = (texts, prefix = 'a') => texts.map((text, i) => ({ key: `${prefix}${i}`, text }));
 
@@ -197,5 +197,66 @@ describe('largestCluster — where a WORK sits inside a document', () => {
   it('handles a single match and an empty list without inventing a range', () => {
     expect(largestCluster([7])).toEqual([7, 7]);
     expect(largestCluster([])).toEqual([0, -1]);          // an empty slice, not a whole-document slice
+  });
+});
+
+describe('matchedRegion — locating a work, where monotonicity is a liability', () => {
+  const theirs = [{ key: 0, text: 'the first duty prescribed by God for his servants' },
+    { key: 1, text: 'they that are endued with sincerity and faithfulness' },
+    { key: 2, text: 'o ye peoples of the world know verily that mine ordinances' }];
+
+  it('finds our paragraphs wherever they sit, in any order', () => {
+    const ours = [{ key: 'a', text: 'o ye peoples of the world know verily that mine ordinances' },
+      { key: 'b', text: 'nothing whatever to do with this book' },
+      { key: 'c', text: 'the first duty prescribed by God for his servants' }];
+    // 'c' matches their ¶0 while 'a' already matched their ¶2 — a monotonic aligner would have to drop one.
+    expect(matchedRegion(ours, theirs)).toEqual([0, 2]);
+  });
+
+  it('is why one coincidental early match can no longer hide 25 real paragraphs', () => {
+    // Doc 20811: our ¶90 matched their ¶29 by coincidence, and the monotonic chain then forbade their ¶0-28
+    // to every later paragraph — so the Four Valleys' opening read as text the site had not published.
+    const ours = [{ key: 'x', text: 'they that are endued with sincerity and faithfulness' },
+      ...Array.from({ length: 5 }, (_, i) => ({ key: i, text: 'unrelated filler text number ' + i })),
+      { key: 'y', text: 'the first duty prescribed by God for his servants' }];
+    expect(matchedRegion(ours, theirs)).toEqual([0, 6]);
+  });
+});
+
+describe('alignSequences resilience — one spurious match must not erase its neighbours', () => {
+  // Chad, 2026-08-26: "spurious matches are going to happen. we need to make our approach resilient to
+  // occasional spurious matches."
+  const t = (k, text) => ({ key: k, text });
+
+  it('drops the outlier, not the stretch the outlier skipped over', () => {
+    // ¶1 pairs coincidentally with a far-off paragraph. Under a hard cursor that jump made their ¶1-2
+    // unreachable and the rest of the book went unmatched; now the anomaly is the one discarded.
+    const theirs = [t(0, 'alpha bravo charlie delta echo foxtrot'), t(1, 'golf hotel india juliet kilo lima'),
+      t(2, 'mike november oscar papa quebec romeo'), t(3, 'sierra tango uniform victor whisky xray')];
+    const ours = [t('a', 'alpha bravo charlie delta echo foxtrot'), t('b', 'sierra tango uniform victor whisky xray'),
+      t('c', 'golf hotel india juliet kilo lima'), t('d', 'mike november oscar papa quebec romeo')];
+    const { matches } = alignSequences(ours, theirs, { minScore: 0.7, window: 8 });
+    expect(matches.map((m) => m.ourKey)).toEqual(['a', 'c', 'd']);
+  });
+
+  it('still refuses to reorder — the output is strictly monotonic on both sides', () => {
+    const theirs = Array.from({ length: 8 }, (_, i) => t(i, `word${i} common shared phrase text here now`));
+    const ours = theirs.map((x) => ({ ...x, key: `o${x.key}` }));
+    const { matches } = alignSequences(ours, theirs, { minScore: 0.5, window: 8 });
+    for (let i = 1; i < matches.length; i++) {
+      expect(matches[i].theirIndex).toBeGreaterThan(matches[i - 1].theirIndex);
+      expect(matches[i].ourIndex).toBeGreaterThan(matches[i - 1].ourIndex);
+    }
+  });
+
+  it('prefers one strong pairing over two weak ones that contradict it', () => {
+    expect(heaviestIncreasingRun([5, 1, 2], [0.99, 0.55, 0.55])).toEqual([1, 2]);   // 1.10 > 0.99
+    expect(heaviestIncreasingRun([5, 1, 2], [0.99, 0.4, 0.4])).toEqual([0]);        // 0.99 > 0.80
+  });
+
+  it('never binds a paragraph below threshold — an unmatched paragraph is a recordable fact', () => {
+    const { matches } = alignSequences([t('a', 'entirely unrelated wording')], [t(0, 'nothing alike whatsoever')],
+      { minScore: 0.7 });
+    expect(matches).toEqual([]);
   });
 });

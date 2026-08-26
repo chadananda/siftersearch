@@ -8,7 +8,7 @@
 // substring test, where a re-emitted segment would have to be trusted.
 import { describe, it, expect } from 'vitest';
 import { normalizeArabic, findAnchor, numberLines, renderLines, buildSegmentPrompt, parseAnchors, spansFromAnchors,
-  planChunks, lineWindowFor, refineWordStart }
+  planChunks, lineWindowFor, refineWordStart, longestIncreasingRun }
   from '../../api/lib/rag/concepts/segment-original.js';
 
 const ORIGINAL = 'انّ اوّل ما کتب الله علی العباد عرفان مشرق وحيه و مطلع امره '
@@ -117,6 +117,22 @@ describe('refineWordStart — where the quoted words earn their keep', () => {
   });
 });
 
+describe('longestIncreasingRun — let the majority settle the order', () => {
+  it('keeps the long run and drops the outlier, not the other way round', () => {
+    expect(longestIncreasingRun([1, 99, 2, 3, 4])).toEqual([0, 2, 3, 4]);
+    expect(longestIncreasingRun([5, 1, 2, 3])).toEqual([1, 2, 3]);
+  });
+
+  it('is stable on already-ordered input and on nothing at all', () => {
+    expect(longestIncreasingRun([1, 2, 3])).toEqual([0, 1, 2]);
+    expect(longestIncreasingRun([])).toEqual([]);
+  });
+
+  it('refuses a repeat — two paragraphs cannot begin at the same line', () => {
+    expect(longestIncreasingRun([4, 4, 4])).toHaveLength(1);
+  });
+});
+
 describe('spansFromAnchors', () => {
   const opts = { wordsPerLine: 6 };
 
@@ -149,7 +165,7 @@ describe('spansFromAnchors', () => {
     // Neighbour lines are searched, so a later paragraph could otherwise be cut BEFORE an earlier one and
     // undo the ordering the line numbers exist to guarantee. Rejected out loud, not dropped as an empty span.
     const { spans, rejected } = spansFromAnchors(ORIGINAL,
-      [{ index: 1, line: 4, words: 'يرون حدود الله' }, { index: 2, line: 4, words: 'انّ الّذين اوتوا' }], 2, opts);
+      [{ index: 1, line: 4, words: 'يرون حدود الله' }, { index: 2, line: 5, words: 'يرون حدود الله' }], 2, opts);
     expect(spans.map((s) => s.index)).toEqual([1]);
     expect(rejected[0].why).toMatch(/resolves at or before/);
   });
@@ -167,11 +183,14 @@ describe('spansFromAnchors', () => {
     expect(rejected[0].why).toMatch(/out of range/);
   });
 
-  it('REJECTS a line number that runs backwards', () => {
+  it('drops the ONE anchor that contradicts the order, not everything after it', () => {
+    // Chad: "spurious matches are going to happen. we need to make our approach resilient to occasional
+    // spurious matches." Greedy ordering let an outlier raise the floor and reject its correct neighbours.
     const { spans, rejected } = spansFromAnchors(ORIGINAL,
-      [{ index: 1, line: 4 }, { index: 2, line: 1 }], 2, opts);
-    expect(spans.map((s) => s.index)).toEqual([1]);
-    expect(rejected[0].why).toMatch(/backwards/);
+      [{ index: 1, line: 1 }, { index: 2, line: 7 }, { index: 3, line: 2 }, { index: 4, line: 3 }], 4, opts);
+    expect(spans.map((s) => s.index)).toEqual([1, 3, 4]);       // the majority survives
+    expect(rejected.map((r) => r.index)).toEqual([2]);          // the outlier is the one dropped
+    expect(rejected[0].why).toMatch(/contradicts the surrounding order/);
   });
 
   it('treats a model SKIP as a recorded gap', () => {

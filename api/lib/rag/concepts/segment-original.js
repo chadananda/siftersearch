@@ -150,6 +150,41 @@ export function refineWordStart(words, lines, lineNo, anchorWords, { lookaround 
 }
 
 /**
+ * The longest strictly-increasing run through `values`, as the indexes that belong to it.
+ *
+ * Chad, 2026-08-26: "spurious matches are going to happen. we need to make our approach resilient to
+ * occasional spurious matches."
+ *
+ * Both texts run in the same order, so line numbers must increase — but enforcing that GREEDILY makes one
+ * bad answer catastrophic rather than merely wrong: a single anchor that jumps too far raises the floor and
+ * every correct anchor after it is rejected as "backwards". Measured on the Secret of Divine Civilization,
+ * where "line 6 runs backwards from 16" and "line 98 runs backwards from 113" mean the OUTLIER won and its
+ * well-placed neighbours were discarded.
+ *
+ * Taking the longest increasing subsequence instead lets the majority decide: the outlier is the one dropped,
+ * because it is the one that cannot be reconciled with the rest. O(n log n), patience-sorting.
+ */
+export function longestIncreasingRun(values) {
+  const tails = [];        // tails[k] = index into `values` of the smallest tail of a run of length k+1
+  const prev = new Array(values.length).fill(-1);
+  for (let i = 0; i < values.length; i++) {
+    let lo = 0, hi = tails.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (values[tails[mid]] < values[i]) lo = mid + 1; else hi = mid;
+    }
+    // A tie is not an improvement: two paragraphs cannot begin at the same line, and keeping the EARLIER one
+    // is the sane reading (the earlier paragraph owns the earlier text).
+    if (tails[lo] !== undefined && values[tails[lo]] === values[i]) continue;
+    prev[i] = lo > 0 ? tails[lo - 1] : -1;
+    tails[lo] = i;
+  }
+  const out = [];
+  for (let i = tails.length ? tails[tails.length - 1] : -1; i >= 0; i = prev[i]) out.push(i);
+  return out.reverse();
+}
+
+/**
  * Turn line-numbered anchors into spans of the original.
  *
  * The LINE NUMBER places the cut. The words are checked against that line only as CONFIRMATION, and a
@@ -162,12 +197,21 @@ export function spansFromAnchors(originalText, anchors, englishCount, { wordsPer
   const words = String(originalText || '').split(/\s+/).filter(Boolean);
   const found = [];
   const rejected = [];
-  let lastLine = 0;
   let lastStart = 0;
-  for (const a of [...anchors].sort((x, y) => x.index - y.index)) {
+
+  // Unambiguous errors first — a skip and an impossible line number need no comparison with anything else.
+  const ordered = [...anchors].sort((x, y) => x.index - y.index);
+  const usable = [];
+  for (const a of ordered) {
     if (a.line == null) { rejected.push({ ...a, why: 'model skipped' }); continue; }
     if (a.line < 1 || a.line > lines.length) { rejected.push({ ...a, why: `line ${a.line} out of range (1..${lines.length})` }); continue; }
-    if (a.line < lastLine) { rejected.push({ ...a, why: `line ${a.line} runs backwards from ${lastLine}` }); continue; }
+    usable.push(a);
+  }
+  // Then let the MAJORITY settle the ordering, rather than whichever anchor happened to come first.
+  const keep = new Set(longestIncreasingRun(usable.map((a) => a.line)));
+  usable.forEach((a, i) => { if (!keep.has(i)) rejected.push({ ...a, why: `line ${a.line} contradicts the surrounding order` }); });
+
+  for (const a of usable.filter((_, i) => keep.has(i))) {
     const line = lines[a.line - 1];
     // Refine the line to an exact word offset where the quoted words can be found near it; fall back to the
     // line start otherwise. Never allowed to move BACKWARDS past the previous span — a refinement that
@@ -182,7 +226,6 @@ export function spansFromAnchors(originalText, anchors, englishCount, { wordsPer
     }
     found.push({ index: a.index, wordStart, line: a.line, confirmed: refined != null, exact: wordStart === refined });
     lastStart = wordStart;
-    lastLine = a.line;
   }
   const spans = found.map((f, i) => ({
     index: f.index, line: f.line, confirmed: f.confirmed, exact: f.exact,
