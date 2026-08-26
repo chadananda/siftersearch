@@ -15,7 +15,7 @@ import { spawn } from 'node:child_process';   // used by /grounding/backup (was 
 import { spawnGrounding } from '../lib/pipeline/spawn.js';
 import { makeStore } from '../lib/rag-adapter/store.js';
 import { repairMergeTombstones, mergeTombstoneDivergence, naturalKeyCollisions, breakMergeCycles } from '../lib/entity-merge-repair.js';
-import { guttedCanonicals } from '../lib/canonical-integrity.js';
+import { guttedCanonicals, liveDuplicateCanonicals } from '../lib/canonical-integrity.js';
 import { getIntegrationProgress, gradedPlanDocIds } from '../lib/bio.js';
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
@@ -274,6 +274,46 @@ export default async function groundingRoutes(fastify) {
     });
   });
 
+  /**
+   * GET /concepts/resolve-works — which of OUR documents holds each aligned work, decided by TEXT.
+   *
+   * Title matching is how a plan ends up pointing at nothing: it put grounding on empty duplicates
+   * (6555→12511), proposed "On divine origination" as the original of "The Secret of Divine Civilization",
+   * and showed a soft-deleted tombstone beside a live canonical. The work's own English, looked up in our
+   * corpus, is the identity test — and it self-checks, because a husk has no text to match.
+   *
+   * A split or tied vote resolves to null. That is a HOLD, not a failure.
+   */
+  fastify.get('/concepts/resolve-works', admin, async (req) => {
+    const { resolveWorkDoc } = await import('../lib/rag/concepts/resolve-work.js');
+    const { CTAI_WORK_BY_DOC } = await import('../lib/rag/concepts/ctai.js');
+    const { keywordSearch } = await import('../lib/search.js');
+    const only = req.query?.work;
+    const works = only ? [only] : [...new Set([
+      'kitab-i-iqan', 'gleanings', 'the-hidden-words', 'epistle-to-the-son-of-the-wolf',
+      'prayers-and-meditations', 'tablet-of-the-holy-mariner', 'will-and-testament',
+      'fire-tablet', 'kitab-i-ahd', 'tablet-of-ahmad', 'tablet-of-carmel',
+    ])];
+    // Adapt the app's search to the port the resolver expects. Paragraph hits carry their doc; the resolver
+    // dedupes per probe, so a long document matching many paragraphs still counts once.
+    const search = async (q, { limit = 10 } = {}) => {
+      const r = await keywordSearch(q, { limit });
+      return (r?.hits || []).map((h) => ({
+        docId: h.doc_id ?? h.documentId, title: h.doc_title ?? h.title, sourceSite: h.source_site ?? null,
+      }));
+    };
+    const known = Object.fromEntries(Object.entries(CTAI_WORK_BY_DOC).map(([id, w]) => [w, Number(id)]));
+    const out = [];
+    for (const work of works) {
+      const r = await resolveWorkDoc(work, { search, log: logger });
+      // Report agreement with the hand-curated map explicitly: a mismatch is the interesting case, and
+      // silently preferring either side would hide it.
+      out.push({ ...r, curated: known[work] ?? null,
+        agrees: known[work] == null ? null : known[work] === r.resolved });
+    }
+    return { works: out };
+  });
+
   /** GET /concepts/original-coverage?docId= — how much of the bilingual layer is actually populated. */
   fastify.get('/concepts/original-coverage', admin, async (req) => {
     const { CTAI_WORK_BY_DOC } = await import('../lib/rag/concepts/ctai.js');
@@ -491,6 +531,12 @@ export default async function groundingRoutes(fastify) {
   // sitting still. `orphaned` must be 0; `suppressed` (a duplicate_of target that genuinely holds prose) is
   // the one benign case and is counted separately, never summed into the alarm.
   fastify.get('/content/gutted-canonicals', admin, async () => guttedCanonicals());
+
+  // GET /content/duplicate-canonicals — canonical titles with MORE THAN ONE LIVE copy holding content.
+  // A tombstone is not a duplicate: 8301 "Prayers and Meditations" was soft-deleted in May with
+  // duplicate_of → 20805, but a listing with no deleted_at filter returned it beside the live canonical and
+  // read as a dedupe failure. Counting rows that bear a title answers nothing; only live rows with prose do.
+  fastify.get('/content/duplicate-canonicals', admin, async () => liveDuplicateCanonicals());
   // Rows merged into EACH OTHER (A→B, B→A) — no chain terminates, so the main repair skips them.
   // Survivor is chosen by evidence (claims+mentions), ties by lowest id; the rest tombstone to it.
   fastify.post('/entities/break-merge-cycles', admin, async (request) =>

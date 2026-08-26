@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T02:32:34.800Z",
+  "generated": "2026-08-26T02:47:22.057Z",
   "entries": [
+    {
+      "hash": "b3c37cb0",
+      "date": "2026-08-25",
+      "type": "Other",
+      "description": "The original's language is per PARAGRAPH, and the Iqan is Persian",
+      "scope": null
+    },
     {
       "hash": "93f7d71a",
       "date": "2026-08-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Subset-match hardening + curated-only/skip-existing gather modes",
       "scope": null
-    },
-    {
-      "hash": "ae68503c",
-      "date": "2026-06-24",
-      "type": "Other",
-      "description": "Bahaipedia article-image scraper (infobox portraits, filename+name verified)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-25": [
+      {
+        "hash": "b3c37cb0",
+        "date": "2026-08-25",
+        "type": "Other",
+        "description": "The original's language is per PARAGRAPH, and the Iqan is Persian",
+        "scope": null
+      },
       {
         "hash": "93f7d71a",
         "date": "2026-08-25",
@@ -7067,13 +7074,6 @@
         "date": "2026-06-24",
         "type": "Other",
         "description": "Subset-match hardening + curated-only/skip-existing gather modes",
-        "scope": null
-      },
-      {
-        "hash": "ae68503c",
-        "date": "2026-06-24",
-        "type": "Other",
-        "description": "Bahaipedia article-image scraper (infobox portraits, filename+name verified)",
         "scope": null
       }
     ]

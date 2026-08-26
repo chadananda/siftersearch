@@ -28,6 +28,41 @@ import { queryAll } from './db.js';
  * ok is false when `orphaned` is non-empty. A blanket "docs with no content" count would report ~7 for a
  * healthy corpus and be permanently ignored, so the two cases are separated rather than summed.
  */
+/**
+ * Canonical works that have MORE THAN ONE LIVE COPY — a real duplicate, as opposed to a tombstone.
+ *
+ * Why this exists (2026-08-25): a title listing showed two "Prayers and Meditations" and read as a dedupe
+ * failure. It was not — 8301 was soft-deleted in May with `duplicate_of` → 20805, and the listing endpoint
+ * simply had no `deleted_at` filter, so it returned the tombstone beside the living record. A count of rows
+ * bearing a title answers nothing; only a count of LIVE rows holding CONTENT does.
+ *
+ * Both conditions are required. A row that is deleted is not a duplicate, and a row with no live prose is a
+ * husk — the concern of guttedCanonicals(), not this check. Summing either into "duplicates" produces false
+ * alarms that train the reader to ignore the alarm.
+ */
+export async function liveDuplicateCanonicals({ query = queryAll } = {}) {
+  const rows = await query(`
+    SELECT LOWER(TRIM(d.title)) key, COUNT(*) n,
+           GROUP_CONCAT(d.id) ids, GROUP_CONCAT(COALESCE(d.source_site, 'main-library')) sites
+      FROM docs d
+     WHERE d.deleted_at IS NULL
+       AND d.duplicate_of IS NULL
+       AND (d.source_site = 'oceanlibrary.com' OR d.source_site IS NULL)
+       AND EXISTS (SELECT 1 FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL)
+     GROUP BY key
+    HAVING n > 1
+     ORDER BY n DESC`, [], 'audit:live-duplicate-canonicals');
+
+  return {
+    ok: rows.length === 0,
+    duplicates: rows.length,
+    detail: rows.length === 0
+      ? 'every canonical title resolves to exactly one live copy holding content'
+      : `${rows.length} canonical title(s) have more than one LIVE copy holding content`,
+    sample: rows.slice(0, 20).map((r) => ({ title: r.key, copies: r.n, ids: r.ids, sites: r.sites })),
+  };
+}
+
 export async function guttedCanonicals({ query = queryAll } = {}) {
   // CANONICAL = oceanlibrary.com or the main library (source_site NULL). A scraped copy going empty is not
   // this defect — the corpus holds 147,477 scraped docs and they churn.

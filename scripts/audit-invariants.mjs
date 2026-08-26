@@ -80,6 +80,17 @@ const INVARIANTS = [
           recoverableParagraphs: d.recoverableParagraphs, sample: d.sample?.slice(0, 5) } };
     },
   },
+  {
+    id: 'duplicate-canonicals',
+    title: 'Each canonical work has exactly one live copy',
+    incident: '2026-08-25 — a title listing showed two "Prayers and Meditations" and read as a dedupe failure; 8301 was in fact soft-deleted with duplicate_of→20805 and the listing endpoint had no deleted_at filter',
+    run: async () => {
+      const d = await get('/api/admin/content/duplicate-canonicals');
+      // LIVE + HOLDING CONTENT, both required. A deleted row is not a duplicate, and an empty row is a husk
+      // (invariant 12's concern). Counting either as a duplicate produces false alarms.
+      return { ok: d.ok, detail: d.detail, data: { duplicates: d.duplicates, sample: d.sample?.slice(0, 5) } };
+    },
+  },
 ];
 
 const results = [];

@@ -2972,6 +2972,8 @@ Collection: ${paragraph.collection || 'Unknown'}
           language: { type: 'string', description: 'Filter by language code' },
           hasFilePath: { type: 'string', enum: ['true', 'false'], description: 'Filter by file_path presence' },
           hasContent: { type: 'string', enum: ['true', 'false'], description: 'Filter by content entries' },
+          sourceSite: { type: 'string', description: "Filter by source_site; 'canonical' = oceanlibrary.com or main library (NULL)" },
+          includeDeleted: { type: 'string', enum: ['true', 'false'], description: 'Include soft-deleted docs (default false)' },
           fields: { type: 'string', description: 'Comma-separated fields to return' },
           limit: { type: 'integer', minimum: 1, maximum: 1000, default: 100 },
           offset: { type: 'integer', minimum: 0, default: 0 }
@@ -2986,13 +2988,15 @@ Collection: ${paragraph.collection || 'Unknown'}
       language,
       hasFilePath,
       hasContent,
+      sourceSite,
+      includeDeleted,
       fields = 'id,title,author',
       limit = 100,
       offset = 0
     } = request.query;
 
     // Allowed fields to prevent SQL injection
-    const allowedFields = ['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'file_path', 'file_hash', 'paragraph_count', 'created_at', 'updated_at'];
+    const allowedFields = ['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'file_path', 'file_hash', 'paragraph_count', 'created_at', 'updated_at', 'source_site', 'duplicate_of', 'deleted_at'];
     const requestedFields = fields.split(',').map(f => f.trim()).filter(f => allowedFields.includes(f));
     if (requestedFields.length === 0) {
       requestedFields.push('id', 'title', 'author');
@@ -3001,6 +3005,17 @@ Collection: ${paragraph.collection || 'Unknown'}
     // Build query
     const conditions = [];
     const params = [];
+
+    // EXCLUDE SOFT-DELETED BY DEFAULT. This endpoint used to return tombstones alongside live docs, so a
+    // title lookup showed two "Prayers and Meditations" — 8301 (deleted 2026-05-29, duplicate_of 20805) and
+    // the live canonical 20805 — and read as a dedupe failure when the dedupe had in fact worked. A listing
+    // that mixes the dead with the living invites exactly that misreading (2026-08-25).
+    if (includeDeleted !== 'true') conditions.push('deleted_at IS NULL');
+
+    // CANONICAL = oceanlibrary.com or the main library (NULL). The corpus holds ~147,000 scraped documents
+    // against oceanlibrary's ~565, so an unfiltered title search surfaces a scrape first roughly 128:1.
+    if (sourceSite === 'canonical') conditions.push("(source_site = 'oceanlibrary.com' OR source_site IS NULL)");
+    else if (sourceSite) { conditions.push('source_site = ?'); params.push(sourceSite); }
 
     if (author) {
       if (author.includes('*')) {
