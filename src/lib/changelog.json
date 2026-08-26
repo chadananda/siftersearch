@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T22:00:19.638Z",
+  "generated": "2026-08-26T22:08:18.850Z",
   "entries": [
+    {
+      "hash": "5bd3002e",
+      "date": "2026-08-26",
+      "type": "Other",
+      "description": "The Tablets of the Divine Plan DO have a Persian original — per chapter — and stems run in parallel",
+      "scope": null
+    },
     {
       "hash": "549f6c72",
       "date": "2026-08-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Single-select filter chips (radio: choosing one clears others), clearer labels",
       "scope": null
-    },
-    {
-      "hash": "f090b85d",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Remove redundant meaning-search button; compact filter chips",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-26": [
+      {
+        "hash": "5bd3002e",
+        "date": "2026-08-26",
+        "type": "Other",
+        "description": "The Tablets of the Divine Plan DO have a Persian original — per chapter — and stems run in parallel",
+        "scope": null
+      },
       {
         "hash": "549f6c72",
         "date": "2026-08-26",
@@ -7067,13 +7074,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Single-select filter chips (radio: choosing one clears others), clearer labels",
-        "scope": null
-      },
-      {
-        "hash": "f090b85d",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Remove redundant meaning-search button; compact filter chips",
         "scope": null
       }
     ]

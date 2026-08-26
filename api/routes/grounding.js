@@ -608,6 +608,69 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * POST /concepts/probe-stems {docId, stems?, all?} — WHICH published works are inside this document, and
+   * where. Page fetches only; NO model call, so it costs nothing but time.
+   *
+   * The compilations are the reason this exists. The Summons of the Lord of Hosts, the Fountain of Wisdom and
+   * the Tablets of Bahá'u'lláh are each a gathering of tablets that oceanoflights publishes SEPARATELY, and
+   * guessing which tablets a compilation contains is exactly the kind of half-remembered list that has cost
+   * time all night. So the whole catalogue becomes the hypothesis space and the deterministic
+   * English-to-English match decides — a stem that is not in the book simply reports no overlap.
+   *
+   * Safe to run wide because the model is never reached: in segment-ool-work the spend happens strictly
+   * AFTER this same bounding step, so a stem that does not match costs zero.
+   */
+  fastify.post('/concepts/probe-stems', admin, async (req) => {
+    const { docId, stems: wantStems, all = false, minScore = 0.55, concurrency = 8, minMatches = 3 } = req.body || {};
+    if (!docId) throw ApiError.badRequest('docId required');
+    const { fetchPageParagraphs } = await import('../lib/rag/concepts/ool-page.js');
+    const { matchedRegion, largestCluster } = await import('../lib/rag/concepts/align.js');
+    const { pool } = await import('../lib/rag/kernel/run.js');
+    const store = makeStore();
+
+    let stems = wantStems;
+    if (!stems?.length) {
+      if (!all) throw ApiError.badRequest('stems[] required, or all:true to sweep the catalogue');
+      const { readFile } = await import('node:fs/promises');
+      const url = new URL('../../data/oceanoflights-works.json', import.meta.url);
+      stems = Object.keys(JSON.parse(await readFile(url, 'utf8')).stems);
+    }
+
+    const resolved = await store.resolveCanonicalDoc(Number(docId));
+    const ours = (await store.getParagraphs(resolved)).map((p) => ({ key: p.id, text: p.text }));
+
+    const found = await pool(concurrency, stems, async (stem) => {
+      const en = await fetchPageParagraphs(stem, 'en', { log: logger });
+      if (!en?.length) return null;
+      const theirs = en.map((p, i) => ({ key: i, text: p.text }));
+      const idx = matchedRegion(ours, theirs, { minScore });
+      if (idx.length < minMatches) return null;
+      const [lo, hi] = largestCluster(idx);
+      const inCluster = idx.filter((i) => i >= lo && i <= hi).length;
+      return { stem, theirParagraphs: theirs.length, matched: idx.length, inCluster,
+        boundRange: [lo, hi], span: hi - lo + 1,
+        // How much of THEIR work we hold. A compilation excerpting one tablet scores low here and that is
+        // the honest reading — it is not a failure to locate, it is a partial inclusion.
+        theirCoverage: Number((idx.length / theirs.length).toFixed(3)) };
+    });
+
+    const hits = (found || []).filter(Boolean).sort((a, b) => a.boundRange[0] - b.boundRange[0]);
+    // Overlapping ranges mean two candidate stems claim the same stretch — usually the same tablet listed
+    // twice, or a compilation nested inside another. Named, not silently merged.
+    const overlaps = [];
+    for (let i = 1; i < hits.length; i++) {
+      if (hits[i].boundRange[0] <= hits[i - 1].boundRange[1]) {
+        overlaps.push({ a: hits[i - 1].stem, b: hits[i].stem, at: [hits[i].boundRange[0], hits[i - 1].boundRange[1]] });
+      }
+    }
+    const covered = new Set();
+    for (const h of hits) for (let i = h.boundRange[0]; i <= h.boundRange[1]; i++) covered.add(i);
+    return { docId: resolved, probed: stems.length, ourParagraphs: ours.length,
+      hits, hitCount: hits.length, overlaps,
+      docCoverage: Number((covered.size / (ours.length || 1)).toFixed(3)) };
+  });
+
+  /**
    * POST /concepts/align-bahai-org {docId, path, lang='fa', dryRun=true}
    *
    * TRY THIS BEFORE PAYING ANYONE. Where the source edition is paragraph-for-paragraph with ours, the
