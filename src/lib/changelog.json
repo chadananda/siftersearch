@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T20:44:11.221Z",
+  "generated": "2026-08-26T20:57:14.719Z",
   "entries": [
+    {
+      "hash": "c5737495",
+      "date": "2026-08-26",
+      "type": "Other",
+      "description": "A double line-shift and an outer range that swallowed a neighbouring work",
+      "scope": null
+    },
     {
       "hash": "d639ba63",
       "date": "2026-08-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Death line on cards + drawer (martyrs accented), sample-query buttons (teach the meaning-search)",
       "scope": null
-    },
-    {
-      "hash": "be579bd2",
-      "date": "2026-06-24",
-      "type": "Other",
-      "description": "Surface death in list/dossier + feed it into the search catalog (precise fate queries)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-26": [
+      {
+        "hash": "c5737495",
+        "date": "2026-08-26",
+        "type": "Other",
+        "description": "A double line-shift and an outer range that swallowed a neighbouring work",
+        "scope": null
+      },
       {
         "hash": "d639ba63",
         "date": "2026-08-26",
@@ -7069,13 +7076,6 @@
         "date": "2026-06-24",
         "type": "Other",
         "description": "Death line on cards + drawer (martyrs accented), sample-query buttons (teach the meaning-search)",
-        "scope": null
-      },
-      {
-        "hash": "be579bd2",
-        "date": "2026-06-24",
-        "type": "Other",
-        "description": "Surface death in list/dossier + feed it into the search catalog (precise fate queries)",
         "scope": null
       }
     ]

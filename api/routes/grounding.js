@@ -393,7 +393,7 @@ export default async function groundingRoutes(fastify) {
     const { docId, stem, dryRun = true, minScore = 0.7, force = false } = req.body || {};
     if (!docId || !stem) throw ApiError.badRequest('docId and stem required');
     const { fetchPageParagraphs, pairByVerse } = await import('../lib/rag/concepts/ool-page.js');
-    const { alignSequences, detectSourceLang, largestCluster } = await import('../lib/rag/concepts/align.js');
+    const { alignSequences, detectSourceLang } = await import('../lib/rag/concepts/align.js');
     const store = makeStore();
 
     // ALREADY COVERED? Then do not go looking for a source we do not need — and decide this BEFORE any
@@ -470,7 +470,7 @@ export default async function groundingRoutes(fastify) {
     if (!docId) throw ApiError.badRequest('docId required');
     const { targetFor, NOT_THE_ORIGINAL } = await import('../lib/rag/concepts/originals-targets.js');
     const { fetchPageParagraphs, findOriginalLanguage } = await import('../lib/rag/concepts/ool-page.js');
-    const { alignSequences, detectSourceLang } = await import('../lib/rag/concepts/align.js');
+    const { alignSequences, detectSourceLang, largestCluster } = await import('../lib/rag/concepts/align.js');
     const seg = await import('../lib/rag/concepts/segment-original.js');
     const { withAIContext } = await import('../lib/ai-context.js');
     const { chatCompletion } = await import('../lib/ai.js');
