@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-26T00:57:24.336Z",
+  "generated": "2026-08-26T01:16:48.054Z",
   "entries": [
+    {
+      "hash": "235b1727",
+      "date": "2026-08-25",
+      "type": "Other",
+      "description": "Core roster + bilingual extraction contract",
+      "scope": null
+    },
     {
       "hash": "c660c2a1",
       "date": "2026-08-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Full-run mode for card gatherer + card-apply (fields + anchor queue)",
       "scope": null
-    },
-    {
-      "hash": "6a5117ed",
-      "date": "2026-06-24",
-      "type": "Other",
-      "description": "Deep disambiguation-prior card gatherer (sourced, contamination-guarded)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-25": [
+      {
+        "hash": "235b1727",
+        "date": "2026-08-25",
+        "type": "Other",
+        "description": "Core roster + bilingual extraction contract",
+        "scope": null
+      },
       {
         "hash": "c660c2a1",
         "date": "2026-08-25",
@@ -7067,13 +7074,6 @@
         "date": "2026-06-24",
         "type": "Other",
         "description": "Full-run mode for card gatherer + card-apply (fields + anchor queue)",
-        "scope": null
-      },
-      {
-        "hash": "6a5117ed",
-        "date": "2026-06-24",
-        "type": "Other",
-        "description": "Deep disambiguation-prior card gatherer (sourced, contamination-guarded)",
         "scope": null
       }
     ]
