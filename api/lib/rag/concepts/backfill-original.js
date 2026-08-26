@@ -18,8 +18,9 @@
 // Deps: align.js (pure), ctai.js (transport), the injected store.
 
 import { alignSequences } from './align.js';
-import { CTAI_WORK_BY_DOC, fetchPair } from './ctai.js';
+import { CTAI_WORK_BY_DOC, CTAI_PAIR_COUNT, fetchPair } from './ctai.js';
 import { CLASS, coreEntry } from './core-roster.js';
+import { pool } from '../kernel/run.js';
 
 /**
  * Who rendered the English, and therefore what the English is EVIDENCE OF.
@@ -36,16 +37,25 @@ export function translationAuthorityFor(docId) {
   return null;                                       // GUARDIAN_ORIGINAL has no translation; nor does anything else
 }
 
-/** Fetch every aligned pair of a work, in order. One request per paragraph — the paragraph-at-a-time path. */
-export async function fetchWorkPairs(work, maxPairs, { log, onProgress } = {}) {
-  const pairs = [];
-  for (let pi = 1; pi <= maxPairs; pi++) {
+/**
+ * Fetch every aligned pair of a work — the paragraph-at-a-time path, one request per paragraph.
+ *
+ * POOLED, because serial is not merely slow here, it is unusable: Gleanings is 729 pairs, and at ~0.8s each
+ * a serial fetch runs ~10 minutes — past the edge proxy's request timeout, so the caller gets a 502 while the
+ * work continues invisibly on the server. Concurrency brings a whole book inside one request.
+ *
+ * Order is restored by pair_index afterwards, since the pool completes out of order and the alignment that
+ * consumes this is a MONOTONIC sequence match — feeding it shuffled pairs would break the one property that
+ * keeps a book in register.
+ */
+export async function fetchWorkPairs(work, maxPairs, { log, concurrency = 8 } = {}) {
+  const indexes = Array.from({ length: maxPairs }, (_, i) => i + 1);
+  const fetched = await pool(concurrency, indexes, async (pi) => {
     const p = await fetchPair(work, pi, { log });
-    if (!p) continue;                                // a gap in the index is not an error
-    pairs.push({ key: p.pair_index, text: p.translation, source: p.source_text, section: p.section });
-    onProgress?.(pi, maxPairs);
-  }
-  return pairs;
+    if (!p) return null;                             // a gap in the index is not an error
+    return { key: p.pair_index, text: p.translation, source: p.source_text, section: p.section };
+  });
+  return fetched.filter(Boolean).sort((a, b) => a.key - b.key);
 }
 
 /**
@@ -54,13 +64,15 @@ export async function fetchWorkPairs(work, maxPairs, { log, onProgress } = {}) {
  * `dryRun` runs the whole read side and reports exactly what WOULD be written — including the coverage and
  * score spread — so a bad alignment is caught before it touches 4.2M rows of content.
  */
-export async function backfillDoc(ctx, docId, { maxPairs = 2000, minScore = 0.7, dryRun = false, log } = {}) {
+export async function backfillDoc(ctx, docId, { maxPairs, minScore = 0.7, dryRun = false, log } = {}) {
   const work = CTAI_WORK_BY_DOC[Number(docId)];
   if (!work) return { docId, skipped: 'no aligned original for this doc', written: 0 };
 
   const authority = translationAuthorityFor(docId);
   const paras = await ctx.store.getParagraphs(docId);          // already prose-only (paragraph|quote)
-  const theirs = await fetchWorkPairs(work, maxPairs, { log });
+  // Measured pair count, not a blanket ceiling: probing 2,000 indexes for a 160-pair book is ~12x the
+  // needed traffic against someone else's API for nothing.
+  const theirs = await fetchWorkPairs(work, maxPairs ?? CTAI_PAIR_COUNT[work] ?? 2000, { log });
   if (!theirs.length) return { docId, work, error: 'aligned source returned no pairs', written: 0 };
 
   // Key on the CONTENT ROW ID, not `pid`: pid is COALESCE(external_para_id, 'p'||id), so for a doc carrying

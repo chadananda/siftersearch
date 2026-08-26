@@ -44,6 +44,18 @@ export const CTAI_WORK_BY_DOC = Object.freeze({
   8273: 'epistle-to-the-son-of-the-wolf',
 });
 
+/**
+ * Pair count per work, MEASURED by binary search 2026-08-25 — pair_index is 1-based and 0 is empty on every
+ * work tested. Without this a backfill probes a fixed ceiling (2,000 requests for a 160-pair book), which is
+ * ~12× the needed traffic against someone else's API for no gain.
+ */
+export const CTAI_PAIR_COUNT = Object.freeze({
+  'kitab-i-iqan': 291,
+  gleanings: 729,
+  'the-hidden-words': 160,
+  'epistle-to-the-son-of-the-wolf': 268,
+});
+
 /** True when an aligned original can be fetched for this doc at all. */
 export const hasAlignment = (docId) => Boolean(CTAI_WORK_BY_DOC[Number(docId)]);
 
