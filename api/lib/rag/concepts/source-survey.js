@@ -22,7 +22,7 @@
 // Deps: db (read-only), ctai.js (the work map).
 
 import { queryAll } from '../../db.js';
-import { CTAI_WORK_BY_DOC } from './ctai.js';
+import { CTAI_WORK_BY_DOC, CTAI_DOC_BY_WORK } from './ctai.js';
 
 // Authors who wrote in Arabic or Persian. An English document by one of these is BY DEFINITION a
 // translation, whoever rendered it — which is the population Chad asked to cover, not just the six works
@@ -124,5 +124,57 @@ export async function surveyTranslatedCanonicals({ query = queryAll, minTitleSco
       unreachable: by('none').reduce((n, r) => n + r.paragraphs, 0),
     },
     rows,
+  };
+}
+
+/**
+ * THE GAP REPORT: for every canonical translation, has it got its original, and if not, is one reachable?
+ *
+ * Chad, 2026-08-26: "I want to be sure we have found the original for all the documents that are
+ * translations (and where original exists)." An assurance from me is not evidence; this counts it.
+ *
+ * Four states, and the distinction between the last two is the point:
+ *   covered      — ≥90% of prose paragraphs carry an original. Done.
+ *   partial      — some but not most. Usually a compilation where only part of the work is parallel.
+ *   reachable    — none yet, but a source exists (CTAI holds the work, or oceanoflights serves the stem).
+ *   unreachable  — no source located. NOT the same as "no original exists": a work recorded from talks
+ *                  (Paris Talks) genuinely has none, whereas a tablet whose original we simply have not
+ *                  found is unfinished business. Reported separately so the second kind is not lost among
+ *                  the first.
+ */
+export async function originalsGapReport({ query = queryAll, limit = 500 } = {}) {
+  const rows = await query(`
+    SELECT d.id, d.title, d.author, d.collection,
+           (SELECT COUNT(*) FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL
+                                             AND COALESCE(c.blocktype,'paragraph') IN ('paragraph','quote')) paras,
+           (SELECT COUNT(*) FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL
+                                             AND c.original_text IS NOT NULL) aligned
+      FROM docs d
+     WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
+       AND (d.source_site = 'oceanlibrary.com' OR d.source_site IS NULL)
+       AND COALESCE(d.language,'en') = 'en'
+     ORDER BY paras DESC LIMIT ?`, [limit], 'survey:gap-report');
+
+  const ctaiDocs = new Set(Object.keys(CTAI_WORK_BY_DOC).map(Number));
+  const out = { covered: [], partial: [], reachable: [], unreachable: [] };
+  for (const d of rows) {
+    if (!d.paras) continue;
+    if (!ORIGINAL_LANGUAGE_AUTHORS.test(d.author || '')) continue;   // English-composed → no original to find
+    const pct = d.aligned / d.paras;
+    const entry = { docId: d.id, title: d.title, paras: d.paras, aligned: d.aligned,
+      pct: Math.round(pct * 100), ctai: ctaiDocs.has(d.id) || Boolean(CTAI_DOC_BY_WORK[d.id]) };
+    if (pct >= 0.9) out.covered.push(entry);
+    else if (d.aligned > 0) out.partial.push(entry);
+    else if (entry.ctai) out.reachable.push({ ...entry, via: 'ctai' });
+    else out.unreachable.push(entry);
+  }
+  const sum = (a) => a.reduce((n, x) => n + x.paras, 0);
+  return {
+    translations: out.covered.length + out.partial.length + out.reachable.length + out.unreachable.length,
+    counts: { covered: out.covered.length, partial: out.partial.length,
+      reachable: out.reachable.length, unreachable: out.unreachable.length },
+    paragraphs: { covered: sum(out.covered), partial: sum(out.partial),
+      reachable: sum(out.reachable), unreachable: sum(out.unreachable) },
+    ...out,
   };
 }

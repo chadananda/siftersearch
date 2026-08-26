@@ -8,7 +8,7 @@ import { assertDisambiguated } from '../kernel/gate.js';
 import { profileFor } from '../kernel/profile.js';
 import { pool } from '../kernel/run.js';
 import { buildBilingualSystem, buildBilingualUser } from './bilingual.js';
-import { englishIsOriginal } from './core-roster.js';
+import { englishIsOriginal, coreEntry, CLASS } from './core-roster.js';
 
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.98 });
@@ -28,6 +28,22 @@ export async function run(ctx, docId, opts = {}) {
     .filter((p) => p.context && acceptedVersions.has(p.contextModel) && (p.kind ?? 'paragraph') === 'paragraph');
   if (opts.limit) paras = paras.slice(0, opts.limit);          // small reviewed slices before a full run
   const system = buildSystem(profile);
+  // WHOSE RENDERING IS THIS? The prompt inverts on the answer — his word-choice FIXES which sense is
+  // operative, a committee's does not — so getting it wrong mis-states the doctrine to the model.
+  //
+  // TWO SOURCES, DB FIRST, ROSTER AS BACKSTOP. Relying on the column alone means any future path that
+  // populates an original without setting the authority silently UNDER-CREDITS him: his rendering would be
+  // read as one translator's opinion. The roster knows which works he translated, so it can answer even
+  // when the column is empty. Reported per run (authorityCount) so an 'unattributed' book is visible rather
+  // than quietly taking the cautious path.
+  const rosterAuthority = (id) => {
+    const cls = coreEntry(id)?.cls;
+    if (cls === CLASS.GUARDIAN_TRANSLATION) return 'shoghi-effendi';
+    if (cls === CLASS.DESIGNATED) return 'committee';
+    return null;
+  };
+  const authorityFor = (p) => p.translationAuthority ?? rosterAuthority(docId);
+  const authorityCount = {};
   // BILINGUAL WHERE WE HAVE IT. A paragraph carrying its aligned original is read with BOTH texts in view:
   // the original fixes WHICH TERM (English collapses Ṣalát/Duʿá/Dhikr into "prayer", ʿadl/inṣáf into
   // "justice"), and an authorised rendering fixes WHICH SENSE. Per paragraph, not per book — a book's
@@ -73,11 +89,12 @@ export async function run(ctx, docId, opts = {}) {
     // there, it is the correct reading. Checked explicitly rather than relying on original_text simply
     // being absent, so a stray alignment written onto such a book can never buy it a paid model.
     const bilingual = hasOriginal && ['ar', 'fa'].includes(p.originalLang) && !englishIsOriginal(docId);
+    if (bilingual) authorityCount[authorityFor(p) ?? 'unattributed'] = (authorityCount[authorityFor(p) ?? 'unattributed'] || 0) + 1;
     const { parsed, escalated } = await withAIContext(
       { stage: 'concept-extract', docId, originalLang: bilingual ? p.originalLang : null },
       () => ctx.model.runLadder({
       route: bilingual ? bilingualRoute : route,
-      system: bilingual ? bilingualSystemFor(p.translationAuthority ?? null) : system,
+      system: bilingual ? bilingualSystemFor(authorityFor(p)) : system,
       user: bilingual
         ? buildBilingualUser(p, { source: p.original, translation: p.text })
         : buildUser(p),
@@ -95,6 +112,7 @@ export async function run(ctx, docId, opts = {}) {
     if (opts.dryRun) rows.push(...paraRows);
     else if (paraRows.length) stats.written += await ctx.store.saveConceptClaims(paraRows);
   });
+  stats.byTranslationAuthority = authorityCount;
   ctx.log.info?.({ docId, ...stats }, 'concepts/extract');
   return opts.dryRun ? { ...stats, written: 0, rows } : stats;
 }

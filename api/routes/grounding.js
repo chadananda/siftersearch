@@ -368,6 +368,19 @@ export default async function groundingRoutes(fastify) {
     return out;
   });
 
+  /**
+   * GET /concepts/originals-gap — for EVERY canonical translation: has it got its original, and if not, is
+   * one reachable? Chad, 2026-08-26: "I want to be sure we have found the original for all the documents
+   * that are translations (and where original exists)." This counts it rather than asserting it.
+   *
+   * 'unreachable' is NOT 'no original exists' — a work recorded from talks genuinely has none, while a
+   * tablet whose original we have not located is unfinished business. Kept apart so the second is visible.
+   */
+  fastify.get('/concepts/originals-gap', admin, async (req) => {
+    const { originalsGapReport } = await import('../lib/rag/concepts/source-survey.js');
+    return originalsGapReport({ limit: Math.min(1000, Number(req.query?.limit) || 500) });
+  });
+
   /** GET /concepts/original-coverage?docId= — how much of the bilingual layer is actually populated. */
   fastify.get('/concepts/original-coverage', admin, async (req) => {
     const { CTAI_DOC_BY_WORK, CTAI_WORK_BY_DOC } = await import('../lib/rag/concepts/ctai.js');

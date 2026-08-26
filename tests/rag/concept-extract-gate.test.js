@@ -106,3 +106,51 @@ describe('the model follows the ORIGINAL language, not the document language', (
     expect(seen[0]).toMatch(/deepseek/);
   });
 });
+
+describe('the extractor knows WHOSE translation it is reading', () => {
+  // Chad, 2026-08-26: "I want to be sure the extractor will be aware when a translation is Shoghi Effendi
+  // so it can be treated differently." The prompt inverts on the answer, so getting it wrong mis-states the
+  // doctrine to the model — his word-choice FIXES which sense is operative; a committee's does not.
+  //
+  // Two sources, DB column first and the curated roster as backstop: relying on the column alone means any
+  // future path that stores an original without setting the authority silently UNDER-CREDITS him.
+  const profile = { genre: 'doctrinal', lang: 'en',
+    models: { extract: 'deepseek-v4-flash', bilingualExtract: 'claude-sonnet-4-6' }, fallback: 'deepseek-v4-flash' };
+  beforeEach(() => { PROFILE.current = profile; });
+
+  const seenSystems = [];
+  const ctxFor = (paragraphs, docId) => ({
+    config: { versions: { disambig: 'deepseek-disambig-v1', conceptDisambig: 'concept-disambig-v1' } },
+    catalog: { get: () => ({ capabilities: [] }) },
+    log: { info: () => {} },
+    model: { runLadder: async ({ system }) => { seenSystems.push(system); return { parsed: [], escalated: false }; } },
+    store: { getParagraphs: async () => paragraphs, getDocMeta: async () => ({ id: docId }), saveConceptClaims: async () => 0 },
+  });
+  const para = (o) => ({ id: 1, pid: 'p1', kind: 'paragraph', context: 'n', contextModel: 'deepseek-disambig-v1',
+    text: 'A passage concerning the Covenant.', original: 'کلمات', originalLang: 'fa', ...o });
+
+  it('uses the SHOGHI EFFENDI prompt when the column says so', async () => {
+    seenSystems.length = 0;
+    await run(ctxFor([para({ translationAuthority: 'shoghi-effendi' })], 20810), 20810);
+    expect(seenSystems[0]).toMatch(/neither outranks the other/);
+  });
+
+  it('falls back to the ROSTER when the column is empty, rather than under-crediting him', async () => {
+    // 20810 is a GUARDIAN_TRANSLATION on the roster. With no column value the naive reading would treat his
+    // rendering as one translator's opinion — the opposite of the doctrine.
+    seenSystems.length = 0;
+    await run(ctxFor([para({ translationAuthority: null })], 20810), 20810);
+    expect(seenSystems[0]).toMatch(/neither outranks the other/);
+  });
+
+  it('uses the ORIGINAL-GOVERNS prompt for a committee rendering', async () => {
+    seenSystems.length = 0;
+    await run(ctxFor([para({ translationAuthority: 'committee' })], 21307), 21307);
+    expect(seenSystems[0]).toMatch(/THE ORIGINAL GOVERNS HERE/);
+  });
+
+  it('REPORTS the authority mix, so an unattributed book is visible', async () => {
+    const r = await run(ctxFor([para({ translationAuthority: 'shoghi-effendi' })], 20810), 20810);
+    expect(r.byTranslationAuthority).toMatchObject({ 'shoghi-effendi': 1 });
+  });
+});
