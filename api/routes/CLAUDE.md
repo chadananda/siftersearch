@@ -21,6 +21,9 @@ Each file registers a route group. `api/index.js` mounts them under `/api/v1/`.
 - `forum.js` — forum post + vote CRUD.
 
 ## Admin
+- `docs.js` — **the ONE document surface** (`/api/admin/docs*`): list by named visibility scope, resolve
+  `duplicate_of` to the copy holding the text, guarded delete + mark-duplicate. Delegates entirely to
+  `api/lib/docs-repo.js`; writes no SQL itself. Prefer this over hand-rolled `FROM docs` queries anywhere.
 - `admin.js` — internal-key-protected admin endpoints (jobs, library admin, enrichment, validation, sites). **Mega-file (3,910 lines) — split deferred.**
 - `library.js` — admin library CRUD: ingestion triggers, metadata edits, LightRAG, publisher state. **Mega-file (3,860 lines) — split deferred.**
 - `graph.js` — graph-DB query endpoints.

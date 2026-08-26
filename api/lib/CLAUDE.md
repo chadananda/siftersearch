@@ -16,6 +16,18 @@ One-line index for AI navigation. Open the file for full documentation.
 - `api-keys.js` — API key issuance + verification.
 - `billing.js` — Stripe metered billing for API tier.
 
+## Document access — USE THIS, don't write doc SQL
+- `docs-repo.js` — **THE ONE INTERFACE for reading/changing documents.** Named visibility scopes
+  (`live` · `canonical` · `withProse` · `canonicalWithProse` · `all`), duplicate resolution that refuses to
+  land on an empty shell, and guarded destructive ops (`markDuplicate` refuses a prose-less target;
+  `softDeleteDocs` refuses the last live copy and any doc with live dependants). HTTP face:
+  `api/routes/docs.js` at `/api/admin/docs*`.
+  **Why:** the rules were being re-remembered at 530 `deleted_at IS NULL` sites across 171 files, and
+  forgetting them soft-deleted 155 canonicals (06-09), emptied 20 more (06-12), and hid 4 behind empty
+  shells. It is also the ONE place to attribute slow queries — every op carries a stable `docs-repo:*` tag
+  into `slow_query_log`.
+  **If you need SQL it can't express, extend `docs-repo.js` rather than querying `docs` directly.**
+
 ## Content / search infrastructure
 - `content.js` — `content` namespace: paragraph CRUD, `insertParagraph`, `bulkInsertParagraphs`, `getDirtyParagraphsForDoc`, `markSynced`, embedding cache helpers. **Mega-file (1000+ lines).**
 - `search.js` — Meilisearch hybrid + keyword + multi-index + HyPE search; `initializeIndexes`, `multiIndexSearch`, `keywordSearch`, `hybridSearch`, `searchHypeQuestions`, `syncHypeBatch`, `indexDocument`. **Mega-file (2000 lines) — split deferred to focused session.**

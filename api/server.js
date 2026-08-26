@@ -23,6 +23,7 @@ import searchRoutes from './routes/search.js';
 import sessionRoutes from './routes/session.js';
 import userRoutes from './routes/user.js';
 import adminRoutes from './routes/admin.js';
+import docsRepoRoutes from './routes/docs.js';
 import companionRoutes from './routes/companion.js';
 import companionMeRoutes from './routes/companion-me.js';
 import entityReviewRoutes from './routes/entity-review.js';
@@ -258,6 +259,7 @@ export async function createServer(opts = {}) {
   await server.register(sessionRoutes, { prefix: '/api/session' });
   await server.register(userRoutes, { prefix: '/api/user' });
   await server.register(adminRoutes, { prefix: '/api/admin' });
+  await server.register(docsRepoRoutes, { prefix: '/api/admin' });   // the ONE document surface (docs-repo)
   await server.register(entityReviewRoutes, { prefix: '/api/admin' });
   await server.register(groundingRoutes, { prefix: '/api/admin' });
   await server.register(ingestRoutes, { prefix: '/api/admin' });
