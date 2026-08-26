@@ -586,6 +586,64 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * POST /concepts/align-bahai-org {docId, path, lang='fa', dryRun=true}
+   *
+   * TRY THIS BEFORE PAYING ANYONE. Where the source edition is paragraph-for-paragraph with ours, the
+   * pairing is deterministic, free, and checkable — and strictly better than a model segmenting a text whose
+   * paragraphing was already correct.
+   *
+   * Some Answered Questions measured r=0.9755 at offset 7 and ≤0.18 at every other offset, over all 781
+   * paragraphs rather than a sample. I had already built and half-run the paid path before testing this.
+   *
+   * Refuses unless the offset is DECISIVE: an off-by-one shifts an entire book by one paragraph, which is
+   * the kind of error that reads as plausible forever.
+   */
+  fastify.post('/concepts/align-bahai-org', admin, async (req) => {
+    const { docId, path, lang = 'fa', dryRun = true, force = false, sections = 12 } = req.body || {};
+    if (!docId || !path) throw ApiError.badRequest('docId and path required');
+    const { fetchWorkParagraphs } = await import('../lib/rag/concepts/bahai-org.js');
+    const { bestOrdinalOffset, detectSourceLang } = await import('../lib/rag/concepts/align.js');
+    const store = makeStore();
+
+    const resolved = await store.resolveCanonicalDoc(Number(docId));
+    const cov = await store.getOriginalCoverage(resolved);
+    if (!force && cov.total && cov.aligned / cov.total >= 0.9) {
+      return { docId: resolved, path, skipped: 'already covered', ...cov, written: 0 };
+    }
+    const { paragraphs, perSection } = await fetchWorkParagraphs(path, { lang, sections, log: logger });
+    if (!paragraphs.length) throw ApiError.badRequest(`bahai.org served no numbered paragraphs for '${path}' (${lang})`);
+
+    const ours = (await store.getParagraphs(resolved)).map((p) => ({ key: p.id, text: p.text }));
+    const fit = bestOrdinalOffset(ours.map((p) => p.text.split(/\s+/).length),
+      paragraphs.map((p) => p.text.split(/\s+/).length));
+
+    const sampleAt = (k) => ({ ourIndex: fit.offset + k, sourceParagraph: k + 1,
+      en: String(ours[fit.offset + k]?.text || '').slice(0, 200), original: paragraphs[k].text.slice(0, 200) });
+    const out = { docId: resolved, path, lang, basis: 'ordinal', sourceParagraphs: paragraphs.length,
+      ourParagraphs: ours.length, perSection, fit, dryRun, written: 0,
+      // Both ENDS and the middle: an offset that is right at the start and wrong at the end means a
+      // paragraph was inserted or dropped, and only the tail can show it.
+      samples: [0, Math.floor(paragraphs.length / 2), paragraphs.length - 1].map(sampleAt) };
+    if (!fit.decisive) return { ...out, refused: fit.why };
+
+    const rows = [];
+    paragraphs.forEach((p, k) => {
+      const para = ours[fit.offset + k];
+      if (!para) return;
+      const srcLang = detectSourceLang(p.text);
+      if (!srcLang) return;
+      rows.push({ paraId: para.key, originalText: p.text, originalLang: srcLang,
+        translationAuthority: 'committee', wordAlignment: null,
+        alignRef: JSON.stringify({ source: 'bahai.org', path, basis: 'ordinal', sourceParagraph: p.n,
+          ordinal: k + 1, offset: fit.offset, r: fit.r, alignedAt: new Date().toISOString() }) });
+    });
+    out.candidates = rows.length;
+    if (dryRun || !rows.length) return out;
+    out.written = await store.saveParagraphOriginals(rows);
+    return out;
+  });
+
+  /**
    * POST /concepts/segment-bahai-org {docId, path, lang='fa', dryRun=true}
    *
    * The same segmentation, against bahai.org's library. Chad, 2026-08-26, supplying the source: "Here is Some

@@ -14,7 +14,7 @@
 //
 // Measured result with both properties in place: 290/292 matched, 0 non-monotonic, 0 pairs claimed twice.
 import { describe, it, expect } from 'vitest';
-import { alignSequences, dice, contentWords, normalizeEn, detectSourceLang, largestCluster, matchedRegion, heaviestIncreasingRun } from '../../api/lib/rag/concepts/align.js';
+import { alignSequences, dice, contentWords, normalizeEn, detectSourceLang, largestCluster, matchedRegion, heaviestIncreasingRun, bestOrdinalOffset, lengthCorrelation } from '../../api/lib/rag/concepts/align.js';
 
 const seq = (texts, prefix = 'a') => texts.map((text, i) => ({ key: `${prefix}${i}`, text }));
 
@@ -258,5 +258,40 @@ describe('alignSequences resilience — one spurious match must not erase its ne
     const { matches } = alignSequences([t('a', 'entirely unrelated wording')], [t(0, 'nothing alike whatsoever')],
       { minScore: 0.7 });
     expect(matches).toEqual([]);
+  });
+});
+
+describe('bestOrdinalOffset — try the free, deterministic pairing first', () => {
+  // A Persian paragraph and its English rendering share no words, but they share a SHAPE: long translates
+  // long, a one-line verse translates short. Across a book that shape is a fingerprint.
+  // Deliberately NON-periodic. A periodic fixture correlates with its own shifts, and the margin rule then
+  // (correctly) refuses it — real prose has no such structure, which is why SAQ's margin was 0.79.
+  let seed = 12345;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  const theirLens = Array.from({ length: 100 }, () => 15 + Math.floor(rnd() * 200));
+  const ourLens = [9, 9, 9, ...theirLens.map((l) => Math.round(l * 1.3))];   // front matter, then 1:1 at offset 3
+
+  it('finds the offset and reports it as decisive', () => {
+    const r = bestOrdinalOffset(ourLens, theirLens);
+    expect(r.offset).toBe(3);
+    expect(r.r).toBeGreaterThan(0.95);
+    expect(r.decisive).toBe(true);
+  });
+
+  it('REFUSES when the editions are not paragraph-for-paragraph', () => {
+    const scrambled = theirLens.map(() => 15 + Math.floor(rnd() * 200));
+    const r = bestOrdinalOffset(ourLens, scrambled);
+    expect(r.decisive).toBe(false);
+    expect(r.why).toMatch(/not paragraph-for-paragraph|not determined/);
+  });
+
+  it('REFUSES an offset that is barely better than its neighbour', () => {
+    // An off-by-one shifts a whole book by one paragraph — an error that reads as plausible forever.
+    const flat = Array.from({ length: 100 }, () => 50);
+    expect(bestOrdinalOffset(flat.map((x) => x * 1.3), flat).decisive).toBe(false);
+  });
+
+  it('needs enough pairs before a correlation means anything', () => {
+    expect(lengthCorrelation([10, 20], [10, 20], 0)).toMatchObject({ r: 0 });
   });
 });

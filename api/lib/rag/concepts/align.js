@@ -208,3 +208,55 @@ export function matchedRegion(ours, theirs, { minScore = 0.55 } = {}) {
   });
   return out;
 }
+
+/**
+ * Pearson correlation of PARAGRAPH LENGTHS between two editions at a given offset.
+ *
+ * Language-independent, so it works where no shared vocabulary does: a Persian paragraph and its English
+ * rendering have no words in common, but they have a shape — a long paragraph translates long, a one-line
+ * verse translates short. Across a whole book that shape is a fingerprint.
+ */
+export function lengthCorrelation(ourLens, theirLens, offset) {
+  const xs = [], ys = [];
+  for (let k = 0; k < theirLens.length; k++) {
+    const i = offset + k;
+    if (i < 0 || i >= ourLens.length) continue;
+    xs.push(ourLens[i]); ys.push(theirLens[k]);
+  }
+  const n = xs.length;
+  if (n < 20) return { n, r: 0 };                 // too few pairs for the shape to mean anything
+  const mx = xs.reduce((a, b) => a + b, 0) / n, my = ys.reduce((a, b) => a + b, 0) / n;
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let i = 0; i < n; i++) { const a = xs[i] - mx, b = ys[i] - my; sxy += a * b; sxx += a * a; syy += b * b; }
+  const d = Math.sqrt(sxx * syy);
+  return { n, r: d ? sxy / d : 0 };
+}
+
+/**
+ * Is this edition paragraph-for-paragraph with ours, and at what offset?
+ *
+ * WHEN THIS HOLDS, IT BEATS EVERYTHING ELSE. Some Answered Questions measured r=0.9755 at offset 7 and
+ * ≤0.18 at every other offset — over all 781 paragraphs, not a sample. That is a deterministic, free and
+ * checkable pairing, where the alternative was four paid model calls segmenting a text whose paragraphing
+ * was already correct. Cheap enough to try FIRST on any new source.
+ *
+ * It must be DECISIVE to be used: a strong correlation that is barely better than its neighbour means the
+ * offset is not really determined, and an off-by-one here would shift a whole book by one paragraph — the
+ * kind of error that reads as plausible forever. Refuses rather than reporting a best guess.
+ */
+export function bestOrdinalOffset(ourLens, theirLens, { maxOffset = 60, minR = 0.9, minMargin = 0.25 } = {}) {
+  const scored = [];
+  for (let off = -maxOffset; off <= maxOffset; off++) scored.push({ off, ...lengthCorrelation(ourLens, theirLens, off) });
+  scored.sort((a, b) => b.r - a.r);
+  const [best, next] = scored;
+  const margin = best.r - (next?.r ?? 0);
+  return {
+    offset: best.off, r: Number(best.r.toFixed(4)), n: best.n,
+    runnerUp: next ? { offset: next.off, r: Number(next.r.toFixed(4)) } : null,
+    margin: Number(margin.toFixed(4)),
+    decisive: best.r >= minR && margin >= minMargin,
+    why: best.r < minR ? `correlation ${best.r.toFixed(3)} below ${minR} — the editions are not paragraph-for-paragraph`
+      : margin < minMargin ? `offset ${best.off} only ${margin.toFixed(3)} better than ${next.off} — not determined`
+        : null,
+  };
+}
