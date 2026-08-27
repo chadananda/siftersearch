@@ -28,7 +28,7 @@ import { isHyped, DISAMB_THRESHOLD } from '../../pipeline/processed.js';
 // THE VERSION STRING IS PART OF THE PROMPT. Changing the prompt without bumping it left every paragraph
 // matching the current version, so --rehype skipped the whole book and regenerated nothing — the run
 // reported success and the questions were byte-identical. A prompt change IS a version change.
-export const HYPE_VERSION = 'hype-v5-distinct';
+export const HYPE_VERSION = 'hype-v6-crosswork';
 const DENSE_HINT = 'Keep each question short; output ONLY the compact JSON object, nothing else.';
 const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not worth HyPE
 // Question count is set by the PARAGRAPH, not a quota: a dense passage (every sentence answering several
@@ -208,7 +208,8 @@ From the paragraph (use the disambiguation CONTEXT only to resolve who/what/wher
   • NO YES/NO QUESTIONS. "Does nature have consciousness?" and "Is nature in the grasp of God?" retrieve badly — a reader asks "what does X teach about Y", and a yes/no phrasing sits far from that in embedding space while adding no distinct ask. Turn each into the open form it is hiding: "What does ‘Abdu'l-Bahá teach about nature's lack of consciousness?"
   • NO NEAR-DUPLICATES. Two questions that a reader would consider the same question ARE the same question, however differently worded. "Does nature have consciousness or understanding?" and "Is nature conscious according to the Bahá'í writings?" are one ask, not two.
   • NO CATCH-ALL QUESTIONS. "What did ‘Abdu'l-Bahá say about nature in Some Answered Questions?" is not a question, it is the paragraph's topic with a question mark. It matches everything about the topic and so distinguishes nothing.
-  • Vary the phrasing. Naming the book helps a reader who knows it, but do not append it to every question — most searches will not mention it, and a page of questions all ending in the same title matches nothing but itself. Roughly one in three is plenty.
+  • NEVER NAME THE BOOK OR WORK IN A QUESTION. Not "in Some Answered Questions", not "in the Kitáb-i-Íqán", not "according to this book". The purpose of these questions is to TIE A CONCEPT ACROSS THE WHOLE CORPUS: the same concept is developed in many works, and a reader asking "what is meant by justice" should reach every passage that answers it, not only the one whose title they happened to name. Scoping to a book or a religion is done by a FILTER at search time and needs no help from the question text. A title inside the question only narrows what it can match, and a page of questions all ending in the same title matches little but itself.
+  • Naming the AUTHOR is different and allowed where it is natural — readers really do ask "what did ‘Abdu'l-Bahá teach about the soul" — because it identifies a voice that speaks across many works rather than fencing the question inside one of them. Still do not put it in every question.
   • At least ONE question phrased WITHOUT naming any person — by theme, event, place or period — so topic searches also retrieve this paragraph.
   • Use the name-forms a reader would type: canonical short names (the CAST's primary forms), never long honorific chains.
   • Ground every question in what the paragraph ACTUALLY says — never invent facts.

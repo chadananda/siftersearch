@@ -41,7 +41,7 @@ describe('the version string is part of the prompt', () => {
   // Changing the prompt without bumping HYPE_VERSION left every paragraph matching the current version, so
   // --rehype skipped the entire book: the run reported success and the questions came back byte-identical.
   it('v4 is stamped, so the version-aware upgrade actually regenerates', () => {
-    expect(HYPE_VERSION).toBe('hype-v5-distinct');
+    expect(HYPE_VERSION).toBe('hype-v6-crosswork');
   });
 
   it('isHyped treats a row stamped with an older version as wanting an upgrade', async () => {
@@ -70,10 +70,11 @@ describe('definitions are the highest-value thing to retrieve', () => {
     expect(sys).toMatch(/the same for the ORIGINAL term/);
   });
 
-  it('stops the model appending the book title to every question', () => {
-    // Measured on the Íqán v4 run: 8 of 10 questions in one paragraph ended "in the Kitáb-i-Íqán".
-    expect(sys).toMatch(/do not append it to every question/);
-    expect(sys).toMatch(/matches nothing but itself/);
+  it('bans the book title outright (superseded the earlier "not every question" rule)', () => {
+    // Measured on the Íqán v4 run: 8 of 10 questions in one paragraph ended "in the Kitáb-i-Íqán". Limiting
+    // the frequency was the wrong fix — the title should never appear, because it narrows what the question
+    // can match and the corpus-wide tie is the entire point.
+    expect(sys).toMatch(/NEVER NAME THE BOOK OR WORK IN A QUESTION/);
   });
 });
 
@@ -101,8 +102,9 @@ describe('v5 — the padding came back in a new costume', () => {
     expect(sys).toMatch(/the paragraph's topic with a question mark/);
   });
 
-  it('is stamped v5, so the change regenerates', () => {
-    expect(HYPE_VERSION).toBe('hype-v5-distinct');
+  it('the padding rules are still in force at the current version', () => {
+    // Version assertion lives with the newest change; these rules must survive every later bump.
+    expect(sys).toMatch(/NO YES\/NO QUESTIONS/);
   });
 });
 
@@ -124,5 +126,34 @@ describe('every AI stage must receive the concurrency it is given', () => {
       const line = src.split('\n').find((l) => l.includes(`want('${stage}')`));
       expect(line, `${stage} has no concurrency`).toMatch(/concurrency:/);
     }
+  });
+});
+
+describe('v6 — questions must tie a concept ACROSS works, never fence it inside one', () => {
+  // Chad, 2026-08-26: "the 'in Some Answered Questions' type HyPE is counter-productive. We are trying to
+  // tie concepts across books, not isolate them. We already have a book filter or a religion filter if
+  // needed. This should not be a type of hype question."
+  const sys = buildSystem({ lang: 'en', genre: 'doctrinal', script: 'Latin' }, { title: 'Some Answered Questions' });
+
+  it('forbids naming the book outright — not "sparingly", never', () => {
+    expect(sys).toMatch(/NEVER NAME THE BOOK OR WORK IN A QUESTION/);
+    expect(sys).not.toMatch(/Roughly one in three/);
+  });
+
+  it('gives the reason: the same concept is developed in many works', () => {
+    expect(sys).toMatch(/TIE A CONCEPT ACROSS THE WHOLE CORPUS/);
+    expect(sys).toMatch(/not only the one whose title they happened to name/);
+  });
+
+  it('says scoping belongs to the search filter, not the question text', () => {
+    expect(sys).toMatch(/done by a FILTER at search time/);
+  });
+
+  it('still allows the AUTHOR, which identifies a voice across works rather than fencing one in', () => {
+    expect(sys).toMatch(/Naming the AUTHOR is different/);
+  });
+
+  it('is stamped v6, so it regenerates', () => {
+    expect(HYPE_VERSION).toBe('hype-v6-crosswork');
   });
 });
