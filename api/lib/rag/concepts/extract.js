@@ -64,7 +64,7 @@ export async function run(ctx, docId, opts = {}) {
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
   // proofFrom answers "which text is this doctrine cited from" — the number that would have shown, on the
   // first run, that every Persian-quoted proof was being thrown away.
-  const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, bilingual: 0, proofFrom: {}, dropSamples: [] };
+  const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, bilingual: 0, proofFrom: {}, dropSamples: [], failSamples: [] };
   // A bare `paras: 0` is indistinguishable from "this book has no concepts". Name the reason.
   if (!paras.length) {
     const all = await ctx.store.getParagraphs(docId);
@@ -92,7 +92,7 @@ export async function run(ctx, docId, opts = {}) {
     // being absent, so a stray alignment written onto such a book can never buy it a paid model.
     const bilingual = hasOriginal && ['ar', 'fa'].includes(p.originalLang) && !englishIsOriginal(docId);
     if (bilingual) authorityCount[authorityFor(p) ?? 'unattributed'] = (authorityCount[authorityFor(p) ?? 'unattributed'] || 0) + 1;
-    const { parsed, escalated } = await withAIContext(
+    const { parsed, escalated, finishReason, raw } = await withAIContext(
       { stage: 'concept-extract', docId, originalLang: bilingual ? p.originalLang : null },
       () => ctx.model.runLadder({
       route: bilingual ? bilingualRoute : route,
@@ -103,7 +103,21 @@ export async function run(ctx, docId, opts = {}) {
       parse: parseConceptClaims, maxTokens }));
     if (bilingual) stats.bilingual++;
     if (escalated) stats.escalated++;
-    if (!parsed || !parsed.length) { stats.failed++; return; }
+    if (!parsed || !parsed.length) {
+      // WHY a paragraph yielded nothing. An unparseable reply and a refusal look identical in a counter, and
+      // a truncated one looks like both — the head of the reply plus its length separates all three. A 25%
+      // failure rate on the Íqán is not noise and must not be averaged away.
+      stats.failed++;
+      if (stats.failSamples.length < 4) {
+        // finishReason separates the three cases a bare counter conflates: a TRUNCATED reply (ran out of
+        // tokens mid-JSON), a REFUSAL (short, prose), and a genuine parse failure.
+        const text = typeof raw === 'string' ? raw : (raw?.content ?? raw?.text ?? '');
+        stats.failSamples.push({ pid: p.pid, bilingual, finishReason: finishReason ?? null,
+          words: String(p.text || '').split(/\s+/).length,
+          replyChars: text.length, replyTail: text.slice(-160) });
+      }
+      return;
+    }
     // BOTH TEXTS ARE CITABLE. The English is checked first because it is the common case; the original is
     // offered whenever the paragraph carries one, whether or not this call was bilingual — a proof quoted
     // from the source is valid regardless of which prompt produced it.
