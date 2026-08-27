@@ -250,10 +250,19 @@ export function spansFromAnchors(originalText, anchors, englishCount, { wordsPer
   const spans = found.map((f, i) => ({
     index: f.index, line: f.line, confirmed: f.confirmed, exact: f.exact,
     text: words.slice(f.wordStart, i + 1 < found.length ? found[i + 1].wordStart : undefined).join(' ').trim(),
-  })).filter((s) => s.text.length > 20);
+  })).filter((s) => s.text.length > 0);
+  // NO LENGTH FLOOR. Chad, 2026-08-26: "why do you have a threshold? you keep making up rules that mangle
+  // our content." There was a `length > 20` here and it deleted short scripture outright — "هو الأبهى"
+  // ("He is the Most Glorious") is nine characters. On the Selections of the Báb that rule accounted for
+  // scattered single paragraphs across 105 separate runs, every one of them real text.
+  //
+  // A threshold that drops content produces no error, only absence, which then reads as "the source does not
+  // have it". The empty case is the only one worth excluding, and `> 0` excludes exactly that. Anything
+  // genuinely suspicious is REPORTED (`short`) so it can be looked at, not removed.
   return {
     spans, rejected,
     unconfirmed: spans.filter((s) => !s.confirmed).length,
+    short: spans.filter((s) => s.text.length <= 20).length,   // reported, never dropped
     // How many cuts landed on the exact word rather than the enclosing line — the quality number that
     // matters for a bilingual layer, since an inexact cut carries a lead-in from the previous passage.
     exact: spans.filter((s) => s.exact).length,

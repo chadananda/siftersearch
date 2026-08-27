@@ -637,7 +637,10 @@ export default async function groundingRoutes(fastify) {
    * AFTER this same bounding step, so a stem that does not match costs zero.
    */
   fastify.post('/concepts/probe-stems', admin, async (req) => {
-    const { docId, stems: wantStems, all = false, minScore = 0.55, concurrency = 8, minMatches = 3 } = req.body || {};
+    const { docId, stems: wantStems, all = false, minScore = 0.55, concurrency = 8, minMatches = 1,
+      offset = 0, limit } = req.body || {};
+    // minMatches defaults to ONE. A floor of 3 hid 28 of the 76 pieces of the Selections of the Báb — every
+    // one a real short prayer — and would have had me register 48 as though the rest did not exist.
     if (!docId) throw ApiError.badRequest('docId required');
     const { fetchPageParagraphs } = await import('../lib/rag/concepts/ool-page.js');
     const { matchedRegion, largestCluster, contentWords } = await import('../lib/rag/concepts/align.js');
@@ -648,9 +651,23 @@ export default async function groundingRoutes(fastify) {
     if (!stems?.length) {
       if (!all) throw ApiError.badRequest('stems[] required, or all:true to sweep the catalogue');
       const { readFile } = await import('node:fs/promises');
-      const url = new URL('../../data/oceanoflights-works.json', import.meta.url);
-      stems = Object.keys(JSON.parse(await readFile(url, 'utf8')).stems);
+      // THE SITE MAP, not the best-known-works tables. Those tables list 112 stems; the site publishes
+      // 13,454, of which 12,502 have an Arabic or Persian page. Sweeping the tables meant the hypothesis
+      // space was ~1% of the source — which is how the Súriy-i-Haykal's original came to be recorded as
+      // unpublished when it sits at bahaullah-pub06-090-ar (Chad supplied the URL; the sitemap has it).
+      const url = new URL('../../data/oceanoflights-stems.json', import.meta.url);
+      const catalogue = JSON.parse(await readFile(url, 'utf8')).stems;
+      // Only stems carrying BOTH an English page (which bounds our paragraphs) and an original-language one
+      // (which supplies the text). A stem with the original alone is still usable, but only as the `src`
+      // half of an explicit pair, so it cannot be swept blind.
+      stems = Object.entries(catalogue)
+        .filter(([, langs]) => langs.includes('en') && (langs.includes('ar') || langs.includes('fa')))
+        .map(([stem]) => stem);
     }
+    // Batched, because a full sweep is far more page fetches than one request can hold inside the tunnel's
+    // ~125s ceiling. The caller advances `offset`; `remaining` says how much is left.
+    const total = stems.length;
+    stems = stems.slice(Number(offset) || 0, (Number(offset) || 0) + (Number(limit) || stems.length));
 
     const resolved = await store.resolveCanonicalDoc(Number(docId));
     const ours = (await store.getParagraphs(resolved)).map((p) => ({ key: p.id, text: p.text }));
@@ -688,8 +705,9 @@ export default async function groundingRoutes(fastify) {
     }
     const covered = new Set();
     for (const h of hits) for (let i = h.boundRange[0]; i <= h.boundRange[1]; i++) covered.add(i);
-    return { docId: resolved, probed: stems.length, ourParagraphs: ours.length,
-      hits, hitCount: hits.length, overlaps,
+    return { docId: resolved, probed: stems.length, catalogue: total,
+      offset: Number(offset) || 0, remaining: Math.max(0, total - (Number(offset) || 0) - stems.length),
+      ourParagraphs: ours.length, hits, hitCount: hits.length, overlaps,
       docCoverage: Number((covered.size / (ours.length || 1)).toFixed(3)) };
   });
 

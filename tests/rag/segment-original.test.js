@@ -269,3 +269,23 @@ describe('lineWindowFor when a book is driven in slices', () => {
     expect(slice.to).toBe(781);                 // what the bug looked like
   });
 });
+
+describe('no length floor — a threshold that drops content produces absence, not an error', () => {
+  // Chad, 2026-08-26: "why do you have a threshold? you keep making up rules that mangle our content."
+  // A `text.length > 20` filter here deleted short scripture outright: "هو الأبهى" is nine characters.
+  const SHORT = 'هو الأبهى و هذا كتاب من لدنا الى الذين آمنوا';
+
+  it('KEEPS a span shorter than a line of prose', () => {
+    const lines = linesFromParagraphs(['هو الأبهى', 'و هذا كتاب من لدنا الى الذين آمنوا']);
+    const { spans, short } = spansFromAnchors(SHORT, [{ index: 1, line: 1 }, { index: 2, line: 2 }], 2, { lines });
+    expect(spans.map((s) => s.index)).toEqual([1, 2]);
+    expect(spans[0].text).toBe('هو الأبهى');
+    expect(short).toBe(1);                 // reported so it can be looked at — never removed
+  });
+
+  it('still excludes the genuinely EMPTY span, which is the only case worth excluding', () => {
+    const lines = linesFromParagraphs(['هو الأبهى']);
+    const { spans } = spansFromAnchors('هو الأبهى', [{ index: 1, line: 1 }, { index: 2, line: 1 }], 2, { lines });
+    expect(spans).toHaveLength(1);
+  });
+});
