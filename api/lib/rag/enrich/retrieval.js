@@ -28,7 +28,13 @@ import { isHyped, DISAMB_THRESHOLD } from '../../pipeline/processed.js';
 // THE VERSION STRING IS PART OF THE PROMPT. Changing the prompt without bumping it left every paragraph
 // matching the current version, so --rehype skipped the whole book and regenerated nothing — the run
 // reported success and the questions were byte-identical. A prompt change IS a version change.
-export const HYPE_VERSION = 'hype-v12-heading-aware';
+// v13 carries the v12 PROMPT UNCHANGED. Only the generator's call config changed: DeepSeek `thinking` was
+// being sent as `extra_body` (a Python-SDK idiom Node drops), so v4-flash reasoned away the whole token
+// budget and returned nothing on longer paragraphs — 536/778 SAQ paragraphs were stamped v12 with zero
+// questions. Those artifacts are not v12's prompt working badly, they are no output at all, so they must
+// not keep a stamp that says "processed at the current version". Bumping is what makes `rehype` regenerate
+// them; leaving it at v12 would skip all 778.
+export const HYPE_VERSION = 'hype-v13-thinking-fixed';
 const DENSE_HINT = 'Keep each question short; output ONLY the compact JSON object, nothing else.';
 const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not worth HyPE
 // Question count is set by the PARAGRAPH, not a quota: a dense passage (every sentence answering several

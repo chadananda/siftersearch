@@ -245,8 +245,15 @@ async function chatDeepSeek(messages, { model, temperature, maxTokens, stream, r
   // deepseek-v4-flash: thinking disabled (fast extraction/classification)
   // deepseek-v4-pro: thinking enabled (adjudication, promotion)
   // Per DeepSeek API docs: https://api-docs.deepseek.com/guides/thinking_mode
-  // extra_body passes non-standard params through the OpenAI SDK to the underlying API
-  params.extra_body = { thinking: { type: thinking ? 'enabled' : 'disabled' } };
+  // TOP-LEVEL, NOT extra_body. `extra_body` is a PYTHON-SDK idiom; openai@6 for Node has no such option
+  // (grep -rl extra_body node_modules/openai/ returns nothing), so it shipped as a literal key DeepSeek
+  // ignores and thinking was NEVER disabled on any call. v4-flash then spent the whole max_tokens budget
+  // reasoning and returned content of length 0 with finish_reason:"length" — which every caller sees as an
+  // unparseable response, not as a truncation. That emptied 69% of SAQ's HyPE paragraphs (536/778, stamped
+  // done with []) on 2026-08-27, and is the "reasoning tax" and the "481/500 pilot calls truncated" that
+  // were previously mis-patched by raising max_tokens. The Node SDK forwards unknown top-level body fields
+  // as-is, so this is how a non-standard param actually reaches the API.
+  params.thinking = { type: thinking ? 'enabled' : 'disabled' };
   const response = await client.chat.completions.create(params);
   if (stream) return response;
   return {

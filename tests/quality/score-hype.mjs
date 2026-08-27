@@ -75,8 +75,27 @@ const qsOf = (row) => {
 };
 
 const res = await fetch(`${API}/api/admin/docs/${DOC}/paragraphs?limit=1000`, { headers: { 'X-Internal-Key': KEY } });
-const rows = (await res.json()).paragraphs.filter((r) => qsOf(r).length);
+const allParas = (await res.json()).paragraphs;
+const rows = allParas.filter((r) => qsOf(r).length);
 if (!rows.length) { console.error(`doc ${DOC} has no HyPE questions`); process.exit(1); }
+
+// COVERAGE — REPORT IT OR THE QUALITY NUMBERS LIE.
+// This scorer can only grade paragraphs that HAVE questions, so its population is the survivors. On
+// 2026-08-27 a generator bug emptied 69% of SAQ's paragraphs and every quality metric ROSE (answered
+// 80%→91%) because the failures left the denominator — the instrument reported a collapse as a win, and
+// six historical rows in hype-history.json turned out to be mutually incomparable. A paragraph stamped
+// with a generator version and carrying zero questions is a PROCESSED FAILURE, not an absence of work:
+// it is done, unreachable by search, and will never be retried. So count it, here, next to the score.
+const eligible = allParas.filter((p) => (p.text || '').length >= 60);   // MIN_LEN in retrieval.js
+const emptied = eligible.filter((p) => p.hyp_model && !qsOf(p).length);
+const coverage = {
+  eligible: eligible.length,
+  withQuestions: eligible.length - emptied.length,
+  emptied: emptied.length,
+  coveragePct: eligible.length ? Math.round((100 * (eligible.length - emptied.length)) / eligible.length) : 0,
+  questionsPerEligiblePara: eligible.length
+    ? Number((eligible.reduce((n, p) => n + qsOf(p).length, 0) / eligible.length).toFixed(2)) : 0,
+};
 
 // EVENLY SPACED, not the first N: a book's opening paragraphs are unrepresentative, and sampling a prefix
 // is the mistake this project has made twice tonight.
@@ -104,13 +123,15 @@ for (const row of picked) {
 }
 
 const pct = (n) => (tally.questions ? Math.round((100 * n) / tally.questions) : 0);
-const report = { doc: DOC, model: arg('model', 'claude-sonnet-4-6'), ...tally,
+const report = { doc: DOC, model: arg('model', 'claude-sonnet-4-6'), ...tally, ...coverage,
   searchablePct: pct(tally.searchable), answeredPct: pct(tally.answered), distinctPct: pct(tally.distinct),
   missedPerParagraph: tally.paragraphs ? Number((tally.missed / tally.paragraphs).toFixed(2)) : 0 };
 
 if (process.argv.includes('--json')) { console.log(JSON.stringify({ report, worst }, null, 2)); }
 else {
   console.log(`\nHyPE quality — doc ${DOC}, ${tally.paragraphs} paragraphs, ${tally.questions} questions`);
+  console.log(`  COVERAGE     ${coverage.coveragePct}%   (${coverage.withQuestions}/${coverage.eligible} eligible paragraphs carry questions; ${coverage.emptied} processed-but-empty, ${coverage.questionsPerEligiblePara} q/para book-wide)`);
+  if (coverage.coveragePct < 90) console.log(`  ⚠ the scores below grade ONLY those ${coverage.coveragePct}% — they are not a reading of the book.`);
   console.log(`  searchable   ${report.searchablePct}%   (a real reader would type it)`);
   console.log(`  answered     ${report.answeredPct}%   (this passage actually answers it)`);
   console.log(`  distinct     ${report.distinctPct}%   (not another question reworded)`);

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-27T13:57:29.659Z",
+  "generated": "2026-08-27T16:40:14.115Z",
   "entries": [
+    {
+      "hash": "865449d8",
+      "date": "2026-08-27",
+      "type": "Other",
+      "description": "Bilingual originals, concept extraction, HyPE quality",
+      "scope": null
+    },
     {
       "hash": "d5a9d064",
       "date": "2026-08-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Prioritize connection-bearing passages (naming Bahá'u'lláh / attaining-presence) in sampling — captures who-met-whom evidence even-spacing misses (Mullá Ḥusayn↔Bahá'u'lláh in Ṭihrán)",
       "scope": null
-    },
-    {
-      "hash": "15662da9",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Clear stale pre-QC facts2 on zero-verified + STALEONLY filter (refresh only people lacking proof spans) — makes the catalog uniformly QC'd",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-27": [
+      {
+        "hash": "865449d8",
+        "date": "2026-08-27",
+        "type": "Other",
+        "description": "Bilingual originals, concept extraction, HyPE quality",
+        "scope": null
+      },
       {
         "hash": "d5a9d064",
         "date": "2026-08-27",
@@ -7069,13 +7076,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Prioritize connection-bearing passages (naming Bahá'u'lláh / attaining-presence) in sampling — captures who-met-whom evidence even-spacing misses (Mullá Ḥusayn↔Bahá'u'lláh in Ṭihrán)",
-        "scope": null
-      },
-      {
-        "hash": "15662da9",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Clear stale pre-QC facts2 on zero-verified + STALEONLY filter (refresh only people lacking proof spans) — makes the catalog uniformly QC'd",
         "scope": null
       }
     ]

@@ -191,8 +191,12 @@ describe('v7 — distinctness is tested by the ANSWER, never by a count', () => 
     expect(sys).toMatch(/sets the count, not a quota/);
   });
 
+  // v13 keeps the v12 PROMPT and bumps only because the generator's DeepSeek call was fixed (`thinking` was
+  // sent as `extra_body`, which Node drops, so v4-flash truncated and 536/778 SAQ paragraphs were stamped
+  // done with zero questions). Output that differs materially must not share a stamp with output that does
+  // not — the stamp is what `rehype` resumes on.
   it('is stamped at the current version', () => {
-    expect(HYPE_VERSION).toBe('hype-v12-heading-aware');
+    expect(HYPE_VERSION).toBe('hype-v13-thinking-fixed');
   });
 });
 

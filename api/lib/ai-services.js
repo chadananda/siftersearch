@@ -573,7 +573,9 @@ async function chatDeepSeek(messages, opts) {
   const params = {
     model: apiModel, messages,
     temperature: opts.temperature, max_tokens: opts.maxTokens, stream: opts.stream || false,
-    extra_body: { thinking: { type: opts.thinking ? 'enabled' : 'disabled' } }
+    // TOP-LEVEL, NOT extra_body — see the note in ai.js/chatDeepSeek. `extra_body` is a Python-SDK idiom;
+    // in Node it ships as a literal key the API ignores, leaving thinking on and truncating long calls.
+    thinking: { type: opts.thinking ? 'enabled' : 'disabled' }
   };
   if (opts.responseFormat) params.response_format = opts.responseFormat;
   const response = await client.chat.completions.create(params, reqOpts);
