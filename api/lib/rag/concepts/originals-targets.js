@@ -94,6 +94,34 @@ export const ORIGINALS_TARGETS = Object.freeze({
     // its original — the probe found them at coverage 1.0 in disjoint sequential ranges across the whole
     // document. The same passages also appear under abdul-baha-bkw* and abdul-baha-mk*, which is the same
     // text in other collections; the dedicated series is preferred because it covers the book completely.
+  // THE PUBLISHED-SELECTIONS SERIES (Chad: the-bab-published-selections-en). This compilation is drawn
+  // from many separate works, so there is no single source document — but the site publishes exactly the
+  // 76 pieces it contains, pub02-01 through pub02-77, each with its original. probe-stems bound 48 of them
+  // to disjoint sequential ranges at coverage 1.0 covering 92% of our text before the list was even read;
+  // the remainder are short prayers that fell under the probe's 3-paragraph floor.
+  20898: { work: 'Selections from the Writings of the Báb', stems: [
+    'bab-pub02-01', 'bab-pub02-02', 'bab-pub02-03', 'bab-pub02-04',
+    'bab-pub02-05', 'bab-pub02-06', 'bab-pub02-07', 'bab-pub02-08',
+    'bab-pub02-09', 'bab-pub02-10', 'bab-pub02-11', 'bab-pub02-12',
+    'bab-pub02-13', 'bab-pub02-14', 'bab-pub02-15', 'bab-pub02-16',
+    'bab-pub02-17', 'bab-pub02-18', 'bab-pub02-19', 'bab-pub02-20',
+    'bab-pub02-21', 'bab-pub02-22', 'bab-pub02-23', 'bab-pub02-24',
+    'bab-pub02-25', 'bab-pub02-26', 'bab-pub02-27', 'bab-pub02-28',
+    'bab-pub02-30', 'bab-pub02-31', 'bab-pub02-32', 'bab-pub02-33',
+    'bab-pub02-34', 'bab-pub02-35', 'bab-pub02-36', 'bab-pub02-37',
+    'bab-pub02-38', 'bab-pub02-39', 'bab-pub02-40', 'bab-pub02-41',
+    'bab-pub02-42', 'bab-pub02-43', 'bab-pub02-44', 'bab-pub02-45',
+    'bab-pub02-46', 'bab-pub02-47', 'bab-pub02-48', 'bab-pub02-49',
+    'bab-pub02-50', 'bab-pub02-51', 'bab-pub02-52', 'bab-pub02-53',
+    'bab-pub02-54', 'bab-pub02-55', 'bab-pub02-56', 'bab-pub02-57',
+    'bab-pub02-58', 'bab-pub02-59', 'bab-pub02-60', 'bab-pub02-61',
+    'bab-pub02-62', 'bab-pub02-63', 'bab-pub02-64', 'bab-pub02-65',
+    'bab-pub02-66', 'bab-pub02-67', 'bab-pub02-68', 'bab-pub02-69',
+    'bab-pub02-70', 'bab-pub02-71', 'bab-pub02-72', 'bab-pub02-73',
+    'bab-pub02-74', 'bab-pub02-75', 'bab-pub02-76', 'bab-pub02-77',
+  ], lang: 'ar', basis: 'segment',
+    note: '76 published pieces; the Báb wrote in both Arabic and Persian, so originalLang is detected per span' },
+
   20910: { work: 'Selections from the Writings of ‘Abdu’l-Bahá', stems: [
     'abdul-baha-selections-writings01-001', 'abdul-baha-selections-writings01-002', 'abdul-baha-selections-writings01-003',
     'abdul-baha-selections-writings01-004', 'abdul-baha-selections-writings01-005', 'abdul-baha-selections-writings01-006',
