@@ -198,6 +198,38 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * POST /concepts/judge-hype — a SECOND MODEL grades generated questions against their passage.
+   *
+   * Chad, 2026-08-26: "you cannot test this mechanically. Maybe we use another model to validate?"
+   *
+   * Correct: a key comparison catches questions citing the same span and nothing else, and "would a reader
+   * type this" is not decidable in code at all. This is the seam for tests/quality/score-hype.mjs.
+   *
+   * THE JUDGE MUST NOT BE THE AUTHOR. Grading deepseek's questions with deepseek measures self-consistency,
+   * not quality — so the model is explicit here rather than resolved from the doc's routing, and the caller
+   * is responsible for picking one that did not write them.
+   */
+  fastify.post('/concepts/judge-hype', admin, async (req) => {
+    const { docId, provider = 'anthropic', model = 'claude-sonnet-4-6', system, user,
+      temperature = 0, maxTokens = 4000 } = req.body || {};
+    if (!docId || !system || !user) throw ApiError.badRequest('docId, system and user required');
+    const { withAIContext } = await import('../lib/ai-context.js');
+    const { chatCompletion } = await import('../lib/ai.js');
+    const store = makeStore();
+    // The spend gate reads originalLang for the capability case; take it from the DOCUMENT rather than the
+    // request so a caller cannot assert its way onto a paid model.
+    const cov = await store.getOriginalCoverage(Number(docId));
+    const originalLang = cov?.aligned > 0 ? 'fa' : null;
+    const reply = await withAIContext({ docId: Number(docId), stage: 'hype-judge', originalLang, caller: 'score-hype' },
+      () => chatCompletion([{ role: 'system', content: system }, { role: 'user', content: user }],
+        { provider, model, temperature, maxTokens }));
+    const text = reply?.content ?? reply?.text ?? '';
+    const m = String(text).match(/\{[\s\S]*\}/);
+    if (!m) return { questions: [], missed: [], unparsed: String(text).slice(0, 200) };
+    try { return JSON.parse(m[0]); } catch { return { questions: [], missed: [], unparsed: m[0].slice(0, 200) }; }
+  });
+
+  /**
    * GET /concepts/claims?docId=&limit=&concept= — READ BACK what extraction actually wrote.
    *
    * Counts cannot tell a good extraction from a bad one. /concepts/status reports 3,523 claims on the

@@ -53,7 +53,11 @@ const PAID_DOC_ALLOWLIST = new Set(String(process.env.PAID_DOC_ALLOWLIST || '').
 // Measured justification: on the Persian Íqán, deepseek failed 2 of 3 paragraphs and the claims that
 // survived were degenerate ("the Exalted teaches God is the Exalted", no root). The English-only books do
 // NOT qualify here — they route to deepseek exactly as before.
-const CONCEPT_STAGES = new Set(['concept-extract', 'concept-disambiguate', 'concepts', 'concept-lexicon']);
+// 'hype-judge' is a SECOND OPINION on generated questions (Chad, 2026-08-26: "you cannot test this
+// mechanically. Maybe we use another model to validate?"). It reads the same paragraph and its stored
+// original, so it is the same capability case as extraction — and it must be a DIFFERENT model from the one
+// that wrote the questions, or it is not a second opinion at all.
+const CONCEPT_STAGES = new Set(['concept-extract', 'concept-disambiguate', 'concepts', 'concept-lexicon', 'hype-judge']);
 const ORIGINAL_LANGS = new Set(['ar', 'fa']);
 
 /** True when this is concept work on a core book whose paragraph carries an Arabic/Persian original. */
