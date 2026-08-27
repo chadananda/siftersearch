@@ -64,7 +64,7 @@ export async function run(ctx, docId, opts = {}) {
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
   // proofFrom answers "which text is this doctrine cited from" — the number that would have shown, on the
   // first run, that every Persian-quoted proof was being thrown away.
-  const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, bilingual: 0, proofFrom: {} };
+  const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, bilingual: 0, proofFrom: {}, dropSamples: [] };
   // A bare `paras: 0` is indistinguishable from "this book has no concepts". Name the reason.
   if (!paras.length) {
     const all = await ctx.store.getParagraphs(docId);
@@ -113,7 +113,22 @@ export async function run(ctx, docId, opts = {}) {
     for (const c of parsed) {
       stats.claims++;
       const proofLang = (c.concept && c.relation && c.proof) ? conceptProofOk(c.proof, haystacks) : null;
-      if (!proofLang) { stats.dropped++; continue; }
+      if (!proofLang) {
+        stats.dropped++;
+        // A STAGE THAT DISCARDS MOST OF ITS OWN WORK MUST SAY WHAT IT DISCARDED. Two runs reported
+        // "claims: 103, written: 1" and neither said why, so the first fix was aimed at a guess and missed.
+        // Keeping a few rejected proofs beside the text they failed against turns a mystery into a diff.
+        if (stats.dropSamples.length < 6) {
+          stats.dropSamples.push({
+            concept: c.concept ?? null,
+            missing: !c.concept ? 'concept' : !c.relation ? 'relation' : !c.proof ? 'proof' : 'not-verbatim',
+            proof: String(c.proof ?? '').slice(0, 160),
+            enHead: String(p.text || '').slice(0, 160),
+            srcHead: String(p.original || '').slice(0, 160),
+          });
+        }
+        continue;
+      }
       stats.proofFrom[proofLang] = (stats.proofFrom[proofLang] || 0) + 1;
       paraRows.push(conceptClaimRow(c, { docId, pid: p.pid, methodVersion: version, extractor, batch, proofLang }));
     }
