@@ -62,7 +62,9 @@ export async function run(ctx, docId, opts = {}) {
   const bilingualRoute = { model: opts.bilingualModel ?? profile.models.bilingualExtract ?? route.model,
     fallback: opts.bilingualModel ?? profile.models.bilingualExtract ?? route.fallback };
   const maxTokens = (m) => (ctx.catalog.get(m)?.capabilities?.includes('reasoning') ? 6000 : 3000);
-  const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, bilingual: 0 };
+  // proofFrom answers "which text is this doctrine cited from" — the number that would have shown, on the
+  // first run, that every Persian-quoted proof was being thrown away.
+  const stats = { paras: paras.length, claims: 0, written: 0, dropped: 0, failed: 0, escalated: 0, bilingual: 0, proofFrom: {} };
   // A bare `paras: 0` is indistinguishable from "this book has no concepts". Name the reason.
   if (!paras.length) {
     const all = await ctx.store.getParagraphs(docId);
@@ -102,12 +104,18 @@ export async function run(ctx, docId, opts = {}) {
     if (bilingual) stats.bilingual++;
     if (escalated) stats.escalated++;
     if (!parsed || !parsed.length) { stats.failed++; return; }
-    const textNorm = proofNorm(p.text);
+    // BOTH TEXTS ARE CITABLE. The English is checked first because it is the common case; the original is
+    // offered whenever the paragraph carries one, whether or not this call was bilingual — a proof quoted
+    // from the source is valid regardless of which prompt produced it.
+    const haystacks = [{ lang: 'en', norm: proofNorm(p.text) }];
+    if (hasOriginal) haystacks.push({ lang: p.originalLang || 'src', norm: proofNorm(p.original), raw: p.original });
     const paraRows = [];
     for (const c of parsed) {
       stats.claims++;
-      if (!c.concept || !c.relation || !c.proof || !conceptProofOk(c.proof, textNorm)) { stats.dropped++; continue; }
-      paraRows.push(conceptClaimRow(c, { docId, pid: p.pid, methodVersion: version, extractor, batch }));
+      const proofLang = (c.concept && c.relation && c.proof) ? conceptProofOk(c.proof, haystacks) : null;
+      if (!proofLang) { stats.dropped++; continue; }
+      stats.proofFrom[proofLang] = (stats.proofFrom[proofLang] || 0) + 1;
+      paraRows.push(conceptClaimRow(c, { docId, pid: p.pid, methodVersion: version, extractor, batch, proofLang }));
     }
     if (opts.dryRun) rows.push(...paraRows);
     else if (paraRows.length) stats.written += await ctx.store.saveConceptClaims(paraRows);
@@ -128,21 +136,59 @@ export function parseConceptClaims(raw) {
 }
 
 const proofNorm = (s) => String(s || '').replace(/\s+/g, ' ').toLowerCase().trim();
-export function conceptProofOk(proof, paragraphNorm) {
+
+/**
+ * Arabic/Persian normalisation for the proof check: diacritics and letter-form variants differ between
+ * editions and a model re-quoting scripture will not reproduce them exactly.
+ *
+ * Without this, a CORRECT proof quoted from the original is rejected for a dropped hamza — the same failure
+ * that made the segmenter discard good alignments, and with the same signature: a confident stage reporting
+ * that nothing survived.
+ */
+const scriptNorm = (s) => proofNorm(s)
+  .replace(/[\u064B-\u0652\u0670\u0640]/g, '')
+  .replace(/[أإآٱ]/g, 'ا').replace(/[ىی]/g, 'ي').replace(/ة/g, 'ه').replace(/[کك]/g, 'ك');
+
+/**
+ * Is this proof span verbatim in the passage?
+ *
+ * `haystacks` may be SEVERAL texts. In bilingual extraction the model reads the original beside the
+ * translation and is told to keep the proof verbatim in the SOURCE — so it quotes Persian, and checking only
+ * the English discarded 102 of 103 claims on the first real Íqán run. A proof verbatim in the original is
+ * not a weaker citation than one in the rendering; for a translated work it is the stronger one.
+ *
+ * Returns WHICH text it was found in, because that is worth recording: a proof from Shoghi Effendi's English
+ * carries his interpretive authority, and a proof from the original carries the author's own words.
+ */
+export function conceptProofOk(proof, haystacks) {
+  const list = Array.isArray(haystacks) ? haystacks : [{ lang: 'en', norm: haystacks }];
   const p = proofNorm(proof);
-  return p.length > 8 && paragraphNorm.includes(p.slice(0, 120));
+  if (p.length <= 8) return null;
+  const needle = p.slice(0, 120);
+  for (const h of list) {
+    if (!h?.norm) continue;
+    if (h.norm.includes(needle)) return h.lang;
+    // Script-insensitive retry for the original only: English needs no such tolerance and allowing it there
+    // would only loosen a check that is already working.
+    if (h.lang !== 'en' && scriptNorm(h.raw ?? h.norm).includes(scriptNorm(p).slice(0, 120))) return h.lang;
+  }
+  return null;
 }
 
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
 const sha = (s) => createHash('sha1').update(s).digest('hex').slice(0, 16);
 
-export function conceptClaimRow(c, { docId, pid, methodVersion, extractor, batch }) {
+export function conceptClaimRow(c, { docId, pid, methodVersion, extractor, batch, proofLang }) {
   const semanticKey = `${nrm(c.concept)}|${c.relation}|${nrm(c.teaching || c.target || '')}|${pid}`;
   const statement = `${c.concept} — ${c.relation}${c.teaching ? ' ' + c.teaching : ''}`.slice(0, 300);
   return {
     claimHash: sha(`${docId}|${pid}|${semanticKey}`), concept: c.concept, relation: c.relation,
     target: c.teaching || c.target || null, root: c.root || null, statement, proofVerbatim: String(c.proof).slice(0, 240),
     docId, paraId: pid, semanticKey, methodVersion, extractor, confidence: 0.7, status: 'supported', proofOk: 1, batch,
+    // Recorded on the extractor string rather than a new column: which text the proof is verbatim in changes
+    // what the citation is EVIDENCE of, and a claim proved from the original must be distinguishable from one
+    // proved from a rendering when this is read back.
+    ...(proofLang && proofLang !== 'en' ? { extractor: `${extractor}+proof:${proofLang}` } : {}),
   };
 }
 

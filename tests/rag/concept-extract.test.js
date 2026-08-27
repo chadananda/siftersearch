@@ -1,5 +1,6 @@
 // concepts/extract — cited doctrinal/concept claims (work→concept→teaching), proof-gated, on fake ports.
 // RED-FIRST: written before the stage; defines the contract.
+import { buildBilingualSystem } from '../../api/lib/rag/concepts/bilingual.js';
 import { describe, it, expect } from 'vitest';
 import { parseConceptClaims, conceptProofOk, conceptClaimRow } from '../../api/lib/rag/concepts/extract.js';
 import { fakeLLM, makeRag } from './kit.js';
@@ -9,10 +10,28 @@ describe('concepts/extract — pure helpers', () => {
     const raw = '{"claims":[{"concept":"the Covenant","relation":"means","teaching":"the enduring bond","proof":"the Covenant of God","root":"Mítháq"},{"concept":"trunc';
     expect(parseConceptClaims(raw)).toEqual([{ concept: 'the Covenant', relation: 'means', teaching: 'the enduring bond', proof: 'the Covenant of God', root: 'Mítháq' }]);
   });
-  it('conceptProofOk requires a verbatim span of the paragraph', () => {
+  it('conceptProofOk requires a verbatim span, and says WHICH text it came from', () => {
     const text = 'he expounded the station of the manifestation and the meaning of the covenant.';
-    expect(conceptProofOk('meaning of the covenant', text)).toBe(true);
-    expect(conceptProofOk('not present here', text)).toBe(false);
+    expect(conceptProofOk('meaning of the covenant', text)).toBe('en');
+    expect(conceptProofOk('not present here', text)).toBe(null);
+  });
+
+  it('accepts a proof quoted from the ORIGINAL, not only from the rendering', () => {
+    // Bilingual extraction shows the model both texts and asks it to keep the proof verbatim in the SOURCE.
+    // Checking only the English discarded 102 of 103 claims on the first real Íqán run.
+    const hay = [{ lang: 'en', norm: 'and the meaning of the covenant.' },
+      { lang: 'fa', norm: 'و معنی میثاق الهی را بیان فرمود', raw: 'و معنی میثاق الهی را بیان فرمود' }];
+    expect(conceptProofOk('معنی میثاق الهی', hay)).toBe('fa');
+    expect(conceptProofOk('meaning of the covenant', hay)).toBe('en');
+    expect(conceptProofOk('چیزی که در متن نیست', hay)).toBe(null);
+  });
+
+  it('tolerates diacritics the model drops when re-quoting the original', () => {
+    // A correct proof must not be rejected for a missing hamza — the failure that made the segmenter
+    // discard good alignments, with the same signature: a stage reporting that nothing survived.
+    const hay = [{ lang: 'en', norm: 'x' },
+      { lang: 'ar', norm: 'إنّ الّذين اوتوا بصآئر من الله', raw: 'إنّ الّذين اوتوا بصآئر من الله' }];
+    expect(conceptProofOk('ان الذين اوتوا بصائر', hay)).toBe('ar');
   });
   it('conceptClaimRow defers concept identity and carries proof + root', () => {
     const row = conceptClaimRow({ concept: 'the Covenant', relation: 'means', teaching: 'the bond', proof: 'x', root: 'Mítháq' },
@@ -42,5 +61,30 @@ describe('concepts/extract — run() on fake ports', () => {
   it('gates on disambiguation', async () => {
     const { rag } = makeRag({ seed: { paras: { 21310: [para] }, coverage: { 21310: 0.4 } } });
     await expect(rag.concepts.extract(21310)).rejects.toThrow(/disambiguated/);
+  });
+});
+
+describe('the bilingual prompt states what only Shoghi Effendi has', () => {
+  // Chad, 2026-08-26: "if it was [his], the translation itself has tremendous authority (as the only
+  // translation by a designated interpreter)… be sure we remind the extraction prompt of the unique nature
+  // of shoghi effendi translations as authoritative doctrinally in a way that no other translation can be."
+  it('says the standing is unique and cannot be acquired by another translator', () => {
+    const sys = buildBilingualSystem({}, { title: 'the Kitáb-i-Íqán' }, { translationAuthority: 'shoghi-effendi' });
+    expect(sys).toMatch(/sole designated interpreter/);
+    expect(sys).toMatch(/ONLY translation that carries doctrinal authority/);
+    expect(sys).toMatch(/no other rendering .* has it or can acquire it/);
+  });
+
+  it('does NOT grant that standing to a committee or provisional rendering', () => {
+    const sys = buildBilingualSystem({}, { title: 'the Kitáb-i-Aqdas' }, { translationAuthority: 'committee' });
+    expect(sys).toMatch(/THE ORIGINAL GOVERNS HERE/);
+    expect(sys).not.toMatch(/sole designated interpreter/);
+  });
+
+  it('tells the model it may quote its proof from EITHER text', () => {
+    // The instruction used to say "quoted exactly from the passage", and the model quoted Persian while the
+    // gate searched English — 102 of 103 claims discarded.
+    const sys = buildBilingualSystem({}, { title: 'x' }, { translationAuthority: 'shoghi-effendi' });
+    expect(sys).toMatch(/Quote from EITHER text/);
   });
 });

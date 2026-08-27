@@ -46,15 +46,19 @@ ${authoritative
 1. THE ORIGINAL tells you WHICH TERM — the concept's identity.
    English is broader than the original and silently merges distinct concepts. "Prayer" renders Ṣalát (ص-ل-و, obligatory prayer), Duʿá (د-ع-و, supplication) and Dhikr (ذ-ك-ر, remembrance) — three different roots, three different concepts, with different laws attached. "Justice" renders both ʿadl (ع-د-ل, rectitude) and insáf (ن-ص-ف, equity). Treating these as one concept because English uses one word is a doctrinal error created by translation. ALWAYS key the concept to its root.
 
-2. ${authoritative ? "SHOGHI EFFENDI'S RENDERING tells you WHICH SENSE — the authoritative interpretation." : 'THE TRANSLATION is a guide to meaning, not a determination of it.'}
+2. ${authoritative
+  ? `SHOGHI EFFENDI'S RENDERING tells you WHICH SENSE — the authoritative interpretation.
    His English is not an approximation of the original and is NEVER something to correct, improve, or read past. As the authorised interpreter his word-choice FIXES which sense of a polysemous term is operative in this passage. When he renders غمام as "clouds of Heaven-sent trials", he is telling you which of that term's senses is meant here. Treat his rendering as interpretive evidence of equal standing to the original, not as a lossy copy of it.
+   THIS STANDING IS UNIQUE AND UNREPEATABLE. He is the sole designated interpreter, so his is the ONLY translation that carries doctrinal authority in its own right — no other rendering of these texts, however scholarly, has it or can acquire it. A reading you would reject from any other translator is authoritative here. Where his English says something the original merely permits, HE HAS DECIDED IT.`
+  : `THE TRANSLATION is a guide to meaning, not a determination of it.
+   This rendering was NOT made by the designated interpreter. Read it for orientation and quote it where it is faithful, but never let its word-choice settle which sense of a term is operative — only the original can do that here. Where it is vaguer, more specific, or more confident than the original, that is the translator's judgement and not doctrine.`}
 
 WHAT TO EXTRACT
 For each significant doctrinal concept or symbol the passage DEVELOPS:
 - the concept, named in English as Shoghi Effendi renders it
 - its ORIGINAL term, copied verbatim from the original text (${ROOT_REQUIRED_NOTE})
 - what the passage says it means or teaches
-- a VERBATIM proof span, quoted exactly from the passage — never paraphrased
+- a VERBATIM proof span, quoted exactly — never paraphrased. Quote from EITHER text: from the ORIGINAL when the claim is about which term is meant, from the ENGLISH when it rests on ${authoritative ? 'the interpreter\'s word-choice' : 'the rendering'}. Copy the characters exactly as they appear in the text you quote.
 
 POLYSEMY
 A symbolic text carries more than one meaning at once. Where the passage supports several senses, record them ALL. Do NOT choose between them, and do not let a concrete or literal reading rule out a symbolic one — in a symbolic work the literal image is also a sign.
