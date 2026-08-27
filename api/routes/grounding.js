@@ -197,6 +197,40 @@ export default async function groundingRoutes(fastify) {
       first_at: ages?.first_at ?? null, last_at: ages?.last_at ?? null, byDoc, sample };
   });
 
+  /**
+   * GET /concepts/claims?docId=&limit=&concept= — READ BACK what extraction actually wrote.
+   *
+   * Counts cannot tell a good extraction from a bad one. /concepts/status reports 3,523 claims on the
+   * Kitáb-i-Íqán and says nothing about whether they are doctrine or restatement — and the only way I could
+   * inspect quality until now was to pay for a dry run and read its return value, which reads the model
+   * rather than the database.
+   *
+   * proofLang comes off the extractor string, where it is recorded: a claim proved from the ORIGINAL cites
+   * the author's own words, one proved from Shoghi Effendi's English cites an authorised interpretation, and
+   * those are different kinds of evidence.
+   */
+  fastify.get('/concepts/claims', admin, async (req) => {
+    const docId = req.query?.docId ? Number(req.query.docId) : null;
+    const limit = Math.min(200, Number(req.query?.limit) || 40);
+    const where = [], args = [];
+    if (docId) { where.push('doc_id = ?'); args.push(docId); }
+    if (req.query?.concept) { where.push('subject LIKE ?'); args.push(`%${req.query.concept}%`); }
+    const sql = where.length ? ` WHERE ${where.join(' AND ')}` : '';
+    const rows = await queryAll(
+      `SELECT subject, relation, target, root, proof_verbatim, para_id, extractor, proof_ok
+         FROM concept_claims${sql} ORDER BY id DESC LIMIT ?`, [...args, limit], 'diag:concept-claims');
+    const byRelation = await queryAll(
+      `SELECT relation, COUNT(*) n FROM concept_claims${sql} GROUP BY relation ORDER BY n DESC`, args, 'diag:claims-by-relation');
+    const byProof = await queryAll(
+      `SELECT CASE WHEN extractor LIKE '%+proof:%' THEN SUBSTR(extractor, INSTR(extractor,'+proof:')+7) ELSE 'en' END lang,
+              COUNT(*) n FROM concept_claims${sql} GROUP BY lang ORDER BY n DESC`, args, 'diag:claims-by-proof');
+    // DISTINCT SUBJECTS against total claims: the number that separates a rich extraction from one that
+    // restated the same concept many times.
+    const distinct = await queryOne(`SELECT COUNT(DISTINCT subject) n FROM concept_claims${sql}`, args, 'diag:claims-distinct');
+    const withRoot = await queryOne(`SELECT COUNT(*) n FROM concept_claims${sql}${sql ? ' AND' : ' WHERE'} root IS NOT NULL AND root != ''`, args, 'diag:claims-root');
+    return { docId, distinctSubjects: distinct?.n ?? 0, withRoot: withRoot?.n ?? 0, byRelation, byProofLang: byProof, claims: rows };
+  });
+
   /** POST /concepts/sync — reindex concept entities without re-extracting. Full refresh; cheap, no model calls. */
   // GET /concepts/lexicon?symbol=…&limit= — every recorded interpretation of one symbol.
   // Feeds tests/quality/score-concepts.mjs, which measures TWO things the lexicon conflates: whether we
