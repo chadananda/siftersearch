@@ -108,3 +108,25 @@ describe('the bilingual prompt states what only Shoghi Effendi has', () => {
     expect(sys).toMatch(/Quote from EITHER text/);
   });
 });
+
+describe('the bilingual prompt and the validator must share one contract', () => {
+  // They did not. The prompt asked for {concepts:[{…,"sense"}]} and the validator required `relation`, so
+  // every bilingual claim was parsed, found to lack it, and dropped — the path had produced zero claims
+  // since it was written. Every concept in the corpus came from the English-only books.
+  it('the bilingual prompt asks for the fields the validator requires', () => {
+    const sys = buildBilingualSystem({}, { title: 'x' }, { translationAuthority: 'shoghi-effendi' });
+    expect(sys).toMatch(/relation = one of: means \| teaches \| interprets/);
+    expect(sys).toMatch(/"claims":\[/);
+    expect(sys).not.toMatch(/"concepts":\[/);
+  });
+
+  it('a reply in the OLD shape still parses rather than being discarded', () => {
+    const raw = '{"concept":"the Covenant","sense":"the enduring bond","proof":"the Covenant of God","original_term":"ميثاق"}';
+    expect(parseConceptClaims(raw)[0]).toMatchObject({
+      concept: 'the Covenant', teaching: 'the enduring bond', relation: 'means', root: 'ميثاق' });
+  });
+
+  it('does not invent a relation for a claim that asserts nothing', () => {
+    expect(parseConceptClaims('{"concept":"x","proof":"y"}')[0].relation).toBeUndefined();
+  });
+});

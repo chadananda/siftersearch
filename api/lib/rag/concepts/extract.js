@@ -142,10 +142,30 @@ export async function run(ctx, docId, opts = {}) {
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 
+/**
+ * Parse claim objects out of a model reply.
+ *
+ * TOLERANT OF THE OTHER SCHEMA. The bilingual prompt asked for {concepts:[{…, sense}]} while this stage
+ * requires {claims:[{…, relation, teaching}]} — two contracts for one pipeline, so every bilingual claim was
+ * parsed, found to have no `relation`, and dropped. The bilingual path had therefore never produced a single
+ * claim since it was written, which is why every concept in the corpus came from the English-only books.
+ *
+ * The prompt is fixed; this mapping stays so a reply in the older shape is still usable rather than silently
+ * discarded, and so a recorded golden reply keeps parsing.
+ */
 export function parseConceptClaims(raw) {
   const out = [];
   for (const o of String(raw).match(/\{[^{}]*\}/g) || []) {
-    try { const j = JSON.parse(o); if (j && (j.concept || j.proof)) out.push(j); } catch { /* partial */ }
+    try {
+      const j = JSON.parse(o);
+      if (!j || !(j.concept || j.proof)) continue;
+      // `sense` was the bilingual prompt's name for `teaching`; a claim carrying only a sense is a claim
+      // about what the concept MEANS, which is the relation `means`.
+      if (j.teaching == null && j.sense != null) j.teaching = j.sense;
+      if (!j.relation && j.teaching) j.relation = 'means';
+      if (!j.root && j.original_term) j.root = j.original_term;
+      out.push(j);
+    } catch { /* partial */ }
   }
   return out;
 }

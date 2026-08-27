@@ -67,7 +67,16 @@ A symbolic text carries more than one meaning at once. Where the passage support
 RESTRAINT
 Extract significant doctrinal or technical TERMS, never ordinary descriptive phrases from the passage. If the passage has no aligned original available, say so and omit the root rather than guessing at one. Under-extract rather than invent: a concept you are unsure of is better left out than recorded wrongly.
 
-Return ONLY JSON: {"concepts":[{"concept","root","root_translit","original_term","sense","proof"}]}`;
+OUTPUT
+One object per claim. A concept with several senses produces SEVERAL objects, one per sense — that is how polysemy is recorded.
+• concept = the English canonical name of the idea/symbol${authoritative ? ', as Shoghi Effendi renders it' : ''}.
+• relation = one of: means | teaches | interprets | symbolizes | fulfills | is-station-of | ranks.
+• teaching = what the passage asserts about it, in a short clause.
+• proof = the verbatim span, from either text, per the rule above.
+• root / original_term = the original-language term behind the concept, copied from the original text (omit if not present there).
+• authoritative = true when this sense rests on ${authoritative ? "Shoghi Effendi's rendering" : 'the original'}; false when it is a further sense the original supports.
+
+Return ONLY JSON: {"claims":[{"concept":"..","relation":"..","teaching":"..","proof":"..","root":"..","original_term":"..","authoritative":true}]}`;
 }
 
 /**

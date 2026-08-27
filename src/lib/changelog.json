@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-27T01:03:29.098Z",
+  "generated": "2026-08-27T01:09:37.490Z",
   "entries": [
+    {
+      "hash": "b3bdb2f5",
+      "date": "2026-08-26",
+      "type": "Other",
+      "description": "Report WHAT was dropped, not just how many",
+      "scope": null
+    },
     {
       "hash": "f02187d2",
       "date": "2026-08-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Dawn-Breakers facts pass (DB-heavy, important facts, merges into characterizations) for important multi-mention characters",
       "scope": null
-    },
-    {
-      "hash": "db7eb856",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Broaden death vocabulary (fell/wounded/breathed his last/...)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-26": [
+      {
+        "hash": "b3bdb2f5",
+        "date": "2026-08-26",
+        "type": "Other",
+        "description": "Report WHAT was dropped, not just how many",
+        "scope": null
+      },
       {
         "hash": "f02187d2",
         "date": "2026-08-26",
@@ -7067,13 +7074,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Dawn-Breakers facts pass (DB-heavy, important facts, merges into characterizations) for important multi-mention characters",
-        "scope": null
-      },
-      {
-        "hash": "db7eb856",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Broaden death vocabulary (fell/wounded/breathed his last/...)",
         "scope": null
       }
     ]
