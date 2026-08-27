@@ -130,3 +130,65 @@ v12's prompt is unmeasured — no clean reading of it exists yet.
 
 `retrieval.js:325` — "NEVER NAME THE BOOK OR WORK IN A QUESTION" — and eleven lines later the worked example
 is `"What does ʿirfán mean in the Kitáb-i-Íqán?"`, which violates it.
+
+---
+
+# ADDENDUM — fix shipped, SAQ re-run, and the honest reading of v12's prompt
+
+Committed `b36862c7`, version **2.187.1** in `package.json` and live on `/health`. Both DeepSeek call sites
+(`ai.js`, `ai-services.js`) now send `thinking` top-level. `HYPE_VERSION` → `hype-v13-thinking-fixed`
+(the v12 PROMPT is unchanged; only the generator's call config is — and the bump is what lets `rehype`
+regenerate paragraphs already stamped v12).
+
+## The fix works, and it is not marginal
+
+| | v12 (broken call) | **v13 (fixed call)** |
+|---|---|---|
+| eligible paragraphs with questions | 242/778 (31%) | **773/779 (99%)** |
+| processed-but-empty | 536 | **6** |
+| q/para book-wide | 1.52 | **6.74** |
+| paragraphs >900 chars that came back empty | 92% | **0%** |
+| wall-clock for the whole book at cc=40 | ~95 min | **~6 min** |
+
+The 6 remaining empties are 0.8% — a normal failure floor, not a pattern.
+
+**The 16× speedup is the same bug seen from the cost side.** Every call had been buying reasoning tokens
+nobody asked for, on every DeepSeek stage in the system. This is the "reasoning tax" from
+`project_reasoning_tax_output_cost`, and it was never a property of the model — it was a dropped parameter.
+
+## v12's prompt, measured on a whole population for the first time
+
+`score-hype.mjs --doc=20911 --sample=30`, coverage 99%:
+
+| | v5-era (n=30, ~92% coverage) | v12 (31% coverage — survivors) | **v13 = v12 prompt, 99% coverage** |
+|---|---|---|---|
+| searchable | 95% / 92% | 85% | **87%** |
+| answered | 80% / 78% | 91% | **80%** |
+| distinct | 77% / 78% | 90% | **88%** |
+| missed / para | 2.07 / 2.13 | 2.23 | **2.13** |
+
+**`answered` did not move.** 80% then, 80% now. The 91% was entirely the survivor effect — the paragraphs
+that failed were the ones that would have scored badly, and they left the denominator. The handoff's §5.1
+condition is met exactly as written: *"If `answered` did not move, the next lever is the judge's own
+feedback loop — feed its rejections back as negative examples."*
+
+What v10→v12 did buy, honestly:
+- **distinct 77% → 88%.** Real. The span gate and the one-question-per-teaching rule work.
+- **searchable 92-95% → 87%.** A real regression, and the largest remaining defect after `answered`.
+- **q/para 12.6 → 6.7** with **`missed` flat at ~2.1**. Halving the questions cost no measured coverage of
+  what the paragraph teaches — the questions removed were the redundant ones. This is the one place a
+  smaller number is the good news, and `missed` is what licenses saying so.
+
+The judge's rejections cluster on one shape, which is what §5.1's feedback loop should target first:
+a passage that MENTIONS a term without explaining it still attracts "what does X mean?" — ¶29 "what does it
+mean to be a material educator", ¶55 "what is the meaning of the crown of thorns". The prompt already
+forbids this in prose ("MENTIONING IS NOT ANSWERING") and the model still does it. It needs examples, not
+more rules.
+
+## Still open
+
+- 5 of the 6 remaining empties, and ¶788 (12,339 chars), are unexamined.
+- **Every other book hyped or extracted while this bug was live is suspect.** SAQ is one document; the
+  fault was in the shared call path. Sweep for paragraphs stamped with any generator version and carrying
+  zero output before trusting any book's coverage.
+- Prompt defect from §7 still unfixed (the `Kitáb-i-Íqán` example contradicting "never name the book").
