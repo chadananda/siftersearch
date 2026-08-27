@@ -41,12 +41,38 @@ describe('the version string is part of the prompt', () => {
   // Changing the prompt without bumping HYPE_VERSION left every paragraph matching the current version, so
   // --rehype skipped the entire book: the run reported success and the questions came back byte-identical.
   it('v4 is stamped, so the version-aware upgrade actually regenerates', () => {
-    expect(HYPE_VERSION).toBe('hype-v4-seeker');
+    expect(HYPE_VERSION).toBe('hype-v4-seeker-def');
   });
 
   it('isHyped treats a row stamped with an older version as wanting an upgrade', async () => {
     const { isHyped } = await import('../../api/lib/pipeline/processed.js');
     expect(isHyped({ hypModel: 'hype-v3-adaptive' }, HYPE_VERSION)).toBe(false);
     expect(isHyped({ hypModel: HYPE_VERSION }, HYPE_VERSION)).toBe(true);
+  });
+});
+
+describe('definitions are the highest-value thing to retrieve', () => {
+  // Chad, 2026-08-26, on "KNOW THAT JUSTICE consists in rendering to each his due" (SAQ ¶933): "This is a
+  // definition. When someone asks 'what is meant by justice?' such passages should pop up as define the term."
+  const sys = buildSystem({ lang: 'en', genre: 'doctrinal', script: 'Latin' }, { title: 'Some Answered Questions' });
+
+  it('makes the plain definitional forms mandatory, not optional', () => {
+    expect(sys).toMatch(/IF THE PASSAGE DEFINES A TERM/);
+    expect(sys).toMatch(/MANDATORY and come first/);
+    expect(sys).toMatch(/What is meant by X\?/);
+  });
+
+  it('says why they get missed — the passage states them too plainly to look like answers', () => {
+    expect(sys).toMatch(/look like they need no question/);
+  });
+
+  it('asks for the definitional form of the ORIGINAL term too', () => {
+    expect(sys).toMatch(/the same for the ORIGINAL term/);
+  });
+
+  it('stops the model appending the book title to every question', () => {
+    // Measured on the Íqán v4 run: 8 of 10 questions in one paragraph ended "in the Kitáb-i-Íqán".
+    expect(sys).toMatch(/do not append it to every question/);
+    expect(sys).toMatch(/matches nothing but itself/);
   });
 });
