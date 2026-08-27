@@ -179,10 +179,16 @@ const proofNorm = (s) => String(s || '').replace(/\s+/g, ' ').toLowerCase().trim
  * Without this, a CORRECT proof quoted from the original is rejected for a dropped hamza — the same failure
  * that made the segmenter discard good alignments, and with the same signature: a confident stage reporting
  * that nothing survived.
+ *
+ * SPACING IS DISCARDED TOO, and that one is not about the model. Our text of the Íqán reads "ظهورقدم" with
+ * the space missing — a digitisation typo — and the model quoted it back correctly spaced. Comparing letter
+ * sequences rather than character strings means a flaw in OUR source cannot invalidate a faithful citation.
+ * Zero-width joiners go the same way: Persian uses them constantly and no two editions agree on where.
  */
 const scriptNorm = (s) => proofNorm(s)
-  .replace(/[\u064B-\u0652\u0670\u0640]/g, '')
-  .replace(/[أإآٱ]/g, 'ا').replace(/[ىی]/g, 'ي').replace(/ة/g, 'ه').replace(/[کك]/g, 'ك');
+  .replace(/[\u064B-\u0652\u0670\u0640\u200C\u200D]/g, '')
+  .replace(/[أإآٱ]/g, 'ا').replace(/[ىی]/g, 'ي').replace(/ة/g, 'ه').replace(/[کك]/g, 'ك')
+  .replace(/\s+/g, '');
 
 /**
  * Is this proof span verbatim in the passage?

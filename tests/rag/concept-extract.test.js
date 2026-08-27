@@ -130,3 +130,24 @@ describe('the bilingual prompt and the validator must share one contract', () =>
     expect(parseConceptClaims('{"concept":"x","proof":"y"}')[0].relation).toBeUndefined();
   });
 });
+
+describe('a flaw in OUR text must not invalidate a faithful citation', () => {
+  it('matches across a missing space in the source', () => {
+    // Our Íqán reads "به عرصه ظهورقدم گذارد" — the space is missing, a digitisation typo — and the model
+    // quoted it back correctly spaced. Comparing letter sequences keeps the citation.
+    const hay = [{ lang: 'en', norm: 'x' },
+      { lang: 'fa', norm: 'و جمال موعود از سرادق غيب به عرصه ظهورقدم گذارد', raw: 'و جمال موعود از سرادق غيب به عرصه ظهورقدم گذارد' }];
+    expect(conceptProofOk('از سرادق غيب به عرصه ظهور قدم گذارد', hay)).toBe('fa');
+  });
+
+  it('matches across a zero-width non-joiner, which no two Persian editions place alike', () => {
+    const hay = [{ lang: 'en', norm: 'x' },
+      { lang: 'fa', norm: 'ابواب عنايت مفتوح می‌شود', raw: 'ابواب عنايت مفتوح می‌شود' }];
+    expect(conceptProofOk('ابواب عنايت مفتوح میشود', hay)).toBe('fa');
+  });
+
+  it('does NOT let the loosened comparison match unrelated text', () => {
+    const hay = [{ lang: 'en', norm: 'x' }, { lang: 'fa', norm: 'ابواب عنايت مفتوح', raw: 'ابواب عنايت مفتوح' }];
+    expect(conceptProofOk('سخنی که هرگز در این متن نیامده است', hay)).toBe(null);
+  });
+});
