@@ -217,12 +217,12 @@ export default async function groundingRoutes(fastify) {
     if (req.query?.concept) { where.push('subject LIKE ?'); args.push(`%${req.query.concept}%`); }
     const sql = where.length ? ` WHERE ${where.join(' AND ')}` : '';
     const rows = await queryAll(
-      `SELECT subject, relation, target, root, proof_verbatim, para_id, extractor, proof_ok
+      `SELECT subject, relation, target, root, proof_verbatim, para_id, extractor_version, proof_ok
          FROM concept_claims${sql} ORDER BY id DESC LIMIT ?`, [...args, limit], 'diag:concept-claims');
     const byRelation = await queryAll(
       `SELECT relation, COUNT(*) n FROM concept_claims${sql} GROUP BY relation ORDER BY n DESC`, args, 'diag:claims-by-relation');
     const byProof = await queryAll(
-      `SELECT CASE WHEN extractor LIKE '%+proof:%' THEN SUBSTR(extractor, INSTR(extractor,'+proof:')+7) ELSE 'en' END lang,
+      `SELECT CASE WHEN extractor_version LIKE '%+proof:%' THEN SUBSTR(extractor_version, INSTR(extractor_version,'+proof:')+7) ELSE 'en' END lang,
               COUNT(*) n FROM concept_claims${sql} GROUP BY lang ORDER BY n DESC`, args, 'diag:claims-by-proof');
     // DISTINCT SUBJECTS against total claims: the number that separates a rich extraction from one that
     // restated the same concept many times.
