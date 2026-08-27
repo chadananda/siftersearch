@@ -19,7 +19,16 @@ import { segment } from '../kernel/segment.js';
 import { pool } from '../kernel/run.js';
 import { isHyped, DISAMB_THRESHOLD } from '../../pipeline/processed.js';
 
-export const HYPE_VERSION = 'hype-v3-adaptive';
+// v4 (2026-08-26, "hype-v4-seeker"): the questions are the retrieval surface, so their SHAPE is the product.
+// v3 wrote comprehension checks — "What does this passage ask the reader to ponder?" — and padded counts by
+// splitting one sentence's list into a question per noun. v4 asks for what a reader types, forbids referring
+// to the text itself, and reaches the concept layer: where a claim carries an original term, a reader who
+// knows that term must be able to search with it.
+//
+// THE VERSION STRING IS PART OF THE PROMPT. Changing the prompt without bumping it left every paragraph
+// matching the current version, so --rehype skipped the whole book and regenerated nothing — the run
+// reported success and the questions were byte-identical. A prompt change IS a version change.
+export const HYPE_VERSION = 'hype-v4-seeker';
 const DENSE_HINT = 'Keep each question short; output ONLY the compact JSON object, nothing else.';
 const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not worth HyPE
 // Question count is set by the PARAGRAPH, not a quota: a dense passage (every sentence answering several

@@ -3,7 +3,7 @@
 // Chad, 2026-08-26: "Complete and quality HyPE questions are the main reason we are analyzing concepts and
 // people. We need quality HyPE to locate the right passage during RAG search."
 import { describe, it, expect } from 'vitest';
-import { buildSystem, buildUser } from '../../api/lib/rag/enrich/retrieval.js';
+import { buildSystem, buildUser, HYPE_VERSION } from '../../api/lib/rag/enrich/retrieval.js';
 
 describe('HyPE asks what a reader asks, not what a quiz asks', () => {
   // Measured on the Kitáb-i-Íqán before this change: ¶2 produced "From what should their ears be cleansed?",
@@ -34,5 +34,19 @@ describe('HyPE asks what a reader asks, not what a quiz asks', () => {
 
   it('still lets the paragraph set the count', () => {
     expect(sys).toMatch(/sets the count, not a quota/);
+  });
+});
+
+describe('the version string is part of the prompt', () => {
+  // Changing the prompt without bumping HYPE_VERSION left every paragraph matching the current version, so
+  // --rehype skipped the entire book: the run reported success and the questions came back byte-identical.
+  it('v4 is stamped, so the version-aware upgrade actually regenerates', () => {
+    expect(HYPE_VERSION).toBe('hype-v4-seeker');
+  });
+
+  it('isHyped treats a row stamped with an older version as wanting an upgrade', async () => {
+    const { isHyped } = await import('../../api/lib/pipeline/processed.js');
+    expect(isHyped({ hypModel: 'hype-v3-adaptive' }, HYPE_VERSION)).toBe(false);
+    expect(isHyped({ hypModel: HYPE_VERSION }, HYPE_VERSION)).toBe(true);
   });
 });
