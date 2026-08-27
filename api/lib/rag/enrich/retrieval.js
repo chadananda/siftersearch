@@ -28,7 +28,7 @@ import { isHyped, DISAMB_THRESHOLD } from '../../pipeline/processed.js';
 // THE VERSION STRING IS PART OF THE PROMPT. Changing the prompt without bumping it left every paragraph
 // matching the current version, so --rehype skipped the whole book and regenerated nothing — the run
 // reported success and the questions were byte-identical. A prompt change IS a version change.
-export const HYPE_VERSION = 'hype-v7-distinct-answers';
+export const HYPE_VERSION = 'hype-v8-answer-keyed';
 const DENSE_HINT = 'Keep each question short; output ONLY the compact JSON object, nothing else.';
 const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not worth HyPE
 // Question count is set by the PARAGRAPH, not a quota: a dense passage (every sentence answering several
@@ -166,14 +166,56 @@ const isDone = (p) => isHyped(p, HYPE_VERSION);
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 
+/**
+ * Normalise an answering span for comparison: two questions pointing at the same words are one question.
+ */
+const answerKey = (a) => String(a || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().slice(0, 90);
+
+/**
+ * Keep one question per distinct ANSWER.
+ *
+ * Chad, 2026-08-26: "please tighten, but never with arbitrary caps. We want unique questions but cannot
+ * guess in advance how many questions a paragraph will answer. You fixed the too many questions problem
+ * with a cap before and that is broken thinking."
+ *
+ * So the test is his — two questions are two questions only if they have two answers — and it is applied
+ * HERE rather than asked of the model. Three prompt revisions tried to legislate it in prose and each
+ * drifted back: a sentence naming nature's "sound organization, inviolable laws, perfect order and
+ * consummate design" produced four definitional questions, then four MORE in the original language, all
+ * answered by that one sentence. Prose asking a model to police its own redundancy competes with every
+ * other instruction in the prompt; a key comparison does not.
+ *
+ * NO CAP IS APPLIED. A paragraph answering thirty distinct things keeps thirty. Questions with no span, or
+ * spans too short to be meaningful, are kept as-is — an unusable span is a reason to skip the check, never
+ * to discard a question.
+ */
+export function dedupeByAnswer(items) {
+  const seen = new Map();
+  const out = [];
+  for (const it of items) {
+    const key = answerKey(it.a);
+    if (key.length < 12) { out.push(it.q); continue; }        // no usable span → keep, do not judge
+    if (seen.has(key)) continue;
+    seen.set(key, true);
+    out.push(it.q);
+  }
+  return out;
+}
+
 export function parseHype(raw) {
   const m = String(raw).match(/\{[\s\S]*\}/);
   if (!m) return null;
   try {
     const j = JSON.parse(m[0]);
-    const q = (j.questions || []).filter((x) => typeof x === 'string' && x.trim());
+    // Accept both shapes: {q,a} objects (current) and bare strings (older recordings, and slices that
+    // answer without a span). A mixed array is fine — each item is judged on what it carries.
+    const items = (j.questions || [])
+      .map((x) => (typeof x === 'string' ? { q: x, a: '' } : { q: String(x?.q ?? ''), a: String(x?.a ?? '') }))
+      .filter((x) => x.q.trim());
+    if (!items.length) return null;
+    const q = dedupeByAnswer(items);
     if (q.length < 1) return null;
-    return { questions: q.slice(0, 40), thesis: String(j.thesis || '').trim() };   // 40 = QUESTION_CEILING sanity rail
+    return { questions: q.slice(0, 40), thesis: String(j.thesis || '').trim() };   // 40 = runaway rail, never a target
   } catch { return null; }
 }
 
@@ -206,10 +248,7 @@ From the paragraph (use the disambiguation CONTEXT only to resolve who/what/wher
   • IF THE PASSAGE DEFINES A TERM, the plain definitional questions are MANDATORY and come first. A passage saying "Know that justice consists in rendering to each his due" is THE answer to "What is justice?" and "What is meant by justice?" — those exact ordinary forms must be present, not only a subtler question about its application. Definitions are the highest-value thing a reader searches for and the easiest to miss, because the passage states them so plainly that they look like they need no question. Give the bare form ("What is X?"), the asking form ("What is meant by X?"), and the same for the ORIGINAL term where one is known.
     Define a term ONLY where the passage gives that term its own content — says what it IS, or draws a line between it and something else. A word the passage merely uses, as one of several ways of naming a single idea, does not get its own definition.
   • NO YES/NO QUESTIONS. "Does nature have consciousness?" and "Is nature in the grasp of God?" retrieve badly — a reader asks "what does X teach about Y", and a yes/no phrasing sits far from that in embedding space while adding no distinct ask. Turn each into the open form it is hiding: "What does ‘Abdu'l-Bahá teach about nature's lack of consciousness?"
-  • THE TEST FOR TWO QUESTIONS IS TWO ANSWERS. Before writing a question, ask what part of the passage answers it. If the answer is the SAME SPAN that already answers a question you have written, it is not a second question however differently worded — it is the first one again.
-    Worked example. A sentence saying nature is subject "to a sound organization, to inviolable laws, to a perfect order, and to a consummate design" is answered, for all four phrases, by that one sentence: they are four namings of a single idea. So it earns ONE question about the idea — naming the terms inside it if they are worth surfacing — not four definitions, and certainly not four again in the original language.
-    The same sentence read differently DOES earn another question: "what does nature never depart from" and "what can be seen with the eye of insight" have different answers in it, so they are genuinely two.
-  • THIS IS NOT A LIMIT ON HOW MANY. A paragraph that genuinely answers thirty distinct questions must get thirty; a paragraph answering two must get two. Never drop a real question to hit a number, and never invent one to reach a number — there is no number. Distinctness is the only test.
+  • EVERY QUESTION CARRIES THE SPAN THAT ANSWERS IT. Give "a" — the words from the passage a reader would be shown as the answer, copied verbatim. Two questions answered by the SAME words are one question, however differently worded, and only one will be kept. This is not a limit on how many: a paragraph answering thirty distinct things gets thirty. It is a test of whether an ask is really distinct, and the span is how you check your own work before writing it down.
   • NO CATCH-ALL QUESTIONS. "What did ‘Abdu'l-Bahá say about nature in Some Answered Questions?" is not a question, it is the paragraph's topic with a question mark. It matches everything about the topic and so distinguishes nothing.
   • NEVER NAME THE BOOK OR WORK IN A QUESTION. Not "in Some Answered Questions", not "in the Kitáb-i-Íqán", not "according to this book". The purpose of these questions is to TIE A CONCEPT ACROSS THE WHOLE CORPUS: the same concept is developed in many works, and a reader asking "what is meant by justice" should reach every passage that answers it, not only the one whose title they happened to name. Scoping to a book or a religion is done by a FILTER at search time and needs no help from the question text. A title inside the question only narrows what it can match, and a page of questions all ending in the same title matches little but itself.
   • Naming the AUTHOR is different and allowed where it is natural — readers really do ask "what did ‘Abdu'l-Bahá teach about the soul" — because it identifies a voice that speaks across many works rather than fencing the question inside one of them. Still do not put it in every question.
@@ -222,7 +261,7 @@ If ESTABLISHED FACTS are provided with the paragraph, they are cited claims extr
 
 If AUTHORITATIVE INTERPRETATIONS are provided, they are the doctrinal claims this passage establishes, each with its ORIGINAL-LANGUAGE TERM in brackets. These are what a serious reader comes for, so make each one findable. Where a concept carries an original term, write at least one question a reader would ask USING THAT TERM — "What does ʿirfán mean in the Kitáb-i-Íqán?", "What is the difference between ʿadl and inṣáf?" — because a reader who knows the term searches with it, and the English gloss will not retrieve them. Ask about the concept; never echo the interpretation's wording back as a question.
 
-Return exactly: {"questions":["…?","…?"],"thesis":"…"} (as many questions as the paragraph answers)
+Return exactly: {"questions":[{"q":"…?","a":"verbatim words from the passage that answer it"}],"thesis":"…"} (as many as the paragraph answers)
 
 BOOK:
 ${bookMeta}${cast ? `\n\nBOOK CAST (who's-who — resolve a name to the right figure; do not ask about people not in the paragraph):\n${cast}` : ''}`;

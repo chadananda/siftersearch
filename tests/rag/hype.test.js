@@ -3,7 +3,7 @@
 // Chad, 2026-08-26: "Complete and quality HyPE questions are the main reason we are analyzing concepts and
 // people. We need quality HyPE to locate the right passage during RAG search."
 import { describe, it, expect } from 'vitest';
-import { buildSystem, buildUser, HYPE_VERSION } from '../../api/lib/rag/enrich/retrieval.js';
+import { buildSystem, buildUser, HYPE_VERSION, parseHype, dedupeByAnswer } from '../../api/lib/rag/enrich/retrieval.js';
 
 describe('HyPE asks what a reader asks, not what a quiz asks', () => {
   // Measured on the Kitáb-i-Íqán before this change: ¶2 produced "From what should their ears be cleansed?",
@@ -100,7 +100,7 @@ describe('v5 — the padding came back in a new costume', () => {
   it('bans topic-with-a-question-mark catch-alls, and tests duplication by the answer', () => {
     expect(sys).toMatch(/NO CATCH-ALL QUESTIONS/);
     expect(sys).toMatch(/the paragraph's topic with a question mark/);
-    expect(sys).toMatch(/THE TEST FOR TWO QUESTIONS IS TWO ANSWERS/);
+    expect(sys).toMatch(/EVERY QUESTION CARRIES THE SPAN THAT ANSWERS IT/);
   });
 
   it('the padding rules are still in force at the current version', () => {
@@ -165,32 +165,72 @@ describe('v7 — distinctness is tested by the ANSWER, never by a count', () => 
   // with a cap before and that is broken thinking."
   const sys = buildSystem({ lang: 'en', genre: 'doctrinal', script: 'Latin' }, { title: 'Some Answered Questions' });
 
-  it('defines distinctness by whether the answering SPAN differs', () => {
-    expect(sys).toMatch(/THE TEST FOR TWO QUESTIONS IS TWO ANSWERS/);
-    expect(sys).toMatch(/it is the first one again/);
-  });
-
-  it('carries the worked example that four namings of one idea earn one question', () => {
-    expect(sys).toMatch(/four namings of a single idea/);
-    expect(sys).toMatch(/not four definitions, and certainly not four again in the original language/);
-  });
-
-  it('shows the other side too — one sentence CAN answer several distinct questions', () => {
-    // Without this the rule reads as "merge things", which would suppress real questions.
-    expect(sys).toMatch(/The same sentence read differently DOES earn another question/);
+  it('asks for the answering span with every question', () => {
+    expect(sys).toMatch(/EVERY QUESTION CARRIES THE SPAN THAT ANSWERS IT/);
+    expect(sys).toMatch(/only one will be kept/);
   });
 
   it('states explicitly that this is not a cap', () => {
-    expect(sys).toMatch(/THIS IS NOT A LIMIT ON HOW MANY/);
-    expect(sys).toMatch(/there is no number/);
+    expect(sys).toMatch(/not a limit on how many/i);
+    expect(sys).toMatch(/a paragraph answering thirty distinct things gets thirty/);
+  });
+
+  it('asks for the {q,a} shape', () => {
+    expect(sys).toMatch(/"q":"…\?","a":"verbatim words from the passage/);
   });
 
   it('still refuses to let a quota set the count', () => {
     expect(sys).toMatch(/sets the count, not a quota/);
-    expect(sys).toMatch(/Never drop a real question to hit a number/);
   });
 
-  it('is stamped v7', () => {
-    expect(HYPE_VERSION).toBe('hype-v7-distinct-answers');
+  it('is stamped at the current version', () => {
+    expect(HYPE_VERSION).toBe('hype-v8-answer-keyed');
+  });
+});
+
+describe('dedupeByAnswer — the distinctness test, applied in code rather than asked of the model', () => {
+  // The real ¶8 output: four English definitional questions and four more in Arabic, every one of them
+  // answered by the same sentence. Three prompt revisions failed to stop it; a key comparison does.
+  const four = [
+    { q: 'What does it mean that nature has a sound organization?', a: 'subject to a sound organization, to inviolable laws, to a perfect order, and to a consummate design' },
+    { q: 'What are the inviolable laws of nature?', a: 'subject to a sound organization, to inviolable laws, to a perfect order, and to a consummate design' },
+    { q: 'What does انتظامات صحیحه mean?', a: 'subject to a sound organization, to inviolable laws, to a perfect order, and to a consummate design' },
+    { q: 'What can be observed with the eye of insight?', a: 'the eye of insight and discernment beholds a perfect order' },
+  ];
+
+  it('keeps one question per distinct answer, across languages', () => {
+    expect(dedupeByAnswer(four)).toEqual([
+      'What does it mean that nature has a sound organization?',
+      'What can be observed with the eye of insight?',
+    ]);
+  });
+
+  it('applies NO cap — thirty distinct answers keep thirty questions', () => {
+    const many = Array.from({ length: 30 }, (_, i) => ({ q: `question ${i}?`, a: `a distinct answering span number ${i}` }));
+    expect(dedupeByAnswer(many)).toHaveLength(30);
+  });
+
+  it('keeps a question whose span is missing or too short to judge', () => {
+    // An unusable span is a reason to skip the check, never to discard a question.
+    expect(dedupeByAnswer([{ q: 'a?', a: '' }, { q: 'b?', a: 'tiny' }, { q: 'c?' }])).toEqual(['a?', 'b?', 'c?']);
+  });
+
+  it('ignores punctuation and case when comparing spans', () => {
+    expect(dedupeByAnswer([
+      { q: 'x?', a: 'Rendering to each his due.' },
+      { q: 'y?', a: 'rendering to each his due' },
+    ])).toEqual(['x?']);
+  });
+});
+
+describe('parseHype accepts both shapes', () => {
+  it('reads {q,a} objects and dedupes them', () => {
+    const raw = '{"questions":[{"q":"A?","a":"the same answering words here"},{"q":"B?","a":"the same answering words here"}],"thesis":"t"}';
+    expect(parseHype(raw)).toEqual({ questions: ['A?'], thesis: 't' });
+  });
+
+  it('still reads bare strings, so older recordings keep parsing', () => {
+    const raw = '{"questions":["A?","B?"],"thesis":"t"}';
+    expect(parseHype(raw)).toEqual({ questions: ['A?', 'B?'], thesis: 't' });
   });
 });
