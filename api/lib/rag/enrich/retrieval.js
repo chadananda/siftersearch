@@ -28,7 +28,7 @@ import { isHyped, DISAMB_THRESHOLD } from '../../pipeline/processed.js';
 // THE VERSION STRING IS PART OF THE PROMPT. Changing the prompt without bumping it left every paragraph
 // matching the current version, so --rehype skipped the whole book and regenerated nothing — the run
 // reported success and the questions were byte-identical. A prompt change IS a version change.
-export const HYPE_VERSION = 'hype-v10-answer-gated';
+export const HYPE_VERSION = 'hype-v11-answer-not-topic';
 const DENSE_HINT = 'Keep each question short; output ONLY the compact JSON object, nothing else.';
 const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not worth HyPE
 // Question count is set by the PARAGRAPH, not a quota: a dense passage (every sentence answering several
@@ -291,7 +291,13 @@ ${foreign}
 From the paragraph (use the disambiguation CONTEXT only to resolve who/what/where — do NOT ask about the context):
 - "questions": every distinct question a READER WOULD ACTUALLY ASK that this paragraph answers. The paragraph's content sets the count, not a quota: a substantial passage may carry 15, 25, even 40 distinct asks, a thin transitional one only 1-3. Each ends "?", max 15 words. Useful angles: ${registers}.
 
-  THE ONE RULE THIS ALL RESTS ON: THIS PASSAGE MUST ANSWER EVERY QUESTION YOU WRITE — fully, or as the major part of the answer. A question this passage does not answer does not belong to it, however natural the question is and however plainly the passage mentions the subject. Mentioning is not answering: a passage that quotes the phrase "my tired moments" does not answer "what is meant by my tired moments". If you cannot point to the words here that answer it, do not write it — a reader sent to a passage that does not answer them has been failed, and the whole point of these questions is to send readers to the right place.
+  THE ONE RULE THIS ALL RESTS ON: THIS PASSAGE MUST ANSWER EVERY QUESTION YOU WRITE — fully, or as the major part of the answer. A question this passage does not answer does not belong to it, however natural the question is and however plainly the passage mentions the subject. A reader sent to a passage that does not answer them has been failed, and sending readers to the right place is the entire purpose of these questions.
+
+  Three ways a question fails this rule, all of which look fine at a glance:
+    MENTIONING IS NOT ANSWERING. A passage quoting "my tired moments" does not answer "what is meant by my tired moments" — it uses the phrase, it does not explain it.
+    ASSERTING THAT IS NOT EXPLAINING HOW OR WHY. If the passage says the spiritual foundations ARE renewed in every Dispensation, it answers "what is renewed" and "when", and it does NOT answer "how does that renewal occur" — that would need an explanation the passage never gives. Do not reach for how/why unless the reason is stated here.
+    NAMING IS NOT IDENTIFYING. A passage that mentions "the divines" does not answer "who were the divines".
+  The test: imagine the reader shown ONLY the words you put in "a". If they would still be waiting for their answer, the question does not belong to this passage.
 
   WRITE THE QUESTION SOMEONE TYPES INTO A SEARCH BOX, not a comprehension check about the text.
   • NEVER refer to the text itself. No "this passage", "the revealed verse", "the author", "the following". A reader searching does not know a passage exists — that is what they are trying to find. "What does this passage ask the reader to ponder?" is worthless: nobody will ever type it.

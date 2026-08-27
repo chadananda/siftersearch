@@ -43,5 +43,35 @@
     "answeredPct": 77,
     "distinctPct": 77,
     "missedPerParagraph": 1.7
+  },
+  {
+    "at": "2026-08-27T13:16:25.059Z",
+    "doc": 20911,
+    "model": "claude-sonnet-4-6",
+    "questions": 126,
+    "searchable": 111,
+    "answered": 98,
+    "distinct": 89,
+    "missed": 18,
+    "paragraphs": 10,
+    "searchablePct": 88,
+    "answeredPct": 78,
+    "distinctPct": 71,
+    "missedPerParagraph": 1.8
+  },
+  {
+    "at": "2026-08-27T13:25:48.321Z",
+    "doc": 20911,
+    "model": "claude-sonnet-4-6",
+    "questions": 367,
+    "searchable": 337,
+    "answered": 286,
+    "distinct": 288,
+    "missed": 64,
+    "paragraphs": 30,
+    "searchablePct": 92,
+    "answeredPct": 78,
+    "distinctPct": 78,
+    "missedPerParagraph": 2.13
   }
 ]

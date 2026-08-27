@@ -192,7 +192,7 @@ describe('v7 — distinctness is tested by the ANSWER, never by a count', () => 
   });
 
   it('is stamped at the current version', () => {
-    expect(HYPE_VERSION).toBe('hype-v10-answer-gated');
+    expect(HYPE_VERSION).toBe('hype-v11-answer-not-topic');
   });
 });
 
@@ -276,7 +276,11 @@ describe('the invariant: this passage must ANSWER every question it carries', ()
   it('states the rule first in the prompt, as the thing everything rests on', () => {
     const sys = buildSystem({ lang: 'en', genre: 'doctrinal', script: 'Latin' }, { title: 'x' });
     expect(sys).toMatch(/THIS PASSAGE MUST ANSWER EVERY QUESTION YOU WRITE/);
-    expect(sys).toMatch(/Mentioning is not answering/);
+    expect(sys).toMatch(/MENTIONING IS NOT ANSWERING/);
+    // The three failure modes a span check cannot catch: the span exists and still does not answer.
+    expect(sys).toMatch(/ASSERTING THAT IS NOT EXPLAINING HOW OR WHY/);
+    expect(sys).toMatch(/NAMING IS NOT IDENTIFYING/);
+    expect(sys).toMatch(/they would still be waiting for their answer/);
   });
 });
 
