@@ -162,8 +162,11 @@ export async function getParagraphs(docId, { proseOnly = true, limit = 100000, o
     // align_ref included: it records WHERE an original came from (source, stem, verse, score). Leaving it
     // out made the provenance unreadable — an audit of what had been written could see the Arabic but not
     // which page it came from, and reported "no stems" when every row had one (2026-08-26).
+    // hyp_questions/context included: judging HyPE quality means READING the questions, and until this was
+    // here the only way to see them was to pay for a dry run — which reads the model, not the database.
     `SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype, c.language,
-            c.original_text, c.original_lang, c.translation_text, c.translation_authority, c.align_ref
+            c.original_text, c.original_lang, c.translation_text, c.translation_authority, c.align_ref,
+            c.hyp_questions, c.hyp_model, c.context, c.context_model
        FROM content c WHERE c.doc_id = ? AND c.deleted_at IS NULL ${kinds}
       ORDER BY c.paragraph_index LIMIT ? OFFSET ?`,
     [Number(docId), limit, offset], 'docs-repo:paragraphs');

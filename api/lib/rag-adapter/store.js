@@ -609,6 +609,45 @@ export function makeStore() {
     },
 
     // A concept entity (for the interfaith link stage).
+    /**
+     * pid → the cited claim statements this paragraph establishes. The knowledge feed for fact-informed HyPE.
+     *
+     * THIS PORT DID NOT EXIST. retrieval.js reads it through an OPTIONAL binding that falls back to {} — so
+     * "v2 knowledge-informed HyPE" and its concept-awareness have been running fact-blind and concept-blind
+     * since they were written, reporting success the whole time. An optional port that degrades silently is
+     * indistinguishable from a working one until you look at what it fed (stats.factFed, which stayed 0).
+     */
+    async getParaClaims(docId) {
+      const rows = await db.queryAll(
+        `SELECT para_id, statement FROM entity_claims
+          WHERE doc_id = ? AND para_id IS NOT NULL AND statement IS NOT NULL
+            AND COALESCE(status,'supported') = 'supported' AND superseded_at IS NULL
+          ORDER BY id`, [docId]);
+      const out = {};
+      for (const r of rows) (out[r.para_id] ||= []).push(r.statement);
+      return out;
+    },
+
+    /**
+     * pid → the doctrinal claims this paragraph establishes, each with its original-language root.
+     *
+     * The root is included deliberately: it is what lets HyPE write a question a reader can actually ask
+     * about the ORIGINAL term ("what does ʿirfán mean in the Íqán") rather than only about the English gloss,
+     * which is the whole reason the bilingual layer exists.
+     */
+    async getParaConceptClaims(docId) {
+      const rows = await db.queryAll(
+        `SELECT para_id, subject, relation, target, root FROM concept_claims
+          WHERE doc_id = ? AND para_id IS NOT NULL AND proof_ok = 1
+          ORDER BY id`, [docId]);
+      const out = {};
+      for (const r of rows) {
+        (out[r.para_id] ||= []).push(
+          `${r.subject}${r.root ? ` (${r.root})` : ''} — ${r.relation}${r.target ? ` ${r.target}` : ''}`);
+      }
+      return out;
+    },
+
     async getConcept(id) {
       return (await db.queryAll(`SELECT id, canonical, root, tradition, summary FROM concept_entities WHERE id=?`, [id]))[0] || { id };
     },

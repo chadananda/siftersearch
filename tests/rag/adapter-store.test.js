@@ -186,3 +186,15 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
     expect(otherBook.has('Mírzá Aḥmad')).toBe(false);      // and the reverse holds — no cross-book leakage
   });
 });
+
+describe('the knowledge feed ports HyPE reads through', () => {
+  // retrieval.js binds these OPTIONALLY and falls back to {} — so their absence made "knowledge-informed
+  // HyPE" fact-blind and concept-blind while reporting success. An optional port that degrades silently is
+  // indistinguishable from a working one until you look at what it actually fed.
+  it('the adapter provides both, so the fallback is never the live path', async () => {
+    const { makeStore } = await import('../../api/lib/rag-adapter/store.js');
+    const store = makeStore();
+    expect(typeof store.getParaClaims).toBe('function');
+    expect(typeof store.getParaConceptClaims).toBe('function');
+  });
+});
