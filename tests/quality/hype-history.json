@@ -28,5 +28,20 @@
     "answeredPct": 89,
     "distinctPct": 65,
     "missedPerParagraph": 2
+  },
+  {
+    "at": "2026-08-27T13:00:18.747Z",
+    "doc": 20911,
+    "model": "claude-sonnet-4-6",
+    "questions": 129,
+    "searchable": 125,
+    "answered": 99,
+    "distinct": 99,
+    "missed": 17,
+    "paragraphs": 10,
+    "searchablePct": 97,
+    "answeredPct": 77,
+    "distinctPct": 77,
+    "missedPerParagraph": 1.7
   }
 ]

@@ -28,7 +28,7 @@ import { isHyped, DISAMB_THRESHOLD } from '../../pipeline/processed.js';
 // THE VERSION STRING IS PART OF THE PROMPT. Changing the prompt without bumping it left every paragraph
 // matching the current version, so --rehype skipped the whole book and regenerated nothing — the run
 // reported success and the questions were byte-identical. A prompt change IS a version change.
-export const HYPE_VERSION = 'hype-v9-one-ask';
+export const HYPE_VERSION = 'hype-v10-answer-gated';
 const DENSE_HINT = 'Keep each question short; output ONLY the compact JSON object, nothing else.';
 const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not worth HyPE
 // Question count is set by the PARAGRAPH, not a quota: a dense passage (every sentence answering several
@@ -102,16 +102,35 @@ export async function run(ctx, docId, opts = {}) {
         ({ parsed, escalated } = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts, null, conceptClaims?.[p.pid]), parse: parseHype, maxTokens, temperature: 0.3, denseHint: DENSE_HINT }));
       } else {
         // One bounded call per sentence-group; slice 1 also writes the whole-paragraph thesis.
-        const questions = []; let thesis = '';
+        // ITEMS, not bare questions: the answer-span gate below runs on items, so a sliced paragraph handed
+        // over without them would bypass the invariant entirely — silently, and only for LONG paragraphs,
+        // which are exactly the ones most likely to carry a question the passage does not answer.
+        const items = []; let thesis = '';
         for (let si = 0; si < slices.length; si++) {
           const r = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts, { focus: slices[si], part: si + 1, parts: slices.length }, conceptClaims?.[p.pid]), parse: si === 0 ? parseHype : parseHypeSlice, maxTokens, temperature: 0.3, denseHint: DENSE_HINT });
           if (r.escalated) escalated = true;
           if (!r.parsed) continue;                       // a lost slice costs coverage, not the paragraph
           if (si === 0) thesis = r.parsed.thesis;
-          for (const q of r.parsed.questions) { const k = q.toLowerCase().replace(/[^a-z0-9 ]/g, ''); if (!questions.some((e) => e.k === k)) questions.push({ k, q }); }
+          for (const it of r.parsed.items || []) {
+            const k = String(it.q).toLowerCase().replace(/[^a-z0-9 ]/g, '');
+            if (!items.some((e) => e.k === k)) items.push({ q: it.q, a: it.a, k });
+          }
         }
-        if (questions.length && thesis) parsed = { questions: questions.slice(0, QUESTION_CEILING).map((e) => e.q), thesis };
+        if (items.length && thesis) parsed = { items, thesis };
         stats.sliced = (stats.sliced || 0) + 1;
+      }
+      if (parsed?.items) {
+        // ENFORCE THE INVARIANT. A question whose claimed answer is not in either text is not a question
+        // about this paragraph. A question with no usable span is KEPT and counted — an unverifiable claim is
+        // a reason to look, never a reason to delete a reader's route to the passage.
+        const kept = [];
+        for (const it of parsed.items) {
+          const present = spanIsPresent(it.a, [p.text, p.original]);
+          if (present === false) { stats.unanswered = (stats.unanswered || 0) + 1; continue; }
+          if (present === null) stats.unverified = (stats.unverified || 0) + 1;
+          kept.push(it);
+        }
+        parsed = kept.length ? { questions: dedupeByAnswer(kept).slice(0, QUESTION_CEILING), thesis: parsed.thesis } : null;
       }
       if (!parsed) { await markHypeExhausted(ctx, p, opts, stats); report(); return; }
       if (!opts.dryRun) await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
@@ -189,6 +208,38 @@ const answerKey = (a) => String(a || '').toLowerCase().replace(/[^\p{L}\p{N}]+/g
  * spans too short to be meaningful, are kept as-is — an unusable span is a reason to skip the check, never
  * to discard a question.
  */
+/**
+ * Is the span the model gave for a question actually IN the passage?
+ *
+ * Chad, 2026-08-26: "The paragraph should always be an answer or a major partial answer of every question.
+ * Otherwise the question does not belong to the paragraph. This is basic HyPE logic!"
+ *
+ * That is the defining property of a HyPE question and it was being ASKED for rather than CHECKED — a
+ * second-model judge measured 23% of questions as unanswered by their own paragraph. Since every question
+ * already carries the words it claims are the answer, the claim can simply be verified, exactly as concept
+ * claims are proof-gated.
+ *
+ * Both texts count: a question about an original-language term is answered by the ORIGINAL, which is why the
+ * bilingual layer exists. Script-normalised for the original, because a model re-quoting Persian will not
+ * reproduce diacritics or ZWNJ.
+ */
+const spanNorm = (t) => String(t || '').toLowerCase().replace(/\s+/g, ' ').trim();
+const scriptSpanNorm = (t) => spanNorm(t)
+  .replace(/[\u064B-\u0652\u0670\u0640\u200C\u200D]/g, '')
+  .replace(/[أإآٱ]/g, 'ا').replace(/[ىی]/g, 'ي').replace(/ة/g, 'ه').replace(/[کك]/g, 'ك')
+  .replace(/\s+/g, '');
+
+export function spanIsPresent(span, texts) {
+  const needle = spanNorm(span).slice(0, 90);
+  if (needle.length < 12) return null;                       // unusable span → unverifiable, not false
+  for (const t of texts) {
+    if (!t) continue;
+    if (spanNorm(t).includes(needle)) return true;
+    if (scriptSpanNorm(t).includes(scriptSpanNorm(span).slice(0, 90))) return true;
+  }
+  return false;
+}
+
 export function dedupeByAnswer(items) {
   const seen = new Map();
   const out = [];
@@ -213,9 +264,8 @@ export function parseHype(raw) {
       .map((x) => (typeof x === 'string' ? { q: x, a: '' } : { q: String(x?.q ?? ''), a: String(x?.a ?? '') }))
       .filter((x) => x.q.trim());
     if (!items.length) return null;
-    const q = dedupeByAnswer(items);
-    if (q.length < 1) return null;
-    return { questions: q.slice(0, 40), thesis: String(j.thesis || '').trim() };   // 40 = runaway rail, never a target
+    if (!items.length) return null;
+    return { items, questions: dedupeByAnswer(items).slice(0, 40), thesis: String(j.thesis || '').trim() };   // 40 = runaway rail, never a target
   } catch { return null; }
 }
 
@@ -240,6 +290,8 @@ export function buildSystem(profile, meta, cast = '') {
 ${foreign}
 From the paragraph (use the disambiguation CONTEXT only to resolve who/what/where — do NOT ask about the context):
 - "questions": every distinct question a READER WOULD ACTUALLY ASK that this paragraph answers. The paragraph's content sets the count, not a quota: a substantial passage may carry 15, 25, even 40 distinct asks, a thin transitional one only 1-3. Each ends "?", max 15 words. Useful angles: ${registers}.
+
+  THE ONE RULE THIS ALL RESTS ON: THIS PASSAGE MUST ANSWER EVERY QUESTION YOU WRITE — fully, or as the major part of the answer. A question this passage does not answer does not belong to it, however natural the question is and however plainly the passage mentions the subject. Mentioning is not answering: a passage that quotes the phrase "my tired moments" does not answer "what is meant by my tired moments". If you cannot point to the words here that answer it, do not write it — a reader sent to a passage that does not answer them has been failed, and the whole point of these questions is to send readers to the right place.
 
   WRITE THE QUESTION SOMEONE TYPES INTO A SEARCH BOX, not a comprehension check about the text.
   • NEVER refer to the text itself. No "this passage", "the revealed verse", "the author", "the following". A reader searching does not know a passage exists — that is what they are trying to find. "What does this passage ask the reader to ponder?" is worthless: nobody will ever type it.
@@ -286,7 +338,7 @@ export function sliceParagraph(text) {
 // Slice parts 2+ carry no thesis — questions only.
 export function parseHypeSlice(raw) {
   const p = parseHype(raw);
-  return p ? { questions: p.questions, thesis: '' } : null;
+  return p ? { items: p.items, questions: p.questions, thesis: '' } : null;
 }
 
 // The concept layer (conceptual-track §7). HyPE is the RETRIEVAL level of the same idea the lexicon holds,

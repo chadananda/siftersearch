@@ -3,7 +3,7 @@
 // Chad, 2026-08-26: "Complete and quality HyPE questions are the main reason we are analyzing concepts and
 // people. We need quality HyPE to locate the right passage during RAG search."
 import { describe, it, expect } from 'vitest';
-import { buildSystem, buildUser, HYPE_VERSION, parseHype, dedupeByAnswer } from '../../api/lib/rag/enrich/retrieval.js';
+import { buildSystem, buildUser, HYPE_VERSION, parseHype, parseHypeSlice, dedupeByAnswer, spanIsPresent } from '../../api/lib/rag/enrich/retrieval.js';
 
 describe('HyPE asks what a reader asks, not what a quiz asks', () => {
   // Measured on the Kitáb-i-Íqán before this change: ¶2 produced "From what should their ears be cleansed?",
@@ -192,7 +192,7 @@ describe('v7 — distinctness is tested by the ANSWER, never by a count', () => 
   });
 
   it('is stamped at the current version', () => {
-    expect(HYPE_VERSION).toBe('hype-v9-one-ask');
+    expect(HYPE_VERSION).toBe('hype-v10-answer-gated');
   });
 });
 
@@ -234,11 +234,66 @@ describe('dedupeByAnswer — the distinctness test, applied in code rather than 
 describe('parseHype accepts both shapes', () => {
   it('reads {q,a} objects and dedupes them', () => {
     const raw = '{"questions":[{"q":"A?","a":"the same answering words here"},{"q":"B?","a":"the same answering words here"}],"thesis":"t"}';
-    expect(parseHype(raw)).toEqual({ questions: ['A?'], thesis: 't' });
+    expect(parseHype(raw)).toMatchObject({ questions: ['A?'], thesis: 't' });
   });
 
   it('still reads bare strings, so older recordings keep parsing', () => {
     const raw = '{"questions":["A?","B?"],"thesis":"t"}';
-    expect(parseHype(raw)).toEqual({ questions: ['A?', 'B?'], thesis: 't' });
+    expect(parseHype(raw)).toMatchObject({ questions: ['A?', 'B?'], thesis: 't' });
+  });
+});
+
+describe('the invariant: this passage must ANSWER every question it carries', () => {
+  // Chad, 2026-08-26: "The paragraph should always be an answer or a major partial answer of every question.
+  // Otherwise the question does not belong to the paragraph. This is basic HyPE logic!"
+  // A judge measured 23% of questions as unanswered by their own paragraph — the rule was being asked for,
+  // not checked. Every question already carries the words it claims answer it, so the claim is verifiable.
+  const EN = 'Know that justice consists in rendering to each his due, but bounty is to reward beyond desert.';
+  const FA = 'بدان که عدل اعطای کلّ ذی حقّ حقّه است';
+
+  it('accepts a span that is in the English', () => {
+    expect(spanIsPresent('justice consists in rendering to each his due', [EN, FA])).toBe(true);
+  });
+
+  it('accepts a span that is only in the ORIGINAL — that is what the bilingual layer is for', () => {
+    expect(spanIsPresent('عدل اعطای کلّ ذی حقّ حقّه است', [EN, FA])).toBe(true);
+  });
+
+  it('tolerates diacritics a model drops when re-quoting the original', () => {
+    expect(spanIsPresent('عدل اعطاي كل ذي حق حقه است', [EN, FA])).toBe(true);
+  });
+
+  it('REJECTS a span that is in neither — the question does not belong to this passage', () => {
+    expect(spanIsPresent('the soul is a sign of God and hath many stations', [EN, FA])).toBe(false);
+  });
+
+  it('returns null for a span too short to judge, so it is kept rather than deleted', () => {
+    // An unverifiable claim is a reason to look, never a reason to delete a reader's route to the passage.
+    expect(spanIsPresent('due', [EN, FA])).toBe(null);
+    expect(spanIsPresent('', [EN, FA])).toBe(null);
+  });
+
+  it('states the rule first in the prompt, as the thing everything rests on', () => {
+    const sys = buildSystem({ lang: 'en', genre: 'doctrinal', script: 'Latin' }, { title: 'x' });
+    expect(sys).toMatch(/THIS PASSAGE MUST ANSWER EVERY QUESTION YOU WRITE/);
+    expect(sys).toMatch(/Mentioning is not answering/);
+  });
+});
+
+describe('the answer gate covers the SLICED path too', () => {
+  // A long paragraph is split into sentence groups and its questions concatenated. Handing that result over
+  // as bare strings would skip the gate for exactly the paragraphs most likely to carry an unanswered
+  // question — silently, and only for the long ones.
+  it('parseHypeSlice surfaces items so the gate can run on them', () => {
+    const raw = '{"questions":[{"q":"A?","a":"some verbatim answering words"}],"thesis":""}';
+    expect(parseHypeSlice(raw).items).toEqual([{ q: 'A?', a: 'some verbatim answering words' }]);
+  });
+
+  it('the sliced branch assembles items, not strings', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const src = await readFile(new URL('../../api/lib/rag/enrich/retrieval.js', import.meta.url), 'utf8');
+    const branch = src.slice(src.indexOf('One bounded call per sentence-group'), src.indexOf('stats.sliced'));
+    expect(branch).toMatch(/parsed = \{ items, thesis \}/);
+    expect(branch).not.toMatch(/parsed = \{ questions:/);
   });
 });
