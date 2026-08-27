@@ -72,39 +72,6 @@ export default async function groundingRoutes(fastify) {
     return { started: true, docId: Number(docId), pid, from: from || null, only: only || null, cc: Number(cc) || 8 };
   });
 
-  /**
-   * POST /grounding/stop {docId} — stop a live run.
-   *
-   * Chad, 2026-08-26: "perhaps do a better job of saving data so we don't lose work."
-   *
-   * Without this there was no way to end a run except to wait it out. Iterating the HyPE prompt while a
-   * 2.5-hour serial run held the lock meant ~200 paragraphs were generated at a version I had already
-   * superseded — work paid for and discarded, and the newer, faster code could not start until the older
-   * one finished.
-   *
-   * NOTHING IS LOST BY STOPPING. Every paragraph is saved as it completes and resume is version-aware, so a
-   * relaunch skips what is already at the current version and redoes only the rest. SIGTERM, so the child
-   * finishes its in-flight write rather than being cut mid-save.
-   */
-  fastify.post('/grounding/stop', admin, async (req) => {
-    const { docId, signal = 'SIGTERM' } = req.body || {};
-    if (!docId) throw ApiError.badRequest('docId required');
-    const run = await state.getRun(Number(docId));
-    if (!run?.pid) return { stopped: false, reason: 'no live run recorded', run: run ?? null };
-    try {
-      process.kill(run.pid, signal);
-    } catch (err) {
-      // ESRCH = already gone: the row is stale, which is worth clearing rather than reporting as a failure.
-      if (err.code !== 'ESRCH') throw ApiError.badRequest(`could not signal ${run.pid}: ${err.message}`);
-      await state.setRun(Number(docId), null);
-      return { stopped: false, reason: 'process already gone; stale run row cleared', pid: run.pid };
-    }
-    // Clear the row, or the 409 guard keeps the doc locked against the relaunch this exists to enable.
-    await state.setRun(Number(docId), null);
-    return { stopped: true, docId: Number(docId), pid: run.pid, signal,
-      note: 'paragraphs already written are kept; relaunch resumes at the current version' };
-  });
-
   // ── QUEUE: the API owns the work ORDER and advances it ──────────────────────────────────────────────────────
   // Enqueue books and the supervisor starts each one as a slot frees — so processing continues without an operator
   // (or an agent loop) alive to launch the next book. `to` bounds a run (e.g. to:'research' keeps it out of the
@@ -1072,6 +1039,15 @@ export default async function groundingRoutes(fastify) {
   });
 
   // STOP a live run — signal the reported pid (best-effort) and clear the run marker so the UI goes idle.
+  //
+  // Chad, 2026-08-26: "perhaps do a better job of saving data so we don't lose work." This is how: iterating
+  // a prompt while a long run holds the lock otherwise means waiting it out. A 2.5-hour serial HyPE run kept
+  // going after I had superseded its version, so ~200 paragraphs were generated at a version already
+  // discarded — and the faster replacement could not start until it finished.
+  //
+  // NOTHING IS LOST BY STOPPING: paragraphs are saved as they complete and resume is version-aware, so a
+  // relaunch skips what is current and redoes only the rest. Clearing the run row is what lets it relaunch —
+  // the 409 guard reads that row.
   fastify.post('/grounding/stop', admin, async (req) => {
     const { docId } = req.body || {};
     if (!docId) throw ApiError.badRequest('docId required');
