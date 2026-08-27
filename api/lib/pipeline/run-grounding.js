@@ -88,7 +88,10 @@ export async function runGrounding(docId, opts = {}) {
     if (want('merge'))        { await enter('merge'); emit('merge', await rag.entities.merge({ concurrency: 4, onProgress })); } // same-name dedup by evidence
     if (want('dedup') && out.createdIds.length) { await enter('dedup'); emit('dedup', await rag.entities.dedupGuard({ entityIds: out.createdIds, onProgress })); } // AFTER link — new entities need bound claims
     if (wantsBand) { await releaseGraphBand(docId); heldBand = false; }   // release BEFORE hype/verify (they don't mutate the graph)
-    if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { upgrade: rehype, ...(hypeModel ? { model: hypeModel } : {}), onProgress })); }   // rehype = version-aware upgrade; hypeModel = flagship model override
+    // concurrency: cc — HyPE was the ONE stage that never received it, so --cc did nothing here at all and
+    // every run used the stage default. That is why cc=6 and cc=32 produced the same throughput (Chad,
+    // 2026-08-26: "5 par/minute is painfully slow", then "parallelizing so we don't take a year").
+    if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { upgrade: rehype, concurrency: cc, ...(hypeModel ? { model: hypeModel } : {}), onProgress })); }   // rehype = version-aware upgrade; hypeModel = flagship model override
 
     if (want('verify')) {
       await enter('verify');

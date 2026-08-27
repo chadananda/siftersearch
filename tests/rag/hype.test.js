@@ -105,3 +105,24 @@ describe('v5 — the padding came back in a new costume', () => {
     expect(HYPE_VERSION).toBe('hype-v5-distinct');
   });
 });
+
+describe('every AI stage must receive the concurrency it is given', () => {
+  // HyPE was the one stage run-grounding never passed `concurrency: cc` to, so --cc=32 and --cc=6 produced
+  // identical throughput and the dial appeared broken rather than absent. A control that is silently
+  // ignored is worse than one that is missing: it invites you to keep turning it.
+  it('run-grounding passes concurrency to the hype stage', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const src = await readFile(new URL('../../api/lib/pipeline/run-grounding.js', import.meta.url), 'utf8');
+    const line = src.split('\n').find((l) => l.includes("want('hype')"));
+    expect(line).toMatch(/concurrency: cc/);
+  });
+
+  it('and to every other stage that takes it, so none is silently serial', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const src = await readFile(new URL('../../api/lib/pipeline/run-grounding.js', import.meta.url), 'utf8');
+    for (const stage of ['disambiguate', 'claims', 'hype']) {
+      const line = src.split('\n').find((l) => l.includes(`want('${stage}')`));
+      expect(line, `${stage} has no concurrency`).toMatch(/concurrency:/);
+    }
+  });
+});
