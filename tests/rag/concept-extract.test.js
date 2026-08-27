@@ -75,6 +75,26 @@ describe('the bilingual prompt states what only Shoghi Effendi has', () => {
     expect(sys).toMatch(/no other rendering .* has it or can acquire it/);
   });
 
+  it('does NOT let that authority foreclose the other senses', () => {
+    // Chad, 2026-08-26: "even though Shoghi Effendi translations identify a legitimate reading, probably the
+    // main legitimate reading, that does not infer that other meanings are totally illegitimate… saying
+    // 'his word-choice fixes which sense' is both under-appreciating and over-simplifying interpretation."
+    const sys = buildBilingualSystem({}, { title: 'x' }, { translationAuthority: 'shoghi-effendi' });
+    expect(sys).toMatch(/DOES NOT EXHAUST THE PASSAGE/);
+    expect(sys).toMatch(/does not delete the other senses/);
+    expect(sys).toMatch(/record the sense his rendering establishes, marked as authoritative, AND the further senses/);
+    expect(sys).not.toMatch(/FIXES which sense/);          // the formulation being corrected
+    expect(sys).not.toMatch(/HE HAS DECIDED IT/);
+  });
+
+  it('agrees with its own polysemy section instead of contradicting it', () => {
+    // The prompt told the model to record every sense a symbolic passage supports, and in the same breath
+    // that the translator's word-choice fixed one. Both cannot be followed.
+    const sys = buildBilingualSystem({}, { title: 'x' }, { translationAuthority: 'shoghi-effendi' });
+    expect(sys).toMatch(/carries more than one meaning at once/);
+    expect(sys).toMatch(/record them ALL/);
+  });
+
   it('does NOT grant that standing to a committee or provisional rendering', () => {
     const sys = buildBilingualSystem({}, { title: 'the Kitáb-i-Aqdas' }, { translationAuthority: 'committee' });
     expect(sys).toMatch(/THE ORIGINAL GOVERNS HERE/);

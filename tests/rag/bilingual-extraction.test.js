@@ -8,8 +8,13 @@
 // systematically bad extraction. The two sources carry different authority over different questions:
 //   ORIGINAL  → WHICH TERM. Identity and differentiation. English collapses Ṣalát/Duʿá/Dhikr into
 //               "prayer" and ʿadl/insáf into "justice"; only the root keeps them apart.
-//   SE RENDERING → WHICH SENSE. His word-choice is an authoritative interpretive act that fixes which
-//               sense of a polysemous term is operative in THIS passage. Not eloquent approximation.
+//   SE RENDERING → A SENSE, AUTHORITATIVELY. His word-choice is an authoritative interpretive act that
+//               ESTABLISHES a true sense — often the principal one — without foreclosing the others.
+//               Chad, 2026-08-26: "even though Shoghi Effendi translations identify a legitimate reading,
+//               probably the main legitimate reading, that does not infer that other meanings are totally
+//               illegitimate… 'his word-choice fixes which sense' is both under-appreciating and
+//               over-simplifying interpretation." Revealed language holds more than one true reading at
+//               once; an authorised interpretation OPENS meaning rather than narrowing it to one.
 // Neither alone is sufficient, and the prompt must say so rather than implying a hierarchy.
 import { describe, it, expect } from 'vitest';
 import { buildBilingualSystem, buildBilingualUser, ROOT_REQUIRED_NOTE } from '../../api/lib/rag/concepts/bilingual.js';
@@ -28,7 +33,14 @@ describe('the system prompt states the doctrine, not just the task', () => {
     // Assert the doctrine POSITIVELY. A negative regex cannot tell "is an approximation" from "is NOT an
     // approximation" — the prompt states the latter, and the first version of this test failed it.
     expect(sys).toMatch(/not an approximation|never something to correct/i);
-    expect(sys).toMatch(/fixes which sense|which sense is (meant|operative)/i);
+    expect(sys).toMatch(/ESTABLISHES A SENSE/i);
+    expect(sys).toMatch(/disclosing a sense that is genuinely there/i);
+  });
+
+  it('does not let his reading foreclose the others', () => {
+    expect(sys).toMatch(/DOES NOT EXHAUST THE PASSAGE/);
+    expect(sys).toMatch(/does not delete the other senses/);
+    expect(sys).not.toMatch(/FIXES which sense/);
   });
 
   it('assigns the ORIGINAL authority over term identity', () => {
@@ -105,7 +117,7 @@ describe('the weight of the English depends on WHO rendered it', () => {
 
   it('gives his rendering equal standing with the original', () => {
     expect(se).toMatch(/neither outranks the other/i);
-    expect(se).toMatch(/WHICH SENSE/);
+    expect(se).toMatch(/ESTABLISHES A SENSE — authoritatively, but not exclusively/);
   });
 
   it('makes the ORIGINAL govern for a rendering that is not his', () => {
