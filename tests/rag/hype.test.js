@@ -41,7 +41,7 @@ describe('the version string is part of the prompt', () => {
   // Changing the prompt without bumping HYPE_VERSION left every paragraph matching the current version, so
   // --rehype skipped the entire book: the run reported success and the questions came back byte-identical.
   it('v4 is stamped, so the version-aware upgrade actually regenerates', () => {
-    expect(HYPE_VERSION).toBe('hype-v6-crosswork');
+    expect(HYPE_VERSION).toMatch(/^hype-v\d/);
   });
 
   it('isHyped treats a row stamped with an older version as wanting an upgrade', async () => {
@@ -85,10 +85,11 @@ describe('v5 — the padding came back in a new costume', () => {
   // added alongside.
   const sys = buildSystem({ lang: 'en', genre: 'doctrinal', script: 'Latin' }, { title: 'Some Answered Questions' });
 
-  it('restricts definitional questions to terms the passage actually turns on', () => {
-    expect(sys).toMatch(/ONLY for a term the passage genuinely DEFINES or turns on/);
-    expect(sys).toMatch(/NOT for ordinary descriptive wording/);
-    expect(sys).toMatch(/the same padding in a new costume/);
+  it('restricts definitional questions to terms the passage gives their own content', () => {
+    // v5 said "not ordinary descriptive wording", which the model still read loosely. v7 states the test:
+    // a term earns a definition where the passage says what it IS or draws a line around it.
+    expect(sys).toMatch(/gives that term its own content/);
+    expect(sys).toMatch(/does not get its own definition/);
   });
 
   it('bans yes/no questions, which retrieve badly and add no distinct ask', () => {
@@ -96,10 +97,10 @@ describe('v5 — the padding came back in a new costume', () => {
     expect(sys).toMatch(/Turn each into the open form it is hiding/);
   });
 
-  it('bans near-duplicates and topic-with-a-question-mark catch-alls', () => {
-    expect(sys).toMatch(/NO NEAR-DUPLICATES/);
+  it('bans topic-with-a-question-mark catch-alls, and tests duplication by the answer', () => {
     expect(sys).toMatch(/NO CATCH-ALL QUESTIONS/);
     expect(sys).toMatch(/the paragraph's topic with a question mark/);
+    expect(sys).toMatch(/THE TEST FOR TWO QUESTIONS IS TWO ANSWERS/);
   });
 
   it('the padding rules are still in force at the current version', () => {
@@ -153,7 +154,43 @@ describe('v6 — questions must tie a concept ACROSS works, never fence it insid
     expect(sys).toMatch(/Naming the AUTHOR is different/);
   });
 
-  it('is stamped v6, so it regenerates', () => {
-    expect(HYPE_VERSION).toBe('hype-v6-crosswork');
+  it('keeps the cross-work ban at the current version', () => {
+    expect(sys).toMatch(/NEVER NAME THE BOOK OR WORK IN A QUESTION/);
+  });
+});
+
+describe('v7 — distinctness is tested by the ANSWER, never by a count', () => {
+  // Chad, 2026-08-26: "please tighten, but never with arbitrary caps. We want unique questions but cannot
+  // guess in advance how many questions a paragraph will answer. You fixed the too many questions problem
+  // with a cap before and that is broken thinking."
+  const sys = buildSystem({ lang: 'en', genre: 'doctrinal', script: 'Latin' }, { title: 'Some Answered Questions' });
+
+  it('defines distinctness by whether the answering SPAN differs', () => {
+    expect(sys).toMatch(/THE TEST FOR TWO QUESTIONS IS TWO ANSWERS/);
+    expect(sys).toMatch(/it is the first one again/);
+  });
+
+  it('carries the worked example that four namings of one idea earn one question', () => {
+    expect(sys).toMatch(/four namings of a single idea/);
+    expect(sys).toMatch(/not four definitions, and certainly not four again in the original language/);
+  });
+
+  it('shows the other side too — one sentence CAN answer several distinct questions', () => {
+    // Without this the rule reads as "merge things", which would suppress real questions.
+    expect(sys).toMatch(/The same sentence read differently DOES earn another question/);
+  });
+
+  it('states explicitly that this is not a cap', () => {
+    expect(sys).toMatch(/THIS IS NOT A LIMIT ON HOW MANY/);
+    expect(sys).toMatch(/there is no number/);
+  });
+
+  it('still refuses to let a quota set the count', () => {
+    expect(sys).toMatch(/sets the count, not a quota/);
+    expect(sys).toMatch(/Never drop a real question to hit a number/);
+  });
+
+  it('is stamped v7', () => {
+    expect(HYPE_VERSION).toBe('hype-v7-distinct-answers');
   });
 });
