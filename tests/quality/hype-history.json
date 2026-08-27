@@ -1,0 +1,32 @@
+[
+  {
+    "at": "2026-08-27T12:43:56.625Z",
+    "doc": 20911,
+    "model": "claude-sonnet-4-6",
+    "questions": 136,
+    "searchable": 103,
+    "answered": 89,
+    "distinct": 95,
+    "missed": 20,
+    "paragraphs": 10,
+    "searchablePct": 76,
+    "answeredPct": 65,
+    "distinctPct": 70,
+    "missedPerParagraph": 2
+  },
+  {
+    "at": "2026-08-27T12:47:41.009Z",
+    "doc": 20911,
+    "model": "claude-sonnet-4-6",
+    "questions": 136,
+    "searchable": 123,
+    "answered": 121,
+    "distinct": 88,
+    "missed": 20,
+    "paragraphs": 10,
+    "searchablePct": 90,
+    "answeredPct": 89,
+    "distinctPct": 65,
+    "missedPerParagraph": 2
+  }
+]

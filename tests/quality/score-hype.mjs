@@ -43,18 +43,22 @@ const RUBRIC = `You are grading SEARCH QUESTIONS written for one passage. They e
 
 For EACH question return:
   "searchable": true only if a real reader might type it into a search box. FALSE for anything referring to the text itself ("what does this passage say/ask", "according to the following"), and FALSE for a topic with a question mark that would match anything ("what did the author say about nature?").
-  "answered": true only if THIS passage answers it. False if it needs outside knowledge.
+  "answered": true only if THIS passage answers it — either text. A question about an original-language term is ANSWERED when that term appears in the original passage shown, even though the English does not contain it: that is what the two texts are for. False only if it genuinely needs knowledge from outside both.
   "distinct": false if another question in the set asks the same thing in different words — name it in "same_as".
 Then for the SET:
   "missed": short list of things this passage clearly answers that NO question covers. Be strict; this is the most useful field.
 Return ONLY JSON:
 {"questions":[{"i":0,"searchable":true,"answered":true,"distinct":true,"same_as":null,"why":"…"}],"missed":["…"]}`;
 
-async function judge(paragraph, questions, model) {
+async function judge(paragraph, original, questions, model) {
   const body = {
     provider: 'anthropic', model, temperature: 0, maxTokens: 4000,
     system: RUBRIC,
-    user: `PASSAGE:\n${paragraph}\n\nQUESTIONS:\n${questions.map((q, i) => `${i}. ${q}`).join('\n')}`,
+    // THE ORIGINAL GOES TOO. Without it the judge sees only the English and marks every question about an
+    // original-language term "requires outside knowledge" — which would have had me tear out the terms that
+    // are the entire reason for the bilingual layer. Judging bilingual questions against monolingual
+    // evidence measures the wrong population; that error has cost this project a night before.
+    user: `PASSAGE (English):\n${paragraph}${original ? `\n\nPASSAGE (original language — a question about a term FOUND HERE is answerable):\n${original}` : ''}\n\nQUESTIONS:\n${questions.map((q, i) => `${i}. ${q}`).join('\n')}`,
   };
   const r = await fetch(`${API}/api/admin/concepts/judge-hype`, {
     method: 'POST', headers: { 'X-Internal-Key': KEY, 'Content-Type': 'application/json' },
@@ -84,7 +88,7 @@ const worst = [];
 for (const row of picked) {
   const questions = qsOf(row);
   let v;
-  try { v = await judge(row.text, questions, arg('model', 'claude-sonnet-4-6')); }
+  try { v = await judge(row.text, row.original_text, questions, arg('model', 'claude-sonnet-4-6')); }
   catch (e) { console.error(`  ¶${row.paragraph_index}: ${e.message}`); continue; }
   tally.questions += questions.length;
   for (const q of v.questions || []) {

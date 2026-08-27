@@ -60,14 +60,22 @@ describe('definitions are the highest-value thing to retrieve', () => {
     expect(sys).toMatch(/IF THE PASSAGE DEFINES A TERM/);
     expect(sys).toMatch(/MANDATORY and come first/);
     expect(sys).toMatch(/What is meant by X\?/);
+    // ONE phrasing, not two: asking both forms manufactured a duplicate on every defined term, which a
+    // second-model judge measured as 35% of all questions being restatements.
+    expect(sys).toMatch(/never both: they are the same ask/);
   });
 
   it('says why they get missed — the passage states them too plainly to look like answers', () => {
     expect(sys).toMatch(/look like they need no question/);
   });
 
-  it('asks for the definitional form of the ORIGINAL term too', () => {
-    expect(sys).toMatch(/the same for the ORIGINAL term/);
+  it('gives the ORIGINAL term its own question — a reader searching it would otherwise miss the passage', () => {
+    expect(sys).toMatch(/that term gets its own question/);
+  });
+
+  it('refuses to define a phrase the passage merely quotes', () => {
+    expect(sys).toMatch(/merely used or quoted without being explained/);
+    expect(sys).toMatch(/sends readers here for nothing/);
   });
 
   it('bans the book title outright (superseded the earlier "not every question" rule)', () => {
@@ -184,7 +192,7 @@ describe('v7 — distinctness is tested by the ANSWER, never by a count', () => 
   });
 
   it('is stamped at the current version', () => {
-    expect(HYPE_VERSION).toBe('hype-v8-answer-keyed');
+    expect(HYPE_VERSION).toBe('hype-v9-one-ask');
   });
 });
 
