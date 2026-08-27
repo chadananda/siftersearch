@@ -181,6 +181,12 @@ export function refineWordStart(words, lines, lineNo, anchorWords, { lookaround 
  *
  * Taking the longest increasing subsequence instead lets the majority decide: the outlier is the one dropped,
  * because it is the one that cannot be reconciled with the rest. O(n log n), patience-sorting.
+ *
+ * NON-DECREASING, not strictly increasing. Two English paragraphs may genuinely begin at the SAME place in
+ * the original, because our editions split what the original keeps together — "He is the Most Glorious." is
+ * its own row in the English and part of the opening sentence in the Arabic. Requiring a strict increase
+ * called that a contradiction and threw one of the pair away: on the Selections of the Báb it was the single
+ * largest cause of loss, "line 1 contradicts the surrounding order" eleven times over.
  */
 export function longestIncreasingRun(values) {
   const tails = [];        // tails[k] = index into `values` of the smallest tail of a run of length k+1
@@ -189,11 +195,8 @@ export function longestIncreasingRun(values) {
     let lo = 0, hi = tails.length;
     while (lo < hi) {
       const mid = (lo + hi) >> 1;
-      if (values[tails[mid]] < values[i]) lo = mid + 1; else hi = mid;
+      if (values[tails[mid]] <= values[i]) lo = mid + 1; else hi = mid;
     }
-    // A tie is not an improvement: two paragraphs cannot begin at the same line, and keeping the EARLIER one
-    // is the sane reading (the earlier paragraph owns the earlier text).
-    if (tails[lo] !== undefined && values[tails[lo]] === values[i]) continue;
     prev[i] = lo > 0 ? tails[lo - 1] : -1;
     tails[lo] = i;
   }
@@ -238,19 +241,25 @@ export function spansFromAnchors(originalText, anchors, englishCount, { wordsPer
     // reorders the book would undo the one property the line numbers are here to guarantee.
     const refined = refineWordStart(words, lines, a.line, a.words);
     const wordStart = refined != null && refined >= lastStart ? refined : line.wordStart;
-    // Two paragraphs resolving to the same position is a REJECTION, not an empty span quietly dropped by the
-    // length filter: it means the model placed both in one spot, and that is worth seeing.
-    if (found.length && wordStart <= lastStart) {
-      rejected.push({ ...a, why: `resolves at or before ¶${found.at(-1).index}` });
+    // SHARING a position is allowed; going BACKWARDS is not. When two English paragraphs resolve to the same
+    // point they are two halves of one original passage, and both get it — which is the truthful answer,
+    // because the original does not distinguish them. Only a genuine reversal is rejected.
+    if (found.length && wordStart < lastStart) {
+      rejected.push({ ...a, why: `resolves before ¶${found.at(-1).index}` });
       continue;
     }
     found.push({ index: a.index, wordStart, line: a.line, confirmed: refined != null, exact: wordStart === refined });
     lastStart = wordStart;
   }
-  const spans = found.map((f, i) => ({
-    index: f.index, line: f.line, confirmed: f.confirmed, exact: f.exact,
-    text: words.slice(f.wordStart, i + 1 < found.length ? found[i + 1].wordStart : undefined).join(' ').trim(),
-  })).filter((s) => s.text.length > 0);
+  const spans = found.map((f, i) => {
+    // End at the next DISTINCT start, not simply the next anchor: paragraphs sharing a start would otherwise
+    // give the first one an empty span and lose it to the emptiness check.
+    let j = i + 1;
+    while (j < found.length && found[j].wordStart === f.wordStart) j += 1;
+    return { index: f.index, line: f.line, confirmed: f.confirmed, exact: f.exact,
+      shared: (i > 0 && found[i - 1].wordStart === f.wordStart) || (j > i + 1),
+      text: words.slice(f.wordStart, j < found.length ? found[j].wordStart : undefined).join(' ').trim() };
+  }).filter((s) => s.text.length > 0);
   // NO LENGTH FLOOR. Chad, 2026-08-26: "why do you have a threshold? you keep making up rules that mangle
   // our content." There was a `length > 20` here and it deleted short scripture outright — "هو الأبهى"
   // ("He is the Most Glorious") is nine characters. On the Selections of the Báb that rule accounted for
@@ -263,6 +272,7 @@ export function spansFromAnchors(originalText, anchors, englishCount, { wordsPer
     spans, rejected,
     unconfirmed: spans.filter((s) => !s.confirmed).length,
     short: spans.filter((s) => s.text.length <= 20).length,   // reported, never dropped
+    shared: spans.filter((s) => s.shared).length,             // English rows sharing one original passage
     // How many cuts landed on the exact word rather than the enclosing line — the quality number that
     // matters for a bilingual layer, since an inexact cut carries a lead-in from the previous passage.
     exact: spans.filter((s) => s.exact).length,

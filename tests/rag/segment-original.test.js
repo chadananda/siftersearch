@@ -128,8 +128,10 @@ describe('longestIncreasingRun — let the majority settle the order', () => {
     expect(longestIncreasingRun([])).toEqual([]);
   });
 
-  it('refuses a repeat — two paragraphs cannot begin at the same line', () => {
-    expect(longestIncreasingRun([4, 4, 4])).toHaveLength(1);
+  it('ALLOWS a repeat — two English paragraphs may begin at the same place in the original', () => {
+    // Our editions split what the original keeps together, so a shared start is truthful, not a conflict.
+    expect(longestIncreasingRun([4, 4, 4])).toEqual([0, 1, 2]);
+    expect(longestIncreasingRun([1, 5, 5, 6, 2])).toEqual([0, 1, 2, 3]);   // still drops the reversal
   });
 });
 
@@ -161,13 +163,14 @@ describe('spansFromAnchors', () => {
     expect(exact).toBe(1);
   });
 
-  it('REJECTS a second paragraph that resolves at or before the first', () => {
-    // Neighbour lines are searched, so a later paragraph could otherwise be cut BEFORE an earlier one and
-    // undo the ordering the line numbers exist to guarantee. Rejected out loud, not dropped as an empty span.
-    const { spans, rejected } = spansFromAnchors(ORIGINAL,
+  it('gives BOTH paragraphs the passage when they resolve to the same place', () => {
+    // "He is the Most Glorious." is its own row in the English and part of the opening sentence in the
+    // Arabic. Both rows get that passage — the original does not distinguish them, so neither should we.
+    const { spans, shared } = spansFromAnchors(ORIGINAL,
       [{ index: 1, line: 4, words: 'يرون حدود الله' }, { index: 2, line: 5, words: 'يرون حدود الله' }], 2, opts);
-    expect(spans.map((s) => s.index)).toEqual([1]);
-    expect(rejected[0].why).toMatch(/resolves at or before/);
+    expect(spans.map((s) => s.index)).toEqual([1, 2]);
+    expect(spans[0].text).toBe(spans[1].text);
+    expect(shared).toBe(2);
   });
 
   it('REPORTS an unconfirmed line rather than discarding it', () => {
@@ -283,9 +286,15 @@ describe('no length floor — a threshold that drops content produces absence, n
     expect(short).toBe(1);                 // reported so it can be looked at — never removed
   });
 
-  it('still excludes the genuinely EMPTY span, which is the only case worth excluding', () => {
+  it('two rows sharing the ONLY passage both keep it — neither is emptied out', () => {
     const lines = linesFromParagraphs(['هو الأبهى']);
     const { spans } = spansFromAnchors('هو الأبهى', [{ index: 1, line: 1 }, { index: 2, line: 1 }], 2, { lines });
-    expect(spans).toHaveLength(1);
+    expect(spans.map((s) => s.text)).toEqual(['هو الأبهى', 'هو الأبهى']);
+  });
+
+  it('still excludes a genuinely EMPTY span', () => {
+    const lines = linesFromParagraphs(['', 'هو الأبهى']);
+    const { spans } = spansFromAnchors('هو الأبهى', [{ index: 1, line: 1 }], 1, { lines });
+    expect(spans.every((s) => s.text.length > 0)).toBe(true);
   });
 });
