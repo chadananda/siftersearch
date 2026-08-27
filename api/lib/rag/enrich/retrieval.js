@@ -28,7 +28,7 @@ import { isHyped, DISAMB_THRESHOLD } from '../../pipeline/processed.js';
 // THE VERSION STRING IS PART OF THE PROMPT. Changing the prompt without bumping it left every paragraph
 // matching the current version, so --rehype skipped the whole book and regenerated nothing — the run
 // reported success and the questions were byte-identical. A prompt change IS a version change.
-export const HYPE_VERSION = 'hype-v11-answer-not-topic';
+export const HYPE_VERSION = 'hype-v12-heading-aware';
 const DENSE_HINT = 'Keep each question short; output ONLY the compact JSON object, nothing else.';
 const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not worth HyPE
 // Question count is set by the PARAGRAPH, not a quota: a dense passage (every sentence answering several
@@ -316,6 +316,9 @@ From the paragraph (use the disambiguation CONTEXT only to resolve who/what/wher
   • Ground every question in what the paragraph ACTUALLY says — never invent facts.
 - "thesis": ONE sentence (20-45 words) stating what this paragraph teaches as a proposition, stated directly.
 
+If a HEADING is given, it names the question or subject this passage is part of answering. Use it to know WHICH discussion the passage belongs to and to phrase questions a reader of that subject would ask — but write questions about what THIS paragraph says, not about the heading's subject in general, and never quote the heading as if the passage answered all of it.
+In a work of answers, one passage often addresses SEVERAL related questions at once: a single explanation may settle a definition, the objection against it, and its consequence together. Those are distinct asks and each deserves its own question — this is where a paragraph legitimately yields many, and where under-asking loses the most.
+
 If ESTABLISHED FACTS are provided with the paragraph, they are cited claims extracted from THIS paragraph — the knowledge researchers seek here. EVERY listed fact must be reachable by at least one question (closely related facts may share a question). Prefer fact-bearing questions over generic ones.
 
 If AUTHORITATIVE INTERPRETATIONS are provided, they are the doctrinal claims this passage establishes, each with its ORIGINAL-LANGUAGE TERM in brackets. These are what a serious reader comes for, so make each one findable. Where a concept carries an original term, write at least one question a reader would ask USING THAT TERM — "What does ʿirfán mean in the Kitáb-i-Íqán?", "What is the difference between ʿadl and inṣáf?" — because a reader who knows the term searches with it, and the English gloss will not retrieve them. Ask about the concept; never echo the interpretation's wording back as a question.
@@ -363,9 +366,14 @@ export function buildUser(p, facts = null, slice = null, concepts = null) {
   const conceptBlock = concepts?.length
     ? `\n\nAUTHORITATIVE INTERPRETATIONS this passage develops (ASK ABOUT THESE — name the concept, do not echo the wording):\n${concepts.slice(0, MAX_CONCEPTS_PER_PARA).map((c) => `- ${c}`).join('\n')}`
     : '';
-  if (!slice) return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${factBlock}${conceptBlock}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
+  // THE HEADING IS THE QUESTION THIS PASSAGE HELPS ANSWER, and the stage never used it. In a work of
+  // answers — Some Answered Questions has 85 headings, "Proof and Arguments for the Existence of God",
+  // "The Need for an Educator" — that is the single most orienting fact about a paragraph, and writing
+  // questions without it means guessing which discussion the passage belongs to.
+  const headingBlock = p.heading ? `\n\nUNDER THE HEADING: ${p.heading}` : '';
+  if (!slice) return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${headingBlock}${factBlock}${conceptBlock}\n\nPARAGRAPH [${p.pid}]:\n${p.text}`;
   const thesisNote = slice.part === 1
     ? 'Include the "thesis" for the WHOLE paragraph.'
     : 'Set "thesis" to "" — it was written with part 1.';
-  return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${factBlock}${conceptBlock}\n\nFULL PARAGRAPH [${p.pid}] (for context only):\n${p.text}\n\nFOCUS (part ${slice.part}/${slice.parts}) — write questions ONLY for what these sentences state (facts covered by other parts are handled there). ${thesisNote}\nFOCUS SENTENCES:\n${slice.focus}`;
+  return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${headingBlock}${factBlock}${conceptBlock}\n\nFULL PARAGRAPH [${p.pid}] (for context only):\n${p.text}\n\nFOCUS (part ${slice.part}/${slice.parts}) — write questions ONLY for what these sentences state (facts covered by other parts are handled there). ${thesisNote}\nFOCUS SENTENCES:\n${slice.focus}`;
 }

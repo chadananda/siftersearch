@@ -192,7 +192,7 @@ describe('v7 — distinctness is tested by the ANSWER, never by a count', () => 
   });
 
   it('is stamped at the current version', () => {
-    expect(HYPE_VERSION).toBe('hype-v11-answer-not-topic');
+    expect(HYPE_VERSION).toBe('hype-v12-heading-aware');
   });
 });
 
@@ -299,5 +299,41 @@ describe('the answer gate covers the SLICED path too', () => {
     const branch = src.slice(src.indexOf('One bounded call per sentence-group'), src.indexOf('stats.sliced'));
     expect(branch).toMatch(/parsed = \{ items, thesis \}/);
     expect(branch).not.toMatch(/parsed = \{ questions:/);
+  });
+});
+
+describe('v12 — the heading is the question the passage helps answer', () => {
+  // Chad, 2026-08-26: "SAQ is the ideal document for HyPE questions because it is, end-to-end, explanations
+  // answering philosophical and economic and religious questions… Notice how ‘Abdu'l-Bahá answers one
+  // question and tries to address all related philosophical questions related to that question within each
+  // answer." The stage had the heading available on every paragraph and never once read it.
+  const sys = buildSystem({ lang: 'en', genre: 'doctrinal', script: 'Latin' }, { title: 'Some Answered Questions' });
+
+  it('puts the heading in the user message when there is one', () => {
+    const u = buildUser({ pid: 'p1', text: 'Nature is subject to law.', context: 'c',
+      heading: 'Proof and Arguments for the Existence of God' });
+    expect(u).toMatch(/UNDER THE HEADING: Proof and Arguments for the Existence of God/);
+  });
+
+  it('omits the block entirely when a paragraph has no heading', () => {
+    expect(buildUser({ pid: 'p1', text: 'x', context: 'c' })).not.toMatch(/UNDER THE HEADING/);
+  });
+
+  it('carries it into the SLICED user message too, where long answers live', () => {
+    const u = buildUser({ pid: 'p1', text: 'long…', context: 'c', heading: 'The Need for an Educator' },
+      null, { focus: 'a sentence', part: 1, parts: 3 });
+    expect(u).toMatch(/UNDER THE HEADING: The Need for an Educator/);
+  });
+
+  it('tells the model to use it for orientation, not to answer the heading in general', () => {
+    expect(sys).toMatch(/names the question or subject this passage is part of answering/);
+    expect(sys).toMatch(/not about the heading's subject in general/);
+  });
+
+  it('says a single answer legitimately settles several related asks', () => {
+    // This is where under-asking loses the most, so the rule has to push both ways: distinct or nothing,
+    // but do not collapse genuinely separate asks that one explanation happens to answer together.
+    expect(sys).toMatch(/SEVERAL related questions at once/);
+    expect(sys).toMatch(/where under-asking loses the most/);
   });
 });
