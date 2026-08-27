@@ -164,7 +164,7 @@ const LANG_NAME = { en: 'English', fa: 'Persian', ar: 'Arabic', he: 'Hebrew' };
 const REGISTERS = {
   history: `(a) a concrete who/what/when/where fact it states, (b) the event or episode and its outcome, (c) why it matters or what followed from it, (d) how a curious lay reader would casually ask about it`,
   biography: `(a) a concrete fact about the person (role, relationship, act, date), (b) the episode recounted and its outcome, (c) the person's significance or what this reveals about them, (d) how a curious lay reader would casually ask about it`,
-  doctrinal: `(a) the concept, term, or station the passage explains, (b) what the passage asserts or teaches about it, (c) its implication or application, (d) how a thoughtful lay reader would casually ask about it`,
+  doctrinal: `(a) the concept, term, or station and what is taught about it, (b) the distinction it draws — how it differs from what a reader might confuse it with, (c) the reason or condition given, and what follows from it, (d) how a thoughtful lay reader would casually ask about it, in their own words`,
 };
 
 export function buildSystem(profile, meta, cast = '') {
@@ -176,13 +176,20 @@ export function buildSystem(profile, meta, cast = '') {
   return `You generate Hypothetical Prompt Embeddings (HyPE) for ONE paragraph, to power semantic search. A reader searches with a QUESTION; write the questions THIS paragraph answers, so it is retrievable by anyone asking about its content in their own words. Output JSON ONLY.
 ${foreign}
 From the paragraph (use the disambiguation CONTEXT only to resolve who/what/where — do NOT ask about the context):
-- "questions": EVERY distinct question this paragraph genuinely answers — the paragraph's content sets the count, not a quota. Work through it sentence by sentence: a dense sentence often answers several distinct questions (who, what, when, where, why, outcome, significance); a long fact-packed paragraph may deserve 15, 25, even 40 questions, while a thin transitional one deserves only 1-3. Never pad or rephrase the same ask twice — and never omit a distinct askable fact. Each ends "?", max 15 words. Useful angles: ${registers}.
-  • At least ONE question must be phrased WITHOUT naming any person — by event, place, period, or theme ("What happened at …?", "How did the … community …?") — so topic searches also retrieve this paragraph.
+- "questions": every distinct question a READER WOULD ACTUALLY ASK that this paragraph answers. The paragraph's content sets the count, not a quota: a substantial passage may carry 15, 25, even 40 distinct asks, a thin transitional one only 1-3. Each ends "?", max 15 words. Useful angles: ${registers}.
+
+  WRITE THE QUESTION SOMEONE TYPES INTO A SEARCH BOX, not a comprehension check about the text.
+  • NEVER refer to the text itself. No "this passage", "the revealed verse", "the author", "the following". A reader searching does not know a passage exists — that is what they are trying to find. "What does this passage ask the reader to ponder?" is worthless: nobody will ever type it.
+  • ONE QUESTION PER DISTINCT THING TAUGHT — never one per noun. If a sentence lists several items covered by a single teaching, that is ONE question about the teaching, not four about the list. "From what must the heart be cleansed?", "From what must the ear be cleansed?", "From what must the eye be cleansed?" is one question padded three times; ask "What must a seeker purify in order to attain certitude?" instead.
+  • Ask what the passage ESTABLISHES, not what it mentions. A reader wants the teaching, the reason, the consequence, the distinction — not an inventory of its vocabulary.
+  • At least ONE question phrased WITHOUT naming any person — by theme, event, place or period — so topic searches also retrieve this paragraph.
   • Use the name-forms a reader would type: canonical short names (the CAST's primary forms), never long honorific chains.
   • Ground every question in what the paragraph ACTUALLY says — never invent facts.
 - "thesis": ONE sentence (20-45 words) stating what this paragraph teaches as a proposition, stated directly.
 
 If ESTABLISHED FACTS are provided with the paragraph, they are cited claims extracted from THIS paragraph — the knowledge researchers seek here. EVERY listed fact must be reachable by at least one question (closely related facts may share a question). Prefer fact-bearing questions over generic ones.
+
+If AUTHORITATIVE INTERPRETATIONS are provided, they are the doctrinal claims this passage establishes, each with its ORIGINAL-LANGUAGE TERM in brackets. These are what a serious reader comes for, so make each one findable. Where a concept carries an original term, write at least one question a reader would ask USING THAT TERM — "What does ʿirfán mean in the Kitáb-i-Íqán?", "What is the difference between ʿadl and inṣáf?" — because a reader who knows the term searches with it, and the English gloss will not retrieve them. Ask about the concept; never echo the interpretation's wording back as a question.
 
 Return exactly: {"questions":["…?","…?"],"thesis":"…"} (as many questions as the paragraph answers)
 
