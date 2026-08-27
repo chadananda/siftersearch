@@ -28,7 +28,7 @@ import { isHyped, DISAMB_THRESHOLD } from '../../pipeline/processed.js';
 // THE VERSION STRING IS PART OF THE PROMPT. Changing the prompt without bumping it left every paragraph
 // matching the current version, so --rehype skipped the whole book and regenerated nothing — the run
 // reported success and the questions were byte-identical. A prompt change IS a version change.
-export const HYPE_VERSION = 'hype-v4-seeker-def';
+export const HYPE_VERSION = 'hype-v5-distinct';
 const DENSE_HINT = 'Keep each question short; output ONLY the compact JSON object, nothing else.';
 const MIN_LEN = 60; // skip headers/fragments (titles, publisher lines) not worth HyPE
 // Question count is set by the PARAGRAPH, not a quota: a dense passage (every sentence answering several
@@ -76,40 +76,52 @@ export async function run(ctx, docId, opts = {}) {
   const base = long.length - paras.length;
   const report = () => opts.onProgress?.(base + stats.done + stats.failed, long.length);
 
-  await pool(opts.concurrency ?? 5, segs, async (seg) => {
-    for (const p of seg) {
-      // Per-PARAGRAPH guard: pool()'s guard is per ITEM = per SEGMENT here, so an unguarded throw would drop every
-      // remaining paragraph of the segment while the stage still reported success. Fatal (credit/key/policy) aborts.
-      try {
-        const pFacts = facts[p.pid] || null;
-        if (pFacts) stats.factFed++;
-        const slices = sliceParagraph(p.text);
-        let parsed = null, escalated = false;
-        if (slices.length === 1) {
-          ({ parsed, escalated } = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts, null, conceptClaims?.[p.pid]), parse: parseHype, maxTokens, temperature: 0.3, denseHint: DENSE_HINT }));
-        } else {
-          // One bounded call per sentence-group; slice 1 also writes the whole-paragraph thesis.
-          const questions = []; let thesis = '';
-          for (let si = 0; si < slices.length; si++) {
-            const r = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts, { focus: slices[si], part: si + 1, parts: slices.length }, conceptClaims?.[p.pid]), parse: si === 0 ? parseHype : parseHypeSlice, maxTokens, temperature: 0.3, denseHint: DENSE_HINT });
-            if (r.escalated) escalated = true;
-            if (!r.parsed) continue;                       // a lost slice costs coverage, not the paragraph
-            if (si === 0) thesis = r.parsed.thesis;
-            for (const q of r.parsed.questions) { const k = q.toLowerCase().replace(/[^a-z0-9 ]/g, ''); if (!questions.some((e) => e.k === k)) questions.push({ k, q }); }
-          }
-          if (questions.length && thesis) parsed = { questions: questions.slice(0, QUESTION_CEILING).map((e) => e.q), thesis };
-          stats.sliced = (stats.sliced || 0) + 1;
+  // THROUGHPUT: THE UNIT OF WORK IS A PARAGRAPH, NOT A SEGMENT.
+  //
+  // This pooled over SEGMENTS and ran each segment's paragraphs sequentially, so a 789-paragraph book formed
+  // ~5-13 segments and only that many calls were ever in flight — raising `cc` past the segment count did
+  // nothing at all. Measured on Some Answered Questions: ~5 paragraphs/minute at cc=6, 2.5 hours for one
+  // book (Chad, 2026-08-26: "5 par/minute is painfully slow. is there no way to speed that up?").
+  //
+  // The serialisation existed for the PROMPT CACHE: the SYSTEM prefix is byte-identical across a whole book
+  // and expensive to re-bill, so one call must populate the cache before the rest follow. That needs a single
+  // warm-up, not every paragraph queued behind the one before it. Segments survive for ordering only.
+  const flat = segs.flat();
+  if (flat.length) await hypeOne(flat[0]);            // populate the shared prefix, then open the throttle
+  await pool(opts.concurrency ?? 12, flat.slice(1), hypeOne);
+
+  async function hypeOne(p) {
+    // Per-PARAGRAPH guard: pool()'s guard is per ITEM = per SEGMENT here, so an unguarded throw would drop every
+    // remaining paragraph of the segment while the stage still reported success. Fatal (credit/key/policy) aborts.
+    try {
+      const pFacts = facts[p.pid] || null;
+      if (pFacts) stats.factFed++;
+      const slices = sliceParagraph(p.text);
+      let parsed = null, escalated = false;
+      if (slices.length === 1) {
+        ({ parsed, escalated } = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts, null, conceptClaims?.[p.pid]), parse: parseHype, maxTokens, temperature: 0.3, denseHint: DENSE_HINT }));
+      } else {
+        // One bounded call per sentence-group; slice 1 also writes the whole-paragraph thesis.
+        const questions = []; let thesis = '';
+        for (let si = 0; si < slices.length; si++) {
+          const r = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts, { focus: slices[si], part: si + 1, parts: slices.length }, conceptClaims?.[p.pid]), parse: si === 0 ? parseHype : parseHypeSlice, maxTokens, temperature: 0.3, denseHint: DENSE_HINT });
+          if (r.escalated) escalated = true;
+          if (!r.parsed) continue;                       // a lost slice costs coverage, not the paragraph
+          if (si === 0) thesis = r.parsed.thesis;
+          for (const q of r.parsed.questions) { const k = q.toLowerCase().replace(/[^a-z0-9 ]/g, ''); if (!questions.some((e) => e.k === k)) questions.push({ k, q }); }
         }
-        if (!parsed) { await markHypeExhausted(ctx, p, opts, stats); report(); continue; }
-        if (!opts.dryRun) await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
-        stats.done++; if (escalated) stats.escalated++; report();
-      } catch (e) {
-        if (e?.fatal) throw e;
-        await markHypeExhausted(ctx, p, opts, stats);
-        report();
+        if (questions.length && thesis) parsed = { questions: questions.slice(0, QUESTION_CEILING).map((e) => e.q), thesis };
+        stats.sliced = (stats.sliced || 0) + 1;
       }
+      if (!parsed) { await markHypeExhausted(ctx, p, opts, stats); report(); return; }
+      if (!opts.dryRun) await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
+      stats.done++; if (escalated) stats.escalated++; report();
+    } catch (e) {
+      if (e?.fatal) throw e;
+      await markHypeExhausted(ctx, p, opts, stats);
+      report();
     }
-  });
+  }
   ctx.log.info?.({ docId, ...stats }, 'retrieval/hype');
   return stats;
 }
@@ -192,6 +204,10 @@ From the paragraph (use the disambiguation CONTEXT only to resolve who/what/wher
   • ONE QUESTION PER DISTINCT THING TAUGHT — never one per noun. If a sentence lists several items covered by a single teaching, that is ONE question about the teaching, not four about the list. "From what must the heart be cleansed?", "From what must the ear be cleansed?", "From what must the eye be cleansed?" is one question padded three times; ask "What must a seeker purify in order to attain certitude?" instead.
   • Ask what the passage ESTABLISHES, not what it mentions. A reader wants the teaching, the reason, the consequence, the distinction — not an inventory of its vocabulary.
   • IF THE PASSAGE DEFINES A TERM, the plain definitional questions are MANDATORY and come first. A passage saying "Know that justice consists in rendering to each his due" is THE answer to "What is justice?" and "What is meant by justice?" — those exact ordinary forms must be present, not only a subtler question about its application. Definitions are the highest-value thing a reader searches for and the easiest to miss, because the passage states them so plainly that they look like they need no question. Give the bare form ("What is X?"), the asking form ("What is meant by X?"), and the same for the ORIGINAL term where one is known.
+    ONLY for a term the passage genuinely DEFINES or turns on — a doctrinal or technical term a reader would look up. NOT for ordinary descriptive wording. "Sound organization", "inviolable laws", "perfect order" and "consummate design" in one sentence are four ways of saying the passage's ONE point about order in nature; they are not four terms needing four definitions, in either language. Asking each of them, and then asking each again in the original, is the same padding in a new costume.
+  • NO YES/NO QUESTIONS. "Does nature have consciousness?" and "Is nature in the grasp of God?" retrieve badly — a reader asks "what does X teach about Y", and a yes/no phrasing sits far from that in embedding space while adding no distinct ask. Turn each into the open form it is hiding: "What does ‘Abdu'l-Bahá teach about nature's lack of consciousness?"
+  • NO NEAR-DUPLICATES. Two questions that a reader would consider the same question ARE the same question, however differently worded. "Does nature have consciousness or understanding?" and "Is nature conscious according to the Bahá'í writings?" are one ask, not two.
+  • NO CATCH-ALL QUESTIONS. "What did ‘Abdu'l-Bahá say about nature in Some Answered Questions?" is not a question, it is the paragraph's topic with a question mark. It matches everything about the topic and so distinguishes nothing.
   • Vary the phrasing. Naming the book helps a reader who knows it, but do not append it to every question — most searches will not mention it, and a page of questions all ending in the same title matches nothing but itself. Roughly one in three is plenty.
   • At least ONE question phrased WITHOUT naming any person — by theme, event, place or period — so topic searches also retrieve this paragraph.
   • Use the name-forms a reader would type: canonical short names (the CAST's primary forms), never long honorific chains.

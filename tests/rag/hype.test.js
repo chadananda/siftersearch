@@ -41,7 +41,7 @@ describe('the version string is part of the prompt', () => {
   // Changing the prompt without bumping HYPE_VERSION left every paragraph matching the current version, so
   // --rehype skipped the entire book: the run reported success and the questions came back byte-identical.
   it('v4 is stamped, so the version-aware upgrade actually regenerates', () => {
-    expect(HYPE_VERSION).toBe('hype-v4-seeker-def');
+    expect(HYPE_VERSION).toBe('hype-v5-distinct');
   });
 
   it('isHyped treats a row stamped with an older version as wanting an upgrade', async () => {
@@ -74,5 +74,34 @@ describe('definitions are the highest-value thing to retrieve', () => {
     // Measured on the Íqán v4 run: 8 of 10 questions in one paragraph ended "in the Kitáb-i-Íqán".
     expect(sys).toMatch(/do not append it to every question/);
     expect(sys).toMatch(/matches nothing but itself/);
+  });
+});
+
+describe('v5 — the padding came back in a new costume', () => {
+  // Measured on Some Answered Questions ¶8: "sound organization", "inviolable laws", "perfect order" and
+  // "consummate design" each got a definitional question, and then each got ANOTHER in Arabic — the same
+  // one-point sentence asked eight times. The definitional rule had re-created the fragmentation it was
+  // added alongside.
+  const sys = buildSystem({ lang: 'en', genre: 'doctrinal', script: 'Latin' }, { title: 'Some Answered Questions' });
+
+  it('restricts definitional questions to terms the passage actually turns on', () => {
+    expect(sys).toMatch(/ONLY for a term the passage genuinely DEFINES or turns on/);
+    expect(sys).toMatch(/NOT for ordinary descriptive wording/);
+    expect(sys).toMatch(/the same padding in a new costume/);
+  });
+
+  it('bans yes/no questions, which retrieve badly and add no distinct ask', () => {
+    expect(sys).toMatch(/NO YES\/NO QUESTIONS/);
+    expect(sys).toMatch(/Turn each into the open form it is hiding/);
+  });
+
+  it('bans near-duplicates and topic-with-a-question-mark catch-alls', () => {
+    expect(sys).toMatch(/NO NEAR-DUPLICATES/);
+    expect(sys).toMatch(/NO CATCH-ALL QUESTIONS/);
+    expect(sys).toMatch(/the paragraph's topic with a question mark/);
+  });
+
+  it('is stamped v5, so the change regenerates', () => {
+    expect(HYPE_VERSION).toBe('hype-v5-distinct');
   });
 });
