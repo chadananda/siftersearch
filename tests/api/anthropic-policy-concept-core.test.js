@@ -110,3 +110,32 @@ describe('isOriginalSegmentAllowed', () => {
     expect(call({ docId: NOT_CORE, stage: 'concept-segment-original', sourceLang: 'fa' })).toThrow(/REFUSED/);
   });
 });
+
+// ── THE TWO GATES MUST AGREE ──────────────────────────────────────────────────────────────────────────────
+// rag-adapter/usage.js and anthropic-policy.js both decide whether a paid call is allowed. The concept-core
+// allowance was added to one and not the other, so a correctly-scoped bilingual extraction on the Íqán was
+// refused with "lang=unknown". usage.js now CONSULTS the policy rather than keeping a copy of the rules.
+describe('assertSpendAllowed defers to the one policy', () => {
+  it('allows the concept-core case it used to refuse', async () => {
+    const { assertSpendAllowed } = await import('../../api/lib/rag-adapter/usage.js');
+    expect(() => assertSpendAllowed({ provider: 'anthropic', model: 'claude-sonnet-4-6',
+      lang: undefined, stage: 'concept-extract', docId: CORE, originalLang: 'fa' })).not.toThrow();
+  });
+
+  it('still refuses an English paragraph of that same book', async () => {
+    const { assertSpendAllowed } = await import('../../api/lib/rag-adapter/usage.js');
+    expect(() => assertSpendAllowed({ provider: 'anthropic', model: 'claude-sonnet-4-6',
+      lang: 'en', stage: 'concept-extract', docId: CORE, originalLang: null })).toThrow(/Persian-only/);
+  });
+
+  it('still refuses a doc on neither list', async () => {
+    const { assertSpendAllowed } = await import('../../api/lib/rag-adapter/usage.js');
+    expect(() => assertSpendAllowed({ provider: 'anthropic', model: 'claude-sonnet-4-6',
+      stage: 'concept-extract', docId: NOT_CORE, originalLang: 'fa' })).toThrow(/Persian-only/);
+  });
+
+  it('is still inert for deepseek', async () => {
+    const { assertSpendAllowed } = await import('../../api/lib/rag-adapter/usage.js');
+    expect(() => assertSpendAllowed({ provider: 'deepseek', model: 'deepseek-v4-flash' })).not.toThrow();
+  });
+});

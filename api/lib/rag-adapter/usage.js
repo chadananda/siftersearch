@@ -4,6 +4,13 @@
 // adapter — and logging in both places would double-count. Attribution rides the shared ../ai-context scope.
 // Deps: ../ai-context (ambient doc/stage/lang), ../model-registry (the ONE pricing source).
 import { withAIContext, currentAIContext } from '../ai-context.js';
+// THE ONE POLICY, consulted rather than copied. This gate and anthropic-policy.js both decide whether a paid
+// call is allowed, and they disagreed: the concept-core allowance was added to that module and never to this
+// one, so a correctly-scoped bilingual extraction on the Kitáb-i-Íqán — core book, Persian original, exactly
+// the case the allowance exists for — was refused here with "lang=unknown". Two policies that must agree is
+// the open-producer/closed-consumer shape that has cost this project a night at a time; importing removes the
+// second copy instead of updating it.
+import { isConceptCoreAllowed, isOriginalSegmentAllowed } from '../anthropic-policy.js';
 import { getModel } from '../model-registry.js';
 
 /** Open a metering/policy scope for a stage. Everything awaited inside (incl. pool concurrency) inherits it. */
@@ -26,14 +33,19 @@ const PAID_LANGS = new Set(['fa']);
 // so the exception is visible in config and removable without a deploy. Empty (default) = no exception.
 const PAID_DOC_ALLOWLIST = new Set(String(process.env.PAID_DOC_ALLOWLIST || '').split(',').map((s) => Number(s.trim())).filter(Boolean));
 
-export function assertSpendAllowed({ provider, model, lang, stage, docId }) {
+export function assertSpendAllowed({ provider, model, lang, stage, docId, originalLang, sourceLang }) {
   if (!PAID_PROVIDERS.has(provider)) return;
   if (PAID_LANGS.has(lang)) return;
   if (docId && PAID_DOC_ALLOWLIST.has(Number(docId))) return;   // flagship exception — see note above
+  // The capability cases, owned by anthropic-policy.js. Both are narrow by construction (curated doc list +
+  // a concept stage + an Arabic/Persian ORIGINAL) and neither widens what this gate refuses otherwise.
+  if (isConceptCoreAllowed({ docId, stage, originalLang })) return;
+  if (isOriginalSegmentAllowed({ docId, stage, sourceLang })) return;
   // Reuse the kernel's fatal contract: a policy breach is not per-item bad luck, so it must abort the run
   // loudly instead of being swallowed into partial work.
   const e = new Error(
-    `Spend policy: ${provider}/${model} is Persian-only — refused for lang=${lang || 'unknown'} (stage=${stage || '?'}). ` +
+    `Spend policy: ${provider}/${model} is Persian-only — refused for lang=${lang || 'unknown'} ` +
+    `(stage=${stage || '?'}, doc=${docId ?? 'none'}, originalLang=${originalLang || 'none'}). ` +
     `English/Arabic/Hebrew are deepseek-only; fix the deepseek call rather than escalating to a paid model.`,
   );
   e.fatal = true;
