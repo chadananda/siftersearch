@@ -97,7 +97,15 @@ export async function entityDossier(rawId) {
     // ZERO. A filter that can empty a result reports absence as a fact about the world, which is the failure
     // this codebase keeps paying for. So walk the name's terms rarest-first and take the first one that still
     // leaves somebody standing; if none does, filter nothing.
-    const nameTerms = searchTerms(ge.cn);
+    // RARITY IS SCORED OVER THE PRIMARY NAME, NOT A PARENTHETICAL ALIAS.
+    // "the Letters of the Living (Ḥurúf-i-Ḥayy)" is a name and its alias, not a four-word conjunct. Scoring
+    // all of it together picked "huruf" — rare, genuinely present on a handful of claims, and therefore not
+    // caught by the still-matches-somebody guard — which kept 5 unrelated people and still returned ZERO for
+    // the intersection. The alias stays in the SEARCH (it should recall), but the word a claim is REQUIRED to
+    // carry comes from the primary form: [letters, living], which is how the corpus actually writes it
+    // ("Quddús — letter-of-the-living Letters of the Living").
+    const primaryName = ge.cn.replace(/\([^)]*\)/g, ' ').trim();
+    const nameTerms = searchTerms(primaryName).length ? searchTerms(primaryName) : searchTerms(ge.cn);
     let required = null;
     if (nameTerms.length > 1 && found.results.length) {
       const counts = await Promise.all(nameTerms.map((t) => queryOne(
