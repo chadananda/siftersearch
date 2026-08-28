@@ -14,7 +14,7 @@
 import { listBioPersons, getBioPerson, bioSearch, getIntegrationProgress } from '../lib/bio.js';
 import { queryAll } from '../lib/db.js';
 import { Readable } from 'node:stream';
-import { entityLookup, entityDossier, entitySearch } from '../lib/entity-api.js';
+import { entityLookup, entityDossier, entitySearch, searchTerms } from '../lib/entity-api.js';
 import { listEntities, exportEntities, resolveKeys, changesSince, graphVersion, naturalKey, ENTITY_FIELDS } from '../lib/entity-catalog.js';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ]/g, '').toLowerCase();
@@ -401,7 +401,20 @@ export default async function peopleRoutes(server) {
     // RECALL: bioSearch answered "Letters of the Living who participated in Badasht" with 4 of the 6 people
     // the evidence supports. Its ids are unioned with the evidence search rather than replaced — two
     // different recall paths over the same corpus, and dropping either loses real people.
-    const evidence = await entitySearch(q, { limit: 30 });
+    // A GROUP IN THE QUERY IS A CONSTRAINT; THE REST OF THE QUERY IS THE QUESTION.
+    // Bounding by the roster alone still answered "Letters of the Living who participated in Badasht" with
+    // all 11 roster members that matched — because every one of them matches the words "letters"/"living",
+    // which are the group's OWN name. The group half selects WHO IS ELIGIBLE; the remaining words are what
+    // they must actually have done. So search on the remainder ("participated badasht") and intersect with
+    // the roster — one search rather than two, and the answer is members with evidence for the act.
+    let searchQ = q;
+    if (base.group) {
+      const gname = (await entityDossier(base.group).catch(() => null))?.name || '';
+      const groupTerms = new Set(searchTerms(gname.replace(/\([^)]*\)/g, ' ')));
+      const rest = searchTerms(q).filter((t) => !groupTerms.has(t));
+      if (rest.length) searchQ = rest.join(' ');
+    }
+    const evidence = await entitySearch(searchQ, { limit: 60 });
     const byId = new Map(evidence.results.map((r) => [r.id, r]));
     let people = [];
     for (const id of (base.ids || [])) {
@@ -421,6 +434,7 @@ export default async function peopleRoutes(server) {
     if (base.group) {
       const g = await entityDossier(base.group).catch(() => null);
       const memberIds = new Set((g?.participants || []).map((m) => m.id));
+      // Membership is decided by the structured edge, never by whose claim repeats the group's name.
       if (memberIds.size) people = people.filter((p) => memberIds.has(p.id));
     }
     people.sort((a, b) => (b.score || 0) - (a.score || 0) || (b.importance || 0) - (a.importance || 0));
