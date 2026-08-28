@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T23:04:25.204Z",
+  "generated": "2026-08-28T23:15:24.202Z",
   "entries": [
+    {
+      "hash": "7b35e1bf",
+      "date": "2026-08-28",
+      "type": "Docs",
+      "description": "Canonical cheat sheet verbatim at the top of OpenAPI and /docs/api",
+      "scope": "api"
+    },
     {
       "hash": "2c7ef34c",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "GPB heading structure + Baghdad-period coverage",
       "scope": null
-    },
-    {
-      "hash": "689a3018",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Clear stale episodes from persons no longer resolved (fixes Letter Hádí retaining the Badasht episode)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "7b35e1bf",
+        "date": "2026-08-28",
+        "type": "Docs",
+        "description": "Canonical cheat sheet verbatim at the top of OpenAPI and /docs/api",
+        "scope": "api"
+      },
       {
         "hash": "2c7ef34c",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "GPB heading structure + Baghdad-period coverage",
-        "scope": null
-      },
-      {
-        "hash": "689a3018",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Clear stale episodes from persons no longer resolved (fixes Letter Hádí retaining the Badasht episode)",
         "scope": null
       }
     ]
