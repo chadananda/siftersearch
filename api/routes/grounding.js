@@ -16,6 +16,7 @@ import { spawnGrounding } from '../lib/pipeline/spawn.js';
 import { makeStore } from '../lib/rag-adapter/store.js';
 import { repairMergeTombstones, mergeTombstoneDivergence, naturalKeyCollisions, breakMergeCycles } from '../lib/entity-merge-repair.js';
 import { guttedCanonicals, liveDuplicateCanonicals } from '../lib/canonical-integrity.js';
+import { emptiedHype, emptiedDisambig, emptiedExtract } from '../lib/generator-integrity.js';
 import { getIntegrationProgress, gradedPlanDocIds } from '../lib/bio.js';
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
@@ -1171,6 +1172,35 @@ export default async function groundingRoutes(fastify) {
   // duplicate_of → 20805, but a listing with no deleted_at filter returned it beside the live canonical and
   // read as a dedupe failure. Counting rows that bear a title answers nothing; only live rows with prose do.
   fastify.get('/content/duplicate-canonicals', admin, async () => liveDuplicateCanonicals());
+
+  /**
+   * GET /content/emptied-by-generator?stage=hype|disambig|extract — paragraphs a stage marked PROCESSED
+   * while producing NOTHING, grouped by book.
+   *
+   * Built for the 2026-06-02→08-27 DeepSeek `extra_body` bug (thinking never disabled → v4-flash burned the
+   * whole token budget reasoning → empty response → ladder exhausted → stamped done with []). SAQ lost 69%
+   * of its HyPE that way and every existing coverage check called it 100% hyped, because an emptied
+   * paragraph holds '[]' and the check tested IS NOT NULL.
+   *
+   * READ `emptyLongPct` AGAINST `emptyShortPct`, not the raw count: some paragraphs legitimately yield
+   * nothing, and what marks THIS bug is emptiness rising with paragraph length. `verdict` says which case
+   * each book is, so a flat curve is never reported as the defect.
+   */
+  fastify.get('/content/emptied-by-generator', admin, async (req) => {
+    const stage = (req.query?.stage || 'hype').toLowerCase();
+    const minStamped = Number(req.query?.minStamped) || 20;
+    const run = { hype: emptiedHype, disambig: emptiedDisambig, extract: emptiedExtract }[stage];
+    if (!run) throw ApiError.badRequest(`stage must be hype, disambig or extract (got '${stage}')`);
+    const books = await run({ minStamped });
+    const suspect = books.filter((b) => b.verdict.startsWith('SUSPECT'));
+    return {
+      stage, minStamped, books: books.length,
+      suspect: suspect.length,
+      paragraphsEmptyInSuspectBooks: suspect.reduce((n, b) => n + b.empty, 0),
+      suspectBooks: suspect,
+      all: books,
+    };
+  });
   // Rows merged into EACH OTHER (A→B, B→A) — no chain terminates, so the main repair skips them.
   // Survivor is chosen by evidence (claims+mentions), ties by lowest id; the rest tombstone to it.
   fastify.post('/entities/break-merge-cycles', admin, async (request) =>
