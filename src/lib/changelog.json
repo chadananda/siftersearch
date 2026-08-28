@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T20:35:08.406Z",
+  "generated": "2026-08-28T20:42:27.257Z",
   "entries": [
+    {
+      "hash": "fe7e3394",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "1+3n values for 1+2n placeholders — entities/search was 500ing in production",
+      "scope": "entities"
+    },
     {
       "hash": "e5341d74",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Full-name matching + importance-dominant resolution (fixes Quddús/Mullá Ḥusayn vs duplicate entities)",
       "scope": null
-    },
-    {
-      "hash": "bec5da74",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Inspect episode set",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "fe7e3394",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "1+3n values for 1+2n placeholders — entities/search was 500ing in production",
+        "scope": "entities"
+      },
       {
         "hash": "e5341d74",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Full-name matching + importance-dominant resolution (fixes Quddús/Mullá Ḥusayn vs duplicate entities)",
-        "scope": null
-      },
-      {
-        "hash": "bec5da74",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Inspect episode set",
         "scope": null
       }
     ]

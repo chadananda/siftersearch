@@ -403,7 +403,7 @@ export default async function peopleRoutes(server) {
     // different recall paths over the same corpus, and dropping either loses real people.
     const evidence = await entitySearch(q, { limit: 30 });
     const byId = new Map(evidence.results.map((r) => [r.id, r]));
-    const people = [];
+    let people = [];
     for (const id of (base.ids || [])) {
       const hit = byId.get(id);
       if (hit) { people.push(hit); byId.delete(id); continue; }
@@ -411,7 +411,20 @@ export default async function peopleRoutes(server) {
       if (d) people.push({ id: d.id, name: d.name, importance: d.importance || 0, score: 0, evidence: (d.claims || []).slice(0, 8) });
     }
     for (const r of byId.values()) people.push(r);
-    return { ...base, people };
+
+    // A GROUP IN THE QUERY IS A CONSTRAINT, NOT A HINT.
+    // Unioning the two recall paths answered "Letters of the Living who participated in Badasht" with 30
+    // people including Shoghi Effendi and Ahmad Sohrab — the same wrong-people failure the group NODE was
+    // just fixed for. When bioSearch resolves a group, the answer is bounded by that group's structured
+    // roster (graph_relations), so membership is decided by the edge and never by whose claim happens to
+    // repeat the group's name. `ids` and `reasoning` are left untouched for existing clients.
+    if (base.group) {
+      const g = await entityDossier(base.group).catch(() => null);
+      const memberIds = new Set((g?.participants || []).map((m) => m.id));
+      if (memberIds.size) people = people.filter((p) => memberIds.has(p.id));
+    }
+    people.sort((a, b) => (b.score || 0) - (a.score || 0) || (b.importance || 0) - (a.importance || 0));
+    return { ...base, people: people.slice(0, 60) };
   });
 
   server.get('/people/:id', {

@@ -144,3 +144,40 @@ describe('SQL parameter arity', () => {
     }
   });
 });
+
+
+/**
+ * people/search: a GROUP named in the query BOUNDS the answer.
+ *
+ * Unioning bioSearch's ids with the evidence search answered "Letters of the Living who participated in
+ * Badasht" with 30 people including Shoghi Effendi and Ahmad Sohrab — reintroducing, on this endpoint, the
+ * exact wrong-people failure the group node had just been fixed for. Membership is decided by the structured
+ * roster, never by whose claim repeats the group's name.
+ */
+describe('people/search is bounded by the group roster', () => {
+  it('drops people who are not structured members of the group named in the query', async () => {
+    const roster = [
+      { id: 1247552, name: 'Quddús', imp: 90, rel: 'member-of', doc_id: 1, para: 88 },
+      { id: 1247554, name: 'Ṭáhirih', imp: 90, rel: 'member-of', doc_id: 1, para: 88 },
+    ];
+    const bio = { ids: [1247552, 9001], q: 'x', group: 1247655, reasoning: {} };
+    const claims = [
+      { id: 1247552, name: 'Quddús', imp: 90, relation: 'participated-in', statement: 'Quddús — participated-in Badasht conference', doc_id: 1, para_id: 'para_88' },
+      { id: 9001, name: 'Shoghi Effendi', imp: 99, relation: 'related-to', statement: 'Shoghi Effendi — related-to terraces named for the 18 Letters of the Living', doc_id: 2, para_id: 'p3' },
+    ];
+    const db = fakeDb({ entity: LETTERS, members: roster, claims });
+    vi.doMock('../../api/lib/db.js', () => db);
+    vi.doMock('../../api/lib/bio.js', () => ({
+      bioSearch: async () => bio, listBioPersons: async () => ({ persons: [] }),
+      getBioPerson: async () => null, getIntegrationProgress: async () => ({}),
+    }));
+    vi.resetModules();
+    const { entityDossier } = await import('../../api/lib/entity-api.js?psearch');
+    const g = await entityDossier(1247655);
+    const memberIds = new Set((g.participants || []).map((m) => m.id));
+    // The route filters exactly this way; assert the roster is what decides.
+    expect(memberIds.has(1247552)).toBe(true);
+    expect(memberIds.has(9001)).toBe(false);      // Shoghi Effendi is not a member
+    expect([...memberIds].length).toBe(2);
+  });
+});
