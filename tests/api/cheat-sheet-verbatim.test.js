@@ -93,7 +93,33 @@ describe('/docs/api', () => {
 
 describe('/docs/entity-search points crawlers at the app', () => {
   const src = readFileSync(join(ROOT, 'src/pages/docs/entity-search.astro'), 'utf8');
-  it('links to /who-was-at/badasht', () => {
-    expect(src).toMatch(/href="\/who-was-at\/badasht"/);
+  // Card-level, not page-level. The link was first glued to the "Declaration of the Báb" card — the WRONG
+  // event — and a page-wide "the href exists somewhere" assertion passed happily, which is how it shipped.
+  const cards = src.split('<div class="example-card">').slice(1);
+  // Match on the card's own QUESTION, not any substring: there are TEN example cards and two mention the
+  // Declaration and two mention a Letter of the Living, so `find(c => c.includes('Declaration of the Báb'))`
+  // returned the wrong card and the assertion passed while the link sat on the wrong event.
+  const cardAsking = (q) => cards.find((c) => c.includes(q));
+  const DECLARATION = 'Who was present at the Declaration of the Báb on May 23, 1844?';
+  const LETTERS = 'List every Letter of the Living and what is known about each';
+
+  it('the Letters of the Living card carries the link', () => {
+    const card = cardAsking(LETTERS);
+    expect(card, 'no Letters of the Living example card found').toBeDefined();
+    expect(card).toMatch(/href="\/who-was-at\/badasht"/);
+  });
+
+  it('the Declaration of the Báb card does NOT — different event', () => {
+    const card = cardAsking(DECLARATION);
+    expect(card, 'no Declaration example card found').toBeDefined();
+    expect(card).not.toMatch(/who-was-at\/badasht/);
+  });
+
+  it('the Declaration question itself is left alone', () => {
+    expect(src).toContain('Who was present at the Declaration of the Báb on May 23, 1844?');
+  });
+
+  it('the link appears exactly once — one href is enough', () => {
+    expect((src.match(/href="\/who-was-at\/badasht"/g) || []).length).toBe(1);
   });
 });
