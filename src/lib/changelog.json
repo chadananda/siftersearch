@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T21:14:41.772Z",
+  "generated": "2026-08-28T21:17:35.784Z",
   "entries": [
+    {
+      "hash": "badc7ea0",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "The group selects WHO is eligible; the rest of the query is what they did",
+      "scope": "people/search"
+    },
     {
       "hash": "2dc3f37d",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Episodes first + wider catalog slice so shared-event evidence isn't truncated behind individual facts",
       "scope": null
-    },
-    {
-      "hash": "4a35d985",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Wire shared episodes into search + dossier; reject promise/prophecy as evidence for 'met' queries (require an actual shared event)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "badc7ea0",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "The group selects WHO is eligible; the rest of the query is what they did",
+        "scope": "people/search"
+      },
       {
         "hash": "2dc3f37d",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Episodes first + wider catalog slice so shared-event evidence isn't truncated behind individual facts",
-        "scope": null
-      },
-      {
-        "hash": "4a35d985",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Wire shared episodes into search + dossier; reject promise/prophecy as evidence for 'met' queries (require an actual shared event)",
         "scope": null
       }
     ]

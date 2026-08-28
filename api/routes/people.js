@@ -14,7 +14,7 @@
 import { listBioPersons, getBioPerson, bioSearch, getIntegrationProgress } from '../lib/bio.js';
 import { queryAll } from '../lib/db.js';
 import { Readable } from 'node:stream';
-import { entityLookup, entityDossier, entitySearch, searchTerms } from '../lib/entity-api.js';
+import { entityLookup, entityDossier, entitySearch, searchTerms, foldText } from '../lib/entity-api.js';
 import { listEntities, exportEntities, resolveKeys, changesSince, graphVersion, naturalKey, ENTITY_FIELDS } from '../lib/entity-catalog.js';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ]/g, '').toLowerCase();
@@ -415,11 +415,32 @@ export default async function peopleRoutes(server) {
       if (rest.length) searchQ = rest.join(' ');
     }
     const evidence = await entitySearch(searchQ, { limit: 60 });
+    // A VERB IN THE QUERY THAT NAMES A RELATION CONSTRAINS THE RELATION.
+    // "who PARTICIPATED IN Badasht" is a question about the `participated-in` edge. Answering it with
+    // `visited` evidence is answering a different question: visiting is not attending. The relation names
+    // come from the data itself (whatever relations the candidate evidence carries), so this needs no
+    // vocabulary list and stays correct as the extractor's relation set grows.
+    const relsPresent = [...new Set(evidence.results.flatMap((r) => r.evidence.map((e) => e.relation)).filter(Boolean))];
+    const qTerms = searchTerms(q);
+    const askedRelations = relsPresent.filter((rel) => {
+      const f = foldText(rel).replace(/[^a-z0-9]+/g, ' ');
+      return qTerms.some((t) => f.split(' ').some((w) => w.startsWith(t) || t.startsWith(w)));
+    });
+    if (askedRelations.length) {
+      const want = new Set(askedRelations);
+      evidence.results = evidence.results
+        .map((r) => ({ ...r, evidence: r.evidence.filter((e) => want.has(e.relation)) }))
+        .filter((r) => r.evidence.length);
+    }
     const byId = new Map(evidence.results.map((r) => [r.id, r]));
     let people = [];
     for (const id of (base.ids || [])) {
       const hit = byId.get(id);
       if (hit) { people.push(hit); byId.delete(id); continue; }
+      // Only widen with a dossier when the query did NOT name a relation. Pulling bioSearch's ids in
+      // unconditionally re-admitted people whose evidence is the wrong edge — Bahá'u'lláh presided at
+      // Badasht but is not a Letter of the Living, and that is exactly what the constraints exist to exclude.
+      if (askedRelations.length) continue;
       const d = await entityDossier(id).catch(() => null);
       if (d) people.push({ id: d.id, name: d.name, importance: d.importance || 0, score: 0, evidence: (d.claims || []).slice(0, 8) });
     }

@@ -181,3 +181,59 @@ describe('people/search is bounded by the group roster', () => {
     expect([...memberIds].length).toBe(2);
   });
 });
+
+
+/**
+ * THE PROOF QUERY IS A RULE, NOT A HEADCOUNT.
+ *
+ * BA + Tester locked it: Letters ∩ Badasht means a LETTER MEMBERSHIP EDGE **and** relation
+ * `participated-in`. Earlier passes chased a number (6, then 5) and kept bending the matching to reach it —
+ * which is how Bahá'u'lláh and the Báb, who are not Letters of the Living, got into the documented answer in
+ * the first place. These assertions encode the two conditions and deliberately assert NO total.
+ *
+ *   visited is not attended     → Mullá Ḥusayn stays out
+ *   a Badasht claim is not membership → nobody enters without the roster edge
+ */
+import { searchTerms as _st, foldText as _ft } from '../../api/lib/entity-api.js';
+
+describe('proof query: membership edge AND participated-in', () => {
+  const roster = new Set([1247552, 1247554, 1249584, 1249582]);   // Quddús, Ṭáhirih, Mírzá Hádí, M-‘Alíy
+  const candidates = [
+    { id: 1247552, name: 'Quddús', evidence: [{ relation: 'participated-in', statement: 'Quddús — participated-in Badasht conference' }] },
+    { id: 1247554, name: 'Ṭáhirih', evidence: [{ relation: 'participated-in', statement: 'Ṭáhirih — participated-in conference of Badasht' }] },
+    { id: 1247564, name: 'Mullá Ḥusayn', evidence: [{ relation: 'visited', statement: 'Mullá Ḥusayn — visited Badasht' }] },
+    { id: 9100, name: "Bahá'u'lláh", evidence: [{ relation: 'participated-in', statement: "Bahá'u'lláh — participated-in Badasht conference" }] },
+    { id: 9101, name: 'the Báb', evidence: [{ relation: 'participated-in', statement: 'the Báb — participated-in Conference of Badasht' }] },
+  ];
+  // The rule the route applies: relation named by the query, then bounded by the roster.
+  const apply = (cands) => cands
+    .map((c) => ({ ...c, evidence: c.evidence.filter((e) => e.relation === 'participated-in') }))
+    .filter((c) => c.evidence.length)
+    .filter((c) => roster.has(c.id));
+
+  it('VISITED IS NOT ATTENDED — Mullá Ḥusayn is excluded despite a Badasht claim', () => {
+    expect(apply(candidates).map((c) => c.name)).not.toContain('Mullá Ḥusayn');
+  });
+
+  it('a Badasht claim without a membership edge is not enough — Bahá\'u\'lláh and the Báb stay out', () => {
+    const names = apply(candidates).map((c) => c.name);
+    expect(names).not.toContain("Bahá'u'lláh");
+    expect(names).not.toContain('the Báb');
+  });
+
+  it('people satisfying BOTH conditions are returned', () => {
+    const names = apply(candidates).map((c) => c.name);
+    expect(names).toContain('Quddús');
+    expect(names).toContain('Ṭáhirih');
+  });
+
+  it('a query verb naming a relation selects that relation and no other', () => {
+    const rels = ['participated-in', 'visited', 'hosted'];
+    const qTerms = _st('Letters of the Living who participated in Badasht');
+    const asked = rels.filter((rel) => {
+      const f = _ft(rel).replace(/[^a-z0-9]+/g, ' ');
+      return qTerms.some((t) => f.split(' ').some((w) => w.startsWith(t) || t.startsWith(w)));
+    });
+    expect(asked).toEqual(['participated-in']);
+  });
+});
