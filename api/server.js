@@ -268,7 +268,7 @@ export async function createServer(opts = {}) {
           '2. Look up the group — same on the group node.',
           '3. List the edges — intersection of the two rosters with `participated-in`. `visited` is not attended. `people[]` is the answer; `ids` is only a projection.',
           'Passage search (`POST /search`) quotes what you found. It cannot build the list.',
-          'Proof: Letters of the Living ∩ Badasht — /who-was-at/badasht (live).',
+          'Proof: Letters of the Living ∩ Badasht (`/who-was-at/badasht` once live).',
           '',
           '---',
           '',

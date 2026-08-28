@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T23:18:30.820Z",
+  "generated": "2026-08-28T23:20:57.845Z",
   "entries": [
+    {
+      "hash": "ec8979c2",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "Drop \"once live\" — the page exists, so both surfaces name it live",
+      "scope": "docs"
+    },
     {
       "hash": "10808a24",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Stop over-skipping — front-matter filter was eating lowercase narrative sub-scenes (e.g. 'b. His visit to Ṭihrán', the explicit Mullá Ḥusayn↔Bahá'u'lláh meeting)",
       "scope": null
-    },
-    {
-      "hash": "01e01911",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Mullá Ḥusayn Ṭihrán-meeting capture + GPB skip generalization",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "ec8979c2",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "Drop \"once live\" — the page exists, so both surfaces name it live",
+        "scope": "docs"
+      },
       {
         "hash": "10808a24",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Stop over-skipping — front-matter filter was eating lowercase narrative sub-scenes (e.g. 'b. His visit to Ṭihrán', the explicit Mullá Ḥusayn↔Bahá'u'lláh meeting)",
-        "scope": null
-      },
-      {
-        "hash": "01e01911",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Mullá Ḥusayn Ṭihrán-meeting capture + GPB skip generalization",
         "scope": null
       }
     ]
