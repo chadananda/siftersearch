@@ -70,23 +70,104 @@ export async function entityDossier(rawId) {
   };
 }
 
-// entity_search(query) — candidate people whose CITED claims match the query tokens (fast, no AI). Returns each with
-// the matching cited claims as evidence — the general search / chat can then read or verify them.
+// ── entity_search term handling ───────────────────────────────────────────────────────────────────────────
+//
+// WHAT WAS WRONG (2026-08-28): the query joined `LOWER(statement) LIKE ?` for EVERY token longer than two
+// characters with AND — "the" included — and required them all inside ONE claim statement. The tool then
+// failed on the very examples its own description advertises, while the evidence sat in the table:
+//     "amanuensis"   → 11 people        "amanuensis of the Báb"  → 0
+//     "Fort Ṭabarsí" → 12 people        "died at Fort Ṭabarsí"   → 0
+// A claim says "was martyred at Fort Ṭabarsí", the reader asks "died at" — one absent word deleted every
+// result. Chat, getting nothing, answered person questions with "not listed in the text".
+//
+// Second fault: terms were diacritic-folded but `statement` was not, so a folded "bab" could not reach the
+// stored "Báb" and the corpus's most central figure matched a single claim.
+//
+// A missing word must DEMOTE a match, never delete it (this codebase has paid for greedy all-or-nothing
+// matching before). So: fold both sides, drop stop-words, match on OR, and RANK — exact phrase first, then
+// by how many distinct terms a claim carries.
+const STOP = new Set(('the of at in on a an and or to for with by from as was were is are be been his her their its ' +
+  'who whom which that this it he she they them had has have who\'s about into during after before').split(' '));
+
+// The transliteration set actually used in this corpus, both cases. SQLite's LOWER() is ASCII-only, so the
+// accented capitals must be mapped explicitly rather than lower-cased.
+const FOLD = {
+  'á': 'a', 'à': 'a', 'â': 'a', 'ä': 'a', 'ā': 'a', 'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e', 'ē': 'e',
+  'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i', 'ī': 'i', 'ó': 'o', 'ò': 'o', 'ô': 'o', 'ö': 'o', 'ō': 'o',
+  'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u', 'ū': 'u', 'ḍ': 'd', 'ḥ': 'h', 'ṭ': 't', 'ẓ': 'z', 'ṣ': 's',
+  'ṇ': 'n', 'ġ': 'g', 'š': 's', 'č': 'c', 'ž': 'z', 'ñ': 'n', 'ç': 'c',
+};
+
+/** Fold a string to its plain-ASCII, mark-free, lower-case form. Used on BOTH sides of every comparison. */
+export function foldText(t) {
+  return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[ʼʻ‘’'`´]/g, '')
+    .split('').map((ch) => FOLD[ch] ?? FOLD[ch.toLowerCase()] ?? ch).join('')
+    .toLowerCase();
+}
+
+/** The content words a claim must be matched on. Stop-words are kept ONLY if the query is nothing else. */
+export function searchTerms(q) {
+  const all = foldText(q).split(/[^a-z0-9]+/).filter((t) => t.length > 2);
+  const content = all.filter((t) => !STOP.has(t));
+  return content.length ? content : all;
+}
+
+/**
+ * How well one claim answers the query. 0 = no match (excluded).
+ * Exact phrase outranks scattered terms, per the search doctrine; each additional distinct term adds one.
+ */
+export function scoreStatement(statement, terms, foldedQuery = null) {
+  const f = foldText(statement);
+  let score = 0;
+  for (const t of terms) if (f.includes(t)) score += 1;
+  if (!score) return 0;
+  if (foldedQuery && f.includes(foldedQuery)) score += 10;   // exact phrase first
+  return score;
+}
+
+// The SQL-side fold, so the OR pre-filter selects the same rows the JS scorer would. Generated from FOLD so
+// the two can never drift apart.
+const SQL_FOLD = (col) => {
+  const pairs = [...new Set(Object.keys(FOLD).flatMap((c) => [c, c.toUpperCase()]))]
+    .filter((c) => FOLD[c] || FOLD[c.toLowerCase()]);
+  let e = col;
+  for (const c of pairs) e = `REPLACE(${e}, '${c}', '${FOLD[c] ?? FOLD[c.toLowerCase()]}')`;
+  for (const c of ['ʼ', 'ʻ', '‘', '’', "''", '`']) e = `REPLACE(${e}, '${c}', '')`;
+  return `LOWER(${e})`;
+};
+
+// entity_search(query) — candidate people whose CITED claims match the query tokens. Returns each with the
+// matching cited claims as evidence — the general search / chat can then read or verify them.
 export async function entitySearch(q, { limit = 12 } = {}) {
-  const terms = String(q || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length > 2);
+  const terms = searchTerms(q);
   if (!terms.length) return { query: q, results: [] };
-  const like = terms.map(() => `LOWER(statement) LIKE ?`).join(' AND ');
+  const folded = SQL_FOLD('ec.statement');
+  // OR, NOT AND: a claim matching some of the query is a weaker answer, not a non-answer.
+  const where = terms.map(() => `${folded} LIKE ?`).join(' OR ');
   const rows = await queryAll(
     `SELECT ec.entity_id id, ge.canonical_name name, ge.importance imp, ec.statement, ec.relation, ec.doc_id, ec.para_id
        FROM entity_claims ec JOIN graph_entities ge ON ge.id=ec.entity_id
       WHERE (ec.status IS NULL OR ec.status='supported') AND ge.entity_type='person'
         AND ${LIVE_SQL('ge.')}
-        AND ${like} LIMIT 200`, terms.map((t) => `%${t}%`));
+        AND (${where}) LIMIT 600`, terms.map((t) => `%${t}%`));
+  const foldedQuery = foldText(q);
   const dmap = await resolveDocs(rows.map((r) => r.doc_id));
   const byEnt = new Map();
-  for (const r of rows) { if (!byEnt.has(r.id)) byEnt.set(r.id, { id: r.id, name: r.name, importance: r.imp || 0, evidence: [] });
+  for (const r of rows) {
+    const score = scoreStatement(r.statement, terms, foldedQuery);
+    if (!score) continue;
+    if (!byEnt.has(r.id)) byEnt.set(r.id, { id: r.id, name: r.name, importance: r.imp || 0, score: 0, evidence: [] });
+    const e = byEnt.get(r.id);
+    e.score = Math.max(e.score, score);
     const d = dmap.get(r.doc_id) || {};
-    byEnt.get(r.id).evidence.push({ statement: r.statement, relation: r.relation, source: d.title || null, sourceAbbr: abbrOf(d.title), paraId: r.para_id, url: d.url && r.para_id ? `${d.url}?paraId=${r.para_id}` : null }); }
-  const results = [...byEnt.values()].sort((a, b) => b.evidence.length - a.evidence.length || b.importance - a.importance).slice(0, Math.min(30, +limit || 12));
+    e.evidence.push({ score, statement: r.statement, relation: r.relation, source: d.title || null,
+      sourceAbbr: abbrOf(d.title), paraId: r.para_id, url: d.url && r.para_id ? `${d.url}?paraId=${r.para_id}` : null });
+  }
+  // Best-matching person first; strongest evidence first within each person.
+  const results = [...byEnt.values()]
+    .map((e) => ({ ...e, evidence: e.evidence.sort((a, b) => b.score - a.score).slice(0, 8) }))
+    .sort((a, b) => b.score - a.score || b.evidence.length - a.evidence.length || b.importance - a.importance)
+    .slice(0, Math.min(30, +limit || 12));
   return { query: q, results, note: 'cited-claim matches — read/verify evidence before asserting' };
 }

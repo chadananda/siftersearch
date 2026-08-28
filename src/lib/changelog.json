@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T13:57:05.624Z",
+  "generated": "2026-08-28T14:06:42.665Z",
   "entries": [
+    {
+      "hash": "f6b38ee1",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "Public API is guarded by its KEY, not its origin — and a rejection is not a 500",
+      "scope": "api"
+    },
     {
       "hash": "59c3e82e",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Proof-span IS the support gate (drop facts with no groundable evidence) — replaces blunt proper-noun guard; restores ‘Abdu'l-Bahá's facts",
       "scope": null
-    },
-    {
-      "hash": "86630c69",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Exempt the subject's own name/aliases from the conflation guard — fixes ‘Abdu'l-Bahá (named 'the Master' in GPB) losing all facts; the guard now only catches FOREIGN entity import",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "f6b38ee1",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "Public API is guarded by its KEY, not its origin — and a rejection is not a 500",
+        "scope": "api"
+      },
       {
         "hash": "59c3e82e",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Proof-span IS the support gate (drop facts with no groundable evidence) — replaces blunt proper-noun guard; restores ‘Abdu'l-Bahá's facts",
-        "scope": null
-      },
-      {
-        "hash": "86630c69",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Exempt the subject's own name/aliases from the conflation guard — fixes ‘Abdu'l-Bahá (named 'the Master' in GPB) losing all facts; the guard now only catches FOREIGN entity import",
         "scope": null
       }
     ]
