@@ -428,9 +428,25 @@ export default async function peopleRoutes(server) {
     });
     if (askedRelations.length) {
       const want = new Set(askedRelations);
-      evidence.results = evidence.results
-        .map((r) => ({ ...r, evidence: r.evidence.filter((e) => want.has(e.relation)) }))
+      // THE VERB PICKS THE EDGE; THE REMAINING WORDS PICK THE SUBJECT.
+      // Constraining the relation alone let "participated-in ANYTHING" through: Mullá Ḥusayn arrived on
+      // "participated-in engagement of Vás-Kas" and "battle at Bárfurúsh", Mullá ‘Alíy-i-Basṭámí on
+      // "retirement for forty days" — neither has a Badasht claim. "participated" is the generic word here
+      // exactly as "conference" was on the event node; "badasht" is the one that identifies the subject.
+      // So the words NOT consumed by the relation must appear in the evidence itself.
+      const relWords = new Set(askedRelations.flatMap((rel) => foldText(rel).split(/[^a-z0-9]+/).filter(Boolean)));
+      const topicTerms = qTerms.filter((t) => ![...relWords].some((w) => w.startsWith(t) || t.startsWith(w)));
+      const constrain = (needAll) => evidence.results
+        .map((r) => ({
+          ...r,
+          evidence: r.evidence.filter((e) => want.has(e.relation) && (!topicTerms.length || (needAll
+            ? topicTerms.every((t) => foldText(e.statement).includes(t))
+            : topicTerms.some((t) => foldText(e.statement).includes(t))))),
+        }))
         .filter((r) => r.evidence.length);
+      // All topic words, or — rather than return nothing — any of them.
+      const strict = constrain(true);
+      evidence.results = strict.length ? strict : constrain(false);
     }
     const byId = new Map(evidence.results.map((r) => [r.id, r]));
     let people = [];

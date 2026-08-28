@@ -237,3 +237,33 @@ describe('proof query: membership edge AND participated-in', () => {
     expect(asked).toEqual(['participated-in']);
   });
 });
+
+
+/**
+ * The verb picks the EDGE; the remaining words pick the SUBJECT.
+ *
+ * Constraining only the relation let "participated-in ANYTHING" through — Mullá Ḥusayn entered on
+ * "participated-in engagement of Vás-Kas" and Mullá ‘Alíy-i-Basṭámí on "retirement for forty days", neither
+ * of whom has a Badasht claim. "participated" is the generic word here exactly as "conference" was on the
+ * event node.
+ */
+describe('topic words must appear in the evidence, not just the relation', () => {
+  const evidence = [
+    { name: 'Quddús', statement: 'Quddús — participated-in Badasht conference', relation: 'participated-in' },
+    { name: 'Mírzá Hádí', statement: 'Mírzá Hádí — participated-in Badásht gathering', relation: 'participated-in' },
+    { name: 'Mullá Ḥusayn', statement: "Mullá Ḥusayn-i-Bushrú'í — participated-in battle at Bárfurúsh", relation: 'participated-in' },
+    { name: 'Mullá ‘Alíy-i-Basṭámí', statement: 'Mullá ‘Alíy-i-Basṭámí — participated-in retirement for forty days', relation: 'participated-in' },
+  ];
+  const topic = ['badasht'];
+  const kept = evidence.filter((e) => topic.every((t) => _ft(e.statement).includes(t))).map((e) => e.name);
+
+  it('keeps only claims naming the subject asked about', () => {
+    expect(kept).toContain('Quddús');
+    expect(kept).not.toContain('Mullá Ḥusayn');
+    expect(kept).not.toContain('Mullá ‘Alíy-i-Basṭámí');
+  });
+
+  it('folds diacritics so "Badásht" still counts as Badasht', () => {
+    expect(kept).toContain('Mírzá Hádí');
+  });
+});
