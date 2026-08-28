@@ -15,6 +15,7 @@ import { listBioPersons, getBioPerson, bioSearch, getIntegrationProgress } from 
 import { queryAll } from '../lib/db.js';
 import { Readable } from 'node:stream';
 import { entityLookup, entityDossier, entitySearch, searchTerms, foldText } from '../lib/entity-api.js';
+import { alignAnswer } from '../lib/people-answer.js';
 import { listEntities, exportEntities, resolveKeys, changesSince, graphVersion, naturalKey, ENTITY_FIELDS } from '../lib/entity-catalog.js';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['‘’`ʻ]/g, '').toLowerCase();
@@ -382,7 +383,9 @@ export default async function peopleRoutes(server) {
           additionalProperties: true,
           properties: {
             answer: { type: 'string', nullable: true, description: 'Synthesised answer, when one can be grounded.' },
-            people: { type: 'array', items: PERSON_HIT, description: 'Matching people with their evidence.' },
+            people: { type: 'array', items: PERSON_HIT, description: 'THE ANSWER. Matching people with their cited evidence.' },
+            ids: { type: 'array', items: { type: 'integer' }, description: 'Projection of people[].id, in the same order — a convenience view, never a second list. It cannot contain anyone absent from people[] or omit anyone present.' },
+            reasoning: { type: 'object', additionalProperties: true, description: 'Narrative summary and per-person evidence, filtered to people[]: it never names anyone the answer excludes.' },
           },
         },
       },
@@ -475,7 +478,10 @@ export default async function peopleRoutes(server) {
       if (memberIds.size) people = people.filter((p) => memberIds.has(p.id));
     }
     people.sort((a, b) => (b.score || 0) - (a.score || 0) || (b.importance || 0) - (a.importance || 0));
-    return { ...base, people: people.slice(0, 60) };
+    // ONE ANSWER. `ids` and `reasoning` are projected FROM people[], never left as a second, looser list —
+    // agents read `ids`, and it was still naming Bahá'u'lláh (not a Letter of the Living) while omitting two
+    // people the answer contained. Narrow the derived views to the answer; never widen the answer to match.
+    return alignAnswer({ base, people: people.slice(0, 60) });
   });
 
   server.get('/people/:id', {

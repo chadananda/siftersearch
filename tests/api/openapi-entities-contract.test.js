@@ -110,6 +110,19 @@ describe('OpenAPI contract — people/entity graph', () => {
     });
   });
 
+  // ids must be documented as a PROJECTION, so nobody reimplements it as a second list.
+  describe('people/search documents ids as a projection of people[]', () => {
+    it('documents ids and reasoning', () => {
+      const props = schemaOf('/api/v1/people/search')?.properties || {};
+      expect(Object.keys(props)).toContain('ids');
+      expect(Object.keys(props)).toContain('reasoning');
+    });
+    it('says outright that ids is not a second list', () => {
+      const d = schemaOf('/api/v1/people/search')?.properties?.ids?.description || '';
+      expect(d).toMatch(/projection|never a second list/i);
+    });
+  });
+
   describe('no schema-free routes left in this family', () => {
     it.each([
       '/api/v1/entities/search',

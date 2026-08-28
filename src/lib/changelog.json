@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T21:30:56.802Z",
+  "generated": "2026-08-28T22:25:26.584Z",
   "entries": [
+    {
+      "hash": "29689657",
+      "date": "2026-08-28",
+      "type": "Docs",
+      "description": "State the proof query as a rule, not a headcount",
+      "scope": null
+    },
     {
       "hash": "e59de5d3",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Letters group membership + Mírzá Hádí",
       "scope": null
-    },
-    {
-      "hash": "5aaf77a9",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Connection evidence prefers the shared episode that names the target + shows episode name",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "29689657",
+        "date": "2026-08-28",
+        "type": "Docs",
+        "description": "State the proof query as a rule, not a headcount",
+        "scope": null
+      },
       {
         "hash": "e59de5d3",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Letters group membership + Mírzá Hádí",
-        "scope": null
-      },
-      {
-        "hash": "5aaf77a9",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Connection evidence prefers the shared episode that names the target + shows episode name",
         "scope": null
       }
     ]

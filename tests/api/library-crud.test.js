@@ -153,7 +153,11 @@ describe('Library API CRUD Operations', () => {
       const body = JSON.parse(response.payload);
       expect(body).toHaveProperty('documents');
       expect(Array.isArray(body.documents)).toBe(true);
-    });
+      // FIRST query to touch the document tables in a run — cold open + cache warm. Measured at 6.5s under
+      // full-suite parallel load against the default 5s, which made this the suite's one flaky test and
+      // blocked two commits. Same explicit timeout the slow queries above already carry; the assertions are
+      // unchanged. Not a product defect: the route answers, it is the cold first hit that is slow.
+    }, 30000);
 
     it('should support pagination parameters', async () => {
       const response = await server.inject({
