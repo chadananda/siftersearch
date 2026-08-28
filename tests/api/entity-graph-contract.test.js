@@ -28,14 +28,16 @@ const CLAIMS = [
 
 function fakeDb({ entity, members = [], claims = CLAIMS }) {
   const queries = [];
+  const calls = [];
   const queryOne = vi.fn(async (sql) => {
     queries.push(sql);
     if (/FROM graph_entities WHERE id=\?/.test(sql)) return { id: entity.id, cn: entity.cn, et: entity.et, importance: entity.importance, lav: entity.lav };
     if (/entity_research/.test(sql)) return null;
     return { n: 0 };
   });
-  const queryAll = vi.fn(async (sql) => {
+  const queryAll = vi.fn(async (sql, params) => {
     queries.push(sql);
+    calls.push({ sql, params });
     if (/FROM entity_claims WHERE entity_id=\?/.test(sql)) return [];          // node carries no claims of its own
     if (/entity_mentions_v2/.test(sql)) return [];
     if (/FROM graph_relations/.test(sql)) return members;
@@ -43,7 +45,7 @@ function fakeDb({ entity, members = [], claims = CLAIMS }) {
     if (/entity_claims/.test(sql)) return claims.map((c) => ({ ...c, rank: 1 }));
     return [];
   });
-  return { queryOne, queryAll, queries };
+  return { queryOne, queryAll, queries, calls };
 }
 
 describe('event node — participants, precision and cost', () => {
@@ -112,5 +114,33 @@ describe('group node — membership, not mention', () => {
     const { entityDossier } = await import('../../api/lib/entity-api.js?dump');
     const d = await entityDossier(1247655);
     expect(d.participantsProvenance.matchedOn).not.toBe('letters');
+  });
+});
+
+
+/**
+ * PARAMETER ARITY.
+ *
+ * The MATERIALIZED-CTE rewrite carried the old params array (phrase + terms + terms, sized for the previous
+ * query) into a new statement that binds phrase + terms in the rank and terms again in the WHERE — 1+3n
+ * values for 1+2n placeholders. better-sqlite3 REJECTS that ("Too many parameter values were provided"), so
+ * every entities/search and every event dossier returned 500 in production.
+ *
+ * The behavioural tests above all passed, because a stubbed db never binds anything. A query test that never
+ * counts its parameters cannot see this class of bug at all.
+ */
+describe('SQL parameter arity', () => {
+  it('binds exactly one value per placeholder in the claim search', async () => {
+    const db = fakeDb({ entity: BADASHT });
+    vi.doMock('../../api/lib/db.js', () => db);
+    vi.resetModules();
+    const { entityDossier } = await import('../../api/lib/entity-api.js?arity');
+    await entityDossier(1264029);
+    const claimCalls = db.calls.filter((c) => /FROM entity_claims|FROM c\b/i.test(c.sql) && /LIKE/.test(c.sql));
+    expect(claimCalls.length).toBeGreaterThan(0);
+    for (const { sql, params } of claimCalls) {
+      const placeholders = (sql.match(/\?/g) || []).length;
+      expect(params?.length ?? 0).toBe(placeholders);
+    }
   });
 });

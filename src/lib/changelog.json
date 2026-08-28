@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T20:31:02.060Z",
+  "generated": "2026-08-28T20:35:08.406Z",
   "entries": [
+    {
+      "hash": "e5341d74",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "Latency, group membership, people/search shape, people/{id} spec — with tests that fail on the old code",
+      "scope": "entities"
+    },
     {
       "hash": "71b15490",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Inspect episode set",
       "scope": null
-    },
-    {
-      "hash": "8c9709b1",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Fix leftover windows ref",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "e5341d74",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "Latency, group membership, people/search shape, people/{id} spec — with tests that fail on the old code",
+        "scope": "entities"
+      },
       {
         "hash": "71b15490",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Inspect episode set",
-        "scope": null
-      },
-      {
-        "hash": "8c9709b1",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Fix leftover windows ref",
         "scope": null
       }
     ]

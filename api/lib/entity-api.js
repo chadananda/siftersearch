@@ -264,7 +264,13 @@ export async function entitySearch(q, { limit = 12, rows: preRows = null } = {})
   // A MATERIALIZED CTE folds each candidate row once and the rest of the query reads that column. SQLite
   // flattens a plain subquery (re-inlining the expression and changing nothing), so the hint is load-bearing.
   const rank = `(10 * (f LIKE ?) + ${terms.map(() => `(f LIKE ?)`).join(' + ')})`;
-  const params = [`%${foldedQuery}%`, ...terms.map((t) => `%${t}%`), ...terms.map((t) => `%${t}%`)];
+  // ONE VALUE PER PLACEHOLDER, COUNTED: rank binds 1 (phrase) + n (terms), the WHERE binds n more. Carrying
+  // the old two-copy params array into the new query passed 1+3n values for 1+2n placeholders and every
+  // entities/search 500'd in production — better-sqlite3 rejects the arity, it does not silently ignore the
+  // extras. The unit tests missed it because a stubbed db never binds anything; see the arity assertion in
+  // tests/api/entity-graph-contract.test.js.
+  const rankParams = [`%${foldedQuery}%`, ...terms.map((t) => `%${t}%`)];
+  const whereParams = terms.map((t) => `%${t}%`);
   const rows = preRows || await queryAll(
     `WITH c AS MATERIALIZED (
         SELECT ec.entity_id id, ge.canonical_name name, ge.importance imp, ec.statement, ec.relation,
@@ -277,7 +283,7 @@ export async function entitySearch(q, { limit = 12, rows: preRows = null } = {})
        FROM c
       WHERE ${terms.map(() => `f LIKE ?`).join(' OR ')}
       ORDER BY rank DESC LIMIT 2000`,
-    [...params, ...terms.map((t) => `%${t}%`)]);
+    [...rankParams, ...whereParams]);
   const dmap = await resolveDocs(rows.map((r) => r.doc_id));
   const byEnt = new Map();
   for (const r of rows) {
