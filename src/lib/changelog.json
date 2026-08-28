@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T22:34:05.204Z",
+  "generated": "2026-08-28T22:59:16.256Z",
   "entries": [
+    {
+      "hash": "f8418ef0",
+      "date": "2026-08-28",
+      "type": "Docs",
+      "description": "Retest 2 — ids/reasoning projected from people[], verified live on 2.187.21",
+      "scope": null
+    },
     {
       "hash": "8462ae35",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Canonical-first resolution — dupes→importance-dominant, but different-nisba namesakes (Mírzá Hádí Letter vs Nahrí) are ambiguous→skip; stops namesake mis-resolution",
       "scope": null
-    },
-    {
-      "hash": "4615bdec",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Mírzá Hádí source passages",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "f8418ef0",
+        "date": "2026-08-28",
+        "type": "Docs",
+        "description": "Retest 2 — ids/reasoning projected from people[], verified live on 2.187.21",
+        "scope": null
+      },
       {
         "hash": "8462ae35",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Canonical-first resolution — dupes→importance-dominant, but different-nisba namesakes (Mírzá Hádí Letter vs Nahrí) are ambiguous→skip; stops namesake mis-resolution",
-        "scope": null
-      },
-      {
-        "hash": "4615bdec",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Mírzá Hádí source passages",
         "scope": null
       }
     ]

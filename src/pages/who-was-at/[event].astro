@@ -1,0 +1,162 @@
+---
+// THE PAGE IS THE QUERY. Not a writeup about how to query — this renders the intersection of two node
+// rosters, live, per request. Proof URL: /who-was-at/badasht
+//
+// Membership is decided by the two structured rosters only (src/lib/who-was-at.js). A claim found by search
+// does not admit anyone: Mullá Báqir-i-Tabrízí is a Letter of the Living with a Badasht claim in the claim
+// table, is absent from the Badasht node, and is therefore not an attendee here.
+//
+// SSR (not prerendered) so a shareable URL is always current and new events work without a rebuild. The API
+// is called server-side, where no Origin header is sent and so no API key is required.
+import Layout from '../../layouts/Layout.astro';
+import NavBar from '../../components/common/NavBar.svelte';
+import { intersectRosters } from '../../lib/who-was-at.js';
+
+const API = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+
+// The events this page can answer, and the group each is asked about. Keyed by slug so the URL is readable
+// and stable; ids are resolved here rather than in the template because graph ids renumber on a full rebuild
+// (see /api/v1/entities/capabilities → idStability) and this is the one place to repair when they do.
+const EVENTS = {
+  badasht: {
+    eventId: 1264029, groupId: 1247655,
+    eventName: 'the Conference of Badasht', groupName: 'the Letters of the Living',
+    year: '1848',
+    blurb: 'The Conference of Badasht, in the summer of 1848, is where the Bábí community’s break with Islamic law was made public.',
+  },
+};
+
+const slug = String(Astro.params.event || '').toLowerCase();
+const conf = EVENTS[slug];
+if (!conf) return new Response(null, { status: 404 });
+
+const get = async (id) => {
+  const res = await fetch(`${API}/api/v1/entities/${id}`, { signal: AbortSignal.timeout(18000) });
+  if (!res.ok) throw new Error(`entity ${id} → ${res.status}`);
+  return res.json();
+};
+
+let event = null, group = null, error = null;
+try { [event, group] = await Promise.all([get(conf.eventId), get(conf.groupId)]); }
+catch (e) { error = e.message; }
+
+const { attendees = [], otherRelations = [], membersNotAtEvent = [] } =
+  event && group ? intersectRosters({ event, group }) : {};
+
+const title = `Who was at ${conf.eventName}? — ${conf.groupName} at Badasht`;
+const description = `The ${conf.groupName} who took part in ${conf.eventName} (${conf.year}), each with the `
+  + `cited claim that places them there — source, relation and paragraph link.`;
+
+// Cited paragraphs are the citation UNDER a person, never how the list was built.
+const cite = (e) => (e.url ? e.url : e.paraId ? `/document/${e.paraId}` : null);
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, stale-while-revalidate=3600');
+---
+
+<Layout title={title} description={description}>
+  <NavBar client:idle />
+
+  <main class="wwa">
+    <header class="wwa-head">
+      <p class="wwa-kicker">Who was at</p>
+      <h1>{conf.eventName}<span class="wwa-year">{conf.year}</span></h1>
+      <p class="wwa-blurb">{conf.blurb}</p>
+      <p class="wwa-q">
+        Showing <strong>{conf.groupName}</strong> who are recorded as having
+        <code>participated-in</code> this event.
+      </p>
+    </header>
+
+    {error && (
+      <p class="wwa-error">The entity graph did not answer ({error}). This page reads it live; nothing is cached in the page.</p>
+    )}
+
+    <section class="wwa-method" aria-label="How this list is built">
+      <ol>
+        <li>Look up the event — <a href={`${API}/api/v1/entities/${conf.eventId}`}>{event?.name || 'event node'}</a>, {event?.participantCount ?? '—'} people on the node.</li>
+        <li>Look up the group — <a href={`${API}/api/v1/entities/${conf.groupId}`}>{group?.name || 'group node'}</a>, {group?.participantCount ?? '—'} members.</li>
+        <li>Keep the people in both, whose event edge is <code>participated-in</code>.</li>
+      </ol>
+    </section>
+
+    <!--attendees:start-->
+    <section class="wwa-list" aria-label="Attendees">
+      <h2>{attendees.length} {attendees.length === 1 ? 'person' : 'people'} in both rosters</h2>
+      {attendees.map((p) => (
+        <article class="wwa-person">
+          <h3><a href={`/biography?id=${p.id}`}>{p.name}</a></h3>
+          <ul class="wwa-ev">
+            {p.evidence.map((e) => (
+              <li>
+                <span class="wwa-rel">{e.relation}</span>
+                <span class="wwa-stmt">{e.statement}</span>
+                <span class="wwa-src">
+                  {e.source}
+                  {cite(e) && <> · <a href={cite(e)} rel="nofollow">{e.paraId}</a></>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </article>
+      ))}
+      {!attendees.length && !error && <p>No one on this event node is also a member of that group.</p>}
+    </section>
+    <!--attendees:end-->
+
+    {(otherRelations.length > 0 || membersNotAtEvent.length > 0) && (
+      <section class="wwa-near" aria-label="Present in another way, or absent">
+        <h2>Nearby, and why they are not in the list</h2>
+        <p class="wwa-note">
+          Listed so an absence is never mistaken for missing data. These people are one condition short.
+        </p>
+        <ul>
+          {otherRelations.map((p) => (
+            <li>
+              <strong>{p.name}</strong> — a member, but this event node records
+              {' '}{p.relations.map((r) => <code>{r}</code>)}, not <code>participated-in</code>.
+              {p.evidence?.[0] && <span class="wwa-src"> {p.evidence[0].statement}</span>}
+            </li>
+          ))}
+          {membersNotAtEvent.map((p) => (
+            <li><strong>{p.name}</strong> — a member, but no edge to this event on the event node.</li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <footer class="wwa-foot">
+      <p>
+        Built live from the entity graph: the event node, the group node, and the relation between them.
+        Every name carries the claim that places them there and the paragraph it came from.
+      </p>
+    </footer>
+  </main>
+</Layout>
+
+<style>
+  .wwa { max-width: 52rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  .wwa-kicker { text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; color: var(--text-muted); margin: 0 0 .25rem; }
+  .wwa-head h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 1.15; margin: 0 0 .5rem; color: var(--text-primary); }
+  .wwa-year { display: inline-block; margin-left: .6rem; font-size: .5em; color: var(--text-muted); vertical-align: middle; }
+  .wwa-blurb { color: var(--text-secondary); margin: 0 0 .75rem; }
+  .wwa-q { color: var(--text-secondary); background: var(--surface-1); border-left: 3px solid var(--accent); padding: .6rem .9rem; border-radius: 0 .35rem .35rem 0; }
+  .wwa-method { margin: 1.75rem 0; padding: 1rem 1.1rem; background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: .5rem; }
+  .wwa-method ol { margin: 0; padding-left: 1.2rem; color: var(--text-secondary); }
+  .wwa-method li { margin: .3rem 0; }
+  .wwa-list h2, .wwa-near h2 { font-size: 1.1rem; color: var(--text-primary); margin: 2rem 0 .75rem; }
+  .wwa-person { border: 1px solid var(--border-subtle); border-radius: .5rem; padding: .9rem 1rem; margin: .75rem 0; background: var(--surface-0); }
+  .wwa-person h3 { margin: 0 0 .5rem; font-size: 1.05rem; }
+  .wwa-person h3 a { color: var(--text-primary); text-decoration: none; }
+  .wwa-person h3 a:hover { color: var(--accent); }
+  .wwa-ev { list-style: none; margin: 0; padding: 0; }
+  .wwa-ev li { display: grid; gap: .15rem; padding: .4rem 0; border-top: 1px solid var(--border-subtle); }
+  .wwa-ev li:first-child { border-top: 0; }
+  .wwa-rel { font-family: ui-monospace, monospace; font-size: .75rem; color: var(--accent); }
+  .wwa-stmt { color: var(--text-primary); }
+  .wwa-src { font-size: .8rem; color: var(--text-muted); }
+  .wwa-near ul { color: var(--text-secondary); padding-left: 1.1rem; }
+  .wwa-near li { margin: .4rem 0; }
+  .wwa-note { color: var(--text-muted); font-size: .875rem; margin: 0 0 .5rem; }
+  .wwa-error { color: var(--error); background: var(--surface-1); padding: .75rem 1rem; border-radius: .4rem; }
+  .wwa-foot { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle); color: var(--text-muted); font-size: .875rem; }
+  code { font-family: ui-monospace, monospace; font-size: .85em; background: var(--surface-2); padding: .05rem .3rem; border-radius: .2rem; }
+</style>
