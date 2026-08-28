@@ -21,7 +21,7 @@ const LINES = [
   '2. Look up the group — same on the group node.',
   '3. List the edges — intersection of the two rosters with `participated-in`. `visited` is not attended. `people[]` is the answer; `ids` is only a projection.',
   'Passage search (`POST /search`) quotes what you found. It cannot build the list.',
-  'Proof: Letters of the Living ∩ Badasht (`/who-was-at/badasht` once live).',
+  'Proof: Letters of the Living ∩ Badasht — /who-was-at/badasht (live).',
 ];
 // Backticks are markup once rendered; everything else must survive unchanged.
 const plain = (s) => s.replace(/`/g, '').replace(/\s+/g, ' ').trim();
@@ -30,6 +30,12 @@ const EXPECTED = LINES.map(plain);
 describe('OpenAPI info.description', () => {
   const server = readFileSync(join(ROOT, 'api/server.js'), 'utf8');
 
+  it('STARTS with line 1 — nothing in front of the numbered lines', () => {
+    const d = server.slice(server.indexOf('description: ['));
+    const firstEntry = d.slice(d.indexOf("'"), d.indexOf("',") + 1);
+    expect(firstEntry).toContain('1. Look up the event');
+  });
+
   it('carries all five lines verbatim, in order, with nothing in front', () => {
     // The literal lines as they appear in the source array, in order.
     const idx = LINES.map((l) => server.indexOf(l));
@@ -37,8 +43,14 @@ describe('OpenAPI info.description', () => {
     for (let i = 1; i < LINES.length; i++) expect(idx[i]).toBeGreaterThan(idx[i - 1]);
   });
 
-  it('keeps "once live" in the proof line', () => {
-    expect(server).toContain('(`/who-was-at/badasht` once live).');
+  // "once live" was correct only while the page did not exist. It exists, so the phrase is now wrong on
+  // both surfaces and must not survive anywhere in the spec.
+  it('does NOT say "once live" anywhere', () => {
+    expect(server).not.toMatch(/once live/);
+  });
+
+  it('names the proof page in its live form', () => {
+    expect(server).toContain('Proof: Letters of the Living ∩ Badasht — /who-was-at/badasht (live).');
   });
 });
 
@@ -73,8 +85,9 @@ describe('/docs/api', () => {
     }
   });
 
-  it('keeps the proof sentence exactly, including "once live"', () => {
-    expect(body).toContain('Proof: Letters of the Living ∩ Badasht (/who-was-at/badasht once live).');
+  it('keeps the proof sentence exactly, and does not say "once live"', () => {
+    expect(body).toContain('Proof: Letters of the Living ∩ Badasht — /who-was-at/badasht (live).');
+    expect(src).not.toMatch(/once live/);
   });
 });
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T23:15:24.202Z",
+  "generated": "2026-08-28T23:18:30.820Z",
   "entries": [
+    {
+      "hash": "10808a24",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "Stop rewriting the cheat sheet — verbatim, first, unwrapped; and point entity-search at the app",
+      "scope": "docs"
+    },
     {
       "hash": "7b35e1bf",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Mullá Ḥusayn Ṭihrán-meeting capture + GPB skip generalization",
       "scope": null
-    },
-    {
-      "hash": "1ff95b87",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "GPB heading structure + Baghdad-period coverage",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "10808a24",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "Stop rewriting the cheat sheet — verbatim, first, unwrapped; and point entity-search at the app",
+        "scope": "docs"
+      },
       {
         "hash": "7b35e1bf",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Mullá Ḥusayn Ṭihrán-meeting capture + GPB skip generalization",
-        "scope": null
-      },
-      {
-        "hash": "1ff95b87",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "GPB heading structure + Baghdad-period coverage",
         "scope": null
       }
     ]

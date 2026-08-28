@@ -8,15 +8,16 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   activeSection="api"
 >
   <!-- CANONICAL CHEAT SHEET — VERBATIM. Do not rewrite, paraphrase, soften, or WRAP it.
-       It is the first body content: an earlier edit put a heading in front of it and reworded the proof line
-       (dropped "once live", turned the URL into a dash). A block that must be quoted exactly is not a block
-       to improve. Only <p>/<code> around the same words. tests/api/cheat-sheet-verbatim.test.js enforces it. -->
+       It is the first body content; an earlier edit put a heading in front of it and reworded the proof
+       sentence. A block that must be quoted exactly is not a block to improve. Only <p>/<code>/<a> around
+       the same words. This page and OpenAPI info.description must stay character-identical — the proof
+       sentence names the page as live, because it is. tests/api/cheat-sheet-verbatim.test.js enforces both. -->
   <div class="cheat">
     <p>1. Look up the event — <code>GET /entities/lookup?q=</code> then <code>GET /entities/&#123;id&#125;</code> for <code>participants[]</code>.</p>
     <p>2. Look up the group — same on the group node.</p>
     <p>3. List the edges — intersection of the two rosters with <code>participated-in</code>. <code>visited</code> is not attended. <code>people[]</code> is the answer; <code>ids</code> is only a projection.</p>
     <p>Passage search (<code>POST /search</code>) quotes what you found. It cannot build the list.</p>
-    <p>Proof: Letters of the Living ∩ Badasht (<code>/who-was-at/badasht</code> once live).</p>
+    <p>Proof: Letters of the Living ∩ Badasht — <a href="/who-was-at/badasht">/who-was-at/badasht</a> (live).</p>
   </div>
 
   <h1>Public Search API</h1>
