@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T13:18:28.771Z",
+  "generated": "2026-08-28T13:31:32.801Z",
   "entries": [
+    {
+      "hash": "52e56bc6",
+      "date": "2026-08-28",
+      "type": "New",
+      "description": "Sweep for paragraphs a stage marked processed while producing nothing",
+      "scope": "audit"
+    },
     {
       "hash": "9c23a767",
       "date": "2026-08-27",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Mention coverage diag (throwaway)",
       "scope": null
-    },
-    {
-      "hash": "7f8ee20c",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Id lookup (throwaway)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-08-28": [
+      {
+        "hash": "52e56bc6",
+        "date": "2026-08-28",
+        "type": "New",
+        "description": "Sweep for paragraphs a stage marked processed while producing nothing",
+        "scope": "audit"
+      }
+    ],
     "2026-08-27": [
       {
         "hash": "9c23a767",
@@ -7069,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Mention coverage diag (throwaway)",
-        "scope": null
-      },
-      {
-        "hash": "7f8ee20c",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Id lookup (throwaway)",
         "scope": null
       }
     ]

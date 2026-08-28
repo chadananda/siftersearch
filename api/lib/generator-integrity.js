@@ -73,8 +73,13 @@ export async function emptiedDisambig({ query = queryAll, minStamped = 20 } = {}
  * long/short split carries information here.
  */
 export async function emptiedExtract({ query = queryAll, minStamped = 20 } = {}) {
-  const empty = `NOT EXISTS (SELECT 1 FROM entity_claims ec WHERE ec.para_id = CAST(c.id AS TEXT))
-             AND NOT EXISTS (SELECT 1 FROM concept_claims cc WHERE cc.para_id = CAST(c.id AS TEXT))`;
+  // JOIN ON THE PID, NOT THE ROW ID. Claims store `para_id` = COALESCE(external_para_id, 'p'||id)
+  // (see concepts/backfill-original.js). Matching CAST(c.id AS TEXT) matches nothing, and "nothing" here
+  // renders as 100% empty — which is what the first run of this sweep reported for all 15 books, including
+  // one holding 6,252 claims. An empty result is a claim about this query before it is a claim about the data.
+  const PID = `COALESCE(c.external_para_id, 'p' || c.id)`;
+  const empty = `NOT EXISTS (SELECT 1 FROM entity_claims ec WHERE ec.para_id = ${PID})
+             AND NOT EXISTS (SELECT 1 FROM concept_claims cc WHERE cc.para_id = ${PID})`;
   const rows = await query(`
     SELECT c.doc_id, d.title, d.file_path, d.language,
            COUNT(*) stamped, SUM(${empty}) empty,
