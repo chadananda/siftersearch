@@ -82,37 +82,59 @@ export async function entityDossier(rawId) {
   // guarantee than a graph edge and is labelled as such in `participantsProvenance` rather than presented
   // as one. /entities/capabilities already tells this truth about place; this extends it to the node itself.
   if (!claims.length && ['event', 'place', 'group'].includes(ge.et)) {
+    // A GROUP HAS A REAL MEMBERSHIP EDGE. USE IT INSTEAD OF GUESSING FROM PROSE.
+    //
+    // graph_relations(source_entity_id → target_entity_id) carries person→group membership, and bio.js has
+    // been reading it all along. Matching the name against claim prose instead produced the Letters of the
+    // Living as a 30-name dump including Shoghi Effendi ("related-to terraces named for the 18 Letters of
+    // the Living"), the Báb ("prophesied thirteen Letters") and Bahá'u'lláh ("characterized-as NOT included
+    // among the Letters") — every one of those sentences contains the group's name, so no name-matching rule
+    // could ever separate them. The edge can: it returns the canonical 18, indexed, in a quarter-second.
+    //
+    // EVENTS AND PLACES HAVE NO SUCH EDGE (`/api/graph/entity/1264029` → connected: []), so they keep the
+    // prose path below. Do not assume symmetry between node types; it does not hold.
+    const members = await queryAll(
+      `SELECT gr.source_entity_id id, ge2.canonical_name name, ge2.importance imp, gr.relation_type rel,
+              gr.source_doc_id doc_id, gr.source_content_id para
+         FROM graph_relations gr JOIN graph_entities ge2 ON ge2.id = gr.source_entity_id
+        WHERE gr.target_entity_id = ? AND ge2.entity_type = 'person' AND ${LIVE_SQL('ge2.')}
+        ORDER BY (ge2.importance IS NULL), ge2.importance DESC`, [id]);
+    if (members.length) {
+      const mdocs = await resolveDocs(members.map((m) => m.doc_id));
+      const byId = new Map();
+      for (const m of members) {
+        if (!byId.has(m.id)) byId.set(m.id, { id: m.id, name: m.name, importance: m.imp || 0, relations: [], evidence: [] });
+        const e = byId.get(m.id);
+        if (m.rel && !e.relations.includes(m.rel)) e.relations.push(m.rel);
+        const d = mdocs.get(m.doc_id) || {};
+        e.evidence.push({ relation: m.rel || null, statement: `${m.name} — ${m.rel || 'member-of'} ${ge.cn}`,
+          source: d.title || null, sourceAbbr: abbrOf(d.title), paraId: m.para ? `p${m.para}` : null,
+          url: d.url && m.para ? `${d.url}?paraId=p${m.para}` : null });
+      }
+      dossier.participants = [...byId.values()];
+      dossier.participantCount = dossier.participants.length;
+      dossier.participantsProvenance = {
+        derivedFrom: 'graph-relations',
+        matchedOn: null,
+        note: `Structured membership edge (graph_relations), not a name match — these are the recorded members `
+          + `of this ${ge.et}. People who merely MENTION it (Shoghi Effendi on the terraces named for the `
+          + `Letters of the Living, for instance) are correctly absent; find those with the search call below.`,
+        equivalentCall: `GET /api/v1/entities/search?q=${encodeURIComponent(ge.cn)}`,
+      };
+    } else {
     const found = await entitySearch(ge.cn, { limit: 60 });
-    // REQUIRE THE NAME'S RAREST WORD, OR A GENERIC ONE DRAGS IN THE WRONG EVENT.
-    // "Badasht Conference" OR-matches "conference", so the first cut listed Shoghi Effendi
-    // ("participated-in Second Indian Cultural Conference") and ‘Abdu’l-Bahá ("Orient-Occident-Unity
-    // Conference") as people at Badasht. Rarity is MEASURED against the claim table rather than filtered
-    // through a hand-written list of generic words — the corpus decides which of a node's own words
-    // identifies it, so this needs no maintenance and cannot mangle a name whose "generic" word is the
-    // distinguishing one.
-    // THE RAREST TERM THAT IS ACTUALLY PRESENT — not simply the rarest.
-    // Requiring the globally rarest word fixed Badasht (dropping "Second Indian Cultural Conference", which
-    // shares only "conference") but emptied "the Letters of the Living (Ḥurúf-i-Ḥayy)", whose rarest token is
-    // a parenthetical transliteration that claim prose almost never spells out — the intersection went to
-    // ZERO. A filter that can empty a result reports absence as a fact about the world, which is the failure
-    // this codebase keeps paying for. So walk the name's terms rarest-first and take the first one that still
-    // leaves somebody standing; if none does, filter nothing.
-    // RARITY IS SCORED OVER THE PRIMARY NAME, NOT A PARENTHETICAL ALIAS.
-    // "the Letters of the Living (Ḥurúf-i-Ḥayy)" is a name and its alias, not a four-word conjunct. Scoring
-    // all of it together picked "huruf" — rare, genuinely present on a handful of claims, and therefore not
-    // caught by the still-matches-somebody guard — which kept 5 unrelated people and still returned ZERO for
-    // the intersection. The alias stays in the SEARCH (it should recall), but the word a claim is REQUIRED to
-    // carry comes from the primary form: [letters, living], which is how the corpus actually writes it
-    // ("Quddús — letter-of-the-living Letters of the Living").
+    // RARITY FROM THE CANDIDATES, NOT FROM EXTRA FULL SCANS.
+    // Scoring rarity with one COUNT(*) per term added a whole folded scan of entity_claims per word — the
+    // Letters node has four, which is most of why it took 31s. The candidate set is every claim mentioning
+    // any part of the name, so which of the name's own words is the generic one is already visible in it.
     const primaryName = ge.cn.replace(/\([^)]*\)/g, ' ').trim();
     const nameTerms = searchTerms(primaryName).length ? searchTerms(primaryName) : searchTerms(ge.cn);
+    const allEvidence = found.results.flatMap((r) => r.evidence.map((e) => foldText(e.statement)));
     let required = null;
-    if (nameTerms.length > 1 && found.results.length) {
-      const counts = await Promise.all(nameTerms.map((t) => queryOne(
-        `SELECT COUNT(*) n FROM entity_claims WHERE ${SQL_FOLD('statement')} LIKE ?`, [`%${t}%`])));
+    if (nameTerms.length > 1 && allEvidence.length) {
       const byRarity = nameTerms
-        .map((t, i) => ({ t, n: counts[i]?.n ?? 0 }))
-        .sort((a, b) => a.n - b.n);
+        .map((t) => ({ t, n: allEvidence.filter((f) => f.includes(t)).length }))
+        .sort((x, y) => x.n - y.n);
       const narrow = (term) => found.results
         .map((r) => ({ ...r, evidence: r.evidence.filter((e) => foldText(e.statement).includes(term)) }))
         .filter((r) => r.evidence.length);
@@ -121,23 +143,30 @@ export async function entityDossier(rawId) {
         if (kept.length) { required = t; found.results = kept; break; }
       }
     }
-    dossier.participants = found.results.slice(0, 30).map((r) => ({
-      id: r.id, name: r.name, importance: r.importance,
-      // The caller filters on `relation` — participated-in / visited / hosted / died / met. Nothing is
-      // dropped here: "died at Badasht" answers "who was at Badasht" as surely as "participated-in" does.
-      relations: [...new Set(r.evidence.map((e) => e.relation).filter(Boolean))],
-      evidence: r.evidence,
-    }));
+    // MENTIONING AN EVENT IS NOT ATTENDING IT. Same lesson as the group above, applied where no edge exists:
+    // the relation separates presence from reference. Nothing is discarded — the rest come back as `mentions`.
+    const parts = [], mentions = [];
+    for (const r of found.results) {
+      const keep = r.evidence.filter((e) => !GENERIC_RELATIONS.has(e.relation));
+      const rest = r.evidence.filter((e) => GENERIC_RELATIONS.has(e.relation));
+      const base = { id: r.id, name: r.name, importance: r.importance };
+      if (keep.length) parts.push({ ...base, relations: [...new Set(keep.map((e) => e.relation).filter(Boolean))], evidence: keep });
+      else if (rest.length) mentions.push({ ...base, relations: [...new Set(rest.map((e) => e.relation).filter(Boolean))], evidence: rest });
+    }
+    dossier.participants = parts.slice(0, 30);
     dossier.participantCount = dossier.participants.length;
+    dossier.mentions = mentions.slice(0, 30);
+    dossier.mentionsCount = dossier.mentions.length;
     dossier.participantsProvenance = {
       derivedFrom: 'claim-prose',
-      matchedOn: required || null,   // the word from this node's name that claims had to contain, or null if unfiltered
+      matchedOn: required || null,
       note: `No structured edge points at this ${ge.et}. Participants are people whose CITED claims mention `
-        + `"${ge.cn}" in their statement text, ranked by match — the same evidence GET /entities/search returns, `
-        + `narrowed to claims containing the name's most distinctive word so a generic one ("conference") cannot `
-        + `pull in a different event. Verify each with its proof span and paraId; a name match is recall, not proof.`,
+        + `"${ge.cn}" AND assert presence — the relation, not the name, separates being there from being `
+        + `mentioned. Claims that only reference it are returned under \`mentions\` rather than dropped. `
+        + `Verify each with its proof span and paraId; a name match is recall, not proof.`,
       equivalentCall: `GET /api/v1/entities/search?q=${encodeURIComponent(ge.cn)}`,
     };
+    }
   }
   return dossier;
 }
@@ -158,6 +187,15 @@ export async function entityDossier(rawId) {
 // A missing word must DEMOTE a match, never delete it (this codebase has paid for greedy all-or-nothing
 // matching before). So: fold both sides, drop stop-words, match on OR, and RANK — exact phrase first, then
 // by how many distinct terms a claim carries.
+// Relations that only REFERENCE a node rather than place someone at or in it. Membership and presence are
+// everything else. Derived from the failure, not invented: "related-to terraces named for the 18 Letters of
+// the Living" (Shoghi Effendi), "prophesied thirteen Letters" (the Báb) and "characterized-as not included
+// among the Letters" (Bahá'u'lláh) all name the group without joining it.
+const GENERIC_RELATIONS = new Set([
+  'related-to', 'characterized-as', 'associated-with', 'prophesied', 'testified-about',
+  'mentioned', 'referenced', 'named-after', 'decreed', 'compared-to', 'described-as',
+]);
+
 const STOP = new Set(('the of at in on a an and or to for with by from as was were is are be been his her their its ' +
   'who whom which that this it he she they them had has have who\'s about into during after before').split(' '));
 
@@ -211,28 +249,35 @@ const SQL_FOLD = (col) => {
 
 // entity_search(query) — candidate people whose CITED claims match the query tokens. Returns each with the
 // matching cited claims as evidence — the general search / chat can then read or verify them.
-export async function entitySearch(q, { limit = 12 } = {}) {
+export async function entitySearch(q, { limit = 12, rows: preRows = null } = {}) {
   const terms = searchTerms(q);
   if (!terms.length) return { query: q, results: [] };
-  const folded = SQL_FOLD('ec.statement');
   const foldedQuery = foldText(q);
-  // OR, NOT AND: a claim matching some of the query is a weaker answer, not a non-answer.
-  const where = terms.map(() => `${folded} LIKE ?`).join(' OR ');
-  // RANK IN SQL, BECAUSE THE ROW CAP CUTS SOMETHING. With OR-matching, one common term ("bab") matches tens
-  // of thousands of claims, so an unordered LIMIT returns whichever rows the scan reached first and silently
-  // discards the specific people the reader asked for — the first cut of this fix answered "amanuensis of
-  // the Báb" with the Báb himself and dropped his amanuensis. The cap is a rail against a runaway scan, so
-  // what it keeps must be the BEST candidates, not the earliest. This expression mirrors scoreStatement.
-  const rank = `(10 * (${folded} LIKE ?) + ${terms.map(() => `(${folded} LIKE ?)`).join(' + ')})`;
+  // FOLD ONCE PER ROW, NOT ONCE PER TERM PER ROW.
+  //
+  // The first version inlined SQL_FOLD (a ~40-deep REPLACE chain) into every term test in WHERE, every term
+  // test in the rank, and the phrase test — five evaluations per row for a two-word name, NINE for
+  // "the Letters of the Living (Ḥurúf-i-Ḥayy)". Measured live: entities/search 9.8s, the Badasht node 20.8s,
+  // the Letters node 31.2s against a 20s agent-client timeout. Latency scaled with the term count, which is
+  // the fingerprint of exactly this mistake.
+  //
+  // A MATERIALIZED CTE folds each candidate row once and the rest of the query reads that column. SQLite
+  // flattens a plain subquery (re-inlining the expression and changing nothing), so the hint is load-bearing.
+  const rank = `(10 * (f LIKE ?) + ${terms.map(() => `(f LIKE ?)`).join(' + ')})`;
   const params = [`%${foldedQuery}%`, ...terms.map((t) => `%${t}%`), ...terms.map((t) => `%${t}%`)];
-  const rows = await queryAll(
-    `SELECT ec.entity_id id, ge.canonical_name name, ge.importance imp, ec.statement, ec.relation, ec.doc_id, ec.para_id,
-            ${rank} rank
-       FROM entity_claims ec JOIN graph_entities ge ON ge.id=ec.entity_id
-      WHERE (ec.status IS NULL OR ec.status='supported') AND ge.entity_type='person'
-        AND ${LIVE_SQL('ge.')}
-        AND (${where})
-      ORDER BY rank DESC LIMIT 2000`, params);
+  const rows = preRows || await queryAll(
+    `WITH c AS MATERIALIZED (
+        SELECT ec.entity_id id, ge.canonical_name name, ge.importance imp, ec.statement, ec.relation,
+               ec.doc_id, ec.para_id, ${SQL_FOLD('ec.statement')} f
+          FROM entity_claims ec JOIN graph_entities ge ON ge.id=ec.entity_id
+         WHERE (ec.status IS NULL OR ec.status='supported') AND ge.entity_type='person'
+           AND ${LIVE_SQL('ge.')}
+     )
+     SELECT id, name, imp, statement, relation, doc_id, para_id, ${rank} rank
+       FROM c
+      WHERE ${terms.map(() => `f LIKE ?`).join(' OR ')}
+      ORDER BY rank DESC LIMIT 2000`,
+    [...params, ...terms.map((t) => `%${t}%`)]);
   const dmap = await resolveDocs(rows.map((r) => r.doc_id));
   const byEnt = new Map();
   for (const r of rows) {
@@ -252,3 +297,4 @@ export async function entitySearch(q, { limit = 12 } = {}) {
     .slice(0, Math.min(30, +limit || 12));
   return { query: q, results, note: 'cited-claim matches — read/verify evidence before asserting' };
 }
+

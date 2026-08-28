@@ -84,6 +84,32 @@ describe('OpenAPI contract — people/entity graph', () => {
     });
   });
 
+  // Item 4 of the tester's list: /people/{id} was still an empty spec after the first pass, because the
+  // schema sweep covered the entity routes and stopped there.
+  describe('people/{id} is documented too', () => {
+    it('documents its id path parameter', () => {
+      expect(paramNames('/api/v1/people/{id}')).toContain('id');
+    });
+    it('documents a 200 response schema', () => {
+      expect(schemaOf('/api/v1/people/{id}')).toBeDefined();
+    });
+    it('points at entities/{id} for cited claims, so the two person routes are not confused', () => {
+      expect(op('/api/v1/people/{id}')?.description || '').toMatch(/entities\/\{id\}/);
+    });
+  });
+
+  // Item 3: the live body was {ids, q, group, reasoning} while the spec promised people[] with evidence.
+  // The spec half of that contract is asserted here; the behavioural half is in entity-graph-contract.
+  describe('people/search promises people[] with verifiable evidence', () => {
+    it('documents people[] and its evidence fields', () => {
+      const props = schemaOf('/api/v1/people/search')?.properties?.people?.items?.properties;
+      expect(props).toBeDefined();
+      expect(Object.keys(props)).toContain('evidence');
+      const ev = props.evidence.items.properties;
+      for (const f of ['relation', 'statement', 'source', 'paraId']) expect(Object.keys(ev)).toContain(f);
+    });
+  });
+
   describe('no schema-free routes left in this family', () => {
     it.each([
       '/api/v1/entities/search',
@@ -91,6 +117,7 @@ describe('OpenAPI contract — people/entity graph', () => {
       '/api/v1/people/search',
       '/api/v1/entities/{id}',
       '/api/v1/entities/capabilities',
+      '/api/v1/people/{id}',
     ])('%s documents a 200 response schema', (path) => {
       expect(schemaOf(path)).toBeDefined();
     });

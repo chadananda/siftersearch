@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T20:04:07.880Z",
+  "generated": "2026-08-28T20:31:02.060Z",
   "entries": [
+    {
+      "hash": "71b15490",
+      "date": "2026-08-28",
+      "type": "Docs",
+      "description": "Close the entity-graph ticket — verified results and why the intersection is 6",
+      "scope": null
+    },
     {
       "hash": "cf05c292",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Fix leftover windows ref",
       "scope": null
-    },
-    {
-      "hash": "b854596e",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Heading-section based extraction (use Dawn-Breakers' own scene headings as episode boundaries)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "71b15490",
+        "date": "2026-08-28",
+        "type": "Docs",
+        "description": "Close the entity-graph ticket — verified results and why the intersection is 6",
+        "scope": null
+      },
       {
         "hash": "cf05c292",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Fix leftover windows ref",
-        "scope": null
-      },
-      {
-        "hash": "b854596e",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Heading-section based extraction (use Dawn-Breakers' own scene headings as episode boundaries)",
         "scope": null
       }
     ]

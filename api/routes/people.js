@@ -389,10 +389,65 @@ export default async function peopleRoutes(server) {
     },
   }, async (request, reply) => {
     reply.header('Cache-Control', 'public, max-age=60, s-maxage=600, stale-while-revalidate=3600');
-    return await bioSearch(request.query?.q);
+    const q = request.query?.q;
+    const base = await bioSearch(q);
+    // THE LIVE BODY MUST MATCH THE SPEC. It returned {ids, q, group, reasoning} while the OpenAPI documented
+    // people[] with evidence.relation/statement/source/paraId — so a client written from the contract got
+    // nothing it could use, and the ids alone carry no citation to verify.
+    //
+    // `ids` and `reasoning` are KEPT (the biography browser reads them); people[] is added alongside, built
+    // from the cited-claim layer so every person arrives with the proof a reader needs.
+    //
+    // RECALL: bioSearch answered "Letters of the Living who participated in Badasht" with 4 of the 6 people
+    // the evidence supports. Its ids are unioned with the evidence search rather than replaced — two
+    // different recall paths over the same corpus, and dropping either loses real people.
+    const evidence = await entitySearch(q, { limit: 30 });
+    const byId = new Map(evidence.results.map((r) => [r.id, r]));
+    const people = [];
+    for (const id of (base.ids || [])) {
+      const hit = byId.get(id);
+      if (hit) { people.push(hit); byId.delete(id); continue; }
+      const d = await entityDossier(id).catch(() => null);
+      if (d) people.push({ id: d.id, name: d.name, importance: d.importance || 0, score: 0, evidence: (d.claims || []).slice(0, 8) });
+    }
+    for (const r of byId.values()) people.push(r);
+    return { ...base, people };
   });
 
-  server.get('/people/:id', async (request, reply) => {
+  server.get('/people/:id', {
+    schema: {
+      tags: ['Entities'],
+      summary: 'Full person dossier — relationships, citations, cross-corpus reach',
+      description: 'The biography record for one person: kinship, side, sources, portrait and citations. For '
+        + 'CITED CLAIMS with proof spans and paragraph links use GET /api/v1/entities/{id} instead — that is '
+        + 'the evidence-reconciled substrate; this is the browser-facing biography.',
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string', description: 'Person id, from GET /api/v1/people or entities/lookup.' } },
+        required: ['id'],
+      },
+      response: {
+        200: {
+          type: 'object',
+          additionalProperties: true,
+          properties: {
+            id: { type: 'integer' },
+            name: { type: 'string' },
+            importance: { type: 'number' },
+            side: { type: 'string', nullable: true, description: "Bábí · Bahá'í · opponent · other" },
+            summary: { type: 'string', nullable: true },
+            aliases: { type: 'array', items: { type: 'string' } },
+            kinship: { type: 'array', items: { type: 'object', additionalProperties: true }, description: 'Family links: who, and the relation.' },
+            death: { type: 'object', nullable: true, additionalProperties: true },
+            sources: { type: 'array', items: { type: 'string' }, description: 'Source-book keys this person is grounded in.' },
+            hasPortrait: { type: 'boolean' },
+            portrait: { type: 'string', nullable: true },
+          },
+        },
+        404: { type: 'object', properties: { error: { type: 'string' } } },
+      },
+    },
+  }, async (request, reply) => {
     const person = await getBioPerson(request.params.id);
     if (!person) { reply.code(404); return { error: 'not found' }; }
     return person;
