@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T13:38:07.319Z",
+  "generated": "2026-08-28T13:57:05.624Z",
   "entries": [
+    {
+      "hash": "59c3e82e",
+      "date": "2026-08-28",
+      "type": "Docs",
+      "description": "Sweep results — 9 books, 143 long-paragraph empties, all pre-v5",
+      "scope": null
+    },
     {
       "hash": "5c8f3d8d",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Exempt the subject's own name/aliases from the conflation guard — fixes ‘Abdu'l-Bahá (named 'the Master' in GPB) losing all facts; the guard now only catches FOREIGN entity import",
       "scope": null
-    },
-    {
-      "hash": "d738f7d7",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "DBG tracing (extraction/verifier) for diagnosing zero-fact figures",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "59c3e82e",
+        "date": "2026-08-28",
+        "type": "Docs",
+        "description": "Sweep results — 9 books, 143 long-paragraph empties, all pre-v5",
+        "scope": null
+      },
       {
         "hash": "5c8f3d8d",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Exempt the subject's own name/aliases from the conflation guard — fixes ‘Abdu'l-Bahá (named 'the Master' in GPB) losing all facts; the guard now only catches FOREIGN entity import",
-        "scope": null
-      },
-      {
-        "hash": "d738f7d7",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "DBG tracing (extraction/verifier) for diagnosing zero-fact figures",
         "scope": null
       }
     ]

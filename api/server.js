@@ -78,22 +78,22 @@ export async function createServer(opts = {}) {
     // The API's own origin (same-origin browser POSTs still send Origin — e.g. the /widget/demo page) + dev hosts.
     return widgetOrigins.has(origin) || origin === 'https://api.siftersearch.com' || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
   }
-  await server.register(cors, {
-    origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, etc.)
-      if (!origin) return callback(null, true);
-      // Check if origin is in allowed list
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      // Also allow any *.pages.dev subdomain (for Cloudflare previews)
-      if (origin.endsWith('.pages.dev')) {
-        return callback(null, true);
-      }
-      // Widget host sites (dynamic, from widget_profiles)
-      isWidgetOrigin(origin).then((ok) => (ok ? callback(null, true) : callback(new Error('Not allowed by CORS'), false)));
-    },
-    credentials: true,
+  // THE PUBLIC API IS GUARDED BY ITS KEY, NOT BY ITS ORIGIN.
+  //
+  // Until 2026-08-28 a disallowed origin was rejected with `callback(new Error('Not allowed by CORS'))`,
+  // which @fastify/cors surfaces as a 500. So every third-party browser caller of the documented public API
+  // got {"statusCode":500,"error":"Internal Server Error"} with no Access-Control-Allow-Origin — which in a
+  // browser is an opaque network failure, and was diagnosed as the Cloudflare tunnel being down. It was not:
+  // the same request without an Origin header returned 200 throughout. A policy decision must never be
+  // reported as a server fault.
+  //
+  // Origin is not a security boundary for a key-authenticated API: curl, servers and scripts never send an
+  // Origin and are unaffected by CORS at all, so an allowlist only ever blocked legitimate browser consumers.
+  // Third-party origins are therefore allowed — but WITHOUT credentials (browsers forbid sending cookies to a
+  // reflected/wildcard origin, and we do not want ambient session auth from arbitrary sites) and only WITH an
+  // API key, enforced below. Trusted origins keep credentials so the site's own cookie/session calls, the
+  // admin UI and registered widget hosts are untouched.
+  const corsShared = {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -106,6 +106,37 @@ export async function createServer(opts = {}) {
       'X-Request-Id'
     ],
     exposedHeaders: ['X-Server-Version']
+  };
+  const isTrustedOrigin = async (origin) =>
+    allowedOrigins.includes(origin) || origin.endsWith('.pages.dev') || (await isWidgetOrigin(origin));
+
+  await server.register(cors, () => async (req, callback) => {
+    const origin = req.headers.origin;
+    // No Origin = not a browser (curl, server-to-server, mobile). CORS does not apply; route auth still does.
+    if (!origin) return callback(null, { origin: true, credentials: true, ...corsShared });
+    if (await isTrustedOrigin(origin)) return callback(null, { origin: true, credentials: true, ...corsShared });
+    return callback(null, { origin: true, credentials: false, ...corsShared });
+  });
+
+  // CROSS-ORIGIN API CALLS MUST CARRY A KEY. Registered after the CORS hook so the 401 still gets its CORS
+  // headers — a bare 401 with no ACAO is unreadable in a browser and looks like an outage all over again.
+  //
+  // OPTIONS IS EXEMPT AND MUST BE: browsers never send custom headers (and so never the key) on a preflight.
+  // Rejecting the preflight for a missing key would block every cross-origin call before the real request is
+  // ever made, which is the same failure this change exists to remove.
+  server.addHook('onRequest', async (req, reply) => {
+    if (req.method === 'OPTIONS') return;
+    const origin = req.headers.origin;
+    if (!origin) return;                                  // non-browser caller — route-level auth governs
+    if (!req.url.startsWith('/api/')) return;             // /health, /widget assets etc. stay open
+    if (await isTrustedOrigin(origin)) return;            // our own pages keep using the session cookie
+    const key = req.headers['x-api-key'] || String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    if (!key) {
+      return reply.code(401).send({
+        error: 'API key required for cross-origin requests. Set the X-API-Key header.',
+        code: 'unauthorized',
+      });
+    }
   });
 
   // Cookies (for refresh tokens)
