@@ -61,13 +61,45 @@ export async function entityDossier(rawId) {
     source: d.title || null, sourceAbbr: abbrOf(d.title), paraId: c.para_id,
     url: d.url && c.para_id ? `${d.url}?paraId=${c.para_id}` : null,
   }; });
-  return {
+  const dossier = {
     id: ge.id, name: ge.cn, type: ge.et, importance: ge.importance || 0, side: er?.side || null,
     summary: er?.summary || null, aliases: parse(er?.aliases),
     claims, claimCount: claims.length,
     occurrences: occ.map((o) => ({ book: (dmap.get(o.doc_id)?.title) || `doc${o.doc_id}`, mentions: o.n })),
     mentionCount: occ.reduce((s, o) => s + o.n, 0), source: 'entity-substrate-v2',
   };
+
+  // AN EVENT/PLACE/GROUP NODE CARRIES NO CLAIMS OF ITS OWN, AND MUST NOT LOOK UNUSED BECAUSE OF IT.
+  //
+  // Claims hang off the PERSON: "Quddús — participated-in Badasht conference". The link to the event lives
+  // in the claim's PROSE, not in target_entity_id — of 92 participated-in claims on Quddús exactly ONE
+  // carries an object_id. So `GET /entities/{Badasht Conference}` returned claims:[] and read as an empty
+  // record for an event the corpus discusses at length, and an agent reasonably concluded the event graph
+  // was unpopulated and fell back to passage search.
+  //
+  // There is no structured edge to join, so participants are assembled the only way the data allows — by
+  // matching the node's name against claim prose, the same path /entities/search takes. That is a weaker
+  // guarantee than a graph edge and is labelled as such in `participantsProvenance` rather than presented
+  // as one. /entities/capabilities already tells this truth about place; this extends it to the node itself.
+  if (!claims.length && ['event', 'place', 'group'].includes(ge.et)) {
+    const found = await entitySearch(ge.cn, { limit: 30 });
+    dossier.participants = found.results.map((r) => ({
+      id: r.id, name: r.name, importance: r.importance,
+      // The caller filters on `relation` — participated-in / visited / hosted / died / met. Nothing is
+      // dropped here: "died at Badasht" answers "who was at Badasht" as surely as "participated-in" does.
+      relations: [...new Set(r.evidence.map((e) => e.relation).filter(Boolean))],
+      evidence: r.evidence,
+    }));
+    dossier.participantCount = dossier.participants.length;
+    dossier.participantsProvenance = {
+      derivedFrom: 'claim-prose',
+      note: `No structured edge points at this ${ge.et}. Participants are people whose CITED claims mention `
+        + `"${ge.cn}" in their statement text, ranked by match — the same evidence GET /entities/search returns. `
+        + `Verify each with its proof span and paraId before asserting; a name match is recall, not proof.`,
+      equivalentCall: `GET /api/v1/entities/search?q=${encodeURIComponent(ge.cn)}`,
+    };
+  }
+  return dossier;
 }
 
 // ── entity_search term handling ───────────────────────────────────────────────────────────────────────────

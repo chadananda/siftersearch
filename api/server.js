@@ -256,7 +256,30 @@ export async function createServer(opts = {}) {
     openapi: {
       info: {
         title: 'SifterSearch API',
-        description: 'AI-powered interfaith sacred text search. Search passages, browse the library, and chat with an AI research assistant.',
+        // THE STEERING TEXT. This blurb is what an agent reads before choosing a tool, and until 2026-08-28 it
+        // named only passage search — so "who was at the Badasht Conference" went through passage search, which
+        // quotes text but cannot enumerate people, and the first pass was wasted. Lead with the routing rule.
+        description: [
+          'AI-powered interfaith sacred text search: passages, library browsing, a person/event graph, and an AI research assistant.',
+          '',
+          '**Pick the right tool — this is the part agents get wrong.**',
+          '',
+          'For "who was at X", or people linked to an event, place, group or to each other:',
+          '1. Look up the node — `GET /api/v1/entities/lookup?q=` (any transliteration; `type=event|place|group|person`).',
+          '2. List the people — `GET /api/v1/entities/{id}` returns `participants[]` for an event/place/group;',
+          '   `GET /api/v1/entities/search?q=` and `GET /api/v1/people/search?q=` answer descriptive queries',
+          '   ("amanuensis of the Báb", "died at Fort Ṭabarsí").',
+          '3. Follow the edges — filter each result\'s evidence by `relation`: `participated-in`, `visited`,',
+          '   `hosted`, `died`, `met`, `accompanied`, `teacher-of`.',
+          '',
+          'Passage search (`POST /api/v1/search`, `/search/quick`, `/tools/search`) is for **citation — quoting what',
+          'you found — not for building the list**. It returns paragraphs, not people, and cannot enumerate',
+          'who attended anything.',
+          '',
+          'Graph shape: **person · group · event · place**. Claims hang off the PERSON; the tie to an event or place',
+          'lives in the claim prose, not in a target id. `GET /api/v1/entities/capabilities` states exactly which',
+          'links are structured and which are not — read it before concluding data is missing.',
+        ].join('\n'),
         version: SERVER_VERSION,
         contact: { name: 'SifterSearch', url: 'https://siftersearch.com' }
       },
@@ -270,7 +293,8 @@ export async function createServer(opts = {}) {
         { name: 'Search', description: 'Content search across sacred texts' },
         { name: 'Library', description: 'Browse and search the document library' },
         { name: 'Chat', description: 'AI-powered research assistant' },
-        { name: 'System', description: 'Health checks and metadata' }
+        { name: 'System', description: 'Health checks and metadata' },
+        { name: 'Entities', description: 'Person/group/event/place graph. START HERE for "who was at X" and for people linked to events or to each other — lookup the node, read its participants/evidence, filter by relation. Passage search is for quoting the result, not for building it.' }
       ]
     },
     transform: ({ schema, url, ...rest }) => {

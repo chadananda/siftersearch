@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T14:10:43.869Z",
+  "generated": "2026-08-28T19:16:36.898Z",
   "entries": [
+    {
+      "hash": "b1fef5b8",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "Rank candidates in SQL — an unordered LIMIT discarded the answer",
+      "scope": "entity_search"
+    },
     {
       "hash": "ecf475c1",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Remove throwaway id-probe",
       "scope": null
-    },
-    {
-      "hash": "85da1085",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Remove dead selfToks var",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "b1fef5b8",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "Rank candidates in SQL — an unordered LIMIT discarded the answer",
+        "scope": "entity_search"
+      },
       {
         "hash": "ecf475c1",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Remove throwaway id-probe",
-        "scope": null
-      },
-      {
-        "hash": "85da1085",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Remove dead selfToks var",
         "scope": null
       }
     ]
