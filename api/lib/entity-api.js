@@ -82,8 +82,30 @@ export async function entityDossier(rawId) {
   // guarantee than a graph edge and is labelled as such in `participantsProvenance` rather than presented
   // as one. /entities/capabilities already tells this truth about place; this extends it to the node itself.
   if (!claims.length && ['event', 'place', 'group'].includes(ge.et)) {
-    const found = await entitySearch(ge.cn, { limit: 30 });
-    dossier.participants = found.results.map((r) => ({
+    const found = await entitySearch(ge.cn, { limit: 60 });
+    // REQUIRE THE NAME'S RAREST WORD, OR A GENERIC ONE DRAGS IN THE WRONG EVENT.
+    // "Badasht Conference" OR-matches "conference", so the first cut listed Shoghi Effendi
+    // ("participated-in Second Indian Cultural Conference") and ‘Abdu’l-Bahá ("Orient-Occident-Unity
+    // Conference") as people at Badasht. Rarity is MEASURED against the claim table rather than filtered
+    // through a hand-written list of generic words — the corpus decides which of a node's own words
+    // identifies it, so this needs no maintenance and cannot mangle a name whose "generic" word is the
+    // distinguishing one.
+    const nameTerms = searchTerms(ge.cn);
+    let required = null;
+    if (nameTerms.length > 1) {
+      const counts = await Promise.all(nameTerms.map((t) => queryOne(
+        `SELECT COUNT(*) n FROM entity_claims WHERE ${SQL_FOLD('statement')} LIKE ?`, [`%${t}%`])));
+      const ns = counts.map((c) => c?.n ?? 0);
+      required = nameTerms[ns.indexOf(Math.min(...ns))];
+    }
+    if (required) {
+      // Keep only evidence that actually names this node, then drop anyone left with none. The people who
+      // remain are tied to THIS event, and every claim shown is about it.
+      found.results = found.results
+        .map((r) => ({ ...r, evidence: r.evidence.filter((e) => foldText(e.statement).includes(required)) }))
+        .filter((r) => r.evidence.length);
+    }
+    dossier.participants = found.results.slice(0, 30).map((r) => ({
       id: r.id, name: r.name, importance: r.importance,
       // The caller filters on `relation` — participated-in / visited / hosted / died / met. Nothing is
       // dropped here: "died at Badasht" answers "who was at Badasht" as surely as "participated-in" does.
@@ -94,8 +116,9 @@ export async function entityDossier(rawId) {
     dossier.participantsProvenance = {
       derivedFrom: 'claim-prose',
       note: `No structured edge points at this ${ge.et}. Participants are people whose CITED claims mention `
-        + `"${ge.cn}" in their statement text, ranked by match — the same evidence GET /entities/search returns. `
-        + `Verify each with its proof span and paraId before asserting; a name match is recall, not proof.`,
+        + `"${ge.cn}" in their statement text, ranked by match — the same evidence GET /entities/search returns, `
+        + `narrowed to claims containing the name's most distinctive word so a generic one ("conference") cannot `
+        + `pull in a different event. Verify each with its proof span and paraId; a name match is recall, not proof.`,
       equivalentCall: `GET /api/v1/entities/search?q=${encodeURIComponent(ge.cn)}`,
     };
   }
