@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T14:06:42.665Z",
+  "generated": "2026-08-28T14:10:43.869Z",
   "entries": [
+    {
+      "hash": "ecf475c1",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "One absent word deleted every result — match by OR and rank, not AND",
+      "scope": "entity_search"
+    },
     {
       "hash": "f6b38ee1",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Remove dead selfToks var",
       "scope": null
-    },
-    {
-      "hash": "7118270b",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Proof-span IS the support gate (drop facts with no groundable evidence) — replaces blunt proper-noun guard; restores ‘Abdu'l-Bahá's facts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "ecf475c1",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "One absent word deleted every result — match by OR and rank, not AND",
+        "scope": "entity_search"
+      },
       {
         "hash": "f6b38ee1",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Remove dead selfToks var",
-        "scope": null
-      },
-      {
-        "hash": "7118270b",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Proof-span IS the support gate (drop facts with no groundable evidence) — replaces blunt proper-noun guard; restores ‘Abdu'l-Bahá's facts",
         "scope": null
       }
     ]

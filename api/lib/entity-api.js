@@ -143,15 +143,24 @@ export async function entitySearch(q, { limit = 12 } = {}) {
   const terms = searchTerms(q);
   if (!terms.length) return { query: q, results: [] };
   const folded = SQL_FOLD('ec.statement');
+  const foldedQuery = foldText(q);
   // OR, NOT AND: a claim matching some of the query is a weaker answer, not a non-answer.
   const where = terms.map(() => `${folded} LIKE ?`).join(' OR ');
+  // RANK IN SQL, BECAUSE THE ROW CAP CUTS SOMETHING. With OR-matching, one common term ("bab") matches tens
+  // of thousands of claims, so an unordered LIMIT returns whichever rows the scan reached first and silently
+  // discards the specific people the reader asked for — the first cut of this fix answered "amanuensis of
+  // the Báb" with the Báb himself and dropped his amanuensis. The cap is a rail against a runaway scan, so
+  // what it keeps must be the BEST candidates, not the earliest. This expression mirrors scoreStatement.
+  const rank = `(10 * (${folded} LIKE ?) + ${terms.map(() => `(${folded} LIKE ?)`).join(' + ')})`;
+  const params = [`%${foldedQuery}%`, ...terms.map((t) => `%${t}%`), ...terms.map((t) => `%${t}%`)];
   const rows = await queryAll(
-    `SELECT ec.entity_id id, ge.canonical_name name, ge.importance imp, ec.statement, ec.relation, ec.doc_id, ec.para_id
+    `SELECT ec.entity_id id, ge.canonical_name name, ge.importance imp, ec.statement, ec.relation, ec.doc_id, ec.para_id,
+            ${rank} rank
        FROM entity_claims ec JOIN graph_entities ge ON ge.id=ec.entity_id
       WHERE (ec.status IS NULL OR ec.status='supported') AND ge.entity_type='person'
         AND ${LIVE_SQL('ge.')}
-        AND (${where}) LIMIT 600`, terms.map((t) => `%${t}%`));
-  const foldedQuery = foldText(q);
+        AND (${where})
+      ORDER BY rank DESC LIMIT 2000`, params);
   const dmap = await resolveDocs(rows.map((r) => r.doc_id));
   const byEnt = new Map();
   for (const r of rows) {
