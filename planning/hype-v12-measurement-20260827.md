@@ -192,3 +192,78 @@ more rules.
   fault was in the shared call path. Sweep for paragraphs stamped with any generator version and carrying
   zero output before trusting any book's coverage.
 - Prompt defect from §7 still unfixed (the `Kitáb-i-Íqán` example contradicting "never name the book").
+
+---
+
+# SWEEP — what else the `extra_body` bug emptied (2026-08-28)
+
+New endpoint `GET /content/emptied-by-generator?stage=hype|disambig|extract` (`api/lib/generator-integrity.js`).
+Nothing in the codebase could detect this class of defect: `enrichmentCoverage` tests `hyp_questions IS NOT
+NULL` and an emptied paragraph holds `'[]'`, so a gutted book reported 100% hyped.
+
+**The discriminator is the length curve, not the count.** Some paragraphs legitimately yield nothing. This
+bug's fingerprint is emptiness RISING WITH LENGTH (SAQ: 23% under 200 chars → 100% over 1500), because a
+longer passage needs more reasoning before it can answer.
+
+## How far the damage can possibly reach
+
+| date | event |
+|---|---|
+| 2026-06-02 | `3540b914` introduces `extra_body` — *"OpenAI SDK strips unknown top-level params"*, false for Node |
+| 2026-08-13 | `b1538486` adds `markHypeExhausted` — the first time a failure STAMPS instead of leaving NULL |
+| 2026-08-27 | `b36862c7` fixes it |
+
+**Permanent damage is only possible in the 08-13 → 08-27 window.** Before 08-13 a failure left the column
+NULL, which reads as "not yet hyped" — those paragraphs stayed eligible and get picked up whenever the book
+is next processed. They were never silently marked done. Every stamp in the damaging window is visible to
+this sweep, so its coverage is complete for the class that matters.
+
+## 1. HyPE — 9 books, 143 long-paragraph empties. Small, and all pre-v5.
+
+40 books carry a HyPE stamp corpus-wide; 7,435 paragraphs; **157 empty (2.1%)**.
+Every book showing the signature is stamped `hype-v3-adaptive`:
+
+| doc | title | long% empty | short% empty | n |
+|---|---|---|---|---|
+| 20878 | The Priceless Pearl | 17% | 0% | 91 |
+| 20894 | The World Order of Bahá'u'lláh | 9% | 0% | 19 |
+| 20893 | The Promised Day is Come | 10% | 1% | 15 |
+| 20890 | The Advent of Divine Justice | 7% | 0% | 7 |
+| 20810 | The Kitáb-i-Íqán | 3% | 1% | 5 |
+| 11373 · 21307 · 11252 · 28628 | (small) | 6–25% | 0% | 7 |
+
+The ratio is ∞ or ≥3× in all nine — the right shape, at a tenth of SAQ's magnitude. v3 asked for fewer
+questions, so it planned less and truncated less; v10–v12's answer-gating made the model plan much harder,
+which is why SAQ was hit at 69%. **These nine are at v3/v4, so a v13 re-hype regenerates them anyway** —
+no separate repair is needed, only the decision to re-hype.
+
+## 2. Disambiguation — clean where this bug could reach
+
+| stamp | books | paragraphs | empty | long% | short% |
+|---|---|---|---|---|---|
+| `deepseek-disambig-v1` | 651 | 305,139 | **349 (0.1%)** | 0.5% | 0.1% |
+| `claude-sonnet-4-6` | 1,491 | 327,234 | **258,346 (79%)** | 85% | 79% |
+
+DeepSeek disambiguation — **the only population this bug can touch** — is effectively untouched.
+
+**The 79% belongs to Anthropic-routed work and is NOT this bug** (wrong provider, and a flat curve where
+this bug produces a gradient). It is nonetheless a large unexplained integrity signal: 258K paragraphs
+carrying a `claude-sonnet-4-6` stamp with NULL context, across 1,491 books — `citadel-of-faith_en` is noted
+on 24 of 3,884 paragraphs. Sampled rows are short fragments, so some of this is expected floor behaviour.
+**Not diagnosed. Own investigation. Do not fold it into this one.**
+
+## 3. Extraction — not this bug; the curve is inverted
+
+15 books, 4,203 stamped, 409 empty (9.7%) — but corpus-wide **long 5.6% vs short 11.7%**, the opposite of
+the signature. SAQ, Íqán, World Order, Promised Day: 0–1%. Three small books (11373, 11252, 1855) show a
+mild gradient over an already-high baseline (89% vs 76%); that is weak evidence, not a confirmed casualty.
+
+*(First run of this sweep reported 100% empty for all 15 books, SAQ included — which holds 6,252 claims.
+The join used `CAST(c.id AS TEXT)`; claims store `para_id = COALESCE(external_para_id,'p'||id)`. Fixed in
+`5c8f3d8d`. A total-emptiness result is a claim about the query before it is a claim about the data.)*
+
+## Bottom line
+
+SAQ was the overwhelming casualty and is repaired. The residue is **143 long paragraphs across 9 books,
+all at v3/v4**, which a v13 re-hype sweeps up for free. Disambiguation and extraction are not casualties.
+The open item is the 258K Anthropic-stamped un-noted paragraphs, which are a separate question.

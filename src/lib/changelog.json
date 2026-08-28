@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T13:31:32.801Z",
+  "generated": "2026-08-28T13:38:07.319Z",
   "entries": [
+    {
+      "hash": "5c8f3d8d",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "Extract sweep joined claims on the row id, not the pid",
+      "scope": "audit"
+    },
     {
       "hash": "52e56bc6",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "DBG tracing (extraction/verifier) for diagnosing zero-fact figures",
       "scope": null
-    },
-    {
-      "hash": "6f80d1bb",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Mention coverage diag (throwaway)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "5c8f3d8d",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "Extract sweep joined claims on the row id, not the pid",
+        "scope": "audit"
+      },
       {
         "hash": "52e56bc6",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "DBG tracing (extraction/verifier) for diagnosing zero-fact figures",
-        "scope": null
-      },
-      {
-        "hash": "6f80d1bb",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Mention coverage diag (throwaway)",
         "scope": null
       }
     ]
