@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T19:58:11.020Z",
+  "generated": "2026-08-28T20:04:07.880Z",
   "entries": [
+    {
+      "hash": "cf05c292",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "Score name rarity over the primary name, not a parenthetical alias",
+      "scope": "entities"
+    },
     {
       "hash": "a0df70c0",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Heading-section based extraction (use Dawn-Breakers' own scene headings as episode boundaries)",
       "scope": null
-    },
-    {
-      "hash": "0b8a3333",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Inspect Dawn-Breakers heading structure + episode extractor v1",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "cf05c292",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "Score name rarity over the primary name, not a parenthetical alias",
+        "scope": "entities"
+      },
       {
         "hash": "a0df70c0",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Heading-section based extraction (use Dawn-Breakers' own scene headings as episode boundaries)",
-        "scope": null
-      },
-      {
-        "hash": "0b8a3333",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Inspect Dawn-Breakers heading structure + episode extractor v1",
         "scope": null
       }
     ]

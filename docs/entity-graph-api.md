@@ -73,6 +73,16 @@ Keep the participants whose `relations` include `participated-in`, then intersec
 Living. `visited`, `hosted` and `died` also answer "who was there" — the relation is yours to filter, and
 nothing is dropped on your behalf.
 
+**Verified 2026-08-28** (v2.187.12): Badasht Conference → 9 participants, 8 with `participated-in`;
+Letters of the Living → 30; the intersection is **6** — Bahá'u'lláh, the Báb, Quddús, Ṭáhirih,
+Mírzá Hádí and Mírzá Muḥammad-‘Alíy-i-Qazvíní, cited to *God Passes By* ¶84/¶88 and
+*The Revelation of Bahá'u'lláh* vol. 2.
+
+`participantsProvenance.matchedOn` tells you which word of the node's name a claim had to carry — `badasht`
+here. It is the rarest word of the node's PRIMARY name (parenthetical aliases excluded) that still matches
+somebody: rare enough that "Second Indian Cultural Conference" cannot ride in on the word *conference*,
+never so rare that the list empties.
+
 Only now reach for passage search, to quote what you found:
 
 ```bash
