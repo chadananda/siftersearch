@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T23:20:57.845Z",
+  "generated": "2026-08-28T23:30:46.008Z",
   "entries": [
+    {
+      "hash": "2cb44029",
+      "date": "2026-08-28",
+      "type": "Other",
+      "description": "Restore the canonical cheat sheet — \"once live\" stays",
+      "scope": null
+    },
     {
       "hash": "ec8979c2",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Apply merges multiple books (IN=db,gpb); remove throwaway SQL probes — inspect entities via /api/v1/people/:id + /people/search, not ad-hoc SQL",
       "scope": null
-    },
-    {
-      "hash": "642fc94d",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Stop over-skipping — front-matter filter was eating lowercase narrative sub-scenes (e.g. 'b. His visit to Ṭihrán', the explicit Mullá Ḥusayn↔Bahá'u'lláh meeting)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "2cb44029",
+        "date": "2026-08-28",
+        "type": "Other",
+        "description": "Restore the canonical cheat sheet — \"once live\" stays",
+        "scope": null
+      },
       {
         "hash": "ec8979c2",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Apply merges multiple books (IN=db,gpb); remove throwaway SQL probes — inspect entities via /api/v1/people/:id + /people/search, not ad-hoc SQL",
-        "scope": null
-      },
-      {
-        "hash": "642fc94d",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Stop over-skipping — front-matter filter was eating lowercase narrative sub-scenes (e.g. 'b. His visit to Ṭihrán', the explicit Mullá Ḥusayn↔Bahá'u'lláh meeting)",
         "scope": null
       }
     ]
