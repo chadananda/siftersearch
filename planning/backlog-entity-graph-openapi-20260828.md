@@ -135,3 +135,35 @@ Excluded: Mullá Ḥusayn (`visited`), Bahá'u'lláh and the Báb (not Letters),
   through passage search. Held pending Tester sign-off.
 - `entity_claims` data quirk: a claim attributed to Mullá Ḥusayn carries the statement "the Báb —
   participated-in pilgrimage to Ḥijáz". Subject/attribution mismatch, not fixed here.
+
+
+---
+
+## RETEST 2 — v2.187.21 (Tester: "almost passed", ids/reasoning disagreed)
+
+`people[]` is THE answer. `ids` and `reasoning` were still bioSearch's looser view and contradicted it —
+`ids` named Bahá'u'lláh (not a Letter) and omitted two people `people[]` returned; `reasoning` led with him.
+
+Fixed in `api/lib/people-answer.js` (`alignAnswer`): `ids` is a projection of `people[].id` in the same
+order; `reasoning.summary` is filtered BY SEGMENT so bioSearch's wording, quoted spans and paragraph links
+survive verbatim — people are removed, no summary is authored; `reasoning.evidence` is keyed only by
+`people[]` ids. **Not** aligned by widening `people[]`: narrow the derived views to the answer, never widen
+the answer to the views.
+
+Verified live:
+
+| check | result |
+|---|---|
+| `ids` exactly equals `people[].id`, order included | ✅ 1247552, 1247554, 1247595, 1249574, 1249584 |
+| `reasoning.summary` names anyone outside `people[]` | ✅ no |
+| `reasoning.evidence` keyed only by `people[]` ids | ✅ |
+| Badasht GET / Letters GET / people/{id} | 4.6s / 0.16s / 2.7s |
+| Letters group, Shoghi Effendi | 16 members, absent |
+| OpenAPI: `ids` documented as a projection | ✅ |
+
+Answer (rule, not headcount — membership edge AND `participated-in` naming Badasht): Quddús, Ṭáhirih,
+Mullá Báqir-i-Tabrízí, Mírzá Muḥammad-‘Alíy-i-Qazvíní, Mírzá Hádí.
+
+Also fixed: the suite's one flaky test (`library-crud` → "documents array") was a 5s default timeout against
+a 6.5s cold first query; given the explicit timeout its slower siblings already carry. Assertions unchanged.
+It had aborted two commits.

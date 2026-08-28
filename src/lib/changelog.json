@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T22:25:26.584Z",
+  "generated": "2026-08-28T22:34:05.204Z",
   "entries": [
+    {
+      "hash": "8462ae35",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "One answer — ids and reasoning are projections of people[], not a second list",
+      "scope": "people/search"
+    },
     {
       "hash": "29689657",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Mírzá Hádí source passages",
       "scope": null
-    },
-    {
-      "hash": "d6f49fae",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Letters group membership + Mírzá Hádí",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "8462ae35",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "One answer — ids and reasoning are projections of people[], not a second list",
+        "scope": "people/search"
+      },
       {
         "hash": "29689657",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Mírzá Hádí source passages",
-        "scope": null
-      },
-      {
-        "hash": "d6f49fae",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Letters group membership + Mírzá Hádí",
         "scope": null
       }
     ]
