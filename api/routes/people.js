@@ -202,6 +202,7 @@ export default async function peopleRoutes(server) {
               description: 'States plainly that participants are derived from claim prose, not from a structured edge.',
               properties: {
                 derivedFrom: { type: 'string', example: 'claim-prose' },
+                matchedOn: { type: 'string', nullable: true, description: 'The word from this node name that a claim had to contain to count — the rarest one that still matched anybody, so a generic word ("conference") cannot pull in a different event and a rare one cannot empty the list.', example: 'badasht' },
                 note: { type: 'string' },
                 equivalentCall: { type: 'string', example: 'GET /api/v1/entities/search?q=Badasht%20Conference' },
               },

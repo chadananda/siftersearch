@@ -90,20 +90,28 @@ export async function entityDossier(rawId) {
     // through a hand-written list of generic words — the corpus decides which of a node's own words
     // identifies it, so this needs no maintenance and cannot mangle a name whose "generic" word is the
     // distinguishing one.
+    // THE RAREST TERM THAT IS ACTUALLY PRESENT — not simply the rarest.
+    // Requiring the globally rarest word fixed Badasht (dropping "Second Indian Cultural Conference", which
+    // shares only "conference") but emptied "the Letters of the Living (Ḥurúf-i-Ḥayy)", whose rarest token is
+    // a parenthetical transliteration that claim prose almost never spells out — the intersection went to
+    // ZERO. A filter that can empty a result reports absence as a fact about the world, which is the failure
+    // this codebase keeps paying for. So walk the name's terms rarest-first and take the first one that still
+    // leaves somebody standing; if none does, filter nothing.
     const nameTerms = searchTerms(ge.cn);
     let required = null;
-    if (nameTerms.length > 1) {
+    if (nameTerms.length > 1 && found.results.length) {
       const counts = await Promise.all(nameTerms.map((t) => queryOne(
         `SELECT COUNT(*) n FROM entity_claims WHERE ${SQL_FOLD('statement')} LIKE ?`, [`%${t}%`])));
-      const ns = counts.map((c) => c?.n ?? 0);
-      required = nameTerms[ns.indexOf(Math.min(...ns))];
-    }
-    if (required) {
-      // Keep only evidence that actually names this node, then drop anyone left with none. The people who
-      // remain are tied to THIS event, and every claim shown is about it.
-      found.results = found.results
-        .map((r) => ({ ...r, evidence: r.evidence.filter((e) => foldText(e.statement).includes(required)) }))
+      const byRarity = nameTerms
+        .map((t, i) => ({ t, n: counts[i]?.n ?? 0 }))
+        .sort((a, b) => a.n - b.n);
+      const narrow = (term) => found.results
+        .map((r) => ({ ...r, evidence: r.evidence.filter((e) => foldText(e.statement).includes(term)) }))
         .filter((r) => r.evidence.length);
+      for (const { t } of byRarity) {
+        const kept = narrow(t);
+        if (kept.length) { required = t; found.results = kept; break; }
+      }
     }
     dossier.participants = found.results.slice(0, 30).map((r) => ({
       id: r.id, name: r.name, importance: r.importance,
@@ -115,6 +123,7 @@ export async function entityDossier(rawId) {
     dossier.participantCount = dossier.participants.length;
     dossier.participantsProvenance = {
       derivedFrom: 'claim-prose',
+      matchedOn: required || null,   // the word from this node's name that claims had to contain, or null if unfiltered
       note: `No structured edge points at this ${ge.et}. Participants are people whose CITED claims mention `
         + `"${ge.cn}" in their statement text, ranked by match — the same evidence GET /entities/search returns, `
         + `narrowed to claims containing the name's most distinctive word so a generic one ("conference") cannot `
