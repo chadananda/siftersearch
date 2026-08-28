@@ -102,3 +102,36 @@ recall, not proof. `/entities/capabilities` gained `structuredEvent` alongside t
   copies of the steering text were the OpenAPI blurb and `/tools/*`, both updated. Those external copies
   still say "prefer sifter_search" and need the same edit — someone must point at where they live.
 - A pre-existing test flake under pre-commit load (passes 3/3 standalone, 2031 green). Predates this work.
+
+---
+
+## RETEST READY — v2.187.19 (Tester's five failures)
+
+| # | failure | fixed | verified live |
+|---|---|---|---|
+| 1 | Badasht GET 30.5s vs 20s client timeout | fold once per row (MATERIALIZED CTE) + no per-term COUNT scans | **4.7s**; Letters **0.15s**; search 4.3s |
+| 2 | Letters group dumped 30 incl. Shoghi Effendi | groups use the structured `graph_relations` roster | **16 members**, no Shoghi Effendi |
+| 3 | people/search shape + wrong set | spec-shaped `people[]`; membership edge AND `participated-in` AND topic term | 5 people, both conditions true |
+| 4 | /people/{id} empty spec | params + response schema | `params: id`, 200 schema present |
+| 5 | no contract test caught any of it | behavioural suite + arity test | 2049 tests green |
+
+**Item 3 is a rule, not a number:** Letter membership edge AND relation `participated-in` on a claim naming
+Badasht. Result: Quddús, Ṭáhirih, Mullá Báqir-i-Tabrízí, Mírzá Muḥammad-‘Alíy-i-Qazvíní, Mírzá Hádí.
+Excluded: Mullá Ḥusayn (`visited`), Bahá'u'lláh and the Báb (not Letters), Shoghi Effendi (mentions only).
+
+### Mistakes made getting here, so they are not repeated
+- **Chasing a headcount.** 6 then 5 were targets, and the matcher was bent twice to reach them. The 6 was my
+  own prose-matching error, which counted Bahá'u'lláh and the Báb as Letters.
+- **A generic token doing the matching, three times**: "conference" on the event node, "letters" on the group
+  node, "participated" on people/search. Each time the discriminating token went unchecked.
+- **Broke production**: 2.187.14 returned 500 on entities/search and every event dossier — 1+3n parameter
+  values for 1+2n placeholders. Every behavioural test passed because a stubbed db never binds parameters.
+  The suite now counts parameters per placeholder.
+- **A green check on the relation is not a check on the subject.** Every result carried `participated-in`
+  while two of them had no Badasht claim at all. Reading the statements found it; counting never would.
+
+### Still open
+- MCP server description + Grok Bot connector instruction are NOT in this repo and still route "who was at X"
+  through passage search. Held pending Tester sign-off.
+- `entity_claims` data quirk: a claim attributed to Mullá Ḥusayn carries the statement "the Báb —
+  participated-in pilgrimage to Ḥijáz". Subject/attribution mismatch, not fixed here.

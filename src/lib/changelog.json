@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T21:25:28.665Z",
+  "generated": "2026-08-28T21:30:56.802Z",
   "entries": [
+    {
+      "hash": "e59de5d3",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "The verb picks the edge, the remaining words pick the subject",
+      "scope": "people/search"
+    },
     {
       "hash": "b135b9ca",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Connection evidence prefers the shared episode that names the target + shows episode name",
       "scope": null
-    },
-    {
-      "hash": "c60f7c66",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Deterministic shared-episode roster lookup for 'who met X' — guarantees the full roster (the Badasht three) instead of relying on the LLM to find every line",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "e59de5d3",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "The verb picks the edge, the remaining words pick the subject",
+        "scope": "people/search"
+      },
       {
         "hash": "b135b9ca",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Connection evidence prefers the shared episode that names the target + shows episode name",
-        "scope": null
-      },
-      {
-        "hash": "c60f7c66",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Deterministic shared-episode roster lookup for 'who met X' — guarantees the full roster (the Badasht three) instead of relying on the LLM to find every line",
         "scope": null
       }
     ]

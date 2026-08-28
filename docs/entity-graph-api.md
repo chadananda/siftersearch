@@ -73,15 +73,32 @@ Keep the participants whose `relations` include `participated-in`, then intersec
 Living. `visited`, `hosted` and `died` also answer "who was there" — the relation is yours to filter, and
 nothing is dropped on your behalf.
 
-**Verified 2026-08-28** (v2.187.12): Badasht Conference → 9 participants, 8 with `participated-in`;
-Letters of the Living → 30; the intersection is **6** — Bahá'u'lláh, the Báb, Quddús, Ṭáhirih,
-Mírzá Hádí and Mírzá Muḥammad-‘Alíy-i-Qazvíní, cited to *God Passes By* ¶84/¶88 and
-*The Revelation of Bahá'u'lláh* vol. 2.
+**The proof query is a RULE, not a headcount** (BA + Tester, 2026-08-28). "Letters of the Living who
+participated in Badasht" means BOTH of:
 
-`participantsProvenance.matchedOn` tells you which word of the node's name a claim had to carry — `badasht`
-here. It is the rarest word of the node's PRIMARY name (parenthetical aliases excluded) that still matches
-somebody: rare enough that "Second Indian Cultural Conference" cannot ride in on the word *conference*,
-never so rare that the list empties.
+1. a **Letter membership edge** — the structured roster on the group node (`graph_relations`), and
+2. relation **`participated-in`** on a claim that names Badasht.
+
+`visited` is not attended. A Badasht claim without a membership edge is not a Letter. Verified live on
+v2.187.19 — `GET /api/v1/people/search?q=Letters of the Living who participated in Badasht`:
+
+| person | evidence | source |
+|---|---|---|
+| Quddús | participated-in Badasht conference | God Passes By ¶88 |
+| Ṭáhirih | participated-in conference of Badasht | God Passes By ¶91 |
+| Mullá Báqir-i-Tabrízí | participated-in Badasht | The Báb: The Herald of the Day |
+| Mírzá Muḥammad-‘Alíy-i-Qazvíní | participated-in Badasht conference | Revelation of Bahá'u'lláh vol. 2 |
+| Mírzá Hádí, son of Mullá ‘Abdu'l-Vahháb-i-Qazvíní | participated-in Badásht gathering | Ẓuhúru'l-Ḥaqq vol. 3 |
+
+Correctly **excluded**: Mullá Ḥusayn (a Letter, but his Badasht claim is `visited`); Bahá'u'lláh and the Báb
+(at Badasht, but not Letters — the roster excludes them and the corpus states Bahá'u'lláh was "not included
+among the Letters"); Shoghi Effendi (mentions the Letters, is not one).
+
+An earlier version of this page claimed 6, arrived at by prose matching that counted Bahá'u'lláh and the Báb
+as Letters. That was wrong and is the reason the rule is now stated as two conditions.
+
+`participantsProvenance.derivedFrom` says which path answered: `graph-relations` for a group (a real edge),
+`claim-prose` for an event or place (recall, verify by proof span).
 
 Only now reach for passage search, to quote what you found:
 
