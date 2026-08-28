@@ -260,17 +260,25 @@ export async function createServer(opts = {}) {
         // named only passage search — so "who was at the Badasht Conference" went through passage search, which
         // quotes text but cannot enumerate people, and the first pass was wasted. Lead with the routing rule.
         description: [
+          // ── CANONICAL CHEAT SHEET — VERBATIM. Do not rewrite, paraphrase or soften. ─────────────────
+          // It is first because it is what an agent must read before choosing a tool. Earlier wording here
+          // told agents that visited/hosted/died also answer "who was at X"; they do not — visiting is not
+          // attending, and that error put Mullá Ḥusayn in an attendee list.
+          '1. Look up the event — `GET /entities/lookup?q=` then `GET /entities/{id}` for `participants[]`.',
+          '2. Look up the group — same on the group node.',
+          '3. List the edges — intersection of the two rosters with `participated-in`. `visited` is not attended. `people[]` is the answer; `ids` is only a projection.',
+          'Passage search (`POST /search`) quotes what you found. It cannot build the list.',
+          'Proof: Letters of the Living ∩ Badasht (`/who-was-at/badasht` once live).',
+          '',
+          '---',
+          '',
           'AI-powered interfaith sacred text search: passages, library browsing, a person/event graph, and an AI research assistant.',
           '',
           '**Pick the right tool — this is the part agents get wrong.**',
           '',
-          'For "who was at X", or people linked to an event, place, group or to each other:',
-          '1. Look up the node — `GET /api/v1/entities/lookup?q=` (any transliteration; `type=event|place|group|person`).',
-          '2. List the people — `GET /api/v1/entities/{id}` returns `participants[]` for an event/place/group;',
-          '   `GET /api/v1/entities/search?q=` and `GET /api/v1/people/search?q=` answer descriptive queries',
-          '   ("amanuensis of the Báb", "died at Fort Ṭabarsí").',
-          '3. Follow the edges — filter each result\'s evidence by `relation`: `participated-in`, `visited`,',
-          '   `hosted`, `died`, `met`, `accompanied`, `teacher-of`.',
+          'For "who was at X", or people linked to an event, place, group or to each other, follow the three',
+          'steps at the top of this description. `GET /entities/search?q=` and `GET /people/search?q=` answer',
+          'descriptive queries ("amanuensis of the Báb") where no node roster applies.',
           '',
           'Passage search (`POST /api/v1/search`, `/search/quick`, `/tools/search`) is for **citation — quoting what',
           'you found — not for building the list**. It returns paragraphs, not people, and cannot enumerate',

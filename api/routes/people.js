@@ -32,7 +32,7 @@ const EVIDENCE = {
   type: 'object',
   description: 'One CITED claim supporting this person’s link to the query. Always verify via proof/paraId.',
   properties: {
-    relation: { type: 'string', description: 'The edge type: participated-in, visited, hosted, died, met, accompanied, related-to, teacher-of, characterized-as, …. THIS is what you filter on to answer "who was at X".', example: 'participated-in' },
+    relation: { type: 'string', description: 'The edge type: participated-in, visited, hosted, died, met, accompanied, related-to, teacher-of, characterized-as, …. For "who was at X" the edge is `participated-in`. VISITED IS NOT ATTENDED — visiting, hosting and dying at a place are different facts and do not answer who took part.', example: 'participated-in' },
     statement: { type: 'string', description: 'The claim in one line, subject — relation — object.', example: 'Quddús — participated-in Badasht conference' },
     source: { type: 'string', nullable: true, description: 'Title of the book the claim was extracted from.', example: 'The Dawn-Breakers' },
     sourceAbbr: { type: 'string', nullable: true, description: 'Short form of the source title (DB, GPB).', example: 'DB' },
@@ -63,8 +63,8 @@ const BADASHT_EXAMPLE = [
   '**Worked example — Letters of the Living ∩ `participated-in` Badasht Conference:**',
   '1. `GET /api/v1/entities/lookup?q=Badasht` → `Badasht Conference` (type `event`, id 1264029).',
   '2. `GET /api/v1/entities/{id}` → `participants[]`, each with `relations` and cited `evidence`.',
-  '3. Keep those whose `relations` include `participated-in` (`visited` / `hosted` / `died` answer '
-    + '"who was there" too — the relation is yours to filter, nothing is dropped for you).',
+  '3. Keep those whose `relations` include `participated-in`. `visited` is not attended: it is a different '
+    + 'fact, shown and labelled, not folded into the answer.',
   '4. Intersect with the Letters of the Living: `GET /api/v1/entities/lookup?q=Letters of the Living` for the '
     + 'group node, or match the returned people against it.',
   '5. Only now use passage search (`sifter_search`) to QUOTE what you found. It cannot build the list.',
@@ -185,7 +185,7 @@ export default async function peopleRoutes(server) {
             mentionCount: { type: 'integer' },
             participants: {
               type: 'array',
-              description: 'EVENT/PLACE/GROUP ONLY. People whose cited claims mention this node. Filter `relations` by participated-in / visited / hosted / died to answer "who was at X".',
+              description: 'EVENT/PLACE/GROUP ONLY. People whose cited claims mention this node. For "who was at X" keep `relations` containing `participated-in`; `visited`, `hosted` and `died` are different facts and are NOT attendance. Worked example: /who-was-at/badasht.',
               items: {
                 type: 'object',
                 properties: {
@@ -331,8 +331,8 @@ export default async function peopleRoutes(server) {
         note: 'event participation is not a structured edge: claims name the event inside their statement text '
           + 'rather than pointing target_entity_id at it. GET /entities/{id} on an event therefore returns '
           + '`participants` derived from claim prose (labelled in participantsProvenance), and '
-          + 'GET /entities/search?q=<event> returns the same evidence. Filter by relation: participated-in, '
-          + 'visited, hosted, died.',
+          + 'GET /entities/search?q=<event> returns the same evidence. For attendance filter by relation '
+          + '`participated-in`; `visited`, `hosted` and `died` are different facts and are not attendance.',
         howToList: 'GET /api/v1/entities/lookup?q=Badasht → id → GET /api/v1/entities/{id} → participants[]',
       },
       rateLimit: { perKeyPerHour: 1000, globalPerMinute: 100, note: 'ask for a raised per-key limit for bulk work' },

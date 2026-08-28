@@ -82,7 +82,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, 
     <section class="wwa-list" aria-label="Attendees">
       <h2>{attendees.length} {attendees.length === 1 ? 'person' : 'people'} in both rosters</h2>
       {attendees.map((p) => (
-        <article class="wwa-person">
+        <article class="wwa-person" data-attendee={p.name}>
           <h3><a href={`/biography?id=${p.id}`}>{p.name}</a></h3>
           <ul class="wwa-ev">
             {p.evidence.map((e) => (

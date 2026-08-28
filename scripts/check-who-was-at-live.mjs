@@ -30,15 +30,18 @@ const check = (ok, msg) => (ok ? pass : fail).push(msg);
 check(res.status === 200, `GET ${URL_PATH} → ${res.status} (want 200)`);
 check(ms < 20000, `latency ${(ms / 1000).toFixed(1)}s (agent client budget 20s)`);
 
-// The attendee list. Names may appear elsewhere on the page (e.g. an "excluded, and why" section), so the
-// attendee block is delimited explicitly by the page for this check.
+// The attendee list. Read the NAMES the page marks, not the block's raw text: a source book is titled
+// "Mullá Ḥusayn" and is cited under Quddús, so a substring search over the block reported him as an
+// attendee when he is correctly absent. Assert on the page's own machine-readable claim instead.
 const block = (html.match(/<!--attendees:start-->([\s\S]*?)<!--attendees:end-->/) || [])[1] || '';
 check(block.length > 0, 'page marks its attendee block');
+const attendees = [...block.matchAll(/data-attendee="([^"]+)"/g)].map((m) => m[1]);
+check(attendees.length > 0, `page marks each attendee by name (found ${attendees.length})`);
 
-for (const n of MUST_INCLUDE) check(block.includes(n), `attendee present: ${n}`);
-for (const [n, why] of MUST_EXCLUDE_AS_ATTENDEE) check(!block.includes(n), `NOT an attendee: ${n} (${why})`);
+for (const n of MUST_INCLUDE) check(attendees.some((a) => a.includes(n)), `attendee present: ${n}`);
+for (const [n, why] of MUST_EXCLUDE_AS_ATTENDEE) check(!attendees.some((a) => a.includes(n)), `NOT an attendee: ${n} (${why})`);
 // Mullá Ḥusayn must not be an attendee, but MUST appear on the page labelled `visited`.
-check(!block.includes('Mullá Ḥusayn'), 'NOT an attendee: Mullá Ḥusayn (visited ≠ attended)');
+check(!attendees.some((a) => a === 'Mullá Ḥusayn'), 'NOT an attendee: Mullá Ḥusayn (visited ≠ attended)');
 check(/Mullá Ḥusayn[\s\S]{0,400}visited/.test(html), 'Mullá Ḥusayn shown elsewhere, labelled visited');
 
 // Evidence must be on the page, per person.

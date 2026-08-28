@@ -4,7 +4,7 @@
 
 1. **Look up the node** — `GET /api/v1/entities/lookup?q=Badasht` (any transliteration; `type=event|place|group|person`).
 2. **List the people** — `GET /api/v1/entities/{id}` → `participants[]` for an event/place/group; `GET /api/v1/entities/search?q=` for descriptive queries.
-3. **Follow the edges** — filter evidence by `relation`: `participated-in`, `visited`, `hosted`, `died`, `met`, `accompanied`.
+3. **List the edges** — intersection of the two rosters with `participated-in`. **`visited` is not attended.**
 
 **Passage search (`/api/v1/search`, `/search/quick`, `/tools/search`) is for citation — quoting what you found — not for building the list.** It returns paragraphs, not people.
 
@@ -70,8 +70,8 @@ curl -H "X-API-Key: $KEY" \
 ```
 
 Keep the participants whose `relations` include `participated-in`, then intersect with the Letters of the
-Living. `visited`, `hosted` and `died` also answer "who was there" — the relation is yours to filter, and
-nothing is dropped on your behalf.
+Living. **`visited` is not attended** — visiting, hosting and dying at a place are different facts; they are
+shown and labelled (see /who-was-at/badasht) but never folded into the attendance answer.
 
 **The proof query is a RULE, not a headcount** (BA + Tester, 2026-08-28). "Letters of the Living who
 participated in Badasht" means BOTH of:

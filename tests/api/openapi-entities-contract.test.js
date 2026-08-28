@@ -123,6 +123,32 @@ describe('OpenAPI contract — people/entity graph', () => {
     });
   });
 
+  // The canonical cheat sheet is verbatim and FIRST. Earlier wording told agents that visited/hosted/died
+  // also answer "who was at X" — they do not, and that error is what put a visitor in an attendee list.
+  describe('canonical cheat sheet leads the spec', () => {
+    const d = () => spec.info?.description || '';
+    it('starts with step 1, before any prose about the product', () => {
+      expect(d().trimStart()).toMatch(/^1\. Look up the event/);
+    });
+    it('carries all three steps and the passage-search caveat', () => {
+      expect(d()).toMatch(/2\. Look up the group/);
+      expect(d()).toMatch(/3\. List the edges/);
+      expect(d()).toMatch(/Passage search \(`POST \/search`\) quotes what you found\. It cannot build the list\./);
+    });
+    it('states that visited is not attended, and names the proof page', () => {
+      expect(d()).toMatch(/`visited` is not attended/);
+      expect(d()).toMatch(/\/who-was-at\/badasht/);
+    });
+    it('says people[] is the answer and ids only a projection', () => {
+      expect(d()).toMatch(/`people\[\]` is the answer; `ids` is only a projection/);
+    });
+    it('NOWHERE claims visited/hosted/died answer "who was there"', () => {
+      const all = JSON.stringify(spec);
+      expect(all).not.toMatch(/visited.{0,40}answer .who was there/i);
+      expect(all).not.toMatch(/participated-in \/ visited \/ hosted \/ died to answer/i);
+    });
+  });
+
   describe('no schema-free routes left in this family', () => {
     it.each([
       '/api/v1/entities/search',

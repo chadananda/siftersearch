@@ -10,6 +10,24 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   <h1>Public Search API</h1>
   <p class="subtitle">Integrate AI-powered sacred text search into your applications</p>
 
+  <!-- CANONICAL CHEAT SHEET — VERBATIM. Do not rewrite, paraphrase or soften.
+       It sits above everything else because this page previously listed only passage search, and an agent
+       reading it went to passage search for "who was at X" — which quotes text but cannot enumerate people. -->
+  <aside class="cheat">
+    <h2 class="cheat-h">Answering &ldquo;who was at X&rdquo; &mdash; read this first</h2>
+    <ol class="cheat-steps">
+      <li>Look up the event &mdash; <code>GET /entities/lookup?q=</code> then <code>GET /entities/&#123;id&#125;</code> for <code>participants[]</code>.</li>
+      <li>Look up the group &mdash; same on the group node.</li>
+      <li>List the edges &mdash; intersection of the two rosters with <code>participated-in</code>. <strong><code>visited</code> is not attended.</strong> <code>people[]</code> is the answer; <code>ids</code> is only a projection.</li>
+    </ol>
+    <p class="cheat-tail">
+      Passage search (<code>POST /search</code>) quotes what you found. It cannot build the list.
+    </p>
+    <p class="cheat-tail">
+      Proof: Letters of the Living &cap; Badasht &mdash; <a href="/who-was-at/badasht">/who-was-at/badasht</a>.
+    </p>
+  </aside>
+
   <p>
     The SifterSearch Public API provides programmatic access to our hybrid search system with
     full AI analysis, scoring, and highlighting. Use it to build custom search interfaces,
@@ -824,3 +842,11 @@ for result in data['results']:
     <li><strong>Persist researchContext</strong> - Pass the assistant's prior context back on follow-up chat turns to maintain coherent multi-turn research sessions.</li>
   </ul>
 </DocsLayout>
+
+<style>
+  .cheat { margin: 1.5rem 0 2rem; padding: 1rem 1.25rem; background: var(--surface-1); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: .5rem; }
+  .cheat-h { margin: 0 0 .6rem; font-size: 1rem; color: var(--text-primary); }
+  .cheat-steps { margin: 0 0 .6rem; padding-left: 1.2rem; color: var(--text-secondary); }
+  .cheat-steps li { margin: .3rem 0; }
+  .cheat-tail { margin: .35rem 0 0; color: var(--text-secondary); font-size: .925rem; }
+</style>
