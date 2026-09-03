@@ -74,3 +74,6 @@ data/siftersearch-gazetteer.json
 
 # wrangler local runtime state (sqlite WAL/SHM, never committable)
 .wrangler/
+
+# --- standard hygiene ---
+*conflicted copy*

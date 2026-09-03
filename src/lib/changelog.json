@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-03T05:50:38.379Z",
+  "generated": "2026-09-03T23:20:29.421Z",
   "entries": [
+    {
+      "hash": "e461275a",
+      "date": "2026-09-02",
+      "type": "Chore",
+      "description": "Sync outstanding laptop work before boss migration",
+      "scope": null
+    },
     {
       "hash": "67513752",
       "date": "2026-08-28",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Ṭabarsí martyr roster lookup (grounding)",
       "scope": null
-    },
-    {
-      "hash": "c5d62c08",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Death fact first + citation borrowed from a martyrdom fact — 'died at X' queries see every death and can link it",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-02": [
+      {
+        "hash": "e461275a",
+        "date": "2026-09-02",
+        "type": "Chore",
+        "description": "Sync outstanding laptop work before boss migration",
+        "scope": null
+      }
+    ],
     "2026-08-28": [
       {
         "hash": "67513752",
@@ -7069,15 +7078,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Ṭabarsí martyr roster lookup (grounding)",
-        "scope": null
-      }
-    ],
-    "2026-06-25": [
-      {
-        "hash": "c5d62c08",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Death fact first + citation borrowed from a martyrdom fact — 'died at X' queries see every death and can link it",
         "scope": null
       }
     ]
