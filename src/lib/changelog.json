@@ -1,6 +1,13 @@
 {
-  "generated": "2026-08-28T23:34:11.182Z",
+  "generated": "2026-09-03T05:50:38.379Z",
   "entries": [
+    {
+      "hash": "67513752",
+      "date": "2026-08-28",
+      "type": "Fixed",
+      "description": "Move the /who-was-at/badasht link onto the Letters of the Living card",
+      "scope": "docs"
+    },
     {
       "hash": "2f5abb52",
       "date": "2026-08-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Death fact first + citation borrowed from a martyrdom fact — 'died at X' queries see every death and can link it",
       "scope": null
-    },
-    {
-      "hash": "2845f8f2",
-      "date": "2026-06-25",
-      "type": "Other",
-      "description": "Candidate-scoped predicate search + integrated explanation (query-matched evidence woven inline with source links); episodes+death as evidence; frontend renders the integrated answer (drops summary+list)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-08-28": [
+      {
+        "hash": "67513752",
+        "date": "2026-08-28",
+        "type": "Fixed",
+        "description": "Move the /who-was-at/badasht link onto the Letters of the Living card",
+        "scope": "docs"
+      },
       {
         "hash": "2f5abb52",
         "date": "2026-08-28",
@@ -7071,13 +7078,6 @@
         "date": "2026-06-25",
         "type": "Other",
         "description": "Death fact first + citation borrowed from a martyrdom fact — 'died at X' queries see every death and can link it",
-        "scope": null
-      },
-      {
-        "hash": "2845f8f2",
-        "date": "2026-06-25",
-        "type": "Other",
-        "description": "Candidate-scoped predicate search + integrated explanation (query-matched evidence woven inline with source links); episodes+death as evidence; frontend renders the integrated answer (drops summary+list)",
         "scope": null
       }
     ]
