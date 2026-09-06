@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-03T23:20:29.421Z",
+  "generated": "2026-09-06T05:14:25.132Z",
   "entries": [
+    {
+      "hash": "4c7bbf49",
+      "date": "2026-09-03",
+      "type": "Chore",
+      "description": "Standard .gitignore hygiene",
+      "scope": null
+    },
     {
       "hash": "e461275a",
       "date": "2026-09-02",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Ṭabarsí martyr-roster pass (mark all roster martyrs as died-at-Ṭabarsí with Nabíl's specific detail)",
       "scope": null
-    },
-    {
-      "hash": "491c52ca",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Ṭabarsí martyr roster lookup (grounding)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-03": [
+      {
+        "hash": "4c7bbf49",
+        "date": "2026-09-03",
+        "type": "Chore",
+        "description": "Standard .gitignore hygiene",
+        "scope": null
+      }
+    ],
     "2026-09-02": [
       {
         "hash": "e461275a",
@@ -7071,13 +7080,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Ṭabarsí martyr-roster pass (mark all roster martyrs as died-at-Ṭabarsí with Nabíl's specific detail)",
-        "scope": null
-      },
-      {
-        "hash": "491c52ca",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Ṭabarsí martyr roster lookup (grounding)",
         "scope": null
       }
     ]

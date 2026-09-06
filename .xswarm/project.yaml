@@ -1,0 +1,60 @@
+# Entry point for orchestrator agents. Points at what this project
+# already has; project-init moved nothing to create this.
+recipe: marketing-site@1
+mode: active          # review | active | reactive | periodic | parked
+program: bahai-history-funnel   # ~/.xswarm/programs/
+
+docs:
+  prd:
+    - planning/PRD.md
+    - planning/RAG-Enhancement-PRD.md
+    - planning/RAG-quality-PRD.md
+    - planning/ocean-search-testing-prd.md
+  router: CLAUDE.md
+  deploy:
+    - wrangler.jsonc
+
+audit:
+  targets: { performance: 90, accessibility: 100, seo: 100 }
+  ratchet: true
+
+authority:
+  may: [continue_plan, run_tests, run_audits, fix_from_audit]
+  escalate: [commit, deploy_production, deploy_staging, migrate_data, outward_facing]
+
+metrics:
+  # KPIs mature with the product. The measure that matters is the CURRENT
+  # stage's; earlier stages stay as health checks, later ones are not yet
+  # meaningful. Advance a stage when its measure is met for a month.
+  #
+  #   concept     the idea is not settled            no build measure — the work is a decision
+#   pre-launch  not published yet                  progress to launch, not traffic
+#   reach       are people arriving at all?        traffic
+  #   engagement  are they doing the thing?          depth, return visits, actions
+  #   conversion  are they taking the valued action? signups, tickets, enquiries
+  #   revenue     are they paying, and staying?      revenue, retention
+  #
+  stage: growth
+  stage_note: audience is small; grow it before optimising anything downstream
+  # PROPOSED 2026-09-05. Correct or replace.
+  # public site — traffic is the starting measure
+  source: cloudflare
+  # Traffic is leading; this is the measure that matters. Progress is
+  # movement toward the goal, not motion.
+  valued_action:
+    name: searches_run
+    from: app telemetry — not built
+    measures: searches performed, and results opened
+    target: TBD — engagement is the measure here, not signups
+  kpis:
+    - name: weekly_pageloads
+      from: cloudflare
+      measures: 7-day pageloads, requestHost
+      target: 107 (from a 57 baseline)
+    - name: weekly_trend
+      from: cloudflare
+      measures: period over previous period
+      target: not negative two periods running
+
+gate:
+  visual_paths: ["src/pages/**", "src/components/**"]
