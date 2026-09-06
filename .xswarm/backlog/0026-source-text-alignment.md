@@ -13,6 +13,7 @@ acceptance:
   - text: alignment becomes a gated stage, or its absence from the gate is a recorded decision
   - text: the three no-authored-original works are excluded by rule, not left permanently red
   - text: a candidate original is confirmed by text overlap, never by title match alone
+  - text: the published source a translation actually names is preferred over any other text of the same work, including a better modern edition
   - text: works are classified into the five tiers, and coverage is reported per tier
   - text: where a work has recensions or several source languages, the choice is recorded as an editorial decision with its reason
   - text: tier 1 completes without waiting on the contested tiers
@@ -89,10 +90,20 @@ report stays permanently red and stops being read.
 * `content.original_text`, counted by `docs-repo.enrichmentCoverage`
 
 ## Making it tractable
-It cannot be run as one job. Decompose by cost, cheapest first, because the
-cheap tiers are also the highest-authority:
+It cannot be run as one job.
 
-    1  in-corpus, Bahá'í      original already in the library, single original.
+**Identification comes first, and the tier is its result.** An earlier version
+of this item tiered by "is the original already in the corpus?", which is the
+wrong first question: a text we already hold may be the wrong edition, and
+using it because it is convenient is how a translator's actual source gets
+silently replaced. Establish what the translation was made from (0029), then
+ask whether we hold that. Cost is a consequence of the answer, never a reason
+to change it.
+
+Decompose by cost, cheapest first — the cheap tiers are also the
+highest-authority:
+
+    1  in-corpus, Bahá'í      identified source already in the library.
                               245 Arabic + 23 Persian for the Báb alone.
                               No acquisition, no scholarly judgement.
     2  in-corpus, other       original already held for any tradition.
