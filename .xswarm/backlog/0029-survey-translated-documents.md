@@ -22,8 +22,14 @@ content and metadata is extracted into a SQLite db… All that is indexed by a
 separate Melisearch engine"). SQLite is a derived artefact and must never be
 read as the library — doing so produced two wrong conclusions in one session.
 
-Library root: `~/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library`
-On the Mac, NOT on Boss. 11,660 .md files:
+Library home: **Tower-NAS**. Chad, 2026-09-06: "The data is on Tower-NAS. It's a
+Dropbox folder synced on the laptop." The path below is a SYNC MOUNT, not the
+source — treat it as a local view that may lag or be partially materialised:
+
+    ~/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library
+
+Boss cannot see it at all, which is why the harvest cannot simply be dispatched
+there the way other work is. 11,660 .md files:
 
     Baha'i 8096 · Judaism 1306 · Buddhist 836 · -sites 535 · Islam 295
     Christian 155 · Zoroastrian 109 · Tao 98 · Hindu 88 · Confucian 65
@@ -41,6 +47,13 @@ Three facts that set the plan:
 
 3. **The 66,000 OceanOfLights pages described in `oceanoflights.js` are not
    here.** `-sites/` holds oceanlibrary.com only (535 files).
+
+4. **Counts taken over a Dropbox sync are provisional.** Selective sync can
+   leave placeholders that `find` still counts, so 11,660 is an upper bound
+   until verified against Tower-NAS itself. Any harvest must read from the NAS
+   or confirm full materialisation first — silently processing a placeholder
+   as an empty document would mark works "extracted, no content" and look
+   finished.
 
 ## Correction worth keeping
 An earlier pass read the partial SQLite (17 Islamic docs, 1 Buddhist) and
