@@ -9,6 +9,17 @@ acceptance:
   - text: the suite passes, or every remaining failure is individually justified in writing
   - text: git commit works without SKIP_CHECKS
   - text: the failing count appears in the daily ops report, so a red suite is visible
+decision: |
+  `pnpm test` on main: 22 files failing, 95 tests failing, 1814 passing. The
+  pre-commit hook aborts on failure, so no commit succeeds without SKIP_CHECKS.
+
+  22 files failing suggests a few shared causes rather than 95 separate bugs —
+  a moved fixture, a schema drift, a changed import.
+
+  CHOOSE ONE:
+    A. Dispatch it now       — an agent finds the cause count and fixes what it can
+    B. Tell me the cause     — if you already know why, it becomes a small item
+    C. Leave it, use SKIP_CHECKS — faster today; the gate stops catching regressions
 ---
 
 ## Finding, 2026-09-06

@@ -10,6 +10,24 @@ class: never
 acceptance:
   - text: a mode is chosen and the queue is enqueueable again
   - text: a spend ceiling is set so it does not need re-deciding every week
+decision: |
+  The extraction pipeline finished everything "plan" mode allows and stopped.
+  Its own daily report says: "plan exhausted — no enqueueable work left
+  (7 husks, 2 language-parked, 0 quarantined); switch mode to 'general' when
+  ready to spend". Nothing queued, nothing running, $0.00 spend, 0 books
+  processed — for several days, while the report subject read "all nominal".
+
+  General mode processes the remaining corpus and costs money per book. Nobody
+  has recorded what a book costs or how many remain, so the ceiling matters
+  more than the switch.
+
+  CHOOSE ONE:
+    A. Switch to general, ceiling $X/month  — extraction resumes; everything
+       downstream (HyPE coverage, concept extraction, encounters) unblocks
+    B. Stay in plan mode                    — nothing more can be extracted;
+       say so and the daily alert stops firing
+    C. Wait for item 0019                   — the claims investigation may show
+       encounter data already exists unused, changing what you would pay for
 ---
 
 ## Finding, 2026-09-06
