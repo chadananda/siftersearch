@@ -1,6 +1,6 @@
 ---
 id: "0001"
-title: The curated history plan is complete — open grounding to the whole library?
+title: The grounding gate does not include the prerequisites — do not switch to general
 state: blocked
 blocked_on: Chad — switching to general mode means spending, and that is his call
 traces_to: .xswarm/GOAL.md
@@ -11,47 +11,45 @@ acceptance:
   - text: a mode is chosen and the queue is enqueueable again
   - text: a spend ceiling is set so it does not need re-deciding every week
 decision: |
-  CORRECTED 2026-09-06 after Chad questioned the earlier reading, which was
-  misleading. "Plan exhausted" does NOT mean extraction is finished.
+  CORRECTED TWICE, 2026-09-06. The first version said "extraction finished".
+  The second said "the curated plan is complete, open the library?". Both were
+  wrong in the same direction: they treated the grounding processor's notion of
+  done as the plan's notion of done. It is not.
 
-  There are three grounding modes, from the processor's own comment:
-    plan      follow the hardcoded history plan (integration-phases.js) —
-              a curated, ordered list of specific doc ids
-    override  hand-enrolled queue, for development
-    general   "default later, once the whole plan is done" — process ANY
-              unprocessed document in the library
+  **The recommendation is now: do NOT switch to general.** There are at least
+  two prerequisites the gate cannot see, both of which you specified.
 
-  It has been in `plan` mode. The curated roadmap is finished. **The library
-  has not been touched.** The plan is ~10 phases beginning with the seed —
-  God Passes By and The Dawn-Breakers, "the authority seed... the core cast
-  that every later book resolves against" — then the Doctrinal Spine, where
-  the file states "ORDER IS LOAD-BEARING: the interpretive lexicon must
-  accumulate before the lower texts whose symbols draw on it are extracted".
+  1. **Dial in concept search on the seeded books first.** The point of seeding
+     the doctrinal spine in a load-bearing order was to test and tune concept
+     retrieval on those books before spending on the rest of the library.
+     That test has not happened. Filed as 0025.
 
-  So: the deliberately-ordered foundation is laid. Concept extraction across
-  the wider library has barely started, exactly as you said, because general
-  mode has never run.
+  2. **Source-text alignment for translated paragraphs.** Your request, in the
+     code: `concepts/source-survey.js` opens "The prerequisite for 'fetch the
+     source for every translated canonical' (Chad, 2026-08-25)". Built and
+     measured — `align.js` uses Dice over monotonic alignment because index
+     matching was measured wrong on the Íqán. **It is not a gated stage**:
+     `plan.js` gates on disamb, reconcile, extract and hype only, and
+     `original_text` appears in neither plan.js nor processed.js. Filed as 0026.
 
-  The 7 husks are documents with zero paragraphs. The file records that a
-  previous "6 books are structurally blocked" conclusion was wrong — the plan
-  pointed at empty duplicates, and two were swapped to good copies. Two have
-  no good copy in the corpus at all: 420 The Life of the Báb (Mazandarání)
-  and 11498 The Astonishing Events... Nayríz. Those are acquisition problems,
-  not processing ones.
+  Concept extraction is also a SEPARATE TRACK from the entity pipeline that the
+  mode governs. It has run on six books, its promotion stage does not exist at
+  all (nothing writes `concept_entities`), and four spine texts are un-run —
+  Some Answered Questions, the Íqán, the Aqdas, the Hidden Words. Switching the
+  entity pipeline to general does nothing for any of that. Filed as 0027.
 
   CHOOSE ONE:
-    A. Switch to general with a ceiling — grounding opens to the whole
-       library. This is the main job, not a resumption. Unknown: cost per
-       book and how many remain, so the ceiling matters more than the switch.
-    B. Stay in plan, extend the plan — add specific books to
-       integration-phases.js instead. Keeps the load-bearing order and the
-       spend bounded. Right if sequence still matters more than coverage.
-    C. Neither yet — do 0019 first. If encounter claims already exist unused,
-       what you would be paying to generate changes.
+    A. Hold in plan mode; do 0025, 0026, 0027 first  — RECOMMENDED. The gate is
+       measuring the wrong finish line; open the library only once the
+       prerequisites you set are actually met.
+    B. Switch to general anyway — right only if breadth of entity coverage now
+       matters more than concept quality and source alignment.
+    C. Extend the plan with specific books — bounded spend, keeps the ordering,
+       but leaves the same prerequisites unmet.
 
-  What I still cannot tell you: the cost per book, and how many library
-  documents are unprocessed. Both are needed to set a sensible ceiling and
-  neither is in the reports. Finding them is a small job.
+  The reporting defect underneath all of this is filed as 0028: a pipeline that
+  reports "plan exhausted" while two specified prerequisites are untouched is
+  measuring stage completion and calling it project completion.
 ---
 
 ## Finding, 2026-09-06 — corrected
