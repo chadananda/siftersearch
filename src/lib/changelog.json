@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-06T05:14:25.132Z",
+  "generated": "2026-09-06T05:15:40.720Z",
   "entries": [
+    {
+      "hash": "ee7e3a62",
+      "date": "2026-09-05",
+      "type": "Other",
+      "description": "Project state (SKIP_LINT — pre-existing lint warnings, test gate kept)",
+      "scope": null
+    },
     {
       "hash": "4c7bbf49",
       "date": "2026-09-03",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Directly enrich Aḥmad-i-Ibdál Ṭabarsí martyrdom (DB ¶1303)",
       "scope": null
-    },
-    {
-      "hash": "ed7caca1",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Ṭabarsí martyr-roster pass (mark all roster martyrs as died-at-Ṭabarsí with Nabíl's specific detail)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-05": [
+      {
+        "hash": "ee7e3a62",
+        "date": "2026-09-05",
+        "type": "Other",
+        "description": "Project state (SKIP_LINT — pre-existing lint warnings, test gate kept)",
+        "scope": null
+      }
+    ],
     "2026-09-03": [
       {
         "hash": "4c7bbf49",
@@ -7073,13 +7082,6 @@
         "date": "2026-06-26",
         "type": "Fixed",
         "description": "Directly enrich Aḥmad-i-Ibdál Ṭabarsí martyrdom (DB ¶1303)",
-        "scope": null
-      },
-      {
-        "hash": "ed7caca1",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Ṭabarsí martyr-roster pass (mark all roster martyrs as died-at-Ṭabarsí with Nabíl's specific detail)",
         "scope": null
       }
     ]
