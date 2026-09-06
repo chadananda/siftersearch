@@ -10,6 +10,8 @@ acceptance:
   - text: the bespoke home page chat interface is gone
   - text: the home page uses the same widget button that client sites will embed
   - text: one chat implementation exists, not two
+  - text: it is a web component, embeddable in a site that is not SifterSearch
+  - text: renamed from SifterChat to Anis, including in the widget manager
   - text: the question path is unchanged — same answers, same citations, through the widget
   - text: site builds and the responsive sweep passes
     check: "pnpm build"
@@ -26,6 +28,7 @@ Two chat surfaces means two answer paths, and the one you test is not the one
 visitors get. Unifying now means every later improvement — latency, entity
 disambiguation, follow-up — lands once and everywhere.
 
-## Name
-The companion is **Anis**. `SifterChat` becomes Anis; see 0016 first, because
-the name is already taken by something else.
+## Name — settled
+The companion is **Anis** (0016 resolved). `SifterChat` becomes Anis. The
+component published here is the same one every client site embeds, so the name
+travels with it.
