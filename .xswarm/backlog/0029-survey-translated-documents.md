@@ -16,6 +16,40 @@ acceptance:
   - text: documents whose original cannot be determined are marked unknown, never silently skipped
 ---
 
+## MEASURED, 2026-09-06 — the real shape of the corpus
+Files are the source of truth (Chad, 2026-09-06: "The library is in files… The
+content and metadata is extracted into a SQLite db… All that is indexed by a
+separate Melisearch engine"). SQLite is a derived artefact and must never be
+read as the library — doing so produced two wrong conclusions in one session.
+
+Library root: `~/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library`
+On the Mac, NOT on Boss. 11,660 .md files:
+
+    Baha'i 8096 · Judaism 1306 · Buddhist 836 · -sites 535 · Islam 295
+    Christian 155 · Zoroastrian 109 · Tao 98 · Hindu 88 · Confucian 65
+    Sikh 39 · Jain 28 · Jainism 0 (stray empty dir) · _retired-duplicates 10
+
+Three facts that set the plan:
+
+1. **Extraction is incomplete and gates everything.** 11,660 files on disk vs
+   4,982 documents in SQLite. An original cannot be attached to a paragraph
+   that was never extracted. Reconcile first; it is deterministic and cheap.
+
+2. **The originals are not on disk.** Only 4 language-suffixed files exist in
+   the entire library, so the `_en`/`_ar` stem pairing that makes OceanOfLights
+   a parallel corpus lives on the site, not locally. Acquisition is unstarted.
+
+3. **The 66,000 OceanOfLights pages described in `oceanoflights.js` are not
+   here.** `-sites/` holds oceanlibrary.com only (535 files).
+
+## Correction worth keeping
+An earlier pass read the partial SQLite (17 Islamic docs, 1 Buddhist) and
+concluded "the corpus is not interfaith", retiring the recension tier as
+imaginary. That was wrong. The tier is real and covers ~2,700 non-Bahá'í
+documents. The lesson is the one above: a derived subset invited a confident
+claim about a population it did not contain, which is the same error the survey
+itself warns about at line 214.
+
 ## Why this comes before any more alignment
 Chad, 2026-09-06: "Every book document with translated content should attempt to
 find and add the original for each paragraph. Huge research project."
