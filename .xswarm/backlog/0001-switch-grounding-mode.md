@@ -31,6 +31,8 @@ decision: |
      matching was measured wrong on the Íqán. **It is not a gated stage**:
      `plan.js` gates on disamb, reconcile, extract and hype only, and
      `original_text` appears in neither plan.js nor processed.js. Filed as 0026.
+     Chad, 2026-09-06: **CTAI is done — 11 works. The rest are in-corpus**,
+     against the 245 Arabic and 23 Persian originals already in the library.
 
   Concept extraction is also a SEPARATE TRACK from the entity pipeline that the
   mode governs. It has run on six books, its promotion stage does not exist at
