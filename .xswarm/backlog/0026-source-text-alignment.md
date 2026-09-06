@@ -1,10 +1,11 @@
 ---
 id: "0026"
-title: Align the remaining translated works — CTAI is done, the rest are in-corpus
+title: Original text for every translated paragraph in the library
 state: ready
 traces_to: docs/architecture/conceptual-track.md
 priority: P1
-size: L
+size: XL
+depends_on: ["0029"]
 acceptance:
   - text: every translated canonical outside CTAI has its in-corpus original identified, or is marked unlocatable
   - text: alignment runs against those originals and populates content.original_text
@@ -12,6 +13,9 @@ acceptance:
   - text: alignment becomes a gated stage, or its absence from the gate is a recorded decision
   - text: the three no-authored-original works are excluded by rule, not left permanently red
   - text: a candidate original is confirmed by text overlap, never by title match alone
+  - text: works are classified into the five tiers, and coverage is reported per tier
+  - text: where a work has recensions or several source languages, the choice is recorded as an editorial decision with its reason
+  - text: tier 1 completes without waiting on the contested tiers
 ---
 
 ## Problem
@@ -19,6 +23,38 @@ Chad asked on 2026-08-25 that every translation paragraph carry its source text
 as a field. `concepts/source-survey.js` records the request verbatim. He noted
 on 2026-09-06 that it had never been mentioned in any status — and it has not,
 because it is not gated and not reported.
+
+## Scope, Chad 2026-09-06
+
+> Every book document with translated content should attempt to find and add
+> the original for each paragraph. Huge research project.
+
+**Every translated document in the library**, not only the Bahá'í canon. The
+corpus is interfaith — the vocabulary in the pipeline names Baha'i, Christian,
+Islam, Judaism, Buddhist, Hindu, Sikh, Tao, Zoroastrian and Jain — so this
+reaches scripture, commentary and secondary works across all of them, over
+6.7M paragraphs.
+
+It is called a research project because the hard part is not alignment. The
+hard part is **bibliographic identification**: for each translated work,
+establishing which original-language work it renders, and locating a text of it.
+`align.js` already handles the mechanical half well and is measured.
+
+## Where the difficulty actually sits, by tradition
+This is not uniform work, and pretending it is will produce wrong originals:
+
+* **Single authored original** — the Bahá'í writings, the Qur'án. One text,
+  one language. The cleanest case.
+* **Multiple original languages in one work** — the Bible: Hebrew, Aramaic,
+  Greek. "The original" is a per-book question, sometimes per-passage.
+* **Recensions rather than an original** — Buddhist texts across Pali,
+  Sanskrit, Chinese and Tibetan; Hindu texts across recensions. Choosing one is
+  a scholarly judgement, and a silent choice is a misrepresentation.
+* **No authored original** — the three recorded exclusions, and there will be
+  more. Talks taken down by others.
+
+An alignment that attaches a Sanskrit recension to a translation made from the
+Chinese is wrong in a way no similarity score will catch.
 
 ## Status, Chad 2026-09-06: **CTAI is already done. Now the rest.**
 
@@ -51,6 +87,25 @@ report stays permanently red and stops being read.
   Shoghi Effendi renderings only, so no Aqdas, no Some Answered Questions).
 * `concepts/backfill-original.js`, `original-term.js`
 * `content.original_text`, counted by `docs-repo.enrichmentCoverage`
+
+## Making it tractable
+It cannot be run as one job. Decompose by cost, cheapest first, because the
+cheap tiers are also the highest-authority:
+
+    1  in-corpus, Bahá'í      original already in the library, single original.
+                              245 Arabic + 23 Persian for the Báb alone.
+                              No acquisition, no scholarly judgement.
+    2  in-corpus, other       original already held for any tradition.
+    3  external, unambiguous  one original, obtainable, licence permitting.
+    4  external, contested    recensions or multiple source languages. Needs a
+                              recorded editorial decision per work, not a fetch.
+    5  no original            excluded by rule, with the reason.
+
+Tier 1 is finishable and directly serves the doctrinal spine. Tier 4 is a
+standing scholarly programme and should never block the others.
+
+**Report coverage per tier.** A single global percentage over a task this
+shaped tells nobody anything.
 
 ## The discipline to preserve
 The survey "RANKS candidates but does not bind them. Title matching across

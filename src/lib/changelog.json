@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-06T20:20:35.173Z",
+  "generated": "2026-09-06T20:28:45.683Z",
   "entries": [
+    {
+      "hash": "fc183940",
+      "date": "2026-09-06",
+      "type": "Other",
+      "description": "CTAI complete, scope the in-corpus remainder",
+      "scope": null
+    },
     {
       "hash": "7eec5550",
       "date": "2026-09-06",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Search-corpus (cross-library passage search by person, authority-ranked) for Phase-B deep research",
       "scope": null
-    },
-    {
-      "hash": "a1a28c81",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Dump-paras (JSON paragraph range) for the person-sweep workers",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-06": [
+      {
+        "hash": "fc183940",
+        "date": "2026-09-06",
+        "type": "Other",
+        "description": "CTAI complete, scope the in-corpus remainder",
+        "scope": null
+      },
       {
         "hash": "7eec5550",
         "date": "2026-09-06",
@@ -7077,13 +7084,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Search-corpus (cross-library passage search by person, authority-ranked) for Phase-B deep research",
-        "scope": null
-      },
-      {
-        "hash": "a1a28c81",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Dump-paras (JSON paragraph range) for the person-sweep workers",
         "scope": null
       }
     ]
