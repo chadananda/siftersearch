@@ -1,0 +1,133 @@
+# Scholar harness — questions that separate a competent scholar from a search box.
+#
+# Each case states what a good answer must DO, not merely contain. A grader that
+# only string-matches will pass answers about the wrong person, so every case
+# carries `must_not` as well as `must`.
+#
+# expect.status:
+#   known      — the answer is established; `must` is checkable
+#   verify     — the expected answer needs Chad or a source check before it counts
+#   absent     — the correct answer is "not attested"; declining IS passing
+#
+# Seeded 2026-09-06 from real failures. Grow it from questions Anis is actually asked.
+
+categories:
+
+  precision:
+    why: |
+      The question asked must be the question answered. The archive answers
+      "when did he first believe" when asked "when did they first meet" —
+      a near-miss that reads as correct.
+    cases:
+      - id: prec-01
+        q: When did Mullá Ḥusayn first meet the Báb?
+        status: verify
+        must:
+          - distinguishes first meeting from the declaration of 22–23 May 1844
+          - places the encounter in the Báb's pre-revelation Karbilá period
+          - cites Balyuzi for the meeting in the home of Mullá Ṣádiq (Muqaddas)
+        must_not:
+          - answers with 22–23 May 1844 as the first meeting
+          - answers about Muḥammad-Ḥasan-i-Bushrú'í (his brother)
+          - answers about Mullá Ḵhudá-Baḵhs̱h-i-Qúc̱hání
+        note: |
+          Observed failure 2026-09-06. Both the biography card and Ask AI
+          returned the declaration date; Ask AI additionally answered about two
+          other men, precisely dated and sourced.
+      - id: prec-02
+        q: When did Mullá Ḥusayn declare his belief in the Báb?
+        status: known
+        must:
+          - gives the night of 22–23 May 1844
+        note: The companion question. Both must be answered, differently.
+
+  disambiguation:
+    why: |
+      Name similarity outranking identity is the most dangerous failure here —
+      it yields confident, sourced, precisely dated answers about the wrong person.
+    cases:
+      - id: dis-01
+        q: What is known about Muḥammad-Ḥasan-i-Bushrú'í?
+        status: known
+        must:
+          - identifies him as Mullá Ḥusayn's brother and a Letter of the Living
+        must_not:
+          - conflates him with Mullá Ḥusayn
+        note: The archive already records `brother:` on the Mullá Ḥusayn card.
+      - id: dis-02
+        q: Which Mullá Ṣádiq sounded the amended call to prayer in Shíráz?
+        status: known
+        must:
+          - identifies Mullá Ṣádiq-i-Khurásání, surnamed Ismu'lláhu'l-Aṣdaq, known as Muqaddas
+      - id: dis-03
+        q: Tell me about Ḥusayn Khán.
+        status: known
+        must:
+          - identifies the governor of Fárs, persecutor of the Báb
+        must_not:
+          - conflates him with Mullá Ḥusayn or Siyyid Ḥusayn-i-Yazdí
+
+  synthesis:
+    why: |
+      The questions a scholar asks are rarely answered by one passage. This is
+      the category that distinguishes the tool from a search box.
+    cases:
+      - id: syn-01
+        q: Which of the Letters of the Living had contact with the Báb before 1844?
+        status: verify
+        must:
+          - answers per person, with the evidence for each
+          - names which sources attest each contact
+          - states which Letters have no attested pre-1844 contact
+          - marks inference across sources as inference
+        must_not:
+          - asserts a general claim without per-person evidence
+        note: |
+          Chad's hypothesis, 2026-09-06: the Báb probably met almost all of the
+          Letters during the early Karbilá period, evidence scattered across
+          books. Recorded as hypothesis — the system assembles evidence, it does
+          not confirm the conclusion.
+      - id: syn-02
+        q: Do the recognition accounts of the Letters of the Living follow a common pattern?
+        status: verify
+        must:
+          - compares accounts across people rather than summarising one
+          - shows the passages the comparison rests on
+          - says plainly when the evidence set is too small to claim a pattern
+        note: Chad cites Mullá Ṣádiq's recognition in Kashan as following the pattern.
+
+  absence:
+    why: |
+      A scholar says "the sources do not record that." Declining is the correct
+      answer and must score as a pass, or the system learns to invent.
+    cases:
+      - id: abs-01
+        q: What did Mullá Ḥusayn eat on the morning of 23 May 1844?
+        status: absent
+        must:
+          - declines, and says the sources do not record it
+        must_not:
+          - offers a plausible reconstruction
+          - answers a different question instead
+      - id: abs-02
+        q: How many people attended the Conference of Badasht?
+        status: verify
+        must:
+          - gives the figure if attested, or says the sources differ, or declines
+        must_not:
+          - states a single number with false confidence
+
+  provenance:
+    why: Every claim must be checkable, or the archive is an opinion.
+    cases:
+      - id: prov-01
+        q: Where was Mullá Ḥusayn martyred, and what is the source?
+        status: known
+        must:
+          - gives the fort of Shaykh Ṭabarsí, 2 February 1849
+          - names a source and cites a passage
+      - id: prov-02
+        q: Give me a claim from the archive and show me the passage it rests on.
+        status: known
+        must:
+          - returns verbatim proof text with a document and paragraph reference

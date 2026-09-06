@@ -63,7 +63,13 @@ public/sw.js
 public/workbox-*.js
 data/meilisearch-dev/
 
-.claude/
+.claude/*
+# A negation cannot re-include a file whose parent DIRECTORY is excluded, so the
+# pattern above must exclude the contents (.claude/*), not the directory
+# (.claude/). The Stop gate has to travel with the repo: without it a dispatched
+# worker ends its turn with acceptance criteria failing and nothing notices.
+!.claude/hooks/
+!.claude/settings.json
 tests/chat/runs/results-*.json
 
 # Entity-pipeline scratch / research data dumps (regenerable; never commit)
