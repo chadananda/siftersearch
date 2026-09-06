@@ -32,6 +32,21 @@ search box does not:
 Seeded at `tests/scholar/queries.yaml` with 11 cases drawn from real failures
 observed 2026-09-06.
 
+## This does not start from nothing — read the existing work first
+`docs/jafar-conversational-analysis.md`, `docs/morning-report-final.md` and
+`docs/dialog-overnight-iteration-log.md` (April 2026) already contain:
+
+* a **scoring rubric** — depth, clarity, stereotype-avoidance, word-definitions,
+  assumption-challenge, teaching-clarity, evidence-quality
+* **97 scored conversations**, range 55–76%, only 6 at ≥70%
+* **nine named failure patterns** with dialog evidence
+* a re-test protocol: re-run the lowest-scoring dialogs, target +10 points
+
+That corpus is a far better harness than 11 hand-written cases. The right move
+is to **merge**: keep the categories here for factual correctness and
+provenance, which the rubric does not cover, and adopt the existing rubric and
+conversation set for posture and quality. Do not rebuild what exists.
+
 ## Why every case carries `must_not`
 A grader that only string-matches will pass an answer about the wrong person.
 The Mullá Ḥusayn failure produced a precisely dated, sourced answer — about his

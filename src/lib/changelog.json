@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-06T16:39:09.833Z",
+  "generated": "2026-09-06T16:42:17.813Z",
   "entries": [
+    {
+      "hash": "7eec5550",
+      "date": "2026-09-06",
+      "type": "Other",
+      "description": "The embeddable companion SifterSearch publishes",
+      "scope": null
+    },
     {
       "hash": "8e82ee01",
       "date": "2026-09-05",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Dump-paras (JSON paragraph range) for the person-sweep workers",
       "scope": null
-    },
-    {
-      "hash": "3a6fe200",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Remove throwaway probes",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-06": [
+      {
+        "hash": "7eec5550",
+        "date": "2026-09-06",
+        "type": "Other",
+        "description": "The embeddable companion SifterSearch publishes",
+        "scope": null
+      }
+    ],
     "2026-09-05": [
       {
         "hash": "8e82ee01",
@@ -7075,13 +7084,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Dump-paras (JSON paragraph range) for the person-sweep workers",
-        "scope": null
-      },
-      {
-        "hash": "3a6fe200",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Remove throwaway probes",
         "scope": null
       }
     ]

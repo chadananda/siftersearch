@@ -65,6 +65,13 @@ retrieval becomes. Two separate failures were visible in one question:
 
 The second is the dangerous one. A reader has no way to tell.
 
+## Corroborated by the April work
+`docs/dialog-overnight-iteration-log.md` records prompt iteration ceilinging at
+~65-70% with later versions regressing, and the best-scoring version
+fabricating quotes. That is what a good model does over an index that lacks the
+structure the question needs. It is evidence for the data explanation, not a
+separate problem.
+
 ## The standard to hit
 Chad: "that type of connection is obvious to the student who has read those
 books and should be explicit to the entity database." The Dawn-Breakers gives
