@@ -20,6 +20,14 @@ and `wip/` experimental scripts.
 - `watchdog.js` — checks PM2 process health, restarts stuck workers.
 - `setup-systemd.js`, `setup-tunnel.js`, `tunnel.js` — server setup.
 
+## Diagnostics — entity_claims / encounters (backlog 0019)
+- `encounter-claim-survey.mjs` — EXACT whole-table survey: every distinct relation with counts,
+  meeting-type claims, `target_entity_id` coverage, and person co-occurrence per paragraph from
+  `entity_mentions_v2`. Read-only, must run ON tower-nas. Findings: `docs/encounter-claims-inventory.md`.
+- `encounter-claim-survey-api.mjs` — same questions over the LIVE public API, for when tower-nas SSH is
+  down but the tunnel is up. Samples the top-N people by importance; cannot see `target_entity_id` or
+  `entity_mentions_v2` paragraphs. `SURVEY_PERSONS` / `SURVEY_OFFSET` / `SURVEY_CONCURRENCY`.
+
 ## Maintenance / one-off (root)
 - `truncate-embeddings.js`, `regenerate-embeddings.js` — embedding model migration.
 - `resegment-oversized.js` — re-segment paragraphs that exceed embedder context.

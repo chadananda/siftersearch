@@ -1,7 +1,7 @@
 ---
 id: "0019"
 title: Find out what encounter claims already exist before extracting anything
-state: ready
+state: active
 traces_to: .xswarm/GOAL.md
 priority: P1
 size: S
