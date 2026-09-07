@@ -80,14 +80,47 @@ The Báb carries 342 aliases (325 script, 17 Latin) as a FLAT UNTYPED ARRAY:
                     cipher | office | honorific
     valid_from      "the Báb" is anachronistic before 1844; "Bahá'u'lláh"
                     before ~1863
-    discriminating  does this form ALONE identify the person?
+    referential     the DISTRIBUTION of entities this form can denote, with
+                    corpus priors — never a boolean
     script          arabic | latin
     orthography     bahai | ascii | academic | other
 
-**`type` + `discriminating` fix a failure already observed.** `Bushrú'í` is a
-NISBA, shared by Mullá Ḥusayn and his brother Mírzá Muḥammad-Ḥasan-i-Bushrú'í.
-That is why Ask AI answered the Mullá Ḥusayn question with the brother. A
-resolver that knows a form is a nisba knows it cannot resolve on it alone.
+**CORRECTION — "discriminating" was wrong.** Chad, 2026-09-06: "the problem with
+'discriminating' vs non-discriminating is that it is not true. 'Ali' alone is
+sufficient for reference in the right context (like the tablet of Ahmad, for
+instance). Every name is like this. Most of the time a person is referenced by
+the shortest name if the context is clear. That is why we need disambiguation
+for search."
+
+Discriminating power is a property of (designation, CONTEXT) — never of the
+designation alone. And the inference runs opposite to the intuition: a writer
+uses the SHORTEST form that suffices, so a bare `Alí` signals that context is
+strongly determining, not that reference is weak.
+
+Measured over 18,663 person entities — bare forms denote distributions:
+
+    Mírzá 2,437 persons · Áqá 1,571 · Ḥájí 1,089 · Khán 1,014
+    Mullá 953 · Siyyid 757 · Muḥammad 742
+    tokens unique to ONE person: 9,496 of 14,775 (64%)
+    single-word person names in the index: 2,496
+
+The most frequent tokens are honorifics carrying no identifying content at all,
+while most tokens are unique — so ambiguity is wildly uneven and cannot be a
+per-name flag. `Bushrú'í` is a nisba shared by Mullá Ḥusayn and his brother
+Mírzá Muḥammad-Ḥasan-i-Bushrú'í, which is why Ask AI returned the brother. The
+fix is not to mark the nisba weak; it is to resolve it in context.
+
+### The real gap: disambiguation exists at extraction, not at query
+`assertDisambiguated(ctx, docId, { threshold: 0.98 })` gates claim extraction,
+and the context NOTE resolves who-is-who (`"Siyyid ‘Alí-Muḥammad" = the Báb`).
+That machinery works. **Nothing plays the NOTE's role at query time.** A user
+typing `Alí` or `Bushrú'í` gets string matching against a distribution, with no
+context to collapse it — which is precisely the observed failure.
+
+Query-time disambiguation needs the same inputs the extractor gets: the other
+terms in the query, the collection or period in scope, and the corpus priors
+above. Where it cannot resolve, it should say which candidates it is choosing
+between rather than silently picking one.
 
 ### Preserve the designation actually used — do not normalise it away
 The context NOTE already resolves designation → entity (`"Siyyid ‘Alí-Muḥammad"

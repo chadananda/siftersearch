@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-07T12:34:49.540Z",
+  "generated": "2026-09-07T13:00:28.168Z",
   "entries": [
+    {
+      "hash": "5d776262",
+      "date": "2026-09-07",
+      "type": "Other",
+      "description": "Designations are first-class; two axes, not one canonical form",
+      "scope": null
+    },
     {
       "hash": "5f0f3647",
       "date": "2026-09-06",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Derive connection-target tokens from display name so name fragments (baha/llah) don't leak into the place/event filter and exclude valid roster members",
       "scope": null
-    },
-    {
-      "hash": "0100c51b",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Narrow connection roster by query place/event terms — 'imprisoned with X at Máh-Kú' returns the co-prisoners, not X's whole episode-roster; broad 'met X' stays unfiltered",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-07": [
+      {
+        "hash": "5d776262",
+        "date": "2026-09-07",
+        "type": "Other",
+        "description": "Designations are first-class; two axes, not one canonical form",
+        "scope": null
+      }
+    ],
     "2026-09-06": [
       {
         "hash": "5f0f3647",
@@ -7077,13 +7086,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Derive connection-target tokens from display name so name fragments (baha/llah) don't leak into the place/event filter and exclude valid roster members",
-        "scope": null
-      },
-      {
-        "hash": "0100c51b",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Narrow connection roster by query place/event terms — 'imprisoned with X at Máh-Kú' returns the co-prisoners, not X's whole episode-roster; broad 'met X' stays unfiltered",
         "scope": null
       }
     ]
