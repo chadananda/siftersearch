@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-07T01:36:34.514Z",
+  "generated": "2026-09-07T01:38:56.145Z",
   "entries": [
+    {
+      "hash": "42b892db",
+      "date": "2026-09-06",
+      "type": "Other",
+      "description": "Reverse traversal impossible; Siyyid Kazim has no entity",
+      "scope": null
+    },
     {
       "hash": "fc183940",
       "date": "2026-09-06",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Dump-cast (importance-range cast batch, skips already-researched) for Phase-B scale-out",
       "scope": null
-    },
-    {
-      "hash": "d5d879dd",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Search-corpus (cross-library passage search by person, authority-ranked) for Phase-B deep research",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-06": [
+      {
+        "hash": "42b892db",
+        "date": "2026-09-06",
+        "type": "Other",
+        "description": "Reverse traversal impossible; Siyyid Kazim has no entity",
+        "scope": null
+      },
       {
         "hash": "fc183940",
         "date": "2026-09-06",
@@ -7077,13 +7084,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Dump-cast (importance-range cast batch, skips already-researched) for Phase-B scale-out",
-        "scope": null
-      },
-      {
-        "hash": "d5d879dd",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Search-corpus (cross-library passage search by person, authority-ranked) for Phase-B deep research",
         "scope": null
       }
     ]

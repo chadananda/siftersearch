@@ -48,16 +48,33 @@ answered at all**, because:
                              "Rashti's disciples" · "Rashti"
                              "S̱harḥ-i-Qaṣídih (Siyyid Káẓim-i-Rashtí)"  ← a BOOK
 
-**One of the central figures of Bábí history has no entity.** His 46 claims live
-as strings on the Báb's card. Anything asked from his side is unanswerable, and
-the same holds for every person who only ever appears as a claim target.
+**⚠ THE ABOVE WAS A BAD MEASUREMENT — corrected same day.** It used `limit=4` and
+never checked the result total. Siyyid Káẓim-i-Rashtí DOES have an entity:
+**id 1297046**, and it is excellent — 358 claims, 217 mentions, 48 aliases, a
+real summary, occurrences across 10 books (144 in Ẓuhúru'l-Ḥaqq Vol 3), with
+`met`, `hosted` and `visited` claims about the Báb from both directions.
 
-### Directionality is unreliable
-Paragraph `p7070656` (Dawn Over Mount Hira) produced BOTH
-`the Báb — hosted Siyyid Káẓim` and `the Báb — visited Siyyid Káẓim`. One
-passage, two opposite directions. Same pattern in ROLT (p7699496/97), and the
-pair carries both `taught-by` (17) and `teacher-of` (1), and both `prophesied`
-and `prophesied-by`. A graph query would return confidently wrong answers.
+The real defect is **one field**: `importance: 0` on an entity with 358 claims,
+while "the widow of Siyyid Káẓim-i-Rashtí" — one mention — scores 16. He is not
+missing, he is UNRANKED, so he sorts below his own widow, daughter and a harem
+attendant. Nothing about targets-as-strings is demonstrated; claims resolve from
+his side correctly.
+
+So the P0 narrows to: **`importance` is unpopulated for major entities, and the
+list endpoint returns unpopulated `mentionCount` too, so search cannot rank.**
+That single fix likely resolves the Mullá Ḥusayn symptom as well — his brother
+outranked him for the same reason.
+
+### Directionality — real but narrower than first stated
+Reciprocal pairs are CORRECT, not contradictory: `p6715850` yields both
+`the Báb — visited Siyyid Káẓim-i-Rashtí` and
+`Siyyid Káẓim-i-Rashtí — hosted the Báb`. That is one event seen from two sides
+and is exactly right.
+
+Genuine inversions do exist and are a minority: `p7070656` yields both
+`the Báb — hosted Siyyid Káẓim` AND `the Báb — visited Siyyid Káẓim` with the
+same subject, and `Siyyid Káẓim-i-Rashtí — appointed-by Mullá Ḥusayn` is
+backwards. Worth a sampled audit, not a rebuild.
 
 ### The list endpoint does not populate ranking fields
 `mentionCount` is ≤1 for all 3,000 entities sampled, while the DETAIL view gives
