@@ -16,7 +16,32 @@ acceptance:
   - text: documents whose original cannot be determined are marked unknown, never silently skipped
 ---
 
-## MEASURED, 2026-09-06 — the real shape of the corpus
+## ⚠ RETRACTED BELOW — read this first (2026-09-06, later)
+The production site reports its own contents on the homepage:
+
+    12 religions · 105 collections · 158,800 documents · 6.6M paragraphs
+    Baha'i 33,991 · Judaism 1,385 · Buddhist 858 · Islam 468 · Zoroastrian 117
+    Christian 203 · Hindu 126 · Tao 96 · Confucian 63 · Sikh 38 · Jain 24 · Jainism 5
+
+That is the library. Everything in the section below was measured against a
+4,982-document LOCAL SQLite subset and a supplemental markdown folder, and is
+wrong wherever it generalises from them:
+
+* **There is no ingestion gap.** Production holds MORE documents than the file
+  tree in every category flagged "100% missing" — Pali Canon, Talmud,
+  Baha'i/Books are all ingested. The gap was an artefact of the local subset.
+* **`Ocean Library` is not the library.** Its parent is `Ocean2.0 Supplemental/
+  ocean-supplemental-markdown` — one supplemental source among several.
+  Baha'i 33,991 in production vs 8,096 files confirms most content comes from
+  elsewhere (bahai-library.com, ~35,931 docs).
+* **6.6M paragraphs is right.** An earlier "correction" to 1.39M was taken from
+  the local file and should be ignored.
+
+Method rule this cost three wrong conclusions in one session: **never
+characterise the corpus from a local database or a single folder.** Ask
+production. The homepage alone would have answered it in one page load.
+
+## SUPERSEDED — measured against the local subset, retained for method only
 Files are the source of truth (Chad, 2026-09-06: "The library is in files… The
 content and metadata is extracted into a SQLite db… All that is indexed by a
 separate Melisearch engine"). SQLite is a derived artefact and must never be
