@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-07T04:35:30.515Z",
+  "generated": "2026-09-07T12:34:49.540Z",
   "entries": [
+    {
+      "hash": "5f0f3647",
+      "date": "2026-09-06",
+      "type": "Other",
+      "description": "Resolve names via original script; token-initial dot-below bug",
+      "scope": null
+    },
     {
       "hash": "5cc9d8c2",
       "date": "2026-09-06",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Narrow connection roster by query place/event terms — 'imprisoned with X at Máh-Kú' returns the co-prisoners, not X's whole episode-roster; broad 'met X' stays unfiltered",
       "scope": null
-    },
-    {
-      "hash": "e9ae562c",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Connection answer keeps deterministic recall but LLM writes concise per-member clauses (≤14 words, verb-first); cleaned-statement fallback so no roster member is dropped",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-06": [
+      {
+        "hash": "5f0f3647",
+        "date": "2026-09-06",
+        "type": "Other",
+        "description": "Resolve names via original script; token-initial dot-below bug",
+        "scope": null
+      },
       {
         "hash": "5cc9d8c2",
         "date": "2026-09-06",
@@ -7077,13 +7084,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Narrow connection roster by query place/event terms — 'imprisoned with X at Máh-Kú' returns the co-prisoners, not X's whole episode-roster; broad 'met X' stays unfiltered",
-        "scope": null
-      },
-      {
-        "hash": "e9ae562c",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Connection answer keeps deterministic recall but LLM writes concise per-member clauses (≤14 words, verb-first); cleaned-statement fallback so no roster member is dropped",
         "scope": null
       }
     ]

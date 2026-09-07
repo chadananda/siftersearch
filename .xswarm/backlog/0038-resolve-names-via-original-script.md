@@ -52,6 +52,51 @@ But `q=ملا حسین` also returns **0**. Search consults neither the original
 aliases nor the Latin ones — only the primary name. So the anchor is present and
 unused.
 
+## DESIGNATIONS ARE FIRST-CLASS — not one canonical form per person
+Chad, 2026-09-06: "are we talking about doing this for the most common form of
+the name only? Every person can be designated many ways (Ali Muhammad Shirazi /
+Ali qabl-i-Nabil / Ali / Siyyid-i-Bab / The Bab etc.)"
+
+No — every designation must resolve. There are TWO orthogonal axes, and an
+earlier draft of this item conflated them:
+
+    DESIGNATION   which appellation is used   'Alí-Muḥammad · Shírází ·
+                                              'Alí qabl-i-Nabíl · the Gate · the Báb
+    ORTHOGRAPHY   how that one is written     Qá'im / Qá’im / قائم / Qa'im
+
+### What exists today
+The Báb carries 342 aliases (325 script, 17 Latin) as a FLAT UNTYPED ARRAY:
+`["the Primal Point", "the Gate", "the Forerunner"]`. Three defects:
+
+* designation and orthography are mixed — `the Qá'im` vs `the Qá’im` differ only
+  by apostrophe, while `the Gate` vs `Siyyid ‘Alí-Muḥammad` are different kinds
+  of thing entirely;
+* Chad's own examples are ABSENT — no `'Alí qabl-i-Nabíl`, no `Shírází`;
+* some entries are malformed: `Siyyid ‘Alí-Muḥammad, the Báb (Qá’im /
+  Ṣáḥibu’z-Zamán battle` — truncated mid-parenthesis.
+
+### Required fields, each justified by an observed failure
+    type            personal-name | patronymic | nisba | title | epithet |
+                    cipher | office | honorific
+    valid_from      "the Báb" is anachronistic before 1844; "Bahá'u'lláh"
+                    before ~1863
+    discriminating  does this form ALONE identify the person?
+    script          arabic | latin
+    orthography     bahai | ascii | academic | other
+
+**`type` + `discriminating` fix a failure already observed.** `Bushrú'í` is a
+NISBA, shared by Mullá Ḥusayn and his brother Mírzá Muḥammad-Ḥasan-i-Bushrú'í.
+That is why Ask AI answered the Mullá Ḥusayn question with the brother. A
+resolver that knows a form is a nisba knows it cannot resolve on it alone.
+
+### Preserve the designation actually used — do not normalise it away
+The context NOTE already resolves designation → entity (`"Siyyid ‘Alí-Muḥammad"
+= the Báb`), but the claim then stores only the canonical name. Which form a
+source chose is EVIDENCE — of period, of the narrator's stance, of deference or
+hostility. Balyuzi's paragraph 164 uses the period-correct `Siyyid
+‘Alí-Muḥammad` for the 1841 Karbilá scene; the archive records `the Báb`, a
+title he did not yet bear. Store the surface form beside the resolved id.
+
 ## Proposed
 1. Fix the tokenizer for dot-below initials, with a regression test.
 2. **Index aliases** — all of them, both scripts. Alone this makes `Bábu'l-Báb`,
