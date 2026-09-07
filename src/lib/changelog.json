@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-07T13:06:56.130Z",
+  "generated": "2026-09-07T13:09:04.316Z",
   "entries": [
+    {
+      "hash": "df9cb4a1",
+      "date": "2026-09-07",
+      "type": "Other",
+      "description": "Normalized form as universal retrieval key; script varies too",
+      "scope": null
+    },
     {
       "hash": "a9e4c674",
       "date": "2026-09-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Replace too-broad 'Western believers who became Bahá'ís' sample with the specific, reliable 'first Western pilgrims to ‘Akká' (now 6/6 sample buttons return strong cited sets)",
       "scope": null
-    },
-    {
-      "hash": "897ecab6",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Tolerant JSON parse for the search LLM — salvage lead + complete match objects from malformed/truncated DeepSeek output instead of crashing the whole answer; raise maxTokens 1800→2600",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-07": [
+      {
+        "hash": "df9cb4a1",
+        "date": "2026-09-07",
+        "type": "Other",
+        "description": "Normalized form as universal retrieval key; script varies too",
+        "scope": null
+      },
       {
         "hash": "a9e4c674",
         "date": "2026-09-07",
@@ -7079,13 +7086,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Replace too-broad 'Western believers who became Bahá'ís' sample with the specific, reliable 'first Western pilgrims to ‘Akká' (now 6/6 sample buttons return strong cited sets)",
-        "scope": null
-      },
-      {
-        "hash": "897ecab6",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Tolerant JSON parse for the search LLM — salvage lead + complete match objects from malformed/truncated DeepSeek output instead of crashing the whole answer; raise maxTokens 1800→2600",
         "scope": null
       }
     ]

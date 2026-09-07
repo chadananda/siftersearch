@@ -73,6 +73,42 @@ the error that produced the duplicate records.
 
 Collisions are expected and handled downstream, not prevented by the key.
 
+### The iḍáfa axis — Arabic article vs Persian ezáfe
+Chad, 2026-09-06: "the idafa form between Arabic and Farsi varies for the same
+words."
+
+This is the mechanism behind a fragmentation already observed:
+
+    Shaykh Murtiday-i-Ansari    ← Persian ezáfe  (-i- / -y-i-)
+    Shaykh Murtada al-Ansari    ← Arabic article (al-)
+    Shaykh Murtada
+
+Same man, same nisba, joined two ways. Normalisation therefore needs
+MORPHOLOGY, not only character folding: `-i-`, `-y-i-`, `-yi-`, `al-`, `ul-`,
+`u'l-`, `'l-` are one join written differently, and must fold together.
+
+### ⚠ WHAT MAY BE FOLDED, AND WHAT MAY NOT — learned by breaking it
+A trial normaliser that folded diacritics AND stripped honorifics AND sorted
+tokens into a set produced 1,209 collision groups over 3,079 person entities.
+Inspecting them shows the fold was destructive:
+
+    [muhammad] 34 entities — Muḥammad (the Prophet, imp 78), Muḥammad Áqá,
+                             Muḥammad-‘Alí Mírzá, Mírzá ‘Alí-Muḥammad …
+    [husayn]   16 entities — Mullá Ḥusayn (imp 88), Ḥusayn Ḵhán, Da'i Ḥusayn …
+
+Those are DIFFERENT PEOPLE. Wired to a merge job, that normaliser would have
+destroyed the Prophet's record. The number is a COLLISION RATE for a retrieval
+key, not a duplicate count — and it is the concrete argument for the split:
+**normalisation gathers candidates, disambiguation decides.**
+
+Rules that follow:
+* **FOLD** — diacritics, apostrophe variants, case, script variants
+  (yeh ی/ي, kaf ک/ك, hamza أإاآ, taa marbuta ة/ه, harakat, ZWNJ), and
+  CONNECTORS ONLY (ezáfe / article). A connector carries no identity.
+* **DO NOT FOLD** — anything identity-bearing. Do not strip honorifics
+  (`Mírzá Ḥasan Khán` ≠ `Ḥasan`); they are weak signal but real. Do not sort or
+  dedupe tokens (`Muḥammad-‘Alí` ≠ `‘Alí-Muḥammad`); order is meaning.
+
 ### What this fixes immediately
 `Muhammad` and `Muḥammad` normalize to the same key, so they can no longer
 return disjoint worlds of 261 and 2,112 entities. The original script remains
