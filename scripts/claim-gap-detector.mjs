@@ -10,6 +10,14 @@
 // which ones any entity drew a claim from, and report the unclaimed runs with their text. A long run
 // of narrative prose that produced nothing is a candidate miss.
 //
+// ⚠ KNOWN LIMITS — read results with these in mind:
+//   * Coverage % describes only the paragraphs that RESOLVED, not the whole book. The id range is
+//     inferred from claim-bearing paragraphs, so a book's unclaimed tail may never be scanned. On
+//     Balyuzi (865 paragraphs) the first good run resolved 417.
+//   * A "run" is contiguous in SCANNED paragraphs, not in the book. Unscanned paragraphs inside a
+//     run make its printed idx range wider than its paragraph count. The text is reliable; treat the
+//     index range as approximate until every paragraph resolves.
+//
 // ⚠ APPROXIMATION, stated because it changes how results must be read: claims are reachable only
 // per-entity, so coverage is computed over the top-N entities by importance. A paragraph marked
 // "no claims" means no claim BY THOSE ENTITIES. Raising --entities lowers false positives. Measured
@@ -105,7 +113,15 @@ const probes = await pool(sample, (id) => get(`${BASE}/api/v1/paragraph/${id}`, 
 let mine = probes.filter((p) => p && p.documentId === DOC).map((p) => p.id);
 if (!mine.length && args.seed) mine = [Number(args.seed)];
 if (!mine.length) { console.error('no claim paragraphs resolve to this document'); process.exit(1); }
-const lo = Math.min(...mine) - 400, hi = Math.max(...mine) + 400;
+// Use the DENSEST CLUSTER, not min/max. A single outlier id — a re-ingested or duplicated paragraph
+// living far from its siblings — turns min..max into millions of iterations, which is what happened
+// on the first run: the process sat at 6% cpu walking empty id space.
+mine.sort((a, b) => a - b);
+const med = mine[Math.floor(mine.length / 2)];
+const near = mine.filter((id) => Math.abs(id - med) < total * 6);
+const span = Math.min(Math.max(...near) - Math.min(...near) + 800, total * 8);
+const lo = Math.min(...near) - 400, hi = lo + span;
+console.log(`  scanning id range ${lo}..${hi} (${hi - lo + 1} ids for ${total} paragraphs)`);
 
 const scanned = (await pool(Array.from({ length: hi - lo + 1 }, (_, k) => lo + k),
   (id) => get(`${BASE}/api/v1/paragraph/${id}`, { key: true }), 8))
@@ -131,11 +147,15 @@ const scored = runs.filter((r) => r.paras.length >= MINRUN).map((r) => {
 
 console.log(`UNCLAIMED RUNS of ${MINRUN}+ paragraphs — longest first\n`);
 for (const r of scored.slice(0, 12)) {
-  console.log(`  idx ${r.from}-${r.to}  (${r.paras.length} paras, ${r.words} words, ~${r.avg}/para)`);
+  const contig = (r.to - r.from + 1) === r.paras.length ? '' : '  [range approximate — gaps unscanned]';
+  console.log(`  idx ${r.from}-${r.to}  (${r.paras.length} paras, ${r.words} words, ~${r.avg}/para)${contig}`);
   console.log(`    "${r.paras[0].text.replace(/\s+/g, ' ').slice(0, 150)}…"`);
 }
 const claimedHere = scanned.filter((p) => claimed.has(p.id)).length;
-console.log(`\ncoverage: ${claimedHere}/${scanned.length} paragraphs carry a claim ` +
+console.log(`\ncoverage: ${claimedHere}/${scanned.length} SCANNED paragraphs carry a claim ` +
             `(${Math.round(100 * claimedHere / scanned.length)}%)`);
+if (scanned.length < total)
+  console.log(`⚠ only ${scanned.length} of ${total} paragraphs resolved — this is a PARTIAL view ` +
+              `of the document; the percentage above is not book-wide coverage`);
 console.log(`unclaimed runs >=${MINRUN}: ${scored.length}, totalling ` +
             `${scored.reduce((s, r) => s + r.paras.length, 0)} paragraphs\n`);
