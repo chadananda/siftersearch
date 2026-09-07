@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-07T13:00:28.168Z",
+  "generated": "2026-09-07T13:03:10.732Z",
   "entries": [
+    {
+      "hash": "cedec0c1",
+      "date": "2026-09-07",
+      "type": "Other",
+      "description": "Drop 'discriminating'; disambiguation is contextual and missing at query time",
+      "scope": null
+    },
     {
       "hash": "5d776262",
       "date": "2026-09-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Deterministic roster only for broad 'met X' connection queries; route place/event-specific connection queries (imprisoned with X at Y) through the LLM precision path over roster candidates",
       "scope": null
-    },
-    {
-      "hash": "f7915217",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Derive connection-target tokens from display name so name fragments (baha/llah) don't leak into the place/event filter and exclude valid roster members",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-07": [
+      {
+        "hash": "cedec0c1",
+        "date": "2026-09-07",
+        "type": "Other",
+        "description": "Drop 'discriminating'; disambiguation is contextual and missing at query time",
+        "scope": null
+      },
       {
         "hash": "5d776262",
         "date": "2026-09-07",
@@ -7079,13 +7086,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Deterministic roster only for broad 'met X' connection queries; route place/event-specific connection queries (imprisoned with X at Y) through the LLM precision path over roster candidates",
-        "scope": null
-      },
-      {
-        "hash": "f7915217",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Derive connection-target tokens from display name so name fragments (baha/llah) don't leak into the place/event filter and exclude valid roster members",
         "scope": null
       }
     ]

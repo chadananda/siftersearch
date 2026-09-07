@@ -117,6 +117,31 @@ That machinery works. **Nothing plays the NOTE's role at query time.** A user
 typing `Alí` or `Bushrú'í` gets string matching against a distribution, with no
 context to collapse it — which is precisely the observed failure.
 
+### The default when context is absent: most prominent referent
+Chad, 2026-09-06: "Usually, the query refers to the most common person by that
+name. Thus 'muhammad' alone would refer to the prophet. Since there is limited
+or no context."
+
+Correct, and the data already supports it — for correctly-spelled queries:
+
+    q=Muḥammad  → 2,112 hits, top = "Muḥammad" (importance 78) — the Prophet ✓
+    q=Muhammad  →   261 hits, top = "Muhammad al-Mahdi" (importance 0)  ✗
+
+**The two spellings return DISJOINT SETS.** The ASCII query is not a worse
+ranking of the same list; it is a different 261 entities, every one at
+importance 0 — the unnormalised duplicates. The spelling a user is most likely
+to type routes exclusively to the junk tier. Same pattern for `Ali` (top hit
+`Malik Qásim Mírzá`, imp 27) vs `‘Alí` (top `Mullá ‘Alíy-i-Basṭámí`, imp 76).
+
+Three blockers, cheapest first:
+  1. ASCII and diacritic forms must resolve into ONE index. Today they are
+     effectively two corpora and the popular input reaches the worse one.
+  2. `importance` must be populated — it IS the prominence prior this default
+     depends on, and it is 0 on Siyyid Káẓim's 358-claim record and on all 261
+     ASCII Muḥammads (see 0035).
+  3. Then: return the most prominent candidate, with alternatives listed
+     beneath. Never silently choose among near-equals.
+
 Query-time disambiguation needs the same inputs the extractor gets: the other
 terms in the query, the collection or period in scope, and the corpus priors
 above. Where it cannot resolve, it should say which candidates it is choosing
