@@ -38,7 +38,48 @@ Consequence already observed: `Mullá Ḥusayn` (entity 1247564, **importance 88
 2,657 claims, 1,398 mentions) is unreachable by his own name, and Ask AI
 returned his brother instead.
 
-### 2. The architecture — the original script is the invariant
+### 2. The architecture — a NORMALIZED FORM is the universal key
+**CORRECTION, 2026-09-06.** An earlier version of this item claimed "the original
+script does not vary" and proposed it as the anchor. Chad: "Do we unify by adding
+a standard normalized version of each name? Seems more universal than a script
+version (which also has variants)."
+
+He is right on both counts.
+
+**Script varies too**, and the proof is in Mullá Ḥusayn's own alias list:
+
+    جناب ملا حسین بشرویه    ← Persian yeh (ی)
+    جناب ملا حسين بشرويه    ← Arabic yeh (ي)
+
+Plus hamza placement (أ إ ا آ), kaf (ک/ك), taa marbuta (ة/ه), optional harakat,
+and ZWNJ in Persian compounds.
+
+**And a script anchor is not universal.** It exists only for the Arabic/Persian
+material. This corpus holds 12 traditions — Sanskrit, Pali, Hebrew and Chinese
+names have no Arabic form, and neither does Queen Marie of Romania. A normalized
+form is computable for every designation in every tradition.
+
+### Normalization is a RETRIEVAL key, never an identity
+This is the distinction that makes it safe. The normalized form is many-to-one by
+design: `Ḥasan` and `Hasan` collapse together. That is correct for a lookup key
+and catastrophic for an identity — collapsing them into one ENTITY is precisely
+the error that produced the duplicate records.
+
+    normalized    gathers CANDIDATES (fold diacritics, unify apostrophes,
+                  lowercase; for script: normalize yeh/kaf/hamza, strip harakat)
+    entity id     identity
+    disambiguation picks among candidates — context when present,
+                  prominence prior when absent
+
+Collisions are expected and handled downstream, not prevented by the key.
+
+### What this fixes immediately
+`Muhammad` and `Muḥammad` normalize to the same key, so they can no longer
+return disjoint worlds of 261 and 2,112 entities. The original script remains
+valuable — as an attested designation and as evidence — but it is one
+designation among many, not the anchor.
+
+### (superseded) the original-script-as-invariant argument
 Folding cannot solve this. The sources use incompatible systems: Nicolas writes
 *Séyyèd Ali Mohammed*, Browne differently, modern Persian differently, Shoghi
 Effendi's orthography differently again. No fold table unifies them, and each
