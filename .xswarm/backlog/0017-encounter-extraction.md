@@ -17,7 +17,14 @@ acceptance:
   - text: attested and inferred are always distinguishable in the output
 ---
 
-## ⚠ PREMISE OVERTURNED, 2026-09-06 — 0019 is done and says do not extract
+## ⚠ TWICE REVISED — read 0036, which is the accurate diagnosis
+This item's premise (kinship only) was false. My replacement claim — that
+extraction is fine and only retrieval fails — was also too strong. The accurate
+finding is in **0036**: the relation vocabulary supports encounters, but
+narrative episodes are collapsed into weak relations. The Dawn-Breakers Karbilá
+visit yields `knew the Báb`, not an encounter.
+
+## Earlier note (still true as far as it goes)
 This item said "The archive models people. It does not model what happened
 between them. Relationships are kinship only." **Measured against production,
 that is wrong.** The Báb alone has 8,628 claims over 63 relations with zero
