@@ -1,5 +1,34 @@
 # SifterSearch Project Guidelines
 
+## ⚠ READ FIRST — where the data actually is
+
+**Run `node scripts/corpus-status.mjs` before making ANY claim about corpus size,
+coverage, languages or ingestion health.** It queries production and takes a second.
+
+| thing | where it really lives |
+|---|---|
+| **The library (source of truth)** | files, synced via Dropbox from **Tower-NAS** |
+| **Content + metadata** | SQLite, extracted from the files |
+| **Search index** | Meilisearch, separate engine |
+| **Production** | runs on **Tower-NAS**, reached through a Cloudflare tunnel |
+
+### Traps that have already caused wrong conclusions
+
+* **`data/sifter.db` is NOT the library.** It is a small local dev subset — a few
+  thousand documents against production's ~158,000. Reading it as the corpus
+  produced five wrong conclusions in one session, including a non-existent
+  ingestion defect and "the corpus is not interfaith" (it has 12 traditions).
+* **`Ocean Library` under `Ocean2.0 Supplemental/` is NOT supplemental.** That
+  word is a legacy name and means nothing — do not reason from it.
+* **Tower-NAS is often unreachable over Tailscale while serving perfectly.**
+  `tailscaled` and `cloudflared` are separate; unreachable ≠ down. Say
+  "unreachable from here", never "down".
+* **Language codes are not normalised** (`en`/`En`/`Eng`, `fr`/`Fr`/`FR`, …), so
+  any language filter undercounts silently. `corpus-status.mjs` flags the groups.
+
+If production cannot be reached, say the number could not be determined. Do not
+substitute the local database and do not estimate.
+
 > **Full coding principles**: See [planning/coding-principles-guide.md](planning/coding-principles-guide.md)
 
 ## Quick Reference
