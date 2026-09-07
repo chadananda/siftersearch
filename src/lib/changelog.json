@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-07T04:16:48.925Z",
+  "generated": "2026-09-07T04:35:30.515Z",
   "entries": [
+    {
+      "hash": "5cc9d8c2",
+      "date": "2026-09-06",
+      "type": "Other",
+      "description": "Episode layer; root cause is prompt design, not a bug",
+      "scope": null
+    },
     {
       "hash": "1ee9b04e",
       "date": "2026-09-06",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Connection answer keeps deterministic recall but LLM writes concise per-member clauses (≤14 words, verb-first); cleaned-statement fallback so no roster member is dropped",
       "scope": null
-    },
-    {
-      "hash": "381a25eb",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Deterministic connection-roster answer — for 'who met X' return everyone sharing an episode with X (group-intersected), don't let the LLM prune the roster",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-06": [
+      {
+        "hash": "5cc9d8c2",
+        "date": "2026-09-06",
+        "type": "Other",
+        "description": "Episode layer; root cause is prompt design, not a bug",
+        "scope": null
+      },
       {
         "hash": "1ee9b04e",
         "date": "2026-09-06",
@@ -7077,13 +7084,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Connection answer keeps deterministic recall but LLM writes concise per-member clauses (≤14 words, verb-first); cleaned-statement fallback so no roster member is dropped",
-        "scope": null
-      },
-      {
-        "hash": "381a25eb",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Deterministic connection-roster answer — for 'who met X' return everyone sharing an episode with X (group-intersected), don't let the LLM prune the roster",
         "scope": null
       }
     ]
