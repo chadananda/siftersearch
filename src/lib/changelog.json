@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-07T01:56:40.482Z",
+  "generated": "2026-09-07T02:41:55.529Z",
   "entries": [
+    {
+      "hash": "1ee9b04e",
+      "date": "2026-09-06",
+      "type": "Other",
+      "description": "Balyuzi opening scene absent; ~75 paragraphs yield no claims",
+      "scope": null
+    },
     {
       "hash": "85f51d20",
       "date": "2026-09-06",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Deterministic connection-roster answer — for 'who met X' return everyone sharing an episode with X (group-intersected), don't let the LLM prune the roster",
       "scope": null
-    },
-    {
-      "hash": "bf2e7b3b",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Connection queries intersect group with target's episode-roster + float the shared episode to the front of each line — restores Badasht-three recall after cross-corpus facts diluted the catalog",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-06": [
+      {
+        "hash": "1ee9b04e",
+        "date": "2026-09-06",
+        "type": "Other",
+        "description": "Balyuzi opening scene absent; ~75 paragraphs yield no claims",
+        "scope": null
+      },
       {
         "hash": "85f51d20",
         "date": "2026-09-06",
@@ -7077,13 +7084,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Deterministic connection-roster answer — for 'who met X' return everyone sharing an episode with X (group-intersected), don't let the LLM prune the roster",
-        "scope": null
-      },
-      {
-        "hash": "bf2e7b3b",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Connection queries intersect group with target's episode-roster + float the shared episode to the front of each line — restores Badasht-three recall after cross-corpus facts diluted the catalog",
         "scope": null
       }
     ]
