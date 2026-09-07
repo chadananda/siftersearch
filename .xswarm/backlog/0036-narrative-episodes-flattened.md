@@ -34,6 +34,44 @@ an acquaintance predicate. NOT YET CONFIRMED: reading para_267 requires
 authenticated access (`/api/v1/paragraph/` returns 401). Confirm before building
 on it.
 
+## CONFIRMED ON A SECOND BOOK — Balyuzi's opening scene is absent
+Chad, 2026-09-06: "the book 'The Bab' by Balyuzi opens with the scene of the Bab
+attending a gathering at the home of Mulla Sadiq in Karbila. The chief guest is
+Siyyid Kazim, the chief speaker, Mulla Husayn. This episode should have been the
+answer to the question of when did Mulla Husayn and the Bab first meet since it
+is a documented, published scene in a high-authority book."
+
+Measured (`TB-T` = The Báb: The Herald of the Days):
+
+* The Báb's earliest TB-T claim is `p6715702`; the next is `p6715778` — roughly
+  **75 consecutive opening paragraphs producing no claims at all.**
+* Extraction effectively begins at `p6715778-95`, which is the DECLARATION night
+  in Shíráz — the Báb hosting Mullá Ḥusayn, revealing the Qayyúmu'l-Asmá'.
+* **Mullá Ṣádiq has ZERO TB-T claims** across every fragment of his identity
+  (1247579 Muqaddas imp 46 / 183 claims; 1291031; 1261851).
+
+So the gathering is absent. That is precisely why "when did Mullá Ḥusayn first
+meet the Báb" returns the 1844 declaration: the earlier scene was never
+extracted, so the declaration is the earliest contact the archive holds.
+
+The connection is not unknown to the corpus — `Ismu'lláhu'l-Asdaq — met Mullá
+Ḥusayn <TROB>` exists from another book. It is Balyuzi's opening specifically
+that was dropped.
+
+### Identity fragmentation, same episode
+Mullá Ṣádiq exists as at least four entities: `Muqaddas` (imp 46),
+`Sadiq-i-Muqaddas-i-Khurasani` (imp 0, 0 claims),
+`Mullá Ṣádiq-i-Muqaddas, surnamed Ismu'lláhu'l-Aṣdaq` (imp 0), and others. His
+claims never aggregate. And `q=Ṣádiq` with correct diacritics returns **0** —
+the same diacritic failure found independently on Mullá Ḥusayn.
+
+### Why this is the strongest possible demonstration
+Chad: "if we missed a major episode of the Dawn Breakers, how would we be sure we
+capture every major episode in Balyuzi?" We would not, and now we know we do not.
+An episode that OPENS a high-authority published book was dropped. Nothing in the
+system would have reported that. Recall is not merely imperfect — it is
+unmeasured, and therefore unknown everywhere.
+
 ## Why this is a third diagnosis, not either previous one
 * 0017 said the archive models people, not encounters — relations are kinship
   only. **False:** 63 relations on the Báb, zero kinship.

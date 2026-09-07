@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-07T01:41:00.511Z",
+  "generated": "2026-09-07T01:56:40.482Z",
   "entries": [
+    {
+      "hash": "85f51d20",
+      "date": "2026-09-06",
+      "type": "Other",
+      "description": "Narrative episodes flattened to weak relations; Dawn-Breakers Karbila absent",
+      "scope": null
+    },
     {
       "hash": "42b892db",
       "date": "2026-09-06",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Connection queries intersect group with target's episode-roster + float the shared episode to the front of each line — restores Badasht-three recall after cross-corpus facts diluted the catalog",
       "scope": null
-    },
-    {
-      "hash": "34b7eb6a",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Dump-cast (importance-range cast batch, skips already-researched) for Phase-B scale-out",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-06": [
+      {
+        "hash": "85f51d20",
+        "date": "2026-09-06",
+        "type": "Other",
+        "description": "Narrative episodes flattened to weak relations; Dawn-Breakers Karbila absent",
+        "scope": null
+      },
       {
         "hash": "42b892db",
         "date": "2026-09-06",
@@ -7077,13 +7084,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Connection queries intersect group with target's episode-roster + float the shared episode to the front of each line — restores Badasht-three recall after cross-corpus facts diluted the catalog",
-        "scope": null
-      },
-      {
-        "hash": "34b7eb6a",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Dump-cast (importance-range cast batch, skips already-researched) for Phase-B scale-out",
         "scope": null
       }
     ]
