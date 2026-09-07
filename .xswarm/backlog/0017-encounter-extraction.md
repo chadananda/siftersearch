@@ -1,7 +1,7 @@
 ---
 id: "0017"
 title: Extract encounters, not only biographies
-state: ready
+state: blocked
 traces_to: .xswarm/GOAL.md
 priority: P1
 size: L
@@ -17,7 +17,17 @@ acceptance:
   - text: attested and inferred are always distinguishable in the output
 ---
 
-## Do not start here — run 0019 first
+## ⚠ PREMISE OVERTURNED, 2026-09-06 — 0019 is done and says do not extract
+This item said "The archive models people. It does not model what happened
+between them. Relationships are kinship only." **Measured against production,
+that is wrong.** The Báb alone has 8,628 claims over 63 relations with zero
+kinship, including 149 `met`, 336 `visited`, 87 `hosted` — and 162 claims naming
+Mullá Ḥusayn, sourced to the Dawn-Breakers.
+
+The encounters were extracted. They cannot be reached. Blocked pending 0035; if
+0035 fixes resolution, most of this item disappears rather than being done.
+
+## Superseded reasoning below
 The schema already supports encounters and the extractor may already be
 emitting them into a closed whitelist that drops them. Establish what exists
 before extracting anything.

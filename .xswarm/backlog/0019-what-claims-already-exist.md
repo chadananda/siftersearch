@@ -1,7 +1,7 @@
 ---
 id: "0019"
 title: Find out what encounter claims already exist before extracting anything
-state: ready
+state: done
 traces_to: .xswarm/GOAL.md
 priority: P1
 size: S
@@ -12,7 +12,24 @@ acceptance:
   - text: a written answer to "must extraction be repeated", with numbers
 ---
 
-## Why this comes before 0017
+## ANSWERED, 2026-09-06 — the claims exist, in quantity
+Measured against PRODUCTION via the public `/api/v1/entities` endpoint (no NAS
+access needed; local db is the dev subset and shows 0 rows for everything).
+
+* 45,636 entities in production.
+* The Báb's entity carries **8,628 claims across 63 distinct relations**, and
+  **zero of them are kinship**. The premise of 0017 — "relationships are kinship
+  only" — is false in production.
+* Encounter relations are present and populous: `visited` 336, `met` 149,
+  `hosted` 87, `accompanied` 76, plus `companion-of`, `host-of`, `recognized`.
+* **162 claims link the Báb and Mullá Ḥusayn specifically**, including
+  `met Mullá Ḥusayn <DB>`, `host-of Mullá Ḥusayn <DB>`,
+  `companion-of Mullá Ḥusayn <DB>`, `met Mullá Ḥusayn-i-Bushrú'í <MḤ>`.
+
+So extraction worked. **Do not spend on re-extraction.** The defect is retrieval,
+and it is recorded in 0035.
+
+## Why this came before 0017
 Chad asked whether encounters require repeating extraction. The evidence says
 probably not, or not fully — and that is cheap to confirm before spending.
 
