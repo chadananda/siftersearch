@@ -1,0 +1,157 @@
+# Anis battery — prove every tool works, and prove the chat layer reaches them.
+#
+# Chad, 2026-09-08: "we need to make sure the Anis search api supports chat (all
+# tools). As well as direct access to tools: library / kw search / AI search
+# (hype, semantic) / entity search (persons, documents, episodes, concepts). A
+# battery of search examples should be developed to prove the effectiveness of
+# all tools and chat response formats."
+#
+# Every case states what a good answer must DO. `must_not` is mandatory, because
+# a grader that only string-matches will pass an answer about the wrong person —
+# which is exactly the failure already observed ("Iqan" resolving to "Iqani").
+#
+# status: pass | fail | gap   — `gap` means the capability does not exist yet and
+# the test is written to fail until it does. Do not delete these to go green.
+
+tools:
+  library:
+    - id: lib-author
+      why: "authorship must come from metadata, not passage retrieval"
+      call: {tool: library.documents, q: "Iqan", limit: 4}
+      must: ["author == Bahá'u'lláh for The Kitáb-i-Íqán"]
+      must_not: ["empty result", "author of a study-course conflated with the work"]
+      status: pass
+    - id: lib-date
+      why: "dates are absent from metadata — year=0 on every document"
+      call: {tool: library.documents, q: "Iqan"}
+      must: ["a usable year for the Kitáb-i-Íqán"]
+      status: gap
+      note: "year=0 corpus-wide. Date questions must fall through to passages."
+    - id: lib-stats
+      call: {tool: library.stats}
+      must: ["religions>=12", "documents>150000", "paragraphs>6M"]
+      status: pass
+    - id: lib-tool-params
+      why: "the AGENT-facing library tool takes no parameters at all"
+      call: {tool: tools.library}
+      must: ["filter by religion, collection, author, language"]
+      status: gap
+
+  search_shape:
+    - id: search-passages
+      call: {tool: tools.search, mode: passages, query: "detachment from the world"}
+      must: ["returns Íqán or Hidden Words passage", "highlight spans present"]
+      must_not: ["results from an unrelated tradition for a Bahá'í-specific phrase"]
+      status: pass
+    - id: search-documents
+      call: {tool: tools.search, mode: documents, query: "Kitáb-i-Íqán"}
+      must: ["the work itself ranks first"]
+      status: pass
+    - id: search-count
+      call: {tool: tools.search, mode: count, query: "covenant"}
+      must: ["a number, not a passage list"]
+      status: pass
+    - id: search-read
+      call: {tool: tools.search, mode: read, document_id: 20810, start: 0, limit: 5}
+      must: ["sequential paragraphs in document order"]
+      status: pass
+
+  retrieval_method:
+    - id: mode-keyword
+      why: "Chad asked for direct keyword search; API cannot select it"
+      status: gap
+      note: "mode enum is [passages, documents, count, read] — RESULT SHAPES, not
+             retrieval methods. No keyword / semantic / HyPE selection exists."
+    - id: mode-semantic
+      status: gap
+    - id: mode-hype
+      status: gap
+      note: "HyPE index exists in the pipeline but is not addressable from the API."
+
+  entity_persons:
+    - id: ent-person-ascii
+      call: {tool: entities, q: "Mulla Husayn"}
+      must: ["the Letter of the Living, importance ~88"]
+      must_not: ["a minor namesake ranked above him", "his brother Muḥammad-Ḥasan"]
+      status: fail
+      note: "returns a different minor person; importance unpopulated so ranking is random"
+    - id: ent-person-diacritic
+      call: {tool: entities, q: "Mullá Ḥusayn"}
+      must: ["same entity as ent-person-ascii"]
+      status: fail
+      note: "0 results. Token-initial non-ASCII breaks entity search (Ḥ Ṣ Ṭ Ẓ Í)."
+    - id: ent-person-title
+      call: {tool: entities, q: "Bábu'l-Báb"}
+      must: ["resolves to Mullá Ḥusayn"]
+      status: fail
+      note: "aliases are not indexed — 97 of his 116 aliases are Arabic script"
+
+  entity_documents:
+    - id: ent-work-english
+      call: {tool: entities, q: "Book of Certitude"}
+      must: ["1 hit, type=work"]
+      status: pass
+    - id: ent-work-persian
+      call: {tool: entities, q: "Kitáb-i-Íqán"}
+      must: ["same work as ent-work-english"]
+      status: fail
+      note: "0 results. Works need designations too — 0038 treats this as a person problem."
+    - id: ent-work-wrong-match
+      call: {tool: entities, q: "Iqan"}
+      must_not: ["a PERSON returned for a work query"]
+      status: fail
+      note: "returns 'Iqani' (person). A confident wrong match is worse than zero."
+
+  entity_concepts:
+    - id: ent-concept
+      call: {tool: entities, q: "covenant", type: concept}
+      must: ["concept entities returned, not passages"]
+      status: pass
+      note: "concepts are ~40% of sampled entities"
+
+  entity_episodes:
+    - id: ent-episode
+      why: "Chad lists episodes as an entity type"
+      must: ["the Karbilá gathering at Mullá Ṣádiq's home is retrievable as an event"]
+      status: gap
+      note: "episodes do not exist. See 0037 — extraction is instructed 'NOT narrative
+             colour' and skips attributed testimony, so scenes were never extracted."
+
+chat:
+  - id: chat-authorship
+    ask: "Who wrote the Kitáb-i-Íqán?"
+    must: ["Bahá'u'lláh", "cites a source"]
+    must_not: ["hedges", "says it cannot find the author"]
+    tool_expected: library
+    why: "the library already knows this; failure here is tool selection, not data"
+  - id: chat-date
+    ask: "When was the Kitáb-i-Íqán revealed?"
+    must: ["~1861-62, Baghdad", "cites a passage since metadata has no year"]
+    tool_expected: search
+  - id: chat-first-meeting
+    ask: "When did Mullá Ḥusayn first meet the Báb?"
+    must: ["does NOT assert the 1844 declaration as their first meeting"]
+    must_not: ["returns his brother Muḥammad-Ḥasan"]
+    status: fail
+    note: "the Balyuzi Karbilá scene was never extracted; the honest answer is uncertainty"
+  - id: chat-absence
+    ask: "What do the Bahá'í writings say about cryptocurrency?"
+    must: ["says there is nothing", "offers the nearest genuine topic"]
+    must_not: ["fabricates a passage", "returns an unrelated tradition"]
+    why: "absence handling already works in raw search — verify it survives the chat layer"
+  - id: chat-provenance
+    ask: "Quote a passage on detachment and tell me exactly where it is from"
+    must: ["verbatim quote", "work + paragraph identifier", "link resolves"]
+    must_not: ["paraphrase presented as a quote"]
+
+response_format:
+  - id: fmt-citation
+    must: ["every quoted passage carries a resolvable citation_url"]
+    must_not: ["a citation URL swapped between two quotes"]
+    note: "jafar-pipeline already warns about exactly this failure"
+  - id: fmt-attribution
+    must: ["source_title matches the passage actually retrieved"]
+    must_not: ["a more famous work substituted for the real source"]
+  - id: fmt-uncertainty
+    must: ["distinguishes 'the archive does not say' from 'this did not happen'"]
+    why: "the single most important honesty property for a scholarly assistant"

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-08T13:47:21.312Z",
+  "generated": "2026-09-08T14:30:48.592Z",
   "entries": [
+    {
+      "hash": "92dea377",
+      "date": "2026-09-08",
+      "type": "Other",
+      "description": "Anis tool reachability — data is there, test the conversation",
+      "scope": null
+    },
     {
       "hash": "d4829d59",
       "date": "2026-09-07",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Theme continuity + centered responsive content — define alias tokens (--border/--accent/--accent-hover/--error-*) so admin components inherit the site palette instead of resolving transparent; center every admin page at 1200px with responsive padding",
       "scope": null
-    },
-    {
-      "hash": "bfad7bab",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Sample-search jumps straight to AI — suppress the intermediate literal/phonetic grid filter while an AI search is in flight (set aiBusy synchronously on sample click; filtered returns [] during fetch so the loader shows, not a flash of name-matches)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-08": [
+      {
+        "hash": "92dea377",
+        "date": "2026-09-08",
+        "type": "Other",
+        "description": "Anis tool reachability — data is there, test the conversation",
+        "scope": null
+      }
+    ],
     "2026-09-07": [
       {
         "hash": "d4829d59",
@@ -7079,13 +7088,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Theme continuity + centered responsive content — define alias tokens (--border/--accent/--accent-hover/--error-*) so admin components inherit the site palette instead of resolving transparent; center every admin page at 1200px with responsive padding",
-        "scope": null
-      },
-      {
-        "hash": "bfad7bab",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Sample-search jumps straight to AI — suppress the intermediate literal/phonetic grid filter while an AI search is in flight (set aiBusy synchronously on sample click; filtered returns [] during fetch so the loader shows, not a flash of name-matches)",
         "scope": null
       }
     ]
