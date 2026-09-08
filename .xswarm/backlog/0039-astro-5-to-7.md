@@ -1,5 +1,5 @@
 ---
-id: "0001"
+id: "0039"
 title: Upgrade Astro 5 to 7
 state: ready
 traces_to: house stack currency

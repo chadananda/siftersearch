@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-07T13:09:04.316Z",
+  "generated": "2026-09-08T04:50:02.593Z",
   "entries": [
+    {
+      "hash": "d4829d59",
+      "date": "2026-09-07",
+      "type": "Other",
+      "description": "Idafa/ezafe folding; what may and may not be normalized",
+      "scope": null
+    },
     {
       "hash": "df9cb4a1",
       "date": "2026-09-07",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Sample-search jumps straight to AI — suppress the intermediate literal/phonetic grid filter while an AI search is in flight (set aiBusy synchronously on sample click; filtered returns [] during fetch so the loader shows, not a flash of name-matches)",
       "scope": null
-    },
-    {
-      "hash": "a3b10f4a",
-      "date": "2026-06-26",
-      "type": "Other",
-      "description": "Replace too-broad 'Western believers who became Bahá'ís' sample with the specific, reliable 'first Western pilgrims to ‘Akká' (now 6/6 sample buttons return strong cited sets)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-07": [
+      {
+        "hash": "d4829d59",
+        "date": "2026-09-07",
+        "type": "Other",
+        "description": "Idafa/ezafe folding; what may and may not be normalized",
+        "scope": null
+      },
       {
         "hash": "df9cb4a1",
         "date": "2026-09-07",
@@ -7079,13 +7086,6 @@
         "date": "2026-06-26",
         "type": "Other",
         "description": "Sample-search jumps straight to AI — suppress the intermediate literal/phonetic grid filter while an AI search is in flight (set aiBusy synchronously on sample click; filtered returns [] during fetch so the loader shows, not a flash of name-matches)",
-        "scope": null
-      },
-      {
-        "hash": "a3b10f4a",
-        "date": "2026-06-26",
-        "type": "Other",
-        "description": "Replace too-broad 'Western believers who became Bahá'ís' sample with the specific, reliable 'first Western pilgrims to ‘Akká' (now 6/6 sample buttons return strong cited sets)",
         "scope": null
       }
     ]

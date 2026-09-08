@@ -2,7 +2,7 @@
 id: "0001"
 title: The grounding gate does not include the prerequisites — do not switch to general
 state: blocked
-blocked_on: Chad — switching to general mode means spending, and that is his call
+blocked_on: "Chad — one line: hold in plan mode until 0035/0036/0037/0038 land, or switch to general now and accept indexing a corpus we know is missing its episodes?"
 traces_to: .xswarm/GOAL.md
 priority: P1
 size: S
