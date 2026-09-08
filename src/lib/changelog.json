@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-08T14:33:49.876Z",
+  "generated": "2026-09-08T15:38:54.714Z",
   "entries": [
+    {
+      "hash": "a6d80913",
+      "date": "2026-09-08",
+      "type": "Other",
+      "description": "OpenAPI tool surface first, battery downstream; add librarian CRUD",
+      "scope": null
+    },
     {
       "hash": "fe8de97d",
       "date": "2026-09-08",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Subject gate — drop cross-filed roster facts from search evidence",
       "scope": null
-    },
-    {
-      "hash": "551d8455",
-      "date": "2026-07-07",
-      "type": "Other",
-      "description": "Fix AI-search halo spinning a search-bar silhouette in the background",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-08": [
+      {
+        "hash": "a6d80913",
+        "date": "2026-09-08",
+        "type": "Other",
+        "description": "OpenAPI tool surface first, battery downstream; add librarian CRUD",
+        "scope": null
+      },
       {
         "hash": "fe8de97d",
         "date": "2026-09-08",
@@ -7079,13 +7086,6 @@
         "date": "2026-07-07",
         "type": "Other",
         "description": "Subject gate — drop cross-filed roster facts from search evidence",
-        "scope": null
-      },
-      {
-        "hash": "551d8455",
-        "date": "2026-07-07",
-        "type": "Other",
-        "description": "Fix AI-search halo spinning a search-bar silhouette in the background",
         "scope": null
       }
     ]
