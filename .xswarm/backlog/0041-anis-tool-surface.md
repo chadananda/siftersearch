@@ -1,78 +1,89 @@
 ---
 id: "0041"
-title: Anis needs direct tool access — the API exposes result shapes, not retrieval methods
+title: Complete the OpenAPI tool surface — it is the prerequisite for testing anything
 state: ready
 priority: P0
 size: L
-depends_on: ["0040"]
 acceptance:
-  - text: chat can reach every tool, and the battery proves which tool answered
-  - text: retrieval method is selectable — keyword, semantic, HyPE — not only result shape
+  - text: every tool Anis can use is callable directly and documented in the OpenAPI spec
+  - text: retrieval method is selectable — keyword, semantic (HyPE inside it), hybrid
+  - text: the library tool filters by religion, collection, author, language, document
   - text: entity search covers persons, works, concepts and episodes
-  - text: the battery in tests/anis/battery.yaml runs in CI and gaps stay visible as failures
+  - text: the librarian has CRUD — create, update, merge, correct, delete — with no raw SQL path
+  - text: tests/anis/battery.yaml runs end to end, with gaps failing rather than absent
 ---
 
-## What Chad asked for
-2026-09-08: "we need to make sure the Anis search api supports chat (all tools).
-As well as direct access to tools: library / kw search / AI search (hype,
-semantic) / entity search (persons, documents, episodes, concepts). A battery of
-search examples should be developed to prove the effectiveness of all tools and
-chat response formats."
+## The ordering error this item corrects
+Chad, 2026-09-08: "If we don't have direct tool access, how do we test? And I've
+specified from the beginning that we should have OpenAPI access to all search
+tools. And the librarian should have additional CRUD tools."
 
-## What the API actually offers, measured
-`POST /api/v1/tools/search` takes `mode`, and the enum is:
+A battery was written first, against capabilities that have no endpoint. Six of
+its cases are documentation, not tests — they can never run. **The surface comes
+first; the battery is downstream of it.** Requiring OpenAPI access to every tool
+was a standing requirement, not a new one.
 
-    passages | documents | count | read
+## Measured state, 2026-09-08
 
-**Those are RESULT SHAPES, not retrieval methods.** There is no way to ask for
-keyword vs semantic — the strategy is fixed and internal. So "direct access to
-kw search / AI search" is not supported today.
+**Retrieval methods are not selectable.** `POST /api/v1/tools/search` takes
+`mode`, and the enum is `passages | documents | count | read` — RESULT SHAPES.
+The strategy underneath is fixed and internal.
 
-**Two methods to expose, not three.** Chad, 2026-09-08: "hype should be part of
-semantic search." HyPE is a technique inside semantic retrieval — index the
-questions a passage answers, match the user's question against those — not a
-mode beside it. So:
+**The agent-facing library tool takes no parameters at all.** `GET
+/api/v1/tools/library` has zero query params, though `/api/v1/library/documents`
+supports q, author, religion, collection, language, limit, offset. The agent has
+the worse tool.
+
+**There is no librarian CRUD.** Of 35 write endpoints, 22 are admin and exactly
+two touch library content — `PATCH /admin/deep-research/{id}/content` (unrelated)
+and `POST /entities/resolve` (a lookup). Nothing creates, edits, merges or
+corrects a document, a paragraph, or an entity.
+
+That is why agents reach for SQL. The standing rule — never mutate app data with
+raw SQL, extend the admin API instead — was written after a blind `UPDATE`
+clobbered a draft. The rule exists; the API that would let anyone obey it does not.
+
+## What to build
+
+**1. Retrieval methods, selectable.** Two plus their fusion — HyPE lives inside
+semantic, not beside it:
 
     keyword    lexical/BM25 — exact names, phrases, rare terms
-    semantic   vector, WITH HyPE inside it — question-shaped queries
-    hybrid     the fusion, which should be the default and should beat either alone
+    semantic   vector, with HyPE — question-shaped queries
+    hybrid     the fusion; should be the default and should beat either alone
 
-The battery keeps one case (`semantic-hype-effect`) that proves the HyPE layer is
-live — a question sharing no vocabulary with the passage should still retrieve
-it — without treating HyPE as a selectable mode.
+Keep the existing `mode` for result shape; add `method` for retrieval. They are
+orthogonal and conflating them is what produced the current confusion.
 
-`GET /api/v1/tools/library` takes **no parameters at all** — the agent-facing
-library tool cannot filter by religion, collection, author or language, though
-`/api/v1/library/documents` can.
+**2. The library tool gets the filters `/library/documents` already has.**
 
-## The four tool families and their state
+**3. Entity search across all four types** — persons, works, concepts, episodes.
+Episodes do not exist yet (0037); expose the type so the battery fails loudly
+rather than silently omitting it.
 
-    library      works. Authorship answers from metadata. BUT year=0 corpus-wide,
-                 so dates must fall through to passages, and the agent-facing
-                 tool takes no filters.
-    search       works well on natural queries; poor on keyword-stuffed ones.
-                 Result shapes only; no method selection.
-    entities     persons BROKEN by diacritics and unranked importance; works
-                 indexed under ONE designation; a near-miss returns a confident
-                 WRONG match ("Iqan" → "Iqani", a person).
-    episodes     DO NOT EXIST. See 0037.
+**4. Librarian CRUD**, and this is the half that unblocks everything else:
 
-## The battery
-`tests/anis/battery.yaml` — 27 cases across library, search shapes, retrieval
-methods, entity persons/works/concepts/episodes, chat, and response format.
+    documents   create, update metadata, soft-delete, restore
+    content     edit a paragraph, re-segment, correct OCR
+    entities    create, merge two into one, split, correct a designation,
+                set canonical name, add alias
+    provenance  every write records who and why — this corpus is a scholarly
+                record and an unattributed edit is a defect
 
-Six marked `gap` (capability absent) and six `fail` (exists and is broken). Those
-twelve are written to fail on purpose. **Do not delete them to go green** — a
-green suite that dropped its hard cases is how recall silently disappears, which
-is the lesson of 0036.
+Entity merge and alias-add are the operations that fix 0038's fragmentation
+(Mullá Ṣádiq exists as four entities; the Íqán is indexed under one designation).
+Without them the only remedy is SQL, which is forbidden for good reason.
 
-Response-format cases matter as much as retrieval: citation URLs must not be
-swapped between quotes (jafar-pipeline already warns about this), the source
-title must match what was actually retrieved, and the answer must distinguish
-"the archive does not say" from "this did not happen".
+**5. All of it in the published OpenAPI spec** at `/api/v1/docs/json`, so both
+Anis and the battery discover tools rather than hardcoding them.
+
+## Then the battery
+`tests/anis/battery.yaml` — 29 cases across library, search shapes, retrieval
+methods, entity types, chat, and response format. It becomes runnable once the
+surface exists. Cases marked `gap` and `fail` are written to fail on purpose;
+deleting them to go green is how recall silently disappears (0036).
 
 ## Why P0
-Anis is the product being shipped. The battery is what makes iterative
-improvement measurable rather than anecdotal — right now every judgement about
-search quality, including two wrong ones I made on 2026-09-07, comes from ad-hoc
-probing of a single endpoint.
+Everything else about Anis is unmeasurable until the tools are directly callable.
+Two wrong conclusions about search quality were drawn on 2026-09-07 from ad-hoc
+probing of a single endpoint — that is what testing looks like without this.
