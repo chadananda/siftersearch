@@ -57,16 +57,30 @@ tools:
       status: pass
 
   retrieval_method:
+    # Chad, 2026-09-08: "hype should be part of semantic search" — HyPE is a
+    # technique WITHIN semantic retrieval (index the questions a passage answers,
+    # match the user's question against those), not a third mode beside it.
+    # So there are two methods to expose, plus their fusion.
     - id: mode-keyword
-      why: "Chad asked for direct keyword search; API cannot select it"
+      why: "lexical/BM25 — exact terms, names, phrases the user typed"
+      must: ["a rare exact phrase outranks a topically-similar paraphrase"]
       status: gap
       note: "mode enum is [passages, documents, count, read] — RESULT SHAPES, not
-             retrieval methods. No keyword / semantic / HyPE selection exists."
+             retrieval methods. Neither keyword nor semantic can be selected."
     - id: mode-semantic
+      why: "vector retrieval, INCLUDING HyPE — question-shaped queries"
+      must: ["a question phrased unlike the source text still retrieves it"]
+      must_not: ["degrades to keyword when the query shares no vocabulary with the passage"]
       status: gap
-    - id: mode-hype
+    - id: semantic-hype-effect
+      why: "HyPE is why a natural question matches an answer that shares no words with it"
+      must: ["'why do the innocent suffer' retrieves passages on tests and trials"]
       status: gap
-      note: "HyPE index exists in the pipeline but is not addressable from the API."
+      note: "Not a separate mode. This case proves the HyPE layer is live inside semantic."
+    - id: mode-hybrid
+      why: "the default should fuse both; prove the fusion beats either alone"
+      must: ["hybrid ranks above keyword-only AND semantic-only on the scholar set"]
+      status: gap
 
   entity_persons:
     - id: ent-person-ascii

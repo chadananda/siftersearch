@@ -25,8 +25,21 @@ chat response formats."
     passages | documents | count | read
 
 **Those are RESULT SHAPES, not retrieval methods.** There is no way to ask for
-keyword vs semantic vs HyPE — the strategy is fixed and internal. So "direct
-access to kw search / AI search" is not supported today.
+keyword vs semantic — the strategy is fixed and internal. So "direct access to
+kw search / AI search" is not supported today.
+
+**Two methods to expose, not three.** Chad, 2026-09-08: "hype should be part of
+semantic search." HyPE is a technique inside semantic retrieval — index the
+questions a passage answers, match the user's question against those — not a
+mode beside it. So:
+
+    keyword    lexical/BM25 — exact names, phrases, rare terms
+    semantic   vector, WITH HyPE inside it — question-shaped queries
+    hybrid     the fusion, which should be the default and should beat either alone
+
+The battery keeps one case (`semantic-hype-effect`) that proves the HyPE layer is
+live — a question sharing no vocabulary with the passage should still retrieve
+it — without treating HyPE as a selectable mode.
 
 `GET /api/v1/tools/library` takes **no parameters at all** — the agent-facing
 library tool cannot filter by religion, collection, author or language, though
