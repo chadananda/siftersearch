@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-09T13:08:50.412Z",
+  "generated": "2026-09-09T13:12:51.766Z",
   "entries": [
+    {
+      "hash": "49207c04",
+      "date": "2026-09-09",
+      "type": "Other",
+      "description": "Implementation plan",
+      "scope": null
+    },
     {
       "hash": "a0684bd3",
       "date": "2026-09-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Throwaway misbound probe",
       "scope": null
-    },
-    {
-      "hash": "705aa29b",
-      "date": "2026-07-07",
-      "type": "Other",
-      "description": "Broaden roster-dash match (any spaced dash) + pronoun-lead guard",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-09": [
+      {
+        "hash": "49207c04",
+        "date": "2026-09-09",
+        "type": "Other",
+        "description": "Implementation plan",
+        "scope": null
+      },
       {
         "hash": "a0684bd3",
         "date": "2026-09-09",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-07",
         "type": "Other",
         "description": "Throwaway misbound probe",
-        "scope": null
-      },
-      {
-        "hash": "705aa29b",
-        "date": "2026-07-07",
-        "type": "Other",
-        "description": "Broaden roster-dash match (any spaced dash) + pronoun-lead guard",
         "scope": null
       }
     ]

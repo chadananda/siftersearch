@@ -84,7 +84,12 @@ export async function runGrounding(docId, opts = {}) {
     const wantsBand = ['project', 'link', 'merge', 'dedup'].some(want);
     if (wantsBand) { await enter(currentRun?.stage || 'project'); await acquireGraphBand(docId, { onWait: () => { if (currentRun) { currentRun.waitingForGraph = true; writeRun(); } } }); heldBand = true; if (currentRun) { currentRun.waitingForGraph = false; } }
     if (want('project'))      { await enter('project'); const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId }); out.createdIds = r.createdIds || []; emit('project', r); }
-    if (want('link'))         { await enter('link'); execSync(`DOC=${docId} WRITE=1 SIFTER_WRITER_URL=${writer} node scripts/entity-read/link-claims.mjs`, { stdio: 'inherit' }); }
+    // link BINDS claims to entities. Until 2026-09-09 this line shelled out to
+    // scripts/entity-read/link-claims.mjs via execSync and captured NOTHING — no result, no emit, no
+    // error detail — so when it ran for two books and stopped, nothing knew. 615,211 claims ended up
+    // 50% subject-bound and 9% target-bound, and no gate reported it. See backlog 0043.
+    // It is a module now, and it emits like every other stage. Do not reintroduce a shell-out here.
+    if (want('link'))         { await enter('link'); const r = await rag.entities.link(docId); emit('link', r); }
     if (want('merge'))        { await enter('merge'); emit('merge', await rag.entities.merge({ concurrency: 4, onProgress })); } // same-name dedup by evidence
     if (want('dedup') && out.createdIds.length) { await enter('dedup'); emit('dedup', await rag.entities.dedupGuard({ entityIds: out.createdIds, onProgress })); } // AFTER link — new entities need bound claims
     if (wantsBand) { await releaseGraphBand(docId); heldBand = false; }   // release BEFORE hype/verify (they don't mutate the graph)

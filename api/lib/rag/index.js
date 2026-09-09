@@ -48,6 +48,7 @@ export function createCorpusRAG(deps = {}) {
       async claims(docId, opts)   { return (await import('./entities/claims.js')).run(ctx, docId, opts); },     // cited, proof-gated
       async reconcile(docId, opts){ return (await import('./entities/reconcile.js')).run(ctx, docId, opts); },  // evidence → proposed decisions
       async project(opts)         { return (await import('./entities/project.js')).run(ctx, opts); },           // materialize from decision log
+      async link(docId, opts)     { return (await import('./entities/link.js')).run(ctx, docId, opts); },      // BIND claims to entities (entity_id + target_entity_id)
       async merge(opts)           { return (await import('./entities/merge.js')).run(ctx, opts); },             // dedup same-name entities by evidence
       async dedupGuard(opts)      { return (await import('./entities/dedup-guard.js')).run(ctx, opts); },       // dedup cross-name duplicates by grounded FACTS
       async verify(docId, opts)   { return (await import('./entities/verify.js')).run(ctx, docId, opts); },     // search-verify gate: cast+claims+HyPE actually return
