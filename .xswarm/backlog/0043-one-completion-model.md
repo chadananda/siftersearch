@@ -109,6 +109,57 @@ Third: the v1/v2 table split is dead weight — `entity_mentions`, `entity_alias
 at zero rows while `entity_mentions_v2` carries 216,533. Empty tables that look
 live are a reading hazard; drop them or document them as retired.
 
+## IMPLEMENTATION PLAN — authorised 2026-09-09
+
+### The precise defect, verified
+`run-grounding.js:87` is the only stage that shells out:
+
+    if (want('link')) { await enter('link');
+      execSync(`DOC=${docId} WRITE=1 ... node scripts/entity-read/link-claims.mjs`); }
+
+Its sibling one line above:
+
+    if (want('project')) { const r = await rag.entities.project({...}); emit('project', r); }
+
+**Every other stage calls a module, captures a result and emits telemetry. `link`
+captures nothing** — no return value, no emit, no row stamp, no error detail. It
+is the one stage that can half-finish in silence, and it is the one at 9%.
+
+Six places define what a stage is: `bio.js:58`, `run-grounding.js:15` (a verbatim
+duplicate), `stage-state.js:10`, `state.js:18` (different NAMES for the same
+stages — `disambig` vs `disambiguate`), and two in `anthropic-policy.js`.
+
+One structural cause of the 50/9 split, from the script itself:
+`if (sEid == null) continue;` — a claim whose SUBJECT fails to bind is skipped
+entirely, so its target is never attempted. Targets cannot exceed subjects by
+construction.
+
+### Steps
+1. **`api/lib/pipeline/stages.js`** — the single registry. Each stage declared
+   once: name, one-line purpose, module path, completion stamp, order. The six
+   existing lists import from it. This is the change that stops a future session
+   being misled.
+2. **`api/lib/rag/entities/link.js`** — port link-claims.mjs verbatim into a
+   module returning `{claims, subjectBound, targetBound, viaFallback, updated}`.
+   Keep its logic exactly: namesake-safe doc binding, DIRECTIONAL matching (never
+   `core ⊂ subject`, which swallows "muhammad" into every compound name), and
+   clear-then-recompute on doc-scoped writes so a re-run after a matcher fix
+   removes stale mis-binds.
+3. **Wire it like its siblings** — `const r = await rag.entities.link({docId})`
+   then `emit('link', r)`.
+4. **`scripts/entity-read/link-claims.mjs`** becomes a thin CLI wrapper over the
+   module, so both paths run identical code.
+5. **A target-binding gate**, fed real counts, so "link never ran" is
+   distinguishable from "nothing to bind".
+6. **Headers on every file touched**: what it owns, what it must NOT do, where
+   the neighbouring concern lives.
+
+### Deliberately NOT in this change
+* Fixing `if (sEid == null) continue;`. It would raise target coverage but alters
+  matching behaviour — a separate, measured change.
+* The corpus-wide re-run. The refactor lands first and is verified on one book;
+  the data pass is its own decision.
+
 ## Why P0
 Every downstream item — 0035 ranking, 0038 names, 0042 targets, 0037 episodes —
 is unmeasurable while "done" means three different things. And the next session

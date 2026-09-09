@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-09T12:59:20.382Z",
+  "generated": "2026-09-09T13:08:50.412Z",
   "entries": [
+    {
+      "hash": "a0684bd3",
+      "date": "2026-09-09",
+      "type": "Other",
+      "description": "One completion model — entity pipeline lives in scripts",
+      "scope": null
+    },
     {
       "hash": "fde7facb",
       "date": "2026-09-09",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Broaden roster-dash match (any spaced dash) + pronoun-lead guard",
       "scope": null
-    },
-    {
-      "hash": "52882616",
-      "date": "2026-07-07",
-      "type": "Other",
-      "description": "Refine subject gate — keep facts that name the entity anywhere / possessive-subject",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-09": [
+      {
+        "hash": "a0684bd3",
+        "date": "2026-09-09",
+        "type": "Other",
+        "description": "One completion model — entity pipeline lives in scripts",
+        "scope": null
+      },
       {
         "hash": "fde7facb",
         "date": "2026-09-09",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-07",
         "type": "Other",
         "description": "Broaden roster-dash match (any spaced dash) + pronoun-lead guard",
-        "scope": null
-      },
-      {
-        "hash": "52882616",
-        "date": "2026-07-07",
-        "type": "Other",
-        "description": "Refine subject gate — keep facts that name the entity anywhere / possessive-subject",
         "scope": null
       }
     ]
