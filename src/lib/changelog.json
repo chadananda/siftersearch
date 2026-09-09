@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-09T12:37:57.715Z",
+  "generated": "2026-09-09T12:59:20.382Z",
   "entries": [
+    {
+      "hash": "fde7facb",
+      "date": "2026-09-09",
+      "type": "Other",
+      "description": "91% of claim targets unresolved — the structural defect",
+      "scope": null
+    },
     {
       "hash": "a6d80913",
       "date": "2026-09-08",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Refine subject gate — keep facts that name the entity anywhere / possessive-subject",
       "scope": null
-    },
-    {
-      "hash": "3b891321",
-      "date": "2026-07-07",
-      "type": "Other",
-      "description": "Subject gate — drop cross-filed roster facts from search evidence",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-09": [
+      {
+        "hash": "fde7facb",
+        "date": "2026-09-09",
+        "type": "Other",
+        "description": "91% of claim targets unresolved — the structural defect",
+        "scope": null
+      }
+    ],
     "2026-09-08": [
       {
         "hash": "a6d80913",
@@ -7079,13 +7088,6 @@
         "date": "2026-07-07",
         "type": "Other",
         "description": "Refine subject gate — keep facts that name the entity anywhere / possessive-subject",
-        "scope": null
-      },
-      {
-        "hash": "3b891321",
-        "date": "2026-07-07",
-        "type": "Other",
-        "description": "Subject gate — drop cross-filed roster facts from search evidence",
         "scope": null
       }
     ]
