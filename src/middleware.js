@@ -1,3 +1,5 @@
+// Astro edge middleware. Gates /admin/* server-side on the refresh_token cookie.
+// Deps: astro:middleware, the API's /api/auth/session. Fails closed.
 import { defineMiddleware } from 'astro:middleware';
 
 // Server-side gate for the admin area. The browser sends the httpOnly `refresh_token` cookie

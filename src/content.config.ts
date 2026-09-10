@@ -1,3 +1,6 @@
+// Astro content collections: agents + docsIndex load from docs/agents/, dialogs from
+// src/content/dialogs/. Deps: astro:content, astro/loaders glob.
+// `published` defaults false, so a dialog stays out of the index until opted in.
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 

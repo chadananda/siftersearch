@@ -28,3 +28,7 @@ _Requests to this project's agents. One per `## ` heading._
 ## 🔴 SifterSearch ALERT: Grounding progress
 - **🔴 SifterSearch ALERT: Grounding progress** — Grounding is stalled — plan mode with nothing queued, running or completed in 24h and the exhaustion endpoint unreachable, plus 4 blocking queries over 5s.  
   _noreply@bahai-education.org · today_
+
+## 🔴 SifterSearch ALERT: API :7839
+- **🔴 SifterSearch ALERT: API :7839** — SifterSearch's API on port 7839 returned status 0 (down) in two consecutive daily checks, alongside repeated blocking queries over 5s on pipeline-snapshot.  
+  _noreply@bahai-education.org · today_
