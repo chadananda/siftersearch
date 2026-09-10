@@ -178,7 +178,7 @@ IMPORTANT: Copy the markers EXACTLY as they appear in the text. Semantic coheren
   } catch (err) {
     // NEVER fall back to fake processing - fail clearly so the issue can be fixed
     logger.error({ err: err.message }, 'AI segmentation FAILED - not falling back to hard split');
-    throw new Error(`AI segmentation failed: ${err.message}. Source file needs manual review.`);
+    throw new Error(`AI segmentation failed: ${err.message}. Source file needs manual review.`, { cause: err });
   }
 }
 

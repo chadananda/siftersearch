@@ -56,7 +56,13 @@ export default [
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-console': 'off',
       'prefer-const': 'warn',
-      'no-case-declarations': 'off' // Allow declarations in case blocks
+      'no-case-declarations': 'off', // Allow declarations in case blocks
+      // Newly in eslint:recommended as of ESLint 10. Every one of the 45 it flags
+      // here is the deliberate `let x = <safe default>;` before a try/catch that
+      // reassigns it — dropping the initializer would leave x undefined on a path
+      // the catch does not cover. Kept visible as a warning, not an error, in the
+      // same spirit as no-unused-vars and prefer-const above.
+      'no-useless-assignment': 'warn'
     }
   },
   {
@@ -104,6 +110,10 @@ export default [
       'scripts/wip/**',
       'planning/**',
       '*.min.js',
+      // Generated Vite bundle (src/widget → here). Linting build output produced
+      // 17 of the repo's lint errors — all of them about browser globals and
+      // minifier-shaped code that no one will ever edit by hand.
+      'api/static/widget/sifter-chat.js',
       // Skip Svelte/Astro files - need special parsers
       '**/*.svelte',
       '**/*.astro'

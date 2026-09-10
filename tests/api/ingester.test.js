@@ -14,6 +14,16 @@ import {
   parseMarkdownFrontmatter
 } from '../../api/services/ingester.js';
 
+// Hoisted by vitest to before every import in this file, so it must be declared
+// here rather than inside the beforeEach that consumes it. vitest 5 rejects the
+// nested form outright; under vitest 4 it was already behaving this way silently.
+vi.mock('../../api/lib/db.js', () => ({
+  queryOne: vi.fn(),
+  queryAll: vi.fn(),
+  query: vi.fn(),
+  transaction: vi.fn()
+}));
+
 describe('Ingester Service', () => {
   describe('hashContent', () => {
     it('should return SHA256 hash of content', () => {
@@ -725,15 +735,7 @@ describe('ingestDocument ID Preservation (Integration)', () => {
       redirects: new Map()
     };
 
-    // Mock the database module
-    vi.mock('../../api/lib/db.js', () => ({
-      queryOne: vi.fn(),
-      queryAll: vi.fn(),
-      query: vi.fn(),
-      transaction: vi.fn()
-    }));
-
-    // Import after mocking
+    // db.js is mocked at the top of this file — the factory is hoisted regardless.
     const db = await import('../../api/lib/db.js');
     queryOne = db.queryOne;
     queryAll = db.queryAll;

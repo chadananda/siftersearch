@@ -113,7 +113,7 @@ Given('the application is running', async function () {
     const response = await fetch(BASE_URL);
     expect(response.ok, 'Application should be responding').to.be.true;
   } catch (err) {
-    throw new Error(`Application not running at ${BASE_URL}: ${err.message}`);
+    throw new Error(`Application not running at ${BASE_URL}: ${err.message}`, { cause: err });
   }
 });
 

@@ -108,7 +108,7 @@ function parseFrontmatterTolerant(raw) {
   try {
     return yaml.parse(out.join('\n')) || {};
   } catch (err) {
-    throw new Error(`Frontmatter parse failed: ${err.message}`);
+    throw new Error(`Frontmatter parse failed: ${err.message}`, { cause: err });
   }
 }
 

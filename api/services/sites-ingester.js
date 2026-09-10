@@ -53,7 +53,7 @@ async function loadSitesRegistry(basePath) {
     return parsed.sites || {};
   } catch (err) {
     if (err.code === 'ENOENT') {
-      throw new Error(`Sites registry missing: ${path} (copy from config/sites.example.yaml)`);
+      throw new Error(`Sites registry missing: ${path} (copy from config/sites.example.yaml)`, { cause: err });
     }
     throw err;
   }

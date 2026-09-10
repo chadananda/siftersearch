@@ -387,7 +387,7 @@ async function callLLMWithRetry(label, fn) {
           waited = true;
         }
         if (Date.now() - healthStart > HEALTH_TIMEOUT_MS) {
-          throw new Error(`Local LLM unhealthy for >${HEALTH_TIMEOUT_MS / 60000}min, giving up`);
+          throw new Error(`Local LLM unhealthy for >${HEALTH_TIMEOUT_MS / 60000}min, giving up`, { cause: err });
         }
         await new Promise(r => setTimeout(r, HEALTH_POLL_INTERVAL_MS));
       }
