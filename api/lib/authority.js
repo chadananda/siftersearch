@@ -23,6 +23,18 @@ import { config } from './config.js';
 // Cache for authority values from library meta.yaml files
 let libraryAuthority = null;
 let lastLoadTime = 0;
+
+// Returned when the library has never been scanned successfully — no basePath
+// configured, or the directory is not mounted. Every caller dereferences
+// .collectionMeta / .collections straight away, so handing back null crashed
+// ingestion with an opaque TypeError instead of falling back to defaults.
+// Not cached: leaving libraryAuthority null means the next call retries the scan.
+const EMPTY_AUTHORITY = Object.freeze({
+  religions: {},
+  collections: {},
+  religionMeta: {},
+  collectionMeta: {},
+});
 let backgroundRefreshPending = false;
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes — library structure changes rarely
 
@@ -252,7 +264,7 @@ function loadLibraryAuthority() {
       backgroundRefreshPending = false;
     });
   }
-  return libraryAuthority;
+  return libraryAuthority || EMPTY_AUTHORITY;
 }
 
 /**

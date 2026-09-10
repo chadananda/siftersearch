@@ -8,7 +8,7 @@
 // the connection isn't even opened in default scope.
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
@@ -104,9 +104,20 @@ describe('getSiteDb', () => {
     // Adversarial siteId — the filename must NOT contain path traversal characters.
     const db = await getSiteDb('weird/site', '../../etc/passwd');
     expect(db).toBeDefined();
-    // The actual file should be under data/sites/, not at /etc/passwd.
-    const escapedAttempt = path.join(tempCwd, '..', '..', 'etc', 'passwd');
-    expect(existsSync(escapedAttempt)).toBe(false);
+
+    // The file lands under data/sites/ with every separator and dot-segment
+    // flattened. (The previous assertion here resolved to the real /etc/passwd,
+    // which exists on every Linux box, so it failed for a reason unrelated to
+    // the behaviour under test.)
+    const sitesDir = path.join(tempCwd, 'data/sites');
+    const written = readdirSync(sitesDir);
+    const escaped = written.find((f) => f.includes('passwd'));
+    expect(escaped).toBe('.._.._etc_passwd.db');
+    expect(existsSync(path.join(sitesDir, escaped))).toBe(true);
+
+    // Nothing was created outside data/sites/.
+    expect(existsSync(path.join(tempCwd, 'data', 'passwd.db'))).toBe(false);
+    expect(existsSync(path.join(tempCwd, 'etc'))).toBe(false);
   });
 
   it('re-running migrations on existing DB is a no-op', async () => {
