@@ -39,6 +39,15 @@ export default defineConfig({
     platformProxy: {
       enabled: true
     },
+    // No image optimisation. Nothing in src/ imports astro:assets — no <Image>,
+    // no <Picture>, no getImage — but the adapter's default ('compile') pulls
+    // sharp into the SSR bundle. `npm ci` does not hoist sharp (it is only a
+    // transitive dep of miniflare), so `npm run build` failed outright on a
+    // clean install — and the build is the only path frontend changes take to
+    // production. It also takes sharp out of the /_image endpoint — the route is
+    // still registered, but passthrough returns the original bytes instead of
+    // decoding them, which is where the Astro AVIF RCE advisory lived.
+    imageService: 'passthrough',
     // Our worker wraps Astro to proxy /api/*, /widget*, /health to the tunnel. Registering it as the
     // adapter's entry point (rather than as wrangler's `main`) means the adapter hands it the manifest
     // instead of the worker importing the build output — the circular reference that blocks adapter v14.
