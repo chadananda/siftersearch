@@ -530,3 +530,11 @@ module.exports = {
     }
   ]
 };
+
+// dotenv 17 prints a banner (and a vendor tip) to stdout on every config() call.
+// Every process here loads .env-secrets and .env-public, so that is two lines of
+// advertising at the top of every PM2 log, on every restart. Injected here rather
+// than at the 410 dotenv.config() call sites across the repo.
+for (const app of module.exports.apps) {
+  app.env = { ...(app.env || {}), DOTENV_CONFIG_QUIET: 'true' };
+}
