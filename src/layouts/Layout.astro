@@ -15,7 +15,10 @@ const siteName = 'SifterSearch';
 const {
   title,
   description = 'Search thousands of sacred texts from world religions with AI-powered semantic search. Explore Baha\'i writings, pilgrim notes, and interfaith literature instantly.',
-  image = '/og-image.png',
+  // /og-image.png has never existed in public/, so every page that did not pass an
+  // explicit hero shipped an og:image that 404s — no preview card on any share.
+  // icon-512 is a stopgap that at least resolves; a real 1200x630 card is wanted.
+  image = '/icon-512.png',
   type = 'website',
   noindex = false
 } = Astro.props;

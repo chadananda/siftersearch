@@ -1,3 +1,7 @@
+# /sitemap.xml is the convention crawlers and auditors probe by default; this
+# site's index is sitemap-index.xml and only robots.txt said so.
+/sitemap.xml   /sitemap-index.xml   301
+
 /dialog        /dialogue       301
 /dialog/       /dialogue/      301
 /dialog/*      /dialogue/:splat 301

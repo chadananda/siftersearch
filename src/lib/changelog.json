@@ -1,6 +1,76 @@
 {
-  "generated": "2026-09-09T13:12:51.766Z",
+  "generated": "2026-09-10T05:24:39.783Z",
   "entries": [
+    {
+      "hash": "ac5979a7",
+      "date": "2026-09-09",
+      "type": "Security",
+      "description": "No shell in the backup path, 255 ignored files untracked, 641 -> 344",
+      "scope": null
+    },
+    {
+      "hash": "1b56fb0e",
+      "date": "2026-09-09",
+      "type": "Security",
+      "description": "Clear every npm advisory that has a non-breaking fix (15 -> 6)",
+      "scope": null
+    },
+    {
+      "hash": "0f649744",
+      "date": "2026-09-09",
+      "type": "Other",
+      "description": "Remaining minors current, and six undeclared dependencies declared",
+      "scope": null
+    },
+    {
+      "hash": "cee3afcb",
+      "date": "2026-09-09",
+      "type": "Fixed",
+      "description": "Npm run build failed from a clean install — sharp was unresolvable",
+      "scope": "build"
+    },
+    {
+      "hash": "aff2aa19",
+      "date": "2026-09-09",
+      "type": "Other",
+      "description": "Runtime majors current — openai 7, pino 10, better-sqlite3 13, and six more",
+      "scope": null
+    },
+    {
+      "hash": "6f116ba9",
+      "date": "2026-09-09",
+      "type": "Other",
+      "description": "Dev tooling to current majors — eslint 10, vitest 5, cucumber 13",
+      "scope": null
+    },
+    {
+      "hash": "c0d2a1a4",
+      "date": "2026-09-09",
+      "type": "Other",
+      "description": "Auto/0019 — encounter-claim inventory survey",
+      "scope": null
+    },
+    {
+      "hash": "db292e13",
+      "date": "2026-09-09",
+      "type": "Fixed",
+      "description": "Authority cache never returns null; drop a vacuous traversal assertion",
+      "scope": null
+    },
+    {
+      "hash": "96f56f83",
+      "date": "2026-09-09",
+      "type": "Fixed",
+      "description": "Make the test suite runnable — lazy OpenAI clients, two real migration bugs",
+      "scope": null
+    },
+    {
+      "hash": "151f941d",
+      "date": "2026-09-09",
+      "type": "Other",
+      "description": "Link becomes a real stage — module, facade entry, emit; script is a wrapper",
+      "scope": null
+    },
     {
       "hash": "49207c04",
       "date": "2026-09-09",
@@ -118,6 +188,13 @@
       "date": "2026-09-06",
       "type": "Other",
       "description": "CTAI complete, scope the in-corpus remainder",
+      "scope": null
+    },
+    {
+      "hash": "dde98863",
+      "date": "2026-09-06",
+      "type": "Other",
+      "description": "Survey what encounter claims already exist before extracting anything",
       "scope": null
     },
     {
@@ -3423,87 +3500,80 @@
       "type": "Other",
       "description": "Provenance/context diagnosis",
       "scope": null
-    },
-    {
-      "hash": "12d04140",
-      "date": "2026-07-08",
-      "type": "Docs",
-      "description": "Scale-aware entity schema — radical uniformity (everything is entity/name/claim), 4 tables, hot-cold split, split-readiness",
-      "scope": null
-    },
-    {
-      "hash": "7fe06d57",
-      "date": "2026-07-08",
-      "type": "Other",
-      "description": "Remove throwaway cross-db probe",
-      "scope": null
-    },
-    {
-      "hash": "6386e9f4",
-      "date": "2026-07-08",
-      "type": "Other",
-      "description": "Map entity layer across sifter.db + graph.db",
-      "scope": null
-    },
-    {
-      "hash": "03fd409e",
-      "date": "2026-07-08",
-      "type": "Other",
-      "description": "Drop stale LLM lead when target/consistency gates filter all matches (never name an excluded person)",
-      "scope": null
-    },
-    {
-      "hash": "a0305a94",
-      "date": "2026-07-08",
-      "type": "Docs",
-      "description": "Entity-architecture.md — cited-claim spine, evidence comparator, five-discipline industry audit synthesis",
-      "scope": null
-    },
-    {
-      "hash": "add667ac",
-      "date": "2026-07-08",
-      "type": "Other",
-      "description": "Connection-target precision — evidence must name the queried target",
-      "scope": null
-    },
-    {
-      "hash": "7edd9cfa",
-      "date": "2026-07-08",
-      "type": "Other",
-      "description": "Remove throwaway alias probe",
-      "scope": null
-    },
-    {
-      "hash": "ba778544",
-      "date": "2026-07-08",
-      "type": "Other",
-      "description": "Check resolver alias table for Mustafa",
-      "scope": null
-    },
-    {
-      "hash": "b7bef034",
-      "date": "2026-07-07",
-      "type": "Other",
-      "description": "Revert over-blunt single-token-alias rule (would drop legit title facts); probe para_369",
-      "scope": null
-    },
-    {
-      "hash": "12920290",
-      "date": "2026-07-07",
-      "type": "Other",
-      "description": "Bare-alias contamination guard — canonical + multi-token aliases only",
-      "scope": null
-    },
-    {
-      "hash": "99cc042f",
-      "date": "2026-07-07",
-      "type": "Other",
-      "description": "Throwaway misbound probe",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-09": [
+      {
+        "hash": "ac5979a7",
+        "date": "2026-09-09",
+        "type": "Security",
+        "description": "No shell in the backup path, 255 ignored files untracked, 641 -> 344",
+        "scope": null
+      },
+      {
+        "hash": "1b56fb0e",
+        "date": "2026-09-09",
+        "type": "Security",
+        "description": "Clear every npm advisory that has a non-breaking fix (15 -> 6)",
+        "scope": null
+      },
+      {
+        "hash": "0f649744",
+        "date": "2026-09-09",
+        "type": "Other",
+        "description": "Remaining minors current, and six undeclared dependencies declared",
+        "scope": null
+      },
+      {
+        "hash": "cee3afcb",
+        "date": "2026-09-09",
+        "type": "Fixed",
+        "description": "Npm run build failed from a clean install — sharp was unresolvable",
+        "scope": "build"
+      },
+      {
+        "hash": "aff2aa19",
+        "date": "2026-09-09",
+        "type": "Other",
+        "description": "Runtime majors current — openai 7, pino 10, better-sqlite3 13, and six more",
+        "scope": null
+      },
+      {
+        "hash": "6f116ba9",
+        "date": "2026-09-09",
+        "type": "Other",
+        "description": "Dev tooling to current majors — eslint 10, vitest 5, cucumber 13",
+        "scope": null
+      },
+      {
+        "hash": "c0d2a1a4",
+        "date": "2026-09-09",
+        "type": "Other",
+        "description": "Auto/0019 — encounter-claim inventory survey",
+        "scope": null
+      },
+      {
+        "hash": "db292e13",
+        "date": "2026-09-09",
+        "type": "Fixed",
+        "description": "Authority cache never returns null; drop a vacuous traversal assertion",
+        "scope": null
+      },
+      {
+        "hash": "96f56f83",
+        "date": "2026-09-09",
+        "type": "Fixed",
+        "description": "Make the test suite runnable — lazy OpenAI clients, two real migration bugs",
+        "scope": null
+      },
+      {
+        "hash": "151f941d",
+        "date": "2026-09-09",
+        "type": "Other",
+        "description": "Link becomes a real stage — module, facade entry, emit; script is a wrapper",
+        "scope": null
+      },
       {
         "hash": "49207c04",
         "date": "2026-09-09",
@@ -3627,6 +3697,13 @@
         "date": "2026-09-06",
         "type": "Other",
         "description": "CTAI complete, scope the in-corpus remainder",
+        "scope": null
+      },
+      {
+        "hash": "dde98863",
+        "date": "2026-09-06",
+        "type": "Other",
+        "description": "Survey what encounter claims already exist before extracting anything",
         "scope": null
       },
       {
@@ -7009,85 +7086,6 @@
         "date": "2026-07-08",
         "type": "Other",
         "description": "Provenance/context diagnosis",
-        "scope": null
-      },
-      {
-        "hash": "12d04140",
-        "date": "2026-07-08",
-        "type": "Docs",
-        "description": "Scale-aware entity schema — radical uniformity (everything is entity/name/claim), 4 tables, hot-cold split, split-readiness",
-        "scope": null
-      },
-      {
-        "hash": "7fe06d57",
-        "date": "2026-07-08",
-        "type": "Other",
-        "description": "Remove throwaway cross-db probe",
-        "scope": null
-      },
-      {
-        "hash": "6386e9f4",
-        "date": "2026-07-08",
-        "type": "Other",
-        "description": "Map entity layer across sifter.db + graph.db",
-        "scope": null
-      },
-      {
-        "hash": "03fd409e",
-        "date": "2026-07-08",
-        "type": "Other",
-        "description": "Drop stale LLM lead when target/consistency gates filter all matches (never name an excluded person)",
-        "scope": null
-      },
-      {
-        "hash": "a0305a94",
-        "date": "2026-07-08",
-        "type": "Docs",
-        "description": "Entity-architecture.md — cited-claim spine, evidence comparator, five-discipline industry audit synthesis",
-        "scope": null
-      },
-      {
-        "hash": "add667ac",
-        "date": "2026-07-08",
-        "type": "Other",
-        "description": "Connection-target precision — evidence must name the queried target",
-        "scope": null
-      },
-      {
-        "hash": "7edd9cfa",
-        "date": "2026-07-08",
-        "type": "Other",
-        "description": "Remove throwaway alias probe",
-        "scope": null
-      },
-      {
-        "hash": "ba778544",
-        "date": "2026-07-08",
-        "type": "Other",
-        "description": "Check resolver alias table for Mustafa",
-        "scope": null
-      }
-    ],
-    "2026-07-07": [
-      {
-        "hash": "b7bef034",
-        "date": "2026-07-07",
-        "type": "Other",
-        "description": "Revert over-blunt single-token-alias rule (would drop legit title facts); probe para_369",
-        "scope": null
-      },
-      {
-        "hash": "12920290",
-        "date": "2026-07-07",
-        "type": "Other",
-        "description": "Bare-alias contamination guard — canonical + multi-token aliases only",
-        "scope": null
-      },
-      {
-        "hash": "99cc042f",
-        "date": "2026-07-07",
-        "type": "Other",
-        "description": "Throwaway misbound probe",
         "scope": null
       }
     ]
