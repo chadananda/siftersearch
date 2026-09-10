@@ -17,7 +17,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -43,7 +43,9 @@ const TO = process.env.DIGEST_EMAIL || process.env.SITE_ADMIN_EMAIL || '';
 const BACKUP_DIR = process.env.BACKUP_DIR || '/tank/backups/siftersearch';
 const LIVE_DB = process.env.SIFTER_DB_PATH || join(ROOT, 'data', 'sifter.db');
 const alarm = (subject, text) => (TO ? sendEmail({ to: TO, subject, text }).catch((e) => logger.error({ err: e.message }, 'backup alarm email failed')) : Promise.resolve());
-const sql = (db, q) => execSync(`sqlite3 "${db}" "${q}"`, { stdio: 'pipe', timeout: 30 * 60 * 1000 }).toString().trim();
+// argv, not a shell string: BACKUP_DIR and SIFTER_DB_PATH are env-set paths, and this
+// runs unattended every night against the corpus. Matches api/lib/backup.js.
+const sql = (db, q) => execFileSync('sqlite3', [db, q], { stdio: 'pipe', timeout: 30 * 60 * 1000 }).toString().trim();
 
 const t0 = Date.now();
 const problems = [];

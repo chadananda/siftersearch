@@ -13,7 +13,7 @@
  * Or:  npx siftersearch preflight
  */
 
-import { execSync, spawn } from 'child_process';
+import { execFileSync, spawnSync, spawn } from 'child_process';
 import { existsSync, accessSync, constants, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -168,7 +168,7 @@ const INSTALL_INSTRUCTIONS = {
  */
 function commandExists(cmd) {
   try {
-    execSync(`which ${cmd}`, { stdio: 'pipe' });
+    execFileSync('which', [cmd], { stdio: 'pipe' });
     return true;
   } catch {
     return false;
@@ -180,7 +180,11 @@ function commandExists(cmd) {
  */
 function getVersion(cmd, versionFlag = '--version') {
   try {
-    const output = execSync(`${cmd} ${versionFlag} 2>&1`, { stdio: 'pipe' }).toString().trim();
+    // argv form has no `2>&1`, so ask for both streams explicitly — several tools
+    // (git among them) print their version banner on stderr.
+    const r = spawnSync(cmd, [versionFlag], { encoding: 'utf-8' });
+    if (r.error || r.status !== 0) throw r.error || new Error(`${cmd} exited ${r.status}`);
+    const output = `${r.stdout || ''}${r.stderr || ''}`.trim();
     // Extract version number from output
     const match = output.match(/(\d+\.\d+\.?\d*)/);
     return match ? match[1] : output.split('\n')[0].substring(0, 50);

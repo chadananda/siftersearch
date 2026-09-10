@@ -1,6 +1,34 @@
 {
-  "generated": "2026-09-10T05:24:39.783Z",
+  "generated": "2026-09-10T08:42:52.542Z",
   "entries": [
+    {
+      "hash": "9741c9d3",
+      "date": "2026-09-10",
+      "type": "Fixed",
+      "description": "Two hung /api/auth/refresh fetches on every page load",
+      "scope": "client"
+    },
+    {
+      "hash": "7dfceb12",
+      "date": "2026-09-09",
+      "type": "Chore",
+      "description": "Worker status for the overnight standards pass",
+      "scope": null
+    },
+    {
+      "hash": "b350e520",
+      "date": "2026-09-09",
+      "type": "Other",
+      "description": "Pin GATE_BASE_URL, so the gate stops auditing xswarm.ai from this repo",
+      "scope": null
+    },
+    {
+      "hash": "2a133d7b",
+      "date": "2026-09-09",
+      "type": "Other",
+      "description": "Every share card pointed at an og:image that 404s",
+      "scope": null
+    },
     {
       "hash": "ac5979a7",
       "date": "2026-09-09",
@@ -3472,38 +3500,40 @@
       "type": "Other",
       "description": "Verify GPB claims",
       "scope": null
-    },
-    {
-      "hash": "f5453e78",
-      "date": "2026-07-08",
-      "type": "Docs",
-      "description": "Research + aliases — create vs describe; research resolves (which entity a name belongs to) + cited external-equivalence, never mints entities or unattributed names",
-      "scope": null
-    },
-    {
-      "hash": "b95a4a31",
-      "date": "2026-07-08",
-      "type": "Docs",
-      "description": "Entity-creation discipline — source-driven, coverage-ordered (GPB→+DB→…); research enriches, never creates",
-      "scope": null
-    },
-    {
-      "hash": "714a5019",
-      "date": "2026-07-08",
-      "type": "Docs",
-      "description": "Identity is mention-anchored — a bare name is not an entity; provenance mandatory, enforced by write-time proof gate",
-      "scope": null
-    },
-    {
-      "hash": "964da2c0",
-      "date": "2026-07-08",
-      "type": "Other",
-      "description": "Provenance/context diagnosis",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-10": [
+      {
+        "hash": "9741c9d3",
+        "date": "2026-09-10",
+        "type": "Fixed",
+        "description": "Two hung /api/auth/refresh fetches on every page load",
+        "scope": "client"
+      }
+    ],
     "2026-09-09": [
+      {
+        "hash": "7dfceb12",
+        "date": "2026-09-09",
+        "type": "Chore",
+        "description": "Worker status for the overnight standards pass",
+        "scope": null
+      },
+      {
+        "hash": "b350e520",
+        "date": "2026-09-09",
+        "type": "Other",
+        "description": "Pin GATE_BASE_URL, so the gate stops auditing xswarm.ai from this repo",
+        "scope": null
+      },
+      {
+        "hash": "2a133d7b",
+        "date": "2026-09-09",
+        "type": "Other",
+        "description": "Every share card pointed at an og:image that 404s",
+        "scope": null
+      },
       {
         "hash": "ac5979a7",
         "date": "2026-09-09",
@@ -7058,34 +7088,6 @@
         "date": "2026-07-08",
         "type": "Other",
         "description": "Verify GPB claims",
-        "scope": null
-      },
-      {
-        "hash": "f5453e78",
-        "date": "2026-07-08",
-        "type": "Docs",
-        "description": "Research + aliases — create vs describe; research resolves (which entity a name belongs to) + cited external-equivalence, never mints entities or unattributed names",
-        "scope": null
-      },
-      {
-        "hash": "b95a4a31",
-        "date": "2026-07-08",
-        "type": "Docs",
-        "description": "Entity-creation discipline — source-driven, coverage-ordered (GPB→+DB→…); research enriches, never creates",
-        "scope": null
-      },
-      {
-        "hash": "714a5019",
-        "date": "2026-07-08",
-        "type": "Docs",
-        "description": "Identity is mention-anchored — a bare name is not an entity; provenance mandatory, enforced by write-time proof gate",
-        "scope": null
-      },
-      {
-        "hash": "964da2c0",
-        "date": "2026-07-08",
-        "type": "Other",
-        "description": "Provenance/context diagnosis",
         "scope": null
       }
     ]

@@ -120,9 +120,12 @@ async function checkApi() {
   } catch {
     try {
       const t = Date.now();
-      const { stdout } = await exec(`curl -s --max-time 10 -o /dev/null -w "%{http_code}" "${publicUrl}"`, { timeout: 12000 });
+      // Second attempt with a plain fetch and a longer budget. This used to shell out
+      // to curl with publicUrl interpolated into the command string; curl bought
+      // nothing that fetch does not already do here.
+      const r2 = await fetch(publicUrl, { signal: AbortSignal.timeout(11000) });
       const ms = Date.now() - t;
-      const code = parseInt(stdout.trim(), 10);
+      const code = r2.status;
       if (code === 200) return ok('api', ms, { via: 'curl' });
       return fail('api', `HTTP ${code} (curl)`, { latency_ms: ms });
     } catch (curlErr) {

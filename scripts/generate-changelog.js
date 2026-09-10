@@ -10,7 +10,7 @@
  *   node scripts/generate-changelog.js [--count=10]
  */
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -25,8 +25,12 @@ const count = countArg ? parseInt(countArg.split('=')[1], 10) : 500; // Default 
 
 // Get recent commits with conventional commit format
 // Format: hash|date|subject
-const gitLog = execSync(
-  `git log --pretty=format:"%h|%as|%s" -n ${count * 2}`,
+// argv form: this runs on every `npm run build` via prebuild, and `count` comes
+// from --count= on the command line. Also drops the shell's quote handling, which
+// was the only reason the format string needed escaping.
+const gitLog = execFileSync(
+  'git',
+  ['log', '--pretty=format:%h|%as|%s', '-n', String(count * 2)],
   { encoding: 'utf-8', cwd: join(__dirname, '..') }
 ).trim();
 
