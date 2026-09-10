@@ -3,7 +3,14 @@
 const { spawnSync } = require('child_process');
 
 const API = 'https://api.siftersearch.com/api/v1/chat';
-const KEY = 'a9b228276d355e3a053223bfd64cd5546792c65053905606fef5dfe68fab7a31';
+// The public API key is PUBLIC_SIFTER_API_KEY in the committed .env-public — Vite ships it to the
+// browser by design. Read it from there rather than pasting a fifth copy of the literal.
+const { readFileSync } = require('fs');
+const { join } = require('path');
+const API_KEY_NAME = 'PUBLIC_SIFTER_API_KEY';
+const readPublicKey = () => process.env[API_KEY_NAME]
+  || (readFileSync(join(__dirname, '..', '..', '.env-public'), 'utf8').match(new RegExp('^' + API_KEY_NAME + '=(.+)$', 'm')) || [])[1];
+const KEY = readPublicKey();
 const body = JSON.stringify({
   messages: [{ role: 'user', content: 'What does Bahá’u’lláh say in the Tablet of Wisdom about materialism?' }],
   tenant: 'siftersearch'

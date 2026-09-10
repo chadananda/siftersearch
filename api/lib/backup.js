@@ -2,7 +2,7 @@
 // :why: .backup command is the only method that produces a consistent snapshot with active WAL
 // :rules: Never use db.js here — backup must be independent of the ORM/client layer
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { mkdirSync, readdirSync, unlinkSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -77,7 +77,7 @@ function countLocalBackups() {
 
 // Check sqlite3 CLI is available
 function checkSqliteCli() {
-  try { execSync('sqlite3 --version', { stdio: 'pipe' }); return true; } catch { return false; }
+  try { execFileSync('sqlite3', ['--version'], { stdio: 'pipe' }); return true; } catch { return false; }
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -107,7 +107,7 @@ async function runMeiliBackup() {
     // exit 24 ("some files vanished") on most runs. That's fine — the LMDB
     // pages we actually care about (indexes/) are stable and copied.
     try {
-      execSync(`rsync -aH --delete "${MEILI_SRC}/" "${dest}/"`,
+      execFileSync('rsync', ['-aH', '--delete', `${MEILI_SRC}/`, `${dest}/`],
         { stdio: ['ignore', 'pipe', 'pipe'] });
     } catch (rsyncErr) {
       // rsync exits 24 when files vanish during transfer — non-fatal.
@@ -119,7 +119,7 @@ async function runMeiliBackup() {
     const elapsedMs = Date.now() - t0;
     let sizeBytes = 0;
     try {
-      sizeBytes = parseInt(execSync(`du -sb "${dest}" | cut -f1`).toString().trim(), 10) || 0;
+      sizeBytes = parseInt(execFileSync('du', ['-sb', dest]).toString().split(/\s/)[0], 10) || 0;
     } catch { /* size optional */ }
     logger.info({ dest, elapsedMs, sizeBytes }, 'Meilisearch backup complete');
     return { component: 'meilisearch', success: true, dest, elapsedMs, sizeBytes };
@@ -137,7 +137,7 @@ async function runEmbeddingCacheBackup() {
   try {
     logger.info({ src: EMBED_CACHE_SRC, dest }, 'Starting embedding cache backup');
     // Use sqlite3 .backup (cache db is also WAL-mode SQLite)
-    execSync(`sqlite3 "${EMBED_CACHE_SRC}" ".backup ${dest}"`, { stdio: 'pipe' });
+    execFileSync('sqlite3', [EMBED_CACHE_SRC, `.backup ${dest}`], { stdio: 'pipe' });
     logger.info({ dest }, 'Embedding cache backup complete');
     return { component: 'embedding_cache', success: true, dest };
   } catch (err) {
@@ -189,21 +189,21 @@ export async function runBackup() {
     logger.info({ dbPath, backupPath, strategy: zfsDataset ? 'zfs-snapshot' : 'sqlite-backup' }, 'Starting SQLite backup');
     if (zfsDataset) {
       const snapName = `siftersearch-backup-${Date.now()}`;
-      const zfs = (args) => { try { execSync(`sudo -n zfs ${args}`, { stdio: 'pipe' }); } catch { execSync(`zfs ${args}`, { stdio: 'pipe' }); } };
-      zfs(`snapshot ${zfsDataset}@${snapName}`);
+      const zfs = (args) => { try { execFileSync('sudo', ['-n', 'zfs', ...args], { stdio: 'pipe' }); } catch { execFileSync('zfs', args, { stdio: 'pipe' }); } };
+      zfs(['snapshot', `${zfsDataset}@${snapName}`]);
       try {
-        const mount = execSync(`zfs get -H -o value mountpoint ${zfsDataset}`, { stdio: 'pipe' }).toString().trim();
+        const mount = execFileSync('zfs', ['get', '-H', '-o', 'value', 'mountpoint', zfsDataset], { stdio: 'pipe' }).toString().trim();
         const snapDir = `${mount}/.zfs/snapshot/${snapName}`;
         const dbFile = dbPath.split('/').pop();
-        execSync(`cp "${snapDir}/${dbFile}" "${backupPath}"`, { stdio: 'pipe', timeout: 3600_000 });
-        if (existsSync(`${snapDir}/${dbFile}-wal`)) execSync(`cp "${snapDir}/${dbFile}-wal" "${backupPath}-wal"`, { stdio: 'pipe', timeout: 600_000 });
+        execFileSync('cp', [`${snapDir}/${dbFile}`, backupPath], { stdio: 'pipe', timeout: 3600_000 });
+        if (existsSync(`${snapDir}/${dbFile}-wal`)) execFileSync('cp', [`${snapDir}/${dbFile}-wal`, `${backupPath}-wal`], { stdio: 'pipe', timeout: 600_000 });
         // Fold the WAL into the copy → clean single-file snapshot (removes -wal/-shm side files).
-        execSync(`sqlite3 "${backupPath}" "PRAGMA journal_mode=DELETE;"`, { stdio: 'pipe', timeout: 1800_000 });
+        execFileSync('sqlite3', [backupPath, 'PRAGMA journal_mode=DELETE;'], { stdio: 'pipe', timeout: 1800_000 });
       } finally {
-        try { zfs(`destroy ${zfsDataset}@${snapName}`); } catch (e) { logger.warn({ err: e.message, snapName }, 'backup snapshot destroy failed — clean up manually'); }
+        try { zfs(['destroy', `${zfsDataset}@${snapName}`]); } catch (e) { logger.warn({ err: e.message, snapName }, 'backup snapshot destroy failed — clean up manually'); }
       }
     } else {
-      execSync(`sqlite3 "${dbPath}" ".backup ${backupPath}"`, { stdio: 'pipe', timeout: 3600_000 });
+      execFileSync('sqlite3', [dbPath, `.backup ${backupPath}`], { stdio: 'pipe', timeout: 3600_000 });
     }
     logger.info({ backupPath }, 'SQLite backup complete');
     components.push({ component: 'sqlite_content', success: true, dest: backupPath });
@@ -227,7 +227,7 @@ export async function runBackup() {
   if (nasTarget) {
     try {
       logger.info({ nasTarget, backupPath }, 'Syncing SQLite backup to NAS');
-      execSync(`rsync -az "${backupPath}" "${nasTarget}"`, { stdio: 'pipe' });
+      execFileSync('rsync', ['-az', backupPath, nasTarget], { stdio: 'pipe' });
       remoteSynced = true;
       logger.info({ nasTarget }, 'Backup synced to NAS');
     } catch (err) {

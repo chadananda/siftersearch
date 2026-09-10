@@ -70,6 +70,7 @@ export default async function librarianRoutes(fastify) {
 
     // Get total count
     const countResult = await queryOne(
+      // security-audit-ignore: dangerous-pattern — the appended fragment is a string literal; `status` goes in as a bound parameter
       'SELECT COUNT(*) as count FROM ingestion_queue' + (status ? ' WHERE status = ?' : ''),
       status ? [status] : []
     );

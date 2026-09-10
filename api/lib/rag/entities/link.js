@@ -8,6 +8,7 @@
 // binding to a later pass that can weigh evidence. Correct design. But the later pass was never a module —
 // it lived in scripts/entity-read/link-claims.mjs, and run-grounding invoked it by execSync:
 //
+// security-audit-ignore: dangerous-pattern — prose, not code: this quotes the execSync call this file REPLACED
 //     if (want('link')) { execSync(`DOC=${docId} WRITE=1 ... node scripts/entity-read/link-claims.mjs`) }
 //
 // Every sibling stage did `const r = await rag.entities.project(...); emit('project', r)`. This one captured

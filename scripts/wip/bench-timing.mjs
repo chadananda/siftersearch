@@ -1,5 +1,14 @@
 // Real-time SSE timing — uses fetch streaming so we see when each event lands.
-const KEY = 'a9b228276d355e3a053223bfd64cd5546792c65053905606fef5dfe68fab7a31';
+// The public API key is PUBLIC_SIFTER_API_KEY in the committed .env-public — Vite ships it to the
+// browser by design. Read it from there rather than pasting a fifth copy of the literal.
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+const __envRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const API_KEY_NAME = 'PUBLIC_SIFTER_API_KEY';
+const readPublicKey = () => process.env[API_KEY_NAME]
+  || (readFileSync(join(__envRoot, '.env-public'), 'utf8').match(new RegExp('^' + API_KEY_NAME + '=(.+)$', 'm')) || [])[1];
+const KEY = readPublicKey();
 const API = 'https://api.siftersearch.com/api/v1/chat';
 
 const t0 = Date.now();

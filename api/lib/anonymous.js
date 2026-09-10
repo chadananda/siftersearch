@@ -308,6 +308,7 @@ export function ensureSessionId(request, reply) {
   // plain http — so local dev falls back to Lax and keeps working.
   const cross = process.env.NODE_ENV === 'production';
   try {
+    // security-audit-ignore: cookie-flag — `cross` IS NODE_ENV === 'production', so secure/sameSite:none hold everywhere it matters; a literal true would break http dev
     reply.setCookie(SESSION_COOKIE, id, {
       httpOnly: true, path: '/',
       secure: cross, sameSite: cross ? 'none' : 'lax',

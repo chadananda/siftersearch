@@ -55,6 +55,7 @@ const COOKIE_OPTIONS = {
 const LEGACY_COOKIE_OPTIONS = { path: '/api/auth' };
 function setRefreshCookie(reply, refresh) {
   reply.clearCookie(REFRESH_COOKIE, LEGACY_COOKIE_OPTIONS);
+  // security-audit-ignore: cookie-flag — httpOnly, secure and sameSite are all set in COOKIE_OPTIONS, spread on the next token
   reply.setCookie(REFRESH_COOKIE, refresh.id, { ...COOKIE_OPTIONS, expires: refresh.expiresAt });
 }
 
