@@ -225,11 +225,24 @@ async function handleResponse(response) {
   return data;
 }
 
+// One refresh at a time. Every API call that gets a 401 asks for a refresh, and on a
+// cold page load several fire at once — two identical POSTs to /api/auth/refresh were
+// measurable on every anonymous visit to the home page. Concurrent callers now await
+// the same request; the slot is cleared when it settles so the next 401 can retry.
+let refreshInFlight = null;
+
 /**
  * Refresh the access token using the refresh token cookie
  * Silently returns false if no refresh token exists (anonymous users)
  */
-async function refreshToken() {
+function refreshToken() {
+  if (!refreshInFlight) {
+    refreshInFlight = doRefreshToken().finally(() => { refreshInFlight = null; });
+  }
+  return refreshInFlight;
+}
+
+async function doRefreshToken() {
   try {
     const response = await fetch(`${API_URL}/api/auth/refresh`, {
       method: 'POST',
@@ -241,7 +254,12 @@ async function refreshToken() {
     });
 
     if (!response.ok) {
-      // Expected for anonymous users - no refresh token
+      // Expected for anonymous users - no refresh token.
+      // The body MUST be drained. Returning without reading it leaves the response
+      // stream open, the request never completes, and the page never reaches network
+      // idle — which is exactly what it did: two /api/auth/refresh fetches still in
+      // flight 30s after a home page that finished loading in 880ms.
+      await response.body?.cancel().catch(() => {});
       clearAccessToken();
       return false;
     }
