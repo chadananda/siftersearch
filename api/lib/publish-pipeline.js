@@ -23,7 +23,17 @@ import { query as dbQuery } from './db.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCRIPTS_DIR = join(__dirname, '../../scripts');
 
-const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
+// Lazy client: constructing OpenAI at module scope throws when no key is set,
+// which made this module unimportable (and crashed API boot) without one.
+let openaiClient = null;
+function getOpenAI() {
+  if (!openaiClient) {
+    const apiKey = config.ai.openai?.apiKey || process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error('OPENAI_API_KEY is required');
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
 
 const TOPICS = [
   'theology', 'ethics', 'social-order', 'politics', 'history',
@@ -62,7 +72,7 @@ ${topic_hint ? `Topic hint from caller: ${topic_hint}\n\n` : ''}Transcript:
 
 ${transcript.length > 18000 ? transcript.slice(0, 18000) + '\n\n[truncated]' : transcript}`;
 
-  const resp = await openai.chat.completions.create({
+  const resp = await getOpenAI().chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
     temperature: 0.4,
@@ -105,7 +115,7 @@ Output ONLY JSON: {"rounds":[{"question":"...","answer":"..."},...]} with EXACTL
 
   const user = rounds.map((r, i) => `Round ${i + 1}:\nUSER: ${(r.user || '').slice(0, 800)}\nJAFAR: ${(r.jafar || '').slice(0, 1000)}`).join('\n\n');
 
-  const resp = await openai.chat.completions.create({
+  const resp = await getOpenAI().chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
     temperature: 0.3,
@@ -236,7 +246,7 @@ export async function anonymizeUserTurns(messages) {
 Output JSON: {"messages":[{"role":"...","text":"..."},...]} with EXACTLY ${userTexts.length} entries in order.`;
 
   try {
-    const resp = await openai.chat.completions.create({
+    const resp = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'system', content: sys }, { role: 'user', content: JSON.stringify(userTexts) }],
       temperature: 0.1,

@@ -23,7 +23,17 @@ import { logger } from './logger.js';
 import { config } from './config.js';
 import { query, queryOne } from './db.js';
 
-const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
+// Lazy client: constructing OpenAI at module scope throws when no key is set,
+// which made this module unimportable (and crashed API boot) without one.
+let openaiClient = null;
+function getOpenAI() {
+  if (!openaiClient) {
+    const apiKey = config.ai.openai?.apiKey || process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error('OPENAI_API_KEY is required');
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
 const TRANSLATION_MODEL = process.env.TRANSLATION_MODEL || 'gpt-4o-mini';
 
 // ─── CTAI JAFAR ───────────────────────────────────────────────────────────
@@ -177,7 +187,7 @@ export async function translatePassage({
     + (jafarHints ? `\n\nJAFAR concordance for this passage:\n${jafarHints}` : '')
     + (work_context ? `\n\nWork context: ${work_context}` : '');
 
-  const completion = await openai.chat.completions.create({
+  const completion = await getOpenAI().chat.completions.create({
     model: TRANSLATION_MODEL,
     max_tokens: Math.max(1500, Math.ceil(text.length / 2)),
     temperature: 0.3,

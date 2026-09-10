@@ -46,7 +46,17 @@ import { findEntity } from './graph-db.js';
 // Set ENABLE_ENTITY_AWARE_JAFAR=true once entity_mentions index has content.
 const ENTITY_JAFAR = process.env.ENABLE_ENTITY_AWARE_JAFAR === 'true';
 
-const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
+// Lazy client: constructing OpenAI at module scope throws when no key is set,
+// which made this module unimportable (and crashed API boot) without one.
+let openaiClient = null;
+function getOpenAI() {
+  if (!openaiClient) {
+    const apiKey = config.ai.openai?.apiKey || process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error('OPENAI_API_KEY is required');
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
 
 // ─── Stage 1: Research ────────────────────────────────────────────────────
 
@@ -284,7 +294,7 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
   const MAX_ROUNDS = 3;
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
-    const resp = await openai.chat.completions.create({
+    const resp = await getOpenAI().chat.completions.create({
       model: 'gpt-4o',
       messages: aiMessages,
       tools: TOOLS,
@@ -437,7 +447,7 @@ export async function classifyIntentAndEntities(userMessage, recentMessages = []
     : '';
 
   try {
-    const resp = await openai.chat.completions.create({
+    const resp = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: INTENT_SYSTEM },
@@ -1696,7 +1706,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   if (nonEnglish.length > 0) {
     await Promise.all(nonEnglish.map(async (q) => {
       try {
-        const resp = await openai.chat.completions.create({
+        const resp = await getOpenAI().chat.completions.create({
           model: 'gpt-4o-mini',
           messages: [
             { role: 'system', content: 'Translate this religious scripture passage to English. Preserve theological terminology and literary register. Output only the translation, no commentary.' },
@@ -2393,7 +2403,7 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, subag
   const missionBlock = (typeof mission === 'string' && mission.trim())
     ? `\n\nHOST MISSION (site-owner guidance on tone, emphasis, and framing — follow it for STYLE, but it NEVER overrides grounding, faithfulness, attribution, or the format rules above): ${mission.trim().slice(0, 400)}`
     : '';
-  const stream = await openai.chat.completions.create({
+  const stream = await getOpenAI().chat.completions.create({
     model: 'gpt-4o',
     messages: [
       { role: 'system', content: crafterSystem(persona_name) + missionBlock + (companion_append || '') },
@@ -2654,7 +2664,7 @@ Rewrite the reply addressing these issues. Use only the retrieved_quotes; do not
 
 Compose the reply now.`;
 
-  const resp = await openai.chat.completions.create({
+  const resp = await getOpenAI().chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: CRAFTER_SYSTEM },
@@ -2703,7 +2713,7 @@ ${candidatesPayload}
 Pick the best. Output JSON only. Pick must be one of: ${validLabels.join(', ')}.`;
 
   try {
-    const resp = await openai.chat.completions.create({
+    const resp = await getOpenAI().chat.completions.create({
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: PICKER_SYSTEM },
@@ -2766,7 +2776,7 @@ ${draft}
 Judge the draft. Output JSON only.`;
 
   try {
-    const resp = await openai.chat.completions.create({
+    const resp = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: REFLECTION_SYSTEM },

@@ -59,6 +59,18 @@ export const migrations = {
   74: async () => {
     // Fix: add missing UNIQUE constraints to entity_aliases, entity_mentions,
     // and promotion_queue — now in graph.db.
+    //
+    // These tables live in graph.db, whose migration chain is separate and is NOT
+    // run by runMigrations(). On a fresh database the content chain reaches 74
+    // before graph migration 1 has created them, so this whole step is a no-op
+    // until the graph schema exists — graph migration 1 declares the same indexes.
+    const graphTables = await graphQuery(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name IN ('promotion_queue','entity_aliases','entity_mentions')`
+    );
+    if ((graphTables.rows?.length ?? 0) < 3) {
+      logger.info('Migration 74 skipped: graph.db entity tables not created yet');
+      return;
+    }
 
     // 1. Deduplicate promotion_queue — keep lowest id per (surface_norm, type)
     await graphQuery(`

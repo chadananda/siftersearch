@@ -818,7 +818,11 @@ export const migrations = {
   // Version 44: Layered Indexing Tables
   44: async () => {
     logger.info('Starting migration 44: Layered indexing tables');
-    await query(migration44SQL());
+    // query() prepares a single statement; this script is many, so run them one by one.
+    // (Safe to split on ';' here — the script is plain CREATE TABLE/INDEX, no triggers.)
+    for (const stmt of migration44SQL().split(';').map(s => s.trim()).filter(Boolean)) {
+      await query(stmt);
+    }
     logger.info('Migration 44 complete: Layered indexing tables added');
   },
   // Version 45: Normalize religion name from "Buddhism" to "Buddhist"

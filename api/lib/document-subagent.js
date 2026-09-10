@@ -10,7 +10,17 @@ import { config } from './config.js';
 import { queryOne, queryAll } from './db.js';
 import { executeSearch } from '../routes/chat.js';
 
-const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
+// Lazy client: constructing OpenAI at module scope throws when no key is set,
+// which made this module unimportable (and crashed API boot) without one.
+let openaiClient = null;
+function getOpenAI() {
+  if (!openaiClient) {
+    const apiKey = config.ai.openai?.apiKey || process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error('OPENAI_API_KEY is required');
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
 
 const SUBAGENT_MODEL = process.env.DOC_SUBAGENT_MODEL || 'gpt-4o-mini';
 const MAX_ITERATIONS = 8;
@@ -286,7 +296,7 @@ export async function answerFromDocument({
     iterations++;
     let resp;
     try {
-      resp = await openai.chat.completions.create({
+      resp = await getOpenAI().chat.completions.create({
         model: SUBAGENT_MODEL,
         messages,
         tools: SUBAGENT_TOOLS,
