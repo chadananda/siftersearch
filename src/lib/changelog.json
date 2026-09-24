@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-24T22:27:22.937Z",
+  "generated": "2026-09-24T23:23:17.096Z",
   "entries": [
+    {
+      "hash": "21a7f011",
+      "date": "2026-09-24",
+      "type": "Fixed",
+      "description": "Author narrowing returned nothing unless the string was byte-identical",
+      "scope": "search"
+    },
     {
       "hash": "71372abe",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Fast AI-free lookup API — /api/v1/entities/lookup (transliteration-invariant recall over projected entities). migration 87 (entity_lookup_keys), shared api/lib/translit-key.js, build-lookup-index.mjs",
       "scope": null
-    },
-    {
-      "hash": "9ed18c2a",
-      "date": "2026-07-09",
-      "type": "Docs",
-      "description": "Full disambiguation process — final minimal-note format, concurrency/resume/retry, extraction gate, run + reversal",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "21a7f011",
+        "date": "2026-09-24",
+        "type": "Fixed",
+        "description": "Author narrowing returned nothing unless the string was byte-identical",
+        "scope": "search"
+      },
       {
         "hash": "71372abe",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Fast AI-free lookup API — /api/v1/entities/lookup (transliteration-invariant recall over projected entities). migration 87 (entity_lookup_keys), shared api/lib/translit-key.js, build-lookup-index.mjs",
-        "scope": null
-      },
-      {
-        "hash": "9ed18c2a",
-        "date": "2026-07-09",
-        "type": "Docs",
-        "description": "Full disambiguation process — final minimal-note format, concurrency/resume/retry, extraction gate, run + reversal",
         "scope": null
       }
     ]

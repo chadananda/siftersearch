@@ -1,127 +1,92 @@
-// Search-scope registry tests (Phase E1).
-//
-// These pin the wall between primary RAG and site-only content:
-//   - Default scope (no chatbot_location) excludes site-only entirely.
-//   - A site-only chatbot location yields ONLY that site's Meili index
-//     (no primary, no other supplementals).
-//   - A supplemental chatbot location maps to the default scope (its
-//     ranking boost is v2 polish, not exclusion).
-//
-// If any of these invariants change, the tests must be updated explicitly —
-// silent regressions here would leak opinion content into Jafar.
+/**
+ * SEARCH SCOPE: narrow hard, relax honestly.
+ *
+ * WHY NARROWING (measured 2026-09-24): the same query unfiltered returns Sutra Collection and Tao Te Ching
+ * in 7.35s; with religion="Baha'i" it returns The Dawn-Breakers in 0.95s. 7.7x faster and correct. Nothing
+ * in the pipeline infers a tradition — `religion` only ever arrives in the model's tool args, and at least
+ * two internal search calls pass none, so a Buddhism thread searches all 12 traditions.
+ *
+ * WHY RELAXING: a constraint that cannot widen reports absence as fact. If someone asks for a quote in Some
+ * Answered Questions and it is not there, the answer is "you are probably thinking of this passage in Paris
+ * Talks" — NOT silence, and NOT a silent swap that cites the wrong book as though it were the one asked for.
+ * Every widening is recorded so the answer can say what was relaxed.
+ */
+import { describe, it, expect } from 'vitest';
+import { relaxScope, scopeLadder, shouldWiden, describeRelaxation } from '../../api/lib/search-scope.js';
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  getParagraphIndex,
-  getScopeIndexes,
-  getDefaultScope,
-  getScopeForLocation,
-  setSiteRegistry,
-  INDEXES,
-} from '../../api/lib/search/scope.js';
-
-const SAMPLE_REGISTRY = {
-  'oceanlibrary.com': { scope: 'supplemental', meili_index_prefix: 'ol' },
-  'bahai-library.com': { scope: 'supplemental', meili_index_prefix: 'balib' },
-  'oceanoflights.org': { scope: 'supplemental', meili_index_prefix: 'ool' },
-  'bahaiteachings.org': { scope: 'site-only', meili_index_prefix: 'bt' },
-};
-
-describe('getParagraphIndex', () => {
-  it('returns primary paragraphs when no prefix', () => {
-    expect(getParagraphIndex()).toBe(INDEXES.PARAGRAPHS);
-    expect(getParagraphIndex(null)).toBe(INDEXES.PARAGRAPHS);
-  });
-
-  it('returns siftersearch_<prefix>_paragraphs for a site prefix', () => {
-    expect(getParagraphIndex('balib')).toBe('siftersearch_balib_paragraphs');
-    expect(getParagraphIndex('bt')).toBe('siftersearch_bt_paragraphs');
-  });
-});
-
-describe('getScopeIndexes', () => {
-  it('returns just primary when scope = { primary: true, sites: [] }', () => {
-    expect(getScopeIndexes({ primary: true, sites: [] })).toEqual([INDEXES.PARAGRAPHS]);
-  });
-
-  it('returns just sites when scope.primary is false', () => {
-    expect(getScopeIndexes({ primary: false, sites: ['bt'] }))
-      .toEqual(['siftersearch_bt_paragraphs']);
-  });
-
-  it('returns primary + sites in order when both', () => {
-    expect(getScopeIndexes({ primary: true, sites: ['balib', 'ool'] })).toEqual([
-      INDEXES.PARAGRAPHS,
-      'siftersearch_balib_paragraphs',
-      'siftersearch_ool_paragraphs',
+describe('scopeLadder', () => {
+  it('drops the narrowest constraint first — document before author before religion', () => {
+    const scope = { documentId: 20911, author: "’Abdu’l-Bahá", religion: "Baha'i" };
+    expect(scopeLadder(scope).map((s) => Object.keys(s).sort().join('+'))).toEqual([
+      'author+documentId+religion',
+      'author+religion',
+      'religion',
+      '',
     ]);
   });
 
-  it('default arg = { primary: true, sites: [] }', () => {
-    expect(getScopeIndexes()).toEqual([INDEXES.PARAGRAPHS]);
+  it('ends unconstrained, so a real answer is never withheld for lack of a filter', () => {
+    const last = scopeLadder({ religion: 'Buddhist' }).at(-1);
+    expect(Object.keys(last)).toEqual([]);
+  });
+
+  it('a comparative question starts unconstrained and has nothing to relax', () => {
+    expect(scopeLadder({})).toEqual([{}]);
   });
 });
 
-describe('default + chatbot-location scopes', () => {
-  beforeEach(() => {
-    setSiteRegistry(SAMPLE_REGISTRY);
+describe('shouldWiden', () => {
+  it('widens on no results', () => {
+    expect(shouldWiden([], { min: 3 })).toBe(true);
   });
-
-  it('default scope = primary + ALL supplementals (excludes site-only)', () => {
-    const scope = getDefaultScope();
-    expect(scope.primary).toBe(true);
-    expect(scope.sites.sort()).toEqual(['balib', 'ol', 'ool']);
-    // bt (site-only) is NOT in the default scope.
-    expect(scope.sites).not.toContain('bt');
+  it('widens on too few results', () => {
+    expect(shouldWiden([{}, {}], { min: 3 })).toBe(true);
   });
-
-  it('scope for null/unknown location = default scope', () => {
-    expect(getScopeForLocation(null)).toEqual(getDefaultScope());
-    expect(getScopeForLocation('unknown.com')).toEqual(getDefaultScope());
-  });
-
-  it('scope for a site-only location = ONLY that site, no primary, no other supplementals', () => {
-    const scope = getScopeForLocation('bahaiteachings.org');
-    expect(scope).toEqual({ primary: false, sites: ['bt'] });
-  });
-
-  it('scope for a supplemental location = default scope (ranking boost is v2 polish)', () => {
-    const scope = getScopeForLocation('bahai-library.com');
-    expect(scope).toEqual(getDefaultScope());
-  });
-
-  it('CRITICAL: site-only sites NEVER appear in default scope, even after registry refresh', () => {
-    // Adversarial — try to slip a site-only into default scope by reordering
-    // or capitalizing. The scope must filter strictly on `scope === 'supplemental'`.
-    setSiteRegistry({
-      'evil.example': { scope: 'site-only', meili_index_prefix: 'evil' },
-      'good.example': { scope: 'supplemental', meili_index_prefix: 'good' },
-    });
-    const scope = getDefaultScope();
-    expect(scope.sites).toContain('good');
-    expect(scope.sites).not.toContain('evil');
-  });
-
-  it('with empty registry, default scope is just primary', () => {
-    setSiteRegistry({});
-    expect(getDefaultScope()).toEqual({ primary: true, sites: [] });
+  it('does NOT widen when the narrow scope answered', () => {
+    expect(shouldWiden([{}, {}, {}], { min: 3 })).toBe(false);
   });
 });
 
-describe('getScopeIndexes integration with location resolution', () => {
-  beforeEach(() => setSiteRegistry(SAMPLE_REGISTRY));
+describe('relaxScope', () => {
+  const inBook = [{ id: 1, title: 'Some Answered Questions' }];
+  const elsewhere = [{ id: 2, title: 'Paris Talks' }, { id: 3, title: 'Paris Talks' }, { id: 4, title: 'Paris Talks' }];
 
-  it('end-to-end: default location → primary + 3 supplemental indexes', () => {
-    const indexes = getScopeIndexes(getScopeForLocation(null));
-    expect(indexes).toContain(INDEXES.PARAGRAPHS);
-    expect(indexes).toContain('siftersearch_balib_paragraphs');
-    expect(indexes).toContain('siftersearch_ool_paragraphs');
-    expect(indexes).toContain('siftersearch_ol_paragraphs');
-    expect(indexes).not.toContain('siftersearch_bt_paragraphs');
+  it('keeps the narrow result when it suffices, and reports no widening', async () => {
+    const r = await relaxScope({ documentId: 20911, religion: "Baha'i" }, async () => [{}, {}, {}], { min: 3 });
+    expect(r.widened).toBe(false);
+    expect(r.relaxed).toEqual([]);
   });
 
-  it('end-to-end: bahaiteachings.org chatbot → ONLY siftersearch_bt_paragraphs', () => {
-    const indexes = getScopeIndexes(getScopeForLocation('bahaiteachings.org'));
-    expect(indexes).toEqual(['siftersearch_bt_paragraphs']);
+  it('WIDENS and names what it dropped — the "you probably mean Paris Talks" case', async () => {
+    const seen = [];
+    const run = async (scope) => { seen.push({ ...scope }); return scope.documentId ? inBook : elsewhere; };
+    const r = await relaxScope({ documentId: 20911, religion: "Baha'i" }, run, { min: 3 });
+    expect(r.widened).toBe(true);
+    expect(r.relaxed).toContain('documentId');
+    expect(r.results.map((x) => x.title)).toEqual(['Paris Talks', 'Paris Talks', 'Paris Talks']);
+    expect(seen[0].documentId).toBe(20911);          // tried the named book FIRST
+    expect(seen[1].documentId).toBeUndefined();      // then without it
+  });
+
+  it('remembers what the narrow scope DID find, so the answer can say "not there, but here"', async () => {
+    const run = async (scope) => (scope.documentId ? inBook : elsewhere);
+    const r = await relaxScope({ documentId: 20911 }, run, { min: 3 });
+    expect(r.narrowResults).toHaveLength(1);
+  });
+
+  it('never returns fewer results than the narrow scope found', async () => {
+    const run = async (scope) => (scope.documentId ? inBook : []);
+    const r = await relaxScope({ documentId: 20911 }, run, { min: 3 });
+    expect(r.results).toHaveLength(1);
+  });
+});
+
+describe('describeRelaxation', () => {
+  it('states the constraint that was dropped, for the answer to disclose', () => {
+    const d = describeRelaxation({ documentId: 20911 }, ['documentId'], { 20911: 'Some Answered Questions' });
+    expect(d).toMatch(/Some Answered Questions/);
+  });
+  it('is empty when nothing was relaxed — no disclosure to make', () => {
+    expect(describeRelaxation({ religion: "Baha'i" }, [], {})).toBe('');
   });
 });
