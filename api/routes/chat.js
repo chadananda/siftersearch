@@ -17,6 +17,7 @@ import { participantId } from '../lib/anonymous.js';
 import { logger } from '../lib/logger.js';
 import { queryOne, queryAll } from '../lib/db.js';
 import { slugifyPath } from '../lib/slug.js';
+import { rankByTitle } from '../lib/title-rank.js';
 
 const SITE_URL = 'https://siftersearch.com';
 
@@ -991,10 +992,14 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
         const a = normalize(author);
         hits = hits.filter(h => normalize(h.author).includes(a));
       }
-      // Re-rank: authority score first, then Meilisearch position
-      hits = hits
-        .map((h, idx) => ({ ...h, _authority: authorityScore(h), _idx: idx }))
-        .sort((a, b) => (b._authority - a._authority) || (a._idx - b._idx))
+      // RE-RANK BY TITLE FIRST, THEN AUTHORITY.
+      // This used to sort by authority and use Meilisearch position only as a tie-break. authorityScore
+      // awards +60 for a canonical author, so "The Advent of Divine Justice" (Shoghi Effendi) outranked
+      // "The Dawn-Breakers" (Nabíl, score 0) for the query "The Dawn-Breakers" — the subagent then read the
+      // wrong book and the chat answered "The Dawn-Breakers does not specifically discuss the Conference of
+      // Badasht", which is one of its most famous chapters. Authority still decides among titles that match
+      // equally well, which is what it was for: the canonical Íqán over "Notes on the Íqán".
+      hits = rankByTitle(title || '', hits.map((h, idx) => ({ ...h, _authority: authorityScore(h), _idx: idx })))
         .slice(0, safeLimit);
       const meiliCandidates = hits
         // Skip the canonical doc if we already prepended it

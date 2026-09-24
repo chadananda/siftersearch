@@ -38,6 +38,7 @@ import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billi
 import { slugifyPath, generateDocSlug } from '../lib/slug.js';
 import { participantId as resolveParticipant } from '../lib/anonymous.js';
 import { deriveThreadTitle, ownsThread, ownThreadsFilter, TITLE_AFTER_ROUNDS } from '../lib/threads.js';
+import { rankByTitle } from '../lib/title-rank.js';
 
 const SITE_URL = 'https://siftersearch.com';
 
@@ -843,11 +844,17 @@ export default async function publicApiRoutes(fastify) {
         if (language) filters.push(`language = "${esc(language)}"`);
         if (author) filters.push(`author CONTAINS "${esc(author)}"`);
 
+        // OVER-FETCH, THEN RANK BY TITLE. Meilisearch scores title/author/description together, so a long
+        // description mentioning the words beat the actual book: "Dawn-Breakers" put The Dawn-Breakers at
+        // rank 4, "Paris Talks" put Paris Talks at rank 3. A caller taking the top hit gets the wrong book.
+        const overFetch = Math.min(200, offset + limit + 50);
         const result = await meili.index(INDEXES.DOCUMENTS).search(q, {
-          limit, offset,
+          limit: overFetch, offset: 0,
           filter: filters.length > 0 ? filters.join(' AND ') : undefined,
           attributesToRetrieve: ['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'paragraph_count']
         });
+        // Only when the caller actually searched — a plain browse keeps the engine's order.
+        result.hits = (q && q.trim() ? rankByTitle(q, result.hits) : result.hits).slice(offset, offset + limit);
 
         return {
           documents: result.hits.map(doc => ({
