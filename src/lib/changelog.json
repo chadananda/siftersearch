@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-24T17:28:38.043Z",
+  "generated": "2026-09-24T17:38:51.192Z",
   "entries": [
+    {
+      "hash": "e5c58bf7",
+      "date": "2026-09-24",
+      "type": "Fixed",
+      "description": "The work the user NAMED must outrank a more authoritative one",
+      "scope": "search"
+    },
     {
       "hash": "6bdd285c",
       "date": "2026-09-10",
@@ -3493,16 +3500,18 @@
       "type": "Chore",
       "description": "Un-track scratch/research dumps swept in by git add -A; keep only disambiguation-methodology doc",
       "scope": null
-    },
-    {
-      "hash": "dcba88e8",
-      "date": "2026-07-08",
-      "type": "Other",
-      "description": "Give the AI the SCENE (cited paragraph + neighbours) — place/era/subject often established earlier and not repeated; flag only contradictions, not omissions",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-24": [
+      {
+        "hash": "e5c58bf7",
+        "date": "2026-09-24",
+        "type": "Fixed",
+        "description": "The work the user NAMED must outrank a more authoritative one",
+        "scope": "search"
+      }
+    ],
     "2026-09-10": [
       {
         "hash": "6bdd285c",
@@ -7079,15 +7088,6 @@
         "date": "2026-07-09",
         "type": "Chore",
         "description": "Un-track scratch/research dumps swept in by git add -A; keep only disambiguation-methodology doc",
-        "scope": null
-      }
-    ],
-    "2026-07-08": [
-      {
-        "hash": "dcba88e8",
-        "date": "2026-07-08",
-        "type": "Other",
-        "description": "Give the AI the SCENE (cited paragraph + neighbours) — place/era/subject often established earlier and not repeated; flag only contradictions, not omissions",
         "scope": null
       }
     ]

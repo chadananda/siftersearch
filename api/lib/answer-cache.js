@@ -19,7 +19,14 @@ import { query, queryOne, queryAll } from './db.js';
 import { logger } from './logger.js';
 
 // ── The search-quality version. Bump when retrieval or crafting changes answers. ──
-export const SEARCH_VERSION = '2026-08-10.3';   // bump: quote-source = verbatim-containment miss check
+export const SEARCH_VERSION = '2026-09-24.1';   // bump: title-tier ranking — the NAMED work outranks authority
+// WHY THIS MUST BE BUMPED WITH EVERY ANSWER-AFFECTING CHANGE.
+// On 2026-09-24 the title-ranking fix went live and the question that motivated it — "What does The
+// Dawn-Breakers say about the Conference of Badasht?" — kept returning the old wrong answer ("does not
+// specifically discuss") in 0.31s, with zero tool calls, because this string still read 2026-08-10.3. The fix
+// was correct at the tool level (8/8 titles resolved) and invisible to users, because the cache never knew
+// the engine had changed. Same failure as HYPE_VERSION: the producer changed and the version string did not.
+// tests/api/answer-cache.test.js asserts this value exactly, so the bump cannot be forgotten silently.
 
 const SIM_THRESHOLD = 0.93;       // "same question"
 const MAX_CANDIDATES = 20000;     // cosine scan cap (matches deep_research pattern; ANN index later)
