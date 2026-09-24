@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-24T17:38:51.192Z",
+  "generated": "2026-09-24T22:27:22.937Z",
   "entries": [
+    {
+      "hash": "71372abe",
+      "date": "2026-09-24",
+      "type": "Fixed",
+      "description": "Bump SEARCH_VERSION for the title-ranking change, and make the bump un-forgettable",
+      "scope": "answer-cache"
+    },
     {
       "hash": "e5c58bf7",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Full disambiguation process — final minimal-note format, concurrency/resume/retry, extraction gate, run + reversal",
       "scope": null
-    },
-    {
-      "hash": "0fa5be95",
-      "date": "2026-07-09",
-      "type": "Chore",
-      "description": "Un-track scratch/research dumps swept in by git add -A; keep only disambiguation-methodology doc",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "71372abe",
+        "date": "2026-09-24",
+        "type": "Fixed",
+        "description": "Bump SEARCH_VERSION for the title-ranking change, and make the bump un-forgettable",
+        "scope": "answer-cache"
+      },
       {
         "hash": "e5c58bf7",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Docs",
         "description": "Full disambiguation process — final minimal-note format, concurrency/resume/retry, extraction gate, run + reversal",
-        "scope": null
-      },
-      {
-        "hash": "0fa5be95",
-        "date": "2026-07-09",
-        "type": "Chore",
-        "description": "Un-track scratch/research dumps swept in by git add -A; keep only disambiguation-methodology doc",
         "scope": null
       }
     ]

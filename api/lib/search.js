@@ -1100,6 +1100,33 @@ function tallySourceStats(entries) {
 }
 export function getSearchSourceStats() { return SOURCE_STATS; }
 
+/**
+ * Does a paragraph's author satisfy an author filter?
+ *
+ * MUST AGREE WITH THE ENGINE FILTER. The Meilisearch filter above is `author CONTAINS "…"` — partial by
+ * design, because nobody types the stored form. This post-filter used exact string equality
+ * (`e.paragraph.author !== filters.author`), so it discarded everything CONTAINS had matched:
+ * author="Abdu" returned 0 rows while author="’Abdu’l-Bahá" worked. Empty reads as "he never said it", and
+ * metadata narrowing is the strongest lever this corpus has — the same query unfiltered returns Tao Te Ching
+ * in 7.4s, and religion-filtered returns The Dawn-Breakers in 0.95s. A narrowing that silently empties is
+ * worse than none.
+ *
+ * Folded substring: diacritics and apostrophe style never decide whether ‘Abdu'l-Bahá is ‘Abdu'l-Bahá.
+ */
+export function authorMatches(paragraphAuthor, filterAuthor) {
+  const want = foldAuthor(filterAuthor);
+  if (!want) return true;                       // no constraint
+  const have = foldAuthor(paragraphAuthor);
+  if (!have) return false;                      // constrained, but the row names nobody
+  return have.includes(want);
+}
+
+const foldAuthor = (s) => String(s || '')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[\u2018\u2019\u02bc\u02bb`']/g, '')
+  .replace(/[^a-zA-Z0-9]+/g, '')
+  .toLowerCase();
+
 export async function multiIndexSearch(query, options = {}) {
   const limit = options.limit || 10;
   const overFetch = Math.max(limit * 3, 30);
@@ -1234,7 +1261,7 @@ export async function multiIndexSearch(query, options = {}) {
       if (!e.paragraph || e.paragraph._stub) return false;
       // HyPE doesn't index author — post-merge enforce author filter so HyPE hits
       // from non-matching authors don't bypass it (e.g. Pickthall leaking into author="Muhammad" slot).
-      if (filters.author && e.paragraph.author && e.paragraph.author !== filters.author) return false;
+      if (filters.author && !authorMatches(e.paragraph.author, filters.author)) return false;
       // Skip Bismillah formula paragraphs — they score 0.93+ in HyPE for mercy queries
       // (the formula literally contains "Compassionate" and "Merciful") but Jafar can't
       // cite them meaningfully. Filtering here ensures actual content surfaces instead.
