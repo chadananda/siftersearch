@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-24T23:23:17.096Z",
+  "generated": "2026-09-24T23:56:15.807Z",
   "entries": [
+    {
+      "hash": "5391152f",
+      "date": "2026-09-24",
+      "type": "New",
+      "description": "Conversation-scoped narrowing that relaxes honestly (not yet wired)",
+      "scope": "search"
+    },
     {
       "hash": "21a7f011",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Entity-read pipeline index (current vs legacy tooling) + lookup layer + passes in improvable-architecture doc",
       "scope": null
-    },
-    {
-      "hash": "1966283d",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Fast AI-free lookup API — /api/v1/entities/lookup (transliteration-invariant recall over projected entities). migration 87 (entity_lookup_keys), shared api/lib/translit-key.js, build-lookup-index.mjs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "5391152f",
+        "date": "2026-09-24",
+        "type": "New",
+        "description": "Conversation-scoped narrowing that relaxes honestly (not yet wired)",
+        "scope": "search"
+      },
       {
         "hash": "21a7f011",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Docs",
         "description": "Entity-read pipeline index (current vs legacy tooling) + lookup layer + passes in improvable-architecture doc",
-        "scope": null
-      },
-      {
-        "hash": "1966283d",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Fast AI-free lookup API — /api/v1/entities/lookup (transliteration-invariant recall over projected entities). migration 87 (entity_lookup_keys), shared api/lib/translit-key.js, build-lookup-index.mjs",
         "scope": null
       }
     ]

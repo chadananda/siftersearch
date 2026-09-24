@@ -1148,8 +1148,13 @@ export async function multiIndexSearch(query, options = {}) {
     : (filters.religion && !filters.collection) ? 0.3 : 0.5;
   const entityIds = options.entityIds || [];
 
+  // PER-LAYER TIMINGS. "Where did the milliseconds go" is unanswerable from a single total, and search
+  // quality work needs it per stage — see api/lib/search-trace.js.
+  const _t0 = Date.now();
+  const _stamp = {};
+  const timed = (name, p) => p.then((r) => { _stamp[name] = Date.now() - _t0; return r; });
   const [mainResult, hypeResult, entityResult] = await Promise.all([
-    hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio }).catch(err => {
+    timed('main', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio })).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
       return { hits: [] };
     }),
@@ -1157,14 +1162,14 @@ export async function multiIndexSearch(query, options = {}) {
     // have HyPE (gated off in v1), and supplementals don't either. The
     // primary `hype_questions` index is the only one populated.
     (!scope_config || scope_config.primary)
-      ? searchHypeQuestions(query, { limit: overFetch, filters }).catch(err => {
+      ? timed('hype', searchHypeQuestions(query, { limit: overFetch, filters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: hype failed');
           return { hits: [] };
         })
       : Promise.resolve({ hits: [] }),
     // Entity-mentions: only when resolved entity IDs are provided.
     entityIds.length > 0
-      ? searchByEntity(entityIds, { limit: overFetch, filters }).catch(err => {
+      ? timed('entity', searchByEntity(entityIds, { limit: overFetch, filters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: entity failed');
           return { hits: [] };
         })
@@ -1338,9 +1343,14 @@ export async function multiIndexSearch(query, options = {}) {
       main: (mainResult.hits || []).length,
       hype: (hypeResult.hits || []).length,
       entity_mentions: (entityResult.hits || []).length,
-    }
+    },
+    // Emitted for the trace. Retrieval layers run in parallel, so these are completion offsets from the
+    // start of the fan-out, not additive costs; `merge` is the RRF + diversity work after them.
+    _timings: { ...(_stamp), merge: Date.now() - _t0 - Math.max(0, ..._stampValues(_stamp)), total: Date.now() - _t0 },
   };
 }
+
+const _stampValues = (o) => { const v = Object.values(o).filter((x) => Number.isFinite(x)); return v.length ? v : [0]; };
 
 // ─── HyPE sidecar sync ────────────────────────────────────────────────────
 //

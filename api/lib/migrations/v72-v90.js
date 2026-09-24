@@ -839,6 +839,11 @@ export const migrations = {
     logger.info('Migration 117 complete');
   },
 
+  // SEARCH TRACE (2026-09-24). One durable row per search: which layers ran, which layer FOUND the top hit,
+  // filters and where they came from, per-stage timings, cache status, engine version. `search_log` carried
+  // none of that, and SOURCE_STATS (which tracks hype-vs-main leadership) lived only in process memory — lost
+  // on restart, never queryable. A day was spent guessing whether HyPE contributed to a failing search.
+
   116: async () => {
     logger.info('Starting migration 116: covering index for the per-language rollup');
     await ensureIndex(query, {
@@ -941,6 +946,41 @@ export const migrations = {
     try { await query('ALTER TABLE content ADD COLUMN word_alignment TEXT'); }
     catch (err) { if (!/duplicate column/i.test(err?.message || '')) throw err; }
     logger.info('Migration 121 complete: content.word_alignment (word-level original↔translation spans)');
+  },
+  122: async () => {
+    logger.info('Starting migration 122: search_trace (per-search strategy + timings)');
+    await query(`CREATE TABLE IF NOT EXISTS search_trace (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      trace_id TEXT UNIQUE,
+      endpoint TEXT,
+      query TEXT,
+      query_hash TEXT,
+      search_version TEXT,
+      cache_status TEXT,
+      filters_json TEXT,
+      filters_source TEXT,
+      layers_json TEXT,
+      top1_layer TEXT,
+      hype_led INTEGER DEFAULT 0,
+      timings_json TEXT,
+      total_ms INTEGER,
+      result_count INTEGER,
+      top1_doc_id INTEGER,
+      top1_title TEXT,
+      top1_authority REAL,
+      relaxed_json TEXT,
+      widened INTEGER DEFAULT 0,
+      user_id INTEGER,
+      api_key_id INTEGER,
+      -- epoch INTEGER, not ISO text: every read does arithmetic on this (windows, rates, before/after a
+      -- version bump), and schema-contract forbids a table mixing the two conventions.
+      created_at INTEGER DEFAULT (unixepoch()))`);
+    // The three access patterns a forensic API needs: recent-first, by question, and slow/zero outliers.
+    await query(`CREATE INDEX IF NOT EXISTS idx_strace_created ON search_trace(created_at DESC)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_strace_qhash   ON search_trace(query_hash)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_strace_slow    ON search_trace(total_ms DESC)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_strace_zero    ON search_trace(result_count, created_at DESC)`);
+    logger.info('Migration 122 complete: search_trace');
   },
 
   118: async () => {
