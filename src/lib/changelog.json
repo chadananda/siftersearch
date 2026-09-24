@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-24T23:57:32.722Z",
+  "generated": "2026-09-25T00:00:03.641Z",
   "entries": [
+    {
+      "hash": "37fe821b",
+      "date": "2026-09-24",
+      "type": "Docs",
+      "description": "Trace + forensic API is committed, not pending",
+      "scope": "handoff"
+    },
     {
       "hash": "bf269f60",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Concurrency pool + MINFREQ floor + retry for full-book runs",
       "scope": null
-    },
-    {
-      "hash": "d272ab89",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Archive 101 legacy pre-substrate entity scripts → scripts/entity-legacy/ (keep current pipeline + diagnostics + portrait tooling)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "37fe821b",
+        "date": "2026-09-24",
+        "type": "Docs",
+        "description": "Trace + forensic API is committed, not pending",
+        "scope": "handoff"
+      },
       {
         "hash": "bf269f60",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Concurrency pool + MINFREQ floor + retry for full-book runs",
-        "scope": null
-      },
-      {
-        "hash": "d272ab89",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Archive 101 legacy pre-substrate entity scripts → scripts/entity-legacy/ (keep current pipeline + diagnostics + portrait tooling)",
         "scope": null
       }
     ]

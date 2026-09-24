@@ -3,9 +3,22 @@
 Read this, then `git status` — it should be **clean**. No background jobs are running: the quality battery
 was killed at handoff and wrote nothing (§3). Everything below §1 is committed and pushed.
 
-Node: **v25.9.0 required** (`export PATH="$HOME/.local/share/fnm/node-versions/v25.9.0/installation/bin:$PATH"`).
-The fnm shell hook is broken this session; substituting Node 24 gives **95 phantom test failures**
-(`better_sqlite3.node` NODE_MODULE_VERSION 141 vs 137). Check `node -v` before believing any test run.
+Node: **25.9.0**, now pinned by `.node-version` and `engines` (matches tower-nas production exactly).
+
+⚠ **Your fnm shell hook is broken** — every command prints "can't find the necessary environment variables",
+and `node` is absent from PATH. Until it is fixed, `.node-version` cannot auto-apply, so export explicitly:
+
+```
+export PATH="$HOME/.local/share/fnm/node-versions/v25.9.0/installation/bin:$PATH"
+```
+
+The permanent fix is `eval "$(fnm env --use-on-cd)"` in the shell profile; then `.node-version` switches
+automatically on cd. The local fnm *default* is still v24.20.0 — deliberately unchanged, since that affects
+every other project. `fnm default v25.9.0` if you want it global.
+
+Why this matters: `node_modules/better-sqlite3` is compiled for **ABI 141 (Node 25)**. Running the suite on
+Node 24 gives **95 phantom failures** and looks like a code regression. I lost time to exactly that.
+**boss is on v24.20.0** and will need `fnm install 25.9.0` before dev moves there.
 
 ⚠ **`rtk` filters command output.** `git diff --name-only` reported **1 file** when the truth was **305**;
 `ls`/`wc` returned "(empty)" for files that exist; `curl` JSON came back as a *schema* instead of values. Use
