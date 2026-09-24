@@ -1,8 +1,7 @@
 # Handoff — search quality (2026-09-24)
 
-Read this, then `git status`. **There is uncommitted work in the tree — see §2 before anything else.**
-
-No background jobs are running: the quality battery was killed at handoff and wrote nothing (§3).
+Read this, then `git status` — it should be **clean**. No background jobs are running: the quality battery
+was killed at handoff and wrote nothing (§3). Everything below §1 is committed and pushed.
 
 Node: **v25.9.0 required** (`export PATH="$HOME/.local/share/fnm/node-versions/v25.9.0/installation/bin:$PATH"`).
 The fnm shell hook is broken this session; substituting Node 24 gives **95 phantom test failures**
@@ -24,29 +23,30 @@ The fnm shell hook is broken this session; substituting Node 24 gives **95 phant
 | **Author filter** — folded substring, was exact-match | `21a7f011` | `author="Abdu"` 0 → 3 passages |
 | Conversation scoping + honest relaxation (**NOT WIRED**) | `5391152f` | `scope-extract.js`, `search-scope.js`, 19 tests |
 
-## 2. UNCOMMITTED WORK IN THE TREE — finish or discard deliberately
+## 2. Search trace + forensic API — COMMITTED (`bf269f60`), one step from useful
 
 ```
- M api/lib/migrations/runner.js        CURRENT_VERSION 121 → 122
- M api/lib/migrations/v72-v90.js       migration 122: search_trace table
- M api/lib/search.js                   per-layer timings (_timings) from multiIndexSearch
- M api/routes/admin.js                 forensic API: /search-trace, /search-trace/:id, /search-stats
-?? api/lib/search-trace.js             buildTrace + recordTrace + summarizeTraces
-?? tests/api/search-trace.test.js      12 tests
+migration 122            search_trace table (empty until wired)
+api/lib/search-trace.js  buildTrace / recordTrace / summarizeTraces   (12 tests)
+api/lib/search.js        multiIndexSearch now emits _timings {main,hype,entity,merge,total}
+api/routes/admin.js      GET /search-trace/:traceId · /search-trace?… · /search-stats?days=
 ```
 
-**2116 tests pass.** It was NOT committed only because the quality baseline was still running against live
-(§3) and deploying mid-run would corrupt the before/after.
+All `requireInternal`, so the dev agent can read them — the existing `/activity/*` analytics routes need a
+browser JWT and return 401 for `INTERNAL_API_KEY` on all four header spellings.
 
-**Still to do before this is useful:** call `recordTrace()` at the emission points —
-`/api/v1/search` (public-api.js ~line 401) and `executeSearch` (chat.js ~line 479). The table and the API
-exist; nothing writes to it yet.
+**Additive and inert**: nothing calls `recordTrace()` yet, so the table stays empty and no search behaviour
+changed. Migration 122 creates the table on the first boot after deploy.
 
-Two traps already hit here, both caught by the repo's own tests, not by me:
-- my migration was first numbered **118, which already exists** — it would have shadowed
-  `graph_entity_changes` and skipped it on a fresh DB. `migration-version-invariant.test.js` caught it.
-- `schema-contract.test.js` rejects a table mixing ISO-text and epoch timestamps. `search_trace.created_at`
-  is `INTEGER DEFAULT (unixepoch())`; reads use `unixepoch('now', ?)`, not `datetime()`.
+**The one remaining step** — call `recordTrace(buildTrace({...}))` at the two emission points:
+`/api/v1/search` (public-api.js ~401) and `executeSearch` (chat.js ~479). Pass `timings` from
+`multiIndexSearch`'s `_timings`, `layers` from `_layers`, `hits` (they carry `_layerRanks`), the filters plus
+`filtersSource`, `cacheStatus`, and `SEARCH_VERSION`. Return the `trace_id` to the caller so a search can be
+looked up afterwards.
+
+Why it matters: `SOURCE_STATS` already tracked hype-vs-main leadership but only in memory — lost on restart,
+never queryable. `by_search_version` in `/search-stats` is what makes "did that change help?" a query instead
+of an argument.
 
 ## 3. Quality baseline — NOT RUN (killed at handoff; run it first)
 
