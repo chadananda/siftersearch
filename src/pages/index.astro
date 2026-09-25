@@ -1,21 +1,61 @@
 ---
+// Home page: SifterSearch hosts Anis exactly as any client site does — the standard one-line embed with the house
+// profile (backlog 0015: one chat implementation, the one visitors get everywhere). The hero only opens Anis.
 import Layout from '../layouts/Layout.astro';
-import IslandSkeleton from '../components/common/IslandSkeleton.astro';
 import LiquidBackground from '../components/LiquidBackground.svelte';
-import ChatInterface from '../components/ChatInterface.svelte';
 ---
 
 <Layout title="SifterSearch - AI-Powered Interfaith Library" description="Search thousands of sacred texts from world religions with AI-powered semantic search. Explore Baha'i writings, pilgrim notes, and interfaith literature instantly.">
   <LiquidBackground client:only="svelte" />
-  <main class="main-container">
-    <ChatInterface client:only="svelte"><IslandSkeleton slot="fallback" /></ChatInterface>
+  <main class="home">
+    <section class="hero">
+      <h1 class="text-primary">SifterSearch</h1>
+      <p class="lede text-secondary">An interfaith library of the world’s sacred texts — searchable by meaning, cited to the paragraph.</p>
+
+      <form class="ask bg-surface-1 border-border" id="ask-form" role="search">
+        <label for="ask-input" class="sr-only">Ask Anís a question</label>
+        <input id="ask-input" name="q" type="text" autocomplete="off" class="text-primary"
+          placeholder="Ask Anís — “What does the Báb say about the soul?”" />
+        <button type="submit" class="bg-accent hover:bg-accent-hover">Ask Anís</button>
+      </form>
+
+      <nav class="links text-muted" aria-label="Explore">
+        <a href="/library" class="hover:text-accent">Browse the library</a>
+        <span aria-hidden="true">·</span>
+        <a href="/docs/api" class="hover:text-accent">Search API</a>
+        <span aria-hidden="true">·</span>
+        <a href="/about" class="hover:text-accent">About</a>
+      </nav>
+    </section>
   </main>
+
+  <!-- Anís — the same one-line embed every host site uses. -->
+  <script is:inline src="https://siftersearch.com/widget.js" data-key="wgt_house_siftersearch" async></script>
+  <script is:inline>
+    document.getElementById('ask-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var q = document.getElementById('ask-input').value;
+      window.dispatchEvent(new CustomEvent('sifter-chat:open', { detail: { q: q } }));
+    });
+  </script>
 </Layout>
 
 <style>
-  .main-container {
+  .home {
     min-height: 100vh;
     min-height: 100dvh;
+    display: grid;
+    place-items: center;
     position: relative;
+    padding: 1rem;
   }
+  .hero { width: 100%; max-width: 40rem; text-align: center; }
+  h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 600; letter-spacing: -0.02em; margin: 0 0 0.75rem; }
+  .lede { font-size: clamp(1rem, 2.4vw, 1.2rem); line-height: 1.55; margin: 0 auto 2rem; max-width: 32rem; }
+  .ask { display: flex; gap: 0.5rem; padding: 0.4rem; border-width: 1px; border-radius: 999px; box-shadow: 0 10px 30px rgb(0 0 0 / 0.12); }
+  .ask input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; padding: 0.7rem 1rem; font-size: 1rem; }
+  .ask button { border: 0; color: white; font-weight: 600; padding: 0.7rem 1.3rem; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+  .links { margin-top: 1.4rem; display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; font-size: 0.95rem; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (max-width: 480px) { .ask { flex-direction: column; border-radius: 1.25rem; } .ask button { width: 100%; } }
 </style>

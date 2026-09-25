@@ -324,6 +324,17 @@
       if (!openedOnce) { openedOnce = true; track('open'); }
     }
   }
+  // Host pages can open Anis from their own UI (the SifterSearch home page does): dispatch
+  //   window.dispatchEvent(new CustomEvent('sifter-chat:open', { detail: { q: 'optional question' } }))
+  $effect(() => {
+    const onOpen = (e) => {
+      const q = e?.detail?.q;
+      if (typeof q === 'string' && q.trim()) input = q.trim().slice(0, 500);
+      if (!open) togglePanel();
+    };
+    window.addEventListener('sifter-chat:open', onOpen);
+    return () => window.removeEventListener('sifter-chat:open', onOpen);
+  });
   $effect(() => {
     const esc = (e) => { if (e.key === 'Escape' && open) open = false; };
     window.addEventListener('keydown', esc);

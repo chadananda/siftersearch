@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T20:21:51.875Z",
+  "generated": "2026-09-25T23:12:33.441Z",
   "entries": [
+    {
+      "hash": "ee990174",
+      "date": "2026-09-25",
+      "type": "Fixed",
+      "description": "A dry run's force only skips the cooldown — it reported every live book as 'changed'",
+      "scope": "ingest"
+    },
     {
       "hash": "00f70210",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Halve LLM-analysis latency (one wave, faster model, drop dead Voyage path)",
       "scope": null
-    },
-    {
-      "hash": "69bd492a",
-      "date": "2026-07-10",
-      "type": "Other",
-      "description": "Remove temp stabilization instrumentation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "ee990174",
+        "date": "2026-09-25",
+        "type": "Fixed",
+        "description": "A dry run's force only skips the cooldown — it reported every live book as 'changed'",
+        "scope": "ingest"
+      },
       {
         "hash": "00f70210",
         "date": "2026-09-25",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-10",
         "type": "Other",
         "description": "Halve LLM-analysis latency (one wave, faster model, drop dead Voyage path)",
-        "scope": null
-      },
-      {
-        "hash": "69bd492a",
-        "date": "2026-07-10",
-        "type": "Other",
-        "description": "Remove temp stabilization instrumentation",
         "scope": null
       }
     ]
