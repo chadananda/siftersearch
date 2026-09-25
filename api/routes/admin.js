@@ -59,6 +59,7 @@ const expandTrace = (r) => {
 };
 
 import { getStats as getSearchStats, getMeili, probeSearchEngine } from '../lib/search.js';
+import { EMB_TOTAL_SQL, EMB_MISSING_SQL } from '../lib/pipeline/snapshot-queries.js';
 import { indexDocumentFromText, batchIndexDocuments, indexFromJSON, removeDocument, getIndexingStatus, migrateEmbeddingsFromMeilisearch, getEmbeddingCacheStats } from '../services/indexer.js';
 import { getSyncStats, forceSyncNow, getUnsyncedCount } from '../services/sync-worker.js';
 import { getWatcherStats, isWatcherRunning } from '../services/library-watcher.js';
@@ -732,10 +733,11 @@ export default async function adminRoutes(fastify) {
         libraryNodes: nodes?.count || 0
       })).catch(() => ({ docs: 0, content: 0, users: 0, libraryNodes: 0 })),
       // Embedding stats
-      Promise.all([
-        queryOne('SELECT COUNT(*) as count FROM content WHERE embedding IS NOT NULL'),
-        queryOne('SELECT COUNT(*) as count FROM content WHERE embedding IS NULL')
-      ]).then(([withEmbed, withoutEmbed]) => ({
+      // `embedding IS NOT NULL` read a 512-float blob per row: a 47s freeze of the whole API (slow_query_log,
+      // 2026-09-24). Same derivation as pipeline/snapshot-queries.js: with = total − missing (partial index).
+      Promise.all([EMB_TOTAL_SQL, EMB_MISSING_SQL].map((sql) => queryOne(sql)))
+        .then(([total, missing]) => [{ count: Math.max(0, (total?.n || 0) - (missing?.n || 0)) }, { count: missing?.n || 0 }])
+        .then(([withEmbed, withoutEmbed]) => ({
         withEmbeddings: withEmbed?.count || 0,
         withoutEmbeddings: withoutEmbed?.count || 0,
         coverage: withEmbed?.count && (withEmbed.count + (withoutEmbed?.count || 0)) > 0

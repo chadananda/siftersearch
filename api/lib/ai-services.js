@@ -101,7 +101,7 @@ async function getDailySpending(serviceType) {
       `SELECT SUM(estimated_cost_usd) as total
        FROM ai_usage
        WHERE service_type = ?
-       AND date(timestamp) = date('now')`,
+       AND timestamp >= date('now') AND timestamp < date('now', '+1 day')`,
       [serviceType]
     );
     return result.rows?.[0]?.total || 0;
@@ -119,7 +119,7 @@ export async function getAllDailySpending() {
     const result = await query(
       `SELECT service_type, SUM(estimated_cost_usd) as total
        FROM ai_usage
-       WHERE date(timestamp) = date('now')
+       WHERE timestamp >= date('now') AND timestamp < date('now', '+1 day')
        GROUP BY service_type`
     );
     const spending = {};
