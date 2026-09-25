@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T01:24:54.508Z",
+  "generated": "2026-09-25T01:34:28.300Z",
   "entries": [
+    {
+      "hash": "4f9087f6",
+      "date": "2026-09-24",
+      "type": "Fixed",
+      "description": "Actually enable containsFilter at API boot — initializeIndexes never runs there",
+      "scope": "search"
+    },
     {
       "hash": "eea935a1",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Process-book.sh driver (canonical sequence) + propagate-bindings (deterministic variant/singleton binding) + migration 88 (entity_claims.entity_id nullable — was silently dropping unmatched claims)",
       "scope": null
-    },
-    {
-      "hash": "c0d117ba",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Candidate recall uses FULL resolved name (was coreName-stripped → missed existing entities → 71/72 creates were dups); + CLEAR flag for clean re-run",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "4f9087f6",
+        "date": "2026-09-24",
+        "type": "Fixed",
+        "description": "Actually enable containsFilter at API boot — initializeIndexes never runs there",
+        "scope": "search"
+      },
       {
         "hash": "eea935a1",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Process-book.sh driver (canonical sequence) + propagate-bindings (deterministic variant/singleton binding) + migration 88 (entity_claims.entity_id nullable — was silently dropping unmatched claims)",
-        "scope": null
-      },
-      {
-        "hash": "c0d117ba",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Candidate recall uses FULL resolved name (was coreName-stripped → missed existing entities → 71/72 creates were dups); + CLEAR flag for clean re-run",
         "scope": null
       }
     ]

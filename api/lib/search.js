@@ -448,6 +448,20 @@ export async function ensureContainsFilter({ meiliUrl, headers, fetchImpl = fetc
   }
 }
 
+/**
+ * `field CONTAINS "value"`, OR-ed over apostrophe styles. Meili CONTAINS is apostrophe-sensitive and the corpus
+ * stores ' and ’ and ‘ side by side, so one spelling silently dropped half of an author's works.
+ */
+export function containsClause(field, value) {
+  const esc = (v) => String(v).replace(/"/g, '\\"');
+  const APOS = /['‘’]/g;
+  const variants = APOS.test(value)
+    ? [...new Set(["'", '’', '‘'].map((a) => String(value).replace(APOS, a)))]
+    : [String(value)];
+  const parts = variants.map((v) => `${field} CONTAINS "${esc(v)}"`);
+  return parts.length === 1 ? parts[0] : `(${parts.join(' OR ')})`;
+}
+
 /** Boot-time engine features, from config. Called by the API at startup — initializeIndexes() is NOT run there. */
 export async function ensureEngineFeatures() {
   const meiliUrl = config.search.host || 'http://localhost:7700';
@@ -720,8 +734,8 @@ export async function hybridSearch(query, options = {}) {
   // Build filter string
   const filterParts = [];
   if (filters.religion) filterParts.push(`religion = "${filters.religion}"`);
-  if (filters.collection) filterParts.push(`collection CONTAINS "${filters.collection.replace(/"/g, '\\"')}"`);
-  if (filters.author) filterParts.push(`author CONTAINS "${filters.author.replace(/"/g, '\\"')}"`);
+  if (filters.collection) filterParts.push(containsClause('collection', filters.collection));
+  if (filters.author) filterParts.push(containsClause('author', filters.author));
   if (filters.language) filterParts.push(`language = "${filters.language}"`);
   if (filters.yearFrom) filterParts.push(`year >= ${filters.yearFrom}`);
   if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
@@ -797,7 +811,8 @@ export async function hybridSearch(query, options = {}) {
   // regardless of authority reranking. Fix: when no religion/collection/author filter
   // and no filterTerms, run one Meilisearch sub-query PER tradition in a single
   // multiSearch call, take top N from each, then merge + authority-rerank.
-  const isCrossTradition = !filters.religion && !filters.collection && !filters.author && !filterTerms.length && offset === 0;
+  // federate:false = one ranked list over the whole corpus (the keyword layer hunting ONE passage wants that).
+  const isCrossTradition = options.federate !== false && !filters.religion && !filters.collection && !filters.author && !filterTerms.length && offset === 0;
 
   // Extra filter parts that apply even in cross-tradition mode (language, year, doc_id).
   // The religion filter is added per sub-query in crossTraditionSearch instead.
@@ -1214,7 +1229,7 @@ export async function multiIndexSearch(query, options = {}) {
   const _t0 = Date.now();
   const _stamp = {};
   const timed = (name, p) => p.then((r) => { _stamp[name] = Date.now() - _t0; return r; });
-  const [mainResult, hypeResult, entityResult] = await Promise.all([
+  const [mainResult, hypeResult, entityResult, keywordResult] = await Promise.all([
     timed('main', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio })).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
       return { hits: [] };
@@ -1222,7 +1237,7 @@ export async function multiIndexSearch(query, options = {}) {
     // HyPE: only query when scope includes primary. Site-only sites don't
     // have HyPE (gated off in v1), and supplementals don't either. The
     // primary `hype_questions` index is the only one populated.
-    (!scope_config || scope_config.primary)
+    (options.hype !== false && (!scope_config || scope_config.primary))
       ? timed('hype', searchHypeQuestions(query, { limit: overFetch, filters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: hype failed');
           return { hits: [] };
@@ -1232,6 +1247,14 @@ export async function multiIndexSearch(query, options = {}) {
     entityIds.length > 0
       ? timed('entity', searchByEntity(entityIds, { limit: overFetch, filters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: entity failed');
+          return { hits: [] };
+        })
+      : Promise.resolve({ hits: [] }),
+    // Keyword layer (planner: shape=quote). Pure BM25, unfederated — a verbatim quote loses to its semantic
+    // neighbours in the hybrid main layer (Hidden Words → Qur'án/Psalms) but ranks #1–2 on its own words.
+    options.keywordLayer
+      ? timed('keyword', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: 0, federate: false })).catch(err => {
+          logger.warn({ err: err.message }, 'multiIndexSearch: keyword failed');
           return { hits: [] };
         })
       : Promise.resolve({ hits: [] }),
@@ -1246,6 +1269,15 @@ export async function multiIndexSearch(query, options = {}) {
     cur.score += weights.main / (RRF_K + rank);
     cur.paragraph = hit;
     cur.mainRank = rank;
+    aggregate.set(pid, cur);
+  });
+
+  (keywordResult.hits || []).forEach((hit, rank) => {
+    const pid = hit.id;
+    const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, entityRank: null, mainRank: null, hypeRank: null };
+    cur.score += (weights.keyword ?? 2.0) / (RRF_K + rank);
+    if (!cur.paragraph) cur.paragraph = hit;
+    cur.keywordRank = rank;
     aggregate.set(pid, cur);
   });
 
@@ -1357,7 +1389,7 @@ export async function multiIndexSearch(query, options = {}) {
   });
 
   let finalEntries;
-  if (isCrossTraditionMIS) {
+  if (isCrossTraditionMIS && options.diversify !== false) {
     const rrfHits = sortedDeduped.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
     // Cap at 25% per tradition (max 2 of 8) so at least 6 other tradition slots exist.
     // Tighter than hybridSearch's 40% because multiIndexSearch is the user-facing output.
@@ -1382,7 +1414,7 @@ export async function multiIndexSearch(query, options = {}) {
       ...e.paragraph,
       _rrfScore: e.score,
       ...(options.includeMatchedHype && e.matchedHype ? { matched_hype: e.matchedHype } : {}),
-      _layerRanks: { main: e.mainRank, hype: e.hypeRank, entity: e.entityRank }
+      _layerRanks: { main: e.mainRank, hype: e.hypeRank, entity: e.entityRank, keyword: e.keywordRank ?? null }
     };
     if (!h.source_url && h.doc_id) h.source_url = `https://siftersearch.com/document/${h.doc_id}`;
     return h;

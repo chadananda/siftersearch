@@ -398,9 +398,14 @@ export default async function searchRoutes(fastify) {
   // the search-quality battery could never measure HyPE's contribution. Internal-only; used by
   // tests/quality/score-search.mjs --multi. Hits carry _layerRanks {main,hype,entity} + matched_hype.
   fastify.post('/multi', { preHandler: requireInternal }, async (request) => {
-    const { query, limit = 10, filters = {} } = request.body || {};
+    const { query, limit = 10, filters = {}, plan = true, messages } = request.body || {};
     if (!query || !String(query).trim()) return { hits: [] };
-    return multiIndexSearch(String(query), { limit: Math.min(Number(limit) || 10, 30), filters, includeMatchedHype: true });
+    const lim = Math.min(Number(limit) || 10, 30);
+    // plan:false = the raw engine, kept so the battery can measure what planning adds.
+    if (plan === false) return multiIndexSearch(String(query), { limit: lim, filters, includeMatchedHype: true });
+    const { plannedSearch } = await import('../lib/planned-search.js');
+    const r = await plannedSearch(String(query), { limit: lim, given: filters, messages });
+    return { hits: r.hits, _plan: { ...r.plan, layers: r.layers, widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowCount, cached: r.cached, timings: r.timings } };
   });
 
   fastify.get('/stats', async (request) => {

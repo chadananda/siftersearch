@@ -17,6 +17,8 @@ const args = process.argv.slice(2);
 const JSON_ONLY = args.includes('--json');
 const WRITE_REPORT = args.includes('--write-report');
 const MULTI = args.includes('--multi');
+// --no-plan: raw multi-index engine, bypassing the Jev planner (measures what planning adds).
+const NO_PLAN = args.includes('--no-plan');
 const TOP_K = parseInt(args.find((a) => a.startsWith('--top-k='))?.split('=')[1] || '10', 10);
 const TYPE = args.find((a) => a.startsWith('--type='))?.split('=')[1] || null;
 const API_BASE = process.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
@@ -51,7 +53,7 @@ async function call(path, { method = 'GET', body, internal = false, keyless = fa
 
 async function search(query) {
   const { data, ms } = MULTI
-    ? await call('/api/search/multi', { method: 'POST', body: { query, limit: TOP_K }, internal: true })
+    ? await call('/api/search/multi', { method: 'POST', body: { query, limit: TOP_K, ...(NO_PLAN ? { plan: false } : {}) }, internal: true })
     : await call('/api/v1/search', { method: 'POST', body: { query, limit: TOP_K } });
   const hits = (data.results || data.hits || data.passages || []).slice(0, TOP_K);
   return { ms, items: hits.map((h) => ({ title: fold(h.title), author: fold(h.author), text: fold(h.text), religion: trad(h.religion) })) };
@@ -173,7 +175,7 @@ const group = (key) => {
 };
 const measured = results.filter((r) => !r.error);
 const report = {
-  run_at: new Date().toISOString(), endpoint: MULTI ? 'multi' : 'public', top_k: TOP_K,
+  run_at: new Date().toISOString(), endpoint: MULTI ? (NO_PLAN ? 'multi-raw' : 'multi-planned') : 'public', top_k: TOP_K,
   valid: measured.length === results.length,
   total: results.length, measured: measured.length, errored: results.length - measured.length,
   passed: measured.filter((r) => r.ok).length, pass_rate: pct(measured.filter((r) => r.ok).length, measured.length),
@@ -186,7 +188,7 @@ const report = {
 };
 
 if (WRITE_REPORT) {
-  const histPath = join(__dirname, MULTI ? 'type-history-multi.json' : 'type-history.json');
+  const histPath = join(__dirname, MULTI ? 'type-history-multi.json' : 'type-history.json');   // entries carry `endpoint`
   const hist = existsSync(histPath) ? JSON.parse(readFileSync(histPath, 'utf-8')) : [];
   const { results: _r, ...summary } = report;
   if (report.valid) hist.push(summary); // an invalid run is not history

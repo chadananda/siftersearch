@@ -18,11 +18,11 @@
 // Deps: fetch, TYPESAFE_API_KEY. Relaxation policy lives in search-scope.js.
 import { logger } from './logger.js';
 
-const ENDPOINT = 'https://api.typesafe.ai/v1/systemone';
+export const ENDPOINT = 'https://api.typesafe.ai/v1/systemone';
 // Below this, treat the signal as absent rather than acting on a coin-flip.
-const MIN_CONFIDENCE = 0.6;
+export const MIN_CONFIDENCE = 0.6;
 
-const TRADITIONS = {
+export const TRADITIONS = {
   "Baha'i": 'Bahá’í writings — Bahá’u’lláh, the Báb, ‘Abdu’l-Bahá, Shoghi Effendi, Bahá’í history',
   Islam: 'Qur’án, hadith, Islamic tradition',
   Christian: 'Bible, Gospels, Christian tradition',
