@@ -478,6 +478,11 @@ function siteDbReplaceContent(siteDb, docId, paragraphs) {
   txn(paragraphs);
 }
 
+/** Skip a file only when its hash matches AND its document still has live paragraphs. Pure. */
+export function isUnchanged({ existing, fileHash, force, hasLiveContent }) {
+  return !force && !!existing && existing.file_hash === fileHash && !!hasLiveContent;
+}
+
 // ─── Ingest a single file ───────────────────────────────────────────────
 
 async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath, threshold, force = false }) {
@@ -501,8 +506,18 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
   const existing = isSiteOnly
     ? await siteDbFindDoc(siteDb, relPath)
     : await queryOne('SELECT id, file_hash FROM docs WHERE file_path = ? AND deleted_at IS NULL', [relPath]);
-  if (!force && existing && existing.file_hash === fileHash) {
+  // "Unchanged" means the TEXT is there, not merely that the hash matches: a doc whose paragraphs were soft-deleted
+  // (the June reconcile bug) kept its hash and was skipped on every run for months — ESW, This Decisive Hour…
+  const hasLiveContent = existing
+    ? !!(isSiteOnly
+      ? siteDb.prepare('SELECT 1 AS x FROM content WHERE doc_id = ? LIMIT 1').get(existing.id)
+      : await queryOne('SELECT 1 AS x FROM content WHERE doc_id = ? AND deleted_at IS NULL LIMIT 1', [existing.id]))
+    : false;
+  if (isUnchanged({ existing, fileHash, force, hasLiveContent })) {
     return { status: 'unchanged', file: relPath, scope };
+  }
+  if (existing && existing.file_hash === fileHash && !hasLiveContent) {
+    logger.warn({ file: relPath, docId: existing.id, scope }, 'Sites-ingester: HOLLOW doc (same hash, no live paragraphs) — re-ingesting');
   }
 
   // Parse via the site adapter — pass siteConfig so the adapter can look up

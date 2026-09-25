@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T18:56:33.585Z",
+  "generated": "2026-09-25T19:38:10.041Z",
   "entries": [
+    {
+      "hash": "31df550d",
+      "date": "2026-09-25",
+      "type": "Fixed",
+      "description": "Serve the OceanLibrary site copy (with paragraph ids) over a duplicate of the same book",
+      "scope": "search"
+    },
     {
       "hash": "1aeb8e30",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "One-time enable-binary-quantization (deliberate PATCH past the startup guard)",
       "scope": null
-    },
-    {
-      "hash": "8c732884",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Enable Meili binaryQuantized on the vector embedders (fix slow semantic search)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "31df550d",
+        "date": "2026-09-25",
+        "type": "Fixed",
+        "description": "Serve the OceanLibrary site copy (with paragraph ids) over a duplicate of the same book",
+        "scope": "search"
+      },
       {
         "hash": "1aeb8e30",
         "date": "2026-09-25",
@@ -7083,13 +7090,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "One-time enable-binary-quantization (deliberate PATCH past the startup guard)",
-        "scope": null
-      },
-      {
-        "hash": "8c732884",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Enable Meili binaryQuantized on the vector embedders (fix slow semantic search)",
         "scope": null
       }
     ]

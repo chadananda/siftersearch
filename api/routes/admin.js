@@ -1102,8 +1102,9 @@ export default async function adminRoutes(fastify) {
       throw ApiError.notFound(`File not found: ${filePath}`);
     }
 
-    // Read file content
-    const content = await readFile(filePath, 'utf-8');
+    // Read file content. (Named fileText: it was `content`, shadowing the content module, so forceReindex's
+    // content.deleteParagraphsByDoc threw AFTER clearing file_hash.)
+    const fileText = await readFile(filePath, 'utf-8');
 
     // Check if document already exists by file_path
     const existing = await getDocumentByPath(filePath);
@@ -1129,7 +1130,7 @@ export default async function adminRoutes(fastify) {
     // Ingest the document (ingester handles ID generation/lookup internally)
     logger.info({ filePath, existing: !!existing }, 'Ingesting document from file');
 
-    const result = await ingestDocument(content, {}, filePath);
+    const result = await ingestDocument(fileText, {}, filePath);
 
     return {
       success: true,
