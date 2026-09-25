@@ -829,5 +829,170 @@
     },
     "latency_p50_ms": 180,
     "latency_p95_ms": 414
+  },
+  {
+    "run_at": "2026-09-25T13:41:40.785Z",
+    "endpoint": "public-nollm",
+    "top_k": 10,
+    "valid": true,
+    "total": 82,
+    "measured": 82,
+    "errored": 0,
+    "passed": 64,
+    "pass_rate": 78,
+    "plan_fallbacks": [],
+    "contract": {
+      "results": 424,
+      "no_text": 0,
+      "no_author": 0,
+      "uploader_author": 28,
+      "no_url": 0,
+      "book_root_url": 73,
+      "quoted_no_source": 0,
+      "examples": {
+        "uploader_author": [
+          "holley religion for mankind [pdf-h-holley] https://siftersearch.com/library/bahai/books/pdf-h-holley_holley-religion-for-mankind#p22",
+          "gleanings from the writings of bahaullah [bayat] https://siftersearch.com/library/bahai/books/bayat_gleanings-from-the-writings-of-bahaullah-study-guide#p27",
+          "hartz bahai faith [pdf-h-hartz] https://siftersearch.com/library/bahai/books/pdf-h-hartz_hartz-bahai-faith#p5",
+          "tablets of bahaullah vol 3 compilation a [michot] https://siftersearch.com/library/bahai/books/michot_tablets-of-bahaullah-vol-3-compilation-and-provisional-translations#p104"
+        ],
+        "book_root_url": [
+          "the promised day is come [Shoghi Effendi] https://oceanlibrary.com/promised-day-is-come_shoghi-effendi",
+          "epistle to the son of the wolf [Bahá’u’lláh] https://oceanlibrary.com/epistle-to-the-son-of-the-wolf_bahaullah",
+          "divine philosophy [Steven Phelps] https://oceanlibrary.com/divine-philosophy_abdul-baha",
+          "the promised day is come [Shoghi Effendi] https://oceanlibrary.com/promised-day-is-come_shoghi-effendi"
+        ]
+      }
+    },
+    "known_gaps_now_passing": [],
+    "unexpected_failures": [
+      "xp-one-country",
+      "xp-harmony-science-religion",
+      "xp-lord-shepherd",
+      "xp-beginning-word",
+      "lp-love-enemies",
+      "fw-dawnbreakers-one-word",
+      "df-nirvana",
+      "sr-light-of-men",
+      "sr-harmony"
+    ],
+    "by_type": {
+      "exact_phrase": {
+        "passed": 10,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 71,
+        "p50_ms": 3057
+      },
+      "lay_paraphrase": {
+        "passed": 6,
+        "measured": 7,
+        "errored": 0,
+        "pass_rate": 86,
+        "p50_ms": 1107
+      },
+      "find_work": {
+        "passed": 11,
+        "measured": 12,
+        "errored": 0,
+        "pass_rate": 92,
+        "p50_ms": 113
+      },
+      "misattribution": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 115
+      },
+      "find_person": {
+        "passed": 7,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 50,
+        "p50_ms": 95
+      },
+      "enumerate": {
+        "passed": 0,
+        "measured": 2,
+        "errored": 0,
+        "pass_rate": 0,
+        "p50_ms": 6218
+      },
+      "scoped_topic": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1128
+      },
+      "compare": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 3166
+      },
+      "author_scoped": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1404
+      },
+      "history_fact": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1040
+      },
+      "define_term": {
+        "passed": 4,
+        "measured": 5,
+        "errored": 0,
+        "pass_rate": 80,
+        "p50_ms": 1109
+      },
+      "source_resolution": {
+        "passed": 4,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 67,
+        "p50_ms": 1658
+      },
+      "library_meta": {
+        "passed": 1,
+        "measured": 1,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 172
+      }
+    },
+    "by_persona": {
+      "both": {
+        "passed": 31,
+        "measured": 36,
+        "errored": 0,
+        "pass_rate": 86,
+        "p50_ms": 1086
+      },
+      "chat": {
+        "passed": 15,
+        "measured": 18,
+        "errored": 0,
+        "pass_rate": 83,
+        "p50_ms": 1029
+      },
+      "research": {
+        "passed": 18,
+        "measured": 28,
+        "errored": 0,
+        "pass_rate": 64,
+        "p50_ms": 994
+      }
+    },
+    "latency_p50_ms": 1009,
+    "latency_p95_ms": 3809
   }
 ]

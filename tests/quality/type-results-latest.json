@@ -1,149 +1,182 @@
 {
-  "run_at": "2026-09-25T02:59:03.331Z",
+  "run_at": "2026-09-25T13:41:40.785Z",
   "endpoint": "public-nollm",
   "top_k": 10,
   "valid": true,
-  "total": 76,
-  "measured": 76,
+  "total": 82,
+  "measured": 82,
   "errored": 0,
-  "passed": 61,
-  "pass_rate": 80,
+  "passed": 64,
+  "pass_rate": 78,
   "plan_fallbacks": [],
+  "contract": {
+    "results": 424,
+    "no_text": 0,
+    "no_author": 0,
+    "uploader_author": 28,
+    "no_url": 0,
+    "book_root_url": 73,
+    "quoted_no_source": 0,
+    "examples": {
+      "uploader_author": [
+        "holley religion for mankind [pdf-h-holley] https://siftersearch.com/library/bahai/books/pdf-h-holley_holley-religion-for-mankind#p22",
+        "gleanings from the writings of bahaullah [bayat] https://siftersearch.com/library/bahai/books/bayat_gleanings-from-the-writings-of-bahaullah-study-guide#p27",
+        "hartz bahai faith [pdf-h-hartz] https://siftersearch.com/library/bahai/books/pdf-h-hartz_hartz-bahai-faith#p5",
+        "tablets of bahaullah vol 3 compilation a [michot] https://siftersearch.com/library/bahai/books/michot_tablets-of-bahaullah-vol-3-compilation-and-provisional-translations#p104"
+      ],
+      "book_root_url": [
+        "the promised day is come [Shoghi Effendi] https://oceanlibrary.com/promised-day-is-come_shoghi-effendi",
+        "epistle to the son of the wolf [Bahá’u’lláh] https://oceanlibrary.com/epistle-to-the-son-of-the-wolf_bahaullah",
+        "divine philosophy [Steven Phelps] https://oceanlibrary.com/divine-philosophy_abdul-baha",
+        "the promised day is come [Shoghi Effendi] https://oceanlibrary.com/promised-day-is-come_shoghi-effendi"
+      ]
+    }
+  },
   "known_gaps_now_passing": [],
   "unexpected_failures": [
+    "xp-one-country",
     "xp-harmony-science-religion",
     "xp-lord-shepherd",
+    "xp-beginning-word",
     "lp-love-enemies",
-    "lp-war-peace-thoughts",
     "fw-dawnbreakers-one-word",
-    "df-nirvana"
+    "df-nirvana",
+    "sr-light-of-men",
+    "sr-harmony"
   ],
   "by_type": {
     "exact_phrase": {
-      "passed": 12,
+      "passed": 10,
       "measured": 14,
       "errored": 0,
-      "pass_rate": 86,
-      "p50_ms": 260
+      "pass_rate": 71,
+      "p50_ms": 3057
     },
     "lay_paraphrase": {
-      "passed": 5,
+      "passed": 6,
       "measured": 7,
       "errored": 0,
-      "pass_rate": 71,
-      "p50_ms": 142
+      "pass_rate": 86,
+      "p50_ms": 1107
     },
     "find_work": {
       "passed": 11,
       "measured": 12,
       "errored": 0,
       "pass_rate": 92,
-      "p50_ms": 110
+      "p50_ms": 113
     },
     "misattribution": {
       "passed": 3,
       "measured": 3,
       "errored": 0,
       "pass_rate": 100,
-      "p50_ms": 127
+      "p50_ms": 115
     },
     "find_person": {
       "passed": 7,
       "measured": 14,
       "errored": 0,
       "pass_rate": 50,
-      "p50_ms": 133
+      "p50_ms": 95
     },
     "enumerate": {
       "passed": 0,
       "measured": 2,
       "errored": 0,
       "pass_rate": 0,
-      "p50_ms": 5718
+      "p50_ms": 6218
     },
     "scoped_topic": {
       "passed": 6,
       "measured": 6,
       "errored": 0,
       "pass_rate": 100,
-      "p50_ms": 322
+      "p50_ms": 1128
     },
     "compare": {
       "passed": 3,
       "measured": 3,
       "errored": 0,
       "pass_rate": 100,
-      "p50_ms": 146
+      "p50_ms": 3166
     },
     "author_scoped": {
       "passed": 3,
       "measured": 3,
       "errored": 0,
       "pass_rate": 100,
-      "p50_ms": 1592
+      "p50_ms": 1404
     },
     "history_fact": {
       "passed": 6,
       "measured": 6,
       "errored": 0,
       "pass_rate": 100,
-      "p50_ms": 214
+      "p50_ms": 1040
     },
     "define_term": {
       "passed": 4,
       "measured": 5,
       "errored": 0,
       "pass_rate": 80,
-      "p50_ms": 219
+      "p50_ms": 1109
+    },
+    "source_resolution": {
+      "passed": 4,
+      "measured": 6,
+      "errored": 0,
+      "pass_rate": 67,
+      "p50_ms": 1658
     },
     "library_meta": {
       "passed": 1,
       "measured": 1,
       "errored": 0,
       "pass_rate": 100,
-      "p50_ms": 133
+      "p50_ms": 172
     }
   },
   "by_persona": {
     "both": {
-      "passed": 33,
+      "passed": 31,
       "measured": 36,
       "errored": 0,
-      "pass_rate": 92,
-      "p50_ms": 199
+      "pass_rate": 86,
+      "p50_ms": 1086
     },
     "chat": {
-      "passed": 14,
+      "passed": 15,
       "measured": 18,
       "errored": 0,
-      "pass_rate": 78,
-      "p50_ms": 149
+      "pass_rate": 83,
+      "p50_ms": 1029
     },
     "research": {
-      "passed": 14,
-      "measured": 22,
+      "passed": 18,
+      "measured": 28,
       "errored": 0,
       "pass_rate": 64,
-      "p50_ms": 201
+      "p50_ms": 994
     }
   },
-  "latency_p50_ms": 180,
-  "latency_p95_ms": 414,
+  "latency_p50_ms": 1009,
+  "latency_p95_ms": 3809,
   "results": [
     {
       "id": "xp-one-country",
       "type": "exact_phrase",
       "persona": "both",
-      "ok": true,
+      "ok": false,
       "known_gap": false,
-      "ms": 404,
-      "rank": 2,
+      "ms": 2520,
+      "rank": null,
       "plan": {
         "shape": "quote",
         "fallback": null,
         "error": null
       },
-      "why": null,
+      "why": "no top-5 hit with {\"title\":\"gleanings|epistle to the son of the wolf|tablets of baha|proclamation\",\"text\":\"one country\"}",
       "top": "bahai sacred writings [bahai]"
     },
     {
@@ -152,7 +185,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 347,
+      "ms": 2360,
       "rank": 1,
       "plan": {
         "shape": "quote",
@@ -168,8 +201,8 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 180,
-      "rank": 2,
+      "ms": 3057,
+      "rank": 3,
       "plan": {
         "shape": "quote",
         "fallback": null,
@@ -184,7 +217,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 274,
+      "ms": 3403,
       "rank": 1,
       "plan": {
         "shape": "quote",
@@ -192,7 +225,7 @@
         "error": null
       },
       "why": null,
-      "top": "the hidden words of bahaullah [bahai]"
+      "top": "parallel hidden words in english early and authorised [bahai]"
     },
     {
       "id": "xp-fruits-one-tree",
@@ -200,7 +233,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 219,
+      "ms": 1521,
       "rank": 2,
       "plan": {
         "shape": "quote",
@@ -216,15 +249,15 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 178,
-      "rank": 2,
+      "ms": 3138,
+      "rank": 1,
       "plan": {
         "shape": "quote",
         "fallback": null,
         "error": null
       },
       "why": null,
-      "top": "bahai sacred writings [bahai]"
+      "top": "parallel hidden words in english early and authorised [bahai]"
     },
     {
       "id": "xp-two-wings",
@@ -232,7 +265,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 313,
+      "ms": 3686,
       "rank": 1,
       "plan": {
         "shape": "quote",
@@ -248,7 +281,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 188,
+      "ms": 3809,
       "rank": 1,
       "plan": {
         "shape": "quote",
@@ -264,7 +297,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 260,
+      "ms": 3346,
       "rank": null,
       "plan": {
         "shape": "topic",
@@ -280,7 +313,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 414,
+      "ms": 3852,
       "rank": 1,
       "plan": {
         "shape": "quote",
@@ -296,7 +329,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 166,
+      "ms": 1015,
       "rank": null,
       "plan": {
         "shape": "quote",
@@ -310,17 +343,17 @@
       "id": "xp-beginning-word",
       "type": "exact_phrase",
       "persona": "both",
-      "ok": true,
+      "ok": false,
       "known_gap": false,
-      "ms": 253,
-      "rank": 1,
+      "ms": 1086,
+      "rank": null,
       "plan": {
         "shape": "quote",
         "fallback": null,
         "error": null
       },
-      "why": null,
-      "top": "the gospel of john [christian]"
+      "why": "no top-7 hit with {\"title\":\"john\",\"text\":\"beginning was the word\"}",
+      "top": "douay rheims bible [christian]"
     },
     {
       "id": "xp-meek-inherit",
@@ -328,7 +361,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 259,
+      "ms": 1372,
       "rank": 1,
       "plan": {
         "shape": "quote",
@@ -344,7 +377,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 414,
+      "ms": 1554,
       "rank": 1,
       "plan": {
         "shape": "quote",
@@ -360,15 +393,15 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 261,
-      "rank": 9,
+      "ms": 3647,
+      "rank": 1,
       "plan": {
         "shape": "quote",
         "fallback": null,
         "error": null
       },
       "why": null,
-      "top": "creativity and spirituality are they related [bahai]"
+      "top": "paris talks [bahai]"
     },
     {
       "id": "lp-earth-one-country",
@@ -376,7 +409,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 373,
+      "ms": 2959,
       "rank": 2,
       "plan": {
         "shape": "quote",
@@ -392,7 +425,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 142,
+      "ms": 1005,
       "rank": 7,
       "plan": {
         "shape": "quote",
@@ -408,7 +441,7 @@
       "persona": "chat",
       "ok": false,
       "known_gap": false,
-      "ms": 186,
+      "ms": 1045,
       "rank": null,
       "plan": {
         "shape": "quote",
@@ -422,17 +455,17 @@
       "id": "lp-war-peace-thoughts",
       "type": "lay_paraphrase",
       "persona": "chat",
-      "ok": false,
+      "ok": true,
       "known_gap": false,
-      "ms": 114,
-      "rank": null,
+      "ms": 1264,
+      "rank": 1,
       "plan": {
         "shape": "topic",
         "fallback": null,
         "error": null
       },
-      "why": "no top-10 hit with {\"title\":\"paris talks\",\"text\":\"thought of peace\"}",
-      "top": "abdul baha in paris [bahai]"
+      "why": null,
+      "top": "paris talks [bahai]"
     },
     {
       "id": "lp-tao-cannot-be-named",
@@ -440,7 +473,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 114,
+      "ms": 847,
       "rank": 1,
       "plan": {
         "shape": "quote",
@@ -456,7 +489,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 140,
+      "ms": 1107,
       "rank": 8,
       "plan": {
         "shape": "quote",
@@ -472,7 +505,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 156,
+      "ms": 105,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -484,7 +517,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 93,
+      "ms": 101,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -496,7 +529,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 105,
+      "ms": 165,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -508,7 +541,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 103,
+      "ms": 174,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -520,7 +553,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 89,
+      "ms": 108,
       "rank": null,
       "plan": null,
       "why": "top 3: the dawnbreakers nab ls narrative of the early days of the bah revelation [books dawnbreakers] | the dawnbreakers chapter i footnotes [books dawnbreakers footnotes 1 i 1 2] | the dawnbreakers chapter i footnotes [books dawnbreakers footnotes 1 i 12 3]",
@@ -532,7 +565,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 85,
+      "ms": 109,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -544,7 +577,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 146,
+      "ms": 113,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -556,7 +589,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 110,
+      "ms": 94,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -568,7 +601,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 113,
+      "ms": 93,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -580,7 +613,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 285,
+      "ms": 140,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -592,7 +625,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 99,
+      "ms": 132,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -604,7 +637,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 129,
+      "ms": 171,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -616,7 +649,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 127,
+      "ms": 80,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -628,7 +661,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 113,
+      "ms": 115,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -640,7 +673,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 133,
+      "ms": 83,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -652,7 +685,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 121,
+      "ms": 85,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -664,7 +697,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 149,
+      "ms": 82,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -676,7 +709,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 217,
+      "ms": 98,
       "rank": null,
       "plan": null,
       "why": "wanted Mullá Ḥusayn (1247564); top 3: the Bábu’d-Dín (1248028) | Janab-i-Babu'l-Báb (1264031) | the Báb (1247551)",
@@ -688,7 +721,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 199,
+      "ms": 106,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -700,7 +733,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 123,
+      "ms": 80,
       "rank": null,
       "plan": null,
       "why": "wanted Ṭáhirih (1247554); top 3: Qurrat al-‘Ayn: Shā‘ir-i Azādīkhāh va Millī-yi Īrān (1280284) | Chahar Maqālih dar bārih-yi Ṭāhirih Qurrat al-’Ayn (1280337) | Qurrat al-’Ayn (1280339)",
@@ -712,7 +745,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 240,
+      "ms": 113,
       "rank": null,
       "plan": null,
       "why": "wanted Ṭáhirih (1247554); top 3: Zerin Taj (1267850) | Zarin-Taj (1280319) | the Taj Mahal (Agra) (1248767)",
@@ -724,7 +757,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 98,
+      "ms": 95,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -736,7 +769,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 156,
+      "ms": 184,
       "rank": null,
       "plan": null,
       "why": "wanted the Báb (1247551); top 3: Siyyid `Alí-Muhammad of Shíráz (1262755) | Mírzá Muḥammad-‘Alí Khán-i-Shírází (1263155) | Shírází, Mírzá Muḥammad Taqí ibn Muhibb ‘Alí Shírází Ha'iri (1273902)",
@@ -748,7 +781,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 98,
+      "ms": 102,
       "rank": null,
       "plan": null,
       "why": "wanted Bahá'u'lláh (1247562); top 3: Núr-‘Alí the hunter (1249988) | Núr ‘Alí Sháh (1272431) | Áqá Ḥusayn-‘Alíy-i-Nur (1276727)",
@@ -760,7 +793,7 @@
       "persona": "chat",
       "ok": false,
       "known_gap": true,
-      "ms": 98,
+      "ms": 90,
       "rank": null,
       "plan": null,
       "why": "wanted ‘Abdu’l-Bahá (1247563); top 1: Abdul Baha's word (1251675)",
@@ -772,7 +805,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 297,
+      "ms": 88,
       "rank": null,
       "plan": null,
       "why": "wanted ‘Abdu’l-Bahá (1247563); top 3: Life and Teachings of ‘Abbás Effendi (1250045) | Life of Abbas Effendi (1251707) | ‘Abbás Effendi ’Abdu’l-Bahá (1252042)",
@@ -784,7 +817,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 83,
+      "ms": 95,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -796,7 +829,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 99,
+      "ms": 6238,
       "rank": 1,
       "plan": null,
       "why": null,
@@ -808,7 +841,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 5718,
+      "ms": 6218,
       "rank": null,
       "plan": null,
       "why": "must not list: the bab",
@@ -820,7 +853,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 254,
+      "ms": 86,
       "rank": null,
       "plan": null,
       "why": "missing: bajistani, rawdih; 16 members, expected 18",
@@ -832,7 +865,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 390,
+      "ms": 1429,
       "rank": null,
       "plan": {
         "shape": "topic",
@@ -848,7 +881,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 189,
+      "ms": 956,
       "rank": null,
       "plan": {
         "shape": "topic",
@@ -864,7 +897,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 233,
+      "ms": 1365,
       "rank": null,
       "plan": {
         "shape": "topic",
@@ -880,7 +913,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 322,
+      "ms": 841,
       "rank": null,
       "plan": {
         "shape": "topic",
@@ -896,7 +929,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 380,
+      "ms": 1128,
       "rank": null,
       "plan": {
         "shape": "topic",
@@ -912,7 +945,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 111,
+      "ms": 824,
       "rank": null,
       "plan": {
         "shape": "topic",
@@ -928,7 +961,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 112,
+      "ms": 3817,
       "rank": null,
       "plan": {
         "shape": "topic",
@@ -944,7 +977,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 146,
+      "ms": 3081,
       "rank": null,
       "plan": {
         "shape": "topic",
@@ -960,7 +993,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 263,
+      "ms": 3166,
       "rank": null,
       "plan": {
         "shape": "topic",
@@ -976,7 +1009,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 1750,
+      "ms": 2012,
       "rank": null,
       "plan": {
         "shape": "topic",
@@ -992,10 +1025,10 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 1592,
+      "ms": 986,
       "rank": null,
       "plan": {
-        "shape": "topic",
+        "shape": "lookup",
         "fallback": null,
         "error": null
       },
@@ -1008,8 +1041,8 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 308,
-      "rank": 1,
+      "ms": 1404,
+      "rank": 7,
       "plan": {
         "shape": "topic",
         "fallback": null,
@@ -1024,7 +1057,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 256,
+      "ms": 1009,
       "rank": 1,
       "plan": {
         "shape": "fact",
@@ -1040,7 +1073,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 147,
+      "ms": 1125,
       "rank": 1,
       "plan": {
         "shape": "fact",
@@ -1056,7 +1089,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 201,
+      "ms": 1193,
       "rank": 2,
       "plan": {
         "shape": "fact",
@@ -1072,7 +1105,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 146,
+      "ms": 1021,
       "rank": 2,
       "plan": {
         "shape": "fact",
@@ -1088,7 +1121,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 214,
+      "ms": 1040,
       "rank": 3,
       "plan": {
         "shape": "fact",
@@ -1104,7 +1137,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 309,
+      "ms": 942,
       "rank": 1,
       "plan": {
         "shape": "fact",
@@ -1120,7 +1153,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 319,
+      "ms": 1109,
       "rank": 1,
       "plan": {
         "shape": "define",
@@ -1136,7 +1169,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 149,
+      "ms": 1029,
       "rank": 1,
       "plan": {
         "shape": "define",
@@ -1152,7 +1185,7 @@
       "persona": "chat",
       "ok": false,
       "known_gap": false,
-      "ms": 234,
+      "ms": 2946,
       "rank": 2,
       "plan": {
         "shape": "define",
@@ -1168,7 +1201,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 156,
+      "ms": 788,
       "rank": 1,
       "plan": {
         "shape": "define",
@@ -1184,7 +1217,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 219,
+      "ms": 3463,
       "rank": 2,
       "plan": {
         "shape": "define",
@@ -1200,7 +1233,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 176,
+      "ms": 994,
       "rank": null,
       "plan": {
         "shape": "quote",
@@ -1211,12 +1244,108 @@
       "top": "the gospel of john [christian]"
     },
     {
+      "id": "sr-essence-justice",
+      "type": "source_resolution",
+      "persona": "research",
+      "ok": true,
+      "known_gap": false,
+      "ms": 3648,
+      "rank": 3,
+      "plan": {
+        "shape": "topic",
+        "fallback": null,
+        "error": null
+      },
+      "why": null,
+      "top": "god passes by [bahai]"
+    },
+    {
+      "id": "sr-light-of-men",
+      "type": "source_resolution",
+      "persona": "research",
+      "ok": false,
+      "known_gap": false,
+      "ms": 1658,
+      "rank": null,
+      "plan": {
+        "shape": "quote",
+        "fallback": null,
+        "error": null
+      },
+      "why": "no passage contains light of men",
+      "top": "the advent of divine justice [bahai]"
+    },
+    {
+      "id": "sr-one-country",
+      "type": "source_resolution",
+      "persona": "research",
+      "ok": true,
+      "known_gap": false,
+      "ms": 1679,
+      "rank": 1,
+      "plan": {
+        "shape": "quote",
+        "fallback": null,
+        "error": null
+      },
+      "why": null,
+      "top": "bahai sacred writings [bahai]"
+    },
+    {
+      "id": "sr-best-beloved",
+      "type": "source_resolution",
+      "persona": "research",
+      "ok": true,
+      "known_gap": false,
+      "ms": 297,
+      "rank": 1,
+      "plan": {
+        "shape": "quote",
+        "fallback": null,
+        "error": null
+      },
+      "why": null,
+      "top": "parallel hidden words in english early and authorised [bahai]"
+    },
+    {
+      "id": "sr-two-wings",
+      "type": "source_resolution",
+      "persona": "research",
+      "ok": true,
+      "known_gap": false,
+      "ms": 247,
+      "rank": 1,
+      "plan": {
+        "shape": "quote",
+        "fallback": null,
+        "error": null
+      },
+      "why": null,
+      "top": "paris talks [bahai]"
+    },
+    {
+      "id": "sr-harmony",
+      "type": "source_resolution",
+      "persona": "research",
+      "ok": false,
+      "known_gap": false,
+      "ms": 163,
+      "rank": null,
+      "plan": {
+        "shape": "topic",
+        "fallback": null,
+        "error": null
+      },
+      "why": "no passage contains harmony of science and religion",
+      "top": "some answered questions [bahai]"
+    },
+    {
       "id": "lm-religions",
       "type": "library_meta",
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 133,
+      "ms": 172,
       "rank": null,
       "plan": null,
       "why": null,

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T13:35:00.575Z",
+  "generated": "2026-09-25T13:42:35.900Z",
   "entries": [
+    {
+      "hash": "a6ab3d94",
+      "date": "2026-09-25",
+      "type": "New",
+      "description": "Collapse copies of the same text; battery tests the RAW data contract per research pattern",
+      "scope": "search"
+    },
     {
       "hash": "bc3035b1",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Deepseek-v4-flash/pro API ids are v4 (deepseek-chat V3 deprecated)",
       "scope": null
-    },
-    {
-      "hash": "23ea288d",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Wire deepseek-v4-flash→deepseek-chat mapping + switch service tiers off OpenAI",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "a6ab3d94",
+        "date": "2026-09-25",
+        "type": "New",
+        "description": "Collapse copies of the same text; battery tests the RAW data contract per research pattern",
+        "scope": "search"
+      },
       {
         "hash": "bc3035b1",
         "date": "2026-09-25",
@@ -7083,13 +7090,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Deepseek-v4-flash/pro API ids are v4 (deepseek-chat V3 deprecated)",
-        "scope": null
-      },
-      {
-        "hash": "23ea288d",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Wire deepseek-v4-flash→deepseek-chat mapping + switch service tiers off OpenAI",
         "scope": null
       }
     ]

@@ -27,6 +27,17 @@ Cross-tradition diversity cap ONLY when the plan has no scope and shape ≠ quot
 /api/search/multi and executeSearch (tools + chat; model args override plan) → battery →
 switch /v1/search main path if it beats public.
 
+## G. Raw search owns correct sources (2.187.102–.103)
+source-resolve.js: Jev classifies each candidate passage (original/quotation/recollection/commentary + speaker);
+quoted spans traced by exact words to the speaker's own work (authority, canonical site); quotation passages
+replaced (quoted_in), commentary annotated (quote_sources); copies collapsed (also_in). Adds ~0.35–0.55s.
+Battery (raw, analyze:false) now reports a DATA CONTRACT per returned passage. First run, 424 passages:
+book-root references 73 (17%), uploader-as-author 28 (7%: bayat, michot, pdf-h-holley, pdf-h-hartz).
+OPEN (decisions/data): (1) translation policy for collapsing copies — John 1:1 now served from Douay-Rheims, not
+"John"; Bahá'í = Shoghi Effendi's authorized translation? (2) paragraph ids for OceanLibrary docs linked at book
+root (Epistle to the Son of the Wolf, Promised Day is Come…). (3) author metadata: uploader names; Lights of
+Guidance + The Universal House of Justice stored as author Bahá'u'lláh; pilgrim notes at authority 7.
+
 ## F-DONE (2.187.95–.96): Anis chat layer LIVE on /api/chat/stream (default; ANIS_ENGINE=jafar rolls back)
 api/lib/anis/{respond,prompt,craft}.js — transport-neutral anisRespond() for the web component AND future
 anis@oceanlibrary.com email. Lean prompt (1k vs 12k tokens). ONE global model ANIS_LLM (default openai:gpt-4o-mini;
