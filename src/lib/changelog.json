@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T05:11:05.305Z",
+  "generated": "2026-09-25T05:16:55.948Z",
   "entries": [
+    {
+      "hash": "ef50da70",
+      "date": "2026-09-24",
+      "type": "Fixed",
+      "description": "Search follow-ups with the question they refer to; never borrow a passage about someone else",
+      "scope": "anis"
+    },
     {
       "hash": "f3784f01",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Leave group-without-target queries unscoped (sparse membership under-returns)",
       "scope": null
-    },
-    {
-      "hash": "e3423fda",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Honest-none only when the group is the query subject; restore group scoping",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "ef50da70",
+        "date": "2026-09-24",
+        "type": "Fixed",
+        "description": "Search follow-ups with the question they refer to; never borrow a passage about someone else",
+        "scope": "anis"
+      },
       {
         "hash": "f3784f01",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Leave group-without-target queries unscoped (sparse membership under-returns)",
-        "scope": null
-      },
-      {
-        "hash": "e3423fda",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Honest-none only when the group is the query subject; restore group scoping",
         "scope": null
       }
     ]

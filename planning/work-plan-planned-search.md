@@ -27,6 +27,15 @@ Cross-tradition diversity cap ONLY when the plan has no scope and shape ≠ quot
 /api/search/multi and executeSearch (tools + chat; model args override plan) → battery →
 switch /v1/search main path if it beats public.
 
+## F-DONE (2.187.95–.96): Anis chat layer LIVE on /api/chat/stream (default; ANIS_ENGINE=jafar rolls back)
+api/lib/anis/{respond,prompt,craft}.js — transport-neutral anisRespond() for the web component AND future
+anis@oceanlibrary.com email. Lean prompt (1k vs 12k tokens). ONE global model ANIS_LLM (default openai:gpt-4o-mini;
+race in scripts/wip/anis-model-race.mjs). Live convo test: scripts/wip/anis-live-convo.mjs.
+OPEN: (1) Groq paid tier → ANIS_LLM=groq:openai/gpt-oss-120b:low (2-3x faster; free tier 8k TPM); also the `fast`
+service names retired llama-3.3-70b → silently falls back to OpenAI. (2) gpt-4o-mini added an ungrounded date
+("1850" for Ṭabarsí; 1849). (3) chat-path search 0.8–1.7s vs 0.2s raw — executeSearch enrichment SQL.
+(4) primary texts vs secondary books in chat quotes (authority). (5) email adapter for anis@.
+
 ## F. Search-first chat (Chad: "chat should fire the search immediately with JEV and feed results to a single LLM call")
 Turn → planSearch(messages) → route by shape WITHOUT an LLM (quote/fact/topic/define → plannedSearch;
 enumerate → roster endpoint; lookup → find-document/entity lookup) → ONE generation call with the results.
