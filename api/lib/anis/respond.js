@@ -67,10 +67,13 @@ function conversationSummary(messages, persona) {
 }
 
 async function defaultDeps() {
-  const [{ executeSearch }, { craftAnswerStream, stripUngroundedLinks }, companion, { anisCraft }] = await Promise.all([
+  const [{ executeSearch }, { craftAnswerStream, stripUngroundedLinks }, companion, { anisCraft }, { planSearch }] = await Promise.all([
     import('../../routes/chat.js'), import('../jafar-pipeline.js'), import('../companion/index.js'), import('./craft.js'),
+    import('../search-plan.js'),
   ]);
   return {
+    // Planned once here; executeSearch's plannedSearch then hits the plan cache (same conversation state).
+    plan: (messages) => planSearch(messages),
     search: executeSearch,
     // Lean Anis prompt by default; ANIS_PROMPT=jafar uses the 12k-token Jafar crafter (comparison / rollback).
     craft: process.env.ANIS_PROMPT === 'jafar' ? craftAnswerStream : anisCraft,
@@ -118,8 +121,12 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const question = lastUser(messages);
   const t0 = Date.now();
 
+  // Conversation (greetings, thanks, questions about Anis) is not a lookup: answer as ourselves, search nothing.
+  const plan = d.plan ? await d.plan(messages).catch(() => null) : null;
+  const conversational = plan?.shape === 'converse';
+
   onEvent({ type: 'stage', stage: 'search' });
-  const res = await d.search({
+  const res = conversational ? { passages: [], _plan: plan } : await d.search({
     query: searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
     plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {} },
   });
@@ -132,8 +139,10 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const citations = retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url,
     religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index, text: q.text.slice(0, 300) }));
   // Something useful before the first token (backlog 0023): the sources are known in ~0.2s.
-  onEvent({ type: 'sources', sources: citations, plan: res?._plan || null, ms: searchMs });
-  onEvent({ type: 'status', text: statusLine(citations, res?._plan) });
+  if (!conversational) {
+    onEvent({ type: 'sources', sources: citations, plan: res?._plan || null, ms: searchMs });
+    onEvent({ type: 'status', text: statusLine(citations, res?._plan) });
+  }
 
   let comp = null;
   try {
@@ -151,12 +160,15 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const raw = await d.craft({
     user_question: question, retrieved_quotes: retrieved, conversation_summary: conversationSummary(messages, persona),
     persona_name: persona, mission: profile.mission || null, companion_append: comp?.append || '',
-    comparative: !!res?._plan?.comparative, llm: llm || parseLlm(process.env.ANIS_LLM),
+    comparative: !!res?._plan?.comparative, conversational, llm: llm || parseLlm(process.env.ANIS_LLM),
     onChunk: (t) => { if (firstTokenMs === null) firstTokenMs = Date.now() - t0; onEvent({ type: 'text', content: t }); },
   });
   const reply = (d.stripLinks || keepRetrievedLinks)(linkMarkers(raw, retrieved), retrieved);
   if (comp?.log && comp.plan) comp.log(comp.plan);
 
-  return { reply, citations, retrieved, plan: res?._plan || null,
+  // Chips = the sources the reply actually links, not every passage retrieved (screenshot: Book of Mormon and
+  // Qabbalah under an answer that used two Bahá'í texts).
+  const cited = citations.filter((c) => c.url && reply.includes(c.url));
+  return { reply, citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
     timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 } };
 }

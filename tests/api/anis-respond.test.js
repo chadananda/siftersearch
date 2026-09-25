@@ -13,7 +13,7 @@ function deps(over = {}) {
   return {
     calls,
     search: async (args) => { calls.search.push(args); return { passages, _plan: { shape: 'quote', filters: { religion: "Baha'i" } } }; },
-    craft: async (args) => { calls.craft.push(args); args.onChunk('The earth '); args.onChunk('is one country [bad](https://evil.example).'); return 'The earth is one country [bad](https://evil.example).'; },
+    craft: async (args) => { calls.craft.push(args); args.onChunk('The earth '); args.onChunk('is one country.'); return 'The earth is ["but one country"](https://x/g#117) — *Gleanings*, not [bad](https://evil.example).'; },
     companion: async (ctx) => { calls.companion.push(ctx); return { append: '\n\nCOMPANION: gentle.', plan: { mode: 'INQUIRY' }, offer: false }; },
     ...over,
   };
@@ -120,6 +120,24 @@ describe('anisRespond', () => {
     await anisRespond({ messages: m, deps: d });
     expect(d.calls.search[0].query).toContain('Mullá Ḥusayn');
     expect(d.calls.craft[0].user_question).toBe('Where was he killed?');   // the model still answers the actual turn
+  });
+
+  // Screenshot 2026-09-24: "what is your name?" searched the library and crowbarred a prayer quote into Anis's
+  // self-introduction. Conversation (greetings, thanks, questions about Anis) is not a lookup.
+  it('answers conversation as itself — no search, no passages, no citations', async () => {
+    const d = deps({ plan: async () => ({ shape: 'converse', filters: {}, prefer: null, comparative: false }) });
+    const r = await anisRespond({ messages: [{ role: 'user', content: 'what is your name?' }], profile: { persona_name: 'Anís' }, deps: d });
+    expect(d.calls.search).toHaveLength(0);
+    expect(d.calls.craft[0].retrieved_quotes).toEqual([]);
+    expect(d.calls.craft[0].conversational).toBe(true);
+    expect(r.citations).toEqual([]);
+  });
+
+  // Same screenshot: chips listed every retrieved passage (Book of Mormon, Qabbalah…) under an answer that used two.
+  it('returns as citations only the sources the reply actually links', async () => {
+    const d = deps({ craft: async (a) => { a.onChunk('x'); return 'As it says, ["one country and mankind"](https://x/g#117) — *Gleanings*.'; } });
+    const r = await anisRespond({ messages: convo, deps: d });
+    expect(r.citations.map((c) => c.url)).toEqual(['https://x/g#117']);
   });
 
   it('returns what the email adapter needs: text, citations, plan, timings', async () => {

@@ -27,6 +27,7 @@ const SHAPES = {
   define: 'asks what a term, name or concept means',
   lookup: 'names a specific work or person and wants that item itself',
   enumerate: 'asks for a list: members of a group, attendees of an event, all instances of something',
+  converse: 'conversation, not a lookup: a greeting, thanks, small talk, or a question about the assistant itself (its name, what it can do)',
 };
 
 // Deterministic BACKSTOP only (used when Jev is unreachable): a tradition or scripture the query NAMES.

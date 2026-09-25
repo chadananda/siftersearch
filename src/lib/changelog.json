@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T05:16:55.948Z",
+  "generated": "2026-09-25T05:19:27.848Z",
   "entries": [
+    {
+      "hash": "6fcb8e6f",
+      "date": "2026-09-24",
+      "type": "Docs",
+      "description": "Anis chat layer live; open items (Groq tier, date grounding, chat-path search latency)",
+      "scope": "plan"
+    },
     {
       "hash": "ef50da70",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Explain empty connection results instead of a blank banner",
       "scope": null
-    },
-    {
-      "hash": "8e4643f6",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Leave group-without-target queries unscoped (sparse membership under-returns)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "6fcb8e6f",
+        "date": "2026-09-24",
+        "type": "Docs",
+        "description": "Anis chat layer live; open items (Groq tier, date grounding, chat-path search latency)",
+        "scope": "plan"
+      },
       {
         "hash": "ef50da70",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Explain empty connection results instead of a blank banner",
-        "scope": null
-      },
-      {
-        "hash": "8e4643f6",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Leave group-without-target queries unscoped (sparse membership under-returns)",
         "scope": null
       }
     ]

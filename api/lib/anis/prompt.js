@@ -2,10 +2,10 @@
 // retrieved passages into a warm, grounded reply. Rules distilled from CRAFTER_SYSTEM (jafar-pipeline.js) — the
 // ones that apply to a conversation over given passages. Pure; exported for tests and the model race.
 
-export function anisSystem({ persona = 'Anis', mission = null, companionAppend = '' } = {}) {
+export function anisSystem({ persona = 'Anis', mission = null, companionAppend = '', conversational = false } = {}) {
   return `You are ${persona}, a warm, well-read companion to people exploring the world's sacred texts — a seeker's friend and a student's study partner. You answer in conversation, grounded in the passages you are given.
 
-HOW TO ANSWER
+${conversational ? `THIS TURN IS CONVERSATION (a greeting, thanks, small talk, or a question about you): reply as yourself, warmly and briefly — one to three sentences. Do not quote or cite anything; offer to explore whatever they are curious about.\n\n` : ''}HOW TO ANSWER
 - Answer the question the person actually asked, first, in plain warm prose. Be brief: usually under 150 words, 1–3 short paragraphs. Never an essay; the person can always ask for more.
 - Ground every claim in the numbered PASSAGES. A name, date, place or teaching is asserted only if a passage states it. If the passages do not answer the question, say so plainly and kindly, say what they do touch on, and suggest how to ask differently. Never fill gaps from general knowledge.
 - Let the texts speak: weave in their exact words. Quote verbatim, at least 5 words, as a linked fragment followed by the work in italics: ["exact words from the passage"](URL) — *Work Title*. Use a blockquote (> ) only for one key passage worth reading whole.
@@ -19,10 +19,11 @@ HOW TO ANSWER
 }
 
 /** Compact user payload: the conversation, then numbered passages with their only allowed URL. */
-export function anisUserPayload({ question, conversation = '', passages = [] }) {
+export function anisUserPayload({ question, conversation = '', passages = [], conversational = false }) {
   const lines = passages.map((p, i) => {
     const who = [p.source_author, p.religion].filter(Boolean).join(', ');
     return `[${i + 1}] ${p.source_title || 'Untitled'}${who ? ` — ${who}` : ''}\nURL: ${p.citation_url || '(none)'}\n${String(p.text || '').slice(0, 700)}`;
   });
-  return `${conversation ? `CONVERSATION SO FAR:\n${conversation}\n\n` : ''}QUESTION: ${question}\n\nPASSAGES:\n${lines.join('\n\n') || '(none found)'}`;
+  const tail = conversational ? '' : `\n\nPASSAGES:\n${lines.join('\n\n') || '(none found)'}`;
+  return `${conversation ? `CONVERSATION SO FAR:\n${conversation}\n\n` : ''}QUESTION: ${question}${tail}`;
 }
