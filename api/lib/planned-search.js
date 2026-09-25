@@ -66,7 +66,8 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
  * @param {object} [o.given]        caller filters (model tool args, explicit API filters) — always win
  * @returns {{hits, plan, layers, widened, relaxed, narrowCount, cached, timings}}
  */
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, minResults = 3 } = {}) {
+// resolver: source resolution (source-resolve.js) — default ON for the real engine, off when a test injects one.
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, minResults = 3 } = {}) {
   const t0 = Date.now();
   const plan = await planner(messages?.length ? messages : query, { given });
   // Site default (an embedding site's home tradition): fills in only when the question named none and is not a
@@ -100,10 +101,21 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     relaxScope(plan.filters, search, { min: Math.min(minResults, limit) }),
     plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }, withoutAuthor(query, plan.prefer)).catch(() => []) : Promise.resolve([]),
   ]);
-  const hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, subjectTerms(query, plan.prefer)) : r.results;
+  let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, subjectTerms(query, plan.prefer)) : r.results;
+
+  // Correct sources BEFORE anything formats them: quoted words served from their original work, every checked
+  // passage labelled (original / quotation / recollection / commentary) with whose words it carries.
+  const resolve = resolver ?? (engine ? null : (await import('./source-resolve.js')).resolveSources);
+  let resolution = null;
+  if (resolve && plan.shape !== 'converse' && hits.length) {
+    const t2 = Date.now();
+    const res = await resolve(hits).catch((err) => ({ hits, resolved: 0, error: err.message }));
+    hits = res.hits;
+    resolution = { resolved: res.resolved, error: res.error || null, ms: Date.now() - t2 };
+  }
 
   const value = {
-    hits, plan, layers,
+    hits, plan, layers, resolution,
     widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowResults.length, scopeUsed: r.scope,
   };
   if (cache.size >= MAX) cache.delete(cache.keys().next().value);

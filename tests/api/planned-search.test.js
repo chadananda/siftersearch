@@ -107,6 +107,17 @@ describe('plannedSearch', () => {
     expect(r.hits.map((h) => h.id)).toEqual([11, 20, 21]);   // his words ON justice first; off-topic author hit not promoted
   });
 
+  // Raw search owns correct sources: the resolver runs on the final hits (not for conversation turns).
+  it('runs source resolution on the final hits and reports it', async () => {
+    const e = engine(() => many(4));
+    const calls = [];
+    const resolver = async (hits) => { calls.push(hits.length); return { hits: hits.map((h) => ({ ...h, _source: { kind: 'original' } })), resolved: 0 }; };
+    const r = await plannedSearch('x', { planner: planOf({}), engine: e.fn, resolver });
+    expect(calls).toEqual([4]);
+    expect(r.hits[0]._source.kind).toBe('original');
+    expect(r.resolution).toMatchObject({ resolved: 0 });
+  });
+
   it('caller filters beat the plan', async () => {
     const e = engine(() => many(5));
     await plannedSearch('x', { given: { religion: 'Hindu' }, planner: planOf({ tradition: 'Buddhist' }), engine: e.fn });

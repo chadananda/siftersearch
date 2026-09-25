@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T13:19:11.698Z",
+  "generated": "2026-09-25T13:30:41.647Z",
   "entries": [
+    {
+      "hash": "0451dd77",
+      "date": "2026-09-25",
+      "type": "New",
+      "description": "Default model Gemini 3.5 Flash-Lite (fastest measured); gemini + anthropic providers",
+      "scope": "anis"
+    },
     {
       "hash": "46a0f6e3",
       "date": "2026-09-24",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Fix vividness regex (prefix), prefer proof that names target, drop enumerating lead",
       "scope": null
-    },
-    {
-      "hash": "780667eb",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Rank connection claims by concreteness (deprioritise vague proofs)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-25": [
+      {
+        "hash": "0451dd77",
+        "date": "2026-09-25",
+        "type": "New",
+        "description": "Default model Gemini 3.5 Flash-Lite (fastest measured); gemini + anthropic providers",
+        "scope": "anis"
+      }
+    ],
     "2026-09-24": [
       {
         "hash": "46a0f6e3",
@@ -7081,13 +7090,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Fix vividness regex (prefix), prefer proof that names target, drop enumerating lead",
-        "scope": null
-      },
-      {
-        "hash": "780667eb",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Rank connection claims by concreteness (deprioritise vague proofs)",
         "scope": null
       }
     ]

@@ -492,7 +492,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
       const r = await plannedSearch(query, { messages: plan.messages, given: filters, defaults: plan.defaults, limit: safeLimit, scope_config, entityIds });
       merged = r.hits || [];
       planInfo = { shape: r.plan.shape, filters: r.plan.filters, prefer: r.plan.prefer?.author || null, comparative: r.plan.comparative,
-        widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error || null };
+        widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error || null, resolution: r.resolution };
     } else if (phrase) {
       // PHRASE mode (quote-source lookups): pure BM25 straight to the paragraphs
       // index — Meili honors "quoted phrases" in q. The multi-index merge below
@@ -647,7 +647,8 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
           language: hit.language || meta?.language || null,
           document_id: docId,
           paragraph_index: hit.paragraph_index,
-          ...(hit.matched_hype ? { matched_hype: hit.matched_hype } : {})
+          ...(hit.matched_hype ? { matched_hype: hit.matched_hype } : {}),
+          ...(hit._source ? { source: hit._source } : {})
         };
         // Deep-link priority: OceanLibrary para deeplink > internal /library/…#p{N}
         // If neither resolves, source_url stays null — docs missing metadata need fixing at the source.

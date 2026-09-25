@@ -385,7 +385,8 @@ export default async function publicApiRoutes(fastify) {
       ? import('../lib/planned-search.js').then(({ plannedSearch }) => plannedSearch(query, { limit: Math.min(limit, 30), given: searchFilters }))
           .then((r) => {
             planInfo = { shape: r.plan.shape, filters: r.plan.filters, prefer: r.plan.prefer?.author || null, comparative: r.plan.comparative,
-              layers: r.layers, widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error };
+              layers: r.layers, widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error,
+              resolution: r.resolution };
             return { hits: r.hits };
           })
           .catch((err) => {
@@ -513,6 +514,8 @@ export default async function publicApiRoutes(fastify) {
       _matchesPosition: hit._matchesPosition,
       _formatted: hit._formatted,
       rerank_score: hit.rerank_score,
+      // Source resolution (source-resolve.js): kind, speaker, and where quoted words originate.
+      _source: hit._source,
     }));
 
     // Retrieval (search + rerank + excerpt prep) is everything up to here.
@@ -572,6 +575,8 @@ export default async function publicApiRoutes(fastify) {
       // Naming the chapter is also what turns a bare "here" into a citation worth following (2026-08-17).
       heading: result.heading || null,
       author: result.author,
+      // What this passage IS and whose words it carries; quote_sources/quoted_in point at the ORIGINAL paragraphs.
+      source: result._source || null,
       religion: result.religion,
       collection: result.collection,
       authority: result.authority,

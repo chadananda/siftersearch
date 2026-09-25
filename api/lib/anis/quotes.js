@@ -2,21 +2,16 @@
 // Invented words presented as scripture are removed with their sentence (which also carries the false attribution).
 // Pure. Used by the live reply guard (respond.js) and the model race (scripts/wip/anis-model-race.mjs).
 
-const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-  .replace(/[‘’ʼ`'"“”]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+import { quoteSpans, containsQuote } from '../quote-text.js';
 
-/** Quoted spans long enough to be a quotation of a text (≥5 words). */
-export function quoteSpans(text) {
-  return [...String(text || '').matchAll(/["“]([^"”]+)["”]/g)].map((m) => m[1].trim())
-    .filter((q) => q.split(/\s+/).length >= 5);
-}
+export { quoteSpans };
 
-/** Spans whose words appear in no passage. An ellipsis may join verbatim pieces; each piece of ≥3 words must match. */
+/** Spans whose words appear in no passage (containsQuote: ellipsis-joined pieces of ≥3 words each must match). */
 export function unverifiedQuotes(text, passages) {
-  const hay = (passages || []).map((p) => fold(p.text)).join(' | ');
+  const hay = (passages || []).map((p) => p.text || '').join(' | ');
   return quoteSpans(text).filter((q) => {
-    const pieces = q.split(/\.\.\.|…/).map(fold).filter((p) => p.split(' ').length >= 3);
-    return pieces.length === 0 ? false : !pieces.every((p) => hay.includes(p));
+    const pieces = String(q).split(/\.\.\.|\u2026/).filter((p) => p.trim().split(/\s+/).length >= 3);
+    return pieces.length > 0 && !containsQuote(hay, q);
   });
 }
 

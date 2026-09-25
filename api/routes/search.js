@@ -405,7 +405,7 @@ export default async function searchRoutes(fastify) {
     if (plan === false) return multiIndexSearch(String(query), { limit: lim, filters, includeMatchedHype: true });
     const { plannedSearch } = await import('../lib/planned-search.js');
     const r = await plannedSearch(String(query), { limit: lim, given: filters, messages });
-    return { hits: r.hits, _plan: { ...r.plan, layers: r.layers, widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowCount, cached: r.cached, timings: r.timings } };
+    return { hits: r.hits, _plan: { ...r.plan, layers: r.layers, widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowCount, cached: r.cached, timings: r.timings, resolution: r.resolution } };
   });
 
   fastify.get('/stats', async (request) => {
