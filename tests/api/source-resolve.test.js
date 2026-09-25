@@ -1,108 +1,153 @@
-// Raw search must return the ORIGINAL source for quoted words — correct metadata, quote and reference. Live 2026-09-25:
-// "the essence of Justice and the source thereof…" (Gleanings LXXXVIII) was served from a pilgrim-notes book (Bolles,
-// authority 7) while canonical Gleanings sat outside the top 12. The chat layer only has what search gives it.
+// Raw search returns each quote from its IDEAL source and drops duplicates from secondary sources (Chad, 2026-09-25:
+// "tweak document weighting or re-ranking, preferably with JEV"; "OceanLibrary is the primary source, all others are
+// supplementary"). Live defects this pins:
+//  - Gleanings LXXXVIII served from a pilgrim-notes book (authority 7); canonical Gleanings outside the top 12;
+//  - "The best beloved of all things in My sight is Justice" linked to a 1903 BahaiLibrary "Parallel Hidden Words"
+//    instead of OceanLibrary's Hidden Words.
 import { describe, it, expect } from 'vitest';
-import { resolveSources, pickOriginal, needsResolution } from '../../api/lib/source-resolve.js';
+import { resolveSources, collapseCopies, needsCheck, deterministicPick } from '../../api/lib/source-resolve.js';
 
-const GLEANINGS = { id: 900, doc_id: 8312, paragraph_index: 88, title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh', authority: 10, source_site: 'oceanlibrary.com',
+const OL = 'https://oceanlibrary.com/x/?paraId=p1';
+const GLEANINGS = { id: 900, doc_id: 8312, paragraph_index: 88, title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh', authority: 10, source_url: OL,
   text: 'Know verily that the essence of justice and the source thereof are both embodied in the ordinances prescribed by Him Who is the Manifestation of the Self of God.' };
 const SACRED = { ...GLEANINGS, id: 901, doc_id: 20777, title: 'Bahá’í Sacred Writings', authority: 8 };
-const BAYAT = { ...GLEANINGS, id: 902, doc_id: 919098, title: "Gleanings from the Writings of Baha'u'llah", author: 'bayat', authority: null, source_site: null };
-const PILGRIM = { id: 10, doc_id: 12618, paragraph_index: 6, title: 'Shoghi Effendi on Laws, Administration and Prophecy', author: 'J. Ruh-Angiz Bolles', authority: 7,
+const BAYAT = { ...GLEANINGS, id: 902, doc_id: 919098, title: 'Gleanings study guide', author: 'bayat', authority: null, source_url: null };
+const PILGRIM = { id: 10, doc_id: 12618, paragraph_index: 6, title: 'Shoghi Effendi on Laws, Administration and Prophecy', author: 'J. Ruh-Angiz Bolles', authority: 7, source_url: null,
   text: '"Gleanings", p. 175. "Know verily that the essence of justice and the source thereof are both embodied in the ordinances prescribed by Him."' };
-const ORIGINAL = { id: 20, doc_id: 11465, title: 'Tablet of the Riḍván of Justice', author: 'Bahá’u’lláh', authority: 10, text: 'O people! Justice is the light of the world.' };
+const HW_OL = { id: 30, doc_id: 20809, paragraph_index: 2, title: 'The Hidden Words of Bahá’u’lláh', author: 'Bahá’u’lláh', authority: 9, source_url: OL,
+  text: 'O Son of Spirit! The best beloved of all things in My sight is Justice; turn not away therefrom if thou desirest Me.' };
+const HW_1903 = { ...HW_OL, id: 31, doc_id: 15171, title: 'Parallel Hidden Words in English (Early Translations)', authority: 9, source_url: null };
+const ORIGINAL = { id: 20, doc_id: 11465, title: 'Tablet of the Riḍván of Justice', author: 'Bahá’u’lláh', authority: 10, source_url: OL, text: 'O people! Justice is the light of the world.' };
 
-const jevAll = (verdicts) => async () => verdicts;   // [{ kind, speaker }] per candidate, in order
+// Link metadata: BahaiLibrary for the 1903 translation, nothing recorded for the uploader copy.
+const linkMeta = async (ids) => new Map(ids.map((id) => [id, id === 15171 ? { metadata: '{"sourceUrl":"https://bahai-library.com/hw1903"}' } : {}]));
+// judge stub: verdicts per passage in order; choices per group key → chosen option id (null = abstain).
+const judge = (verdicts = [], pickFn = () => null) => async ({ passages, groups }) => ({
+  verdicts: passages.map((_, i) => verdicts[i] || { kind: 'original', speaker: 'author' }),
+  choices: Object.fromEntries(groups.map((g) => [g.key, pickFn(g)])),
+});
+const deps = (over = {}) => ({ linkMeta, judge: judge(), phraseSearch: async () => [], ...over });
 
-describe('needsResolution', () => {
-  it('skips a passage that is already the speaker’s own text with no quotation', () => {
-    expect(needsResolution(ORIGINAL)).toBe(false);
+describe('needsCheck', () => {
+  it('checks a central figure’s passage that is NOT on OceanLibrary (a primary copy may exist)', () => {
+    expect(needsCheck(HW_1903, 2)).toBe(true);
   });
-  it('checks a secondary author’s passage that contains a quotation', () => {
-    expect(needsResolution(PILGRIM)).toBe(true);
+  it('skips a central figure’s own passage already on OceanLibrary with no quotation', () => {
+    expect(needsCheck(ORIGINAL, 1)).toBe(false);
+  });
+  it('checks any passage that quotes', () => {
+    expect(needsCheck(PILGRIM, 5)).toBe(true);
   });
 });
 
-describe('pickOriginal', () => {
-  it('prefers the speaker’s own work, then authority, over compilations and uploader copies', () => {
-    expect(pickOriginal([BAYAT, SACRED, GLEANINGS], 'Bahá’u’lláh').doc_id).toBe(8312);
+describe('deterministicPick (fallback when Jev abstains)', () => {
+  it('OceanLibrary first — the OceanLibrary Hidden Words beats the 1903 supplementary copy', () => {
+    expect(deterministicPick([HW_1903, HW_OL], 'Bahá’u’lláh', new Map([[30, 1], [31, 2]])).id).toBe(30);
   });
-  it('never picks a copy with no authority over an attributed one', () => {
-    expect(pickOriginal([BAYAT, SACRED], 'Bahá’u’lláh').doc_id).toBe(20777);
+  it('any OceanLibrary copy beats a supplementary one, even the speaker’s own work elsewhere', () => {
+    const blPrimary = { ...GLEANINGS, id: 903, doc_id: 5, authority: 10 };
+    expect(deterministicPick([blPrimary, SACRED], 'Bahá’u’lláh', new Map([[903, 2], [901, 1]])).id).toBe(901);
+  });
+  // Chad: "the source book comes before books quoting it. So the Iqan comes before Gleanings for the same quote and both
+  // come before compilations" — Gleanings is a SELECTION of Bahá'u'lláh's writings; the Íqán is the original work.
+  it('the original work (Kitáb-i-Íqán) beats the anthology (Gleanings) beats a compilation, for the same words', () => {
+    const IQAN = { ...GLEANINGS, id: 905, doc_id: 20810, title: 'The Kitáb-i-Íqán', authority: 10 };
+    const COMP = { ...GLEANINGS, id: 906, doc_id: 20778, title: 'Compilation on Knowledge', author: 'Universal House of Justice', authority: 10 };
+    const tiers = new Map([[900, 1], [905, 1], [906, 1]]);
+    expect(deterministicPick([GLEANINGS, COMP, IQAN], 'Bahá’u’lláh', tiers).id).toBe(905);
+    expect(deterministicPick([COMP, GLEANINGS], 'Bahá’u’lláh', tiers).id).toBe(900);
+  });
+
+  it('within OceanLibrary: the speaker’s own work, then authority', () => {
+    expect(deterministicPick([SACRED, GLEANINGS], 'Bahá’u’lláh', new Map([[900, 1], [901, 1]])).id).toBe(900);
+  });
+  it('never picks an uploader copy over an attributed one', () => {
+    expect(deterministicPick([BAYAT, SACRED], 'Bahá’u’lláh', new Map([[902, 5], [901, 1]])).id).toBe(901);
   });
 });
 
 describe('resolveSources', () => {
-  it('replaces a secondary copy with the original work and records where it was quoted', async () => {
-    const r = await resolveSources([PILGRIM, ORIGINAL], {
-      classify: jevAll([{ kind: 'quotation', speaker: 'Bahá’u’lláh' }]),
+  it('replaces a secondary quotation with the ideal original chosen by Jev, listing where else it appears', async () => {
+    const r = await resolveSources([PILGRIM, ORIGINAL], deps({
+      judge: judge([{ kind: 'quotation', speaker: 'Bahá’u’lláh' }], (g) => g.options.find((o) => o.doc_id === 8312)?.id),
       phraseSearch: async () => [PILGRIM, BAYAT, SACRED, GLEANINGS],
-    });
+    }));
     expect(r.hits[0].doc_id).toBe(8312);
     expect(r.hits[0]._source).toMatchObject({ kind: 'quotation', speaker: 'Bahá’u’lláh', resolved: true });
-    expect(r.hits[0]._source.quoted_in).toMatchObject({ doc_id: 12618, title: PILGRIM.title });
-    expect(r.hits[1].doc_id).toBe(11465);            // an original passage passes through untouched
-    expect(r.resolved).toBe(1);
+    expect(r.hits[0]._source.quoted_in).toMatchObject({ doc_id: 12618 });
+    expect(r.hits[0]._source.also_in.map((x) => x.doc_id).sort()).toEqual([20777, 919098]);
+    expect(r.hits[1].doc_id).toBe(11465);
   });
 
-  // God Passes By is Shoghi Effendi's history (commentary) quoting Bahá'u'lláh: keep the passage, and reference each
-  // quote to its original paragraph so the answer can cite the Tablet itself.
-  it('keeps a commentary passage and references each embedded quote to its original', async () => {
-    const GPB = { id: 30, doc_id: 21310, paragraph_index: 509, title: 'God Passes By', author: 'Shoghi Effendi', authority: 7,
-      text: 'Justice He extols as "Know verily that the essence of justice and the source thereof are both embodied in the ordinances prescribed by Him".' };
-    const r = await resolveSources([GPB], { classify: jevAll([{ kind: 'commentary', speaker: 'Bahá’u’lláh' }]), phraseSearch: async () => [SACRED, GLEANINGS] });
-    expect(r.hits[0].doc_id).toBe(21310);
-    expect(r.hits[0]._source.kind).toBe('commentary');
-    expect(r.hits[0]._source.quote_sources).toHaveLength(1);
-    expect(r.hits[0]._source.quote_sources[0]).toMatchObject({ doc_id: 8312, paragraph_index: 88, title: GLEANINGS.title, author: 'Bahá’u’lláh' });
+  it('never lets Jev pick a supplementary copy when an OceanLibrary copy exists', async () => {
+    const r = await resolveSources([HW_1903], deps({
+      judge: judge([{ kind: 'original', speaker: 'Bahá’u’lláh' }], () => 31),   // Jev (wrongly) picks the 1903 copy
+      phraseSearch: async () => [HW_1903, HW_OL],
+    }));
+    expect(r.hits[0].doc_id).toBe(20809);
   });
 
-  it('only accepts a candidate that actually CONTAINS the quoted words', async () => {
+  it('swaps a central figure’s passage from a supplementary copy to the OceanLibrary copy of the same words', async () => {
+    const r = await resolveSources([HW_1903], deps({ phraseSearch: async () => [HW_1903, HW_OL] }));   // Jev abstains
+    expect(r.hits[0].doc_id).toBe(20809);
+    expect(r.hits[0]._source.also_in.map((x) => x.doc_id)).toEqual([15171]);
+  });
+
+  it('asks Jev to choose only among copies that actually CONTAIN the words', async () => {
     const lookalike = { ...GLEANINGS, id: 950, text: 'Justice is a theme of this book.' };
-    const r = await resolveSources([PILGRIM], {
-      classify: jevAll([{ kind: 'quotation', speaker: 'Bahá’u’lláh' }]),
-      phraseSearch: async () => [lookalike],
-    });
-    expect(r.hits[0].doc_id).toBe(12618);            // no verified copy → keep, but labelled
-    expect(r.hits[0]._source).toMatchObject({ kind: 'quotation', speaker: 'Bahá’u’lláh', resolved: false });
+    let seen = null;
+    await resolveSources([PILGRIM], deps({
+      judge: async (a) => { seen = a; return judge([{ kind: 'quotation', speaker: 'Bahá’u’lláh' }])(a); },
+      phraseSearch: async () => [lookalike, SACRED, GLEANINGS],
+    }));
+    expect(seen.groups[0].options.map((o) => o.id)).not.toContain(950);
   });
 
-  it('labels a recollection it cannot trace to a written text, rather than presenting it as scripture', async () => {
+  it('keeps a commentary passage and references each embedded quote to its ideal source', async () => {
+    const GPB = { id: 40, doc_id: 21310, paragraph_index: 509, title: 'God Passes By', author: 'Shoghi Effendi', authority: 7, source_url: OL,
+      text: 'Justice He extols as "Know verily that the essence of justice and the source thereof are both embodied in the ordinances prescribed by Him".' };
+    const r = await resolveSources([GPB], deps({ judge: judge([{ kind: 'commentary', speaker: 'Bahá’u’lláh' }]), phraseSearch: async () => [SACRED, GLEANINGS] }));
+    expect(r.hits[0].doc_id).toBe(21310);
+    expect(r.hits[0]._source.quote_sources[0]).toMatchObject({ doc_id: 8312 });
+  });
+
+  it('labels a recollection it cannot trace, rather than presenting it as scripture', async () => {
     const note = { ...PILGRIM, id: 11, text: 'He said that we must be as one soul in many bodies, and that unity was everything to Him.' };
-    const r = await resolveSources([note], { classify: jevAll([{ kind: 'recollection', speaker: '‘Abdu’l-Bahá' }]), phraseSearch: async () => [] });
+    const r = await resolveSources([note], deps({ judge: judge([{ kind: 'recollection', speaker: '‘Abdu’l-Bahá' }]) }));
     expect(r.hits[0]._source).toMatchObject({ kind: 'recollection', speaker: '‘Abdu’l-Bahá', resolved: false });
   });
 
   it('does not duplicate a paragraph that was already in the results', async () => {
-    const r = await resolveSources([PILGRIM, GLEANINGS], {
-      classify: jevAll([{ kind: 'quotation', speaker: 'Bahá’u’lláh' }]),
-      phraseSearch: async () => [GLEANINGS],
-    });
+    const r = await resolveSources([PILGRIM, GLEANINGS], deps({
+      judge: judge([{ kind: 'quotation', speaker: 'Bahá’u’lláh' }]), phraseSearch: async () => [GLEANINGS],
+    }));
     expect(r.hits.map((h) => h.id)).toEqual([900]);
   });
 
-  it('fails open: a classifier error returns the hits unchanged', async () => {
-    const r = await resolveSources([PILGRIM, ORIGINAL], { classify: async () => { throw new Error('jev down'); }, phraseSearch: async () => [] });
-    expect(r.hits.map((h) => h.id)).toEqual([10, 20]);
+  it('makes ONE judge call for all passages and groups', async () => {
+    let calls = 0;
+    await resolveSources([PILGRIM, HW_1903], deps({
+      judge: async (a) => { calls++; return judge([{ kind: 'quotation', speaker: 'Bahá’u’lláh' }, { kind: 'original', speaker: 'Bahá’u’lláh' }])(a); },
+      phraseSearch: async (span) => (/beloved|spirit/i.test(span) ? [HW_OL, HW_1903] : [GLEANINGS]),
+    }));
+    expect(calls).toBe(1);
+  });
+
+  it('fails open: a judge error falls back to the deterministic choice, never to nothing', async () => {
+    const r = await resolveSources([HW_1903], deps({ judge: async () => { throw new Error('jev down'); }, phraseSearch: async () => [HW_1903, HW_OL] }));
+    expect(r.hits[0].doc_id).toBe(20809);
     expect(r.error).toMatch(/jev down/);
   });
 });
 
-// Live: canonical Gleanings at #2 and uploader copies of the SAME paragraph ("michot", "bayat") at #6–8.
-import { collapseCopies } from '../../api/lib/source-resolve.js';
 describe('collapseCopies', () => {
-  it('keeps the best copy of the same text and lists the others as also_in', () => {
-    const out = collapseCopies([BAYAT, GLEANINGS, ORIGINAL, SACRED]);
+  it('keeps the best copy of the same text (OceanLibrary first) and lists the others as also_in', () => {
+    const tiers = new Map([[902, 5], [900, 1], [901, 1], [20, 1]]);
+    const out = collapseCopies([BAYAT, GLEANINGS, ORIGINAL, SACRED], tiers);
     expect(out.map((h) => h.doc_id)).toEqual([8312, 11465]);
     expect(out[0]._source.also_in.map((x) => x.doc_id).sort()).toEqual([20777, 919098]);
   });
-
-  it('treats a paragraph contained in a longer copy as the same text', () => {
-    const longer = { ...SACRED, text: `Heading. ${GLEANINGS.text} More words after.` };
-    expect(collapseCopies([GLEANINGS, longer])).toHaveLength(1);
-  });
-
   it('leaves different passages alone', () => {
-    expect(collapseCopies([GLEANINGS, ORIGINAL])).toHaveLength(2);
+    expect(collapseCopies([GLEANINGS, ORIGINAL], new Map())).toHaveLength(2);
   });
 });

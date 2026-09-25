@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T14:09:32.457Z",
+  "generated": "2026-09-25T16:37:45.735Z",
   "entries": [
+    {
+      "hash": "a7490ac8",
+      "date": "2026-09-25",
+      "type": "Fixed",
+      "description": "Links follow the site order and use each document's own sourceUrl",
+      "scope": "search"
+    },
     {
       "hash": "8c72a660",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "/search/meili-diag — report Meili task backlog + paragraphs index state",
       "scope": null
-    },
-    {
-      "hash": "5599d3be",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "TEMP timing log — split hybridSearch into embed vs Meili latency",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "a7490ac8",
+        "date": "2026-09-25",
+        "type": "Fixed",
+        "description": "Links follow the site order and use each document's own sourceUrl",
+        "scope": "search"
+      },
       {
         "hash": "8c72a660",
         "date": "2026-09-25",
@@ -7083,13 +7090,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "/search/meili-diag — report Meili task backlog + paragraphs index state",
-        "scope": null
-      },
-      {
-        "hash": "5599d3be",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "TEMP timing log — split hybridSearch into embed vs Meili latency",
         "scope": null
       }
     ]
