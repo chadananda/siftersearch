@@ -7,6 +7,8 @@
 // Default measured 2026-09-24 (scripts/wip/anis-model-race.mjs, lean prompt): gpt-4o-mini 0.6s to first token,
 // obeys the link rules. Groq gpt-oss-120b is 2-3x faster end to end but needs Groq's paid tier (free = 8k TPM ≈ 2-3
 // replies/min) — switch with ANIS_LLM=groq:openai/gpt-oss-120b:low.
+import { dropUnverified, createSentenceGate } from './quotes.js';
+
 const DEFAULT_LLM = { provider: 'openai', model: 'gpt-4o-mini' };
 const PROVIDERS = new Set(['groq', 'openai', 'deepseek']);
 
@@ -156,19 +158,29 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   } catch { comp = null; }   // relationship enriches the answer; it never blocks one
 
   onEvent({ type: 'stage', stage: 'craft' });
+  // Stream a sentence at a time, releasing only sentences whose quotes are in the passages — an invented quote is
+  // never SHOWN, not even for the moment before the final text replaces it. first_token_ms = first text SEEN.
   let firstTokenMs = null;
+  const gate = createSentenceGate(retrieved, (t) => {
+    if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
+    onEvent({ type: 'text', content: t });
+  });
   const raw = await d.craft({
     user_question: question, retrieved_quotes: retrieved, conversation_summary: conversationSummary(messages, persona),
     persona_name: persona, mission: profile.mission || null, companion_append: comp?.append || '',
     comparative: !!res?._plan?.comparative, conversational, llm: llm || parseLlm(process.env.ANIS_LLM),
-    onChunk: (t) => { if (firstTokenMs === null) firstTokenMs = Date.now() - t0; onEvent({ type: 'text', content: t }); },
+    onChunk: (t) => gate.push(t),
   });
-  const reply = (d.stripLinks || keepRetrievedLinks)(linkMarkers(raw, retrieved), retrieved);
+  gate.flush();
+  // Final text: markers → links, ungrounded links unlinked, and any sentence quoting words found in NO passage removed
+  // (the widget reconciles its streamed text to this; email sends only this).
+  const guarded = dropUnverified((d.stripLinks || keepRetrievedLinks)(linkMarkers(raw, retrieved), retrieved), retrieved);
+  const reply = guarded.text;
   if (comp?.log && comp.plan) comp.log(comp.plan);
 
   // Chips = the sources the reply actually links, not every passage retrieved (screenshot: Book of Mormon and
   // Qabbalah under an answer that used two Bahá'í texts).
   const cited = citations.filter((c) => c.url && reply.includes(c.url));
-  return { reply, citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
+  return { reply, quotes_removed: guarded.removed, citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
     timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 } };
 }

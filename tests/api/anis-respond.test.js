@@ -140,6 +140,14 @@ describe('anisRespond', () => {
     expect(r.citations.map((c) => c.url)).toEqual(['https://x/g#117']);
   });
 
+  it('removes a sentence quoting words that are in no retrieved passage before the reply is final', async () => {
+    const d = deps({ craft: async (a) => { a.onChunk('x'); return 'Unity matters. He states that "the essence of justice is the love of all mankind". And: ["The earth is but one country, and mankind its citizens"](https://x/g#117) — *Gleanings*.'; } });
+    const r = await anisRespond({ messages: convo, deps: d });
+    expect(r.reply).not.toContain('essence of justice');
+    expect(r.reply).toContain('one country');
+    expect(r.quotes_removed).toBe(1);
+  });
+
   it('returns what the email adapter needs: text, citations, plan, timings', async () => {
     const r = await anisRespond({ messages: convo, deps: deps() });
     expect(r.citations[0]).toMatchObject({ title: 'Gleanings', url: 'https://x/g#117' });

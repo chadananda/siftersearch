@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T05:19:27.848Z",
+  "generated": "2026-09-25T05:25:07.285Z",
   "entries": [
+    {
+      "hash": "8062bf1f",
+      "date": "2026-09-24",
+      "type": "Fixed",
+      "description": "Conversation is not a lookup; chips show only the sources the reply cites",
+      "scope": "anis"
+    },
     {
       "hash": "6fcb8e6f",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Specific, book-worded connection clauses linked to the exact cited claim",
       "scope": null
-    },
-    {
-      "hash": "853f92ef",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Explain empty connection results instead of a blank banner",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "8062bf1f",
+        "date": "2026-09-24",
+        "type": "Fixed",
+        "description": "Conversation is not a lookup; chips show only the sources the reply cites",
+        "scope": "anis"
+      },
       {
         "hash": "6fcb8e6f",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Specific, book-worded connection clauses linked to the exact cited claim",
-        "scope": null
-      },
-      {
-        "hash": "853f92ef",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Explain empty connection results instead of a blank banner",
         "scope": null
       }
     ]
