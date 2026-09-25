@@ -58,7 +58,8 @@ async function search(query) {
     ? await call('/api/search/multi', { method: 'POST', body: { query, limit: TOP_K, ...(NO_PLAN ? { plan: false } : {}) }, internal: true })
     : await call('/api/v1/search', { method: 'POST', body: { query, limit: TOP_K, ...(NO_PLAN ? { plan: false } : {}), ...(RAW ? { analyze: false } : {}) } });
   const hits = (data.results || data.hits || data.passages || []).slice(0, TOP_K);
-  return { ms, items: hits.map((h) => ({ title: fold(h.title), author: fold(h.author), text: fold(h.text), religion: trad(h.religion) })) };
+  const plan = data._plan ? { shape: data._plan.shape ?? null, fallback: data._plan.fallback ?? null, error: data._plan.error ?? null } : null;
+  return { ms, plan, items: hits.map((h) => ({ title: fold(h.title), author: fold(h.author), text: fold(h.text), religion: trad(h.religion) })) };
 }
 
 const lookupCache = new Map();
@@ -102,9 +103,9 @@ const CHECKS = {
 
 const RUNNERS = {
   async search(f) {
-    const { ms, items } = await search(f.query);
+    const { ms, items, plan } = await search(f.query);
     const results = Object.entries(f.expect).map(([k, v]) => CHECKS[k](items, v));
-    return { ms, results, top: items[0] && `${items[0].title} [${items[0].religion}]` };
+    return { ms, results, plan, top: items[0] && `${items[0].title} [${items[0].religion}]` };
   },
   async find_document(f) {
     const qs = new URLSearchParams({ title: f.query, ...(f.params || {}) });
@@ -153,7 +154,7 @@ async function runOne(f) {
     const r = await RUNNERS[f.endpoint](f);
     const ok = r.results.every((x) => x.ok);
     return { id: f.id, type: f.type, persona: f.persona, ok, known_gap: !!f.known_gap, ms: r.ms ?? Date.now() - t0,
-      rank: r.results.find((x) => x.rank)?.rank ?? null, why: r.results.filter((x) => !x.ok).map((x) => x.why).join('; ') || null, top: r.top ?? null };
+      rank: r.results.find((x) => x.rank)?.rank ?? null, plan: r.plan ?? null, why: r.results.filter((x) => !x.ok).map((x) => x.why).join('; ') || null, top: r.top ?? null };
   } catch (err) {
     return { id: f.id, type: f.type, persona: f.persona, ok: false, error: err.message, known_gap: !!f.known_gap, ms: Date.now() - t0 };
   }
@@ -182,6 +183,8 @@ const report = {
   total: results.length, measured: measured.length, errored: results.length - measured.length,
   passed: measured.filter((r) => r.ok).length, pass_rate: pct(measured.filter((r) => r.ok).length, measured.length),
   // A known gap that passes is news (something got fixed); an unmarked fixture that fails is a regression or a new finding.
+  // A planned search that fell back (Jev/engine error) measures the LEGACY path — count it, never blend it silently.
+  plan_fallbacks: results.filter((r) => r.plan?.fallback || r.plan?.error).map((r) => `${r.id}: ${r.plan.fallback || ''} ${r.plan.error || ''}`.trim()),
   known_gaps_now_passing: measured.filter((r) => r.known_gap && r.ok).map((r) => r.id),
   unexpected_failures: measured.filter((r) => !r.known_gap && !r.ok).map((r) => r.id),
   by_type: group('type'), by_persona: group('persona'),
@@ -200,7 +203,8 @@ if (WRITE_REPORT) {
 
 if (JSON_ONLY) { console.log(JSON.stringify(report, null, 2)); process.exit(0); }
 console.log(`\nSearch-type battery (${report.endpoint}, top-${TOP_K}) — ${report.passed}/${report.measured} (${report.pass_rate}%)${report.valid ? '' : `  ⚠ INVALID: ${report.errored} errored`}`);
-console.log(`latency p50 ${report.latency_p50_ms}ms  p95 ${report.latency_p95_ms}ms\n`);
+console.log(`latency p50 ${report.latency_p50_ms}ms  p95 ${report.latency_p95_ms}ms`);
+console.log(report.plan_fallbacks.length ? `⚠ DEGRADED: ${report.plan_fallbacks.length} planned searches fell back — ${report.plan_fallbacks.slice(0, 3).join('; ')}\n` : '');
 for (const [t, g] of Object.entries(report.by_type)) console.log(`  ${t.padEnd(16)} ${String(g.passed).padStart(2)}/${String(g.measured).padEnd(2)} ${String(g.pass_rate ?? '-').padStart(4)}%  p50 ${g.p50_ms ?? '-'}ms${g.errored ? `  (${g.errored} errored)` : ''}`);
 console.log('');
 for (const [p, g] of Object.entries(report.by_persona)) console.log(`  persona ${p.padEnd(9)} ${g.passed}/${g.measured} (${g.pass_rate}%)`);

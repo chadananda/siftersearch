@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T02:08:32.746Z",
+  "generated": "2026-09-25T02:20:11.263Z",
   "entries": [
+    {
+      "hash": "4e379071",
+      "date": "2026-09-24",
+      "type": "Fixed",
+      "description": "Planner survives Jev slowness — plan cache, 2.5s timeout, keyword backstop",
+      "scope": "search"
+    },
     {
       "hash": "b4cbf270",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Test",
       "description": "Bio-search quality battery (node, npm run test:bio-search)",
       "scope": null
-    },
-    {
-      "hash": "efbc7e01",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Connection-search cites the real meeting fact, drop double-punctuation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "4e379071",
+        "date": "2026-09-24",
+        "type": "Fixed",
+        "description": "Planner survives Jev slowness — plan cache, 2.5s timeout, keyword backstop",
+        "scope": "search"
+      },
       {
         "hash": "b4cbf270",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Test",
         "description": "Bio-search quality battery (node, npm run test:bio-search)",
-        "scope": null
-      },
-      {
-        "hash": "efbc7e01",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Connection-search cites the real meeting fact, drop double-punctuation",
         "scope": null
       }
     ]

@@ -388,7 +388,12 @@ export default async function publicApiRoutes(fastify) {
               layers: r.layers, widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error };
             return { hits: r.hits };
           })
-          .catch((err) => { logger.warn({ err: err.message }, 'planned search failed — legacy path'); return hybridSearch(query, { limit: Math.min(limit * 2, 30), filters: searchFilters }); })
+          .catch((err) => {
+            // Never silent: a degraded answer must be distinguishable from a planned one.
+            logger.warn({ err: err.message }, 'planned search failed — legacy path');
+            planInfo = { fallback: 'legacy', error: err.message };
+            return hybridSearch(query, { limit: Math.min(limit * 2, 30), filters: searchFilters });
+          })
           .catch(() => ({ hits: [] }))
       : hybridSearch(query, {
       limit: Math.min(limit * 2, 30),

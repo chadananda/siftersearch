@@ -159,16 +159,34 @@ Jev calls through the existing spend chokepoint (`api/lib/rag-adapter/usage.js`)
 ⚠ pm2 processes load `.env-secrets` at boot — **nothing has restarted**, so the live API does not yet see
 `TYPESAFE_API_KEY`.
 
-## 8. Recommended order (revised after measurement)
+## 8. Status of the order (updated late 2026-09-24) — see planning/work-plan-planned-search.md
 
-1. Wire `extractScope()` into search as a religion filter (fail open, never narrow comparatives, relax via
-   search-scope.js). Measured +11/45 offline. Log-only first if you want real-traffic inference rates.
-2. Add a keyword/phrase layer to `multiIndexSearch` RRF, and make the cross-tradition diversity cap apply only
-   when scope says "none"/comparative. Re-run `score-types.mjs --multi` — target: exact_phrase ≥ 12/14.
-3. THEN point `/v1/search` at `multiIndexSearch`; re-run both batteries for before/after.
-4. Author extraction (Jev choice over the authors list) for author_scoped.
-5. Wire `recordTrace()` at both emission points; give `/search` the result cache `/search/quick` has.
-6. Entity gaps above are a disambiguation/merge job — Chad's call when.
+DONE and LIVE (2.187.86–.91):
+- **Author/collection filters were dead in production**: Meili 1.41 rejects `CONTAINS` without the
+  `containsFilter` experimental feature; hybridSearch swallowed the error as zero hits. Enabled at API boot
+  (`ensureEngineFeatures`; NOTHING runs `initializeIndexes()` at startup — the worker comments said otherwise).
+  `GET /api/admin/search-engine` (internal key) = version, features, per-filter-kind probe.
+- `containsClause`: CONTAINS OR-ed over ' ’ ‘ (Meili CONTAINS is apostrophe-sensitive).
+- keywordSearch cache now keyed on filters too (a filtered and unfiltered search shared one entry).
+- **Jev-planned search** (`search-plan.js` + `planned-search.js`): one ~200ms classification → tradition,
+  comparative, author PREFERENCE (never a filter — Chad), shape → layers (keyword for quotes, HyPE, diversity
+  only when unscoped) → relaxScope. Plan cache 30 min; keyword backstop when Jev fails.
+- `/v1/search` is planned; LLM only summarises (preserveOrder, ≤2 calls, no unused introduction call).
+  `analyze:false` = RAW: planned retrieval, ZERO LLM calls. `plan:false` = legacy path.
+
+| path (76 fixtures) | pass | p50 |
+|---|---|---|
+| public legacy (`plan:false`) | 49 | 6.5s |
+| public planned + LLM summary | 56 (before Jev hardening) | 4.1s |
+| **public planned, `analyze:false`** | **58** | **0.47s** |
+| multi planned | 61 | 1.2s |
+
+NEXT:
+1. **Search-first chat** (work plan §F): Jev plan → deterministic route by shape → ONE generation call.
+2. Claims index (work plan §B): Meili `claims` over entity_claims (target_entity_id = place/event/work,
+   valid_from = date); entitySearch LIKE-scan is 4.5–7s.
+3. Remaining quote misses (Psalm 23 under Christian scope, "harmony of science and religion").
+4. `/v1/tools/search` + chat executeSearch still call multiIndexSearch unplanned.
 
 ## 9. Open, not mine to decide
 
