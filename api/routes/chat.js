@@ -14,6 +14,7 @@ import { hybridSearch, keywordSearch, multiIndexSearch } from '../lib/search.js'
 import { entityLookup, entityDossier, entitySearch } from '../lib/entity-api.js';
 import { optionalAuthenticate } from '../lib/auth.js';
 import { participantId } from '../lib/anonymous.js';
+import { linkFor } from '../lib/source-links.js';
 import { logger } from '../lib/logger.js';
 import { queryOne, queryAll } from '../lib/db.js';
 import { slugifyPath } from '../lib/slug.js';
@@ -535,7 +536,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     if (docIds.length > 0) {
       const placeholders = docIds.map(() => '?').join(',');
       const docRows = await queryAll(
-        `SELECT id, slug, filename, religion, collection, language, source_site, source_url, title FROM docs WHERE id IN (${placeholders})`,
+        `SELECT id, slug, filename, religion, collection, language, source_site, source_url, title, metadata FROM docs WHERE id IN (${placeholders})`,
         docIds
       );
       docMeta = new Map(docRows.map(r => [r.id, r]));
@@ -669,6 +670,14 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
           // No slug/religion/collection → source_url stays null; fix the doc metadata, don't invent a URL
         }
         // No meta → source_url stays null
+        // Link policy (source-links.js): the document's own origin (source_url or metadata.sourceUrl) by site tier —
+        // OceanLibrary → BahaiLibrary → OceanofLights → publisher — else the SifterSearch paragraph.
+        if (meta) {
+          const link = linkFor({ ...meta, source_url: result.source_url?.includes('siftersearch.com') ? meta.source_url : (result.source_url || meta.source_url) }, hit.paragraph_index);
+          result.source_url = link.url;
+          result.link_site = link.site;
+          result.reader_url = link.reader_url;
+        }
         return result;
       })
     };

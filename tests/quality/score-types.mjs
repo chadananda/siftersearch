@@ -60,7 +60,8 @@ async function search(query) {
   const hits = (data.results || data.hits || data.passages || []).slice(0, TOP_K);
   const plan = data._plan ? { shape: data._plan.shape ?? null, fallback: data._plan.fallback ?? null, error: data._plan.error ?? null } : null;
   const items = hits.map((h) => ({ title: fold(h.title), author: fold(h.author), text: fold(h.text), religion: trad(h.religion),
-    url: h.url || h.source_url || null, rawAuthor: h.author || '', source: h.source || h._source || null }));
+    url: h.url || h.source_url || null, rawAuthor: h.author || '', source: h.source || h._source || null,
+    site: h.link?.site || null, paragraph: h.link ? !!h.link.paragraph_level : /paraId=|#p\d+/.test(h.url || '') }));
   CONTRACT.observe(items);
   return { ms, plan, items };
 }
@@ -122,6 +123,15 @@ const CHECKS = {
     const i = items.findIndex((h) => re(text).test(h.text));
     if (i < 0) return { ok: false, why: `no passage contains ${text}` };
     return matchHit(items[i], want) ? { ok: true, rank: i + 1 } : { ok: false, why: `words first found in "${items[i].title}" [${items[i].author}]` };
+  },
+  // The first passage containing the words must LINK to the right place (Chad: finding the quote is half the job).
+  link: (items, { text, site, paragraph = true }) => {
+    const i = items.findIndex((h) => re(text).test(h.text));
+    if (i < 0) return { ok: false, why: `no passage contains ${text}` };
+    const h = items[i];
+    if (site && h.site !== site) return { ok: false, why: `links to ${h.site || h.url} (want ${site})` };
+    if (paragraph && !h.paragraph) return { ok: false, why: `links to the whole work, not the paragraph: ${h.url}` };
+    return { ok: true, rank: i + 1 };
   },
   religions_min: (items, n) => {
     const have = new Set(items.map((h) => h.religion));

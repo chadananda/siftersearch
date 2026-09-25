@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T13:42:35.900Z",
+  "generated": "2026-09-25T14:09:32.457Z",
   "entries": [
+    {
+      "hash": "8c72a660",
+      "date": "2026-09-25",
+      "type": "Docs",
+      "description": "Raw data contract results + open data decisions; battery history",
+      "scope": "plan"
+    },
     {
       "hash": "a6ab3d94",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "TEMP timing log — split hybridSearch into embed vs Meili latency",
       "scope": null
-    },
-    {
-      "hash": "c9d2fd2e",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Deepseek-v4-flash/pro API ids are v4 (deepseek-chat V3 deprecated)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "8c72a660",
+        "date": "2026-09-25",
+        "type": "Docs",
+        "description": "Raw data contract results + open data decisions; battery history",
+        "scope": "plan"
+      },
       {
         "hash": "a6ab3d94",
         "date": "2026-09-25",
@@ -7083,13 +7090,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "TEMP timing log — split hybridSearch into embed vs Meili latency",
-        "scope": null
-      },
-      {
-        "hash": "c9d2fd2e",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Deepseek-v4-flash/pro API ids are v4 (deepseek-chat V3 deprecated)",
         "scope": null
       }
     ]

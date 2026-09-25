@@ -1,98 +1,1281 @@
 {
-  "_about": "Search-TYPE battery: one fixture per kind of question users actually ask (taxonomy from 124 logged questions, 2026-09-24). Every expectation is independent ground truth (the text, history, or a canonical title) — never a snapshot of what search returned. Patterns match FOLDED text: lowercase, diacritics and apostrophes removed, hyphens as spaces ('Abdu'l-Bahá' -> 'abdul baha'). persona: chat = friendly conversational need, research = the assistant that must get facts exactly right, both = either. known_gap marks a fixture written to FAIL today, so a pass is news.",
-  "fixtures": [
-    { "id": "xp-one-country", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "The earth is but one country, and mankind its citizens", "expect": { "hit": { "title": "gleanings|epistle to the son of the wolf|tablets of baha|proclamation", "text": "one country" } }, "truth": "Bahá'u'lláh, Gleanings CXVII / Epistle to the Son of the Wolf" },
-    { "id": "xp-son-of-spirit", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "O Son of Spirit! My first counsel is this: Possess a pure, kindly and radiant heart", "expect": { "hit": { "title": "hidden words", "text": "pure kindly and radiant heart" } }, "truth": "Hidden Words, Arabic 1" },
-    { "id": "xp-generous-prosperity", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "Be generous in prosperity, and thankful in adversity", "expect": { "hit": { "title": "gleanings|epistle to the son of the wolf|tablets of baha", "text": "generous in prosperity" } }, "truth": "Gleanings CXXX; Epistle to the Son of the Wolf p.93" },
-    { "id": "xp-justice-best-beloved", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "The best beloved of all things in My sight is Justice", "expect": { "hit": { "title": "hidden words", "text": "best beloved of all things" } }, "truth": "Hidden Words, Arabic 2" },
-    { "id": "xp-fruits-one-tree", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "Ye are the fruits of one tree, and the leaves of one branch", "expect": { "hit": { "title": "gleanings|epistle to the son of the wolf|tablets of baha", "text": "fruits of one tree" } }, "truth": "Bahá'u'lláh, Gleanings CXXXII; Epistle p.14" },
-    { "id": "xp-noble-created", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "Noble have I created thee, yet thou hast abased thyself", "expect": { "hit": { "title": "hidden words", "text": "noble have i created thee" } }, "truth": "Hidden Words, Arabic 22" },
-    { "id": "xp-two-wings", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "Religion and science are the two wings upon which man's intelligence can soar", "expect": { "hit": { "title": "paris talks", "text": "two wings" } }, "truth": "'Abdu'l-Bahá, Paris Talks 44" },
-    { "id": "xp-thought-of-war", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "When a thought of war comes, oppose it by a stronger thought of peace", "expect": { "hit": { "title": "paris talks", "text": "thought of war" } }, "truth": "'Abdu'l-Bahá, Paris Talks 6" },
-    { "id": "xp-harmony-science-religion", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "harmony of science and religion", "expect": { "hit": { "author": "abdul baha", "text": "harmony of science and religion" } }, "truth": "'Abdu'l-Bahá's standard formulation (Promulgation of Universal Peace, Paris Talks); keyword index ranks it #1" },
-    { "id": "xp-world-embracing", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "Let your vision be world-embracing, rather than confined to your own self", "expect": { "hit": { "title": "gleanings|tablets of baha|epistle to the son of the wolf", "text": "world embracing" } }, "truth": "Bahá'u'lláh, Gleanings XLIII" },
-    { "id": "xp-lord-shepherd", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "The Lord is my shepherd; I shall not want", "expect": { "hit": { "title": "psalm", "text": "my shepherd" } }, "truth": "Psalm 23:1" },
-    { "id": "xp-beginning-word", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "In the beginning was the Word, and the Word was with God", "expect": { "hit": { "title": "john", "text": "beginning was the word" } }, "truth": "John 1:1" },
-    { "id": "xp-meek-inherit", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "Blessed are the meek: for they shall inherit the earth", "expect": { "hit": { "title": "matthew", "text": "meek" } }, "truth": "Matthew 5:5" },
-    { "id": "xp-no-compulsion", "type": "exact_phrase", "persona": "both", "endpoint": "search", "query": "Let there be no compulsion in religion", "expect": { "hit": { "title": "qur", "text": "no compulsion" } }, "truth": "Qur'án 2:256" },
-
-    { "id": "lp-two-wings-bird", "type": "lay_paraphrase", "persona": "chat", "endpoint": "search", "query": "that quote about religion and science being like the two wings of a bird", "expect": { "hit": { "author": "abdul baha", "text": "wings" } }, "truth": "'Abdu'l-Bahá, Paris Talks 44 (bird with two wings)" },
-    { "id": "lp-earth-one-country", "type": "lay_paraphrase", "persona": "chat", "endpoint": "search", "query": "Bahá'u'lláh said the whole earth is one country", "expect": { "hit": { "author": "bahaullah", "text": "one country" } }, "truth": "Gleanings CXVII" },
-    { "id": "lp-hatred-by-hatred", "type": "lay_paraphrase", "persona": "chat", "endpoint": "search", "query": "Buddha said hatred is never ended by more hatred", "expect": { "hit": { "title": "dhammapada", "text": "hatred" } }, "truth": "Dhammapada 1.5" },
-    { "id": "lp-love-enemies", "type": "lay_paraphrase", "persona": "chat", "endpoint": "search", "query": "Jesus said to love your enemies", "expect": { "hit": { "title": "matthew|luke", "text": "love your enemies" } }, "truth": "Matthew 5:44; Luke 6:27" },
-    { "id": "lp-war-peace-thoughts", "type": "lay_paraphrase", "persona": "chat", "endpoint": "search", "query": "what did Abdul Baha say about fighting thoughts of war with thoughts of peace", "expect": { "hit": { "title": "paris talks", "text": "thought of peace" } }, "truth": "Paris Talks 6" },
-    { "id": "lp-tao-cannot-be-named", "type": "lay_paraphrase", "persona": "chat", "endpoint": "search", "query": "the Tao that can be spoken is not the true Tao", "expect": { "hit": { "title": "tao te ching|tao teh|tao te king" } }, "truth": "Tao Te Ching ch.1" },
-    { "id": "lp-quran-compulsion", "type": "lay_paraphrase", "persona": "chat", "endpoint": "search", "query": "the Quran verse saying nobody should be forced into religion", "expect": { "hit": { "title": "qur", "text": "compulsion" } }, "truth": "Qur'án 2:256" },
-
-    { "id": "fw-hidden-words", "type": "find_work", "persona": "both", "endpoint": "find_document", "query": "Hidden Words", "expect": { "candidate": { "title": "hidden words", "author": "bahaullah" }, "within": 1 }, "truth": "title" },
-    { "id": "fw-iqan-no-diacritics", "type": "find_work", "persona": "both", "endpoint": "find_document", "query": "Kitab-i-Iqan", "expect": { "candidate": { "title": "iqan" }, "within": 1 }, "truth": "title" },
-    { "id": "fw-iqan-english", "type": "find_work", "persona": "chat", "endpoint": "find_document", "query": "The Book of Certitude", "expect": { "candidate": { "title": "iqan|certitude", "author": "bahaullah" }, "within": 3 }, "truth": "Book of Certitude = Kitáb-i-Íqán" },
-    { "id": "fw-aqdas-english", "type": "find_work", "persona": "chat", "endpoint": "find_document", "query": "The Most Holy Book", "expect": { "candidate": { "title": "aqdas|most holy book", "author": "bahaullah" }, "within": 3 }, "truth": "Most Holy Book = Kitáb-i-Aqdas" },
-    { "id": "fw-dawnbreakers-one-word", "type": "find_work", "persona": "both", "endpoint": "find_document", "query": "Dawnbreakers", "expect": { "candidate": { "title": "dawn breakers" }, "within": 3 }, "truth": "title" },
-    { "id": "fw-saq-typo", "type": "find_work", "persona": "chat", "endpoint": "find_document", "query": "Some Answerd Questions", "expect": { "candidate": { "title": "some answered questions" }, "within": 3 }, "truth": "title (typo)" },
-    { "id": "fw-paris-talks-lower", "type": "find_work", "persona": "both", "endpoint": "find_document", "query": "paris talks", "expect": { "candidate": { "title": "paris talks", "author": "abdul baha" }, "within": 1 }, "truth": "title" },
-    { "id": "fw-gpb", "type": "find_work", "persona": "both", "endpoint": "find_document", "query": "God Passes By", "expect": { "candidate": { "title": "god passes by", "author": "shoghi effendi" }, "within": 1 }, "truth": "title" },
-    { "id": "fw-seven-valleys", "type": "find_work", "persona": "both", "endpoint": "find_document", "query": "Seven Valleys", "expect": { "candidate": { "title": "seven valleys", "author": "bahaullah" }, "within": 3 }, "truth": "title" },
-    { "id": "fw-tao-te-ching", "type": "find_work", "persona": "both", "endpoint": "find_document", "query": "Tao Te Ching", "expect": { "candidate": { "title": "tao te ching" }, "within": 1 }, "truth": "title" },
-    { "id": "fw-dhammapada", "type": "find_work", "persona": "both", "endpoint": "find_document", "query": "Dhammapada", "expect": { "candidate": { "title": "dhammapada" }, "within": 1 }, "truth": "title" },
-    { "id": "fw-gita", "type": "find_work", "persona": "both", "endpoint": "find_document", "query": "Bhagavad Gita", "expect": { "candidate": { "title": "bhagavad" }, "within": 1 }, "truth": "title" },
-    { "id": "fw-wrong-author-hidden-words", "type": "misattribution", "persona": "research", "endpoint": "find_document", "query": "Hidden Words", "params": { "author": "Shoghi Effendi" }, "expect": { "candidate": { "title": "hidden words", "author": "bahaullah" }, "within": 3 }, "truth": "The Hidden Words are by Bahá'u'lláh; a wrong author in the question must not hide the work" },
-    { "id": "fw-wrong-author-paris-talks", "type": "misattribution", "persona": "research", "endpoint": "find_document", "query": "Paris Talks", "params": { "author": "Bahá'u'lláh" }, "expect": { "candidate": { "title": "paris talks", "author": "abdul baha" }, "within": 3 }, "truth": "Paris Talks are by 'Abdu'l-Bahá" },
-
-    { "id": "fp-quddus-persian", "type": "find_person", "persona": "both", "endpoint": "entity_lookup", "query": "Ghoddus", "expect": { "same_as": "Quddús", "within": 1 }, "truth": "Persian-style transliteration of Quddús" },
-    { "id": "fp-mulla-husayn", "type": "find_person", "persona": "both", "endpoint": "entity_lookup", "query": "Mulla Husayn", "expect": { "same_as": "Mullá Ḥusayn", "within": 1 }, "truth": "no diacritics" },
-    { "id": "fp-mulla-hosein", "type": "find_person", "persona": "chat", "endpoint": "entity_lookup", "query": "Mulla Hosein", "expect": { "same_as": "Mullá Ḥusayn", "within": 3 }, "truth": "older transliteration" },
-    { "id": "fp-babul-bab", "type": "find_person", "persona": "research", "endpoint": "entity_lookup", "query": "Babu'l-Bab", "expect": { "same_as": "Mullá Ḥusayn", "within": 3 }, "known_gap": "separate person node 'Janab-i-Babu'l-Báb' (1264031) (2026-09-24)", "truth": "Bábu'l-Báb ('Gate of the Gate') is Mullá Ḥusayn's title (Dawn-Breakers)" },
-    { "id": "fp-tahirih", "type": "find_person", "persona": "both", "endpoint": "entity_lookup", "query": "Tahirih", "expect": { "same_as": "Ṭáhirih", "within": 1 }, "truth": "anchor sanity" },
-    { "id": "fp-qurratul-ayn", "type": "find_person", "persona": "research", "endpoint": "entity_lookup", "query": "Qurratu'l-'Ayn", "expect": { "same_as": "Ṭáhirih", "within": 3 }, "known_gap": "separate person nodes 'Qurrat al-'Ayn' / 'Kurratu'l-Ayn' / 'Quarratul-Ayn' (2026-09-24)", "truth": "Qurratu'l-'Ayn is Ṭáhirih's title (Dawn-Breakers, GPB)" },
-    { "id": "fp-zarrin-taj", "type": "find_person", "persona": "research", "endpoint": "entity_lookup", "query": "Zarrin-Taj", "expect": { "same_as": "Ṭáhirih", "within": 3 }, "known_gap": "separate person node 'Zerin Taj' (2026-09-24)", "truth": "Zarrín-Táj was Ṭáhirih's given name" },
-    { "id": "fp-bab", "type": "find_person", "persona": "both", "endpoint": "entity_lookup", "query": "the Bab", "expect": { "same_as": "the Báb", "within": 1 }, "truth": "anchor sanity" },
-    { "id": "fp-bab-given-name", "type": "find_person", "persona": "research", "endpoint": "entity_lookup", "query": "Siyyid Ali-Muhammad of Shiraz", "expect": { "same_as": "the Báb", "within": 3 }, "known_gap": "returns other Muḥammad-'Alís (2026-09-24)", "truth": "Siyyid 'Alí-Muḥammad of Shíráz is the Báb's given name" },
-    { "id": "fp-bahaullah-given-name", "type": "find_person", "persona": "research", "endpoint": "entity_lookup", "query": "Mirza Husayn-Ali of Nur", "expect": { "same_as": "Bahá'u'lláh", "within": 3 }, "known_gap": "top hit is Imám Ḥusayn — a WRONG person (2026-09-24)", "truth": "Mírzá Ḥusayn-'Alíy-i-Núrí is Bahá'u'lláh's given name" },
-    { "id": "fp-abdul-baha-plain", "type": "find_person", "persona": "chat", "endpoint": "entity_lookup", "query": "Abdul Baha", "expect": { "same_as": "‘Abdu’l-Bahá", "within": 1 }, "known_gap": "duplicate person node 'Abdul Baha' ranks first (2026-09-24)", "truth": "plain spelling of 'Abdu'l-Bahá" },
-    { "id": "fp-abbas-effendi", "type": "find_person", "persona": "research", "endpoint": "entity_lookup", "query": "Abbas Effendi", "expect": { "same_as": "‘Abdu’l-Bahá", "within": 3 }, "known_gap": "separate node '‘Abbás Effendi ’Abdu’l-Bahá' (2026-09-24)", "truth": "'Abbás Effendi is 'Abdu'l-Bahá's given name" },
-    { "id": "fp-vahid", "type": "find_person", "persona": "both", "endpoint": "entity_lookup", "query": "Vahid", "expect": { "same_as": "Vaḥíd", "within": 1 }, "truth": "anchor sanity" },
-    { "id": "fp-nabil-bare", "type": "find_person", "persona": "research", "endpoint": "entity_lookup", "query": "Nabil", "expect": { "same_as": "Nabíl-i-A'ẓam", "within": 1 }, "truth": "a bare name defaults to its most prominent bearer (Nabíl-i-A'ẓam, author of The Dawn-Breakers)" },
-
-    { "id": "ro-badasht-attendees", "type": "enumerate", "persona": "research", "endpoint": "entity_roster", "query": "Badasht Conference", "params": { "entity_type": "event", "relation": "participated-in" }, "expect": { "includes": ["bahaullah", "quddus", "tahirih"], "excludes": ["^the bab$"] }, "known_gap": "the Báb is listed participated-in (2026-09-24)", "truth": "Badasht (1848): Bahá'u'lláh hosted, Quddús and Ṭáhirih attended; the Báb was imprisoned in Ádhirbáyján (Máh-Kú/Chihríq) and did not attend" },
-    { "id": "ro-letters-of-the-living", "type": "enumerate", "persona": "research", "endpoint": "entity_roster", "query": "the Letters of the Living", "params": { "entity_type": "group", "relation": "letter-of-the-living" }, "expect": { "includes": ["mulla husayn", "quddus", "tahirih", "bajistani", "rawdih"], "count": 18 }, "known_gap": "16 of 18: Mullá Ḥasan-i-Bajistání and Mírzá Muḥammad Rawḍih-Khán-i-Yazdí missing (2026-09-24)", "truth": "Dawn-Breakers ch. III: eighteen Letters, Mullá Ḥusayn first, Quddús last" },
-
-    { "id": "sc-buddhism-suffering", "type": "scoped_topic", "persona": "both", "endpoint": "search", "query": "What does Buddhism teach about suffering?", "expect": { "top_religion": { "religion": "buddhist", "n": 3 } }, "truth": "tradition named in the question" },
-    { "id": "sc-quran-patience", "type": "scoped_topic", "persona": "both", "endpoint": "search", "query": "What does the Quran say about patience?", "expect": { "top_religion": { "religion": "islam", "n": 3 } }, "truth": "tradition named in the question" },
-    { "id": "sc-bahai-afterlife", "type": "scoped_topic", "persona": "both", "endpoint": "search", "query": "Bahá'í teachings on the life after death", "expect": { "top_religion": { "religion": "bahai", "n": 3 } }, "truth": "tradition named in the question" },
-    { "id": "sc-jewish-repentance", "type": "scoped_topic", "persona": "both", "endpoint": "search", "query": "Jewish teaching on repentance", "expect": { "top_religion": { "religion": "judaism", "n": 3 } }, "truth": "tradition named in the question" },
-    { "id": "sc-hindu-karma", "type": "scoped_topic", "persona": "both", "endpoint": "search", "query": "the Hindu understanding of karma", "expect": { "top_religion": { "religion": "hindu", "n": 3 } }, "truth": "tradition named in the question" },
-    { "id": "sc-taoist-wu-wei", "type": "scoped_topic", "persona": "both", "endpoint": "search", "query": "Taoist teaching on non-action", "expect": { "top_religion": { "religion": "tao", "n": 3 } }, "truth": "tradition named in the question" },
-    { "id": "cmp-buddhist-christian-compassion", "type": "compare", "persona": "research", "endpoint": "search", "query": "compare Buddhist and Christian views on compassion", "expect": { "religions_all": ["buddhist", "christian"] }, "truth": "a comparative must never be narrowed to one side" },
-    { "id": "cmp-islam-judaism-fasting", "type": "compare", "persona": "research", "endpoint": "search", "query": "how do Islam and Judaism each view fasting?", "expect": { "religions_all": ["islam", "judaism"] }, "truth": "a comparative must never be narrowed to one side" },
-    { "id": "cmp-golden-rule", "type": "compare", "persona": "both", "endpoint": "search", "query": "what do the world's religions say about the golden rule?", "expect": { "religions_min": 3 }, "truth": "an across-traditions question needs several traditions" },
-
-    { "id": "au-abdul-baha-equality", "type": "author_scoped", "persona": "both", "endpoint": "search", "query": "Abdu'l-Bahá on the equality of women and men", "expect": { "top_author": { "author": "abdul baha", "n": 3 } }, "truth": "author named in the question" },
-    { "id": "au-shoghi-admin-order", "type": "author_scoped", "persona": "research", "endpoint": "search", "query": "Shoghi Effendi on the Administrative Order", "expect": { "top_author": { "author": "shoghi effendi", "n": 3 } }, "truth": "author named in the question" },
-    { "id": "au-bab-him-whom-god", "type": "author_scoped", "persona": "research", "endpoint": "search", "query": "what the Báb wrote about Him Whom God shall make manifest", "expect": { "hit": { "author": "\\bbab\\b", "text": "him whom god shall make manifest" } }, "truth": "the Báb's own writings (Selections, Persian Bayán)" },
-
-    { "id": "hx-bab-martyrdom-year", "type": "history_fact", "persona": "research", "endpoint": "search", "query": "When was the Báb martyred?", "expect": { "hit": { "text": "1850" } }, "truth": "9 July 1850" },
-    { "id": "hx-bab-martyrdom-place", "type": "history_fact", "persona": "research", "endpoint": "search", "query": "Where was the Báb executed?", "expect": { "hit": { "text": "tabriz" } }, "truth": "Tabríz" },
-    { "id": "hx-ridvan-year", "type": "history_fact", "persona": "research", "endpoint": "search", "query": "When did Bahá'u'lláh declare His mission in the Garden of Ridván?", "expect": { "hit": { "text": "1863" } }, "truth": "April 1863, Baghdad" },
-    { "id": "hx-bahaullah-passing", "type": "history_fact", "persona": "research", "endpoint": "search", "query": "Where did Bahá'u'lláh pass away?", "expect": { "hit": { "text": "bahji" } }, "truth": "Mansion of Bahjí, near 'Akká, 1892" },
-    { "id": "hx-abdul-baha-america", "type": "history_fact", "persona": "research", "endpoint": "search", "query": "When did 'Abdu'l-Bahá travel to America?", "expect": { "hit": { "text": "1912" } }, "truth": "1912" },
-    { "id": "hx-mulla-husayn-death", "type": "history_fact", "persona": "research", "endpoint": "search", "query": "Where was Mullá Ḥusayn killed?", "expect": { "hit": { "text": "tabarsi" } }, "truth": "Shaykh Ṭabarsí, 1849" },
-
-    { "id": "df-mashriq", "type": "define_term", "persona": "chat", "endpoint": "search", "query": "What is the Mashriqu'l-Adhkár?", "expect": { "hit": { "text": "mashriq" }, "top_religion": { "religion": "bahai", "n": 1 } }, "truth": "Bahá'í house of worship" },
-    { "id": "df-huququllah", "type": "define_term", "persona": "chat", "endpoint": "search", "query": "What does Huqúqu'lláh mean?", "expect": { "hit": { "text": "huququllah" } }, "truth": "'Right of God' (Kitáb-i-Aqdas)" },
-    { "id": "df-nirvana", "type": "define_term", "persona": "chat", "endpoint": "search", "query": "what is nirvana", "expect": { "hit": { "text": "nirvana|nibbana" }, "top_religion": { "religion": "buddhist", "n": 1 } }, "truth": "Buddhist term" },
-    { "id": "df-zakat", "type": "define_term", "persona": "chat", "endpoint": "search", "query": "what is zakat", "expect": { "hit": { "text": "zakat|alms" }, "top_religion": { "religion": "islam", "n": 1 } }, "truth": "Islamic obligatory alms" },
-    { "id": "df-dharma", "type": "define_term", "persona": "chat", "endpoint": "search", "query": "what does dharma mean", "expect": { "hit": { "text": "dharma|dhamma" } }, "truth": "Hindu/Buddhist term" },
-
-    { "id": "mis-helps-themselves", "type": "misattribution", "persona": "research", "endpoint": "search", "query": "Jesus said God helps those who help themselves", "expect": { "no_hit": { "religion": "christian", "text": "helps? those who help themselves" } }, "truth": "not in the Bible (Algernon Sidney / Franklin); scripture must not appear to confirm it" },
-
-    { "id": "sr-essence-justice", "type": "source_resolution", "persona": "research", "endpoint": "search", "query": "What does Bahá’u’lláh say about the essence of justice being embodied in the ordinances?", "expect": { "origin": { "text": "essence of justice and the source thereof", "author": "bahaullah" } }, "truth": "Gleanings LXXXVIII; also quoted in a pilgrim-notes book, biographies and compilations" },
-    { "id": "sr-light-of-men", "type": "source_resolution", "persona": "research", "endpoint": "search", "query": "Bahá’u’lláh calling justice the light of men", "expect": { "origin": { "text": "light of men", "author": "bahaullah" } }, "truth": "Bahá'u'lláh's Tablets; quoted in God Passes By" },
-    { "id": "sr-one-country", "type": "source_resolution", "persona": "research", "endpoint": "search", "query": "the earth is but one country and mankind its citizens", "expect": { "origin": { "text": "one country", "author": "bahaullah" } }, "truth": "Gleanings CXVII; quoted in countless secondary works" },
-    { "id": "sr-best-beloved", "type": "source_resolution", "persona": "research", "endpoint": "search", "query": "the best beloved of all things in My sight is Justice", "expect": { "origin": { "text": "best beloved of all things", "author": "bahaullah" } }, "truth": "Hidden Words, Arabic 2" },
-    { "id": "sr-two-wings", "type": "source_resolution", "persona": "research", "endpoint": "search", "query": "religion and science are the two wings upon which man's intelligence can soar", "expect": { "origin": { "text": "two wings", "author": "abdul baha" } }, "truth": "'Abdu'l-Bahá, Paris Talks 44" },
-    { "id": "sr-harmony", "type": "source_resolution", "persona": "research", "endpoint": "search", "query": "harmony of science and religion", "expect": { "origin": { "text": "harmony of science and religion", "author": "abdul baha" } }, "truth": "'Abdu'l-Bahá, Promulgation of Universal Peace" },
-
-    { "id": "lm-religions", "type": "library_meta", "persona": "chat", "endpoint": "religions", "query": "which religions are in the library?", "expect": { "min_count": 12 }, "truth": "corpus-status: 12 traditions" }
-  ]
+ "_about": "Search-TYPE battery: one fixture per kind of question users actually ask (taxonomy from 124 logged questions, 2026-09-24). Every expectation is independent ground truth (the text, history, or a canonical title) — never a snapshot of what search returned. Patterns match FOLDED text: lowercase, diacritics and apostrophes removed, hyphens as spaces ('Abdu'l-Bahá' -> 'abdul baha'). persona: chat = friendly conversational need, research = the assistant that must get facts exactly right, both = either. known_gap marks a fixture written to FAIL today, so a pass is news.",
+ "fixtures": [
+  {
+   "id": "xp-one-country",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "The earth is but one country, and mankind its citizens",
+   "expect": {
+    "hit": {
+     "title": "gleanings|epistle to the son of the wolf|tablets of baha|proclamation",
+     "text": "one country"
+    },
+    "link": {
+     "text": "one country",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Bahá'u'lláh, Gleanings CXVII / Epistle to the Son of the Wolf"
+  },
+  {
+   "id": "xp-son-of-spirit",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "O Son of Spirit! My first counsel is this: Possess a pure, kindly and radiant heart",
+   "expect": {
+    "hit": {
+     "title": "hidden words",
+     "text": "pure kindly and radiant heart"
+    },
+    "link": {
+     "text": "pure kindly and radiant heart",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Hidden Words, Arabic 1"
+  },
+  {
+   "id": "xp-generous-prosperity",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "Be generous in prosperity, and thankful in adversity",
+   "expect": {
+    "hit": {
+     "title": "gleanings|epistle to the son of the wolf|tablets of baha",
+     "text": "generous in prosperity"
+    },
+    "link": {
+     "text": "generous in prosperity",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Gleanings CXXX; Epistle to the Son of the Wolf p.93"
+  },
+  {
+   "id": "xp-justice-best-beloved",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "The best beloved of all things in My sight is Justice",
+   "expect": {
+    "hit": {
+     "title": "hidden words",
+     "text": "best beloved of all things"
+    },
+    "link": {
+     "text": "best beloved of all things",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Hidden Words, Arabic 2"
+  },
+  {
+   "id": "xp-fruits-one-tree",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "Ye are the fruits of one tree, and the leaves of one branch",
+   "expect": {
+    "hit": {
+     "title": "gleanings|epistle to the son of the wolf|tablets of baha",
+     "text": "fruits of one tree"
+    },
+    "link": {
+     "text": "fruits of one tree",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Bahá'u'lláh, Gleanings CXXXII; Epistle p.14"
+  },
+  {
+   "id": "xp-noble-created",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "Noble have I created thee, yet thou hast abased thyself",
+   "expect": {
+    "hit": {
+     "title": "hidden words",
+     "text": "noble have i created thee"
+    },
+    "link": {
+     "text": "noble have i created thee",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Hidden Words, Arabic 22"
+  },
+  {
+   "id": "xp-two-wings",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "Religion and science are the two wings upon which man's intelligence can soar",
+   "expect": {
+    "hit": {
+     "title": "paris talks",
+     "text": "two wings"
+    },
+    "link": {
+     "text": "two wings",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "'Abdu'l-Bahá, Paris Talks 44"
+  },
+  {
+   "id": "xp-thought-of-war",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "When a thought of war comes, oppose it by a stronger thought of peace",
+   "expect": {
+    "hit": {
+     "title": "paris talks",
+     "text": "thought of war"
+    },
+    "link": {
+     "text": "thought of war",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "'Abdu'l-Bahá, Paris Talks 6"
+  },
+  {
+   "id": "xp-harmony-science-religion",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "harmony of science and religion",
+   "expect": {
+    "hit": {
+     "author": "abdul baha",
+     "text": "harmony of science and religion"
+    },
+    "link": {
+     "text": "harmony of science and religion",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "'Abdu'l-Bahá's standard formulation (Promulgation of Universal Peace, Paris Talks); keyword index ranks it #1"
+  },
+  {
+   "id": "xp-world-embracing",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "Let your vision be world-embracing, rather than confined to your own self",
+   "expect": {
+    "hit": {
+     "title": "gleanings|tablets of baha|epistle to the son of the wolf",
+     "text": "world embracing"
+    },
+    "link": {
+     "text": "world embracing",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Bahá'u'lláh, Gleanings XLIII"
+  },
+  {
+   "id": "xp-lord-shepherd",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "The Lord is my shepherd; I shall not want",
+   "expect": {
+    "hit": {
+     "title": "psalm",
+     "text": "my shepherd"
+    },
+    "link": {
+     "text": "my shepherd",
+     "paragraph": true
+    }
+   },
+   "truth": "Psalm 23:1"
+  },
+  {
+   "id": "xp-beginning-word",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "In the beginning was the Word, and the Word was with God",
+   "expect": {
+    "hit": {
+     "title": "john",
+     "text": "beginning was the word"
+    },
+    "link": {
+     "text": "beginning was the word",
+     "paragraph": true
+    }
+   },
+   "truth": "John 1:1"
+  },
+  {
+   "id": "xp-meek-inherit",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "Blessed are the meek: for they shall inherit the earth",
+   "expect": {
+    "hit": {
+     "title": "matthew",
+     "text": "meek"
+    },
+    "link": {
+     "text": "meek",
+     "paragraph": true
+    }
+   },
+   "truth": "Matthew 5:5"
+  },
+  {
+   "id": "xp-no-compulsion",
+   "type": "exact_phrase",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "Let there be no compulsion in religion",
+   "expect": {
+    "hit": {
+     "title": "qur",
+     "text": "no compulsion"
+    },
+    "link": {
+     "text": "no compulsion",
+     "paragraph": true
+    }
+   },
+   "truth": "Qur'án 2:256"
+  },
+  {
+   "id": "lp-two-wings-bird",
+   "type": "lay_paraphrase",
+   "persona": "chat",
+   "endpoint": "search",
+   "query": "that quote about religion and science being like the two wings of a bird",
+   "expect": {
+    "hit": {
+     "author": "abdul baha",
+     "text": "wings"
+    },
+    "link": {
+     "text": "wings",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "'Abdu'l-Bahá, Paris Talks 44 (bird with two wings)"
+  },
+  {
+   "id": "lp-earth-one-country",
+   "type": "lay_paraphrase",
+   "persona": "chat",
+   "endpoint": "search",
+   "query": "Bahá'u'lláh said the whole earth is one country",
+   "expect": {
+    "hit": {
+     "author": "bahaullah",
+     "text": "one country"
+    },
+    "link": {
+     "text": "one country",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Gleanings CXVII"
+  },
+  {
+   "id": "lp-hatred-by-hatred",
+   "type": "lay_paraphrase",
+   "persona": "chat",
+   "endpoint": "search",
+   "query": "Buddha said hatred is never ended by more hatred",
+   "expect": {
+    "hit": {
+     "title": "dhammapada",
+     "text": "hatred"
+    },
+    "link": {
+     "text": "hatred",
+     "paragraph": true
+    }
+   },
+   "truth": "Dhammapada 1.5"
+  },
+  {
+   "id": "lp-love-enemies",
+   "type": "lay_paraphrase",
+   "persona": "chat",
+   "endpoint": "search",
+   "query": "Jesus said to love your enemies",
+   "expect": {
+    "hit": {
+     "title": "matthew|luke",
+     "text": "love your enemies"
+    },
+    "link": {
+     "text": "love your enemies",
+     "paragraph": true
+    }
+   },
+   "truth": "Matthew 5:44; Luke 6:27"
+  },
+  {
+   "id": "lp-war-peace-thoughts",
+   "type": "lay_paraphrase",
+   "persona": "chat",
+   "endpoint": "search",
+   "query": "what did Abdul Baha say about fighting thoughts of war with thoughts of peace",
+   "expect": {
+    "hit": {
+     "title": "paris talks",
+     "text": "thought of peace"
+    },
+    "link": {
+     "text": "thought of peace",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Paris Talks 6"
+  },
+  {
+   "id": "lp-tao-cannot-be-named",
+   "type": "lay_paraphrase",
+   "persona": "chat",
+   "endpoint": "search",
+   "query": "the Tao that can be spoken is not the true Tao",
+   "expect": {
+    "hit": {
+     "title": "tao te ching|tao teh|tao te king"
+    }
+   },
+   "truth": "Tao Te Ching ch.1"
+  },
+  {
+   "id": "lp-quran-compulsion",
+   "type": "lay_paraphrase",
+   "persona": "chat",
+   "endpoint": "search",
+   "query": "the Quran verse saying nobody should be forced into religion",
+   "expect": {
+    "hit": {
+     "title": "qur",
+     "text": "compulsion"
+    },
+    "link": {
+     "text": "compulsion",
+     "paragraph": true
+    }
+   },
+   "truth": "Qur'án 2:256"
+  },
+  {
+   "id": "fw-hidden-words",
+   "type": "find_work",
+   "persona": "both",
+   "endpoint": "find_document",
+   "query": "Hidden Words",
+   "expect": {
+    "candidate": {
+     "title": "hidden words",
+     "author": "bahaullah"
+    },
+    "within": 1
+   },
+   "truth": "title"
+  },
+  {
+   "id": "fw-iqan-no-diacritics",
+   "type": "find_work",
+   "persona": "both",
+   "endpoint": "find_document",
+   "query": "Kitab-i-Iqan",
+   "expect": {
+    "candidate": {
+     "title": "iqan"
+    },
+    "within": 1
+   },
+   "truth": "title"
+  },
+  {
+   "id": "fw-iqan-english",
+   "type": "find_work",
+   "persona": "chat",
+   "endpoint": "find_document",
+   "query": "The Book of Certitude",
+   "expect": {
+    "candidate": {
+     "title": "iqan|certitude",
+     "author": "bahaullah"
+    },
+    "within": 3
+   },
+   "truth": "Book of Certitude = Kitáb-i-Íqán"
+  },
+  {
+   "id": "fw-aqdas-english",
+   "type": "find_work",
+   "persona": "chat",
+   "endpoint": "find_document",
+   "query": "The Most Holy Book",
+   "expect": {
+    "candidate": {
+     "title": "aqdas|most holy book",
+     "author": "bahaullah"
+    },
+    "within": 3
+   },
+   "truth": "Most Holy Book = Kitáb-i-Aqdas"
+  },
+  {
+   "id": "fw-dawnbreakers-one-word",
+   "type": "find_work",
+   "persona": "both",
+   "endpoint": "find_document",
+   "query": "Dawnbreakers",
+   "expect": {
+    "candidate": {
+     "title": "dawn breakers"
+    },
+    "within": 3
+   },
+   "truth": "title"
+  },
+  {
+   "id": "fw-saq-typo",
+   "type": "find_work",
+   "persona": "chat",
+   "endpoint": "find_document",
+   "query": "Some Answerd Questions",
+   "expect": {
+    "candidate": {
+     "title": "some answered questions"
+    },
+    "within": 3
+   },
+   "truth": "title (typo)"
+  },
+  {
+   "id": "fw-paris-talks-lower",
+   "type": "find_work",
+   "persona": "both",
+   "endpoint": "find_document",
+   "query": "paris talks",
+   "expect": {
+    "candidate": {
+     "title": "paris talks",
+     "author": "abdul baha"
+    },
+    "within": 1
+   },
+   "truth": "title"
+  },
+  {
+   "id": "fw-gpb",
+   "type": "find_work",
+   "persona": "both",
+   "endpoint": "find_document",
+   "query": "God Passes By",
+   "expect": {
+    "candidate": {
+     "title": "god passes by",
+     "author": "shoghi effendi"
+    },
+    "within": 1
+   },
+   "truth": "title"
+  },
+  {
+   "id": "fw-seven-valleys",
+   "type": "find_work",
+   "persona": "both",
+   "endpoint": "find_document",
+   "query": "Seven Valleys",
+   "expect": {
+    "candidate": {
+     "title": "seven valleys",
+     "author": "bahaullah"
+    },
+    "within": 3
+   },
+   "truth": "title"
+  },
+  {
+   "id": "fw-tao-te-ching",
+   "type": "find_work",
+   "persona": "both",
+   "endpoint": "find_document",
+   "query": "Tao Te Ching",
+   "expect": {
+    "candidate": {
+     "title": "tao te ching"
+    },
+    "within": 1
+   },
+   "truth": "title"
+  },
+  {
+   "id": "fw-dhammapada",
+   "type": "find_work",
+   "persona": "both",
+   "endpoint": "find_document",
+   "query": "Dhammapada",
+   "expect": {
+    "candidate": {
+     "title": "dhammapada"
+    },
+    "within": 1
+   },
+   "truth": "title"
+  },
+  {
+   "id": "fw-gita",
+   "type": "find_work",
+   "persona": "both",
+   "endpoint": "find_document",
+   "query": "Bhagavad Gita",
+   "expect": {
+    "candidate": {
+     "title": "bhagavad"
+    },
+    "within": 1
+   },
+   "truth": "title"
+  },
+  {
+   "id": "fw-wrong-author-hidden-words",
+   "type": "misattribution",
+   "persona": "research",
+   "endpoint": "find_document",
+   "query": "Hidden Words",
+   "params": {
+    "author": "Shoghi Effendi"
+   },
+   "expect": {
+    "candidate": {
+     "title": "hidden words",
+     "author": "bahaullah"
+    },
+    "within": 3
+   },
+   "truth": "The Hidden Words are by Bahá'u'lláh; a wrong author in the question must not hide the work"
+  },
+  {
+   "id": "fw-wrong-author-paris-talks",
+   "type": "misattribution",
+   "persona": "research",
+   "endpoint": "find_document",
+   "query": "Paris Talks",
+   "params": {
+    "author": "Bahá'u'lláh"
+   },
+   "expect": {
+    "candidate": {
+     "title": "paris talks",
+     "author": "abdul baha"
+    },
+    "within": 3
+   },
+   "truth": "Paris Talks are by 'Abdu'l-Bahá"
+  },
+  {
+   "id": "fp-quddus-persian",
+   "type": "find_person",
+   "persona": "both",
+   "endpoint": "entity_lookup",
+   "query": "Ghoddus",
+   "expect": {
+    "same_as": "Quddús",
+    "within": 1
+   },
+   "truth": "Persian-style transliteration of Quddús"
+  },
+  {
+   "id": "fp-mulla-husayn",
+   "type": "find_person",
+   "persona": "both",
+   "endpoint": "entity_lookup",
+   "query": "Mulla Husayn",
+   "expect": {
+    "same_as": "Mullá Ḥusayn",
+    "within": 1
+   },
+   "truth": "no diacritics"
+  },
+  {
+   "id": "fp-mulla-hosein",
+   "type": "find_person",
+   "persona": "chat",
+   "endpoint": "entity_lookup",
+   "query": "Mulla Hosein",
+   "expect": {
+    "same_as": "Mullá Ḥusayn",
+    "within": 3
+   },
+   "truth": "older transliteration"
+  },
+  {
+   "id": "fp-babul-bab",
+   "type": "find_person",
+   "persona": "research",
+   "endpoint": "entity_lookup",
+   "query": "Babu'l-Bab",
+   "expect": {
+    "same_as": "Mullá Ḥusayn",
+    "within": 3
+   },
+   "known_gap": "separate person node 'Janab-i-Babu'l-Báb' (1264031) (2026-09-24)",
+   "truth": "Bábu'l-Báb ('Gate of the Gate') is Mullá Ḥusayn's title (Dawn-Breakers)"
+  },
+  {
+   "id": "fp-tahirih",
+   "type": "find_person",
+   "persona": "both",
+   "endpoint": "entity_lookup",
+   "query": "Tahirih",
+   "expect": {
+    "same_as": "Ṭáhirih",
+    "within": 1
+   },
+   "truth": "anchor sanity"
+  },
+  {
+   "id": "fp-qurratul-ayn",
+   "type": "find_person",
+   "persona": "research",
+   "endpoint": "entity_lookup",
+   "query": "Qurratu'l-'Ayn",
+   "expect": {
+    "same_as": "Ṭáhirih",
+    "within": 3
+   },
+   "known_gap": "separate person nodes 'Qurrat al-'Ayn' / 'Kurratu'l-Ayn' / 'Quarratul-Ayn' (2026-09-24)",
+   "truth": "Qurratu'l-'Ayn is Ṭáhirih's title (Dawn-Breakers, GPB)"
+  },
+  {
+   "id": "fp-zarrin-taj",
+   "type": "find_person",
+   "persona": "research",
+   "endpoint": "entity_lookup",
+   "query": "Zarrin-Taj",
+   "expect": {
+    "same_as": "Ṭáhirih",
+    "within": 3
+   },
+   "known_gap": "separate person node 'Zerin Taj' (2026-09-24)",
+   "truth": "Zarrín-Táj was Ṭáhirih's given name"
+  },
+  {
+   "id": "fp-bab",
+   "type": "find_person",
+   "persona": "both",
+   "endpoint": "entity_lookup",
+   "query": "the Bab",
+   "expect": {
+    "same_as": "the Báb",
+    "within": 1
+   },
+   "truth": "anchor sanity"
+  },
+  {
+   "id": "fp-bab-given-name",
+   "type": "find_person",
+   "persona": "research",
+   "endpoint": "entity_lookup",
+   "query": "Siyyid Ali-Muhammad of Shiraz",
+   "expect": {
+    "same_as": "the Báb",
+    "within": 3
+   },
+   "known_gap": "returns other Muḥammad-'Alís (2026-09-24)",
+   "truth": "Siyyid 'Alí-Muḥammad of Shíráz is the Báb's given name"
+  },
+  {
+   "id": "fp-bahaullah-given-name",
+   "type": "find_person",
+   "persona": "research",
+   "endpoint": "entity_lookup",
+   "query": "Mirza Husayn-Ali of Nur",
+   "expect": {
+    "same_as": "Bahá'u'lláh",
+    "within": 3
+   },
+   "known_gap": "top hit is Imám Ḥusayn — a WRONG person (2026-09-24)",
+   "truth": "Mírzá Ḥusayn-'Alíy-i-Núrí is Bahá'u'lláh's given name"
+  },
+  {
+   "id": "fp-abdul-baha-plain",
+   "type": "find_person",
+   "persona": "chat",
+   "endpoint": "entity_lookup",
+   "query": "Abdul Baha",
+   "expect": {
+    "same_as": "‘Abdu’l-Bahá",
+    "within": 1
+   },
+   "known_gap": "duplicate person node 'Abdul Baha' ranks first (2026-09-24)",
+   "truth": "plain spelling of 'Abdu'l-Bahá"
+  },
+  {
+   "id": "fp-abbas-effendi",
+   "type": "find_person",
+   "persona": "research",
+   "endpoint": "entity_lookup",
+   "query": "Abbas Effendi",
+   "expect": {
+    "same_as": "‘Abdu’l-Bahá",
+    "within": 3
+   },
+   "known_gap": "separate node '‘Abbás Effendi ’Abdu’l-Bahá' (2026-09-24)",
+   "truth": "'Abbás Effendi is 'Abdu'l-Bahá's given name"
+  },
+  {
+   "id": "fp-vahid",
+   "type": "find_person",
+   "persona": "both",
+   "endpoint": "entity_lookup",
+   "query": "Vahid",
+   "expect": {
+    "same_as": "Vaḥíd",
+    "within": 1
+   },
+   "truth": "anchor sanity"
+  },
+  {
+   "id": "fp-nabil-bare",
+   "type": "find_person",
+   "persona": "research",
+   "endpoint": "entity_lookup",
+   "query": "Nabil",
+   "expect": {
+    "same_as": "Nabíl-i-A'ẓam",
+    "within": 1
+   },
+   "truth": "a bare name defaults to its most prominent bearer (Nabíl-i-A'ẓam, author of The Dawn-Breakers)"
+  },
+  {
+   "id": "ro-badasht-attendees",
+   "type": "enumerate",
+   "persona": "research",
+   "endpoint": "entity_roster",
+   "query": "Badasht Conference",
+   "params": {
+    "entity_type": "event",
+    "relation": "participated-in"
+   },
+   "expect": {
+    "includes": [
+     "bahaullah",
+     "quddus",
+     "tahirih"
+    ],
+    "excludes": [
+     "^the bab$"
+    ]
+   },
+   "known_gap": "the Báb is listed participated-in (2026-09-24)",
+   "truth": "Badasht (1848): Bahá'u'lláh hosted, Quddús and Ṭáhirih attended; the Báb was imprisoned in Ádhirbáyján (Máh-Kú/Chihríq) and did not attend"
+  },
+  {
+   "id": "ro-letters-of-the-living",
+   "type": "enumerate",
+   "persona": "research",
+   "endpoint": "entity_roster",
+   "query": "the Letters of the Living",
+   "params": {
+    "entity_type": "group",
+    "relation": "letter-of-the-living"
+   },
+   "expect": {
+    "includes": [
+     "mulla husayn",
+     "quddus",
+     "tahirih",
+     "bajistani",
+     "rawdih"
+    ],
+    "count": 18
+   },
+   "known_gap": "16 of 18: Mullá Ḥasan-i-Bajistání and Mírzá Muḥammad Rawḍih-Khán-i-Yazdí missing (2026-09-24)",
+   "truth": "Dawn-Breakers ch. III: eighteen Letters, Mullá Ḥusayn first, Quddús last"
+  },
+  {
+   "id": "sc-buddhism-suffering",
+   "type": "scoped_topic",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "What does Buddhism teach about suffering?",
+   "expect": {
+    "top_religion": {
+     "religion": "buddhist",
+     "n": 3
+    }
+   },
+   "truth": "tradition named in the question"
+  },
+  {
+   "id": "sc-quran-patience",
+   "type": "scoped_topic",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "What does the Quran say about patience?",
+   "expect": {
+    "top_religion": {
+     "religion": "islam",
+     "n": 3
+    }
+   },
+   "truth": "tradition named in the question"
+  },
+  {
+   "id": "sc-bahai-afterlife",
+   "type": "scoped_topic",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "Bahá'í teachings on the life after death",
+   "expect": {
+    "top_religion": {
+     "religion": "bahai",
+     "n": 3
+    }
+   },
+   "truth": "tradition named in the question"
+  },
+  {
+   "id": "sc-jewish-repentance",
+   "type": "scoped_topic",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "Jewish teaching on repentance",
+   "expect": {
+    "top_religion": {
+     "religion": "judaism",
+     "n": 3
+    }
+   },
+   "truth": "tradition named in the question"
+  },
+  {
+   "id": "sc-hindu-karma",
+   "type": "scoped_topic",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "the Hindu understanding of karma",
+   "expect": {
+    "top_religion": {
+     "religion": "hindu",
+     "n": 3
+    }
+   },
+   "truth": "tradition named in the question"
+  },
+  {
+   "id": "sc-taoist-wu-wei",
+   "type": "scoped_topic",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "Taoist teaching on non-action",
+   "expect": {
+    "top_religion": {
+     "religion": "tao",
+     "n": 3
+    }
+   },
+   "truth": "tradition named in the question"
+  },
+  {
+   "id": "cmp-buddhist-christian-compassion",
+   "type": "compare",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "compare Buddhist and Christian views on compassion",
+   "expect": {
+    "religions_all": [
+     "buddhist",
+     "christian"
+    ]
+   },
+   "truth": "a comparative must never be narrowed to one side"
+  },
+  {
+   "id": "cmp-islam-judaism-fasting",
+   "type": "compare",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "how do Islam and Judaism each view fasting?",
+   "expect": {
+    "religions_all": [
+     "islam",
+     "judaism"
+    ]
+   },
+   "truth": "a comparative must never be narrowed to one side"
+  },
+  {
+   "id": "cmp-golden-rule",
+   "type": "compare",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "what do the world's religions say about the golden rule?",
+   "expect": {
+    "religions_min": 3
+   },
+   "truth": "an across-traditions question needs several traditions"
+  },
+  {
+   "id": "au-abdul-baha-equality",
+   "type": "author_scoped",
+   "persona": "both",
+   "endpoint": "search",
+   "query": "Abdu'l-Bahá on the equality of women and men",
+   "expect": {
+    "top_author": {
+     "author": "abdul baha",
+     "n": 3
+    }
+   },
+   "truth": "author named in the question"
+  },
+  {
+   "id": "au-shoghi-admin-order",
+   "type": "author_scoped",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "Shoghi Effendi on the Administrative Order",
+   "expect": {
+    "top_author": {
+     "author": "shoghi effendi",
+     "n": 3
+    }
+   },
+   "truth": "author named in the question"
+  },
+  {
+   "id": "au-bab-him-whom-god",
+   "type": "author_scoped",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "what the Báb wrote about Him Whom God shall make manifest",
+   "expect": {
+    "hit": {
+     "author": "\\bbab\\b",
+     "text": "him whom god shall make manifest"
+    }
+   },
+   "truth": "the Báb's own writings (Selections, Persian Bayán)"
+  },
+  {
+   "id": "hx-bab-martyrdom-year",
+   "type": "history_fact",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "When was the Báb martyred?",
+   "expect": {
+    "hit": {
+     "text": "1850"
+    }
+   },
+   "truth": "9 July 1850"
+  },
+  {
+   "id": "hx-bab-martyrdom-place",
+   "type": "history_fact",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "Where was the Báb executed?",
+   "expect": {
+    "hit": {
+     "text": "tabriz"
+    }
+   },
+   "truth": "Tabríz"
+  },
+  {
+   "id": "hx-ridvan-year",
+   "type": "history_fact",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "When did Bahá'u'lláh declare His mission in the Garden of Ridván?",
+   "expect": {
+    "hit": {
+     "text": "1863"
+    }
+   },
+   "truth": "April 1863, Baghdad"
+  },
+  {
+   "id": "hx-bahaullah-passing",
+   "type": "history_fact",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "Where did Bahá'u'lláh pass away?",
+   "expect": {
+    "hit": {
+     "text": "bahji"
+    }
+   },
+   "truth": "Mansion of Bahjí, near 'Akká, 1892"
+  },
+  {
+   "id": "hx-abdul-baha-america",
+   "type": "history_fact",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "When did 'Abdu'l-Bahá travel to America?",
+   "expect": {
+    "hit": {
+     "text": "1912"
+    }
+   },
+   "truth": "1912"
+  },
+  {
+   "id": "hx-mulla-husayn-death",
+   "type": "history_fact",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "Where was Mullá Ḥusayn killed?",
+   "expect": {
+    "hit": {
+     "text": "tabarsi"
+    }
+   },
+   "truth": "Shaykh Ṭabarsí, 1849"
+  },
+  {
+   "id": "df-mashriq",
+   "type": "define_term",
+   "persona": "chat",
+   "endpoint": "search",
+   "query": "What is the Mashriqu'l-Adhkár?",
+   "expect": {
+    "hit": {
+     "text": "mashriq"
+    },
+    "top_religion": {
+     "religion": "bahai",
+     "n": 1
+    }
+   },
+   "truth": "Bahá'í house of worship"
+  },
+  {
+   "id": "df-huququllah",
+   "type": "define_term",
+   "persona": "chat",
+   "endpoint": "search",
+   "query": "What does Huqúqu'lláh mean?",
+   "expect": {
+    "hit": {
+     "text": "huququllah"
+    }
+   },
+   "truth": "'Right of God' (Kitáb-i-Aqdas)"
+  },
+  {
+   "id": "df-nirvana",
+   "type": "define_term",
+   "persona": "chat",
+   "endpoint": "search",
+   "query": "what is nirvana",
+   "expect": {
+    "hit": {
+     "text": "nirvana|nibbana"
+    },
+    "top_religion": {
+     "religion": "buddhist",
+     "n": 1
+    }
+   },
+   "truth": "Buddhist term"
+  },
+  {
+   "id": "df-zakat",
+   "type": "define_term",
+   "persona": "chat",
+   "endpoint": "search",
+   "query": "what is zakat",
+   "expect": {
+    "hit": {
+     "text": "zakat|alms"
+    },
+    "top_religion": {
+     "religion": "islam",
+     "n": 1
+    }
+   },
+   "truth": "Islamic obligatory alms"
+  },
+  {
+   "id": "df-dharma",
+   "type": "define_term",
+   "persona": "chat",
+   "endpoint": "search",
+   "query": "what does dharma mean",
+   "expect": {
+    "hit": {
+     "text": "dharma|dhamma"
+    }
+   },
+   "truth": "Hindu/Buddhist term"
+  },
+  {
+   "id": "mis-helps-themselves",
+   "type": "misattribution",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "Jesus said God helps those who help themselves",
+   "expect": {
+    "no_hit": {
+     "religion": "christian",
+     "text": "helps? those who help themselves"
+    }
+   },
+   "truth": "not in the Bible (Algernon Sidney / Franklin); scripture must not appear to confirm it"
+  },
+  {
+   "id": "sr-essence-justice",
+   "type": "source_resolution",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "What does Bahá’u’lláh say about the essence of justice being embodied in the ordinances?",
+   "expect": {
+    "origin": {
+     "text": "essence of justice and the source thereof",
+     "author": "bahaullah"
+    },
+    "link": {
+     "text": "essence of justice and the source thereof",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Gleanings LXXXVIII; also quoted in a pilgrim-notes book, biographies and compilations"
+  },
+  {
+   "id": "sr-light-of-men",
+   "type": "source_resolution",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "Bahá’u’lláh calling justice the light of men",
+   "expect": {
+    "origin": {
+     "text": "light of men",
+     "author": "bahaullah"
+    },
+    "link": {
+     "text": "light of men",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Bahá'u'lláh's Tablets; quoted in God Passes By"
+  },
+  {
+   "id": "sr-one-country",
+   "type": "source_resolution",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "the earth is but one country and mankind its citizens",
+   "expect": {
+    "origin": {
+     "text": "one country",
+     "author": "bahaullah"
+    },
+    "link": {
+     "text": "one country",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Gleanings CXVII; quoted in countless secondary works"
+  },
+  {
+   "id": "sr-best-beloved",
+   "type": "source_resolution",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "the best beloved of all things in My sight is Justice",
+   "expect": {
+    "origin": {
+     "text": "best beloved of all things",
+     "author": "bahaullah"
+    },
+    "link": {
+     "text": "best beloved of all things",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "Hidden Words, Arabic 2"
+  },
+  {
+   "id": "sr-two-wings",
+   "type": "source_resolution",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "religion and science are the two wings upon which man's intelligence can soar",
+   "expect": {
+    "origin": {
+     "text": "two wings",
+     "author": "abdul baha"
+    },
+    "link": {
+     "text": "two wings",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "'Abdu'l-Bahá, Paris Talks 44"
+  },
+  {
+   "id": "sr-harmony",
+   "type": "source_resolution",
+   "persona": "research",
+   "endpoint": "search",
+   "query": "harmony of science and religion",
+   "expect": {
+    "origin": {
+     "text": "harmony of science and religion",
+     "author": "abdul baha"
+    },
+    "link": {
+     "text": "harmony of science and religion",
+     "site": "oceanlibrary.com",
+     "paragraph": true
+    }
+   },
+   "truth": "'Abdu'l-Bahá, Promulgation of Universal Peace"
+  },
+  {
+   "id": "lm-religions",
+   "type": "library_meta",
+   "persona": "chat",
+   "endpoint": "religions",
+   "query": "which religions are in the library?",
+   "expect": {
+    "min_count": 12
+   },
+   "truth": "corpus-status: 12 traditions"
+  }
+ ]
 }

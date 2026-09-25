@@ -560,7 +560,15 @@ export default async function publicApiRoutes(fastify) {
         })
       : analysis.results;
 
-    const results = rankedResults.slice(0, limit).map(result => ({
+    // Link policy (source-links.js): OceanLibrary → BahaiLibrary → OceanofLights → publisher → SifterSearch, from the
+    // document's own source_url OR metadata.sourceUrl; plus a paragraph-exact reader link. One batched lookup.
+    const { linkFor } = await import('../lib/source-links.js');
+    const { getLinkMeta } = await import('../lib/docs-repo.js');
+    const linkMeta = await getLinkMeta(rankedResults.slice(0, limit).map((r) => r.document_id)).catch(() => new Map());
+    const linkOf = (result) => linkFor({ ...(linkMeta.get(Number(result.document_id)) || {}), ...result,
+      source_url: result.source_url || linkMeta.get(Number(result.document_id))?.source_url || null,
+      metadata: linkMeta.get(Number(result.document_id))?.metadata }, result.paragraph_index);
+    const results = rankedResults.slice(0, limit).map(result => { const link = linkOf(result); return {
       id: result.id,
       documentId: result.document_id,
       paragraphIndex: result.paragraph_index,
@@ -582,9 +590,11 @@ export default async function publicApiRoutes(fastify) {
       authority: result.authority,
       score: result.score,
       summary: result.summary || result.briefAnswer || '',
-      url: getParagraphUrl(result, result.paragraph_index),
-      documentUrl: getDocumentUrl(result)
-    }));
+      url: link.url,
+      documentUrl: link.tier < 5 ? link.url.split('?')[0] : getDocumentUrl(result),
+      readerUrl: link.reader_url,
+      link: { site: link.site, tier: link.tier, paragraph_level: link.paragraph_level },
+    }; });
 
     const durationMs = Date.now() - startTime;
     logApiSearch({ query, apiKeyId: request.apiKeyId, resultCount: results.length, durationMs, searchType: 'api', filters });

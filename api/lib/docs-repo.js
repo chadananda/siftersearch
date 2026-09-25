@@ -304,3 +304,16 @@ export async function softDeleteDocs(docIds, { reason = 'unspecified', runId = n
   const res = await content.safeSoftDeleteDocs(proceed, { reason, runId });
   return { ...res, refused };
 }
+
+/**
+ * Link metadata for a batch of documents (source-links.js). One query per search, not per result.
+ * metadata holds the importer's frontmatter extras — `sourceUrl` is the document's origin (bahai-library.com etc.).
+ */
+export async function getLinkMeta(docIds) {
+  const ids = [...new Set((docIds || []).map(Number).filter(Number.isFinite))];
+  if (!ids.length) return new Map();
+  const rows = await queryAll(
+    `SELECT id, source_url, source_site, metadata, slug, filename, religion, collection FROM docs WHERE id IN (${ids.map(() => '?').join(',')})`,
+    ids, 'docs-repo:link-meta');
+  return new Map(rows.map((r) => [r.id, r]));
+}
