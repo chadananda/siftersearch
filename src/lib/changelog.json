@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T18:48:42.826Z",
+  "generated": "2026-09-25T18:56:33.585Z",
   "entries": [
+    {
+      "hash": "1aeb8e30",
+      "date": "2026-09-25",
+      "type": "Fixed",
+      "description": "OceanLibrary links carry the paragraph id again — attached once, in the link policy",
+      "scope": "search"
+    },
     {
       "hash": "8631dc1b",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Enable Meili binaryQuantized on the vector embedders (fix slow semantic search)",
       "scope": null
-    },
-    {
-      "hash": "ae384976",
-      "date": "2026-07-09",
-      "type": "Fixed",
-      "description": "Meili-diag route was inside a JSDoc comment (never registered)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "1aeb8e30",
+        "date": "2026-09-25",
+        "type": "Fixed",
+        "description": "OceanLibrary links carry the paragraph id again — attached once, in the link policy",
+        "scope": "search"
+      },
       {
         "hash": "8631dc1b",
         "date": "2026-09-25",
@@ -7083,13 +7090,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Enable Meili binaryQuantized on the vector embedders (fix slow semantic search)",
-        "scope": null
-      },
-      {
-        "hash": "ae384976",
-        "date": "2026-07-09",
-        "type": "Fixed",
-        "description": "Meili-diag route was inside a JSDoc comment (never registered)",
         "scope": null
       }
     ]

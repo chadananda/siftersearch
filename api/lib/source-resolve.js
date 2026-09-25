@@ -33,32 +33,43 @@ const isSpeaker = (author, speaker) => (SPEAKERS[speaker] || []).some((n) => fol
 const isCentral = (author) => Object.keys(SPEAKERS).some((s) => isSpeaker(author, s));
 const speakerOf = (hits) => Object.keys(SPEAKERS).find((s) => hits.some((h) => isSpeaker(h.author, s)));
 
-/** Worth checking? It quotes; or it is not by a central figure; or it is a central figure's text NOT on OceanLibrary. */
-export function needsCheck(hit, tier) {
-  return quoteSpans(hit.text).length > 0 || !isCentral(hit.author) || (tier ?? 5) > 1;
+/** Worth checking? It quotes; or it is not by a central figure; or it is a central figure's text NOT on OceanLibrary;
+ *  or it is on OceanLibrary but without the paragraph id (a duplicate of the OceanLibrary site copy, e.g. Paris Talks 8320). */
+export function needsCheck(hit, tier, paraLevel = true) {
+  return quoteSpans(hit.text).length > 0 || !isCentral(hit.author) || (tier ?? 5) > 1 || ((tier ?? 5) === 1 && !paraLevel);
 }
 
 // Policy ranking, most important first:
 //   OceanLibrary (primary) above anything supplementary → the speaker's own work → the ORIGINAL work above a
 //   selection/anthology/compilation of it → recorded authority (missing = 0, so uploader copies sink) → better tier.
-const rank = (h, speaker, tiers) => {
+//   A paragraph-level OceanLibrary link comes AFTER original-before-anthology, so it never lifts Gleanings over the Íqán.
+const rank = (h, speaker, tiers, para = new Map()) => {
   const t = tiers.get(h.id) ?? 5;
-  return [t === 1 ? 1 : 0, isSpeaker(h.author, speaker) ? 1 : 0, SELECTION.test(foldText(h.title)) ? 0 : 1, Number(h.authority) || 0, -t];
+  return [t === 1 ? 1 : 0, isSpeaker(h.author, speaker) ? 1 : 0, SELECTION.test(foldText(h.title)) ? 0 : 1,
+    para.get(h.id) ? 1 : 0, Number(h.authority) || 0, -t];
 };
 const better = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i]; return false; };
 
 /** Best copy by policy alone (the fallback when Jev abstains or fails). */
-export function deterministicPick(options, speaker, tiers) {
+export function deterministicPick(options, speaker, tiers, para = new Map()) {
   let best = null;
-  for (const o of options || []) if (!best || better(rank(o, speaker, tiers), rank(best, speaker, tiers))) best = o;
+  for (const o of options || []) if (!best || better(rank(o, speaker, tiers, para), rank(best, speaker, tiers, para))) best = o;
   return best;
 }
 
+const bookOf = (url) => String(url || '').split('?')[0].replace(/\/+$/, '');
+
 // Jev chooses WITHIN policy: if any OceanLibrary copy exists, only OceanLibrary copies are eligible.
-function choose(options, choiceId, speaker, tiers) {
+// Same OceanLibrary book held twice: serve the copy that carries OceanLibrary's paragraph ids.
+function choose(options, choiceId, speaker, tiers, para = new Map()) {
   const primary = options.filter((o) => tiers.get(o.id) === 1);
   const eligible = primary.length ? primary : options;
-  return eligible.find((o) => o.id === choiceId) || deterministicPick(eligible, speaker, tiers);
+  const best = eligible.find((o) => o.id === choiceId) || deterministicPick(eligible, speaker, tiers, para);
+  if (best && !para.get(best.id)) {
+    const twin = eligible.find((o) => o !== best && para.get(o.id) && bookOf(o.source_url) && bookOf(o.source_url) === bookOf(best.source_url));
+    if (twin) return twin;
+  }
+  return best;
 }
 
 /** ONE Jev call: each passage's kind + speaker, and each copy group's ideal source. */
@@ -115,19 +126,22 @@ const opening = (text) => String(text || '').replace(/\s+/g, ' ').trim().split('
  */
 export async function resolveSources(hits, { judge = jevJudge, phraseSearch = defaultPhraseSearch, linkMeta = defaultLinkMeta, maxChecks = 8 } = {}) {
   const tiers = new Map();
+  const para = new Map();   // id → carries a paragraph-level link
   const tierFor = async (list) => {
     const need = list.filter((h) => !tiers.has(h.id));
     if (!need.length) return;
     const meta = await linkMeta(need.map((h) => h.doc_id)).catch(() => new Map());
     for (const h of need) {
       const m = meta.get(Number(h.doc_id)) || meta.get(h.doc_id) || {};
-      tiers.set(h.id, linkFor({ ...m, ...h, source_url: h.source_url || m.source_url || null, metadata: m.metadata }, h.paragraph_index).tier);
+      const l = linkFor({ ...m, ...h, source_url: h.source_url || m.source_url || null, metadata: m.metadata }, h.paragraph_index);
+      tiers.set(h.id, l.tier);
+      para.set(h.id, l.tier === 1 ? l.paragraph_level : false);
     }
   };
   await tierFor(hits);
 
-  const checkIdx = hits.map((h, i) => (needsCheck(h, tiers.get(h.id)) ? i : -1)).filter((i) => i >= 0).slice(0, maxChecks);
-  if (!checkIdx.length) return { hits: collapseCopies(hits, tiers), resolved: 0 };
+  const checkIdx = hits.map((h, i) => (needsCheck(h, tiers.get(h.id), para.get(h.id)) ? i : -1)).filter((i) => i >= 0).slice(0, maxChecks);
+  if (!checkIdx.length) return { hits: collapseCopies(hits, tiers, para), resolved: 0 };
 
   // 1. Copies, deterministically: exact words, containment verified. mode 'quote' = words it quotes; 'copy' = the
   //    passage itself (a central figure's text held outside OceanLibrary).
@@ -135,7 +149,9 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
   await Promise.all(checkIdx.map(async (i) => {
     const hit = hits[i];
     const spans = quoteSpans(hit.text).sort((a, b) => b.length - a.length).slice(0, 3).map((s) => ({ span: s, mode: 'quote' }));
-    if (!spans.length && isCentral(hit.author) && (tiers.get(hit.id) ?? 5) > 1) spans.push({ span: opening(hit.text), mode: 'copy' });
+    const t = tiers.get(hit.id) ?? 5;
+    const olWithoutPara = t === 1 && !para.get(hit.id);
+    if (!spans.length && ((isCentral(hit.author) && t > 1) || olWithoutPara)) spans.push({ span: opening(hit.text), mode: 'copy' });
     for (const [s, { span, mode }] of spans.entries()) {
       if (span.split(' ').length < 5) continue;
       const found = (await phraseSearch(span, { religion: hit.religion }).catch(() => [])).filter((c) => containsQuote(c.text, span));
@@ -169,7 +185,7 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
 
     const copy = mine.find((g) => g.mode === 'copy');
     if (copy) {
-      const best = choose(copy.options, choices[copy.key], speaker, tiers);
+      const best = choose(copy.options, choices[copy.key], speaker, tiers, para);
       if (best && best.id !== hit.id) {
         out[i] = { ...best, _source: { ...source, kind: v.kind === 'unknown' ? 'original' : v.kind, resolved: true,
           also_in: copy.options.filter((o) => o.id !== best.id).map(ref) } };
@@ -179,7 +195,7 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
     }
     const quoteGroups = mine.filter((g) => g.mode === 'quote');
     if (quoteGroups.length && v.kind !== 'original' && SPEAKERS[v.speaker]) {
-      const picks = quoteGroups.map((g) => ({ g, best: choose(g.options.filter((o) => o.doc_id !== hit.doc_id), choices[g.key], speaker, tiers) }))
+      const picks = quoteGroups.map((g) => ({ g, best: choose(g.options.filter((o) => o.doc_id !== hit.doc_id), choices[g.key], speaker, tiers, para) }))
         .filter((x) => x.best);
       const refs = picks.map(({ g, best }) => ({ span: g.span, ...ref(best), source_url: best.source_url || null }));
       if (v.kind === 'quotation' && picks.length) {
@@ -196,14 +212,14 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
 
   const seen = new Set();
   const unique = out.filter((h) => (seen.has(h.id) ? false : seen.add(h.id)));
-  return { hits: collapseCopies(unique, tiers), resolved, ...(error ? { error } : {}) };
+  return { hits: collapseCopies(unique, tiers, para), resolved, ...(error ? { error } : {}) };
 }
 
 /**
  * Same words, several documents among the results: keep the policy-best copy in the FIRST copy's position and list the
  * rest as `_source.also_in`. "Same" = one folded text contains the other's opening 160 characters.
  */
-export function collapseCopies(hits, tiers = new Map()) {
+export function collapseCopies(hits, tiers = new Map(), para = new Map()) {
   const groups = [];
   for (const h of hits) {
     const f = foldText(h.text);
@@ -214,7 +230,7 @@ export function collapseCopies(hits, tiers = new Map()) {
   return groups.map(({ members }) => {
     if (members.length === 1) return members[0];
     const speaker = members.find((m) => SPEAKERS[m._source?.speaker])?._source.speaker || speakerOf(members);
-    const best = deterministicPick(members, speaker, tiers);
+    const best = deterministicPick(members, speaker, tiers, para);
     const prior = best._source?.also_in || [];
     const also_in = [...prior, ...members.filter((m) => m !== best).map(ref)];
     return { ...best, _source: { ...(best._source || {}), also_in } };

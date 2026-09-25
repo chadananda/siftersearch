@@ -93,6 +93,25 @@ describe('resolveSources', () => {
     expect(r.hits[0]._source.also_in.map((x) => x.doc_id)).toEqual([15171]);
   });
 
+  // Live 2026-09-25: two Paris Talks documents — 8320 (Core Publications, links to the OceanLibrary book page but has
+  // NO OceanLibrary paragraph ids) outranked 20908 (the OceanLibrary site copy, id="para_N" on every paragraph).
+  // Chad: "oceanlibrary.com is always the core canonical". The same book's paragraph-level copy must be served.
+  it('serves the OceanLibrary site copy (with paragraph id) over a copy of the same book without one', async () => {
+    const PT_CORE = { id: 50, doc_id: 8320, paragraph_index: 400, title: 'Paris Talks', author: '’Abdu’l-Bahá', authority: 10,
+      source_url: 'https://oceanlibrary.com/paris-talks_abdul-baha', text: 'Religion and science are the two wings upon which man’s intelligence can soar into the heights.' };
+    const PT_OL = { ...PT_CORE, id: 51, doc_id: 20908, paragraph_index: 160, authority: 9, external_para_id: 'para_160' };
+    const r = await resolveSources([PT_CORE], deps({ phraseSearch: async () => [PT_CORE, PT_OL] }));
+    expect(r.hits[0].doc_id).toBe(20908);
+    expect(r.hits[0]._source.also_in.map((x) => x.doc_id)).toEqual([8320]);
+  });
+
+  it('does NOT prefer an anthology merely because it has paragraph ids (the Íqán still beats Gleanings)', () => {
+    const IQAN = { ...GLEANINGS, id: 905, doc_id: 20810, title: 'The Kitáb-i-Íqán', source_url: 'https://oceanlibrary.com/kitab-i-iqan' };
+    const GL = { ...GLEANINGS, source_url: 'https://oceanlibrary.com/gleanings', external_para_id: 'para_88' };
+    const paraLevel = new Map([[900, true], [905, false]]);
+    expect(deterministicPick([GL, IQAN], 'Bahá’u’lláh', new Map([[900, 1], [905, 1]]), paraLevel).id).toBe(905);
+  });
+
   it('asks Jev to choose only among copies that actually CONTAIN the words', async () => {
     const lookalike = { ...GLEANINGS, id: 950, text: 'Justice is a theme of this book.' };
     let seen = null;
