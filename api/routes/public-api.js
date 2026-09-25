@@ -508,6 +508,7 @@ export default async function publicApiRoutes(fastify) {
       year: hit.year,
       slug: hit.slug,
       source_url: hit.source_url,
+      external_para_id: hit.external_para_id,   // OceanLibrary paragraph id → paragraph-level link (source-links.js)
       authority: hit.authority,
       encumbered: hit.encumbered,
       language: hit.language,

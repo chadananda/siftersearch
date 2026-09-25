@@ -22,6 +22,19 @@ describe('linkFor', () => {
     expect(l).toMatchObject({ site: 'oceanlibrary.com', tier: 1, paragraph_level: true, url: 'https://oceanlibrary.com/gleanings/?paraId=para_117' });
   });
 
+  // Regression (Chad: "we had this working before"): every OceanLibrary paragraph has a para_id, and search knows it
+  // (external_para_id), but results reaching the link builder via the multi-index/HyPE path never got ?paraId= —
+  // Paris Talks, Gleanings and Epistle links opened the book's first page.
+  it('attaches the known OceanLibrary paragraph id to a book-level OceanLibrary link', () => {
+    const l = linkFor({ ...base, source_url: 'https://oceanlibrary.com/paris-talks_abdul-baha', external_para_id: 'para_412' }, 400);
+    expect(l).toMatchObject({ url: 'https://oceanlibrary.com/paris-talks_abdul-baha?paraId=para_412', paragraph_level: true, tier: 1 });
+  });
+
+  it('never doubles a paraId that is already there', () => {
+    const l = linkFor({ ...base, source_url: 'https://oceanlibrary.com/x?paraId=para_1', external_para_id: 'para_1' }, 1);
+    expect(l.url).toBe('https://oceanlibrary.com/x?paraId=para_1');
+  });
+
   it('uses the BahaiLibrary sourceUrl from metadata instead of a SifterSearch page', () => {
     const l = linkFor({ ...base, source_url: null, metadata: '{"sourceUrl":"https://bahai-library.com/50th-anniversary_greatest_holy_leaf"}' }, 12);
     expect(l).toMatchObject({ site: 'bahai-library.com', tier: 2, url: 'https://bahai-library.com/50th-anniversary_greatest_holy_leaf' });

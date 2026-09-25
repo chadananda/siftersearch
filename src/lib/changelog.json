@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T16:37:45.735Z",
+  "generated": "2026-09-25T18:48:42.826Z",
   "entries": [
+    {
+      "hash": "8631dc1b",
+      "date": "2026-09-25",
+      "type": "New",
+      "description": "Ideal-source re-ranking — ONE Jev judgment, bounded by OceanLibrary-first policy",
+      "scope": "search"
+    },
     {
       "hash": "a7490ac8",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Meili-diag route was inside a JSDoc comment (never registered)",
       "scope": null
-    },
-    {
-      "hash": "ef996301",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "/search/meili-diag — report Meili task backlog + paragraphs index state",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "8631dc1b",
+        "date": "2026-09-25",
+        "type": "New",
+        "description": "Ideal-source re-ranking — ONE Jev judgment, bounded by OceanLibrary-first policy",
+        "scope": "search"
+      },
       {
         "hash": "a7490ac8",
         "date": "2026-09-25",
@@ -7083,13 +7090,6 @@
         "date": "2026-07-09",
         "type": "Fixed",
         "description": "Meili-diag route was inside a JSDoc comment (never registered)",
-        "scope": null
-      },
-      {
-        "hash": "ef996301",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "/search/meili-diag — report Meili task backlog + paragraphs index state",
         "scope": null
       }
     ]

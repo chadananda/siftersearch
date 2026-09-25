@@ -40,8 +40,13 @@ export function readerUrl(doc, paragraphIndex) {
  */
 export function linkFor(doc, paragraphIndex) {
   const reader = readerUrl(doc, paragraphIndex);
+  // Every OceanLibrary paragraph has a para_id (the site copy's id="para_N"); search carries it as external_para_id.
+  // Attach it here, once, so no search path can hand out a book-level OceanLibrary link when the paragraph is known.
+  const withPara = (u) => (doc.external_para_id && tierOf(u).tier === 1 && !/paraId=/.test(u)
+    ? `${u}${u.includes('?') ? '&' : '?'}paraId=${encodeURIComponent(doc.external_para_id)}` : u);
   const candidates = [doc.source_url, metaSourceUrl(doc.metadata)]
     .filter((u) => typeof u === 'string' && /^https?:\/\//.test(u))
+    .map((u) => withPara(u))
     .map((u) => ({ url: u, ...tierOf(u) }))
     .filter((c) => c.tier < 5);   // our own address stored as a "source" is not a source
   // Best tier wins; within a tier, a paragraph-level link beats a whole-document one.
