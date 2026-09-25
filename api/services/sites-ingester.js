@@ -485,7 +485,9 @@ export function isUnchanged({ existing, fileHash, force, hasLiveContent }) {
 
 // ─── Ingest a single file ───────────────────────────────────────────────
 
-async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath, threshold, force = false }) {
+// dryRun: report what WOULD happen, write nothing. onlyMissing: ingest only new files and HOLLOW docs — a doc that
+// already has live text is never touched (its paragraphs, and so any entity claims on them, stay exactly as they are).
+async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath, threshold, force = false, dryRun = false, onlyMissing = false }) {
   const scope = siteConfig.scope || 'supplemental';
   const isSiteOnly = scope === 'site-only';
   const siteDb = isSiteOnly ? await getSiteDb(siteConfig.id, siteConfig.meili_index_prefix) : null;
@@ -515,6 +517,13 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
     : false;
   if (isUnchanged({ existing, fileHash, force, hasLiveContent })) {
     return { status: 'unchanged', file: relPath, scope };
+  }
+  if (onlyMissing && existing && hasLiveContent) {
+    return { status: 'kept_live', file: relPath, doc_id: existing.id, scope };
+  }
+  if (dryRun) {
+    const status = !existing ? 'would_add_new' : hasLiveContent ? 'would_reingest_changed' : 'would_restore_hollow';
+    return { status, file: relPath, doc_id: existing?.id ?? null, scope };
   }
   if (existing && existing.file_hash === fileHash && !hasLiveContent) {
     logger.warn({ file: relPath, docId: existing.id, scope }, 'Sites-ingester: HOLLOW doc (same hash, no live paragraphs) — re-ingesting');
@@ -730,6 +739,7 @@ export async function ingestSite(siteId, opts = {}) {
 
   const stats = { new: 0, re_ingested: 0, unchanged: 0, skipped_cooldown: 0, empty: 0, errors: 0, supersedes: 0 };
   const errors = [];
+  const details = [];   // per-file outcome for anything other than 'unchanged' (dry runs and targeted runs report it)
 
   // Time-based throttle: work for SCAN_WORK_MS then pause for SCAN_PAUSE_MS.
   // ~23% idle regardless of document size (100KB stub vs 20MB book).
@@ -742,9 +752,10 @@ export async function ingestSite(siteId, opts = {}) {
     try {
       const result = await ingestOneFile({
         adapter, siteConfig, siteRoot, basePath, absPath: abs,
-        threshold, force: !!opts.force
+        threshold, force: !!opts.force, dryRun: !!opts.dryRun, onlyMissing: !!opts.onlyMissing
       });
       stats[result.status] = (stats[result.status] || 0) + 1;
+      if (result.status !== 'unchanged') details.push({ file: result.file, status: result.status, doc_id: result.doc_id ?? null, paragraphs: result.paragraphs ?? null, supersedes: result.supersedes ?? null });
       if (result.supersedes) stats.supersedes++;
     } catch (err) {
       stats.errors++;
@@ -761,12 +772,15 @@ export async function ingestSite(siteId, opts = {}) {
   // Soft-delete + auto-restore for files that disappeared.
   // Skip reconciliation when running a subset — would falsely soft-delete the
   // 525 books we didn't process this run.
+  // Dry runs and onlyMissing runs never reconcile deletions: they exist to ADD, and must not remove anything.
   const reconcile = (typeof opts.limit === 'number' && opts.limit > 0)
     ? { deleted: 0, restored: 0, skipped: 'subset run' }
-    : await reconcileDeletes(siteId, basePath, files, !walkState.errored);
+    : (opts.dryRun || opts.onlyMissing)
+      ? { deleted: 0, restored: 0, skipped: opts.dryRun ? 'dry run' : 'onlyMissing run' }
+      : await reconcileDeletes(siteId, basePath, files, !walkState.errored);
 
-  logger.info({ siteId, stats, reconcile }, 'Sites-ingester: complete');
-  return { siteId, stats, reconcile, errors };
+  logger.info({ siteId, stats, reconcile, dryRun: !!opts.dryRun, onlyMissing: !!opts.onlyMissing }, 'Sites-ingester: complete');
+  return { siteId, stats, reconcile, errors, details };
 }
 
 // ─── Convenience: discover and run all sites ────────────────────────────

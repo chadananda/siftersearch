@@ -5,6 +5,8 @@
 //   node scripts/sites-ingest.mjs                   # all sites
 //   node scripts/sites-ingest.mjs --site oceanlibrary.com
 //   node scripts/sites-ingest.mjs --site oceanlibrary.com --force
+//   node scripts/sites-ingest.mjs --site oceanlibrary.com --only-missing   # new files + hollow docs only
+//   node scripts/sites-ingest.mjs --site oceanlibrary.com --dry-run        # report, write nothing
 //
 // `--force` bypasses the 4h Dropbox-stability cooldown and the file_hash
 // unchanged short-circuit. Use after a confirmed full sync.
@@ -27,7 +29,7 @@ const threshold = thresholdArg ? parseFloat(thresholdArg) : undefined;
 const limitArg = arg('--limit');
 const limit = limitArg ? parseInt(limitArg, 10) : undefined;
 
-const opts = { force };
+const opts = { force, dryRun: args.includes('--dry-run'), onlyMissing: args.includes('--only-missing') };
 if (threshold !== undefined) opts.threshold = threshold;
 if (limit !== undefined && !Number.isNaN(limit)) opts.limit = limit;
 

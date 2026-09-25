@@ -2306,6 +2306,32 @@ Collection: ${paragraph.collection || 'Unknown'}
   });
 
   /**
+   * POST /server/sites-ingest { site, dryRun=true, onlyMissing=true }
+   * The sites ingester without the library watcher (stopped since 2026-07-10 with the entity pollers). dryRun returns
+   * per-file outcomes inline and writes nothing. A real run executes scripts/sites-ingest.mjs as background task
+   * 'sites-ingest' (GET /server/tasks/sites-ingest). onlyMissing = new files + hollow docs only: a doc with live text is
+   * never touched, so paragraphs carrying entity claims stay put. Neither mode reconciles deletions.
+   */
+  fastify.post('/server/sites-ingest', {
+    preHandler: requireInternal,
+    schema: { body: { type: 'object', properties: {
+      site: { type: 'string', default: 'oceanlibrary.com' }, dryRun: { type: 'boolean', default: true }, onlyMissing: { type: 'boolean', default: true },
+    } } },
+  }, async (request) => {
+    const { site = 'oceanlibrary.com', dryRun = true, onlyMissing = true } = request.body || {};
+    if (dryRun) {
+      const { ingestSite } = await import('../services/sites-ingester.js');
+      return ingestSite(site, { dryRun: true, onlyMissing, force: true });
+    }
+    const existing = backgroundTasks.get('sites-ingest');
+    if (existing && existing.status === 'running') throw ApiError.conflict('A sites-ingest run is already in progress');
+    const args = ['--site', site, '--force', ...(onlyMissing ? ['--only-missing'] : [])];
+    const task = runBackgroundTask('sites-ingest', 'scripts/sites-ingest.mjs', args);
+    logger.info({ site, onlyMissing }, 'sites-ingest started via API');
+    return { success: true, taskId: 'sites-ingest', site, onlyMissing, status: task.status };
+  });
+
+  /**
    * Control PM2 processes (stop/start/restart library watcher)
    */
   fastify.post('/server/pm2/:action/:process', { preHandler: requireInternal }, async (request) => {

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T19:38:10.041Z",
+  "generated": "2026-09-25T19:46:39.016Z",
   "entries": [
+    {
+      "hash": "cd28a358",
+      "date": "2026-09-25",
+      "type": "Fixed",
+      "description": "A HOLLOW doc is not 'unchanged' — OceanLibrary canonicals never re-ingested for three months",
+      "scope": "ingest"
+    },
     {
       "hash": "31df550d",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Provable Meili stability check (enqueued not growing + synced=0 flat + search fast → STABLE)",
       "scope": null
-    },
-    {
-      "hash": "fb750440",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "One-time enable-binary-quantization (deliberate PATCH past the startup guard)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "cd28a358",
+        "date": "2026-09-25",
+        "type": "Fixed",
+        "description": "A HOLLOW doc is not 'unchanged' — OceanLibrary canonicals never re-ingested for three months",
+        "scope": "ingest"
+      },
       {
         "hash": "31df550d",
         "date": "2026-09-25",
@@ -7083,13 +7090,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Provable Meili stability check (enqueued not growing + synced=0 flat + search fast → STABLE)",
-        "scope": null
-      },
-      {
-        "hash": "fb750440",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "One-time enable-binary-quantization (deliberate PATCH past the startup guard)",
         "scope": null
       }
     ]
