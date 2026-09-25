@@ -4,8 +4,8 @@
 import OpenAI from 'openai';
 import { anisSystem, anisUserPayload } from './prompt.js';
 
-const BASE_URL = { openai: undefined, groq: 'https://api.groq.com/openai/v1', deepseek: 'https://api.deepseek.com/v1' };
-const KEY_ENV = { openai: 'OPENAI_API_KEY', groq: 'GROQ_API_KEY', deepseek: 'DEEPSEEK_API_KEY' };
+const BASE_URL = { openai: undefined, groq: 'https://api.groq.com/openai/v1', deepseek: 'https://api.deepseek.com/v1', gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/', anthropic: 'https://api.anthropic.com/v1/' };
+const KEY_ENV = { openai: 'OPENAI_API_KEY', groq: 'GROQ_API_KEY', deepseek: 'DEEPSEEK_API_KEY', gemini: 'GEMINI_API_KEY', anthropic: 'ANTHROPIC_API_KEY' };
 const clients = {};
 function client(provider) {
   return (clients[provider] ||= new OpenAI({
@@ -22,7 +22,7 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
     ],
     temperature: 0.3,
     // Reasoning models spend completion tokens thinking; leave room so the reply is never truncated.
-    max_tokens: llm.reasoning_effort ? 1500 : 700,
+    max_tokens: llm.reasoning_effort && llm.reasoning_effort !== 'none' ? 1500 : 700,
     stream: true,
     ...(llm.reasoning_effort ? { reasoning_effort: llm.reasoning_effort } : {}),
     // DeepSeek v4-flash thinks unless told not to — TOP-LEVEL key, not extra_body (see ai-services chatDeepSeek).

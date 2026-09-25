@@ -90,7 +90,7 @@ describe('anisRespond', () => {
     expect(parseLlm('groq:openai/gpt-oss-120b:low')).toEqual({ provider: 'groq', model: 'openai/gpt-oss-120b', reasoning_effort: 'low' });
     expect(parseLlm('openai:gpt-4o-mini')).toEqual({ provider: 'openai', model: 'gpt-4o-mini' });
     expect(parseLlm('bogus')).toEqual(parseLlm(undefined));
-    expect(parseLlm(undefined)).toEqual({ provider: 'openai', model: 'gpt-4o-mini' });
+    expect(parseLlm(undefined)).toEqual({ provider: 'gemini', model: 'gemini-3.5-flash-lite' });
   });
 
   // Groq's gpt-oss cites as 【n】 instead of links (measured 2026-09-24). n is OUR passage number, so it maps to the

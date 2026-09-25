@@ -4,19 +4,20 @@
 // email uses the returned text. Model: ONE global, switchable setting ANIS_LLM="provider:model[:reasoning_effort]".
 // Deps (lazy, injectable for tests): routes/chat.js executeSearch, jafar-pipeline craftAnswerStream, companion/.
 
-// Default measured 2026-09-24 (scripts/wip/anis-model-race.mjs, lean prompt): gpt-4o-mini 0.6s to first token,
-// obeys the link rules. Groq gpt-oss-120b is 2-3x faster end to end but needs Groq's paid tier (free = 8k TPM ≈ 2-3
-// replies/min) — switch with ANIS_LLM=groq:openai/gpt-oss-120b:low.
 import { dropUnverified, createSentenceGate } from './quotes.js';
 
-const DEFAULT_LLM = { provider: 'openai', model: 'gpt-4o-mini' };
-const PROVIDERS = new Set(['groq', 'openai', 'deepseek']);
+// Default measured 2026-09-25 (scripts/wip/anis-model-race.mjs, lean prompt, 4 questions): Gemini 3.5 Flash-Lite
+// 0.53s first token / 1.5s total (gpt-4o-mini 0.61s / 2.3s; Haiku 0.72s / 4.3s; DeepSeek 0.77s / 2.4s). Every model
+// sometimes quotes words not in its passages — the sentence gate (quotes.js) is the protection, not the model.
+// Groq gpt-oss is faster still but its paid tier is unavailable (free = 8k TPM). Switch with ANIS_LLM.
+const DEFAULT_LLM = { provider: 'gemini', model: 'gemini-3.5-flash-lite' };
+const PROVIDERS = new Set(['groq', 'openai', 'deepseek', 'gemini', 'anthropic']);
 
 /** "groq:openai/gpt-oss-120b:low" → { provider, model, reasoning_effort? }; nonsense → the default. */
 export function parseLlm(spec) {
   const [provider, ...rest] = String(spec || '').split(':');
   if (!PROVIDERS.has(provider) || !rest.length) return { ...DEFAULT_LLM };
-  const effort = ['low', 'medium', 'high'].includes(rest.at(-1)) && rest.length > 1 ? rest.pop() : null;
+  const effort = ['none', 'low', 'medium', 'high'].includes(rest.at(-1)) && rest.length > 1 ? rest.pop() : null;
   const model = rest.join(':');
   return model ? { provider, model, ...(effort ? { reasoning_effort: effort } : {}) } : { ...DEFAULT_LLM };
 }
