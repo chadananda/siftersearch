@@ -448,6 +448,17 @@ export async function ensureContainsFilter({ meiliUrl, headers, fetchImpl = fetc
   }
 }
 
+/** Boot-time engine features, from config. Called by the API at startup — initializeIndexes() is NOT run there. */
+export async function ensureEngineFeatures() {
+  const meiliUrl = config.search.host || 'http://localhost:7700';
+  const headers = { 'Content-Type': 'application/json' };
+  if (config.search.apiKey) headers['Authorization'] = `Bearer ${config.search.apiKey}`;
+  const contains = await ensureContainsFilter({ meiliUrl, headers });
+  if (contains.enabled) logger.info({ changed: contains.changed }, 'Meilisearch containsFilter enabled');
+  else logger.error({ error: contains.error }, 'Meilisearch containsFilter NOT enabled — author/collection filters will return nothing');
+  return contains;
+}
+
 /** Engine diagnostics for the internal API: version, features, and whether each filter KIND actually filters. */
 export async function probeSearchEngine() {
   const meili = getMeili();
@@ -504,9 +515,7 @@ export async function initializeIndexes() {
   const headers = { 'Content-Type': 'application/json' };
   if (meiliKey) headers['Authorization'] = `Bearer ${meiliKey}`;
 
-  const contains = await ensureContainsFilter({ meiliUrl, headers });
-  if (contains.enabled) logger.info({ changed: contains.changed }, 'Meilisearch containsFilter enabled');
-  else logger.error({ error: contains.error }, 'Meilisearch containsFilter NOT enabled — author/collection filters will return nothing');
+  await ensureEngineFeatures();
 
   const paragraphSettings = {
     searchableAttributes: ['text', 'text_grounded', 'context', 'heading', 'title', 'author'],

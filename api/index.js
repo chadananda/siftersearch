@@ -31,7 +31,7 @@ import { stopEmbeddingWorker } from './services/embedding-worker.js';
 import { stopLibraryWatcher } from './services/library-watcher.js';
 import { config } from './lib/config.js';
 import { initAIProcessingState } from './lib/ai-services.js';
-import { prewarmCache, POPULAR_QUERIES, warmOlDocIdCache } from './lib/search.js';
+import { prewarmCache, POPULAR_QUERIES, warmOlDocIdCache, ensureEngineFeatures } from './lib/search.js';
 
 // Validate all environment variables on startup
 // This will print a detailed report and exit if required vars are missing
@@ -147,6 +147,8 @@ const start = async () => {
       // Pre-warm caches (background, non-blocking)
       // Delayed by 5s to let Meilisearch finish any pending tasks first
       setTimeout(async () => {
+        // Author/collection filters depend on this; initializeIndexes() does not run in the API.
+        ensureEngineFeatures().catch(err => logger.warn({ err }, 'ensureEngineFeatures failed'));
         // OL doc ID cache — pre-warm immediately to prevent thundering-herd on first search wave
         warmOlDocIdCache().catch(err => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));
         try {

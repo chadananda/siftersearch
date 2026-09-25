@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T01:19:52.235Z",
+  "generated": "2026-09-25T01:24:54.508Z",
   "entries": [
+    {
+      "hash": "eea935a1",
+      "date": "2026-09-24",
+      "type": "Fixed",
+      "description": "Author/collection filters returned nothing — enable Meili containsFilter; scope the keyword cache",
+      "scope": "search"
+    },
     {
       "hash": "d3bd120f",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Candidate recall uses FULL resolved name (was coreName-stripped → missed existing entities → 71/72 creates were dups); + CLEAR flag for clean re-run",
       "scope": null
-    },
-    {
-      "hash": "99547d51",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "CoreName no longer splits on hyphen (it connects Persian nisbas Khán-i-Núrí) — was truncating names → recall miss → spurious duplicate creates",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "eea935a1",
+        "date": "2026-09-24",
+        "type": "Fixed",
+        "description": "Author/collection filters returned nothing — enable Meili containsFilter; scope the keyword cache",
+        "scope": "search"
+      },
       {
         "hash": "d3bd120f",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Candidate recall uses FULL resolved name (was coreName-stripped → missed existing entities → 71/72 creates were dups); + CLEAR flag for clean re-run",
-        "scope": null
-      },
-      {
-        "hash": "99547d51",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "CoreName no longer splits on hyphen (it connects Persian nisbas Khán-i-Núrí) — was truncating names → recall miss → spurious duplicate creates",
         "scope": null
       }
     ]

@@ -875,7 +875,8 @@ async function workerLoop() {
   await content.initEmbeddingCacheIfNeeded();
   // Skip initializeIndexes() — settings updates are idempotent but queue
   // Meilisearch tasks on every restart, backing up the queue and blocking sync.
-  // The API runs initializeIndexes() on startup; the worker doesn't need to.
+  // NOTE: nothing runs initializeIndexes() at startup (API included) — only scripts/index-library.js.
+  // The API applies engine FEATURES at boot via ensureEngineFeatures(); index settings need the script.
   // Recover stuck sync jobs — retry on lock
   let stuckSyncJobs = [];
   for (let attempt = 1; attempt <= 10; attempt++) {
