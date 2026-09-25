@@ -61,50 +61,59 @@ Why it matters: `SOURCE_STATS` already tracked hype-vs-main leadership but only 
 never queryable. `by_search_version` in `/search-stats` is what makes "did that change help?" a query instead
 of an argument.
 
-## 3. Quality baseline — NOT RUN (killed at handoff; run it first)
+## 3. The batteries — rebuilt 2026-09-24 (session 2)
 
-No baseline exists for the current code. The battery was killed at 212/516 and wrote nothing:
-`tests/quality/history.json` and `results-latest.json` are still at their **Aug 25** state.
-Partial log (discardable): `/tmp/qual-public.log`.
+**Legacy bank (`score-search.mjs` + `ocean-fixtures.json`, 516) was mostly noise and was re-based.**
+326/516 gated on ONE arbitrary word picked from Ocean's first snippet; 165 had "expected" doc ids that were
+our OWN past top result (circular). Upstream (dnotes/ocean-search-testing) were ORDERING tests, not per-query
+truth. Now: `expected_match: 'all_words'` = the query's own content words appear in a top-K passage (the user's
+"did the words find the obvious quote at all"); snapshot ids demoted to `regression_doc_id` (soft signal only).
+Soft signals reported, never gating: `phrase_found`, `tradition_top1`, `regression_kept`; misses carry
+`best_coverage` + `missing_words`. Feasibility: 456+ of 491 gates are satisfiable — the keyword index
+(`/search/quick`) finds an all-words passage — so a miss is a SEARCH miss, not a fixture error.
+cross-tradition sample (52): 29/52, tradition_top1 0.42.
 
-**Run this before changing any retrieval code**, so §4 has a before/after:
+**New: search-TYPE bank** — `score-types.mjs` + `search-type-fixtures.json` (76). One fixture per real
+question type (exact_phrase, lay_paraphrase, find_work, find_person, enumerate, scoped_topic, compare,
+author_scoped, history_fact, define_term, misattribution, library_meta), each against the endpoint that type
+really uses, each expectation independent truth (text/history/title — never current output). `persona`
+chat/research/both; `known_gap` marks fixtures written to fail today. History: `type-history*.json`.
 
-```
-export PATH="$HOME/.local/share/fnm/node-versions/v25.9.0/installation/bin:$PATH"
-nohup node tests/quality/score-search.mjs --write-report > /tmp/qual-public.log 2>&1 &
-```
+| path | all | exact | lay | scoped | author | history | define | find_person | research persona |
+|---|---|---|---|---|---|---|---|---|---|
+| public `/v1/search` | 46/76 61% | 8/14 | 4/7 | 3/6 | 1/3 | 1/6 | 4/5 | 7/14 | 8/22 |
+| `/search/multi` | 37/76 49% | 4/14 | 3/7 | **0/6** | 0/3 | 2/6 | 3/5 | 7/14 | 8/22 |
 
-~45–55 min for 516 fixtures. It hits the LIVE api — **do not deploy while it runs.**
-It overwrites `results-latest.json` and appends `history.json`.
+**Rate limit:** API keys are 1000 req / sliding hour. The 516 legacy run uses half; two runs + probes in an
+hour 429. The scorers count 429 as ERROR (run marked invalid), never as a fail. Entity routes are keyless.
 
-The bank: `score-search.mjs` reads **`ocean-fixtures.json` = 516 fixtures** (concept-match 271,
-phrase-match 168, cross-tradition 52, lay-paraphrase 12, entity-aware 9, authority-ranking 4).
-`search-fixtures.json` (52) is legacy and unused. Recorded history:
+## 4. ~~Switch `/v1/search` to multiIndexSearch~~ — MEASURED: it would REGRESS. Do scope first.
 
-| run | total | pass | MRR | p50 |
-|---|---|---|---|---|
-| Jun 1 | 52 | 81% | 0.82 | 3.9s |
-| Aug 26 | 516 | **25%** | **0.137** | 7.2s |
+The multi path treats every unfiltered query as cross-tradition (search.js ~1255–1305): Bahá'í capped to
+**one slot**, one passage per document, authority sorted BEFORE relevance. Since HyPE covers only Bahá'í
+books, its hit lands at #1 on every query ("What does Buddhism teach about suffering?" → a Bahá'í pilgrim note).
 
-Those are **different populations** — do not read a regression from them. `--multi` runs the battery against
-the internal multi-index path (the one that includes HyPE); `--category=X` narrows it. Running both plain and
-`--multi` would directly size what §4 is worth.
+**Offline experiment (scripts/wip/scope-experiment.mjs): multi + `extractScope()` religion filter, comparatives unnarrowed:**
+search types 16/45 → **27/45**; scoped_topic 0/6 → 6/6; history_fact 2/6 → **6/6**; all 3 comparatives
+correctly left open. One regression (Psalm 23 under Christian filter). Jev misread "harmony of science and
+religion" as COMPARATIVE (0.95) — a routing-bank case.
 
-Observed in the 212 fixtures before the kill: a heavy share of `rank=NF` (not found), consistent with §4
-rather than with a fresh regression.
+**So the order is: wire scope → then multi.** Still unsolved by either:
+- **Exact phrase** (4–8/14): main layer is hybrid ≥0.3 semantic; verbatim Hidden Words/Gleanings quotes lose
+  to Qur'án/Psalms neighbours and never enter the pool, while `/search/quick` has them at #1–2 in ~1s.
+  Needs a KEYWORD/phrase layer in RRF fusion (phraseBoost can't help — it only reorders the pool).
+- **Author-scoped** (0–1/3): nothing extracts an author; Jev scope is religion-only.
+- **Public `/search` drops passages scoring <40** after LLM rerank → "Where did Bahá'u'lláh pass away?"
+  returned ZERO results. Honest when the pool is bad, but the pool is the bug.
 
-## 4. THE BIG ONE, not yet done: the raw endpoint is missing HyPE
+**Entity findings (independent historical truth; NOT fixed — no disambiguation work started):**
+Qurratu'l-'Ayn / Zarrín-Táj ≠ Ṭáhirih node; Siyyid 'Alí-Muḥammad ≠ the Báb; "Mírzá Ḥusayn-'Alí of Núr" →
+Imám Ḥusayn / Núr-'Alí (WRONG person); Abdul Baha / 'Abbás Effendi / Janab-i-Bábu'l-Báb are duplicate nodes.
+Badasht roster lists **the Báb participated-in** (he was imprisoned in Máh-Kú/Chihríq in 1848). Letters of
+the Living node has 16/18 — missing Mullá Ḥasan-i-Bajistání and Mírzá Muḥammad Rawḍih-Khán-i-Yazdí.
 
-`/api/v1/search` calls `hybridSearch` **directly** (public-api.js:401) — main index only, **no HyPE, no
-entity layer**. Meanwhile `/api/v1/tools/search` and the chat tool both use `multiIndexSearch`, which includes
-HyPE at weight 1.5 (1.67M questions, 39% of indexed paragraphs) plus entity mentions.
-
-Chad: *"the public endpoint should have both chat and raw index. The raw index can use all of our indexed
-search and even our JEV routing."* So this is a defect, not a design — and the bank has been scoring the
-crippled path, which is very likely most of the 25%.
-
-**Fix:** point the main call at `multiIndexSearch`, keep the response shape. Then re-run the bank for a true
-before/after. This is the highest-leverage item outstanding.
+**Fixed + deployed this session:** `/v1/search` analysis-timeout fallback returned every result with
+`text: undefined` (raw passages lack `excerpt`) — `unanalyzedResults()` in parallel-analyzer.js, tested.
 
 ## 5. Measured facts worth not re-deriving
 
@@ -150,15 +159,16 @@ Jev calls through the existing spend chokepoint (`api/lib/rag-adapter/usage.js`)
 ⚠ pm2 processes load `.env-secrets` at boot — **nothing has restarted**, so the live API does not yet see
 `TYPESAFE_API_KEY`.
 
-## 8. Recommended order
+## 8. Recommended order (revised after measurement)
 
-1. **Run the baseline** (§3) → record the number. Nothing exists for current code.
-2. Commit §2 (trace + forensic API) and wire `recordTrace()` at both emission points.
-3. Fix §4 (raw endpoint → `multiIndexSearch`), re-run the bank, compare.
-4. Give `/search` the result cache `/search/quick` already has.
-5. Wire scope extraction behind a flag: log the inferred scope **without applying it** for a day, then switch
-   on once the inference rate is visible on real traffic rather than a 124-question sample.
-6. Only then: branch-per-question-type with Jev routing.
+1. Wire `extractScope()` into search as a religion filter (fail open, never narrow comparatives, relax via
+   search-scope.js). Measured +11/45 offline. Log-only first if you want real-traffic inference rates.
+2. Add a keyword/phrase layer to `multiIndexSearch` RRF, and make the cross-tradition diversity cap apply only
+   when scope says "none"/comparative. Re-run `score-types.mjs --multi` — target: exact_phrase ≥ 12/14.
+3. THEN point `/v1/search` at `multiIndexSearch`; re-run both batteries for before/after.
+4. Author extraction (Jev choice over the authors list) for author_scoped.
+5. Wire `recordTrace()` at both emission points; give `/search` the result cache `/search/quick` has.
+6. Entity gaps above are a disambiguation/merge job — Chad's call when.
 
 ## 9. Open, not mine to decide
 

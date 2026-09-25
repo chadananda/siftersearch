@@ -463,6 +463,18 @@ export async function analyzePassagesParallel(query, passages, options = {}) {
 }
 
 /**
+ * Analysis-timeout fallback: passages in retrieval order, shaped like analyzer output.
+ * Callers read excerpt/highlightedText — raw passages lack both, so results shipped with no text.
+ */
+export function unanalyzedResults(passages) {
+  const n = passages.length;
+  return passages.map((p, i) => {
+    const text = stripMeiliHighlights(p.text || '');
+    return { ...p, excerpt: text, highlightedText: text, score: n - i };
+  });
+}
+
+/**
  * Determine optimal passage count based on query complexity
  */
 export function getOptimalPassageCount(query, planType = 'simple') {

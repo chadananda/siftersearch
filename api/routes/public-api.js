@@ -29,7 +29,7 @@
 
 import { hybridSearch, keywordSearch, getStats, getMeili, INDEXES } from '../lib/search.js';
 import { executeSearch, executeLibraryOverview, executeFindDocumentForCitation, executeTool, SYSTEM_PROMPT, TOOLS } from './chat.js';
-import { analyzePassagesParallel } from '../lib/parallel-analyzer.js';
+import { analyzePassagesParallel, unanalyzedResults } from '../lib/parallel-analyzer.js';
 import { logger } from '../lib/logger.js';
 import { ApiError } from '../lib/errors.js';
 import { validateApiKey } from '../lib/api-keys.js';
@@ -529,7 +529,7 @@ export default async function publicApiRoutes(fastify) {
     const analysisTimeout = new Promise(resolve =>
       setTimeout(() => {
         analysisAc.abort();
-        resolve({ results: passages.map(p => ({ ...p, score: p.rerank_score || 0 })) });
+        resolve({ results: unanalyzedResults(passages) });
       }, 10000)
     );
     const analysis = await Promise.race([

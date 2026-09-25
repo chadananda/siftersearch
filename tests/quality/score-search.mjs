@@ -76,6 +76,29 @@ const TRANSIENT = new Set([429, 500, 502, 503, 504]);
 const RETRIES = 4;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// ── MATCH-QUALITY GATE (2026-09-24) ─────────────────────────────────────────────────────────────────────────
+// The ~500 upstream queries (github.com/dnotes/ocean-search-testing) were ORDERING tests with no per-query
+// right answer. convert-ocean-tests.mjs invented one by lifting a single word from Ocean's first result
+// snippet ("there", "Then", "which", "should"…), so 326 fixtures passed or failed on whether any of ten
+// passages happened to contain that word. The real intent — "did the obvious quote get found at all" — is
+// upstream's MATCH QUALITY: the query's own words occur in a top-K passage. Upstream's notes are almost all
+// normalisation failures (dashes, line breaks, apostrophes, possessives, transpositions), which this folds.
+const MATCH_STOP = new Set('a an and or of the to in on at for by with from is are be as that this his her its'.split(' '));
+const foldText = (s) => String(s || '').replace(/<[^>]+>/g, '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toLowerCase().replace(/[‘’ʼʻ`']/g, '').replace(/[-–—_/]/g, ' ')
+  .replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+const queryWords = (q) => foldText(String(q).replace(/\([^)]*\)/g, ' ')).split(' ').filter((w) => w && !MATCH_STOP.has(w));
+// Singular/plural and possessive tolerance ("Sutras"/"Sutra", "Lakshmi's") — upstream flagged both.
+// One inflectional suffix off, matched as a word PREFIX: observing↔observe/observance, ceremonies↔ceremony.
+const stem = (w) => { const r = w.replace(/(ations?|ances?|ings?|ies|ed|es|s|y)$/, ''); return r.length >= 4 ? r : w; };
+const hasWord = (text, w) => new RegExp(w.length <= 3 ? `(^| )${w}( |$)` : `(^| )${stem(w)}`).test(text);
+const allWordsIn = (text, words) => words.length > 0 && words.every((w) => hasWord(text, w));
+const TRADITION = { islamic: 'islam', islam: 'islam', jewish: 'judaism', judaism: 'judaism', taoist: 'tao', tao: 'tao',
+  christian: 'christian', christianity: 'christian', buddhist: 'buddhist', buddhism: 'buddhist', hindu: 'hindu',
+  baha: 'bahai', bahai: 'bahai', "baha'i": 'bahai', zoroastrian: 'zoroastrian', confucian: 'confucian',
+  jain: 'jain', jainism: 'jain', sikh: 'sikh' };
+const tradKey = (s) => TRADITION[foldText(s).replace(/ /g, '')] || foldText(s);
+
 async function runOne(fix) {
   let last;
   for (let attempt = 0; attempt <= RETRIES; attempt++) {
@@ -164,6 +187,11 @@ async function runOnce(fix) {
       docMatch = true;
     }
 
+    if (docMatch && fix.expected_match) {
+      // Gate on the query's own words being present in this passage; otherwise keep scanning.
+      if (!allWordsIn(foldText(h.text || ''), queryWords(fix.query))) continue;
+    }
+
     if (docMatch) {
       const thisText = normalize(h.text || '');
       const thisTextHit = hasTextGate
@@ -191,6 +219,33 @@ async function runOnce(fix) {
     if (topAuthor.includes(normalize(fix.expected_author_not_contains))) antiHit = false;
   }
 
+  // Soft signals — reported, never gating. phrase_rank: first hit with the CONTIGUOUS phrase (better than
+  // scattered words). tradition_hit: top hit is from the tradition the upstream query was written for.
+  // regression_hit: our own past top result is still in the top K (a snapshot, not a truth).
+  let phraseRank = null, traditionHit = null, regressionHit = null;
+  if (fix.expected_match) {
+    const phrase = queryWords(fix.query).join(' ');
+    const pi = hits.findIndex((h) => foldText(h.text || '').includes(phrase));
+    phraseRank = pi >= 0 ? pi + 1 : null;
+  }
+  if (fix.tradition && hits.length) traditionHit = tradKey(hits[0].religion || '') === tradKey(fix.tradition);
+  if (typeof fix.regression_doc_id === 'number') {
+    regressionHit = hits.some((h) => (h.documentId ?? h.document_id ?? h.doc_id) === fix.regression_doc_id);
+  }
+
+  // Diagnostic for match-gated misses: the hit covering the most query words, and what it lacked.
+  // Separates "search found the idea but the translation words it differently" from "search missed".
+  let bestCoverage = null, missingWords = null;
+  if (fix.expected_match && rank < 0 && hits.length) {
+    const words = queryWords(fix.query);
+    for (const h of hits) {
+      const t = foldText(h.text || '');
+      const miss = words.filter((w) => !hasWord(t, w));
+      const cov = words.length ? (words.length - miss.length) / words.length : 0;
+      if (bestCoverage === null || cov > bestCoverage) { bestCoverage = +cov.toFixed(2); missingWords = miss; }
+    }
+  }
+
   const found = rank > 0;
   const recipRank = found ? 1 / rank : 0;
   // text_hit is tracked as paragraph-precision signal but does NOT block passing
@@ -203,6 +258,11 @@ async function runOnce(fix) {
     ok,
     rank: found ? rank : null,
     recip_rank: recipRank,
+    phrase_rank: phraseRank,
+    tradition_hit: traditionHit,
+    regression_hit: regressionHit,
+    best_coverage: bestCoverage,
+    missing_words: missingWords,
     text_hit: textHit,
     anti_hit: antiHit,
     authority_hit: authorityHit,
@@ -341,8 +401,20 @@ if (!valid && !JSON_ONLY) {
     `— and do not deploy during a battery run.\n`);
 }
 
+// Soft signals, as rates over the fixtures that carry them. Never part of pass_rate.
+const rateOf = (key) => {
+  const xs = results.filter((r) => r[key] !== null && r[key] !== undefined && !r.errorType);
+  return xs.length ? { rate: Math.round((1000 * xs.filter((r) => r[key]).length) / xs.length) / 1000, n: xs.length } : null;
+};
+const soft = {
+  phrase_found: rateOf('phrase_rank'),        // contiguous phrase in top K
+  tradition_top1: rateOf('tradition_hit'),     // top hit from the tradition the query was written for
+  regression_kept: rateOf('regression_hit'),   // our own past top doc still in top K (snapshot drift)
+};
+
 const report = {
   run_at: new Date().toISOString(),
+  soft_signals: soft,
   valid,
   measured,
   errored: errored.length,
