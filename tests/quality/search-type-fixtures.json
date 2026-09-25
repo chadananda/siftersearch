@@ -86,6 +86,13 @@
 
     { "id": "mis-helps-themselves", "type": "misattribution", "persona": "research", "endpoint": "search", "query": "Jesus said God helps those who help themselves", "expect": { "no_hit": { "religion": "christian", "text": "helps? those who help themselves" } }, "truth": "not in the Bible (Algernon Sidney / Franklin); scripture must not appear to confirm it" },
 
+    { "id": "sr-essence-justice", "type": "source_resolution", "persona": "research", "endpoint": "search", "query": "What does Bahá’u’lláh say about the essence of justice being embodied in the ordinances?", "expect": { "origin": { "text": "essence of justice and the source thereof", "author": "bahaullah" } }, "truth": "Gleanings LXXXVIII; also quoted in a pilgrim-notes book, biographies and compilations" },
+    { "id": "sr-light-of-men", "type": "source_resolution", "persona": "research", "endpoint": "search", "query": "Bahá’u’lláh calling justice the light of men", "expect": { "origin": { "text": "light of men", "author": "bahaullah" } }, "truth": "Bahá'u'lláh's Tablets; quoted in God Passes By" },
+    { "id": "sr-one-country", "type": "source_resolution", "persona": "research", "endpoint": "search", "query": "the earth is but one country and mankind its citizens", "expect": { "origin": { "text": "one country", "author": "bahaullah" } }, "truth": "Gleanings CXVII; quoted in countless secondary works" },
+    { "id": "sr-best-beloved", "type": "source_resolution", "persona": "research", "endpoint": "search", "query": "the best beloved of all things in My sight is Justice", "expect": { "origin": { "text": "best beloved of all things", "author": "bahaullah" } }, "truth": "Hidden Words, Arabic 2" },
+    { "id": "sr-two-wings", "type": "source_resolution", "persona": "research", "endpoint": "search", "query": "religion and science are the two wings upon which man's intelligence can soar", "expect": { "origin": { "text": "two wings", "author": "abdul baha" } }, "truth": "'Abdu'l-Bahá, Paris Talks 44" },
+    { "id": "sr-harmony", "type": "source_resolution", "persona": "research", "endpoint": "search", "query": "harmony of science and religion", "expect": { "origin": { "text": "harmony of science and religion", "author": "abdul baha" } }, "truth": "'Abdu'l-Bahá, Promulgation of Universal Peace" },
+
     { "id": "lm-religions", "type": "library_meta", "persona": "chat", "endpoint": "religions", "query": "which religions are in the library?", "expect": { "min_count": 12 }, "truth": "corpus-status: 12 traditions" }
   ]
 }

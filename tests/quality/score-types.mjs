@@ -59,7 +59,10 @@ async function search(query) {
     : await call('/api/v1/search', { method: 'POST', body: { query, limit: TOP_K, ...(NO_PLAN ? { plan: false } : {}), ...(RAW ? { analyze: false } : {}) } });
   const hits = (data.results || data.hits || data.passages || []).slice(0, TOP_K);
   const plan = data._plan ? { shape: data._plan.shape ?? null, fallback: data._plan.fallback ?? null, error: data._plan.error ?? null } : null;
-  return { ms, plan, items: hits.map((h) => ({ title: fold(h.title), author: fold(h.author), text: fold(h.text), religion: trad(h.religion) })) };
+  const items = hits.map((h) => ({ title: fold(h.title), author: fold(h.author), text: fold(h.text), religion: trad(h.religion),
+    url: h.url || h.source_url || null, rawAuthor: h.author || '', source: h.source || h._source || null }));
+  CONTRACT.observe(items);
+  return { ms, plan, items };
 }
 
 const lookupCache = new Map();
@@ -70,6 +73,25 @@ async function lookup(q) {
   }
   return lookupCache.get(q);
 }
+
+// RAW DATA CONTRACT (Chad: test the raw search, not the chat formatting — "the chat layer only has the information
+// it was given"). Every returned passage should carry what an answer needs to cite it correctly.
+const UPLOADER = /^[a-z0-9._-]+$/;   // author fields like "bayat", "michot", "pdf-h-holley" — an uploader, not an author
+const CONTRACT = {
+  results: 0, no_text: 0, no_author: 0, uploader_author: 0, no_url: 0, book_root_url: 0, quoted_no_source: 0, examples: {},
+  note(k, it) { this[k]++; (this.examples[k] ||= []).length < 4 && this.examples[k].push(`${it.title.slice(0, 40)} [${it.rawAuthor.slice(0, 20)}] ${it.url || ''}`.trim()); },
+  observe(items) {
+    for (const it of items) {
+      this.results++;
+      if (!it.text) this.note('no_text', it);
+      if (!it.rawAuthor.trim()) this.note('no_author', it);
+      else if (UPLOADER.test(it.rawAuthor.trim())) this.note('uploader_author', it);
+      if (!it.url) this.note('no_url', it);
+      else if (!/paraId=|#p\d+|[?&]p=\d+/.test(it.url)) this.note('book_root_url', it);
+      if (/"[^"]{25,}"|\u201c[^\u201d]{25,}\u201d/.test(it.text) && !it.source) this.note('quoted_no_source', it);
+    }
+  },
+};
 
 // Each checker returns { ok, why } — why names what was missing, so a fail reads without re-running.
 const matchHit = (h, want) => Object.entries(want).every(([k, p]) => re(p).test(h[k] || ''));
@@ -94,6 +116,12 @@ const CHECKS = {
     const have = new Set(items.map((h) => h.religion));
     const miss = list.filter((r) => !have.has(r));
     return miss.length ? { ok: false, why: `missing traditions: ${miss.join(', ')} (had ${[...have].join(', ')})` } : { ok: true };
+  },
+  // The FIRST passage containing the words must come from the original work — not a book that quotes it.
+  origin: (items, { text, ...want }) => {
+    const i = items.findIndex((h) => re(text).test(h.text));
+    if (i < 0) return { ok: false, why: `no passage contains ${text}` };
+    return matchHit(items[i], want) ? { ok: true, rank: i + 1 } : { ok: false, why: `words first found in "${items[i].title}" [${items[i].author}]` };
   },
   religions_min: (items, n) => {
     const have = new Set(items.map((h) => h.religion));
@@ -185,6 +213,7 @@ const report = {
   // A known gap that passes is news (something got fixed); an unmarked fixture that fails is a regression or a new finding.
   // A planned search that fell back (Jev/engine error) measures the LEGACY path — count it, never blend it silently.
   plan_fallbacks: results.filter((r) => r.plan?.fallback || r.plan?.error).map((r) => `${r.id}: ${r.plan.fallback || ''} ${r.plan.error || ''}`.trim()),
+  contract: (({ note, observe, examples, ...c }) => ({ ...c, examples }))(CONTRACT),
   known_gaps_now_passing: measured.filter((r) => r.known_gap && r.ok).map((r) => r.id),
   unexpected_failures: measured.filter((r) => !r.known_gap && !r.ok).map((r) => r.id),
   by_type: group('type'), by_persona: group('persona'),
@@ -210,4 +239,9 @@ console.log('');
 for (const [p, g] of Object.entries(report.by_persona)) console.log(`  persona ${p.padEnd(9)} ${g.passed}/${g.measured} (${g.pass_rate}%)`);
 console.log('\nFailures:');
 for (const r of results.filter((x) => !x.ok)) console.log(`  ${r.known_gap ? '○ known' : '✗ NEW  '} ${r.id.padEnd(34)} ${r.error ? `ERROR ${r.error}` : r.why}`);
+{
+  const c = report.contract;
+  console.log(`\nRaw data contract over ${c.results} returned passages: no text ${c.no_text} · no author ${c.no_author} · uploader-as-author ${c.uploader_author} · no reference ${c.no_url} · book-root reference ${c.book_root_url} · quote without source metadata ${c.quoted_no_source}`);
+  for (const [k, ex] of Object.entries(c.examples)) console.log(`   ${k}: ${ex.join(' | ')}`);
+}
 if (report.known_gaps_now_passing.length) console.log(`\n★ known gaps now PASSING: ${report.known_gaps_now_passing.join(', ')}`);

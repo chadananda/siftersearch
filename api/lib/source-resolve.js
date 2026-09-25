@@ -79,7 +79,7 @@ async function defaultPhraseSearch(span, { religion } = {}) {
  */
 export async function resolveSources(hits, { classify = jevClassify, phraseSearch = defaultPhraseSearch, maxCandidates = 8 } = {}) {
   const idx = hits.map((h, i) => (needsResolution(h) ? i : -1)).filter((i) => i >= 0).slice(0, maxCandidates);
-  if (!idx.length) return { hits, resolved: 0 };
+  if (!idx.length) return { hits: collapseCopies(hits), resolved: 0 };
   let verdicts;
   try { verdicts = await classify(idx.map((i) => hits[i])); }
   catch (err) { return { hits, resolved: 0, error: err.message }; }
@@ -116,5 +116,27 @@ export async function resolveSources(hits, { classify = jevClassify, phraseSearc
   }));
   // A resolved original may already be in the list — keep the first occurrence only.
   const seen = new Set();
-  return { hits: out.filter((h) => (seen.has(h.id) ? false : seen.add(h.id))), resolved };
+  return { hits: collapseCopies(out.filter((h) => (seen.has(h.id) ? false : seen.add(h.id)))), resolved };
+}
+
+/**
+ * Same words, several documents (canonical, compilation, uploader copies): keep the best copy in the FIRST copy's
+ * position and list the rest as `_source.also_in`. "Same" = one folded text contains the other's opening 160 chars.
+ */
+export function collapseCopies(hits) {
+  const key = (h) => foldText(h.text).slice(0, 160);
+  const groups = [];
+  for (const h of hits) {
+    const k = key(h), f = foldText(h.text);
+    const g = k.length >= 60 && groups.find((x) => x.full.includes(k) || f.includes(x.key));
+    if (g) g.members.push(h); else groups.push({ key: k, full: f, members: [h] });
+  }
+  return groups.map(({ members }) => {
+    if (members.length === 1) return members[0];
+    const speaker = members.find((m) => m._source?.speaker && SPEAKERS[m._source.speaker])?._source.speaker
+      || Object.keys(SPEAKERS).find((s) => members.some((m) => isSpeaker(m.author, s)));
+    const best = pickOriginal(members, speaker);
+    const also_in = members.filter((m) => m !== best).map((m) => ({ doc_id: m.doc_id, paragraph_index: m.paragraph_index, title: m.title, author: m.author }));
+    return { ...best, _source: { ...(best._source || {}), also_in } };
+  });
 }

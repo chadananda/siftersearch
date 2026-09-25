@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T13:30:41.647Z",
+  "generated": "2026-09-25T13:35:00.575Z",
   "entries": [
+    {
+      "hash": "bc3035b1",
+      "date": "2026-09-25",
+      "type": "New",
+      "description": "Raw search resolves quoted words to their ORIGINAL source (Jev judges, authority chooses)",
+      "scope": "search"
+    },
     {
       "hash": "0451dd77",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Wire deepseek-v4-flash→deepseek-chat mapping + switch service tiers off OpenAI",
       "scope": null
-    },
-    {
-      "hash": "60d248cc",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Fix vividness regex (prefix), prefer proof that names target, drop enumerating lead",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "bc3035b1",
+        "date": "2026-09-25",
+        "type": "New",
+        "description": "Raw search resolves quoted words to their ORIGINAL source (Jev judges, authority chooses)",
+        "scope": "search"
+      },
       {
         "hash": "0451dd77",
         "date": "2026-09-25",
@@ -7083,13 +7090,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Wire deepseek-v4-flash→deepseek-chat mapping + switch service tiers off OpenAI",
-        "scope": null
-      },
-      {
-        "hash": "60d248cc",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Fix vividness regex (prefix), prefer proof that names target, drop enumerating lead",
         "scope": null
       }
     ]

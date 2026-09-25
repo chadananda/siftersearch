@@ -87,3 +87,22 @@ describe('resolveSources', () => {
     expect(r.error).toMatch(/jev down/);
   });
 });
+
+// Live: canonical Gleanings at #2 and uploader copies of the SAME paragraph ("michot", "bayat") at #6–8.
+import { collapseCopies } from '../../api/lib/source-resolve.js';
+describe('collapseCopies', () => {
+  it('keeps the best copy of the same text and lists the others as also_in', () => {
+    const out = collapseCopies([BAYAT, GLEANINGS, ORIGINAL, SACRED]);
+    expect(out.map((h) => h.doc_id)).toEqual([8312, 11465]);
+    expect(out[0]._source.also_in.map((x) => x.doc_id).sort()).toEqual([20777, 919098]);
+  });
+
+  it('treats a paragraph contained in a longer copy as the same text', () => {
+    const longer = { ...SACRED, text: `Heading. ${GLEANINGS.text} More words after.` };
+    expect(collapseCopies([GLEANINGS, longer])).toHaveLength(1);
+  });
+
+  it('leaves different passages alone', () => {
+    expect(collapseCopies([GLEANINGS, ORIGINAL])).toHaveLength(2);
+  });
+});
