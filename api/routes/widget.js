@@ -8,6 +8,7 @@
 // so it ships via the backend deploy path (the Astro build is unavailable here). The HOUSE profile (is_house=1,
 // siftersearch.com) is the internal lab and cannot be deleted.
 import { readFileSync } from 'fs';
+import { createHash } from 'crypto';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { nanoid } from 'nanoid';
@@ -18,7 +19,15 @@ import { logger } from '../lib/logger.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = join(__dirname, '..', 'static', 'widget');
 const loadAsset = (file) => { try { return readFileSync(join(STATIC_DIR, file), 'utf8'); } catch { return null; } };
-const ASSETS = { 'widget.js': loadAsset('widget.js'), 'sifter-chat.js': loadAsset('sifter-chat.js') };
+// The bundle URL in the loader carries the bundle's content hash, so a deploy is visible at once on every host site
+// (it was unversioned with a 5-minute cache: the home page kept running an old Anis). Hashed URL → immutable cache.
+export const bundleHash = (body) => createHash('md5').update(String(body || '')).digest('hex').slice(0, 10);
+export const versionedLoader = (loader, hash) =>
+  String(loader).replace("bundle.src = api + '/widget/sifter-chat.js';", `bundle.src = api + '/widget/sifter-chat.js?v=${hash}';`);
+const BUNDLE = loadAsset('sifter-chat.js');
+const BUNDLE_HASH = bundleHash(BUNDLE);
+const LOADER = loadAsset('widget.js');
+const ASSETS = { 'widget.js': LOADER ? versionedLoader(LOADER, BUNDLE_HASH) : null, 'sifter-chat.js': BUNDLE };
 const DEMO_HTML = loadAsset('demo.html');
 const ADMIN_HTML = loadAsset('admin.html');
 
@@ -49,8 +58,10 @@ export default async function widgetRoutes(fastify) {
     const path = file === 'widget.js' ? '/widget.js' : '/widget/sifter-chat.js';
     fastify.get(path, async (req, reply) => {
       if (!body) return reply.code(404).send('// widget asset not built — run: npm run build:widget');
+      // A request for exactly this build (?v=<hash>) is immutable; the loader and unversioned requests stay short.
+      const pinned = file === 'sifter-chat.js' && req.query?.v === BUNDLE_HASH;
       return reply.header('content-type', 'application/javascript; charset=utf-8')
-        .header('cache-control', 'public, max-age=300, s-maxage=300')
+        .header('cache-control', pinned ? 'public, max-age=31536000, immutable' : 'public, max-age=300, s-maxage=300')
         .header('access-control-allow-origin', '*').send(body);
     });
   }
