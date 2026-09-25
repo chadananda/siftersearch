@@ -30,6 +30,7 @@
 import { hybridSearch, keywordSearch, getStats, getMeili, INDEXES } from '../lib/search.js';
 import { executeSearch, executeLibraryOverview, executeFindDocumentForCitation, executeTool, SYSTEM_PROMPT, TOOLS } from './chat.js';
 import { analyzePassagesParallel, unanalyzedResults } from '../lib/parallel-analyzer.js';
+import { keywordTradition } from '../lib/search-plan.js';
 import { logger } from '../lib/logger.js';
 import { ApiError } from '../lib/errors.js';
 import { validateApiKey } from '../lib/api-keys.js';
@@ -371,32 +372,8 @@ export default async function publicApiRoutes(fastify) {
     // Detect tradition indicator early — used for both supplementary search and result sorting.
     // Expanded to include book-name indicators (bhagavad, gita, leviticus, tao, etc.) not
     // just tradition-name adjectives.
-    const TRADITION_KEYWORDS = {
-      "baha'i": "Baha'i", "bahai": "Baha'i",
-      "buddhist": "Buddhist", "buddhism": "Buddhist", "buddha": "Buddhist",
-      "christian": "Christian", "bible": "Christian", "gospel": "Christian",
-      "islam": "Islam", "islamic": "Islam", "quran": "Islam", "qur'an": "Islam", "koran": "Islam",
-      "hadith": "Islam", "sunnah": "Islam",
-      "jewish": "Judaism", "judaism": "Judaism", "torah": "Judaism", "hebrew": "Judaism",
-      "leviticus": "Judaism", "exodus": "Judaism", "deuteronomy": "Judaism",
-      "psalms": "Judaism", "proverbs": "Judaism",
-      "hindu": "Hindu", "hinduism": "Hindu", "vedic": "Hindu",
-      "bhagavad": "Hindu", "gita": "Hindu", "upanishad": "Hindu",
-      "sikh": "Sikh", "sikhism": "Sikh", "granth": "Sikh",
-      "zoroastrian": "Zoroastrian", "avesta": "Zoroastrian",
-      "taoist": "Tao", "taoism": "Tao", "tao": "Tao",
-      "confucian": "Confucian", "confucius": "Confucian", "analects": "Confucian",
-      "jain": "Jain", "jainism": "Jain",
-    };
-    const lowerQuery = query.toLowerCase();
     // Planned searches get scope from the Jev plan (conversation-aware, comparatives never narrowed) instead.
-    const detectedTradition = usePlan ? null : Object.entries(TRADITION_KEYWORDS).find(([kw]) => {
-      const idx = lowerQuery.indexOf(kw);
-      if (idx < 0) return false;
-      const before = idx === 0 ? ' ' : lowerQuery[idx - 1];
-      const after = idx + kw.length >= lowerQuery.length ? ' ' : lowerQuery[idx + kw.length];
-      return !/[a-z]/.test(before) && !/[a-z]/.test(after);
-    })?.[1];
+    const detectedTradition = usePlan ? null : keywordTradition(query);
 
     // Run main search + optional supplementary tradition search in parallel.
     // The supplementary search guarantees hits from the detected tradition enter the LLM

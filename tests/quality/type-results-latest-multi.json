@@ -1,13 +1,13 @@
 {
-  "run_at": "2026-09-25T00:56:20.033Z",
-  "endpoint": "multi",
+  "run_at": "2026-09-25T01:51:55.077Z",
+  "endpoint": "multi-raw",
   "top_k": 10,
   "valid": true,
   "total": 76,
   "measured": 76,
   "errored": 0,
-  "passed": 37,
-  "pass_rate": 49,
+  "passed": 38,
+  "pass_rate": 50,
   "known_gaps_now_passing": [],
   "unexpected_failures": [
     "xp-one-country",
@@ -31,13 +31,12 @@
     "sc-jewish-repentance",
     "sc-hindu-karma",
     "sc-taoist-wu-wei",
+    "cmp-islam-judaism-fasting",
     "au-abdul-baha-equality",
     "au-shoghi-admin-order",
     "au-bab-him-whom-god",
     "hx-bab-martyrdom-year",
     "hx-ridvan-year",
-    "hx-bahaullah-passing",
-    "hx-abdul-baha-america",
     "df-nirvana",
     "df-zakat"
   ],
@@ -47,84 +46,84 @@
       "measured": 14,
       "errored": 0,
       "pass_rate": 29,
-      "p50_ms": 3016
+      "p50_ms": 2968
     },
     "lay_paraphrase": {
       "passed": 3,
       "measured": 7,
       "errored": 0,
       "pass_rate": 43,
-      "p50_ms": 2982
+      "p50_ms": 5448
     },
     "find_work": {
       "passed": 11,
       "measured": 12,
       "errored": 0,
       "pass_rate": 92,
-      "p50_ms": 250
+      "p50_ms": 182
     },
     "misattribution": {
       "passed": 3,
       "measured": 3,
       "errored": 0,
       "pass_rate": 100,
-      "p50_ms": 368
+      "p50_ms": 234
     },
     "find_person": {
       "passed": 7,
       "measured": 14,
       "errored": 0,
       "pass_rate": 50,
-      "p50_ms": 198
+      "p50_ms": 144
     },
     "enumerate": {
       "passed": 0,
       "measured": 2,
       "errored": 0,
       "pass_rate": 0,
-      "p50_ms": 5508
+      "p50_ms": 6282
     },
     "scoped_topic": {
       "passed": 0,
       "measured": 6,
       "errored": 0,
       "pass_rate": 0,
-      "p50_ms": 3291
+      "p50_ms": 7657
     },
     "compare": {
-      "passed": 3,
+      "passed": 2,
       "measured": 3,
       "errored": 0,
-      "pass_rate": 100,
-      "p50_ms": 3333
+      "pass_rate": 67,
+      "p50_ms": 13123
     },
     "author_scoped": {
       "passed": 0,
       "measured": 3,
       "errored": 0,
       "pass_rate": 0,
-      "p50_ms": 6154
+      "p50_ms": 6345
     },
     "history_fact": {
-      "passed": 2,
+      "passed": 4,
       "measured": 6,
       "errored": 0,
-      "pass_rate": 33,
-      "p50_ms": 6547
+      "pass_rate": 67,
+      "p50_ms": 12018
     },
     "define_term": {
       "passed": 3,
       "measured": 5,
       "errored": 0,
       "pass_rate": 60,
-      "p50_ms": 3798
+      "p50_ms": 4402
     },
     "library_meta": {
       "passed": 1,
       "measured": 1,
       "errored": 0,
       "pass_rate": 100,
-      "p50_ms": 128
+      "p50_ms": 151
     }
   },
   "by_persona": {
@@ -133,25 +132,25 @@
       "measured": 36,
       "errored": 0,
       "pass_rate": 50,
-      "p50_ms": 2760
+      "p50_ms": 2697
     },
     "chat": {
       "passed": 11,
       "measured": 18,
       "errored": 0,
       "pass_rate": 61,
-      "p50_ms": 2982
+      "p50_ms": 4281
     },
     "research": {
-      "passed": 8,
+      "passed": 9,
       "measured": 22,
       "errored": 0,
-      "pass_rate": 36,
-      "p50_ms": 4000
+      "pass_rate": 41,
+      "p50_ms": 6282
     }
   },
-  "latency_p50_ms": 2918,
-  "latency_p95_ms": 6930,
+  "latency_p50_ms": 2906,
+  "latency_p95_ms": 13123,
   "results": [
     {
       "id": "xp-one-country",
@@ -159,7 +158,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 4457,
+      "ms": 3941,
       "rank": null,
       "why": "no top-10 hit with {\"title\":\"gleanings|epistle to the son of the wolf|tablets of baha|proclamation\",\"text\":\"one country\"}",
       "top": "the world order of bahaullah [bahai]"
@@ -170,7 +169,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 3978,
+      "ms": 3540,
       "rank": null,
       "why": "no top-10 hit with {\"title\":\"hidden words\",\"text\":\"pure kindly and radiant heart\"}",
       "top": "pilgrimage to akka and haifa in october 1914 [bahai]"
@@ -181,7 +180,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 2709,
+      "ms": 2697,
       "rank": null,
       "why": "no top-10 hit with {\"title\":\"gleanings|epistle to the son of the wolf|tablets of baha\",\"text\":\"generous in prosperity\"}",
       "top": "the chosen highway [bahai]"
@@ -192,7 +191,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 3016,
+      "ms": 3363,
       "rank": null,
       "why": "no top-10 hit with {\"title\":\"hidden words\",\"text\":\"best beloved of all things\"}",
       "top": "the advent of divine justice [bahai]"
@@ -203,7 +202,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 2918,
+      "ms": 2906,
       "rank": null,
       "why": "no top-10 hit with {\"title\":\"gleanings|epistle to the son of the wolf|tablets of baha\",\"text\":\"fruits of one tree\"}",
       "top": "the kitab i iqan [bahai]"
@@ -214,7 +213,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 2347,
+      "ms": 2968,
       "rank": null,
       "why": "no top-10 hit with {\"title\":\"hidden words\",\"text\":\"noble have i created thee\"}",
       "top": "bahaullah a brief life and the word made flesh [bahai]"
@@ -225,7 +224,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 3108,
+      "ms": 2645,
       "rank": null,
       "why": "no top-10 hit with {\"title\":\"paris talks\",\"text\":\"two wings\"}",
       "top": "the bahai movement [bahai]"
@@ -236,7 +235,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 2777,
+      "ms": 2589,
       "rank": null,
       "why": "no top-10 hit with {\"title\":\"paris talks\",\"text\":\"thought of war\"}",
       "top": "abdul bahas second visit to britain [bahai]"
@@ -247,7 +246,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 3622,
+      "ms": 3464,
       "rank": null,
       "why": "no top-10 hit with {\"author\":\"abdul baha\",\"text\":\"harmony of science and religion\"}",
       "top": "some answered questions [bahai]"
@@ -258,7 +257,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 3139,
+      "ms": 3196,
       "rank": null,
       "why": "no top-10 hit with {\"title\":\"gleanings|tablets of baha|epistle to the son of the wolf\",\"text\":\"world embracing\"}",
       "top": "harriet wise the master in july [bahai]"
@@ -269,7 +268,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 2545,
+      "ms": 2159,
       "rank": 2,
       "why": null,
       "top": "s pilgrimage reflections shared in madrid [bahai]"
@@ -280,7 +279,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 3435,
+      "ms": 3050,
       "rank": 5,
       "why": null,
       "top": "some answered questions [bahai]"
@@ -291,7 +290,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 2272,
+      "ms": 2350,
       "rank": 2,
       "why": null,
       "top": "the kitab i iqan [bahai]"
@@ -302,7 +301,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 2760,
+      "ms": 2812,
       "rank": 2,
       "why": null,
       "top": "the secret of divine civilization [bahai]"
@@ -313,7 +312,7 @@
       "persona": "chat",
       "ok": false,
       "known_gap": false,
-      "ms": 3118,
+      "ms": 5451,
       "rank": null,
       "why": "no top-10 hit with {\"author\":\"abdul baha\",\"text\":\"wings\"}",
       "top": "the bahai movement [bahai]"
@@ -324,7 +323,7 @@
       "persona": "chat",
       "ok": false,
       "known_gap": false,
-      "ms": 5104,
+      "ms": 5448,
       "rank": null,
       "why": "no top-10 hit with {\"author\":\"bahaullah\",\"text\":\"one country\"}",
       "top": "the promised day is come [bahai]"
@@ -335,7 +334,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 2804,
+      "ms": 5743,
       "rank": 3,
       "why": null,
       "top": "abdul baha in dublin new hampshire [bahai]"
@@ -346,7 +345,7 @@
       "persona": "chat",
       "ok": false,
       "known_gap": false,
-      "ms": 2982,
+      "ms": 5987,
       "rank": null,
       "why": "no top-10 hit with {\"title\":\"matthew|luke\",\"text\":\"love your enemies\"}",
       "top": "the secret of divine civilization [bahai]"
@@ -357,7 +356,7 @@
       "persona": "chat",
       "ok": false,
       "known_gap": false,
-      "ms": 21199,
+      "ms": 5063,
       "rank": null,
       "why": "no top-10 hit with {\"title\":\"paris talks\",\"text\":\"thought of peace\"}",
       "top": "abdul baha in paris [bahai]"
@@ -368,7 +367,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 2756,
+      "ms": 2563,
       "rank": 10,
       "why": null,
       "top": "abdul baha in egypt [bahai]"
@@ -379,7 +378,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 2963,
+      "ms": 2729,
       "rank": 2,
       "why": null,
       "top": "the dawn breakers [bahai]"
@@ -390,7 +389,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 614,
+      "ms": 218,
       "rank": 1,
       "why": null,
       "top": "hidden words [bahaullah]"
@@ -401,7 +400,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 364,
+      "ms": 192,
       "rank": 1,
       "why": null,
       "top": "the kitab i iqan [bahaullah]"
@@ -412,7 +411,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 461,
+      "ms": 182,
       "rank": 1,
       "why": null,
       "top": "the book of certitude kitab i iqan [bahaullah]"
@@ -423,7 +422,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 248,
+      "ms": 181,
       "rank": 1,
       "why": null,
       "top": "the most holy book kitab i aqdas [bahaullah]"
@@ -434,7 +433,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 250,
+      "ms": 170,
       "rank": null,
       "why": "top 3: the dawnbreakers nab ls narrative of the early days of the bah revelation [books dawnbreakers] | the dawnbreakers chapter i footnotes [books dawnbreakers footnotes 1 i 1 2] | the dawnbreakers chapter i footnotes [books dawnbreakers footnotes 1 i 12 3]",
       "top": "the dawnbreakers nab ls narrative of the early days of the bah revelation [books dawnbreakers]"
@@ -445,7 +444,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 198,
+      "ms": 186,
       "rank": 1,
       "why": null,
       "top": "some answered questions [abdul baha]"
@@ -456,7 +455,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 190,
+      "ms": 170,
       "rank": 1,
       "why": null,
       "top": "paris talks [abdul baha]"
@@ -467,7 +466,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 229,
+      "ms": 243,
       "rank": 1,
       "why": null,
       "top": "god passes by [shoghi effendi]"
@@ -478,7 +477,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 228,
+      "ms": 223,
       "rank": 1,
       "why": null,
       "top": "the seven valleys and the four valleys [bahaullah]"
@@ -489,7 +488,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 333,
+      "ms": 181,
       "rank": 1,
       "why": null,
       "top": "tao te ching [lao tzu]"
@@ -500,7 +499,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 229,
+      "ms": 171,
       "rank": 1,
       "why": null,
       "top": "the dhammapada [siddhartha buddha]"
@@ -511,7 +510,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 366,
+      "ms": 173,
       "rank": 1,
       "why": null,
       "top": "bhagavad gita in the bhagavad gita song celestial tr edwin arnold paragraphs 12 undefined [tr edwin arnold]"
@@ -522,7 +521,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 368,
+      "ms": 183,
       "rank": 1,
       "why": null,
       "top": "the hidden words of bahaullah [bahaullah]"
@@ -533,7 +532,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 260,
+      "ms": 234,
       "rank": 1,
       "why": null,
       "top": "paris talks [abdul baha]"
@@ -544,7 +543,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 302,
+      "ms": 163,
       "rank": 1,
       "why": null,
       "top": "Quddús (person)"
@@ -555,7 +554,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 176,
+      "ms": 131,
       "rank": 1,
       "why": null,
       "top": "Mullá Ḥusayn (person)"
@@ -566,7 +565,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 198,
+      "ms": 175,
       "rank": 1,
       "why": null,
       "top": "Mullá Ḥusayn (person)"
@@ -577,7 +576,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 331,
+      "ms": 250,
       "rank": null,
       "why": "wanted Mullá Ḥusayn (1247564); top 3: the Bábu’d-Dín (1248028) | Janab-i-Babu'l-Báb (1264031) | the Báb (1247551)",
       "top": "the Bábu’d-Dín (work)"
@@ -588,7 +587,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 122,
+      "ms": 116,
       "rank": 1,
       "why": null,
       "top": "Ṭáhirih (person)"
@@ -599,7 +598,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 141,
+      "ms": 108,
       "rank": null,
       "why": "wanted Ṭáhirih (1247554); top 3: Qurrat al-‘Ayn: Shā‘ir-i Azādīkhāh va Millī-yi Īrān (1280284) | Chahar Maqālih dar bārih-yi Ṭāhirih Qurrat al-’Ayn (1280337) | Qurrat al-’Ayn (1280339)",
       "top": "Qurrat al-‘Ayn: Shā‘ir-i Azādīkhāh va Millī-yi Īrān (work)"
@@ -610,7 +609,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 142,
+      "ms": 144,
       "rank": null,
       "why": "wanted Ṭáhirih (1247554); top 3: Zerin Taj (1267850) | Zarin-Taj (1280319) | the Taj Mahal (Agra) (1248767)",
       "top": "Zerin Taj (person)"
@@ -621,7 +620,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 191,
+      "ms": 362,
       "rank": 1,
       "why": null,
       "top": "the Báb (person)"
@@ -632,7 +631,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 176,
+      "ms": 366,
       "rank": null,
       "why": "wanted the Báb (1247551); top 3: Siyyid `Alí-Muhammad of Shíráz (1262755) | Mírzá Muḥammad-‘Alí Khán-i-Shírází (1263155) | Shírází, Mírzá Muḥammad Taqí ibn Muhibb ‘Alí Shírází Ha'iri (1273902)",
       "top": "Siyyid `Alí-Muhammad of Shíráz (person)"
@@ -643,7 +642,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 180,
+      "ms": 127,
       "rank": null,
       "why": "wanted Bahá'u'lláh (1247562); top 3: Núr-‘Alí the hunter (1249988) | Núr ‘Alí Sháh (1272431) | Áqá Ḥusayn-‘Alíy-i-Nur (1276727)",
       "top": "Núr-‘Alí the hunter (person)"
@@ -654,7 +653,7 @@
       "persona": "chat",
       "ok": false,
       "known_gap": true,
-      "ms": 276,
+      "ms": 129,
       "rank": null,
       "why": "wanted ‘Abdu’l-Bahá (1247563); top 1: Abdul Baha's word (1251675)",
       "top": "Abdul Baha's word (concept)"
@@ -665,7 +664,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 406,
+      "ms": 117,
       "rank": null,
       "why": "wanted ‘Abdu’l-Bahá (1247563); top 3: Life and Teachings of ‘Abbás Effendi (1250045) | Life of Abbas Effendi (1251707) | ‘Abbás Effendi ’Abdu’l-Bahá (1252042)",
       "top": "Life and Teachings of ‘Abbás Effendi (work)"
@@ -676,7 +675,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 385,
+      "ms": 130,
       "rank": 1,
       "why": null,
       "top": "Vaḥíd (person)"
@@ -687,7 +686,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 5563,
+      "ms": 6581,
       "rank": 1,
       "why": null,
       "top": "Nabíl-i-A'ẓam (person)"
@@ -698,7 +697,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 5508,
+      "ms": 6282,
       "rank": null,
       "why": "must not list: the bab",
       "top": "Badasht Conference: 8 participated-in"
@@ -709,7 +708,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": true,
-      "ms": 158,
+      "ms": 1304,
       "rank": null,
       "why": "missing: bajistani, rawdih; 16 members, expected 18",
       "top": "the Letters of the Living (Ḥurúf-i-Ḥayy): 16 letter-of-the-living"
@@ -720,7 +719,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 3043,
+      "ms": 7116,
       "rank": null,
       "why": "top 3 religions: bahai, buddhist, buddhist",
       "top": "pilgrimage with translations of tablets by bahaullah and abdul baha [bahai]"
@@ -731,7 +730,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 3141,
+      "ms": 7251,
       "rank": null,
       "why": "top 3 religions: bahai, islam, islam",
       "top": "the kitab i aqdas [bahai]"
@@ -742,7 +741,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 4234,
+      "ms": 7657,
       "rank": null,
       "why": "top 3 religions: bahai, buddhist, buddhist",
       "top": "explanation of spiritual evolution as taught from the bahai teachings [bahai]"
@@ -753,9 +752,9 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 4225,
+      "ms": 12952,
       "rank": null,
-      "why": "top 3 religions: bahai, islam, buddhist",
+      "why": "top 3 religions: bahai, christian, judaism",
       "top": "some answered questions [bahai]"
     },
     {
@@ -764,9 +763,9 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 3291,
+      "ms": 12496,
       "rank": null,
-      "why": "top 3 religions: bahai, hindu, buddhist",
+      "why": "top 3 religions: bahai, hindu, judaism",
       "top": "some answered questions [bahai]"
     },
     {
@@ -775,7 +774,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 3236,
+      "ms": 3455,
       "rank": null,
       "why": "top 3 religions: bahai, tao, buddhist",
       "top": "memories of bahais [bahai]"
@@ -786,7 +785,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 4000,
+      "ms": 3840,
       "rank": null,
       "why": null,
       "top": "some answered questions [bahai]"
@@ -795,11 +794,11 @@
       "id": "cmp-islam-judaism-fasting",
       "type": "compare",
       "persona": "research",
-      "ok": true,
+      "ok": false,
       "known_gap": false,
-      "ms": 3333,
+      "ms": 13214,
       "rank": null,
-      "why": null,
+      "why": "missing traditions: islam, judaism (had bahai)",
       "top": "some answered questions [bahai]"
     },
     {
@@ -808,7 +807,7 @@
       "persona": "both",
       "ok": true,
       "known_gap": false,
-      "ms": 3264,
+      "ms": 13123,
       "rank": null,
       "why": null,
       "top": "loves odyssey the life of thornton chase draft of thornton chase the first american bahai [bahai]"
@@ -819,7 +818,7 @@
       "persona": "both",
       "ok": false,
       "known_gap": false,
-      "ms": 5979,
+      "ms": 6042,
       "rank": null,
       "why": "top 3 authors: adib taherzadeh | unknown | unknown",
       "top": "the covenant of bahaullah [bahai]"
@@ -830,7 +829,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": false,
-      "ms": 6154,
+      "ms": 6345,
       "rank": null,
       "why": "top 3 authors: ruhiyyih rabbani | unknown | unknown",
       "top": "the priceless pearl [bahai]"
@@ -841,7 +840,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": false,
-      "ms": 6930,
+      "ms": 7779,
       "rank": null,
       "why": "no top-10 hit with {\"author\":\"\\\\bbab\\\\b\",\"text\":\"him whom god shall make manifest\"}",
       "top": "god passes by [bahai]"
@@ -852,7 +851,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": false,
-      "ms": 6547,
+      "ms": 6540,
       "rank": null,
       "why": "no top-10 hit with {\"text\":\"1850\"}",
       "top": "the dawn breakers [bahai]"
@@ -863,7 +862,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 6448,
+      "ms": 12018,
       "rank": 1,
       "why": null,
       "top": "god passes by [bahai]"
@@ -874,7 +873,7 @@
       "persona": "research",
       "ok": false,
       "known_gap": false,
-      "ms": 6302,
+      "ms": 10888,
       "rank": null,
       "why": "no top-10 hit with {\"text\":\"1863\"}",
       "top": "god passes by [bahai]"
@@ -883,22 +882,22 @@
       "id": "hx-bahaullah-passing",
       "type": "history_fact",
       "persona": "research",
-      "ok": false,
+      "ok": true,
       "known_gap": false,
-      "ms": 7023,
-      "rank": null,
-      "why": "no top-10 hit with {\"text\":\"bahji\"}",
+      "ms": 16072,
+      "rank": 2,
+      "why": null,
       "top": "god passes by [bahai]"
     },
     {
       "id": "hx-abdul-baha-america",
       "type": "history_fact",
       "persona": "research",
-      "ok": false,
+      "ok": true,
       "known_gap": false,
-      "ms": 7017,
-      "rank": null,
-      "why": "no top-10 hit with {\"text\":\"1912\"}",
+      "ms": 15248,
+      "rank": 3,
+      "why": null,
       "top": "god passes by [bahai]"
     },
     {
@@ -907,7 +906,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 4942,
+      "ms": 6921,
       "rank": 1,
       "why": null,
       "top": "god passes by [bahai]"
@@ -918,7 +917,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 5606,
+      "ms": 7488,
       "rank": 1,
       "why": null,
       "top": "the kitab i aqdas [bahai]"
@@ -929,7 +928,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 3634,
+      "ms": 4402,
       "rank": 1,
       "why": null,
       "top": "from vision to victory [bahai]"
@@ -940,7 +939,7 @@
       "persona": "chat",
       "ok": false,
       "known_gap": false,
-      "ms": 3375,
+      "ms": 4281,
       "rank": 2,
       "why": "top 1 religions: bahai",
       "top": "some answered questions [bahai]"
@@ -951,7 +950,7 @@
       "persona": "chat",
       "ok": false,
       "known_gap": false,
-      "ms": 3922,
+      "ms": 4554,
       "rank": 1,
       "why": "top 1 religions: bahai",
       "top": "the kitab i aqdas [bahai]"
@@ -962,7 +961,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 3798,
+      "ms": 4150,
       "rank": 2,
       "why": null,
       "top": "abdul baha in dublin new hampshire [bahai]"
@@ -973,7 +972,7 @@
       "persona": "research",
       "ok": true,
       "known_gap": false,
-      "ms": 2747,
+      "ms": 2813,
       "rank": null,
       "why": null,
       "top": "juliet thompson the diary of juliet thompson [bahai]"
@@ -984,7 +983,7 @@
       "persona": "chat",
       "ok": true,
       "known_gap": false,
-      "ms": 128,
+      "ms": 151,
       "rank": null,
       "why": null,
       "top": "12 religions"

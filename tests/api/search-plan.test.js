@@ -78,16 +78,32 @@ describe('planSearch — the one network call', () => {
   it('asks Jev once and returns a plan with timing', async () => {
     let calls = 0;
     const fetchImpl = async () => { calls++; return { ok: true, json: async () => ({ answers: ans({ tradition: 'Islam', shape: 'define' }) }) }; };
-    const p = await planSearch('what is zakat', { apiKey: 'k', fetchImpl });
+    const p = await planSearch('what is zakat', { apiKey: 'k', fetchImpl, cache: false });
     expect(calls).toBe(1);
     expect(p.filters).toEqual({ religion: 'Islam' });
     expect(p.shape).toBe('define');
     expect(typeof p.ms).toBe('number');
   });
 
+  it('when Jev fails, a tradition NAMED in the query still scopes it (deterministic backstop)', async () => {
+    const fetchImpl = async () => { throw new Error('timeout'); };
+    const p = await planSearch('What does the Quran say about patience?', { apiKey: 'k', fetchImpl, cache: false });
+    expect(p.filters).toEqual({ religion: 'Islam' });
+    expect(p.source.religion).toBe('keyword-backstop');
+  });
+
+  it('caches a plan so a repeat costs no Jev call', async () => {
+    let calls = 0;
+    const fetchImpl = async () => { calls++; return { ok: true, json: async () => ({ answers: ans({ tradition: 'Hindu' }) }) }; };
+    await planSearch('karma in the Gita — cache probe', { apiKey: 'k', fetchImpl });
+    const p = await planSearch('karma in the Gita — cache probe', { apiKey: 'k', fetchImpl });
+    expect(calls).toBe(1);
+    expect(p.cached).toBe(true);
+  });
+
   it('fails open when Jev errors — a plan is an optimisation, never a blocker', async () => {
     const fetchImpl = async () => { throw new Error('boom'); };
-    const p = await planSearch('anything', { apiKey: 'k', fetchImpl });
+    const p = await planSearch('anything', { apiKey: 'k', fetchImpl, cache: false });
     expect(p.filters).toEqual({});
     expect(p.error).toMatch(/boom/);
   });

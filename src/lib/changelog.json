@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T01:56:45.988Z",
+  "generated": "2026-09-25T02:08:32.746Z",
   "entries": [
+    {
+      "hash": "b4cbf270",
+      "date": "2026-09-24",
+      "type": "New",
+      "description": "Public /v1/search is Jev-planned; LLM summarises only (2 calls); analyze:false = zero-LLM raw",
+      "scope": "search"
+    },
     {
       "hash": "226abc05",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Connection-search cites the real meeting fact, drop double-punctuation",
       "scope": null
-    },
-    {
-      "hash": "54dbd053",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Cut person-detail facts to the reconciled entity_claims substrate",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "b4cbf270",
+        "date": "2026-09-24",
+        "type": "New",
+        "description": "Public /v1/search is Jev-planned; LLM summarises only (2 calls); analyze:false = zero-LLM raw",
+        "scope": "search"
+      },
       {
         "hash": "226abc05",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Connection-search cites the real meeting fact, drop double-punctuation",
-        "scope": null
-      },
-      {
-        "hash": "54dbd053",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Cut person-detail facts to the reconciled entity_claims substrate",
         "scope": null
       }
     ]

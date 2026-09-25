@@ -19,6 +19,8 @@ const WRITE_REPORT = args.includes('--write-report');
 const MULTI = args.includes('--multi');
 // --no-plan: raw multi-index engine, bypassing the Jev planner (measures what planning adds).
 const NO_PLAN = args.includes('--no-plan');
+// --raw: public /v1/search with analyze:false — planned retrieval, zero LLM calls.
+const RAW = args.includes('--raw');
 const TOP_K = parseInt(args.find((a) => a.startsWith('--top-k='))?.split('=')[1] || '10', 10);
 const TYPE = args.find((a) => a.startsWith('--type='))?.split('=')[1] || null;
 const API_BASE = process.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
@@ -54,7 +56,7 @@ async function call(path, { method = 'GET', body, internal = false, keyless = fa
 async function search(query) {
   const { data, ms } = MULTI
     ? await call('/api/search/multi', { method: 'POST', body: { query, limit: TOP_K, ...(NO_PLAN ? { plan: false } : {}) }, internal: true })
-    : await call('/api/v1/search', { method: 'POST', body: { query, limit: TOP_K } });
+    : await call('/api/v1/search', { method: 'POST', body: { query, limit: TOP_K, ...(NO_PLAN ? { plan: false } : {}), ...(RAW ? { analyze: false } : {}) } });
   const hits = (data.results || data.hits || data.passages || []).slice(0, TOP_K);
   return { ms, items: hits.map((h) => ({ title: fold(h.title), author: fold(h.author), text: fold(h.text), religion: trad(h.religion) })) };
 }
@@ -175,7 +177,7 @@ const group = (key) => {
 };
 const measured = results.filter((r) => !r.error);
 const report = {
-  run_at: new Date().toISOString(), endpoint: MULTI ? (NO_PLAN ? 'multi-raw' : 'multi-planned') : 'public', top_k: TOP_K,
+  run_at: new Date().toISOString(), endpoint: MULTI ? (NO_PLAN ? 'multi-raw' : 'multi-planned') : `public${NO_PLAN ? '-legacy' : ''}${RAW ? '-nollm' : ''}`, top_k: TOP_K,
   valid: measured.length === results.length,
   total: results.length, measured: measured.length, errored: results.length - measured.length,
   passed: measured.filter((r) => r.ok).length, pass_rate: pct(measured.filter((r) => r.ok).length, measured.length),

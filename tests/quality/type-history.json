@@ -144,5 +144,418 @@
     },
     "latency_p50_ms": 5933,
     "latency_p95_ms": 13093
+  },
+  {
+    "run_at": "2026-09-25T02:01:30.745Z",
+    "endpoint": "public",
+    "top_k": 10,
+    "valid": true,
+    "total": 76,
+    "measured": 76,
+    "errored": 0,
+    "passed": 56,
+    "pass_rate": 74,
+    "known_gaps_now_passing": [],
+    "unexpected_failures": [
+      "xp-one-country",
+      "xp-harmony-science-religion",
+      "xp-lord-shepherd",
+      "lp-earth-one-country",
+      "lp-love-enemies",
+      "lp-war-peace-thoughts",
+      "fw-dawnbreakers-one-word",
+      "au-abdul-baha-equality",
+      "au-shoghi-admin-order",
+      "hx-mulla-husayn-death",
+      "df-nirvana"
+    ],
+    "by_type": {
+      "exact_phrase": {
+        "passed": 11,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 79,
+        "p50_ms": 6468
+      },
+      "lay_paraphrase": {
+        "passed": 4,
+        "measured": 7,
+        "errored": 0,
+        "pass_rate": 57,
+        "p50_ms": 4238
+      },
+      "find_work": {
+        "passed": 11,
+        "measured": 12,
+        "errored": 0,
+        "pass_rate": 92,
+        "p50_ms": 477
+      },
+      "misattribution": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 505
+      },
+      "find_person": {
+        "passed": 7,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 50,
+        "p50_ms": 147
+      },
+      "enumerate": {
+        "passed": 0,
+        "measured": 2,
+        "errored": 0,
+        "pass_rate": 0,
+        "p50_ms": 5869
+      },
+      "scoped_topic": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 4158
+      },
+      "compare": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 6870
+      },
+      "author_scoped": {
+        "passed": 1,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 33,
+        "p50_ms": 12475
+      },
+      "history_fact": {
+        "passed": 5,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 83,
+        "p50_ms": 9729
+      },
+      "define_term": {
+        "passed": 4,
+        "measured": 5,
+        "errored": 0,
+        "pass_rate": 80,
+        "p50_ms": 6406
+      },
+      "library_meta": {
+        "passed": 1,
+        "measured": 1,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 409
+      }
+    },
+    "by_persona": {
+      "both": {
+        "passed": 31,
+        "measured": 36,
+        "errored": 0,
+        "pass_rate": 86,
+        "p50_ms": 4126
+      },
+      "chat": {
+        "passed": 13,
+        "measured": 18,
+        "errored": 0,
+        "pass_rate": 72,
+        "p50_ms": 4238
+      },
+      "research": {
+        "passed": 12,
+        "measured": 22,
+        "errored": 0,
+        "pass_rate": 55,
+        "p50_ms": 4048
+      }
+    },
+    "latency_p50_ms": 4124,
+    "latency_p95_ms": 11249
+  },
+  {
+    "run_at": "2026-09-25T02:02:36.269Z",
+    "endpoint": "public-nollm",
+    "top_k": 10,
+    "valid": true,
+    "total": 76,
+    "measured": 76,
+    "errored": 0,
+    "passed": 58,
+    "pass_rate": 76,
+    "known_gaps_now_passing": [],
+    "unexpected_failures": [
+      "xp-one-country",
+      "xp-son-of-spirit",
+      "xp-harmony-science-religion",
+      "xp-lord-shepherd",
+      "lp-two-wings-bird",
+      "lp-love-enemies",
+      "lp-war-peace-thoughts",
+      "fw-dawnbreakers-one-word",
+      "df-nirvana"
+    ],
+    "by_type": {
+      "exact_phrase": {
+        "passed": 10,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 71,
+        "p50_ms": 832
+      },
+      "lay_paraphrase": {
+        "passed": 4,
+        "measured": 7,
+        "errored": 0,
+        "pass_rate": 57,
+        "p50_ms": 5218
+      },
+      "find_work": {
+        "passed": 11,
+        "measured": 12,
+        "errored": 0,
+        "pass_rate": 92,
+        "p50_ms": 225
+      },
+      "misattribution": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 272
+      },
+      "find_person": {
+        "passed": 7,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 50,
+        "p50_ms": 265
+      },
+      "enumerate": {
+        "passed": 0,
+        "measured": 2,
+        "errored": 0,
+        "pass_rate": 0,
+        "p50_ms": 5608
+      },
+      "scoped_topic": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 584
+      },
+      "compare": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 670
+      },
+      "author_scoped": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1092
+      },
+      "history_fact": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 530
+      },
+      "define_term": {
+        "passed": 4,
+        "measured": 5,
+        "errored": 0,
+        "pass_rate": 80,
+        "p50_ms": 353
+      },
+      "library_meta": {
+        "passed": 1,
+        "measured": 1,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 141
+      }
+    },
+    "by_persona": {
+      "both": {
+        "passed": 31,
+        "measured": 36,
+        "errored": 0,
+        "pass_rate": 86,
+        "p50_ms": 584
+      },
+      "chat": {
+        "passed": 13,
+        "measured": 18,
+        "errored": 0,
+        "pass_rate": 72,
+        "p50_ms": 487
+      },
+      "research": {
+        "passed": 14,
+        "measured": 22,
+        "errored": 0,
+        "pass_rate": 64,
+        "p50_ms": 360
+      }
+    },
+    "latency_p50_ms": 465,
+    "latency_p95_ms": 5608
+  },
+  {
+    "run_at": "2026-09-25T02:06:30.585Z",
+    "endpoint": "public-legacy",
+    "top_k": 10,
+    "valid": true,
+    "total": 76,
+    "measured": 76,
+    "errored": 0,
+    "passed": 49,
+    "pass_rate": 64,
+    "known_gaps_now_passing": [],
+    "unexpected_failures": [
+      "xp-one-country",
+      "xp-noble-created",
+      "xp-harmony-science-religion",
+      "xp-world-embracing",
+      "xp-meek-inherit",
+      "lp-earth-one-country",
+      "lp-love-enemies",
+      "lp-war-peace-thoughts",
+      "fw-dawnbreakers-one-word",
+      "sc-bahai-afterlife",
+      "au-abdul-baha-equality",
+      "au-shoghi-admin-order",
+      "hx-bab-martyrdom-year",
+      "hx-bab-martyrdom-place",
+      "hx-bahaullah-passing",
+      "hx-abdul-baha-america",
+      "hx-mulla-husayn-death",
+      "df-zakat"
+    ],
+    "by_type": {
+      "exact_phrase": {
+        "passed": 9,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 64,
+        "p50_ms": 7551
+      },
+      "lay_paraphrase": {
+        "passed": 4,
+        "measured": 7,
+        "errored": 0,
+        "pass_rate": 57,
+        "p50_ms": 7460
+      },
+      "find_work": {
+        "passed": 11,
+        "measured": 12,
+        "errored": 0,
+        "pass_rate": 92,
+        "p50_ms": 176
+      },
+      "misattribution": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 123
+      },
+      "find_person": {
+        "passed": 7,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 50,
+        "p50_ms": 167
+      },
+      "enumerate": {
+        "passed": 0,
+        "measured": 2,
+        "errored": 0,
+        "pass_rate": 0,
+        "p50_ms": 5656
+      },
+      "scoped_topic": {
+        "passed": 5,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 83,
+        "p50_ms": 12035
+      },
+      "compare": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 6290
+      },
+      "author_scoped": {
+        "passed": 1,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 33,
+        "p50_ms": 9777
+      },
+      "history_fact": {
+        "passed": 1,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 17,
+        "p50_ms": 9394
+      },
+      "define_term": {
+        "passed": 4,
+        "measured": 5,
+        "errored": 0,
+        "pass_rate": 80,
+        "p50_ms": 6989
+      },
+      "library_meta": {
+        "passed": 1,
+        "measured": 1,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 156
+      }
+    },
+    "by_persona": {
+      "both": {
+        "passed": 28,
+        "measured": 36,
+        "errored": 0,
+        "pass_rate": 78,
+        "p50_ms": 6644
+      },
+      "chat": {
+        "passed": 13,
+        "measured": 18,
+        "errored": 0,
+        "pass_rate": 72,
+        "p50_ms": 6939
+      },
+      "research": {
+        "passed": 8,
+        "measured": 22,
+        "errored": 0,
+        "pass_rate": 36,
+        "p50_ms": 5990
+      }
+    },
+    "latency_p50_ms": 6470,
+    "latency_p95_ms": 14204
   }
 ]

@@ -29,6 +29,41 @@ const SHAPES = {
   enumerate: 'asks for a list: members of a group, attendees of an event, all instances of something',
 };
 
+// Deterministic BACKSTOP only (used when Jev is unreachable): a tradition or scripture the query NAMES.
+// Moved here from routes/public-api.js so the legacy path and the backstop share one list.
+export const TRADITION_KEYWORDS = {
+  "baha'i": "Baha'i", 'bahai': "Baha'i",
+  'buddhist': 'Buddhist', 'buddhism': 'Buddhist', 'buddha': 'Buddhist',
+  'christian': 'Christian', 'bible': 'Christian', 'gospel': 'Christian',
+  'islam': 'Islam', 'islamic': 'Islam', 'quran': 'Islam', "qur'an": 'Islam', 'koran': 'Islam',
+  'hadith': 'Islam', 'sunnah': 'Islam',
+  'jewish': 'Judaism', 'judaism': 'Judaism', 'torah': 'Judaism', 'hebrew': 'Judaism',
+  'leviticus': 'Judaism', 'exodus': 'Judaism', 'deuteronomy': 'Judaism',
+  'psalms': 'Judaism', 'proverbs': 'Judaism',
+  'hindu': 'Hindu', 'hinduism': 'Hindu', 'vedic': 'Hindu',
+  'bhagavad': 'Hindu', 'gita': 'Hindu', 'upanishad': 'Hindu',
+  'sikh': 'Sikh', 'sikhism': 'Sikh', 'granth': 'Sikh',
+  'zoroastrian': 'Zoroastrian', 'avesta': 'Zoroastrian',
+  'taoist': 'Tao', 'taoism': 'Tao', 'tao': 'Tao',
+  'confucian': 'Confucian', 'confucius': 'Confucian', 'analects': 'Confucian',
+  'jain': 'Jain', 'jainism': 'Jain',
+};
+
+/** The tradition a text explicitly names (whole word), or undefined. */
+export function keywordTradition(text) {
+  const q = String(text || '').toLowerCase();
+  return Object.entries(TRADITION_KEYWORDS).find(([kw]) => {
+    const idx = q.indexOf(kw);
+    if (idx < 0) return false;
+    const before = idx === 0 ? ' ' : q[idx - 1];
+    const after = idx + kw.length >= q.length ? ' ' : q[idx + kw.length];
+    return !/[a-z]/.test(before) && !/[a-z]/.test(after);
+  })?.[1];
+}
+
+const PLAN_TTL_MS = 30 * 60 * 1000;
+const planCache = new Map();
+
 const EMPTY = { filters: {}, prefer: null, comparative: false, shape: 'topic', confidence: {}, source: {} };
 
 /** Jev answers (or null) → plan. Pure. */
@@ -81,11 +116,22 @@ export function layersFor(plan) {
  * The one network call. `input` is a query string or a message array (the conversation is the state:
  * "and what about compassion?" carries no tradition of its own).
  */
-export async function planSearch(input, { given = {}, apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = 1500, fetchImpl = fetch } = {}) {
+export async function planSearch(input, { given = {}, apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = 2500, fetchImpl = fetch, cache = true } = {}) {
   const messages = Array.isArray(input) ? input : [{ role: 'user', content: String(input || '') }];
   const state = messages.slice(-6).map((m) => `${m.role}: ${String(m.content || '').slice(0, 600)}`).join('\n');
   const t0 = Date.now();
-  if (!apiKey || !state.trim()) return { ...buildPlan(null, { given }), ms: 0, skipped: true };
+  // Jev unreachable/slow → still honour a tradition the user NAMED, rather than searching everything.
+  const backstop = (extra) => {
+    const plan = buildPlan(null, { given });
+    const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content;
+    const t = !plan.filters.religion && keywordTradition(lastUser);
+    if (t) { plan.filters.religion = t; plan.source.religion = 'keyword-backstop'; }
+    return { ...plan, ms: Date.now() - t0, ...extra };
+  };
+  if (!apiKey || !state.trim()) return backstop({ skipped: true });
+  const key = `${state}\u0000${JSON.stringify(given || {})}`;
+  const hit = cache && planCache.get(key);
+  if (hit && Date.now() - hit.at < PLAN_TTL_MS) return { ...hit.plan, ms: Date.now() - t0, cached: true };
   try {
     const res = await fetchImpl(ENDPOINT, {
       method: 'POST',
@@ -114,11 +160,16 @@ export async function planSearch(input, { given = {}, apiKey = process.env.TYPES
       signal: AbortSignal.timeout(timeoutMs),
     });
     const ms = Date.now() - t0;
-    if (!res.ok) return { ...buildPlan(null, { given }), ms, error: `jev HTTP ${res.status}` };
+    if (!res.ok) return backstop({ error: `jev HTTP ${res.status}` });
     const j = await res.json();
-    return { ...buildPlan(normalizeAnswers(j.answers), { given }), ms };
+    const plan = buildPlan(normalizeAnswers(j.answers), { given });
+    if (cache) {
+      if (planCache.size >= 1000) planCache.delete(planCache.keys().next().value);
+      planCache.set(key, { at: Date.now(), plan });   // only SUCCESSFUL plans are cached
+    }
+    return { ...plan, ms };
   } catch (err) {
-    return { ...buildPlan(null, { given }), ms: Date.now() - t0, error: err.message };
+    return backstop({ error: err.message });
   }
 }
 
