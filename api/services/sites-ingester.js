@@ -515,7 +515,9 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
       ? siteDb.prepare('SELECT 1 AS x FROM content WHERE doc_id = ? LIMIT 1').get(existing.id)
       : await queryOne('SELECT 1 AS x FROM content WHERE doc_id = ? AND deleted_at IS NULL LIMIT 1', [existing.id]))
     : false;
-  if (isUnchanged({ existing, fileHash, force, hasLiveContent })) {
+  // In a dry run `force` only skips the cooldown: it must not turn every file into "would re-ingest" (it did — the
+  // first dry run reported 246 books "changed" whose stored hash equals the file's md5).
+  if (isUnchanged({ existing, fileHash, force: force && !dryRun, hasLiveContent })) {
     return { status: 'unchanged', file: relPath, scope };
   }
   if (onlyMissing && existing && hasLiveContent) {

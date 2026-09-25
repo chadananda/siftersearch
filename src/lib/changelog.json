@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T19:46:39.016Z",
+  "generated": "2026-09-25T20:21:51.875Z",
   "entries": [
+    {
+      "hash": "00f70210",
+      "date": "2026-09-25",
+      "type": "New",
+      "description": "Sites-ingest via internal API with dryRun + onlyMissing (new files and hollow docs only)",
+      "scope": "ingest"
+    },
     {
       "hash": "cd28a358",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Remove temp stabilization instrumentation",
       "scope": null
-    },
-    {
-      "hash": "f79d99b1",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Provable Meili stability check (enqueued not growing + synced=0 flat + search fast → STABLE)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "00f70210",
+        "date": "2026-09-25",
+        "type": "New",
+        "description": "Sites-ingest via internal API with dryRun + onlyMissing (new files and hollow docs only)",
+        "scope": "ingest"
+      },
       {
         "hash": "cd28a358",
         "date": "2026-09-25",
@@ -7081,15 +7088,6 @@
         "date": "2026-07-10",
         "type": "Other",
         "description": "Remove temp stabilization instrumentation",
-        "scope": null
-      }
-    ],
-    "2026-07-09": [
-      {
-        "hash": "f79d99b1",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Provable Meili stability check (enqueued not growing + synced=0 flat + search fast → STABLE)",
         "scope": null
       }
     ]
