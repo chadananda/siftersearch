@@ -14,17 +14,45 @@ const foldName = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f
   .replace(/[\u2018\u2019\u02bc\u02bb`']/g, '').replace(/[^a-zA-Z0-9]+/g, '').toLowerCase();
 const byAuthor = (hit, aliases) => aliases.some((a) => foldName(hit.author).includes(foldName(a)));
 
+const foldTok = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[\u2018\u2019\u02bc\u02bb`']/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const STOP = new Set('a an and or of the to in on at for by with from is are be as that this what whats does do did say says said about tell me my his her their its how why when where who which on upon into'.split(' '));
+
+/** Words that name the preferred author (aliases + label), folded — they are the FILTER, not the subject. */
+function nameWords(prefer) {
+  return new Set([prefer.author, ...(prefer.aliases || [])].flatMap((a) => foldTok(a).split(' ')).filter(Boolean));
+}
+/** The query minus the author's name: under an author filter the name is redundant, and partial matching then
+ *  dropped the SUBJECT ("justice") instead. */
+export function withoutAuthor(query, prefer) {
+  const names = nameWords(prefer);
+  const kept = String(query).split(/\s+/).filter((t) => !foldTok(t).split(' ').every((w) => names.has(w)));
+  return kept.join(' ').trim() || query;
+}
+/** Subject terms: content words of the query that are not the author's name. */
+export function subjectTerms(query, prefer) {
+  const names = nameWords(prefer);
+  return foldTok(query).split(' ').filter((w) => w.length >= 3 && !STOP.has(w) && !names.has(w));
+}
+const onSubject = (hit, terms) => {
+  if (!terms.length) return true;
+  const t = foldTok(hit.text);
+  return terms.some((w) => new RegExp(`(^| )${w.length > 4 ? w.replace(/(es|s)$/, '') : w}`).test(t));
+};
+
 /**
  * Preferred author first, everything else KEPT. The author's own words rank ahead; a compilation, biography or
  * newsletter that quotes them still appears — that is often where a half-remembered tablet actually is. Pure.
  */
-export function preferAuthor(authorHits, broadHits, aliases, limit) {
+export function preferAuthor(authorHits, broadHits, aliases, limit, terms = []) {
   const seen = new Set();
   const mine = [], others = [];
-  for (const h of [...authorHits, ...broadHits]) {
+  // Promoted = BY the author AND on the question's subject; "his words first" means his words on THIS.
+  for (const h of [...authorHits.filter((x) => onSubject(x, terms)), ...broadHits]) {
     if (seen.has(h.id)) continue;
     seen.add(h.id);
-    (byAuthor(h, aliases) ? mine : others).push({ ...h, _authorMatch: byAuthor(h, aliases) });
+    const isMine = byAuthor(h, aliases) && onSubject(h, terms);
+    (isMine ? mine : others).push({ ...h, _authorMatch: byAuthor(h, aliases) });
   }
   return [...mine, ...others].slice(0, limit);
 }
@@ -59,8 +87,8 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
 
   const run = engine || (await import('./search.js')).multiIndexSearch;
   const t1 = Date.now();
-  const search = async (filters) => {
-    const res = await run(query, {
+  const search = async (filters, q = query) => {
+    const res = await run(q, {
       limit, filters, scope_config,
       ...(entityIds?.length ? { entityIds } : {}),
       keywordLayer: layers.keyword, hype: layers.hype, diversify: layers.diversify, includeMatchedHype: true,
@@ -70,9 +98,9 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // With a preferred author, the author-matched search runs BESIDE the broad one, never instead of it.
   const [r, authorHits] = await Promise.all([
     relaxScope(plan.filters, search, { min: Math.min(minResults, limit) }),
-    plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }).catch(() => []) : Promise.resolve([]),
+    plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }, withoutAuthor(query, plan.prefer)).catch(() => []) : Promise.resolve([]),
   ]);
-  const hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit) : r.results;
+  const hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, subjectTerms(query, plan.prefer)) : r.results;
 
   const value = {
     hits, plan, layers,

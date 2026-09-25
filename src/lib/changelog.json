@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T05:25:07.285Z",
+  "generated": "2026-09-25T05:27:54.093Z",
   "entries": [
+    {
+      "hash": "ea42a9e8",
+      "date": "2026-09-24",
+      "type": "Fixed",
+      "description": "Never show or keep a quote that is in no retrieved passage",
+      "scope": "anis"
+    },
     {
       "hash": "8062bf1f",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Steer connection-clause pick away from vague 'described/referred-to' proofs",
       "scope": null
-    },
-    {
-      "hash": "683d5d54",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Specific, book-worded connection clauses linked to the exact cited claim",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "ea42a9e8",
+        "date": "2026-09-24",
+        "type": "Fixed",
+        "description": "Never show or keep a quote that is in no retrieved passage",
+        "scope": "anis"
+      },
       {
         "hash": "8062bf1f",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Steer connection-clause pick away from vague 'described/referred-to' proofs",
-        "scope": null
-      },
-      {
-        "hash": "683d5d54",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Specific, book-worded connection clauses linked to the exact cited claim",
         "scope": null
       }
     ]
