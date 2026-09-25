@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T01:42:50.471Z",
+  "generated": "2026-09-25T01:56:45.988Z",
   "entries": [
+    {
+      "hash": "226abc05",
+      "date": "2026-09-24",
+      "type": "Fixed",
+      "description": "An inferred author RANKS first, never filters",
+      "scope": "search"
+    },
     {
       "hash": "31901947",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Cut person-detail facts to the reconciled entity_claims substrate",
       "scope": null
-    },
-    {
-      "hash": "1349c097",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Rederive-seed-books.sh — one clean re-derive of GPB+DB downstream on the matured pipeline (collapses mixed-version strata)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "226abc05",
+        "date": "2026-09-24",
+        "type": "Fixed",
+        "description": "An inferred author RANKS first, never filters",
+        "scope": "search"
+      },
       {
         "hash": "31901947",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Cut person-detail facts to the reconciled entity_claims substrate",
-        "scope": null
-      },
-      {
-        "hash": "1349c097",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Rederive-seed-books.sh — one clean re-derive of GPB+DB downstream on the matured pipeline (collapses mixed-version strata)",
         "scope": null
       }
     ]

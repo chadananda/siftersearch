@@ -7,7 +7,7 @@ and GRAPH CLAIM indexing (facts/claims for persons, places, dates, documents, co
 Measure every step with `score-types.mjs` (public + --multi); record history. Baseline: public 46/76,
 multi 37/76; offline multi+scope 27/45 search fixtures.
 
-## A. Planner — api/lib/search-plan.js  [IN PROGRESS]
+## A. Planner — api/lib/search-plan.js  [DONE 2.187.88–89; author = PREFERENCE, never filter]
 One Jev call (~150ms, fail open): tradition, comparative, author (whose WORDS, not who is the subject),
 shape (quote | fact | topic | lookup | enumerate), subject (person | place | date | work | concept | none).
 Pure `layersFor(plan)` picks layers: quote → keyword layer, no diversity cap; fact → claims + HyPE;
@@ -26,6 +26,12 @@ Cross-tradition diversity cap ONLY when the plan has no scope and shape ≠ quot
 ## D. Wire
 /api/search/multi and executeSearch (tools + chat; model args override plan) → battery →
 switch /v1/search main path if it beats public.
+
+## F. Search-first chat (Chad: "chat should fire the search immediately with JEV and feed results to a single LLM call")
+Turn → planSearch(messages) → route by shape WITHOUT an LLM (quote/fact/topic/define → plannedSearch;
+enumerate → roster endpoint; lookup → find-document/entity lookup) → ONE generation call with the results.
+A second call only when retrieval was thin (widened/empty) or the answer needs a follow-up search.
+Replaces the research→craft→reflect tool loop as the default path; the loop stays as the fallback.
 
 ## E. LLM budget
 Public /search runs ~7 parallel LLM analysis calls per query. Target ≤ 2: order by fast signals,

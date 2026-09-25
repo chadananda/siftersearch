@@ -109,7 +109,8 @@ OUTPUT FORMAT:
       { role: 'user', content: batchPrompt }
     ], {
       temperature: 0.1,  // Lower temperature for more precise copying
-      maxTokens: hasVoyageReranking ? 400 : 600, // Less work when Voyage handles ranking
+      // ~90 output tokens per passage: a fixed 600 truncated the JSON once batches grew past ~6 (maxCalls mode).
+      maxTokens: Math.max(hasVoyageReranking ? 400 : 600, 90 * passages.length),
       caller: 'search:summarize',
       responseFormat: { type: 'json_object' },  // enforce valid JSON — DeepSeek returns prose otherwise → 0 parsed
       signal,
@@ -229,7 +230,13 @@ export async function analyzePassagesParallel(query, passages, options = {}) {
     batchSize = BATCH_SIZE,
     maxConcurrent = MAX_CONCURRENT,
     useExcerpts = true,
-    signal = null
+    signal = null,
+    // Summarise-only mode (planned search owns ranking): keep input order, drop nothing, fill skipped passages.
+    preserveOrder = false,
+    // Cap on LLM calls: overrides batchSize so the whole set is split into at most this many batches.
+    maxCalls = null,
+    // The introduction is one more LLM call; callers that never return it should not pay for it.
+    introduction: wantIntroduction = true,
   } = options;
 
   const startTime = Date.now();
@@ -248,9 +255,10 @@ export async function analyzePassagesParallel(query, passages, options = {}) {
   const indexedPassages = enrichedPassages.map((p, i) => ({ ...p, globalIndex: i }));
 
   // Split into batches
+  const size = maxCalls ? Math.max(1, Math.ceil(indexedPassages.length / maxCalls)) : batchSize;
   const batches = [];
-  for (let i = 0; i < indexedPassages.length; i += batchSize) {
-    batches.push(indexedPassages.slice(i, i + batchSize));
+  for (let i = 0; i < indexedPassages.length; i += size) {
+    batches.push(indexedPassages.slice(i, i + size));
   }
 
   logger.info({
@@ -293,11 +301,17 @@ export async function analyzePassagesParallel(query, passages, options = {}) {
   }
 
   // Sort by boosted score (highest first)
-  allResults.sort((a, b) => (b.score || 0) - (a.score || 0));
-
-  // Filter to relevant results (score >= 40 after boost)
-  // Lower threshold to include more marginally relevant passages
-  const relevantResults = allResults.filter(r => (r.score || 0) >= 40);
+  let relevantResults;
+  if (preserveOrder) {
+    const byIdx = new Map(allResults.map((r) => [r.globalIndex, r]));
+    relevantResults = indexedPassages.map((p) => byIdx.get(p.globalIndex)
+      || { globalIndex: p.globalIndex, score: 0, summary: '', keyPhrase: '', coreTerms: [] });
+  } else {
+    allResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+    // Filter to relevant results (score >= 40 after boost)
+    // Lower threshold to include more marginally relevant passages
+    relevantResults = allResults.filter(r => (r.score || 0) >= 40);
+  }
 
   // Enrich results with original passage data
   // Use enrichedPassages to get excerpt from sentence extraction
@@ -434,7 +448,7 @@ export async function analyzePassagesParallel(query, passages, options = {}) {
 
   // Generate introduction (can run in parallel with final processing)
   const introStartTime = Date.now();
-  const introduction = await generateIntroduction(query, enrichedResults, semanticNote);
+  const introduction = wantIntroduction ? await generateIntroduction(query, enrichedResults, semanticNote) : null;
   const introTimeMs = Date.now() - introStartTime;
 
   const totalTimeMs = Date.now() - startTime;

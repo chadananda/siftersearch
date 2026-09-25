@@ -340,6 +340,8 @@ export default async function publicApiRoutes(fastify) {
           // Opt-in exact-phrase re-rank. Fastify strips unknown body properties, so the flag must be
           // declared here or it never reaches the handler.
           phraseBoost: { type: 'boolean', default: false, description: 'Rank exact phrase matches first, then by authority. Off by default.' },
+          analyze: { type: 'boolean', default: true, description: 'false = RAW: planned retrieval with ZERO LLM calls (no summaries); order and text only.' },
+          plan: { type: 'boolean', default: true, description: 'Plan the search with fast classification (scope, author preference, layers). false = legacy hybrid path.' },
           filters: {
             type: 'object',
             properties: {
@@ -354,7 +356,7 @@ export default async function publicApiRoutes(fastify) {
       }
     }
   }, async (request) => {
-    const { query, limit = 10, filters = {} } = request.body;
+    const { query, limit = 10, filters = {}, plan: usePlan = true, analyze = true } = request.body;
     const startTime = Date.now();
 
     // Pass filters as structured object — hybridSearch reads filters.religion, .author, etc.
@@ -387,7 +389,8 @@ export default async function publicApiRoutes(fastify) {
       "jain": "Jain", "jainism": "Jain",
     };
     const lowerQuery = query.toLowerCase();
-    const detectedTradition = Object.entries(TRADITION_KEYWORDS).find(([kw]) => {
+    // Planned searches get scope from the Jev plan (conversation-aware, comparatives never narrowed) instead.
+    const detectedTradition = usePlan ? null : Object.entries(TRADITION_KEYWORDS).find(([kw]) => {
       const idx = lowerQuery.indexOf(kw);
       if (idx < 0) return false;
       const before = idx === 0 ? ' ' : lowerQuery[idx - 1];
@@ -398,7 +401,19 @@ export default async function publicApiRoutes(fastify) {
     // Run main search + optional supplementary tradition search in parallel.
     // The supplementary search guarantees hits from the detected tradition enter the LLM
     // analysis pool even if authority reranking pushes them below the main limit.
-    const mainSearchPromise = hybridSearch(query, {
+    // PLANNED (default): one Jev classification → scope + author preference + layers → multi-index engine
+    // (keyword layer for quotes, HyPE otherwise), relaxing honestly when a scope is too thin.
+    let planInfo = null;
+    const mainSearchPromise = usePlan
+      ? import('../lib/planned-search.js').then(({ plannedSearch }) => plannedSearch(query, { limit: Math.min(limit, 30), given: searchFilters }))
+          .then((r) => {
+            planInfo = { shape: r.plan.shape, filters: r.plan.filters, prefer: r.plan.prefer?.author || null, comparative: r.plan.comparative,
+              layers: r.layers, widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error };
+            return { hits: r.hits };
+          })
+          .catch((err) => { logger.warn({ err: err.message }, 'planned search failed — legacy path'); return hybridSearch(query, { limit: Math.min(limit * 2, 30), filters: searchFilters }); })
+          .catch(() => ({ hits: [] }))
+      : hybridSearch(query, {
       limit: Math.min(limit * 2, 30),
       filters: searchFilters
     }).catch(() => ({ hits: [] }));
@@ -526,19 +541,25 @@ export default async function publicApiRoutes(fastify) {
     // background AI call accumulation that degrades server performance under load.
     const _tAnalysis = Date.now();
     const analysisAc = new AbortController();
-    const analysisTimeout = new Promise(resolve =>
-      setTimeout(() => {
+    let analysisTimer;
+    const analysisTimeout = new Promise(resolve => {
+      analysisTimer = setTimeout(() => {
         analysisAc.abort();
         resolve({ results: unanalyzedResults(passages) });
-      }, 10000)
-    );
-    const analysis = await Promise.race([
+      }, 10000);
+    });
+    // RAW mode: retrieval order + passage text, no LLM at all.
+    const analysis = analyze === false ? { results: unanalyzedResults(passages) } : await Promise.race([
       // batchSize 3 (was 2): ~24 passages → 8 batches ≤ maxConcurrent, so all analysis runs
       // in ONE concurrent wave instead of two — roughly halves LLM wall-clock. Ordering still
       // comes from the LLM per-passage scoring (no reranker), preserving result quality.
-      analyzePassagesParallel(query, passages, { batchSize: 3, maxConcurrent: 10, signal: analysisAc.signal }),
+      usePlan
+        // Planned retrieval owns the order; the LLM only summarises — two calls, nothing dropped, no intro.
+        ? analyzePassagesParallel(query, passages, { preserveOrder: true, maxCalls: 2, maxConcurrent: 2, introduction: false, signal: analysisAc.signal })
+        : analyzePassagesParallel(query, passages, { batchSize: 3, maxConcurrent: 10, signal: analysisAc.signal }),
       analysisTimeout
     ]);
+    clearTimeout(analysisTimer);
     const analysisMs = Date.now() - _tAnalysis;
 
     // When the query names a tradition (e.g. "Quran", "Buddhist"), results from that
@@ -596,7 +617,8 @@ export default async function publicApiRoutes(fastify) {
         passages: passages.length,
         deduped_removed: _hitsBeforeDedup - searchResults.hits.length,
         meili_ms: searchResults.processingTimeMs ?? null,
-      }
+      },
+      ...(planInfo ? { _plan: planInfo } : {}),
     };
   });
 
