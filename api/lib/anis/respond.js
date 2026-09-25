@@ -41,6 +41,23 @@ export function linkMarkers(text, quotes) {
   });
 }
 
+// Words that only mean something with the previous turn ("he", "that book", "there").
+const ANAPHOR = /\b(he|him|his|she|her|hers|they|them|their|it|its|this|that|these|those|there|then|he's|she's|they're)\b/i;
+
+/**
+ * What to SEARCH for. A follow-up that leans on the conversation (a pronoun, or a short fragment like "and
+ * compassion?") is searched together with the question it refers to; a self-contained question is left alone.
+ * The model still answers the actual turn — only retrieval is widened.
+ */
+export function searchQueryFor(messages) {
+  const users = (messages || []).filter((m) => m.role === 'user').map((m) => String(m.content || '').trim());
+  const current = users.at(-1) || '';
+  const previous = users.at(-2);
+  if (!previous) return current;
+  const short = current.split(/\s+/).filter(Boolean).length <= 5;
+  return (ANAPHOR.test(current) || short) ? `${previous} ${current}` : current;
+}
+
 const lastUser = (messages) => [...(messages || [])].reverse().find((m) => m.role === 'user')?.content || '';
 
 // Prior turns only (the current question is sent separately), trimmed — context, not a transcript to re-answer.
@@ -103,7 +120,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
 
   onEvent({ type: 'stage', stage: 'search' });
   const res = await d.search({
-    query: question, mode: 'passages', limit: 8, scope_config: profile.scope_config,
+    query: searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
     plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {} },
   });
   const searchMs = Date.now() - t0;

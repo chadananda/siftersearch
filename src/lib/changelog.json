@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T05:03:35.394Z",
+  "generated": "2026-09-25T05:11:05.305Z",
   "entries": [
+    {
+      "hash": "f3784f01",
+      "date": "2026-09-24",
+      "type": "New",
+      "description": "Chat is a layer over raw search — plan + zero-LLM retrieval → ONE fast streamed reply",
+      "scope": "anis"
+    },
     {
       "hash": "3b075e75",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Honest-none only when the group is the query subject; restore group scoping",
       "scope": null
-    },
-    {
-      "hash": "a7884048",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Connection = typed target OR proof names target (object-binding is sparse)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "f3784f01",
+        "date": "2026-09-24",
+        "type": "New",
+        "description": "Chat is a layer over raw search — plan + zero-LLM retrieval → ONE fast streamed reply",
+        "scope": "anis"
+      },
       {
         "hash": "3b075e75",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Honest-none only when the group is the query subject; restore group scoping",
-        "scope": null
-      },
-      {
-        "hash": "a7884048",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Connection = typed target OR proof names target (object-binding is sparse)",
         "scope": null
       }
     ]

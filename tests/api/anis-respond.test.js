@@ -1,7 +1,7 @@
 // Anis chat layer: conversation + Jev-planned RAW search → ONE fast streamed answer in the site's persona, with
 // the Seeker Companion plan. Transport-neutral (web component streams; email uses the finished text).
 import { describe, it, expect, vi } from 'vitest';
-import { anisRespond, parseLlm, linkMarkers } from '../../api/lib/anis/respond.js';
+import { anisRespond, parseLlm, linkMarkers, searchQueryFor } from '../../api/lib/anis/respond.js';
 
 const passages = [
   { text: 'The earth is but one country, and mankind its citizens.', title: 'Gleanings', author: 'Bahá’u’lláh', religion: "Baha'i", document_id: 8312, paragraph_index: 117, source_url: 'https://x/g#117' },
@@ -99,6 +99,27 @@ describe('anisRespond', () => {
     const q = [{ citation_url: 'https://x/a', source_title: 'Gleanings' }, { citation_url: null, source_title: 'Paris Talks' }];
     expect(linkMarkers('One country【1】. And unity [2].', q)).toBe('One country ([Gleanings](https://x/a)). And unity (*Paris Talks*).');
     expect(linkMarkers('See [1](https://x/a) and [9].', q)).toBe('See [1](https://x/a) and [9].');   // real links + unknown numbers untouched
+  });
+
+  // Live, 2026-09-24: "Who was Mullá Ḥusayn?" then "Where was he killed?" searched only the second turn, found a
+  // 1909 Nayriz killing, and Anis told the seeker Mullá Ḥusayn died there (he fell at Shaykh Ṭabarsí). A follow-up
+  // that leans on the conversation must be SEARCHED with the turn it refers to.
+  it('searches a pronoun follow-up together with the question it refers to', () => {
+    const m = [{ role: 'user', content: 'Who was Mullá Ḥusayn?' }, { role: 'assistant', content: 'He was…' }, { role: 'user', content: 'Where was he killed?' }];
+    expect(searchQueryFor(m)).toBe('Who was Mullá Ḥusayn? Where was he killed?');
+  });
+
+  it('leaves a self-contained question alone', () => {
+    const m = [{ role: 'user', content: 'Who was Mullá Ḥusayn?' }, { role: 'assistant', content: '…' }, { role: 'user', content: 'What does the Quran say about patience and endurance in hardship?' }];
+    expect(searchQueryFor(m)).toBe('What does the Quran say about patience and endurance in hardship?');
+  });
+
+  it('actually searches with the combined query', async () => {
+    const d = deps();
+    const m = [{ role: 'user', content: 'Who was Mullá Ḥusayn?' }, { role: 'assistant', content: 'He was…' }, { role: 'user', content: 'Where was he killed?' }];
+    await anisRespond({ messages: m, deps: d });
+    expect(d.calls.search[0].query).toContain('Mullá Ḥusayn');
+    expect(d.calls.craft[0].user_question).toBe('Where was he killed?');   // the model still answers the actual turn
   });
 
   it('returns what the email adapter needs: text, citations, plan, timings', async () => {
