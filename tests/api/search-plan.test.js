@@ -25,12 +25,21 @@ describe('buildPlan — scope', () => {
     expect(buildPlan(ans({ tradition: 'Islam', tc: 0.4 })).filters).toEqual({});
   });
 
-  it('maps an author to a filter value the index actually stores', () => {
-    expect(buildPlan(ans({ tradition: "Baha'i", author: '‘Abdu’l-Bahá' })).filters).toEqual({ religion: "Baha'i", author: 'Abdu' });
+  // Chad: authors have many spellings and titles, and "a tablet from 'Abdu'l-Bahá" is often quoted in someone
+  // else's book or a compilation. So an inferred author is a PREFERENCE (rank first), never a filter (hide rest).
+  it('turns an inferred author into a preference with aliases — never a hard filter', () => {
+    const p = buildPlan(ans({ tradition: "Baha'i", author: '‘Abdu’l-Bahá' }));
+    expect(p.filters).toEqual({ religion: "Baha'i" });
+    expect(p.prefer.author).toBe('‘Abdu’l-Bahá');
+    expect(p.prefer.aliases).toEqual(expect.arrayContaining(['Abdu', 'Abbas Effendi']));
   });
 
-  it('demands MORE confidence for an author than a tradition — a wrong author empties more', () => {
-    expect(buildPlan(ans({ author: 'Shoghi Effendi', ac: 0.7 })).filters.author).toBeUndefined();
+  it('demands MORE confidence for an author than a tradition', () => {
+    expect(buildPlan(ans({ author: 'Shoghi Effendi', ac: 0.7 })).prefer).toBeNull();
+  });
+
+  it('an author the CALLER passes explicitly is still honoured as a filter', () => {
+    expect(buildPlan(ans({}), { given: { author: 'Balyuzi' } }).filters.author).toBe('Balyuzi');
   });
 
   it('lets caller-given filters win over the plan', () => {

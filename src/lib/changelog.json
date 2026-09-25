@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T01:34:28.300Z",
+  "generated": "2026-09-25T01:42:50.471Z",
   "entries": [
+    {
+      "hash": "31901947",
+      "date": "2026-09-24",
+      "type": "New",
+      "description": "Jev-planned search — one ~200ms classification picks scope, author and layers",
+      "scope": "search"
+    },
     {
       "hash": "4f9087f6",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Rederive-seed-books.sh — one clean re-derive of GPB+DB downstream on the matured pipeline (collapses mixed-version strata)",
       "scope": null
-    },
-    {
-      "hash": "d317cf5d",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Process-book.sh driver (canonical sequence) + propagate-bindings (deterministic variant/singleton binding) + migration 88 (entity_claims.entity_id nullable — was silently dropping unmatched claims)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "31901947",
+        "date": "2026-09-24",
+        "type": "New",
+        "description": "Jev-planned search — one ~200ms classification picks scope, author and layers",
+        "scope": "search"
+      },
       {
         "hash": "4f9087f6",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Rederive-seed-books.sh — one clean re-derive of GPB+DB downstream on the matured pipeline (collapses mixed-version strata)",
-        "scope": null
-      },
-      {
-        "hash": "d317cf5d",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Process-book.sh driver (canonical sequence) + propagate-bindings (deterministic variant/singleton binding) + migration 88 (entity_claims.entity_id nullable — was silently dropping unmatched claims)",
         "scope": null
       }
     ]

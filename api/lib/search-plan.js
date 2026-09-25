@@ -7,14 +7,17 @@ import { TRADITIONS, MIN_CONFIDENCE, ENDPOINT } from './scope-extract.js';
 // A wrong author hides far more than a wrong tradition, so it needs more certainty to act on.
 const AUTHOR_MIN_CONFIDENCE = 0.8;
 
-// Choice label → filter value the index really stores (CONTAINS; apostrophe styles expanded downstream).
+// An inferred author is a PREFERENCE, never a filter (Chad, 2026-09-24): names have many spellings and titles,
+// and "a tablet from 'Abdu'l-Bahá" is as often found quoted in someone else's book or a compilation as in his
+// own. aliases = folded-substring matches against a paragraph's author field; the FIRST is also the engine
+// filter value for the author-matched half of the search (CONTAINS, apostrophe styles expanded downstream).
 const AUTHORS = {
-  'Bahá’u’lláh': { filter: 'Bahá’u’lláh', about: 'the writings and words of Bahá’u’lláh' },
-  'The Báb': { filter: 'Báb', about: 'the writings of the Báb' },
-  '‘Abdu’l-Bahá': { filter: 'Abdu', about: 'the talks, tablets and writings of ‘Abdu’l-Bahá' },
-  'Shoghi Effendi': { filter: 'Shoghi Effendi', about: 'the writings and letters of Shoghi Effendi' },
-  'Universal House of Justice': { filter: 'Universal House of Justice', about: 'messages of the Universal House of Justice' },
-  none: { filter: null, about: 'no single author’s words are asked for — including when a person is only the SUBJECT of the question ("When was the Báb martyred?" is ABOUT the Báb, not BY him)' },
+  'Bahá’u’lláh': { aliases: ['Bahá’u’lláh', 'Bahaullah', 'Husayn-Ali', 'Blessed Beauty'], about: 'the writings and words of Bahá’u’lláh (Mírzá Ḥusayn-‘Alí, the Blessed Beauty)' },
+  'The Báb': { aliases: ['Báb', 'Ali-Muhammad'], about: 'the writings of the Báb (Siyyid ‘Alí-Muḥammad)' },
+  '‘Abdu’l-Bahá': { aliases: ['Abdu', 'Abdul', 'Abbas Effendi'], about: 'the talks, tablets and writings of ‘Abdu’l-Bahá (‘Abbás Effendi, the Master), however spelled' },
+  'Shoghi Effendi': { aliases: ['Shoghi'], about: 'the writings and letters of Shoghi Effendi (the Guardian)' },
+  'Universal House of Justice': { aliases: ['Universal House of Justice', 'House of Justice'], about: 'messages of the Universal House of Justice' },
+  none: { aliases: null, about: 'no single author’s words are asked for — including when a person is only the SUBJECT of the question ("When was the Báb martyred?" is ABOUT the Báb, not BY him)' },
 };
 
 const SHAPES = {
@@ -26,11 +29,11 @@ const SHAPES = {
   enumerate: 'asks for a list: members of a group, attendees of an event, all instances of something',
 };
 
-const EMPTY = { filters: {}, comparative: false, shape: 'topic', confidence: {}, source: {} };
+const EMPTY = { filters: {}, prefer: null, comparative: false, shape: 'topic', confidence: {}, source: {} };
 
 /** Jev answers (or null) → plan. Pure. */
 export function buildPlan(answers, { given = {} } = {}) {
-  const plan = { ...EMPTY, filters: {}, confidence: {}, source: {} };
+  const plan = { ...EMPTY, filters: {}, prefer: null, confidence: {}, source: {} };
   if (answers) {
     const t = answers.tradition || {};
     const a = answers.author || {};
@@ -44,9 +47,9 @@ export function buildPlan(answers, { given = {} } = {}) {
         plan.source.religion = 'jev';
       }
       const au = AUTHORS[a.choice];
-      if (au?.filter && (a.confidence ?? 0) >= AUTHOR_MIN_CONFIDENCE) {
-        plan.filters.author = au.filter;
-        plan.source.author = 'jev';
+      if (au?.aliases && (a.confidence ?? 0) >= AUTHOR_MIN_CONFIDENCE) {
+        plan.prefer = { author: a.choice, aliases: au.aliases };
+        plan.source.prefer = 'jev';
       }
     }
   }

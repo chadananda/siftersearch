@@ -53,6 +53,24 @@ describe('plannedSearch', () => {
     expect(e.calls).toHaveLength(2);
   });
 
+  it('puts the preferred author first but KEEPS books that quote them', async () => {
+    const pref = async (_i, { given } = {}) => ({ ...buildPlan({
+      tradition: { choice: "Baha'i", confidence: 0.95 }, comparative: { noul: 0 },
+      author: { choice: '‘Abdu’l-Bahá', confidence: 0.95 }, shape: { choice: 'quote', confidence: 0.9 },
+    }, { given }), ms: 5 });
+    const calls = [];
+    const fn = async (_q, opts) => {
+      calls.push(opts.filters);
+      return { hits: opts.filters.author
+        ? [{ id: 2, author: '‘Abdu’l-Bahá' }]
+        : [{ id: 1, author: 'H. M. Balyuzi' }, { id: 2, author: '‘Abdu’l-Bahá' }, { id: 3, author: "'Abdu'l-Bahá, Universal House of Justice" }] };
+    };
+    const r = await plannedSearch('tablet from Abdul Baha', { planner: pref, engine: fn });
+    expect(calls.some((f) => f.author) && calls.some((f) => !f.author)).toBe(true);
+    expect(r.hits.map((h) => h.id)).toEqual([2, 3, 1]);   // his words first, compilation next, Balyuzi kept
+    expect(r.hits[2]._authorMatch).toBe(false);
+  });
+
   it('caller filters beat the plan', async () => {
     const e = engine(() => many(5));
     await plannedSearch('x', { given: { religion: 'Hindu' }, planner: planOf({ tradition: 'Buddhist' }), engine: e.fn });
