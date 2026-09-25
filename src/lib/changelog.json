@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T00:57:06.222Z",
+  "generated": "2026-09-25T01:19:52.235Z",
   "entries": [
+    {
+      "hash": "d3bd120f",
+      "date": "2026-09-24",
+      "type": "Test",
+      "description": "Search-type battery with independent truth; re-based legacy bank; fix textless timeout fallback",
+      "scope": "search"
+    },
     {
       "hash": "9cd0cc8c",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "CoreName no longer splits on hyphen (it connects Persian nisbas Khán-i-Núrí) — was truncating names → recall miss → spurious duplicate creates",
       "scope": null
-    },
-    {
-      "hash": "440937f9",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Type-awareness — classify cluster type first; non-persons (place/work/concept/community/group/event) → 'other-type', not a person create",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "d3bd120f",
+        "date": "2026-09-24",
+        "type": "Test",
+        "description": "Search-type battery with independent truth; re-based legacy bank; fix textless timeout fallback",
+        "scope": "search"
+      },
       {
         "hash": "9cd0cc8c",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "CoreName no longer splits on hyphen (it connects Persian nisbas Khán-i-Núrí) — was truncating names → recall miss → spurious duplicate creates",
-        "scope": null
-      },
-      {
-        "hash": "440937f9",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Type-awareness — classify cluster type first; non-persons (place/work/concept/community/group/event) → 'other-type', not a person create",
         "scope": null
       }
     ]

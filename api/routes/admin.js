@@ -58,7 +58,7 @@ const expandTrace = (r) => {
   return { ...r, filters: parse(r.filters_json), layers: parse(r.layers_json), timings: parse(r.timings_json), relaxed: parse(r.relaxed_json) };
 };
 
-import { getStats as getSearchStats, getMeili } from '../lib/search.js';
+import { getStats as getSearchStats, getMeili, probeSearchEngine } from '../lib/search.js';
 import { indexDocumentFromText, batchIndexDocuments, indexFromJSON, removeDocument, getIndexingStatus, migrateEmbeddingsFromMeilisearch, getEmbeddingCacheStats } from '../services/indexer.js';
 import { getSyncStats, forceSyncNow, getUnsyncedCount } from '../services/sync-worker.js';
 import { getWatcherStats, isWatcherRunning } from '../services/library-watcher.js';
@@ -2386,6 +2386,10 @@ Collection: ${paragraph.collection || 'Unknown'}
       [row.query_hash, row.trace_id], 'admin:search-trace-siblings');
     return { trace: expandTrace(row), same_question: siblings };
   });
+
+  // GET /search-engine → Meili version, experimental features, and whether each filter KIND really filters.
+  // Exists because a rejected CONTAINS filter was swallowed as "zero hits" and nothing reachable could say why.
+  fastify.get('/search-engine', { preHandler: requireInternal }, async () => probeSearchEngine());
 
   fastify.get('/search-stats', { preHandler: requireInternal }, async (request) => {
     const days = parseInt(request.query?.days, 10) || 7;

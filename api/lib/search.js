@@ -425,6 +425,51 @@ function overFetchForRerank(targetCount) {
 /**
  * Initialize indexes with proper settings
  */
+/**
+ * Author/collection narrowing is `CONTAINS`, which Meilisearch rejects unless this experimental feature is on.
+ * The rejection was caught per-index and returned as zero hits, so every author-scoped search was empty.
+ * Idempotent (reads first, PATCHes only when off); never throws — startup must not die on it.
+ */
+export async function ensureContainsFilter({ meiliUrl, headers, fetchImpl = fetch }) {
+  try {
+    const cur = await fetchImpl(`${meiliUrl}/experimental-features`, { headers });
+    const before = cur.ok ? await cur.json() : {};
+    if (before.containsFilter === true) return { enabled: true, changed: false };
+    const res = await fetchImpl(`${meiliUrl}/experimental-features`, {
+      method: 'PATCH', headers, body: JSON.stringify({ containsFilter: true }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || body.containsFilter !== true) {
+      return { enabled: false, changed: false, error: `HTTP ${res.status} ${body.message || ''}`.trim() };
+    }
+    return { enabled: true, changed: true };
+  } catch (err) {
+    return { enabled: false, changed: false, error: err.message };
+  }
+}
+
+/** Engine diagnostics for the internal API: version, features, and whether each filter KIND actually filters. */
+export async function probeSearchEngine() {
+  const meili = getMeili();
+  const meiliUrl = config.search.host || 'http://localhost:7700';
+  const headers = { 'Content-Type': 'application/json' };
+  if (config.search.apiKey) headers['Authorization'] = `Bearer ${config.search.apiKey}`;
+  const out = {};
+  try { out.version = (await meili.getVersion()).pkgVersion; } catch (err) { out.version_error = err.message; }
+  try { out.features = await (await fetch(`${meiliUrl}/experimental-features`, { headers })).json(); } catch (err) { out.features_error = err.message; }
+  const probes = { religion_equals: 'religion = "Baha\'i"', author_contains: 'author CONTAINS "Shoghi Effendi"', collection_contains: 'collection CONTAINS "Bah"' };
+  out.probes = {};
+  for (const [name, filter] of Object.entries(probes)) {
+    try {
+      const r = await meili.index(INDEXES.PARAGRAPHS).search('justice', { filter, limit: 3, attributesToRetrieve: ['author'] });
+      out.probes[name] = { filter, hits: r.hits.length, estimated: r.estimatedTotalHits };
+    } catch (err) {
+      out.probes[name] = { filter, error: err.message };
+    }
+  }
+  return out;
+}
+
 export async function initializeIndexes() {
   if (!config.search.enabled) {
     logger.info('Meilisearch disabled, skipping index initialization');
@@ -458,6 +503,10 @@ export async function initializeIndexes() {
   const meiliKey = config.search.apiKey;
   const headers = { 'Content-Type': 'application/json' };
   if (meiliKey) headers['Authorization'] = `Bearer ${meiliKey}`;
+
+  const contains = await ensureContainsFilter({ meiliUrl, headers });
+  if (contains.enabled) logger.info({ changed: contains.changed }, 'Meilisearch containsFilter enabled');
+  else logger.error({ error: contains.error }, 'Meilisearch containsFilter NOT enabled — author/collection filters will return nothing');
 
   const paragraphSettings = {
     searchableAttributes: ['text', 'text_grounded', 'context', 'heading', 'title', 'author'],
@@ -886,8 +935,11 @@ import {
 export async function keywordSearch(query, options = {}) {
   const { limit = 10, offset = 0, ...restOptions } = options;
 
-  // Check cache first
-  const cached = getCachedSearch(query);
+  // Check cache first — keyed on the scope too, or a filtered search is answered from an unfiltered one
+  const cacheScope = (restOptions.filters && Object.keys(restOptions.filters).length) || restOptions.scope_config
+    ? JSON.stringify({ f: restOptions.filters || {}, s: restOptions.scope_config || null })
+    : '';
+  const cached = getCachedSearch(query, true, cacheScope);
 
   if (cached) {
     // Return slice from cached results
@@ -987,7 +1039,7 @@ export async function keywordSearch(query, options = {}) {
   rankedHits = deduplicatedHits;
 
   // Cache the full ranked result set
-  setCachedSearch(query, rankedHits, rankedHits.length);
+  setCachedSearch(query, rankedHits, rankedHits.length, cacheScope);
 
   // Return requested slice
   const hits = rankedHits.slice(offset, offset + limit);

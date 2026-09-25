@@ -21,12 +21,14 @@ const searchCache = new Map();
 let cacheHits = 0;
 let cacheMisses = 0;
 
-function getCacheKey(query) {
-  return query.toLowerCase().trim();
+// scope = stable string of filters/scope_config; '' for unscoped. Without it a filtered and an unfiltered
+// search for the same words shared one entry.
+function getCacheKey(query, scope = '') {
+  return `${query.toLowerCase().trim()}\u0000${scope}`;
 }
 
-export function getCachedSearch(query, trackStats = true) {
-  const key = getCacheKey(query);
+export function getCachedSearch(query, trackStats = true, scope = '') {
+  const key = getCacheKey(query, scope);
   const cached = searchCache.get(key);
 
   if (!cached) {
@@ -49,8 +51,8 @@ export function getCachedSearch(query, trackStats = true) {
   return cached;
 }
 
-export function setCachedSearch(query, hits, estimatedTotalHits) {
-  const key = getCacheKey(query);
+export function setCachedSearch(query, hits, estimatedTotalHits, scope = '') {
+  const key = getCacheKey(query, scope);
   while (searchCache.size >= SEARCH_CACHE_MAX_SIZE) {
     const oldestKey = searchCache.keys().next().value;
     searchCache.delete(oldestKey);
