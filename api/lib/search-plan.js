@@ -61,6 +61,23 @@ export function keywordTradition(text) {
   })?.[1];
 }
 
+// Backstop author names, matched as whole words on FOLDED text (no diacritics/apostrophes, hyphens as spaces).
+const AUTHOR_NAMES = {
+  'Bahá’u’lláh': ['bahaullah', 'baha u llah', 'blessed beauty'],
+  'The Báb': ['the bab'],
+  '‘Abdu’l-Bahá': ['abdul baha', 'abdulbaha', 'abbas effendi'],
+  'Shoghi Effendi': ['shoghi effendi', 'the guardian'],
+  'Universal House of Justice': ['universal house of justice'],
+};
+const foldQuery = (t) => ` ${String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  .replace(/[\u2018\u2019\u02bc\u02bb`']/g, '').replace(/[-\u2013\u2014_/]/g, ' ').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()} `;
+
+/** The author a text explicitly names (backstop only), or undefined. */
+export function keywordAuthor(text) {
+  const f = foldQuery(text);
+  return Object.entries(AUTHOR_NAMES).find(([, names]) => names.some((n) => f.includes(` ${n} `)))?.[0];
+}
+
 const PLAN_TTL_MS = 30 * 60 * 1000;
 const planCache = new Map();
 
@@ -126,6 +143,12 @@ export async function planSearch(input, { given = {}, apiKey = process.env.TYPES
     const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content;
     const t = !plan.filters.religion && keywordTradition(lastUser);
     if (t) { plan.filters.religion = t; plan.source.religion = 'keyword-backstop'; }
+    const a = keywordAuthor(lastUser);
+    if (a) {
+      plan.prefer = { author: a, aliases: AUTHORS[a].aliases };
+      plan.source.prefer = 'keyword-backstop';
+      if (!plan.filters.religion) { plan.filters.religion = "Baha'i"; plan.source.religion = 'keyword-backstop'; }
+    }
     return { ...plan, ms: Date.now() - t0, ...extra };
   };
   if (!apiKey || !state.trim()) return backstop({ skipped: true });

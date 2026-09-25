@@ -92,6 +92,19 @@ describe('planSearch — the one network call', () => {
     expect(p.source.religion).toBe('keyword-backstop');
   });
 
+  it('when Jev fails, an author NAMED in the query still becomes a preference (and implies the tradition)', async () => {
+    const fetchImpl = async () => { throw new Error('timeout'); };
+    const p = await planSearch('Shoghi Effendi on the Administrative Order', { apiKey: 'k', fetchImpl, cache: false });
+    expect(p.prefer?.author).toBe('Shoghi Effendi');
+    expect(p.filters).toEqual({ religion: "Baha'i" });
+  });
+
+  it('the backstop reads spellings without diacritics or apostrophes (Abdul Baha)', async () => {
+    const fetchImpl = async () => { throw new Error('timeout'); };
+    const p = await planSearch('what did Abdul Baha say about war', { apiKey: 'k', fetchImpl, cache: false });
+    expect(p.prefer?.author).toBe('‘Abdu’l-Bahá');
+  });
+
   it('caches a plan so a repeat costs no Jev call', async () => {
     let calls = 0;
     const fetchImpl = async () => { calls++; return { ok: true, json: async () => ({ answers: ans({ tradition: 'Hindu' }) }) }; };

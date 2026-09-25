@@ -557,5 +557,277 @@
     },
     "latency_p50_ms": 6470,
     "latency_p95_ms": 14204
+  },
+  {
+    "run_at": "2026-09-25T02:58:46.056Z",
+    "endpoint": "public",
+    "top_k": 10,
+    "valid": true,
+    "total": 76,
+    "measured": 76,
+    "errored": 0,
+    "passed": 56,
+    "pass_rate": 74,
+    "plan_fallbacks": [
+      "au-abdul-baha-equality:  The operation was aborted due to timeout",
+      "au-shoghi-admin-order:  The operation was aborted due to timeout"
+    ],
+    "known_gaps_now_passing": [],
+    "unexpected_failures": [
+      "xp-one-country",
+      "xp-harmony-science-religion",
+      "xp-lord-shepherd",
+      "lp-earth-one-country",
+      "lp-love-enemies",
+      "lp-war-peace-thoughts",
+      "fw-dawnbreakers-one-word",
+      "au-abdul-baha-equality",
+      "au-shoghi-admin-order",
+      "hx-mulla-husayn-death",
+      "df-nirvana"
+    ],
+    "by_type": {
+      "exact_phrase": {
+        "passed": 11,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 79,
+        "p50_ms": 5571
+      },
+      "lay_paraphrase": {
+        "passed": 4,
+        "measured": 7,
+        "errored": 0,
+        "pass_rate": 57,
+        "p50_ms": 3342
+      },
+      "find_work": {
+        "passed": 11,
+        "measured": 12,
+        "errored": 0,
+        "pass_rate": 92,
+        "p50_ms": 229
+      },
+      "misattribution": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 273
+      },
+      "find_person": {
+        "passed": 7,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 50,
+        "p50_ms": 224
+      },
+      "enumerate": {
+        "passed": 0,
+        "measured": 2,
+        "errored": 0,
+        "pass_rate": 0,
+        "p50_ms": 6117
+      },
+      "scoped_topic": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 6568
+      },
+      "compare": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 6068
+      },
+      "author_scoped": {
+        "passed": 1,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 33,
+        "p50_ms": 11512
+      },
+      "history_fact": {
+        "passed": 5,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 83,
+        "p50_ms": 4106
+      },
+      "define_term": {
+        "passed": 4,
+        "measured": 5,
+        "errored": 0,
+        "pass_rate": 80,
+        "p50_ms": 3678
+      },
+      "library_meta": {
+        "passed": 1,
+        "measured": 1,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 894
+      }
+    },
+    "by_persona": {
+      "both": {
+        "passed": 31,
+        "measured": 36,
+        "errored": 0,
+        "pass_rate": 86,
+        "p50_ms": 3925
+      },
+      "chat": {
+        "passed": 13,
+        "measured": 18,
+        "errored": 0,
+        "pass_rate": 72,
+        "p50_ms": 3323
+      },
+      "research": {
+        "passed": 12,
+        "measured": 22,
+        "errored": 0,
+        "pass_rate": 55,
+        "p50_ms": 4103
+      }
+    },
+    "latency_p50_ms": 3678,
+    "latency_p95_ms": 11512
+  },
+  {
+    "run_at": "2026-09-25T02:59:03.331Z",
+    "endpoint": "public-nollm",
+    "top_k": 10,
+    "valid": true,
+    "total": 76,
+    "measured": 76,
+    "errored": 0,
+    "passed": 61,
+    "pass_rate": 80,
+    "plan_fallbacks": [],
+    "known_gaps_now_passing": [],
+    "unexpected_failures": [
+      "xp-harmony-science-religion",
+      "xp-lord-shepherd",
+      "lp-love-enemies",
+      "lp-war-peace-thoughts",
+      "fw-dawnbreakers-one-word",
+      "df-nirvana"
+    ],
+    "by_type": {
+      "exact_phrase": {
+        "passed": 12,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 86,
+        "p50_ms": 260
+      },
+      "lay_paraphrase": {
+        "passed": 5,
+        "measured": 7,
+        "errored": 0,
+        "pass_rate": 71,
+        "p50_ms": 142
+      },
+      "find_work": {
+        "passed": 11,
+        "measured": 12,
+        "errored": 0,
+        "pass_rate": 92,
+        "p50_ms": 110
+      },
+      "misattribution": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 127
+      },
+      "find_person": {
+        "passed": 7,
+        "measured": 14,
+        "errored": 0,
+        "pass_rate": 50,
+        "p50_ms": 133
+      },
+      "enumerate": {
+        "passed": 0,
+        "measured": 2,
+        "errored": 0,
+        "pass_rate": 0,
+        "p50_ms": 5718
+      },
+      "scoped_topic": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 322
+      },
+      "compare": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 146
+      },
+      "author_scoped": {
+        "passed": 3,
+        "measured": 3,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 1592
+      },
+      "history_fact": {
+        "passed": 6,
+        "measured": 6,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 214
+      },
+      "define_term": {
+        "passed": 4,
+        "measured": 5,
+        "errored": 0,
+        "pass_rate": 80,
+        "p50_ms": 219
+      },
+      "library_meta": {
+        "passed": 1,
+        "measured": 1,
+        "errored": 0,
+        "pass_rate": 100,
+        "p50_ms": 133
+      }
+    },
+    "by_persona": {
+      "both": {
+        "passed": 33,
+        "measured": 36,
+        "errored": 0,
+        "pass_rate": 92,
+        "p50_ms": 199
+      },
+      "chat": {
+        "passed": 14,
+        "measured": 18,
+        "errored": 0,
+        "pass_rate": 78,
+        "p50_ms": 149
+      },
+      "research": {
+        "passed": 14,
+        "measured": 22,
+        "errored": 0,
+        "pass_rate": 64,
+        "p50_ms": 201
+      }
+    },
+    "latency_p50_ms": 180,
+    "latency_p95_ms": 414
   }
 ]

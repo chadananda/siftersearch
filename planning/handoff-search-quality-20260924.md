@@ -178,7 +178,8 @@ DONE and LIVE (2.187.86–.91):
 |---|---|---|
 | public legacy (`plan:false`) | 49 | 6.5s |
 | public planned + LLM summary | 56 (before Jev hardening) | 4.1s |
-| **public planned, `analyze:false`** | **58** | **0.47s** |
+| **public planned, `analyze:false`** (steady state, 2.187.93) | **61** | **0.18s** (p95 0.41s) |
+| public planned + LLM summary (steady state) | 56 (2 degraded: Jev timeout under LLM load) | 3.7s |
 | multi planned | 61 | 1.2s |
 
 NEXT:
@@ -187,6 +188,14 @@ NEXT:
    valid_from = date); entitySearch LIKE-scan is 4.5–7s.
 3. Remaining quote misses (Psalm 23 under Christian scope, "harmony of science and religion").
 4. `/v1/tools/search` + chat executeSearch still call multiIndexSearch unplanned.
+5. **API event-loop freezes** (slow_query_log via `GET /api/admin/server/slow-queries?hours=24&minMs=300`):
+   fixed the 47s status embedding count and the daily-spend `date(timestamp)` (2.187.93). REMAINING, biggest:
+   `api/lib/pipeline/queue.js:181-191` — five per-doc `COUNT … GROUP BY doc_id` over content, ~3s each,
+   ~248×/day each IN THE API process (~44 min/day frozen). Needs a precomputed per-doc rollup (the worker
+   owns writes), not a query tweak. Also: don't call `/api/admin/server/status` casually — its other counts
+   still scan content.
+   Battery hygiene: run ≥4 min after a deploy and away from the :35 book-ingest cron; a run with errors or
+   `plan_fallbacks` is INVALID/DEGRADED — never a quality number.
 
 ## 9. Open, not mine to decide
 
