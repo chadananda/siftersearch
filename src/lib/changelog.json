@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T23:19:45.128Z",
+  "generated": "2026-09-25T23:24:05.921Z",
   "entries": [
+    {
+      "hash": "7e3dd54c",
+      "date": "2026-09-25",
+      "type": "Fixed",
+      "description": "Version the Anís bundle URL by content hash so a deploy is live on every host site at once",
+      "scope": "widget"
+    },
     {
       "hash": "0fe9f26a",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Deterministic near-dup collapse before AI analysis (+ router/pattern design doc)",
       "scope": null
-    },
-    {
-      "hash": "15a6da2d",
-      "date": "2026-07-10",
-      "type": "Other",
-      "description": "Add retrieval_ms/analysis_ms phase timing to _timing telemetry",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "7e3dd54c",
+        "date": "2026-09-25",
+        "type": "Fixed",
+        "description": "Version the Anís bundle URL by content hash so a deploy is live on every host site at once",
+        "scope": "widget"
+      },
       {
         "hash": "0fe9f26a",
         "date": "2026-09-25",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-10",
         "type": "Other",
         "description": "Deterministic near-dup collapse before AI analysis (+ router/pattern design doc)",
-        "scope": null
-      },
-      {
-        "hash": "15a6da2d",
-        "date": "2026-07-10",
-        "type": "Other",
-        "description": "Add retrieval_ms/analysis_ms phase timing to _timing telemetry",
         "scope": null
       }
     ]
