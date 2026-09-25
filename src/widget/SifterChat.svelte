@@ -25,6 +25,12 @@
   let bodyEl = $state(null);
   let inputEl = $state(null);
   let phase = $state('idle');       // idle | research | craft | streaming
+  // Perception line (Claude-Code-style): the server's specific status ("Reading Gleanings…") replaces the stage
+  // text; if the first words are slow, it rotates gently. The first token of the answer replaces all of it.
+  let statusText = $state('');
+  const WAITING = ['Gathering the passages…', 'Weighing what the texts say…', 'Putting it into words…'];
+  let statusTimer = null;
+  function stopStatus() { if (statusTimer) { clearInterval(statusTimer); statusTimer = null; } }
   let muted = $state(false);
   try { muted = localStorage.getItem('sifter-chat-mute') === '1'; } catch { /* private mode */ }
 
@@ -88,6 +94,16 @@
   }
   const sndSend = () => { if (!muted) tone(720, 0.18, { glide: 380, gain: 0.05 }); };            // droplet
   const sndDone = () => { if (!muted) { tone(523.25, 0.4, { gain: 0.032 }); tone(784, 0.55, { at: 0.09, gain: 0.024 }); } }; // soft fifth
+  // Reset controls. "New conversation" clears the visible thread. "Start over" also asks the server to forget
+  // this visitor's companion relationship (memory, premises, exposures) — the seeker's right to begin again, and
+  // how a tester resets Anis. The server deletes only the CALLER's own participant (same resolver as chat).
+  let resetOpen = $state(false);
+  function newConversation() { messages = []; persist(); errorMsg = ''; resetOpen = false; }
+  async function startOver() {
+    try { await fetch(`${api}/api/v1/companion`, { method: 'DELETE', credentials: 'include' }); } catch { /* local reset still happens */ }
+    try { localStorage.removeItem(`sifter-chat-sid:${token}`); } catch { /* private mode */ }
+    newConversation();
+  }
   function toggleMute() { muted = !muted; try { localStorage.setItem('sifter-chat-mute', muted ? '1' : '0'); } catch { /* ok */ } }
 
   // ── Paced streaming: words flow onto the page evenly, catching up if the buffer grows. ─────────
@@ -137,6 +153,8 @@
     input = '';
     errorMsg = '';
     pendBuf = ''; replay = ''; gotLive = false; streamDone = false; pendCites = null;
+    statusText = ''; stopStatus();
+    { let i = 0; statusTimer = setInterval(() => { if (Date.now() - t0 > 3500) statusText = WAITING[i++ % WAITING.length]; }, 2200); }
     messages = [...messages, { role: 'user', content: text }, { role: 'assistant', content: '', citations: [], pending: true }];
     busy = true;
     phase = 'research';
@@ -150,6 +168,7 @@
     try {
       const res = await fetch(`${api}/api/chat/stream`, {
         method: 'POST',
+        credentials: 'include',   // the anonymous session cookie IS the visitor's companion identity
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ messages: history, widget_token: token,
           ...(name ? { name } : {}), ...(mission ? { mission } : {}),
@@ -170,8 +189,9 @@
           if (!line) continue;
           let ev; try { ev = JSON.parse(line.slice(6)); } catch { continue; }
           if (ev.type === 'stage' && ev.stage) { if (phase !== 'streaming') phase = ev.stage; }
-          else if (ev.type === 'text' && typeof ev.content === 'string') { gotLive = true; pendBuf += ev.content; }
-          else if (ev.type === 'chunk' && typeof ev.text === 'string') { if (gotLive) replay += ev.text; else pendBuf += ev.text; }
+          else if (ev.type === 'status' && typeof ev.text === 'string') { statusText = ev.text; }
+          else if (ev.type === 'text' && typeof ev.content === 'string') { gotLive = true; stopStatus(); pendBuf += ev.content; }
+          else if (ev.type === 'chunk' && typeof ev.text === 'string') { stopStatus(); if (gotLive) replay += ev.text; else pendBuf += ev.text; }
           else if (ev.type === 'citations' && Array.isArray(ev.citations)) { pendCites = ev.citations; }
           else if (ev.type === 'complete') { if (Array.isArray(ev.citations) && ev.citations.length) pendCites = ev.citations; streamDone = true; }
           else if (ev.type === 'error') { throw new Error(ev.message || 'assistant error'); }
@@ -179,7 +199,7 @@
       }
       streamDone = true;   // ticker drains the buffer, then finalizes
     } catch (e) {
-      stopTicker();
+      stopTicker(); stopStatus();
       messages = messages.slice(0, -1);
       messages = [...messages];
       errorMsg = 'Something went wrong reaching the assistant. Please try again.';
@@ -338,6 +358,15 @@
                 <button class="pdisc" role="menuitem" onclick={disconnectOnetap}>Disconnect</button>
               </div>
             {/if}
+            <button class="icon" aria-label="New conversation" aria-haspopup="menu" aria-expanded={resetOpen} onclick={() => (resetOpen = !resetOpen)} title="New conversation">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </button>
+            {#if resetOpen}
+              <div class="pmenu" role="menu">
+                <button class="pdisc" role="menuitem" onclick={newConversation}>New conversation</button>
+                <button class="pdisc" role="menuitem" onclick={startOver} title="Forget what this companion has learned about you, then start fresh">Start over (forget me)</button>
+              </div>
+            {/if}
             <button class="icon" aria-label={muted ? 'Unmute sounds' : 'Mute sounds'} aria-pressed={muted} onclick={toggleMute} title={muted ? 'Unmute' : 'Mute'}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 9.5v5h3.5L13 19V5L7.5 9.5H4z" fill="currentColor" stroke="none"/>
@@ -363,7 +392,8 @@
                     {#if m.role === 'assistant'}
                       {#if m.pending && !m.content}
                         <span class="stage">{
-                          phase === 'craft' ? 'Composing…'
+                          statusText ? statusText
+                          : phase === 'craft' ? 'Composing…'
                           : phase === 'deepening' ? 'Looking deeper into the library…'
                           : phase === 'deepening-more' ? 'Still searching — combing the historical records…'
                           : 'Searching the ocean of texts…'}</span>

@@ -3,10 +3,12 @@
 // Mounted under /api/v1/companion. Works for authed users AND anonymous sessions (they manage their
 // own session data); consent is never presumed — memory persists only after an explicit opt-in here.
 import { optionalAuthenticate } from '../lib/auth.js';
-import { getAnonymousUserId } from '../lib/anonymous.js';
+import { participantId } from '../lib/anonymous.js';
 import { companionStore, relationshipStage } from '../lib/companion/index.js';
 
-const participantOf = (req) => (req.user?.sub?.toString() || getAnonymousUserId(req) || null);
+// The SAME resolver chat uses (account → x-user-id → sifter_sid cookie). Resolving differently here left anonymous
+// widget visitors — identified by the cookie — unable to inspect or delete what the companion built from their chats.
+export const participantOf = (req) => participantId(req);
 
 export default async function companionMeRoutes(fastify) {
   const auth = { preHandler: optionalAuthenticate };

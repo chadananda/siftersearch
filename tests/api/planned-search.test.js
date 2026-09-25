@@ -71,6 +71,20 @@ describe('plannedSearch', () => {
     expect(r.hits[2]._authorMatch).toBe(false);
   });
 
+  // Dozens of sites embed Anis; each may declare a home tradition. It fills in ONLY when the question names none.
+  it('applies a site default tradition when the question names none', async () => {
+    const e = engine(() => many(5));
+    const r = await plannedSearch('what is the purpose of life', { defaults: { religion: "Baha'i" }, planner: planOf({}), engine: e.fn });
+    expect(e.calls[0].filters.religion).toBe("Baha'i");
+    expect(r.plan.source.religion).toBe('site-default');
+  });
+
+  it('never lets a site default override the tradition the user asked about', async () => {
+    const e = engine(() => many(5));
+    await plannedSearch('what does the Quran say about patience', { defaults: { religion: "Baha'i" }, planner: planOf({ tradition: 'Islam' }), engine: e.fn });
+    expect(e.calls[0].filters.religion).toBe('Islam');
+  });
+
   it('caller filters beat the plan', async () => {
     const e = engine(() => many(5));
     await plannedSearch('x', { given: { religion: 'Hindu' }, planner: planOf({ tradition: 'Buddhist' }), engine: e.fn });

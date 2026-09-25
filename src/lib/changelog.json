@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T03:00:39.071Z",
+  "generated": "2026-09-25T05:03:35.394Z",
   "entries": [
+    {
+      "hash": "3b075e75",
+      "date": "2026-09-24",
+      "type": "Fixed",
+      "description": "Jev backstop also reads a NAMED author (as a preference, implying Bahá'í scope)",
+      "scope": "search"
+    },
     {
       "hash": "23ba8cce",
       "date": "2026-09-24",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Connection = typed target OR proof names target (object-binding is sparse)",
       "scope": null
-    },
-    {
-      "hash": "9b078497",
-      "date": "2026-07-09",
-      "type": "Other",
-      "description": "Drive meaning-search off the proof-gated entity_claims substrate",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-24": [
+      {
+        "hash": "3b075e75",
+        "date": "2026-09-24",
+        "type": "Fixed",
+        "description": "Jev backstop also reads a NAMED author (as a preference, implying Bahá'í scope)",
+        "scope": "search"
+      },
       {
         "hash": "23ba8cce",
         "date": "2026-09-24",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-09",
         "type": "Other",
         "description": "Connection = typed target OR proof names target (object-binding is sparse)",
-        "scope": null
-      },
-      {
-        "hash": "9b078497",
-        "date": "2026-07-09",
-        "type": "Other",
-        "description": "Drive meaning-search off the proof-gated entity_claims substrate",
         "scope": null
       }
     ]

@@ -38,9 +38,15 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
  * @param {object} [o.given]        caller filters (model tool args, explicit API filters) — always win
  * @returns {{hits, plan, layers, widened, relaxed, narrowCount, cached, timings}}
  */
-export async function plannedSearch(query, { messages, given = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, minResults = 3 } = {}) {
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, minResults = 3 } = {}) {
   const t0 = Date.now();
   const plan = await planner(messages?.length ? messages : query, { given });
+  // Site default (an embedding site's home tradition): fills in only when the question named none and is not a
+  // comparison. It is a scope like any other, so the relax ladder still widens it when the site's texts are thin.
+  if (defaults?.religion && !plan.filters.religion && !plan.comparative) {
+    plan.filters = { ...plan.filters, religion: defaults.religion };
+    plan.source = { ...plan.source, religion: 'site-default' };
+  }
   const layers = layersFor(plan);
   const planMs = Date.now() - t0;
 

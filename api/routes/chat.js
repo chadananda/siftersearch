@@ -449,7 +449,8 @@ For an unfiltered total of the whole library, use library_overview instead.`,
 
 // ─── Tool implementations ─────────────────────────────────────────────────
 
-export async function executeSearch({ query, mode = 'passages', religion, collection, author, language, document_id, start = 0, limit = 10, scope_config, semanticRatio, entityIds, phrase }) {
+// plan: { messages?, defaults? } → Jev-planned retrieval (search-plan.js) instead of the raw engine; same output + _plan.
+export async function executeSearch({ query, mode = 'passages', religion, collection, author, language, document_id, start = 0, limit = 10, scope_config, semanticRatio, entityIds, phrase, plan }) {
   const safeLimit = Math.min(limit || 10, 100);
 
   // MODE: read — fetch paragraphs from a specific document
@@ -485,7 +486,14 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     if (document_id) filters.documentId = document_id;
 
     let merged;
-    if (phrase) {
+    let planInfo = null;
+    if (plan && !phrase) {
+      const { plannedSearch } = await import('../lib/planned-search.js');
+      const r = await plannedSearch(query, { messages: plan.messages, given: filters, defaults: plan.defaults, limit: safeLimit, scope_config, entityIds });
+      merged = r.hits || [];
+      planInfo = { shape: r.plan.shape, filters: r.plan.filters, prefer: r.plan.prefer?.author || null, comparative: r.plan.comparative,
+        widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error || null };
+    } else if (phrase) {
       // PHRASE mode (quote-source lookups): pure BM25 straight to the paragraphs
       // index — Meili honors "quoted phrases" in q. The multi-index merge below
       // would blend in HyPE-question hits, which match ANY text semantically and
@@ -625,6 +633,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     }
 
     return {
+      ...(planInfo ? { _plan: planInfo } : {}),
       passages: top.map(hit => {
         const docId = hit.doc_id || hit.document_id;
         const meta = docMeta.get(docId);
@@ -1365,12 +1374,15 @@ export default async function chatRoutes(fastify) {
           // host site's own tuning. Display name + a short steering mission. Bounded;
           // treated as guidance, never system authority.
           name: { type: 'string', maxLength: 60 },
-          mission: { type: 'string', maxLength: 400 }
+          mission: { type: 'string', maxLength: 400 },
+          // 'anis' (default): conversation + planned raw search → one fast streamed answer.
+          // 'jafar': the legacy research→craft→reflect pipeline, kept for side-by-side testing / rollback.
+          engine: { type: 'string', enum: ['anis', 'jafar'] }
         }
       }
     }
   }, async (request, reply) => {
-    const { messages, researchContext, chatbot_location, widget_token, name, mission } = request.body;
+    const { messages, researchContext, chatbot_location, widget_token, name, mission, engine } = request.body;
     let persona_name = null;
     let default_tradition = null;
     if (widget_token) {
@@ -1402,6 +1414,26 @@ export default async function chatRoutes(fastify) {
     };
 
     try {
+      // ANIS (default): chat is a LAYER over raw search — the Jev plan + planned retrieval (no LLM), then ONE fast
+      // streamed answer in the site persona with the Seeker Companion plan. ANIS_ENGINE=jafar rolls back globally.
+      const useAnis = (engine || process.env.ANIS_ENGINE || 'anis') === 'anis';
+      let anisResult = null;
+      if (useAnis) {
+        const { anisRespond } = await import('../lib/anis/respond.js');
+        const { getScopeForLocation } = await import('../lib/search/scope.js');
+        let scope_config;
+        try { scope_config = chatbot_location ? getScopeForLocation(chatbot_location) : undefined; } catch { scope_config = undefined; }
+        const r = await anisRespond({
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          profile: { persona_name, default_tradition, mission: mission_prompt, scope_config },
+          participant: { id: userId, authed: !!request.user?.sub },
+          onEvent: sendEvent,
+        });
+        anisResult = {
+          reply: r.reply, retrieval_quotes: r.retrieved, retrieved_count: r.retrieved.length,
+          user_intent: r.plan?.shape || null, gate: { pass: true, picker: 'anis-layer' }, retried: false, timings: r.timings,
+        };
+      }
       // Three-stage Jafar pipeline: research → craft → reflection-gate.
       // See api/lib/jafar-pipeline.js for the architecture rationale.
       const { runJafarPipeline } = await import('../lib/jafar-pipeline.js');
@@ -1412,8 +1444,8 @@ export default async function chatRoutes(fastify) {
       // Enter the answer is partly or fully computed. Opening turns only.
       const lastMsg = messages[messages.length - 1]?.content || '';
       const isOpening = !messages.slice(0, -1).some((m) => m.role === 'user');
-      const pw = isOpening ? _prewarm.get(prewarmKey(persona_name || 'Jafar', lastMsg)) : null;
-      let result = null;
+      const pw = (!anisResult && isOpening) ? _prewarm.get(prewarmKey(persona_name || 'Jafar', lastMsg)) : null;
+      let result = anisResult;
       if (pw?.promise) {
         _prewarm.delete(prewarmKey(persona_name || 'Jafar', lastMsg));
         if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
@@ -1460,7 +1492,9 @@ export default async function chatRoutes(fastify) {
           user_intent: result.user_intent,
           retrieved_count: result.retrieved_count,
           gate_passed: result.gate?.pass,
-          retried: result.retried
+          retried: result.retried,
+          engine: anisResult ? 'anis' : 'jafar',
+          ...(result.timings ? { timings: result.timings } : {})
         }
       });
       reply.raw.end();

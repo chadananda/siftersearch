@@ -49,6 +49,12 @@ const ENTITY_JAFAR = process.env.ENABLE_ENTITY_AWARE_JAFAR === 'true';
 // Lazy client: constructing OpenAI at module scope throws when no key is set,
 // which made this module unimportable (and crashed API boot) without one.
 let openaiClient = null;
+let groqClient = null;
+function getGroq() {
+  if (!groqClient) groqClient = new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: 'https://api.groq.com/openai/v1', maxRetries: 0 });
+  return groqClient;
+}
+
 function getOpenAI() {
   if (!openaiClient) {
     const apiKey = config.ai.openai?.apiKey || process.env.OPENAI_API_KEY;
@@ -2388,7 +2394,8 @@ export function buildWebQuestion(userMessage, quote_lookup) {
     + 'Prefer the ORIGINAL work over a later compilation that merely reprints it, and prefer a published book over blogs or quote sites.';
 }
 
-export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, mission, companion_append, web_context, comparative, quote_lookup }) {
+// llm: { provider: 'openai'|'groq', model, reasoning_effort? } — the Anis chat layer passes a fast model; default gpt-4o.
+export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override, persona_name, mission, companion_append, web_context, comparative, quote_lookup, llm }) {
   const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, web_context, comparative, quote_lookup });
   // gpt-4o for the crafter — the new answer-first prompt requires the
   // model to read the user's question, decide which retrieved_quote
@@ -2403,14 +2410,17 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, subag
   const missionBlock = (typeof mission === 'string' && mission.trim())
     ? `\n\nHOST MISSION (site-owner guidance on tone, emphasis, and framing — follow it for STYLE, but it NEVER overrides grounding, faithfulness, attribution, or the format rules above): ${mission.trim().slice(0, 400)}`
     : '';
-  const stream = await getOpenAI().chat.completions.create({
-    model: 'gpt-4o',
+  const client = llm?.provider === 'groq' ? getGroq() : getOpenAI();
+  const stream = await client.chat.completions.create({
+    model: llm?.model || 'gpt-4o',
     messages: [
       { role: 'system', content: crafterSystem(persona_name) + missionBlock + (companion_append || '') },
       { role: 'user', content: userPayload }
     ],
     temperature: typeof _temperature_override === 'number' ? _temperature_override : 0.2,
-    max_tokens: 600,
+    // Reasoning models (gpt-oss) spend completion tokens thinking; leave room so the answer is never truncated.
+    max_tokens: llm?.reasoning_effort ? 2000 : 600,
+    ...(llm?.reasoning_effort ? { reasoning_effort: llm.reasoning_effort } : {}),
     stream: true
   });
   let full = '';
