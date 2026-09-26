@@ -12,6 +12,7 @@ const persons = [
   { id: 5, cn: 'Mullá Ḥusayn-i-Bushrú’í', imp: 85, aliases: '["Mullá Ḥusayn","Bábu’l-Báb"]' },
   { id: 6, cn: 'Imám Ḥusayn', imp: 90, aliases: '[]' },
   { id: 7, cn: 'Vaḥíd', imp: 60, aliases: '[]' },
+  { id: 8, cn: 'Ḥájí Háshim-i-‘Aṭṭár (of Baghdád)', imp: 5, aliases: '["Shíráz"]' },
 ];
 const groups = [{ id: 50, name: 'Letters of the Living (Ḥurúf-i-Ḥayy)', aliases: '[]' }];
 const members = [{ group: 50, id: 3 }, { group: 50, id: 4 }, { group: 50, id: 5 }];
@@ -25,7 +26,7 @@ const claims = [
   { id: 7, eid: 1, rel: 'met', tid: null, st: 'Bahá’u’lláh met Quddús at Badasht', doc: 10, pid: 'para_7', tv: '1848' },
   { id: 8, eid: 6, rel: 'met', tid: null, st: 'Imám Ḥusayn met his companions', doc: 13, pid: 'para_8', tv: null },
 ];
-const index = createEncounterIndex({ persons, groups, members, claims });
+const index = createEncounterIndex({ persons, groups, members, claims, places: ['Shíráz', 'Baghdád'] });
 const names = (r) => r.people.map((p) => p.name);
 
 describe('encounterSearch', () => {
@@ -57,6 +58,18 @@ describe('encounterSearch', () => {
   it('"Bábí" is not "the Báb" (whole-word matching)', () => {
     const r = encounterSearch('who met the Báb', { index });
     expect(r.people.flatMap((p) => p.evidence.map((e) => e.paraId))).not.toContain('para_6');
+  });
+
+  it('a place in the question is not a second person ("(of Baghdád)" is a qualifier; an alias that is a place is dropped)', () => {
+    expect(encounterSearch('who met the Báb in Shiraz', { index }).pattern).toBe('target');
+    expect(encounterSearch('who met Bahá’u’lláh in Baghdad', { index }).pattern).toBe('target');
+  });
+
+  it('every piece of evidence says why it is there', () => {
+    const r = encounterSearch('who met the Báb', { index });
+    const vias = r.people.flatMap((p) => p.evidence.map((e) => e.via));
+    expect(vias).toContain('typed');
+    expect(vias).toContain('named:bab');
   });
 
   it('two people: the claims between them, either direction', () => {

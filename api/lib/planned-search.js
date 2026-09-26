@@ -127,7 +127,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     const pr = await claimsP;
     entities = (pr.people || []).slice(0, 12).map((p) => ({ id: p.id, name: p.name,
       evidence: (p.evidence || []).slice(0, 4).map((e) => ({ statement: e.statement, relation: e.relation, source: e.source,
-        url: e.url || null, paraId: e.paraId || null, doc_id: e.doc_id ?? null, when: e.when || null })) }));
+        url: e.url || null, paraId: e.paraId || null, doc_id: e.doc_id ?? null, when: e.when || null, ...(e.via ? { via: e.via } : {}) })) }));
     if (pr.pattern) Object.assign(entities, { pattern: pr.pattern, ms: pr.ms ?? null, parties: { target: pr.target, with: pr.with, group: pr.group } });   // which people path answered
     const refs = entities.flatMap((p) => p.evidence.filter((e) => e.doc_id && e.paraId).slice(0, 2)
       .map((e) => ({ doc_id: e.doc_id, paraId: e.paraId, person: p.name, claim: e.statement })));
