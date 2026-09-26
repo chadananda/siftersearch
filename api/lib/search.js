@@ -758,6 +758,7 @@ export async function hybridSearch(query, options = {}) {
   const filterString = filterParts.length > 0 ? filterParts.join(' AND ') : undefined;
 
   // Generate embedding for semantic search — cap at 5s to prevent hanging under load
+  const _h0 = Date.now();
   let vector = null;
   if (semanticRatio > 0) {
     try {
@@ -774,6 +775,7 @@ export async function hybridSearch(query, options = {}) {
     }
   }
 
+  const _embedMs = Date.now() - _h0;
   // Over-fetch so authority reranking can pull canonical sources up from just
   // outside the requested window. Capped at maxResults to keep latency bounded.
   const internalLimit = overFetchForRerank(offset + limit);
@@ -935,7 +937,8 @@ export async function hybridSearch(query, options = {}) {
     estimatedTotalHits: estimated,
     limit,
     offset,
-    _scopeIndexes: targetIndexNames
+    _scopeIndexes: targetIndexNames,
+    _ms: { embed: _embedMs, engine: Date.now() - _h0 - _embedMs, cross: isCrossTradition }
   };
 }
 
@@ -1440,7 +1443,7 @@ export async function multiIndexSearch(query, options = {}) {
     },
     // Emitted for the trace. Retrieval layers run in parallel, so these are completion offsets from the
     // start of the fan-out, not additive costs; `merge` is the RRF + diversity work after them.
-    _timings: { ...(_stamp), merge: Date.now() - _t0 - Math.max(0, ..._stampValues(_stamp)), total: Date.now() - _t0 },
+    _timings: { ...(_stamp), main_embed: mainResult?._ms?.embed, main_engine: mainResult?._ms?.engine, main_cross: mainResult?._ms?.cross || undefined, merge: Date.now() - _t0 - Math.max(0, ..._stampValues(_stamp)), total: Date.now() - _t0 },
   };
 }
 
