@@ -12,7 +12,8 @@ export function classify(row, idx) {
   const target = idx.people.get(row.tid);
   if (!target) return { kind: 'target_not_live' };                       // merged away / non-person / deleted
   const hay = fold(row.st);
-  if (namedBy(hay, target)) return { kind: 'ok' };
+  // Any of the target's names counts here: a name shared with a DUPLICATE entity is still this person's name.
+  if (namedBy(hay, target, { anyForm: true })) return { kind: 'ok' };
   const obj = fold(String(row.st).split(' — ').slice(1).join(' ').replace(/^[a-z-]+ /i, '')).trim();
   if (!obj) return { kind: 'no_object' };
   if (PRONOUN.test(obj)) return { kind: 'pronoun_object' };               // same-paragraph coreference: may be right
@@ -48,5 +49,13 @@ export async function auditClaimTargets({ sample = 8 } = {}) {
   }
   const totals = {};
   for (const b of Object.values(byBatch)) for (const [k, v] of Object.entries(b)) totals[k] = (totals[k] || 0) + v;
-  return { typed: rows.length, totals, byBatch, samples };
+  // Names borne by >1 live person. Some are genuine namesakes; a CANONICAL name shared with a prominent figure is
+  // usually an unmerged duplicate ("the Báb" twice) — which splits that person's claims and disables name matching.
+  const owners = new Map();
+  for (const p of idx.people.values()) for (const f of p.forms) (owners.get(f.phrase) || owners.set(f.phrase, []).get(f.phrase)).push(p);
+  const shared = [...owners.entries()].filter(([, ps]) => ps.length > 1);
+  const dupCanonical = shared.filter(([ph, ps]) => ps.some((p) => p.imp >= 50 && p.forms[0]?.phrase === ph))
+    .map(([ph, ps]) => ({ name: ph, entities: ps.sort((a, b) => b.imp - a.imp).slice(0, 6).map((p) => `${p.name} #${p.id} (imp ${p.imp})`) }))
+    .sort((a, b) => b.entities.length - a.entities.length).slice(0, 25);
+  return { typed: rows.length, totals, byBatch, samples, sharedNames: shared.length, prominentShared: dupCanonical };
 }

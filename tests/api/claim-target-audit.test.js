@@ -9,12 +9,14 @@ const idx = createEncounterIndex({
     { id: 2, cn: 'father of Mírzáy-i-Shírází', imp: 1, aliases: '["Mírzáy-i-Shírází"]' },
     { id: 3, cn: 'Siyyid Káẓim-i-Rashtí', imp: 60, aliases: '[]' },
     { id: 4, cn: 'Mullá Ḥusayn', imp: 85, aliases: '[]' },
+    { id: 5, cn: 'the Báb (Siyyid ‘Alí-Muḥammad-i-Shírází)', imp: 3, aliases: '[]' },   // a duplicate entity
   ],
   groups: [], members: [], claims: [], places: ['Shíráz'],
 });
 
 describe('classify', () => {
   it('ok when the typed target is named', () => expect(classify({ st: 'Vaḥíd — met the Báb', tid: 1 }, idx).kind).toBe('ok'));
+  it('ok even when a duplicate entity shares the name', () => expect(classify({ st: 'Quddús — met the Báb', tid: 1 }, idx).kind).toBe('ok'));
   it('a place object typed as a person', () => expect(classify({ st: 'the Báb — visited Shíráz', tid: 2 }, idx).kind).toBe('place_object'));
   it('the object names a different person', () => {
     expect(classify({ st: 'the Báb — met Siyyid Káẓim-i-Rashtí', tid: 4 }, idx)).toMatchObject({ kind: 'names_other', other: 'Siyyid Káẓim-i-Rashtí' });

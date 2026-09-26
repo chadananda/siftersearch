@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-26T17:37:39.650Z",
+  "generated": "2026-09-26T17:45:37.294Z",
   "entries": [
+    {
+      "hash": "dfedb66e",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Claim-target-audit — which binder produces wrong typed targets, classified per import batch",
+      "scope": "admin"
+    },
     {
       "hash": "75ace66f",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Design for claim-authority-reconciliation (core-consistency gate — accusation vs likely-mistake)",
       "scope": null
-    },
-    {
-      "hash": "b99da588",
-      "date": "2026-07-11",
-      "type": "Other",
-      "description": "Parse BOTH quoted (GPB/DB) and unquoted '·'-separated (wave-1/ROB) note formats",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "dfedb66e",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Claim-target-audit — which binder produces wrong typed targets, classified per import batch",
+        "scope": "admin"
+      },
       {
         "hash": "75ace66f",
         "date": "2026-09-26",
@@ -7079,15 +7086,6 @@
         "date": "2026-07-12",
         "type": "Docs",
         "description": "Design for claim-authority-reconciliation (core-consistency gate — accusation vs likely-mistake)",
-        "scope": null
-      }
-    ],
-    "2026-07-11": [
-      {
-        "hash": "b99da588",
-        "date": "2026-07-11",
-        "type": "Other",
-        "description": "Parse BOTH quoted (GPB/DB) and unquoted '·'-separated (wave-1/ROB) note formats",
         "scope": null
       }
     ]

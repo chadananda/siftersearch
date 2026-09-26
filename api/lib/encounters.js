@@ -99,9 +99,9 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
 }
 
 // Does the statement name this person? Unique phrase, not inside another person's longer name at that spot.
-export function namedBy(hay, person, { canonicalOnly = false } = {}) {
+export function namedBy(hay, person, { canonicalOnly = false, anyForm = false } = {}) {
   for (const f of person.forms) {
-    if (!f.unique || (canonicalOnly && !f.canonical)) continue;
+    if ((!f.unique && !anyForm) || (canonicalOnly && !f.canonical)) continue;
     for (const at of occurrences(hay, f.phrase)) {
       const covered = f.supers.some(({ s, off }) => occurrences(hay, s).some((j) => j + off === at));
       if (!covered) return f.phrase;
