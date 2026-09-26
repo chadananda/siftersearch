@@ -13,7 +13,7 @@ const persons = [
   { id: 6, cn: 'Imám Ḥusayn', imp: 90, aliases: '[]' },
   { id: 7, cn: 'Vaḥíd', imp: 60, aliases: '[]' },
 ];
-const groups = [{ id: 50, name: 'Letters of the Living', aliases: '["Ḥurúf-i-Ḥayy"]' }];
+const groups = [{ id: 50, name: 'Letters of the Living (Ḥurúf-i-Ḥayy)', aliases: '[]' }];
 const members = [{ group: 50, id: 3 }, { group: 50, id: 4 }, { group: 50, id: 5 }];
 const claims = [
   { id: 1, eid: 5, rel: 'met', tid: null, st: 'Mullá Ḥusayn met Bahá’u’lláh in Ṭihrán', doc: 10, pid: 'para_1', tv: '1848' },
@@ -37,6 +37,10 @@ describe('encounterSearch', () => {
     // Quddús: his own typed claim AND Bahá’u’lláh’s claim naming him (reverse direction)
     expect(q.evidence.map((e) => e.paraId).sort()).toEqual(['para_2', 'para_7']);
     expect(q.evidence[0]).toMatchObject({ doc_id: 10, when: '1848' });
+  });
+
+  it('a parenthetical is a second name, not extra required words', () => {
+    expect(encounterSearch('which of the Hurúf-i-Ḥayy met Bahá’u’lláh', { index }).pattern).toBe('group-target');
   });
 
   it('apostrophe-free ASCII query still resolves the parties', () => {

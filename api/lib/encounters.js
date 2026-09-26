@@ -22,9 +22,12 @@ const words = (s) => fold(s).trim().split(' ').filter((t) => t && !GLUE.has(t));
 const has = (hay, t) => hay.includes(` ${t} `) || hay.includes(` ${t}s `);
 const parseArr = (s) => { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
 
+// "Siyyid ‘Alí-Muḥammad of Shíráz (the Báb)" is two names, not one six-word name.
+const splitParens = (n) => [String(n || '').replace(/\([^)]*\)/g, ' '), ...[...String(n || '').matchAll(/\(([^)]*)\)/g)].map((m) => m[1])];
+
 function formsOf(names) {
   const seen = new Set();
-  return names.map((n) => words(n)).filter((all) => {
+  return names.flatMap(splitParens).map((n) => words(n)).filter((all) => {
     const core = all.filter((t) => !HON.has(t));
     const key = all.join(' ');
     if (!core.length || seen.has(key)) return false;
