@@ -106,10 +106,27 @@ export async function jevJudge({ passages, groups }, { apiKey = process.env.TYPE
   };
 }
 
-async function defaultPhraseSearch(span, { religion } = {}) {
-  const { hybridSearch } = await import('./search.js');
-  const r = await hybridSearch(span, { limit: 20, semanticRatio: 0, federate: false, filters: religion ? { religion } : {} });
-  return r.hits || [];
+// Copy checks, batched: every span asked in the same tick goes to Meili as ONE multiSearch of exact-phrase queries.
+// Each went through the full hybridSearch pipeline (highlights, rerank, SQL enrichment) as its own request — up to
+// 24 per query, ~0.5s (measured 2026-09-26). containsQuote still verifies every candidate.
+let pendingSpans = null;
+function defaultPhraseSearch(span, { religion } = {}) {
+  if (!pendingSpans) { pendingSpans = []; setImmediate(flushSpans); }
+  return new Promise((resolve) => pendingSpans.push({ span, religion, resolve }));
+}
+async function flushSpans() {
+  const batch = pendingSpans; pendingSpans = null;
+  try {
+    const [{ getMeili }, { INDEXES }] = await Promise.all([import('./search.js'), import('./search/scope.js')]);
+    const queries = batch.map(({ span, religion }) => ({
+      indexUid: INDEXES.PARAGRAPHS, q: `"${String(span).replace(/"/g, ' ')}"`, limit: 40,
+      ...(religion ? { filter: `religion = "${String(religion).replace(/"/g, '\\"')}"` } : {}),
+    }));
+    const r = await getMeili().multiSearch({ queries });
+    batch.forEach((b, i) => b.resolve(r.results?.[i]?.hits || []));
+  } catch {
+    batch.forEach((b) => b.resolve([]));
+  }
 }
 async function defaultLinkMeta(ids) {
   const { getLinkMeta } = await import('./docs-repo.js');
@@ -156,15 +173,14 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
     const t = tiers.get(hit.id) ?? 5;
     const olWithoutPara = t === 1 && !para.get(hit.id);
     if (!spans.length && ((isCentral(hit.author) && t > 1) || olWithoutPara)) spans.push({ span: opening(hit.text), mode: 'copy' });
-    for (const [s, { span, mode }] of spans.entries()) {
-      if (span.split(' ').length < 5) continue;
-      // Bounded by the deadline: a copy check that cannot finish in time is skipped, not waited for.
-      const budget = Math.max(100, left());
+    // All spans at once (one batched Meili call), bounded by the deadline: a late check is skipped, not waited for.
+    const budget = Math.max(300, left());
+    await Promise.all([...spans.entries()].filter(([, { span }]) => span.split(' ').length >= 5).map(async ([s, { span, mode }]) => {
       const found = (await Promise.race([phraseSearch(span, { religion: hit.religion }).catch(() => []),
         new Promise((r) => setTimeout(() => r([]), budget))])).filter((c) => containsQuote(c.text, span));
       const options = [hit, ...found].filter((o, k, arr) => arr.findIndex((x) => x.id === o.id) === k);
       if (options.length > 1) groups.push({ key: `g${i}_${s}`, i, span, mode, options });
-    }
+    }));
   }));
   ms.phrase = Date.now() - t0 - ms.meta;
   await tierFor(groups.flatMap((g) => g.options));

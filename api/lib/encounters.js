@@ -132,9 +132,11 @@ function findParties(q, index) {
   for (const id of cand) {
     const p = index.people.get(id);
     for (const f of p.forms) {
-      for (const [ph, full] of [[f.phrase, true], [f.bare, false]]) {
+      for (const ph of new Set([f.phrase, f.bare])) {
         for (const at of occurrences(hay, ph)) {
-          matches.push({ p, at, end: at + ph.length + 1, matched: ph, score: ph.length * 10 + (full ? 5 : 0) + (f.canonical ? 1 : 0) });
+          // Longest matched words win; on equal words the more prominent bearer ("Nabíl" → Nabíl-i-A‘ẓam, not an
+          // obscure man whose canonical name is exactly "Nabíl"). Honorifics in the question lengthen the match.
+          matches.push({ p, at, end: at + ph.length + 1, matched: ph, score: ph.length });
         }
       }
     }

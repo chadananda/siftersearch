@@ -18,6 +18,8 @@ const persons = [
   { id: 11, cn: 'Mullá ‘Alíy-i-Basṭámí', imp: 50, aliases: '["Mullá ‘Alí"]' },
   { id: 12, cn: 'Muḥammad-Ḥasan-i-Bushrú’í', imp: 20, aliases: '["Mírzá Muḥammad-Ḥasan"]' },
   { id: 13, cn: 'Mírzá Muḥammad-‘Alí', imp: 10, aliases: '["they","he"]' },
+  { id: 14, cn: 'Nabíl-i-A‘ẓam', imp: 70, aliases: '["Nabíl"]' },
+  { id: 15, cn: 'Nabíl', imp: 2, aliases: '[]' },
 ];
 const groups = [{ id: 50, name: 'Letters of the Living (Ḥurúf-i-Ḥayy)', aliases: '[]' }];
 const members = [{ group: 50, id: 3 }, { group: 50, id: 4 }, { group: 50, id: 5 }, { group: 50, id: 11 }, { group: 50, id: 12 }];
@@ -62,6 +64,10 @@ describe('encounterSearch', () => {
     expect(ids).not.toContain(12);   // alias in the target's own statement (reverse direction is canonical-only)
     expect(lotl.people.find((p) => p.id === 3).evidence.map((e) => e.paraId)).not.toContain('para_11');   // scattered words
     expect(encounterSearch('who met Bahá’u’lláh', { index }).people.map((p) => p.id)).not.toContain(9);   // "Bahá" in ‘Abdu’l-Bahá
+  });
+
+  it('equal words → the more prominent bearer, even over an exact canonical name', () => {
+    expect(encounterSearch('did Nabíl meet Bahá’u’lláh?', { index }).with?.id ?? encounterSearch('did Nabíl meet Bahá’u’lláh?', { index }).target.id).toBe(14);
   });
 
   it('an alias made of function words is not a name ("they")', () => {
