@@ -139,8 +139,10 @@ export function layersFor(plan) {
     // A remembered quote is a WORDING problem: exact-word matching finds it; embeddings find its neighbours.
     keyword: shape === 'quote',
     hype: semantic && shape !== 'quote',
-    // Cited claims answer who/when/where and rosters directly, with the paragraph that proves them.
-    claims: shape === 'fact' || shape === 'enumerate' || plan.about === 'people',
+    // Cited claims answer rosters and people questions directly, with the paragraph that proves them. NOT plain
+    // facts: passages + HyPE answer "When was the Báb martyred?", and the claim LIKE-scan (peopleSearch) cost 5-12s
+    // there while blocking the API (battery 2026-09-26). Who-met-whom facts go to the encounter index regardless.
+    claims: shape === 'enumerate' || (plan.about === 'people' && shape !== 'fact'),
     // Spread across traditions only when the question named none and is not hunting one passage.
     diversify: !scoped && shape !== 'quote',
   };

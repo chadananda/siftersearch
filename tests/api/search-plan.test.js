@@ -61,8 +61,9 @@ describe('layersFor — which indexes a shape uses', () => {
   // "Who were the Letters of the Living who met Bahá'u'lláh, and when?" is about PEOPLE: the cited-claim graph
   // answers it (who, with evidence and dates); passages alone could not.
   it('a question about PEOPLE selects the people/claims pattern', () => {
-    const l = layersFor(buildPlan(ans({ shape: 'fact', about: 'people' })));
+    const l = layersFor(buildPlan(ans({ shape: 'enumerate', about: 'people' })));
     expect(l.claims).toBe(true);
+    expect(layersFor(buildPlan(ans({ shape: 'lookup', about: 'people' }))).claims).toBe(true);
     expect(buildPlan(ans({ about: 'people' })).about).toBe('people');
   });
 
@@ -76,9 +77,10 @@ describe('layersFor — which indexes a shape uses', () => {
     expect(l.diversify).toBe(false);
   });
 
-  it('a FACT question consults the claim graph and HyPE', () => {
-    const l = layersFor(buildPlan(ans({ shape: 'fact' })));
-    expect(l.claims).toBe(true);
+  // "When was the Báb martyred?": passages + HyPE hold the date; the claim scan cost 5-12s and buried them.
+  it('a plain FACT question is answered by passages + HyPE, not the claim scan', () => {
+    const l = layersFor(buildPlan(ans({ shape: 'fact', about: 'people' })));
+    expect(l.claims).toBe(false);
     expect(l.hype).toBe(true);
   });
 

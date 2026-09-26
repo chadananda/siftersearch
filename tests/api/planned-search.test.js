@@ -125,7 +125,7 @@ describe('plannedSearch', () => {
       tradition: { choice: "Baha'i", confidence: 0.95 }, comparative: { noul: 0 }, author: { choice: 'none', confidence: 0.9 },
       shape: { choice: 'enumerate', confidence: 0.9 }, about: { choice: 'people', confidence: 0.95 },
     }, { given }), ms: 5 });
-    const people = async () => ({ people: [
+    const people = async () => ({ pattern: 'group-target', people: [
       { id: 1, name: 'Quddús', evidence: [{ statement: 'Quddús — met Bahá’u’lláh', relation: 'met', source: 'The Dawn-Breakers', url: 'https://oceanlibrary.com/db?paraId=para_526', paraId: 'para_526', doc_id: 21308, when: '1848' }] },
     ] });
     const paragraphs = async (refs) => refs.map((r) => ({ id: 777, doc_id: r.doc_id, paragraph_index: 526, text: 'Quddús was admitted into the presence of Bahá’u’lláh…', title: 'The Dawn-Breakers', author: 'Nabil', external_para_id: r.paraId }));
@@ -134,6 +134,18 @@ describe('plannedSearch', () => {
     expect(r.entities[0]).toMatchObject({ name: 'Quddús' });
     expect(r.entities[0].evidence[0]).toMatchObject({ when: '1848', url: 'https://oceanlibrary.com/db?paraId=para_526' });
     expect(r.hits[0]).toMatchObject({ id: 777, _source: { kind: 'evidence', person: 'Quddús' } });
+  });
+
+  it('loose people matches (no answering pattern) follow the passages, never displace them', async () => {
+    const planPeople = async (_i, { given } = {}) => ({ ...buildPlan({
+      tradition: { choice: "Baha'i", confidence: 0.95 }, comparative: { noul: 0 }, author: { choice: 'none', confidence: 0.9 },
+      shape: { choice: 'enumerate', confidence: 0.9 }, about: { choice: 'people', confidence: 0.95 },
+    }, { given }), ms: 5 });
+    const people = async () => ({ people: [{ id: 1, name: 'Quddús', evidence: [{ statement: 'x', relation: 'met', paraId: 'para_1', doc_id: 5 }] }] });
+    const paragraphs = async (refs) => refs.map((r) => ({ id: 999, doc_id: r.doc_id, text: 'evidence', external_para_id: r.paraId }));
+    const r = await plannedSearch('which Letters of the Living died at Ṭabarsí', { planner: planPeople, engine: engine(() => many(5)).fn, people, paragraphs, encounterProbe: () => false, encounters: async () => null });
+    expect(r.hits[0].id).not.toBe(999);
+    expect(r.hits.at(-1)).toMatchObject({ id: 999, _source: { kind: 'evidence' } });
   });
 
   it('does not run the people layer for a question about what a text says', async () => {

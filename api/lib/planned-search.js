@@ -159,7 +159,16 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
       return { ...row, _source: { kind: 'evidence', person: ref.person || null, claim: ref.claim || null } };
     });
     const seenIds = new Set(evidenceHits.map((h) => h.id));
-    hits = [...evidenceHits, ...hits.filter((h) => !seenIds.has(h.id))].slice(0, Math.max(limit, evidenceHits.length));
+    if (pr.pattern) {
+      // The encounter index ANSWERED the question: its cited paragraphs are the answer, so they lead.
+      hits = [...evidenceHits, ...hits.filter((h) => !seenIds.has(h.id))].slice(0, Math.max(limit, evidenceHits.length));
+    } else {
+      // Loose people matches support; they never displace the passages ("When was the Báb martyred?" lost every
+      // passage naming 1850 to twelve people's unrelated evidence — battery 2026-09-26).
+      const passages = hits.filter((h) => !seenIds.has(h.id)).slice(0, limit);
+      const shown = new Set(passages.map((h) => h.id));
+      hits = [...passages, ...evidenceHits.filter((h) => !shown.has(h.id)).slice(0, 6)];
+    }
   }
 
   const value = {
