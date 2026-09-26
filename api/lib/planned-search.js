@@ -68,7 +68,7 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
  */
 // resolver: source resolution (source-resolve.js) — default ON for the real engine, off when a test injects one.
 // people/paragraphs: the claims layer (people-search.js + docs-repo) — default ON for the real engine; injectable.
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, paragraphs, minResults = 3, budgetMs = 1000 } = {}) {
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, paragraphs, minResults = 3, budgetMs = 1000 } = {}) {
   const t0 = Date.now();
   const deadline = t0 + budgetMs;   // the whole strategy (Chad: 1s); late stages get what is left, then degrade
   // The query embedding needs no plan: start it now so it is ready when the engine asks (shared, one call).
@@ -104,9 +104,11 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   };
   // CLAIMS LAYER (people pattern): the cited-claim graph answers who / did what / when; runs BESIDE passage search.
   // Who-met-whom answers from the in-memory encounter index (ms); every other people question from peopleSearch.
-  const peopleFn = people ?? (engine ? null : async (q) => (await (await import('./encounters.js')).encounterPeople(q))
-    ?? (await import('./people-search.js')).peopleSearch(q));
-  const claimsP = layers.claims && peopleFn ? peopleFn(query).catch((err) => ({ people: [], error: err.message }))
+  // Who-met-whom is detected deterministically (ms) on EVERY query, so a slow or failed plan cannot drop it.
+  const encounterFn = encounters ?? (engine || people ? null : async (q) => (await import('./encounters.js')).encounterPeople(q));
+  const searchPeople = people ?? (engine ? null : async (q) => (await import('./people-search.js')).peopleSearch(q));
+  const peopleFn = async (q) => (encounterFn ? await encounterFn(q) : null) ?? (layers.claims && searchPeople ? searchPeople(q) : { people: [] });
+  const claimsP = (layers.claims && searchPeople) || encounterFn ? peopleFn(query).catch((err) => ({ people: [], error: err.message }))
     .finally(() => { stages.claims_ms = Date.now() - t1; }) : null;
   // With a preferred author, the author-matched search runs BESIDE the broad one, never instead of it.
   const [r, authorHits] = await Promise.all([
@@ -124,14 +126,15 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     const t2 = Date.now();
     const res = await resolve(hits, { deadline }).catch((err) => ({ hits, resolved: 0, error: err.message }));
     hits = res.hits;
-    resolution = { resolved: res.resolved, error: res.error || null, ms: Date.now() - t2 };
+    resolution = { resolved: res.resolved, error: res.error || null, ms: Date.now() - t2, stages: res.ms || null };
   }
 
   // People + their cited claims (with dates) + the cited paragraphs themselves — evidence first, then passages.
   // AFTER source resolution: a claim-cited paragraph is already the exact source; resolving it again relabelled it.
   let entities = null;
-  if (claimsP) {
-    const pr = await claimsP;
+  const pr = claimsP ? await claimsP : null;
+  // A who-met-whom probe that found nothing on a non-people plan is not a people answer.
+  if (pr && (layers.claims || pr.pattern)) {
     entities = (pr.people || []).slice(0, 12).map((p) => ({ id: p.id, name: p.name,
       evidence: (p.evidence || []).slice(0, 4).map((e) => ({ statement: e.statement, relation: e.relation, source: e.source,
         url: e.url || null, paraId: e.paraId || null, doc_id: e.doc_id ?? null, when: e.when || null, ...(e.via ? { via: e.via } : {}) })) }));

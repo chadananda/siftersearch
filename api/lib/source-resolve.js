@@ -138,10 +138,14 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
       para.set(h.id, l.tier === 1 ? l.paragraph_level : false);
     }
   };
+  const t0 = Date.now();
+  const left = () => (deadline ? deadline - Date.now() : Infinity);
+  const ms = {};
   await tierFor(hits);
+  ms.meta = Date.now() - t0;
 
   const checkIdx = hits.map((h, i) => (needsCheck(h, tiers.get(h.id), para.get(h.id)) ? i : -1)).filter((i) => i >= 0).slice(0, maxChecks);
-  if (!checkIdx.length) return { hits: collapseCopies(hits, tiers, para), resolved: 0 };
+  if (!checkIdx.length) return { hits: collapseCopies(hits, tiers, para), resolved: 0, ms };
 
   // 1. Copies, deterministically: exact words, containment verified. mode 'quote' = words it quotes; 'copy' = the
   //    passage itself (a central figure's text held outside OceanLibrary).
@@ -154,11 +158,15 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
     if (!spans.length && ((isCentral(hit.author) && t > 1) || olWithoutPara)) spans.push({ span: opening(hit.text), mode: 'copy' });
     for (const [s, { span, mode }] of spans.entries()) {
       if (span.split(' ').length < 5) continue;
-      const found = (await phraseSearch(span, { religion: hit.religion }).catch(() => [])).filter((c) => containsQuote(c.text, span));
+      // Bounded by the deadline: a copy check that cannot finish in time is skipped, not waited for.
+      const budget = Math.max(100, left());
+      const found = (await Promise.race([phraseSearch(span, { religion: hit.religion }).catch(() => []),
+        new Promise((r) => setTimeout(() => r([]), budget))])).filter((c) => containsQuote(c.text, span));
       const options = [hit, ...found].filter((o, k, arr) => arr.findIndex((x) => x.id === o.id) === k);
       if (options.length > 1) groups.push({ key: `g${i}_${s}`, i, span, mode, options });
     }
   }));
+  ms.phrase = Date.now() - t0 - ms.meta;
   await tierFor(groups.flatMap((g) => g.options));
   for (const g of groups) g.options = g.options.map((o) => ({ ...o, site: tiers.get(o.id) === 1 ? 'oceanlibrary.com' : tiers.get(o.id) === 5 ? 'siftersearch.com' : 'supplementary' }));
 
@@ -169,8 +177,10 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
   let error = null;
   try {
     // Bounded by the search deadline: a late judge degrades to the deterministic policy pick, never a slow answer.
-    const left = deadline ? Math.max(150, deadline - Date.now()) : null;
-    const j = await judge({ passages, groups: groups.map(({ key, span, options }) => ({ key, span, options })) }, left ? { timeoutMs: left } : undefined);
+    const t2 = Date.now();
+    const j = await judge({ passages, groups: groups.map(({ key, span, options }) => ({ key, span, options })) },
+      deadline ? { timeoutMs: Math.max(150, left()) } : undefined);
+    ms.judge = Date.now() - t2;
     verdicts = j.verdicts || verdicts;
     choices = j.choices || {};
   } catch (err) { error = err.message; }
@@ -214,7 +224,7 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
 
   const seen = new Set();
   const unique = out.filter((h) => (seen.has(h.id) ? false : seen.add(h.id)));
-  return { hits: collapseCopies(unique, tiers, para), resolved, ...(error ? { error } : {}) };
+  return { hits: collapseCopies(unique, tiers, para), resolved, ms, ...(error ? { error } : {}) };
 }
 
 /**

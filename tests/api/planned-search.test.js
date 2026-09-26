@@ -142,6 +142,21 @@ describe('plannedSearch', () => {
     expect(called).toBe(false);
   });
 
+  // Jev timed out (700ms) and the keyword backstop called "Which Letters of the Living ever met Bahá’u’lláh?" a topic
+  // question — so the people answer vanished. Who-met-whom is detected deterministically on every query.
+  it('answers who-met-whom even when the plan is not a people plan', async () => {
+    const encounters = async () => ({ pattern: 'group-target', ms: 3, people: [{ id: 3, name: 'Quddús', evidence: [{ statement: 'Quddús — met Bahá’u’lláh', relation: 'met', doc_id: 1, paraId: 'para_2', when: '1848', via: 'typed' }] }] });
+    const r = await plannedSearch('which letters of the living ever met Bahá’u’lláh', { planner: planOf({}), engine: engine(() => many(3)).fn, encounters, paragraphs: async () => [] });
+    expect(r.entities[0]).toMatchObject({ name: 'Quddús' });
+    expect(r.entities[0].evidence[0].via).toBe('typed');
+    expect(r.entities.pattern).toBe('group-target');
+  });
+
+  it('a who-met-whom probe that finds nothing leaves a non-people answer without entities', async () => {
+    const r = await plannedSearch('what is justice', { planner: planOf({}), engine: engine(() => many(3)).fn, encounters: async () => null });
+    expect(r.entities).toBeNull();
+  });
+
   it('caller filters beat the plan', async () => {
     const e = engine(() => many(5));
     await plannedSearch('x', { given: { religion: 'Hindu' }, planner: planOf({ tradition: 'Buddhist' }), engine: e.fn });

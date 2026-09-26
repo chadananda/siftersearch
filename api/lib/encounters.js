@@ -178,10 +178,20 @@ export function encounterSearch(q, { index, maxPeople = 20, maxEvidence = 6 } = 
     for (const row of index.bySubject.get(B.id) || []) add(B.id, row, linkOf(row, A));
   } else {
     pattern = 'target';
-    for (const row of index.all) {
-      if (row.eid !== T.id) add(row.eid, row, linkOf(row, T));
-      else if (row.tid && row.tid !== T.id && index.people.has(row.tid)) add(row.tid, row, 'typed');
+    // A full pass over every encounter claim; memoised per target for the life of this index (the popular
+    // targets — the Báb, Bahá’u’lláh — are asked about again and again).
+    const memo = index.targetMemo || (index.targetMemo = new Map());
+    let hitsT = memo.get(T.id);
+    if (!hitsT) {
+      hitsT = [];
+      for (const row of index.all) {
+        if (row.eid !== T.id) { const via = linkOf(row, T); if (via) hitsT.push([row.eid, row, via]); }
+        else if (row.tid && row.tid !== T.id && index.people.has(row.tid)) hitsT.push([row.tid, row, 'typed']);
+      }
+      if (memo.size >= 200) memo.delete(memo.keys().next().value);
+      memo.set(T.id, hitsT);
     }
+    for (const [pid, row, via] of hitsT) add(pid, row, via);
   }
   // The asked relation constrains the edge when the evidence has it; otherwise every encounter stands.
   const asked = ASKED.find(([re]) => re.test(fq))?.[1] || null;

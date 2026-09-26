@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-26T16:05:44.678Z",
+  "generated": "2026-09-26T16:11:34.883Z",
   "entries": [
+    {
+      "hash": "37c0c2a0",
+      "date": "2026-09-26",
+      "type": "Performance",
+      "description": "1s strategy budget — one shared query embedding (prefetched during planning), deadline-bounded source judge, 700ms planner cap",
+      "scope": "search"
+    },
     {
       "hash": "8c46660f",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "CLI + resumable reconcile (idempotent reviewed batches)",
       "scope": null
-    },
-    {
-      "hash": "5da42054",
-      "date": "2026-07-11",
-      "type": "Other",
-      "description": "Fix false-create failure modes found in live GPB review",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "37c0c2a0",
+        "date": "2026-09-26",
+        "type": "Performance",
+        "description": "1s strategy budget — one shared query embedding (prefetched during planning), deadline-bounded source judge, 700ms planner cap",
+        "scope": "search"
+      },
       {
         "hash": "8c46660f",
         "date": "2026-09-26",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-11",
         "type": "Other",
         "description": "CLI + resumable reconcile (idempotent reviewed batches)",
-        "scope": null
-      },
-      {
-        "hash": "5da42054",
-        "date": "2026-07-11",
-        "type": "Other",
-        "description": "Fix false-create failure modes found in live GPB review",
         "scope": null
       }
     ]
