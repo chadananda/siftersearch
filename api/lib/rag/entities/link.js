@@ -42,12 +42,31 @@ import { queryAll, query } from '../../db.js';
 const nrm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
 
-/** Same-paragraph match: equal, or one contains the other and the shorter is long enough to be meaningful. */
-const hit = (a, b) => a && b && (a === b || (a.length > 4 && b.includes(a)) || (b.length > 4 && a.includes(b)));
-
 /** An entity's CORE name — canonical minus "(descriptor)" and ", descriptor". Without this, a relative's
  *  descriptor ("son of Bahá'u'lláh") makes the father's own name look ambiguous and blocks his claims. */
 const coreOf = (s) => nrm(String(s || '').split('(')[0].split(',')[0]);
+
+/** Whole-word form: punctuation/hyphens → spaces, leading article dropped. */
+const wordsOf = (s) => nrm(s).replace(/[^a-z0-9]+/g, ' ').trim().replace(/^(the|a) /, '');
+
+/**
+ * Does a claim's subject/object NAME refer to this mention? Only as the SAME name (the core, or a parenthetical
+ * alternate name — "(the Báb)"), or a SHORTER FORM of the core: its leading words ("Mullá Ḥusayn" for
+ * "Mullá Ḥusayn-i-Bushrú'í" — names shorten by dropping the nisba).
+ *
+ * This replaced a two-way raw-substring test that the 2026-09-26 audit caught mis-binding ~700+ typed targets:
+ * "Shíráz" ⊂ "Mírzáy-i-Shírází" (a place bound to a man), "mother of the Báb" ⊃ "the Báb" (a relative bound to
+ * her son), "the Báb" ⊂ "Mullá Ḥusayn (the Báb's first disciple)" (a name found inside another's descriptor),
+ * "Mecca" ⊂ "the Sharíf of Mecca". Under-bind, never mis-bind.
+ */
+export function namesMention(name, resolvedAs) {
+  const n = wordsOf(name);
+  if (!n) return false;
+  const core = wordsOf(coreOf(resolvedAs));
+  const alternates = [...String(resolvedAs || '').matchAll(/\(([^)]*)\)/g)].map((m) => wordsOf(m[1]));
+  if (n === core || alternates.includes(n)) return true;
+  return n.length > 4 && `${core} `.startsWith(`${n} `);
+}
 
 /**
  * Bind claims to entities for one document (or for the legacy seed batches when docId is omitted).
@@ -71,7 +90,7 @@ export async function link({ docId = null, write = false, deps = {} } = {}) {
   const byPara = new Map();
   for (const m of mentions) {
     if (!byPara.has(m.para_id)) byPara.set(m.para_id, []);
-    byPara.get(m.para_id).push({ rn: nrm(m.resolved_as), eid: m.entity_id });
+    byPara.get(m.para_id).push({ ra: m.resolved_as, eid: m.entity_id });
   }
 
   const claims = await qa(
@@ -88,14 +107,13 @@ export async function link({ docId = null, write = false, deps = {} } = {}) {
       `SELECT DISTINCT g.id, g.canonical_name FROM graph_entities g
          JOIN entity_mentions_v2 m ON m.entity_id=g.id
         WHERE m.doc_id=? AND m.entity_id IS NOT NULL`, [docId]);
-    for (const e of ents) { const rn = coreOf(e.canonical_name); if (rn) docPairs.push({ rn, eid: e.id }); }
+    for (const e of ents) if (e.canonical_name) docPairs.push({ ra: e.canonical_name, eid: e.id });
   }
-  const docHit = (subj, core) => subj === core || (subj.length > 4 && core.includes(subj));
   const docBind = (name) => {
     if (!docId || !name) return null;
     let found = null;
     for (const p of docPairs) {
-      if (docHit(name, p.rn)) { if (found !== null && found !== p.eid) return null; found = p.eid; }
+      if (namesMention(name, p.ra)) { if (found !== null && found !== p.eid) return null; found = p.eid; }
     }
     return found;
   };
@@ -114,8 +132,13 @@ export async function link({ docId = null, write = false, deps = {} } = {}) {
     const subject = parts[0] || '', object = parts[2] || '';
     const ms = byPara.get(c.para_id) || [];
 
-    let sEid = (ms.find((m) => hit(subject, m.rn)) || {}).eid ?? null;           // pass 1: precise same-para
-    let oEid = object ? ((ms.find((m) => hit(object, m.rn)) || {}).eid ?? null) : null;
+    // pass 1: same-paragraph mention. More than one DIFFERENT entity answering to the name → ambiguous → unbound.
+    const sameParaBind = (name) => {
+      const ids = [...new Set(ms.filter((m) => namesMention(name, m.ra)).map((m) => m.eid))];
+      return ids.length === 1 ? ids[0] : null;
+    };
+    let sEid = sameParaBind(subject);
+    let oEid = object ? sameParaBind(object) : null;
     let fellBack = false;
     if (sEid == null) { const g = docBind(subject); if (g != null) { sEid = g; fellBack = true; } }  // pass 2
     if (oEid == null && object) { const g = docBind(object); if (g != null) oEid = g; }
