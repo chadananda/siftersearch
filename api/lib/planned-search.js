@@ -107,7 +107,19 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   ]);
   let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, subjectTerms(query, plan.prefer)) : r.results;
 
+  // Correct sources BEFORE anything formats them: quoted words served from their original work, every checked
+  // passage labelled (original / quotation / recollection / commentary) with whose words it carries.
+  const resolve = resolver ?? (engine ? null : (await import('./source-resolve.js')).resolveSources);
+  let resolution = null;
+  if (resolve && plan.shape !== 'converse' && hits.length) {
+    const t2 = Date.now();
+    const res = await resolve(hits).catch((err) => ({ hits, resolved: 0, error: err.message }));
+    hits = res.hits;
+    resolution = { resolved: res.resolved, error: res.error || null, ms: Date.now() - t2 };
+  }
+
   // People + their cited claims (with dates) + the cited paragraphs themselves — evidence first, then passages.
+  // AFTER source resolution: a claim-cited paragraph is already the exact source; resolving it again relabelled it.
   let entities = null;
   if (claimsP) {
     const pr = await claimsP;
@@ -124,17 +136,6 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     });
     const seenIds = new Set(evidenceHits.map((h) => h.id));
     hits = [...evidenceHits, ...hits.filter((h) => !seenIds.has(h.id))].slice(0, Math.max(limit, evidenceHits.length));
-  }
-
-  // Correct sources BEFORE anything formats them: quoted words served from their original work, every checked
-  // passage labelled (original / quotation / recollection / commentary) with whose words it carries.
-  const resolve = resolver ?? (engine ? null : (await import('./source-resolve.js')).resolveSources);
-  let resolution = null;
-  if (resolve && plan.shape !== 'converse' && hits.length) {
-    const t2 = Date.now();
-    const res = await resolve(hits).catch((err) => ({ hits, resolved: 0, error: err.message }));
-    hits = res.hits;
-    resolution = { resolved: res.resolved, error: res.error || null, ms: Date.now() - t2 };
   }
 
   const value = {

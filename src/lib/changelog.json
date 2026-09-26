@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-26T04:32:01.702Z",
+  "generated": "2026-09-26T04:37:14.471Z",
   "entries": [
+    {
+      "hash": "ea206958",
+      "date": "2026-09-25",
+      "type": "New",
+      "description": "Jev picks the people pattern; raw search returns the cited-claim graph (who, what, when)",
+      "scope": "search"
+    },
     {
       "hash": "7f57f751",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Multilingual + continuation-robust historical extractor; externalize history + conceptual track docs",
       "scope": null
-    },
-    {
-      "hash": "452400ad",
-      "date": "2026-07-10",
-      "type": "Docs",
-      "description": "Adjust to unified enrichment pipeline v2 architecture",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "ea206958",
+        "date": "2026-09-25",
+        "type": "New",
+        "description": "Jev picks the people pattern; raw search returns the cited-claim graph (who, what, when)",
+        "scope": "search"
+      },
       {
         "hash": "7f57f751",
         "date": "2026-09-25",
@@ -7079,15 +7086,6 @@
         "date": "2026-07-11",
         "type": "Other",
         "description": "Multilingual + continuation-robust historical extractor; externalize history + conceptual track docs",
-        "scope": null
-      }
-    ],
-    "2026-07-10": [
-      {
-        "hash": "452400ad",
-        "date": "2026-07-10",
-        "type": "Docs",
-        "description": "Adjust to unified enrichment pipeline v2 architecture",
         "scope": null
       }
     ]
