@@ -253,7 +253,11 @@ export function makeStore() {
       for (const part of nameParts) {
         const pk = [...nameKeys(part)];
         const hit = await recall(pk, '(ge.importance IS NULL), ge.importance DESC', Math.ceil(limit / 2) + 12);
-        coreRows.push(...hit.filter((r) => r.shared >= pk.length).slice(0, Math.ceil(limit / 2)));
+        // An entity whose own core name IS this name ("Muḥammad") outranks a compound that contains it
+        // ("Siyyid ‘Alí-Muḥammad"); prominence orders within each.
+        const same = (r) => [...nameKeys(String(r.canonical).replace(/\([^)]*\)/g, '').split(/[,;—]/)[0])].sort().join() === [...pk].sort().join();
+        const full = hit.filter((r) => r.shared >= pk.length);
+        coreRows.push(...[...full.filter(same), ...full.filter((r) => !same(r))].slice(0, Math.ceil(limit / 2)));
       }
       const fullRows = await recall(keys, 'shared DESC, (ge.importance IS NULL), ge.importance DESC', limit);
       let rows = [];

@@ -88,6 +88,16 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
     expect(shoghi[0].id).toBe(508);
   });
 
+  it('findCandidateEntities: an exact name outranks a compound that contains it', async () => {
+    const ent = (id, name, imp) => {
+      run(`INSERT INTO graph_entities VALUES (?, ?, ?, 'person', ?, NULL)`, [id, name, name, imp]);
+      for (const k of skeletonKeys(name)) run(`INSERT INTO entity_lookup_keys VALUES (?, ?)`, [id, k]);
+    };
+    ent(601, 'Siyyid ‘Alí-Muḥammad', 99); ent(602, 'Muḥammad Sháh', 70); ent(603, 'Muḥammad', 78);
+    const c = await store.findCandidateEntities('Muḥammad (the Apostle of God)', { type: 'person', limit: 6 });
+    expect(c[0].id).toBe(603);
+  });
+
   it('findCandidateEntities: a parenthetical that IS the name recalls its bearer', async () => {
     const c = await store.findCandidateEntities('Siyyid ‘Alí-Muḥammad of Shíráz (the Báb)', { type: 'person', limit: 6 });
     expect(c.map((x) => x.id)).toContain(501);
