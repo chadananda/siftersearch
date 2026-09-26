@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-26T20:29:02.050Z",
+  "generated": "2026-09-26T21:00:04.232Z",
   "entries": [
+    {
+      "hash": "df9f0d33",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Re-link runner — dry-run scores old→new bindings before any write; link writes only changed rows",
+      "scope": "entities"
+    },
     {
       "hash": "951f8db3",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Ground person browser on disambiguated v2 mentions + hard claims, retire legacy NER entity_mentions",
       "scope": null
-    },
-    {
-      "hash": "d3576f13",
-      "date": "2026-07-12",
-      "type": "Docs",
-      "description": "Wave-1 extraction pipeline — operational run-a-book guide, stage contracts, invariants, model routing, hardening state + backlog (H7)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "df9f0d33",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Re-link runner — dry-run scores old→new bindings before any write; link writes only changed rows",
+        "scope": "entities"
+      },
       {
         "hash": "951f8db3",
         "date": "2026-09-26",
@@ -7079,13 +7086,6 @@
         "date": "2026-07-12",
         "type": "Other",
         "description": "Ground person browser on disambiguated v2 mentions + hard claims, retire legacy NER entity_mentions",
-        "scope": null
-      },
-      {
-        "hash": "d3576f13",
-        "date": "2026-07-12",
-        "type": "Docs",
-        "description": "Wave-1 extraction pipeline — operational run-a-book guide, stage contracts, invariants, model routing, hardening state + backlog (H7)",
         "scope": null
       }
     ]

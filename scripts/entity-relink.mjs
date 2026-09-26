@@ -41,9 +41,9 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 mkdirSync('logs', { recursive: true });
 
 const report = { mode: WRITE ? 'write' : 'dry', started: new Date().toISOString(), docs: todo.length, claims: 0, changed: 0,
-  subject: {}, target: {}, encounterTarget: {}, errors: [], samples: {} };
+  subject: {}, target: {}, encounterTarget: {}, lostTargetWhy: {}, lostSubjectWhy: {}, errors: [], samples: {} };
 const bump = (o, k) => { o[k] = (o[k] || 0) + 1; };
-const sample = (k, c) => { const s = (report.samples[k] ||= []); if (s.length < 10) s.push({ id: c.id, statement: c.statement, old: idx.people.get(c.oldT)?.name ?? c.oldT, new: idx.people.get(c.newT)?.name ?? c.newT }); };
+const sample = (k, c) => { const s = (report.samples[k] ||= []); if (s.length < 10) s.push({ id: c.id, why: c.why, statement: c.statement, old: idx.people.get(c.oldT)?.name ?? c.oldT, new: idx.people.get(c.newT)?.name ?? c.newT }); };
 const rollback = [];
 
 let n = 0;
@@ -56,6 +56,8 @@ for (const { doc_id: docId } of todo) {
       report.changed++;
       bump(report.subject, `${subjectVerdict(c.statement, c.oldS)}->${subjectVerdict(c.statement, c.newS)}`);
       bump(report.target, `${c.oldT == null ? 'none' : 'set'}->${c.newT == null ? 'none' : 'set'}`);
+      if (c.why?.object && c.oldT != null) bump(report.lostTargetWhy, c.why.object.split(':')[0]);
+      if (c.why?.subject && c.oldS != null) bump(report.lostSubjectWhy, c.why.subject.split(':')[0]);
       if (ENC.has(c.relation) && c.oldT !== c.newT) {
         const k = `${targetVerdict(c.statement, c.oldT)}->${targetVerdict(c.statement, c.newT)}`;
         bump(report.encounterTarget, k); sample(k, c);

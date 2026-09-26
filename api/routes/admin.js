@@ -2368,6 +2368,13 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { success: true, taskId: 'entity-relink', write: !!write, status: task.status };
   });
 
+  // GET /server/entity-duplicate-origins — read-only: which decision created each duplicate of a prominent person,
+  // and whether the real person was among its candidates (recall vs judgement failure) or no decision made it.
+  fastify.get('/server/entity-duplicate-origins', { preHandler: requireInternal }, async (request) => {
+    const { duplicateOrigins } = await import('../lib/entity-duplicate-origins.js');
+    return duplicateOrigins({ maxGroups: Math.min(Number(request.query.groups) || 40, 200) });
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';

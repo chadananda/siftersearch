@@ -59,13 +59,13 @@ const wordsOf = (s) => nrm(s).replace(/[^a-z0-9]+/g, ' ').trim().replace(/^(the|
  * her son), "the Báb" ⊂ "Mullá Ḥusayn (the Báb's first disciple)" (a name found inside another's descriptor),
  * "Mecca" ⊂ "the Sharíf of Mecca". Under-bind, never mis-bind.
  */
-export function namesMention(name, resolvedAs) {
+export function namesMention(name, resolvedAs, { exact = false } = {}) {
   const n = wordsOf(name);
   if (!n) return false;
   const core = wordsOf(coreOf(resolvedAs));
   const alternates = [...String(resolvedAs || '').matchAll(/\(([^)]*)\)/g)].map((m) => wordsOf(m[1]));
   if (n === core || alternates.includes(n)) return true;
-  return n.length > 4 && `${core} `.startsWith(`${n} `);
+  return !exact && n.length > 4 && `${core} `.startsWith(`${n} `);
 }
 
 /**
@@ -131,15 +131,23 @@ export async function link({ docId = null, write = false, diff = false, deps = {
     const ms = byPara.get(c.para_id) || [];
 
     // pass 1: same-paragraph mention. More than one DIFFERENT entity answering to the name → ambiguous → unbound.
-    const sameParaBind = (name) => {
-      const ids = [...new Set(ms.filter((m) => namesMention(name, m.ra)).map((m) => m.eid))];
-      return ids.length === 1 ? ids[0] : null;
+    // An EXACT name match outranks a short-form (leading-words) match; a tie between different entities at the
+    // same rank stays unbound. `why` records the reason a name did not bind (diff mode reports it).
+    const why = {};
+    const sameParaBind = (name, role) => {
+      const hits = ms.filter((m) => namesMention(name, m.ra));
+      if (!hits.length) { why[role] = 'no_mention'; return null; }
+      const exact = hits.filter((m) => namesMention(name, m.ra, { exact: true }));
+      const ids = [...new Set((exact.length ? exact : hits).map((m) => m.eid))];
+      if (ids.length === 1) return ids[0];
+      why[role] = `ambiguous:${ids.slice(0, 4).join(',')}`;
+      return null;
     };
-    let sEid = sameParaBind(subject);
-    let oEid = object ? sameParaBind(object) : null;
+    let sEid = sameParaBind(subject, 'subject');
+    let oEid = object ? sameParaBind(object, 'object') : null;
     let fellBack = false;
-    if (sEid == null) { const g = docBind(subject); if (g != null) { sEid = g; fellBack = true; } }  // pass 2
-    if (oEid == null && object) { const g = docBind(object); if (g != null) oEid = g; }
+    if (sEid == null) { const g = docBind(subject); if (g != null) { sEid = g; fellBack = true; delete why.subject; } }  // pass 2
+    if (oEid == null && object) { const g = docBind(object); if (g != null) { oEid = g; delete why.object; } }
 
     // Subject unresolved → the claim is unbound (target too). See KNOWN LIMITATION above. Outside doc scope the
     // prior value is kept, as before (the legacy batch mode never cleared).
@@ -151,7 +159,7 @@ export async function link({ docId = null, write = false, diff = false, deps = {
     }
     const oldS = c.entity_id ?? null, oldT = c.target_entity_id ?? null;
     if (oldS === sEid && oldT === oEid) continue;
-    if (diff) changes.push({ id: c.id, relation: c.relation, statement: c.statement, oldS, oldT, newS: sEid, newT: oEid });
+    if (diff) changes.push({ id: c.id, relation: c.relation, statement: c.statement, oldS, oldT, newS: sEid, newT: oEid, why });
     if (write) await q(`UPDATE entity_claims SET entity_id=?, target_entity_id=? WHERE id=?`, [sEid, oEid, c.id]);
     updated++;
   }

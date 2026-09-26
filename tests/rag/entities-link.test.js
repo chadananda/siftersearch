@@ -86,4 +86,17 @@ describe('link — binds by same-paragraph mention, never by substring', () => {
     expect(f.updates).toEqual([[1, null, 200]]);
     expect(r.changes).toEqual([expect.objectContaining({ id: 200, oldT: 2, newT: null })]);
   });
+
+  it('an exact name beats a short form; a tie between different entities stays unbound with its reason', async () => {
+    const f = fakeDeps({
+      mentions: [{ para_id: 'p1', resolved_as: 'Quddús', entity_id: 3 },
+        { para_id: 'p1', resolved_as: 'Mírzá Yaḥyá', entity_id: 20 }, { para_id: 'p1', resolved_as: 'Mírzá Yaḥyá-i-Núrí', entity_id: 21 },
+        { para_id: 'p2', resolved_as: 'Quddús', entity_id: 3 },
+        { para_id: 'p2', resolved_as: 'Bahá’u’lláh', entity_id: 1 }, { para_id: 'p2', resolved_as: 'Bahá’u’lláh (the Greatest Branch)', entity_id: 9 }],
+      claims: [claim(300, 'quddus', 'mirza yahya'), claim(301, 'quddus', 'bahaullah', 'p2')],
+    });
+    const r = await link({ docId: 7, write: false, diff: true, deps: f.deps });
+    expect(r.changes.find((c) => c.id === 300).newT).toBe(20);
+    expect(r.changes.find((c) => c.id === 301)).toMatchObject({ newT: null, why: { object: 'ambiguous:1,9' } });
+  });
 });

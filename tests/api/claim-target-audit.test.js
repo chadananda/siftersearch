@@ -17,6 +17,9 @@ const idx = createEncounterIndex({
 describe('classify', () => {
   it('ok when the typed target is named', () => expect(classify({ st: 'Vaḥíd — met the Báb', tid: 1 }, idx).kind).toBe('ok'));
   it('ok even when a duplicate entity shares the name', () => expect(classify({ st: 'Quddús — met the Báb', tid: 1 }, idx).kind).toBe('ok'));
+  it('a target that is the SUBJECT is not ok just because the statement names it', () => {
+    expect(classify({ st: 'Mullá Ḥusayn — met the Báb', tid: 4 }, idx).kind).not.toBe('ok');
+  });
   it('a place object typed as a person', () => expect(classify({ st: 'the Báb — visited Shíráz', tid: 2 }, idx).kind).toBe('place_object'));
   it('the object names a different person', () => {
     expect(classify({ st: 'the Báb — met Siyyid Káẓim-i-Rashtí', tid: 4 }, idx)).toMatchObject({ kind: 'names_other', other: 'Siyyid Káẓim-i-Rashtí' });

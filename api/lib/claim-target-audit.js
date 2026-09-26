@@ -11,11 +11,12 @@ const PRONOUN = /^(him|her|them|he|she|they|his|hers|their|it|the latter|the for
 export function classify(row, idx) {
   const target = idx.people.get(row.tid);
   if (!target) return { kind: 'target_not_live' };                       // merged away / non-person / deleted
-  const hay = fold(row.st);
-  // Any of the target's names counts here: a name shared with a DUPLICATE entity is still this person's name.
-  if (namedBy(hay, target, { anyForm: true })) return { kind: 'ok' };
+  // The OBJECT only ("subject — relation object"): judging the whole statement scored a target that was the
+  // SUBJECT ("Siyyid Ḥusayn — companion-of the Báb" typed to Siyyid Ḥusayn) as correct.
   const obj = fold(String(row.st).split(' — ').slice(1).join(' ').replace(/^[a-z-]+ /i, '')).trim();
   if (!obj) return { kind: 'no_object' };
+  // Any of the target's names counts here: a name shared with a DUPLICATE entity is still this person's name.
+  if (namedBy(` ${obj} `, target, { anyForm: true })) return { kind: 'ok' };
   if (PRONOUN.test(obj)) return { kind: 'pronoun_object' };               // same-paragraph coreference: may be right
   const objCore = obj.replace(/^(the|a) /, '');
   if (idx.placeKeys.has(objCore) || [...idx.placeKeys].some((p) => p.length > 4 && objCore === p)) return { kind: 'place_object', obj };
