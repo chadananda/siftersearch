@@ -78,7 +78,7 @@ export function namesMention(name, resolvedAs) {
  * @returns {Promise<{claims,subjectBound,targetBound,viaFallback,updated,dry,docId,samples}>}
  *          Counts, always. The caller emits this as telemetry; returning void is what caused 0043.
  */
-export async function link({ docId = null, write = false, deps = {} } = {}) {
+export async function link({ docId = null, write = false, diff = false, deps = {} } = {}) {
   const qa = deps.queryAll || queryAll;
   const q = deps.query || query;
 
@@ -94,8 +94,8 @@ export async function link({ docId = null, write = false, deps = {} } = {}) {
   }
 
   const claims = await qa(
-    docId ? `SELECT id, para_id, semantic_key FROM entity_claims WHERE doc_id=?`
-          : `SELECT id, para_id, semantic_key FROM entity_claims WHERE import_batch IN ('db-v2','gpb-v2')`,
+    docId ? `SELECT id, para_id, semantic_key, entity_id, target_entity_id, relation, statement FROM entity_claims WHERE doc_id=?`
+          : `SELECT id, para_id, semantic_key, entity_id, target_entity_id, relation, statement FROM entity_claims WHERE import_batch IN ('db-v2','gpb-v2')`,
     docId ? [docId] : []);
 
   // Doc-level UNAMBIGUOUS fallback (doc-scoped only). Within ONE book's disambiguation context, a name that
@@ -118,15 +118,13 @@ export async function link({ docId = null, write = false, deps = {} } = {}) {
     return found;
   };
 
-  // Doc-scoped write is AUTHORITATIVE and self-healing: clear this doc's prior binds, then recompute — so a
-  // re-run after a matcher fix removes stale mis-binds. The loop only sets, never clears, so without this a
-  // bad bind would survive every future run.
-  if (docId && write) {
-    await q(`UPDATE entity_claims SET entity_id=NULL, target_entity_id=NULL WHERE doc_id=?`, [docId]);
-  }
-
+  // Doc-scoped write is AUTHORITATIVE and self-healing: every claim of the doc is recomputed and any row whose
+  // binding differs is rewritten — including to NULL — so a re-run after a matcher fix removes stale mis-binds.
+  // Only CHANGED rows are written (it used to clear the whole doc and rewrite every row: same end state, a
+  // window of blank binds, and ~100× the writes).
   let subjectBound = 0, targetBound = 0, updated = 0, viaFallback = 0;
   const samples = [];
+  const changes = [];
   for (const c of claims) {
     const parts = String(c.semantic_key || '').split('|');
     const subject = parts[0] || '', object = parts[2] || '';
@@ -143,15 +141,22 @@ export async function link({ docId = null, write = false, deps = {} } = {}) {
     if (sEid == null) { const g = docBind(subject); if (g != null) { sEid = g; fellBack = true; } }  // pass 2
     if (oEid == null && object) { const g = docBind(object); if (g != null) oEid = g; }
 
-    if (sEid == null) continue;   // subject unresolved → keep prior value. See KNOWN LIMITATION above.
-    subjectBound++;
-    if (oEid != null) targetBound++;
-    if (fellBack) { viaFallback++; if (samples.length < 12) samples.push(`${subject} → #${sEid}`); }
+    // Subject unresolved → the claim is unbound (target too). See KNOWN LIMITATION above. Outside doc scope the
+    // prior value is kept, as before (the legacy batch mode never cleared).
+    if (sEid == null) { if (!docId) continue; oEid = null; }
+    else {
+      subjectBound++;
+      if (oEid != null) targetBound++;
+      if (fellBack) { viaFallback++; if (samples.length < 12) samples.push(`${subject} → #${sEid}`); }
+    }
+    const oldS = c.entity_id ?? null, oldT = c.target_entity_id ?? null;
+    if (oldS === sEid && oldT === oEid) continue;
+    if (diff) changes.push({ id: c.id, relation: c.relation, statement: c.statement, oldS, oldT, newS: sEid, newT: oEid });
     if (write) await q(`UPDATE entity_claims SET entity_id=?, target_entity_id=? WHERE id=?`, [sEid, oEid, c.id]);
     updated++;
   }
 
-  return { docId, dry: !write, claims: claims.length, subjectBound, targetBound, viaFallback, updated, samples };
+  return { docId, dry: !write, claims: claims.length, subjectBound, targetBound, viaFallback, updated, samples, ...(diff ? { changes } : {}) };
 }
 
 /**

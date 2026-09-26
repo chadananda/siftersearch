@@ -72,4 +72,18 @@ describe('link — binds by same-paragraph mention, never by substring', () => {
     await link({ docId: 7, write: true, deps: f.deps });
     expect(f.updates.find((u) => u[2] === 103)).toEqual([3, 4, 103]);
   });
+
+  it('writes only changed rows, and a stale mis-bind is rewritten (to the right id or to NULL)', async () => {
+    const f = fakeDeps({
+      mentions: [{ para_id: 'p1', resolved_as: 'the Báb', entity_id: 1 }, { para_id: 'p1', resolved_as: 'Mírzáy-i-Shírází', entity_id: 2 },
+        { para_id: 'p1', resolved_as: 'Quddús', entity_id: 3 }],
+      claims: [
+        { ...claim(200, 'the bab', 'shiraz'), entity_id: 1, target_entity_id: 2 },   // the audit's mis-bind
+        { ...claim(201, 'the bab', 'quddus'), entity_id: 1, target_entity_id: 3 },   // already right
+      ],
+    });
+    const r = await link({ docId: 7, write: true, diff: true, deps: f.deps });
+    expect(f.updates).toEqual([[1, null, 200]]);
+    expect(r.changes).toEqual([expect.objectContaining({ id: 200, oldT: 2, newT: null })]);
+  });
 });

@@ -2354,6 +2354,29 @@ Collection: ${paragraph.collection || 'Unknown'}
   });
 
   /**
+   * POST /server/entity-relink { write=false, doc?, limit? } — re-bind claims to entities with the current binder
+   * (rag/entities/link.js) as background task 'entity-relink' (GET /server/tasks/entity-relink). Dry by default:
+   * scores old→new bindings with the claim-target-audit classifier before anything is written; write mode saves a
+   * rollback file first. GET /server/entity-relink/report returns the latest report JSON.
+   */
+  fastify.post('/server/entity-relink', { preHandler: requireInternal }, async (request) => {
+    const { write = false, doc = null, limit = null } = request.body || {};
+    const existing = backgroundTasks.get('entity-relink');
+    if (existing && existing.status === 'running') throw ApiError.conflict('An entity-relink run is already in progress');
+    const argv = [...(write ? ['--write'] : []), ...(doc ? [`--doc=${Number(doc)}`] : []), ...(limit ? [`--limit=${Number(limit)}`] : [])];
+    const task = runBackgroundTask('entity-relink', 'scripts/entity-relink.mjs', argv);
+    return { success: true, taskId: 'entity-relink', write: !!write, status: task.status };
+  });
+
+  fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const mode = request.query.mode === 'write' ? 'write' : 'dry';
+    const files = readdirSync('logs').filter((f) => f.startsWith(`entity-relink-${mode}-`)).sort();
+    if (!files.length) throw ApiError.notFound(`no ${mode} report yet`);
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
+  /**
    * Control PM2 processes (stop/start/restart library watcher)
    */
   fastify.post('/server/pm2/:action/:process', { preHandler: requireInternal }, async (request) => {

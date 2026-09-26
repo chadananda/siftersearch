@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-26T17:53:28.553Z",
+  "generated": "2026-09-26T20:29:02.050Z",
   "entries": [
+    {
+      "hash": "951f8db3",
+      "date": "2026-09-26",
+      "type": "Fixed",
+      "description": "Link binds a claim name only as the same name or a leading short form — never raw substring",
+      "scope": "entities"
+    },
     {
       "hash": "90697642",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Wave-1 extraction pipeline — operational run-a-book guide, stage contracts, invariants, model routing, hardening state + backlog (H7)",
       "scope": null
-    },
-    {
-      "hash": "f6207846",
-      "date": "2026-07-12",
-      "type": "Other",
-      "description": "Fix Mázindarání override doc_ids (real 15228/15254-59/20028-37, not phantom 617xxx) so Persian Ẓuhúru'l-Ḥaqq routes to HAIKU not flash (flash silently fails on Persian)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "951f8db3",
+        "date": "2026-09-26",
+        "type": "Fixed",
+        "description": "Link binds a claim name only as the same name or a leading short form — never raw substring",
+        "scope": "entities"
+      },
       {
         "hash": "90697642",
         "date": "2026-09-26",
@@ -7079,13 +7086,6 @@
         "date": "2026-07-12",
         "type": "Docs",
         "description": "Wave-1 extraction pipeline — operational run-a-book guide, stage contracts, invariants, model routing, hardening state + backlog (H7)",
-        "scope": null
-      },
-      {
-        "hash": "f6207846",
-        "date": "2026-07-12",
-        "type": "Other",
-        "description": "Fix Mázindarání override doc_ids (real 15228/15254-59/20028-37, not phantom 617xxx) so Persian Ẓuhúru'l-Ḥaqq routes to HAIKU not flash (flash silently fails on Persian)",
         "scope": null
       }
     ]
