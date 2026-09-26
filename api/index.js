@@ -151,6 +151,8 @@ const start = async () => {
         ensureEngineFeatures().catch(err => logger.warn({ err }, 'ensureEngineFeatures failed'));
         // OL doc ID cache — pre-warm immediately to prevent thundering-herd on first search wave
         warmOlDocIdCache().catch(err => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));
+        import('./lib/encounters.js').then((m) => m.getEncounterIndex())
+          .catch(err => logger.warn({ err }, 'Failed to pre-warm encounter index'));
         try {
           const result = await prewarmCache(POPULAR_QUERIES);
           logger.info({ warmed: result.warmed, elapsedMs: result.elapsedMs }, 'Search cache pre-warmed');

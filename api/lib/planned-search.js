@@ -98,7 +98,9 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     return res?.hits || [];
   };
   // CLAIMS LAYER (people pattern): the cited-claim graph answers who / did what / when; runs BESIDE passage search.
-  const peopleFn = people ?? (engine ? null : async (q) => (await import('./people-search.js')).peopleSearch(q));
+  // Who-met-whom answers from the in-memory encounter index (ms); every other people question from peopleSearch.
+  const peopleFn = people ?? (engine ? null : async (q) => (await (await import('./encounters.js')).encounterPeople(q))
+    ?? (await import('./people-search.js')).peopleSearch(q));
   const claimsP = layers.claims && peopleFn ? peopleFn(query).catch((err) => ({ people: [], error: err.message })) : null;
   // With a preferred author, the author-matched search runs BESIDE the broad one, never instead of it.
   const [r, authorHits] = await Promise.all([
@@ -126,6 +128,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     entities = (pr.people || []).slice(0, 12).map((p) => ({ id: p.id, name: p.name,
       evidence: (p.evidence || []).slice(0, 4).map((e) => ({ statement: e.statement, relation: e.relation, source: e.source,
         url: e.url || null, paraId: e.paraId || null, doc_id: e.doc_id ?? null, when: e.when || null })) }));
+    if (pr.pattern) Object.assign(entities, { pattern: pr.pattern, ms: pr.ms ?? null });   // which people path answered
     const refs = entities.flatMap((p) => p.evidence.filter((e) => e.doc_id && e.paraId).slice(0, 2)
       .map((e) => ({ doc_id: e.doc_id, paraId: e.paraId, person: p.name, claim: e.statement })));
     const paraFn = paragraphs ?? (engine ? null : async (rs) => (await import('./docs-repo.js')).getParagraphsByRefs(rs));

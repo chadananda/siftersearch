@@ -388,7 +388,8 @@ export default async function publicApiRoutes(fastify) {
             entitiesOut = r.entities || null;
             planInfo = { shape: r.plan.shape, about: r.plan.about, filters: r.plan.filters, prefer: r.plan.prefer?.author || null, comparative: r.plan.comparative,
               layers: r.layers, widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error,
-              resolution: r.resolution };
+              resolution: r.resolution,
+              people: r.entities ? { pattern: r.entities.pattern || 'people-search', ms: r.entities.ms ?? null, error: r.entities.evidence_error || null } : null };
             return { hits: r.hits };
           })
           .catch((err) => {
