@@ -240,9 +240,11 @@ export function makeStore() {
            FROM entity_lookup_keys lk JOIN graph_entities ge ON ge.id=lk.entity_id
            LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type
           WHERE lk.skeleton_key IN (${ks.map(() => '?').join(',')})${type ? ' AND ge.entity_type=?' : ''}
-            AND ge.canonical_name NOT LIKE '%⟨merged%'
+            AND ${LIVE_SQL('ge.')}
           GROUP BY lk.entity_id ORDER BY ${order} LIMIT ?`,
         [...ks, ...(type ? [type] : []), n]) : Promise.resolve([]));
+      // Live only (entity-live.js): the old name-marker test let a TOMBSTONED duplicate — merged minutes earlier —
+      // be offered as a candidate, so reconcile could link new mentions to a dead entity.
       // CORE NAME FIRST. Ranking only by keys shared with the WHOLE string let a descriptor's words out-vote the
       // name: for "the Báb (the Remembrance of God)" six earlier Báb duplicates + "the Maid of Heaven" filled the
       // list, the Báb (importance 100) was cut off, and 66 of 81 duplicates of prominent people were created that
@@ -276,7 +278,7 @@ export function makeStore() {
           `SELECT ge.id id, ge.canonical_name canonical, ge.entity_type type, ge.importance importance, er.summary, er.aliases aliases
              FROM graph_entities ge
              LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type
-            WHERE ge.id=? AND ge.canonical_name NOT LIKE '%⟨merged%'`, [anchor.id]))[0];
+            WHERE ge.id=? AND ${LIVE_SQL('ge.')}`, [anchor.id]))[0];
         if (head) rows.unshift({ ...head, shared: head.shared ?? 0 });
       }
       if (gaz.guards?.length) {

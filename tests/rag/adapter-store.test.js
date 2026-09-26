@@ -105,6 +105,13 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
     expect(gs.every((g) => g.entities.some((e) => (e.importance || 0) >= 90))).toBe(true);
   });
 
+  it('findCandidateEntities: never offers a merged-away (tombstoned) entity', async () => {
+    run(`UPDATE graph_entities SET last_assessed_version='merged-into-501' WHERE id=502`);
+    const c = await store.findCandidateEntities('the Báb (the Remembrance of God)', { type: 'person', limit: 8 });
+    expect(c.map((x) => x.id)).not.toContain(502);
+    run(`UPDATE graph_entities SET last_assessed_version=NULL WHERE id=502`);
+  });
+
   it('findCandidateEntities: a parenthetical that IS the name recalls its bearer', async () => {
     const c = await store.findCandidateEntities('Siyyid ‘Alí-Muḥammad of Shíráz (the Báb)', { type: 'person', limit: 6 });
     expect(c.map((x) => x.id)).toContain(501);
