@@ -7,7 +7,8 @@
 import { MeiliSearch } from 'meilisearch';
 import { config } from './config.js';
 import { logger } from './logger.js';
-import { createEmbedding, createEmbeddings } from './ai.js';
+import { createEmbeddings } from './ai.js';
+import { queryEmbedding } from './query-embedding.js';
 import { getAuthority } from './authority.js';
 import { queryOne, queryAll, query } from './db.js';
 import { getImportProgress, getIngestionProgress, getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
@@ -764,7 +765,7 @@ export async function hybridSearch(query, options = {}) {
         setTimeout(() => reject(new Error('embedding timeout')), 5000)
       );
       const embedding = await Promise.race([
-        createEmbedding(query, { caller: 'search' }),
+        queryEmbedding(query, { caller: 'search' }),
         embeddingTimeout
       ]);
       vector = embedding.embedding;

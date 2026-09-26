@@ -68,8 +68,11 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
  */
 // resolver: source resolution (source-resolve.js) — default ON for the real engine, off when a test injects one.
 // people/paragraphs: the claims layer (people-search.js + docs-repo) — default ON for the real engine; injectable.
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, paragraphs, minResults = 3 } = {}) {
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, paragraphs, minResults = 3, budgetMs = 1000 } = {}) {
   const t0 = Date.now();
+  const deadline = t0 + budgetMs;   // the whole strategy (Chad: 1s); late stages get what is left, then degrade
+  // The query embedding needs no plan: start it now so it is ready when the engine asks (shared, one call).
+  if (!engine) import('./query-embedding.js').then((m) => m.queryEmbedding(query)).catch(() => {});
   const plan = await planner(messages?.length ? messages : query, { given });
   // Site default (an embedding site's home tradition): fills in only when the question named none and is not a
   // comparison. It is a scope like any other, so the relax ladder still widens it when the site's texts are thin.
@@ -119,7 +122,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   let resolution = null;
   if (resolve && plan.shape !== 'converse' && hits.length) {
     const t2 = Date.now();
-    const res = await resolve(hits).catch((err) => ({ hits, resolved: 0, error: err.message }));
+    const res = await resolve(hits, { deadline }).catch((err) => ({ hits, resolved: 0, error: err.message }));
     hits = res.hits;
     resolution = { resolved: res.resolved, error: res.error || null, ms: Date.now() - t2 };
   }

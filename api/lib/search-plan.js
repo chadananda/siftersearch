@@ -144,7 +144,7 @@ export function layersFor(plan) {
  * The one network call. `input` is a query string or a message array (the conversation is the state:
  * "and what about compassion?" carries no tradition of its own).
  */
-export async function planSearch(input, { given = {}, apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = 2500, fetchImpl = fetch, cache = true } = {}) {
+export async function planSearch(input, { given = {}, apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = 700, fetchImpl = fetch, cache = true } = {}) {
   const messages = Array.isArray(input) ? input : [{ role: 'user', content: String(input || '') }];
   const state = messages.slice(-6).map((m) => `${m.role}: ${String(m.content || '').slice(0, 600)}`).join('\n');
   const t0 = Date.now();

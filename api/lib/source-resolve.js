@@ -124,7 +124,7 @@ const opening = (text) => String(text || '').replace(/\s+/g, ' ').trim().split('
  * @param {Array} hits  engine hits (id, doc_id, paragraph_index, text, title, author, authority, source_url, religion…)
  * @returns {{ hits, resolved, error? }}
  */
-export async function resolveSources(hits, { judge = jevJudge, phraseSearch = defaultPhraseSearch, linkMeta = defaultLinkMeta, maxChecks = 8 } = {}) {
+export async function resolveSources(hits, { judge = jevJudge, phraseSearch = defaultPhraseSearch, linkMeta = defaultLinkMeta, maxChecks = 8, deadline = null } = {}) {
   const tiers = new Map();
   const para = new Map();   // id → carries a paragraph-level link
   const tierFor = async (list) => {
@@ -168,7 +168,9 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
   let choices = {};
   let error = null;
   try {
-    const j = await judge({ passages, groups: groups.map(({ key, span, options }) => ({ key, span, options })) });
+    // Bounded by the search deadline: a late judge degrades to the deterministic policy pick, never a slow answer.
+    const left = deadline ? Math.max(150, deadline - Date.now()) : null;
+    const j = await judge({ passages, groups: groups.map(({ key, span, options }) => ({ key, span, options })) }, left ? { timeoutMs: left } : undefined);
     verdicts = j.verdicts || verdicts;
     choices = j.choices || {};
   } catch (err) { error = err.message; }

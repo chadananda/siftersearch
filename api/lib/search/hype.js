@@ -17,7 +17,8 @@
 // dependencies to keep this module loosely coupled.
 
 import { logger } from '../logger.js';
-import { createEmbedding, createEmbeddings } from '../ai.js';
+import { createEmbeddings } from '../ai.js';
+import { queryEmbedding } from '../query-embedding.js';
 
 /**
  * Convert stored hyp_questions text → array of trimmed question strings.
@@ -48,7 +49,7 @@ export async function searchHypeQuestions({ getMeili, INDEXES }, query, options 
 
   let vector;
   try {
-    const { embedding } = await createEmbedding(query, { caller: 'hype-search' });
+    const { embedding } = await queryEmbedding(query, { caller: 'hype-search' });
     vector = embedding;
   } catch (err) {
     logger.warn({ err: err.message }, 'HyPE search: embedding generation failed');
