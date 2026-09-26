@@ -274,12 +274,12 @@ export async function entitySearch(q, { limit = 12, rows: preRows = null } = {})
   const rows = preRows || await queryAll(
     `WITH c AS MATERIALIZED (
         SELECT ec.entity_id id, ge.canonical_name name, ge.importance imp, ec.statement, ec.relation,
-               ec.doc_id, ec.para_id, ${SQL_FOLD('ec.statement')} f
+               ec.doc_id, ec.para_id, ec.time_value tv, ec.time_precision tp, ${SQL_FOLD('ec.statement')} f
           FROM entity_claims ec JOIN graph_entities ge ON ge.id=ec.entity_id
          WHERE (ec.status IS NULL OR ec.status='supported') AND ge.entity_type='person'
            AND ${LIVE_SQL('ge.')}
      )
-     SELECT id, name, imp, statement, relation, doc_id, para_id, ${rank} rank
+     SELECT id, name, imp, statement, relation, doc_id, para_id, tv, tp, ${rank} rank
        FROM c
       WHERE ${terms.map(() => `f LIKE ?`).join(' OR ')}
       ORDER BY rank DESC LIMIT 2000`,
@@ -293,7 +293,9 @@ export async function entitySearch(q, { limit = 12, rows: preRows = null } = {})
     const e = byEnt.get(r.id);
     e.score = Math.max(e.score, score);
     const d = dmap.get(r.doc_id) || {};
-    e.evidence.push({ score, statement: r.statement, relation: r.relation, source: d.title || null,
+    // when: the claim's own date (time_value/precision) — "who met Bahá'u'lláh AND WHEN" is answerable from the graph.
+    e.evidence.push({ score, statement: r.statement, relation: r.relation, source: d.title || null, doc_id: r.doc_id,
+      when: r.tv || null, when_precision: r.tp || null,
       sourceAbbr: abbrOf(d.title), paraId: r.para_id, url: d.url && r.para_id ? `${d.url}?paraId=${r.para_id}` : null });
   }
   // Best-matching person first; strongest evidence first within each person.

@@ -488,11 +488,13 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
 
     let merged;
     let planInfo = null;
+    let entitiesOut = null;
     if (plan && !phrase) {
       const { plannedSearch } = await import('../lib/planned-search.js');
       const r = await plannedSearch(query, { messages: plan.messages, given: filters, defaults: plan.defaults, limit: safeLimit, scope_config, entityIds });
       merged = r.hits || [];
-      planInfo = { shape: r.plan.shape, filters: r.plan.filters, prefer: r.plan.prefer?.author || null, comparative: r.plan.comparative,
+      entitiesOut = r.entities || null;
+      planInfo = { shape: r.plan.shape, about: r.plan.about, filters: r.plan.filters, prefer: r.plan.prefer?.author || null, comparative: r.plan.comparative,
         widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error || null, resolution: r.resolution };
     } else if (phrase) {
       // PHRASE mode (quote-source lookups): pure BM25 straight to the paragraphs
@@ -635,6 +637,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
 
     return {
       ...(planInfo ? { _plan: planInfo } : {}),
+      ...(entitiesOut ? { entities: entitiesOut } : {}),
       passages: top.map(hit => {
         const docId = hit.doc_id || hit.document_id;
         const meta = docMeta.get(docId);

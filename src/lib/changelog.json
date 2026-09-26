@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-26T04:21:37.109Z",
+  "generated": "2026-09-26T04:32:01.702Z",
   "entries": [
+    {
+      "hash": "7f57f751",
+      "date": "2026-09-25",
+      "type": "Fixed",
+      "description": "Keep the navbar and library summary; remove only the chat input — Anís is the one chat",
+      "scope": "home"
+    },
     {
       "hash": "1f316a98",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Adjust to unified enrichment pipeline v2 architecture",
       "scope": null
-    },
-    {
-      "hash": "67bc84cf",
-      "date": "2026-07-10",
-      "type": "Other",
-      "description": "Don't revive deliberately-stopped background workers on deploy",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "7f57f751",
+        "date": "2026-09-25",
+        "type": "Fixed",
+        "description": "Keep the navbar and library summary; remove only the chat input — Anís is the one chat",
+        "scope": "home"
+      },
       {
         "hash": "1f316a98",
         "date": "2026-09-25",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-10",
         "type": "Docs",
         "description": "Adjust to unified enrichment pipeline v2 architecture",
-        "scope": null
-      },
-      {
-        "hash": "67bc84cf",
-        "date": "2026-07-10",
-        "type": "Other",
-        "description": "Don't revive deliberately-stopped background workers on deploy",
         "scope": null
       }
     ]

@@ -8,6 +8,7 @@ const ans = (o) => ({
   comparative: { noul: o.comparative ?? 0 },
   author: { choice: o.author ?? 'none', confidence: o.ac ?? 0.95 },
   shape: { choice: o.shape ?? 'topic', confidence: o.sc ?? 0.9 },
+  about: { choice: o.about ?? 'texts', confidence: o.abc ?? 0.9 },
 });
 
 describe('buildPlan — scope', () => {
@@ -56,6 +57,19 @@ describe('buildPlan — scope', () => {
 });
 
 describe('layersFor — which indexes a shape uses', () => {
+  // Chad: "JEV should be selecting a search pattern that provides the Anis LLM with the information it needs".
+  // "Who were the Letters of the Living who met Bahá'u'lláh, and when?" is about PEOPLE: the cited-claim graph
+  // answers it (who, with evidence and dates); passages alone could not.
+  it('a question about PEOPLE selects the people/claims pattern', () => {
+    const l = layersFor(buildPlan(ans({ shape: 'fact', about: 'people' })));
+    expect(l.claims).toBe(true);
+    expect(buildPlan(ans({ about: 'people' })).about).toBe('people');
+  });
+
+  it('a question about what a text says does not', () => {
+    expect(layersFor(buildPlan(ans({ shape: 'topic', about: 'texts' }))).claims).toBe(false);
+  });
+
   it('a remembered QUOTE gets the keyword layer and no tradition-diversity cap', () => {
     const l = layersFor(buildPlan(ans({ shape: 'quote' })));
     expect(l.keyword).toBe(true);

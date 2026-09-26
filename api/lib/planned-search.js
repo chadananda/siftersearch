@@ -67,7 +67,8 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
  * @returns {{hits, plan, layers, widened, relaxed, narrowCount, cached, timings}}
  */
 // resolver: source resolution (source-resolve.js) — default ON for the real engine, off when a test injects one.
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, minResults = 3 } = {}) {
+// people/paragraphs: the claims layer (people-search.js + docs-repo) — default ON for the real engine; injectable.
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, paragraphs, minResults = 3 } = {}) {
   const t0 = Date.now();
   const plan = await planner(messages?.length ? messages : query, { given });
   // Site default (an embedding site's home tradition): fills in only when the question named none and is not a
@@ -96,12 +97,34 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     });
     return res?.hits || [];
   };
+  // CLAIMS LAYER (people pattern): the cited-claim graph answers who / did what / when; runs BESIDE passage search.
+  const peopleFn = people ?? (engine ? null : async (q) => (await import('./people-search.js')).peopleSearch(q));
+  const claimsP = layers.claims && peopleFn ? peopleFn(query).catch((err) => ({ people: [], error: err.message })) : null;
   // With a preferred author, the author-matched search runs BESIDE the broad one, never instead of it.
   const [r, authorHits] = await Promise.all([
     relaxScope(plan.filters, search, { min: Math.min(minResults, limit) }),
     plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }, withoutAuthor(query, plan.prefer)).catch(() => []) : Promise.resolve([]),
   ]);
   let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, subjectTerms(query, plan.prefer)) : r.results;
+
+  // People + their cited claims (with dates) + the cited paragraphs themselves — evidence first, then passages.
+  let entities = null;
+  if (claimsP) {
+    const pr = await claimsP;
+    entities = (pr.people || []).slice(0, 12).map((p) => ({ id: p.id, name: p.name,
+      evidence: (p.evidence || []).slice(0, 4).map((e) => ({ statement: e.statement, relation: e.relation, source: e.source,
+        url: e.url || null, paraId: e.paraId || null, doc_id: e.doc_id ?? null, when: e.when || null })) }));
+    const refs = entities.flatMap((p) => p.evidence.filter((e) => e.doc_id && e.paraId).slice(0, 2)
+      .map((e) => ({ doc_id: e.doc_id, paraId: e.paraId, person: p.name, claim: e.statement })));
+    const paraFn = paragraphs ?? (engine ? null : async (rs) => (await import('./docs-repo.js')).getParagraphsByRefs(rs));
+    const found = paraFn && refs.length ? await paraFn(refs).catch(() => []) : [];
+    const evidenceHits = found.map((row) => {
+      const ref = refs.find((x) => x.doc_id === row.doc_id && (x.paraId === row.external_para_id || x.paraId === `p${row.id}`)) || {};
+      return { ...row, _source: { kind: 'evidence', person: ref.person || null, claim: ref.claim || null } };
+    });
+    const seenIds = new Set(evidenceHits.map((h) => h.id));
+    hits = [...evidenceHits, ...hits.filter((h) => !seenIds.has(h.id))].slice(0, Math.max(limit, evidenceHits.length));
+  }
 
   // Correct sources BEFORE anything formats them: quoted words served from their original work, every checked
   // passage labelled (original / quotation / recollection / commentary) with whose words it carries.
@@ -115,7 +138,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   }
 
   const value = {
-    hits, plan, layers, resolution,
+    hits, plan, layers, resolution, entities,
     widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowResults.length, scopeUsed: r.scope,
   };
   if (cache.size >= MAX) cache.delete(cache.keys().next().value);

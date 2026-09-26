@@ -13,12 +13,12 @@ function client(provider) {
   }));
 }
 
-export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, llm, onChunk, signal }) {
+export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, entities = null, llm, onChunk, signal }) {
   const params = {
     model: llm.model,
     messages: [
       { role: 'system', content: anisSystem({ persona: persona_name || 'Anis', mission, companionAppend: companion_append, conversational }) },
-      { role: 'user', content: anisUserPayload({ question: user_question, conversation: conversation_summary, passages: retrieved_quotes, conversational }) },
+      { role: 'user', content: anisUserPayload({ question: user_question, conversation: conversation_summary, passages: retrieved_quotes, conversational, entities }) },
     ],
     temperature: 0.3,
     // Reasoning models spend completion tokens thinking; leave room so the reply is never truncated.

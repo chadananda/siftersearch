@@ -118,6 +118,30 @@ describe('plannedSearch', () => {
     expect(r.resolution).toMatchObject({ resolved: 0 });
   });
 
+  // "Who were the Letters of the Living who met Bahá'u'lláh, and when?" — Anis answered from passages only and
+  // got it wrong. The plan picks the people pattern; raw search must deliver the graph's answer.
+  it('runs the people/claims layer when the plan calls for it: entities + their cited paragraphs first', async () => {
+    const planPeople = async (_i, { given } = {}) => ({ ...buildPlan({
+      tradition: { choice: "Baha'i", confidence: 0.95 }, comparative: { noul: 0 }, author: { choice: 'none', confidence: 0.9 },
+      shape: { choice: 'enumerate', confidence: 0.9 }, about: { choice: 'people', confidence: 0.95 },
+    }, { given }), ms: 5 });
+    const people = async () => ({ people: [
+      { id: 1, name: 'Quddús', evidence: [{ statement: 'Quddús — met Bahá’u’lláh', relation: 'met', source: 'The Dawn-Breakers', url: 'https://oceanlibrary.com/db?paraId=para_526', paraId: 'para_526', doc_id: 21308, when: '1848' }] },
+    ] });
+    const paragraphs = async (refs) => refs.map((r) => ({ id: 777, doc_id: r.doc_id, paragraph_index: 526, text: 'Quddús was admitted into the presence of Bahá’u’lláh…', title: 'The Dawn-Breakers', author: 'Nabil', external_para_id: r.paraId }));
+    const e = engine(() => many(5));
+    const r = await plannedSearch('who were the letters of the living who met Bahá’u’lláh and when', { planner: planPeople, engine: e.fn, people, paragraphs });
+    expect(r.entities[0]).toMatchObject({ name: 'Quddús' });
+    expect(r.entities[0].evidence[0]).toMatchObject({ when: '1848', url: 'https://oceanlibrary.com/db?paraId=para_526' });
+    expect(r.hits[0]).toMatchObject({ id: 777, _source: { kind: 'evidence', person: 'Quddús' } });
+  });
+
+  it('does not run the people layer for a question about what a text says', async () => {
+    let called = false;
+    await plannedSearch('x', { planner: planOf({}), engine: engine(() => many(3)).fn, people: async () => { called = true; return { people: [] }; } });
+    expect(called).toBe(false);
+  });
+
   it('caller filters beat the plan', async () => {
     const e = engine(() => many(5));
     await plannedSearch('x', { given: { religion: 'Hindu' }, planner: planOf({ tradition: 'Buddhist' }), engine: e.fn });

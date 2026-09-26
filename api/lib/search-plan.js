@@ -82,7 +82,16 @@ export function keywordAuthor(text) {
 const PLAN_TTL_MS = 30 * 60 * 1000;
 const planCache = new Map();
 
-const EMPTY = { filters: {}, prefer: null, comparative: false, shape: 'topic', confidence: {}, source: {} };
+// What the question is ABOUT — picks the search pattern (Chad: "JEV should be selecting a search pattern that
+// provides the Anis LLM with the information it needs"). people → the cited-claim graph (who, did what, when).
+const ABOUT = {
+  people: 'people: who someone was, what people did, who met, attended or belonged to something, relationships between people',
+  texts: 'what a scripture, writing, talk or teaching says',
+  terms: 'what a word, name or concept means',
+  events: 'an event, place or date as such (what happened at X, where Y is)',
+};
+
+const EMPTY = { filters: {}, prefer: null, comparative: false, shape: 'topic', about: 'texts', confidence: {}, source: {} };
 
 /** Jev answers (or null) → plan. Pure. */
 export function buildPlan(answers, { given = {} } = {}) {
@@ -94,6 +103,7 @@ export function buildPlan(answers, { given = {} } = {}) {
     plan.comparative = (answers.comparative?.noul ?? 0) > 0.5;
     plan.confidence = { tradition: t.confidence ?? 0, author: a.confidence ?? 0, shape: s.confidence ?? 0 };
     if (s.choice && SHAPES[s.choice]) plan.shape = s.choice;
+    if (answers.about?.choice && ABOUT[answers.about.choice]) plan.about = answers.about.choice;
     if (!plan.comparative) {
       if (t.choice && t.choice !== 'none' && TRADITIONS[t.choice] && (t.confidence ?? 0) >= MIN_CONFIDENCE) {
         plan.filters.religion = t.choice;
@@ -124,7 +134,7 @@ export function layersFor(plan) {
     keyword: shape === 'quote',
     hype: shape !== 'quote',
     // Cited claims answer who/when/where and rosters directly, with the paragraph that proves them.
-    claims: shape === 'fact' || shape === 'enumerate',
+    claims: shape === 'fact' || shape === 'enumerate' || plan.about === 'people',
     // Spread across traditions only when the question named none and is not hunting one passage.
     diversify: !scoped && shape !== 'quote',
   };
@@ -179,6 +189,7 @@ export async function planSearch(input, { given = {}, apiKey = process.env.TYPES
             criteria: Object.fromEntries(Object.entries(AUTHORS).map(([k, v]) => [k, v.about])),
           },
           shape: { type: 'choice', instructions: 'What kind of request is the latest user turn?', criteria: SHAPES },
+          about: { type: 'choice', instructions: 'What is the latest user turn ABOUT?', criteria: ABOUT },
         },
       }),
       signal: AbortSignal.timeout(timeoutMs),
@@ -205,5 +216,5 @@ function normalizeAnswers(a) {
     const c = x.choice ?? x.value ?? null;
     return { choice: c, confidence: x.confidence ?? x.distribution?.[c] ?? 0 };
   };
-  return { tradition: choice(a.tradition), author: choice(a.author), shape: choice(a.shape), comparative: a.comparative };
+  return { tradition: choice(a.tradition), author: choice(a.author), shape: choice(a.shape), about: choice(a.about), comparative: a.comparative };
 }

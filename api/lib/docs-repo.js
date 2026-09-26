@@ -317,3 +317,26 @@ export async function getLinkMeta(docIds) {
     ids, 'docs-repo:link-meta');
   return new Map(rows.map((r) => [r.id, r]));
 }
+
+/**
+ * Paragraphs cited by entity claims: refs [{doc_id, paraId}] where paraId is an OceanLibrary id ('para_736') or a
+ * content row id ('p16114089'). Indexed lookups only (content PK; doc_id + external_para_id). Carries the doc fields
+ * the link policy needs.
+ */
+export async function getParagraphsByRefs(refs) {
+  const ext = (refs || []).filter((r) => r.doc_id && r.paraId && !/^p\d+$/.test(r.paraId));
+  const ids = (refs || []).map((r) => /^p(\d+)$/.exec(r.paraId || '')?.[1]).filter(Boolean).map(Number);
+  const cols = `c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.external_para_id, d.title, d.author, d.religion,
+                d.collection, d.source_url, d.source_site, d.authority`;
+  const out = [];
+  if (ext.length) {
+    out.push(...await queryAll(`SELECT ${cols} FROM content c JOIN docs d ON d.id = c.doc_id
+      WHERE c.deleted_at IS NULL AND (${ext.map(() => '(c.doc_id = ? AND c.external_para_id = ?)').join(' OR ')})`,
+      ext.flatMap((r) => [r.doc_id, r.paraId]), 'docs-repo:paras-by-ref'));
+  }
+  if (ids.length) {
+    out.push(...await queryAll(`SELECT ${cols} FROM content c JOIN docs d ON d.id = c.doc_id
+      WHERE c.deleted_at IS NULL AND c.id IN (${ids.map(() => '?').join(',')})`, ids, 'docs-repo:paras-by-id'));
+  }
+  return out;
+}
