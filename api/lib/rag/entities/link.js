@@ -59,13 +59,17 @@ const wordsOf = (s) => nrm(s).replace(/[^a-z0-9]+/g, ' ').trim().replace(/^(the|
  * her son), "the Báb" ⊂ "Mullá Ḥusayn (the Báb's first disciple)" (a name found inside another's descriptor),
  * "Mecca" ⊂ "the Sharíf of Mecca". Under-bind, never mis-bind.
  */
+const parens = (s) => [...String(s || '').matchAll(/\(([^)]*)\)/g)].map((m) => m[1]);
+// ", surnamed Ibn-i-Abhar" / ", known as Áqáy-i-Kalím" — a name given in a descriptor is one of the person's names.
+const givenNames = (s) => [...String(s || '').matchAll(/(?:surnamed|known as|called|entitled|titled|also named)\s+([^,;()]+)/gi)].map((m) => m[1]);
+
 export function namesMention(name, resolvedAs, { exact = false } = {}) {
-  const n = wordsOf(name);
-  if (!n) return false;
+  // Every name each side carries: its core, its parenthetical alternates, and names given in a descriptor.
+  const claimNames = [coreOf(name), ...parens(name), ...givenNames(name)].map(wordsOf).filter(Boolean);
+  if (!claimNames.length) return false;
   const core = wordsOf(coreOf(resolvedAs));
-  const alternates = [...String(resolvedAs || '').matchAll(/\(([^)]*)\)/g)].map((m) => wordsOf(m[1]));
-  if (n === core || alternates.includes(n)) return true;
-  return !exact && n.length > 4 && `${core} `.startsWith(`${n} `);
+  const mentionNames = new Set([core, ...parens(resolvedAs), ...givenNames(resolvedAs)].map(wordsOf).filter(Boolean));
+  return claimNames.some((n) => mentionNames.has(n) || (!exact && n.length > 4 && `${core} `.startsWith(`${n} `)));
 }
 
 /**

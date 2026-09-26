@@ -11,6 +11,17 @@ describe('namesMention — a claim name refers to a mention only as the same nam
   it('a parenthetical is a second name (equality only)', () => expect(namesMention('the Báb', 'Siyyid ‘Alí-Muḥammad of Shíráz (the Báb)')).toBe(true));
   it('leading "the" is not part of a name', () => expect(namesMention('the Báb', 'Báb')).toBe(true));
 
+  // Dry-run 2 (2026-09-26): 21,402 subjects / 11,193 targets lost as "no_mention" because names on EITHER side carry
+  // alternates the matcher ignored.
+  it('a claim name with its own parenthetical matches the plain mention', () => {
+    expect(namesMention('Mírzá Yaḥyá (Ṣubḥ-i-Azal)', 'Mírzá Yaḥyá')).toBe(true);
+    expect(namesMention('Ṭáhirih (Fáṭimih Baraghání)', 'Ṭáhirih')).toBe(true);
+    expect(namesMention('Siyyid Káẓim (Siyyid Káẓim-i-Rashtí)', 'Siyyid Káẓim-i-Rashtí')).toBe(true);
+  });
+  it('a "surnamed / known as" name on the mention is one of its names', () => {
+    expect(namesMention('Ibn-i-Abhar', 'Mírzá ‘Alí-Muḥammad, surnamed Ibn-i-Abhar')).toBe(true);
+    expect(namesMention('Áqáy-i-Kalím', 'Mírzá Músá, known as Áqáy-i-Kalím')).toBe(true);
+  });
   it('a place is not a person whose nisba contains it', () => expect(namesMention('Shíráz', 'Mírzáy-i-Shírází')).toBe(false));
   it('never the reverse direction: a descriptor is not its referent', () => expect(namesMention('mother of the Báb', 'the Báb')).toBe(false));
   it('never into another mention’s descriptor', () => expect(namesMention('the Báb', 'Mullá Ḥusayn (the Báb’s first disciple)')).toBe(false));
