@@ -2344,6 +2344,16 @@ Collection: ${paragraph.collection || 'Unknown'}
   });
 
   /**
+   * GET /server/claim-target-audit — read-only: of the TYPED encounter claims, how many point at a target the
+   * statement does not name, classified by the binding failure (place object, substring, names another person…)
+   * per import batch, with samples. Measures which binder creates wrong targets so it is fixed at source.
+   */
+  fastify.get('/server/claim-target-audit', { preHandler: requireInternal }, async (request) => {
+    const { auditClaimTargets } = await import('../lib/claim-target-audit.js');
+    return auditClaimTargets({ sample: Math.min(Number(request.query.sample) || 8, 30) });
+  });
+
+  /**
    * Control PM2 processes (stop/start/restart library watcher)
    */
   fastify.post('/server/pm2/:action/:process', { preHandler: requireInternal }, async (request) => {

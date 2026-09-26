@@ -95,11 +95,11 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
     all.push(row);
     (bySubject.get(c.eid) || bySubject.set(c.eid, []).get(c.eid)).push(row);
   }
-  return { people, byWord, roster, groups: grp, all, bySubject, builtAt: Date.now() };
+  return { people, byWord, roster, groups: grp, all, bySubject, placeKeys, builtAt: Date.now() };
 }
 
 // Does the statement name this person? Unique phrase, not inside another person's longer name at that spot.
-function namedBy(hay, person, { canonicalOnly = false } = {}) {
+export function namedBy(hay, person, { canonicalOnly = false } = {}) {
   for (const f of person.forms) {
     if (!f.unique || (canonicalOnly && !f.canonical)) continue;
     for (const at of occurrences(hay, f.phrase)) {
