@@ -327,7 +327,7 @@ export async function getParagraphsByRefs(refs) {
   const ext = (refs || []).filter((r) => r.doc_id && r.paraId && !/^p\d+$/.test(r.paraId));
   const ids = (refs || []).map((r) => /^p(\d+)$/.exec(r.paraId || '')?.[1]).filter(Boolean).map(Number);
   const cols = `c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.external_para_id, d.title, d.author, d.religion,
-                d.collection, d.source_url, d.source_site, d.authority`;
+                d.collection, d.source_url, d.source_site`;
   const out = [];
   if (ext.length) {
     out.push(...await queryAll(`SELECT ${cols} FROM content c JOIN docs d ON d.id = c.doc_id

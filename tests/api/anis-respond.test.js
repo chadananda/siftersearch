@@ -148,6 +148,15 @@ describe('anisRespond', () => {
     expect(r.quotes_removed).toBe(1);
   });
 
+  // Live 2026-09-25: the stream showed a link the model rewrote onto another domain; only the final text removed it.
+  it('never STREAMS a link that is not among the sources', async () => {
+    const d = deps({ craft: async (a) => { a.onChunk('See ["one country"](https://invented.example/x). '); a.onChunk('And the source ["The earth is but one country"](https://x/g#117).'); return 'x'; } });
+    const streamed = [];
+    await anisRespond({ messages: convo, deps: d, onEvent: (e) => e.type === 'text' && streamed.push(e.content) });
+    expect(streamed.join('')).not.toContain('invented.example');
+    expect(streamed.join('')).toContain('https://x/g#117');
+  });
+
   it('returns what the email adapter needs: text, citations, plan, timings', async () => {
     const r = await anisRespond({ messages: convo, deps: deps() });
     expect(r.citations[0]).toMatchObject({ title: 'Gleanings', url: 'https://x/g#117' });

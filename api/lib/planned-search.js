@@ -129,7 +129,12 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     const refs = entities.flatMap((p) => p.evidence.filter((e) => e.doc_id && e.paraId).slice(0, 2)
       .map((e) => ({ doc_id: e.doc_id, paraId: e.paraId, person: p.name, claim: e.statement })));
     const paraFn = paragraphs ?? (engine ? null : async (rs) => (await import('./docs-repo.js')).getParagraphsByRefs(rs));
-    const found = paraFn && refs.length ? await paraFn(refs).catch(() => []) : [];
+    let evidenceError = null;
+    const found = paraFn && refs.length ? await paraFn(refs).catch((err) => { evidenceError = err.message; return []; }) : [];
+    if (evidenceError || (refs.length && !found.length)) {
+      // Never silently: a people answer without its cited paragraphs reads as "the record does not say".
+      entities.evidence_error = evidenceError || `0 of ${refs.length} cited paragraphs found`;
+    }
     const evidenceHits = found.map((row) => {
       const ref = refs.find((x) => x.doc_id === row.doc_id && (x.paraId === row.external_para_id || x.paraId === `p${row.id}`)) || {};
       return { ...row, _source: { kind: 'evidence', person: ref.person || null, claim: ref.claim || null } };

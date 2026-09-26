@@ -162,9 +162,13 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // Stream a sentence at a time, releasing only sentences whose quotes are in the passages — an invented quote is
   // never SHOWN, not even for the moment before the final text replaces it. first_token_ms = first text SEEN.
   let firstTokenMs = null;
+  // Links allowed = the passages' URLs + the people record's evidence URLs. Applied per sentence while STREAMING
+  // (the stream once showed a link the model had moved onto another domain; only the final text caught it).
+  const allowed = [...retrieved, ...(res?.entities || []).flatMap((p) => (p.evidence || []).map((e) => ({ citation_url: e.url })))];
+  const cleanLinks = (t) => (d.stripLinks || keepRetrievedLinks)(linkMarkers(t, retrieved), allowed);
   const gate = createSentenceGate(retrieved, (t) => {
     if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
-    onEvent({ type: 'text', content: t });
+    onEvent({ type: 'text', content: cleanLinks(t) });
   });
   const raw = await d.craft({
     user_question: question, retrieved_quotes: retrieved, conversation_summary: conversationSummary(messages, persona),
@@ -175,7 +179,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   gate.flush();
   // Final text: markers → links, ungrounded links unlinked, and any sentence quoting words found in NO passage removed
   // (the widget reconciles its streamed text to this; email sends only this).
-  const guarded = dropUnverified((d.stripLinks || keepRetrievedLinks)(linkMarkers(raw, retrieved), retrieved), retrieved);
+  const guarded = dropUnverified(cleanLinks(raw), retrieved);
   const reply = guarded.text;
   if (comp?.log && comp.plan) comp.log(comp.plan);
 

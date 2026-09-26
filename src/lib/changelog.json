@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-26T04:37:14.471Z",
+  "generated": "2026-09-26T04:44:24.127Z",
   "entries": [
+    {
+      "hash": "ce6fa28a",
+      "date": "2026-09-25",
+      "type": "Fixed",
+      "description": "Attach claim-cited evidence paragraphs AFTER source resolution (it relabelled them)",
+      "scope": "search"
+    },
     {
       "hash": "ea206958",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Human-viewable extraction plan overview + status pages",
       "scope": null
-    },
-    {
-      "hash": "beba586f",
-      "date": "2026-07-11",
-      "type": "Other",
-      "description": "Multilingual + continuation-robust historical extractor; externalize history + conceptual track docs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "ce6fa28a",
+        "date": "2026-09-25",
+        "type": "Fixed",
+        "description": "Attach claim-cited evidence paragraphs AFTER source resolution (it relabelled them)",
+        "scope": "search"
+      },
       {
         "hash": "ea206958",
         "date": "2026-09-25",
@@ -7079,13 +7086,6 @@
         "date": "2026-07-11",
         "type": "Docs",
         "description": "Human-viewable extraction plan overview + status pages",
-        "scope": null
-      },
-      {
-        "hash": "beba586f",
-        "date": "2026-07-11",
-        "type": "Other",
-        "description": "Multilingual + continuation-robust historical extractor; externalize history + conceptual track docs",
         "scope": null
       }
     ]
