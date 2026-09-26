@@ -86,13 +86,13 @@ describe('layersFor — which indexes a shape uses', () => {
   // embedding (0.5–0.75s from tower-nas) is paid only by strategies that need meaning-match.
   it('pays for the query embedding only when the strategy needs meaning-match', () => {
     const sem = (a) => layersFor(buildPlan(ans(a))).semantic;
-    expect(sem({ shape: 'quote' })).toBe(false);
     expect(sem({ shape: 'lookup' })).toBe(false);
-    expect(sem({ shape: 'fact', about: 'people' })).toBe(false);
-    expect(sem({ shape: 'enumerate', about: 'people' })).toBe(false);
+    // Battery regressions when these went keyword-only: lay paraphrases are classed as quotes, and history
+    // facts ("When was the Báb martyred?") are answered by HyPE.
+    expect(sem({ shape: 'quote' })).toBe(true);
+    expect(sem({ shape: 'fact', about: 'people' })).toBe(true);
+    expect(layersFor(buildPlan(ans({ shape: 'fact', about: 'people' }))).hype).toBe(true);
     expect(sem({ shape: 'topic', about: 'texts' })).toBe(true);
-    expect(sem({ shape: 'define', about: 'terms' })).toBe(true);
-    expect(layersFor(buildPlan(ans({ shape: 'fact', about: 'people' }))).hype).toBe(false);   // HyPE is vector-only
   });
 
   it('diversifies across traditions ONLY when nothing scoped the question', () => {

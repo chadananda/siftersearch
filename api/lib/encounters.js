@@ -249,6 +249,12 @@ export async function getEncounterIndex() {
   return _index ?? _building;
 }
 
+/** Synchronous, ms: is this a who-met-whom question the (already built) index can answer? false until built. */
+export function isEncounterQuestion(q) {
+  if (!_index || !VERB.test(fold(q))) return false;
+  return findParties(q, _index).persons.length > 0;
+}
+
 /** Async wrapper for the claims layer: encounterSearch + each cited paragraph's source title and policy link. */
 export async function encounterPeople(q) {
   if (!VERB.test(fold(q))) return null;

@@ -68,7 +68,7 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
  */
 // resolver: source resolution (source-resolve.js) — default ON for the real engine, off when a test injects one.
 // people/paragraphs: the claims layer (people-search.js + docs-repo) — default ON for the real engine; injectable.
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, paragraphs, minResults = 3, budgetMs = 1000 } = {}) {
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, minResults = 3, budgetMs = 1000 } = {}) {
   const t0 = Date.now();
   const deadline = t0 + budgetMs;   // the whole strategy (Chad: 1s); late stages get what is left, then degrade
   // The query embedding needs no plan: start it now so it is ready when the engine asks (shared, one call).
@@ -80,7 +80,11 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     plan.filters = { ...plan.filters, religion: defaults.religion };
     plan.source = { ...plan.source, religion: 'site-default' };
   }
-  const layers = layersFor(plan);
+  let layers = layersFor(plan);
+  // Who-met-whom is answered by the encounter index with cited paragraphs; passages only support it, and BM25 on
+  // the names finds them — so it pays for no query embedding.
+  const probe = encounterProbe ?? (engine || people ? null : (await import('./encounters.js')).isEncounterQuestion);
+  if (probe?.(query)) layers = { ...layers, semantic: false, hype: false, encounter: true };
   const planMs = Date.now() - t0;
 
   const { SEARCH_VERSION = '' } = engine ? {} : await import('./answer-cache.js').catch(() => ({}));

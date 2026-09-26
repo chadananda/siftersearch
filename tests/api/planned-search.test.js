@@ -152,6 +152,13 @@ describe('plannedSearch', () => {
     expect(r.entities.pattern).toBe('group-target');
   });
 
+  it('a recognised who-met-whom question pays for no query embedding', async () => {
+    const e = engine(() => many(3));
+    const r = await plannedSearch('did Quddús meet Ṭáhirih', { planner: planOf({}), engine: e.fn, encounterProbe: () => true, encounters: async () => null });
+    expect(r.layers).toMatchObject({ semantic: false, hype: false, encounter: true });
+    expect(e.calls[0].semantic).toBe(false);
+  });
+
   it('a who-met-whom probe that finds nothing leaves a non-people answer without entities', async () => {
     const r = await plannedSearch('what is justice', { planner: planOf({}), engine: engine(() => many(3)).fn, encounters: async () => null });
     expect(r.entities).toBeNull();

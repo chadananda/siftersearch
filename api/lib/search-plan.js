@@ -128,16 +128,17 @@ export function buildPlan(answers, { given = {} } = {}) {
 export function layersFor(plan) {
   const scoped = Object.keys(plan.filters || {}).length > 0;
   const shape = plan.shape;
-  // Meaning-match (query embedding → vector layers) only where the strategy needs it. A quote is a wording problem,
-  // a lookup names its target, and a people fact/roster is answered by the claims index with names that BM25
-  // matches exactly — the embedding (0.5–0.75s from tower-nas) bought them nothing.
-  const semantic = !(shape === 'quote' || shape === 'lookup' || (plan.about === 'people' && (shape === 'fact' || shape === 'enumerate')));
+  // Meaning-match (query embedding → vector layers) only where the strategy needs it: a lookup names its target.
+  // NOT quotes — "Buddha said hatred is never ended by more hatred" is classed a quote but is a paraphrase — and NOT
+  // people facts ("When was the Báb martyred?" is answered by HyPE). Who-met-whom drops it at search time, once the
+  // encounter index has recognised the question (planned-search.js). Battery 2026-09-26: 3 regressions otherwise.
+  const semantic = shape !== 'lookup';
   return {
     main: true,
     semantic,
     // A remembered quote is a WORDING problem: exact-word matching finds it; embeddings find its neighbours.
     keyword: shape === 'quote',
-    hype: semantic,
+    hype: semantic && shape !== 'quote',
     // Cited claims answer who/when/where and rosters directly, with the paragraph that proves them.
     claims: shape === 'fact' || shape === 'enumerate' || plan.about === 'people',
     // Spread across traditions only when the question named none and is not hunting one passage.
