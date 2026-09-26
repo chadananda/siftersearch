@@ -141,6 +141,8 @@
   let loading = $state(false);
   // Chat mode — the default user experience. Uses /api/chat/stream.
   // Instant search and research modes are accessible from admin dashboard.
+  // Pages that host Anís (the home page) pass showInput={false}: navbar + library summary stay, the chat goes.
+  let { showInput = true } = $props();
   let researchMode = $state(true);
   let researchMessages = $state([]); // [{role, content, citations?, isSearching?}]
   let researchContext = $state(null); // Background research context for next turn
@@ -2679,6 +2681,8 @@
     {/if}
   </div>
 
+  <!-- showInput=false: the page hosts Anís (the widget) instead — no chat input, no conversation bar. -->
+  {#if showInput}
   <!-- Conversation history. ARIA is the ONLY locator strategy here (accessibility AND testability, per the
        threads testing contract): navigation landmark + labelled list, aria-current on the open thread. -->
   {#if researchMode}
@@ -2835,6 +2839,7 @@
       </form>
     {/if}
   </div>
+  {/if}
 </div>
 
 <style>

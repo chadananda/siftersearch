@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-25T23:24:05.921Z",
+  "generated": "2026-09-26T04:21:37.109Z",
   "entries": [
+    {
+      "hash": "1f316a98",
+      "date": "2026-09-25",
+      "type": "Fixed",
+      "description": "Anís is named Anís on the home page (data-name), not the house profile's lab label",
+      "scope": "home"
+    },
     {
       "hash": "7e3dd54c",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Don't revive deliberately-stopped background workers on deploy",
       "scope": null
-    },
-    {
-      "hash": "24e00e33",
-      "date": "2026-07-10",
-      "type": "Other",
-      "description": "Deterministic near-dup collapse before AI analysis (+ router/pattern design doc)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "1f316a98",
+        "date": "2026-09-25",
+        "type": "Fixed",
+        "description": "Anís is named Anís on the home page (data-name), not the house profile's lab label",
+        "scope": "home"
+      },
       {
         "hash": "7e3dd54c",
         "date": "2026-09-25",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-10",
         "type": "Other",
         "description": "Don't revive deliberately-stopped background workers on deploy",
-        "scope": null
-      },
-      {
-        "hash": "24e00e33",
-        "date": "2026-07-10",
-        "type": "Other",
-        "description": "Deterministic near-dup collapse before AI analysis (+ router/pattern design doc)",
         "scope": null
       }
     ]
