@@ -101,12 +101,15 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // Who-met-whom answers from the in-memory encounter index (ms); every other people question from peopleSearch.
   const peopleFn = people ?? (engine ? null : async (q) => (await (await import('./encounters.js')).encounterPeople(q))
     ?? (await import('./people-search.js')).peopleSearch(q));
-  const claimsP = layers.claims && peopleFn ? peopleFn(query).catch((err) => ({ people: [], error: err.message })) : null;
+  const stages = {};   // per-stage ms, so the 1s budget can be held stage by stage
+  const claimsP = layers.claims && peopleFn ? peopleFn(query).catch((err) => ({ people: [], error: err.message }))
+    .finally(() => { stages.claims_ms = Date.now() - t1; }) : null;
   // With a preferred author, the author-matched search runs BESIDE the broad one, never instead of it.
   const [r, authorHits] = await Promise.all([
     relaxScope(plan.filters, search, { min: Math.min(minResults, limit) }),
     plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }, withoutAuthor(query, plan.prefer)).catch(() => []) : Promise.resolve([]),
   ]);
+  stages.passages_ms = Date.now() - t1;
   let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, subjectTerms(query, plan.prefer)) : r.results;
 
   // Correct sources BEFORE anything formats them: quoted words served from their original work, every checked
@@ -133,7 +136,9 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
       .map((e) => ({ doc_id: e.doc_id, paraId: e.paraId, person: p.name, claim: e.statement })));
     const paraFn = paragraphs ?? (engine ? null : async (rs) => (await import('./docs-repo.js')).getParagraphsByRefs(rs));
     let evidenceError = null;
+    const t3 = Date.now();
     const found = paraFn && refs.length ? await paraFn(refs).catch((err) => { evidenceError = err.message; return []; }) : [];
+    stages.evidence_ms = Date.now() - t3;
     if (evidenceError || (refs.length && !found.length)) {
       // Never silently: a people answer without its cited paragraphs reads as "the record does not say".
       entities.evidence_error = evidenceError || `0 of ${refs.length} cited paragraphs found`;
@@ -152,5 +157,5 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   };
   if (cache.size >= MAX) cache.delete(cache.keys().next().value);
   cache.set(key, { at: Date.now(), value });
-  return { ...value, cached: false, timings: { plan_ms: planMs, search_ms: Date.now() - t1, total_ms: Date.now() - t0 } };
+  return { ...value, cached: false, timings: { plan_ms: planMs, search_ms: Date.now() - t1, total_ms: Date.now() - t0, ...stages, resolve_ms: resolution?.ms ?? null } };
 }

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-26T15:45:50.073Z",
+  "generated": "2026-09-26T15:54:33.459Z",
   "entries": [
+    {
+      "hash": "24490fe2",
+      "date": "2026-09-26",
+      "type": "Fixed",
+      "description": "Encounters — places are not people, qualifiers are not names; evidence says why it matched",
+      "scope": "search"
+    },
     {
       "hash": "a5dd056f",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Entities/reconcile (evidence adjudication -> proposed decisions)",
       "scope": null
-    },
-    {
-      "hash": "e9c9d736",
-      "date": "2026-07-11",
-      "type": "Other",
-      "description": "ParseMentions/renderNote match the real corpus note format (quoted surfaces)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "24490fe2",
+        "date": "2026-09-26",
+        "type": "Fixed",
+        "description": "Encounters — places are not people, qualifiers are not names; evidence says why it matched",
+        "scope": "search"
+      },
       {
         "hash": "a5dd056f",
         "date": "2026-09-26",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-11",
         "type": "Other",
         "description": "Entities/reconcile (evidence adjudication -> proposed decisions)",
-        "scope": null
-      },
-      {
-        "hash": "e9c9d736",
-        "date": "2026-07-11",
-        "type": "Other",
-        "description": "ParseMentions/renderNote match the real corpus note format (quoted surfaces)",
         "scope": null
       }
     ]

@@ -1,7 +1,8 @@
 // Who-met-whom fast path: an in-memory join over encounter claims (met/accompanied/visited/…) + group rosters.
-// Only ~22% of encounter claims carry target_entity_id, so each claim is matched by its typed target OR by the
-// person's name forms appearing as whole words in its statement. Loaded once (≈100k rows), refreshed stale-while-
-// revalidate; a query is a few ms, never a LIKE scan. Returns null when the question is not who-met-whom.
+// Only ~22% of encounter claims carry target_entity_id, so a claim also links to a person when one of their names
+// appears in its statement as a PHRASE that (a) belongs to nobody else and (b) is not part of a longer name at that
+// spot ("Mullá ‘Alí" inside "Mullá ‘Alí Mardan", "Bahá" inside "‘Abdu’l-Bahá"). Loaded once (~100k rows), refreshed
+// stale-while-revalidate; a query is milliseconds. Returns null when the question is not who-met-whom.
 // Deps: db, entity-live, source-links.
 import { queryAll } from './db.js';
 import { LIVE_SQL } from './entity-live.js';
@@ -9,103 +10,154 @@ import { linkFor } from './source-links.js';
 
 export const ENCOUNTER_RELATIONS = ['met', 'accompanied', 'companion-of', 'knew', 'visited', 'hosted', 'host-of',
   'interviewed-by', 'summoned', 'summoned-by', 'recognized', 'taught-by', 'teacher-of', 'disciple-of', 'converted-by'];
-const REL_RANK = new Map(ENCOUNTER_RELATIONS.map((r, i) => [r, i]));
 const VERB = /\b(met|meet|meets|meeting|accompan\w*|knew|know|known|visit\w*|encounter\w*|companions?|presence|attain\w*|host\w*|interview\w*|summon\w*|saw|seen|see)\b/;
-// Honorifics are features (they separate Mullá Ḥusayn from Imám Ḥusayn) — required when matching a statement,
-// optional-but-scored when matching the query, so a bare "Ḥusayn" still falls to the most prominent bearer.
+// The verb picks the edge ("accompanied" is not "met"); verbs not listed accept every encounter relation.
+const ASKED = [
+  [/\baccompan|\bcompanion/, ['accompanied', 'companion-of']],
+  [/\bvisit/, ['visited', 'hosted', 'host-of']],
+  [/\bhost/, ['hosted', 'host-of', 'visited']],
+  [/\bknew\b|\bknow/, ['knew', 'met']],
+  [/\bsummon/, ['summoned', 'summoned-by']],
+  [/\binterview/, ['interviewed-by', 'met']],
+];
+// Honorifics separate Mullá Ḥusayn from Imám Ḥusayn: required in a statement, optional in the question (a bare
+// "Ḥusayn" falls to the most prominent bearer).
 const HON = new Set('mirza mulla haji hajji siyyid sayyid aqa shaykh sheikh imam ustad hajj karbilai mashhadi'.split(' '));
-const GLUE = new Set(['the', 'of', 'i', 'al', 'ul', 'a']);
+const QWORDS = new Set(('who whom whose which what when where why how did does do ever was were is are the of and in to at a an '
+  + 'with from for on all list name tell me any many first by his her their they them he she it that this there').split(' '));
+// "(of Baghdád)", "(son of …)" are qualifiers, not names.
+const QUALIFIER = /^\s*(of|from|in|at|son|daughter|wife|husband|brother|sister|father|mother|known|called|later|a|an|surnamed|titled|d\.|b\.|\d)/i;
 
 export const fold = (s) => ' ' + String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/[ʼʻ‘’'`´]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
-const words = (s) => fold(s).trim().split(' ').filter((t) => t && !GLUE.has(t));
-const has = (hay, t) => hay.includes(` ${t} `) || hay.includes(` ${t}s `);
 const parseArr = (s) => { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
-
-// "Siyyid ‘Alí-Muḥammad of Shíráz (the Báb)" is two names, not one six-word name.
-// "(of Baghdád)", "(son of …)" are qualifiers, not names — Ḥájí Háshim "of Baghdád" is not a person called Baghdád.
-const QUALIFIER = /^\s*(of|from|in|at|son|daughter|wife|husband|brother|sister|father|mother|known|called|later|a|an|surnamed|titled|d\.|b\.|\d)/i;
 const splitParens = (n) => [String(n || '').replace(/\([^)]*\)/g, ' '),
   ...[...String(n || '').matchAll(/\(([^)]*)\)/g)].map((m) => m[1]).filter((x) => !QUALIFIER.test(x))];
 
-function formsOf(names, places = new Set()) {
-  const seen = new Set();
-  return names.flatMap(splitParens).map((n) => words(n)).filter((all) => {
-    const core = all.filter((t) => !HON.has(t));
-    const key = all.join(' ');
-    // A form that is exactly a place name ("Shíráz", "Baghdád") would turn every "in Shiraz" into a person.
-    if (!core.length || seen.has(key) || places.has(core.join(' '))) return false;
-    seen.add(key); return true;
-  }).map((all) => ({ all, core: all.filter((t) => !HON.has(t)), hon: all.filter((t) => HON.has(t)) }));
+/** Every word-aligned start offset of phrase p in padded hay (a trailing possessive "s" is allowed). */
+function occurrences(hay, p) {
+  const out = [];
+  for (const needle of [` ${p} `, ` ${p}s `]) {
+    for (let i = hay.indexOf(needle); i !== -1; i = hay.indexOf(needle, i + 1)) out.push(i);
+  }
+  return out;
 }
 
-/** Pure: build the index from rows. persons {id,cn,imp,aliases}, groups {id,name,aliases}, members {group,id}, claims {id,eid,rel,tid,st,doc,pid,tv}. */
+function formsOf(names, canonicalCount) {
+  const seen = new Set(), out = [];
+  names.forEach((n, i) => {
+    for (const part of splitParens(n)) {
+      const phrase = fold(part).trim().replace(/^(the|a) /, '');
+      if (!phrase || seen.has(phrase)) continue;
+      seen.add(phrase);
+      const w = phrase.split(' ');
+      let k = 0; while (k < w.length - 1 && HON.has(w[k])) k++;
+      out.push({ phrase, bare: w.slice(k).join(' '), canonical: i < canonicalCount });
+    }
+  });
+  return out;
+}
+
+/** Pure: build the index. persons {id,cn,imp,aliases}, groups {id,name,aliases}, members {group,id},
+ *  claims {id,eid,rel,tid,st,prf,doc,pid,tv}, places [name]. */
 export function createEncounterIndex({ persons, groups, members, claims, places = [] }) {
-  const placeKeys = new Set(places.map((n) => words(String(n).replace(/\([^)]*\)/g, ' ')).filter((t) => !HON.has(t)).join(' ')).filter(Boolean));
-  const people = new Map();
-  const byToken = new Map();
+  const placeKeys = new Set(places.map((n) => fold(String(n).replace(/\([^)]*\)/g, ' ')).trim()).filter(Boolean));
+  const people = new Map(), owners = new Map(), byWord = new Map();
   for (const p of persons) {
-    const forms = formsOf([p.cn, ...parseArr(p.aliases)], placeKeys);
+    // A name that is exactly a place ("Shíráz") would make every "in Shiraz" a person.
+    const forms = formsOf([p.cn, ...parseArr(p.aliases)], 1).filter((f) => !placeKeys.has(f.phrase) && !placeKeys.has(f.bare));
     people.set(p.id, { id: p.id, name: p.cn, imp: p.imp || 0, forms });
-    for (const f of forms) for (const t of f.core) (byToken.get(t) || byToken.set(t, new Set()).get(t)).add(p.id);
+    for (const f of forms) {
+      (owners.get(f.phrase) || owners.set(f.phrase, new Set()).get(f.phrase)).add(p.id);
+      for (const w of new Set(f.bare.split(' '))) (byWord.get(w) || byWord.set(w, new Set()).get(w)).add(p.id);
+    }
+  }
+  // Longer names of OTHER people that contain this phrase — an occurrence inside one of them is not this person.
+  const phrasesByWord = new Map();
+  for (const ph of owners.keys()) for (const w of new Set(ph.split(' '))) (phrasesByWord.get(w) || phrasesByWord.set(w, []).get(w)).push(ph);
+  for (const p of people.values()) {
+    for (const f of p.forms) {
+      f.unique = owners.get(f.phrase).size === 1;
+      const rare = f.phrase.split(' ').reduce((a, w) => ((phrasesByWord.get(w)?.length ?? 0) < (phrasesByWord.get(a)?.length ?? Infinity) ? w : a));
+      f.supers = (phrasesByWord.get(rare) || []).filter((s) => s !== f.phrase && ` ${s} `.includes(` ${f.phrase} `)
+        && [...owners.get(s)].some((o) => o !== p.id)).map((s) => ({ s, off: ` ${s} `.indexOf(` ${f.phrase} `) }));
+    }
   }
   const roster = new Map();
   for (const m of members) if (people.has(m.id)) (roster.get(m.group) || roster.set(m.group, []).get(m.group)).push(m.id);
-  const grp = groups.map((g) => ({ id: g.id, name: g.name, forms: formsOf([g.name, ...parseArr(g.aliases)]).filter((f) => f.core.length >= 2) }));
+  const grp = groups.map((g) => ({ id: g.id, name: g.name,
+    phrases: formsOf([g.name, ...parseArr(g.aliases)], 1).map((f) => f.phrase).filter((ph) => ph.includes(' ')) }));
   const all = [], bySubject = new Map();
   for (const c of claims) {
-    const row = { ...c, hay: fold(c.st) };
+    const row = { ...c, hay: fold(c.st), topic: fold(`${c.st} ${c.prf || ''}`) };
+    delete row.prf;
     all.push(row);
     (bySubject.get(c.eid) || bySubject.set(c.eid, []).get(c.eid)).push(row);
   }
-  return { people, byToken, roster, groups: grp, all, bySubject, builtAt: Date.now() };
+  return { people, byWord, roster, groups: grp, all, bySubject, builtAt: Date.now() };
 }
 
-// A statement names a person when every word of one of their forms (honorifics included) is in it.
-// Returns HOW it links ('typed' | 'named:<form>') so every piece of evidence can say why it is there.
-const names = (row, person) => person.forms.find((f) => f.all.every((t) => has(row.hay, t)));
-const links = (row, person) => {
+// Does the statement name this person? Unique phrase, not inside another person's longer name at that spot.
+function namedBy(hay, person, { canonicalOnly = false } = {}) {
+  for (const f of person.forms) {
+    if (!f.unique || (canonicalOnly && !f.canonical)) continue;
+    for (const at of occurrences(hay, f.phrase)) {
+      const covered = f.supers.some(({ s, off }) => occurrences(hay, s).some((j) => j + off === at));
+      if (!covered) return f.phrase;
+    }
+  }
+  return null;
+}
+const linkOf = (row, person, opts) => {
   if (row.tid === person.id) return 'typed';
-  const f = names(row, person);
-  return f ? `named:${f.all.join(' ')}` : null;
+  const f = namedBy(row.hay, person, opts);
+  return f ? `named:${f}` : null;
 };
 
 function findParties(q, index) {
-  let hay = fold(q);
+  const hay = fold(q);
+  const used = [];   // [start,end) spans of the question already assigned to a party
   let group = null;
   for (const g of index.groups) {
-    for (const f of g.forms) {
-      if (f.core.every((t) => has(hay, t)) && (!group || f.core.length > group.len)) group = { id: g.id, name: g.name, len: f.core.length, core: f.core };
+    for (const ph of g.phrases) {
+      const at = occurrences(hay, ph)[0];
+      if (at != null && (!group || ph.length > group.len)) group = { id: g.id, name: g.name, len: ph.length, span: [at, at + ph.length + 1] };
     }
   }
-  if (group) for (const t of group.core) hay = hay.replace(` ${t} `, ' ').replace(` ${t}s `, ' ');
+  if (group) used.push(group.span);
   const cand = new Set();
-  for (const t of hay.trim().split(' ')) for (const id of index.byToken.get(t) || []) cand.add(id);
+  for (const w of hay.trim().split(' ')) for (const id of index.byWord.get(w) || []) cand.add(id);
   const matches = [];
   for (const id of cand) {
     const p = index.people.get(id);
-    let best = null;
     for (const f of p.forms) {
-      if (!f.core.every((t) => has(hay, t))) continue;
-      const score = f.core.join('').length * 10 + f.hon.filter((t) => has(hay, t)).length * 5;
-      if (!best || score > best.score) best = { score, core: f.core };
+      for (const [ph, full] of [[f.phrase, true], [f.bare, false]]) {
+        for (const at of occurrences(hay, ph)) {
+          matches.push({ p, at, end: at + ph.length + 1, matched: ph, score: ph.length * 10 + (full ? 5 : 0) + (f.canonical ? 1 : 0) });
+        }
+      }
     }
-    if (best) matches.push({ p, ...best });
   }
   matches.sort((a, b) => b.score - a.score || b.p.imp - a.p.imp);
   const out = [];
   for (const m of matches) {
-    if (out.some((o) => o.core.some((t) => m.core.includes(t)))) continue;   // same words → same mention
+    if (used.some(([s, e]) => m.at < e && s < m.end) || out.some((o) => o.p.id === m.p.id)) continue;
+    used.push([m.at, m.end]);
     out.push(m);
     if (out.length === 2) break;
   }
-  return { group, persons: out.map((m) => ({ ...m.p, matched: m.core.join(' ') })) };
+  // The words that are neither a party, the group, a verb nor a question word are the topic ("Shiraz", "Baghdad").
+  let rest = hay;
+  for (const [s, e] of [...used].sort((a, b) => b[0] - a[0])) rest = rest.slice(0, s) + ' ' + rest.slice(e - 1);
+  const topic = [...new Set(rest.trim().split(' ').filter((w) => w.length > 2 && !QWORDS.has(w) && !VERB.test(w)))];
+  return { group, persons: out.map((m) => ({ ...m.p, matched: m.matched })), topic };
 }
 
-/** Pure + synchronous: { pattern, target, group, people:[{id,name,importance,evidence[]}] } or null. */
+/** Pure + synchronous: { pattern, target, with, group, topic, relations, people:[{id,name,importance,evidence[]}] } or null. */
 export function encounterSearch(q, { index, maxPeople = 20, maxEvidence = 6 } = {}) {
-  if (!index || !VERB.test(fold(q))) return null;
-  const { group, persons } = findParties(q, index);
+  const fq = fold(q);
+  if (!index || !VERB.test(fq)) return null;
+  const { group, persons, topic } = findParties(q, index);
   if (!persons.length) return null;
   const found = new Map();   // personId → Map(claimId → row+via)
   const add = (pid, row, via) => { if (via) (found.get(pid) || found.set(pid, new Map()).get(pid)).set(row.id, { ...row, via }); };
@@ -114,35 +166,43 @@ export function encounterSearch(q, { index, maxPeople = 20, maxEvidence = 6 } = 
   if (group) {
     pattern = 'group-target';
     const ids = (index.roster.get(group.id) || []).filter((id) => id !== T.id);
-    for (const id of ids) for (const row of index.bySubject.get(id) || []) add(id, row, links(row, T));
-    for (const row of index.bySubject.get(T.id) || []) {
-      for (const id of ids) add(id, row, links(row, index.people.get(id)));
-    }
+    for (const id of ids) for (const row of index.bySubject.get(id) || []) add(id, row, linkOf(row, T));
+    // Reverse direction ("Bahá’u’lláh met Quddús"): only the member's typed id or CANONICAL name — an alias in the
+    // target's own statements is how "Mírzá Muḥammad-Ḥasan" (another man) was filed under a Letter of the Living.
+    for (const row of index.bySubject.get(T.id) || []) for (const id of ids) add(id, row, linkOf(row, index.people.get(id), { canonicalOnly: true }));
   } else if (persons.length === 2) {
     pattern = 'pair';
     const [A, B] = persons;
-    for (const row of index.bySubject.get(A.id) || []) add(A.id, row, links(row, B));
-    for (const row of index.bySubject.get(B.id) || []) add(B.id, row, links(row, A));
+    for (const row of index.bySubject.get(A.id) || []) add(A.id, row, linkOf(row, B));
+    for (const row of index.bySubject.get(B.id) || []) add(B.id, row, linkOf(row, A));
   } else {
     pattern = 'target';
     for (const row of index.all) {
-      if (row.eid !== T.id) add(row.eid, row, links(row, T));
+      if (row.eid !== T.id) add(row.eid, row, linkOf(row, T));
       else if (row.tid && row.tid !== T.id && index.people.has(row.tid)) add(row.tid, row, 'typed');
     }
   }
-  const byWhen = (a, b) => (REL_RANK.get(a.rel) ?? 99) - (REL_RANK.get(b.rel) ?? 99) || String(a.tv || '9999').localeCompare(String(b.tv || '9999'));
+  // The asked relation constrains the edge when the evidence has it; otherwise every encounter stands.
+  const asked = ASKED.find(([re]) => re.test(fq))?.[1] || null;
+  const anyAsked = asked && [...found.values()].some((rows) => [...rows.values()].some((r) => asked.includes(r.rel)));
+  const topicHit = (r) => topic.length > 0 && topic.some((w) => r.topic.includes(` ${w}`));
+  const rank = (r) => (topicHit(r) ? 4 : 0) + (r.via === 'typed' ? 2 : 0) + (r.rel === 'met' ? 1 : 0);
   const people = [...found.entries()].map(([id, rows]) => {
     const p = index.people.get(id) || { id, name: String(id), imp: 0 };
+    const kept = [...rows.values()].filter((r) => !anyAsked || asked.includes(r.rel));
     const seen = new Set();
-    const evidence = [...rows.values()].sort(byWhen).filter((r) => {
+    const ev = kept.sort((a, b) => rank(b) - rank(a) || String(a.tv || '9999').localeCompare(String(b.tv || '9999'))).filter((r) => {
       const k = `${r.doc}:${r.pid}`; if (seen.has(k)) return false; seen.add(k); return true;
-    }).slice(0, maxEvidence).map((r) => ({ statement: r.st, relation: r.rel, doc_id: r.doc ?? null, paraId: r.pid || null, when: r.tv || null, via: r.via }));
-    return { id, name: p.name, importance: p.imp, score: rows.size, evidence };
+    });
+    return { id, name: p.name, importance: p.imp, topic: ev.filter(topicHit).length, typed: ev.filter((r) => r.via === 'typed').length,
+      evidence: ev.slice(0, maxEvidence).map((r) => ({ statement: r.st, relation: r.rel, doc_id: r.doc ?? null, paraId: r.pid || null,
+        when: r.tv || null, via: r.via, ...(topicHit(r) ? { topic: true } : {}) })) };
   }).filter((p) => p.evidence.length);
-  const first = (p) => String(p.evidence.map((e) => e.when).filter(Boolean).sort()[0] || '9999');
-  people.sort((a, b) => first(a).localeCompare(first(b)) || b.importance - a.importance);
+  people.sort((a, b) => b.topic - a.topic || b.typed - a.typed || b.evidence.length - a.evidence.length || b.importance - a.importance);
   return { pattern, target: { id: T.id, name: T.name, matched: T.matched }, group: group ? { id: group.id, name: group.name } : null,
-    with: persons[1] ? { id: persons[1].id, name: persons[1].name, matched: persons[1].matched } : null, people: people.slice(0, maxPeople) };
+    with: persons[1] ? { id: persons[1].id, name: persons[1].name, matched: persons[1].matched } : null,
+    topic, relations: anyAsked ? asked : null,
+    people: people.slice(0, maxPeople).map(({ topic: _t, typed: _y, ...p }) => p) };
 }
 
 // ── Loader: one build, refreshed in the background (stale-while-revalidate) ──
@@ -157,8 +217,8 @@ async function build() {
       WHERE ge.entity_type = 'person' AND ${LIVE_SQL('ge.')}`, [], 'encounters:persons'),
     queryAll(`SELECT ge.id, ge.canonical_name name, er.aliases FROM graph_entities ge
       LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.entity_type = 'group'`, [], 'encounters:groups'),
-    queryAll(`SELECT ec.id, ec.entity_id eid, ec.relation rel, ec.target_entity_id tid, ec.statement st, ec.doc_id doc,
-        ec.para_id pid, ec.time_value tv
+    queryAll(`SELECT ec.id, ec.entity_id eid, ec.relation rel, ec.target_entity_id tid, ec.statement st,
+        substr(ec.proof_verbatim, 1, 300) prf, ec.doc_id doc, ec.para_id pid, ec.time_value tv
       FROM entity_claims ec WHERE ec.relation IN (${rels}) AND (ec.status IS NULL OR ec.status = 'supported')
         AND ec.proof_verbatim IS NOT NULL AND ec.proof_verbatim <> ''`, ENCOUNTER_RELATIONS, 'encounters:claims'),
     queryAll(`SELECT canonical_name n FROM graph_entities WHERE entity_type = 'place' AND ${LIVE_SQL()}`, [], 'encounters:places'),

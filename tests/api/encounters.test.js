@@ -5,17 +5,21 @@ import { describe, it, expect } from 'vitest';
 import { createEncounterIndex, encounterSearch } from '../../api/lib/encounters.js';
 
 const persons = [
-  { id: 1, cn: 'Bahá’u’lláh', imp: 100, aliases: '["Mírzá Ḥusayn-‘Alí"]' },
+  { id: 1, cn: 'Bahá’u’lláh', imp: 100, aliases: '["Mírzá Ḥusayn-‘Alí","Bahá"]' },
   { id: 2, cn: 'The Báb', imp: 99, aliases: '["Siyyid ‘Alí-Muḥammad"]' },
-  { id: 3, cn: 'Quddús', imp: 80, aliases: '["Muḥammad-‘Alíy-i-Bárfurúshí"]' },
+  { id: 3, cn: 'Quddús', imp: 80, aliases: '["Muḥammad-‘Alíy-i-Bárfurúshí","Muḥammad-‘Alí"]' },
   { id: 4, cn: 'Ṭáhirih', imp: 80, aliases: '["Qurratu’l-‘Ayn"]' },
   { id: 5, cn: 'Mullá Ḥusayn-i-Bushrú’í', imp: 85, aliases: '["Mullá Ḥusayn","Bábu’l-Báb"]' },
   { id: 6, cn: 'Imám Ḥusayn', imp: 90, aliases: '[]' },
   { id: 7, cn: 'Vaḥíd', imp: 60, aliases: '[]' },
   { id: 8, cn: 'Ḥájí Háshim-i-‘Aṭṭár (of Baghdád)', imp: 5, aliases: '["Shíráz"]' },
+  { id: 9, cn: '‘Abdu’l-Bahá', imp: 95, aliases: '[]' },
+  { id: 10, cn: 'Mullá ‘Alí Mardan', imp: 3, aliases: '[]' },
+  { id: 11, cn: 'Mullá ‘Alíy-i-Basṭámí', imp: 50, aliases: '["Mullá ‘Alí"]' },
+  { id: 12, cn: 'Muḥammad-Ḥasan-i-Bushrú’í', imp: 20, aliases: '["Mírzá Muḥammad-Ḥasan"]' },
 ];
 const groups = [{ id: 50, name: 'Letters of the Living (Ḥurúf-i-Ḥayy)', aliases: '[]' }];
-const members = [{ group: 50, id: 3 }, { group: 50, id: 4 }, { group: 50, id: 5 }];
+const members = [{ group: 50, id: 3 }, { group: 50, id: 4 }, { group: 50, id: 5 }, { group: 50, id: 11 }, { group: 50, id: 12 }];
 const claims = [
   { id: 1, eid: 5, rel: 'met', tid: null, st: 'Mullá Ḥusayn met Bahá’u’lláh in Ṭihrán', doc: 10, pid: 'para_1', tv: '1848' },
   { id: 2, eid: 3, rel: 'met', tid: 1, st: 'Quddús met Him at Badasht', doc: 10, pid: 'para_2', tv: '1848' },
@@ -25,6 +29,12 @@ const claims = [
   { id: 6, eid: 7, rel: 'visited', tid: null, st: 'Vaḥíd visited the Bábí fort', doc: 12, pid: 'para_6', tv: null },
   { id: 7, eid: 1, rel: 'met', tid: null, st: 'Bahá’u’lláh met Quddús at Badasht', doc: 10, pid: 'para_7', tv: '1848' },
   { id: 8, eid: 6, rel: 'met', tid: null, st: 'Imám Ḥusayn met his companions', doc: 13, pid: 'para_8', tv: null },
+  // Live false matches (2026-09-26), each filed under the wrong person before the phrase/uniqueness rules:
+  { id: 9, eid: 9, rel: 'met', tid: null, st: '‘Abdu’l-Bahá met the pilgrims', doc: 14, pid: 'para_9', tv: null },
+  { id: 10, eid: 1, rel: 'hosted', tid: null, st: 'Bahá’u’lláh hosted Mullá ‘Alí Mardan', doc: 14, pid: 'para_10', tv: null },
+  { id: 11, eid: 1, rel: 'met', tid: null, st: 'Mírzá Ḥusayn-‘Alí met Mullá Muḥammad', doc: 14, pid: 'para_11', tv: '1844' },
+  { id: 12, eid: 1, rel: 'accompanied', tid: null, st: 'Bahá’u’lláh accompanied Mírzá Muḥammad-Ḥasan', doc: 14, pid: 'para_12', tv: '1879' },
+  { id: 13, eid: 7, rel: 'accompanied', tid: null, st: 'Vaḥíd accompanied Bahá’u’lláh', prf: 'on the journey to Baghdád', doc: 15, pid: 'para_13', tv: '1853' },
 ];
 const index = createEncounterIndex({ persons, groups, members, claims, places: ['Shíráz', 'Baghdád'] });
 const names = (r) => r.people.map((p) => p.name);
@@ -42,6 +52,28 @@ describe('encounterSearch', () => {
 
   it('a parenthetical is a second name, not extra required words', () => {
     expect(encounterSearch('which of the Hurúf-i-Ḥayy met Bahá’u’lláh', { index }).pattern).toBe('group-target');
+  });
+
+  it('a name counts only as a contiguous, unique phrase that is not part of a longer name', () => {
+    const lotl = encounterSearch('Which Letters of the Living met Bahá’u’lláh?', { index });
+    const ids = lotl.people.map((p) => p.id);
+    expect(ids).not.toContain(11);   // "Mullá ‘Alí" inside "Mullá ‘Alí Mardan"
+    expect(ids).not.toContain(12);   // alias in the target's own statement (reverse direction is canonical-only)
+    expect(lotl.people.find((p) => p.id === 3).evidence.map((e) => e.paraId)).not.toContain('para_11');   // scattered words
+    expect(encounterSearch('who met Bahá’u’lláh', { index }).people.map((p) => p.id)).not.toContain(9);   // "Bahá" in ‘Abdu’l-Bahá
+  });
+
+  it('"the Báb" is not Bábu’l-Báb', () => {
+    expect(encounterSearch('who met the Báb in Shiraz', { index }).target.id).toBe(2);
+  });
+
+  it('the verb picks the edge and the leftover words rank', () => {
+    const r = encounterSearch('who accompanied Bahá’u’lláh to Baghdad?', { index });
+    expect(r.relations).toEqual(['accompanied', 'companion-of']);
+    expect(r.topic).toEqual(['baghdad']);
+    expect(r.people[0].name).toBe('Vaḥíd');
+    expect(r.people[0].evidence[0].topic).toBe(true);
+    expect(r.people.flatMap((p) => p.evidence.map((e) => e.relation))).not.toContain('met');
   });
 
   it('apostrophe-free ASCII query still resolves the parties', () => {
