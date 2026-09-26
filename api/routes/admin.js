@@ -2385,6 +2385,26 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { name, keys: [...nameKeys(name)], candidates: cands.map((c) => ({ id: c.id, name: c.canonical, importance: c.importance, shared: c.shared })) };
   });
 
+  // POST /server/entity-merge { write=false, minImportance?, limit?, maxSize? } — the evidence-based merge stage as
+  // background task 'entity-merge'. Dry by default (plans only). GET /server/entity-merge/report → latest plan JSON.
+  fastify.post('/server/entity-merge', { preHandler: requireInternal }, async (request) => {
+    const { write = false, minImportance = null, limit = null, maxSize = null } = request.body || {};
+    const existing = backgroundTasks.get('entity-merge');
+    if (existing && existing.status === 'running') throw ApiError.conflict('An entity-merge run is already in progress');
+    const argv = [...(write ? ['--write'] : []), ...(minImportance != null ? [`--minImportance=${Number(minImportance)}`] : []),
+      ...(limit ? [`--limit=${Number(limit)}`] : []), ...(maxSize ? [`--maxSize=${Number(maxSize)}`] : [])];
+    const task = runBackgroundTask('entity-merge', 'scripts/entity-merge.mjs', argv);
+    return { success: true, taskId: 'entity-merge', write: !!write, status: task.status };
+  });
+
+  fastify.get('/server/entity-merge/report', { preHandler: requireInternal }, async (request) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const mode = request.query.mode === 'write' ? 'write' : 'dry';
+    const files = readdirSync('logs').filter((f) => f.startsWith(`entity-merge-${mode}-`)).sort();
+    if (!files.length) throw ApiError.notFound(`no ${mode} merge report yet`);
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';

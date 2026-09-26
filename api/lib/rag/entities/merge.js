@@ -17,7 +17,8 @@ Pick "canonical" = the entity with the richest evidence (most claims/mentions/fu
 Return ONLY JSON: {"canonical":<id>,"same":[<ids to merge INTO canonical>],"distinct":[<ids that genuinely CONTRADICT — keep>],"reason":"<=20 words"}.`;
 
 export async function run(ctx, opts = {}) {
-  const groups = await ctx.store.getDuplicateGroups({ type: 'person', minSize: opts.minSize ?? 2, limit: opts.limit });
+  const groups = await ctx.store.getDuplicateGroups({ type: 'person', minSize: opts.minSize ?? 2, limit: opts.limit,
+    minImportance: opts.minImportance ?? null, maxSize: opts.maxSize ?? 12 });
   const route = { model: opts.model ?? ctx.config.models?.merge, fallback: opts.fallback ?? ctx.config.models?.mergeFallback };
   const stats = { groups: groups.length, adjudicated: 0, failed: 0, merges: 0, entitiesMerged: 0, kept: 0 };
   const plans = [];

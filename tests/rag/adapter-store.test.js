@@ -98,6 +98,13 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
     expect(c[0].id).toBe(603);
   });
 
+  it('getDuplicateGroups: groups descriptor twins with their person by CORE name', async () => {
+    const gs = await store.getDuplicateGroups({ type: 'person', minImportance: 90 });
+    const bab = gs.find((g) => g.key === 'bab');
+    expect(bab.ids).toEqual(expect.arrayContaining([501, 502, 503, 505]));
+    expect(gs.every((g) => g.entities.some((e) => (e.importance || 0) >= 90))).toBe(true);
+  });
+
   it('findCandidateEntities: a parenthetical that IS the name recalls its bearer', async () => {
     const c = await store.findCandidateEntities('Siyyid ‘Alí-Muḥammad of Shíráz (the Báb)', { type: 'person', limit: 6 });
     expect(c.map((x) => x.id)).toContain(501);

@@ -751,17 +751,24 @@ export function makeStore() {
 
     // Same-name entity groups (exact normalized canonical) for the dedup stage — each with mention count +
     // summary + a few facts so the adjudicator can judge same-person vs namesake by evidence.
-    async getDuplicateGroups({ type = 'person', minSize = 2, limit } = {}) {
+    async getDuplicateGroups({ type = 'person', minSize = 2, limit, minImportance = null, maxSize = 12 } = {}) {
       const ents = await db.queryAll(
-        `SELECT ge.id, ge.canonical_name canonical, er.summary,
+        `SELECT ge.id, ge.canonical_name canonical, ge.importance, er.summary,
                 (SELECT COUNT(*) FROM entity_mentions_v2 m WHERE m.entity_id=ge.id) mentions
            FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type
           WHERE ge.entity_type=? AND ${LIVE_SQL('ge.')}`, [type]);   // exclude already-merged (dead) entities
       const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+      // Group by the CORE name — before any "(descriptor)" or ", descriptor", leading article dropped. Grouping by
+      // the whole string never put "the Báb (the Remembrance of God)" beside "the Báb", so descriptor duplicates
+      // (the Báb ×6, Ṭáhirih ×6 …) were invisible to merge. A shared core name is only a CANDIDATE group; the
+      // adjudicator keeps namesakes apart on evidence ("Mullá Ḥusayn (son of Mullá Iskandar)").
+      const coreKey = (s) => norm(String(s || '').replace(/\([^)]*\)/g, ' ').split(/[,;—]/)[0]).replace(/^(the|a) /, '');
       const groups = {};
-      for (const e of ents) { const k = norm(e.canonical); if (!k) continue; (groups[k] = groups[k] || []).push(e); }
+      for (const e of ents) { const k = coreKey(e.canonical); if (!k) continue; (groups[k] = groups[k] || []).push(e); }
       let out = Object.entries(groups).filter(([, es]) => es.length >= minSize)
-        .map(([key, es]) => ({ key, ids: es.map((e) => e.id), entities: es.sort((a, b) => b.mentions - a.mentions) }));
+        .filter(([, es]) => minImportance == null || es.some((e) => (e.importance || 0) >= minImportance))
+        // Very common names gather dozens of namesakes; the richest maxSize are adjudicated (a bounded prompt).
+        .map(([key, es]) => { const top = es.sort((a, b) => b.mentions - a.mentions).slice(0, maxSize); return { key, ids: top.map((e) => e.id), entities: top }; });
       out.sort((a, b) => b.entities[0].mentions - a.entities[0].mentions);   // richest groups first
       if (limit) out = out.slice(0, limit);
       return out;
