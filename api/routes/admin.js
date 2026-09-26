@@ -2375,6 +2375,16 @@ Collection: ${paragraph.collection || 'Unknown'}
     return duplicateOrigins({ maxGroups: Math.min(Number(request.query.groups) || 40, 200) });
   });
 
+  // GET /server/entity-recall?name= — read-only: the candidates reconcile's recall (findCandidateEntities) returns
+  // for a cluster name, with the recall keys. Explains a "create" whose real person was never a candidate.
+  fastify.get('/server/entity-recall', { preHandler: requireInternal }, async (request) => {
+    const name = String(request.query.name || '');
+    const { makeStore } = await import('../lib/rag-adapter/store.js');
+    const { nameKeys } = await import('../lib/translit-key.js');
+    const cands = await makeStore().findCandidateEntities(name, { type: 'person', limit: Number(request.query.limit) || 6 });
+    return { name, keys: [...nameKeys(name)], candidates: cands.map((c) => ({ id: c.id, name: c.canonical, importance: c.importance, shared: c.shared })) };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';

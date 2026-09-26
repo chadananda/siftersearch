@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-26T21:00:04.232Z",
+  "generated": "2026-09-26T21:31:36.892Z",
   "entries": [
+    {
+      "hash": "1d510edd",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Duplicate-origins diagnostic; link exact-beats-short-form + drop reasons; audit judges the object only",
+      "scope": "entities"
+    },
     {
       "hash": "df9f0d33",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Resolve-against-search — searchGrounded port + evidence-driven reconcile (Lurch 1)",
       "scope": null
-    },
-    {
-      "hash": "b766e0b8",
-      "date": "2026-07-12",
-      "type": "Other",
-      "description": "Ground person browser on disambiguated v2 mentions + hard claims, retire legacy NER entity_mentions",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "1d510edd",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Duplicate-origins diagnostic; link exact-beats-short-form + drop reasons; audit judges the object only",
+        "scope": "entities"
+      },
       {
         "hash": "df9f0d33",
         "date": "2026-09-26",
@@ -7079,13 +7086,6 @@
         "date": "2026-07-12",
         "type": "Other",
         "description": "Resolve-against-search — searchGrounded port + evidence-driven reconcile (Lurch 1)",
-        "scope": null
-      },
-      {
-        "hash": "b766e0b8",
-        "date": "2026-07-12",
-        "type": "Other",
-        "description": "Ground person browser on disambiguated v2 mentions + hard claims, retire legacy NER entity_mentions",
         "scope": null
       }
     ]
