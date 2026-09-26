@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-26T04:44:24.127Z",
+  "generated": "2026-09-26T15:21:49.347Z",
   "entries": [
+    {
+      "hash": "172ed3a0",
+      "date": "2026-09-25",
+      "type": "Fixed",
+      "description": "Cited evidence paragraphs actually load; never stream a link that is not a source",
+      "scope": "search,anis"
+    },
     {
       "hash": "ce6fa28a",
       "date": "2026-09-25",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Conceptual, not plumbing — strip code filenames/tables/paths; add interfaith cross-tradition concept linking",
       "scope": null
-    },
-    {
-      "hash": "43618d32",
-      "date": "2026-07-11",
-      "type": "Docs",
-      "description": "Human-viewable extraction plan overview + status pages",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-25": [
+      {
+        "hash": "172ed3a0",
+        "date": "2026-09-25",
+        "type": "Fixed",
+        "description": "Cited evidence paragraphs actually load; never stream a link that is not a source",
+        "scope": "search,anis"
+      },
       {
         "hash": "ce6fa28a",
         "date": "2026-09-25",
@@ -7079,13 +7086,6 @@
         "date": "2026-07-11",
         "type": "Docs",
         "description": "Conceptual, not plumbing — strip code filenames/tables/paths; add interfaith cross-tradition concept linking",
-        "scope": null
-      },
-      {
-        "hash": "43618d32",
-        "date": "2026-07-11",
-        "type": "Docs",
-        "description": "Human-viewable extraction plan overview + status pages",
         "scope": null
       }
     ]

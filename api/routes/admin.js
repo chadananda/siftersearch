@@ -2332,6 +2332,18 @@ Collection: ${paragraph.collection || 'Unknown'}
   });
 
   /**
+   * GET /server/claim-target-coverage — per relation: supported claims, and how many carry a resolved target entity id.
+   * Read-only. Tells how complete the INDEXED who-met-whom path (target_entity_id) is vs text-only claims (0042).
+   */
+  fastify.get('/server/claim-target-coverage', { preHandler: requireInternal }, async () => {
+    const rows = await queryAll(`SELECT relation, COUNT(*) n, SUM(CASE WHEN target_entity_id IS NOT NULL THEN 1 ELSE 0 END) resolved
+      FROM entity_claims WHERE status IS NULL OR status = 'supported' GROUP BY relation ORDER BY n DESC LIMIT 80`, [], 'admin:claim-target-coverage');
+    const total = rows.reduce((a, r) => a + r.n, 0), resolved = rows.reduce((a, r) => a + (r.resolved || 0), 0);
+    return { total, resolved, pct: total ? Math.round((resolved / total) * 1000) / 10 : 0,
+      relations: rows.map((r) => ({ relation: r.relation, n: r.n, resolved: r.resolved || 0, pct: r.n ? Math.round(((r.resolved || 0) / r.n) * 1000) / 10 : 0 })) };
+  });
+
+  /**
    * Control PM2 processes (stop/start/restart library watcher)
    */
   fastify.post('/server/pm2/:action/:process', { preHandler: requireInternal }, async (request) => {
