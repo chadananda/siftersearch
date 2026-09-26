@@ -179,7 +179,9 @@ export async function resolveSources(hits, { judge = jevJudge, phraseSearch = de
     // Bounded by the search deadline: a late judge degrades to the deterministic policy pick, never a slow answer.
     const t2 = Date.now();
     const j = await judge({ passages, groups: groups.map(({ key, span, options }) => ({ key, span, options })) },
-      deadline ? { timeoutMs: Math.max(150, left()) } : undefined);
+      // Floor 600ms: below that the judge times out on nearly every query and quote re-sourcing silently stops
+      // (measured 2026-09-26: plan+embedding+engine already spend the 1s before the judge starts).
+      deadline ? { timeoutMs: Math.max(600, left()) } : undefined);
     ms.judge = Date.now() - t2;
     verdicts = j.verdicts || verdicts;
     choices = j.choices || {};

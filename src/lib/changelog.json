@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-26T16:16:59.987Z",
+  "generated": "2026-09-26T16:23:06.976Z",
   "entries": [
+    {
+      "hash": "c3cf9941",
+      "date": "2026-09-26",
+      "type": "Chore",
+      "description": "Main layer reports embedding vs engine ms",
+      "scope": "search"
+    },
     {
       "hash": "1c838520",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Entities/merge — evidence-based, namesake-safe entity dedup",
       "scope": null
-    },
-    {
-      "hash": "534d6bb3",
-      "date": "2026-07-11",
-      "type": "Other",
-      "description": "Fix anonymous-create + parenthetical-alias recall (found in GPB batch 1 review)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "c3cf9941",
+        "date": "2026-09-26",
+        "type": "Chore",
+        "description": "Main layer reports embedding vs engine ms",
+        "scope": "search"
+      },
       {
         "hash": "1c838520",
         "date": "2026-09-26",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-11",
         "type": "Other",
         "description": "Entities/merge — evidence-based, namesake-safe entity dedup",
-        "scope": null
-      },
-      {
-        "hash": "534d6bb3",
-        "date": "2026-07-11",
-        "type": "Other",
-        "description": "Fix anonymous-create + parenthetical-alias recall (found in GPB batch 1 review)",
         "scope": null
       }
     ]

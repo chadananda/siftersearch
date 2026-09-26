@@ -172,14 +172,13 @@ describe('collapseCopies', () => {
 });
 
 describe('resolveSources deadline (1s search budget)', () => {
-  it('hands the judge only the time left, and still resolves deterministically when the judge times out', async () => {
+  it('gives the judge at least its floor, and still resolves deterministically when the judge times out', async () => {
     const { resolveSources: rs } = await import('../../api/lib/source-resolve.js');
     let got = null;
     const judge = async (_input, opts) => { got = opts; throw new Error('The operation was aborted due to timeout'); };
     const hit = { id: 1, doc_id: 9, author: 'Bahá’u’lláh', title: 'Pilgrim notes', religion: "Baha'i", text: 'He said: “O Son of Being! Love Me, that I may love thee.”', paragraph_index: 3 };
     const res = await rs([hit], { judge, phraseSearch: async () => [], linkMeta: async () => new Map(), deadline: Date.now() + 400 });
-    expect(got.timeoutMs).toBeGreaterThanOrEqual(150);
-    expect(got.timeoutMs).toBeLessThanOrEqual(400);
+    expect(got.timeoutMs).toBe(600);   // floor: a starved judge silently stops quote re-sourcing
     expect(res.hits).toHaveLength(1);
   });
 });
