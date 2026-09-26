@@ -89,19 +89,20 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
 
   const run = engine || (await import('./search.js')).multiIndexSearch;
   const t1 = Date.now();
+  const stages = {};   // per-stage ms, so the 1s budget can be held stage by stage
   const search = async (filters, q = query) => {
     const res = await run(q, {
       limit, filters, scope_config,
       ...(entityIds?.length ? { entityIds } : {}),
       keywordLayer: layers.keyword, hype: layers.hype, diversify: layers.diversify, includeMatchedHype: true,
     });
+    (stages.engine ||= []).push({ filters: Object.keys(filters || {}).filter((k) => filters[k]), ...(res?._timings || {}) });
     return res?.hits || [];
   };
   // CLAIMS LAYER (people pattern): the cited-claim graph answers who / did what / when; runs BESIDE passage search.
   // Who-met-whom answers from the in-memory encounter index (ms); every other people question from peopleSearch.
   const peopleFn = people ?? (engine ? null : async (q) => (await (await import('./encounters.js')).encounterPeople(q))
     ?? (await import('./people-search.js')).peopleSearch(q));
-  const stages = {};   // per-stage ms, so the 1s budget can be held stage by stage
   const claimsP = layers.claims && peopleFn ? peopleFn(query).catch((err) => ({ people: [], error: err.message }))
     .finally(() => { stages.claims_ms = Date.now() - t1; }) : null;
   // With a preferred author, the author-matched search runs BESIDE the broad one, never instead of it.

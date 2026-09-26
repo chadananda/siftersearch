@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-26T15:54:33.459Z",
+  "generated": "2026-09-26T15:58:07.311Z",
   "entries": [
+    {
+      "hash": "e7474a62",
+      "date": "2026-09-26",
+      "type": "Fixed",
+      "description": "Encounter names match as unique contiguous phrases, longest name wins; verb picks the edge, leftover words rank; per-stage timings",
+      "scope": "search"
+    },
     {
       "hash": "24490fe2",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Entities/project + lookup — entity engine complete",
       "scope": null
-    },
-    {
-      "hash": "915d5b42",
-      "date": "2026-07-11",
-      "type": "Other",
-      "description": "Entities/reconcile (evidence adjudication -> proposed decisions)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "e7474a62",
+        "date": "2026-09-26",
+        "type": "Fixed",
+        "description": "Encounter names match as unique contiguous phrases, longest name wins; verb picks the edge, leftover words rank; per-stage timings",
+        "scope": "search"
+      },
       {
         "hash": "24490fe2",
         "date": "2026-09-26",
@@ -7081,13 +7088,6 @@
         "date": "2026-07-11",
         "type": "Other",
         "description": "Entities/project + lookup — entity engine complete",
-        "scope": null
-      },
-      {
-        "hash": "915d5b42",
-        "date": "2026-07-11",
-        "type": "Other",
-        "description": "Entities/reconcile (evidence adjudication -> proposed decisions)",
         "scope": null
       }
     ]

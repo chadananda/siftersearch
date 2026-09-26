@@ -48,7 +48,8 @@ function formsOf(names, canonicalCount) {
   names.forEach((n, i) => {
     for (const part of splitParens(n)) {
       const phrase = fold(part).trim().replace(/^(the|a) /, '');
-      if (!phrase || seen.has(phrase)) continue;
+      // An alias made only of function words ("they", "he") is extraction debris, not a name.
+      if (!phrase || seen.has(phrase) || phrase.length < 3 || phrase.split(' ').every((w) => QWORDS.has(w))) continue;
       seen.add(phrase);
       const w = phrase.split(' ');
       let k = 0; while (k < w.length - 1 && HON.has(w[k])) k++;
