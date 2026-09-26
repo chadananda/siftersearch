@@ -128,11 +128,16 @@ export function buildPlan(answers, { given = {} } = {}) {
 export function layersFor(plan) {
   const scoped = Object.keys(plan.filters || {}).length > 0;
   const shape = plan.shape;
+  // Meaning-match (query embedding → vector layers) only where the strategy needs it. A quote is a wording problem,
+  // a lookup names its target, and a people fact/roster is answered by the claims index with names that BM25
+  // matches exactly — the embedding (0.5–0.75s from tower-nas) bought them nothing.
+  const semantic = !(shape === 'quote' || shape === 'lookup' || (plan.about === 'people' && (shape === 'fact' || shape === 'enumerate')));
   return {
     main: true,
+    semantic,
     // A remembered quote is a WORDING problem: exact-word matching finds it; embeddings find its neighbours.
     keyword: shape === 'quote',
-    hype: shape !== 'quote',
+    hype: semantic,
     // Cited claims answer who/when/where and rosters directly, with the paragraph that proves them.
     claims: shape === 'fact' || shape === 'enumerate' || plan.about === 'people',
     // Spread across traditions only when the question named none and is not hunting one passage.

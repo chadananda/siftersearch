@@ -82,6 +82,19 @@ describe('layersFor — which indexes a shape uses', () => {
     expect(l.hype).toBe(true);
   });
 
+  // Chad 2026-09-26: raw search = Jev picks the strategy, then only the index lookups that strategy needs. The query
+  // embedding (0.5–0.75s from tower-nas) is paid only by strategies that need meaning-match.
+  it('pays for the query embedding only when the strategy needs meaning-match', () => {
+    const sem = (a) => layersFor(buildPlan(ans(a))).semantic;
+    expect(sem({ shape: 'quote' })).toBe(false);
+    expect(sem({ shape: 'lookup' })).toBe(false);
+    expect(sem({ shape: 'fact', about: 'people' })).toBe(false);
+    expect(sem({ shape: 'enumerate', about: 'people' })).toBe(false);
+    expect(sem({ shape: 'topic', about: 'texts' })).toBe(true);
+    expect(sem({ shape: 'define', about: 'terms' })).toBe(true);
+    expect(layersFor(buildPlan(ans({ shape: 'fact', about: 'people' }))).hype).toBe(false);   // HyPE is vector-only
+  });
+
   it('diversifies across traditions ONLY when nothing scoped the question', () => {
     expect(layersFor(buildPlan(ans({ shape: 'topic' }))).diversify).toBe(true);
     expect(layersFor(buildPlan(ans({ shape: 'topic', tradition: 'Islam' }))).diversify).toBe(false);

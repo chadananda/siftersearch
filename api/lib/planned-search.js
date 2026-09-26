@@ -97,7 +97,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     const res = await run(q, {
       limit, filters, scope_config,
       ...(entityIds?.length ? { entityIds } : {}),
-      keywordLayer: layers.keyword, hype: layers.hype, diversify: layers.diversify, includeMatchedHype: true,
+      keywordLayer: layers.keyword, hype: layers.hype, semantic: layers.semantic, diversify: layers.diversify, includeMatchedHype: true,
     });
     (stages.engine ||= []).push({ filters: Object.keys(filters || {}).filter((k) => filters[k]), ...(res?._timings || {}) });
     return res?.hits || [];

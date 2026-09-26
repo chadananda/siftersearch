@@ -274,7 +274,11 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
     return q;
   });
 
-  const response = await meili.multiSearch({ queries: subQueries });
+  // The per-religion batch and the OL supplementary batch are independent: run them together (they ran one after
+  // the other — ~3s for an unfiltered question, measured 2026-09-26).
+  const responseP = meili.multiSearch({ queries: subQueries });
+  responseP.catch(() => {});   // awaited below; this only stops an early rejection being reported as unhandled
+  let response;
 
   // Supplementary OL queries: large non-OL composite docs (e.g., full Bible) can crowd
   // out OL single-book docs even at fetch-limit=30, because the composite doc has
@@ -314,8 +318,10 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
       }
       olSubQueries.push(q);
     }
-    if (olSubQueries.length > 0) {
-      const olResponse = await meili.multiSearch({ queries: olSubQueries });
+    const [main, olResponse] = await Promise.all([responseP,
+      olSubQueries.length > 0 ? meili.multiSearch({ queries: olSubQueries }) : null]);
+    response = main;
+    if (olResponse) {
       for (let i = 0; i < olReligionIndices.length; i++) {
         const ri = olReligionIndices[i];
         const olHits = olResponse.results[i]?.hits || [];
@@ -327,6 +333,7 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
   } catch (err) {
     logger.warn({ err: err.message }, 'crossTraditionSearch: OL supplementary queries failed');
   }
+  response ||= await responseP;   // the OL batch failed; the per-religion batch still stands (or throws, as before)
 
   // Enrich all hits missing source_site from the docs table before authority sorting.
   // OL paragraphs synced before source_site was added to the worker have null in
@@ -1223,7 +1230,10 @@ export async function multiIndexSearch(query, options = {}) {
   // queries keep 0.5 (default) for better conceptual discovery.
   // Callers can pass semanticRatio to override (e.g. 0.1 for author+religion
   // primary scripture searches where BM25 keyword match must dominate).
-  const mainSemanticRatio = options.semanticRatio != null
+  // semantic:false (the plan's strategy needs no meaning-match: a quote, a lookup, a who-met-whom) → no query
+  // embedding at all: main runs BM25 and the vector-only HyPE layer is skipped.
+  const semanticOff = options.semantic === false;
+  const mainSemanticRatio = semanticOff ? 0 : options.semanticRatio != null
     ? options.semanticRatio
     : (filters.religion && !filters.collection) ? 0.3 : 0.5;
   const entityIds = options.entityIds || [];
@@ -1241,7 +1251,7 @@ export async function multiIndexSearch(query, options = {}) {
     // HyPE: only query when scope includes primary. Site-only sites don't
     // have HyPE (gated off in v1), and supplementals don't either. The
     // primary `hype_questions` index is the only one populated.
-    (options.hype !== false && (!scope_config || scope_config.primary))
+    (options.hype !== false && !semanticOff && (!scope_config || scope_config.primary))
       ? timed('hype', searchHypeQuestions(query, { limit: overFetch, filters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: hype failed');
           return { hits: [] };
