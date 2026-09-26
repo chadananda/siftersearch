@@ -234,21 +234,37 @@ export function makeStore() {
       const paren = (String(name).match(/\(([^)]+)\)/g) || []).map((s) => s.replace(/[()]/g, '')).join(' ');
       const keys = [...new Set([name, core, paren, arabicForm].filter(Boolean).flatMap((p) => [...nameKeys(p)]))];
       if (!keys.length) return [];
-      let rows = await db.queryAll(
+      const recall = (ks, order, n) => (ks.length ? db.queryAll(
         `SELECT lk.entity_id id, ge.canonical_name canonical, ge.entity_type type, ge.importance importance,
                 er.summary, er.aliases aliases, COUNT(DISTINCT lk.skeleton_key) shared
            FROM entity_lookup_keys lk JOIN graph_entities ge ON ge.id=lk.entity_id
            LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type=ge.entity_type
-          WHERE lk.skeleton_key IN (${keys.map(() => '?').join(',')})${type ? ' AND ge.entity_type=?' : ''}
+          WHERE lk.skeleton_key IN (${ks.map(() => '?').join(',')})${type ? ' AND ge.entity_type=?' : ''}
             AND ge.canonical_name NOT LIKE '%⟨merged%'
-          GROUP BY lk.entity_id ORDER BY shared DESC, (ge.importance IS NULL), ge.importance DESC LIMIT ?`,
-        [...keys, ...(type ? [type] : []), limit]);
+          GROUP BY lk.entity_id ORDER BY ${order} LIMIT ?`,
+        [...ks, ...(type ? [type] : []), n]) : Promise.resolve([]));
+      // CORE NAME FIRST. Ranking only by keys shared with the WHOLE string let a descriptor's words out-vote the
+      // name: for "the Báb (the Remembrance of God)" six earlier Báb duplicates + "the Maid of Heaven" filled the
+      // list, the Báb (importance 100) was cut off, and 66 of 81 duplicates of prominent people were created that
+      // way (duplicate-origins, 2026-09-26). The bearers of the core name (and of each parenthetical name) that
+      // match ALL its keys come first by prominence; the whole-string recall fills the rest.
+      const nameParts = [core, ...(String(name).match(/\(([^)]+)\)/g) || []).map((x) => x.replace(/[()]/g, ''))].filter(Boolean);
+      const coreRows = [];
+      for (const part of nameParts) {
+        const pk = [...nameKeys(part)];
+        const hit = await recall(pk, '(ge.importance IS NULL), ge.importance DESC', Math.ceil(limit / 2) + 12);
+        coreRows.push(...hit.filter((r) => r.shared >= pk.length).slice(0, Math.ceil(limit / 2)));
+      }
+      const fullRows = await recall(keys, 'shared DESC, (ge.importance IS NULL), ge.importance DESC', limit);
+      let rows = [];
+      for (const r of [...coreRows, ...fullRows]) if (!rows.some((x) => x.id === r.id)) rows.push(r);
       // Gazetteer boost: a central-cast form (title/epithet/nisba) must recall the SAME anchor entity as its
       // name (anti-split). If `name` folds to an anchor, ensure that entity is present and FIRST. And drop any
       // candidate the ≠guards mark as a distinct namesake of the query name OR its resolved anchor (never
       // re-merged) — guards are keyed to canonical names, so a form-query must guard by the anchor too.
       const gaz = loadGazetteer(GAZETTEER_PATH);
-      const anchor = anchorFor(gaz, name);
+      // The whole string, else its core or any parenthetical name ("… (the Báb)") may be a gazetteer form.
+      const anchor = anchorFor(gaz, name) || nameParts.map((p) => anchorFor(gaz, p)).find(Boolean) || null;
       if (anchor) {
         const existing = rows.find((r) => r.id === anchor.id);
         rows = rows.filter((r) => r.id !== anchor.id);

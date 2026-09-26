@@ -63,6 +63,36 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
     expect(cands[0].id).toBe(101);
   });
 
+  // Live (2026-09-26 duplicate-origins): 66 of 81 duplicates of prominent people were created because the real
+  // person was NOT among the candidates. Recall ranked by keys shared with the WHOLE string, so a descriptor's words
+  // ("…of God") out-voted the name: for "the Báb (the Remembrance of God)" six earlier Báb duplicates and "the
+  // Maid of Heaven" filled the list and the Báb (#1247551, importance 100) was cut off. Each duplicate then became
+  // the top candidate for the next variant.
+  it('findCandidateEntities: the CORE name recalls its most prominent bearer first, whatever the descriptor says', async () => {
+    const ent = (id, name, imp) => {
+      run(`INSERT INTO graph_entities VALUES (?, ?, ?, 'person', ?, NULL)`, [id, name, name, imp]);
+      for (const k of skeletonKeys(name)) run(`INSERT INTO entity_lookup_keys VALUES (?, ?)`, [id, k]);
+    };
+    ent(501, 'the Báb', 100);
+    ent(502, 'the Báb (the Remembrance of God)', null);
+    ent(503, 'the Báb (as Remembrance of God)', null);
+    ent(504, 'the Báb, the Proof of God', null);
+    ent(505, 'the Báb (the Greatest Proof of God)', null);
+    ent(506, 'the Maid of Heaven (Remembrance of God)', 52);
+    ent(507, 'the Remembrance of God', null);
+    ent(508, 'Shoghi Effendi', 95);
+    ent(509, '‘Abdu’l-Bahá', 96);
+    const baab = await store.findCandidateEntities('the Báb (the Most Mighty Gate of God)', { type: 'person', limit: 6 });
+    expect(baab[0].id).toBe(501);
+    const shoghi = await store.findCandidateEntities("Shoghi Effendi (successor of 'Abdu'l-Bahá)", { type: 'person', limit: 6 });
+    expect(shoghi[0].id).toBe(508);
+  });
+
+  it('findCandidateEntities: a parenthetical that IS the name recalls its bearer', async () => {
+    const c = await store.findCandidateEntities('Siyyid ‘Alí-Muḥammad of Shíráz (the Báb)', { type: 'person', limit: 6 });
+    expect(c.map((x) => x.id)).toContain(501);
+  });
+
   it('getDocMeta maps columns to the DocMeta shape', async () => {
     expect(await store.getDocMeta(7)).toMatchObject({ id: 7, title: 'God Passes By', author: 'Shoghi Effendi' });
   });
