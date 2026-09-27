@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T21:43:18.294Z",
+  "generated": "2026-09-27T21:49:24.683Z",
   "entries": [
+    {
+      "hash": "bd4cbc07",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "SSE chat streams never sent the session cookie — every widget visitor was anonymous with no identity",
+      "scope": "identity"
+    },
     {
       "hash": "db5616ed",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The API owns the work QUEUE and advances it — plus one monitor call",
       "scope": null
-    },
-    {
-      "hash": "4be2b2fa",
-      "date": "2026-07-16",
-      "type": "Other",
-      "description": "Report + display EVERY grounding book (parallel runs), tabbed panel",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "bd4cbc07",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "SSE chat streams never sent the session cookie — every widget visitor was anonymous with no identity",
+        "scope": "identity"
+      },
       {
         "hash": "db5616ed",
         "date": "2026-09-27",
@@ -7071,15 +7078,6 @@
         "date": "2026-07-17",
         "type": "Other",
         "description": "The API owns the work QUEUE and advances it — plus one monitor call",
-        "scope": null
-      }
-    ],
-    "2026-07-16": [
-      {
-        "hash": "4be2b2fa",
-        "date": "2026-07-16",
-        "type": "Other",
-        "description": "Report + display EVERY grounding book (parallel runs), tabbed panel",
         "scope": null
       }
     ]

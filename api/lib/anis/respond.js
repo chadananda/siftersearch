@@ -116,9 +116,10 @@ const keepRetrievedLinks = (text, quotes) => {
  * @param {object} [a.participant]{ id, authed } — the Seeker Companion relationship key
  * @param {object} [a.llm]        override; default = ANIS_LLM env → DEFAULT_LLM
  * @param {Function} [a.onEvent]  receives { type: 'stage'|'sources'|'text'|'companion_offer', … }
+ * @param {object} [a.direction]  { stance, guarded, channel } from the triage gate (turn.js) → the formatter's DIRECTION
  * @returns {{ reply, citations, retrieved, plan, timings }}
  */
-export async function anisRespond({ messages, profile = {}, participant = {}, llm, onEvent = () => {}, deps }) {
+export async function anisRespond({ messages, profile = {}, participant = {}, llm, onEvent = () => {}, direction = {}, deps }) {
   const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
   const persona = profile.persona_name || 'Anis';
   const question = lastUser(messages);
@@ -175,7 +176,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const raw = await d.craft({
     user_question: question, retrieved_quotes: retrieved, conversation_summary: conversationSummary(messages, persona),
     persona_name: persona, mission: profile.mission || null, companion_append: comp?.append || '',
-    comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, llm: llm || parseLlm(process.env.ANIS_LLM),
+    comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, direction, llm: llm || parseLlm(process.env.ANIS_LLM),
     onChunk: (t) => gate.push(t),
   });
   gate.flush();

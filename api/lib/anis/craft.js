@@ -2,7 +2,7 @@
 // Any OpenAI-compatible provider (openai | groq | deepseek) — the model is ONE global switch (ANIS_LLM), so cost
 // and speed can change without code. Deps: openai SDK, anis/prompt.js.
 import OpenAI from 'openai';
-import { anisSystem, anisUserPayload } from './prompt.js';
+import { anisSystem, anisUserPayload, anisDirection } from './prompt.js';
 
 const BASE_URL = { openai: undefined, groq: 'https://api.groq.com/openai/v1', deepseek: 'https://api.deepseek.com/v1', gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/', anthropic: 'https://api.anthropic.com/v1/' };
 const KEY_ENV = { openai: 'OPENAI_API_KEY', groq: 'GROQ_API_KEY', deepseek: 'DEEPSEEK_API_KEY', gemini: 'GEMINI_API_KEY', anthropic: 'ANTHROPIC_API_KEY' };
@@ -13,12 +13,15 @@ function client(provider) {
   }));
 }
 
-export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, entities = null, peopleAnswer = null, llm, onChunk, signal }) {
+export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, entities = null, peopleAnswer = null, direction = {}, llm, onChunk, signal }) {
+  // System = soul + house style (constant → cached prefix); everything about THIS reply goes in the user message.
+  const dir = anisDirection({ channelFrame: direction.channel?.frame ?? null, stance: direction.stance ?? null, guarded: !!direction.guarded,
+    conversational, mission, companionAppend: companion_append });
   const params = {
     model: llm.model,
     messages: [
-      { role: 'system', content: anisSystem({ persona: persona_name || 'Anis', mission, companionAppend: companion_append, conversational }) },
-      { role: 'user', content: anisUserPayload({ question: user_question, conversation: conversation_summary, passages: retrieved_quotes, conversational, entities, peopleAnswer }) },
+      { role: 'system', content: anisSystem({ persona: persona_name || 'Anís' }) },
+      { role: 'user', content: anisUserPayload({ question: user_question, conversation: conversation_summary, passages: retrieved_quotes, conversational, entities, peopleAnswer, direction: dir }) },
     ],
     temperature: 0.3,
     // Reasoning models spend completion tokens thinking; leave room so the reply is never truncated.
