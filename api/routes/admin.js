@@ -2611,6 +2611,13 @@ Collection: ${paragraph.collection || 'Unknown'}
     return namesakeContext({ pairs, groups: Math.min(Number(request.query.groups) || 25, 200), minMentions: Number(request.query.min) || 3 });
   });
 
+  // GET /server/identity-replay — read-only: rebuild every mention's entity from the decision log and classify each
+  // divergence from the stored ids (match · cross-doc · no-decision · unbound · mismatch). planning/work-plan-identity.md.
+  fastify.get('/server/identity-replay', { preHandler: requireInternal }, async (request) => {
+    const { identityReplay } = await import('../lib/identity-replay.js');
+    return identityReplay({ sampleSize: Math.min(Number(request.query.samples) || 12, 100) });
+  });
+
   // GET /server/docs-by-title?q=a|b|c — read-only: every copy of each titled work with paragraph / claim / mention
   // counts, so a pass targets the copy the entity pipeline actually used.
   fastify.get('/server/docs-by-title', { preHandler: requireInternal }, async (request) => {

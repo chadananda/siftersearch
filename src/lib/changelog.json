@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T16:19:35.985Z",
+  "generated": "2026-09-27T18:42:44.654Z",
   "entries": [
+    {
+      "hash": "4435eca3",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Merge audit — are merged ids recoverable from the decision log; cross-document resolved_as collisions",
+      "scope": "research"
+    },
     {
       "hash": "924b1eb5",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Evidence-CONSISTENCY doctrine — merge same-name unless a load-bearing fact CONTRADICTS (fixes same-person-across-books under-merge; Mírzá Músá x4 etc.)",
       "scope": "merge"
-    },
-    {
-      "hash": "3f1fd5e9",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "AI-thinking search bar — mask conic glow to border ring (no center bleed through translucent bar)",
-      "scope": "bio"
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "4435eca3",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Merge audit — are merged ids recoverable from the decision log; cross-document resolved_as collisions",
+        "scope": "research"
+      },
       {
         "hash": "924b1eb5",
         "date": "2026-09-27",
@@ -7080,13 +7087,6 @@
         "type": "Fixed",
         "description": "Evidence-CONSISTENCY doctrine — merge same-name unless a load-bearing fact CONTRADICTS (fixes same-person-across-books under-merge; Mírzá Músá x4 etc.)",
         "scope": "merge"
-      },
-      {
-        "hash": "3f1fd5e9",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "AI-thinking search bar — mask conic glow to border ring (no center bleed through translucent bar)",
-        "scope": "bio"
       }
     ]
   }
