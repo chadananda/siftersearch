@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T23:29:22.468Z",
+  "generated": "2026-09-27T23:40:59.606Z",
   "entries": [
+    {
+      "hash": "542331d5",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Soul — question rather than pronounce; challenge the idea, never the person's dignity",
+      "scope": "anis"
+    },
     {
       "hash": "333d62f0",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Make a single-writer hang non-catastrophic + self-healing (2026-07-18 incident)",
       "scope": null
-    },
-    {
-      "hash": "ffca4fb3",
-      "date": "2026-07-17",
-      "type": "Other",
-      "description": "ProviderForDoc uses ACTUAL billed provider, not language — fixes Persian misroute",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "542331d5",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Soul — question rather than pronounce; challenge the idea, never the person's dignity",
+        "scope": "anis"
+      },
       {
         "hash": "333d62f0",
         "date": "2026-09-27",
@@ -7069,15 +7076,6 @@
         "date": "2026-07-18",
         "type": "Other",
         "description": "Make a single-writer hang non-catastrophic + self-healing (2026-07-18 incident)",
-        "scope": null
-      }
-    ],
-    "2026-07-17": [
-      {
-        "hash": "ffca4fb3",
-        "date": "2026-07-17",
-        "type": "Other",
-        "description": "ProviderForDoc uses ACTUAL billed provider, not language — fixes Persian misroute",
         "scope": null
       }
     ]
