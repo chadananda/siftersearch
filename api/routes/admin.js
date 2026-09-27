@@ -2440,10 +2440,11 @@ Collection: ${paragraph.collection || 'Unknown'}
   // POST /server/entity-repair-tombstones { write=false } — repoint relations/claims/mentions left on merged-away
   // entities to their live survivor (background task 'entity-repair'). GET …/report?mode= returns the latest report.
   fastify.post('/server/entity-repair-tombstones', { preHandler: requireInternal }, async (request) => {
-    const { write = false } = request.body || {};
+    const { write = false, restore = null } = request.body || {};
     const existing = backgroundTasks.get('entity-repair');
     if (existing && existing.status === 'running') throw ApiError.conflict('An entity-repair run is already in progress');
-    const task = runBackgroundTask('entity-repair', 'scripts/entity-repair-tombstones.mjs', write ? ['--write'] : []);
+    if (restore && !/^(logs\/)?entity-repair-rollback-[\w-]+\.json$/.test(String(restore))) throw ApiError.badRequest('restore must name a repair rollback file');
+    const task = runBackgroundTask('entity-repair', 'scripts/entity-repair-tombstones.mjs', restore ? [`--restore=${restore}`] : write ? ['--write'] : []);
     return { success: true, taskId: 'entity-repair', write: !!write, status: task.status };
   });
 

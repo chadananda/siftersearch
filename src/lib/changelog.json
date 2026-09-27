@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T01:02:24.124Z",
+  "generated": "2026-09-27T01:07:11.645Z",
   "entries": [
+    {
+      "hash": "3ab00d40",
+      "date": "2026-09-26",
+      "type": "Fixed",
+      "description": "Merges carry relations + importance to the survivor; survivor = curated record; tombstone repair runner",
+      "scope": "entities"
+    },
     {
       "hash": "58de9d77",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Lock background scroll + overscroll-behavior contain (no scroll bleed-through)",
       "scope": "progress popup"
-    },
-    {
-      "hash": "1bc4c938",
-      "date": "2026-07-13",
-      "type": "Other",
-      "description": "Library-integration progress popup — phased roadmap toward 'all history absorbed'",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "3ab00d40",
+        "date": "2026-09-26",
+        "type": "Fixed",
+        "description": "Merges carry relations + importance to the survivor; survivor = curated record; tombstone repair runner",
+        "scope": "entities"
+      },
       {
         "hash": "58de9d77",
         "date": "2026-09-26",
@@ -7078,13 +7085,6 @@
         "type": "Other",
         "description": "Lock background scroll + overscroll-behavior contain (no scroll bleed-through)",
         "scope": "progress popup"
-      },
-      {
-        "hash": "1bc4c938",
-        "date": "2026-07-13",
-        "type": "Other",
-        "description": "Library-integration progress popup — phased roadmap toward 'all history absorbed'",
-        "scope": null
       }
     ]
   }

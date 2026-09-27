@@ -56,6 +56,24 @@ for (const d of dead) {
 report.importanceRaised = raise.size;
 report.importanceSamples = [...raise].slice(0, 15).map(([s, imp]) => `#${s} ${byId.get(s)?.name}: ${byId.get(s)?.importance ?? 'null'} → ${imp}`);
 
+// --restore=<rollback file>: re-insert the relations a rollback file holds, each end resolved to its live survivor
+// (INSERT OR IGNORE — an edge the survivor already has stays single).
+const RESTORE = (process.argv.find((a) => a.startsWith('--restore=')) || '').split('=')[1];
+if (RESTORE) {
+  const { readFileSync } = await import('fs');
+  const rb = JSON.parse(readFileSync(`logs/${RESTORE.replace(/^logs\//, '')}`, 'utf8'));
+  const stmts = [];
+  for (const r of rb.relations || []) {
+    const s = resolve(r.source_entity_id) ?? r.source_entity_id, t = resolve(r.target_entity_id) ?? r.target_entity_id;
+    if (s === t || next.has(s) || next.has(t) || !byId.has(s) || !byId.has(t)) continue;
+    stmts.push({ sql: `INSERT OR IGNORE INTO graph_relations (source_entity_id, target_entity_id, relation_type, weight, source_doc_id, source_content_id, created_at)
+      VALUES (?,?,?,?,?,?,?)`, args: [s, t, r.relation_type, r.weight ?? 1, r.source_doc_id ?? null, r.source_content_id ?? null, r.created_at ?? null] });
+  }
+  for (const ch of chunks(stmts, 200)) await transaction(ch, 'entity-repair-restore');
+  console.log(`RESTORED ${stmts.length} of ${(rb.relations || []).length} relations from ${RESTORE}`);
+  process.exit(0);
+}
+
 if (WRITE) {
   writeFileSync(`logs/entity-repair-rollback-${stamp}.json`, JSON.stringify({ relations: uniqRel, claimSubjects: cs, claimTargets: ct, mentions: men,
     importance: [...raise.keys()].map((s) => ({ id: s, importance: byId.get(s)?.importance ?? null })) }));
@@ -64,7 +82,10 @@ if (WRITE) {
     const s = resolve(r.source_entity_id) ?? r.source_entity_id, t = resolve(r.target_entity_id) ?? r.target_entity_id;
     if (s === t || !byId.has(s) || !byId.has(t) || next.has(s) || next.has(t)) { stmts.push({ sql: 'DELETE FROM graph_relations WHERE id=?', args: [r.id] }); continue; }
     stmts.push({ sql: 'UPDATE OR IGNORE graph_relations SET source_entity_id=?, target_entity_id=? WHERE id=?', args: [s, t, r.id] });
-    stmts.push({ sql: 'DELETE FROM graph_relations WHERE id=? AND (source_entity_id=? OR target_entity_id=?)', args: [r.id, r.source_entity_id, r.target_entity_id].map(Number) });
+    // Drop the row ONLY if the repoint was ignored (the survivor already has this edge) — i.e. it still is not
+    // (s, t). The first version tested "either end equals its OLD id", which is true for the end that did not
+    // change, and so deleted 147 freshly repointed relations (restored by --restore; 2026-09-27).
+    stmts.push({ sql: 'DELETE FROM graph_relations WHERE id=? AND NOT (source_entity_id=? AND target_entity_id=?)', args: [r.id, s, t] });
   }
   for (const c of cs) { const s = resolve(c.entity_id); if (s != null) stmts.push({ sql: 'UPDATE entity_claims SET entity_id=? WHERE id=?', args: [s, c.id] }); }
   for (const c of ct) { const s = resolve(c.target_entity_id); stmts.push({ sql: 'UPDATE entity_claims SET target_entity_id=? WHERE id=?', args: [s, c.id] }); }
