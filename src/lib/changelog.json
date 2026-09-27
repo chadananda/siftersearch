@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T22:13:54.311Z",
+  "generated": "2026-09-27T22:28:20.286Z",
   "entries": [
+    {
+      "hash": "b5f44ab1",
+      "date": "2026-09-27",
+      "type": "Docs",
+      "description": "Identity + Anis status 2026-09-27 evening",
+      "scope": "plan"
+    },
     {
       "hash": "08acb248",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Stable-order the multi-book tabs so they stop jittering + hopping between books",
       "scope": null
-    },
-    {
-      "hash": "ffe5e569",
-      "date": "2026-07-17",
-      "type": "Other",
-      "description": "Proc-gone is NOT success — verify the run reached its work, else mark FAILED",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "b5f44ab1",
+        "date": "2026-09-27",
+        "type": "Docs",
+        "description": "Identity + Anis status 2026-09-27 evening",
+        "scope": "plan"
+      },
       {
         "hash": "08acb248",
         "date": "2026-09-27",
@@ -7071,13 +7078,6 @@
         "date": "2026-07-17",
         "type": "Other",
         "description": "Stable-order the multi-book tabs so they stop jittering + hopping between books",
-        "scope": null
-      },
-      {
-        "hash": "ffe5e569",
-        "date": "2026-07-17",
-        "type": "Other",
-        "description": "Proc-gone is NOT success — verify the run reached its work, else mark FAILED",
         "scope": null
       }
     ]

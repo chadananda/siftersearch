@@ -5,6 +5,9 @@
 // Deps (lazy, injectable for tests): routes/chat.js executeSearch, jafar-pipeline craftAnswerStream, companion/.
 
 import { dropUnverified, createSentenceGate } from './quotes.js';
+import { toFindings, dataProfile, describeProfile } from './findings.js';
+import { chooseFormat } from './formats.js';
+import { channelFor } from './channels.js';
 
 // Default measured 2026-09-25 (scripts/wip/anis-model-race.mjs, lean prompt, 4 questions): Gemini 3.5 Flash-Lite
 // 0.53s first token / 1.5s total (gpt-4o-mini 0.61s / 2.3s; Haiku 0.72s / 4.3s; DeepSeek 0.77s / 2.4s). Every model
@@ -148,6 +151,16 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     onEvent({ type: 'status', text: statusLine(citations, res?._plan) });
   }
 
+  // Findings (typed, with authority) → data profile → format: the reply's shape is chosen from the question AND what
+  // was found AND the channel (PRD F3/F4). Runs in parallel with the Companion plan — no added latency.
+  const pa = res?.peopleAnswer || null;
+  const findings = toFindings({ retrieved, peopleAnswer: pa, entities: res?.entities || null });
+  retrieved.forEach((q, i) => { q.authority = findings[i]?.authority?.name || null; });
+  const evidenceProfile = dataProfile(findings, { plan: res?._plan || null, question });
+  const channel = direction.channel || channelFor('widget-chat');
+  const choose = d.chooseFormat || chooseFormat;
+  const formatP = conversational ? Promise.resolve(null) : choose({ question, profile: evidenceProfile, channel }).catch(() => null);
+
   let comp = null;
   try {
     const evidenceDocs = retrieved.map((q) => ({ doc_id: q.doc_id, title: q.source_title, author: q.source_author, religion: q.religion, collection: q.collection }));
@@ -158,6 +171,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     });
     if (comp?.offer) onEvent({ type: 'companion_offer', offer: 'connect' });
   } catch { comp = null; }   // relationship enriches the answer; it never blocks one
+  const format = await formatP;
 
   onEvent({ type: 'stage', stage: 'craft' });
   // Stream a sentence at a time, releasing only sentences whose quotes are in the passages — an invented quote is
@@ -165,7 +179,6 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   let firstTokenMs = null;
   // Links allowed = the passages' URLs + the people record's evidence URLs. Applied per sentence while STREAMING
   // (the stream once showed a link the model had moved onto another domain; only the final text caught it).
-  const pa = res?.peopleAnswer || null;
   const paEvidence = pa ? [...(pa.contested || []).flatMap((p) => [...p.evidence, ...p.against]), ...(pa.notMet || []).flatMap((p) => p.evidence)] : [];
   const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url }))];
   const cleanLinks = (t) => (d.stripLinks || keepRetrievedLinks)(linkMarkers(t, retrieved), allowed);
@@ -176,7 +189,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const raw = await d.craft({
     user_question: question, retrieved_quotes: retrieved, conversation_summary: conversationSummary(messages, persona),
     persona_name: persona, mission: profile.mission || null, companion_append: comp?.append || '',
-    comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, direction, llm: llm || parseLlm(process.env.ANIS_LLM),
+    comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, direction: { ...direction, format }, llm: llm || parseLlm(process.env.ANIS_LLM),
     onChunk: (t) => gate.push(t),
   });
   gate.flush();
@@ -190,5 +203,6 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // Qabbalah under an answer that used two Bahá'í texts).
   const cited = citations.filter((c) => c.url && reply.includes(c.url));
   return { reply, quotes_removed: guarded.removed, citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
+    format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
     timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 } };
 }

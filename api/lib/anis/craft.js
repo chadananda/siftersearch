@@ -16,7 +16,7 @@ function client(provider) {
 export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, entities = null, peopleAnswer = null, direction = {}, llm, onChunk, signal }) {
   // System = soul + house style (constant → cached prefix); everything about THIS reply goes in the user message.
   const dir = anisDirection({ channelFrame: direction.channel?.frame ?? null, stance: direction.stance ?? null, guarded: !!direction.guarded,
-    conversational, mission, companionAppend: companion_append });
+    conversational, mission, companionAppend: companion_append, formatHow: direction.format?.how ?? null });
   const params = {
     model: llm.model,
     messages: [
