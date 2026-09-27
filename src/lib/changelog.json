@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T05:20:34.189Z",
+  "generated": "2026-09-27T05:30:51.919Z",
   "entries": [
+    {
+      "hash": "e5b080b9",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Title → figure merges with strict name resolution and an independent second check",
+      "scope": "entities"
+    },
     {
       "hash": "aed1f41b",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Explicit ABSORPTION_ORDER sequence (GPB>DB>Gate>ROB>Balyuzi...) — clean grounding-order display",
       "scope": "bio popup"
-    },
-    {
-      "hash": "6b364e32",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Order books by ABSORPTION sequence (grounded chronological, then pending by size) not by size",
-      "scope": "bio popup"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "e5b080b9",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Title → figure merges with strict name resolution and an independent second check",
+        "scope": "entities"
+      },
       {
         "hash": "aed1f41b",
         "date": "2026-09-26",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-13",
         "type": "Fixed",
         "description": "Explicit ABSORPTION_ORDER sequence (GPB>DB>Gate>ROB>Balyuzi...) — clean grounding-order display",
-        "scope": "bio popup"
-      },
-      {
-        "hash": "6b364e32",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Order books by ABSORPTION sequence (grounded chronological, then pending by size) not by size",
         "scope": "bio popup"
       }
     ]

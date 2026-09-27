@@ -44,6 +44,13 @@ for (const docId of DOCS) {
     named.set(p.id, ids); for (const id of ids) bookIds.add(id);
   }
   const bookCands = [...bookIds].map((id) => idx.people.get(id)).filter(Boolean);
+  // Candidates shown to the model: the paragraph's people, the book's most-mentioned people, and the central figures.
+  const bookCount = new Map();
+  for (const m of mentions) bookCount.set(m.entity_id, (bookCount.get(m.entity_id) || 0) + 1);
+  const topBook = [...bookCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 30).map(([id]) => id);
+  const CENTRAL = [1247551, 1247562, 1247563, 1247564, 1247552, 1247554, 1248214];
+  const show = (ids) => [...new Set(ids)].map((id) => idx.people.get(id)).filter(Boolean)
+    .map((p) => ({ id: p.id, name: p.name, aliases: p.forms.filter((f) => !f.canonical).map((f) => f.phrase).slice(0, 4) }));
   const work = paras.map((p) => ({ p, pid: p.external_para_id || `p${p.id}`, ids: new Set([...(byPara.get(p.external_para_id || `p${p.id}`) || []), ...named.get(p.id)]) }))
     .filter((w) => w.ids.size >= 2);
   report.paragraphs += paras.length; report.considered += work.length;
@@ -52,7 +59,9 @@ for (const docId of DOCS) {
     while (next < work.length) {
       const { p, pid, ids } = work[next++];
       try {
-        const r = await chatCompletion([{ role: 'system', content: SYSTEM }, { role: 'user', content: buildUser({ ...p, title }) }],
+        const shown = show([...ids, ...topBook, ...CENTRAL]);
+        const shownIds = new Set(shown.map((c) => c.id));
+        const r = await chatCompletion([{ role: 'system', content: SYSTEM }, { role: 'user', content: buildUser({ ...p, title }, shown) }],
           { provider: 'deepseek', model: MODEL, temperature: 0, maxTokens: 1200, responseFormat: { type: 'json_object' }, caller: 'extract-scenes' });
         report.tokens.prompt += r.usage?.promptTokens || 0; report.tokens.completion += r.usage?.completionTokens || 0;
         const scenes = parseScenes(r.content);
@@ -63,9 +72,11 @@ for (const docId of DOCS) {
           if (!proofInParagraph(s.proof, p.text)) { report.proofRejected++; continue; }
           report.scenes++;
           const parts = s.participants.map((x) => {
-            let id = bindParticipant(x.name, paraCands, matches), basis = id ? 'paragraph' : null;
+            // The model's pick from the numbered list (in context) first; a number outside the list is refused.
+            let id = x.id && shownIds.has(x.id) ? x.id : null, basis = id ? 'model' : null;
+            if (!id) { id = bindParticipant(x.name, paraCands, matches); basis = id ? 'paragraph' : null; }
             if (!id) { id = bindParticipant(x.name, bookCands, matches); basis = id ? 'book' : null; }
-            report.participants++; if (basis === 'paragraph') report.boundPara++; else if (basis === 'book') report.boundBook++; else report.unbound++;
+            report.participants++; if (basis === 'model') report.boundModel = (report.boundModel || 0) + 1; else if (basis === 'paragraph') report.boundPara++; else if (basis === 'book') report.boundBook++; else report.unbound++;
             return { ...x, id, basis, bound: id ? idx.people.get(id)?.name : null };
           });
           if (report.samples.length < 40) report.samples.push({ book: title, pid, place: s.place, time: s.time, summary: s.summary, proof: s.proof, participants: parts.map((x) => `${x.name}${x.role ? ` (${x.role})` : ''} → ${x.bound || 'UNBOUND'}`) });
