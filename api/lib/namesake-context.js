@@ -77,5 +77,28 @@ export async function mergeAudit() {
   const byActor = await queryAll(`SELECT actor, actor_tier, status, date(decided_at,'unixepoch') day, COUNT(*) n,
       SUM(json_array_length(target_ids)) ids FROM entity_decisions WHERE kind='merge' GROUP BY 1,2,3,4 ORDER BY day`, [], 'namesake:audit');
   const sample = await queryAll(`SELECT id, target_ids, rationale FROM entity_decisions WHERE kind='merge' ORDER BY id DESC LIMIT 15`, [], 'namesake:sample');
-  return { byActor, sample };
+  return { byActor, sample, ...(await reconstructability()) };
+}
+
+// Can the pre-merge entities be rebuilt from the log? A merged id is recoverable when a create/link decision recorded
+// it as applied_entity_id (its mention cluster = payload.docId + payload.resolvedAs). Also: bindMentions binds by
+// resolved_as across ALL documents, so one resolved_as decided differently in two books is a cross-book collision.
+async function reconstructability() {
+  const merged = await queryAll(`SELECT DISTINCT CAST(j.value AS INTEGER) id FROM entity_decisions d, json_each(d.target_ids) j
+    WHERE d.kind='merge' AND d.status='applied'`, [], 'namesake:merged');
+  const applied = await queryAll(`SELECT kind, json_extract(payload,'$.applied_entity_id') eid, json_extract(payload,'$.docId') doc,
+      json_extract(payload,'$.resolvedAs') ra FROM entity_decisions WHERE kind IN ('create','link') AND status='applied'`, [], 'namesake:applied');
+  const byEid = new Map();
+  for (const a of applied) if (a.eid != null) (byEid.get(Number(a.eid)) || byEid.set(Number(a.eid), []).get(Number(a.eid))).push(a);
+  const recoverable = merged.filter((m) => byEid.has(m.id)).length;
+  const byRa = new Map();
+  for (const a of applied) if (a.ra) (byRa.get(a.ra) || byRa.set(a.ra, new Map()).get(a.ra)).set(String(a.doc), Number(a.eid));
+  const collisions = [...byRa.entries()].filter(([, m]) => new Set(m.values()).size > 1);
+  const mentionsOnCollided = collisions.length ? (await queryAll(`SELECT COUNT(*) n FROM entity_mentions_v2 WHERE resolved_as IN (${inList(collisions.slice(0, 900))})`,
+    collisions.slice(0, 900).map(([ra]) => ra), 'namesake:coll'))[0].n : 0;
+  const mentionTotals = (await queryAll(`SELECT COUNT(*) n, SUM(entity_id IS NOT NULL) bound FROM entity_mentions_v2`, [], 'namesake:mt'))[0];
+  return { reconstruct: { mergedIds: merged.length, recoverableFromLog: recoverable, appliedDecisions: applied.length,
+    resolvedAsDecidedInSeveralDocs: [...byRa.values()].filter((m) => m.size > 1).length,
+    crossDocCollisions: collisions.length, mentionsOnFirst900Collisions: mentionsOnCollided, mentionTotals,
+    collisionSample: collisions.slice(0, 12).map(([ra, m]) => ({ ra, docs: Object.fromEntries(m) })) } };
 }

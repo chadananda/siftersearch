@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T15:55:59.749Z",
+  "generated": "2026-09-27T16:19:35.985Z",
   "entries": [
+    {
+      "hash": "924b1eb5",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Namesake-context — do same-name records separate by shared docs/years/companions? + merge audit (read-only)",
+      "scope": "research"
+    },
     {
       "hash": "0fc46933",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "AI-thinking search bar — mask conic glow to border ring (no center bleed through translucent bar)",
       "scope": "bio"
-    },
-    {
-      "hash": "b9bfb68d",
-      "date": "2026-07-13",
-      "type": "New",
-      "description": "Pilgrim Notes as collapsible per-period tree under Primary Sources (613 small docs, grouped by era from file_path)",
-      "scope": "bio popup"
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "924b1eb5",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Namesake-context — do same-name records separate by shared docs/years/companions? + merge audit (read-only)",
+        "scope": "research"
+      },
       {
         "hash": "0fc46933",
         "date": "2026-09-27",
@@ -7080,13 +7087,6 @@
         "type": "Fixed",
         "description": "AI-thinking search bar — mask conic glow to border ring (no center bleed through translucent bar)",
         "scope": "bio"
-      },
-      {
-        "hash": "b9bfb68d",
-        "date": "2026-07-13",
-        "type": "New",
-        "description": "Pilgrim Notes as collapsible per-period tree under Primary Sources (613 small docs, grouped by era from file_path)",
-        "scope": "bio popup"
       }
     ]
   }
