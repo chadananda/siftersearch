@@ -2437,6 +2437,24 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { id, row: row || null, survivor, merges };
   });
 
+  // POST /server/entity-repair-tombstones { write=false } — repoint relations/claims/mentions left on merged-away
+  // entities to their live survivor (background task 'entity-repair'). GET …/report?mode= returns the latest report.
+  fastify.post('/server/entity-repair-tombstones', { preHandler: requireInternal }, async (request) => {
+    const { write = false } = request.body || {};
+    const existing = backgroundTasks.get('entity-repair');
+    if (existing && existing.status === 'running') throw ApiError.conflict('An entity-repair run is already in progress');
+    const task = runBackgroundTask('entity-repair', 'scripts/entity-repair-tombstones.mjs', write ? ['--write'] : []);
+    return { success: true, taskId: 'entity-repair', write: !!write, status: task.status };
+  });
+
+  fastify.get('/server/entity-repair-tombstones/report', { preHandler: requireInternal }, async (request) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const mode = request.query.mode === 'write' ? 'write' : 'dry';
+    const files = readdirSync('logs').filter((f) => f.startsWith(`entity-repair-${mode}-`)).sort();
+    if (!files.length) throw ApiError.notFound(`no ${mode} repair report yet`);
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';

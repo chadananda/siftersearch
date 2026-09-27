@@ -791,6 +791,15 @@ export function makeStore() {
         { sql: `UPDATE entity_mentions_v2 SET entity_id=? WHERE entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
         { sql: `UPDATE entity_claims SET entity_id=? WHERE entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
         { sql: `UPDATE entity_claims SET target_entity_id=? WHERE target_entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
+        // Relations follow the person too (group membership, kinship edges). Leaving them on the tombstone is how two
+        // Letters of the Living fell out of their group (2026-09-26). UNIQUE(source,target,type): a row the survivor
+        // already has is kept once — the leftover and any self-loop the repoint creates are dropped.
+        { sql: `UPDATE OR IGNORE graph_relations SET source_entity_id=? WHERE source_entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
+        { sql: `UPDATE OR IGNORE graph_relations SET target_entity_id=? WHERE target_entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
+        { sql: `DELETE FROM graph_relations WHERE source_entity_id IN (${ph}) OR target_entity_id IN (${ph})`, args: [...mergeIds, ...mergeIds] },
+        { sql: `DELETE FROM graph_relations WHERE source_entity_id=? AND target_entity_id=?`, args: [canonicalId, canonicalId] },
+        // The survivor keeps the highest importance of the records it absorbs (a curated station floor must not be lost).
+        { sql: `UPDATE graph_entities SET importance=(SELECT MAX(importance) FROM graph_entities WHERE id IN (?, ${ph})) WHERE id=?`, args: [canonicalId, ...mergeIds, canonicalId] },
         { sql: `UPDATE graph_entities SET last_assessed_version=? WHERE id IN (${ph})`, args: [tombstoneFor(canonicalId), ...mergeIds] },
         { sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, rationale, actor, actor_tier, status, valid_time) VALUES ('merge','entity',?,?,?, 'model', 2, 'applied', NULL)`,
           args: [JSON.stringify(mergeIds), JSON.stringify({ canonical: canonicalId, merged: mergeIds }), reason || null] },

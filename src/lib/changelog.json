@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T00:54:37.213Z",
+  "generated": "2026-09-27T01:02:24.124Z",
   "entries": [
+    {
+      "hash": "58de9d77",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Entity-fate — where a person went (row, tombstone, survivor, merge decisions)",
+      "scope": "admin"
+    },
     {
       "hash": "f60d440a",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Library-integration progress popup — phased roadmap toward 'all history absorbed'",
       "scope": null
-    },
-    {
-      "hash": "26b7d0ba",
-      "date": "2026-07-13",
-      "type": "Docs",
-      "description": "Gate/ROB are descriptive scholarship (historical track, not doctrinal); real Máz ids; convergence principle",
-      "scope": "history-track"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "58de9d77",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Entity-fate — where a person went (row, tombstone, survivor, merge decisions)",
+        "scope": "admin"
+      },
       {
         "hash": "f60d440a",
         "date": "2026-09-26",
@@ -7078,13 +7085,6 @@
         "type": "Other",
         "description": "Library-integration progress popup — phased roadmap toward 'all history absorbed'",
         "scope": null
-      },
-      {
-        "hash": "26b7d0ba",
-        "date": "2026-07-13",
-        "type": "Docs",
-        "description": "Gate/ROB are descriptive scholarship (historical track, not doctrinal); real Máz ids; convergence principle",
-        "scope": "history-track"
       }
     ]
   }

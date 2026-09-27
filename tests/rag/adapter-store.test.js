@@ -112,6 +112,25 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
     run(`UPDATE graph_entities SET last_assessed_version=NULL WHERE id=502`);
   });
 
+  // Two Letters of the Living vanished from their group (2026-09-26): applyMerge repointed mentions + claims but NOT
+  // graph_relations, so the group membership stayed on the tombstone and the live roster dropped them. The merge
+  // also made a thin new duplicate the survivor, so the curated record's importance was lost with it.
+  it('applyMerge: carries relations (group membership) and the higher importance to the survivor', async () => {
+    raw.exec(`CREATE TABLE IF NOT EXISTS graph_relations (id INTEGER PRIMARY KEY AUTOINCREMENT, source_entity_id INTEGER NOT NULL,
+      target_entity_id INTEGER NOT NULL, relation_type TEXT NOT NULL DEFAULT 'co-occurs', weight INTEGER DEFAULT 1, source_doc_id INTEGER,
+      source_content_id INTEGER, created_at TEXT, UNIQUE(source_entity_id, target_entity_id, relation_type))`);
+    run(`INSERT INTO graph_entities VALUES (701, 'Mullá Ḥasan-i-Bajistání', 'Mullá Ḥasan-i-Bajistání', 'person', 70, NULL)`);
+    run(`INSERT INTO graph_entities VALUES (702, 'Mullá Ḥasan-i-Bajistání', 'Mullá Ḥasan-i-Bajistání', 'person', NULL, NULL)`);
+    run(`INSERT INTO graph_entities VALUES (799, 'the Letters of the Living', 'the Letters of the Living', 'group', 90, NULL)`);
+    run(`INSERT INTO graph_relations (source_entity_id, target_entity_id, relation_type) VALUES (701, 799, 'letter-of-the-living')`);
+    run(`INSERT INTO graph_relations (source_entity_id, target_entity_id, relation_type) VALUES (702, 799, 'letter-of-the-living')`);  // dup on survivor
+    run(`INSERT INTO graph_relations (source_entity_id, target_entity_id, relation_type) VALUES (701, 501, 'met')`);
+    await store.applyMerge(702, [701], 'same Letter');
+    const rel = run(`SELECT source_entity_id s, target_entity_id t, relation_type r FROM graph_relations WHERE 701 IN (source_entity_id, target_entity_id) OR 702 IN (source_entity_id, target_entity_id) ORDER BY r`);
+    expect(rel).toEqual([{ s: 702, t: 799, r: 'letter-of-the-living' }, { s: 702, t: 501, r: 'met' }]);
+    expect(run(`SELECT importance FROM graph_entities WHERE id = 702`)[0].importance).toBe(70);
+  });
+
   it('findCandidateEntities: a parenthetical that IS the name recalls its bearer', async () => {
     const c = await store.findCandidateEntities('Siyyid ‘Alí-Muḥammad of Shíráz (the Báb)', { type: 'person', limit: 6 });
     expect(c.map((x) => x.id)).toContain(501);
@@ -250,5 +269,14 @@ describe('the knowledge feed ports HyPE reads through', () => {
     const store = makeStore();
     expect(typeof store.getParaClaims).toBe('function');
     expect(typeof store.getParaConceptClaims).toBe('function');
+  });
+});
+
+describe('merge survivor', () => {
+  it('is the curated record, not whatever the model named', async () => {
+    const { pickCanonical } = await import('../../api/lib/rag/entities/merge.js');
+    const ents = [{ id: 1299654, importance: null, mentions: 9 }, { id: 1249578, importance: 70, mentions: 3 }];
+    expect(pickCanonical(ents, [1299654, 1249578])).toBe(1249578);
+    expect(pickCanonical([{ id: 5, mentions: 1 }, { id: 3, mentions: 1 }], [5, 3])).toBe(3);
   });
 });

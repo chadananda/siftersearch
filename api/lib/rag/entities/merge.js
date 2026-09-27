@@ -27,10 +27,13 @@ export async function run(ctx, opts = {}) {
     const { parsed } = await ctx.model.runLadder({ route, system: SYSTEM, user: buildUser(g), parse: parseMerge, maxTokens: 500 });
     if (!parsed || !parsed.canonical) { stats.failed++; return; }
     stats.adjudicated++;
-    const same = (parsed.same || []).filter((id) => id !== parsed.canonical && g.ids.includes(id));
+    const members = [parsed.canonical, ...(parsed.same || [])].filter((id, i, a) => g.ids.includes(id) && a.indexOf(id) === i);
     stats.kept += (parsed.distinct || []).length;
-    if (!same.length) return;
-    plans.push({ canonical: parsed.canonical, merge: same, reason: parsed.reason, key: g.key });
+    if (members.length < 2) return;
+    // The model decides WHO is the same person; the survivor is chosen by the record, not the model: it picked thin
+    // new duplicates over curated originals, and the originals' importance and group membership went with them.
+    const canonical = pickCanonical(g.entities, members);
+    plans.push({ canonical, merge: members.filter((id) => id !== canonical), reason: parsed.reason, key: g.key });
   }, opts.onProgress);
 
   if (opts.dryRun) return { ...stats, plans };
@@ -43,6 +46,13 @@ export async function run(ctx, opts = {}) {
 }
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
+
+/** Survivor of a merge: highest importance, then most mentions, then the oldest (lowest) id. */
+export function pickCanonical(entities, ids) {
+  const byId = new Map(entities.map((e) => [e.id, e]));
+  return [...ids].sort((a, b) => ((byId.get(b)?.importance ?? -1) - (byId.get(a)?.importance ?? -1))
+    || ((byId.get(b)?.mentions ?? 0) - (byId.get(a)?.mentions ?? 0)) || a - b)[0];
+}
 
 export function parseMerge(raw) {
   const m = String(raw).match(/\{[\s\S]*\}/);
