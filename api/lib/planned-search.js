@@ -136,12 +136,22 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // People + their cited claims (with dates) + the cited paragraphs themselves — evidence first, then passages.
   // AFTER source resolution: a claim-cited paragraph is already the exact source; resolving it again relabelled it.
   let entities = null;
+  let peopleAnswer = null;   // who-met-whom: met · contested (evidence both ways) · notMet (proof denies) · noEvidence
   const pr = claimsP ? await claimsP : null;
   // A who-met-whom probe that found nothing on a non-people plan is not a people answer.
   if (pr && (layers.claims || pr.pattern)) {
-    entities = (pr.people || []).slice(0, 12).map((p) => ({ id: p.id, name: p.name,
-      evidence: (p.evidence || []).slice(0, 4).map((e) => ({ statement: e.statement, relation: e.relation, source: e.source,
-        url: e.url || null, paraId: e.paraId || null, doc_id: e.doc_id ?? null, when: e.when || null, ...(e.via ? { via: e.via } : {}) })) }));
+    // A pattern answer (the encounter index answered the question) is COMPLETE — a group's whole roster — so it is
+    // not capped at the dozen used for loose people matches. Every piece of evidence carries its verbatim proof.
+    const ev = (e) => ({ statement: e.statement, relation: e.relation, source: e.source, url: e.url || null, paraId: e.paraId || null,
+      doc_id: e.doc_id ?? null, when: e.when || null, proof: e.proof || null, ...(e.via ? { via: e.via } : {}), ...(e.negated ? { negated: true } : {}) });
+    entities = (pr.people || []).slice(0, pr.pattern ? 60 : 12).map((p) => ({ id: p.id, name: p.name, evidence: (p.evidence || []).slice(0, 4).map(ev) }));
+    if (pr.pattern) {
+      peopleAnswer = { pattern: pr.pattern, target: pr.target || null, group: pr.group || null, with: pr.with || null, relations: pr.relations || null,
+        met: entities.map((p) => p.name),
+        contested: (pr.contested || []).map((p) => ({ id: p.id, name: p.name, evidence: p.evidence.slice(0, 3).map(ev), against: p.against.slice(0, 3).map(ev) })),
+        notMet: (pr.notMet || []).map((p) => ({ id: p.id, name: p.name, evidence: p.evidence.slice(0, 3).map(ev) })),
+        noEvidence: pr.noEvidence || [] };
+    }
     if (pr.pattern) Object.assign(entities, { pattern: pr.pattern, ms: pr.ms ?? null, parties: { target: pr.target, with: pr.with, group: pr.group } });   // which people path answered
     const refs = entities.flatMap((p) => p.evidence.filter((e) => e.doc_id && e.paraId).slice(0, 2)
       .map((e) => ({ doc_id: e.doc_id, paraId: e.paraId, person: p.name, claim: e.statement })));
@@ -172,7 +182,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   }
 
   const value = {
-    hits, plan, layers, resolution, entities,
+    hits, plan, layers, resolution, entities, peopleAnswer,
     widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowResults.length, scopeUsed: r.scope,
   };
   if (cache.size >= MAX) cache.delete(cache.keys().next().value);

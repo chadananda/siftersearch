@@ -28,10 +28,21 @@ const toks = (s) => fold(s).split(/[^a-z0-9]+/).filter((t) => t.length > 1);
 // see that `q` exists or that evidence carries relation/statement/source/paraId, so it guessed — and guessed
 // passage search, which quotes text but cannot enumerate people. The contract below is the fix; the contract
 // test in tests/api/openapi-entities-contract.test.js asserts it stays served.
+// The response SERIALIZER drops every property a schema does not declare. EVIDENCE listed no `proof`, `when` or
+// object, so the dossier computed each claim's verbatim proof and the API threw it away — while this very
+// description told agents to "verify via proof". Nobody could check a claim against its source (2026-09-27: five
+// "Ṭáhirih — met the Báb" claims whose proofs say she never did). Every field a claim carries is declared here.
 const EVIDENCE = {
   type: 'object',
+  additionalProperties: true,
   description: 'One CITED claim supporting this person’s link to the query. Always verify via proof/paraId.',
   properties: {
+    proof: { type: 'string', nullable: true, description: 'The VERBATIM source words the claim was extracted from (source language). Read it: a claim is only as good as its proof — "met" extracted from "she never met" is a known failure mode.', example: 'Quddús was admitted into His presence' },
+    when: { type: 'string', nullable: true, description: 'Date of the claimed fact (year, with basis), when known.', example: '1848 [pin]' },
+    time: { type: 'object', nullable: true, additionalProperties: true, description: 'Structured date: value, precision, basis, anchor.' },
+    object: { type: 'string', nullable: true, description: 'The claim’s object entity, when resolved.' },
+    object_id: { type: 'integer', nullable: true, description: 'Entity id of the object, when resolved.' },
+    doc_id: { type: 'integer', nullable: true, description: 'Source document id.' },
     relation: { type: 'string', description: 'The edge type: participated-in, visited, hosted, died, met, accompanied, related-to, teacher-of, characterized-as, …. For "who was at X" the edge is `participated-in`. VISITED IS NOT ATTENDED — visiting, hosting and dying at a place are different facts and do not answer who took part.', example: 'participated-in' },
     statement: { type: 'string', description: 'The claim in one line, subject — relation — object.', example: 'Quddús — participated-in Badasht conference' },
     source: { type: 'string', nullable: true, description: 'Title of the book the claim was extracted from.', example: 'The Dawn-Breakers' },

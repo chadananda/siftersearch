@@ -164,7 +164,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   let firstTokenMs = null;
   // Links allowed = the passages' URLs + the people record's evidence URLs. Applied per sentence while STREAMING
   // (the stream once showed a link the model had moved onto another domain; only the final text caught it).
-  const allowed = [...retrieved, ...(res?.entities || []).flatMap((p) => (p.evidence || []).map((e) => ({ citation_url: e.url })))];
+  const pa = res?.peopleAnswer || null;
+  const paEvidence = pa ? [...(pa.contested || []).flatMap((p) => [...p.evidence, ...p.against]), ...(pa.notMet || []).flatMap((p) => p.evidence)] : [];
+  const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url }))];
   const cleanLinks = (t) => (d.stripLinks || keepRetrievedLinks)(linkMarkers(t, retrieved), allowed);
   const gate = createSentenceGate(retrieved, (t) => {
     if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
@@ -173,7 +175,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const raw = await d.craft({
     user_question: question, retrieved_quotes: retrieved, conversation_summary: conversationSummary(messages, persona),
     persona_name: persona, mission: profile.mission || null, companion_append: comp?.append || '',
-    comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, llm: llm || parseLlm(process.env.ANIS_LLM),
+    comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, llm: llm || parseLlm(process.env.ANIS_LLM),
     onChunk: (t) => gate.push(t),
   });
   gate.flush();

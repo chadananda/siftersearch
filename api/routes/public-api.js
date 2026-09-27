@@ -381,11 +381,13 @@ export default async function publicApiRoutes(fastify) {
     // PLANNED (default): one Jev classification → scope + author preference + layers → multi-index engine
     // (keyword layer for quotes, HyPE otherwise), relaxing honestly when a scope is too thin.
     let planInfo = null;
-    let entitiesOut = null;   // people pattern: each person with cited claims (+ dates, links)
+    let entitiesOut = null;   // people pattern: each person with cited claims (+ dates, links, verbatim proof)
+    let peopleAnswerOut = null;   // who-met-whom: met · contested · notMet · noEvidence, each with its proof
     const mainSearchPromise = usePlan
       ? import('../lib/planned-search.js').then(({ plannedSearch }) => plannedSearch(query, { limit: Math.min(limit, 30), given: searchFilters }))
           .then((r) => {
             entitiesOut = r.entities || null;
+            peopleAnswerOut = r.peopleAnswer || null;
             planInfo = { shape: r.plan.shape, about: r.plan.about, filters: r.plan.filters, prefer: r.plan.prefer?.author || null, comparative: r.plan.comparative,
               layers: r.layers, widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error,
               resolution: r.resolution,
@@ -621,6 +623,7 @@ export default async function publicApiRoutes(fastify) {
       },
       ...(planInfo ? { _plan: planInfo } : {}),
       ...(entitiesOut ? { entities: entitiesOut } : {}),
+      ...(peopleAnswerOut ? { peopleAnswer: peopleAnswerOut } : {}),
     };
   });
 

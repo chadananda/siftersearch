@@ -11,7 +11,19 @@ import { linkFor } from './source-links.js';
 export const ENCOUNTER_RELATIONS = ['met', 'accompanied', 'companion-of', 'knew', 'visited', 'hosted', 'host-of',
   'interviewed-by', 'summoned', 'summoned-by', 'recognized', 'taught-by', 'teacher-of', 'disciple-of', 'converted-by'];
 const VERB = /\b(met|meet|meets|meeting|accompan\w*|knew|know|known|visit\w*|encounter\w*|companions?|presence|attain\w*|host\w*|interview\w*|summon\w*|saw|seen|see)\b/;
-// The verb picks the edge ("accompanied" is not "met"); verbs not listed accept every encounter relation.
+// A PHYSICAL MEETING — what "met / meet / saw / presence" asks. Knowing of, recognising, discipleship and conversion
+// are not meetings: Nabíl's "knew the Báb" is "made me acquainted with the Revelation of the Báb" (2026-09-27).
+const MEETING = ['met', 'visited', 'accompanied', 'hosted', 'host-of', 'interviewed-by', 'companion-of'];
+// A proof that DENIES the meeting. Extraction turned "she never attained the presence of the Báb" and "She never
+// met the Bab" into "Ṭáhirih — met the Báb" (5 of her 10 "met" claims); such a claim is evidence AGAINST.
+export const NEGATED = new RegExp([
+  String.raw`\b(never|nor)\b[^.;]{0,60}?\b(met|meet|seen|saw|see|attain\w*|presence|visit\w*|face)`,
+  String.raw`\bwithout\s+(ever\s+|even\s+|having\s+)?(seeing|meeting|seen|met)\b`,
+  String.raw`\b(did|could|had|has|was|were|would)\s*(not|n't)\b[^.;]{0,30}?\b(meet|met|see|seen|attain\w*)`,
+  String.raw`ملاقات\s*ن(کرد|نمود|شد|کرده)|ندید|نرسید|موف?ّ?ق\s*به\s*(ملاقات|لقا\S*)\s*نشد`,
+].join('|'), 'i');
+// The verb picks the edge ("accompanied" is not "met"). STRICT: a person whose only evidence is another relation
+// is not answered as having met anyone.
 const ASKED = [
   [/\baccompan|\bcompanion/, ['accompanied', 'companion-of']],
   [/\bvisit/, ['visited', 'hosted', 'host-of']],
@@ -19,6 +31,7 @@ const ASKED = [
   [/\bknew\b|\bknow/, ['knew', 'met']],
   [/\bsummon/, ['summoned', 'summoned-by']],
   [/\binterview/, ['interviewed-by', 'met']],
+  [/\b(met|meet|meets|meeting|saw|seen|see|presence|attain\w*|encounter\w*)\b/, MEETING],
 ];
 // Honorifics separate Mullá Ḥusayn from Imám Ḥusayn: required in a statement, optional in the question (a bare
 // "Ḥusayn" falls to the most prominent bearer).
@@ -90,8 +103,7 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
     phrases: formsOf([g.name, ...parseArr(g.aliases)], 1).map((f) => f.phrase).filter((ph) => ph.includes(' ')) }));
   const all = [], bySubject = new Map();
   for (const c of claims) {
-    const row = { ...c, hay: fold(c.st), topic: fold(`${c.st} ${c.prf || ''}`) };
-    delete row.prf;
+    const row = { ...c, hay: fold(c.st), topic: fold(`${c.st} ${c.prf || ''}`), neg: NEGATED.test(c.prf || '') };
     all.push(row);
     (bySubject.get(c.eid) || bySubject.set(c.eid, []).get(c.eid)).push(row);
   }
@@ -157,7 +169,7 @@ function findParties(q, index) {
 }
 
 /** Pure + synchronous: { pattern, target, with, group, topic, relations, people:[{id,name,importance,evidence[]}] } or null. */
-export function encounterSearch(q, { index, maxPeople = 20, maxEvidence = 6 } = {}) {
+export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = {}) {
   const fq = fold(q);
   if (!index || !VERB.test(fq)) return null;
   const { group, persons, topic } = findParties(q, index);
@@ -195,27 +207,38 @@ export function encounterSearch(q, { index, maxPeople = 20, maxEvidence = 6 } = 
     }
     for (const [pid, row, via] of hitsT) add(pid, row, via);
   }
-  // The asked relation constrains the edge when the evidence has it; otherwise every encounter stands.
+  // The asked relation constrains the edge — strictly (see ASKED); a question with no relation verb takes them all.
   const asked = ASKED.find(([re]) => re.test(fq))?.[1] || null;
-  const anyAsked = asked && [...found.values()].some((rows) => [...rows.values()].some((r) => asked.includes(r.rel)));
   const topicHit = (r) => topic.length > 0 && topic.some((w) => r.topic.includes(` ${w}`));
   const rank = (r) => (topicHit(r) ? 4 : 0) + (r.via === 'typed' ? 2 : 0) + (r.rel === 'met' ? 1 : 0);
-  const people = [...found.entries()].map(([id, rows]) => {
-    const p = index.people.get(id) || { id, name: String(id), imp: 0 };
-    const kept = [...rows.values()].filter((r) => !anyAsked || asked.includes(r.rel));
+  const shape = (rs) => {
     const seen = new Set();
-    const ev = kept.sort((a, b) => rank(b) - rank(a) || String(a.tv || '9999').localeCompare(String(b.tv || '9999'))).filter((r) => {
+    return rs.sort((a, b) => rank(b) - rank(a) || String(a.tv || '9999').localeCompare(String(b.tv || '9999'))).filter((r) => {
       const k = `${r.doc}:${r.pid}`; if (seen.has(k)) return false; seen.add(k); return true;
-    });
-    return { id, name: p.name, importance: p.imp, topic: ev.filter(topicHit).length, typed: ev.filter((r) => r.via === 'typed').length,
-      evidence: ev.slice(0, maxEvidence).map((r) => ({ statement: r.st, relation: r.rel, doc_id: r.doc ?? null, paraId: r.pid || null,
-        when: r.tv || null, via: r.via, ...(topicHit(r) ? { topic: true } : {}) })) };
-  }).filter((p) => p.evidence.length);
+    }).slice(0, maxEvidence).map((r) => ({ statement: r.st, relation: r.rel, doc_id: r.doc ?? null, paraId: r.pid || null,
+      when: r.tv || null, via: r.via, proof: r.prf || null, ...(r.neg ? { negated: true } : {}), ...(topicHit(r) ? { topic: true } : {}) }));
+  };
+  // Every answer carries its proof. Evidence FOR (a claim whose proof does not deny it) and AGAINST (a proof that
+  // says the meeting never happened) are kept apart: for only → people; against only → notMet; both → contested.
+  const people = [], notMet = [], contested = [];
+  for (const [id, rows] of found) {
+    const p = index.people.get(id) || { id, name: String(id), imp: 0 };
+    const kept = [...rows.values()].filter((r) => !asked || asked.includes(r.rel));
+    const pos = kept.filter((r) => !r.neg), neg = kept.filter((r) => r.neg);
+    const base = { id, name: p.name, importance: p.imp };
+    if (pos.length && neg.length) contested.push({ ...base, evidence: shape(pos), against: shape(neg) });
+    else if (neg.length) notMet.push({ ...base, evidence: shape(neg) });
+    else if (pos.length) people.push({ ...base, topic: pos.filter(topicHit).length, typed: pos.filter((r) => r.via === 'typed').length, evidence: shape(pos) });
+  }
   people.sort((a, b) => b.topic - a.topic || b.typed - a.typed || b.evidence.length - a.evidence.length || b.importance - a.importance);
+  // A group answer accounts for EVERY member: one with no cited evidence either way is named, not silently dropped.
+  const accounted = new Set([...people, ...notMet, ...contested].map((p) => p.id));
+  const noEvidence = group ? (index.roster.get(group.id) || []).filter((id) => id !== T.id && !accounted.has(id))
+    .map((id) => ({ id, name: index.people.get(id)?.name ?? String(id) })) : [];
   return { pattern, target: { id: T.id, name: T.name, matched: T.matched }, group: group ? { id: group.id, name: group.name } : null,
     with: persons[1] ? { id: persons[1].id, name: persons[1].name, matched: persons[1].matched } : null,
-    topic, relations: anyAsked ? asked : null,
-    people: people.slice(0, maxPeople).map(({ topic: _t, typed: _y, ...p }) => p) };
+    topic, relations: asked,
+    people: people.slice(0, maxPeople).map(({ topic: _t, typed: _y, ...p }) => p), contested, notMet, noEvidence };
 }
 
 // ── Loader: one build, refreshed in the background (stale-while-revalidate) ──
@@ -262,14 +285,16 @@ export async function encounterPeople(q) {
   const index = await getEncounterIndex();
   const res = encounterSearch(q, { index });
   if (!res) return null;
-  const docIds = [...new Set(res.people.flatMap((p) => p.evidence.map((e) => e.doc_id)).filter(Boolean))];
+  // Every piece of evidence — for, against, contested — gets its source title and policy link.
+  const allEvidence = [...res.people, ...res.notMet, ...res.contested].flatMap((p) => [...p.evidence, ...(p.against || [])]);
+  const docIds = [...new Set(allEvidence.map((e) => e.doc_id).filter(Boolean))];
   const docs = new Map();
   if (docIds.length) {
     const rows = await queryAll(`SELECT id, title, source_url, metadata, religion, collection, slug FROM docs WHERE id IN (${docIds.map(() => '?').join(',')})`, docIds, 'encounters:docs');
     for (const d of rows) docs.set(d.id, d);
   }
-  for (const p of res.people) {
-    for (const e of p.evidence) {
+  {
+    for (const e of allEvidence) {
       const d = docs.get(e.doc_id);
       if (!d) continue;
       e.source = d.title || null;

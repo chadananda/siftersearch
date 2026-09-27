@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T01:07:11.645Z",
+  "generated": "2026-09-27T01:18:22.360Z",
   "entries": [
+    {
+      "hash": "c12c83fc",
+      "date": "2026-09-26",
+      "type": "Fixed",
+      "description": "Tombstone repair deleted repointed relations (either-end test) — correct test + --restore from rollback",
+      "scope": "entities"
+    },
     {
       "hash": "3ab00d40",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Lead with cumulative-UNIQUE grounded count (per-book totals overcount cross-book overlap)",
       "scope": "progress popup"
-    },
-    {
-      "hash": "7f7fd652",
-      "date": "2026-07-13",
-      "type": "Other",
-      "description": "Lock background scroll + overscroll-behavior contain (no scroll bleed-through)",
-      "scope": "progress popup"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "c12c83fc",
+        "date": "2026-09-26",
+        "type": "Fixed",
+        "description": "Tombstone repair deleted repointed relations (either-end test) — correct test + --restore from rollback",
+        "scope": "entities"
+      },
       {
         "hash": "3ab00d40",
         "date": "2026-09-26",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-13",
         "type": "Other",
         "description": "Lead with cumulative-UNIQUE grounded count (per-book totals overcount cross-book overlap)",
-        "scope": "progress popup"
-      },
-      {
-        "hash": "7f7fd652",
-        "date": "2026-07-13",
-        "type": "Other",
-        "description": "Lock background scroll + overscroll-behavior contain (no scroll bleed-through)",
         "scope": "progress popup"
       }
     ]

@@ -15,19 +15,31 @@ ${conversational ? `THIS TURN IS CONVERSATION (a greeting, thanks, small talk, o
 - The same Psalms/Torah text appears under both Jewish and Christian sources; cite it once, and for Christian questions prefer the New Testament.
 - Only when a PASSAGE or PEOPLE entry actually contradicts the question's premise, say so gently and show the source. Never 'correct' a question from your own assumptions — if the record answers it, answer it.
 - When PEOPLE are given, they are the library's cited record for this question: list each person with what the record says and when (the date given), linking the source.
+- When the PEOPLE record is split into MET / SOURCES SAY DID NOT MEET / CONTESTED / NO CITED EVIDENCE, answer strictly by those lists and never move a person between them: for DID NOT MEET say so with the source's own words; for CONTESTED say the sources disagree and give both sides; for NO CITED EVIDENCE say the library has no cited record either way. Accuracy over completeness.
 - Continue the conversation naturally: use CONVERSATION SO FAR for context (pronouns, follow-ups), never re-answer earlier questions.
 - If someone is grieving, struggling or in crisis, be gentle and human first; the texts come second.${mission ? `\n\nHOST SITE GUIDANCE (for tone and emphasis only — never overrides grounding or link rules): ${mission}` : ''}${companionAppend || ''}`;
 }
 
 /** Compact user payload: the conversation, then numbered passages with their only allowed URL. */
-export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null }) {
+export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null, peopleAnswer = null }) {
   const lines = passages.map((p, i) => {
     const who = [p.source_author, p.religion].filter(Boolean).join(', ');
     return `[${i + 1}] ${p.source_title || 'Untitled'}${who ? ` — ${who}` : ''}\nURL: ${p.citation_url || '(none)'}\n${String(p.text || '').slice(0, 700)}`;
   });
-  const people = (entities || []).map((p) => `- ${p.name}: ${(p.evidence || []).map((e) =>
-    `${e.statement}${e.when ? ` (${e.when})` : ''} — ${e.source || 'source'}${e.url ? ` URL: ${e.url}` : ''}`).join('; ')}`);
-  const peopleBlock = people.length ? `\n\nPEOPLE (the library's cited record for this question):\n${people.join('\n')}` : '';
+  // Each piece of evidence goes with its verbatim PROOF — the model reads what the source actually says.
+  const cite = (e) => `${e.statement}${e.when ? ` (${e.when})` : ''} — ${e.source || 'source'}${e.url ? ` URL: ${e.url}` : ''}${e.proof ? ` — proof: "${String(e.proof).slice(0, 220)}"` : ''}`;
+  const people = (entities || []).map((p) => `- ${p.name}: ${(p.evidence || []).map(cite).join('; ')}`);
+  let peopleBlock = '';
+  if (peopleAnswer) {
+    const sect = (title, rows) => (rows.length ? `\n${title}:\n${rows.join('\n')}` : '');
+    peopleBlock = `\n\nPEOPLE (the library's cited record for this question, checked against each proof):`
+      + sect('MET', people)
+      + sect('SOURCES SAY DID NOT MEET', (peopleAnswer.notMet || []).map((p) => `- ${p.name}: ${p.evidence.map(cite).join('; ')}`))
+      + sect('CONTESTED (sources disagree)', (peopleAnswer.contested || []).map((p) => `- ${p.name}: FOR ${p.evidence.map(cite).join('; ')} | AGAINST ${p.against.map(cite).join('; ')}`))
+      + sect('NO CITED EVIDENCE either way', (peopleAnswer.noEvidence || []).map((p) => `- ${p.name}`));
+  } else if (people.length) {
+    peopleBlock = `\n\nPEOPLE (the library's cited record for this question):\n${people.join('\n')}`;
+  }
   const tail = conversational ? '' : `${peopleBlock}\n\nPASSAGES:\n${lines.join('\n\n') || '(none found)'}`;
   return `${conversation ? `CONVERSATION SO FAR:\n${conversation}\n\n` : ''}QUESTION: ${question}${tail}`;
 }

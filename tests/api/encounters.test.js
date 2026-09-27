@@ -136,4 +136,68 @@ describe('encounterSearch', () => {
     for (let i = 0; i < 200; i++) encounterSearch(`who met the Báb ${i}`, { index });
     expect((performance.now() - t) / 200).toBeLessThan(5);
   });
+
+  // Chad 2026-09-27: "All the letters of the living met the Bab save Tahirih." Five of Ṭáhirih's "met the Báb" claims
+  // cite proofs that say she never did; Nabíl's "knew the Báb" is "made me acquainted with the Revelation of the Báb".
+  describe('accuracy: the proof decides', () => {
+    const acc = createEncounterIndex({
+      persons: [
+        { id: 2, cn: 'The Báb', imp: 99, aliases: '[]' },
+        { id: 3, cn: 'Quddús', imp: 80, aliases: '[]' },
+        { id: 4, cn: 'Ṭáhirih', imp: 80, aliases: '[]' },
+        { id: 5, cn: 'Mullá Ḥusayn', imp: 85, aliases: '[]' },
+        { id: 9, cn: 'Nabíl-i-A‘ẓam', imp: 70, aliases: '["Nabíl"]' },
+        { id: 10, cn: 'Mullá Ḥasan-i-Bajistání', imp: 70, aliases: '[]' },
+      ],
+      groups: [{ id: 50, name: 'Letters of the Living', aliases: '[]' }],
+      members: [3, 4, 5, 10].map((id) => ({ group: 50, id })),
+      claims: [
+        { id: 1, eid: 5, rel: 'met', tid: 2, st: 'Mullá Ḥusayn — met the Báb', prf: 'the Báb received him in His house', doc: 1, pid: 'para_1', tv: '1844' },
+        { id: 2, eid: 3, rel: 'met', tid: 2, st: 'Quddús — met the Báb', prf: 'Quddús was admitted into His presence', doc: 1, pid: 'para_2', tv: '1844' },
+        { id: 3, eid: 4, rel: 'met', tid: 2, st: 'Ṭáhirih — met the Báb', prf: 'she never attained the presence of the Báb', doc: 2, pid: 'para_3', tv: null },
+        { id: 4, eid: 4, rel: 'met', tid: 2, st: 'Ṭáhirih — met the Báb', prf: 'She never met the Bab during her lifetime', doc: 3, pid: 'para_4', tv: null },
+        { id: 5, eid: 4, rel: 'knew', tid: 2, st: 'Ṭáhirih — knew the Báb', prf: 'recognize the Bab without ever seeing Him', doc: 4, pid: 'para_5', tv: null },
+        { id: 6, eid: 9, rel: 'knew', tid: 2, st: 'Nabíl — knew the Báb', prf: 'first made me acquainted with the Revelation of the Báb', doc: 1, pid: 'para_6', tv: '1847' },
+      ],
+    });
+
+    it('a proof that negates the meeting is evidence AGAINST it, never for it', () => {
+      const r = encounterSearch('which Letters of the Living met the Báb?', { index: acc });
+      expect(r.people.map((p) => p.name).sort()).toEqual(['Mullá Ḥusayn', 'Quddús']);
+      expect(r.notMet.map((p) => p.name)).toEqual(['Ṭáhirih']);
+      expect(r.notMet[0].evidence[0].proof).toMatch(/never/);
+    });
+
+    it('"knew" is not "met"', () => {
+      const r = encounterSearch('did Nabíl meet the Báb?', { index: acc });
+      expect(r.pattern).toBe('pair');
+      expect(r.people).toEqual([]);
+    });
+
+    it('a group answer accounts for every member — those with no cited evidence are named, not dropped', () => {
+      const r = encounterSearch('which Letters of the Living met the Báb?', { index: acc });
+      expect(r.noEvidence.map((p) => p.name)).toEqual(['Mullá Ḥasan-i-Bajistání']);
+    });
+
+    it('evidence both ways is contested, with both proofs', () => {
+      const both = createEncounterIndex({
+        persons: [{ id: 2, cn: 'The Báb', imp: 99, aliases: '[]' }, { id: 4, cn: 'Ṭáhirih', imp: 80, aliases: '[]' }],
+        groups: [], members: [],
+        claims: [
+          { id: 1, eid: 4, rel: 'met', tid: 2, st: 'Ṭáhirih — met the Báb', prf: 'at last she was with the Báb', doc: 5, pid: 'p1', tv: '1848' },
+          { id: 2, eid: 4, rel: 'met', tid: 2, st: 'Ṭáhirih — met the Báb', prf: 'Ṭáhirih never saw the Báb', doc: 6, pid: 'p2', tv: null },
+        ],
+      });
+      const r = encounterSearch('did Ṭáhirih meet the Báb?', { index: both });
+      expect(r.people).toEqual([]);
+      expect(r.contested[0].name).toBe('Ṭáhirih');
+      expect(r.contested[0].against[0].proof).toMatch(/never saw/);
+    });
+
+    it('Persian negation counts too', async () => {
+      const { NEGATED } = await import('../../api/lib/encounters.js');
+      expect(NEGATED.test('هرگز به ملاقات حضرت باب نرسید')).toBe(true);
+      expect(NEGATED.test('با جناب قدّوس ملاقات نمود')).toBe(false);
+    });
+  });
 });

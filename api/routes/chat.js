@@ -489,11 +489,13 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     let merged;
     let planInfo = null;
     let entitiesOut = null;
+    let peopleAnswerOut = null;
     if (plan && !phrase) {
       const { plannedSearch } = await import('../lib/planned-search.js');
       const r = await plannedSearch(query, { messages: plan.messages, given: filters, defaults: plan.defaults, limit: safeLimit, scope_config, entityIds });
       merged = r.hits || [];
       entitiesOut = r.entities || null;
+      peopleAnswerOut = r.peopleAnswer || null;
       planInfo = { shape: r.plan.shape, about: r.plan.about, filters: r.plan.filters, prefer: r.plan.prefer?.author || null, comparative: r.plan.comparative,
         widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error || null, resolution: r.resolution };
     } else if (phrase) {
@@ -638,6 +640,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     return {
       ...(planInfo ? { _plan: planInfo } : {}),
       ...(entitiesOut ? { entities: entitiesOut } : {}),
+      ...(peopleAnswerOut ? { peopleAnswer: peopleAnswerOut } : {}),
       passages: top.map(hit => {
         const docId = hit.doc_id || hit.document_id;
         const meta = docMeta.get(docId);
