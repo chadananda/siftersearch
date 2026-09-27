@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T01:18:22.360Z",
+  "generated": "2026-09-27T01:25:32.916Z",
   "entries": [
+    {
+      "hash": "3e908d30",
+      "date": "2026-09-26",
+      "type": "Fixed",
+      "description": "Proof decides who-met-whom; API exposes every claim's proof",
+      "scope": "search,api"
+    },
     {
       "hash": "c12c83fc",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Show per-book new-in-sequence (+N) and unresolved (held-uncertain) counts",
       "scope": "progress popup"
-    },
-    {
-      "hash": "14a2228e",
-      "date": "2026-07-13",
-      "type": "Other",
-      "description": "Lead with cumulative-UNIQUE grounded count (per-book totals overcount cross-book overlap)",
-      "scope": "progress popup"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "3e908d30",
+        "date": "2026-09-26",
+        "type": "Fixed",
+        "description": "Proof decides who-met-whom; API exposes every claim's proof",
+        "scope": "search,api"
+      },
       {
         "hash": "c12c83fc",
         "date": "2026-09-26",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-13",
         "type": "Other",
         "description": "Show per-book new-in-sequence (+N) and unresolved (held-uncertain) counts",
-        "scope": "progress popup"
-      },
-      {
-        "hash": "14a2228e",
-        "date": "2026-07-13",
-        "type": "Other",
-        "description": "Lead with cumulative-UNIQUE grounded count (per-book totals overcount cross-book overlap)",
         "scope": "progress popup"
       }
     ]

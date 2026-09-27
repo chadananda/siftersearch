@@ -70,6 +70,12 @@ describe('encounterSearch', () => {
     expect(encounterSearch('did Nabíl meet Bahá’u’lláh?', { index }).with?.id ?? encounterSearch('did Nabíl meet Bahá’u’lláh?', { index }).target.id).toBe(14);
   });
 
+  it('a bare role is not a name ("the narrator")', () => {
+    const ix = createEncounterIndex({ persons: [{ id: 1, cn: 'the Báb', imp: 99, aliases: '[]' }, { id: 2, cn: 'Nabíl-i-A‘ẓam', imp: 70, aliases: '["the narrator","Nabíl"]' }],
+      groups: [], members: [], claims: [{ id: 1, eid: 1, rel: 'visited', tid: null, st: 'The Báb — visited the narrator', prf: 'He would frequently come to the home of my late father', doc: 9, pid: 'p', tv: '1844' }] });
+    expect(encounterSearch('did Nabíl meet the Báb?', { index: ix }).people).toEqual([]);
+  });
+
   it('an alias made of function words is not a name ("they")', () => {
     expect(encounterSearch('did Quddús meet Ṭáhirih, and when did they meet?', { index }).with?.id).toBe(3);
   });
@@ -198,6 +204,33 @@ describe('encounterSearch', () => {
       const { NEGATED } = await import('../../api/lib/encounters.js');
       expect(NEGATED.test('هرگز به ملاقات حضرت باب نرسید')).toBe(true);
       expect(NEGATED.test('با جناب قدّوس ملاقات نمود')).toBe(false);
+      expect(NEGATED.test('she never attained the presence of the Báb')).toBe(true);
+      expect(NEGATED.test('She never met the Bab during her lifetime')).toBe(true);
+      expect(NEGATED.test('Ṭáhirih never saw the Báb')).toBe(true);
+      expect(NEGATED.test('With the exception of Siyyid Ḥusayn and his brother, neither the public nor the governor was allowed to see Him')).toBe(false);
+    });
+  });
+
+  describe('bindings that cannot be right', () => {
+    const ix = createEncounterIndex({
+      persons: [
+        { id: 2, cn: 'the Báb', imp: 99, aliases: '[]' },
+        { id: 7, cn: 'Siyyid ‘Alí-Muḥammad (the Báb)', imp: 0, aliases: '[]' },          // an unmerged twin
+        { id: 11, cn: 'Muḥammad-Ḥasan-i-Bushrú’í', imp: 60, aliases: '[]' },
+      ],
+      groups: [{ id: 50, name: 'Letters of the Living', aliases: '[]' }], members: [{ group: 50, id: 11 }],
+      claims: [
+        // live: object "the Báb" bound to the SUBJECT himself; the proof is genuine evidence of the meeting
+        { id: 1, eid: 11, rel: 'met', tid: 11, st: 'Muḥammad-Ḥasan-i-Bushrú’í — met the Báb', prf: 'بشيراز رفته بشرف لقإ و ايمان باب اعظم', doc: 1, pid: 'p1', tv: '1844' },
+      ],
+    });
+    it('a target typed to its own subject is ignored, and the statement still counts by name', () => {
+      const r = encounterSearch('which Letters of the Living met the Báb?', { index: ix });
+      expect(r.people.map((p) => p.name)).toEqual(['Muḥammad-Ḥasan-i-Bushrú’í']);
+      expect(r.people[0].evidence[0].via).toBe('named:bab');
+    });
+    it('a canonical name belongs to its bearer even when a twin carries it in parentheses', () => {
+      expect(encounterSearch('who met the Báb', { index: ix }).target.id).toBe(2);
     });
   });
 });

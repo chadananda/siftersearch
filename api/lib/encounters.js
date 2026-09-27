@@ -17,7 +17,9 @@ const MEETING = ['met', 'visited', 'accompanied', 'hosted', 'host-of', 'intervie
 // A proof that DENIES the meeting. Extraction turned "she never attained the presence of the Báb" and "She never
 // met the Bab" into "Ṭáhirih — met the Báb" (5 of her 10 "met" claims); such a claim is evidence AGAINST.
 export const NEGATED = new RegExp([
-  String.raw`\b(never|nor)\b[^.;]{0,60}?\b(met|meet|seen|saw|see|attain\w*|presence|visit\w*|face)`,
+  // "never" within a few words of the verb — a wider window read "With the exception of Siyyid Ḥusayn …, neither
+  // the public …" (which says he DID see the Báb) as a denial.
+  String.raw`\bnever\b(\s+\S+){0,4}?\s+(met|meet|seen|saw|see|attain\w*|visit\w*)\b`,
   String.raw`\bwithout\s+(ever\s+|even\s+|having\s+)?(seeing|meeting|seen|met)\b`,
   String.raw`\b(did|could|had|has|was|were|would)\s*(not|n't)\b[^.;]{0,30}?\b(meet|met|see|seen|attain\w*)`,
   String.raw`ملاقات\s*ن(کرد|نمود|شد|کرده)|ندید|نرسید|موف?ّ?ق\s*به\s*(ملاقات|لقا\S*)\s*نشد`,
@@ -38,6 +40,7 @@ const ASKED = [
 const HON = new Set('mirza mulla haji hajji siyyid sayyid aqa shaykh sheikh imam ustad hajj karbilai mashhadi'.split(' '));
 const QWORDS = new Set(('who whom whose which what when where why how did does do ever was were is are the of and in to at a an '
   + 'with from for on all list name tell me any many first by his her their they them he she it that this there').split(' '));
+const ROLE = new Set('narrator author writer historian chronicler speaker translator master teacher guide host guest visitor pilgrim believer youth elder'.split(' '));
 // "(of Baghdád)", "(son of …)" are qualifiers, not names.
 const QUALIFIER = /^\s*(of|from|in|at|son|daughter|wife|husband|brother|sister|father|mother|known|called|later|a|an|surnamed|titled|d\.|b\.|\d)/i;
 
@@ -61,8 +64,10 @@ function formsOf(names, canonicalCount) {
   names.forEach((n, i) => {
     for (const part of splitParens(n)) {
       const phrase = fold(part).trim().replace(/^(the|a) /, '');
-      // An alias made only of function words ("they", "he") is extraction debris, not a name.
-      if (!phrase || seen.has(phrase) || phrase.length < 3 || phrase.split(' ').every((w) => QWORDS.has(w))) continue;
+      // An alias made only of function words ("they", "he") is extraction debris, not a name; a bare ROLE ("the
+      // narrator", "the Master") names whoever holds it in THAT book — "narrator" bound another memoirist's father's
+      // guest to Nabíl (2026-09-27). Neither identifies anyone across the corpus.
+      if (!phrase || seen.has(phrase) || phrase.length < 3 || phrase.split(' ').every((w) => QWORDS.has(w) || ROLE.has(w))) continue;
       seen.add(phrase);
       const w = phrase.split(' ');
       let k = 0; while (k < w.length - 1 && HON.has(w[k])) k++;
@@ -89,9 +94,17 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
   // Longer names of OTHER people that contain this phrase — an occurrence inside one of them is not this person.
   const phrasesByWord = new Map();
   for (const ph of owners.keys()) for (const w of new Set(ph.split(' '))) (phrasesByWord.get(w) || phrasesByWord.set(w, []).get(w)).push(ph);
+  // A phrase that is exactly ONE person's CANONICAL name belongs to that person even when twins carry it as an alias
+  // or parenthetical ("Siyyid ‘Alí-Muḥammad (the Báb)"): otherwise one unmerged twin makes "the Báb" unmatchable
+  // everywhere and every statement naming Him stops counting (2026-09-27: six Letters showed "no evidence").
+  const canonicalOwner = new Map();
+  for (const p of people.values()) {
+    const f = p.forms.find((x) => x.canonical);
+    if (f) canonicalOwner.set(f.phrase, canonicalOwner.has(f.phrase) ? null : p.id);
+  }
   for (const p of people.values()) {
     for (const f of p.forms) {
-      f.unique = owners.get(f.phrase).size === 1;
+      f.unique = owners.get(f.phrase).size === 1 || (f.canonical && canonicalOwner.get(f.phrase) === p.id);
       const rare = f.phrase.split(' ').reduce((a, w) => ((phrasesByWord.get(w)?.length ?? 0) < (phrasesByWord.get(a)?.length ?? Infinity) ? w : a));
       f.supers = (phrasesByWord.get(rare) || []).filter((s) => s !== f.phrase && ` ${s} `.includes(` ${f.phrase} `)
         && [...owners.get(s)].some((o) => o !== p.id)).map((s) => ({ s, off: ` ${s} `.indexOf(` ${f.phrase} `) }));
@@ -103,7 +116,9 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
     phrases: formsOf([g.name, ...parseArr(g.aliases)], 1).map((f) => f.phrase).filter((ph) => ph.includes(' ')) }));
   const all = [], bySubject = new Map();
   for (const c of claims) {
-    const row = { ...c, hay: fold(c.st), topic: fold(`${c.st} ${c.prf || ''}`), neg: NEGATED.test(c.prf || '') };
+    // A target typed to its own SUBJECT is a mis-bind (the object "the Báb" bound to the man who met Him): drop the
+    // type, keep the claim — its statement can still name the real object.
+    const row = { ...c, tid: c.tid === c.eid ? null : c.tid, hay: fold(c.st), topic: fold(`${c.st} ${c.prf || ''}`), neg: NEGATED.test(c.prf || '') };
     all.push(row);
     (bySubject.get(c.eid) || bySubject.set(c.eid, []).get(c.eid)).push(row);
   }
