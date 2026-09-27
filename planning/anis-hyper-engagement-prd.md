@@ -384,6 +384,13 @@ Tiers follow the project's existing contract: a clean API seam with vitest and n
 
 ## 5. Phases
 
+**Status 2026-09-27:** P0 LIVE (v2.187.200+): exchange log before answer, Jev triage gate, canned replies, hidden
+tarpit, output check, voice lint, channel registry, widget One Tap merge + signed connection cookie, footer pause link,
+and the SSE session-cookie fix (widget visitors had no identity at all). P1 partial: soul.md + house style as the cached
+system prompt with per-reply DIRECTION (stance, channel, guarded) LIVE; format catalog, findings contract and the soul
+battery are next.
+
+
 | Phase | Ships | Gate to next |
 |---|---|---|
 | **P0 · Foundation** | F1 exchange log + Anis persistence + replay; F2 gate (Jev triage, canned catalog, strikes, tarpit, output check, FORBIDDEN lint); F5 registry skeleton; the three defects (One Tap merge, stop machinery stub, validator) | triage battery at target; nothing lost across a forced crash |

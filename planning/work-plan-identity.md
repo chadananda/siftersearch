@@ -123,3 +123,15 @@ disambiguate (frame-aware: frame stack, resolves EVERY person named, reason per 
   sample passages) → pair scoring (shared companions/docs weighted by rarity; name weight by how many live persons
   share it; veto) → model on the residue, side by side incl. "neither" → human for disagreements. First queue: the
   253 held pairs; gold = Chad's merge-review decisions.
+
+### 2026-09-27 evening — results
+- Claim re-link written (950 claims). Pair judge WRITTEN: 90 merges (both judges agreed; evidence on each decision),
+  8 recorded distinct (both agreed), 154 proposed → merge-review page (v2, 736 candidates incl. 123 new "judges
+  disagreed"). Karbilá duplicate 1288406 merged into Mullá Ḥusayn 1247564. Replay after: 208,555 match; representative
+  1,014 (merged pairs now one person); cross-doc held 6,962.
+- Entity battery 6/6 + Karbilá still GAP. Root cause now visible: scenes carry no year and claim dates are unreliable
+  (era-inherited: a Persian proof "in Shíráz" dated 1825), and "prior to X" can't see X in original script. Added
+  chronological "prior to" ranking (encounters.js). Do NOT tune further toward this test — the fix is increment 7
+  (frame-aware dates: scenes + claims carry the innermost frame's stated date) + original-script place names.
+- NEXT: Chad reviews held pairs on the page → apply his decisions; materialize with include for pairs judged distinct;
+  then increment 3 (claims bind to mention anchors), 6 (mention recall — disambiguate fix is live for new runs), 7.
