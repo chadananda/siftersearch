@@ -2565,6 +2565,24 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // POST /server/entity-catalog-apply { write=false, min=0.9 } — apply catalog review verdicts (retype non-people,
+  // merge confident titles into their figure, hold the rest). GET …/report?mode= → latest plan/result.
+  fastify.post('/server/entity-catalog-apply', { preHandler: requireInternal }, async (request) => {
+    const { write = false, min = 0.9 } = request.body || {};
+    const existing = backgroundTasks.get('entity-catalog-apply');
+    if (existing && existing.status === 'running') throw ApiError.conflict('An entity-catalog-apply run is already in progress');
+    const task = runBackgroundTask('entity-catalog-apply', 'scripts/entity-catalog-apply.mjs', [...(write ? ['--write'] : []), `--min=${Number(min) || 0.9}`]);
+    return { success: true, taskId: 'entity-catalog-apply', write: !!write, status: task.status };
+  });
+
+  fastify.get('/server/entity-catalog-apply/report', { preHandler: requireInternal }, async (request) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const mode = request.query.mode === 'write' ? 'write' : 'dry';
+    const files = readdirSync('logs').filter((f) => f.startsWith(`entity-catalog-apply-${mode}-`)).sort();
+    if (!files.length) throw ApiError.notFound(`no ${mode} catalog-apply report yet`);
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T04:56:56.559Z",
+  "generated": "2026-09-27T05:01:44.993Z",
   "entries": [
+    {
+      "hash": "1486b291",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Scene layer (migration 125) — who was physically together, with verbatim proof; scenes feed who-met-whom",
+      "scope": "entities"
+    },
     {
       "hash": "ebb166c5",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Claims/disambiguate concurrency 4->8 (--cc override) — 2x throughput on dense books",
       "scope": "grounding"
-    },
-    {
-      "hash": "64d59a48",
-      "date": "2026-07-13",
-      "type": "New",
-      "description": "Add same-name merge stage (link->merge->dedup) — catches intra-batch dups",
-      "scope": "pipeline"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "1486b291",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Scene layer (migration 125) — who was physically together, with verbatim proof; scenes feed who-met-whom",
+        "scope": "entities"
+      },
       {
         "hash": "ebb166c5",
         "date": "2026-09-26",
@@ -7078,13 +7085,6 @@
         "type": "Performance",
         "description": "Claims/disambiguate concurrency 4->8 (--cc override) — 2x throughput on dense books",
         "scope": "grounding"
-      },
-      {
-        "hash": "64d59a48",
-        "date": "2026-07-13",
-        "type": "New",
-        "description": "Add same-name merge stage (link->merge->dedup) — catches intra-batch dups",
-        "scope": "pipeline"
       }
     ]
   }
