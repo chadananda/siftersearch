@@ -60,6 +60,7 @@ export async function run(ctx, docId, opts = {}) {
     for (const c of claims) {
       stats.claims++;
       if (!c.subject || !c.relation || !c.proof || !proofPresent(c.proof, textNorm)) { stats.dropped++; continue; }
+      if (deniesMeeting(c.relation, c.proof)) { stats.negated = (stats.negated || 0) + 1; continue; }
       buf.push(claimRow(c, { docId, pid: p.pid, era, relKeys, methodVersion: version, extractor, batch }));
     }
     if (buf.length >= FLUSH_ROWS) await flush();
@@ -105,6 +106,21 @@ export function parseClaims(raw) {
     try { const j = JSON.parse(o); if (j && (j.subject || j.proof)) out.push(j); } catch { /* partial object */ }
   }
   return out;
+}
+
+// A MEETING claim whose own proof DENIES the meeting. The prompt already says to skip negated statements; the model
+// still wrote "Ṭáhirih — met the Báb" from "she never attained the presence of the Báb" and "She never met the Bab"
+// (5 of her 10 "met" claims, 2026-09-27). Deterministic backstop at the gate. Kept in step with the search-side
+// guard in the app's encounters module (the library cannot import app code).
+const MEETING_REL = new Set(['met', 'visited', 'accompanied', 'hosted', 'host-of', 'interviewed-by', 'companion-of', 'knew']);
+const DENIAL = new RegExp([
+  String.raw`\bnever\b(\s+\S+){0,4}?\s+(met|meet|seen|saw|see|attain\w*|visit\w*)\b`,
+  String.raw`\bwithout\s+(ever\s+|even\s+|having\s+)?(seeing|meeting|seen|met)\b`,
+  String.raw`\b(did|could|had|has|was|were|would)\s*(not|n't)\b[^.;]{0,30}?\b(meet|met|see|seen|attain\w*)`,
+  String.raw`ملاقات\s*ن(کرد|نمود|شد|کرده)|ندید|نرسید|موف?ّ?ق\s*به\s*(ملاقات|لقا\S*)\s*نشد`,
+].join('|'), 'i');
+export function deniesMeeting(relation, proof) {
+  return MEETING_REL.has(relation) && DENIAL.test(String(proof || ''));
 }
 
 const proofNorm = (s) => String(s || '').replace(/\s+/g, ' ').toLowerCase().trim();

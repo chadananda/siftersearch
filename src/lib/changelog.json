@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T02:29:18.948Z",
+  "generated": "2026-09-27T02:35:26.404Z",
   "entries": [
+    {
+      "hash": "7e67017e",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Model verdicts drive who-met-whom (met/denied/excluded); verifier v2 (reversed roles = met, intent ≠ met)",
+      "scope": "search"
+    },
     {
       "hash": "d6d0a865",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Full roadmap redesign - phases, sizes, collapsible, live progress",
       "scope": "bio popup"
-    },
-    {
-      "hash": "138f106c",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Stop truncation-thrash + purge deprecated deepseek-chat from live path",
-      "scope": "deepseek"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "7e67017e",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Model verdicts drive who-met-whom (met/denied/excluded); verifier v2 (reversed roles = met, intent ≠ met)",
+        "scope": "search"
+      },
       {
         "hash": "d6d0a865",
         "date": "2026-09-26",
@@ -7078,13 +7085,6 @@
         "type": "New",
         "description": "Full roadmap redesign - phases, sizes, collapsible, live progress",
         "scope": "bio popup"
-      },
-      {
-        "hash": "138f106c",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Stop truncation-thrash + purge deprecated deepseek-chat from live path",
-        "scope": "deepseek"
       }
     ]
   }
