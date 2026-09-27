@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T18:42:44.654Z",
+  "generated": "2026-09-27T18:47:10.599Z",
   "entries": [
+    {
+      "hash": "af90f778",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Projection — replay mention identity from the decision log; read-only replay check endpoint",
+      "scope": "entities"
+    },
     {
       "hash": "4435eca3",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Stronger over-merge guard — bare factless common-name records need a POSITIVE tie, not just absence of contradiction (no bare-Muhammad->Prophet)",
       "scope": "merge"
-    },
-    {
-      "hash": "805c8e35",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Evidence-CONSISTENCY doctrine — merge same-name unless a load-bearing fact CONTRADICTS (fixes same-person-across-books under-merge; Mírzá Músá x4 etc.)",
-      "scope": "merge"
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "af90f778",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Projection — replay mention identity from the decision log; read-only replay check endpoint",
+        "scope": "entities"
+      },
       {
         "hash": "4435eca3",
         "date": "2026-09-27",
@@ -7079,13 +7086,6 @@
         "date": "2026-07-13",
         "type": "Fixed",
         "description": "Stronger over-merge guard — bare factless common-name records need a POSITIVE tie, not just absence of contradiction (no bare-Muhammad->Prophet)",
-        "scope": "merge"
-      },
-      {
-        "hash": "805c8e35",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Evidence-CONSISTENCY doctrine — merge same-name unless a load-bearing fact CONTRADICTS (fixes same-person-across-books under-merge; Mírzá Músá x4 etc.)",
         "scope": "merge"
       }
     ]

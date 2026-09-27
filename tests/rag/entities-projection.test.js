@@ -44,9 +44,11 @@ describe('replay — mention → entity from the log alone', () => {
     expect(r.get(1)).toMatchObject({ entity: 1, pending: 11 });
   });
 
-  it('a merge cycle does not hang and is reported', () => {
-    const r = replay({ mentions: [m(1, 7, 'X')], decisions: [cluster(10, 'create', 7, 'X', { applied: 1 }), merge(20, 2, [1]), merge(21, 1, [2])] });
-    expect(r.get(1).cycle).toBe(true);
+  it('merges unite CLUSTERS in order: ping-pong (A→B, then B→A) keeps one survivor and never cycles', () => {
+    const r = replay({ mentions: [m(1, 7, 'X'), m(2, 7, 'Y')],
+      decisions: [cluster(10, 'create', 7, 'X', { applied: 1 }), cluster(11, 'create', 7, 'Y', { applied: 2 }), merge(20, 2, [1]), merge(21, 1, [2])] });
+    expect(r.get(1).entity).toBe(2);
+    expect(r.get(2).entity).toBe(2);
   });
 });
 
@@ -69,5 +71,16 @@ describe('compare — the replay check against the database', () => {
 
   it('a mention the log leaves unresolved and the DB leaves unbound is a match', () => {
     expect(compare({ mentions: [m(1, 7, 'Z', null)], decisions: [] }).counts).toEqual({ match: 1 });
+  });
+
+  it('another document binding the name counts as cross-doc even when this document has no applied decision', () => {
+    const c = compare({ mentions: [m(1, 7, 'Q', 100)], decisions: [cluster(10, 'link', 8, 'Q', { entityId: 100, applied: 100 })] });
+    expect(c.counts).toEqual({ 'cross-doc': 1 });
+  });
+
+  it('same merged cluster, different representative id → representative (not a mismatch)', () => {
+    const mentions = [m(1, 7, 'X', 1)];            // DB kept 1 alive; the log's order makes 2 the survivor
+    const decisions = [cluster(10, 'create', 7, 'X', { applied: 1 }), cluster(11, 'create', 8, 'Y', { applied: 2 }), merge(20, 2, [1])];
+    expect(compare({ mentions, decisions }).counts).toEqual({ representative: 1 });
   });
 });

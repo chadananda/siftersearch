@@ -28,31 +28,35 @@ function clusterStates(decisions) {
   return states;
 }
 
-// Applied entity-level merges → merged id → { into, decision }. Later decisions win for the same merged id.
+// Applied entity-level merges, replayed in order as UNIONS of clusters: a merge joins the merged record's current
+// cluster to the canonical's current cluster, the canonical's survivor surviving. Replaying "A into B" then "B into A"
+// (the per-book global merge ping-ponged) therefore keeps one survivor and can never form a cycle.
+// → Map(record id → { into, decision }) — each record's parent, with the decision that set it.
 function mergeEdges(decisions) {
   const edges = new Map();
+  const find = (x) => { while (edges.has(x)) x = edges.get(x).into; return x; };
   for (const d of decisions.filter((x) => x.kind === 'merge' && x.status === 'applied').sort((a, b) => a.id - b.id)) {
     const p = payloadOf(d);
     const into = num(p.canonical);
-    for (const id of (p.merged ?? p.merge ?? []).map(num)) if (id != null && into != null && id !== into) edges.set(id, { into, decision: d.id });
+    if (into == null) continue;
+    for (const id of (p.merged ?? p.merge ?? []).map(num)) {
+      if (id == null) continue;
+      const root = find(id), target = find(into);
+      if (root !== target) edges.set(root, { into: target, decision: d.id });
+    }
   }
   return edges;
 }
 
 function follow(edges, start) {
-  const via = [], seen = new Set([start]);
+  const via = [];
   let cur = start;
-  while (edges.has(cur)) {
-    const e = edges.get(cur);
-    via.push(e.decision);
-    if (seen.has(e.into)) return { entity: null, via, cycle: true };
-    seen.add(e.into); cur = e.into;
-  }
-  return { entity: cur, via, cycle: false };
+  while (edges.has(cur)) { const e = edges.get(cur); via.push(e.decision); cur = e.into; }
+  return { entity: cur, via };
 }
 
 // mentions: [{id, docId, resolvedAs}] · decisions: [{id, kind, targetKind, status, supersedes, payload}]
-// → Map(mentionId → {base, entity, decision, via:[merge decision ids], pending, cycle})
+// → Map(mentionId → {base, entity, decision, via:[merge decision ids], pending})
 export function replay({ mentions, decisions }) {
   const states = clusterStates(decisions);
   const edges = mergeEdges(decisions);
@@ -62,27 +66,29 @@ export function replay({ mentions, decisions }) {
     const s = states.get(`${num(mn.docId)}\u0001${mn.resolvedAs}`);
     const base = s?.entity ?? null;
     if (base != null && !memo.has(base)) memo.set(base, follow(edges, base));
-    const f = base == null ? { entity: null, via: [], cycle: false } : memo.get(base);
-    out.set(mn.id, { base, entity: f.entity, decision: s?.decision ?? null, via: f.via, pending: s?.pending ?? null, cycle: f.cycle });
+    const f = base == null ? { entity: null, via: [] } : memo.get(base);
+    out.set(mn.id, { base, entity: f.entity, decision: s?.decision ?? null, via: f.via, pending: s?.pending ?? null });
   }
   return out;
 }
 
 // The replay check: classify each mention by how the stored entity id relates to the replayed one.
-//   match       — same (both null counts)
-//   cross-doc   — stored id is what ANOTHER document's decision for the same name projects to (string-wide binding)
-//   no-decision — stored id exists but no applied decision explains it (bound by a script/seed; see `basis`)
-//   unbound     — the log binds it, the database does not
-//   mismatch    — both bound, to different entities, and no other document explains it
+//   match          — same (both null counts)
+//   representative — same merged cluster, a different surviving id (the log's merge order vs a data-side repair)
+//   cross-doc      — stored id is what ANOTHER document's decision for the same name projects to (string-wide binding)
+//   no-decision    — stored id exists but no applied decision explains it (bound by a script/seed; see `basis`)
+//   unbound        — the log binds it, the database does not
+//   mismatch       — both bound, to different clusters, and no other document explains it
 export function compare({ mentions, decisions, sampleSize = 12 }) {
   const r = replay({ mentions, decisions });
   const states = clusterStates(decisions);
   const edges = mergeEdges(decisions);
+  const root = (id) => follow(edges, id).entity;
   const byName = new Map();                                  // resolvedAs → Set(projected entity of each doc's decision)
   for (const [key, s] of states) {
     if (s.entity == null) continue;
     const ra = key.split('\u0001')[1];
-    (byName.get(ra) || byName.set(ra, new Set()).get(ra)).add(follow(edges, s.entity).entity);
+    (byName.get(ra) || byName.set(ra, new Set()).get(ra)).add(root(s.entity));
   }
   const counts = {}, samples = {}, noDecisionByBasis = {};
   const note = (cat, row) => { counts[cat] = (counts[cat] || 0) + 1; const s = (samples[cat] ||= []); if (s.length < sampleSize) s.push(row); };
@@ -92,8 +98,9 @@ export function compare({ mentions, decisions, sampleSize = 12 }) {
     const row = { mention: mn.id, doc: num(mn.docId), name: mn.resolvedAs, db, replay: rep, decision: x.decision, via: x.via };
     if (db === rep) note('match', row);
     else if (db == null) note('unbound', row);
+    else if (rep != null && root(db) === rep) note('representative', row);
+    else if (byName.get(mn.resolvedAs)?.has(root(db))) note('cross-doc', row);
     else if (x.decision == null) { note('no-decision', row); noDecisionByBasis[mn.basis ?? 'unknown'] = (noDecisionByBasis[mn.basis ?? 'unknown'] || 0) + 1; }
-    else if (byName.get(mn.resolvedAs)?.has(db)) note('cross-doc', row);
     else note('mismatch', row);
   }
   delete samples.match;

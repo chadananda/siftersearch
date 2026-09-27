@@ -13,6 +13,7 @@ export async function identityReplay({ sampleSize = 12 } = {}) {
       WHERE target_kind='mention-cluster' OR kind='merge'`, [], 'replay:decisions'))
     .map((r) => ({ id: r.id, kind: r.kind, targetKind: r.target_kind, status: r.status, supersedes: r.supersedes, payload: r.payload }));
   const kinds = await queryAll(`SELECT kind, target_kind, status, COUNT(*) n FROM entity_decisions GROUP BY 1,2,3 ORDER BY n DESC`, [], 'replay:kinds');
+  const mentionLevel = await queryAll(`SELECT id, kind, status, target_ids, payload, rationale, actor FROM entity_decisions WHERE target_kind='mention' ORDER BY id LIMIT 6`, [], 'replay:mention-level');
   const result = compare({ mentions, decisions, sampleSize });
-  return { ms: Date.now() - t0, decisionsRead: decisions.length, logKinds: kinds, ...result };
+  return { ms: Date.now() - t0, decisionsRead: decisions.length, logKinds: kinds, mentionLevelSample: mentionLevel, ...result };
 }
