@@ -2602,6 +2602,15 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // GET /server/namesake-context?groups=25&pairs=a-b,c-d — read-only research: do same-name person records separate
+  // by shared documents / claim years / companions? + an audit of every merge decision so far.
+  fastify.get('/server/namesake-context', { preHandler: requireInternal }, async (request) => {
+    const { namesakeContext, mergeAudit } = await import('../lib/namesake-context.js');
+    const pairs = request.query.pairs ? String(request.query.pairs).split(',').map((p) => p.split('-').map(Number)).filter((p) => p.length === 2 && p.every(Boolean)) : null;
+    if (request.query.audit) return mergeAudit();
+    return namesakeContext({ pairs, groups: Math.min(Number(request.query.groups) || 25, 200), minMentions: Number(request.query.min) || 3 });
+  });
+
   // GET /server/docs-by-title?q=a|b|c — read-only: every copy of each titled work with paragraph / claim / mention
   // counts, so a pass targets the copy the entity pipeline actually used.
   fastify.get('/server/docs-by-title', { preHandler: requireInternal }, async (request) => {
