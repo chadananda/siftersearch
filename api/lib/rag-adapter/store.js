@@ -798,6 +798,9 @@ export function makeStore() {
         { sql: `UPDATE OR IGNORE graph_relations SET target_entity_id=? WHERE target_entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
         { sql: `DELETE FROM graph_relations WHERE source_entity_id IN (${ph}) OR target_entity_id IN (${ph})`, args: [...mergeIds, ...mergeIds] },
         { sql: `DELETE FROM graph_relations WHERE source_entity_id=? AND target_entity_id=?`, args: [canonicalId, canonicalId] },
+        // Scene participants follow the person too (entity_scenes, migration 125). PRIMARY KEY(scene_id, name) — the
+        // repoint changes only entity_id, so no collision is possible.
+        { sql: `UPDATE scene_participants SET entity_id=? WHERE entity_id IN (${ph})`, args: [canonicalId, ...mergeIds] },
         // The survivor keeps the highest importance of the records it absorbs (a curated station floor must not be lost).
         { sql: `UPDATE graph_entities SET importance=(SELECT MAX(importance) FROM graph_entities WHERE id IN (?, ${ph})) WHERE id=?`, args: [canonicalId, ...mergeIds, canonicalId] },
         { sql: `UPDATE graph_entities SET last_assessed_version=? WHERE id IN (${ph})`, args: [tombstoneFor(canonicalId), ...mergeIds] },

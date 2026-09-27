@@ -2602,6 +2602,23 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // GET /server/docs-by-title?q=a|b|c — read-only: every copy of each titled work with paragraph / claim / mention
+  // counts, so a pass targets the copy the entity pipeline actually used.
+  fastify.get('/server/docs-by-title', { preHandler: requireInternal }, async (request) => {
+    const qs = String(request.query.q || '').split('|').map((x) => x.trim()).filter(Boolean).slice(0, 30);
+    const out = [];
+    for (const q of qs) {
+      const docs = await queryAll(`SELECT id, title, author FROM docs WHERE title LIKE ? AND deleted_at IS NULL LIMIT 20`, [`%${q}%`], 'admin:docs-by-title');
+      for (const d of docs) {
+        const c = await queryOne(`SELECT COUNT(*) n FROM content WHERE doc_id = ? AND deleted_at IS NULL`, [d.id]);
+        const cl = await queryOne(`SELECT COUNT(*) n FROM entity_claims WHERE doc_id = ?`, [d.id]);
+        const m = await queryOne(`SELECT COUNT(*) n FROM entity_mentions_v2 WHERE doc_id = ?`, [d.id]);
+        out.push({ q, id: d.id, title: d.title, author: d.author, paragraphs: c.n, claims: cl.n, mentions: m.n });
+      }
+    }
+    return { docs: out };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';

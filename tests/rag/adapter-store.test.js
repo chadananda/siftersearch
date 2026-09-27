@@ -125,7 +125,10 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
     run(`INSERT INTO graph_relations (source_entity_id, target_entity_id, relation_type) VALUES (701, 799, 'letter-of-the-living')`);
     run(`INSERT INTO graph_relations (source_entity_id, target_entity_id, relation_type) VALUES (702, 799, 'letter-of-the-living')`);  // dup on survivor
     run(`INSERT INTO graph_relations (source_entity_id, target_entity_id, relation_type) VALUES (701, 501, 'met')`);
+    raw.exec(`CREATE TABLE IF NOT EXISTS scene_participants (scene_id INTEGER NOT NULL, name TEXT NOT NULL, role TEXT, entity_id INTEGER, bind_basis TEXT, PRIMARY KEY (scene_id, name))`);
+    run(`INSERT INTO scene_participants VALUES (1, 'Mullá Ḥasan', 'guest', 701, 'model')`);
     await store.applyMerge(702, [701], 'same Letter');
+    expect(run(`SELECT entity_id FROM scene_participants WHERE scene_id = 1`)[0].entity_id).toBe(702);
     const rel = run(`SELECT source_entity_id s, target_entity_id t, relation_type r FROM graph_relations WHERE 701 IN (source_entity_id, target_entity_id) OR 702 IN (source_entity_id, target_entity_id) ORDER BY r`);
     expect(rel).toEqual([{ s: 702, t: 799, r: 'letter-of-the-living' }, { s: 702, t: 501, r: 'met' }]);
     expect(run(`SELECT importance FROM graph_entities WHERE id = 702`)[0].importance).toBe(70);
