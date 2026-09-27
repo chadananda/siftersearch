@@ -1246,6 +1246,27 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_cv_verdict ON claim_verifications(verdict)`);
     logger.info('Migration 123 complete');
   },
+
+  124: async () => {
+    // Person-catalog review (2026-09-27). The "person" catalog holds groups ("Babīs", "Afnáns"), works ("Bayán"),
+    // bare nisbas ("Shírází"), junk ("ḤÁJÍ MÍRZÁ") and TITLES stored as separate people ("Centre of the Covenant",
+    // "Siyyid of Shíráz") — which split the central figures and poison mention binding. One model verdict per
+    // entity lives here; applying it (retype / merge / retire) is a separate, reviewed step. Nothing is edited here.
+    logger.info('Starting migration 124: entity_catalog_review');
+    await query(`CREATE TABLE IF NOT EXISTS entity_catalog_review (
+      entity_id INTEGER PRIMARY KEY,
+      kind TEXT NOT NULL,            -- individual | title_of | group | work | place | concept | junk
+      same_as TEXT,                  -- for title_of: the figure the name belongs to (as the model named them)
+      same_as_id INTEGER,            -- that figure, resolved (live entity id), when resolvable
+      confidence REAL,
+      reason TEXT,
+      model TEXT,
+      version INTEGER NOT NULL,
+      reviewed_at INTEGER DEFAULT (unixepoch())
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ecr_kind ON entity_catalog_review(kind)`);
+    logger.info('Migration 124 complete');
+  },
 };
 
 export const graphMigrations = {

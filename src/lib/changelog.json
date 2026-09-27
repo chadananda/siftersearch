@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T04:24:30.364Z",
+  "generated": "2026-09-27T04:43:35.957Z",
   "entries": [
+    {
+      "hash": "95e86186",
+      "date": "2026-09-26",
+      "type": "Fixed",
+      "description": "Mention backfill binds only capitalised, non-generic, nisba-consistent sole names",
+      "scope": "entities"
+    },
     {
       "hash": "2c2902cc",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Author-routing floor >=40 paras (drop tiny fragments from Foundation/Primary)",
       "scope": "bio popup"
-    },
-    {
-      "hash": "c109e57e",
-      "date": "2026-07-13",
-      "type": "New",
-      "description": "Author-routed phases — Balyuzi/Taherzadeh to Foundation, Rabbani to Primary",
-      "scope": "bio popup"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "95e86186",
+        "date": "2026-09-26",
+        "type": "Fixed",
+        "description": "Mention backfill binds only capitalised, non-generic, nisba-consistent sole names",
+        "scope": "entities"
+      },
       {
         "hash": "2c2902cc",
         "date": "2026-09-26",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-13",
         "type": "Fixed",
         "description": "Author-routing floor >=40 paras (drop tiny fragments from Foundation/Primary)",
-        "scope": "bio popup"
-      },
-      {
-        "hash": "c109e57e",
-        "date": "2026-07-13",
-        "type": "New",
-        "description": "Author-routed phases — Balyuzi/Taherzadeh to Foundation, Rabbani to Primary",
         "scope": "bio popup"
       }
     ]

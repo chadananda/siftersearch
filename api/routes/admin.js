@@ -2528,6 +2528,23 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // POST /server/entity-catalog-review { limit?, concurrency? } — classify every live "person" record (DeepSeek);
+  // verdicts in entity_catalog_review, nothing applied. GET …/report → latest run report.
+  fastify.post('/server/entity-catalog-review', { preHandler: requireInternal }, async (request) => {
+    const { limit = 100000, concurrency = 8 } = request.body || {};
+    const existing = backgroundTasks.get('entity-catalog-review');
+    if (existing && existing.status === 'running') throw ApiError.conflict('An entity-catalog-review run is already in progress');
+    const task = runBackgroundTask('entity-catalog-review', 'scripts/entity-catalog-review.mjs', [`--limit=${Number(limit) || 100000}`, `--concurrency=${Math.min(Number(concurrency) || 8, 16)}`]);
+    return { success: true, taskId: 'entity-catalog-review', status: task.status };
+  });
+
+  fastify.get('/server/entity-catalog-review/report', { preHandler: requireInternal }, async () => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const files = readdirSync('logs').filter((f) => f.startsWith('entity-catalog-review-')).sort();
+    if (!files.length) throw ApiError.notFound('no catalog review report yet');
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';
