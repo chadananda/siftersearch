@@ -107,10 +107,19 @@ disambiguate (frame-aware: frame stack, resolves EVERY person named, reason per 
   143 abstention bindings removed — incl. 141 anonymous "Bábí martyr … not given" folded into ONE record by
   propagate-bindings — 1 unbound) + 6 recorded rule decisions. HELD 8,253 mentions = 253 (stored, replay) pairs,
   nearly all ONE person recorded twice (Mírzá Yaḥyá ×3, Siyyid Káẓim, Shaykh Aḥmad, Ásíyih Khánum, Esslemont…) —
-  the string bind was masking per-book duplicate creation. AWAITING Chad: approve the safe write.
+  the string bind was masking per-book duplicate creation. WRITTEN 19:55 (Chad approved): 723 corrections + 6 rule
+  decisions; replay now == DB except the held pairs (208,265 match; 8,253 held; 15 representative). Rollback:
+  logs/identity-materialize-rollback-2026-09-27T19-55-41-922Z.json. Claim re-link dry run in progress.
 - [~] 4 evidence judge — DONE: verify-link rewritten for production-shaped claims (real nisbas; offices/side = flags;
   stated years only; named parent from "X — son-of Y"); claims record date basis stated vs inherited.
-  NEXT: identity dossier (names, docs, discriminator claims w/ proof, companions excl. ubiquitous, stated years,
+  DONE (held for push): doctrine rewrite (no merge on name; default UNSURE; innermost context; prominence ≠ evidence);
+  pair judge (signals + model, merge only when both agree, veto → distinct, rest proposed) + dossiers; research-resolve
+  reads the figure's own passages (F8); dedup-guard queries by fact objects (F9); disambiguation resolves EVERY named
+  person and drops the prominence default (F1/F3 — effective on next run); claims accept any note (F17: the 2026-08-15
+  rule mentions got, claims never did); occurrence-indexed mentions (F4).
+  NEXT (Chad chose 'evidence judge + you'): pair-judge dry run on the 253 held pairs → review → write → publish the
+  'review' remainder to Chad with dossiers.
+  was-NEXT: identity dossier (names, docs, discriminator claims w/ proof, companions excl. ubiquitous, stated years,
   sample passages) → pair scoring (shared companions/docs weighted by rarity; name weight by how many live persons
   share it; veto) → model on the residue, side by side incl. "neither" → human for disagreements. First queue: the
   253 held pairs; gold = Chad's merge-review decisions.

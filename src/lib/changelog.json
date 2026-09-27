@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T20:56:33.705Z",
+  "generated": "2026-09-27T21:12:28.427Z",
   "entries": [
+    {
+      "hash": "21cc18d7",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Merge-review export includes pair-judge disagreements with both verdicts",
+      "scope": "review"
+    },
     {
       "hash": "7bb440ae",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Meter every AI call, enforce paid-providers-are-Persian-only, enable prompt caching",
       "scope": null
-    },
-    {
-      "hash": "e4e99478",
-      "date": "2026-07-15",
-      "type": "Other",
-      "description": "Arabic-script identity key (recall aid) in reconcile candidate-recall + prompt + lookup index; alias-registration on bind for cross-book Persian recall; Sonnet Persian disambiguation; ADJUDICATOR_VERSION 2->3",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "21cc18d7",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Merge-review export includes pair-judge disagreements with both verdicts",
+        "scope": "review"
+      },
       {
         "hash": "7bb440ae",
         "date": "2026-09-27",
@@ -7073,15 +7080,6 @@
         "date": "2026-07-16",
         "type": "Other",
         "description": "Meter every AI call, enforce paid-providers-are-Persian-only, enable prompt caching",
-        "scope": null
-      }
-    ],
-    "2026-07-15": [
-      {
-        "hash": "e4e99478",
-        "date": "2026-07-15",
-        "type": "Other",
-        "description": "Arabic-script identity key (recall aid) in reconcile candidate-recall + prompt + lookup index; alias-registration on bind for cross-book Persian recall; Sonnet Persian disambiguation; ADJUDICATOR_VERSION 2->3",
         "scope": null
       }
     ]
