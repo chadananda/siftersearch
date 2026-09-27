@@ -2425,6 +2425,18 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { a, b, claims: rows.filter((r) => r.target_entity_id === other(r)).map((r) => ({ ...r, proof: String(r.proof || '').slice(0, 400) })) };
   });
 
+  // GET /server/entity-fate?id= — read-only: an entity's row (live, tombstoned or gone) and every merge decision
+  // that names it — where did a person go? (Two Letters of the Living vanished from their group this way.)
+  fastify.get('/server/entity-fate', { preHandler: requireInternal }, async (request) => {
+    const id = Number(request.query.id);
+    const row = await queryOne(`SELECT id, canonical_name, entity_type, importance, last_assessed_version FROM graph_entities WHERE id = ?`, [id], 'admin:entity-fate');
+    const merges = await queryAll(`SELECT id, kind, target_ids, payload, rationale, status, actor, decided_at FROM entity_decisions
+      WHERE kind = 'merge' AND (target_ids LIKE ? OR payload LIKE ?) ORDER BY id`, [`%${id}%`, `%${id}%`], 'admin:entity-fate');
+    const into = /^merged-into-(\d+)$/.exec(row?.last_assessed_version || '')?.[1];
+    const survivor = into ? await queryOne(`SELECT id, canonical_name, last_assessed_version FROM graph_entities WHERE id = ?`, [Number(into)]) : null;
+    return { id, row: row || null, survivor, merges };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';

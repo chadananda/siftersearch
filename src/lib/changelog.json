@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T00:48:48.872Z",
+  "generated": "2026-09-27T00:54:37.213Z",
   "entries": [
+    {
+      "hash": "f60d440a",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Encounter-evidence — encounter claims between two entities with their verbatim proof",
+      "scope": "admin"
+    },
     {
       "hash": "2492cfa5",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Gate/ROB are descriptive scholarship (historical track, not doctrinal); real Máz ids; convergence principle",
       "scope": "history-track"
-    },
-    {
-      "hash": "a44d394d",
-      "date": "2026-07-13",
-      "type": "Other",
-      "description": "Skip links with a non-numeric entity id (fixes writer crash on DB)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "f60d440a",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Encounter-evidence — encounter claims between two entities with their verbatim proof",
+        "scope": "admin"
+      },
       {
         "hash": "2492cfa5",
         "date": "2026-09-26",
@@ -7078,13 +7085,6 @@
         "type": "Docs",
         "description": "Gate/ROB are descriptive scholarship (historical track, not doctrinal); real Máz ids; convergence principle",
         "scope": "history-track"
-      },
-      {
-        "hash": "a44d394d",
-        "date": "2026-07-13",
-        "type": "Other",
-        "description": "Skip links with a non-numeric entity id (fixes writer crash on DB)",
-        "scope": null
       }
     ]
   }
