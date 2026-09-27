@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T22:49:52.861Z",
+  "generated": "2026-09-27T23:29:22.468Z",
   "entries": [
+    {
+      "hash": "333d62f0",
+      "date": "2026-09-27",
+      "type": "Docs",
+      "description": "P1 done",
+      "scope": "anis"
+    },
     {
       "hash": "773713e5",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "ProviderForDoc uses ACTUAL billed provider, not language — fixes Persian misroute",
       "scope": null
-    },
-    {
-      "hash": "1848e581",
-      "date": "2026-07-17",
-      "type": "Other",
-      "description": "Fix Haiku 4.5 4x cost undercount + server spend-gate/off-peak/auto-retry hardening",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "333d62f0",
+        "date": "2026-09-27",
+        "type": "Docs",
+        "description": "P1 done",
+        "scope": "anis"
+      },
       {
         "hash": "773713e5",
         "date": "2026-09-27",
@@ -7071,13 +7078,6 @@
         "date": "2026-07-17",
         "type": "Other",
         "description": "ProviderForDoc uses ACTUAL billed provider, not language — fixes Persian misroute",
-        "scope": null
-      },
-      {
-        "hash": "1848e581",
-        "date": "2026-07-17",
-        "type": "Other",
-        "description": "Fix Haiku 4.5 4x cost undercount + server spend-gate/off-peak/auto-retry hardening",
         "scope": null
       }
     ]
