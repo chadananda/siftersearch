@@ -26,7 +26,9 @@ export function nisbas(name) {
     parts.forEach((p, pi) => {
       const f = fold(p).replace(/[^a-z]/g, '');
       if (!/i$/.test(f) || NOT_NISBA.has(f) || f.length < 4) return;
-      if (pi > 0 || (wi > 0 && wi === words.length - 1 && parts.length === 1)) out.add(skeleton(f.replace(/i$/, '')));
+      // A trailing word counts only when it is not a hyphenated compound given name (Muḥammad-‘Alí, Ḥusayn-‘Alí).
+      const lastSeg = fold(p.split('-').at(-1)).replace(/[^a-z]/g, '');
+      if (pi > 0 || (wi > 0 && wi === words.length - 1 && parts.length === 1 && !p.includes('-') && !NOT_NISBA.has(lastSeg))) out.add(skeleton(f.replace(/i$/, '')));
     });
   });
   return out;

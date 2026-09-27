@@ -16,6 +16,8 @@ describe('nisba — only a real nisba counts', () => {
     ok(verifyLink({ name: 'Mullá ‘Alí', facts: [] }, { name: 'Mullá ‘Alíy-i-Basṭámí', facts: [] }));
     ok(verifyLink({ name: 'Siyyid Mihdí', facts: [] }, { name: 'Siyyid Mihdíy-i-Dahají', facts: [] }));
     expect([...nisbas('Ḥájí Mírzá Ḥasan')]).toEqual([]);
+    expect([...nisbas('Mírzá Muḥammad-‘Alí')]).toEqual([]);          // MEASURED: a compound given name, not a nisba
+    expect([...nisbas('Mírzá Muḥammad ‘Alí Nahri')].length).toBe(1);
   });
   it('different nisbas veto', () => veto(verifyLink({ name: 'Mullá Ḥusayn-i-Bushrú’í', facts: [] }, { name: 'Mullá Ḥusayn-i-Yazdí', facts: [] }), 'nisba'));
   it('one shared nisba of several is the same (Qazvíní-Baraghání)', () => ok(verifyLink({ name: 'Ṭáhirih-i-Qazvíní', facts: [] }, { name: 'Fáṭimih-i-Baraghání-i-Qazvíní', facts: [] })));
