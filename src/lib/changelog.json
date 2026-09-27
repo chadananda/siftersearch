@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T21:17:31.402Z",
+  "generated": "2026-09-27T21:25:35.893Z",
   "entries": [
+    {
+      "hash": "19fc7e8f",
+      "date": "2026-09-27",
+      "type": "Docs",
+      "description": "Soul carries no subject facts — calibration is a placeholder pattern",
+      "scope": "anis"
+    },
     {
       "hash": "2059bfb6",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Per-book cost at 6dp — rounding to cents floored real spend to $0",
       "scope": null
-    },
-    {
-      "hash": "1460967d",
-      "date": "2026-07-16",
-      "type": "Other",
-      "description": "Ai_usage.document_id is TEXT — a bound number stored as '15254.0' and matched nothing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "19fc7e8f",
+        "date": "2026-09-27",
+        "type": "Docs",
+        "description": "Soul carries no subject facts — calibration is a placeholder pattern",
+        "scope": "anis"
+      },
       {
         "hash": "2059bfb6",
         "date": "2026-09-27",
@@ -7073,13 +7080,6 @@
         "date": "2026-07-16",
         "type": "Other",
         "description": "Per-book cost at 6dp — rounding to cents floored real spend to $0",
-        "scope": null
-      },
-      {
-        "hash": "1460967d",
-        "date": "2026-07-16",
-        "type": "Other",
-        "description": "Ai_usage.document_id is TEXT — a bound number stored as '15254.0' and matched nothing",
         "scope": null
       }
     ]
