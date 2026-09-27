@@ -52,6 +52,20 @@ describe('replay — mention → entity from the log alone', () => {
   });
 });
 
+describe('replay — mention-level decisions', () => {
+  const split = (id, mentionIds, from, to = null) => ({ id, kind: 'split', targetKind: 'mention', status: 'applied', targetIds: mentionIds, payload: { from, to } });
+  it('a split moves exactly its mentions (to another entity or to none), overriding the cluster decision', () => {
+    const r = replay({ mentions: [m(1, 7, 'the guards'), m(2, 7, 'the guards'), m(3, 7, 'the guards')],
+      decisions: [cluster(10, 'link', 7, 'the guards', { entityId: 5, applied: 5 }), split(30, [1, 2], 5, null), split(31, [3], 5, 8)] });
+    expect(r.get(1)).toMatchObject({ entity: null, decision: 30 });
+    expect(r.get(3)).toMatchObject({ entity: 8, decision: 31 });
+  });
+  it('a split target still follows later merges', () => {
+    const r = replay({ mentions: [m(1, 7, 'X')], decisions: [cluster(10, 'create', 7, 'X', { applied: 1 }), split(30, [1], 1, 8), merge(40, 9, [8])] });
+    expect(r.get(1).entity).toBe(9);
+  });
+});
+
 describe('compare — the replay check against the database', () => {
   it('classifies every mention: match · cross-doc · no-decision (by who bound it) · unbound · mismatch', () => {
     const mentions = [

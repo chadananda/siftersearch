@@ -9,9 +9,9 @@ export async function identityReplay({ sampleSize = 12 } = {}) {
   const t0 = Date.now();
   const mentions = (await queryAll(`SELECT id, doc_id, resolved_as, entity_id, resolution_basis, method_version FROM entity_mentions_v2`, [], 'replay:mentions'))
     .map((r) => ({ id: r.id, docId: r.doc_id, resolvedAs: r.resolved_as, entityId: r.entity_id, basis: r.resolution_basis || r.method_version || 'unknown' }));
-  const decisions = (await queryAll(`SELECT id, kind, target_kind, status, supersedes, payload FROM entity_decisions
-      WHERE target_kind='mention-cluster' OR kind='merge'`, [], 'replay:decisions'))
-    .map((r) => ({ id: r.id, kind: r.kind, targetKind: r.target_kind, status: r.status, supersedes: r.supersedes, payload: r.payload }));
+  const decisions = (await queryAll(`SELECT id, kind, target_kind, target_ids, status, supersedes, payload FROM entity_decisions
+      WHERE target_kind IN ('mention-cluster','mention') OR kind='merge'`, [], 'replay:decisions'))
+    .map((r) => ({ id: r.id, kind: r.kind, targetKind: r.target_kind, targetIds: r.target_ids, status: r.status, supersedes: r.supersedes, payload: r.payload }));
   const kinds = await queryAll(`SELECT kind, target_kind, status, COUNT(*) n FROM entity_decisions GROUP BY 1,2,3 ORDER BY n DESC`, [], 'replay:kinds');
   const mentionLevel = await queryAll(`SELECT id, kind, status, target_ids, payload, rationale, actor FROM entity_decisions WHERE target_kind='mention' ORDER BY id LIMIT 6`, [], 'replay:mention-level');
   const result = compare({ mentions, decisions, sampleSize });

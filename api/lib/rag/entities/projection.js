@@ -55,15 +55,30 @@ function follow(edges, start) {
   return { entity: cur, via };
 }
 
+// Applied mention-level decisions (split / link on target_kind 'mention'): mention id → { entity, decision }. More
+// specific than a cluster decision, so they override it; the latest decision per mention wins.
+function mentionOverrides(decisions) {
+  const out = new Map();
+  for (const d of decisions.filter((x) => x.targetKind === 'mention' && x.status === 'applied').sort((a, b) => a.id - b.id)) {
+    const p = payloadOf(d);
+    const ids = typeof d.targetIds === 'string' ? JSON.parse(d.targetIds || '[]') : (d.targetIds || []);
+    const entity = d.kind === 'split' ? num(p.to) : num(p.entityId ?? p.entity_id ?? p.to);
+    for (const id of ids.map(num)) if (id != null) out.set(id, { entity, decision: d.id });
+  }
+  return out;
+}
+
 // mentions: [{id, docId, resolvedAs}] · decisions: [{id, kind, targetKind, status, supersedes, payload}]
 // → Map(mentionId → {base, entity, decision, via:[merge decision ids], pending})
 export function replay({ mentions, decisions }) {
   const states = clusterStates(decisions);
   const edges = mergeEdges(decisions);
+  const overrides = mentionOverrides(decisions);
   const memo = new Map();
   const out = new Map();
   for (const mn of mentions) {
-    const s = states.get(`${num(mn.docId)}\u0001${mn.resolvedAs}`);
+    const o = overrides.get(num(mn.id));
+    const s = o ? { entity: o.entity, decision: o.decision, pending: null } : states.get(`${num(mn.docId)}\u0001${mn.resolvedAs}`);
     const base = s?.entity ?? null;
     if (base != null && !memo.has(base)) memo.set(base, follow(edges, base));
     const f = base == null ? { entity: null, via: [] } : memo.get(base);
@@ -90,19 +105,19 @@ export function compare({ mentions, decisions, sampleSize = 12 }) {
     const ra = key.split('\u0001')[1];
     (byName.get(ra) || byName.set(ra, new Set()).get(ra)).add(root(s.entity));
   }
-  const counts = {}, samples = {}, noDecisionByBasis = {};
+  const counts = {}, samples = {}, noDecisionByBasis = {}, unboundByBasis = {};
   const note = (cat, row) => { counts[cat] = (counts[cat] || 0) + 1; const s = (samples[cat] ||= []); if (s.length < sampleSize) s.push(row); };
   for (const mn of mentions) {
     const x = r.get(mn.id);
     const db = num(mn.entityId), rep = x.entity;
-    const row = { mention: mn.id, doc: num(mn.docId), name: mn.resolvedAs, db, replay: rep, decision: x.decision, via: x.via };
+    const row = { mention: mn.id, doc: num(mn.docId), name: mn.resolvedAs, db, replay: rep, decision: x.decision, via: x.via, basis: mn.basis };
     if (db === rep) note('match', row);
-    else if (db == null) note('unbound', row);
+    else if (db == null) { note('unbound', row); unboundByBasis[mn.basis ?? 'unknown'] = (unboundByBasis[mn.basis ?? 'unknown'] || 0) + 1; }
     else if (rep != null && root(db) === rep) note('representative', row);
     else if (byName.get(mn.resolvedAs)?.has(root(db))) note('cross-doc', row);
     else if (x.decision == null) { note('no-decision', row); noDecisionByBasis[mn.basis ?? 'unknown'] = (noDecisionByBasis[mn.basis ?? 'unknown'] || 0) + 1; }
     else note('mismatch', row);
   }
   delete samples.match;
-  return { total: mentions.length, counts, noDecisionByBasis, samples };
+  return { total: mentions.length, counts, noDecisionByBasis, unboundByBasis, samples };
 }

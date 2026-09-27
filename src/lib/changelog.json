@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T18:47:10.599Z",
+  "generated": "2026-09-27T18:52:50.945Z",
   "entries": [
+    {
+      "hash": "67c0fa01",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Projection replays merges as ordered cluster unions (ping-pong merges never cycle); classify representative/cross-doc first",
+      "scope": "entities"
+    },
     {
       "hash": "af90f778",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Gazetteer identity-anchor resolver (app-side, additive)",
       "scope": null
-    },
-    {
-      "hash": "789c3ea2",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Stronger over-merge guard — bare factless common-name records need a POSITIVE tie, not just absence of contradiction (no bare-Muhammad->Prophet)",
-      "scope": "merge"
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "67c0fa01",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Projection replays merges as ordered cluster unions (ping-pong merges never cycle); classify representative/cross-doc first",
+        "scope": "entities"
+      },
       {
         "hash": "af90f778",
         "date": "2026-09-27",
@@ -7080,13 +7087,6 @@
         "type": "Other",
         "description": "Gazetteer identity-anchor resolver (app-side, additive)",
         "scope": null
-      },
-      {
-        "hash": "789c3ea2",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Stronger over-merge guard — bare factless common-name records need a POSITIVE tie, not just absence of contradiction (no bare-Muhammad->Prophet)",
-        "scope": "merge"
       }
     ]
   }
