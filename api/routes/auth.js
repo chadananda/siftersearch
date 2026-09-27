@@ -23,7 +23,7 @@ import {
   revokeRefreshToken,
   authenticate
 } from '../lib/auth.js';
-import { unifyUserId, temporaryIds } from '../lib/anonymous.js';
+import { unifyUserId, temporaryIds, clearConnectedIdentity } from '../lib/anonymous.js';
 import { companionStore, relationshipStage } from '../lib/companion/index.js';
 import { MemoryAgent } from '../agents/agent-memory.js';
 import {
@@ -94,6 +94,33 @@ async function connectParticipant(request, user) {
     }
   }
 }
+
+/**
+ * Find or create the account for a verified Google identity (site sign-in AND widget One Tap share this, so a person
+ * who connects through any site's widget is the same account as on siftersearch.com). Throws for a banned account.
+ */
+export async function upsertGoogleUser({ email, sub, name = null, picture = null }) {
+  let user = await queryOne('SELECT * FROM users WHERE email = ?', [email]);
+  if (user?.tier === 'banned') throw ApiError.forbidden('Account suspended');
+  if (!user) {
+    const result = await query(
+      `INSERT INTO users (email, password_hash, name, email_verified, picture, google_sub)
+       VALUES (?, NULL, ?, 1, ?, ?) RETURNING id`,
+      [email, name, picture, sub]
+    );
+    user = await queryOne('SELECT * FROM users WHERE id = ?', [result.rows[0].id]);
+    logger.info({ userId: user.id, email }, 'User created via Google sign-in');
+  } else {
+    await query(
+      `UPDATE users SET email_verified = 1, google_sub = ?, picture = COALESCE(?, picture), name = COALESCE(name, ?) WHERE id = ?`,
+      [sub, picture, name, user.id]
+    );
+    user = await queryOne('SELECT * FROM users WHERE id = ?', [user.id]);
+  }
+  return user;
+}
+
+export { connectParticipant };
 
 export default async function authRoutes(fastify) {
   // Signup - creates unverified account and sends verification code
@@ -340,23 +367,7 @@ export default async function authRoutes(fastify) {
     const gName = String(info.name || '').slice(0, 120) || null;
     const gPic = String(info.picture || '').slice(0, 500) || null;
 
-    let user = await queryOne('SELECT * FROM users WHERE email = ?', [email]);
-    if (user?.tier === 'banned') throw ApiError.forbidden('Account suspended');
-    if (!user) {
-      const result = await query(
-        `INSERT INTO users (email, password_hash, name, email_verified, picture, google_sub)
-         VALUES (?, NULL, ?, 1, ?, ?) RETURNING id`,
-        [email, gName, gPic, sub]
-      );
-      user = await queryOne('SELECT * FROM users WHERE id = ?', [result.rows[0].id]);
-      logger.info({ userId: user.id, email }, 'User created via Google sign-in');
-    } else {
-      await query(
-        `UPDATE users SET email_verified = 1, google_sub = ?, picture = COALESCE(?, picture), name = COALESCE(name, ?) WHERE id = ?`,
-        [sub, gPic, gName, user.id]
-      );
-      user = await queryOne('SELECT * FROM users WHERE id = ?', [user.id]);
-    }
+    let user = await upsertGoogleUser({ email, sub, name: gName, picture: gPic });
 
     // Admin whitelist (upgrade only)
     const whitelist = String(process.env.ADMIN_EMAILS || '').toLowerCase().split(/[\s,]+/).filter(Boolean);
@@ -496,6 +507,7 @@ export default async function authRoutes(fastify) {
 
     reply.clearCookie(REFRESH_COOKIE, COOKIE_OPTIONS);
     reply.clearCookie(REFRESH_COOKIE, LEGACY_COOKIE_OPTIONS); // also drop any legacy-scoped cookie
+    clearConnectedIdentity(reply);   // forget the widget connection; rotate the temporary session (shared computers)
     reply.send({ success: true });
   });
 

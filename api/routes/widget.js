@@ -141,12 +141,24 @@ function init(){
                    picture=excluded.picture, unsubscribed_at=NULL`,
       [profile.token, String(sessionId || '').slice(0, 64) || null, email, sub, name, String(info.picture || '').slice(0, 500) || null]);
     logger.info({ token: profile.token, email }, 'widget One Tap connection');
+    // Connecting through ANY site's widget is the same account as on siftersearch.com, and the same consent: fold this
+    // browser's temporary history in (threads, companion memory), record retention consent with its source, then carry
+    // the connection in a signed cookie so the widget's next messages belong to the account (it holds no JWT).
+    try {
+      const { upsertGoogleUser, connectParticipant } = await import('./auth.js');
+      const { setConnectedIdentity } = await import('../lib/anonymous.js');
+      const user = await upsertGoogleUser({ email: email.toLowerCase(), sub, name, picture: String(info.picture || '').slice(0, 500) || null });
+      await connectParticipant(req, user);
+      setConnectedIdentity(reply, user.id);
+    } catch (e) { logger.warn({ err: e.message }, 'widget One Tap: account connect failed (connection row still saved)'); }
     try {
       const { sendEmail } = await import('../services/email.js');
+      const { pauseUrl } = await import('../lib/anis/pause-link.js');
       await sendEmail({
         to: email,
         subject: `You're connected to ${profile.name}`,
-        text: `Hello${name ? ` ${name}` : ''},\n\nYou've connected your Google account to ${profile.name}, powered by Ocean research.\n\nFrom time to time we'll send you a detailed summary of your research conversations — the passages found, the sources cited, and links to read further in the original texts.\n\nIf you'd rather not receive these, just reply to this email with "stop".\n\n— The Ocean Library`,
+        // The promise has to be true: a signed one-click pause link (no sign-in), not a "reply stop" nothing reads yet.
+        text: `Hello${name ? ` ${name}` : ''},\n\nYou've connected your Google account to ${profile.name}, powered by Ocean research.\n\nFrom time to time we'll send you a detailed summary of your research conversations — the passages found, the sources cited, and links to read further in the original texts.\n\nIf you'd rather not receive these, pause them here: ${pauseUrl(email)}\n\n— The Ocean Library`,
       });
     } catch (e) { logger.warn({ err: e.message }, 'One Tap welcome email failed (connection still saved)'); }
     return { ok: true, email, name, picture: String(info.picture || '') || null };

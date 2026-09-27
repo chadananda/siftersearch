@@ -1299,6 +1299,20 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_sp_entity ON scene_participants(entity_id)`);
     logger.info('Migration 125 complete');
   },
+
+  126: async () => {
+    // ANIS EXCHANGE LOG (planning/anis-hyper-engagement-prd.md F1). Every inbound message is written BEFORE any model runs
+    // (status 'pending'), so an outage becomes a replay queue instead of lost letters; the answer and the path that
+    // produced it (gate result, recipe, format, timings) complete the row. channel = which venue (widget-chat, email…).
+    logger.info('Starting migration 126: anis exchange log columns');
+    for (const col of ["status TEXT", "channel TEXT", "path_json TEXT", "answered_at TEXT"]) {
+      try { await query(`ALTER TABLE chat_messages ADD COLUMN ${col}`); } catch { /* exists */ }
+    }
+    try { await query(`ALTER TABLE chat_sessions ADD COLUMN channel TEXT`); } catch { /* exists */ }
+    await query(`CREATE INDEX IF NOT EXISTS idx_chat_messages_status ON chat_messages(status) WHERE status IN ('pending','failed')`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_chat_sessions_participant_activity ON chat_sessions(participant_id, last_activity)`);
+    logger.info('Migration 126 complete');
+  },
 };
 
 export const graphMigrations = {

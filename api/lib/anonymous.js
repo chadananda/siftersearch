@@ -11,6 +11,7 @@
  * - Banned: 0 queries
  */
 
+import { createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
 import { userQuery as query, userQueryOne as queryOne } from './db.js';
 import { logger } from './logger.js';
 import { config } from './config.js';
@@ -324,9 +325,42 @@ export function ensureSessionId(request, reply) {
  */
 export function participantId(request) {
   return request.user?.sub?.toString()
+    || accountFromCookie(request)
     || getAnonymousUserId(request)
     || request.cookies?.[SESSION_COOKIE]
     || null;
+}
+
+// ── Widget connection identity ────────────────────────────────────────────────────────────────────
+// The embedded widget never holds our JWT, so after a One Tap connect its later messages would still arrive under the
+// temporary session id — the account would own the OLD threads while new ones pooled under a discarded id. A signed,
+// HttpOnly account cookie carries the connection instead; participantId() honours it right after the JWT. Connect and
+// sign-out also ROTATE the session cookie, so the next person on a shared computer starts fresh (PRD F7).
+export const ACCOUNT_COOKIE = 'sifter_acct';
+const acctSig = (v) => createHmac('sha256', process.env.JWT_ACCESS_SECRET || 'dev-only').update(`acct:${v}`).digest('hex').slice(0, 32);
+export const signAccount = (id) => `${String(id)}.${acctSig(String(id))}`;
+export function accountFromCookie(request) {
+  const c = String(request.cookies?.[ACCOUNT_COOKIE] || '');
+  const i = c.lastIndexOf('.');
+  if (i <= 0) return null;
+  const v = c.slice(0, i), sig = c.slice(i + 1), want = acctSig(v);
+  if (!/^\d+$/.test(v) || sig.length !== want.length) return null;
+  return timingSafeEqual(Buffer.from(sig), Buffer.from(want)) ? v : null;
+}
+const crossCookie = () => { const cross = process.env.NODE_ENV === 'production'; return { httpOnly: true, path: '/', secure: cross, sameSite: cross ? 'none' : 'lax' }; };
+/** After a connect: the account cookie on, a fresh temporary session (the old one's history now belongs to the account). */
+export function setConnectedIdentity(reply, accountId) {
+  try {
+    reply.setCookie(ACCOUNT_COOKIE, signAccount(accountId), { ...crossCookie(), maxAge: 400 * 24 * 3600 });
+    reply.setCookie(SESSION_COOKIE, 'sess_' + randomUUID(), crossCookie());
+  } catch { /* headers already sent */ }
+}
+/** On sign-out: forget the connection and rotate the temporary session. */
+export function clearConnectedIdentity(reply) {
+  try {
+    reply.clearCookie(ACCOUNT_COOKIE, crossCookie());
+    reply.setCookie(SESSION_COOKIE, 'sess_' + randomUUID(), crossCookie());
+  } catch { /* headers already sent */ }
 }
 
 /** Every temporary id this browser might have used, so connecting merges all of them, not just one. */

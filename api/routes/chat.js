@@ -1435,19 +1435,24 @@ export default async function chatRoutes(fastify) {
       const useAnis = (engine || process.env.ANIS_ENGINE || 'anis') === 'anis';
       let anisResult = null;
       if (useAnis) {
-        const { anisRespond } = await import('../lib/anis/respond.js');
+        // One Anis TURN: log first → Jev triage gate (canned replies, hidden tarpit) → research answer → output check.
+        const { anisTurn } = await import('../lib/anis/turn.js');
         const { getScopeForLocation } = await import('../lib/search/scope.js');
         let scope_config;
         try { scope_config = chatbot_location ? getScopeForLocation(chatbot_location) : undefined; } catch { scope_config = undefined; }
-        const r = await anisRespond({
+        const r = await anisTurn({
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          channel: widget_token ? 'widget-chat' : 'site-chat',
           profile: { persona_name, default_tradition, mission: mission_prompt, scope_config },
-          participant: { id: userId, authed: !!request.user?.sub },
+          participant: { id: userId, authed: !!request.user?.sub, userId: Number(request.user?.sub) || null },
+          conversationId: request.body.conversationId || null,
+          clientKey: userId || request.ip,
           onEvent: sendEvent,
         });
         anisResult = {
-          reply: r.reply, retrieval_quotes: r.retrieved, retrieved_count: r.retrieved.length,
-          user_intent: r.plan?.shape || null, gate: { pass: true, picker: 'anis-layer' }, retried: false, timings: r.timings,
+          reply: r.reply, retrieval_quotes: r.retrieved || [], retrieved_count: (r.retrieved || []).length,
+          user_intent: r.status === 'answered' ? (r.plan?.shape || null) : null, gate: { pass: true, picker: 'anis-layer' }, retried: false, timings: r.timings,
+          conversation_id: r.conversationId || null,
         };
       }
       // Three-stage Jafar pipeline: research → craft → reflection-gate.
@@ -1510,6 +1515,7 @@ export default async function chatRoutes(fastify) {
           gate_passed: result.gate?.pass,
           retried: result.retried,
           engine: anisResult ? 'anis' : 'jafar',
+          ...(result.conversation_id ? { conversation_id: result.conversation_id } : {}),
           ...(result.timings ? { timings: result.timings } : {})
         }
       });

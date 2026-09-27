@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T21:26:37.769Z",
+  "generated": "2026-09-27T21:37:23.159Z",
   "entries": [
+    {
+      "hash": "b073d824",
+      "date": "2026-09-27",
+      "type": "Docs",
+      "description": "Soul battery packets for the convictions",
+      "scope": "anis"
+    },
     {
       "hash": "b18a0c3f",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Normalise prompt-token accounting across providers (anthropic excludes cache reads)",
       "scope": null
-    },
-    {
-      "hash": "0b6f9861",
-      "date": "2026-07-16",
-      "type": "Other",
-      "description": "Stage label never reached the log — withAIContext spreads, so mutating the caller's object was a no-op",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "b073d824",
+        "date": "2026-09-27",
+        "type": "Docs",
+        "description": "Soul battery packets for the convictions",
+        "scope": "anis"
+      },
       {
         "hash": "b18a0c3f",
         "date": "2026-09-27",
@@ -7073,13 +7080,6 @@
         "date": "2026-07-16",
         "type": "Other",
         "description": "Normalise prompt-token accounting across providers (anthropic excludes cache reads)",
-        "scope": null
-      },
-      {
-        "hash": "0b6f9861",
-        "date": "2026-07-16",
-        "type": "Other",
-        "description": "Stage label never reached the log — withAIContext spreads, so mutating the caller's object was a no-op",
         "scope": null
       }
     ]

@@ -43,6 +43,7 @@ import peopleRoutes from './routes/people.js';
 import deepResearchRoutes from './routes/deep-research.js';
 import groundingRoutes from './routes/grounding.js';
 import widgetRoutes from './routes/widget.js';
+import anisRoutes from './routes/anis.js';
 import ingestRoutes from './routes/ingest.js';
 import bookNotesRoutes from './routes/book-notes.js';
 import { config } from './lib/config.js';
@@ -329,6 +330,7 @@ export async function createServer(opts = {}) {
   await server.register(bookNotesRoutes, { prefix: '/api/admin' });
   await server.register(companionRoutes, { prefix: '/api/admin' });
   await server.register(companionMeRoutes, { prefix: '/api/v1/companion' });
+  await server.register(anisRoutes, { prefix: '/api/v1/anis' });   // Anís letters: footer pause link
   await server.register(documentsRoutes, { prefix: '/api/documents' });
   await server.register(servicesRoutes, { prefix: '/api/services' });
   await server.register(anonymousRoutes, { prefix: '/api/anonymous' });
