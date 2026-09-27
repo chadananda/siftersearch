@@ -2510,6 +2510,24 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { para, claims, mentions, book: { ...book, mentions: bookMentions }, pipeline };
   });
 
+  // POST /server/mention-backfill { write=false, doc? } — known people named in paragraph TEXT that have no mention
+  // (the mention stage only records names the disambiguation note glossed). Audit by default. GET …/report → latest.
+  fastify.post('/server/mention-backfill', { preHandler: requireInternal }, async (request) => {
+    const { write = false, doc = null } = request.body || {};
+    const existing = backgroundTasks.get('mention-backfill');
+    if (existing && existing.status === 'running') throw ApiError.conflict('A mention-backfill run is already in progress');
+    const task = runBackgroundTask('mention-backfill', 'scripts/mention-backfill.mjs', [...(write ? ['--write'] : []), ...(doc ? [`--doc=${Number(doc)}`] : [])]);
+    return { success: true, taskId: 'mention-backfill', write: !!write, status: task.status };
+  });
+
+  fastify.get('/server/mention-backfill/report', { preHandler: requireInternal }, async (request) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const mode = request.query.mode === 'write' ? 'write' : 'audit';
+    const files = readdirSync('logs').filter((f) => f.startsWith(`mention-backfill-${mode}-`)).sort();
+    if (!files.length) throw ApiError.notFound(`no ${mode} mention-backfill report yet`);
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';

@@ -108,7 +108,8 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
   }
   for (const p of people.values()) {
     for (const f of p.forms) {
-      f.unique = owners.get(f.phrase).size === 1 || (f.canonical && canonicalOwner.get(f.phrase) === p.id);
+      f.sole = owners.get(f.phrase).size === 1;   // no one else — no person, no place — carries this name at all
+      f.unique = f.sole || (f.canonical && canonicalOwner.get(f.phrase) === p.id);
       const rare = f.phrase.split(' ').reduce((a, w) => ((phrasesByWord.get(w)?.length ?? 0) < (phrasesByWord.get(a)?.length ?? Infinity) ? w : a));
       f.supers = (phrasesByWord.get(rare) || []).filter((s) => s !== f.phrase && ` ${s} `.includes(` ${f.phrase} `)
         && [...owners.get(s)].some((o) => o !== p.id)).map((s) => ({ s, off: ` ${s} `.indexOf(` ${f.phrase} `) }));
@@ -140,9 +141,9 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
 // the POSSESSOR of what the statement is about, not a person met.
 const OF_THING = / (house|home|shrine|tomb|grave|remains|body|garden|mansion|prison|cell|room|resting place|sepulchre|throne|writings|tablet|tablets|cause|faith|revelation|followers|disciples|mother|father|wife|widow|son|daughter|uncle|brother|sister|family|kinsmen|relatives|letter|message|messenger|emissary|photograph|portrait|seal|name|words|verses|station|shrines|house s) of( the)? $/;
 
-export function namedBy(hay, person, { canonicalOnly = false, anyForm = false } = {}) {
+export function namedBy(hay, person, { canonicalOnly = false, anyForm = false, sole = false } = {}) {
   for (const f of person.forms) {
-    if ((!f.unique && !anyForm) || (canonicalOnly && !f.canonical)) continue;
+    if ((!f.unique && !anyForm) || (sole && !f.sole) || (canonicalOnly && !f.canonical)) continue;
     for (const at of occurrences(hay, f.phrase)) {
       if (OF_THING.test(hay.slice(Math.max(0, at - 40), at + 1))) continue;
       const covered = f.supers.some(({ s, off }) => occurrences(hay, s).some((j) => j + off === at));

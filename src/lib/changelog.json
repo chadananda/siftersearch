@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T04:08:24.436Z",
+  "generated": "2026-09-27T04:17:45.266Z",
   "entries": [
+    {
+      "hash": "7a80ec24",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Paragraph-claims — what extraction produced for one paragraph, and the book's claim coverage",
+      "scope": "admin"
+    },
     {
       "hash": "bb5e598c",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Current-book PROGRESS bar replaces size bars",
       "scope": "bio popup"
-    },
-    {
-      "hash": "80364f41",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Active fallback = most-recent claim write (simpler, shows the actively-extracting book; status file is authoritative)",
-      "scope": "bio"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "7a80ec24",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Paragraph-claims — what extraction produced for one paragraph, and the book's claim coverage",
+        "scope": "admin"
+      },
       {
         "hash": "bb5e598c",
         "date": "2026-09-26",
@@ -7078,13 +7085,6 @@
         "type": "New",
         "description": "Current-book PROGRESS bar replaces size bars",
         "scope": "bio popup"
-      },
-      {
-        "hash": "80364f41",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Active fallback = most-recent claim write (simpler, shows the actively-extracting book; status file is authoritative)",
-        "scope": "bio"
       }
     ]
   }
