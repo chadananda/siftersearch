@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T03:32:11.214Z",
+  "generated": "2026-09-27T04:08:24.436Z",
   "entries": [
+    {
+      "hash": "bb5e598c",
+      "date": "2026-09-26",
+      "type": "Fixed",
+      "description": "Verified labels reach the API; a pair's authoritative denial settles both sides; names inside places/possessions are not people",
+      "scope": "search"
+    },
     {
       "hash": "1e3ea3e9",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Active fallback = most-recent claim write (simpler, shows the actively-extracting book; status file is authoritative)",
       "scope": "bio"
-    },
-    {
-      "hash": "033374ad",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Active-book fallback excludes done books (bound mentions) so it shows the real un-reconciled book, not a completed one with leftover unbound claims",
-      "scope": "bio"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "bb5e598c",
+        "date": "2026-09-26",
+        "type": "Fixed",
+        "description": "Verified labels reach the API; a pair's authoritative denial settles both sides; names inside places/possessions are not people",
+        "scope": "search"
+      },
       {
         "hash": "1e3ea3e9",
         "date": "2026-09-26",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-13",
         "type": "Fixed",
         "description": "Active fallback = most-recent claim write (simpler, shows the actively-extracting book; status file is authoritative)",
-        "scope": "bio"
-      },
-      {
-        "hash": "033374ad",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Active-book fallback excludes done books (bound mentions) so it shows the real un-reconciled book, not a completed one with leftover unbound claims",
         "scope": "bio"
       }
     ]

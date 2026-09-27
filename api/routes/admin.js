@@ -2488,6 +2488,28 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // GET /server/paragraph-claims?id=<content id> — read-only: every claim extracted from one paragraph (with proof,
+  // binding and verdict), its mentions, and the book's claim coverage. Answers "why is there no claim for this?"
+  fastify.get('/server/paragraph-claims', { preHandler: requireInternal }, async (request) => {
+    const id = Number(request.query.id);
+    const para = await queryOne(`SELECT id, doc_id, external_para_id, paragraph_index FROM content WHERE id = ?`, [id], 'admin:paragraph-claims');
+    if (!para) throw ApiError.notFound('no such paragraph');
+    const pids = [para.external_para_id, `p${para.id}`].filter(Boolean);
+    const ph = pids.map(() => '?').join(',');
+    const claims = await queryAll(`SELECT ec.id, ec.relation, ec.statement, ec.proof_verbatim proof, ec.entity_id, s.canonical_name subject,
+        ec.target_entity_id, t.canonical_name target, ec.extractor_version, ec.import_batch, cv.verdict
+      FROM entity_claims ec LEFT JOIN graph_entities s ON s.id = ec.entity_id LEFT JOIN graph_entities t ON t.id = ec.target_entity_id
+      LEFT JOIN claim_verifications cv ON cv.claim_id = ec.id
+      WHERE ec.doc_id = ? AND ec.para_id IN (${ph})`, [para.doc_id, ...pids], 'admin:paragraph-claims');
+    const mentions = await queryAll(`SELECT surface, resolved_as, entity_id FROM entity_mentions_v2 WHERE doc_id = ? AND para_id IN (${ph})`, [para.doc_id, ...pids]);
+    const book = await queryOne(`SELECT COUNT(*) claims, COUNT(DISTINCT para_id) paragraphs, MIN(extractor_version) minv, MAX(extractor_version) maxv
+      FROM entity_claims WHERE doc_id = ?`, [para.doc_id]);
+    const bookMentions = await queryOne(`SELECT COUNT(*) n, COUNT(DISTINCT para_id) paragraphs FROM entity_mentions_v2 WHERE doc_id = ?`, [para.doc_id]);
+    let pipeline = null;
+    try { pipeline = await queryOne(`SELECT * FROM doc_pipeline WHERE doc_id = ?`, [para.doc_id]); } catch { /* table optional */ }
+    return { para, claims, mentions, book: { ...book, mentions: bookMentions }, pipeline };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';
