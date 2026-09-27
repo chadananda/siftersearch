@@ -1,6 +1,6 @@
 // entities/dedup-guard — cross-name dedup by GROUNDED FACTS (not names). Pure helpers + run() on fakes.
 import { describe, it, expect } from 'vitest';
-import { parseDedup, groupCandidates, buildUser, SYSTEM } from '../../api/lib/rag/entities/dedup-guard.js';
+import { parseDedup, groupCandidates, buildUser, SYSTEM, factQuery } from '../../api/lib/rag/entities/dedup-guard.js';
 import { fakeLLM, makeRag } from './kit.js';
 
 describe('dedup-guard — pure helpers', () => {
@@ -65,5 +65,13 @@ describe('dedup-guard — run() on fake ports', () => {
     const stats = await rag.entities.dedupGuard({ entityIds: [1001], dryRun: true, model: 'flash', fallback: 'haiku' });
     expect(stats.decisions).toHaveLength(1);
     expect(store.decisions).toHaveLength(0);
+  });
+});
+
+describe('dedup-guard — searches by facts, not by the name', () => {
+  it('the query is relation + object, never the subject name the statements start with', () => {
+    const q = factQuery([{ relation: 'son-of', statement: 'Mírzá Músá — son-of Mírzá Buzurg' }, { relation: 'died', statement: 'Mírzá Músá — died ‘Akká' }]);
+    expect(q).toBe('son-of Mírzá Buzurg died ‘Akká');
+    expect(q).not.toMatch(/Músá/);
   });
 });

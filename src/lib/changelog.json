@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T20:16:53.647Z",
+  "generated": "2026-09-27T20:19:11.075Z",
   "entries": [
+    {
+      "hash": "9d805a41",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Research-resolve reads the uncertain figure's own passages before other books",
+      "scope": "entities"
+    },
     {
       "hash": "bb34fa06",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Honest done-gate (reconcile decided >=85% of clusters) + high-res progress",
       "scope": null
-    },
-    {
-      "hash": "3cb66111",
-      "date": "2026-07-14",
-      "type": "Other",
-      "description": "SSR fallback placeholders for admin islands + harden biography prerender fetch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "9d805a41",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Research-resolve reads the uncertain figure's own passages before other books",
+        "scope": "entities"
+      },
       {
         "hash": "bb34fa06",
         "date": "2026-09-27",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-14",
         "type": "Other",
         "description": "Honest done-gate (reconcile decided >=85% of clusters) + high-res progress",
-        "scope": null
-      },
-      {
-        "hash": "3cb66111",
-        "date": "2026-07-14",
-        "type": "Other",
-        "description": "SSR fallback placeholders for admin islands + harden biography prerender fetch",
         "scope": null
       }
     ]

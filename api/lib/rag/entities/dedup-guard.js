@@ -8,6 +8,7 @@
 // corpus, so it is only meaningful AFTER prior books are grounded (the point of cumulative ordering).
 import { pool } from '../kernel/run.js';
 import { IDENTITY_DOCTRINE } from './evidence-doctrine.js';
+import { objectOf } from './verify-link.js';
 
 export const SYSTEM = `${IDENTITY_DOCTRINE}
 
@@ -27,7 +28,10 @@ export async function run(ctx, opts = {}) {
     const self = await ctx.store.getEntityFacts(id, { limit: 6 });
     if (!self?.facts?.length) return;                                 // no evidence → cannot dedup by fact
     self.id = id;
-    const query = self.facts.map((f) => f.statement).join(' ').slice(0, 300);
+    // Search by the facts' OBJECTS (death place, father, office) — statements begin with the subject's own name, so
+    // searching them was name recall again (measured 2026-09-27).
+    const query = factQuery(self.facts);
+    if (!query) return;
     const hits = ((await ctx.store.searchGrounded?.(query, { limit: 8 })) || []).filter((h) => h.entityId && h.entityId !== id);
     if (!hits.length) return;
     stats.searched++;
@@ -49,6 +53,8 @@ export async function run(ctx, opts = {}) {
 }
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
+
+export const factQuery = (facts) => facts.map((f) => `${f.relation || ''} ${objectOf(f)}`.trim()).filter(Boolean).join(' ').slice(0, 300);
 
 // Fold grounded hits (each a fact bound to an entity) into per-candidate fact bundles.
 export function groupCandidates(hits) {
