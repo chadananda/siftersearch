@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T19:33:57.148Z",
+  "generated": "2026-09-27T19:35:33.720Z",
   "entries": [
+    {
+      "hash": "5417a107",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Conflict veto rewritten for production-shaped claims; claims record whether a date was stated or inherited",
+      "scope": "entities"
+    },
     {
       "hash": "00be9504",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Main bar and per-book mini bar render identically",
       "scope": null
-    },
-    {
-      "hash": "34c44df2",
-      "date": "2026-07-14",
-      "type": "Other",
-      "description": "Accurate at all times — absolute reporting, float %, velocity interp, live task lines",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "5417a107",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Conflict veto rewritten for production-shaped claims; claims record whether a date was stated or inherited",
+        "scope": "entities"
+      },
       {
         "hash": "00be9504",
         "date": "2026-09-27",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-14",
         "type": "Other",
         "description": "Main bar and per-book mini bar render identically",
-        "scope": null
-      },
-      {
-        "hash": "34c44df2",
-        "date": "2026-07-14",
-        "type": "Other",
-        "description": "Accurate at all times — absolute reporting, float %, velocity interp, live task lines",
         "scope": null
       }
     ]

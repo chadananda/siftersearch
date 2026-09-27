@@ -99,7 +99,18 @@ disambiguate (frame-aware: frame stack, resolves EVERY person named, reason per 
   cross-doc string-wide bind 8,250 · cross-doc unbind 522 · propagate script (no decision) 149 · split overwritten by
   a later cluster re-bind 57 · merge ping-pong representative 15 · genuine mismatch ~3. Worst visible effect: Shaykh
   Aḥmad-i-Aḥsá'í and Siyyid Káẓim each split across two LIVE records (1261152/1299242, 1260454/1297046) in the DB.
-- [ ] 2 pipeline first: doc-scoped bind/unbind; mention decisions keyed by ANCHOR (ids die on resetDocDerived);
-  unmerge (supersede) in replay; materializer (diff-only, dry-run); run-grounding stops the per-book global merge.
-  Then: record today's unexplained state as tier-0 legacy decisions (graph unchanged) + queue each cross-doc
-  (dbEntity, replayEntity) pair for evidence reassessment.
+- [~] 2 pipeline first — DONE: bind/unbind scoped to the decision's document (docId required); per-book global merge
+  retired; projection: anchor-keyed mention decisions, unmerge (supersede), precedence (specific > general unless
+  outranked; later > earlier unless lower tier); materialize stage (`rag.entities.materialize`, script
+  identity-materialize.mjs, POST /server/identity-materialize, dry by default, rollback on write).
+  DRY RUN (2026-09-27 19:28): 723 safe corrections (57 lost splits restored, 522 cross-book unbinds re-bound,
+  143 abstention bindings removed — incl. 141 anonymous "Bábí martyr … not given" folded into ONE record by
+  propagate-bindings — 1 unbound) + 6 recorded rule decisions. HELD 8,253 mentions = 253 (stored, replay) pairs,
+  nearly all ONE person recorded twice (Mírzá Yaḥyá ×3, Siyyid Káẓim, Shaykh Aḥmad, Ásíyih Khánum, Esslemont…) —
+  the string bind was masking per-book duplicate creation. AWAITING Chad: approve the safe write.
+- [~] 4 evidence judge — DONE: verify-link rewritten for production-shaped claims (real nisbas; offices/side = flags;
+  stated years only; named parent from "X — son-of Y"); claims record date basis stated vs inherited.
+  NEXT: identity dossier (names, docs, discriminator claims w/ proof, companions excl. ubiquitous, stated years,
+  sample passages) → pair scoring (shared companions/docs weighted by rarity; name weight by how many live persons
+  share it; veto) → model on the residue, side by side incl. "neither" → human for disagreements. First queue: the
+  253 held pairs; gold = Chad's merge-review decisions.
