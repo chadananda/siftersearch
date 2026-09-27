@@ -2409,6 +2409,22 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // GET /server/encounter-evidence?a=<entityId>&b=<entityId> — read-only: every encounter-type claim between two
+  // entities (either direction, typed or naming the other), WITH its verbatim proof and source book. For checking
+  // whether "met" claims are borne out by their proof ("Ṭáhirih met the Báb" — she never did).
+  fastify.get('/server/encounter-evidence', { preHandler: requireInternal }, async (request) => {
+    const a = Number(request.query.a), b = Number(request.query.b);
+    const { ENCOUNTER_RELATIONS } = await import('../lib/encounters.js');
+    const rels = [...ENCOUNTER_RELATIONS, 'disciple-of', 'believer'];
+    const rows = await queryAll(`SELECT ec.id, ec.entity_id, ec.target_entity_id, ec.relation, ec.statement, ec.proof_verbatim proof,
+        ec.time_value, ec.para_id, ec.import_batch, d.title
+      FROM entity_claims ec LEFT JOIN docs d ON d.id = ec.doc_id
+      WHERE ec.entity_id IN (?, ?) AND ec.relation IN (${rels.map(() => '?').join(',')})
+        AND (ec.status IS NULL OR ec.status = 'supported')`, [a, b, ...rels], 'admin:encounter-evidence');
+    const other = (r) => (r.entity_id === a ? b : a);
+    return { a, b, claims: rows.filter((r) => r.target_entity_id === other(r)).map((r) => ({ ...r, proof: String(r.proof || '').slice(0, 400) })) };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';
