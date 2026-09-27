@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T19:26:34.076Z",
+  "generated": "2026-09-27T19:33:57.148Z",
   "entries": [
+    {
+      "hash": "00be9504",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Materialize unbinds undecided bindings on abstention handles instead of recording them",
+      "scope": "entities"
+    },
     {
       "hash": "ee67dbab",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Accurate at all times — absolute reporting, float %, velocity interp, live task lines",
       "scope": null
-    },
-    {
-      "hash": "fef219ec",
-      "date": "2026-07-14",
-      "type": "Other",
-      "description": "Real per-item within-stage progress (every stage reports, no flat bars)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "00be9504",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Materialize unbinds undecided bindings on abstention handles instead of recording them",
+        "scope": "entities"
+      },
       {
         "hash": "ee67dbab",
         "date": "2026-09-27",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-14",
         "type": "Other",
         "description": "Accurate at all times — absolute reporting, float %, velocity interp, live task lines",
-        "scope": null
-      },
-      {
-        "hash": "fef219ec",
-        "date": "2026-07-14",
-        "type": "Other",
-        "description": "Real per-item within-stage progress (every stage reports, no flat bars)",
         "scope": null
       }
     ]

@@ -139,7 +139,12 @@ const eraOf = (context) => { const m = String(context).match(/@[^—]*—/); ret
 export function claimRow(c, { docId, pid, era, relKeys, methodVersion, extractor, batch }) {
   const rel = relKeys.has(c.relation) ? c.relation : 'related-to';
   const when = c.when || era;
-  const timeBasis = /\[pin/i.test(when) ? 'pin' : /\[est/i.test(when) ? 'estimate' : (era ? (/\[pin/i.test(era) ? 'pin' : 'estimate') : null);
+  // 'stated' = the model gave a date of its own (the prompt allows one only when the paragraph states it); otherwise
+  // the date is the scene era copied from the note — 'pin'/'estimate' by the NOTE's tag. Labelling a stated date by the
+  // era's tag made real dates look estimated, and inherited era dates look like a person's own anchors.
+  const norm = (x) => String(x || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const inherited = !c.when || norm(c.when) === norm(era);
+  const timeBasis = !inherited ? 'stated' : /\[pin/i.test(when) ? 'pin' : /\[est/i.test(when) ? 'estimate' : (era ? 'estimate' : null);
   const year = (String(when).match(/\b(1[678]\d{2})\b/) || [])[1] || null;
   const semanticKey = `${nrm(c.subject)}|${rel}|${nrm(c.object)}|${pid}`;
   const statement = `${c.subject} — ${c.relation}${c.object ? ' ' + c.object : ''}`.slice(0, 300);

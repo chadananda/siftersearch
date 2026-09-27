@@ -22,8 +22,14 @@ describe('claims — pure helpers', () => {
     const row = claimRow({ subject: 'Mullá Ḥusayn', relation: 'died', object: 'Fort Ṭabarsí', proof: 'x', when: '1849 [pin]' },
       { docId: 21308, pid: 'para_9', era: '', relKeys, methodVersion: 'v1', extractor: 'e1', batch: 'b1' });
     expect(row).not.toHaveProperty('entity_id');     // LAW: identity deferred
-    expect(row).toMatchObject({ relation: 'died', timeValue: '1849', timeBasis: 'pin', batch: 'b1' });
+    expect(row).toMatchObject({ relation: 'died', timeValue: '1849', timeBasis: 'stated', batch: 'b1' });
     expect(row.semanticKey).toContain('|died|');
+    const base = { docId: 1, pid: 'p', relKeys, methodVersion: 'v1', extractor: 'e1', batch: 'b1' };
+    const c = (when) => ({ subject: 'X', relation: 'died', object: 'Y', proof: 'x', when });
+    expect(claimRow(c(undefined), { ...base, era: '~1844 [est]' }).timeBasis).toBe('estimate');      // inherited from the note
+    expect(claimRow(c('~1844 [est]'), { ...base, era: '~1844 [est]' }).timeBasis).toBe('estimate');  // copied back verbatim
+    expect(claimRow(c('1848'), { ...base, era: '~1844 [est]' }).timeBasis).toBe('stated');          // the paragraph's own date
+    expect(claimRow(c(undefined), { ...base, era: '1850 [pin]' }).timeBasis).toBe('pin');
     expect(row.claimHash).toMatch(/^[0-9a-f]{16}$/);
   });
 });

@@ -1,156 +1,88 @@
-// entities/verify-link — EEWA deterministic contradiction check. Compares cluster facts vs candidate
-// facts across 6 discriminative axes; any hard conflict → REJECT (prevents fabrication via false merge).
-// Pure function: no async, no ports, no DB. Called by reconcile/project AFTER a LINK is proposed.
+// entities/verify-link — deterministic CONFLICT VETO for an identity link (record linkage: any conflicting exclusive
+// attribute blocks a merge; absence of evidence is neutral). Pure, no ports. Facts are production-shaped claims:
+// { statement: "<subject> — <relation> <object>", relation, when: year, basis: 'pin'|'estimate'|null }.
+// Vetoes only on attributes a person has ONE of: nisba set, stated death year, stated lifespan, named parent.
+// Offices and allegiance are FLAGS (a man governs Zanján, later Shíráz; a Bábí becomes a Bahá'í) — never a veto.
+// 2026-09-27 rewrite: the old gate read any name word ending in -í as a nisba (Ḥájí, ‘Alí, Mihdí), compared offices
+// by whole statements INCLUDING the subject's name (vetoed "Mullá Ḥusayn" vs "Mullá Ḥusayn-i-Bushrú'í"), and never
+// ran its kinship/death-place/side axes (it expected a relation vocabulary production does not use).
 
-// ── consonant-skeleton helper (inline — boundary forbids import) ──────────────
-// Strips vowels + diacritics so transliteration variants compare equal (Turshízí = Torshizi).
-// NFD decomposes combined chars; strip combining marks (U+0300–U+036F); drop a e i o u; collapse repeats.
-function skeleton(s) {
-  return s.toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')   // strip combining diacritics
-    .replace(/[ʼʻ'''`]/g, '')                           // strip apostrophe variants
-    .replace(/[aeiou]/g, '')                             // drop vowels
-    .replace(/(.)\1+/g, '$1');                           // collapse repeats
-}
+const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[ʼʻ'‘’`´]/g, '').toLowerCase();
+const skeleton = (s) => fold(s).replace(/[^a-z]/g, '').replace(/[aeiouy]/g, '').replace(/(.)\1+/g, '$1');
 
-// ── nisba extraction ──────────────────────────────────────────────────────────
-// Nisbas are trailing -í adjectives in Persian/Arabic names (romanized with acute accent).
-// Detect: after NFD+strip-diacritics+lowercase the token ends with 'i' (de-accented -í).
-// Store as the consonant-skeleton of the WHOLE token so transliteration variants compare equal
-// (Turshízí and Torshizi both → trshz). Single-char tokens (iẓáfa 'i') are skipped.
-function nisbas(name) {
-  const tokens = name.split(/[\s-]+/);
+// Given names and honorifics that END in -í but are not nisbas (a nisba names a place/tribe of origin).
+const NOT_NISBA = new Set(['ali', 'aliy', 'mihdi', 'mahdi', 'taqi', 'naqi', 'hadi', 'vali', 'quli', 'haji', 'ghani', 'zaki', 'ruhi']);
+// Honorifics and titles — never identity-bearing in a parent's name.
+const HONORIFIC = new Set(['mirza', 'mulla', 'haji', 'hajj', 'siyyid', 'sayyid', 'shaykh', 'aqa', 'aqay', 'khan', 'karbilai', 'mashhadi', 'ustad', 'darvish', 'the', 'of', 'i', 'y']);
+
+// Nisbas of a name: the parts of an iḍáfa chain after "-i-" that end in -í, plus a trailing standalone word ending in
+// -í (not the first word, not a given name). "Mullá ‘Alíy-i-Basṭámí" → {bstm}; "Ḥájí Mírzá Ḥasan" → {}.
+export function nisbas(name) {
   const out = new Set();
-  for (const t of tokens) {
-    // Check if original token (after NFD+strip-diacritics+lowercase) ends with 'i' → nisba marker
-    const plain = t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[ʼʻ''`]/g, '');
-    if (plain.length < 2 || !plain.endsWith('i')) continue;
-    const sk = skeleton(t);            // consonant root (vowels gone; 'i' ending already stripped by vowel-drop)
-    if (sk.length >= 2) out.add(sk);  // ≥2 consonants = a real place root, not just a suffix
-  }
+  const words = String(name || '').replace(/\([^)]*\)/g, ' ').split(/\s+/).filter(Boolean);
+  words.forEach((w, wi) => {
+    const parts = w.split(/-(?:i|yi|y)-/i);
+    parts.forEach((p, pi) => {
+      const f = fold(p).replace(/[^a-z]/g, '');
+      if (!/i$/.test(f) || NOT_NISBA.has(f) || f.length < 4) return;
+      if (pi > 0 || (wi > 0 && wi === words.length - 1 && parts.length === 1)) out.add(skeleton(f.replace(/i$/, '')));
+    });
+  });
   return out;
 }
 
-// ── year extraction ──────────────────────────────────────────────────────────
-// Extract the first 4-digit year from a fact's `when` field; ignore context-only years on non-anchor
-// facts (a scene year is not the person's lifespan anchor unless relation is born/died).
-const BORN_RELS = new Set(['born']);
-const DIED_RELS = new Set(['died', 'death-place', 'martyred']);
-function yearFromFact(f) {
-  if (!f.when) return null;
-  const m = f.when.match(/\b(\d{4})\b/);
-  return m ? +m[1] : null;
+// The claim's object: text after "<subject> — <relation>". Bare statements (no dash) are all object.
+export function objectOf(f) {
+  const s = String(f.statement || '');
+  const i = s.indexOf(' — ');
+  if (i < 0) return s.replace(/^(son|daughter)\s+of\s+/i, '');
+  const rest = s.slice(i + 3).trim();
+  return f.relation && rest.toLowerCase().startsWith(f.relation.toLowerCase()) ? rest.slice(f.relation.length).trim() : rest;
 }
+
+// A year is a personal anchor when the paragraph stated it ('stated'; legacy 'pin'), not when it is the scene era.
+const stated = (f) => f.basis !== 'estimate';
+const yearOf = (f) => { const m = String(f.when ?? '').match(/\b(1[0-9]{3})\b/); return m ? +m[1] : null; };
+const DIED = new Set(['died', 'martyred', 'killed', 'executed']);
+const isParentClaim = (f) => f.relation === 'son-of' || f.relation === 'daughter-of' || /^(son|daughter)\s+of\s+/i.test(String(f.statement || ''));
+const nameTokens = (s) => new Set(fold(s).replace(/\([^)]*\)/g, ' ').split(/[^a-z]+/).filter((t) => t.length > 1 && !HONORIFIC.has(t)).map(skeleton).filter(Boolean));
+
 function lifespan(facts) {
   let born = null, died = null;
   for (const f of facts) {
-    const y = yearFromFact(f);
-    if (!y) continue;
-    if (BORN_RELS.has(f.relation)) born = y;
-    if (DIED_RELS.has(f.relation)) died = y;
+    const y = yearOf(f);
+    if (y == null || !stated(f)) continue;
+    if (f.relation === 'born') born = y;
+    if (DIED.has(f.relation)) died = y;
   }
   return { born, died };
 }
 
-// ── text normalization for role / kinship comparison ─────────────────────────
-// Strip the most common filler words so "governor of Zanján" ≠ "governor of Shíráz"
-// is caught, but "teacher" ≈ "teacher of Islamic studies" stays compatible.
-const FILLER = /\b(of|the|a|an|in|at|and|or|was|served|as|his|her|their)\b/gi;
-function normalizeRole(s) { return skeleton(s.replace(FILLER, ' ').replace(/\s+/g, ' ').trim()); }
-
-// ── side classification ───────────────────────────────────────────────────────
-// Bábí and Bahá'í are the same allegiance arc (final shift is normal). Opponent is distinct.
-function sideClass(s) {
-  const l = s.toLowerCase();
-  if (/bah[aá]/.test(l) || /bab[ií]/.test(l)) return 'believer';
-  if (/opponent|adversar|enemy|foe|antagonist/.test(l)) return 'opponent';
-  return 'other';
-}
-
-// ── role compatibility ────────────────────────────────────────────────────────
-// Two role strings are INCOMPATIBLE only when both are specific and clearly name different roles.
-// Compatible when: skeletons equal, or one is a strict substring of the other (specialization).
-// Incompatible when: different after normalization and neither contains the other.
-// "governor of Zanján" vs "governor of Shíráz" → skeletons gvrnrznjn vs gvrnrshrz → neither
-// contains the other → incompatible. "teacher" vs "teacher of Islamic studies" → former is a
-// substring of the latter → compatible (same role, one more specific).
-function rolesIncompatible(a, b) {
-  const sa = normalizeRole(a), sb = normalizeRole(b);
-  if (sa === sb) return false;
-  if (sa.includes(sb) || sb.includes(sa)) return false;  // one is a specialization of the other
-  return true;
-}
-
-// ── kinship: extract relation-type prefix + target ────────────────────────────
-// "son of X" → { rel: 'son', target: 'of x' }; we extract the first word as the relation type
-// and the rest (after 'of') as the target to compare by skeleton.
-function parseKinship(statement) {
-  const m = statement.match(/^(son|daughter|father|mother|brother|sister|wife|husband|uncle|aunt|nephew|niece|cousin)\s+of\s+(.+)/i);
-  if (!m) return null;
-  return { rel: m[1].toLowerCase(), target: skeleton(m[2]) };
-}
-
-// ── the verification gate ────────────────────────────────────────────────────
 export function verifyLink(cluster, candidate) {
-  const cFacts = cluster.facts || [];
-  const eFacts = candidate.facts || [];
-  const NO_CONFLICT = { ok: true, axis: null, reason: 'no contradiction' };
-
-  // 1. nisba — disjoint nisba sets (both non-empty, no overlap) → REJECT
+  const cF = cluster.facts || [], eF = candidate.facts || [];
+  const flags = [];
+  // 1. nisba — both carry nisbas and share none
   const cn = nisbas(cluster.name), en = nisbas(candidate.name);
-  if (cn.size > 0 && en.size > 0) {
-    // Disjoint: no skeleton in cn appears in en
-    const shared = [...cn].some((s) => en.has(s));
-    if (!shared) return { ok: false, axis: 'nisba', reason: `nisba mismatch: cluster '${cluster.name}' vs candidate '${candidate.name}'` };
+  if (cn.size && en.size && ![...cn].some((s) => en.has(s)))
+    return { ok: false, axis: 'nisba', reason: `nisba conflict: ${[...cn]} vs ${[...en]} ('${cluster.name}' / '${candidate.name}')`, flags };
+  // 2. lifespan + death — stated years only (a year copied from the scene's era is not a lifespan anchor); ±1 for calendar conversion
+  const a = lifespan(cF), b = lifespan(eF);
+  if ((a.born != null && b.died != null && a.born > b.died + 1) || (b.born != null && a.died != null && b.born > a.died + 1))
+    return { ok: false, axis: 'era', reason: `impossible lifespan: born ${a.born ?? b.born} after death ${b.died ?? a.died}`, flags };
+  if (a.died != null && b.died != null && Math.abs(a.died - b.died) > 1)
+    return { ok: false, axis: 'death', reason: `death year conflict: ${a.died} vs ${b.died}`, flags };
+  // 3. named parent — son-of/daughter-of objects share no identity-bearing name token
+  for (const cp of cF.filter(isParentClaim)) for (const ep of eF.filter(isParentClaim)) {
+    const x = nameTokens(objectOf(cp)), y = nameTokens(objectOf(ep));
+    if (x.size && y.size && ![...x].some((t) => y.has(t)))
+      return { ok: false, axis: 'kinship', reason: `parent conflict: '${objectOf(cp)}' vs '${objectOf(ep)}'`, flags };
   }
-
-  // 2. era — only reject when BOTH have birth+death anchors that form an impossible lifespan.
-  // A scene-year alone (when but no born/died relation) is NOT a lifespan anchor → do not reject.
-  const cls = lifespan(cFacts), els = lifespan(eFacts);
-  if (cls.born !== null && els.died !== null && cls.born > els.died)
-    return { ok: false, axis: 'era', reason: `era impossible: born ${cls.born} > died ${els.died}` };
-  if (els.born !== null && cls.died !== null && els.born > cls.died)
-    return { ok: false, axis: 'era', reason: `era impossible: born ${els.born} > died ${cls.died}` };
-
-  // 3. death — if BOTH have a death year and they differ → REJECT
-  if (cls.died !== null && els.died !== null && cls.died !== els.died)
-    return { ok: false, axis: 'death', reason: `death year conflict: ${cls.died} vs ${els.died}` };
-  // death-place conflict: both have 'death-place' fact and they differ by skeleton
-  const cdp = cFacts.find((f) => f.relation === 'death-place');
-  const edp = eFacts.find((f) => f.relation === 'death-place');
-  if (cdp && edp && skeleton(cdp.statement) !== skeleton(edp.statement))
-    return { ok: false, axis: 'death', reason: `death-place conflict: '${cdp.statement}' vs '${edp.statement}'` };
-
-  // 4. role — incompatible specific offices (held-office only; has-title is too generic to reject on)
-  // "governor of Zanján" vs "governor of Shíráz" both held-office with different places → REJECT.
-  // "has-title" (honorifics, epithets) can legitimately differ between sources → never reject on it.
-  const cRoles = cFacts.filter((f) => f.relation === 'held-office');
-  const eRoles = eFacts.filter((f) => f.relation === 'held-office');
-  for (const cr of cRoles) {
-    for (const er of eRoles) {
-      if (rolesIncompatible(cr.statement, er.statement))
-        return { ok: false, axis: 'role', reason: `office conflict: '${cr.statement}' vs '${er.statement}'` };
-    }
-  }
-
-  // 5. kinship — same relation type (son-of / daughter-of etc) pointing to DIFFERENT people
-  const cKin = cFacts.filter((f) => f.relation === 'related-to').map((f) => parseKinship(f.statement)).filter(Boolean);
-  const eKin = eFacts.filter((f) => f.relation === 'related-to').map((f) => parseKinship(f.statement)).filter(Boolean);
-  for (const ck of cKin) {
-    for (const ek of eKin) {
-      if (ck.rel === ek.rel && ck.target !== ek.target)
-        return { ok: false, axis: 'kinship', reason: `kinship conflict: ${ck.rel} of '${ck.target}' vs '${ek.target}'` };
-    }
-  }
-
-  // 6. side — soft FLAG only; Bábí/Bahá'í are the same arc; only opponent-vs-believer is notable
-  const cSide = cFacts.find((f) => f.relation === 'side');
-  const eSide = eFacts.find((f) => f.relation === 'side') || (candidate.side ? { statement: candidate.side } : null);
-  if (cSide && eSide) {
-    const cc = sideClass(cSide.statement), ec = sideClass(eSide.statement);
-    if (cc !== ec && (cc === 'opponent' || ec === 'opponent'))
-      return { ok: true, axis: 'side', reason: `side mismatch: '${cSide.statement}' vs '${eSide.statement}' (flag)` };
-  }
-
-  return NO_CONFLICT;
+  // 4. flags (never vetoes): differing offices; believer vs opponent
+  const offices = (F) => F.filter((f) => f.relation === 'held-office' || f.relation === 'governor-of' || f.relation === 'ruler-of').map(objectOf);
+  const co = offices(cF), eo = offices(eF);
+  if (co.length && eo.length && !co.some((x) => eo.some((y) => skeleton(x) === skeleton(y)))) flags.push({ axis: 'role', reason: `different offices: ${co[0]} / ${eo[0]}` });
+  const sideOf = (F, side) => (F.some((f) => ['opponent', 'covenant-breaker'].includes(f.relation)) ? 'opponent' : F.some((f) => f.relation === 'believer') ? 'believer' : side || null);
+  const cs = sideOf(cF), es = sideOf(eF, candidate.side === 'opponent' ? 'opponent' : null);
+  if (cs && es && cs !== es) flags.push({ axis: 'side', reason: `side: ${cs} vs ${es}` });
+  return { ok: true, axis: flags[0]?.axis ?? null, reason: flags.length ? flags.map((f) => f.reason).join('; ') + ' (flag)' : 'no contradiction', flags };
 }
