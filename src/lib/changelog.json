@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T18:52:50.945Z",
+  "generated": "2026-09-27T18:59:22.147Z",
   "entries": [
+    {
+      "hash": "f52f581e",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Projection honours mention-level split/link decisions; replay check reports who unbound each mention",
+      "scope": "entities"
+    },
     {
       "hash": "67c0fa01",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Promote the library-progress popup into a persistent collapsible right-hand side panel (slim edge-tab when collapsed shows live book count; expands to the full roadmap drawer). Persistent 20s poll; no scroll-lock.",
       "scope": null
-    },
-    {
-      "hash": "eccd7ae6",
-      "date": "2026-07-13",
-      "type": "Other",
-      "description": "Gazetteer identity-anchor resolver (app-side, additive)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "f52f581e",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Projection honours mention-level split/link decisions; replay check reports who unbound each mention",
+        "scope": "entities"
+      },
       {
         "hash": "67c0fa01",
         "date": "2026-09-27",
@@ -7079,13 +7086,6 @@
         "date": "2026-07-13",
         "type": "Other",
         "description": "Promote the library-progress popup into a persistent collapsible right-hand side panel (slim edge-tab when collapsed shows live book count; expands to the full roadmap drawer). Persistent 20s poll; no scroll-lock.",
-        "scope": null
-      },
-      {
-        "hash": "eccd7ae6",
-        "date": "2026-07-13",
-        "type": "Other",
-        "description": "Gazetteer identity-anchor resolver (app-side, additive)",
         "scope": null
       }
     ]

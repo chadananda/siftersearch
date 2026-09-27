@@ -92,6 +92,17 @@ describe('compare — the replay check against the database', () => {
     expect(c.counts).toEqual({ 'cross-doc': 1 });
   });
 
+  it('a split the database lost (a later cluster re-bind overwrote it) is override-lost, not cross-doc', () => {
+    const decisions = [cluster(10, 'link', 7, 'the guards', { entityId: 5, applied: 5 }),
+      { id: 30, kind: 'split', targetKind: 'mention', status: 'applied', targetIds: [1], payload: { from: 5, to: null } }];
+    expect(compare({ mentions: [m(1, 7, 'the guards', 5)], decisions }).counts).toEqual({ 'override-lost': 1 });
+  });
+
+  it('a mention another book\'s re-adjudication unbound is cross-doc-unbind', () => {
+    const c = compare({ mentions: [m(1, 7, 'Q', null, 'reconcile-unbind')], decisions: [cluster(10, 'link', 7, 'Q', { entityId: 4, applied: 4 })] });
+    expect(c.counts).toEqual({ 'cross-doc-unbind': 1 });
+  });
+
   it('same merged cluster, different representative id → representative (not a mismatch)', () => {
     const mentions = [m(1, 7, 'X', 1)];            // DB kept 1 alive; the log's order makes 2 the survivor
     const decisions = [cluster(10, 'create', 7, 'X', { applied: 1 }), cluster(11, 'create', 8, 'Y', { applied: 2 }), merge(20, 2, [1])];

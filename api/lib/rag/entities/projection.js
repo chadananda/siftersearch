@@ -90,7 +90,9 @@ export function replay({ mentions, decisions }) {
 // The replay check: classify each mention by how the stored entity id relates to the replayed one.
 //   match          — same (both null counts)
 //   representative — same merged cluster, a different surviving id (the log's merge order vs a data-side repair)
+//   override-lost  — a mention-level split/link says otherwise; the DB still holds the cluster's entity (re-bind overwrote it)
 //   cross-doc      — stored id is what ANOTHER document's decision for the same name projects to (string-wide binding)
+//   cross-doc-unbind — the log binds it; the DB was unbound by a re-adjudication elsewhere (string-wide unbind)
 //   no-decision    — stored id exists but no applied decision explains it (bound by a script/seed; see `basis`)
 //   unbound        — the log binds it, the database does not
 //   mismatch       — both bound, to different clusters, and no other document explains it
@@ -99,22 +101,28 @@ export function compare({ mentions, decisions, sampleSize = 12 }) {
   const states = clusterStates(decisions);
   const edges = mergeEdges(decisions);
   const root = (id) => follow(edges, id).entity;
-  const byName = new Map();                                  // resolvedAs → Set(projected entity of each doc's decision)
+  const byName = new Map();                                  // resolvedAs → Map(doc → projected entity of that doc's decision)
   for (const [key, s] of states) {
     if (s.entity == null) continue;
-    const ra = key.split('\u0001')[1];
-    (byName.get(ra) || byName.set(ra, new Set()).get(ra)).add(root(s.entity));
+    const [doc, ra] = key.split('\u0001');
+    (byName.get(ra) || byName.set(ra, new Map()).get(ra)).set(Number(doc), root(s.entity));
   }
+  const otherDocHas = (mn, id) => [...(byName.get(mn.resolvedAs) || new Map())].some(([doc, e]) => doc !== num(mn.docId) && e === id);
   const counts = {}, samples = {}, noDecisionByBasis = {}, unboundByBasis = {};
   const note = (cat, row) => { counts[cat] = (counts[cat] || 0) + 1; const s = (samples[cat] ||= []); if (s.length < sampleSize) s.push(row); };
   for (const mn of mentions) {
     const x = r.get(mn.id);
     const db = num(mn.entityId), rep = x.entity;
     const row = { mention: mn.id, doc: num(mn.docId), name: mn.resolvedAs, db, replay: rep, decision: x.decision, via: x.via, basis: mn.basis };
+    const own = byName.get(mn.resolvedAs)?.get(num(mn.docId)) ?? null;
     if (db === rep) note('match', row);
-    else if (db == null) { note('unbound', row); unboundByBasis[mn.basis ?? 'unknown'] = (unboundByBasis[mn.basis ?? 'unknown'] || 0) + 1; }
+    else if (db == null) {
+      const cat = mn.basis === 'reconcile-unbind' ? 'cross-doc-unbind' : 'unbound';
+      note(cat, row); unboundByBasis[mn.basis ?? 'unknown'] = (unboundByBasis[mn.basis ?? 'unknown'] || 0) + 1;
+    }
     else if (rep != null && root(db) === rep) note('representative', row);
-    else if (byName.get(mn.resolvedAs)?.has(root(db))) note('cross-doc', row);
+    else if (x.decision != null && own != null && root(db) === own && rep !== own) note('override-lost', row);
+    else if (otherDocHas(mn, root(db))) note('cross-doc', row);
     else if (x.decision == null) { note('no-decision', row); noDecisionByBasis[mn.basis ?? 'unknown'] = (noDecisionByBasis[mn.basis ?? 'unknown'] || 0) + 1; }
     else note('mismatch', row);
   }
