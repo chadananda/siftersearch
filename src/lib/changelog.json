@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T05:01:44.993Z",
+  "generated": "2026-09-27T05:08:34.904Z",
   "entries": [
+    {
+      "hash": "57c209c8",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Apply catalog review — retype non-people, merge confident titles into their figure, hold the rest",
+      "scope": "entities"
+    },
     {
       "hash": "1486b291",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Within-stage progress for claims (paras-with-claims/total) so the bar climbs, not frozen at the stage boundary",
       "scope": "bio popup"
-    },
-    {
-      "hash": "95e5e5bf",
-      "date": "2026-07-13",
-      "type": "Performance",
-      "description": "Claims/disambiguate concurrency 4->8 (--cc override) — 2x throughput on dense books",
-      "scope": "grounding"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "57c209c8",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Apply catalog review — retype non-people, merge confident titles into their figure, hold the rest",
+        "scope": "entities"
+      },
       {
         "hash": "1486b291",
         "date": "2026-09-26",
@@ -7078,13 +7085,6 @@
         "type": "Fixed",
         "description": "Within-stage progress for claims (paras-with-claims/total) so the bar climbs, not frozen at the stage boundary",
         "scope": "bio popup"
-      },
-      {
-        "hash": "95e5e5bf",
-        "date": "2026-07-13",
-        "type": "Performance",
-        "description": "Claims/disambiguate concurrency 4->8 (--cc override) — 2x throughput on dense books",
-        "scope": "grounding"
       }
     ]
   }

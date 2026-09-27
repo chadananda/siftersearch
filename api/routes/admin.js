@@ -2568,10 +2568,11 @@ Collection: ${paragraph.collection || 'Unknown'}
   // POST /server/entity-catalog-apply { write=false, min=0.9 } — apply catalog review verdicts (retype non-people,
   // merge confident titles into their figure, hold the rest). GET …/report?mode= → latest plan/result.
   fastify.post('/server/entity-catalog-apply', { preHandler: requireInternal }, async (request) => {
-    const { write = false, min = 0.9 } = request.body || {};
+    const { write = false, min = 0.9, retypeOnly = true } = request.body || {};
     const existing = backgroundTasks.get('entity-catalog-apply');
     if (existing && existing.status === 'running') throw ApiError.conflict('An entity-catalog-apply run is already in progress');
-    const task = runBackgroundTask('entity-catalog-apply', 'scripts/entity-catalog-apply.mjs', [...(write ? ['--write'] : []), `--min=${Number(min) || 0.9}`]);
+    const task = runBackgroundTask('entity-catalog-apply', 'scripts/entity-catalog-apply.mjs',
+      [...(write ? ['--write'] : []), `--min=${Number(min) || 0.9}`, ...(retypeOnly !== false ? ['--retype-only'] : [])]);
     return { success: true, taskId: 'entity-catalog-apply', write: !!write, status: task.status };
   });
 

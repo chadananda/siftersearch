@@ -12,6 +12,10 @@ const { LIVE_SQL } = await import('../api/lib/entity-live.js');
 const { makeStore } = await import('../api/lib/rag-adapter/store.js');
 
 const WRITE = process.argv.includes('--write');
+// --retype-only: apply the reversible retypes, merge NOTHING. The first dry run's ≥0.9 merge list held serious errors
+// (Ghusn-i-A‘ẓam → Bahá’u’lláh, Zayn al-‘Ábidín → Bahá’u’lláh): the figure a title was RESOLVED to was taken from
+// recall without checking its name matched the model's. Merges wait for strict resolution + a second check.
+const RETYPE_ONLY = process.argv.includes('--retype-only');
 const MIN = Number((process.argv.find((a) => a.startsWith('--min=')) || '').split('=')[1]) || 0.9;
 const store = makeStore();
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -35,7 +39,7 @@ if (WRITE) {
   writeFileSync(`logs/entity-catalog-rollback-${stamp}.json`, JSON.stringify(rollback));
   const stmts = retype.map((r) => ({ sql: `UPDATE graph_entities SET entity_type = ? WHERE id = ? AND entity_type = 'person'`, args: [r.kind, r.id] }));
   for (let i = 0; i < stmts.length; i += 300) await transaction(stmts.slice(i, i + 300), 'entity-catalog-apply');
-  for (const r of merge) {
+  for (const r of RETYPE_ONLY ? [] : merge) {
     rollback.merges.push({ title: r.id, into: r.sid,
       mentions: await queryAll(`SELECT id, entity_id FROM entity_mentions_v2 WHERE entity_id = ?`, [r.id]),
       claimSubjects: await queryAll(`SELECT id, entity_id FROM entity_claims WHERE entity_id = ?`, [r.id]),
