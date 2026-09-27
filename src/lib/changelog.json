@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T21:16:29.537Z",
+  "generated": "2026-09-27T21:17:31.402Z",
   "entries": [
+    {
+      "hash": "2059bfb6",
+      "date": "2026-09-27",
+      "type": "Docs",
+      "description": "Soul.md draft — compact personality and principles: a friend who disagrees for your good, gently",
+      "scope": "anis"
+    },
     {
       "hash": "2c90e8e4",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Ai_usage.document_id is TEXT — a bound number stored as '15254.0' and matched nothing",
       "scope": null
-    },
-    {
-      "hash": "6176c4bf",
-      "date": "2026-07-16",
-      "type": "Other",
-      "description": "Meter EVERY chat call at ai.js (not just the rag adapter) + price from the registry",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "2059bfb6",
+        "date": "2026-09-27",
+        "type": "Docs",
+        "description": "Soul.md draft — compact personality and principles: a friend who disagrees for your good, gently",
+        "scope": "anis"
+      },
       {
         "hash": "2c90e8e4",
         "date": "2026-09-27",
@@ -7073,13 +7080,6 @@
         "date": "2026-07-16",
         "type": "Other",
         "description": "Ai_usage.document_id is TEXT — a bound number stored as '15254.0' and matched nothing",
-        "scope": null
-      },
-      {
-        "hash": "6176c4bf",
-        "date": "2026-07-16",
-        "type": "Other",
-        "description": "Meter EVERY chat call at ai.js (not just the rag adapter) + price from the registry",
         "scope": null
       }
     ]
