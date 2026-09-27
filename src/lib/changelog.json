@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T05:14:49.750Z",
+  "generated": "2026-09-27T05:20:34.189Z",
   "entries": [
+    {
+      "hash": "aed1f41b",
+      "date": "2026-09-26",
+      "type": "Fixed",
+      "description": "Catalog retype merges a record into its same-named twin of the new type instead of failing",
+      "scope": "entities"
+    },
     {
       "hash": "f3181e6e",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Order books by ABSORPTION sequence (grounded chronological, then pending by size) not by size",
       "scope": "bio popup"
-    },
-    {
-      "hash": "e18a4860",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Time-weighted progress bar (claims ~55% share) so it climbs meaningfully during the dominant stage",
-      "scope": "bio popup"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "aed1f41b",
+        "date": "2026-09-26",
+        "type": "Fixed",
+        "description": "Catalog retype merges a record into its same-named twin of the new type instead of failing",
+        "scope": "entities"
+      },
       {
         "hash": "f3181e6e",
         "date": "2026-09-26",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-13",
         "type": "Fixed",
         "description": "Order books by ABSORPTION sequence (grounded chronological, then pending by size) not by size",
-        "scope": "bio popup"
-      },
-      {
-        "hash": "e18a4860",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Time-weighted progress bar (claims ~55% share) so it climbs meaningfully during the dominant stage",
         "scope": "bio popup"
       }
     ]

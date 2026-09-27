@@ -2584,6 +2584,24 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // POST /server/entity-title-merge { write=false } — title → figure merges with strict name resolution + a second
+  // model check; dry by default. GET …/report?mode= → latest plan/result.
+  fastify.post('/server/entity-title-merge', { preHandler: requireInternal }, async (request) => {
+    const { write = false } = request.body || {};
+    const existing = backgroundTasks.get('entity-title-merge');
+    if (existing && existing.status === 'running') throw ApiError.conflict('An entity-title-merge run is already in progress');
+    const task = runBackgroundTask('entity-title-merge', 'scripts/entity-title-merge.mjs', write ? ['--write'] : []);
+    return { success: true, taskId: 'entity-title-merge', write: !!write, status: task.status };
+  });
+
+  fastify.get('/server/entity-title-merge/report', { preHandler: requireInternal }, async (request) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const mode = request.query.mode === 'write' ? 'write' : 'dry';
+    const files = readdirSync('logs').filter((f) => f.startsWith(`entity-title-merge-${mode}-`)).sort();
+    if (!files.length) throw ApiError.notFound(`no ${mode} title-merge report yet`);
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';
