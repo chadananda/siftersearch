@@ -94,3 +94,13 @@ describe('claims — run() on fake ports', () => {
     expect(llm.calls.length).toBe(1);     // fail-fast: ONE call, not 5 retries × 2 models
   });
 });
+
+describe('claims — eligibility', () => {
+  it('a paragraph whose note predates the version stamp is still extracted (a note is extractable whatever stamped it)', async () => {
+    const para = { id: 9, pid: 'para_9', kind: 'paragraph', contextModel: null, context: '@Shíráz, ~1844 [pin] — x', text: 'He declared His mission in Shíráz.' };
+    const llm = fakeLLM([{ content: '{"claims":[]}', finishReason: 'stop' }]);
+    const { rag } = makeRag({ seed: { paras: { 7: [para] }, coverage: { 7: 1 }, relations: [{ key: 'met' }] }, llm });
+    const stats = await rag.entities.claims(7, { version: 'v1' });
+    expect(stats.paras).toBe(1);
+  });
+});

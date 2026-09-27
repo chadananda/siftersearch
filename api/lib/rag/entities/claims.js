@@ -20,7 +20,9 @@ export async function run(ctx, docId, opts = {}) {
   const relations = (await ctx.store.getRelations?.()) || [];
   const relKeys = new Set(relations.map((r) => r.key));
   const relList = relations.map((r) => r.key).join(', ') || DEFAULT_RELATIONS;
-  let paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context && p.contextModel === version && (p.kind ?? 'paragraph') === 'paragraph');
+  // A NOTE IS EXTRACTABLE WHATEVER STAMPED IT (Chad, 2026-08-15 — applied to mentions then; claims kept the old
+  // version-equality filter, so paragraphs whose notes predate the stamp got mentions but were never offered for claims).
+  let paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context && (p.kind ?? 'paragraph') === 'paragraph');
   const allParas = paras.length;   // pre-resume count → ABSOLUTE progress base (resumed runs report true totals)
   // RESUME: only process paragraphs that don't already have claims — a re-run cheaply fills gaps (crash / earlier
   // throttle) instead of re-doing the whole book. (INSERT OR IGNORE already dedups, but this skips the model calls.)

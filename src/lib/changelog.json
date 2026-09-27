@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T20:19:11.075Z",
+  "generated": "2026-09-27T20:22:42.920Z",
   "entries": [
+    {
+      "hash": "2b1f41fd",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Dedup-guard searches by fact objects, not statements that begin with the subject's name",
+      "scope": "entities"
+    },
     {
       "hash": "9d805a41",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Plain-language stage descriptions (3-4 lines, no jargon)",
       "scope": null
-    },
-    {
-      "hash": "2ffd7130",
-      "date": "2026-07-14",
-      "type": "Other",
-      "description": "Honest done-gate (reconcile decided >=85% of clusters) + high-res progress",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "2b1f41fd",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Dedup-guard searches by fact objects, not statements that begin with the subject's name",
+        "scope": "entities"
+      },
       {
         "hash": "9d805a41",
         "date": "2026-09-27",
@@ -7075,15 +7082,6 @@
         "date": "2026-07-15",
         "type": "Other",
         "description": "Plain-language stage descriptions (3-4 lines, no jargon)",
-        "scope": null
-      }
-    ],
-    "2026-07-14": [
-      {
-        "hash": "2ffd7130",
-        "date": "2026-07-14",
-        "type": "Other",
-        "description": "Honest done-gate (reconcile decided >=85% of clusters) + high-res progress",
         "scope": null
       }
     ]

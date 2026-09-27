@@ -24,6 +24,17 @@ describe('disambiguate — pure helpers', () => {
     expect(renderNote({ place: '', era: '', idea: 'a thread', resolve: [] })).toBe('@?, ~? — a thread');
   });
 
+  // 2026-09-27: the note skipped "names already in full", and mentions are built only from the note — so people named
+  // in full (Mullá Ṣádiq in Eminent Bahá'ís ¶54) had no mention and their claims could not bind. And a bare name
+  // defaulted to the most prominent bearer (a tablet's Muḥammad became the Prophet).
+  it('resolves EVERY named person (full names map to themselves) and never defaults a bare name to prominence', () => {
+    const sys = buildSystem({ lang: 'en', genre: 'history' }, { title: 'T' }, 'CAST LINE');
+    expect(sys).toMatch(/EVERY named person/);
+    expect(sys).not.toMatch(/skip names already in full/);
+    expect(sys).not.toMatch(/most-prominent match/);
+    expect(sys).toMatch(/prominence alone is not evidence/);
+  });
+
   it('buildSystem embeds book meta + cast and flags a non-English source', () => {
     const sys = buildSystem(fakeProfiler({ lang: 'fa', script: 'arabic', genre: 'history' })({}), { title: 'Ẓuhúru\'l-Ḥaqq', author: 'Mázandarání' }, 'Vaḥíd ≠ Vaḥíd of Nayríz');
     expect(sys).toContain('Ẓuhúru');
