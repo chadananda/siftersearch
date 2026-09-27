@@ -2618,6 +2618,25 @@ Collection: ${paragraph.collection || 'Unknown'}
     return identityReplay({ sampleSize: Math.min(Number(request.query.samples) || 12, 100) });
   });
 
+  // POST /server/identity-materialize { write=false, doc? } — write the decision log's replay onto mentions
+  // (rag/entities/materialize.js) as background task 'identity-materialize'. DRY by default: corrections by category,
+  // recorded decisions, reassessment pairs. write saves a rollback file first. GET …/report?mode=dry|write → latest.
+  fastify.post('/server/identity-materialize', { preHandler: requireInternal }, async (request) => {
+    const { write = false, doc = null } = request.body || {};
+    const existing = backgroundTasks.get('identity-materialize');
+    if (existing && existing.status === 'running') throw ApiError.conflict('An identity-materialize run is already in progress');
+    const argv = [...(write ? ['--write'] : []), ...(doc ? [`--doc=${Number(doc)}`] : [])];
+    const task = runBackgroundTask('identity-materialize', 'scripts/identity-materialize.mjs', argv);
+    return { success: true, taskId: 'identity-materialize', write: !!write, status: task.status };
+  });
+  fastify.get('/server/identity-materialize/report', { preHandler: requireInternal }, async (request) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const mode = request.query.mode === 'write' ? 'write' : 'dry';
+    const files = readdirSync('logs').filter((f) => f.startsWith(`identity-materialize-${mode}-`)).sort();
+    if (!files.length) throw ApiError.notFound(`no ${mode} report yet`);
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   // GET /server/docs-by-title?q=a|b|c — read-only: every copy of each titled work with paragraph / claim / mention
   // counts, so a pass targets the copy the entity pipeline actually used.
   fastify.get('/server/docs-by-title', { preHandler: requireInternal }, async (request) => {

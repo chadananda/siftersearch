@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T19:09:32.503Z",
+  "generated": "2026-09-27T19:14:08.090Z",
   "entries": [
+    {
+      "hash": "e20ccbfd",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Cluster decisions bind/unbind only their own document; retire the per-book global evidence-free merge",
+      "scope": "entities"
+    },
     {
       "hash": "886c3c69",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Flush batch 200->20 so progress % climbs in fine steps (was ~40% jumps)",
       "scope": null
-    },
-    {
-      "hash": "019ae36c",
-      "date": "2026-07-14",
-      "type": "Other",
-      "description": "Collapsed state → standard right-side rail (top-right, docked), not a full-width top bar",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "e20ccbfd",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Cluster decisions bind/unbind only their own document; retire the per-book global evidence-free merge",
+        "scope": "entities"
+      },
       {
         "hash": "886c3c69",
         "date": "2026-09-27",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-14",
         "type": "Other",
         "description": "Flush batch 200->20 so progress % climbs in fine steps (was ~40% jumps)",
-        "scope": null
-      },
-      {
-        "hash": "019ae36c",
-        "date": "2026-07-14",
-        "type": "Other",
-        "description": "Collapsed state → standard right-side rail (top-right, docked), not a full-width top bar",
         "scope": null
       }
     ]

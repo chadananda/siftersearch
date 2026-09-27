@@ -2,7 +2,7 @@
 // (docs/entity-improvable-architecture.md). A mention's entity = its cluster decision IN ITS OWN DOCUMENT, carried
 // through every applied merge. The replay check compares that with what the database holds and names each divergence.
 import { describe, it, expect } from 'vitest';
-import { replay, compare } from '../../api/lib/rag/entities/projection.js';
+import { replay, compare, divergences } from '../../api/lib/rag/entities/projection.js';
 
 const m = (id, doc, ra, entityId = null, basis = 'reconcile') => ({ id, docId: doc, resolvedAs: ra, entityId, basis });
 const cluster = (id, kind, doc, ra, { entityId = null, applied = null, status = 'applied', supersedes = null } = {}) =>
@@ -70,6 +70,37 @@ describe('replay — mention-level decisions', () => {
   });
 });
 
+describe('replay — anchors and reversals', () => {
+  it('a mention decision keyed by ANCHOR survives re-extraction (new row id, same anchor)', () => {
+    const r = replay({ mentions: [{ id: 999, anchor: 'a1b2', docId: 7, resolvedAs: 'X' }],
+      decisions: [cluster(10, 'create', 7, 'X', { applied: 1 }), { id: 30, kind: 'link', targetKind: 'mention', status: 'applied', targetIds: ['a1b2'], payload: { entityId: 4 } }] });
+    expect(r.get(999)).toMatchObject({ entity: 4, decision: 30 });
+  });
+
+  it('an applied unmerge (a decision superseding a merge) restores both records', () => {
+    const decisions = [cluster(10, 'create', 7, 'X', { applied: 1 }), cluster(11, 'create', 7, 'Y', { applied: 2 }), merge(20, 2, [1]),
+      { id: 25, kind: 'unmerge', targetKind: 'entity', status: 'applied', supersedes: 20, payload: { canonical: 2, merged: [1] } }];
+    const r = replay({ mentions: [m(1, 7, 'X'), m(2, 7, 'Y')], decisions });
+    expect(r.get(1).entity).toBe(1);
+    expect(r.get(2).entity).toBe(2);
+  });
+});
+
+describe('replay — precedence: the latest decision governs, unless it comes from a LOWER tier', () => {
+  const ml = (id, anchor, entityId, tier) => ({ id, kind: 'link', targetKind: 'mention', status: 'applied', actorTier: tier, targetIds: [anchor], payload: { entityId } });
+  const mn = { id: 1, anchor: 'aa', docId: 7, resolvedAs: 'X' };
+  const c = (id, entityId, tier = 2) => ({ ...cluster(id, 'link', 7, 'X', { entityId, applied: entityId }), actorTier: tier });
+  // Recorded legacy state carries the tier of what PRODUCED it (another book's model decision = 2), flagged unproven.
+  it('recorded legacy state (same tier, later) holds over the earlier model decision', () =>
+    expect(replay({ mentions: [mn], decisions: [c(10, 1), ml(20, 'aa', 5, 2)] }).get(1).entity).toBe(5));
+  it('a later model decision supersedes recorded legacy state', () =>
+    expect(replay({ mentions: [mn], decisions: [ml(20, 'aa', 5, 2), c(30, 1)] }).get(1).entity).toBe(1));
+  it('a later RULE (tier 1) does not override an earlier model decision', () =>
+    expect(replay({ mentions: [mn], decisions: [c(10, 1), ml(20, 'aa', 5, 1)] }).get(1).entity).toBe(1));
+  it('a human decision (tier 3) is not overridden by a later model decision', () =>
+    expect(replay({ mentions: [mn], decisions: [ml(20, 'aa', 5, 3), c(30, 1)] }).get(1).entity).toBe(5));
+});
+
 describe('compare — the replay check against the database', () => {
   it('classifies every mention: match · cross-doc · no-decision (by who bound it) · unbound · mismatch', () => {
     const mentions = [
@@ -111,5 +142,16 @@ describe('compare — the replay check against the database', () => {
     const mentions = [m(1, 7, 'X', 1)];            // DB kept 1 alive; the log's order makes 2 the survivor
     const decisions = [cluster(10, 'create', 7, 'X', { applied: 1 }), cluster(11, 'create', 8, 'Y', { applied: 2 }), merge(20, 2, [1])];
     expect(compare({ mentions, decisions }).counts).toEqual({ representative: 1 });
+  });
+});
+
+describe('divergences — every mention whose stored id differs from the replay, classified', () => {
+  it('lists all of them (not just samples), with the category and both ids', () => {
+    const mentions = [m(1, 7, 'A', 100), m(2, 8, 'A', 100), m(4, 7, 'C', null)];
+    const decisions = [cluster(10, 'link', 7, 'A', { entityId: 100, applied: 100 }), cluster(11, 'link', 8, 'A', { entityId: 300, applied: 300 }), cluster(12, 'create', 7, 'C', { applied: 400 })];
+    expect(divergences({ mentions, decisions })).toEqual([
+      expect.objectContaining({ mention: 2, category: 'cross-doc', db: 100, replay: 300 }),
+      expect.objectContaining({ mention: 4, category: 'unbound', db: null, replay: 400 }),
+    ]);
   });
 });

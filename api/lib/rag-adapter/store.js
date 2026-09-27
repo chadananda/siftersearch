@@ -548,6 +548,27 @@ export function makeStore() {
       return r.rows?.[0]?.changes ?? 0;
     },
 
+    // ── Identity projection (rag/entities/projection.js + materialize.js) ──
+    // The replay's inputs: every mention (or one document's) with its stored binding, and the identity-bearing log.
+    async getMentionIdentity({ docId = null } = {}) {
+      const rows = await db.queryAll(`SELECT id, anchor, doc_id, resolved_as, entity_id, resolution_basis, method_version FROM entity_mentions_v2
+        ${docId != null ? 'WHERE doc_id=?' : ''}`, docId != null ? [docId] : []);
+      return rows.map((r) => ({ id: r.id, anchor: r.anchor, docId: r.doc_id, resolvedAs: r.resolved_as, entityId: r.entity_id, basis: r.resolution_basis || r.method_version || 'unknown' }));
+    },
+    async getIdentityLog() {
+      const rows = await db.queryAll(`SELECT id, kind, target_kind, target_ids, status, supersedes, actor_tier, payload FROM entity_decisions
+        WHERE target_kind IN ('mention-cluster','mention') OR kind IN ('merge','unmerge')`);
+      return rows.map((r) => ({ id: r.id, kind: r.kind, targetKind: r.target_kind, targetIds: r.target_ids, status: r.status, supersedes: r.supersedes, actorTier: r.actor_tier, payload: r.payload }));
+    },
+    // Write projected bindings (diff rows {id, entityId}); basis 'projection' marks them as the log's output.
+    async setMentionEntities(rows) {
+      for (let i = 0; i < rows.length; i += 500) {
+        await db.transaction(rows.slice(i, i + 500).map(({ id, entityId }) => ({
+          sql: `UPDATE entity_mentions_v2 SET entity_id=?, resolution_basis='projection' WHERE id=?`, args: [entityId, id] })));
+      }
+      return rows.length;
+    },
+
     // Mark a decision applied + record which entity it resolved to (reversible provenance).
     async markDecisionApplied(id, entityId) {
       await db.query(`UPDATE entity_decisions SET status='applied', payload=json_set(COALESCE(payload,'{}'),'$.applied_entity_id',?) WHERE id=?`, [entityId, id]);

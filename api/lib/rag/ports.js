@@ -82,6 +82,9 @@
  * @property {(resolvedAs: string, entityId: number, conf: number, docId: number) => Promise<number>} bindMentions  one document's cluster → rows bound
  * @property {(resolvedAs: string, docId: number) => Promise<number>} unbindMentions  one document's cluster → rows freed
  * @property {(decisionId: number, entityId: number) => Promise<void>} markDecisionApplied
+ * @property {(o?: {docId?: number}) => Promise<object[]>} getMentionIdentity   replay input: mentions + stored binding
+ * @property {() => Promise<Decision[]>} getIdentityLog                     replay input: identity-bearing decisions
+ * @property {(rows: {id:number, entityId:number|null}[]) => Promise<number>} setMentionEntities  write projected bindings
  * @typedef {Object} DocMeta
  * @property {number} id @property {string} [title] @property {string} [author] @property {string} [religion]
  * @property {string} [collection] @property {number} [year] @property {string} [description] @property {string} [lang]
