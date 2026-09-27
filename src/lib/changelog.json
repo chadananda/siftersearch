@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T01:25:32.916Z",
+  "generated": "2026-09-27T02:10:09.464Z",
   "entries": [
+    {
+      "hash": "eb8c6bcb",
+      "date": "2026-09-26",
+      "type": "Fixed",
+      "description": "Who-met-whom — self-typed targets ignored, canonical names owned by their bearer, roles are not names, tighter negation",
+      "scope": "search"
+    },
     {
       "hash": "3e908d30",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Backward re-resolution (convergence sweep) — re-run research-resolve over held uncertains vs the fuller corpus",
       "scope": null
-    },
-    {
-      "hash": "3f05a478",
-      "date": "2026-07-13",
-      "type": "Other",
-      "description": "Show per-book new-in-sequence (+N) and unresolved (held-uncertain) counts",
-      "scope": "progress popup"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "eb8c6bcb",
+        "date": "2026-09-26",
+        "type": "Fixed",
+        "description": "Who-met-whom — self-typed targets ignored, canonical names owned by their bearer, roles are not names, tighter negation",
+        "scope": "search"
+      },
       {
         "hash": "3e908d30",
         "date": "2026-09-26",
@@ -7078,13 +7085,6 @@
         "type": "Docs",
         "description": "Backward re-resolution (convergence sweep) — re-run research-resolve over held uncertains vs the fuller corpus",
         "scope": null
-      },
-      {
-        "hash": "3f05a478",
-        "date": "2026-07-13",
-        "type": "Other",
-        "description": "Show per-book new-in-sequence (+N) and unresolved (held-uncertain) counts",
-        "scope": "progress popup"
       }
     ]
   }

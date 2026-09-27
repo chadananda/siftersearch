@@ -149,7 +149,8 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
       peopleAnswer = { pattern: pr.pattern, target: pr.target || null, group: pr.group || null, with: pr.with || null, relations: pr.relations || null,
         met: entities.map((p) => p.name),
         contested: (pr.contested || []).map((p) => ({ id: p.id, name: p.name, evidence: p.evidence.slice(0, 3).map(ev), against: p.against.slice(0, 3).map(ev) })),
-        notMet: (pr.notMet || []).map((p) => ({ id: p.id, name: p.name, evidence: p.evidence.slice(0, 3).map(ev) })),
+        notMet: (pr.notMet || []).map((p) => ({ id: p.id, name: p.name, evidence: p.evidence.slice(0, 3).map(ev),
+          ...(p.disputedBy?.length ? { disputedBy: p.disputedBy.slice(0, 3).map(ev) } : {}) })),
         noEvidence: pr.noEvidence || [] };
     }
     if (pr.pattern) Object.assign(entities, { pattern: pr.pattern, ms: pr.ms ?? null, parties: { target: pr.target, with: pr.with, group: pr.group } });   // which people path answered

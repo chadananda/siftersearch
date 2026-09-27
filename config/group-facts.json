@@ -1,0 +1,14 @@
+[
+  {
+    "key": "lotl-met-bab",
+    "note": "The Letters of the Living attained the presence of the Báb in Shíráz — all but Ṭáhirih (GPB: 'unlike her fellow-disciples, never attained the presence of the Báb').",
+    "group": 1247655,
+    "target": 1247551,
+    "relation": "met",
+    "paragraph": 21053951,
+    "proof": "attained the presence of the Báb and were declared “Letters of the Living.”",
+    "exceptions": [
+      { "member": 1247554, "paragraph": 21055489, "proof": "unlike her fellow-disciples, never attained the presence of the Báb" }
+    ]
+  }
+]

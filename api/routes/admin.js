@@ -2456,6 +2456,14 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // POST /server/entity-group-facts { write=false } — config/group-facts.json → one cited claim per group member
+  // (proof verified verbatim), exceptions as denying claims. Background task 'entity-group-facts'.
+  fastify.post('/server/entity-group-facts', { preHandler: requireInternal }, async (request) => {
+    const { write = false } = request.body || {};
+    const task = runBackgroundTask('entity-group-facts', 'scripts/entity-group-facts.mjs', write ? ['--write'] : []);
+    return { success: true, taskId: 'entity-group-facts', write: !!write, status: task.status };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';

@@ -79,7 +79,8 @@ function formsOf(names, canonicalCount) {
 
 /** Pure: build the index. persons {id,cn,imp,aliases}, groups {id,name,aliases}, members {group,id},
  *  claims {id,eid,rel,tid,st,prf,doc,pid,tv}, places [name]. */
-export function createEncounterIndex({ persons, groups, members, claims, places = [] }) {
+export function createEncounterIndex({ persons, groups, members, claims, places = [], authoritative = [] }) {
+  const authDocs = new Set(authoritative);
   const placeKeys = new Set(places.map((n) => fold(String(n).replace(/\([^)]*\)/g, ' ')).trim()).filter(Boolean));
   const people = new Map(), owners = new Map(), byWord = new Map();
   for (const p of persons) {
@@ -118,7 +119,8 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
   for (const c of claims) {
     // A target typed to its own SUBJECT is a mis-bind (the object "the Báb" bound to the man who met Him): drop the
     // type, keep the claim — its statement can still name the real object.
-    const row = { ...c, tid: c.tid === c.eid ? null : c.tid, hay: fold(c.st), topic: fold(`${c.st} ${c.prf || ''}`), neg: NEGATED.test(c.prf || '') };
+    const row = { ...c, tid: c.tid === c.eid ? null : c.tid, hay: fold(c.st), topic: fold(`${c.st} ${c.prf || ''}`), neg: NEGATED.test(c.prf || ''),
+      auth: authDocs.has(c.doc) };
     all.push(row);
     (bySubject.get(c.eid) || bySubject.set(c.eid, []).get(c.eid)).push(row);
   }
@@ -225,13 +227,13 @@ export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = 
   // The asked relation constrains the edge — strictly (see ASKED); a question with no relation verb takes them all.
   const asked = ASKED.find(([re]) => re.test(fq))?.[1] || null;
   const topicHit = (r) => topic.length > 0 && topic.some((w) => r.topic.includes(` ${w}`));
-  const rank = (r) => (topicHit(r) ? 4 : 0) + (r.via === 'typed' ? 2 : 0) + (r.rel === 'met' ? 1 : 0);
+  const rank = (r) => (r.auth ? 8 : 0) + (topicHit(r) ? 4 : 0) + (r.via === 'typed' ? 2 : 0) + (r.rel === 'met' ? 1 : 0);
   const shape = (rs) => {
     const seen = new Set();
     return rs.sort((a, b) => rank(b) - rank(a) || String(a.tv || '9999').localeCompare(String(b.tv || '9999'))).filter((r) => {
       const k = `${r.doc}:${r.pid}`; if (seen.has(k)) return false; seen.add(k); return true;
     }).slice(0, maxEvidence).map((r) => ({ statement: r.st, relation: r.rel, doc_id: r.doc ?? null, paraId: r.pid || null,
-      when: r.tv || null, via: r.via, proof: r.prf || null, ...(r.neg ? { negated: true } : {}), ...(topicHit(r) ? { topic: true } : {}) }));
+      when: r.tv || null, via: r.via, proof: r.prf || null, ...(r.auth ? { authoritative: true } : {}), ...(r.neg ? { negated: true } : {}), ...(topicHit(r) ? { topic: true } : {}) }));
   };
   // Every answer carries its proof. Evidence FOR (a claim whose proof does not deny it) and AGAINST (a proof that
   // says the meeting never happened) are kept apart: for only → people; against only → notMet; both → contested.
@@ -241,7 +243,13 @@ export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = 
     const kept = [...rows.values()].filter((r) => !asked || asked.includes(r.rel));
     const pos = kept.filter((r) => !r.neg), neg = kept.filter((r) => r.neg);
     const base = { id, name: p.name, importance: p.imp };
-    if (pos.length && neg.length) contested.push({ ...base, evidence: shape(pos), against: shape(neg) });
+    // AUTHORITY SETTLES A CONFLICT: when the core histories (God Passes By, The Dawn-Breakers) speak to it and the
+    // other side rests only on secondary books, the core histories decide — Shoghi Effendi's "unlike her fellow-
+    // disciples, never attained the presence of the Báb" is not "contested" by a popular retelling.
+    const authPos = pos.some((r) => r.auth), authNeg = neg.some((r) => r.auth);
+    if (pos.length && neg.length && authNeg && !authPos) notMet.push({ ...base, evidence: shape(neg.filter((r) => r.auth)), disputedBy: shape(pos) });
+    else if (pos.length && neg.length && authPos && !authNeg) people.push({ ...base, topic: pos.filter(topicHit).length, typed: pos.filter((r) => r.via === 'typed').length, evidence: shape(pos.filter((r) => r.auth).concat(pos.filter((r) => !r.auth))), disputedBy: shape(neg) });
+    else if (pos.length && neg.length) contested.push({ ...base, evidence: shape(pos), against: shape(neg) });
     else if (neg.length) notMet.push({ ...base, evidence: shape(neg) });
     else if (pos.length) people.push({ ...base, topic: pos.filter(topicHit).length, typed: pos.filter((r) => r.via === 'typed').length, evidence: shape(pos) });
   }
@@ -274,11 +282,13 @@ async function build() {
         AND ec.proof_verbatim IS NOT NULL AND ec.proof_verbatim <> ''`, ENCOUNTER_RELATIONS, 'encounters:claims'),
     queryAll(`SELECT canonical_name n FROM graph_entities WHERE entity_type = 'place' AND ${LIVE_SQL()}`, [], 'encounters:places'),
   ]);
+  // The core histories whose word settles a conflict (see encounterSearch). By title: every copy of them counts.
+  const authoritative = (await queryAll(`SELECT id FROM docs WHERE title IN ('God Passes By', 'The Dawn-Breakers')`, [], 'encounters:authority')).map((r) => r.id);
   const gids = groups.map((g) => g.id);
   const members = gids.length ? await queryAll(`SELECT gr.target_entity_id "group", gr.source_entity_id id
     FROM graph_relations gr WHERE gr.target_entity_id IN (${gids.map(() => '?').join(',')})`, gids, 'encounters:members') : [];
   const live = new Set(persons.map((p) => p.id));
-  return createEncounterIndex({ persons, groups, members, claims: claims.filter((c) => live.has(c.eid)), places: places.map((r) => r.n) });
+  return createEncounterIndex({ persons, groups, members, claims: claims.filter((c) => live.has(c.eid)), places: places.map((r) => r.n), authoritative });
 }
 
 export async function getEncounterIndex() {

@@ -233,4 +233,19 @@ describe('encounterSearch', () => {
       expect(encounterSearch('who met the Báb', { index: ix }).target.id).toBe(2);
     });
   });
+
+  it('the core histories settle a conflict: Shoghi Effendi’s denial is not "contested" by a secondary retelling', () => {
+    const ix = createEncounterIndex({
+      persons: [{ id: 2, cn: 'the Báb', imp: 99, aliases: '[]' }, { id: 4, cn: 'Ṭáhirih', imp: 80, aliases: '[]' }],
+      groups: [], members: [], authoritative: [21310],
+      claims: [
+        { id: 1, eid: 4, rel: 'met', tid: 2, st: 'Ṭáhirih — met the Báb', prf: 'held a conversation with the Bab', doc: 999, pid: 'p1', tv: null },
+        { id: 2, eid: 4, rel: 'met', tid: 2, st: 'Ṭáhirih — met the Báb', prf: 'unlike her fellow-disciples, never attained the presence of the Báb', doc: 21310, pid: 'para_31', tv: null },
+      ],
+    });
+    const r = encounterSearch('did Ṭáhirih meet the Báb?', { index: ix });
+    expect(r.contested).toEqual([]);
+    expect(r.notMet[0]).toMatchObject({ name: 'Ṭáhirih', evidence: [expect.objectContaining({ authoritative: true, negated: true })] });
+    expect(r.notMet[0].disputedBy[0].proof).toMatch(/held a conversation/);
+  });
 });
