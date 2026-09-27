@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T04:17:45.266Z",
+  "generated": "2026-09-27T04:24:30.364Z",
   "entries": [
+    {
+      "hash": "2c2902cc",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Mention coverage audit + backfill — names written in the text, not only names the note glossed",
+      "scope": "entities"
+    },
     {
       "hash": "7a80ec24",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Author-routed phases — Balyuzi/Taherzadeh to Foundation, Rabbani to Primary",
       "scope": "bio popup"
-    },
-    {
-      "hash": "33874655",
-      "date": "2026-07-13",
-      "type": "New",
-      "description": "Current-book PROGRESS bar replaces size bars",
-      "scope": "bio popup"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "2c2902cc",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Mention coverage audit + backfill — names written in the text, not only names the note glossed",
+        "scope": "entities"
+      },
       {
         "hash": "7a80ec24",
         "date": "2026-09-26",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-13",
         "type": "New",
         "description": "Author-routed phases — Balyuzi/Taherzadeh to Foundation, Rabbani to Primary",
-        "scope": "bio popup"
-      },
-      {
-        "hash": "33874655",
-        "date": "2026-07-13",
-        "type": "New",
-        "description": "Current-book PROGRESS bar replaces size bars",
         "scope": "bio popup"
       }
     ]
