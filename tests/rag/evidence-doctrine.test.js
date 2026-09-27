@@ -14,7 +14,16 @@ describe('identity doctrine — the one comparator', () => {
     expect(IDENTITY_DOCTRINE).toMatch(/nisba/i);
     expect(IDENTITY_DOCTRINE).toMatch(/Covenant-breaker/i);      // named as a category, not identity
     expect(IDENTITY_DOCTRINE).toMatch(/Herrigel/);               // the concrete negative example
-    expect(IDENTITY_DOCTRINE).toMatch(/bare common name/i);      // asymmetric rule retained
+    expect(IDENTITY_DOCTRINE).toMatch(/bare common name/i);
+  });
+  // 2026-09-27: "a qualified name merges on ABSENCE of contradiction" counted the name as its own evidence.
+  it('a name never decides identity: SAME needs a positive tie beyond it; the default is UNSURE', () => {
+    expect(IDENTITY_DOCTRINE).not.toMatch(/merges on ABSENCE/i);
+    expect(IDENTITY_DOCTRINE).toMatch(/never the same person/i);
+    expect(IDENTITY_DOCTRINE).toMatch(/POSITIVE DISCRIMINATIVE TIE/);
+    expect(IDENTITY_DOCTRINE).toMatch(/Otherwise UNSURE/);
+    expect(IDENTITY_DOCTRINE).toMatch(/INNERMOST/);                // nested narration: the inner story's context
+    expect(IDENTITY_DOCTRINE).toMatch(/Prominence is not evidence/);
   });
   it('every resolver embeds the shared doctrine (no drift)', () => {
     for (const S of [MERGE, DEDUP, RECONCILE, RESEARCH]) expect(S).toContain(IDENTITY_DOCTRINE);

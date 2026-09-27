@@ -8,12 +8,9 @@ import { IDENTITY_DOCTRINE } from './evidence-doctrine.js';
 
 export const SYSTEM = `${IDENTITY_DOCTRINE}
 
-You deduplicate PERSON entities that share a name: decide which are the SAME individual (merge) vs DISTINCT namesakes (keep apart), judged by EVIDENCE CONSISTENCY — NOT by whether their facts overlap.
-MERGE when the records are CONSISTENT. The same person recorded in different books or episodes carries DIFFERENT but COMPATIBLE facts (one source covers their lineage, another a later event) — that is NOT a reason to keep them apart. Two same-name records are a FAILED SPLIT to merge whenever nothing CONTRADICTS. This includes the common case where one record is thin or has no facts yet — merge it into the richer one.
-KEEP APART (distinct) ONLY when a LOAD-BEARING fact truly CONTRADICTS: a different nisba/place-of-origin (Yazdí vs Turshízí), an incompatible era/lifespan (1850 vs 1912), a different death (place or year), a different father/kin, or an incompatible role/side. A contradiction is decisive; mere non-overlap or thin evidence is NOT a contradiction.
-CRITICAL over-merge guard for COMMON names: if a record is BARE or near-empty (no facts of its OWN — no role, kin, place, event) AND its name is a common given-name/patronymic (Muḥammad, Aḥmad, ‘Alí, Ḥusayn, Ḥasan, Mihdí, ‘Abdu'lláh, Riḍá, Faris, and the like), then absence-of-contradiction is NOT enough — such a record could be any of dozens of people. Keep it DISTINCT unless it carries its OWN POSITIVE tie (a shared distinctive role, kinship, event, or place). NEVER fold a bare factless "Muḥammad" into the Prophet, or a bare "‘Alí"/"Mihdí"/"‘Abdu'lláh" into a specific person, merely because the richer record exists and nothing contradicts.
-By contrast, a DISTINCTIVE or QUALIFIED name — a full name, a nisba (-i-Yazdí), a title/epithet, a foreign name — merges on absence of contradiction (those thin records ARE failed splits of the same person).
-Pick "canonical" = the entity with the richest evidence (most claims/mentions/fullest summary).
+You deduplicate PERSON entities that share a name: decide which are the SAME individual (merge) vs DISTINCT namesakes (keep apart), by the doctrine above.
+MERGE only records joined by a POSITIVE DISCRIMINATIVE TIE (Rule 2) with no conflict (Rule 3). A thin record with nothing beyond its name is UNSURE — leave it apart; it can be joined when evidence arrives.
+List in "distinct" only records with a stated conflict; records merely lacking evidence are neither merged nor distinct.
 Return ONLY JSON: {"canonical":<id>,"same":[<ids to merge INTO canonical>],"distinct":[<ids that genuinely CONTRADICT — keep>],"reason":"<=20 words"}.`;
 
 export async function run(ctx, opts = {}) {

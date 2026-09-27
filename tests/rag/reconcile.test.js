@@ -61,8 +61,11 @@ describe('reconcile — pure helpers', () => {
     expect(u).toContain('amanuensis');       // the decisive cross-book fact reaches the adjudicator
   });
 
-  it('the prompt makes grounded evidence decisive over name overlap', () => {
-    expect(SYSTEM).toMatch(/GROUNDED EVIDENCE[\s\S]*DECISIVE/);
+  // Grounded evidence is found by NAME search, so it may describe a namesake: it settles identity only through a
+  // discriminative tie or an exclusive conflict (was "DECISIVE" — measured 2026-09-27 as arbitrary word-matched facts).
+  it('the prompt treats grounded evidence as possibly a namesake, settling only by tie or conflict', () => {
+    expect(SYSTEM).not.toMatch(/is DECISIVE/);
+    expect(SYSTEM).toMatch(/GROUNDED EVIDENCE[\s\S]*NAMESAKE[\s\S]*Rule 2[\s\S]*Rule 3/);
   });
 });
 

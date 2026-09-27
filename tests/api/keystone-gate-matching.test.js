@@ -66,8 +66,8 @@ describe('the LLM decides, with the evidence it needs', () => {
   });
 
   it('carries the doctrine that governs the split', () => {
-    expect(SYSTEM).toMatch(/EVIDENCE CONSISTENCY/);
-    expect(SYSTEM).toMatch(/KEEP APART/);
+    expect(SYSTEM).toMatch(/POSITIVE DISCRIMINATIVE TIE/);   // 2026-09-27 doctrine: a merge needs a tie beyond the name
+    expect(SYSTEM).toMatch(/keep apart/i);
     expect(SYSTEM).toMatch(/nisba/i);                     // Yazdí vs Turshízí is near-decisive
   });
 

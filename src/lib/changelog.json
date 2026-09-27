@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T19:35:33.720Z",
+  "generated": "2026-09-27T20:09:43.065Z",
   "entries": [
+    {
+      "hash": "1963cb07",
+      "date": "2026-09-27",
+      "type": "Docs",
+      "description": "Identity work — increment 2 status, dry-run results, next: evidence dossier + pair judge",
+      "scope": "plan"
+    },
     {
       "hash": "5417a107",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "SSR the navbar on biography + library (was client:only → blank until hydrate)",
       "scope": null
-    },
-    {
-      "hash": "2efa1090",
-      "date": "2026-07-14",
-      "type": "Other",
-      "description": "Main bar and per-book mini bar render identically",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "1963cb07",
+        "date": "2026-09-27",
+        "type": "Docs",
+        "description": "Identity work — increment 2 status, dry-run results, next: evidence dossier + pair judge",
+        "scope": "plan"
+      },
       {
         "hash": "5417a107",
         "date": "2026-09-27",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-14",
         "type": "Other",
         "description": "SSR the navbar on biography + library (was client:only → blank until hydrate)",
-        "scope": null
-      },
-      {
-        "hash": "2efa1090",
-        "date": "2026-07-14",
-        "type": "Other",
-        "description": "Main bar and per-book mini bar render identically",
         "scope": null
       }
     ]

@@ -9,10 +9,12 @@ describe('merge — pure helpers', () => {
       .toEqual({ canonical: 5, same: [6, 7], distinct: [8], reason: 'same era/role' });
     expect(parseMerge('nope')).toBeNull();
   });
-  it('the prompt merges on evidence CONSISTENCY (keep apart only on contradiction), with a bare-common-name caution', () => {
-    expect(SYSTEM).toMatch(/consisten/i);                 // merge when consistent — not "facts must agree"
-    expect(SYSTEM).toMatch(/contradict/i);                // keep apart ONLY on a load-bearing contradiction
-    expect(SYSTEM).toMatch(/bare|common given-name/i);    // namesake caution retained for bare common names
+  // 2026-09-27: "merge whenever nothing contradicts / merge thin records into the richer one" merged ~7,200 records on
+  // a name and a mention count. A merge now needs a positive tie; a thin record is UNSURE and left apart.
+  it('the prompt merges only on a positive tie; a thin record is left apart as UNSURE', () => {
+    expect(SYSTEM).toMatch(/POSITIVE DISCRIMINATIVE TIE/);
+    expect(SYSTEM).toMatch(/thin record[\s\S]*UNSURE/i);
+    expect(SYSTEM).not.toMatch(/merge it into the richer one/i);
     expect(buildUser({ key: 'abdulbaha', ids: [1, 2], entities: [{ id: 1, canonical: '‘Abdu’l-Bahá', mentions: 40 }, { id: 2, canonical: '‘Abdu’l-Bahá', mentions: 3 }] })).toContain('abdulbaha');
   });
 });
