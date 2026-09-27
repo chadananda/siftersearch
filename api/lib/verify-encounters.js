@@ -1,7 +1,7 @@
 // Verify encounter claims against their FULL paragraph (the proof span alone often omits who is speaking — "held a
 // conversation with the Bab" — or negates the claim — "she never met the Báb"). Pure prompt + parse here; the runner
 // (scripts/verify-encounters.mjs) loads paragraphs, calls the model, stores verdicts in claim_verifications.
-export const VERIFY_VERSION = 1;
+export const VERIFY_VERSION = 2;   // v2: reversed roles are still a meeting; intent alone is not
 export const VERDICTS = ['met', 'denied', 'not_stated', 'wrong_person'];
 
 export const SYSTEM = `You check claims that two people MET — were physically in each other's presence — against the source paragraph they were extracted from. For each numbered claim, read the WHOLE paragraph and return one verdict:
@@ -9,7 +9,7 @@ export const SYSTEM = `You check claims that two people MET — were physically 
 - "denied": the paragraph states they did NOT meet ("never attained His presence", "never saw", "without ever seeing Him").
 - "not_stated": the paragraph does not say they met in person — only belief, recognition, correspondence, a dream, a letter, hearing about someone, or a meeting of OTHER people.
 - "wrong_person": the paragraph describes such a meeting but between different people than SUBJECT and OBJECT (e.g. the claim names the Báb but the text is about Bahá'u'lláh).
-Rules: judge only what THIS paragraph says, never your own knowledge of history. A pronoun counts when the paragraph makes clear whom it means. Quote the paragraph's own decisive words verbatim (max 25 words).
+Rules: judge only what THIS paragraph says, never your own knowledge of history. A pronoun or kin term ("his brother", "His Host") counts when the paragraph makes clear whom it means. The question is only whether the two were in each other's PRESENCE: if they were, answer "met" even when the claim reverses who hosted or accompanied whom. Intention or a journey toward someone ("set out to visit", "sought his presence") is "met" only if the paragraph says they arrived or were together; otherwise "not_stated". Quote the paragraph's own decisive words verbatim (max 25 words).
 Why: these verdicts decide answers to "did X meet Y?" for scholars; a wrong "met" is worse than a missing one.
 Example: claim "Ṭáhirih — met the Báb", paragraph "…a woman, the only one of her sex, who, unlike her fellow-disciples, never attained the presence of the Báb…" → {"n":1,"verdict":"denied","quote":"unlike her fellow-disciples, never attained the presence of the Báb"}.
 Return ONLY JSON: {"verdicts":[{"n":<claim number>,"verdict":"met|denied|not_stated|wrong_person","quote":"...","reason":"<=12 words"}]}`;

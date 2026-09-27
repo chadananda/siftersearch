@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T02:24:15.084Z",
+  "generated": "2026-09-27T02:29:18.948Z",
   "entries": [
+    {
+      "hash": "d6d0a865",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Verify meeting claims against their full paragraph (migration 123 claim_verifications)",
+      "scope": "entities"
+    },
     {
       "hash": "b8a56eaa",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Stop truncation-thrash + purge deprecated deepseek-chat from live path",
       "scope": "deepseek"
-    },
-    {
-      "hash": "3cb5ea10",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Integration-phases.js straight-quote delimiters (prev edit smart-quoted the code → SyntaxError)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "d6d0a865",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Verify meeting claims against their full paragraph (migration 123 claim_verifications)",
+        "scope": "entities"
+      },
       {
         "hash": "b8a56eaa",
         "date": "2026-09-26",
@@ -7078,13 +7085,6 @@
         "type": "Fixed",
         "description": "Stop truncation-thrash + purge deprecated deepseek-chat from live path",
         "scope": "deepseek"
-      },
-      {
-        "hash": "3cb5ea10",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Integration-phases.js straight-quote delimiters (prev edit smart-quoted the code → SyntaxError)",
-        "scope": null
       }
     ]
   }

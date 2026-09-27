@@ -248,4 +248,18 @@ describe('encounterSearch', () => {
     expect(r.notMet[0]).toMatchObject({ name: 'Ṭáhirih', evidence: [expect.objectContaining({ authoritative: true, negated: true })] });
     expect(r.notMet[0].disputedBy[0].proof).toMatch(/held a conversation/);
   });
+
+  it('a model verdict from the whole paragraph overrides the proof span', () => {
+    const ix = createEncounterIndex({
+      persons: [{ id: 2, cn: 'the Báb', imp: 99, aliases: '[]' }, { id: 9, cn: 'Nabíl-i-A‘ẓam', imp: 70, aliases: '["Nabíl"]' }, { id: 5, cn: 'Mullá Ḥusayn', imp: 85, aliases: '[]' }],
+      groups: [], members: [],
+      claims: [
+        { id: 1, eid: 9, rel: 'met', tid: 2, st: 'Nabíl-i-A‘ẓam — met the Báb', prf: 'He would frequently come to the home of my late father', doc: 3, pid: 'p1', tv: null, vd: 'wrong_person' },
+        { id: 2, eid: 5, rel: 'met', tid: 2, st: 'Mullá Ḥusayn — met the Báb', prf: 'I left His house', doc: 1, pid: 'p2', tv: '1844', vd: 'met', vq: 'the Báb received him in His house' },
+      ],
+    });
+    expect(encounterSearch('did Nabíl meet the Báb?', { index: ix }).people).toEqual([]);
+    const r = encounterSearch('did Mullá Ḥusayn meet the Báb?', { index: ix });
+    expect(r.people[0].evidence[0]).toMatchObject({ verified: 'met', verifiedQuote: 'the Báb received him in His house' });
+  });
 });

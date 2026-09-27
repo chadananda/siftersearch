@@ -22,6 +22,9 @@ const claims = await queryAll(`SELECT ec.id, ec.statement, ec.doc_id, ec.para_id
     LEFT JOIN claim_verifications cv ON cv.claim_id = ec.id AND cv.version >= ?
    WHERE cv.claim_id IS NULL AND ec.relation IN (${MEETING.map(() => '?').join(',')})
      AND (ec.status IS NULL OR ec.status = 'supported') AND ec.doc_id IS NOT NULL AND ec.para_id IS NOT NULL
+     -- group facts (config/group-facts.json) are verified by construction: a verbatim proof from the core histories
+     -- that speaks of the GROUP ("these, and a few others"), which a per-person reading would call not_stated.
+     AND (ec.import_batch IS NULL OR ec.import_batch NOT LIKE 'group-fact:%')
      ${TYPED ? 'AND t.id IS NOT NULL' : ''}
    ORDER BY (t.id IS NULL), ec.id LIMIT ?`, [VERIFY_VERSION, ...MEETING, LIMIT]);
 

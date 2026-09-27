@@ -121,6 +121,11 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
     // type, keep the claim — its statement can still name the real object.
     const row = { ...c, tid: c.tid === c.eid ? null : c.tid, hay: fold(c.st), topic: fold(`${c.st} ${c.prf || ''}`), neg: NEGATED.test(c.prf || ''),
       auth: authDocs.has(c.doc) };
+    // A model verdict from re-reading the whole paragraph (claim_verifications) overrides the proof-span guess:
+    // denied → evidence against; not_stated / wrong_person → no evidence at all; met → verified evidence.
+    if (c.vd === 'denied') row.neg = true;
+    else if (c.vd === 'met') row.neg = false;
+    if (c.vd === 'not_stated' || c.vd === 'wrong_person') continue;
     all.push(row);
     (bySubject.get(c.eid) || bySubject.set(c.eid, []).get(c.eid)).push(row);
   }
@@ -227,13 +232,14 @@ export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = 
   // The asked relation constrains the edge — strictly (see ASKED); a question with no relation verb takes them all.
   const asked = ASKED.find(([re]) => re.test(fq))?.[1] || null;
   const topicHit = (r) => topic.length > 0 && topic.some((w) => r.topic.includes(` ${w}`));
-  const rank = (r) => (r.auth ? 8 : 0) + (topicHit(r) ? 4 : 0) + (r.via === 'typed' ? 2 : 0) + (r.rel === 'met' ? 1 : 0);
+  const rank = (r) => (r.auth ? 8 : 0) + (r.vd ? 6 : 0) + (topicHit(r) ? 4 : 0) + (r.via === 'typed' ? 2 : 0) + (r.rel === 'met' ? 1 : 0);
   const shape = (rs) => {
     const seen = new Set();
     return rs.sort((a, b) => rank(b) - rank(a) || String(a.tv || '9999').localeCompare(String(b.tv || '9999'))).filter((r) => {
       const k = `${r.doc}:${r.pid}`; if (seen.has(k)) return false; seen.add(k); return true;
     }).slice(0, maxEvidence).map((r) => ({ statement: r.st, relation: r.rel, doc_id: r.doc ?? null, paraId: r.pid || null,
-      when: r.tv || null, via: r.via, proof: r.prf || null, ...(r.auth ? { authoritative: true } : {}), ...(r.neg ? { negated: true } : {}), ...(topicHit(r) ? { topic: true } : {}) }));
+      when: r.tv || null, via: r.via, proof: r.prf || null, verified: r.vd === 'met' || r.vd === 'denied' ? r.vd : null,
+      ...(r.vq ? { verifiedQuote: r.vq } : {}), ...(r.auth ? { authoritative: true } : {}), ...(r.neg ? { negated: true } : {}), ...(topicHit(r) ? { topic: true } : {}) }));
   };
   // Every answer carries its proof. Evidence FOR (a claim whose proof does not deny it) and AGAINST (a proof that
   // says the meeting never happened) are kept apart: for only → people; against only → notMet; both → contested.
@@ -277,8 +283,9 @@ async function build() {
     queryAll(`SELECT ge.id, ge.canonical_name name, er.aliases FROM graph_entities ge
       LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.entity_type = 'group'`, [], 'encounters:groups'),
     queryAll(`SELECT ec.id, ec.entity_id eid, ec.relation rel, ec.target_entity_id tid, ec.statement st,
-        substr(ec.proof_verbatim, 1, 300) prf, ec.doc_id doc, ec.para_id pid, ec.time_value tv
-      FROM entity_claims ec WHERE ec.relation IN (${rels}) AND (ec.status IS NULL OR ec.status = 'supported')
+        substr(ec.proof_verbatim, 1, 300) prf, ec.doc_id doc, ec.para_id pid, ec.time_value tv, cv.verdict vd, cv.quote vq
+      FROM entity_claims ec LEFT JOIN claim_verifications cv ON cv.claim_id = ec.id
+      WHERE ec.relation IN (${rels}) AND (ec.status IS NULL OR ec.status = 'supported')
         AND ec.proof_verbatim IS NOT NULL AND ec.proof_verbatim <> ''`, ENCOUNTER_RELATIONS, 'encounters:claims'),
     queryAll(`SELECT canonical_name n FROM graph_entities WHERE entity_type = 'place' AND ${LIVE_SQL()}`, [], 'encounters:places'),
   ]);
