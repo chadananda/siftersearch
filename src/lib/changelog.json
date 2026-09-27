@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T02:10:09.464Z",
+  "generated": "2026-09-27T02:17:41.792Z",
   "entries": [
+    {
+      "hash": "4e76c307",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Group facts as cited per-member claims; core histories settle conflicting encounter evidence",
+      "scope": "entities"
+    },
     {
       "hash": "eb8c6bcb",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Nayríz document-compilations are PRIMARY sources (Tier 3), not pillars",
       "scope": null
-    },
-    {
-      "hash": "1535aa55",
-      "date": "2026-07-13",
-      "type": "Docs",
-      "description": "Backward re-resolution (convergence sweep) — re-run research-resolve over held uncertains vs the fuller corpus",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "4e76c307",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Group facts as cited per-member claims; core histories settle conflicting encounter evidence",
+        "scope": "entities"
+      },
       {
         "hash": "eb8c6bcb",
         "date": "2026-09-26",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-13",
         "type": "Other",
         "description": "Nayríz document-compilations are PRIMARY sources (Tier 3), not pillars",
-        "scope": null
-      },
-      {
-        "hash": "1535aa55",
-        "date": "2026-07-13",
-        "type": "Docs",
-        "description": "Backward re-resolution (convergence sweep) — re-run research-resolve over held uncertains vs the fuller corpus",
         "scope": null
       }
     ]

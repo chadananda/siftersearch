@@ -2464,6 +2464,12 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { success: true, taskId: 'entity-group-facts', write: !!write, status: task.status };
   });
 
+  // POST /server/encounters/refresh — rebuild the in-memory who-met-whom index now (after any entity write).
+  fastify.post('/server/encounters/refresh', { preHandler: requireInternal }, async () => {
+    const { refreshEncounterIndex } = await import('../lib/encounters.js');
+    return refreshEncounterIndex();
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';

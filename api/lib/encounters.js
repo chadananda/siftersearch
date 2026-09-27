@@ -291,6 +291,13 @@ async function build() {
   return createEncounterIndex({ persons, groups, members, claims: claims.filter((c) => live.has(c.eid)), places: places.map((r) => r.n), authoritative });
 }
 
+/** Rebuild now (after an entity write — merges, re-link, group facts) instead of waiting out the 30-minute TTL. */
+export async function refreshEncounterIndex() {
+  const ix = await build();
+  _index = ix;
+  return { builtAt: ix.builtAt, people: ix.people.size, claims: ix.all.length };
+}
+
 export async function getEncounterIndex() {
   const stale = !_index || Date.now() - _index.builtAt > TTL;
   if (stale && !_building) _building = build().then((ix) => { _index = ix; return ix; }).finally(() => { _building = null; });
