@@ -198,16 +198,7 @@ Each feature lists what it is, why, the contract, who decides each part, and acc
 - **Acceptance:** adding a channel is data plus one adapter, with no pipeline change. A test registers a dummy "sms" channel and runs the battery through it.
 
 ### F6 · The soul in four layers
-- **Layer 1, `soul.md` (Anis), cached prefix:**
-  - character: a companion for study, who loves the texts and wants the person to leave wanting to read;
-  - how it treats people;
-  - voice: specific observations, never superlatives, no scriptural register outside quotes;
-  - convictions;
-  - integrity: states it is AI; the evidence supplies facts;
-  - stance: a companion among seekers, never "we Bahá'ís";
-  - no humour by default;
-  - two calibration pairs (flat vs. in voice, gushing vs. in voice), using only verified facts.
-  - **The Companion constitution's MUST and FORBIDDEN lists move here verbatim as the integrity section.**
+- **Layer 1, `api/lib/anis/soul.md`, cached prefix.** It lives in the repo so it can be edited and tweaked as we learn, and it stays **very compact** (about 450 words). It defines personality and core principles, not only tone: the **attitude**, and **where Anís lives between reconciliation and argument**. A knowledgeable friend who doesn't always agree, but disagrees for your betterment, gently and without threat: find what is true first; say it once with the passage; leave the choice with you; never win, never flatter; wrong is ordinary. Everything that is really a decision (whether to share a discovery, whether to challenge, format, length) stays OUT of the soul and lives in layers 3 and 4. The Companion's MUST and FORBIDDEN lists are compressed into "What you hold to". The calibration example is verified against *Eminent Bahá'ís* and *Lights of Fortitude*.
 - **Layer 2, house style, cached:**
   - transliteration conventions (Shoghi Effendi's system);
   - original beside transliteration;
@@ -419,7 +410,7 @@ P0 and P1 improve every answer Anis gives today, with or without email, and cost
 | **D7** | Alpha audience | internal testers only vs. also siftersearch.com visitors who connect | **internal allowlist** for any email; chat changes (P0–P1) go to everyone |
 | **D8** | Ship the user-facing share path | held since 2026-08-12, sanitizer verified 2026-08-17 | **yes, in P2**, with preview + Jev PII check + unpublish |
 | **D9** | Name in letters and sign-off | "Anis", "Anís", "Anis — Ocean Library" | "Anís" in prose, `Anis <anis@…>` as the sender |
-| **D10** | Soul authorship | you write soul.md / I draft it from the Companion constitution + ANIS.md for your edit | **I draft, you edit**: it is the one artifact whose voice should be yours |
+| **D10** | Soul authorship | — | **Drafted** as `api/lib/anis/soul.md` (2026-09-27) for your edits: compact, personality + principles + the reconciliation/argument stance |
 
 ---
 
