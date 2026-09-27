@@ -1453,7 +1453,7 @@ export default async function chatRoutes(fastify) {
         anisResult = {
           reply: r.reply, retrieval_quotes: r.retrieved || [], retrieved_count: (r.retrieved || []).length,
           user_intent: r.status === 'answered' ? (r.plan?.shape || null) : null, gate: { pass: true, picker: 'anis-layer' }, retried: false, timings: r.timings,
-          conversation_id: r.conversationId || null,
+          conversation_id: r.conversationId || null, format: r.format?.id || null,
         };
       }
       // Three-stage Jafar pipeline: research → craft → reflection-gate.
@@ -1517,6 +1517,7 @@ export default async function chatRoutes(fastify) {
           retried: result.retried,
           engine: anisResult ? 'anis' : 'jafar',
           ...(result.conversation_id ? { conversation_id: result.conversation_id } : {}),
+          ...(result.format ? { format: result.format } : {}),
           ...(result.timings ? { timings: result.timings } : {})
         }
       });

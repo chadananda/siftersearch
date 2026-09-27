@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T22:28:20.286Z",
+  "generated": "2026-09-27T22:32:37.629Z",
   "entries": [
+    {
+      "hash": "aa4030ee",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "P1 — typed findings with authority kinds; answer formats chosen from question + evidence + channel",
+      "scope": "anis"
+    },
     {
       "hash": "b5f44ab1",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Graph-mutating band is project-to-dedup, not project-to-end — stop serializing HyPE",
       "scope": null
-    },
-    {
-      "hash": "8b26a3c2",
-      "date": "2026-07-17",
-      "type": "Other",
-      "description": "Stable-order the multi-book tabs so they stop jittering + hopping between books",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "aa4030ee",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "P1 — typed findings with authority kinds; answer formats chosen from question + evidence + channel",
+        "scope": "anis"
+      },
       {
         "hash": "b5f44ab1",
         "date": "2026-09-27",
@@ -7071,13 +7078,6 @@
         "date": "2026-07-17",
         "type": "Other",
         "description": "Graph-mutating band is project-to-dedup, not project-to-end — stop serializing HyPE",
-        "scope": null
-      },
-      {
-        "hash": "8b26a3c2",
-        "date": "2026-07-17",
-        "type": "Other",
-        "description": "Stable-order the multi-book tabs so they stop jittering + hopping between books",
         "scope": null
       }
     ]
