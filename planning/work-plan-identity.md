@@ -94,4 +94,12 @@ disambiguate (frame-aware: frame stack, resolves EVERY person named, reason per 
 8. Absorb remaining scripts as stages (verify-encounters, catalog classification into resolve, group facts).
 
 ## Status
-- [ ] 1 projection + replay check
+- [x] 1 projection + replay check (2026-09-27) — `rag/entities/projection.js`, `/api/admin/server/identity-replay`.
+  Replay of the log reproduces 207,534 / 216,533 mentions (95.85%) in ~2s. Every divergence explained:
+  cross-doc string-wide bind 8,250 · cross-doc unbind 522 · propagate script (no decision) 149 · split overwritten by
+  a later cluster re-bind 57 · merge ping-pong representative 15 · genuine mismatch ~3. Worst visible effect: Shaykh
+  Aḥmad-i-Aḥsá'í and Siyyid Káẓim each split across two LIVE records (1261152/1299242, 1260454/1297046) in the DB.
+- [ ] 2 pipeline first: doc-scoped bind/unbind; mention decisions keyed by ANCHOR (ids die on resetDocDerived);
+  unmerge (supersede) in replay; materializer (diff-only, dry-run); run-grounding stops the per-book global merge.
+  Then: record today's unexplained state as tier-0 legacy decisions (graph unchanged) + queue each cross-doc
+  (dbEntity, replayEntity) pair for evidence reassessment.

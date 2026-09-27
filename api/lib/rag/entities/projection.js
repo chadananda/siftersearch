@@ -4,7 +4,7 @@
 // bindMentions applies a decision to the name string in every book, which the replay check reports as 'cross-doc'.
 // Pure: no ports, no DB. `compare` is the replay check — every divergence from the stored ids, classified.
 
-const num = (x) => (x == null || x === '' ? null : Number(x));
+const num = (x) => { const n = x == null || x === '' ? NaN : Number(x); return Number.isFinite(n) ? n : null; };
 const payloadOf = (d) => (typeof d.payload === 'string' ? JSON.parse(d.payload || '{}') : (d.payload || {}));
 
 // Cluster state per (doc, resolvedAs): walk that key's decisions in id order, as project applied them. An applied

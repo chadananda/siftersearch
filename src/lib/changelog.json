@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T18:59:22.147Z",
+  "generated": "2026-09-27T19:05:45.439Z",
   "entries": [
+    {
+      "hash": "af8dccb0",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Replay check separates other-book bindings, other-book unbinds and lost splits",
+      "scope": "entities"
+    },
     {
       "hash": "f52f581e",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Collapsed progress → artistic bar at top under navbar (sticky, gradient fill, shimmer + pulse when actively grounding); grounding efficiency: batch claims writes (~15x fewer writer round-trips → less :7849 contention, faster) + catch write failures + bounded 90s writer-fetch timeout (fixes the uncaught headers-timeout that crashed 3887; writer txns atomic + resume idempotent = no dup risk)",
       "scope": null
-    },
-    {
-      "hash": "39d5a642",
-      "date": "2026-07-13",
-      "type": "Other",
-      "description": "Promote the library-progress popup into a persistent collapsible right-hand side panel (slim edge-tab when collapsed shows live book count; expands to the full roadmap drawer). Persistent 20s poll; no scroll-lock.",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "af8dccb0",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Replay check separates other-book bindings, other-book unbinds and lost splits",
+        "scope": "entities"
+      },
       {
         "hash": "f52f581e",
         "date": "2026-09-27",
@@ -7077,15 +7084,6 @@
         "date": "2026-07-14",
         "type": "Other",
         "description": "Collapsed progress → artistic bar at top under navbar (sticky, gradient fill, shimmer + pulse when actively grounding); grounding efficiency: batch claims writes (~15x fewer writer round-trips → less :7849 contention, faster) + catch write failures + bounded 90s writer-fetch timeout (fixes the uncaught headers-timeout that crashed 3887; writer txns atomic + resume idempotent = no dup risk)",
-        "scope": null
-      }
-    ],
-    "2026-07-13": [
-      {
-        "hash": "39d5a642",
-        "date": "2026-07-13",
-        "type": "Other",
-        "description": "Promote the library-progress popup into a persistent collapsible right-hand side panel (slim edge-tab when collapsed shows live book count; expands to the full roadmap drawer). Persistent 20s poll; no scroll-lock.",
         "scope": null
       }
     ]
