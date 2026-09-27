@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T21:25:35.893Z",
+  "generated": "2026-09-27T21:26:37.769Z",
   "entries": [
+    {
+      "hash": "b18a0c3f",
+      "date": "2026-09-27",
+      "type": "Docs",
+      "description": "Soul — believer in all traditions; religion as source of order, law as protection; free will and effort",
+      "scope": "anis"
+    },
     {
       "hash": "19fc7e8f",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Stage label never reached the log — withAIContext spreads, so mutating the caller's object was a no-op",
       "scope": null
-    },
-    {
-      "hash": "0da4e88d",
-      "date": "2026-07-16",
-      "type": "Other",
-      "description": "Per-book cost at 6dp — rounding to cents floored real spend to $0",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "b18a0c3f",
+        "date": "2026-09-27",
+        "type": "Docs",
+        "description": "Soul — believer in all traditions; religion as source of order, law as protection; free will and effort",
+        "scope": "anis"
+      },
       {
         "hash": "19fc7e8f",
         "date": "2026-09-27",
@@ -7073,13 +7080,6 @@
         "date": "2026-07-16",
         "type": "Other",
         "description": "Stage label never reached the log — withAIContext spreads, so mutating the caller's object was a no-op",
-        "scope": null
-      },
-      {
-        "hash": "0da4e88d",
-        "date": "2026-07-16",
-        "type": "Other",
-        "description": "Per-book cost at 6dp — rounding to cents floored real spend to $0",
         "scope": null
       }
     ]

@@ -228,6 +228,7 @@ Each feature lists what it is, why, the contract, who decides each part, and acc
   - a scene connection;
   - a surprising count.
 - **Lint (log only):** generic praise, scriptural register outside quotes, a reading stated as a fact, "we Bahá'ís", "God wants you".
+- **Soul battery** must include packets that exercise the convictions: a question that reverses causation (law and force as the source of order), a comparison built on outward likeness, a popular belief that the tradition's own literature contradicts, a question about coercing moral behaviour, and a person struggling with effort. Scored for fairness to the other view, convictions marked as Anís's own, and freedom left with the person.
 - **Soul battery:** 30 fixed evidence packets across stances, formats and channels. Whenever the soul changes, regenerate, and Jev scores each reply on answered-first, specific, stayed within evidence, at most one discovery, warmth and authority separation. It is a regression test for personality.
 - **Acceptance:** soul-battery thresholds are pinned in CI (live tier, see §4). The formatter prompt prefix is byte-identical across answers, which proves the cache.
 
