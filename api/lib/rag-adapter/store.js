@@ -569,6 +569,48 @@ export function makeStore() {
       return rows.length;
     },
 
+    // Evidence dossiers for the pair judge (rag/entities/pair-judge.js): per record its resolved names, books, cited
+    // claims (discriminating relations first), companions (co-named in a paragraph, with each companion's corpus-wide
+    // mention total) and sample passages. `universal` = the most-mentioned people — co-occurring with them ties no one.
+    async getIdentityDossiers(ids) {
+      const ph = ids.map(() => '?').join(',');
+      const dossiers = new Map();
+      if (!ids.length) return { dossiers, universal: new Set(), totalMentions: 1 };
+      const ents = await db.queryAll(`SELECT id, canonical_name, importance, ${LIVE_SQL('')} AS live FROM graph_entities WHERE id IN (${ph})`, ids);
+      for (const e of ents) dossiers.set(e.id, { id: e.id, name: e.canonical_name, importance: e.importance, live: !!e.live, mentions: 0, names: [], docs: [], claims: [], companions: [], passages: [] });
+      for (const r of await db.queryAll(`SELECT entity_id e, resolved_as n, COUNT(*) c FROM entity_mentions_v2 WHERE entity_id IN (${ph}) GROUP BY 1,2 ORDER BY c DESC`, ids)) {
+        const d = dossiers.get(r.e); if (!d) continue; d.mentions += r.c; if (d.names.length < 8) d.names.push({ name: r.n, n: r.c });
+      }
+      for (const r of await db.queryAll(`SELECT m.entity_id e, m.doc_id id, d.title, COUNT(*) n FROM entity_mentions_v2 m JOIN docs d ON d.id=m.doc_id
+          WHERE m.entity_id IN (${ph}) GROUP BY 1,2 ORDER BY n DESC`, ids)) { const d = dossiers.get(r.e); if (d && d.docs.length < 10) d.docs.push({ id: r.id, title: r.title, n: r.n }); }
+      const PRIORITY = `CASE WHEN c.relation IN ('born','died','martyred','killed','executed','son-of','daughter-of','father-of','mother-of','wife-of','husband-of','brother-of','sister-of') THEN 0
+        WHEN c.relation IN ('held-office','governor-of','ruler-of','titled','has-title','surnamed-by','resided-in','buried-in','letter-of-the-living') THEN 1 ELSE 2 END`;
+      for (const r of await db.queryAll(`SELECT c.id, c.entity_id e, c.relation, c.statement, c.proof_verbatim proof, c.time_value, c.time_basis, d.title
+          FROM entity_claims c JOIN docs d ON d.id=c.doc_id WHERE c.entity_id IN (${ph}) AND (c.status IS NULL OR c.status='supported')
+          ORDER BY ${PRIORITY}, c.id`, ids)) {
+        const d = dossiers.get(r.e); if (d && d.claims.length < 30) d.claims.push({ id: r.id, relation: r.relation, statement: r.statement, proof: r.proof, when: r.time_value, basis: r.time_basis, doc: r.title });
+      }
+      const co = await db.queryAll(`SELECT a.entity_id e, b.entity_id o, COUNT(*) n FROM entity_mentions_v2 a
+          JOIN entity_mentions_v2 b ON b.doc_id=a.doc_id AND b.para_id=a.para_id AND b.entity_id IS NOT NULL AND b.entity_id!=a.entity_id
+          WHERE a.entity_id IN (${ph}) GROUP BY 1,2 ORDER BY n DESC`, ids);
+      const others = [...new Set(co.map((r) => r.o))];
+      const meta = new Map();
+      for (let i = 0; i < others.length; i += 500) {
+        const chunk = others.slice(i, i + 500);
+        for (const r of await db.queryAll(`SELECT ge.id, ge.canonical_name n, (SELECT COUNT(*) FROM entity_mentions_v2 m WHERE m.entity_id=ge.id) total
+            FROM graph_entities ge WHERE ge.id IN (${chunk.map(() => '?').join(',')})`, chunk)) meta.set(r.id, r);
+      }
+      for (const r of co) { const d = dossiers.get(r.e); if (d && d.companions.length < 40) d.companions.push({ id: r.o, name: meta.get(r.o)?.n ?? `#${r.o}`, n: r.n, total: meta.get(r.o)?.total ?? 0 }); }
+      for (const id of ids) {
+        const d = dossiers.get(id); if (!d) continue;
+        d.passages = (await db.queryAll(`SELECT m.doc_id doc, m.para_id para, substr(c.text,1,420) text FROM entity_mentions_v2 m
+            JOIN content c ON c.doc_id=m.doc_id AND c.external_para_id=m.para_id WHERE m.entity_id=? GROUP BY m.doc_id ORDER BY COUNT(*) DESC LIMIT 3`, [id]));
+      }
+      const top = await db.queryAll(`SELECT entity_id id, COUNT(*) n FROM entity_mentions_v2 WHERE entity_id IS NOT NULL GROUP BY 1 ORDER BY n DESC LIMIT 12`);
+      const totalMentions = (await db.queryAll(`SELECT COUNT(*) n FROM entity_mentions_v2 WHERE entity_id IS NOT NULL`))[0]?.n || 1;
+      return { dossiers, universal: new Set(top.map((r) => r.id)), totalMentions };
+    },
+
     // Mark a decision applied + record which entity it resolved to (reversible provenance).
     async markDecisionApplied(id, entityId) {
       await db.query(`UPDATE entity_decisions SET status='applied', payload=json_set(COALESCE(payload,'{}'),'$.applied_entity_id',?) WHERE id=?`, [entityId, id]);
@@ -809,7 +851,7 @@ export function makeStore() {
     // which no API-layer filter looked at, so 6,668 merged rows were served as live people until 2026-08-24.
     // It also concatenated onto the previous value, so re-merging stacked markers up to nine deep. Assigning
     // a constant makes the write idempotent: merging the same id twice leaves the identical tombstone.
-    async applyMerge(canonicalId, mergeIds, reason) {
+    async applyMerge(canonicalId, mergeIds, reason, meta = {}) {
       if (!mergeIds.length) return 0;
       const ph = mergeIds.map(() => '?').join(',');
       await db.transaction([
@@ -829,8 +871,10 @@ export function makeStore() {
         // The survivor keeps the highest importance of the records it absorbs (a curated station floor must not be lost).
         { sql: `UPDATE graph_entities SET importance=(SELECT MAX(importance) FROM graph_entities WHERE id IN (?, ${ph})) WHERE id=?`, args: [canonicalId, ...mergeIds, canonicalId] },
         { sql: `UPDATE graph_entities SET last_assessed_version=? WHERE id IN (${ph})`, args: [tombstoneFor(canonicalId), ...mergeIds] },
-        { sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, rationale, actor, actor_tier, status, valid_time) VALUES ('merge','entity',?,?,?, 'model', 2, 'applied', NULL)`,
-          args: [JSON.stringify(mergeIds), JSON.stringify({ canonical: canonicalId, merged: mergeIds }), reason || null] },
+        // The decision carries its evidence (claims, companions, the model's cited tie) so the merge can be proved and re-assessed.
+        { sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, confidence, status, method_version, valid_time) VALUES ('merge','entity',?,?,?,?,?,?,?, 'applied', ?, NULL)`,
+          args: [JSON.stringify(mergeIds), JSON.stringify({ canonical: canonicalId, merged: mergeIds }), meta.evidence ? JSON.stringify(meta.evidence) : null, reason || null,
+            meta.actor || 'model', meta.actorTier ?? 2, meta.confidence ?? null, meta.methodVersion ?? null] },
       ]);
       return mergeIds.length;
     },

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T20:09:43.065Z",
+  "generated": "2026-09-27T20:14:38.144Z",
   "entries": [
+    {
+      "hash": "d91d93df",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Identity doctrine — a name never decides identity; SAME needs a positive tie beyond it, default UNSURE",
+      "scope": "entities"
+    },
     {
       "hash": "1963cb07",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "SSR fallback placeholders for public content islands (no reflow on hydration)",
       "scope": null
-    },
-    {
-      "hash": "bdb94fbd",
-      "date": "2026-07-14",
-      "type": "Other",
-      "description": "SSR the navbar on biography + library (was client:only → blank until hydrate)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "d91d93df",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Identity doctrine — a name never decides identity; SAME needs a positive tie beyond it, default UNSURE",
+        "scope": "entities"
+      },
       {
         "hash": "1963cb07",
         "date": "2026-09-27",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-14",
         "type": "Other",
         "description": "SSR fallback placeholders for public content islands (no reflow on hydration)",
-        "scope": null
-      },
-      {
-        "hash": "bdb94fbd",
-        "date": "2026-07-14",
-        "type": "Other",
-        "description": "SSR the navbar on biography + library (was client:only → blank until hydrate)",
         "scope": null
       }
     ]

@@ -2637,6 +2637,26 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // POST /server/identity-pair-judge { write=false, limit?, pairs?: [[a,b]] } — judge held identity pairs
+  // (rag/entities/pair-judge.js) as background task 'identity-pair-judge'. DRY by default. write: merges both judges
+  // agree on (with evidence), vetoed pairs recorded distinct, the rest proposed for a human. GET …/report?mode=dry|write.
+  fastify.post('/server/identity-pair-judge', { preHandler: requireInternal }, async (request) => {
+    const { write = false, limit = null, pairs = null } = request.body || {};
+    const existing = backgroundTasks.get('identity-pair-judge');
+    if (existing && existing.status === 'running') throw ApiError.conflict('An identity-pair-judge run is already in progress');
+    const list = Array.isArray(pairs) ? pairs.filter((p) => Array.isArray(p) && p.length === 2).map((p) => p.map(Number).join('-')).join(',') : '';
+    const argv = [...(write ? ['--write'] : []), ...(limit ? [`--limit=${Number(limit)}`] : []), ...(list ? [`--pairs=${list}`] : [])];
+    const task = runBackgroundTask('identity-pair-judge', 'scripts/identity-pair-judge.mjs', argv);
+    return { success: true, taskId: 'identity-pair-judge', write: !!write, status: task.status };
+  });
+  fastify.get('/server/identity-pair-judge/report', { preHandler: requireInternal }, async (request) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const mode = request.query.mode === 'write' ? 'write' : 'dry';
+    const files = readdirSync('logs').filter((f) => f.startsWith(`identity-pair-judge-${mode}-`)).sort();
+    if (!files.length) throw ApiError.notFound(`no ${mode} report yet`);
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   // GET /server/docs-by-title?q=a|b|c — read-only: every copy of each titled work with paragraph / claim / mention
   // counts, so a pass targets the copy the entity pipeline actually used.
   fastify.get('/server/docs-by-title', { preHandler: requireInternal }, async (request) => {

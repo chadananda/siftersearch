@@ -247,6 +247,25 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
     await expect(store.bindMentions('Shaykh Aḥmad', 66, 0.9)).rejects.toThrow(/docId/);
   });
 
+  it('getIdentityDossiers: names, books, discriminating claims first, companions with corpus totals, passages', async () => {
+    run(`INSERT INTO docs (id,title) VALUES (901,'Dossier Book')`);
+    run(`INSERT INTO content (doc_id,external_para_id,paragraph_index,text) VALUES (901,'dp1',1,'Mírzá Músá, son of Mírzá Buzurg, went with Nabíl.')`);
+    run(`INSERT INTO graph_entities (id,name,canonical_name,entity_type,importance) VALUES (9101,'Mírzá Músá','Mírzá Músá','person',40),(9102,'Nabíl','Nabíl','person',10)`);
+    run(`INSERT INTO entity_mentions_v2 (anchor,doc_id,para_id,occurrence,surface,surface_norm,entity_id,resolved_as,method_version) VALUES
+      ('dos1',901,'dp1',0,'Mírzá Músá','mirza musa',9101,'Mírzá Músá','v2'),('dos2',901,'dp1',0,'Nabíl','nabil',9102,'Nabíl','v2')`);
+    run(`INSERT INTO entity_claims (claim_hash,entity_id,relation,statement,proof_verbatim,doc_id,para_id,status,time_basis) VALUES
+      ('dh1',9101,'accompanied','Mírzá Músá — accompanied Nabíl','went with Nabíl',901,'dp1','supported',NULL),
+      ('dh2',9101,'son-of','Mírzá Músá — son-of Mírzá Buzurg','son of Mírzá Buzurg',901,'dp1','supported','stated')`);
+    const { dossiers, universal, totalMentions } = await store.getIdentityDossiers([9101]);
+    const d = dossiers.get(9101);
+    expect(d).toMatchObject({ name: 'Mírzá Músá', importance: 40, live: true, mentions: 1 });
+    expect(d.docs[0]).toMatchObject({ id: 901, title: 'Dossier Book', n: 1 });
+    expect(d.claims[0].relation).toBe('son-of');                                   // discriminating relation first
+    expect(d.companions[0]).toMatchObject({ id: 9102, name: 'Nabíl', n: 1, total: 1 });
+    expect(d.passages[0].text).toMatch(/son of Mírzá Buzurg/);
+    expect(universal.size).toBeGreaterThan(0); expect(totalMentions).toBeGreaterThan(0);
+  });
+
   it('unbindMentions sets entity_id NULL for the cluster and returns the freed count (≥0)', async () => {
     // Insert two bound mentions for resolved_as='ClusterZ' with entity_id=88.
     run(`INSERT INTO entity_mentions_v2 (anchor,doc_id,para_id,occurrence,surface,surface_norm,entity_id,resolved_as,method_version) VALUES ('anc_z1',21310,'p_z1',0,'ClusterZ','clusterz',88,'ClusterZ','v2')`);
