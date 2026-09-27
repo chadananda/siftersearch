@@ -387,8 +387,10 @@ Tiers follow the project's existing contract: a clean API seam with vitest and n
 **Status 2026-09-27:** P0 LIVE (v2.187.200+): exchange log before answer, Jev triage gate, canned replies, hidden
 tarpit, output check, voice lint, channel registry, widget One Tap merge + signed connection cookie, footer pause link,
 and the SSE session-cookie fix (widget visitors had no identity at all). P1 partial: soul.md + house style as the cached
-system prompt with per-reply DIRECTION (stance, channel, guarded) LIVE; format catalog, findings contract and the soul
-battery are next.
+system prompt with per-reply DIRECTION (stance, channel, guarded) LIVE. P1 DONE (v2.187.208): typed findings with authority kinds;
+17-format catalog chosen from question + evidence + channel (code filters, Jev chooses, shape default); soul battery with a
+CALIBRATED scorer (tests/anis/soul-battery.mjs --calibrate first). Battery: no preamble/pressure/harshness/unfairness;
+flattery-when-wrong 94–100% clean; lint 94%; open: unmarked opinion 39–56% (conviction questions). NEXT: P2.
 
 
 | Phase | Ships | Gate to next |
