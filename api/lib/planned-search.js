@@ -143,7 +143,9 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     // A pattern answer (the encounter index answered the question) is COMPLETE — a group's whole roster — so it is
     // not capped at the dozen used for loose people matches. Every piece of evidence carries its verbatim proof.
     const ev = (e) => ({ statement: e.statement, relation: e.relation, source: e.source, url: e.url || null, paraId: e.paraId || null,
-      doc_id: e.doc_id ?? null, when: e.when || null, proof: e.proof || null, ...(e.via ? { via: e.via } : {}), ...(e.negated ? { negated: true } : {}) });
+      doc_id: e.doc_id ?? null, when: e.when || null, proof: e.proof || null, verified: e.verified ?? null,
+      ...(e.verifiedQuote ? { verifiedQuote: e.verifiedQuote } : {}), ...(e.authoritative ? { authoritative: true } : {}),
+      ...(e.via ? { via: e.via } : {}), ...(e.negated ? { negated: true } : {}) });
     entities = (pr.people || []).slice(0, pr.pattern ? 60 : 12).map((p) => ({ id: p.id, name: p.name, evidence: (p.evidence || []).slice(0, 4).map(ev) }));
     if (pr.pattern) {
       peopleAnswer = { pattern: pr.pattern, target: pr.target || null, group: pr.group || null, with: pr.with || null, relations: pr.relations || null,

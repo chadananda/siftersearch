@@ -92,7 +92,10 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
       for (const w of new Set(f.bare.split(' '))) (byWord.get(w) || byWord.set(w, new Set()).get(w)).add(p.id);
     }
   }
-  // Longer names of OTHER people that contain this phrase — an occurrence inside one of them is not this person.
+  // Places are longer names too: "the House of the Báb", "the Shrine of the Báb" contain "Báb" but are not Him —
+  // "Nabíl — visited the House of the Báb" (a pilgrimage rite) was answered as Nabíl meeting the Báb (2026-09-27).
+  for (const ph of placeKeys) if (ph.includes(' ')) (owners.get(ph) || owners.set(ph, new Set()).get(ph)).add(0);
+  // Longer names of OTHER people (or places) that contain this phrase — an occurrence inside one of them is not this person.
   const phrasesByWord = new Map();
   for (const ph of owners.keys()) for (const w of new Set(ph.split(' '))) (phrasesByWord.get(w) || phrasesByWord.set(w, []).get(w)).push(ph);
   // A phrase that is exactly ONE person's CANONICAL name belongs to that person even when twins carry it as an alias
@@ -133,10 +136,15 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
 }
 
 // Does the statement name this person? Unique phrase, not inside another person's longer name at that spot.
+// "the House of the Báb", "the remains of the Báb", "the mother of the Báb", "the Cause of the Báb": the name is
+// the POSSESSOR of what the statement is about, not a person met.
+const OF_THING = / (house|home|shrine|tomb|grave|remains|body|garden|mansion|prison|cell|room|resting place|sepulchre|throne|writings|tablet|tablets|cause|faith|revelation|followers|disciples|mother|father|wife|widow|son|daughter|uncle|brother|sister|family|kinsmen|relatives|letter|message|messenger|emissary|photograph|portrait|seal|name|words|verses|station|shrines|house s) of( the)? $/;
+
 export function namedBy(hay, person, { canonicalOnly = false, anyForm = false } = {}) {
   for (const f of person.forms) {
     if ((!f.unique && !anyForm) || (canonicalOnly && !f.canonical)) continue;
     for (const at of occurrences(hay, f.phrase)) {
+      if (OF_THING.test(hay.slice(Math.max(0, at - 40), at + 1))) continue;
       const covered = f.supers.some(({ s, off }) => occurrences(hay, s).some((j) => j + off === at));
       if (!covered) return f.phrase;
     }
@@ -258,6 +266,18 @@ export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = 
     else if (pos.length && neg.length) contested.push({ ...base, evidence: shape(pos), against: shape(neg) });
     else if (neg.length) notMet.push({ ...base, evidence: shape(neg) });
     else if (pos.length) people.push({ ...base, topic: pos.filter(topicHit).length, typed: pos.filter((r) => r.via === 'typed').length, evidence: shape(pos) });
+  }
+  // A PAIR is one question about one meeting: both sides' evidence describes it. An authoritative denial on either
+  // side settles it for both — Shoghi Effendi's "never attained the presence of the Báb" is not answered "yes" by the
+  // Báb's side of a mis-bound claim (2026-09-27).
+  if (pattern === 'pair') {
+    const settled = notMet.some((p) => p.evidence.some((e) => e.authoritative));
+    if (settled) {
+      for (const p of people.splice(0)) {
+        const into = notMet.find((n) => n.id !== p.id) || notMet[0];
+        into.disputedBy = [...(into.disputedBy || []), ...p.evidence];
+      }
+    }
   }
   people.sort((a, b) => b.topic - a.topic || b.typed - a.typed || b.evidence.length - a.evidence.length || b.importance - a.importance);
   // A group answer accounts for EVERY member: one with no cited evidence either way is named, not silently dropped.

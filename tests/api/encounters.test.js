@@ -262,4 +262,39 @@ describe('encounterSearch', () => {
     const r = encounterSearch('did Mullá Ḥusayn meet the Báb?', { index: ix });
     expect(r.people[0].evidence[0]).toMatchObject({ verified: 'met', verifiedQuote: 'the Báb received him in His house' });
   });
+
+  it('a pair is one meeting: an authoritative denial settles both sides', () => {
+    const ix = createEncounterIndex({
+      persons: [{ id: 2, cn: 'the Báb', imp: 99, aliases: '[]' }, { id: 4, cn: 'Ṭáhirih', imp: 80, aliases: '[]' }],
+      groups: [], members: [], authoritative: [21310],
+      claims: [
+        { id: 1, eid: 2, rel: 'met', tid: 4, st: 'the Báb — met Ṭáhirih', prf: 'جمال ابهی با جناب قدّوس و طاهره مذاکرات فرمودند', doc: 77, pid: 'p1', tv: null },
+        { id: 2, eid: 4, rel: 'met', tid: 2, st: 'Ṭáhirih — met the Báb', prf: 'unlike her fellow-disciples, never attained the presence of the Báb', doc: 21310, pid: 'para_31', tv: null },
+      ],
+    });
+    const r = encounterSearch('did Ṭáhirih meet the Báb?', { index: ix });
+    expect(r.people).toEqual([]);
+    expect(r.notMet[0].disputedBy.length).toBe(1);
+  });
+
+  it('a name inside a PLACE name is the place ("the House of the Báb")', () => {
+    const ix = createEncounterIndex({
+      persons: [{ id: 2, cn: 'the Báb', imp: 99, aliases: '[]' }, { id: 9, cn: 'Nabíl-i-A‘ẓam', imp: 70, aliases: '["Nabíl"]' }],
+      groups: [], members: [], places: ['the House of the Báb', 'Shíráz'],
+      claims: [{ id: 1, eid: 9, rel: 'visited', tid: null, st: 'Nabíl-i-A‘ẓam — visited the House of the Báb', prf: 'When Nabíl carried out these lengthy rites', doc: 5, pid: 'p', tv: null }],
+    });
+    expect(encounterSearch('did Nabíl meet the Báb?', { index: ix }).people).toEqual([]);
+  });
+
+  it('a name after "house of / remains of / mother of" is not the person', () => {
+    const ix = createEncounterIndex({
+      persons: [{ id: 2, cn: 'the Báb', imp: 99, aliases: '[]' }, { id: 9, cn: 'Nabíl-i-A‘ẓam', imp: 70, aliases: '["Nabíl"]' }],
+      groups: [], members: [],
+      claims: [
+        { id: 1, eid: 9, rel: 'visited', tid: null, st: 'Nabíl-i-A‘ẓam — visited the House of the Báb', prf: 'rites', doc: 5, pid: 'p1', tv: null },
+        { id: 2, eid: 9, rel: 'accompanied', tid: null, st: 'Nabíl-i-A‘ẓam — accompanied the remains of the Báb', prf: 'bore', doc: 5, pid: 'p2', tv: null },
+      ],
+    });
+    expect(encounterSearch('did Nabíl meet the Báb?', { index: ix }).people).toEqual([]);
+  });
 });
