@@ -321,6 +321,24 @@ describe('encounterSearch', () => {
     expect(encounterSearch('did Nabíl meet Mírzá Aḥmad?', { index: ix }).people.map((p) => p.name)).toEqual(['Nabíl-i-A‘ẓam']);
   });
 
+  // Live 2026-09-27: every later AUTHORITATIVE meeting (Máh-Kú 1847, never mentioning Shíráz) outranked the Karbilá
+  // scene, so "prior to" must be read as chronology: Shíráz is dated by the evidence that mentions it (1844).
+  it('"prior to Shíráz" is chronology: later authoritative meetings that never mention Shíráz sink too', () => {
+    const ix = createEncounterIndex({
+      persons: [{ id: 2, cn: 'the Báb', imp: 99, aliases: '[]' }, { id: 5, cn: 'Mullá Ḥusayn', imp: 85, aliases: '[]' }],
+      groups: [], members: [], authoritative: [21308],
+      claims: [
+        { id: 1, eid: 5, rel: 'met', tid: 2, st: 'Mullá Ḥusayn — met the Báb', prf: 'The Youth who met me outside the gate of Shíráz', doc: 21308, pid: 'a', tv: '1844', vd: 'met' },
+        { id: 's7:5:2', eid: 5, rel: 'met', tid: 2, st: 'Mullá Ḥusayn (guest) — present with the Báb (host), castle of Máh-Kú: a Naw-Rúz feast', prf: 'He then summoned His friends', doc: 21308, pid: 'c', tv: '1848', vd: 'met', scene: 7 },
+        { id: 'c9', eid: 5, rel: 'met', tid: 2, st: 'Mullá Ḥusayn — companion-of the Báb', prf: 'The days of our companionship', doc: 21308, pid: 'd', tv: '1847', vd: 'met' },
+        { id: 's9:5:2', eid: 5, rel: 'met', tid: 2, st: 'Mullá Ḥusayn (preacher) — present with the Báb (guest), Karbilá: struck dumb', prf: 'the preacher … was momentarily struck dumb', doc: 3887, pid: 'b', tv: '1841', vd: 'met', scene: 9 },
+      ],
+    });
+    const ev = encounterSearch('Had the Báb ever met Mullá Ḥusayn prior to Shíráz?', { index: ix }).people.find((p) => p.name === 'Mullá Ḥusayn').evidence;
+    expect(ev[0].scene).toBe(9);
+    expect(ev.findIndex((e) => e.scene === 7)).toBeGreaterThan(0);
+  });
+
   it('"prior to Shíráz" pushes the Shíráz meetings down and the earlier one up', () => {
     const ix = createEncounterIndex({
       persons: [{ id: 2, cn: 'the Báb', imp: 99, aliases: '[]' }, { id: 5, cn: 'Mullá Ḥusayn', imp: 85, aliases: '[]' }],

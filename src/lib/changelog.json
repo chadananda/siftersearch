@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T21:52:21.964Z",
+  "generated": "2026-09-27T22:04:53.134Z",
   "entries": [
+    {
+      "hash": "91fb7927",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "A hyphenated compound given name (Muḥammad-‘Alí) is not a nisba",
+      "scope": "entities"
+    },
     {
       "hash": "c2191afb",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Count concurrency from an IMMEDIATE signal, not lagging heartbeats",
       "scope": null
-    },
-    {
-      "hash": "ecc92698",
-      "date": "2026-07-17",
-      "type": "Other",
-      "description": "Read the enqueued row by the WRITER-reported id, not last_insert_rowid()",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "91fb7927",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "A hyphenated compound given name (Muḥammad-‘Alí) is not a nisba",
+        "scope": "entities"
+      },
       {
         "hash": "c2191afb",
         "date": "2026-09-27",
@@ -7071,13 +7078,6 @@
         "date": "2026-07-17",
         "type": "Other",
         "description": "Count concurrency from an IMMEDIATE signal, not lagging heartbeats",
-        "scope": null
-      },
-      {
-        "hash": "ecc92698",
-        "date": "2026-07-17",
-        "type": "Other",
-        "description": "Read the enqueued row by the WRITER-reported id, not last_insert_rowid()",
         "scope": null
       }
     ]

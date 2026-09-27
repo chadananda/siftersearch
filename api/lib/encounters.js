@@ -248,7 +248,18 @@ export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = 
   const asked = ASKED.find(([re]) => re.test(fq))?.[1] || null;
   const topicHit = (r) => topic.length > 0 && topic.some((w) => r.topic.includes(` ${w}`));
   const beforeHit = (r) => before.length > 0 && before.some((w) => r.topic.includes(` ${w}`));
-  const rank = (r) => (r.auth ? 8 : 0) + (r.vd ? 6 : 0) + (topicHit(r) ? 4 : 0) + (r.via === 'typed' ? 2 : 0) + (r.rel === 'met' ? 1 : 0) - (beforeHit(r) ? 20 : 0);
+  // "Prior to X" is CHRONOLOGY, not only wording: X is dated by the earliest dated evidence that mentions it, then
+  // evidence dated before that rises and evidence dated at or after it sinks — "prior to Shíráz" (1844) must not be
+  // answered with the Máh-Kú meetings (1847), which never mention Shíráz. Undated evidence is left where it ranks.
+  const yearOf = (r) => { const m = String(r.tv ?? '').match(/\b(1[0-9]{3})\b/); return m ? Number(m[1]) : null; };
+  const anchorYear = before.length ? Math.min(...[...found.values()].flatMap((m) => [...m.values()]).filter(beforeHit).map(yearOf).filter(Boolean)) : Infinity;
+  const chrono = (r) => {
+    if (!before.length) return 0;
+    if (beforeHit(r)) return -20;
+    const y = yearOf(r);
+    return y == null || !Number.isFinite(anchorYear) ? 0 : y < anchorYear ? 10 : -20;
+  };
+  const rank = (r) => (r.auth ? 8 : 0) + (r.vd ? 6 : 0) + (topicHit(r) ? 4 : 0) + (r.via === 'typed' ? 2 : 0) + (r.rel === 'met' ? 1 : 0) + chrono(r);
   const shape = (rs) => {
     const seen = new Set();
     return rs.sort((a, b) => rank(b) - rank(a) || String(a.tv || '9999').localeCompare(String(b.tv || '9999'))).filter((r) => {
@@ -270,7 +281,7 @@ export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = 
     // disciples, never attained the presence of the Báb" is not "contested" by a popular retelling.
     const authPos = pos.some((r) => r.auth), authNeg = neg.some((r) => r.auth);
     if (pos.length && neg.length && authNeg && !authPos) notMet.push({ ...base, evidence: shape(neg.filter((r) => r.auth)), disputedBy: shape(pos) });
-    else if (pos.length && neg.length && authPos && !authNeg) people.push({ ...base, topic: pos.filter(topicHit).length, typed: pos.filter((r) => r.via === 'typed').length, evidence: shape(pos.filter((r) => r.auth).concat(pos.filter((r) => !r.auth))), disputedBy: shape(neg) });
+    else if (pos.length && neg.length && authPos && !authNeg) people.push({ ...base, topic: pos.filter(topicHit).length, typed: pos.filter((r) => r.via === 'typed').length, evidence: before.length ? shape(pos) : shape(pos.filter((r) => r.auth).concat(pos.filter((r) => !r.auth))), disputedBy: shape(neg) });
     else if (pos.length && neg.length) contested.push({ ...base, evidence: shape(pos), against: shape(neg) });
     else if (neg.length) notMet.push({ ...base, evidence: shape(neg) });
     else if (pos.length) people.push({ ...base, topic: pos.filter(topicHit).length, typed: pos.filter((r) => r.via === 'typed').length, evidence: shape(pos) });
