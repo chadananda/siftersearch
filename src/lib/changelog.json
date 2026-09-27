@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T04:43:35.957Z",
+  "generated": "2026-09-27T04:52:19.468Z",
   "entries": [
+    {
+      "hash": "259a0cfd",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Person-catalog review (migration 124) — classify every 'person' record before binding mentions to it",
+      "scope": "entities"
+    },
     {
       "hash": "95e86186",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Fixed-width right columns (size/progress · +new · unresolved) line up across rows",
       "scope": "bio popup"
-    },
-    {
-      "hash": "95a47dcd",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Author-routing floor >=40 paras (drop tiny fragments from Foundation/Primary)",
-      "scope": "bio popup"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "259a0cfd",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Person-catalog review (migration 124) — classify every 'person' record before binding mentions to it",
+        "scope": "entities"
+      },
       {
         "hash": "95e86186",
         "date": "2026-09-26",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-13",
         "type": "Fixed",
         "description": "Fixed-width right columns (size/progress · +new · unresolved) line up across rows",
-        "scope": "bio popup"
-      },
-      {
-        "hash": "95a47dcd",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Author-routing floor >=40 paras (drop tiny fragments from Foundation/Primary)",
         "scope": "bio popup"
       }
     ]
