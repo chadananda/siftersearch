@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T02:17:41.792Z",
+  "generated": "2026-09-27T02:24:15.084Z",
   "entries": [
+    {
+      "hash": "b8a56eaa",
+      "date": "2026-09-26",
+      "type": "New",
+      "description": "Encounters/refresh — rebuild the who-met-whom index after an entity write",
+      "scope": "admin"
+    },
     {
       "hash": "4e76c307",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Integration-phases.js straight-quote delimiters (prev edit smart-quoted the code → SyntaxError)",
       "scope": null
-    },
-    {
-      "hash": "f68d8afe",
-      "date": "2026-07-13",
-      "type": "Other",
-      "description": "Nayríz document-compilations are PRIMARY sources (Tier 3), not pillars",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "b8a56eaa",
+        "date": "2026-09-26",
+        "type": "New",
+        "description": "Encounters/refresh — rebuild the who-met-whom index after an entity write",
+        "scope": "admin"
+      },
       {
         "hash": "4e76c307",
         "date": "2026-09-26",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-13",
         "type": "Fixed",
         "description": "Integration-phases.js straight-quote delimiters (prev edit smart-quoted the code → SyntaxError)",
-        "scope": null
-      },
-      {
-        "hash": "f68d8afe",
-        "date": "2026-07-13",
-        "type": "Other",
-        "description": "Nayríz document-compilations are PRIMARY sources (Tier 3), not pillars",
         "scope": null
       }
     ]

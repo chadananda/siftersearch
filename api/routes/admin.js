@@ -2470,6 +2470,24 @@ Collection: ${paragraph.collection || 'Unknown'}
     return refreshEncounterIndex();
   });
 
+  // POST /server/verify-encounters { limit=1000, typed=false, concurrency=8 } — model-verify meeting claims against
+  // their full paragraph (DeepSeek; verdicts in claim_verifications). GET …/report → the latest run's report.
+  fastify.post('/server/verify-encounters', { preHandler: requireInternal }, async (request) => {
+    const { limit = 1000, typed = false, concurrency = 8 } = request.body || {};
+    const existing = backgroundTasks.get('verify-encounters');
+    if (existing && existing.status === 'running') throw ApiError.conflict('A verify-encounters run is already in progress');
+    const argv = [`--limit=${Math.min(Number(limit) || 1000, 200000)}`, `--concurrency=${Math.min(Number(concurrency) || 8, 16)}`, ...(typed ? ['--typed'] : [])];
+    const task = runBackgroundTask('verify-encounters', 'scripts/verify-encounters.mjs', argv);
+    return { success: true, taskId: 'verify-encounters', status: task.status, argv };
+  });
+
+  fastify.get('/server/verify-encounters/report', { preHandler: requireInternal }, async () => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const files = readdirSync('logs').filter((f) => f.startsWith('verify-encounters-')).sort();
+    if (!files.length) throw ApiError.notFound('no verify-encounters report yet');
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';

@@ -1227,6 +1227,25 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_audit_target ON audit_log(target)`);
     logger.info('Migration 108 complete');
   },
+
+  123: async () => {
+    // Encounter-claim VERIFICATION (2026-09-27, Chad: "accuracy is an absolute requirement"). Extraction wrote
+    // "Ṭáhirih — met the Báb" from proofs saying she never did; a claim's short proof span often omits who is
+    // speaking. Each encounter claim is re-read against its FULL paragraph by a model, and the verdict is kept here
+    // (one row per claim; `version` re-verifies when the method changes). The claim itself is never edited.
+    logger.info('Starting migration 123: claim_verifications');
+    await query(`CREATE TABLE IF NOT EXISTS claim_verifications (
+      claim_id INTEGER PRIMARY KEY,
+      verdict TEXT NOT NULL,          -- met | denied | not_stated | wrong_person
+      quote TEXT,                     -- the paragraph's own words that decide it (verbatim)
+      reason TEXT,
+      model TEXT,
+      version INTEGER NOT NULL,
+      verified_at INTEGER DEFAULT (unixepoch())
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_cv_verdict ON claim_verifications(verdict)`);
+    logger.info('Migration 123 complete');
+  },
 };
 
 export const graphMigrations = {
