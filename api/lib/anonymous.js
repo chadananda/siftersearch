@@ -315,7 +315,22 @@ export function ensureSessionId(request, reply) {
       secure: cross, sameSite: cross ? 'none' : 'lax',
     });
   } catch { return existing || null; }
+  // @fastify/cookie serializes Set-Cookie in onSend, which SSE routes never reach (they write the raw socket); record
+  // the minted id so participantId() sees it on THIS request and writeSessionCookieRaw() can send it before a flush.
+  request.mintedSessionId = id;
   return id;
+}
+
+/**
+ * SSE routes flush the raw response themselves, bypassing the cookie plugin — so the session cookie minted for this
+ * request was never sent, and every widget visitor was anonymous with no identity (found 2026-09-27). Call this
+ * before reply.raw.flushHeaders().
+ */
+export function writeSessionCookieRaw(request, reply) {
+  const id = request.mintedSessionId;
+  if (!id || reply.raw.headersSent) return;
+  const cross = process.env.NODE_ENV === 'production';
+  reply.raw.setHeader('Set-Cookie', `${SESSION_COOKIE}=${id}; Path=/; HttpOnly${cross ? '; Secure; SameSite=None' : '; SameSite=Lax'}`);
 }
 
 /**
@@ -328,6 +343,7 @@ export function participantId(request) {
     || accountFromCookie(request)
     || getAnonymousUserId(request)
     || request.cookies?.[SESSION_COOKIE]
+    || request.mintedSessionId
     || null;
 }
 

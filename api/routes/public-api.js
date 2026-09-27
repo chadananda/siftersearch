@@ -37,7 +37,7 @@ import { validateApiKey } from '../lib/api-keys.js';
 import { query, queryOne, queryAll, userQuery, userQueryOne, telemetryQuery } from '../lib/db.js';
 import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billing.js';
 import { slugifyPath, generateDocSlug } from '../lib/slug.js';
-import { participantId as resolveParticipant } from '../lib/anonymous.js';
+import { participantId as resolveParticipant, writeSessionCookieRaw } from '../lib/anonymous.js';
 import { deriveThreadTitle, ownsThread, ownThreadsFilter, TITLE_AFTER_ROUNDS } from '../lib/threads.js';
 import { rankByTitle } from '../lib/title-rank.js';
 
@@ -1239,6 +1239,7 @@ export default async function publicApiRoutes(fastify) {
     const origin = request.headers.origin;
     if (origin) reply.raw.setHeader('Access-Control-Allow-Origin', origin);
     reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
+    writeSessionCookieRaw(request, reply);   // the cookie plugin never runs on a raw SSE response
     reply.raw.flushHeaders();
 
     const sendEvent = (data) => {

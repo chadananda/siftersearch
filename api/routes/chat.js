@@ -13,7 +13,7 @@
 import { hybridSearch, keywordSearch, multiIndexSearch } from '../lib/search.js';
 import { entityLookup, entityDossier, entitySearch } from '../lib/entity-api.js';
 import { optionalAuthenticate } from '../lib/auth.js';
-import { participantId } from '../lib/anonymous.js';
+import { participantId, writeSessionCookieRaw } from '../lib/anonymous.js';
 import { linkFor } from '../lib/source-links.js';
 import { logger } from '../lib/logger.js';
 import { queryOne, queryAll } from '../lib/db.js';
@@ -1423,6 +1423,7 @@ export default async function chatRoutes(fastify) {
     reply.raw.setHeader('Content-Type', 'text/event-stream');
     reply.raw.setHeader('Cache-Control', 'no-cache');
     reply.raw.setHeader('Connection', 'keep-alive');
+    writeSessionCookieRaw(request, reply);   // the cookie plugin never runs on a raw SSE response
     reply.raw.flushHeaders();
 
     const sendEvent = (data) => {
