@@ -30,15 +30,18 @@ export async function run(ctx, docId, opts = {}) {
   // books that trade beats re-disambiguating 84k paragraphs.
   const paras = (await ctx.store.getParagraphs(docId)).filter((p) => p.context != null);
   const mentions = [];
-  const seen = new Set();
   for (const p of paras) {
+    // One surface can name two people in one paragraph ("Mírzá Muḥammad … and his son Mírzá Muḥammad"): each distinct
+    // resolution gets the next occurrence index. A repeat of the same resolution is the same mention. The first stays
+    // occurrence 0, so every existing anchor is unchanged.
+    const bySurface = new Map();                    // surfaceNorm → [resolvedAs in occurrence order]
     for (const { surface, resolvedAs } of parseMentions(p.context)) {
       const surfaceNorm = normSurface(surface);
       if (!surfaceNorm) continue;
-      const anchor = anchorOf(docId, p.pid, surfaceNorm, 0);
-      if (seen.has(anchor)) continue;                 // de-dup identical mentions within the run
-      seen.add(anchor);
-      mentions.push({ anchor, docId, paraId: p.pid, occurrence: 0, surface, surfaceNorm, resolvedAs: resolvedAs.slice(0, 120), methodVersion: version });
+      const seen = bySurface.get(surfaceNorm) || bySurface.set(surfaceNorm, []).get(surfaceNorm);
+      if (seen.includes(resolvedAs)) continue;
+      const occurrence = seen.push(resolvedAs) - 1;
+      mentions.push({ anchor: anchorOf(docId, p.pid, surfaceNorm, occurrence), docId, paraId: p.pid, occurrence, surface, surfaceNorm, resolvedAs: resolvedAs.slice(0, 120), methodVersion: version });
     }
   }
   const written = opts.dryRun ? 0 : await ctx.store.saveMentions(mentions);

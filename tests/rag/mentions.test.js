@@ -51,6 +51,14 @@ describe('mentions — run() on fake ports', () => {
     }
   });
 
+  it('one surface naming two people in a paragraph yields two mentions (occurrence 0 and 1); a repeat is one', async () => {
+    const two = [{ id: 1, pid: 'p1', context: '@Tabríz, ~1850 — x · "Mírzá Muḥammad" = Mírzá Muḥammad (the father); "Mírzá Muḥammad" = Mírzá Muḥammad (the son); "Mírzá Muḥammad" = Mírzá Muḥammad (the father)' }];
+    const { rag, store } = makeRag({ seed: { paras: { 6: two }, coverage: { 6: 1 } }, llm: fakeLLM([]) });
+    await rag.entities.mentions(6, { version: 'v1' });
+    expect(store.mentions.map((m) => [m.occurrence, m.resolvedAs])).toEqual([[0, 'Mírzá Muḥammad (the father)'], [1, 'Mírzá Muḥammad (the son)']]);
+    expect(store.mentions[0].anchor).toBe(anchorOf(6, 'p1', 'mirza muhammad', 0));   // first keeps the historical anchor
+  });
+
   it('gates on disambiguation', async () => {
     const { rag } = makeRag({ seed: { paras: { 5: paras }, coverage: { 5: 0.4 } } });
     await expect(rag.entities.mentions(5)).rejects.toThrow(/disambiguated/);
