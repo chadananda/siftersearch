@@ -90,7 +90,10 @@ export async function runGrounding(docId, opts = {}) {
     // 50% subject-bound and 9% target-bound, and no gate reported it. See backlog 0043.
     // It is a module now, and it emits like every other stage. Do not reintroduce a shell-out here.
     if (want('link'))         { await enter('link'); const r = await rag.entities.link(docId); emit('link', r); }
-    if (want('merge'))        { await enter('merge'); emit('merge', await rag.entities.merge({ concurrency: 4, onProgress })); } // same-name dedup by evidence
+    // RETIRED 2026-09-27: this ran a CORPUS-WIDE same-name merge after every book, judged on name + mention count
+    // alone (7,528 applied merges, 7,227 records; A→B then B→A ping-pong across books). Identity changes now come
+    // only from evidence-bearing decisions re-assessed per entity — planning/work-plan-identity.md (reassess stage).
+    if (want('merge'))        { await enter('merge'); emit('merge', { skipped: 'retired: evidence-free global merge (planning/work-plan-identity.md)' }); }
     if (want('dedup') && out.createdIds.length) { await enter('dedup'); emit('dedup', await rag.entities.dedupGuard({ entityIds: out.createdIds, onProgress })); } // AFTER link — new entities need bound claims
     if (wantsBand) { await releaseGraphBand(docId); heldBand = false; }   // release BEFORE hype/verify (they don't mutate the graph)
     // concurrency: cc — HyPE was the ONE stage that never received it, so --cc did nothing here at all and

@@ -235,11 +235,23 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
     expect(c.priorId).toBe(7003);
   });
 
+  // A cluster decision is made from ONE book's evidence; binding by the name string alone let it rewrite every book's
+  // mentions of that name (8,250 mentions on 2026-09-27, e.g. Shaykh Aḥmad-i-Aḥsá'í split across two live records).
+  it('bindMentions / unbindMentions touch only the decision\'s own document', async () => {
+    run(`INSERT INTO entity_mentions_v2 (anchor,doc_id,para_id,occurrence,surface,surface_norm,entity_id,resolved_as,method_version) VALUES ('anc_s1',501,'p1',0,'Shaykh','shaykh',NULL,'Shaykh Aḥmad','v2')`);
+    run(`INSERT INTO entity_mentions_v2 (anchor,doc_id,para_id,occurrence,surface,surface_norm,entity_id,resolved_as,method_version) VALUES ('anc_s2',502,'p1',0,'Shaykh','shaykh',77,'Shaykh Aḥmad','v2')`);
+    await store.bindMentions('Shaykh Aḥmad', 66, 0.9, 501);
+    expect(run(`SELECT doc_id, entity_id FROM entity_mentions_v2 WHERE resolved_as='Shaykh Aḥmad' ORDER BY doc_id`)).toEqual([{ doc_id: 501, entity_id: 66 }, { doc_id: 502, entity_id: 77 }]);
+    await store.unbindMentions('Shaykh Aḥmad', 501);
+    expect(run(`SELECT doc_id, entity_id FROM entity_mentions_v2 WHERE resolved_as='Shaykh Aḥmad' ORDER BY doc_id`)).toEqual([{ doc_id: 501, entity_id: null }, { doc_id: 502, entity_id: 77 }]);
+    await expect(store.bindMentions('Shaykh Aḥmad', 66, 0.9)).rejects.toThrow(/docId/);
+  });
+
   it('unbindMentions sets entity_id NULL for the cluster and returns the freed count (≥0)', async () => {
     // Insert two bound mentions for resolved_as='ClusterZ' with entity_id=88.
     run(`INSERT INTO entity_mentions_v2 (anchor,doc_id,para_id,occurrence,surface,surface_norm,entity_id,resolved_as,method_version) VALUES ('anc_z1',21310,'p_z1',0,'ClusterZ','clusterz',88,'ClusterZ','v2')`);
     run(`INSERT INTO entity_mentions_v2 (anchor,doc_id,para_id,occurrence,surface,surface_norm,entity_id,resolved_as,method_version) VALUES ('anc_z2',21310,'p_z2',0,'ClusterZ','clusterz',88,'ClusterZ','v2')`);
-    const freed = await store.unbindMentions('ClusterZ');
+    const freed = await store.unbindMentions('ClusterZ', 21310);
     // The in-memory mock wraps the sqlite RunResult as {rows: RunResult} so r.rows?.[0]?.changes is always
     // undefined (RunResult isn't an array) → the store returns 0. Assert numeric, not the exact count.
     expect(typeof freed).toBe('number');

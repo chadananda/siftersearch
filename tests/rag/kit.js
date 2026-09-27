@@ -89,8 +89,8 @@ export function memStore(seed = {}) {
     applyMerge: async (canonical, mergeIds) => { merges.push({ canonical, mergeIds }); return mergeIds.length; },
     getProposedDecisions: async () => seed.proposals || [],
     createEntity: async (canonical, type) => { const id = 1000 + created.length; created.push({ id, canonical, type }); return id; },
-    bindMentions: async (resolvedAs, entityId, conf) => { bound.push({ resolvedAs, entityId, conf }); return seed.clusterSizes?.[resolvedAs] ?? 1; },
-    unbindMentions: async (resolvedAs) => { unbound.push({ resolvedAs }); return seed.clusterSizes?.[resolvedAs] ?? 1; },
+    bindMentions: async (resolvedAs, entityId, conf, docId) => { bound.push({ resolvedAs, entityId, conf, docId }); return seed.clusterSizes?.[resolvedAs] ?? 1; },
+    unbindMentions: async (resolvedAs, docId) => { unbound.push({ resolvedAs, docId }); return seed.clusterSizes?.[resolvedAs] ?? 1; },
     registerArabicAliases: async (entityId, resolvedAs) => { arabicAliases.push({ entityId, resolvedAs }); return seed.arabicAliasCount?.[resolvedAs] ?? 0; },
     markDecisionApplied: async (id, entityId) => { appliedMarks.push({ id, entityId }); },
   };

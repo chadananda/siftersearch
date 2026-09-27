@@ -3,11 +3,11 @@ import { describe, it, expect } from 'vitest';
 import { makeRag } from './kit.js';
 
 const proposals = [
-  { id: 1, kind: 'link', status: 'approved', confidence: 0.92, payload: { resolvedAs: 'Mullá Ḥusayn-i-Bushrú’í', entityId: 5, canonical: null } },
-  { id: 2, kind: 'create', status: 'approved', confidence: 0.8, payload: { resolvedAs: 'Karbilá’í ‘Alí', entityId: null, canonical: 'Karbilá’í ‘Alí', type: 'person' } },
-  { id: 3, kind: 'link', status: 'proposed', confidence: 0.6, payload: { resolvedAs: 'X', entityId: 7 } },   // low-conf, not approved
-  { id: 4, kind: 'uncertain', status: 'proposed', confidence: 0.4, payload: { resolvedAs: 'Y' } },            // never applied
-  { id: 5, kind: 'link', status: 'applied', confidence: 0.99, payload: { resolvedAs: 'Z', entityId: 8 } },   // already applied
+  { id: 1, kind: 'link', status: 'approved', confidence: 0.92, payload: { resolvedAs: 'Mullá Ḥusayn-i-Bushrú’í', entityId: 5, canonical: null, docId: 21308 } },
+  { id: 2, kind: 'create', status: 'approved', confidence: 0.8, payload: { resolvedAs: 'Karbilá’í ‘Alí', entityId: null, canonical: 'Karbilá’í ‘Alí', type: 'person', docId: 21308 } },
+  { id: 3, kind: 'link', status: 'proposed', confidence: 0.6, payload: { resolvedAs: 'X', entityId: 7, docId: 21308 } },   // low-conf, not approved
+  { id: 4, kind: 'uncertain', status: 'proposed', confidence: 0.4, payload: { resolvedAs: 'Y', docId: 21308 } },            // never applied
+  { id: 5, kind: 'link', status: 'applied', confidence: 0.99, payload: { resolvedAs: 'Z', entityId: 8, docId: 21308 } },   // already applied
 ];
 
 describe('entities/project', () => {
@@ -59,15 +59,24 @@ describe('entities/project', () => {
     const stats = await rag.entities.project({ docId: 21308 });
     expect(stats.skippedBadId).toBe(2);          // name-as-id + null both skipped
     expect(stats).toMatchObject({ linked: 1, applied: 1 });
-    expect(store.bound).toEqual([{ resolvedAs: 'C', entityId: 42, conf: 0.95 }]);   // only the real integer id bound
+    expect(store.bound).toEqual([{ resolvedAs: 'C', entityId: 42, conf: 0.95, docId: 21308 }]);   // only the real integer id bound
+  });
+
+  it('a decision that names no document is never applied — and mints nothing (a cluster is one book\'s)', async () => {
+    const orphan = [{ id: 1, kind: 'create', status: 'approved', confidence: 0.9, payload: { resolvedAs: 'A', canonical: 'A', type: 'person' } }];
+    const { rag, store } = makeRag({ seed: { proposals: orphan } });
+    const stats = await rag.entities.project();
+    expect(stats.applied).toBe(0);
+    expect(store.created).toHaveLength(0);
+    expect(store.bound).toHaveLength(0);
   });
 
   it('auto mode applies a high-confidence proposed link', async () => {
-    const hi = [{ id: 9, kind: 'link', status: 'proposed', confidence: 0.95, payload: { resolvedAs: 'Q', entityId: 1 } }];
+    const hi = [{ id: 9, kind: 'link', status: 'proposed', confidence: 0.95, payload: { resolvedAs: 'Q', entityId: 1, docId: 21308 } }];
     const { rag, store } = makeRag({ seed: { proposals: hi } });
     const stats = await rag.entities.project({ auto: true, hiConf: 0.85 });
     expect(stats).toMatchObject({ applied: 1, linked: 1 });
-    expect(store.bound[0]).toMatchObject({ resolvedAs: 'Q', entityId: 1 });
+    expect(store.bound[0]).toMatchObject({ resolvedAs: 'Q', entityId: 1, docId: 21308 });
   });
 
   it('registers each bound cluster\'s Arabic alias (recall aid, built AFTER the evidence decision)', async () => {

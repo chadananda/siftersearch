@@ -79,7 +79,8 @@
  * @property {(decisions: Decision[]) => Promise<number>} saveDecisions    append-only; never edits the graph
  * @property {() => Promise<Decision[]>} getProposedDecisions              mention-cluster decisions (normalised payload)
  * @property {(canonical: string, type?: string) => Promise<number>} createEntity   mint a projection entity → id
- * @property {(resolvedAs: string, entityId: number, conf: number) => Promise<number>} bindMentions  → rows bound
+ * @property {(resolvedAs: string, entityId: number, conf: number, docId: number) => Promise<number>} bindMentions  one document's cluster → rows bound
+ * @property {(resolvedAs: string, docId: number) => Promise<number>} unbindMentions  one document's cluster → rows freed
  * @property {(decisionId: number, entityId: number) => Promise<void>} markDecisionApplied
  * @typedef {Object} DocMeta
  * @property {number} id @property {string} [title] @property {string} [author] @property {string} [religion]

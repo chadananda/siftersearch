@@ -26,11 +26,12 @@ export async function run(ctx, opts = {}) {
   for (const d of all) {
     if (d.kind !== 'uncertain' || !d.priorEntityId || d.status === 'applied') continue;
     if (opts.docId != null && d.payload?.docId !== opts.docId) continue;
-    stats.unbound += await ctx.store.unbindMentions(d.payload.resolvedAs);
+    stats.unbound += await ctx.store.unbindMentions(d.payload.resolvedAs, d.payload.docId);
     await ctx.store.markDecisionApplied(d.id, null);
   }
 
   for (const d of toApply) {                   // sequential: writes, and a create must resolve its id before binding
+    if (d.payload?.docId == null) { stats.skippedNoDoc = (stats.skippedNoDoc || 0) + 1; continue; }   // a cluster is one book's; never bind corpus-wide
     let entityId = d.payload.entityId;
     if (d.kind === 'create') {
       // A re-adjudication that RE-creates reuses the entity its superseded CREATE already minted (never a
@@ -49,10 +50,10 @@ export async function run(ctx, opts = {}) {
       stats.linked++;
     }
     if (!entityId || !d.payload.resolvedAs) continue;
-    stats.mentionsBound += await ctx.store.bindMentions(d.payload.resolvedAs, entityId, d.confidence);  // re-binds a moved cluster (overwrites by resolved_as)
+    stats.mentionsBound += await ctx.store.bindMentions(d.payload.resolvedAs, entityId, d.confidence, d.payload.docId);  // this document's cluster only
     // Persian: register the cluster's Arabic-script name as an entity alias (RECALL aid built AFTER this evidence
     // decision) so the same person is recalled — not duplicated — in later Persian books. No-op for non-Persian.
-    stats.arabicAliases += (await ctx.store.registerArabicAliases?.(entityId, d.payload.resolvedAs)) || 0;
+    stats.arabicAliases += (await ctx.store.registerArabicAliases?.(entityId, d.payload.resolvedAs, d.payload.docId)) || 0;
     await ctx.store.markDecisionApplied(d.id, entityId);
     stats.applied++;
   }

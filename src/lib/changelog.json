@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T19:05:45.439Z",
+  "generated": "2026-09-27T19:09:32.503Z",
   "entries": [
+    {
+      "hash": "886c3c69",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Projection treats non-numeric ids as none; plan: increment 1 done",
+      "scope": "entities"
+    },
     {
       "hash": "af8dccb0",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Collapsed state → standard right-side rail (top-right, docked), not a full-width top bar",
       "scope": null
-    },
-    {
-      "hash": "36928fd2",
-      "date": "2026-07-14",
-      "type": "Other",
-      "description": "Collapsed progress → artistic bar at top under navbar (sticky, gradient fill, shimmer + pulse when actively grounding); grounding efficiency: batch claims writes (~15x fewer writer round-trips → less :7849 contention, faster) + catch write failures + bounded 90s writer-fetch timeout (fixes the uncaught headers-timeout that crashed 3887; writer txns atomic + resume idempotent = no dup risk)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "886c3c69",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Projection treats non-numeric ids as none; plan: increment 1 done",
+        "scope": "entities"
+      },
       {
         "hash": "af8dccb0",
         "date": "2026-09-27",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-14",
         "type": "Other",
         "description": "Collapsed state → standard right-side rail (top-right, docked), not a full-width top bar",
-        "scope": null
-      },
-      {
-        "hash": "36928fd2",
-        "date": "2026-07-14",
-        "type": "Other",
-        "description": "Collapsed progress → artistic bar at top under navbar (sticky, gradient fill, shimmer + pulse when actively grounding); grounding efficiency: batch claims writes (~15x fewer writer round-trips → less :7849 contention, faster) + catch write failures + bounded 90s writer-fetch timeout (fixes the uncaught headers-timeout that crashed 3887; writer txns atomic + resume idempotent = no dup risk)",
         "scope": null
       }
     ]

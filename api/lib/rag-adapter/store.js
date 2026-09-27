@@ -531,16 +531,20 @@ export function makeStore() {
       return r.lastInsertRowid;
     },
 
-    // Bind an entire resolved-name cluster to an entity (the projection set by an applied decision). Returns rows bound.
-    async bindMentions(resolvedAs, entityId, conf) {
-      const r = await db.query(`UPDATE entity_mentions_v2 SET entity_id=?, resolution_basis='reconcile', resolution_conf=? WHERE resolved_as=?`, [entityId, conf, resolvedAs]);
+    // Bind a resolved-name cluster IN ONE DOCUMENT to an entity (the projection of an applied decision). A cluster
+    // decision is judged on that book's evidence; binding by the string alone let one book's decision rewrite every
+    // book's mentions of the name (8,250 mentions, measured 2026-09-27 by /server/identity-replay). docId is required.
+    async bindMentions(resolvedAs, entityId, conf, docId) {
+      if (docId == null) throw new Error('bindMentions: docId required — a cluster decision binds only its own document');
+      const r = await db.query(`UPDATE entity_mentions_v2 SET entity_id=?, resolution_basis='reconcile', resolution_conf=? WHERE resolved_as=? AND doc_id=?`, [entityId, conf, resolvedAs, docId]);
       return r.rows?.[0]?.changes ?? 0;
     },
 
-    // Unbind a cluster — a re-adjudication that pulls a prior LINK/CREATE back to 'uncertain' returns its mentions
-    // to the pool (entity_id NULL). Facts are retained (rows survive), only the binding is withdrawn. Returns rows freed.
-    async unbindMentions(resolvedAs) {
-      const r = await db.query(`UPDATE entity_mentions_v2 SET entity_id=NULL, resolution_basis='reconcile-unbind', resolution_conf=NULL WHERE resolved_as=? AND entity_id IS NOT NULL`, [resolvedAs]);
+    // Unbind a cluster in ONE document — a re-adjudication that pulls a prior LINK/CREATE back to 'uncertain' returns
+    // its mentions to the pool (entity_id NULL). Facts are retained, only the binding is withdrawn. Returns rows freed.
+    async unbindMentions(resolvedAs, docId) {
+      if (docId == null) throw new Error('unbindMentions: docId required — a re-adjudication unbinds only its own document');
+      const r = await db.query(`UPDATE entity_mentions_v2 SET entity_id=NULL, resolution_basis='reconcile-unbind', resolution_conf=NULL WHERE resolved_as=? AND doc_id=? AND entity_id IS NOT NULL`, [resolvedAs, docId]);
       return r.rows?.[0]?.changes ?? 0;
     },
 
@@ -564,11 +568,11 @@ export function makeStore() {
     // its English-book self) is RECALLED as a candidate instead of duplicated. This is a RECALL aid built AFTER the
     // evidence-based bind; it is never itself an identity decision. Only distinctive full names (arabicKeys non-empty
     // after honorific-strip → excludes bare سید/آقا titles). Called by project per bound cluster; no-op for non-Persian.
-    async registerArabicAliases(entityId, resolvedAs) {
+    async registerArabicAliases(entityId, resolvedAs, docId = null) {
       const ent = (await db.queryAll(`SELECT canonical_name cn, entity_type et FROM graph_entities WHERE id=?`, [entityId]))[0];
       if (!ent) return 0;
       const surfaces = (await db.queryAll(
-        `SELECT DISTINCT surface FROM entity_mentions_v2 WHERE resolved_as=? AND surface GLOB '*[؀-ۿ]*' ORDER BY length(surface) DESC LIMIT 5`, [resolvedAs]
+        `SELECT DISTINCT surface FROM entity_mentions_v2 WHERE resolved_as=? AND (? IS NULL OR doc_id=?) AND surface GLOB '*[؀-ۿ]*' ORDER BY length(surface) DESC LIMIT 5`, [resolvedAs, docId, docId]
       )).map((r) => r.surface).filter((s) => s && s.trim().length >= 3 && [...arabicKeys(s)].length >= 1);
       if (!surfaces.length) return 0;
       const row = (await db.queryAll(`SELECT aliases FROM entity_research WHERE canonical_name=? AND entity_type=?`, [ent.cn, ent.et]))[0];
