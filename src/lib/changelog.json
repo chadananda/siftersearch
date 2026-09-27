@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T13:42:59.394Z",
+  "generated": "2026-09-27T13:50:20.272Z",
   "entries": [
+    {
+      "hash": "4d45cb7a",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Merges carry scene participants; admin docs-by-title (copies with claim/mention counts)",
+      "scope": "entities"
+    },
     {
       "hash": "f6416f1f",
       "date": "2026-09-26",
@@ -3493,16 +3500,18 @@
       "type": "Test",
       "description": "Assert refined namesake rule (common-name forbidden + distinctive-name exception)",
       "scope": "merge"
-    },
-    {
-      "hash": "52a0eeb4",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Distinctive-unique-name exception (Bismarck/Hardegg/Browne merge; common names keep namesake caution)",
-      "scope": "merge"
     }
   ],
   "grouped": {
+    "2026-09-27": [
+      {
+        "hash": "4d45cb7a",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Merges carry scene participants; admin docs-by-title (copies with claim/mention counts)",
+        "scope": "entities"
+      }
+    ],
     "2026-09-26": [
       {
         "hash": "f6416f1f",
@@ -7077,13 +7086,6 @@
         "date": "2026-07-13",
         "type": "Test",
         "description": "Assert refined namesake rule (common-name forbidden + distinctive-name exception)",
-        "scope": "merge"
-      },
-      {
-        "hash": "52a0eeb4",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Distinctive-unique-name exception (Bismarck/Hardegg/Browne merge; common names keep namesake caution)",
         "scope": "merge"
       }
     ]

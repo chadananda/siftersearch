@@ -2619,6 +2619,23 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { docs: out };
   });
 
+  // POST /server/merge-review-export — every candidate identity merge with its textual evidence (for Chad's decision);
+  // GET /server/merge-review-export/latest streams the latest JSON. Nothing is merged.
+  fastify.post('/server/merge-review-export', { preHandler: requireInternal }, async () => {
+    const existing = backgroundTasks.get('merge-review-export');
+    if (existing && existing.status === 'running') throw ApiError.conflict('A merge-review-export run is already in progress');
+    const task = runBackgroundTask('merge-review-export', 'scripts/merge-review-export.mjs', []);
+    return { success: true, taskId: 'merge-review-export', status: task.status };
+  });
+
+  fastify.get('/server/merge-review-export/latest', { preHandler: requireInternal }, async (request, reply) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const files = readdirSync('logs').filter((f) => f.startsWith('merge-review-')).sort();
+    if (!files.length) throw ApiError.notFound('no merge review export yet');
+    reply.type('application/json');
+    return readFileSync(`logs/${files.at(-1)}`, 'utf8');
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';
