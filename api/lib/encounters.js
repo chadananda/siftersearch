@@ -153,6 +153,9 @@ export function namedBy(hay, person, { canonicalOnly = false, anyForm = false, s
   return null;
 }
 const linkOf = (row, person, opts) => {
+  // A scene row states its participants exactly: it links ONLY through them. Its text carries a summary ("…Mírzá
+  // Aḥmad, the Báb’s amanuensis") that names people who were NOT there — name-matching it made Nabíl meet the Báb.
+  if (row.scene) return row.tid === person.id ? 'scene' : null;
   if (row.tid === person.id) return 'typed';
   const f = namedBy(row.hay, person, opts);
   return f ? `named:${f}` : null;
@@ -195,15 +198,18 @@ function findParties(q, index) {
   // The words that are neither a party, the group, a verb nor a question word are the topic ("Shiraz", "Baghdad").
   let rest = hay;
   for (const [s, e] of [...used].sort((a, b) => b[0] - a[0])) rest = rest.slice(0, s) + ' ' + rest.slice(e - 1);
-  const topic = [...new Set(rest.trim().split(' ').filter((w) => w.length > 2 && !QWORDS.has(w) && !VERB.test(w)))];
-  return { group, persons: out.map((m) => ({ ...m.p, matched: m.matched })), topic };
+  // "before / prior to <place or event>" asks for what came EARLIER: that word marks evidence to push down, not up —
+  // "Had the Báb met Mullá Ḥusayn prior to Shíráz?" was answered with the Shíráz meetings boosted to the top.
+  const before = [...new Set([...hay.matchAll(/ (?:prior to|before|earlier than) (?:the )?([a-z0-9]{3,})/g)].map((m) => m[1]))];
+  const topic = [...new Set(rest.trim().split(' ').filter((w) => w.length > 2 && !QWORDS.has(w) && !VERB.test(w) && !before.includes(w) && !['prior', 'before', 'earlier', 'ever'].includes(w)))];
+  return { group, persons: out.map((m) => ({ ...m.p, matched: m.matched })), topic, before };
 }
 
 /** Pure + synchronous: { pattern, target, with, group, topic, relations, people:[{id,name,importance,evidence[]}] } or null. */
 export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = {}) {
   const fq = fold(q);
   if (!index || !VERB.test(fq)) return null;
-  const { group, persons, topic } = findParties(q, index);
+  const { group, persons, topic, before } = findParties(q, index);
   if (!persons.length) return null;
   const found = new Map();   // personId → Map(claimId → row+via)
   const add = (pid, row, via) => { if (via) (found.get(pid) || found.set(pid, new Map()).get(pid)).set(row.id, { ...row, via }); };
@@ -241,7 +247,8 @@ export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = 
   // The asked relation constrains the edge — strictly (see ASKED); a question with no relation verb takes them all.
   const asked = ASKED.find(([re]) => re.test(fq))?.[1] || null;
   const topicHit = (r) => topic.length > 0 && topic.some((w) => r.topic.includes(` ${w}`));
-  const rank = (r) => (r.auth ? 8 : 0) + (r.vd ? 6 : 0) + (topicHit(r) ? 4 : 0) + (r.via === 'typed' ? 2 : 0) + (r.rel === 'met' ? 1 : 0);
+  const beforeHit = (r) => before.length > 0 && before.some((w) => r.topic.includes(` ${w}`));
+  const rank = (r) => (r.auth ? 8 : 0) + (r.vd ? 6 : 0) + (topicHit(r) ? 4 : 0) + (r.via === 'typed' ? 2 : 0) + (r.rel === 'met' ? 1 : 0) - (beforeHit(r) ? 20 : 0);
   const shape = (rs) => {
     const seen = new Set();
     return rs.sort((a, b) => rank(b) - rank(a) || String(a.tv || '9999').localeCompare(String(b.tv || '9999'))).filter((r) => {
@@ -287,7 +294,7 @@ export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = 
     .map((id) => ({ id, name: index.people.get(id)?.name ?? String(id) })) : [];
   return { pattern, target: { id: T.id, name: T.name, matched: T.matched }, group: group ? { id: group.id, name: group.name } : null,
     with: persons[1] ? { id: persons[1].id, name: persons[1].name, matched: persons[1].matched } : null,
-    topic, relations: asked,
+    topic, before, relations: asked,
     people: people.slice(0, maxPeople).map(({ topic: _t, typed: _y, ...p }) => p), contested, notMet, noEvidence };
 }
 

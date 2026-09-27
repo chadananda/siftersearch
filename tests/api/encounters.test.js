@@ -309,4 +309,29 @@ describe('encounterSearch', () => {
     expect(r.people.map((p) => p.name).sort()).toEqual(['Mullá Ḥusayn', 'the Báb']);
     expect(r.people[0].evidence[0]).toMatchObject({ scene: 1, verified: 'met' });
   });
+
+  it('a scene links only through its participants, never through names in its summary', () => {
+    const ix = createEncounterIndex({
+      persons: [{ id: 2, cn: 'the Báb', imp: 99, aliases: '[]' }, { id: 9, cn: 'Nabíl-i-A‘ẓam', imp: 70, aliases: '["Nabíl"]' }, { id: 11, cn: 'Mírzá Aḥmad', imp: 20, aliases: '[]' }],
+      groups: [], members: [],
+      claims: [{ id: 's1:9:11', eid: 9, rel: 'met', tid: 11, st: 'Nabíl (companion) — present with Mírzá Aḥmad, the Báb’s amanuensis (companion), Kirmánsháh: Nabíl dwells with the Báb’s amanuensis',
+        prf: 'I was, at that time, dwelling in Kirmánsháh', doc: 21308, pid: 'p1', tv: null, vd: 'met', scene: 1 }],
+    });
+    expect(encounterSearch('did Nabíl meet the Báb?', { index: ix }).people).toEqual([]);
+    expect(encounterSearch('did Nabíl meet Mírzá Aḥmad?', { index: ix }).people.map((p) => p.name)).toEqual(['Nabíl-i-A‘ẓam']);
+  });
+
+  it('"prior to Shíráz" pushes the Shíráz meetings down and the earlier one up', () => {
+    const ix = createEncounterIndex({
+      persons: [{ id: 2, cn: 'the Báb', imp: 99, aliases: '[]' }, { id: 5, cn: 'Mullá Ḥusayn', imp: 85, aliases: '[]' }],
+      groups: [], members: [], authoritative: [21308],
+      claims: [
+        { id: 1, eid: 5, rel: 'met', tid: 2, st: 'Mullá Ḥusayn — met the Báb', prf: 'The Youth who met me outside the gate of Shíráz', doc: 21308, pid: 'a', tv: '1844', vd: 'met' },
+        { id: 's9:5:2', eid: 5, rel: 'met', tid: 2, st: 'Mullá Ḥusayn (preacher) — present with the Báb (guest), Mullá Sadiq’s house, Karbilá: struck dumb', prf: 'the preacher … was momentarily struck dumb', doc: 3887, pid: 'b', tv: null, vd: 'met', scene: 9 },
+      ],
+    });
+    const r = encounterSearch('Had the Báb ever met Mullá Ḥusayn prior to Shíráz?', { index: ix });
+    expect(r.before).toEqual(['shiraz']);
+    expect(r.people.find((p) => p.name === 'Mullá Ḥusayn').evidence[0].scene).toBe(9);
+  });
 });
