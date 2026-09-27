@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T05:08:34.904Z",
+  "generated": "2026-09-27T05:14:49.750Z",
   "entries": [
+    {
+      "hash": "f3181e6e",
+      "date": "2026-09-26",
+      "type": "Fixed",
+      "description": "Catalog apply defaults to retype-only — title merges wait for strict figure resolution + second check",
+      "scope": "entities"
+    },
     {
       "hash": "57c209c8",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Time-weighted progress bar (claims ~55% share) so it climbs meaningfully during the dominant stage",
       "scope": "bio popup"
-    },
-    {
-      "hash": "c3628621",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Within-stage progress for claims (paras-with-claims/total) so the bar climbs, not frozen at the stage boundary",
-      "scope": "bio popup"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "f3181e6e",
+        "date": "2026-09-26",
+        "type": "Fixed",
+        "description": "Catalog apply defaults to retype-only — title merges wait for strict figure resolution + second check",
+        "scope": "entities"
+      },
       {
         "hash": "57c209c8",
         "date": "2026-09-26",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-13",
         "type": "Fixed",
         "description": "Time-weighted progress bar (claims ~55% share) so it climbs meaningfully during the dominant stage",
-        "scope": "bio popup"
-      },
-      {
-        "hash": "c3628621",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Within-stage progress for claims (paras-with-claims/total) so the bar climbs, not frozen at the stage boundary",
         "scope": "bio popup"
       }
     ]

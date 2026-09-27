@@ -37,8 +37,27 @@ if (WRITE) {
   mkdirSync('logs', { recursive: true });
   const rollback = { retype: retype.map((r) => ({ id: r.id, type: r.type })), merges: [] };
   writeFileSync(`logs/entity-catalog-rollback-${stamp}.json`, JSON.stringify(rollback));
-  const stmts = retype.map((r) => ({ sql: `UPDATE graph_entities SET entity_type = ? WHERE id = ? AND entity_type = 'person'`, args: [r.kind, r.id] }));
+  // OR IGNORE: a record whose name already exists under the new type ("Bayán" the person vs "Bayán" the work) collides
+  // with UNIQUE(canonical_name, entity_type, religion) — that record is a duplicate of the existing entity and is
+  // MERGED into it below instead.
+  const stmts = retype.map((r) => ({ sql: `UPDATE OR IGNORE graph_entities SET entity_type = ? WHERE id = ? AND entity_type = 'person'`, args: [r.kind, r.id] }));
   for (let i = 0; i < stmts.length; i += 300) await transaction(stmts.slice(i, i + 300), 'entity-catalog-apply');
+  const stuck = [];
+  for (const r of retype) {
+    const still = (await queryAll(`SELECT entity_type t, religion FROM graph_entities WHERE id = ?`, [r.id]))[0];
+    if (!still || still.t !== 'person') continue;
+    const twin = (await queryAll(`SELECT id FROM graph_entities WHERE canonical_name = ? AND entity_type = ? AND religion IS ? AND ${LIVE_SQL()}`, [r.name, r.kind, still.religion]))[0];
+    if (!twin) { stuck.push(r.name); continue; }
+    rollback.merges.push({ title: r.id, into: twin.id, retypeCollision: true,
+      mentions: await queryAll(`SELECT id, entity_id FROM entity_mentions_v2 WHERE entity_id = ?`, [r.id]),
+      claimSubjects: await queryAll(`SELECT id, entity_id FROM entity_claims WHERE entity_id = ?`, [r.id]),
+      claimTargets: await queryAll(`SELECT id, target_entity_id FROM entity_claims WHERE target_entity_id = ?`, [r.id]),
+      relations: await queryAll(`SELECT * FROM graph_relations WHERE source_entity_id = ? OR target_entity_id = ?`, [r.id, r.id]) });
+    writeFileSync(`logs/entity-catalog-rollback-${stamp}.json`, JSON.stringify(rollback));
+    await store.applyMerge(twin.id, [r.id], `catalog review: "${r.name}" is a ${r.kind}, merged into the existing ${r.kind} of that name`);
+  }
+  report.retypeCollisionsMerged = rollback.merges.length;
+  report.retypeStuck = stuck;
   for (const r of RETYPE_ONLY ? [] : merge) {
     rollback.merges.push({ title: r.id, into: r.sid,
       mentions: await queryAll(`SELECT id, entity_id FROM entity_mentions_v2 WHERE entity_id = ?`, [r.id]),
@@ -54,5 +73,5 @@ mkdirSync('logs', { recursive: true });
 const file = `logs/entity-catalog-apply-${report.mode}-${stamp}.json`;
 writeFileSync(file, JSON.stringify(report, null, 1));
 console.log(`REPORT ${file}`);
-console.log(JSON.stringify({ mode: report.mode, retype: report.retype, byKind: report.retypeByKind, merge: report.merge, held: report.held }));
+console.log(JSON.stringify({ mode: report.mode, retype: report.retype, byKind: report.retypeByKind, collisionsMerged: report.retypeCollisionsMerged, stuck: report.retypeStuck?.length, merge: RETYPE_ONLY ? 0 : report.merge, held: report.held }));
 process.exit(0);
