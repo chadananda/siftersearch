@@ -87,6 +87,12 @@ export function parseMentions(context) {
   }).filter(Boolean);
 }
 
+// A handle that DECLINES to identify ("?", "(identity not given in text)", "uncertain") is an abstention: reconcile
+// never decides it (getMentionClusters skips '%?%' / '%not given%'), so nothing may bind it — a script once bound 141
+// "a Bábí martyr … (further identity not given)" mentions to ONE record.
+// Keep EXACTLY in step with the store's cluster filter (resolved_as LIKE '%?%' / '%not given%'): one definition.
+export const isAbstention = (resolvedAs) => /\?|not given/i.test(String(resolvedAs || ''));
+
 // Normalise a surface for de-dup only (NOT for identity): strip diacritics + quotes, collapse space, lower.
 export function normSurface(s) {
   return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();

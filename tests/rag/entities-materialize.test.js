@@ -3,6 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { run, recordDecisions } from '../../api/lib/rag/entities/materialize.js';
 import { replay } from '../../api/lib/rag/entities/projection.js';
+import { isAbstention } from '../../api/lib/rag/entities/mentions.js';
 
 const m = (id, doc, ra, entityId, basis = 'reconcile') => ({ id, anchor: `a${id}`, docId: doc, resolvedAs: ra, entityId, basis });
 const cluster = (id, kind, doc, ra, applied) => ({ id, kind, targetKind: 'mention-cluster', status: 'applied', actorTier: 2, payload: { docId: doc, resolvedAs: ra, entityId: applied, applied_entity_id: applied } });
@@ -50,9 +51,24 @@ describe('entities/materialize', () => {
     for (const x of after) expect(r.get(x.id).entity).toBe(x.entityId);
   });
 
+  it('an undecided binding on an ABSTENTION handle is unbound, never recorded (141 anonymous martyrs were one record)', async () => {
+    const r = await run(ctx([m(5, 9, 'a Bábí martyr listed in the roster (further identity not given in text)', 77, 'propagate')], []).ctx);
+    expect(r.changesList).toEqual([{ id: 5, from: 77, to: null, category: 'no-decision' }]);
+    expect(r.recorded).toHaveLength(0);
+  });
+
   it('a recorded binding is a tier-1 rule decision keyed by anchor, marked unproven', () => {
     const [d] = recordDecisions([{ category: 'no-decision', anchor: 'a3', db: 55, replay: null, basis: 'propagate', name: 'Muḥammad Big' }]);
     expect(d).toMatchObject({ kind: 'link', targetKind: 'mention', targetIds: ['a3'], payload: { entityId: 55 }, actorTier: 1, status: 'applied' });
     expect(d.rationale).toMatch(/unproven/);
+  });
+});
+
+describe('isAbstention', () => {
+  it('recognises exactly the handles reconcile never decides (its "?" / "not given" filter)', () => {
+    for (const s of ['Mullá Ṣádiq-i-Khurásání (?)', 'a religious leader of Bárfurúsh (further identity not given in text)'])
+      expect(isAbstention(s)).toBe(true);
+    // names a man, only his wider identity is unknown — not an abstention
+    for (const s of ['John Esslemont.', 'Muḥammad Big (a relative of the village owner, identity otherwise unspecified)']) expect(isAbstention(s)).toBe(false);
   });
 });
