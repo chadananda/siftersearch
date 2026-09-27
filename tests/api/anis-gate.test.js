@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { routeTriage, triageMessage, outputBreaksPersona, T } from '../../api/lib/anis/triage.js';
 import { CANNED, NOTHING_FOUND, cannedReply } from '../../api/lib/anis/canned.js';
 import { makeStrikes, tarpitResponse } from '../../api/lib/anis/strikes.js';
-import { lintReply } from '../../api/lib/anis/lint.js';
+import { lintReply, unmachine } from '../../api/lib/anis/lint.js';
 import { channelFor, supports, CHANNELS } from '../../api/lib/anis/channels.js';
 
 const tri = (o = {}) => ({ malicious: 0.01, complete: 0.99, stop_request: 0.01, kind: { choice: 'research', confidence: 0.9 }, ...o });
@@ -82,10 +82,19 @@ describe('voice lint — the FORBIDDEN validator (logs, never blocks)', () => {
     expect(lintReply('God wants you to read this.').map((h) => h.id)).toContain('god-wants-you');
     expect(lintReply('What a great question!').map((h) => h.id)).toContain('generic-praise');
     expect(lintReply('You are spiritually ready.').map((h) => h.id)).toContain('spiritual-rank');
+    // MEASURED live 2026-09-27: the formatter lectured about its method and named its machinery.
+    expect(lintReply('To understand what the writings say about justice, we must carefully distinguish…').map((h) => h.id)).toContain('method-narration');
+    expect(lintReply('The retrieved sources here do not settle it.').map((h) => h.id)).toContain('machinery');
+    expect(lintReply('From our library\'s cited record, several people met Him.').map((h) => h.id)).toContain('machinery');
   });
   it('quoted scripture may say anything — blockquotes and quotations are not linted', () => {
     expect(lintReply('> God wants you to be happy.\nA plain answer.')).toEqual([]);
     expect(lintReply('The passage says “God wants you to be happy”, which…')).toEqual([]);
+  });
+  it('the backstop rewrites the machinery phrase and nothing else', () => {
+    expect(unmachine('The provided texts do not mention it.')).toBe('The texts I can search do not mention it.');
+    expect(unmachine('While the provided passages do not…')).toBe('While the texts I can search do not…');
+    expect(unmachine('The texts provided comfort.')).toBe('The texts provided comfort.');
   });
   it('a plain, specific answer passes', () => expect(lintReply('The word behind “steadfast” here means firmly rooted.')).toEqual([]));
 });

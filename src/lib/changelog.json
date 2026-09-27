@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T22:32:37.629Z",
+  "generated": "2026-09-27T22:47:30.097Z",
   "entries": [
+    {
+      "hash": "f36c23f6",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Chosen answer format in the stream's complete meta",
+      "scope": "anis"
+    },
     {
       "hash": "aa4030ee",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Graph-band mutex replaces whole-book tail-lock; atomic queue claim; reachedBound verifies the real bound stage",
       "scope": null
-    },
-    {
-      "hash": "c1fc59c5",
-      "date": "2026-07-17",
-      "type": "Other",
-      "description": "Graph-mutating band is project-to-dedup, not project-to-end — stop serializing HyPE",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "f36c23f6",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Chosen answer format in the stream's complete meta",
+        "scope": "anis"
+      },
       {
         "hash": "aa4030ee",
         "date": "2026-09-27",
@@ -7071,13 +7078,6 @@
         "date": "2026-07-17",
         "type": "Other",
         "description": "Graph-band mutex replaces whole-book tail-lock; atomic queue claim; reachedBound verifies the real bound stage",
-        "scope": null
-      },
-      {
-        "hash": "c1fc59c5",
-        "date": "2026-07-17",
-        "type": "Other",
-        "description": "Graph-mutating band is project-to-dedup, not project-to-end — stop serializing HyPE",
         "scope": null
       }
     ]

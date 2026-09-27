@@ -8,6 +8,7 @@ import { dropUnverified, createSentenceGate } from './quotes.js';
 import { toFindings, dataProfile, describeProfile } from './findings.js';
 import { chooseFormat } from './formats.js';
 import { channelFor } from './channels.js';
+import { unmachine } from './lint.js';
 
 // Default measured 2026-09-25 (scripts/wip/anis-model-race.mjs, lean prompt, 4 questions): Gemini 3.5 Flash-Lite
 // 0.53s first token / 1.5s total (gpt-4o-mini 0.61s / 2.3s; Haiku 0.72s / 4.3s; DeepSeek 0.77s / 2.4s). Every model
@@ -181,7 +182,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // (the stream once showed a link the model had moved onto another domain; only the final text caught it).
   const paEvidence = pa ? [...(pa.contested || []).flatMap((p) => [...p.evidence, ...p.against]), ...(pa.notMet || []).flatMap((p) => p.evidence)] : [];
   const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url }))];
-  const cleanLinks = (t) => (d.stripLinks || keepRetrievedLinks)(linkMarkers(t, retrieved), allowed);
+  const cleanLinks = (t) => unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(t, retrieved), allowed));
   const gate = createSentenceGate(retrieved, (t) => {
     if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
     onEvent({ type: 'text', content: cleanLinks(t) });
