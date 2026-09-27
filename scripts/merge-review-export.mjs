@@ -2,7 +2,8 @@
 // but you will have to provide all the textual evidence"). Nothing is merged here.
 // Candidates: (a) title_of verdicts resolved STRICTLY by name to a live figure; (b) duplicate records of prominent
 // people found by name — one name extends the other ("Mullá Ḥusayn" / "Mullá Ḥusayn-i-Bushrú'í") or the same words
-// reordered ("Siyyid Káẓim-i-Rashtí" / "Rashtí, Siyyid Káẓim"); (c) merge-stage groups held back on 2026-09-26.
+// reordered ("Siyyid Káẓim-i-Rashtí" / "Rashtí, Siyyid Káẓim"); (c) merge-stage groups held back on 2026-09-26;
+// (d) held identity pairs the pair judge could not settle (its two judges disagreed) — both verdicts shown.
 // Evidence per side: names, aliases, summary, importance, claims (statement + verbatim proof + source + paragraph),
 // paragraphs where the name occurs (text around it), scenes. Output: logs/merge-review-<ts>.json.
 import dotenv from 'dotenv'; dotenv.config({ path: '.env-secrets' }); dotenv.config({ path: '.env-public' });
@@ -114,6 +115,14 @@ async function side(id) {
   const s = { id, name: ge.name, importance: ge.importance, aliases: parse(ge.aliases).slice(0, 12), summary: ge.summary || null, counts, claims, contexts, scenes };
   evidence.set(id, s); return s;
 }
+// (d) pair-judge 'review' results from the latest WRITE report (else dry): the two judges disagreed, so a human decides.
+try {
+  const files = readdirSync('logs').filter((x) => x.startsWith('identity-pair-judge-')).sort((a, b) => a.split('-').slice(-6).join('').localeCompare(b.split('-').slice(-6).join('')));
+  const rep = JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8'));
+  for (const r of rep.results || []) if (r.result === 'review')
+    add(r.pair[0], r.pair[1], 'held-pair', `pair judge: rule ${r.rule}; model ${r.model?.verdict ?? 'none'} — ${r.model?.tie ?? ''}${r.signals?.veto ? `; veto: ${r.signals.veto.reason}` : ''}`);
+} catch { /* no pair-judge report */ }
+
 const out = [];
 for (const c of pairs.values()) {
   if (!liveIds.has(c.a) || !liveIds.has(c.b)) continue;
