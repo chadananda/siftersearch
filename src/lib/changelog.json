@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T23:40:59.606Z",
+  "generated": "2026-09-27T23:50:46.522Z",
   "entries": [
+    {
+      "hash": "c5e66bf9",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Merge-review shows full passages from mentions AND claims, the passage that raised each pair, and English translations with the target term bolded",
+      "scope": "review"
+    },
     {
       "hash": "542331d5",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "\"done\" ⇔ FULL grounding (reachedBound), not reconcile alone — fixes read-half books showing ✓",
       "scope": null
-    },
-    {
-      "hash": "0ce86896",
-      "date": "2026-07-18",
-      "type": "Other",
-      "description": "Make a single-writer hang non-catastrophic + self-healing (2026-07-18 incident)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "c5e66bf9",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Merge-review shows full passages from mentions AND claims, the passage that raised each pair, and English translations with the target term bolded",
+        "scope": "review"
+      },
       {
         "hash": "542331d5",
         "date": "2026-09-27",
@@ -7069,13 +7076,6 @@
         "date": "2026-07-18",
         "type": "Other",
         "description": "\"done\" ⇔ FULL grounding (reachedBound), not reconcile alone — fixes read-half books showing ✓",
-        "scope": null
-      },
-      {
-        "hash": "0ce86896",
-        "date": "2026-07-18",
-        "type": "Other",
-        "description": "Make a single-writer hang non-catastrophic + self-healing (2026-07-18 incident)",
         "scope": null
       }
     ]

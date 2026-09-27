@@ -115,12 +115,13 @@ async function side(id) {
     const para = (/^p\d+$/.test(pid) ? await queryAll(`SELECT text, paragraph_index FROM content WHERE id = ?`, [Number(pid.slice(1))])
       : await queryAll(`SELECT text, paragraph_index FROM content WHERE doc_id = ? AND external_para_id = ? LIMIT 1`, [r.doc, pid]))[0];
     if (!para?.text) continue;
-    let t = para.text.replace(/\s+/g, ' ').trim();
+    const marked = para.text.replace(/\s+/g, ' ').trim();
+    let t = marked.replace(/⁅\/?s\d+⁆/g, '');
     if (t.length > 1800) { const at = Math.max(0, t.indexOf(String(r.mark || '').slice(0, 40))); t = `${at > 700 ? '…' : ''}${t.slice(Math.max(0, at - 700), at + 1100)}…`; }
     // The TARGET TERM is what gets bolded: a mention's surface; for a claim, the record's name when the paragraph has it.
     const core = String(ge.name || '').replace(/\([^)]*\)/g, ' ').split(/[,;—]/)[0].trim();
-    const mark = r.via === 'claim' && core && t.includes(core) ? core : r.mark;
-    contexts.push({ source: r.title, doc_id: r.doc, pid, surface: mark, via: r.via, text: t, record: ge.name,
+    const mark = r.via === 'claim' && core && t.includes(core) ? core : r.mark;   // original-script text keeps the verbatim proof
+    contexts.push({ source: r.title, doc_id: r.doc, pid, surface: mark, via: r.via, text: t, marked, record: ge.name,
       url: `https://siftersearch.com/document/${r.doc}${para.paragraph_index != null ? `#p${para.paragraph_index}` : ''}` });
   }
   let scenes = [];
@@ -159,7 +160,8 @@ async function origin(a, b) {
     const para = (/^p\d+$/.test(pid) ? await queryAll(`SELECT text, paragraph_index FROM content WHERE id = ?`, [Number(pid.slice(1))])
       : await queryAll(`SELECT text, paragraph_index FROM content WHERE doc_id = ? AND external_para_id = ? LIMIT 1`, [r.doc_id, pid]))[0];
     if (!para?.text) continue;
-    out.push({ source: r.title, surface: r.surface, text: para.text.replace(/\s+/g, ' ').trim().slice(0, 1800),
+    const marked = para.text.replace(/\s+/g, ' ').trim();
+    out.push({ source: r.title, surface: r.surface, marked, text: marked.replace(/⁅\/?s\d+⁆/g, '').slice(0, 1800),
       url: `https://siftersearch.com/document/${r.doc_id}${para.paragraph_index != null ? `#p${para.paragraph_index}` : ''}`,
       note: `In this book the name “${r.surface}” was decided as #${p.replay}, but the stored link pointed to #${p.db} (${p.mentions} mentions across ${p.docs.length} books).` });
   }
@@ -180,22 +182,26 @@ for (const c of pairs.values()) {
 // DeepSeek (allowed for every language); cached by sentence+term so a passage shared by candidates is translated once.
 const { chatCompletion } = await import('../api/lib/ai.js');
 const ARABIC = /[\u0600-\u06FF]/;
-const sentenceAround = (text, term) => {
-  const parts = String(text).split(/(?<=[.!?؟۔])\s+/);
-  const i = parts.findIndex((p) => term && p.includes(String(term).slice(0, 30)));
-  return (i >= 0 ? parts.slice(Math.max(0, i - 0), i + 1).join(' ') : parts[0] || String(text)).slice(0, 900);
+// The sentence holding the target: by the paragraph's own sentence markers (⁅sN⁆…⁅/sN⁆) when present, else by punctuation.
+const sentenceAround = (x) => {
+  const src = x.marked || x.text;
+  const parts = /⁅s\d+⁆/.test(src) ? [...src.matchAll(/⁅s\d+⁆([\s\S]*?)⁅\/s\d+⁆/g)].map((m) => m[1].trim()) : String(src).split(/(?<=[.!?؟۔])\s+/);
+  const probe = String(x.surface || '').replace(/⁅\/?s\d+⁆/g, '').trim().slice(0, 30);
+  const i = parts.findIndex((p) => probe && p.includes(probe));
+  return { sentence: (i >= 0 ? parts[i] : parts.slice(0, 2).join(' ')).slice(0, 900), found: i >= 0 };
 };
 const trCache = new Map();
 async function translate(x) {
-  const sentence = sentenceAround(x.text, x.surface);
-  const key = `${sentence}\u0001${x.surface}`;
+  const { sentence, found } = sentenceAround(x);
+  const target = String(x.surface || '').replace(/⁅\/?s\d+⁆/g, '').trim();
+  const key = `${sentence}\u0001${found ? target : ''}`;
   if (!trCache.has(key)) trCache.set(key, (async () => {
     try {
       const r = await chatCompletion([
-        { role: 'system', content: 'Translate the sentence into clear English. Put the English words that render the TARGET in **bold** (exactly one bold span). Keep names in their usual English transliteration. Return only the translation.' },
-        { role: 'user', content: `TARGET: ${x.surface}${x.record ? ` (the record being reviewed: ${x.record})` : ''}\nSENTENCE: ${sentence}` },
+        { role: 'system', content: 'Translate the SENTENCE into clear English and return only the translation. If a TARGET is given and appears in the sentence, put the English words that render it in **bold** (one bold span). Keep names in their usual English transliteration. Never add notes.' },
+        { role: 'user', content: `${found && target ? `TARGET: ${target}\n` : ''}SENTENCE: ${sentence}` },
       ], { provider: 'deepseek', model: 'deepseek-v4-flash', temperature: 0, maxTokens: 400, caller: 'merge-review-translate' });
-      return { original: sentence, english: String(r.content || '').trim() };
+      return { original: sentence, english: String(r.content || '').replace(/⁅\/?s\d+⁆/g, '').trim(), targetFound: found };
     } catch { return null; }
   })());
   x.translation = await trCache.get(key);
@@ -204,7 +210,12 @@ const needing = out.flatMap((c) => [...(c.a.contexts || []), ...(c.b.contexts ||
 for (let i = 0; i < needing.length; i += 8) await Promise.all(needing.slice(i, i + 8).map(translate));
 console.log(`translated ${trCache.size} sentences for ${needing.length} passages`);
 
-out.sort((x, y) => (Math.max(y.a.importance || 0, y.b.importance || 0)) - (Math.max(x.a.importance || 0, x.b.importance || 0)));
+for (const c of out) {
+  const empty = [c.a, c.b].filter((sd) => !(sd.contexts || []).length);
+  if (empty.length) { c.kinds.push('no-basis'); c.why.push(`No passage anywhere for ${empty.map((sd) => `#${sd.id} “${sd.name}”`).join(' and ')} — nothing in the library identifies ${empty.length > 1 ? 'these records' : 'this record'}; it cannot be judged from text.`); }
+  for (const x of [...(c.a.contexts || []), ...(c.b.contexts || []), ...(c.origin || [])]) delete x.marked;
+}
+out.sort((x, y) => Number(x.kinds.includes('no-basis')) - Number(y.kinds.includes('no-basis')) || (Math.max(y.a.importance || 0, y.b.importance || 0)) - (Math.max(x.a.importance || 0, x.b.importance || 0)));
 mkdirSync('logs', { recursive: true });
 const file = `logs/merge-review-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
 writeFileSync(file, JSON.stringify({ generated: new Date().toISOString(), candidates: out }));
