@@ -11,8 +11,8 @@ const payloadOf = (d) => (typeof d.payload === 'string' ? JSON.parse(d.payload |
 // Cluster state per (doc, resolvedAs): walk that key's decisions in id order, as project applied them. An applied
 // link/create binds; an applied uncertain withdraws (the re-adjudication pullback); a superseded decision is skipped.
 // `pending` = a later decision that has not been applied (what the log proposes but the graph does not show).
-// Of two decisions about the same mention, the LATER governs — unless it comes from a lower tier (a model decision
-// never overrides a human one; recorded legacy state never overrides a later judgement, because it is never later).
+// Of two decisions about the same mention(s), the LATER governs — unless it comes from a lower tier (a model decision
+// never overrides a human one).
 function governs(a, b) {
   if (!a || a.decision == null) return b;
   if (!b || b.decision == null) return a;
@@ -97,7 +97,9 @@ export function replay({ mentions, decisions }) {
   for (const mn of mentions) {
     const o = (mn.anchor != null && overrides.get(String(mn.anchor))) || overrides.get(String(mn.id));
     const c = states.get(`${num(mn.docId)}\u0001${mn.resolvedAs}`);
-    const g = governs(c && c.decision != null ? c : null, o || null);
+    // Specific beats general: a mention decision governs its cluster's decision unless the cluster's is higher-tier.
+    const cc = c && c.decision != null ? c : null;
+    const g = o && (!cc || o.tier >= cc.tier) ? o : cc;
     const s = g ? { ...g, pending: g === c ? c.pending : null } : c;
     const base = s?.entity ?? null;
     if (base != null && !memo.has(base)) memo.set(base, follow(edges, base));

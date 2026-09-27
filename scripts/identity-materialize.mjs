@@ -23,7 +23,7 @@ if (WRITE) {
 }
 const r = written || dry;
 const out = { mode: WRITE ? 'write' : 'dry', docId: DOC, mentions: r.mentions, divergent: r.divergent, byCategory: r.byCategory,
-  changes: r.changes, recordedDecisions: r.recordedDecisions, written: r.written,
+  changes: r.changes, held: r.held, recordedDecisions: r.recordedDecisions, written: r.written,
   rollback: WRITE ? `logs/identity-materialize-rollback-${stamp}.json` : null,
   pairs: r.pairs, recorded: r.recorded, changesSample: r.changesList.slice(0, 200) };
 writeFileSync(`logs/identity-materialize-${out.mode}-${stamp}.json`, JSON.stringify(out, null, 1));

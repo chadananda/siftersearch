@@ -30,13 +30,19 @@ describe('entities/materialize', () => {
     const r = await run(f.ctx);
     expect(f.saved).toHaveLength(0); expect(f.set).toHaveLength(0);
     expect(r.byCategory).toEqual({ 'cross-doc': 1, 'no-decision': 1, 'cross-doc-unbind': 1 });
-    expect(r.changesList).toEqual([{ id: 2, from: 100, to: 300, category: 'cross-doc' }, { id: 4, from: null, to: 40, category: 'cross-doc-unbind' }]);
+    expect(r.changesList).toEqual([{ id: 4, from: null, to: 40, category: 'cross-doc-unbind' }]);   // cross-doc is HELD
+    expect(r.held).toBe(1);
     expect(r.pairs).toEqual([expect.objectContaining({ db: 100, replay: 300, mentions: 1, docs: [8] })]);
+  });
+
+  it('a held category is corrected only when explicitly included (after its pair is adjudicated)', async () => {
+    const r = await run(ctx(mentions, decisions).ctx, { include: ['cross-doc'] });
+    expect(r.changesList.map((c) => c.id)).toEqual([2, 4]);
   });
 
   it('write records first, then corrects — and afterwards the replay reproduces the stored graph exactly', async () => {
     const f = ctx(mentions, decisions);
-    await run(f.ctx, { write: true });
+    await run(f.ctx, { write: true, include: ['cross-doc'] });
     expect(f.saved).toHaveLength(1);
     const after = mentions.map((x) => ({ ...x, entityId: f.set.find((s) => s.id === x.id)?.entityId ?? x.entityId }));
     const log = [...decisions, ...f.saved.map((d, i) => ({ ...d, id: 1000 + i }))];

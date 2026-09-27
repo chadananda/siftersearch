@@ -86,19 +86,22 @@ describe('replay — anchors and reversals', () => {
   });
 });
 
-describe('replay — precedence: the latest decision governs, unless it comes from a LOWER tier', () => {
+describe('replay — precedence: a decision about specific mentions governs its cluster\'s decision unless outranked', () => {
   const ml = (id, anchor, entityId, tier) => ({ id, kind: 'link', targetKind: 'mention', status: 'applied', actorTier: tier, targetIds: [anchor], payload: { entityId } });
   const mn = { id: 1, anchor: 'aa', docId: 7, resolvedAs: 'X' };
   const c = (id, entityId, tier = 2) => ({ ...cluster(id, 'link', 7, 'X', { entityId, applied: entityId }), actorTier: tier });
-  // Recorded legacy state carries the tier of what PRODUCED it (another book's model decision = 2), flagged unproven.
-  it('recorded legacy state (same tier, later) holds over the earlier model decision', () =>
-    expect(replay({ mentions: [mn], decisions: [c(10, 1), ml(20, 'aa', 5, 2)] }).get(1).entity).toBe(5));
-  it('a later model decision supersedes recorded legacy state', () =>
-    expect(replay({ mentions: [mn], decisions: [ml(20, 'aa', 5, 2), c(30, 1)] }).get(1).entity).toBe(1));
-  it('a later RULE (tier 1) does not override an earlier model decision', () =>
+  // Measured 2026-09-27: 57 model splits ("the Báb's escort including Muḥammad Big" is a group, not the man) were
+  // silently undone by a LATER re-decision of the whole name cluster that never looked at them.
+  it('a model split survives a later model re-decision of the whole cluster', () =>
+    expect(replay({ mentions: [mn], decisions: [ml(20, 'aa', 5, 2), c(30, 1)] }).get(1).entity).toBe(5));
+  it('a recorded rule binding (tier 1) yields to any model cluster decision', () =>
     expect(replay({ mentions: [mn], decisions: [c(10, 1), ml(20, 'aa', 5, 1)] }).get(1).entity).toBe(1));
-  it('a human decision (tier 3) is not overridden by a later model decision', () =>
-    expect(replay({ mentions: [mn], decisions: [ml(20, 'aa', 5, 3), c(30, 1)] }).get(1).entity).toBe(5));
+  it('a human decision on the cluster (tier 3) outranks a model split', () =>
+    expect(replay({ mentions: [mn], decisions: [ml(20, 'aa', 5, 2), c(30, 1, 3)] }).get(1).entity).toBe(1));
+  it('between two mention decisions the later governs unless it is lower-tier', () => {
+    expect(replay({ mentions: [mn], decisions: [ml(20, 'aa', 5, 2), ml(21, 'aa', 6, 2)] }).get(1).entity).toBe(6);
+    expect(replay({ mentions: [mn], decisions: [ml(20, 'aa', 5, 3), ml(21, 'aa', 6, 2)] }).get(1).entity).toBe(5);
+  });
 });
 
 describe('compare — the replay check against the database', () => {

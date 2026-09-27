@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T19:14:08.090Z",
+  "generated": "2026-09-27T19:19:21.865Z",
   "entries": [
+    {
+      "hash": "13ea9b45",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Materialize stage — write the log's replay onto mentions; anchor-keyed mention decisions, unmerge, tier precedence",
+      "scope": "entities"
+    },
     {
       "hash": "e20ccbfd",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Checkpoint decisions in batches + scope resume by book (the binding fix)",
       "scope": null
-    },
-    {
-      "hash": "8716bf76",
-      "date": "2026-07-14",
-      "type": "Other",
-      "description": "Flush batch 200->20 so progress % climbs in fine steps (was ~40% jumps)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "13ea9b45",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Materialize stage — write the log's replay onto mentions; anchor-keyed mention decisions, unmerge, tier precedence",
+        "scope": "entities"
+      },
       {
         "hash": "e20ccbfd",
         "date": "2026-09-27",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-14",
         "type": "Other",
         "description": "Checkpoint decisions in batches + scope resume by book (the binding fix)",
-        "scope": null
-      },
-      {
-        "hash": "8716bf76",
-        "date": "2026-07-14",
-        "type": "Other",
-        "description": "Flush batch 200->20 so progress % climbs in fine steps (was ~40% jumps)",
         "scope": null
       }
     ]

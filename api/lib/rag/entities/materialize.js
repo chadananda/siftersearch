@@ -6,9 +6,12 @@
 import { divergences } from './projection.js';
 
 // Categories the replay corrects (each is a scoping bug, not a judgement — see projection.js), and ones it records.
-// A mismatch (both bound, no other book explains the stored id) is corrected to this book's own decision: that is the
-// provable one; the stored id goes to the reassessment pairs with the cross-doc ones.
-const CORRECT = new Set(['override-lost', 'cross-doc-unbind', 'cross-doc', 'unbound', 'mismatch']);
+// HELD by default: a divergence between two BOUND entities (cross-doc, mismatch). Measured 2026-09-27: of 253 such
+// pairs nearly all are the same person recorded twice (each book minted its own record; the string-wide bind happened
+// to gather mentions on one). Moving them would scatter a person across records — so the pair is adjudicated first
+// (same person → an evidence merge, and nothing moves; different → pass `include` to correct).
+const CORRECT = new Set(['override-lost', 'cross-doc-unbind', 'unbound']);
+const HELD = new Set(['cross-doc', 'mismatch']);
 const RECORD = new Set(['no-decision']);
 export const METHOD = 'materialize-v1';
 
@@ -40,13 +43,15 @@ export function reassessPairs(rows) {
   return [...pairs.values()].map((p) => ({ ...p, docs: [...p.docs], names: [...p.names].slice(0, 4) })).sort((a, b) => b.mentions - a.mentions);
 }
 
-export async function run(ctx, { docId = null, write = false } = {}) {
+export async function run(ctx, { docId = null, write = false, include = [] } = {}) {
   const [mentions, decisions] = await Promise.all([ctx.store.getMentionIdentity({ docId }), ctx.store.getIdentityLog()]);
   const rows = divergences({ mentions, decisions });
-  const changes = rows.filter((r) => CORRECT.has(r.category)).map((r) => ({ id: r.mention, from: r.db, to: r.replay, category: r.category }));
+  const fix = new Set([...CORRECT, ...include.filter((c) => HELD.has(c))]);
+  const changes = rows.filter((r) => fix.has(r.category)).map((r) => ({ id: r.mention, from: r.db, to: r.replay, category: r.category }));
   const recorded = recordDecisions(rows);
   const byCategory = rows.reduce((a, r) => ((a[r.category] = (a[r.category] || 0) + 1), a), {});
-  const stats = { docId, mentions: mentions.length, divergent: rows.length, byCategory, changes: changes.length, recordedDecisions: recorded.length, written: 0 };
+  const held = rows.filter((r) => HELD.has(r.category) && !fix.has(r.category)).length;
+  const stats = { docId, mentions: mentions.length, divergent: rows.length, byCategory, changes: changes.length, held, recordedDecisions: recorded.length, written: 0 };
   if (write) {
     if (recorded.length) await ctx.store.saveDecisions(recorded);   // record first: the graph must never lose a binding
     stats.written = changes.length ? await ctx.store.setMentionEntities(changes.map(({ id, to }) => ({ id, entityId: to }))) : 0;
