@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T20:14:38.144Z",
+  "generated": "2026-09-27T20:16:53.647Z",
   "entries": [
+    {
+      "hash": "bb34fa06",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Pair judge — two independent judges decide if two records are one person; merges carry evidence",
+      "scope": "entities"
+    },
     {
       "hash": "d91d93df",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "SSR fallback placeholders for admin islands + harden biography prerender fetch",
       "scope": null
-    },
-    {
-      "hash": "1af6ada8",
-      "date": "2026-07-14",
-      "type": "Other",
-      "description": "SSR fallback placeholders for public content islands (no reflow on hydration)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "bb34fa06",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Pair judge — two independent judges decide if two records are one person; merges carry evidence",
+        "scope": "entities"
+      },
       {
         "hash": "d91d93df",
         "date": "2026-09-27",
@@ -7077,13 +7084,6 @@
         "date": "2026-07-14",
         "type": "Other",
         "description": "SSR fallback placeholders for admin islands + harden biography prerender fetch",
-        "scope": null
-      },
-      {
-        "hash": "1af6ada8",
-        "date": "2026-07-14",
-        "type": "Other",
-        "description": "SSR fallback placeholders for public content islands (no reflow on hydration)",
         "scope": null
       }
     ]

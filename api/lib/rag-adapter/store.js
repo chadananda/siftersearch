@@ -428,6 +428,12 @@ export function makeStore() {
       return rows;
     },
 
+    // A document's paragraphs by external id, with text and disambiguation note — a figure's own passages as evidence.
+    async getPassages(docId, paraIds) {
+      if (!paraIds?.length) return [];
+      return db.queryAll(`SELECT external_para_id pid, text, context FROM content WHERE doc_id=? AND external_para_id IN (${paraIds.map(() => '?').join(',')})`, [docId, ...paraIds]);
+    },
+
     // The mention-cluster's OWN facts (EEWA P1) — claims the book asserts about THIS person, pulled from the
     // cluster's own paragraphs (para-indexed → fast) and filtered to the subject whose skeleton matches the
     // resolved name. The book's own testimony ("martyred at Ṭabarsí, brother of X") is the strongest identity

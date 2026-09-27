@@ -82,6 +82,7 @@ export function memStore(seed = {}) {
     getGroundingCoverage: async (id) => seed.grounding?.[id] || { castCount: 0, claimCount: 0, hypeIndexed: 0, paragraphsIndexed: 0, probes: [] },
     getUncertainClusters: async (id) => seed.uncertain?.[id] || [],
     searchCorpus: async (query, opts) => (typeof seed.corpus === 'function' ? seed.corpus(query, opts) : seed.corpus || []),
+    getPassages: async (id, paraIds) => (seed.passages || []).filter((p) => paraIds.includes(p.pid)),
     getScenes: async (id, paraIds) => seed.scenes || paraIds.map((pid) => ({ pid, context: '' })),
     saveDecisions: async (rows) => { decisions.push(...rows); decisionBatches.push(rows.length); return rows.length; },
     // project

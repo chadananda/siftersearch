@@ -34,6 +34,12 @@ describe('research-resolve — pure helpers', () => {
     expect(SYSTEM).toMatch(/NEVER invent an id/i);
   });
 
+  it('buildUser leads with the figure\'s OWN passages — its own place and scene decide who is meant', () => {
+    const u = buildUser({ resolvedAs: 'Muḥammad', freq: 2 }, [], null, [], [{ pid: 'p3', context: '@Adrianople', text: 'the advisor Muḥammad, with whom you served' }]);
+    expect(u).toMatch(/OWN PASSAGES[\s\S]*\[p3\][\s\S]*advisor Muḥammad/);
+    expect(u.indexOf('OWN PASSAGES')).toBeLessThan(u.indexOf('CORPUS EVIDENCE'));
+  });
+
   it('buildUser lists candidate entities so a link cites a real #id (not a name)', () => {
     const u = buildUser({ resolvedAs: 'the youth', freq: 3 }, [], null, [{ id: 42, canonical: 'Mullá Ḥusayn', summary: 'first to believe' }]);
     expect(u).toMatch(/CANDIDATE entities/);
