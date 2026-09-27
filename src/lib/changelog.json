@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T20:24:32.179Z",
+  "generated": "2026-09-27T20:54:43.917Z",
   "entries": [
+    {
+      "hash": "77a45480",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "One surface naming two people in a paragraph yields two mentions (occurrence index); existing anchors unchanged",
+      "scope": "entities"
+    },
     {
       "hash": "f9f56fd5",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "MaxTokens 400->800 + JSON-only retry hint + parse-fail logging — fixes climbing parse-failure rate (GPB 9.5%, DB 17.3%) from truncated verdict JSON on fact-fed prompts",
       "scope": null
-    },
-    {
-      "hash": "6effea7c",
-      "date": "2026-07-15",
-      "type": "Other",
-      "description": "Use RELATIONSHIP and ROLE as identity evidence (recover leaked facts)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "77a45480",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "One surface naming two people in a paragraph yields two mentions (occurrence index); existing anchors unchanged",
+        "scope": "entities"
+      },
       {
         "hash": "f9f56fd5",
         "date": "2026-09-27",
@@ -7075,13 +7082,6 @@
         "date": "2026-07-15",
         "type": "Other",
         "description": "MaxTokens 400->800 + JSON-only retry hint + parse-fail logging — fixes climbing parse-failure rate (GPB 9.5%, DB 17.3%) from truncated verdict JSON on fact-fed prompts",
-        "scope": null
-      },
-      {
-        "hash": "6effea7c",
-        "date": "2026-07-15",
-        "type": "Other",
-        "description": "Use RELATIONSHIP and ROLE as identity evidence (recover leaked facts)",
         "scope": null
       }
     ]

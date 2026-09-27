@@ -377,10 +377,10 @@ export function makeStore() {
       const ent = (await db.queryAll(`SELECT id, canonical_name name FROM graph_entities WHERE id=?`, [entityId]))[0];
       if (!ent) return null;
       const facts = await db.queryAll(
-        `SELECT statement, relation, time_value AS whenv, time_basis FROM entity_claims
+        `SELECT statement, relation, time_value AS whenv, time_basis, proof_verbatim FROM entity_claims
            WHERE entity_id=? AND (status IS NULL OR status='supported') ORDER BY (time_value IS NULL), time_value LIMIT ?`,
         [entityId, limit]);
-      return { id: ent.id, name: ent.name, facts: facts.map((f) => ({ statement: f.statement, relation: f.relation, when: f.whenv, basis: f.time_basis })) };
+      return { id: ent.id, name: ent.name, facts: facts.map((f) => ({ statement: f.statement, relation: f.relation, when: f.whenv, basis: f.time_basis, proof: f.proof_verbatim })) };
     },
 
     // Live search-index coverage for the verify gate. Cast + claims come from the DB (bound = grounded); the
@@ -445,14 +445,14 @@ export function makeStore() {
       const core = String(resolvedAs).replace(/\([^)]*\)/g, '').split(/[,;—]| the | who /)[0].trim();
       const want = new Set([resolvedAs, core].filter(Boolean).flatMap((p) => [...skeletonKeys(p)]));
       const rows = await db.queryAll(
-        `SELECT statement, relation, time_value, time_basis FROM entity_claims
+        `SELECT statement, relation, time_value, time_basis, proof_verbatim FROM entity_claims
            WHERE doc_id=? AND para_id IN (${pids.map(() => '?').join(',')}) AND (status IS NULL OR status='supported')
            ORDER BY (time_value IS NULL), time_value`, [docId, ...pids]);
       const out = [];
       for (const r of rows) {
         const subj = String(r.statement).split(/\s+[—-]\s+/)[0];        // "subject — relation object"
         if (![...skeletonKeys(subj)].some((k) => want.has(k))) continue; // only the claims ABOUT this cluster
-        out.push({ statement: r.statement, relation: r.relation, when: r.time_value, basis: r.time_basis });   // basis: a stated year vs one copied from the scene era
+        out.push({ statement: r.statement, relation: r.relation, when: r.time_value, basis: r.time_basis, proof: r.proof_verbatim });   // basis: a stated year vs one copied from the scene era
         if (out.length >= limit) break;
       }
       return out;

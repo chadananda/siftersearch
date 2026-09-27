@@ -1,7 +1,8 @@
 // entities/verify-link — deterministic CONFLICT VETO for an identity link (record linkage: any conflicting exclusive
 // attribute blocks a merge; absence of evidence is neutral). Pure, no ports. Facts are production-shaped claims:
 // { statement: "<subject> — <relation> <object>", relation, when: year, basis: 'pin'|'estimate'|null }.
-// Vetoes only on attributes a person has ONE of: nisba set, stated death year, stated lifespan, named parent.
+// Vetoes only on attributes a person has ONE of (nisba set, death year, lifespan, named parent) — and only when the
+// claim's verbatim proof carries the value.
 // Offices and allegiance are FLAGS (a man governs Zanján, later Shíráz; a Bábí becomes a Bahá'í) — never a veto.
 // 2026-09-27 rewrite: the old gate read any name word ending in -í as a nisba (Ḥájí, ‘Alí, Mihdí), compared offices
 // by whole statements INCLUDING the subject's name (vetoed "Mullá Ḥusayn" vs "Mullá Ḥusayn-i-Bushrú'í"), and never
@@ -42,6 +43,12 @@ export function objectOf(f) {
 
 // A year is a personal anchor when the paragraph stated it ('stated'; legacy 'pin'), not when it is the scene era.
 const stated = (f) => f.basis !== 'estimate';
+// PROVABLE: a fact vetoes only if its own verbatim proof carries the deciding value — the year, or a name of the
+// parent. Measured 2026-09-27: "Ṣubḥ-i-Azal died 1853 / 1830" (he died 1912), "Laura Barney son-of Lady Blomfield",
+// "Munírih Khánum son-of the subject (Nahrí family elder)" — misextracted claims were splitting one person into two.
+const proofHasYear = (f, y) => String(f.proof ?? '').includes(String(y));
+const KIN_CUE = /\b(son|daughter|child|children|father|mother|born|ibn|bint|zadih|pisar|dukhtar)\b/;
+const proofNames = (f, name) => { const p = fold(f.proof ?? ''); return KIN_CUE.test(p) && fold(name).split(/[^a-z]+/).some((t) => t.length > 2 && !HONORIFIC.has(t) && p.includes(t)); };
 const yearOf = (f) => { const m = String(f.when ?? '').match(/\b(1[0-9]{3})\b/); return m ? +m[1] : null; };
 const DIED = new Set(['died', 'martyred', 'killed', 'executed']);
 const isParentClaim = (f) => f.relation === 'son-of' || f.relation === 'daughter-of' || /^(son|daughter)\s+of\s+/i.test(String(f.statement || ''));
@@ -51,7 +58,7 @@ function lifespan(facts) {
   let born = null, died = null;
   for (const f of facts) {
     const y = yearOf(f);
-    if (y == null || !stated(f)) continue;
+    if (y == null || !stated(f) || !proofHasYear(f, y)) continue;
     if (f.relation === 'born') born = y;
     if (DIED.has(f.relation)) died = y;
   }
@@ -72,7 +79,8 @@ export function verifyLink(cluster, candidate) {
   if (a.died != null && b.died != null && Math.abs(a.died - b.died) > 1)
     return { ok: false, axis: 'death', reason: `death year conflict: ${a.died} vs ${b.died}`, flags };
   // 3. named parent — son-of/daughter-of objects share no identity-bearing name token
-  for (const cp of cF.filter(isParentClaim)) for (const ep of eF.filter(isParentClaim)) {
+  const provenParent = (f) => isParentClaim(f) && proofNames(f, objectOf(f));
+  for (const cp of cF.filter(provenParent)) for (const ep of eF.filter(provenParent)) {
     const x = nameTokens(objectOf(cp)), y = nameTokens(objectOf(ep));
     if (x.size && y.size && ![...x].some((t) => y.has(t)))
       return { ok: false, axis: 'kinship', reason: `parent conflict: '${objectOf(cp)}' vs '${objectOf(ep)}'`, flags };

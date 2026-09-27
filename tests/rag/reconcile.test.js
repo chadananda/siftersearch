@@ -173,8 +173,8 @@ describe('reconcile — EEWA P1 facts + P2 verification gate + versioning', () =
       clusters: { 21310: [{ resolvedAs: 'Áqá Ján', freq: 5, paraIds: ['para_1'] }] },
       coverage: { 21310: 1 },
       candidates: [{ id: 5, canonical: 'Áqá Ján', type: 'person', importance: 40 }],
-      clusterFacts: { 'Áqá Ján': [{ statement: 'Áqá Ján — died 1849', relation: 'died', when: '1849' }] },
-      entityFacts: { 5: { facts: [{ statement: 'died 1892', relation: 'died', when: '1892' }] } },
+      clusterFacts: { 'Áqá Ján': [{ statement: 'Áqá Ján — died 1849', relation: 'died', when: '1849', proof: 'Áqá Ján died in 1849' }] },
+      entityFacts: { 5: { facts: [{ statement: 'died 1892', relation: 'died', when: '1892', proof: 'he passed away in 1892' }] } },
     };
     const llm = fakeLLM([{ content: '{"verdict":"link","type":"person","entity_id":5,"confidence":0.95}' }]);
     const { rag, store } = makeRag({ seed, llm });

@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { signals, ruleVerdict, outcome, decisionFor, parseVerdict, buildUser, run } from '../../api/lib/rag/entities/pair-judge.js';
 
-const claim = (id, subject, relation, object, when = null, basis = 'stated') => ({ id, relation, statement: `${subject} — ${relation} ${object}`, proof: 'x', when, basis, doc: 'DB' });
+const claim = (id, subject, relation, object, when = null, basis = 'stated') => ({ id, relation, statement: `${subject} — ${relation} ${object}`, proof: `${subject}, ${relation.replace('-of', '')} of ${object} ${when ?? ''}`, when, basis, doc: 'DB' });
 const D = (id, name, { claims = [], companions = [], docs = [{ id: 1, title: 'DB', n: 3 }], importance = null, mentions = 3 } = {}) =>
   ({ id, name, live: true, importance, mentions, names: [{ name, n: mentions }], docs, claims, companions, passages: [] });
 const co = (id, name, n = 2, total = 50) => ({ id, name, n, total });
@@ -31,12 +31,13 @@ describe('signals + rule verdict', () => {
   });
 });
 
-describe('outcome — both judges must agree to merge; a veto is final', () => {
+describe('outcome — both judges must agree, to merge and to keep apart', () => {
   it('merge only when rule and model both say same', () => {
     expect(outcome('same', { verdict: 'same' })).toBe('merge');
     expect(outcome('same', { verdict: 'unsure' })).toBe('review');
     expect(outcome('unsure', { verdict: 'same' })).toBe('review');
-    expect(outcome('different', { verdict: 'same' })).toBe('distinct');
+    expect(outcome('different', { verdict: 'same' })).toBe('review');       // a veto rests on claims that can be wrong
+    expect(outcome('different', { verdict: 'different' })).toBe('distinct');
   });
   it('a merge keeps the curated record (importance, then mentions) and carries its evidence', () => {
     const A = D(1, 'X', { importance: null, mentions: 900 }), B = D(2, 'X', { importance: 68, mentions: 40 });

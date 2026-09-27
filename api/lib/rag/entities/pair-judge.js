@@ -1,7 +1,7 @@
 // entities/pair-judge — decide whether two person records are ONE individual, on evidence. Two independent judges:
 // deterministic SIGNALS (conflict veto via verify-link; ties from shared non-universal companions and named kin) and a
-// MODEL reading both dossiers side by side. A merge is applied only when both say SAME; a stated conflict records the
-// pair as distinct; every other outcome is PROPOSED for a human with the evidence. Every decision carries its evidence.
+// MODEL reading both dossiers side by side. A merge is applied only when both say SAME; distinct only when both say
+// DIFFERENT; every other outcome is PROPOSED for a human with the evidence. Every decision carries its evidence.
 // Deps: verify-link (veto), evidence-doctrine (the shared rules), kernel/run (pool).
 import { pool } from '../kernel/run.js';
 import { IDENTITY_DOCTRINE } from './evidence-doctrine.js';
@@ -61,10 +61,10 @@ export function parseVerdict(raw) {
   catch { return null; }
 }
 
-// Combine the two judges. merge = both SAME; distinct = a stated veto (the model may add reasons, never override it);
-// everything else is proposed for a human with both judgements attached.
+// Combine the two judges symmetrically: merge = both SAME; distinct = both DIFFERENT (a veto rests on extracted
+// claims, which can be wrong — measured 2026-09-27); everything else is proposed for a human with both judgements.
 export function outcome(rule, model) {
-  if (rule === 'different') return 'distinct';
+  if (rule === 'different' && model?.verdict === 'different') return 'distinct';
   if (rule === 'same' && model?.verdict === 'same') return 'merge';
   return 'review';
 }
@@ -81,7 +81,7 @@ export function decisionFor(A, B, s, model, result) {
       rationale: `same person: ${model.tie}`.slice(0, 300), actor: 'model:pair-judge', actorTier: 2, confidence: model.confidence, status: 'applied', methodVersion: METHOD };
   }
   if (result === 'distinct') return { kind: 'distinct', targetKind: 'entity', targetIds: [A.id, B.id], payload: { pair: [A.id, B.id] }, evidence,
-    rationale: `different people: ${s.veto.reason}`.slice(0, 300), actor: 'rule:pair-judge', actorTier: 1, confidence: null, status: 'applied', methodVersion: METHOD };
+    rationale: `different people: ${s.veto.reason}; ${model?.tie ?? ''}`.slice(0, 300), actor: 'model:pair-judge', actorTier: 2, confidence: null, status: 'applied', methodVersion: METHOD };
   return { kind: 'merge', targetKind: 'entity', targetIds: [A.id, B.id], payload: { canonical: A.id, merged: [B.id], review: true }, evidence,
     rationale: `needs a human: rule ${ruleVerdict(s)}, model ${model?.verdict ?? 'none'}`, actor: 'model:pair-judge', actorTier: 2, confidence: model?.confidence ?? null, status: 'proposed', methodVersion: METHOD };
 }
@@ -97,8 +97,7 @@ export async function run(ctx, { pairs, write = false, concurrency = 4, onProgre
     if (!A || !B || !A.live || !B.live) { results.push({ pair: [a, b], skipped: 'not live' }); return; }
     const s = signals(A, B, { universal, totalMentions });
     const rule = ruleVerdict(s);
-    const model = rule === 'different' ? null
-      : (await ctx.model.runLadder({ route, system: SYSTEM, user: buildUser(A, B, s), parse: parseVerdict, maxTokens: 400 })).parsed;
+    const model = (await ctx.model.runLadder({ route, system: SYSTEM, user: buildUser(A, B, s), parse: parseVerdict, maxTokens: 400 })).parsed;
     const result = outcome(rule, model);
     results.push({ pair: [a, b], names: [A.name, B.name], rule, model, result, decision: decisionFor(A, B, s, model, result) });
   }, onProgress);

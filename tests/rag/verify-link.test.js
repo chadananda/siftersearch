@@ -5,7 +5,8 @@
 import { describe, it, expect } from 'vitest';
 import { verifyLink, nisbas, objectOf } from '../../api/lib/rag/entities/verify-link.js';
 
-const f = (subject, relation, object, when = null, basis = 'pin') => ({ statement: `${subject} — ${relation} ${object}`, relation, when, basis });
+// proof defaults to a span that carries the object and year (a provable claim); pass proof to test an unprovable one.
+const f = (subject, relation, object, when = null, basis = 'pin', proof = `${relation} ${object} ${when ?? ''}`) => ({ statement: `${subject} — ${relation} ${object}`, relation, when, basis, proof });
 const ok = (r) => expect(r.ok).toBe(true);
 const veto = (r, axis) => { expect(r.ok).toBe(false); expect(r.axis).toBe(axis); };
 
@@ -59,4 +60,13 @@ describe('side is a flag', () => {
   it('believer vs opponent is flagged, not vetoed', () =>
     expect(verifyLink({ name: 'Mírzá Yaḥyá', facts: [f('Mírzá Yaḥyá', 'believer', 'the Báb')] }, { name: 'Mírzá Yaḥyá', facts: [f('Mírzá Yaḥyá', 'covenant-breaker', '')] })).toMatchObject({ ok: true, axis: 'side' }));
   it('no facts on either side: nothing to contradict', () => expect(verifyLink({ name: 'Ṭáhirih', facts: [] }, { name: 'Ṭáhirih', facts: [] })).toMatchObject({ ok: true, axis: null }));
+});
+
+describe('a veto must be provable from the claim\'s own proof (MEASURED misextractions)', () => {
+  it('a death year the proof does not contain does not veto', () =>
+    ok(verifyLink({ name: 'Ṣubḥ-i-Azal', facts: [f('Ṣubḥ-i-Azal', 'died', 'Famagusta', 1853, 'pin', 'he was banished to Cyprus')] },
+      { name: 'Mírzá Yaḥyá', facts: [f('Mírzá Yaḥyá', 'died', 'Famagusta', 1830, 'pin', 'the half-brother of Bahá’u’lláh')] })));
+  it('a parent the proof does not name does not veto', () =>
+    ok(verifyLink({ name: 'Laura Barney', facts: [f('Laura Barney', 'son-of', 'Lady Blomfield', null, 'stated', 'Laura Barney met Lady Blomfield in Paris')] },
+      { name: 'Laura Clifford Barney', facts: [f('Laura Clifford Barney', 'daughter-of', 'Albert Clifford Barney', null, 'stated', 'daughter of Albert Clifford Barney')] })));
 });
