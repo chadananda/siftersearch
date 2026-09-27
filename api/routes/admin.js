@@ -2545,6 +2545,26 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // POST /server/extract-scenes { docs:[ids], write=false, limit?, concurrency? } — scene extraction (DeepSeek), proof
+  // verified, participants bound within paragraph/book. GET …/report?mode= → latest.
+  fastify.post('/server/extract-scenes', { preHandler: requireInternal }, async (request) => {
+    const { docs = [3887], write = false, limit = null, concurrency = 8 } = request.body || {};
+    const existing = backgroundTasks.get('extract-scenes');
+    if (existing && existing.status === 'running') throw ApiError.conflict('An extract-scenes run is already in progress');
+    const argv = [`--doc=${docs.map(Number).filter(Boolean).join(',')}`, ...(write ? ['--write'] : []), ...(limit ? [`--limit=${Number(limit)}`] : []),
+      `--concurrency=${Math.min(Number(concurrency) || 8, 16)}`];
+    const task = runBackgroundTask('extract-scenes', 'scripts/extract-scenes.mjs', argv);
+    return { success: true, taskId: 'extract-scenes', argv, status: task.status };
+  });
+
+  fastify.get('/server/extract-scenes/report', { preHandler: requireInternal }, async (request) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const mode = request.query.mode === 'write' ? 'write' : 'dry';
+    const files = readdirSync('logs').filter((f) => f.startsWith(`extract-scenes-${mode}-`)).sort();
+    if (!files.length) throw ApiError.notFound(`no ${mode} scene report yet`);
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   fastify.get('/server/entity-relink/report', { preHandler: requireInternal }, async (request) => {
     const { readdirSync, readFileSync } = await import('fs');
     const mode = request.query.mode === 'write' ? 'write' : 'dry';

@@ -1267,6 +1267,38 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_ecr_kind ON entity_catalog_review(kind)`);
     logger.info('Migration 124 complete');
   },
+
+  125: async () => {
+    // SCENES (backlog 0036/0037, built 2026-09-27). Claims are pairs; a gathering is not: Eminent Bahá'ís ¶54 puts
+    // Siyyid Káẓim, Mullá Ḥusayn, the Báb and Mullá Ṣádiq in one room and yielded no claim placing Mullá Ḥusayn with
+    // the Báb. A scene records who was physically together, where, when, with a verbatim proof; every pair of bound
+    // participants is "present with" evidence for who-met-whom.
+    logger.info('Starting migration 125: entity_scenes + scene_participants');
+    await query(`CREATE TABLE IF NOT EXISTS entity_scenes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      scene_hash TEXT UNIQUE,
+      doc_id INTEGER NOT NULL,
+      para_id TEXT NOT NULL,
+      place TEXT,
+      time_text TEXT,
+      year INTEGER,
+      summary TEXT,
+      proof TEXT NOT NULL,
+      extractor_version TEXT,
+      created_at INTEGER DEFAULT (unixepoch())
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_scene_para ON entity_scenes(doc_id, para_id)`);
+    await query(`CREATE TABLE IF NOT EXISTS scene_participants (
+      scene_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      role TEXT,
+      entity_id INTEGER,
+      bind_basis TEXT,
+      PRIMARY KEY (scene_id, name)
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_sp_entity ON scene_participants(entity_id)`);
+    logger.info('Migration 125 complete');
+  },
 };
 
 export const graphMigrations = {

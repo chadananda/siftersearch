@@ -247,7 +247,7 @@ export function encounterSearch(q, { index, maxPeople = 40, maxEvidence = 6 } = 
     return rs.sort((a, b) => rank(b) - rank(a) || String(a.tv || '9999').localeCompare(String(b.tv || '9999'))).filter((r) => {
       const k = `${r.doc}:${r.pid}`; if (seen.has(k)) return false; seen.add(k); return true;
     }).slice(0, maxEvidence).map((r) => ({ statement: r.st, relation: r.rel, doc_id: r.doc ?? null, paraId: r.pid || null,
-      when: r.tv || null, via: r.via, proof: r.prf || null, verified: r.vd === 'met' || r.vd === 'denied' ? r.vd : null,
+      when: r.tv || null, via: r.via, proof: r.prf || null, verified: r.vd === 'met' || r.vd === 'denied' ? r.vd : null, ...(r.scene ? { scene: r.scene } : {}),
       ...(r.vq ? { verifiedQuote: r.vq } : {}), ...(r.auth ? { authoritative: true } : {}), ...(r.neg ? { negated: true } : {}), ...(topicHit(r) ? { topic: true } : {}) }));
   };
   // Every answer carries its proof. Evidence FOR (a claim whose proof does not deny it) and AGAINST (a proof that
@@ -312,11 +312,29 @@ async function build() {
   ]);
   // The core histories whose word settles a conflict (see encounterSearch). By title: every copy of them counts.
   const authoritative = (await queryAll(`SELECT id FROM docs WHERE title IN ('God Passes By', 'The Dawn-Breakers')`, [], 'encounters:authority')).map((r) => r.id);
+  // SCENES: every pair of bound participants in one scene was physically together — "present with" evidence, with
+  // the scene's summary and verbatim proof. (A four-person gathering yields six pairs; claims gave one or two.)
+  let sceneRows = [];
+  try {
+    const parts = await queryAll(`SELECT s.id sid, s.doc_id doc, s.para_id pid, s.year, s.place, s.summary, s.proof, p.entity_id eid, p.name, p.role
+      FROM entity_scenes s JOIN scene_participants p ON p.scene_id = s.id WHERE p.entity_id IS NOT NULL`, [], 'encounters:scenes');
+    const bySid = new Map();
+    for (const r of parts) (bySid.get(r.sid) || bySid.set(r.sid, []).get(r.sid)).push(r);
+    for (const [sid, ps] of bySid) {
+      const uniq = [...new Map(ps.map((x) => [x.eid, x])).values()];
+      for (const a of uniq) for (const b of uniq) {
+        if (a.eid === b.eid) continue;
+        sceneRows.push({ id: `s${sid}:${a.eid}:${b.eid}`, eid: a.eid, rel: 'met', tid: b.eid,
+          st: `${a.name}${a.role ? ` (${a.role})` : ''} — present with ${b.name}${b.role ? ` (${b.role})` : ''}${a.place ? `, ${a.place}` : ''}: ${a.summary || ''}`.slice(0, 300),
+          prf: a.proof, doc: a.doc, pid: a.pid, tv: a.year || null, vd: 'met', vq: a.summary || null, scene: sid });
+      }
+    }
+  } catch { sceneRows = []; }   // tables absent before migration 125
   const gids = groups.map((g) => g.id);
   const members = gids.length ? await queryAll(`SELECT gr.target_entity_id "group", gr.source_entity_id id
     FROM graph_relations gr WHERE gr.target_entity_id IN (${gids.map(() => '?').join(',')})`, gids, 'encounters:members') : [];
   const live = new Set(persons.map((p) => p.id));
-  return createEncounterIndex({ persons, groups, members, claims: claims.filter((c) => live.has(c.eid)), places: places.map((r) => r.n), authoritative });
+  return createEncounterIndex({ persons, groups, members, claims: [...claims, ...sceneRows].filter((c) => live.has(c.eid)), places: places.map((r) => r.n), authoritative });
 }
 
 /** Rebuild now (after an entity write — merges, re-link, group facts) instead of waiting out the 30-minute TTL. */

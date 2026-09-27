@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T04:52:19.468Z",
+  "generated": "2026-09-27T04:56:56.559Z",
   "entries": [
+    {
+      "hash": "ebb166c5",
+      "date": "2026-09-26",
+      "type": "Test",
+      "description": "Entity known-answer battery — rosters, meetings, denials, scenes against production",
+      "scope": "quality"
+    },
     {
       "hash": "259a0cfd",
       "date": "2026-09-26",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add same-name merge stage (link->merge->dedup) — catches intra-batch dups",
       "scope": "pipeline"
-    },
-    {
-      "hash": "11f593bd",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Fixed-width right columns (size/progress · +new · unresolved) line up across rows",
-      "scope": "bio popup"
     }
   ],
   "grouped": {
     "2026-09-26": [
+      {
+        "hash": "ebb166c5",
+        "date": "2026-09-26",
+        "type": "Test",
+        "description": "Entity known-answer battery — rosters, meetings, denials, scenes against production",
+        "scope": "quality"
+      },
       {
         "hash": "259a0cfd",
         "date": "2026-09-26",
@@ -7078,13 +7085,6 @@
         "type": "New",
         "description": "Add same-name merge stage (link->merge->dedup) — catches intra-batch dups",
         "scope": "pipeline"
-      },
-      {
-        "hash": "11f593bd",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Fixed-width right columns (size/progress · +new · unresolved) line up across rows",
-        "scope": "bio popup"
       }
     ]
   }

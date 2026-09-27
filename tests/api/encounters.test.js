@@ -297,4 +297,16 @@ describe('encounterSearch', () => {
     });
     expect(encounterSearch('did Nabíl meet the Báb?', { index: ix }).people).toEqual([]);
   });
+
+  it('a scene makes every pair of its participants "present with" evidence', () => {
+    const scene = (sid, eid, name, tid, role) => ({ id: `s${sid}:${eid}:${tid}`, eid, rel: 'met', tid, st: `${name} (${role}) — present with …`, prf: 'the preacher who occupied the pulpit was momentarily struck dumb', doc: 3887, pid: 'p5183786', tv: null, vd: 'met', scene: sid });
+    const ix = createEncounterIndex({
+      persons: [{ id: 2, cn: 'the Báb', imp: 99, aliases: '[]' }, { id: 5, cn: 'Mullá Ḥusayn', imp: 85, aliases: '[]' }, { id: 7, cn: 'Siyyid Káẓim-i-Rashtí', imp: 70, aliases: '[]' }],
+      groups: [], members: [],
+      claims: [scene(1, 5, 'Mullá Ḥusayn', 2, 'preacher'), scene(1, 2, 'the Báb', 5, 'guest'), scene(1, 7, 'Siyyid Káẓim', 2, 'chief guest')],
+    });
+    const r = encounterSearch('did Mullá Ḥusayn ever meet the Báb?', { index: ix });
+    expect(r.people.map((p) => p.name).sort()).toEqual(['Mullá Ḥusayn', 'the Báb']);
+    expect(r.people[0].evidence[0]).toMatchObject({ scene: 1, verified: 'met' });
+  });
 });
