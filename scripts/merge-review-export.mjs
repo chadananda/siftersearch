@@ -52,16 +52,26 @@ for (const p of idx.people.values()) for (const f of p.forms) {
   const k = sortedWords(f.phrase); if (!k.includes(' ')) continue;
   (byWordsKey.get(k) || byWordsKey.set(k, new Set()).get(k)).add(p.id);
 }
+// Tight rules (the loose first version proposed 1,355 pairs, mostly any two "Mírzá Muḥammad"s):
+//   reordered — the two CANONICAL names hold the same words ("Siyyid Káẓim-i-Rashtí" / "Rashtí, Siyyid Káẓim");
+//   extended  — one CANONICAL name extends the other's, and any nisba it adds is one the shorter record already
+//               carries among its names ("Mullá Ḥusayn" + alias "…-i-Bushrú'í" / "Mullá Ḥusayn-i-Bushrú'í"), never a
+//               different one ("Mullá Ḥusayn-i-Yazdí" names another man).
+const nisbasOf = (ph) => { const w = ph.split(' '); const out = []; for (let i = 0; i < w.length - 1; i++) if (w[i] === 'i' && w[i + 1].length > 3) out.push(w[i + 1]); return out; };
+const canonical = (p) => p.forms.find((x) => x.canonical)?.phrase || '';
+const byCanonWords = new Map();
+for (const p of idx.people.values()) { const k = sortedWords(canonical(p)); if (k.includes(' ')) (byCanonWords.get(k) || byCanonWords.set(k, []).get(k)).push(p.id); }
 for (const p of prominent) {
-  for (const f of p.forms.filter((x) => x.canonical || x.phrase.split(' ').length >= 2)) {
-    for (const id of byWordsKey.get(sortedWords(f.phrase)) || []) if (id !== p.id) add(p.id, id, 'duplicate', `same name, words reordered: "${f.phrase}"`);
-    for (const w of new Set(f.phrase.split(' '))) for (const id of idx.byWord.get(w) || []) {
-      if (id === p.id) continue;
-      const other = idx.people.get(id);
-      if (other.forms.some((g) => g.canonical && (g.phrase.startsWith(`${f.phrase} i `) || g.phrase.startsWith(`${f.phrase} `)) && f.canonical)) {
-        add(p.id, id, 'duplicate', `"${other.name}" extends "${p.name}"`);
-      }
-    }
+  const c = canonical(p); if (!c) continue;
+  for (const id of byCanonWords.get(sortedWords(c)) || []) if (id !== p.id) add(p.id, id, 'duplicate', `same name, words reordered: "${idx.people.get(id).name}" / "${p.name}"`);
+  const known = new Set(p.forms.flatMap((f) => nisbasOf(f.phrase)));
+  for (const id of idx.byWord.get(c.split(' ').at(-1)) || []) {
+    if (id === p.id) continue;
+    const oc = canonical(idx.people.get(id));
+    if (!oc.startsWith(`${c} `)) continue;
+    const added = nisbasOf(oc).filter((n) => !nisbasOf(c).includes(n));
+    if (added.length && !added.every((n) => known.has(n))) continue;   // a different nisba = a different man
+    add(p.id, id, 'duplicate', `"${idx.people.get(id).name}" extends "${p.name}"${added.length ? ` with a nisba ${p.name} already carries` : ''}`);
   }
 }
 

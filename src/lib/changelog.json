@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T14:17:22.907Z",
+  "generated": "2026-09-27T14:22:38.735Z",
   "entries": [
+    {
+      "hash": "b6d93319",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Scenes link only through their participants; 'before / prior to X' demotes X's evidence",
+      "scope": "search"
+    },
     {
       "hash": "cc2b9cec",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Merge Pillars into Foundation — all trustworthy scholars = one authoritative-historical category (Pillars too abstract)",
       "scope": "bio popup"
-    },
-    {
-      "hash": "6f929d1d",
-      "date": "2026-07-13",
-      "type": "Fixed",
-      "description": "Move Dawn-Breakers into Seed (with GPB) — clearer for readers; Foundation = Balyuzi+Taherzadeh only",
-      "scope": "bio popup"
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "b6d93319",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Scenes link only through their participants; 'before / prior to X' demotes X's evidence",
+        "scope": "search"
+      },
       {
         "hash": "cc2b9cec",
         "date": "2026-09-27",
@@ -7079,13 +7086,6 @@
         "date": "2026-07-13",
         "type": "Fixed",
         "description": "Merge Pillars into Foundation — all trustworthy scholars = one authoritative-historical category (Pillars too abstract)",
-        "scope": "bio popup"
-      },
-      {
-        "hash": "6f929d1d",
-        "date": "2026-07-13",
-        "type": "Fixed",
-        "description": "Move Dawn-Breakers into Seed (with GPB) — clearer for readers; Foundation = Balyuzi+Taherzadeh only",
         "scope": "bio popup"
       }
     ]
