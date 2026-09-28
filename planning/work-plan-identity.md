@@ -154,3 +154,16 @@ disambiguate (frame-aware: frame stack, resolves EVERY person named, reason per 
   Exiles, 92 paras) queued `to:'link'`, held for off-peak. NEXT: read pilot spend → estimate the 46 → queue →
   then each rescued record: all its passages bound to one entity ⇒ merge into it; mixed ⇒ retire (the passages
   are already held by the right people).
+
+### 2026-09-28 afternoon — search target everywhere; splits; lookup holes
+
+- **Search target** now in plannedSearch (chat, Anís, public API, /multi): keyword-only per name, waits until 1.2s
+  or the passage search ends. Type battery 66/82 (baseline 65); a 62 run was load.
+- **Splits** (`repoint` verdict + `GET /server/cluster-passages`): readers judged 235 clusters of 11 mixed records;
+  113 moved (590 mentions, 786 claims; 39 claims left where a paragraph names both). Held for Chad/next pass:
+  7 (label-only, thin, mixed clusters, two Jalálu'd-Dawlih records); plus 14 unsure clusters (several need
+  MENTION-level splitting — a cluster can hold two people).
+- **Lookup holes** (see memory project_lookup_index_gaps): 9,357 unindexed records backfilled; "Yaḥyá" had no key.
+- **Duplicates to judge:** 1291988 (Baku 'Alí-Akbar Nakhjavání) vs 1269643; 1260005 "Yaḥyá Azal" vs 1301670;
+  Mahd-i-'Ulyá 1288106 needs its name corrected (it is Bahá'u'lláh's wife, not Jahán Khánum) and 1288066
+  (Fáṭimih Khánum) folded into it.

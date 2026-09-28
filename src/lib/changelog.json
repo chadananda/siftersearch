@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T13:35:37.393Z",
+  "generated": "2026-09-28T13:40:38.452Z",
   "entries": [
+    {
+      "hash": "f8acbd2c",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "A long name whose consonant skeleton vanishes keeps a key ('Yaḥyá' had none — Mírzá Yaḥyá was unfindable by name); backfill mode adds the missing keys",
+      "scope": "lookup"
+    },
     {
       "hash": "5b71c9ae",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "ZFS-snapshot copy strategy — immune to the .backup-vs-writes livelock",
       "scope": null
-    },
-    {
-      "hash": "7a33aac1",
-      "date": "2026-08-07",
-      "type": "Other",
-      "description": "Fix BACKUP_DIR misdirection + vault second-drive copy + unkillable-silence breadcrumbs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "f8acbd2c",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "A long name whose consonant skeleton vanishes keeps a key ('Yaḥyá' had none — Mírzá Yaḥyá was unfindable by name); backfill mode adds the missing keys",
+        "scope": "lookup"
+      },
       {
         "hash": "5b71c9ae",
         "date": "2026-09-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-08-07",
         "type": "Other",
         "description": "ZFS-snapshot copy strategy — immune to the .backup-vs-writes livelock",
-        "scope": null
-      },
-      {
-        "hash": "7a33aac1",
-        "date": "2026-08-07",
-        "type": "Other",
-        "description": "Fix BACKUP_DIR misdirection + vault second-drive copy + unkillable-silence breadcrumbs",
         "scope": null
       }
     ]
