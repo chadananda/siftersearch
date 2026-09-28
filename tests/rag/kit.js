@@ -123,6 +123,7 @@ export function makeRag(overrides = {}) {
   };
   if (overrides.web) ports.web = overrides.web;
   if (overrides.config) ports.config = overrides.config;
+  if (overrides.flag) ports.flag = overrides.flag;
   return { rag: createCorpusRAG(ports), ...ports };
 }
 

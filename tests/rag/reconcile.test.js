@@ -92,6 +92,19 @@ describe('reconcile — run() on fake ports (GPB clusters)', () => {
     expect(store.decisions.every((d) => d.status === 'proposed' && d.actorTier === 2)).toBe(true);
   });
 
+  // planning/jev-system1.md §1 — a fast typed check at the source. Only a CONFIDENT "different" vetoes a link.
+  it('a confident System-1 "different" downgrades the link to uncertain; a weak one does not', async () => {
+    const seed = { clusters: { 21310: [clusters[0]] }, coverage: { 21310: 1 }, candidates: [{ id: 5, canonical: 'Mullá Ḥusayn', type: 'person', importance: 95 }] };
+    for (const [confidence, kind] of [[0.9, 'uncertain'], [0.5, 'link']]) {
+      const flag = { identity: async () => ({ verdict: 'different', confidence }) };
+      const { rag, store } = makeRag({ seed, llm: fakeLLM(adjudicate), flag });
+      store.getParagraphTexts = async () => [{ pid: 'para_1', text: 'Mullá Ḥusayn of Nayríz, a marksman, 1853.' }];
+      const stats = await rag.entities.reconcile(21310);
+      expect(store.decisions[0].kind).toBe(kind);
+      if (kind === 'uncertain') expect(stats.flagVetoed).toBe(1);
+    }
+  });
+
   it('consults the grounded corpus and feeds its evidence into the adjudication prompt', async () => {
     const seed = {
       clusters: { 21310: [{ resolvedAs: 'Mírzá Aḥmad', freq: 5, paraIds: ['para_3'] }] },

@@ -97,6 +97,7 @@ export function buildContext(deps) {
     log,
     model: makeModelEngine({ llm: deps.llm, catalog: deps.models }), // routed calls + ladder
     web: deps.web || null,       // OPTIONAL web-research port (research-resolve); absent → corpus-only
+    flag: deps.flag || null,     // OPTIONAL System-1 flagger (fast typed checks); absent → no gate, behaviour unchanged
     config: deps.config || {},
   };
 }

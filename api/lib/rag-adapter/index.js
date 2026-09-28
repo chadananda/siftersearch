@@ -62,8 +62,18 @@ const config = {
 };
 
 // Assemble the full dependency set. Any field can be overridden by a caller (e.g. tests inject fakes).
+// System-1 flagger (Jev) — wired only when its key is present; the library runs unchanged without it.
+const flag = process.env.TYPESAFE_API_KEY ? {
+  async identity(person, { handle, surface, texts, title = '' }) {
+    const { auditClusters, profileOf, windowAround } = await import('../identity-audit.js');
+    const window = texts.map((t) => windowAround(t.text, surface)).join('\n  …  ');
+    const [r] = await auditClusters(profileOf(person), [{ title, handle, surface, window }]);
+    return r;
+  },
+} : null;
+
 export function sifterDeps(overrides = {}) {
-  return { llm, models, store: makeStore(), profiler, log: logger, config, web: makeWeb(), ...overrides };
+  return { llm, models, store: makeStore(), profiler, log: logger, config, web: makeWeb(), flag, ...overrides };
 }
 
 // A ready, app-wired CorpusRAG. Import this from application code and the pipeline orchestrator.

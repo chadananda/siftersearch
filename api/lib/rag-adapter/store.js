@@ -428,6 +428,13 @@ export function makeStore() {
     },
 
     // Representative disambiguation notes for a set of paragraphs (the reconcile dossier).
+    // Paragraph text for the System-1 identity gate (reconcile): the book's own words about the cluster.
+    async getParagraphTexts(docId, paraIds) {
+      if (!paraIds.length) return [];
+      return db.queryAll(`SELECT COALESCE(external_para_id, 'p' || id) pid, text FROM content WHERE doc_id = ? AND deleted_at IS NULL
+          AND (external_para_id IN (${paraIds.map(() => '?').join(',')}) OR ('p' || id) IN (${paraIds.map(() => '?').join(',')}))`, [docId, ...paraIds, ...paraIds]);
+    },
+
     async getScenes(docId, paraIds) {
       if (!paraIds.length) return [];
       const rows = await db.queryAll(

@@ -18,6 +18,8 @@ import { verifyLink } from './verify-link.js';
 // identity key fed into candidate recall + the prompt (Persian docs) + Sonnet disambiguation.
 export const ADJUDICATOR_VERSION = 3;
 
+const FLAG_VETO = 0.75;
+
 export async function run(ctx, docId, opts = {}) {
   await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? 0.98 });   // ONE bar (kernel/gate) — 0.99 stranded 98–99% books
   const profile = await profileFor(ctx, docId);
@@ -94,6 +96,19 @@ export async function run(ctx, docId, opts = {}) {
       if (v && v.ok === false) {
         verdict = { ...parsed, verdict: 'uncertain', entityId: null, decisive: `verify-gate veto (${v.axis}): ${v.reason}`.slice(0, 90) };
         stats.vetoed = (stats.vetoed || 0) + 1;
+      }
+    }
+    // SYSTEM-1 gate: a fast typed check that this book's passage is the candidate's person. Only a CONFIDENT
+    // "different" vetoes (measured 2026-09-28: every "different" at ≥0.75 was a real error; the false flags were all
+    // low-confidence) — and a veto only downgrades to uncertain, for review. planning/jev-system1.md §1.
+    if (verdict.verdict === 'link' && verdict.entityId != null && ctx.flag?.identity) {
+      const cand = candidates.find((c) => c.id === verdict.entityId);
+      const texts = (await ctx.store.getParagraphTexts?.(docId, cluster.paraIds.slice(0, 2))) || [];
+      const f = texts.length ? await ctx.flag.identity({ name: cand?.canonical || '', summary: cand?.summary || '', aliases: cand?.aliases || [] },
+        { handle: cluster.resolvedAs, surface: cluster.resolvedAs, texts }).catch(() => null) : null;
+      if (f?.verdict === 'different' && (f.confidence ?? 0) >= FLAG_VETO) {
+        verdict = { ...verdict, verdict: 'uncertain', entityId: null, decisive: `system-1 veto: passage is not #${cand?.id} (${Number(f.confidence).toFixed(2)})`.slice(0, 90) };
+        stats.flagVetoed = (stats.flagVetoed || 0) + 1;
       }
     }
     const row = decisionRow(verdict, cluster, candidates, docId, { methodVersion: ADJUDICATOR_VERSION, supersedes: cluster.priorId ?? null });

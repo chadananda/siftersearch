@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T16:05:57.792Z",
+  "generated": "2026-09-28T16:08:42.162Z",
   "entries": [
+    {
+      "hash": "6795265f",
+      "date": "2026-09-28",
+      "type": "Docs",
+      "description": "Jev as System 1 — measured strengths/failures and where it goes in the pipeline",
+      "scope": "planning"
+    },
     {
       "hash": "b5428ba3",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Self-healing seedTestUser() on boot (TEST_ADMIN_EMAIL/PASS), mirrors seedAdminUser",
       "scope": null
-    },
-    {
-      "hash": "115cd04e",
-      "date": "2026-08-08",
-      "type": "Other",
-      "description": "Idempotent env-driven seed for QA test-admin user (tier=admin, email_verified=1) via single writer",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "6795265f",
+        "date": "2026-09-28",
+        "type": "Docs",
+        "description": "Jev as System 1 — measured strengths/failures and where it goes in the pipeline",
+        "scope": "planning"
+      },
       {
         "hash": "b5428ba3",
         "date": "2026-09-28",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-08",
         "type": "Other",
         "description": "Self-healing seedTestUser() on boot (TEST_ADMIN_EMAIL/PASS), mirrors seedAdminUser",
-        "scope": null
-      },
-      {
-        "hash": "115cd04e",
-        "date": "2026-08-08",
-        "type": "Other",
-        "description": "Idempotent env-driven seed for QA test-admin user (tier=admin, email_verified=1) via single writer",
         "scope": null
       }
     ]
