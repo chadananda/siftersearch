@@ -1231,3 +1231,20 @@ describe('ingestDocument — oceanoflights originals (Arabic/Persian)', () => {
     expect(insertedLanguage()).toBe('fa');
   });
 });
+
+describe('parseDocumentWithBlocks — short blocks are joined, never dropped', () => {
+  it("keeps a tablet's number and invocation, joined to the text that follows", async () => {
+    const { parseDocumentWithBlocks } = await import('../../api/services/ingester.js');
+    const text = '( 265 )\n\nهو الابهی\n\nای امة الله سر قدرت مشاهده کن که بفضل و موهبت جمال قدم زنان تاج مردانگی بر سر نهادند.';
+    const { chunks } = await parseDocumentWithBlocks(text, { language: 'fa', skipAISegmentation: true });
+    expect(chunks).toHaveLength(1);
+    expect(chunks[0].text.startsWith('( 265 ) هو الابهی ای امة الله')).toBe(true);
+  });
+  it('appends a short closing line to the paragraph before it', async () => {
+    const { parseDocumentWithBlocks } = await import('../../api/services/ingester.js');
+    const text = 'This is the body of the tablet, long enough to stand as a paragraph of its own.\n\n(‘Abdu’l-Bahá)';
+    const { chunks } = await parseDocumentWithBlocks(text, { language: 'en', skipAISegmentation: true });
+    expect(chunks).toHaveLength(1);
+    expect(chunks[0].text.endsWith('(‘Abdu’l-Bahá)')).toBe(true);
+  });
+});

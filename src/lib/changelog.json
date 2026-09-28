@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T21:42:06.650Z",
+  "generated": "2026-09-28T22:00:04.586Z",
   "entries": [
+    {
+      "hash": "372d2143",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Key documents by library-relative path (absolute path failed every ingest: religion=null, collection=home)",
+      "scope": "ingest-file"
+    },
     {
       "hash": "dccaed4e",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Srcsets everywhere via ImageKit (house rule — exact CDN sizes, browser never resizes)",
       "scope": null
-    },
-    {
-      "hash": "50743bb3",
-      "date": "2026-08-09",
-      "type": "Performance",
-      "description": "Migration 105 — ai_usage (caller, doc) expression index kills the per-book 290ms provider scans seizing the API loop",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "372d2143",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Key documents by library-relative path (absolute path failed every ingest: religion=null, collection=home)",
+        "scope": "ingest-file"
+      },
       {
         "hash": "dccaed4e",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Srcsets everywhere via ImageKit (house rule — exact CDN sizes, browser never resizes)",
-        "scope": null
-      },
-      {
-        "hash": "50743bb3",
-        "date": "2026-08-09",
-        "type": "Performance",
-        "description": "Migration 105 — ai_usage (caller, doc) expression index kills the per-book 290ms provider scans seizing the API loop",
         "scope": null
       }
     ]

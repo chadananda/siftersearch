@@ -849,14 +849,22 @@ export async function parseDocumentWithBlocks(text, options = {}) {
     return { chunks: [], autoSegmented: false };
   }
 
-  // Use markdown paragraphs directly - NO processing needed
-  const chunks = blocks
-    .filter(block => block.content && block.content.length >= minChunkSize)
-    .map(block => ({
-      text: block.content,
-      blocktype: block.type,
-      attrs: block.attrs || null
-    }));
+  // Use markdown paragraphs directly. A block shorter than minChunkSize is JOINED to its neighbour, never
+  // dropped: dropping silently lost every tablet's invocation («هو الابهی», 9 chars), its number «( 265 )» and
+  // short addressee lines — measured on the Core Tablets pilot (2026-09-28), 3-5% of a short tablet's text.
+  const chunks = [];
+  let carry = '';
+  for (const block of blocks) {
+    if (!block.content) continue;
+    const text = carry ? `${carry} ${block.content}` : block.content;
+    if (text.length < minChunkSize) { carry = text; continue; }
+    carry = '';
+    chunks.push({ text, blocktype: block.type, attrs: block.attrs || null });
+  }
+  if (carry) {
+    if (chunks.length) chunks[chunks.length - 1].text += ` ${carry}`;
+    else chunks.push({ text: carry, blocktype: 'paragraph', attrs: null });
+  }
 
   logger.debug({
     blocks: blocks.length,
