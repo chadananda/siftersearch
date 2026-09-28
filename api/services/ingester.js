@@ -26,6 +26,9 @@ import {
 import { stripMarkers, hasMarkers, validateMarkers } from '../lib/markers.js';
 import config from '../lib/config.js';
 import { content } from '../lib/content.js';
+// ingestDocument declares a LOCAL `content` (the parsed body); its update paths ran above that declaration and
+// hit the temporal dead zone — every re-ingest of an existing document threw. They use this alias.
+const contentStore = content;
 import { getEncumbered } from '../lib/authority.js';
 
 /**
@@ -1190,7 +1193,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       // Found a soft-deleted doc at this path - restore it!
       await query(`UPDATE docs SET deleted_at = NULL WHERE id = ?`, [deletedDoc.id]);
       // Also restore any soft-deleted content rows for this doc
-      await content.restoreByDoc(deletedDoc.id);
+      await contentStore.restoreByDoc(deletedDoc.id);
 
       existingDoc = { ...deletedDoc, deleted_at: null };
       logger.info({
@@ -1229,7 +1232,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       `, [relativePath, newReligion, newCollection, existingDoc.id]);
 
       // Mark all paragraphs as unsynced so religion/collection updates propagate to search
-      const updateResult = await content.markDocDirty(existingDoc.id);
+      const updateResult = await contentStore.markDocDirty(existingDoc.id);
 
       logger.info({
         documentId: existingDoc.id,
@@ -1315,7 +1318,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       frontmatterMeta.author || existingDoc.author || null,
       newReligion || null,
       newCollection || null,
-      frontmatterMeta.language || existingDoc.language || null,
+      // ar vs fa was decided from the TEXT at ingest; a volume-level label must not overwrite it.
+      (['ar', 'fa'].includes(existingDoc.language) && ['ar', 'fa'].includes(frontmatterMeta.language)
+        ? existingDoc.language : frontmatterMeta.language) || existingDoc.language || null,
       safeParseYear(frontmatterMeta.year) ?? existingDoc.year ?? null,
       frontmatterMeta.description || existingDoc.description || null,
       metaEncumbered,
@@ -1324,7 +1329,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     ]);
 
     // Mark paragraphs as unsynced so metadata updates propagate to search
-    const updateResult = await content.markDocDirty(existingDoc.id);
+    const updateResult = await contentStore.markDocDirty(existingDoc.id);
 
     logger.info({
       documentId: existingDoc.id,

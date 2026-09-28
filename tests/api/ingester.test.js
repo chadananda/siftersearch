@@ -1248,3 +1248,26 @@ describe('parseDocumentWithBlocks — short blocks are joined, never dropped', (
     expect(chunks[0].text.endsWith('(‘Abdu’l-Bahá)')).toBe(true);
   });
 });
+
+describe('ingestDocument — updating an existing document', () => {
+  it('a metadata-only change does not throw (content TDZ) and keeps a text-decided Persian label', async () => {
+    const db = await import('../../api/lib/db.js');
+    const { queryOne, queryAll, query, transaction } = db;
+    [queryOne, queryAll, query, transaction].forEach((f) => f.mockClear());
+    vi.resetModules();
+    const ing = await import('../../api/services/ingester.js');
+    const body = 'نامه شما رسید و از اینکه در فکر انتخاب عمومی بودید روح و ریحان حاصل گردید و ترتیب این است';
+    const text = `---\ntitle: Tablet (retitled)\nlanguage: ar\nneeds_segmentation: false\n---\n\n${body}\n`;
+    const { content: parsed } = ing.parseMarkdownFrontmatter(text);
+    const existing = { id: 99, file_path: "Baha'i/Core Tablets/x.md", file_hash: 'old', body_hash: ing.hashContent(parsed.trim()),
+      title: 'Tablet', religion: "Baha'i", collection: 'Core Tablets', language: 'fa', slug: 'tablet' };
+    queryOne.mockResolvedValue(existing);
+    queryAll.mockResolvedValue([]);
+    query.mockResolvedValue({ changes: 1 });
+    const r = await ing.ingestDocument(text, {}, "Baha'i/Core Tablets/x.md");
+    expect(r.status).not.toBe('error');
+    const upd = query.mock.calls.find((c) => /UPDATE docs SET/i.test(c[0]) && c[1].includes('Tablet (retitled)'));
+    expect(upd[1]).toContain('fa');
+    expect(upd[1]).not.toContain('ar');
+  });
+});

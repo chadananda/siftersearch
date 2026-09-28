@@ -1120,7 +1120,9 @@ export default async function adminRoutes(fastify) {
     // If forceReindex and document exists, clear content to force re-ingestion
     if (forceReindex && existing) {
       await content.deleteParagraphsByDoc(existing.id);
-      await query('UPDATE docs SET file_hash = NULL WHERE id = ?', [existing.id]);
+      // ALL three hashes: with body_hash intact the ingester takes its "metadata changed only" path and never
+      // recreates the paragraphs just deleted — a force re-index would leave the document empty.
+      await query('UPDATE docs SET file_hash = NULL, body_hash = NULL, body_hash_normalized = NULL WHERE id = ?', [existing.id]);
       // Also clear old paragraphs from Meilisearch to prevent orphans
       try {
         const meili = getMeili();
