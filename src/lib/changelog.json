@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T21:39:15.609Z",
+  "generated": "2026-09-28T21:42:06.650Z",
   "entries": [
+    {
+      "hash": "dccaed4e",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Originals that declare their paragraphing bypass the Arabic pause; text decides ar/fa; localOnly ingest never falls back to paid cloud",
+      "scope": "ingest"
+    },
     {
       "hash": "ab9b9367",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Migration 105 — ai_usage (caller, doc) expression index kills the per-book 290ms provider scans seizing the API loop",
       "scope": null
-    },
-    {
-      "hash": "9f6f76a3",
-      "date": "2026-08-09",
-      "type": "Performance",
-      "description": "Bio-search SQL prefilter (fixes 40s timeouts at 611k claims) + edge caching on people endpoints",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "dccaed4e",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Originals that declare their paragraphing bypass the Arabic pause; text decides ar/fa; localOnly ingest never falls back to paid cloud",
+        "scope": "ingest"
+      },
       {
         "hash": "ab9b9367",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Performance",
         "description": "Migration 105 — ai_usage (caller, doc) expression index kills the per-book 290ms provider scans seizing the API loop",
-        "scope": null
-      },
-      {
-        "hash": "9f6f76a3",
-        "date": "2026-08-09",
-        "type": "Performance",
-        "description": "Bio-search SQL prefilter (fixes 40s timeouts at 611k claims) + edge caching on people endpoints",
         "scope": null
       }
     ]

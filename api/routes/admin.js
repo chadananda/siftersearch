@@ -1107,8 +1107,15 @@ export default async function adminRoutes(fastify) {
     // content.deleteParagraphsByDoc threw AFTER clearing file_hash.)
     const fileText = await readFile(filePath, 'utf-8');
 
+    // Documents are keyed by their path RELATIVE to the library base ("Baha'i/Core Tablets/…") — religion and
+    // collection come from its first two segments. An absolute path made every ingest fail with
+    // "religion=null, collection=home" (2026-09-28).
+    const { relative, isAbsolute } = await import('path');
+    const libPath = isAbsolute(filePath) ? relative(config.library.basePath, filePath) : filePath;
+    if (libPath.startsWith('..')) throw ApiError.badRequest(`File is outside the library base (${config.library.basePath})`);
+
     // Check if document already exists by file_path
-    const existing = await getDocumentByPath(filePath);
+    const existing = await getDocumentByPath(libPath);
 
     // If forceReindex and document exists, clear content to force re-ingestion
     if (forceReindex && existing) {
@@ -1133,7 +1140,7 @@ export default async function adminRoutes(fastify) {
 
     const { withAIContext } = await import('../lib/ai-context.js');
     const result = await withAIContext({ caller: 'ingest-file', localOnly },
-      () => ingestDocument(fileText, {}, filePath));
+      () => ingestDocument(fileText, {}, libPath));
 
     return {
       success: true,
