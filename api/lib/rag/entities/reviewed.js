@@ -6,7 +6,7 @@ export const METHOD = 'merge-review-v1';
 
 const tierOf = (reviewer) => (/^human:/.test(reviewer) ? 3 : 2);
 
-/** items: [{ verdict: 'same'|'different'|'rename'|'retire'|'repoint'|'split-mention', a, b?, into?, name?, reason, reviewer, source? }] → decisions. Pure. */
+/** items: [{ verdict: 'same'|'different'|'rename'|'retire'|'repoint'|'split-mention'|'detach', a, b?, into?, name?, reason, reviewer, source? }] → decisions. Pure. */
 export function decisionsFor(items) {
   return items.map((it) => {
     const actor = it.reviewer || 'model:reader', actorTier = tierOf(actor);
@@ -30,6 +30,14 @@ export function decisionsFor(items) {
       return { kind: 'repoint', targetKind: 'mention-cluster', targetIds: [Number(it.from), ...(it.to ? [Number(it.to)] : [])],
         payload: { docId: Number(it.docId), resolvedAs: it.handle, from: Number(it.from), to: it.to ? Number(it.to) : null, toName: it.toName ?? null, toType: it.toType ?? 'person' },
         evidence, rationale: `split: ${it.reason}`.slice(0, 300), actor, actorTier, confidence: null, status: 'applied', methodVersion: METHOD };
+    }
+    // DETACH: the passage shows a mention is NOT this record's person, but not who it is — unbind it (and its claims)
+    // rather than guess; the mention stays, pending identity. Never a deletion.
+    if (it.verdict === 'detach') {
+      if (!Array.isArray(it.anchors) || !it.anchors.length) throw new Error(`reviewed ${it.from}: detach needs anchors`);
+      return { kind: 'split-mention', targetKind: 'mention', targetIds: [Number(it.from)],
+        payload: { anchors: it.anchors.map(String), from: Number(it.from), to: null, detach: true }, evidence,
+        rationale: `not this person: ${it.reason}`.slice(0, 300), actor, actorTier, confidence: null, status: 'applied', methodVersion: METHOD };
     }
     if (it.verdict === 'split-mention') {
       if (!Array.isArray(it.anchors) || !it.anchors.length || !(it.to || String(it.toName || '').trim())) throw new Error(`reviewed ${it.from}: split-mention needs anchors and to (or toName)`);
@@ -95,7 +103,7 @@ export async function run(ctx, { items, write = false } = {}) {
         if (d.kind === 'rename') await ctx.store.renameEntity(targetIds[0], d.payload.name, r);
         else if (d.kind === 'retire') await ctx.store.retireEntity(targetIds[0], d.payload.reason, r);
         else if (d.kind === 'split-mention') {
-          const to = d.payload.to ?? await (async () => { if (!minted.has(d.payload.toName)) minted.set(d.payload.toName, await ctx.store.createEntity(d.payload.toName, d.payload.toType)); return minted.get(d.payload.toName); })();
+          const to = d.payload.detach ? null : d.payload.to ?? await (async () => { if (!minted.has(d.payload.toName)) minted.set(d.payload.toName, await ctx.store.createEntity(d.payload.toName, d.payload.toType)); return minted.get(d.payload.toName); })();
           res.split = await ctx.store.repointMentions(d.payload.anchors, d.payload.from, to, { ...r, payload: { ...d.payload, to } });
           res.to = to;
         } else if (d.kind === 'repoint') {

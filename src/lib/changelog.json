@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T14:13:50.664Z",
+  "generated": "2026-09-28T14:23:38.742Z",
   "entries": [
+    {
+      "hash": "bc312cbf",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Split-mention — move individual mentions (by anchor) when one label covered two people; cluster-passages returns anchors + fuller text",
+      "scope": "entities"
+    },
     {
       "hash": "9e46bb4c",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Flagship paid-model runs for GPB + Dawn-Breakers (user-authorized policy exception)",
       "scope": null
-    },
-    {
-      "hash": "3a79b9ce",
-      "date": "2026-08-07",
-      "type": "Other",
-      "description": "SifterChat widget execution plan — PRD goals mapped to the real architecture",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "bc312cbf",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Split-mention — move individual mentions (by anchor) when one label covered two people; cluster-passages returns anchors + fuller text",
+        "scope": "entities"
+      },
       {
         "hash": "9e46bb4c",
         "date": "2026-09-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-08-07",
         "type": "Other",
         "description": "Flagship paid-model runs for GPB + Dawn-Breakers (user-authorized policy exception)",
-        "scope": null
-      },
-      {
-        "hash": "3a79b9ce",
-        "date": "2026-08-07",
-        "type": "Other",
-        "description": "SifterChat widget execution plan — PRD goals mapped to the real architecture",
         "scope": null
       }
     ]

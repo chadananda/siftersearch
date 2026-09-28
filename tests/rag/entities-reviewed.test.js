@@ -119,6 +119,14 @@ describe('split: repoint one book’s cluster', () => {
     expect(r.results[0].split).toEqual({ moved: 2, claims: 0, held: 1 });
     expect(() => decisionsFor([{ verdict: 'split-mention', from: 1, to: 2, anchors: [], reason: 'x' }])).toThrow(/anchors/);
   });
+  // 2026-09-28: a household "Khánum" in a 1909–12 diary was bound to Rúḥíyyih Khánum (b. 1910) — certainly wrong,
+  // but the text does not say which lady she is.
+  it('detach unbinds a mention that is certainly not this person, without guessing who it is', async () => {
+    const w = store();
+    await run(ctx(w.s), { write: true, items: [{ verdict: 'detach', from: 1262681, anchors: ['7bf8'], reason: 'not Rúḥíyyih by date' }] });
+    expect(w.log.mentionSplits).toEqual([{ anchors: ['7bf8'], from: 1262681, to: null }]);
+    expect(w.log.created).toEqual([]);
+  });
   it('a repoint without its book and label is refused', () => {
     expect(() => decisionsFor([{ verdict: 'repoint', from: 1, to: 2, reason: 'x' }])).toThrow(/docId, handle/);
   });
