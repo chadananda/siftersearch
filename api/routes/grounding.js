@@ -883,13 +883,19 @@ export default async function groundingRoutes(fastify) {
     const ours = (await store.getParagraphs(resolved)).filter((p) => !/^\s*(>\s*)?\[\^/.test(p.text));
 
     const embedder = aiService('embedding');
+    // Batches CONCURRENTLY: a 6,000-paragraph compilation embedded serially outlived the edge's ~100s limit.
     const embed = async (texts) => {
-      const out = [];
-      for (let i = 0; i < texts.length; i += 100) {
-        out.push(...await embedder.embed(texts.slice(i, i + 100).map((t) => t.slice(0, 7000)),
-          { caller: 'concepts:align-crosslingual', documentId: resolved }));
-      }
-      return out.map((v) => { const nrm = Math.hypot(...v); return v.map((x) => x / nrm); });
+      const batches = [];
+      for (let i = 0; i < texts.length; i += 100) batches.push(texts.slice(i, i + 100).map((t) => t.slice(0, 7000)));
+      const done = new Array(batches.length);
+      let next = 0;
+      await Promise.all(Array.from({ length: 6 }, async () => {
+        while (next < batches.length) {
+          const k = next++;
+          done[k] = await embedder.embed(batches[k], { caller: 'concepts:align-crosslingual', documentId: resolved });
+        }
+      }));
+      return done.flat().map((v) => { const nrm = Math.hypot(...v); return v.map((x) => x / nrm); });
     };
     const [ov, tv] = await Promise.all([embed(ours.map((p) => p.text)), embed(theirs)]);
     const { spans, baseline } = alignCrossLingual(ov, tv);

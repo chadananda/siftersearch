@@ -417,6 +417,8 @@ export function alignCrossLingual(ours, theirs, { margin = 0.12, skip = 0.02, st
   const baseline = sample[Math.floor(sample.length / 2)];
   const bar = baseline + margin;
 
+  if (Math.max(n, m) > 3 * Math.min(n, m)) return { spans: alignSubset(ours, theirs, cos, bar, n, m), baseline: Number(baseline.toFixed(3)) };
+
   const w = band ?? Math.max(60, Math.ceil(0.2 * Math.max(n, m)));
   const inBand = (i, j) => Math.abs(j - (i * m) / n) <= w;
   const moves = [[1, 1], [1, 2], [2, 1], [1, 3], [3, 1], [2, 2], [1, 0], [0, 1]];
@@ -443,4 +445,54 @@ export function alignCrossLingual(ours, theirs, { margin = 0.12, skip = 0.02, st
     if (a > i && b > j) spans.push({ ours: [i, a], theirs: [j, b], sim: Number(cos(i, a, j, b).toFixed(3)) });
   }
   return { spans: spans.reverse(), baseline: Number(baseline.toFixed(3)) };
+}
+
+/**
+ * One side is a SMALL SUBSET of the other — our 277-paragraph "Additional Tablets" against bahai.org's
+ * compilation of thousands. The banded multi-step DP is both wrong here (the subset is not spread evenly
+ * along the diagonal) and too slow for the edge's ~100s limit. So: a 1:1 DP over the similarity matrix in
+ * which skipping on the LARGER side is free, then each pair grows into adjacent unpaired paragraphs on
+ * either side while that raises the similarity of the joined runs (split or merged paragraphs).
+ */
+function alignSubset(ours, theirs, cos, bar, n, m) {
+  const oursBigger = n > m;
+  const S = new Float32Array(n * m);
+  for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) S[i * m + j] = cos(i, i + 1, j, j + 1);
+  const skipO = oursBigger ? 0 : 0.02, skipT = oursBigger ? 0.02 : 0;
+  const W = m + 1, D = new Float64Array((n + 1) * W), from = new Uint8Array((n + 1) * W);
+  for (let i = 0; i <= n; i++) {
+    for (let j = 0; j <= m; j++) {
+      if (!i && !j) continue;
+      let best = -Infinity, mv = 0;
+      if (i && j) { best = D[(i - 1) * W + j - 1] + S[(i - 1) * m + j - 1] - bar; mv = 1; }
+      if (i && D[(i - 1) * W + j] - skipO > best) { best = D[(i - 1) * W + j] - skipO; mv = 2; }
+      if (j && D[i * W + j - 1] - skipT > best) { best = D[i * W + j - 1] - skipT; mv = 3; }
+      D[i * W + j] = best; from[i * W + j] = mv;
+    }
+  }
+  const pairs = [];
+  for (let i = n, j = m; i || j;) {
+    const mv = from[i * W + j];
+    if (mv === 1) { pairs.push([i - 1, j - 1]); i--; j--; } else if (mv === 2) i--; else j--;
+  }
+  pairs.reverse();
+  const usedO = new Set(pairs.map((p) => p[0])), usedT = new Set(pairs.map((p) => p[1]));
+  return pairs.map(([i, j]) => {
+    let a = i, b = i + 1, c = j, d = j + 1, sim = cos(a, b, c, d);
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const [na, nb, nc, nd, side, k] of [[a, b + 1, c, d, 'o', b], [a - 1, b, c, d, 'o', a - 1],
+        [a, b, c, d + 1, 't', d], [a, b, c - 1, d, 't', c - 1]]) {
+        const free = side === 'o' ? k >= 0 && k < n && !usedO.has(k) : k >= 0 && k < m && !usedT.has(k);
+        if (!free) continue;
+        const s2 = cos(na, nb, nc, nd);
+        if (s2 > sim + 0.01) {
+          (side === 'o' ? usedO : usedT).add(k);
+          [a, b, c, d, sim, grew] = [na, nb, nc, nd, s2, true];
+          break;
+        }
+      }
+    }
+    return { ours: [a, b], theirs: [c, d], sim: Number(sim.toFixed(3)) };
+  });
 }

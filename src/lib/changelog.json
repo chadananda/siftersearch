@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T20:17:16.984Z",
+  "generated": "2026-09-28T20:29:28.502Z",
   "entries": [
+    {
+      "hash": "41657e40",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Cross-lingual align — sourceRange (exclude UHJ apparatus), reviewer exclude list, fold answers before length floor",
+      "scope": "bilingual"
+    },
     {
       "hash": "14f2e443",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Recent-docs smoke test passes on valid empty list (30-day window bricked deploys)",
       "scope": null
-    },
-    {
-      "hash": "298b2a98",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Google One Tap connect — email research summaries, single-domain",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "41657e40",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Cross-lingual align — sourceRange (exclude UHJ apparatus), reviewer exclude list, fold answers before length floor",
+        "scope": "bilingual"
+      },
       {
         "hash": "14f2e443",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Recent-docs smoke test passes on valid empty list (30-day window bricked deploys)",
-        "scope": null
-      },
-      {
-        "hash": "298b2a98",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Google One Tap connect — email research summaries, single-domain",
         "scope": null
       }
     ]

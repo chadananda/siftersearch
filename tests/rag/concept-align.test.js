@@ -392,3 +392,18 @@ describe('alignCrossLingual', () => {
     expect(spans).toHaveLength(20);
   });
 });
+
+describe('alignCrossLingual — subset of a large compilation', () => {
+  let seed = 11;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647) - 0.5;
+  const unit = (v) => { const n = Math.hypot(...v); return v.map((x) => x / n); };
+  const topic = () => unit(Array.from({ length: 64 }, rnd));
+  const near = (v) => unit(v.map((x) => x + 0.35 * rnd() / 4));
+
+  it('finds our few paragraphs, in order, scattered through a source ten times larger', () => {
+    const src = Array.from({ length: 200 }, topic);
+    const picked = [3, 17, 18, 40, 41, 42, 90, 150, 151, 199];
+    const { spans } = alignCrossLingual(picked.map((k) => near(src[k])), src.map((v) => near(v)));
+    expect(spans.map((s) => s.theirs[0])).toEqual(picked);
+  });
+});
