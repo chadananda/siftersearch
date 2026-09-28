@@ -2690,6 +2690,18 @@ Collection: ${paragraph.collection || 'Unknown'}
       own_decision_agrees: bound((x) => x.agrees === true), own_decision_differs: bound((x) => x.agrees === false), no_own_decision: bound((x) => x.agrees === null), docs };
   });
 
+  // GET /server/entity-top?limit=100 — read-only: the most-mentioned people, with mention count, books and distinct
+  // handles — the sizing of a full per-reference review of the most important characters.
+  fastify.get('/server/entity-top', { preHandler: requireInternal }, async (request) => {
+    const { LIVE_SQL } = await import('../lib/entity-live.js');
+    const lim = Math.min(Number(request.query.limit) || 100, 500);
+    const rows = await queryAll(`SELECT m.entity_id id, ge.canonical_name name, ge.importance, COUNT(*) mentions, COUNT(DISTINCT m.doc_id) books,
+        COUNT(DISTINCT m.resolved_as) handles, COUNT(DISTINCT m.doc_id || '|' || m.resolved_as) clusters
+      FROM entity_mentions_v2 m JOIN graph_entities ge ON ge.id = m.entity_id
+      WHERE ge.entity_type = 'person' AND ${LIVE_SQL('ge.')} GROUP BY m.entity_id ORDER BY mentions DESC LIMIT ?`, [lim]);
+    return { people: rows, mentions: rows.reduce((a, r) => a + r.mentions, 0), clusters: rows.reduce((a, r) => a + r.clusters, 0) };
+  });
+
   // GET /server/docs-by-title?q=a|b|c — read-only: every copy of each titled work with paragraph / claim / mention
   // counts, so a pass targets the copy the entity pipeline actually used.
   fastify.get('/server/docs-by-title', { preHandler: requireInternal }, async (request) => {

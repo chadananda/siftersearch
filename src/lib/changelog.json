@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T01:58:24.214Z",
+  "generated": "2026-09-28T02:04:57.220Z",
   "entries": [
+    {
+      "hash": "83b64424",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Mention breakdown shows what each book's OWN identity decision said",
+      "scope": "research"
+    },
     {
       "hash": "60f27e83",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Hourly progress-digest email (nice HTML) for unattended runs",
       "scope": null
-    },
-    {
-      "hash": "4440a341",
-      "date": "2026-07-18",
-      "type": "Other",
-      "description": "Fix plan-follower crash + size-weighted concurrency (3-5 by size)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "83b64424",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Mention breakdown shows what each book's OWN identity decision said",
+        "scope": "research"
+      },
       {
         "hash": "60f27e83",
         "date": "2026-09-27",
@@ -7069,13 +7076,6 @@
         "date": "2026-07-18",
         "type": "Other",
         "description": "Hourly progress-digest email (nice HTML) for unattended runs",
-        "scope": null
-      },
-      {
-        "hash": "4440a341",
-        "date": "2026-07-18",
-        "type": "Other",
-        "description": "Fix plan-follower crash + size-weighted concurrency (3-5 by size)",
         "scope": null
       }
     ]
