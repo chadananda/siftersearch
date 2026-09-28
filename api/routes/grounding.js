@@ -255,13 +255,14 @@ export default async function groundingRoutes(fastify) {
    */
   fastify.get('/concepts/claims', admin, async (req) => {
     const docId = req.query?.docId ? Number(req.query.docId) : null;
-    const limit = Math.min(200, Number(req.query?.limit) || 40);
+    // A whole book's claims (≤ 6000) when a docId is given — the concept catalogue is built from all of them.
+    const limit = Math.min(docId ? 6000 : 200, Number(req.query?.limit) || 40);
     const where = [], args = [];
     if (docId) { where.push('doc_id = ?'); args.push(docId); }
     if (req.query?.concept) { where.push('subject LIKE ?'); args.push(`%${req.query.concept}%`); }
     const sql = where.length ? ` WHERE ${where.join(' AND ')}` : '';
     const rows = await queryAll(
-      `SELECT subject, relation, target, root, proof_verbatim, para_id, extractor_version, proof_ok
+      `SELECT subject, relation, target, root, statement, semantic_key, proof_verbatim, para_id, extractor_version, proof_ok
          FROM concept_claims${sql} ORDER BY id DESC LIMIT ?`, [...args, limit], 'diag:concept-claims');
     const byRelation = await queryAll(
       `SELECT relation, COUNT(*) n FROM concept_claims${sql} GROUP BY relation ORDER BY n DESC`, args, 'diag:claims-by-relation');

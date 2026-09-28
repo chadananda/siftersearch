@@ -125,6 +125,12 @@ paragraph from the matched ideas' questions (~$0.04 per million input tokens).
 4. **Question library** for the Íqán ideas; A/B against generated HyPE on the search type battery.
 5. **Library sweep** with dedup and budget checks; novelty queue on.
 
+## On ingest — indexed the day a text arrives
+
+Every new paragraph already gets its embedding at ingest. Run it through the shortlist and one Jev call immediately:
+concept links and canonical questions exist the moment the text lands, before any slow extraction reaches it (Chad,
+2026-09-28). The monthly cycle then refines; ingest never waits for it.
+
 ## Economics and cadence
 
 Jev: $42 per billion input tokens, output free → a full library pass (~280k paragraphs × ~1.5k tokens) ≈ $15–25;

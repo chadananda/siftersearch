@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T19:04:25.222Z",
+  "generated": "2026-09-28T19:05:11.505Z",
   "entries": [
+    {
+      "hash": "faa316e0",
+      "date": "2026-09-28",
+      "type": "Docs",
+      "description": "Concept index economics — monthly cycle, ~$20 per full Jev pass",
+      "scope": "planning"
+    },
     {
       "hash": "6096fa5b",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Coverage-deadlock fix (terminal disposition + shared floor) + ops sentinel/daily digest",
       "scope": null
-    },
-    {
-      "hash": "87c005ab",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Single-origin edge worker — SSR + assets + /api proxy in one Worker deploy",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "faa316e0",
+        "date": "2026-09-28",
+        "type": "Docs",
+        "description": "Concept index economics — monthly cycle, ~$20 per full Jev pass",
+        "scope": "planning"
+      },
       {
         "hash": "6096fa5b",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Coverage-deadlock fix (terminal disposition + shared floor) + ops sentinel/daily digest",
-        "scope": null
-      },
-      {
-        "hash": "87c005ab",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Single-origin edge worker — SSR + assets + /api proxy in one Worker deploy",
         "scope": null
       }
     ]
