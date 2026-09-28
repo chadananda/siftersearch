@@ -125,4 +125,9 @@ paragraph from the matched ideas' questions (~$0.04 per million input tokens).
 4. **Question library** for the Íqán ideas; A/B against generated HyPE on the search type battery.
 5. **Library sweep** with dedup and budget checks; novelty queue on.
 
-Open number: Jev's cost per call (TypeSafe billing) — the sweep's budget is ~one call per unique paragraph.
+## Economics and cadence
+
+Jev: $42 per billion input tokens, output free → a full library pass (~280k paragraphs × ~1.5k tokens) ≈ $15–25;
+a new idea or question needs only its own column. Chad (2026-09-28): a few hundred dollars a month — a MONTHLY cycle:
+the slow path grows the catalogue and question library from new and kernel texts; Jev re-links the whole library; every
+link carries catalogue + matcher versions, so each pass replaces the last and a bad month is undone by the next.
