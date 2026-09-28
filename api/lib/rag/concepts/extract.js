@@ -20,7 +20,7 @@ export async function run(ctx, docId, opts = {}) {
   // whitelist and the phrase re-rank. Verified 2026-08-26.
   const version = opts.version ?? ctx.config.versions?.disambig ?? 'disambig-v1';
   const conceptVersion = ctx.config.versions?.conceptDisambig ?? 'concept-disambig-v1';
-  const acceptedVersions = new Set([version, conceptVersion]);
+  const acceptedVersions = new Set([version, ...(ctx.config.versions?.disambigAccepted ?? []), conceptVersion]);
   const extractor = opts.extractor ?? ctx.config.versions?.conceptExtract ?? 'concept-extract-v1';
   const batch = opts.batch ?? extractor;
   const profile = await profileFor(ctx, docId);

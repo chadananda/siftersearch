@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T12:08:43.961Z",
+  "generated": "2026-09-28T12:17:12.924Z",
   "entries": [
+    {
+      "hash": "35037f95",
+      "date": "2026-09-28",
+      "type": "Chore",
+      "description": "Read-only record-passages — rescue a passage-less record's paragraphs from graph.db and scenes, with what the current pipeline bound there",
+      "scope": "entities"
+    },
     {
       "hash": "3c7c1690",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Timeout-guard periodic maintenance tasks — a single hung async task can no longer wedge the single-writer",
       "scope": null
-    },
-    {
-      "hash": "617861b5",
-      "date": "2026-07-21",
-      "type": "Other",
-      "description": "Widen pre-deploy verification window 10s→60s (was aborting EVERY backend deploy)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "35037f95",
+        "date": "2026-09-28",
+        "type": "Chore",
+        "description": "Read-only record-passages — rescue a passage-less record's paragraphs from graph.db and scenes, with what the current pipeline bound there",
+        "scope": "entities"
+      },
       {
         "hash": "3c7c1690",
         "date": "2026-09-28",
@@ -7063,15 +7070,6 @@
         "date": "2026-07-28",
         "type": "Other",
         "description": "Timeout-guard periodic maintenance tasks — a single hung async task can no longer wedge the single-writer",
-        "scope": null
-      }
-    ],
-    "2026-07-21": [
-      {
-        "hash": "617861b5",
-        "date": "2026-07-21",
-        "type": "Other",
-        "description": "Widen pre-deploy verification window 10s→60s (was aborting EVERY backend deploy)",
         "scope": null
       }
     ]

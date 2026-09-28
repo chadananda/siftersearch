@@ -12,7 +12,7 @@ import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './pipeline/peak.js'
 import fs from 'fs';
 import path from 'path';
 import { PROSE_SQL, DISAMB_DONE_SQL, HYPE_DONE_SQL } from './pipeline/processed.js';
-import { LIVE_SQL, isMergedRow } from './entity-live.js';   // ONE definition of live/merged (see entity-live.js header)
+import { LIVE_SQL, isLiveRow } from './entity-live.js';   // ONE definition of live/merged (see entity-live.js header)
 
 export const BIO_ROOT = path.join(process.env.HOME || '/home/chad', 'sifter', 'bio-assets');
 export const readBioManifest = () => { try { return JSON.parse(fs.readFileSync(path.join(BIO_ROOT, 'manifest.json'), 'utf8')); } catch { return {}; } };
@@ -488,7 +488,7 @@ export async function getBioPerson(rawId) {
   const row = await queryOne(`SELECT ge.id, ge.canonical_name AS name, ge.importance, ge.last_assessed_version AS lav, er.side, er.summary,
       er.aliases, er.kinship, er.relations, er.research_notes, er.dates
     FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.id = ?`, [id]);
-  if (!row || isMergedRow({ canonical_name: row.canonical_name ?? row.name, last_assessed_version: row.lav })) return null;   // merged duplicate → gone (references live on the survivor)
+  if (!row || !isLiveRow({ canonical_name: row.canonical_name ?? row.name, last_assessed_version: row.lav })) return null;   // merged duplicate → gone (references live on the survivor)
   const arr = s => { try { return JSON.parse(s || '[]'); } catch { return []; } };
   const obj = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
   let wiki = null, portrait = null, portraitFull = null, bahai = null;

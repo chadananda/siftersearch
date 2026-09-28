@@ -2,6 +2,7 @@
 // the injected ports (llm · models · store · profiler · log) from the application's own modules and hands
 // them to createCorpusRAG. The library core imports NONE of this; a different host would write its own
 // adapter. Use `rag` (a ready instance) or `createSifterRAG()` for a custom config.
+import { DISAMBIG_WRITE, DISAMBIG_ACCEPTED } from '../pipeline/processed.js';
 import { createCorpusRAG } from '../rag/index.js';
 import { makeStore } from './store.js';                       // Store port over the SifterSearch schema
 import { makeWeb } from './web.js';                           // WebResearch port (keyless Wikipedia, sourced)
@@ -48,7 +49,8 @@ const profiler = (meta, sample) => detectProfile(meta, sample);
 // EXPORTED so diagnostics compare against the SAME string the stages use. entities/mentions.js keeps only
 // paragraphs whose context_model === versions.disambig; a second hardcoded copy elsewhere is how the two
 // definitions drift apart, which is the bug this value is used to diagnose (2026-08-14).
-export const RAG_VERSIONS = { disambig: 'deepseek-disambig-v1', hype: 'deepseek-hype-v1', extract: 'extract-v2' };
+// disambig = the stamp WRITTEN (and the resume key, so a run re-reads older notes); disambigAccepted = notes still read.
+export const RAG_VERSIONS = { disambig: DISAMBIG_WRITE, disambigAccepted: DISAMBIG_ACCEPTED, hype: 'deepseek-hype-v1', extract: 'extract-v2' };
 
 const config = {
   versions: RAG_VERSIONS,

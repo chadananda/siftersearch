@@ -26,6 +26,14 @@
 /** Live prose only — the population every measure must agree on. */
 export const PROSE_SQL = "blocktype IN ('paragraph','quote') AND deleted_at IS NULL";
 
+// The disambiguation prompt WRITTEN now, and every prompt whose notes are still read. They are two values because
+// the prompt changed on 2026-09-27 (every named person resolved; no "most prominent bearer" default) without a
+// version bump, so new notes and old ones carried the same stamp and nothing could tell them apart or re-read the
+// old. A bump alone would have been worse: every consumer that compared the stamp exactly would have read ZERO
+// paragraphs on the ~890 books still carrying v1 notes. So: stamp the new, accept both.
+export const DISAMBIG_WRITE = 'deepseek-disambig-v2';
+export const DISAMBIG_ACCEPTED = ['deepseek-disambig-v1', DISAMBIG_WRITE];
+
 /** DONE for SQL. Processed, not yielded. */
 export const DISAMB_DONE_SQL = 'context IS NOT NULL';
 

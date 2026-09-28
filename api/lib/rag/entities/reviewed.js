@@ -6,7 +6,7 @@ export const METHOD = 'merge-review-v1';
 
 const tierOf = (reviewer) => (/^human:/.test(reviewer) ? 3 : 2);
 
-/** items: [{ verdict: 'same'|'different'|'rename', a, b?, into?, name?, reason, reviewer, source? }] → decisions. Pure. */
+/** items: [{ verdict: 'same'|'different'|'rename'|'retire', a, b?, into?, name?, reason, reviewer, source? }] → decisions. Pure. */
 export function decisionsFor(items) {
   return items.map((it) => {
     const actor = it.reviewer || 'model:reader', actorTier = tierOf(actor);
@@ -25,6 +25,8 @@ export function decisionsFor(items) {
       return { kind: 'rename', targetKind: 'entity', targetIds: [Number(it.a)], payload: { name: String(it.name).trim() }, evidence,
         rationale: `renamed: ${it.reason}`.slice(0, 300), actor, actorTier, confidence: null, status: 'applied', methodVersion: METHOD };
     }
+    if (it.verdict === 'retire') return { kind: 'retire', targetKind: 'entity', targetIds: [Number(it.a)], payload: { reason: 'no-passage' }, evidence,
+      rationale: `retired: ${it.reason}`.slice(0, 300), actor, actorTier, confidence: null, status: 'applied', methodVersion: METHOD };
     throw new Error(`reviewed ${it.a}: unknown verdict ${it.verdict}`);
   });
 }
@@ -72,11 +74,15 @@ export async function run(ctx, { items, write = false } = {}) {
     const r = { ...d, targetIds, ...(d.kind === 'distinct' ? { payload: { pair: targetIds } } : {}) };
     const gone = targetIds.filter((id) => !dossiers.get(id)?.live);
     const same = d.kind === 'distinct' && targetIds[0] === targetIds[1];
-    results.push({ kind: d.kind, ids: targetIds, names: targetIds.map((id) => dossiers.get(id)?.name ?? null), decision: r,
-      ...(gone.length ? { skipped: `not live: ${gone.join(',')}` } : same ? { skipped: 'contradiction: judged different, but merged' } : {}) });
-    if (write && !gone.length && !same) {
-      if (d.kind === 'rename') await ctx.store.renameEntity(targetIds[0], d.payload.name, r);
-      else await ctx.store.saveDecisions([r]);
+    const res = { kind: d.kind, ids: targetIds, names: targetIds.map((id) => dossiers.get(id)?.name ?? null), decision: r,
+      ...(gone.length ? { skipped: `not live: ${gone.join(',')}` } : same ? { skipped: 'contradiction: judged different, but merged' } : {}) };
+    results.push(res);
+    if (write && !res.skipped) {
+      try {   // a store refusal (e.g. a record still anchored by a passage) is that item's outcome, not the batch's end
+        if (d.kind === 'rename') await ctx.store.renameEntity(targetIds[0], d.payload.name, r);
+        else if (d.kind === 'retire') await ctx.store.retireEntity(targetIds[0], d.payload.reason, r);
+        else await ctx.store.saveDecisions([r]);
+      } catch (e) { res.skipped = `refused: ${e.message}`; }
     }
   }
   for (const d of decisions.filter((x) => x.kind === 'merge' && dead(x).length)) results.push({ kind: 'merge', ids: d.targetIds, names: d.targetIds.map((id) => dossiers.get(id)?.name ?? null), skipped: `not live: ${dead(d).join(',')}`, decision: d });

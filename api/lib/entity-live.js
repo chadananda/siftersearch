@@ -22,7 +22,13 @@ const MARKER_ALL = new RegExp(MARKER_SRC, 'g');
  * EVERY column named, because a half-aliased predicate is a runtime error in a joined query.
  */
 export const LIVE_SQL = (a = '') =>
-  `(${a}last_assessed_version IS NULL OR ${a}last_assessed_version NOT LIKE 'merged-into-%') AND ${a}canonical_name NOT LIKE '%⟨merged→%'`;
+  `(${a}last_assessed_version IS NULL OR (${a}last_assessed_version NOT LIKE 'merged-into-%' AND ${a}last_assessed_version NOT LIKE 'retired:%')) AND ${a}canonical_name NOT LIKE '%⟨merged→%'`;
+
+// RETIRED (2026-09-28): a record no text supports — the retired June/July extractor dropped the mention of any name
+// it could not match and the promoter minted a record from the bare string. Not a merge (there is no survivor), so
+// it has its own stamp. Reversible: the retire decision keeps the previous stamp.
+export const retiredStamp = (reason) => `retired:${reason}`;
+export const isRetiredRow = (row = {}) => /^retired:/.test(String(row.last_assessed_version ?? ''));
 
 /** Remove every merge marker (they stacked up to nine deep) and restore the original name. */
 export const stripMergeMarkers = (name) => String(name ?? '').replace(MARKER_ALL, '').trim();
@@ -43,6 +49,9 @@ export function tombstoneTarget(lav) {
 /** Row-level twin of LIVE_SQL — either tombstone form alone means the row is dead. */
 export const isMergedRow = (row = {}) =>
   tombstoneTarget(row.last_assessed_version) !== null || MERGE_MARKER.test(String(row.canonical_name ?? ''));
+
+/** Row-level twin of LIVE_SQL in full: neither merged nor retired. */
+export const isLiveRow = (row = {}) => !isMergedRow(row) && !isRetiredRow(row);
 
 /**
  * Resolve each dead id to its FINAL surviving entity by walking the merge chain (X→A, A→B ⇒ X→B).

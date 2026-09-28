@@ -5,7 +5,7 @@
 // are excluded everywhere.
 import { queryOne, queryAll } from './db.js';
 import { skeletonKeys } from './translit-key.js';
-import { LIVE_SQL, isMergedRow } from './entity-live.js';   // ONE definition of live/merged (see entity-live.js header)
+import { LIVE_SQL, isLiveRow } from './entity-live.js';   // ONE definition of live/merged (see entity-live.js header)
 
 const parse = (s) => { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
 const abbrOf = (t) => t === 'The Dawn-Breakers' ? 'DB' : t === 'God Passes By' ? 'GPB' : (String(t || '').split(/\s+/).filter(Boolean).map((w) => w[0]).join('').toUpperCase().slice(0, 4) || null);
@@ -39,7 +39,7 @@ export async function entityLookup(q, { type = null, limit = 20 } = {}) {
 export async function entityDossier(rawId) {
   const id = +String(rawId).replace(/\D/g, '');
   const ge = await queryOne(`SELECT id, canonical_name cn, entity_type et, importance, last_assessed_version lav FROM graph_entities WHERE id=?`, [id]);
-  if (!ge || isMergedRow({ canonical_name: ge.cn, last_assessed_version: ge.lav })) return null;
+  if (!ge || !isLiveRow({ canonical_name: ge.cn, last_assessed_version: ge.lav })) return null;
   const er = await queryOne(`SELECT side, summary, aliases FROM entity_research WHERE canonical_name=? AND entity_type=?`, [ge.cn, ge.et]);
   const rows = await queryAll(`SELECT relation, target_entity_id tid, statement, proof_verbatim proof, doc_id, para_id, time_value tv, time_basis tb, time_precision tp, time_anchor ta
      FROM entity_claims WHERE entity_id=? AND (status IS NULL OR status='supported') ORDER BY (tv IS NULL), tv, relation`, [id]);

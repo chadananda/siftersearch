@@ -530,13 +530,13 @@ export default async function ingestRoutes(fastify) {
       `SELECT c.doc_id,
               COUNT(*) AS prose,
               SUM(CASE WHEN c.context IS NOT NULL THEN 1 ELSE 0 END) AS noted,
-              SUM(CASE WHEN c.context IS NOT NULL AND c.context_model = ? THEN 1 ELSE 0 END) AS eligible,
+              SUM(CASE WHEN c.context IS NOT NULL AND c.context_model IN (SELECT value FROM json_each(?)) THEN 1 ELSE 0 END) AS eligible,
               SUM(CASE WHEN c.extract_model IS NOT NULL THEN 1 ELSE 0 END) AS extracted
          FROM content c
         WHERE c.blocktype IN ('paragraph','quote') AND c.deleted_at IS NULL
         GROUP BY c.doc_id
        HAVING prose > 0 AND noted >= 0.98 * prose AND eligible = 0 AND extracted = 0
-        ORDER BY prose DESC LIMIT ?`, [RAG_VERSIONS.disambig, limit], 'diag:unstampable-books');
+        ORDER BY prose DESC LIMIT ?`, [JSON.stringify(RAG_VERSIONS.disambigAccepted), limit], 'diag:unstampable-books');
     return {
       blocked: false,
       note: 'legacy notes predating the version stamp; NOT blocking since v2.186.198 — the mentions stage reads a note whatever stamped it',
@@ -680,7 +680,7 @@ export default async function ingestRoutes(fastify) {
           AND context IS NOT NULL`, [docId], 'grounding:why-note-stats')) || {};
     const { RAG_VERSIONS } = await import('../lib/rag-adapter/index.js');
     const currentDisambig = RAG_VERSIONS.disambig;
-    const eligible = models.find((r) => r.model === currentDisambig)?.n || 0;
+    const eligible = models.filter((r) => RAG_VERSIONS.disambigAccepted.includes(r.model)).reduce((n, r) => n + (r.n || 0), 0);
     const extractionVerdict = mentions.raw === 0
       ? 'no mentions extracted — entity-sparse, or extraction never ran on this book'
       : (row.clusters ? 'extraction and resolution both produced output'

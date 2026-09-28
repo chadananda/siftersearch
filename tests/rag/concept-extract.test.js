@@ -58,6 +58,16 @@ describe('concepts/extract — run() on fake ports', () => {
     expect(store.conceptClaims.every((c) => !('concept_id' in c))).toBe(true);
   });
 
+  // 2026-09-28: the disambiguation stamp moved to v2 (the prompt changed). Books still carry v1 notes; a stage that
+  // compared the stamp exactly would read ZERO paragraphs on them and report success.
+  it('reads notes from every ACCEPTED disambiguation version, not only the one written now', async () => {
+    const config = { versions: { disambig: 'v2', disambigAccepted: ['v1', 'v2'] } };
+    const { rag, store } = makeRag({ config, seed: { paras: { 21310: [para] }, coverage: { 21310: 1 } }, llm: fakeLLM([reply]) });
+    const stats = await rag.concepts.extract(21310, { batch: 'test' });
+    expect(stats).toMatchObject({ written: 1 });
+    expect(store.conceptClaims).toHaveLength(1);
+  });
+
   it('gates on disambiguation', async () => {
     const { rag } = makeRag({ seed: { paras: { 21310: [para] }, coverage: { 21310: 0.4 } } });
     await expect(rag.concepts.extract(21310)).rejects.toThrow(/disambiguated/);

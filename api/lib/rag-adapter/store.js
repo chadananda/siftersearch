@@ -8,7 +8,7 @@ import { skeletonKeys, nameKeys, arabicKeys } from '../translit-key.js'; // reca
 import { loadGazetteer, anchorFor, guardedPair } from './gazetteer.js'; // central-cast identity anchor + ≠guards
 import { DISAMB_DONE_SQL } from '../pipeline/processed.js';
 import { INTERPRETATION_RELATIONS, unknownRelations } from '../rag/concepts/relations.js';
-import { LIVE_SQL, tombstoneFor } from '../entity-live.js'; // ONE definition of live/merged — never inline it
+import { LIVE_SQL, tombstoneFor, retiredStamp } from '../entity-live.js'; // ONE definition of live/merged — never inline it
 
 // Blocktypes that carry readable prose we enrich (skip figures, nav, etc.). App-specific → stays here.
 const PROSE = "blocktype IN ('paragraph','quote')";
@@ -871,6 +871,22 @@ export function makeStore() {
           args: [k, id, name, norm, ge.et, ge.importance ?? null] })),
         { sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, status, method_version) VALUES ('rename','entity',?,?,?,?,?,?, 'applied', ?)`,
           args: [JSON.stringify([id]), JSON.stringify({ from: ge.cn, name }), JSON.stringify(d?.evidence ?? null), d?.rationale ?? null, d?.actor ?? 'model', d?.actorTier ?? 2, d?.methodVersion ?? null] },
+      ]);
+      return 1;
+    },
+
+    // Retire a record no text supports. REFUSES a record anything still anchors — a mention, a claim on either side,
+    // a scene participant: those came from a passage, so the record is evidence, not a husk.
+    async retireEntity(id, reason, d) {
+      const ge = await db.queryOne(`SELECT last_assessed_version lav FROM graph_entities WHERE id = ?`, [id]);
+      if (!ge) return 0;
+      const held = await db.queryOne(`SELECT (SELECT COUNT(*) FROM entity_mentions_v2 WHERE entity_id = ?) + (SELECT COUNT(*) FROM entity_claims WHERE entity_id = ? OR target_entity_id = ?)
+          + (SELECT COUNT(*) FROM scene_participants WHERE entity_id = ?) n`, [id, id, id, id]);
+      if (held?.n) throw new Error(`entity ${id} is anchored by ${held.n} passage rows — not retired`);
+      await db.transaction([
+        { sql: `UPDATE graph_entities SET last_assessed_version = ? WHERE id = ?`, args: [retiredStamp(reason), id] },
+        { sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, status, method_version) VALUES ('retire','entity',?,?,?,?,?,?, 'applied', ?)`,
+          args: [JSON.stringify([id]), JSON.stringify({ from: ge.lav ?? null, stamp: retiredStamp(reason) }), JSON.stringify(d?.evidence ?? null), d?.rationale ?? null, d?.actor ?? 'model', d?.actorTier ?? 2, d?.methodVersion ?? null] },
       ]);
       return 1;
     },

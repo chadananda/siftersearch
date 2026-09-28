@@ -122,6 +122,7 @@ export function makeRag(overrides = {}) {
     log: overrides.log,
   };
   if (overrides.web) ports.web = overrides.web;
+  if (overrides.config) ports.config = overrides.config;
   return { rag: createCorpusRAG(ports), ...ports };
 }
 

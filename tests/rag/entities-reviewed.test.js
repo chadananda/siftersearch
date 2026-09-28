@@ -1,14 +1,16 @@
 // entities/reviewed — a reader's verdicts become ordinary, reversible decisions; Chad's outrank any model's.
 import { describe, it, expect } from 'vitest';
 import { decisionsFor, planMerges, run } from '../../api/lib/rag/entities/reviewed.js';
+import { LIVE_SQL, isLiveRow, isMergedRow, retiredStamp } from '../../api/lib/entity-live.js';
 
-const store = (live = {}, imp = {}, men = {}) => {
-  const log = { merges: [], saved: [], renames: [] };
+const store = (live = {}, imp = {}, men = {}, anchored = []) => {
+  const log = { merges: [], saved: [], renames: [], retired: [] };
   return { log, s: {
     getIdentityDossiers: async (ids) => ({ dossiers: new Map(ids.map((id) => [id, { id, name: `#${id}`, live: live[id] ?? true, importance: imp[id] ?? null, mentions: men[id] ?? 1 }])) }),
     applyMerge: async (canonical, merged, reason, meta) => log.merges.push({ canonical, merged, meta }),
     saveDecisions: async (rows) => log.saved.push(...rows),
     renameEntity: async (id, name) => log.renames.push({ id, name }),
+    retireEntity: async (id) => { if (anchored.includes(id)) throw new Error(`entity ${id} is anchored`); log.retired.push(id); },
   } };
 };
 const ctx = (s) => ({ store: s, log: { info() {} } });
@@ -35,7 +37,7 @@ describe('reviewed decisions', () => {
       { verdict: 'rename', a: 9, name: 'the Bábí of Nayríz who fled to Ṭihrán', reason: 'its passages never name Yaḥyá' },
     ];
     const dry = store(); await run(ctx(dry.s), { items });
-    expect(dry.log).toEqual({ merges: [], saved: [], renames: [] });
+    expect(dry.log).toEqual({ merges: [], saved: [], renames: [], retired: [] });
     const w = store(); const r = await run(ctx(w.s), { items, write: true });
     expect(r.counts).toEqual({ merge: 1, distinct: 1, rename: 1 });
     expect(w.log.merges[0]).toMatchObject({ canonical: 6, merged: [5], meta: { actorTier: 3 } });
@@ -69,5 +71,28 @@ describe('reviewed decisions', () => {
     const { plans, survivor } = planMerges(ds, new Map());
     expect(plans[0].conflict).toMatch(/different/);
     expect(survivor.size).toBe(0);
+  });
+  // 2026-09-28: 356 records the retired extractor minted from bare name strings, with no passage anywhere.
+  it('retires a passage-less record; one a passage still anchors is refused on its own, the batch goes on', async () => {
+    const w = store({}, {}, {}, [2]);
+    const r = await run(ctx(w.s), { write: true, items: [
+      { verdict: 'retire', a: 1, reason: 'no passage anywhere' },
+      { verdict: 'retire', a: 2, reason: 'no passage anywhere' },
+      { verdict: 'different', a: 3, b: 4, reason: 'x' },
+    ] });
+    expect(w.log.retired).toEqual([1]);
+    expect(r.results.find((x) => x.ids[0] === 2).skipped).toMatch(/refused: .*anchored/);
+    expect(w.log.saved).toHaveLength(1);
+  });
+});
+
+// entity-live — ONE definition of live: a retired record is not served, and it is not a merge.
+describe('retired records', () => {
+  it('are not live, and not merged', () => {
+    const row = { canonical_name: 'the Proclaimer', last_assessed_version: retiredStamp('no-passage') };
+    expect(isLiveRow(row)).toBe(false);
+    expect(isMergedRow(row)).toBe(false);
+    expect(isLiveRow({ canonical_name: 'Mullá Ḥusayn', last_assessed_version: 'reconcile-v1' })).toBe(true);
+    expect(LIVE_SQL('ge.')).toMatch(/ge\.last_assessed_version NOT LIKE 'retired:%'/);
   });
 });
