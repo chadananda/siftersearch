@@ -2771,6 +2771,30 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { entity, doc, handle, mentions: ms.length, paragraphs: paras.length, claimsInThoseParagraphs: claimTotal, passages: out };
   });
 
+  // POST /server/lookup-backfill { write=false } — index every LIVE record that has NO lookup keys (name + researched
+  // aliases, the rebuild's own keys). The index was rebuilt only by the retired per-book shell flow, so records the
+  // grounding pipeline minted since were unreachable by name. Idempotent: a record with any key is left alone.
+  fastify.post('/server/lookup-backfill', { preHandler: requireInternal }, async (request) => {
+    const write = !!request.body?.write;
+    const { LIVE_SQL } = await import('../lib/entity-live.js');
+    const { lookupKeyRows } = await import('../lib/rag-adapter/store.js');
+    const { transaction } = await import('../lib/db.js');
+    const rows = await queryAll(`SELECT ge.id, ge.canonical_name cn, ge.entity_type et, ge.importance imp, er.aliases,
+        (SELECT COUNT(*) FROM entity_mentions_v2 m WHERE m.entity_id = ge.id) mentions
+        FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name AND er.entity_type = ge.entity_type
+       WHERE ${LIVE_SQL('ge.')} AND NOT EXISTS (SELECT 1 FROM entity_lookup_keys k WHERE k.entity_id = ge.id)`);
+    let keys = 0;
+    for (const e of rows) {
+      let aliases = []; try { const a = JSON.parse(e.aliases || '[]'); if (Array.isArray(a)) aliases = a.filter(Boolean).map(String); } catch { /* none */ }
+      const stmts = [...lookupKeyRows(e.id, e.cn, e.et, e.imp, 1), ...[...new Set(aliases)].filter((a) => a !== e.cn).flatMap((a) => lookupKeyRows(e.id, a, e.et, e.imp, 0))];
+      keys += stmts.length;
+      if (write && stmts.length) await transaction(stmts);
+    }
+    const withMentions = rows.filter((e) => e.mentions > 0);
+    return { write, unindexed: rows.length, withMentions: withMentions.length, mentionsUnreachable: withMentions.reduce((n, e) => n + e.mentions, 0), keys,
+      examples: withMentions.sort((a, b) => b.mentions - a.mentions).slice(0, 15).map((e) => ({ id: e.id, name: e.cn, type: e.et, mentions: e.mentions })) };
+  });
+
   // GET /server/entity-mention-breakdown?id= — read-only: where an entity's mentions come from — per book, how the book
   // named it (resolved handles), and the place/era of those passages (from the disambiguation note). Shows a famous
   // record that absorbed other people's mentions ("Mullá Ḥusayn" in a Nayríz history bound to Bushrú'í).

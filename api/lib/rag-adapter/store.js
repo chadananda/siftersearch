@@ -8,7 +8,15 @@ import { skeletonKeys, nameKeys, arabicKeys } from '../translit-key.js'; // reca
 import { loadGazetteer, anchorFor, guardedPair } from './gazetteer.js'; // central-cast identity anchor + ≠guards
 import { DISAMB_DONE_SQL } from '../pipeline/processed.js';
 import { INTERPRETATION_RELATIONS, unknownRelations } from '../rag/concepts/relations.js';
-import { LIVE_SQL, tombstoneFor, retiredStamp } from '../entity-live.js'; // ONE definition of live/merged — never inline it
+import { LIVE_SQL, tombstoneFor, retiredStamp } from '../entity-live.js';
+
+// One record's rows for the lookup index — the SAME keys and folding as scripts/entity-read/build-lookup-index.mjs
+// (nameKeys = transliteration skeletons ∪ Arabic-script keys), so a record indexed here is found exactly as a rebuilt one.
+const lookupNorm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
+export function lookupKeyRows(id, surface, type, importance, isCanonical) {
+  return [...new Set(nameKeys(surface))].map((k) => ({ sql: `INSERT INTO entity_lookup_keys (skeleton_key, entity_id, surface, surface_norm, is_canonical, entity_type, importance) VALUES (?,?,?,?,?,?,?)`,
+    args: [k, id, surface, lookupNorm(surface), isCanonical, type, importance ?? null] }));
+} // ONE definition of live/merged — never inline it
 
 // Blocktypes that carry readable prose we enrich (skip figures, nav, etc.). App-specific → stays here.
 const PROSE = "blocktype IN ('paragraph','quote')";
@@ -532,9 +540,14 @@ export function makeStore() {
     },
 
     // Mint a new (bare) entity as a projection — invisible to the live browser until enriched. Returns its id.
+    // Its lookup keys are written WITH it: the index was rebuilt only by the retired per-book shell flow
+    // (process-book.sh step 10), so every record the grounding pipeline minted was unreachable by name (2026-09-28).
     async createEntity(canonical, type = 'person') {
       const r = await db.query(`INSERT INTO graph_entities (name, canonical_name, entity_type, last_assessed_version) VALUES (?,?,?,?)`, [canonical, canonical, type, 'reconcile-v1']);
-      return r.lastInsertRowid;
+      const id = r.lastInsertRowid;
+      const keys = lookupKeyRows(id, canonical, type, null, 1);
+      if (keys.length) await db.transaction(keys);
+      return id;
     },
 
     // Bind a resolved-name cluster IN ONE DOCUMENT to an entity (the projection of an applied decision). A cluster
@@ -862,13 +875,11 @@ export function makeStore() {
     async renameEntity(id, name, d) {
       const ge = await db.queryOne(`SELECT canonical_name cn, entity_type et, importance FROM graph_entities WHERE id = ?`, [id]);
       if (!ge) return 0;
-      const norm = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
       await db.transaction([
         { sql: `UPDATE graph_entities SET canonical_name = ? WHERE id = ?`, args: [name, id] },
         { sql: `UPDATE entity_research SET canonical_name = ? WHERE canonical_name = ? AND entity_type = ?`, args: [name, ge.cn, ge.et] },
         { sql: `DELETE FROM entity_lookup_keys WHERE entity_id = ? AND surface = ?`, args: [id, ge.cn] },
-        ...[...skeletonKeys(name)].map((k) => ({ sql: `INSERT INTO entity_lookup_keys (skeleton_key, entity_id, surface, surface_norm, is_canonical, entity_type, importance) VALUES (?, ?, ?, ?, 1, ?, ?)`,
-          args: [k, id, name, norm, ge.et, ge.importance ?? null] })),
+        ...lookupKeyRows(id, name, ge.et, ge.importance, 1),
         { sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, status, method_version) VALUES ('rename','entity',?,?,?,?,?,?, 'applied', ?)`,
           args: [JSON.stringify([id]), JSON.stringify({ from: ge.cn, name }), JSON.stringify(d?.evidence ?? null), d?.rationale ?? null, d?.actor ?? 'model', d?.actorTier ?? 2, d?.methodVersion ?? null] },
       ]);
