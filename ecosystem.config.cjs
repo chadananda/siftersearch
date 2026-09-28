@@ -45,6 +45,11 @@ module.exports = {
     {
       name: 'siftersearch-api',
       script: 'api/index.js',
+      // The API SPAWNS grounding runs (pipeline/spawn.js, detached). pm2's default treekill walks the process tree by
+      // parent pid and killed every in-flight run on each deploy — 2026-09-28: 9 rescue books "failed after 2 retries:
+      // did not reach link" with no error in their logs, while the API was redeployed a dozen times. Kill only the
+      // API; the boot reaper (queue.killStrayGroundingProcs) already removes untracked strays and spares tracked runs.
+      treekill: false,
       cwd: PROJECT_ROOT,
       instances: 1,
       exec_mode: 'fork',

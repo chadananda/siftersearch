@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T17:38:17.617Z",
+  "generated": "2026-09-28T17:51:28.589Z",
   "entries": [
+    {
+      "hash": "eef81dca",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Profile card keeps a one-off relative only when the record has little family data",
+      "scope": "entities"
+    },
     {
       "hash": "471148d2",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Perplexity web fallback when the library comes up empty (key-gated)",
       "scope": null
-    },
-    {
-      "hash": "2f1145fb",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Fix quote fast path — phrase mode bypasses HyPE merge; repair snake_case return crash",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "eef81dca",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Profile card keeps a one-off relative only when the record has little family data",
+        "scope": "entities"
+      },
       {
         "hash": "471148d2",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Perplexity web fallback when the library comes up empty (key-gated)",
-        "scope": null
-      },
-      {
-        "hash": "2f1145fb",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Fix quote fast path — phrase mode bypasses HyPE merge; repair snake_case return crash",
         "scope": null
       }
     ]
