@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T16:08:42.162Z",
+  "generated": "2026-09-28T16:14:28.639Z",
   "entries": [
+    {
+      "hash": "c586505e",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "System-1 identity gate at reconcile — a confident 'different' downgrades a link to uncertain (optional port; Jev in the adapter)",
+      "scope": "entities"
+    },
     {
       "hash": "6795265f",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Pin unique dev ports (UI 5173→7842) — no cross-project conflicts",
       "scope": null
-    },
-    {
-      "hash": "57e368c6",
-      "date": "2026-08-08",
-      "type": "Other",
-      "description": "Self-healing seedTestUser() on boot (TEST_ADMIN_EMAIL/PASS), mirrors seedAdminUser",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "c586505e",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "System-1 identity gate at reconcile — a confident 'different' downgrades a link to uncertain (optional port; Jev in the adapter)",
+        "scope": "entities"
+      },
       {
         "hash": "6795265f",
         "date": "2026-09-28",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-08",
         "type": "Other",
         "description": "Pin unique dev ports (UI 5173→7842) — no cross-project conflicts",
-        "scope": null
-      },
-      {
-        "hash": "57e368c6",
-        "date": "2026-08-08",
-        "type": "Other",
-        "description": "Self-healing seedTestUser() on boot (TEST_ADMIN_EMAIL/PASS), mirrors seedAdminUser",
         "scope": null
       }
     ]

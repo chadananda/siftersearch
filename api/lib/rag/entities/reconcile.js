@@ -100,7 +100,7 @@ export async function run(ctx, docId, opts = {}) {
     }
     // SYSTEM-1 gate: a fast typed check that this book's passage is the candidate's person. Only a CONFIDENT
     // "different" vetoes (measured 2026-09-28: every "different" at ≥0.75 was a real error; the false flags were all
-    // low-confidence) — and a veto only downgrades to uncertain, for review. planning/jev-system1.md §1.
+    // low-confidence) — and a veto only downgrades to uncertain, for review. (System-1 plan in planning/, item 1.)
     if (verdict.verdict === 'link' && verdict.entityId != null && ctx.flag?.identity) {
       const cand = candidates.find((c) => c.id === verdict.entityId);
       const texts = (await ctx.store.getParagraphTexts?.(docId, cluster.paraIds.slice(0, 2))) || [];
