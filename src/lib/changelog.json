@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T16:04:48.742Z",
+  "generated": "2026-09-28T16:05:57.792Z",
   "entries": [
+    {
+      "hash": "b5428ba3",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Cluster audit Jev timeout 20s (the names profile made 8s time out)",
+      "scope": "entities"
+    },
     {
       "hash": "9476e5e2",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Idempotent env-driven seed for QA test-admin user (tier=admin, email_verified=1) via single writer",
       "scope": null
-    },
-    {
-      "hash": "a96d8e19",
-      "date": "2026-08-07",
-      "type": "Other",
-      "description": "Flagship sonnet hype battery — lay-paraphrase 67%→83%, MRR 0.390→0.653, hype-touched 100%",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "b5428ba3",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Cluster audit Jev timeout 20s (the names profile made 8s time out)",
+        "scope": "entities"
+      },
       {
         "hash": "9476e5e2",
         "date": "2026-09-28",
@@ -7057,15 +7064,6 @@
         "date": "2026-08-08",
         "type": "Other",
         "description": "Idempotent env-driven seed for QA test-admin user (tier=admin, email_verified=1) via single writer",
-        "scope": null
-      }
-    ],
-    "2026-08-07": [
-      {
-        "hash": "a96d8e19",
-        "date": "2026-08-07",
-        "type": "Other",
-        "description": "Flagship sonnet hype battery — lay-paraphrase 67%→83%, MRR 0.390→0.653, hype-touched 100%",
         "scope": null
       }
     ]
