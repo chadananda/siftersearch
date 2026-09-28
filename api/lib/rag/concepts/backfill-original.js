@@ -17,7 +17,7 @@
 // first pair) and a trailing footnote-definitions block.
 // Deps: align.js (pure), ctai.js (transport), the injected store.
 
-import { alignSequences, detectSourceLang } from './align.js';
+import { alignSequences, recoverSpans, detectSourceLang } from './align.js';
 import { CTAI_DOC_BY_WORK, CTAI_WORKS_FOR_DOC, CTAI_PAIR_COUNT, fetchPair } from './ctai.js';
 import { CLASS, coreEntry } from './core-roster.js';
 import { pool } from '../kernel/run.js';
@@ -122,11 +122,19 @@ export async function backfillDoc(ctx, docId, { work: wantWork, maxPairs, minSco
   // Key on the CONTENT ROW ID, not `pid`: pid is COALESCE(external_para_id, 'p'||id), so for a doc carrying
   // external ids it is not the primary key and the UPDATE would match nothing while reporting success.
   const ours = paras.map((p) => ({ key: p.id, text: p.text }));
-  const { matches, unmatchedOurs, unmatchedTheirs, stats } = alignSequences(ours, theirs, { minScore });
+  const { matches, unmatchedOurs: rawUnmatched, unmatchedTheirs, stats } = alignSequences(ours, theirs, { minScore });
+  // Editions paragraph differently (split continuations, whole-section pairs) — see recoverSpans.
+  const spans = recoverSpans(ours, theirs, matches);
+  const recovered = new Set(spans.map((s) => s.ourIndex));
+  const unmatchedOurs = rawUnmatched.filter((u) => !recovered.has(u.index));
+  const recoveredBy = {};
+  for (const sp of spans) recoveredBy[sp.basis] = (recoveredBy[sp.basis] || 0) + 1;
   const byKey = new Map(theirs.map((t) => [t.key, t]));
 
-  const rows = matches.map((m) => {
-    const t = byKey.get(m.theirKey);
+  const rows = [...matches, ...spans].map((m) => {
+    const keys = m.theirKeys || [m.theirKey];
+    const ts = keys.map((k) => byKey.get(k));
+    const t = { ...ts[0], source: ts.map((x) => x.source).join('\n') };
     return {
       paraId: m.ourKey,
       originalText: t.source,
@@ -137,10 +145,12 @@ export async function backfillDoc(ctx, docId, { work: wantWork, maxPairs, minSco
       // The word-to-word map, kept so a reader can ask which ORIGINAL term a given English word renders.
       // In Hidden Words Arabic #2 "Justice" is إنصاف (inṣáf, equity), NOT عدل (ʿadl) — different roots,
       // different obligations, one English word. Without these spans that distinction is unrecoverable.
-      wordAlignment: t.aligned?.length ? JSON.stringify(t.aligned) : null,
+      // Only a whole-paragraph, one-pair binding can keep it: the spans index the pair's own text.
+      wordAlignment: !m.basis && t.aligned?.length ? JSON.stringify(t.aligned) : null,
       translationAuthority: authority,
       alignRef: JSON.stringify({ source: 'ctai', work, pairIndex: m.theirKey, section: t.section,
-        score: m.score, alignedAt: new Date().toISOString() }),
+        score: m.score, ...(m.basis ? { basis: m.basis, pairIndexes: keys, group: m.group.map((i) => ours[i].key) } : {}),
+        alignedAt: new Date().toISOString() }),
     };
   });
 
@@ -150,7 +160,9 @@ export async function backfillDoc(ctx, docId, { work: wantWork, maxPairs, minSco
   const result = {
     docId: resolvedId, requestedDocId: Number(docId),
     ...(resolvedId !== Number(docId) ? { resolvedFromDuplicate: Number(docId) } : {}),
-    work, authority, dryRun, ...stats, originalLangs: langs,
+    work, authority, dryRun, ...stats, recovered: spans.length, recoveredBy,
+    coverageWithRecovery: ours.length ? Number(((matches.length + spans.length) / ours.length).toFixed(3)) : 0,
+    originalLangs: langs,
     // Surfaced in the RESULT, not only the log: a truncated fetch otherwise reports a plausible coverage
     // number with nothing to distinguish it from a complete one.
     ...(theirs.truncated ? { truncated: true, warning: `pair fetch hit the ${work} ceiling — CTAI_PAIR_COUNT is too low, coverage understates the work` } : {}),

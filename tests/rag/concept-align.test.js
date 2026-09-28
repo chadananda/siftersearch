@@ -14,7 +14,7 @@
 //
 // Measured result with both properties in place: 290/292 matched, 0 non-monotonic, 0 pairs claimed twice.
 import { describe, it, expect } from 'vitest';
-import { alignSequences, dice, contentWords, normalizeEn, detectSourceLang, largestCluster, matchedRegion, heaviestIncreasingRun, bestOrdinalOffset, lengthCorrelation } from '../../api/lib/rag/concepts/align.js';
+import { alignSequences, recoverSpans, dice, contentWords, normalizeEn, detectSourceLang, largestCluster, matchedRegion, heaviestIncreasingRun, bestOrdinalOffset, lengthCorrelation } from '../../api/lib/rag/concepts/align.js';
 
 const seq = (texts, prefix = 'a') => texts.map((text, i) => ({ key: `${prefix}${i}`, text }));
 
@@ -309,5 +309,53 @@ describe('matchedRegion performance contract', () => {
   it('the length prefilter cannot change a verdict, only skip work', () => {
     // Dice cannot exceed 2·min/(|a|+|b|), so anything the prefilter drops was already below threshold.
     expect(matchedRegion(ours, theirs, { minScore: 0.55 })).toEqual([0]);
+  });
+});
+
+describe('recoverSpans', () => {
+  // Distinct vocabulary per passage, so each paragraph matches only its own pair.
+  const A = 'glory sovereignty dominion majesty radiance splendour kingdom heavens earth sublime';
+  const B1 = 'wolves shepherds flock scattered pastures ravaged mountains valleys rivers wandering';
+  const B2 = 'lamentation sorrow tears captivity prison chains darkness exile banishment affliction';
+  const C = 'justice equity balance measure fairness judgement tribunal verdict witness testimony';
+  const D1 = 'ocean pearls depths mysteries hidden treasure concealed shores mariner vessel';
+  const D2 = 'lamp light flame candle radiant brilliant shining illumined kindled beacon';
+  const E = 'garden roses nightingale fragrance blossoms spring meadow verdant flowers breezes';
+
+  it("binds a split continuation to its predecessor's pair (the ~1,500-char import cut)", () => {
+    const ours = seq([A, B1, B2, C]);
+    const theirs = seq([A, `${B1} ${B2}`, C], 'b');
+    const { matches } = alignSequences(ours, theirs);
+    const spans = recoverSpans(ours, theirs, matches);
+    const all = [...matches, ...spans].map((m) => [m.ourKey, m.theirKey]).sort();
+    expect(all).toEqual([['a0', 'b0'], ['a1', 'b1'], ['a2', 'b1'], ['a3', 'b2']]);
+    expect(spans.every((s) => s.group.length === 2)).toBe(true);
+  });
+
+  it('binds a whole-section pair to the run of our paragraphs between two anchors', () => {
+    const ours = seq([A, B1, B2, D1, C]);
+    const theirs = seq([A, `${B1} ${B2} ${D1}`, C], 'b');
+    const { matches } = alignSequences(ours, theirs);
+    const spans = recoverSpans(ours, theirs, matches);
+    expect(spans.map((s) => s.ourKey)).toEqual(['a1', 'a2', 'a3']);
+    expect(new Set(spans.map((s) => s.theirKey))).toEqual(new Set(['b1']));
+  });
+
+  it('joins several pairs when ONE of ours spans them (gap-merge)', () => {
+    const ours = seq([A, `${D1} ${D2} ${E}`, C]);
+    const theirs = seq([A, D1, D2, E, C], 'b');
+    const { matches } = alignSequences(ours, theirs);
+    const spans = recoverSpans(ours, theirs, matches);
+    expect(spans).toHaveLength(1);
+    expect(spans[0]).toMatchObject({ ourKey: 'a1', basis: 'gap-merge', theirKeys: ['b1', 'b2', 'b3'] });
+  });
+
+  it('never binds across an anchor, and leaves unrelated text unbound', () => {
+    const ours = seq([A, E, C, B1]);
+    const theirs = seq([A, C, D1, B1], 'b');
+    const { matches } = alignSequences(ours, theirs);
+    const spans = recoverSpans(ours, theirs, matches);
+    // E (between anchors A and C) has no counterpart there; D1 lies after C, so it may not be used for E.
+    expect(spans.find((s) => s.ourKey === 'a1')).toBeUndefined();
   });
 });

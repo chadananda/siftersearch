@@ -163,6 +163,113 @@ export function alignSequences(ours, theirs, { minScore = 0.7, window = 12 } = {
   };
 }
 
+/** Share of `frag`'s content words found in `whole` (multiset). Only safe where position is already fixed. */
+function containedIn(frag, whole) {
+  const counts = new Map();
+  for (const w of contentWords(whole)) counts.set(w, (counts.get(w) || 0) + 1);
+  const f = contentWords(frag);
+  let hit = 0;
+  for (const w of f) { const n = counts.get(w); if (n) { hit++; counts.set(w, n - 1); } }
+  return { share: f.length ? hit / f.length : 0, words: f.length };
+}
+
+/**
+ * Second pass over an alignment: recover paragraphs that one-to-one matching cannot see because the two
+ * editions PARAGRAPH DIFFERENTLY. Measured on fresh CTAI pairs (2026-09-28): the Epistle 258/317 → 313,
+ * Gleanings 699/746 → 733 — the misses were almost all of three shapes, none a missing original:
+ *
+ *   extend — our importer cut long paragraphs at ~1,500 chars, so one CTAI pair is our ¶N plus its
+ *            continuation ¶N+1 ("lo, the entire company…"). Each half scores below the bar by Dice's own
+ *            length penalty. Absorbed when joining RAISES the score, or when the fragment (≥8 content words)
+ *            is ≥85% contained in the pair its predecessor already matched.
+ *   gap    — CTAI holds a whole section as one pair (Gleanings §103: 3,022 chars against six of ours). A run
+ *            of up to `maxRun` unmatched paragraphs is joined and scored against an unmatched pair.
+ *   anchored near-miss — a lone pair scoring 0.67–0.69 BETWEEN two confident anchors. Position is already
+ *            fixed there, so `gapScore` (0.6) is safe where 0.6 would not be as a free-floating match.
+ *
+ * Everything recovered lies strictly between existing matches, so monotonicity is preserved by construction.
+ * Every span says how it was bound (`basis`) and which of our paragraphs share the original (`group`) — a
+ * split paragraph receives its WHOLE original, and that must stay visible downstream.
+ */
+export function recoverSpans(ours, theirs, matches, { gapScore = 0.6, maxRun = 8, containShare = 0.85 } = {}) {
+  const at = new Map(matches.map((m) => [m.ourIndex, { theirIndex: m.theirIndex, score: m.score, basis: 'pair' }]));
+  const joined = (a, b) => ours.slice(a, b + 1).map((o) => o.text).join(' ');
+  const out = [];
+  const bind = (lo, hi, j, score, basis) => {
+    for (let i = lo; i <= hi; i++) {
+      if (!at.has(i)) {
+        at.set(i, { theirIndex: j, score, basis });
+        out.push({ ourIndex: i, theirIndex: j, ourKey: ours[i].key, theirKey: theirs[j].key,
+          score: Number(score.toFixed(3)), basis, group: [lo, hi] });
+      }
+    }
+  };
+
+  // EXTEND each match over adjacent unmatched paragraphs of ours.
+  for (const m of [...matches].sort((a, b) => a.ourIndex - b.ourIndex)) {
+    const t = theirs[m.theirIndex].text;
+    let lo = m.ourIndex, hi = m.ourIndex, best = m.score;
+    for (let i = hi + 1; i < ours.length && !at.has(i); i++) {
+      const s = dice(joined(lo, i), t);
+      const c = containedIn(ours[i].text, t);
+      if (s > best + 0.005 || (c.words >= 8 && c.share >= containShare)) { best = Math.max(best, s); hi = i; } else break;
+    }
+    for (let i = lo - 1; i >= 0 && !at.has(i); i--) {
+      const s = dice(joined(i, hi), t);
+      if (s > best + 0.005) { best = s; lo = i; } else break;
+    }
+    if (hi > lo) bind(lo, hi, m.theirIndex, best, 'extend');
+  }
+
+  // GAP — unmatched pairs of theirs, each bounded by the anchors on either side.
+  const taken = new Set([...at.values()].map((v) => v.theirIndex));
+  for (let j = 0; j < theirs.length; j++) {
+    if (taken.has(j)) continue;
+    let lo = -1, hi = ours.length;
+    for (const [i, v] of at) {
+      if (v.theirIndex < j && i > lo) lo = i;
+      if (v.theirIndex > j && i < hi) hi = i;
+    }
+    let best = null;
+    for (let a = lo + 1; a < hi; a++) {
+      for (let b = a; b < Math.min(hi, a + maxRun); b++) {
+        if (at.has(b)) break;
+        const s = dice(joined(a, b), theirs[j].text);
+        if (s >= gapScore && (!best || s > best.s)) best = { a, b, s };
+      }
+    }
+    if (best) { bind(best.a, best.b, j, best.s, best.b > best.a ? 'gap-run' : 'gap'); taken.add(j); }
+  }
+
+  // MERGE — the reverse: ONE of ours spanning several unmatched pairs (Gleanings §110.1 = CTAI 435–437).
+  // The paragraph's original is the pairs' sources joined, so the span carries every theirIndex.
+  for (let i = 0; i < ours.length; i++) {
+    if (at.has(i)) continue;
+    let lo = -1, hi = theirs.length;
+    for (const [k, v] of at) {
+      if (k < i && v.theirIndex > lo) lo = v.theirIndex;
+      if (k > i && v.theirIndex < hi) hi = v.theirIndex;
+    }
+    let best = null;
+    for (let a = lo + 1; a < hi; a++) {
+      if (taken.has(a)) continue;
+      for (let b = a + 1; b < Math.min(hi, a + maxRun); b++) {
+        if (taken.has(b)) break;
+        const s = dice(ours[i].text, theirs.slice(a, b + 1).map((t) => t.text).join(' '));
+        if (s >= gapScore && (!best || s > best.s)) best = { a, b, s };
+      }
+    }
+    if (!best) continue;
+    const idx = Array.from({ length: best.b - best.a + 1 }, (_, k) => best.a + k);
+    at.set(i, { theirIndex: best.a, score: best.s, basis: 'gap-merge' });
+    idx.forEach((j) => taken.add(j));
+    out.push({ ourIndex: i, theirIndex: best.a, theirIndexes: idx, ourKey: ours[i].key,
+      theirKey: theirs[best.a].key, theirKeys: idx.map((j) => theirs[j].key),
+      score: Number(best.s.toFixed(3)), basis: 'gap-merge', group: [i, i] });
+  }
+  return out.sort((x, y) => x.ourIndex - y.ourIndex);
+}
+
 /**
  * The densest contiguous stretch of matched indexes — where a WORK sits inside a document.
  *
