@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T19:15:10.798Z",
+  "generated": "2026-09-28T19:17:10.623Z",
   "entries": [
+    {
+      "hash": "0e9dbbfd",
+      "date": "2026-09-28",
+      "type": "Docs",
+      "description": "Concept kernel roster with the corpus copies to use",
+      "scope": "planning"
+    },
     {
       "hash": "20f6ab86",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "PATH-robust pre-commit hook + npm scripts for deploy and checks",
       "scope": null
-    },
-    {
-      "hash": "ea818098",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Enable zone routes for siftersearch.com + www",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "0e9dbbfd",
+        "date": "2026-09-28",
+        "type": "Docs",
+        "description": "Concept kernel roster with the corpus copies to use",
+        "scope": "planning"
+      },
       {
         "hash": "20f6ab86",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "PATH-robust pre-commit hook + npm scripts for deploy and checks",
-        "scope": null
-      },
-      {
-        "hash": "ea818098",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Enable zone routes for siftersearch.com + www",
         "scope": null
       }
     ]
