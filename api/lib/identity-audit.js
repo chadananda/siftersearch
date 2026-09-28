@@ -49,7 +49,7 @@ export function readAnswer(a) {
   return { verdict, confidence, flagged: !(verdict === 'same' && confidence >= SURE) };
 }
 
-export async function auditClusters(profile, clusters, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = fetch, timeoutMs = 8000 } = {}) {
+export async function auditClusters(profile, clusters, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = fetch, timeoutMs = 20000 } = {}) {   // 8s timed out 30 of 341 once the profile carried names
   if (!apiKey) throw new Error('no TYPESAFE_API_KEY');
   const out = [];
   for (let i = 0; i < clusters.length; i += BATCH) {
