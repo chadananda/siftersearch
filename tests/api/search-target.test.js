@@ -49,6 +49,21 @@ describe('resolveTarget', () => {
   });
 });
 
+describe('resolveTarget — places weighed by the text, twins unioned', () => {
+  const db = { queryAll: async (sql) => (sql.includes('entity_mentions_v2') ? [] : sql.includes('entity_claims') ? []
+    : [{ id: 1, aliases: '["Edirne","Adirnih"]' }, { id: 7, aliases: null }, { id: 9, aliases: null }]) };
+  it('"iderne": a place with no bound mentions is weighed by how often its name occurs in the texts', async () => {
+    const lookup = async () => [{ id: 9, name: 'Ṭáhirih', type: 'person' }, { id: 1, name: 'Adrianople', type: 'place' }];
+    const t = await resolveTarget('iderne', { lookup, db, countText: async (n) => (n === 'Adrianople' ? 900 : 0) });
+    expect(t?.name).toBe('Adrianople');
+  });
+  it('"edirne": a duplicate record with the same exact name is searched together with Adrianople', async () => {
+    const lookup = async () => [{ id: 7, name: 'Edirne', type: 'place' }, { id: 1, name: 'Adrianople', type: 'place' }];
+    const t = await resolveTarget('edirne', { lookup, db, countText: async () => 0 });
+    expect(t.names).toEqual(expect.arrayContaining(['Edirne', 'Adrianople', 'Adirnih']));
+  });
+});
+
 describe('markTarget — highlight the target, not the typed string', () => {
   const target = { names: ['Adrianople', 'Adirnih', 'Edirne', 'ادرنه', 'Bahá’u’lláh'] };
   it('marks the name the passage uses, whatever was typed', () =>

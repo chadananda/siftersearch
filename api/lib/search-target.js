@@ -36,7 +36,8 @@ export function pickTarget(name, cands) {
     return { ...c, exact: names.some((n) => fold(n) === q), sound: qk && names.some((n) => [...skeletonKeys(n)].sort().join('|') === qk) };
   }).filter((c) => c.exact || (c.sound && (c.mentions || 0) > 0));
   if (!scored.length) return null;
-  scored.sort((a, b) => Number(b.exact) - Number(a.exact) || (b.mentions || 0) - (a.mentions || 0));
+  const canon = (c) => fold(c.name.replace(/\s*\([^)]*\)/g, '')) === q;
+  scored.sort((a, b) => Number(b.exact) - Number(a.exact) || (b.mentions || 0) - (a.mentions || 0) || Number(canon(b)) - Number(canon(a)));
   const [top, next] = scored;
   if (top.exact) return top;
   if (!next || (top.mentions || 0) >= 3 * (next.mentions || 0)) return top;
@@ -69,15 +70,28 @@ async function namesFor(ids, db = { queryAll }) {
 }
 
 /** Resolve a query to its target entity, or null. → { id, name, type, names, matched } */
-export async function resolveTarget(query, { lookup, db } = {}) {
+export async function resolveTarget(query, { lookup, db, countText } = {}) {
   const name = nameOf(query);
   if (!name) return null;
   const find = lookup || (await import('./entity-api.js')).entityLookup;
   const cands = (await find(name, { limit: 30 }).catch(() => [])).filter((c) => ['person', 'place', 'event', 'work', 'group'].includes(c.type));
   if (!cands.length) return null;
   const names = await namesFor(cands.map((c) => c.id), db);
-  const t = pickTarget(name, cands.map((c) => ({ ...c, ...(names.get(c.id) || { names: [], mentions: 0 }) })));
-  return t ? { id: t.id, name: t.name, type: t.type, names: [...new Set([t.name.replace(/\s*\([^)]*\)/g, '').trim(), ...t.names])], matched: name } : null;
+  let enriched = cands.map((c) => ({ ...c, ...(names.get(c.id) || { names: [], mentions: 0 }) }));
+  // Places and works are seldom bound as mentions: a sound-alike with no weight is weighed by how often its canonical
+  // name actually occurs in the texts (one index count each, only for the few sound-alike candidates).
+  const qk = [...skeletonKeys(name)].sort().join('|');
+  const count = countText || (async (n) => { try { const { keywordSearch } = await import('./search.js'); return (await keywordSearch(n, { limit: 1 })).estimatedTotalHits || 0; } catch { return 0; } });
+  enriched = await Promise.all(enriched.map(async (c) => (!c.mentions && [c.name, ...c.names].some((n) => [...skeletonKeys(n)].sort().join('|') === qk)
+    ? { ...c, mentions: await count(c.name.replace(/\s*\([^)]*\)/g, '').trim()) } : c)));
+  const t = pickTarget(name, enriched);
+  if (!t) return null;
+  // Several records carrying the same exact name are one thing under one spelling (duplicate place records): search and
+  // highlight all their names together.
+  const q = fold(name);
+  const twins = t.exact ? enriched.filter((c) => c.id !== t.id && [c.name, ...c.names].some((n) => fold(n) === q)) : [];
+  const all = [t, ...twins].flatMap((c) => [c.name.replace(/\s*\([^)]*\)/g, '').trim(), ...c.names]);
+  return { id: t.id, name: t.name, type: t.type, names: [...new Set(all)], matched: name, ...(twins.length ? { twins: twins.map((c) => c.id) } : {}) };
 }
 
 const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
