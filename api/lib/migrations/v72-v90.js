@@ -1313,6 +1313,15 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_chat_sessions_participant_activity ON chat_sessions(participant_id, last_activity)`);
     logger.info('Migration 126 complete');
   },
+  127: async () => {
+    // PROFILE CARDS (api/lib/profile-card.js): one compact description per person — names the texts use, dates, family,
+    // places, roles — built by majority from claims and mentions. What a fast chooser links name occurrences against
+    // (planning/jev-system1.md). A projection: rebuildable at any time, never a source of truth.
+    logger.info('Starting migration 127: entity_cards');
+    await query(`CREATE TABLE IF NOT EXISTS entity_cards (
+      entity_id INTEGER PRIMARY KEY, card TEXT NOT NULL, facts TEXT, version TEXT, built_at INTEGER DEFAULT (unixepoch()))`);
+    logger.info('Migration 127 complete');
+  },
 };
 
 export const graphMigrations = {

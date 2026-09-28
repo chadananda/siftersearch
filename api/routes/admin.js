@@ -2838,6 +2838,30 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // POST /server/entity-cards { ids?:[…], minMentions?, write=false } — build profile cards (api/lib/profile-card.js), a
+  // rebuildable projection. Background task; GET …/report?mode=dry|write. GET /server/entity-cards/:id → one card.
+  fastify.post('/server/entity-cards', { preHandler: requireInternal }, async (request) => {
+    const { ids = [], minMentions = null, write = false } = request.body || {};
+    const existing = backgroundTasks.get('entity-cards');
+    if (existing && existing.status === 'running') throw ApiError.conflict('An entity-cards run is already in progress');
+    const list = ids.map(Number).filter(Boolean);
+    const argv = [...(list.length ? [`--ids=${list.join(',')}`] : [`--min-mentions=${Number(minMentions) || 1}`]), ...(write ? ['--write'] : [])];
+    const task = runBackgroundTask('entity-cards', 'scripts/entity-cards.mjs', argv);
+    return { success: true, taskId: 'entity-cards', write: !!write, status: task.status };
+  });
+  fastify.get('/server/entity-cards/report', { preHandler: requireInternal }, async (request) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const mode = request.query.mode === 'write' ? 'write' : 'dry';
+    const files = readdirSync('logs').filter((f) => f.startsWith(`entity-cards-${mode}-`)).sort();
+    if (!files.length) throw ApiError.notFound(`no ${mode} report yet`);
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+  fastify.get('/server/entity-cards/:id', { preHandler: requireInternal }, async (request) => {
+    const row = await queryOne(`SELECT entity_id id, card, facts, version, built_at FROM entity_cards WHERE entity_id = ?`, [Number(request.params.id)]);
+    if (!row) throw ApiError.notFound('no card');
+    return { ...row, facts: JSON.parse(row.facts || '{}') };
+  });
+
   // GET /server/entity-mention-breakdown?id= — read-only: where an entity's mentions come from — per book, how the book
   // named it (resolved handles), and the place/era of those passages (from the disambiguation note). Shows a famous
   // record that absorbed other people's mentions ("Mullá Ḥusayn" in a Nayríz history bound to Bushrú'í).

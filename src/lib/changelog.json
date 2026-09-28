@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T17:21:53.408Z",
+  "generated": "2026-09-28T17:33:30.151Z",
   "entries": [
+    {
+      "hash": "bdde21dc",
+      "date": "2026-09-28",
+      "type": "Docs",
+      "description": "Jev in extraction — occurrence linking measured (disagrees with 93% of wrong bindings; 92% right when confident); build order",
+      "scope": "planning"
+    },
     {
       "hash": "c6182e27",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Quote-source fast path + domain scoping — stop \"similar ideas from other religions\"",
       "scope": null
-    },
-    {
-      "hash": "bccfbcef",
-      "date": "2026-08-08",
-      "type": "Other",
-      "description": "\"The Illuminated Ocean\" — flagship redesign of SifterChat",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "bdde21dc",
+        "date": "2026-09-28",
+        "type": "Docs",
+        "description": "Jev in extraction — occurrence linking measured (disagrees with 93% of wrong bindings; 92% right when confident); build order",
+        "scope": "planning"
+      },
       {
         "hash": "c6182e27",
         "date": "2026-09-28",
@@ -7055,15 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Quote-source fast path + domain scoping — stop \"similar ideas from other religions\"",
-        "scope": null
-      }
-    ],
-    "2026-08-08": [
-      {
-        "hash": "bccfbcef",
-        "date": "2026-08-08",
-        "type": "Other",
-        "description": "\"The Illuminated Ocean\" — flagship redesign of SifterChat",
         "scope": null
       }
     ]
