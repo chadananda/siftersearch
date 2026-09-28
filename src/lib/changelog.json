@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T16:28:40.961Z",
+  "generated": "2026-09-28T16:34:32.453Z",
   "entries": [
+    {
+      "hash": "1412552a",
+      "date": "2026-09-28",
+      "type": "Chore",
+      "description": "Audit report keeps each flag's stage-2 answer (to measure what stage 2 drops)",
+      "scope": "entities"
+    },
     {
       "hash": "744152b5",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Subtle Ocean mark in panel header",
       "scope": null
-    },
-    {
-      "hash": "daaf16b1",
-      "date": "2026-08-08",
-      "type": "Other",
-      "description": "Persona from profile, Ocean brand, wide panel, readable dark links",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "1412552a",
+        "date": "2026-09-28",
+        "type": "Chore",
+        "description": "Audit report keeps each flag's stage-2 answer (to measure what stage 2 drops)",
+        "scope": "entities"
+      },
       {
         "hash": "744152b5",
         "date": "2026-09-28",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-08",
         "type": "Other",
         "description": "Subtle Ocean mark in panel header",
-        "scope": null
-      },
-      {
-        "hash": "daaf16b1",
-        "date": "2026-08-08",
-        "type": "Other",
-        "description": "Persona from profile, Ocean brand, wide panel, readable dark links",
         "scope": null
       }
     ]

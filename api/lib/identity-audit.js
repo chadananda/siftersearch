@@ -56,8 +56,10 @@ export function buildRequest(profile, clusters, { stage = 1 } = {}) {
 export function readAnswer(a, { stage = 1 } = {}) {
   const verdict = a?.choice ?? a?.value ?? 'unclear';
   const confidence = a?.confidence ?? a?.distribution?.[verdict] ?? 0;
-  // Stage 2 sends to a reader ONLY a confident "different" — measured: every "different" at ≥0.75 was a real error.
-  if (stage === 2) return { verdict, confidence, flagged: verdict === 'different' && confidence >= SURE };
+  // Stage 2 → a reader: "different" at ≥0.4, or a weak "profile" (<0.6). Measured 2026-09-28 (Ṭáhirih, Quddús): at
+  // ≥0.75 alone it was precise but DROPPED 7 of 9 real errors (0.40–0.73), and every low-confidence "profile" read was
+  // an error too; confidence also drifts between runs (one cluster 0.81 → 0.66), so a hard high cut is fragile.
+  if (stage === 2) return { verdict, confidence, flagged: (verdict === 'different' && confidence >= 0.4) || (verdict !== 'different' && confidence < 0.6) };
   return { verdict, confidence, flagged: !(verdict === 'same' && confidence >= SURE) };
 }
 
