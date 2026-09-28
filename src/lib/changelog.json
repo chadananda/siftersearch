@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T15:52:55.318Z",
+  "generated": "2026-09-28T15:56:47.515Z",
   "entries": [
+    {
+      "hash": "6d50eb75",
+      "date": "2026-09-28",
+      "type": "Chore",
+      "description": "Cluster audit keeps a random sample of passed clusters so recall can be measured",
+      "scope": "entities"
+    },
     {
       "hash": "fd2862a2",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Render assistant markdown links + italics safely (escape-all-then-rebuild) — raw [text](url) syntax was showing in answers",
       "scope": null
-    },
-    {
-      "hash": "e2b75d7e",
-      "date": "2026-08-07",
-      "type": "Other",
-      "description": "Correct chat endpoint path (/api/chat/stream — chat routes mount at /api/chat, not /api/v1)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "6d50eb75",
+        "date": "2026-09-28",
+        "type": "Chore",
+        "description": "Cluster audit keeps a random sample of passed clusters so recall can be measured",
+        "scope": "entities"
+      },
       {
         "hash": "fd2862a2",
         "date": "2026-09-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-08-07",
         "type": "Other",
         "description": "Render assistant markdown links + italics safely (escape-all-then-rebuild) — raw [text](url) syntax was showing in answers",
-        "scope": null
-      },
-      {
-        "hash": "e2b75d7e",
-        "date": "2026-08-07",
-        "type": "Other",
-        "description": "Correct chat endpoint path (/api/chat/stream — chat routes mount at /api/chat, not /api/v1)",
         "scope": null
       }
     ]

@@ -20,12 +20,17 @@ describe('identity-audit', () => {
     expect(readAnswer({ choice: 'different', confidence: 0.99 }).flagged).toBe(true);
     expect(readAnswer(undefined).flagged).toBe(true);
   });
+  it('the profile carries the names the texts use — titles and original script — as this person', async () => {
+    const { profileOf } = await import('../../api/lib/identity-audit.js');
+    const p = profileOf({ name: 'Mullá Ḥusayn', summary: 's', aliases: ['Bábu\'l-Báb'], names: ['باب الباب', 'Mullá Ḥusayn'] });
+    expect(p).toMatch(/also call this person: Bábu'l-Báb · باب الباب\./);
+  });
   it('batches clusters, and a failed call flags its clusters instead of passing them', async () => {
     const clusters = Array.from({ length: BATCH + 1 }, (_, i) => ({ title: 't', handle: `h${i}`, surface: 's', window: 'w' }));
     let calls = 0;
     const fetchImpl = async () => { calls++; return calls === 1 ? { ok: true, json: async () => ({ answers: Object.fromEntries(Array.from({ length: BATCH }, (_, j) => [`c${j + 1}`, { choice: 'same', confidence: 0.95 }])) }) } : { ok: false, status: 503 }; };
     const out = await auditClusters('P', clusters, { apiKey: 'k', fetchImpl });
-    expect(calls).toBe(2);
+    expect(calls).toBe(3);   // the failed batch is retried once
     expect(out.filter((c) => c.flagged)).toHaveLength(1);
     expect(out.at(-1)).toMatchObject({ verdict: 'error', flagged: true });
   });

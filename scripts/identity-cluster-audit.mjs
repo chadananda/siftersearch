@@ -17,7 +17,10 @@ for (const id of ids) {
       LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name AND er.entity_type = ge.entity_type WHERE ge.id = ?`, [id]);
   if (!ge) continue;
   let aliases = []; try { aliases = JSON.parse(ge.aliases || '[]'); } catch { /* none */ }
-  const profile = profileOf({ name: ge.cn, summary: ge.summary, aliases });
+  // How the texts name them: the most-used mention surfaces (title and original-script forms included).
+  const names = (await queryAll(`SELECT surface FROM entity_mentions_v2 WHERE entity_id = ? GROUP BY surface HAVING COUNT(*) >= 3 ORDER BY COUNT(*) DESC LIMIT 12`, [id])).map((r) => r.surface)
+    .filter((s) => s.length > 3 && !/^(he|she|him|his|her|they|i|we)$/i.test(s));
+  const profile = profileOf({ name: ge.cn, summary: ge.summary, aliases, names });
   const rows = await queryAll(`SELECT m.doc_id, m.resolved_as handle, COUNT(*) n, MIN(m.para_id) p1, MAX(m.para_id) p2, MIN(m.surface) surface, d.title, d.year
       FROM entity_mentions_v2 m JOIN docs d ON d.id = m.doc_id WHERE m.entity_id = ? GROUP BY m.doc_id, m.resolved_as`, [id]);
   const clusters = [];

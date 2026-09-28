@@ -19,8 +19,12 @@ export function windowAround(text, surface, radius = 350) {
 }
 
 /** The person as a reader would check them: name, the curated summary (dates, places, role, family). */
-export const profileOf = ({ name, summary, aliases = [] }) =>
-  `PROFILE — ${name}${aliases.length ? ` (also: ${aliases.slice(0, 6).join(', ')})` : ''}\n${String(summary || '(no summary)').slice(0, 700)}`;
+// `names` = how the texts actually name them, titles and original script included ("باب الباب", "the first to believe"):
+// without them Jev read a title as a different person — two-thirds of its first flags were such references.
+export const profileOf = ({ name, summary, aliases = [], names = [] }) => {
+  const all = [...new Set([...aliases, ...names].map(String).filter((n) => n && n !== name))].slice(0, 16);
+  return `PROFILE — ${name}\n${all.length ? `The texts also call this person: ${all.join(' · ')}. A passage using one of these titles or names for them IS about them unless it clearly concerns someone else.\n` : ''}${String(summary || '(no summary)').slice(0, 700)}`;
+};
 
 /** One Jev request for a batch of clusters. Pure. */
 export function buildRequest(profile, clusters) {
@@ -51,12 +55,15 @@ export async function auditClusters(profile, clusters, { apiKey = process.env.TY
   for (let i = 0; i < clusters.length; i += BATCH) {
     const batch = clusters.slice(i, i + BATCH);
     let answers = {};
-    try {
-      const res = await fetchImpl(JEV_ENDPOINT, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildRequest(profile, batch)), signal: AbortSignal.timeout(timeoutMs) });
-      if (res.ok) answers = (await res.json()).answers || {};
-      else answers = { _error: `jev HTTP ${res.status}` };
-    } catch (e) { answers = { _error: e.message }; }
+    // One retry: 12 of 341 clusters came back as transport errors on 2026-09-28 (flagged, never passed — but lost).
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await fetchImpl(JEV_ENDPOINT, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildRequest(profile, batch)), signal: AbortSignal.timeout(timeoutMs) });
+        answers = res.ok ? (await res.json()).answers || {} : { _error: `jev HTTP ${res.status}` };
+      } catch (e) { answers = { _error: e.message }; }
+      if (!answers._error) break;
+    }
     // A failed call flags its clusters (never silently passes them): an audit that errors must not read as clean.
     batch.forEach((c, j) => out.push({ ...c, ...(answers._error ? { verdict: 'error', confidence: 0, flagged: true, error: answers._error } : readAnswer(answers[`c${j + 1}`])) }));
   }
