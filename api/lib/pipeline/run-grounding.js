@@ -83,7 +83,10 @@ export async function runGrounding(docId, opts = {}) {
     // by the band mutex — everything before/after runs concurrently, but only ONE run mutates the graph at a time.
     const wantsBand = ['project', 'link', 'merge', 'dedup'].some(want);
     if (wantsBand) { await enter(currentRun?.stage || 'project'); await acquireGraphBand(docId, { onWait: () => { if (currentRun) { currentRun.waitingForGraph = true; writeRun(); } } }); heldBand = true; if (currentRun) { currentRun.waitingForGraph = false; } }
-    if (want('project'))      { await enter('project'); const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId }); out.createdIds = r.createdIds || []; emit('project', r); }
+    if (want('project'))      { await enter('project'); const r = await rag.entities.project({ auto: true, kinds: ['link', 'create'], hiConf: 0.9, docId }); out.createdIds = r.createdIds || []; emit('project', r);
+      // Replay this book's OWN decisions onto every mention: project binds only clusters it newly applies, so mentions
+      // a re-read added under an already-decided label stayed unbound (2026-09-28: 9,326 across the rescue books).
+      emit('materialize', await rag.entities.materialize({ docId, write: true })); }
     // link BINDS claims to entities. Until 2026-09-09 this line shelled out to
     // scripts/entity-read/link-claims.mjs via execSync and captured NOTHING — no result, no emit, no
     // error detail — so when it ran for two books and stopped, nothing knew. 615,211 claims ended up

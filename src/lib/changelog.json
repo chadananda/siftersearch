@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T18:35:52.353Z",
+  "generated": "2026-09-28T18:59:56.099Z",
   "entries": [
+    {
+      "hash": "e8a4d025",
+      "date": "2026-09-28",
+      "type": "Docs",
+      "description": "Concept index at library scale — kernel catalogue + vector shortlist + Jev sweep + canonical question library",
+      "scope": "planning"
+    },
     {
       "hash": "02894c22",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Rank dossier claims by question relevance + hard evidence-grounding rule for bolded facts",
       "scope": null
-    },
-    {
-      "hash": "9ca41d87",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Entity-first routing for historical questions + book-level work links",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "e8a4d025",
+        "date": "2026-09-28",
+        "type": "Docs",
+        "description": "Concept index at library scale — kernel catalogue + vector shortlist + Jev sweep + canonical question library",
+        "scope": "planning"
+      },
       {
         "hash": "02894c22",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Rank dossier claims by question relevance + hard evidence-grounding rule for bolded facts",
-        "scope": null
-      },
-      {
-        "hash": "9ca41d87",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Entity-first routing for historical questions + book-level work links",
         "scope": null
       }
     ]
