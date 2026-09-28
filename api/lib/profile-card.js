@@ -16,7 +16,11 @@ const tail = (statement, relation) => String(statement || '').split(' — ').sli
 /** Facts → the card's parts. Pure. `claims`: [{relation, statement, tv, tb, tname, ttype}] · `surfaces`: [[surface, n]]. */
 export function factsFrom({ name, summary = '', aliases = [], surfaces = [], claims = [] }) {
   const names = [...new Set([...surfaces.filter(([s, n]) => n >= 2 && s !== name && s.length > 2 && !/^(he|she|him|his|her|i|we|they)$/i.test(s)).map(([s]) => s), ...aliases])].slice(0, 10);
-  const kin = tally(claims.filter((c) => KIN.includes(c.relation) && c.tname).map((c) => `${c.relation.replace('-of', ' of')} ${c.tname}`)).slice(0, 4).map(([k]) => k);
+  // A relative stated ONCE is kept only when the record has little family data at all: on a contaminated record the
+  // one-off relatives are the other person's ("mother of the Báb" on the Prophet's daughter, 2026-09-28).
+  const kinT = tally(claims.filter((c) => KIN.includes(c.relation) && c.tname).map((c) => `${c.relation.replace('-of', ' of')} ${c.tname}`));
+  const kinTotal = kinT.reduce((n, [, k]) => n + k, 0);
+  const kin = kinT.filter(([, n]) => n >= 2 || kinTotal <= 3).slice(0, 4).map(([k]) => k);
   const places = tally(claims.filter((c) => PLACE_REL.includes(c.relation) && c.tname && c.ttype !== 'person').map((c) => c.tname)).slice(0, 5).map(([p]) => p);
   const roles = tally(claims.filter((c) => ['characterized-as', 'has-title', 'appointed'].includes(c.relation)).map((c) => tail(c.statement, c.relation))
     .filter((t) => t && t.split(/\s+/).length <= 6)).filter(([, n]) => n >= 2).slice(0, 4).map(([r]) => r);

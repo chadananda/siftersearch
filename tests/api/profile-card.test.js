@@ -30,6 +30,12 @@ describe('profile card', () => {
     expect(f.died).toBe(1849);
     expect(f.places).toEqual(['Shaykh Ṭabarsí']);
   });
+  it('drops a one-off relative when the record has plenty of family data (a contaminating minority)', () => {
+    const g = factsFrom({ name: 'Fáṭimih', claims: [
+      ...Array(3).fill(c('daughter-of', 'x', { tname: 'Muḥammad' })), ...Array(2).fill(c('wife-of', 'x', { tname: "Imám 'Alí" })),
+      c('mother-of', 'x', { tname: 'the Báb' }) ] });
+    expect(g.kin).toEqual(['daughter of Muḥammad', "wife of Imám 'Alí"]);
+  });
   it('renders one compact line', () => {
     const card = renderCard(f);
     expect(card).toMatch(/^Mullá Ḥusayn \| also called: باب الباب/);
