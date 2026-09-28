@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T17:51:28.589Z",
+  "generated": "2026-09-28T17:56:12.174Z",
   "entries": [
+    {
+      "hash": "59cf5abd",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Pm2 treekill off for the API — each deploy was killing in-flight grounding runs ('did not reach link', no error logged)",
+      "scope": "ops"
+    },
     {
       "hash": "eef81dca",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "LLM intent extraction is now the router — regex demoted to backstop",
       "scope": null
-    },
-    {
-      "hash": "39dba36f",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Perplexity web fallback when the library comes up empty (key-gated)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "59cf5abd",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Pm2 treekill off for the API — each deploy was killing in-flight grounding runs ('did not reach link', no error logged)",
+        "scope": "ops"
+      },
       {
         "hash": "eef81dca",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "LLM intent extraction is now the router — regex demoted to backstop",
-        "scope": null
-      },
-      {
-        "hash": "39dba36f",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Perplexity web fallback when the library comes up empty (key-gated)",
         "scope": null
       }
     ]

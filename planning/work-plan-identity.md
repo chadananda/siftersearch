@@ -167,3 +167,14 @@ disambiguate (frame-aware: frame stack, resolves EVERY person named, reason per 
 - **Duplicates to judge:** 1291988 (Baku 'Alí-Akbar Nakhjavání) vs 1269643; 1260005 "Yaḥyá Azal" vs 1301670;
   Mahd-i-'Ulyá 1288106 needs its name corrected (it is Bahá'u'lláh's wife, not Jahán Khánum) and 1288066
   (Fáṭimih Khánum) folded into it.
+
+### 2026-09-28 evening — Jev in the loop; cards; rescue running
+
+- Two-stage Jev audit live (stage 2: "different" ≥0.4 or weak "profile" <0.6 → reader); Ṭáhirih/Ḥujjat/Vaḥíd/Quddús
+  audited, 57 read, ~30 real errors fixed (43 mentions, 76 claims). Mullá Ḥusayn: 25 mentions fixed.
+- System-1 identity gate in reconcile (confident "different" → uncertain). Fired once in the pilot.
+- Profile cards (migration 127, entity_cards, 11,176 people) — majority-built; contradictory kin = conflation signal.
+- Jev as occurrence linker measured: disagrees with 93% of wrong bindings; 92% right when confident (planning/jev-system1.md).
+- **Blocked:** TypeSafe credits exhausted (402) since ~17:45 — all Jev paths fail open; card-linking benchmark waits.
+- Rescue: 45 books queued to link. Deploy-kill root cause fixed (treekill:false). 6 failed books re-queued.
+  NEXT when drained: sweep failed → re-queue; then per rescued record: passages bound to one person ⇒ merge, else retire.
