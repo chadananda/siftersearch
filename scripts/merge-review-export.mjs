@@ -188,7 +188,13 @@ const sentenceAround = (x) => {
   const parts = /⁅s\d+⁆/.test(src) ? [...src.matchAll(/⁅s\d+⁆([\s\S]*?)⁅\/s\d+⁆/g)].map((m) => m[1].trim()) : String(src).split(/(?<=[.!?؟۔])\s+/);
   const probe = String(x.surface || '').replace(/⁅\/?s\d+⁆/g, '').trim().slice(0, 30);
   const i = parts.findIndex((p) => probe && p.includes(probe));
-  return { sentence: (i >= 0 ? parts[i] : parts.slice(0, 2).join(' ')).slice(0, 900), found: i >= 0 };
+  // A "sentence" is at most ~400 characters: a paragraph without breaks (footnote runs, unpunctuated Persian) is cut to a
+  // window centred on the target, so the reader gets the words around the name, not a page of apparatus.
+  const win = (t, at) => (t.length <= 420 ? t : `${at > 180 ? '…' : ''}${t.slice(Math.max(0, at - 180), at + 240).trim()}…`);
+  if (i >= 0) return { sentence: win(parts[i], Math.max(0, parts[i].indexOf(probe))), found: true };
+  const flat = String(x.text || '');
+  const at = probe ? flat.indexOf(probe) : -1;
+  return at >= 0 ? { sentence: win(flat, at), found: true } : { sentence: win(parts[0] || flat, 0), found: false };
 };
 const trCache = new Map();
 async function translate(x) {

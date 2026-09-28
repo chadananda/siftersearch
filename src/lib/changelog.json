@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-27T23:50:46.522Z",
+  "generated": "2026-09-28T01:45:37.480Z",
   "entries": [
+    {
+      "hash": "bcdbffb1",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Sentence markers stripped and used to find the target sentence; no-basis candidates labelled and sorted last",
+      "scope": "review"
+    },
     {
       "hash": "c5e66bf9",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Serial full-grounding in strict roadmap order (GROUNDING_MAX_CONCURRENT=1)",
       "scope": null
-    },
-    {
-      "hash": "0d2dcfb2",
-      "date": "2026-07-18",
-      "type": "Other",
-      "description": "\"done\" ⇔ FULL grounding (reachedBound), not reconcile alone — fixes read-half books showing ✓",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "bcdbffb1",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Sentence markers stripped and used to find the target sentence; no-basis candidates labelled and sorted last",
+        "scope": "review"
+      },
       {
         "hash": "c5e66bf9",
         "date": "2026-09-27",
@@ -7069,13 +7076,6 @@
         "date": "2026-07-18",
         "type": "Other",
         "description": "Serial full-grounding in strict roadmap order (GROUNDING_MAX_CONCURRENT=1)",
-        "scope": null
-      },
-      {
-        "hash": "0d2dcfb2",
-        "date": "2026-07-18",
-        "type": "Other",
-        "description": "\"done\" ⇔ FULL grounding (reachedBound), not reconcile alone — fixes read-half books showing ✓",
         "scope": null
       }
     ]
