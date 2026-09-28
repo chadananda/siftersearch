@@ -2721,6 +2721,36 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { missing, legacy_entity_mentions: legacy, graph_db: graph, entities: ents.map((e) => ({ ...e, changes: changes.filter((c) => c.id === e.id).map(({ id, ...c }) => c), refs: refs[e.id] || {}, decisions: decOf[e.id] || [] })) };
   });
 
+  // GET /server/record-passages?ids=1,2 — read-only: the passages a passage-less record was read from, rescued from
+  // where they survive — the retired extractor's mentions in graph.db, and scenes naming the record — and, for each
+  // paragraph, what the CURRENT pipeline bound there (v2 mentions). Evidence for rescue, not a decision.
+  fastify.get('/server/record-passages', { preHandler: requireInternal }, async (request) => {
+    const ids = String(request.query.ids || '').split(',').map(Number).filter(Boolean).slice(0, 500);
+    if (!ids.length) throw ApiError.badRequest('ids required');
+    const ph = ids.map(() => '?').join(',');
+    const { graphQueryAll } = await import('../lib/db.js');
+    const old = await graphQueryAll(`SELECT entity_id id, CAST(CAST(content_id AS REAL) AS INTEGER) cid, role FROM entity_mentions WHERE entity_id IN (${ph})`, ids);
+    const aliases = await graphQueryAll(`SELECT entity_id id, surface FROM entity_aliases WHERE entity_id IN (${ph})`, ids);
+    const scenes = await queryAll(`SELECT sp.entity_id id, sp.name surface, s.doc_id, s.para_id, s.proof FROM scene_participants sp JOIN entity_scenes s ON s.id = sp.scene_id WHERE sp.entity_id IN (${ph})`, ids);
+    const cids = [...new Set(old.map((r) => r.cid))];
+    const paras = cids.length ? await queryAll(`SELECT id cid, doc_id, COALESCE(external_para_id, 'p' || id) para_id, deleted_at IS NOT NULL deleted, substr(text, 1, 1500) text
+        FROM content WHERE id IN (${cids.map(() => '?').join(',')})`, cids) : [];
+    const keys = [...new Set([...paras.map((p) => `${p.doc_id}|${p.para_id}`), ...scenes.map((s) => `${s.doc_id}|${s.para_id}`)])];
+    const v2 = [];
+    for (let i = 0; i < keys.length; i += 200) {
+      const chunk = keys.slice(i, i + 200);
+      v2.push(...await queryAll(`SELECT m.doc_id, m.para_id, m.surface, m.resolved_as, m.entity_id, ge.canonical_name name FROM entity_mentions_v2 m LEFT JOIN graph_entities ge ON ge.id = m.entity_id
+          WHERE ${chunk.map(() => '(m.doc_id = ? AND m.para_id = ?)').join(' OR ')}`, chunk.flatMap((k) => { const [d, p] = k.split('|'); return [Number(d), p]; })));
+    }
+    const at = (d, p) => v2.filter((m) => m.doc_id === d && m.para_id === p).map(({ doc_id, para_id, ...m }) => m);
+    const byCid = new Map(paras.map((p) => [p.cid, p]));
+    return { records: ids.map((id) => ({ id, surfaces: aliases.filter((a) => a.id === id).map((a) => a.surface),
+      passages: [
+        ...old.filter((r) => r.id === id).map((r) => { const p = byCid.get(r.cid); return p ? { from: 'graph.db', cid: r.cid, doc_id: p.doc_id, para_id: p.para_id, deleted: !!p.deleted, text: p.text, current: at(p.doc_id, p.para_id) } : { from: 'graph.db', cid: r.cid, missing: true }; }),
+        ...scenes.filter((s) => s.id === id).map((s) => ({ from: 'scene', surface: s.surface, doc_id: s.doc_id, para_id: s.para_id, text: s.proof, current: at(s.doc_id, s.para_id) })),
+      ] })) };
+  });
+
   // GET /server/entity-mention-breakdown?id= — read-only: where an entity's mentions come from — per book, how the book
   // named it (resolved handles), and the place/era of those passages (from the disambiguation note). Shows a famous
   // record that absorbed other people's mentions ("Mullá Ḥusayn" in a Nayríz history bound to Bushrú'í).

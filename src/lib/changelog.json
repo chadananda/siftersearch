@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T11:41:36.223Z",
+  "generated": "2026-09-28T12:08:43.961Z",
   "entries": [
+    {
+      "hash": "3c7c1690",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Chained reviewed merges fold into one survivor per person; a 'different' inside a group is refused",
+      "scope": "entities"
+    },
     {
       "hash": "41d5a0cc",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Widen pre-deploy verification window 10s→60s (was aborting EVERY backend deploy)",
       "scope": null
-    },
-    {
-      "hash": "b6089773",
-      "date": "2026-07-21",
-      "type": "Other",
-      "description": "Claims proof-trim 200→130 + persist ai_usage cache-token columns (migr 96)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "3c7c1690",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Chained reviewed merges fold into one survivor per person; a 'different' inside a group is refused",
+        "scope": "entities"
+      },
       {
         "hash": "41d5a0cc",
         "date": "2026-09-28",
@@ -7065,13 +7072,6 @@
         "date": "2026-07-21",
         "type": "Other",
         "description": "Widen pre-deploy verification window 10s→60s (was aborting EVERY backend deploy)",
-        "scope": null
-      },
-      {
-        "hash": "b6089773",
-        "date": "2026-07-21",
-        "type": "Other",
-        "description": "Claims proof-trim 200→130 + persist ai_usage cache-token columns (migr 96)",
         "scope": null
       }
     ]
