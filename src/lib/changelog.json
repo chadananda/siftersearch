@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T02:49:57.461Z",
+  "generated": "2026-09-28T02:55:47.610Z",
   "entries": [
+    {
+      "hash": "a7f829f1",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Sound-alike places weighed by text occurrence; same-name duplicate records searched together",
+      "scope": "search"
+    },
     {
       "hash": "0c0bd20e",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add ZeptoMail (Zoho) provider — HTTP transactional API (Zoho-enczapikey auth, verified-domain sender)",
       "scope": null
-    },
-    {
-      "hash": "9f5e9f48",
-      "date": "2026-07-18",
-      "type": "Other",
-      "description": "Daily $100/day DeepSeek budget-reset cron (off-peak-only)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "a7f829f1",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Sound-alike places weighed by text occurrence; same-name duplicate records searched together",
+        "scope": "search"
+      },
       {
         "hash": "0c0bd20e",
         "date": "2026-09-27",
@@ -7069,13 +7076,6 @@
         "date": "2026-07-18",
         "type": "Other",
         "description": "Add ZeptoMail (Zoho) provider — HTTP transactional API (Zoho-enczapikey auth, verified-domain sender)",
-        "scope": null
-      },
-      {
-        "hash": "9f5e9f48",
-        "date": "2026-07-18",
-        "type": "Other",
-        "description": "Daily $100/day DeepSeek budget-reset cron (off-peak-only)",
         "scope": null
       }
     ]
