@@ -62,6 +62,17 @@ export default async function groundingRoutes(fastify) {
     return { ...rest, run: parseRun(run_json) };
   });
 
+  // The tail of a book's grounding log (spawn.js writes logs/grounding-<doc>.log). A failed run records only
+  // "did not reach <stage>"; the cause is in the log, which was reachable only over SSH. Read-only.
+  fastify.get('/grounding/books/:docId/log', admin, async (req) => {
+    const { readFileSync, existsSync } = await import('fs');
+    const f = `${process.cwd()}/logs/grounding-${Number(req.params.docId)}.log`;
+    if (!existsSync(f)) throw ApiError.notFound('no log for this doc');
+    const lines = readFileSync(f, 'utf8').split('\n');
+    const n = Math.min(Number(req.query?.lines) || 120, 2000);
+    return { file: f, total: lines.length, lines: lines.slice(-n) };
+  });
+
   // START grounding a book — spawns the executor detached (replaces manual `ssh nohup`). Idempotent: 409 if live.
   // Supports FULL runs and RE-PROCESSING runs: `from=<stage>` resumes from a stage, `only=<stage>` runs one stage
   // (e.g. only=research to re-resolve just the uncertains) — both report live via run_json exactly like a full run.
