@@ -91,12 +91,14 @@ export async function fetchWorkXhtml(path, { lang = 'fa' } = {}) {
   if (!res.ok) return { paragraphs: [], status: res.status };
   const html = await res.text();
   const body = html.slice(Math.max(0, html.indexOf('<body')));
+  // Fold BEFORE the length floor: "۱ سؤال: از اعیاد" is under it, and dropping it first folded its answer
+  // into the prayer that precedes it.
   const out = [];
   for (const m of body.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)) {
     const text = clean(m[1]);
-    if (text.length <= 20) continue;
+    if (!text) continue;
     if (/^جواب\s*:/.test(text) && out.length) out[out.length - 1] += ` ${text}`;
     else out.push(text);
   }
-  return { paragraphs: out, status: res.status };
+  return { paragraphs: out.filter((t) => t.length > 20), status: res.status };
 }

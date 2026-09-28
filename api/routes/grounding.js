@@ -861,7 +861,8 @@ export default async function groundingRoutes(fastify) {
    * scoring below baseline + minMargin is reported, not written.
    */
   fastify.post('/concepts/align-crosslingual', admin, async (req) => {
-    const { docId, path, lang = 'fa', dryRun = true, force = false, minMargin = 0.08, samples = 8 } = req.body || {};
+    const { docId, path, lang = 'fa', dryRun = true, force = false, minMargin = 0.08, samples = 8,
+      sourceRange, exclude = [] } = req.body || {};
     if (!docId || !path) throw ApiError.badRequest('docId and path required (e.g. "bahaullah/gems-divine-mysteries")');
     const { fetchWorkXhtml } = await import('../lib/rag/concepts/bahai-org.js');
     const { alignCrossLingual, detectSourceLang } = await import('../lib/rag/concepts/align.js');
@@ -870,8 +871,15 @@ export default async function groundingRoutes(fastify) {
     const store = makeStore();
 
     const resolved = await store.resolveCanonicalDoc(Number(docId));
-    const { paragraphs: theirs, status } = await fetchWorkXhtml(path, { lang });
+    // sourceRange [from, to): a source file can carry more than the work — bahai.org's Aqdas also holds the
+    // House of Justice's introduction, synopsis and notes in Persian, TRANSLATED from English. Bound to our
+    // English, those would pose as originals (measured: Q&A paragraphs paired with notes).
+    const fetched = await fetchWorkXhtml(path, { lang });
+    const { status } = fetched;
+    const theirs = sourceRange ? fetched.paragraphs.slice(sourceRange[0], sourceRange[1]) : fetched.paragraphs;
     if (!theirs.length) throw ApiError.badRequest(`bahai.org served no text for '${path}' (${lang}, HTTP ${status})`);
+    // exclude: paragraph ids a reviewer rejected — the low band cannot be separated by similarity alone.
+    const skip = new Set(exclude.map(Number));
     const ours = (await store.getParagraphs(resolved)).filter((p) => !/^\s*(>\s*)?\[\^/.test(p.text));
 
     const embedder = aiService('embedding');
@@ -895,20 +903,22 @@ export default async function groundingRoutes(fastify) {
       if (s.sim < baseline + minMargin) { weak.push(s); continue; }
       kept += group.length;
       for (const p of group) {
-        if (p.original && !force) continue;
+        if ((p.original && !force) || skip.has(p.id)) continue;
         const srcLang = detectSourceLang(original);
         if (!srcLang) continue;
         rows.push({ paraId: p.id, originalText: original, originalLang: srcLang, translationAuthority: authority,
           wordAlignment: null,
           alignRef: JSON.stringify({ source: 'bahai.org', path, lang, basis: 'crosslingual-dp', sim: s.sim,
             baseline, shape: `${s.ours[1] - s.ours[0]}:${s.theirs[1] - s.theirs[0]}`,
-            sourceParagraphs: [s.theirs[0] + 1, s.theirs[1]], group: group.map((g) => g.id),
+            sourceParagraphs: [s.theirs[0] + 1 + (sourceRange?.[0] ?? 0), s.theirs[1] + (sourceRange?.[0] ?? 0)],
+            group: group.map((g) => g.id),
             alignedAt: new Date().toISOString() }) });
       }
     }
     const shapes = {};
     for (const s of spans) { const k = `${s.ours[1] - s.ours[0]}:${s.theirs[1] - s.theirs[0]}`; shapes[k] = (shapes[k] || 0) + 1; }
-    const show = (s) => ({ sim: s.sim, ours: s.ours, theirs: s.theirs,
+    const show = (s) => ({ sim: s.sim, ours: s.ours, theirs: s.theirs, ids: ours.slice(s.ours[0], s.ours[1]).map((p) => p.id),
+      filled: ours.slice(s.ours[0], s.ours[1]).every((p) => p.original),
       en: ours.slice(s.ours[0], s.ours[1]).map((p) => p.text.slice(0, 160)),
       original: theirs.slice(s.theirs[0], s.theirs[1]).map((t) => t.slice(0, 160)) });
     const out = { docId: resolved, path, lang, dryRun, baseline, ourParagraphs: ours.length,
