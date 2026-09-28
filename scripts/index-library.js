@@ -425,6 +425,7 @@ async function indexLibrary() {
   if (authorFilter) console.log(`Author filter: ${authorFilter}`);
   if (skipExisting) console.log('Skipping existing documents');
   if (clearIndex) console.log('⚠️  Will CLEAR existing index first');
+  if (args.includes('--local-only')) console.log('Local models only (no cloud fallback)');
   console.log('');
 
   // Check all paths exist
@@ -675,8 +676,11 @@ process.on('unhandledRejection', (reason) => {
   console.error('[library-watcher] Unhandled rejection (process kept alive):', reason);
 });
 
-// Run
-indexLibrary().catch(err => {
+// Run. --local-only: model calls (sentence marking) stay on local models — a local failure surfaces instead of
+// becoming a cloud bill (bulk ingest of thousands of originals, 2026-09-28).
+const localOnly = args.includes('--local-only');
+const { withAIContext } = await import('../api/lib/ai-context.js');
+withAIContext({ caller: 'index-library', localOnly }, () => indexLibrary()).catch(err => {
   console.error('Fatal error:', err);
   process.exit(1);
 });

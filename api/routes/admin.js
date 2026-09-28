@@ -953,12 +953,15 @@ export default async function adminRoutes(fastify) {
           collection: { type: 'string', description: 'Filter by collection name' },
           author: { type: 'string', description: 'Filter by author name (partial match, e.g., "Bab")' },
           path: { type: 'string', description: 'Filter by path pattern (glob)' },
-          documentId: { type: 'string', description: 'Re-index a single document by ID' }
+          documentId: { type: 'string', description: 'Re-index a single document by ID' },
+          dir: { type: 'string', description: "Library-relative directory to index (e.g. \"Baha'i/Core Tablets\")" },
+          dryRun: { type: 'boolean', default: false },
+          localOnly: { type: 'boolean', default: false, description: 'Local models only: never fall back to paid cloud' }
         }
       }
     }
   }, async (request) => {
-    const { force = false, limit, religion, collection, author, path, documentId } = request.body || {};
+    const { force = false, limit, religion, collection, author, path, documentId, dir, dryRun = false, localOnly = false } = request.body || {};
 
     // Check if already running
     const existing = backgroundTasks.get('reindex');
@@ -967,6 +970,16 @@ export default async function adminRoutes(fastify) {
     }
 
     const args = [];
+    // `dir` is the script's positional path — `--path` below was never read by index-library.js, so the job
+    // always scanned the whole library.
+    if (dir) {
+      const { resolve, relative } = await import('path');
+      const abs = resolve(config.library.basePath, dir);
+      if (relative(config.library.basePath, abs).startsWith('..')) throw ApiError.badRequest('dir must be inside the library');
+      args.push(abs);
+    }
+    if (dryRun) args.push('--dry-run');
+    if (localOnly) args.push('--local-only');
     if (force) args.push('--force');
     if (limit) args.push(`--limit=${limit}`);
     if (religion) args.push(`--religion=${religion}`);
@@ -983,7 +996,7 @@ export default async function adminRoutes(fastify) {
       success: true,
       taskId: 'reindex',
       message: 'Library re-indexing started in background',
-      filters: { force, limit, religion, collection, author, path, documentId },
+      filters: { force, limit, religion, collection, author, path, documentId, dir, dryRun, localOnly },
       status: task.status
     };
   });

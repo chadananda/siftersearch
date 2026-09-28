@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T22:25:09.495Z",
+  "generated": "2026-09-28T22:37:47.147Z",
   "entries": [
+    {
+      "hash": "7a08a3ce",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Range-scan for U+FFFD in paragraph text/originals (measure writer UTF-8 damage)",
+      "scope": "integrity"
+    },
     {
       "hash": "02666dea",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Header profile button markup + popover (completes One Tap visibility)",
       "scope": null
-    },
-    {
-      "hash": "b0e79069",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Combined menu pill (hamburger + avatar, one menu) · widget: One Tap discoverability",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "7a08a3ce",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Range-scan for U+FFFD in paragraph text/originals (measure writer UTF-8 damage)",
+        "scope": "integrity"
+      },
       {
         "hash": "02666dea",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Header profile button markup + popover (completes One Tap visibility)",
-        "scope": null
-      },
-      {
-        "hash": "b0e79069",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Combined menu pill (hamburger + avatar, one menu) · widget: One Tap discoverability",
         "scope": null
       }
     ]
