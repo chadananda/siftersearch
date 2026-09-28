@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T11:06:55.105Z",
+  "generated": "2026-09-28T11:14:55.915Z",
   "entries": [
+    {
+      "hash": "912eca7d",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Reviewed identity verdicts become decisions (human tier 3, evidence, reversible); rename a record its passages never name",
+      "scope": "entities"
+    },
     {
       "hash": "01278fb8",
       "date": "2026-09-27",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Make integration-phases.js the SINGLE hard-coded source (identical roadmap, no rules)",
       "scope": null
-    },
-    {
-      "hash": "66fd9542",
-      "date": "2026-07-20",
-      "type": "Other",
-      "description": "Report each book only ONCE (on first completion) — fixes the same books repeating every hourly email",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-28": [
+      {
+        "hash": "912eca7d",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Reviewed identity verdicts become decisions (human tier 3, evidence, reversible); rename a record its passages never name",
+        "scope": "entities"
+      }
+    ],
     "2026-09-27": [
       {
         "hash": "01278fb8",
@@ -7065,13 +7074,6 @@
         "date": "2026-07-20",
         "type": "Other",
         "description": "Make integration-phases.js the SINGLE hard-coded source (identical roadmap, no rules)",
-        "scope": null
-      },
-      {
-        "hash": "66fd9542",
-        "date": "2026-07-20",
-        "type": "Other",
-        "description": "Report each book only ONCE (on first completion) — fixes the same books repeating every hourly email",
         "scope": null
       }
     ]

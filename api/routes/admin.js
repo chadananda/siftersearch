@@ -2682,6 +2682,35 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // GET /server/entity-provenance?ids=1,2 — read-only: where a record came from and what still points at it. Answers
+  // "how can a record exist with no passage?": its insert time + change history, the decisions naming it, and a count
+  // per table that references it (a record whose only anchor is an alias or lookup key was never read from a text).
+  fastify.get('/server/entity-provenance', { preHandler: requireInternal }, async (request) => {
+    const ids = String(request.query.ids || '').split(',').map(Number).filter(Boolean).slice(0, 1000);
+    if (!ids.length) throw ApiError.badRequest('ids required');
+    const ph = ids.map(() => '?').join(',');
+    const ents = await queryAll(`SELECT id, name, canonical_name, entity_type, created_at, last_assessed_version lav, mention_count, doc_count,
+        importance, summary IS NOT NULL has_summary, description IS NOT NULL has_desc, research_notes IS NOT NULL has_notes FROM graph_entities WHERE id IN (${ph})`, ids);
+    const changes = await queryAll(`SELECT entity_id id, op, canonical_name, merged_into, rowid r FROM graph_entity_changes WHERE entity_id IN (${ph}) ORDER BY rowid`, ids);
+    const refs = {};
+    for (const [t, col] of [['entity_mentions', 'entity_id'], ['entity_mentions_v2', 'entity_id'], ['entity_claims', 'entity_id'], ['entity_claims', 'target_entity_id'],
+      ['graph_relations', 'source_entity_id'], ['graph_relations', 'target_entity_id'], ['entity_aliases', 'entity_id'], ['entity_aliases_v2', 'entity_id'],
+      ['entity_lookup_keys', 'entity_id'], ['scene_participants', 'entity_id'], ['entity_catalog_review', 'entity_id'], ['set_members', 'entity_id'], ['alias_priors', 'entity_id']]) {
+      try { for (const r of await queryAll(`SELECT ${col} id, COUNT(*) n FROM ${t} WHERE ${col} IN (${ph}) GROUP BY 1`, ids)) (refs[r.id] ||= {})[`${t}.${col}`] = r.n; } catch { /* table absent */ }
+    }
+    const decs = await queryAll(`SELECT id, kind, target_kind, actor, method_version, status, rationale, payload, target_ids FROM entity_decisions
+       WHERE json_extract(payload,'$.applied_entity_id') IN (${ph}) OR json_extract(payload,'$.entityId') IN (${ph}) OR json_extract(payload,'$.canonical') IN (${ph})
+          OR EXISTS (SELECT 1 FROM json_each(entity_decisions.target_ids) j WHERE j.value IN (${ph})) ORDER BY id`, [...ids, ...ids, ...ids, ...ids]);
+    const decOf = {};
+    for (const d of decs) {
+      let p = {}; try { p = JSON.parse(d.payload || '{}'); } catch { /* */ }
+      let t = []; try { t = JSON.parse(d.target_ids || '[]'); } catch { /* */ }
+      for (const id of new Set([p.applied_entity_id, p.entityId, p.canonical, ...(Array.isArray(t) ? t : [])].map(Number).filter((x) => ids.includes(x))))
+        (decOf[id] ||= []).push({ id: d.id, kind: d.kind, target: d.target_kind, actor: d.actor, method: d.method_version, status: d.status, doc: p.docId ?? null, as: p.resolvedAs ?? null, why: String(d.rationale || '').slice(0, 120) });
+    }
+    return { entities: ents.map((e) => ({ ...e, changes: changes.filter((c) => c.id === e.id).map(({ id, ...c }) => c), refs: refs[e.id] || {}, decisions: decOf[e.id] || [] })) };
+  });
+
   // GET /server/entity-mention-breakdown?id= — read-only: where an entity's mentions come from — per book, how the book
   // named it (resolved handles), and the place/era of those passages (from the disambiguation note). Shows a famous
   // record that absorbed other people's mentions ("Mullá Ḥusayn" in a Nayríz history bound to Bushrú'í).
