@@ -47,7 +47,10 @@ export function pickTarget(name, cands) {
   // A record sharing ANY matching spelling with the top ("Adirnih" and "Edirne" both sound like "iderne") is a twin.
   const twin = (c) => c.via.some((v) => top.via.includes(v));
   const rival = scored.find((c) => c !== top && !twin(c));
-  if (!rival || (top.mentions || 0) >= 3 * (rival.mentions || 0)) return { ...top, twinsVia: scored.filter((c) => c !== top && twin(c)).map((c) => c.id) };
+  // The place is weighed as ONE thing: its twin records' weight counts with it (Edirne 15 + Adrianople 8 were each
+  // measured against "Adrienne D." 7 on their own).
+  const weight = scored.filter((c) => c === top || twin(c)).reduce((a, c) => a + (c.mentions || 0), 0);
+  if (!rival || weight >= 3 * (rival.mentions || 0)) return { ...top, twinsVia: scored.filter((c) => c !== top && twin(c)).map((c) => c.id) };
   return null;
 }
 
@@ -86,12 +89,14 @@ export async function resolveTarget(query, { lookup, db, countText, explain } = 
   if (!cands.length) return null;
   const names = await namesFor(cands.map((c) => c.id), db);
   let enriched = cands.map((c) => ({ ...c, ...(names.get(c.id) || { names: [], mentions: 0 }) }));
-  // Places and works are seldom bound as mentions: a sound-alike with no weight is weighed by how often its canonical
-  // name actually occurs in the texts (one index count each, only for the few sound-alike candidates).
+  // Places and works are seldom bound as mentions, so a sound-alike is also weighed by how often its canonical name
+  // actually occurs in the texts (one index count each, only for the few sound-alike candidates).
   const qk = [...skeletonKeys(name)].sort().join('|');
   const count = countText || (async (n) => { try { const { keywordSearch } = await import('./search.js'); return (await keywordSearch(n, { limit: 1 })).estimatedTotalHits || 0; } catch { return 0; } });
-  enriched = await Promise.all(enriched.map(async (c) => (!c.mentions && [c.name, ...c.names].some((n) => [...skeletonKeys(n)].sort().join('|') === qk)
-    ? { ...c, mentions: await count(c.name.replace(/\s*\([^)]*\)/g, '').trim()) } : c)));
+  // Every sound-alike (not only the weightless ones) takes the larger of its bound weight and its text count: bound
+  // mentions undercount places badly (Adrianople: 8 bound, while the name runs through the histories).
+  enriched = await Promise.all(enriched.map(async (c) => ([c.name, ...c.names].some((n) => [...skeletonKeys(n)].sort().join('|') === qk)
+    ? { ...c, mentions: Math.max(c.mentions || 0, await count(c.name.replace(/\s*\([^)]*\)/g, '').trim())) } : c)));
   const t = pickTarget(name, enriched);
   // Internal diagnosis only: the candidates as scored, so a miss is read from the data, not guessed at.
   if (explain) explain.cands = enriched.map((c) => ({ id: c.id, name: c.name, type: c.type, mentions: c.mentions, names: c.names, via: c.names && [c.name, ...c.names].filter((n) => [...skeletonKeys(n)].sort().join('|') === qk) })), explain.key = qk;

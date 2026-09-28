@@ -25,6 +25,13 @@ describe('pickTarget', () => {
     expect(t.id).toBe(1);
     expect(t.twinsVia).toEqual([7]);
   });
+  // MEASURED live 2026-09-27: Edirne 15 and Adrianople 8 were each weighed alone against "Adrienne D." 7 → no target.
+  it('twin records are weighed together against a rival', () => {
+    const a = { id: 1, name: 'Adrianople', type: 'place', mentions: 8, names: ['Edirne', 'Adirnih'] };
+    const e = { id: 7, name: 'Edirne', type: 'place', mentions: 15, names: [] };
+    const adrienne = { id: 9, name: 'Adrienne D.', type: 'person', mentions: 7, names: [] };
+    expect(pickTarget('iderne', [a, e, adrienne])?.id).toBe(7);
+  });
   it('a misspelling lands on the entity the texts mention most, when clearly ahead', () => expect(pickTarget('iderne', [dorn, adrianople]).id).toBe(1));
   it('an exact spelling of any of its names wins outright', () => {
     expect(pickTarget('Dorn', [adrianople, dorn]).id).toBe(2);

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T03:20:58.644Z",
+  "generated": "2026-09-28T03:27:03.648Z",
   "entries": [
+    {
+      "hash": "3473e704",
+      "date": "2026-09-27",
+      "type": "Chore",
+      "description": "Internal-key explain on /quick shows the target candidates as scored",
+      "scope": "search"
+    },
     {
       "hash": "06cc0598",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Remove duplicate doc 11344 (Nayriz) from the plan — same book as the finished 16552",
       "scope": null
-    },
-    {
-      "hash": "8f82d272",
-      "date": "2026-07-19",
-      "type": "Other",
-      "description": "Remove doc 214474 (The Afnán Family) from the grounding plan — external site2rag scrape, not approved core library",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "3473e704",
+        "date": "2026-09-27",
+        "type": "Chore",
+        "description": "Internal-key explain on /quick shows the target candidates as scored",
+        "scope": "search"
+      },
       {
         "hash": "06cc0598",
         "date": "2026-09-27",
@@ -7067,13 +7074,6 @@
         "date": "2026-07-19",
         "type": "Other",
         "description": "Remove duplicate doc 11344 (Nayriz) from the plan — same book as the finished 16552",
-        "scope": null
-      },
-      {
-        "hash": "8f82d272",
-        "date": "2026-07-19",
-        "type": "Other",
-        "description": "Remove doc 214474 (The Afnán Family) from the grounding plan — external site2rag scrape, not approved core library",
         "scope": null
       }
     ]
