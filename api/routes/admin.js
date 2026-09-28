@@ -2672,8 +2672,22 @@ Collection: ${paragraph.collection || 'Unknown'}
       d.mentions += r.n; d.handles.push(`${r.resolved_as} ×${r.n}`); d.note = d.note || String(r.note || '').split('—')[0].trim().slice(0, 80);
       byDoc.set(r.doc_id, d);
     }
+    // What did each BOOK'S OWN identity decision say for these handles? A mention bound to this record while its own
+    // book decided something else was bound by another book's decision (the string-wide bind, fixed 2026-09-27).
+    const handles = [...new Set(rows.map((r) => r.resolved_as))];
+    const own = handles.length ? await queryAll(`SELECT id, kind, json_extract(payload,'$.docId') doc, json_extract(payload,'$.resolvedAs') ra,
+        json_extract(payload,'$.applied_entity_id') ent FROM entity_decisions
+       WHERE target_kind = 'mention-cluster' AND status = 'applied' AND json_extract(payload,'$.resolvedAs') IN (${handles.map(() => '?').join(',')})
+       ORDER BY id`, handles) : [];
+    const ownOf = new Map(); for (const o of own) ownOf.set(`${o.doc}|${o.ra}`, { kind: o.kind, entity: o.ent, decision: o.id });
+    for (const r of rows) {
+      const d = byDoc.get(r.doc_id); const o = ownOf.get(`${r.doc_id}|${r.resolved_as}`);
+      (d.own ||= []).push({ handle: r.resolved_as, n: r.n, own_decision: o ? `${o.kind} → #${o.entity}` : 'none in this book', agrees: o ? Number(o.entity) === id : null });
+    }
     const docs = [...byDoc.values()].sort((a, b) => b.mentions - a.mentions);
-    return { id, total: docs.reduce((a, d) => a + d.mentions, 0), books: docs.length, docs };
+    const bound = (f) => docs.flatMap((d) => d.own).filter(f).reduce((a, x) => a + x.n, 0);
+    return { id, total: docs.reduce((a, d) => a + d.mentions, 0), books: docs.length,
+      own_decision_agrees: bound((x) => x.agrees === true), own_decision_differs: bound((x) => x.agrees === false), no_own_decision: bound((x) => x.agrees === null), docs };
   });
 
   // GET /server/docs-by-title?q=a|b|c — read-only: every copy of each titled work with paragraph / claim / mention

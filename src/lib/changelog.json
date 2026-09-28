@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T01:54:12.906Z",
+  "generated": "2026-09-28T01:58:24.214Z",
   "entries": [
+    {
+      "hash": "60f27e83",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Entity-mention-breakdown (where a record's mentions come from); search-target resolver (not yet wired)",
+      "scope": "research"
+    },
     {
       "hash": "9a9d79b8",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Fix plan-follower crash + size-weighted concurrency (3-5 by size)",
       "scope": null
-    },
-    {
-      "hash": "a3b546c3",
-      "date": "2026-07-18",
-      "type": "Other",
-      "description": "Plan-follower — the app now follows the history plan itself (3 processor modes)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "60f27e83",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Entity-mention-breakdown (where a record's mentions come from); search-target resolver (not yet wired)",
+        "scope": "research"
+      },
       {
         "hash": "9a9d79b8",
         "date": "2026-09-27",
@@ -7069,13 +7076,6 @@
         "date": "2026-07-18",
         "type": "Other",
         "description": "Fix plan-follower crash + size-weighted concurrency (3-5 by size)",
-        "scope": null
-      },
-      {
-        "hash": "a3b546c3",
-        "date": "2026-07-18",
-        "type": "Other",
-        "description": "Plan-follower — the app now follows the history plan itself (3 processor modes)",
         "scope": null
       }
     ]
