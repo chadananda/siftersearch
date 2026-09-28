@@ -70,8 +70,9 @@ export function startDbService() {
 
     const server = net.createServer((socket) => {
       let buf = '';
+      socket.setEncoding('utf8');   // stream decoder: a multi-byte letter split across chunks stays whole
       socket.on('data', (chunk) => {
-        buf += chunk.toString();
+        buf += chunk;
         const lines = buf.split('\n');
         buf = lines.pop();
         for (const line of lines) {

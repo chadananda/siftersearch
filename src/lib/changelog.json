@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T22:09:17.284Z",
+  "generated": "2026-09-28T22:24:23.070Z",
   "entries": [
+    {
+      "hash": "bfaa1830",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Re-ingest of an existing document threw (content TDZ); forceReindex left documents empty",
+      "scope": "ingest"
+    },
     {
       "hash": "419f6708",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Retry HTTP probes before going critical (one flaky sample must never page)",
       "scope": null
-    },
-    {
-      "hash": "9338adfb",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Failure-storm alert keys on last 3h (a fixed storm must stop alerting)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "bfaa1830",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Re-ingest of an existing document threw (content TDZ); forceReindex left documents empty",
+        "scope": "ingest"
+      },
       {
         "hash": "419f6708",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Retry HTTP probes before going critical (one flaky sample must never page)",
-        "scope": null
-      },
-      {
-        "hash": "9338adfb",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Failure-storm alert keys on last 3h (a fixed storm must stop alerting)",
         "scope": null
       }
     ]

@@ -33,6 +33,7 @@ import { processAudioJob } from '../services/audio.js';
 import { notifyJobComplete, processEmailQueue } from '../services/email.js';
 import { JOB_TYPES } from '../services/jobs.js';
 import { reportUsageToStripe } from '../lib/billing.js';
+import { readUtf8Body } from '../lib/http-body.js';
 // (backup.js no longer imported — the daily backup is cron-owned: scripts/backup-daily.mjs; see note in runPeriodicTasks)
 
 // Site registry populated at boot from sites.yaml. Used to resolve
@@ -1029,9 +1030,8 @@ function startWriteServer() {
     if (req.method !== 'POST' || req.url !== '/write') {
       res.writeHead(404); res.end(); return;
     }
-    let body = '';
-    req.on('data', c => { body += c; });
-    req.on('end', async () => {
+    // Whole-body UTF-8 decode — per-chunk `body += c` split multi-byte letters into «��» (see http-body.js).
+    readUtf8Body(req).then(async (body) => {
       try {
         const { statements, name } = JSON.parse(body);
         const db = await getDb();

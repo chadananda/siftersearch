@@ -27,8 +27,9 @@ function connect(delay = 0) {
       const queued = pendingQueue.splice(0);
       for (const { data } of queued) sock.write(data);
     });
+    sock.setEncoding('utf8');   // stream decoder: a multi-byte letter split across chunks stays whole
     sock.on('data', (chunk) => {
-      buf += chunk.toString();
+      buf += chunk;
       const lines = buf.split('\n');
       buf = lines.pop();
       for (const line of lines) {

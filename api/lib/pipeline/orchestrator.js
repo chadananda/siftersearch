@@ -47,6 +47,7 @@ function runScript(script, env) {
     // Line-buffer so a prefix never lands mid-line; flush any partial tail on close.
     const label = (stream, out) => {
       let buf = '';
+      stream.setEncoding('utf8');
       stream.on('data', (chunk) => {
         buf += chunk;
         const lines = buf.split('\n');
