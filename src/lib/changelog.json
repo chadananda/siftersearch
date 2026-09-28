@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T19:21:32.035Z",
+  "generated": "2026-09-28T19:23:33.795Z",
   "entries": [
+    {
+      "hash": "b63bfe18",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Íqán idea catalogue draft (51 ideas, 4 themes, mapped to claim groups); design: English extraction, originals via Jev + bilingual links",
+      "scope": "concepts"
+    },
     {
       "hash": "a4ba4a4a",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Hollow-done guard in daily digest (disambiguated books with zero extraction yield)",
       "scope": null
-    },
-    {
-      "hash": "5ffc0173",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "ONE done-definition for group books + version chips",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "b63bfe18",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Íqán idea catalogue draft (51 ideas, 4 themes, mapped to claim groups); design: English extraction, originals via Jev + bilingual links",
+        "scope": "concepts"
+      },
       {
         "hash": "a4ba4a4a",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Hollow-done guard in daily digest (disambiguated books with zero extraction yield)",
-        "scope": null
-      },
-      {
-        "hash": "5ffc0173",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "ONE done-definition for group books + version chips",
         "scope": null
       }
     ]
