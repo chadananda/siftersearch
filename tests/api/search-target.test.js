@@ -16,6 +16,15 @@ describe('nameOf — only a short, name-like query is a target lookup', () => {
 describe('pickTarget', () => {
   const adrianople = { id: 1, name: 'Adrianople', type: 'place', mentions: 900, names: ['Adrianople', 'Adirnih', 'Edirne'] };
   const dorn = { id: 2, name: 'Boris Dorn', type: 'person', mentions: 12, names: ['Dorn'] };
+  // MEASURED live 2026-09-27: Adrianople reached "iderne" through "Adirnih", the Edirne record through "Edirne" — one
+  // shared spelling makes them one place, not rivals that cancel each other out.
+  it('records sharing any sound-alike spelling are twins, not rivals', () => {
+    const a = { id: 1, name: 'Adrianople', type: 'place', mentions: 400, names: ['Adirnih', 'Edirne'] };
+    const e = { id: 7, name: 'Edirne', type: 'place', mentions: 300, names: ['Edirne'] };
+    const t = pickTarget('iderne', [a, e]);
+    expect(t.id).toBe(1);
+    expect(t.twinsVia).toEqual([7]);
+  });
   it('a misspelling lands on the entity the texts mention most, when clearly ahead', () => expect(pickTarget('iderne', [dorn, adrianople]).id).toBe(1));
   it('an exact spelling of any of its names wins outright', () => {
     expect(pickTarget('Dorn', [adrianople, dorn]).id).toBe(2);
