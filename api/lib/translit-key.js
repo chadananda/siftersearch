@@ -32,10 +32,13 @@ export function skeletonKeys(name) {
     .replace(/[^a-z\s-]/g, ' ').split(/[\s-]+/).filter((t) => t.length > 1 && !HON.has(t));
   const keys = new Set();
   for (const t of toks) {
-    for (const k of tokenSkeletons(t)) keys.add(k);
+    const sk = tokenSkeletons(t);
+    for (const k of sk) keys.add(k);
     // Short/title names (Báb, Alí, Vaḥíd) collapse to a <2-char skeleton and would be UNFINDABLE. Add a
     // vowel-kept fallback key ("~bab", "~ali") so they still bucket (exact short-name recall; over-gen is fine).
-    if (t.length <= 4) keys.add(`~${t}`);
+    // ALSO any longer word whose skeleton vanished: "Yaḥyá" (y counts as a vowel → "h") had NO key at all, so
+    // Mírzá Yaḥyá — 2,162 mentions — could not be looked up by his own name (measured 2026-09-28).
+    if (t.length <= 4 || !sk.size) keys.add(`~${t}`);
   }
   return keys;
 }

@@ -2774,8 +2774,33 @@ Collection: ${paragraph.collection || 'Unknown'}
   // POST /server/lookup-backfill { write=false } — index every LIVE record that has NO lookup keys (name + researched
   // aliases, the rebuild's own keys). The index was rebuilt only by the retired per-book shell flow, so records the
   // grounding pipeline minted since were unreachable by name. Idempotent: a record with any key is left alone.
+  // mode:'missing' — instead, add to EVERY live record the fallback keys the 2026-09-28 rule creates (a word > 4 letters
+  // whose skeleton vanished, e.g. "~yahya"); records indexed before the rule lack them, so their own names miss.
   fastify.post('/server/lookup-backfill', { preHandler: requireInternal }, async (request) => {
     const write = !!request.body?.write;
+    if (request.body?.mode === 'missing') {
+      const { LIVE_SQL } = await import('../lib/entity-live.js');
+      const { skeletonKeys } = await import('../lib/translit-key.js');
+      const { transaction } = await import('../lib/db.js');
+      const ents = await queryAll(`SELECT ge.id, ge.canonical_name cn, ge.entity_type et, ge.importance imp, er.aliases
+          FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name AND er.entity_type = ge.entity_type WHERE ${LIVE_SQL('ge.')}`);
+      const norm = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
+      const stmts = [], sample = [];
+      for (const e of ents) {
+        let aliases = []; try { const a = JSON.parse(e.aliases || '[]'); if (Array.isArray(a)) aliases = a.filter(Boolean).map(String); } catch { /* none */ }
+        for (const [surf, canon] of [[e.cn, 1], ...aliases.filter((a) => a !== e.cn).map((a) => [a, 0])]) {
+          for (const k of skeletonKeys(surf)) {
+            if (!k.startsWith('~') || k.length <= 5) continue;   // only the new long-word fallback keys
+            stmts.push({ sql: `INSERT INTO entity_lookup_keys (skeleton_key, entity_id, surface, surface_norm, is_canonical, entity_type, importance)
+                SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM entity_lookup_keys WHERE entity_id = ? AND skeleton_key = ?)`,
+              args: [k, e.id, surf, norm(surf), canon, e.et, e.imp ?? null, e.id, k] });
+            if (sample.length < 12) sample.push(`${e.cn} ← ${k}`);
+          }
+        }
+      }
+      if (write) for (let i = 0; i < stmts.length; i += 500) await transaction(stmts.slice(i, i + 500));
+      return { write, mode: 'missing', records: ents.length, candidateKeys: stmts.length, sample };
+    }
     const { LIVE_SQL } = await import('../lib/entity-live.js');
     const { lookupKeyRows } = await import('../lib/rag-adapter/store.js');
     const { transaction } = await import('../lib/db.js');

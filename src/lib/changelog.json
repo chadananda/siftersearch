@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T13:30:29.355Z",
+  "generated": "2026-09-28T13:35:37.393Z",
   "entries": [
+    {
+      "hash": "5b71c9ae",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "A created or renamed record is indexed for lookup at once; backfill for records the pipeline minted unreachable",
+      "scope": "entities"
+    },
     {
       "hash": "b2bcf73d",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Fix BACKUP_DIR misdirection + vault second-drive copy + unkillable-silence breadcrumbs",
       "scope": null
-    },
-    {
-      "hash": "39c82fd1",
-      "date": "2026-08-07",
-      "type": "Other",
-      "description": "Cron-owned daily backup with verification + alerting — never block the writer again; hype: version-aware upgrade resume",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "5b71c9ae",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "A created or renamed record is indexed for lookup at once; backfill for records the pipeline minted unreachable",
+        "scope": "entities"
+      },
       {
         "hash": "b2bcf73d",
         "date": "2026-09-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-08-07",
         "type": "Other",
         "description": "Fix BACKUP_DIR misdirection + vault second-drive copy + unkillable-silence breadcrumbs",
-        "scope": null
-      },
-      {
-        "hash": "39c82fd1",
-        "date": "2026-08-07",
-        "type": "Other",
-        "description": "Cron-owned daily backup with verification + alerting — never block the writer again; hype: version-aware upgrade resume",
         "scope": null
       }
     ]
