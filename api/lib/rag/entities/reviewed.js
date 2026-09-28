@@ -6,7 +6,7 @@ export const METHOD = 'merge-review-v1';
 
 const tierOf = (reviewer) => (/^human:/.test(reviewer) ? 3 : 2);
 
-/** items: [{ verdict: 'same'|'different'|'rename'|'retire', a, b?, into?, name?, reason, reviewer, source? }] → decisions. Pure. */
+/** items: [{ verdict: 'same'|'different'|'rename'|'retire'|'repoint', a, b?, into?, name?, reason, reviewer, source? }] → decisions. Pure. */
 export function decisionsFor(items) {
   return items.map((it) => {
     const actor = it.reviewer || 'model:reader', actorTier = tierOf(actor);
@@ -24,6 +24,12 @@ export function decisionsFor(items) {
       if (!String(it.name || '').trim()) throw new Error(`reviewed ${it.a}: rename needs a name`);
       return { kind: 'rename', targetKind: 'entity', targetIds: [Number(it.a)], payload: { name: String(it.name).trim() }, evidence,
         rationale: `renamed: ${it.reason}`.slice(0, 300), actor, actorTier, confidence: null, status: 'applied', methodVersion: METHOD };
+    }
+    if (it.verdict === 'repoint') {
+      if (!it.docId || !it.handle || !(it.to || String(it.toName || '').trim())) throw new Error(`reviewed ${it.from}: repoint needs docId, handle and to (or toName)`);
+      return { kind: 'repoint', targetKind: 'mention-cluster', targetIds: [Number(it.from), ...(it.to ? [Number(it.to)] : [])],
+        payload: { docId: Number(it.docId), resolvedAs: it.handle, from: Number(it.from), to: it.to ? Number(it.to) : null, toName: it.toName ?? null, toType: it.toType ?? 'person' },
+        evidence, rationale: `split: ${it.reason}`.slice(0, 300), actor, actorTier, confidence: null, status: 'applied', methodVersion: METHOD };
     }
     if (it.verdict === 'retire') return { kind: 'retire', targetKind: 'entity', targetIds: [Number(it.a)], payload: { reason: 'no-passage' }, evidence,
       rationale: `retired: ${it.reason}`.slice(0, 300), actor, actorTier, confidence: null, status: 'applied', methodVersion: METHOD };
@@ -55,7 +61,7 @@ export function planMerges(decisions, dossiers) {
 /** Apply reviewed verdicts. DRY unless write. Every record named must be live (a tombstone is never merged or renamed). */
 export async function run(ctx, { items, write = false } = {}) {
   const decisions = decisionsFor(items);
-  const ids = [...new Set(decisions.flatMap((d) => d.targetIds))];
+  const ids = [...new Set(decisions.flatMap((d) => d.targetIds))];   // a repoint's `from` and existing `to`
   const { dossiers } = await ctx.store.getIdentityDossiers(ids);
   const dead = (d) => d.targetIds.filter((id) => !dossiers.get(id)?.live);
   const { plans, survivor } = planMerges(decisions.filter((d) => d.kind !== 'merge' || !dead(d).length), dossiers);
@@ -81,6 +87,11 @@ export async function run(ctx, { items, write = false } = {}) {
       try {   // a store refusal (e.g. a record still anchored by a passage) is that item's outcome, not the batch's end
         if (d.kind === 'rename') await ctx.store.renameEntity(targetIds[0], d.payload.name, r);
         else if (d.kind === 'retire') await ctx.store.retireEntity(targetIds[0], d.payload.reason, r);
+        else if (d.kind === 'repoint') {
+          const to = d.payload.to ?? await ctx.store.createEntity(d.payload.toName, d.payload.toType);
+          res.split = await ctx.store.repointCluster(d.payload.from, to, d.payload.docId, d.payload.resolvedAs, { ...r, payload: { ...d.payload, to } });
+          res.to = to;
+        }
         else await ctx.store.saveDecisions([r]);
       } catch (e) { res.skipped = `refused: ${e.message}`; }
     }

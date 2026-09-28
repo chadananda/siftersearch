@@ -875,6 +875,32 @@ export function makeStore() {
       return 1;
     },
 
+    // Move ONE book's cluster (its label for a person) from a record that holds two people to the right one — the split.
+    // Claims have no mention anchor yet (plan step 3), so a claim follows only from paragraphs where the record keeps no
+    // other mention; a paragraph naming both is left and counted, never guessed. The decision is a cluster LINK, so the
+    // identity replay reproduces the split and a later decision can undo it.
+    async repointCluster(from, to, docId, resolvedAs, d) {
+      const ms = await db.queryAll(`SELECT id, para_id FROM entity_mentions_v2 WHERE entity_id = ? AND doc_id = ? AND resolved_as = ?`, [from, docId, resolvedAs]);
+      if (!ms.length) return { moved: 0, claims: 0, held: 0 };
+      const paras = [...new Set(ms.map((m) => m.para_id))];
+      const ph = (a) => a.map(() => '?').join(',');
+      const stay = new Set((await db.queryAll(`SELECT DISTINCT para_id FROM entity_mentions_v2 WHERE entity_id = ? AND doc_id = ? AND resolved_as <> ? AND para_id IN (${ph(paras)})`,
+        [from, docId, resolvedAs, ...paras])).map((r) => r.para_id));
+      const movable = paras.filter((p) => !stay.has(p));
+      const held = stay.size ? (await db.queryOne(`SELECT COUNT(*) n FROM entity_claims WHERE (entity_id = ? OR target_entity_id = ?) AND doc_id = ? AND para_id IN (${ph([...stay])})`, [from, from, docId, ...stay]))?.n ?? 0 : 0;
+      const claims = movable.length ? (await db.queryOne(`SELECT COUNT(*) n FROM entity_claims WHERE (entity_id = ? OR target_entity_id = ?) AND doc_id = ? AND para_id IN (${ph(movable)})`, [from, from, docId, ...movable]))?.n ?? 0 : 0;
+      await db.transaction([
+        { sql: `UPDATE entity_mentions_v2 SET entity_id = ?, resolution_basis = 'review' WHERE id IN (${ph(ms)})`, args: [to, ...ms.map((m) => m.id)] },
+        ...(movable.length ? [
+          { sql: `UPDATE entity_claims SET entity_id = ? WHERE entity_id = ? AND doc_id = ? AND para_id IN (${ph(movable)})`, args: [to, from, docId, ...movable] },
+          { sql: `UPDATE entity_claims SET target_entity_id = ? WHERE target_entity_id = ? AND doc_id = ? AND para_id IN (${ph(movable)})`, args: [to, from, docId, ...movable] },
+        ] : []),
+        { sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, confidence, status, method_version) VALUES ('link','mention-cluster',?,?,?,?,?,?,NULL,'applied',?)`,
+          args: [JSON.stringify([to]), JSON.stringify({ docId, resolvedAs, applied_entity_id: to, from }), JSON.stringify(d?.evidence ?? null), d?.rationale ?? null, d?.actor ?? 'model', d?.actorTier ?? 2, d?.methodVersion ?? null] },
+      ]);
+      return { moved: ms.length, claims, held };
+    },
+
     // Retire a record no text supports. REFUSES a record anything still anchors — a mention, a claim on either side,
     // a scene participant: those came from a passage, so the record is evidence, not a husk.
     async retireEntity(id, reason, d) {

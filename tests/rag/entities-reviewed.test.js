@@ -4,12 +4,14 @@ import { decisionsFor, planMerges, run } from '../../api/lib/rag/entities/review
 import { LIVE_SQL, isLiveRow, isMergedRow, retiredStamp } from '../../api/lib/entity-live.js';
 
 const store = (live = {}, imp = {}, men = {}, anchored = []) => {
-  const log = { merges: [], saved: [], renames: [], retired: [] };
+  const log = { merges: [], saved: [], renames: [], retired: [], created: [], repoints: [] };
   return { log, s: {
     getIdentityDossiers: async (ids) => ({ dossiers: new Map(ids.map((id) => [id, { id, name: `#${id}`, live: live[id] ?? true, importance: imp[id] ?? null, mentions: men[id] ?? 1 }])) }),
     applyMerge: async (canonical, merged, reason, meta) => log.merges.push({ canonical, merged, meta }),
     saveDecisions: async (rows) => log.saved.push(...rows),
     renameEntity: async (id, name) => log.renames.push({ id, name }),
+    createEntity: async (name) => { log.created.push(name); return 900; },
+    repointCluster: async (from, to, docId, handle) => { log.repoints.push({ from, to, docId, handle }); return { moved: 3, claims: 2, held: 1 }; },
     retireEntity: async (id) => { if (anchored.includes(id)) throw new Error(`entity ${id} is anchored`); log.retired.push(id); },
   } };
 };
@@ -37,7 +39,7 @@ describe('reviewed decisions', () => {
       { verdict: 'rename', a: 9, name: 'the Bábí of Nayríz who fled to Ṭihrán', reason: 'its passages never name Yaḥyá' },
     ];
     const dry = store(); await run(ctx(dry.s), { items });
-    expect(dry.log).toEqual({ merges: [], saved: [], renames: [], retired: [] });
+    expect(dry.log).toEqual({ merges: [], saved: [], renames: [], retired: [], created: [], repoints: [] });
     const w = store(); const r = await run(ctx(w.s), { items, write: true });
     expect(r.counts).toEqual({ merge: 1, distinct: 1, rename: 1 });
     expect(w.log.merges[0]).toMatchObject({ canonical: 6, merged: [5], meta: { actorTier: 3 } });
@@ -87,6 +89,26 @@ describe('reviewed decisions', () => {
 });
 
 // entity-live — ONE definition of live: a retired record is not served, and it is not a merge.
+describe('split: repoint one book’s cluster', () => {
+  // 2026-09-28: 1249888 (the physician-martyr of Zanján) held ~70 mentions each book labelled "Ḥujjat".
+  it('moves a cluster to the record the passages name, or to a new record named as the text names them', async () => {
+    const w = store();
+    const r = await run(ctx(w.s), { write: true, items: [
+      { verdict: 'repoint', from: 1249888, to: 1247580, docId: 13433, handle: 'Ḥujjat (Mullá Muḥammad-‘Alíy-i-Zanjání)', reason: 'the passages are Ḥujjat of Zanján' },
+      { verdict: 'repoint', from: 1269643, toName: '‘Alí Nakhjavání', docId: 11169, handle: "'Alí Nakhjavani", reason: 'Hand of the Cause, Accra 1970' },
+    ] });
+    expect(w.log.repoints).toEqual([
+      { from: 1249888, to: 1247580, docId: 13433, handle: 'Ḥujjat (Mullá Muḥammad-‘Alíy-i-Zanjání)' },
+      { from: 1269643, to: 900, docId: 11169, handle: "'Alí Nakhjavani" },
+    ]);
+    expect(w.log.created).toEqual(['‘Alí Nakhjavání']);
+    expect(r.results[0].split).toEqual({ moved: 3, claims: 2, held: 1 });
+  });
+  it('a repoint without its book and label is refused', () => {
+    expect(() => decisionsFor([{ verdict: 'repoint', from: 1, to: 2, reason: 'x' }])).toThrow(/docId, handle/);
+  });
+});
+
 describe('retired records', () => {
   it('are not live, and not merged', () => {
     const row = { canonical_name: 'the Proclaimer', last_assessed_version: retiredStamp('no-passage') };
