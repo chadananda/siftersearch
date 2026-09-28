@@ -2862,6 +2862,25 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { ...row, facts: JSON.parse(row.facts || '{}') };
   });
 
+  // POST /server/identity-shadow-link { docId, paras? } — Jev links every name occurrence in a book beside the pipeline's
+  // binding (api/lib/identity-audit.js). READ-ONLY. Background task; GET …/report?doc= → latest for that book.
+  fastify.post('/server/identity-shadow-link', { preHandler: requireInternal }, async (request) => {
+    const docId = Number(request.body?.docId);
+    if (!docId) throw ApiError.badRequest('docId required');
+    const key = `identity-shadow-link-${docId}`;
+    const existing = backgroundTasks.get(key);
+    if (existing && existing.status === 'running') throw ApiError.conflict('already running for this doc');
+    const paras = Number(request.body?.paras) || null;
+    const task = runBackgroundTask(key, 'scripts/identity-shadow-link.mjs', [`--doc=${docId}`, ...(paras ? [`--paras=${paras}`] : [])]);
+    return { success: true, taskId: key, status: task.status };
+  });
+  fastify.get('/server/identity-shadow-link/report', { preHandler: requireInternal }, async (request) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const files = readdirSync('logs').filter((f) => f.startsWith(`identity-shadow-link-${Number(request.query.doc)}-`)).sort();
+    if (!files.length) throw ApiError.notFound('no report for this doc');
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   // GET /server/entity-mention-breakdown?id= — read-only: where an entity's mentions come from — per book, how the book
   // named it (resolved handles), and the place/era of those passages (from the disambiguation note). Shows a famous
   // record that absorbed other people's mentions ("Mullá Ḥusayn" in a Nayríz history bound to Bushrú'í).

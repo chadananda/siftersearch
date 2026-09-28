@@ -43,3 +43,17 @@ describe('identity-audit', () => {
     expect(out.at(-1)).toMatchObject({ verdict: 'error', flagged: true });
   });
 });
+
+describe('shadow linking', () => {
+  it('asks one choice per occurrence among its cards, plus "not listed" and "not a person"', async () => {
+    const { linkRequest, readLink } = await import('../../api/lib/identity-audit.js');
+    const r = linkRequest('P', [{ surface: 'Mullá Ḥusayn', cands: [{ id: 5, card: 'Mullá Ḥusayn | Bushrú’í' }, { id: 9, card: 'Mullá Ḥusayn of Nayríz' }] }]);
+    expect(Object.keys(r.questions.o1.criteria)).toEqual(['c5', 'c9', 'new', 'none']);
+    expect(readLink({ choice: 'c9', confidence: 0.9 })).toEqual({ pick: 9, confidence: 0.9 });
+    expect(readLink({ choice: 'none', probabilities: { none: 0.7 } })).toEqual({ pick: 'none', confidence: 0.7 });
+  });
+  it('a credits outage is thrown, never read as "no opinion"', async () => {
+    const { linkParagraph } = await import('../../api/lib/identity-audit.js');
+    await expect(linkParagraph('P', [{ surface: 's', cands: [] }], { apiKey: 'k', fetchImpl: async () => ({ ok: false, status: 402 }) })).rejects.toThrow(/402/);
+  });
+});

@@ -84,3 +84,39 @@ export async function auditClusters(profile, clusters, { apiKey = process.env.TY
   }
   return out;
 }
+
+// ── SHADOW LINKING (planning/jev-system1.md, extraction §2) ─────────────────────────────────────────────────────────
+// Jev links every name OCCURRENCE in a paragraph — one question per occurrence, choosing among its candidates' profile
+// cards, "a person not listed", or "not a person" — beside the pipeline's own binding. Agreement is trust; a confident
+// disagreement is a review item. Read-only. Measured on 77 hand-judged occurrences: 97% right when confident (≥0.75).
+
+/** One Jev request for one paragraph's occurrences. Pure. occ: [{ key, surface, cands:[{id, card}] }] */
+export function linkRequest(passage, occ) {
+  const questions = Object.fromEntries(occ.map((o, i) => [`o${i + 1}`, {
+    type: 'choice',
+    instructions: `Occurrence ${i + 1} — who is "${o.surface}" in this passage? Judge from what the passage says: place, time, role, family, who else is present. Many people share a name; never pick the most famous one by default.`,
+    criteria: { ...Object.fromEntries(o.cands.map((c) => [`c${c.id}`, c.card])), new: 'a person NOT listed here', none: 'not a person here (a common word, a generic title, a place or a thing)' },
+  }]));
+  return { model: 'jev-latest', state: `PASSAGE:\n${passage}`, questions };
+}
+
+/** Answer → { pick: id | 'new' | 'none', confidence }. */
+export function readLink(a) {
+  const ch = a?.choice ?? a?.value ?? null;
+  const confidence = a?.confidence ?? a?.probabilities?.[ch] ?? 0;
+  return { pick: ch && ch.startsWith('c') ? Number(ch.slice(1)) : (ch || 'unclear'), confidence };
+}
+
+export async function linkParagraph(passage, occ, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = fetch, timeoutMs = 20000 } = {}) {
+  if (!apiKey) throw new Error('no TYPESAFE_API_KEY');
+  let answers = null;
+  for (let attempt = 0; attempt < 2 && !answers; attempt++) {
+    try {
+      const res = await fetchImpl(JEV_ENDPOINT, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(linkRequest(passage, occ)), signal: AbortSignal.timeout(timeoutMs) });
+      if (res.ok) answers = (await res.json()).answers || {};
+      else if (res.status === 402) throw new Error('jev: no credits (402)');   // not transient — surface it
+    } catch (e) { if (/402/.test(e.message)) throw e; }
+  }
+  return occ.map((o, i) => (answers ? { ...o, ...readLink(answers[`o${i + 1}`]) } : { ...o, pick: 'error', confidence: 0 }));
+}
