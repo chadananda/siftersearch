@@ -44,3 +44,45 @@ the mention (a fixed cut-off hid the name from Jev and readers alike); a failed 
 
 Already live: search scope and plan, source resolution, Anís triage and persona check, entity cluster audit
 (`POST /api/admin/server/identity-cluster-audit`, read-only).
+
+## Extraction itself — Jev where the decision is a CHOICE (2026-09-28)
+
+**Diagnosis.** Identity is decided twice, both times as free text: disambiguation writes a label per name
+("Mullá Ḥusayn (the Bábu'l-Báb)"), reconcile maps the label to a record. Every error class cleaned up today comes from
+that: prominence defaults (every Fáṭimih → Ṭáhirih), one label covering several people (three in one 1926 cluster),
+common words taken for names ("ولي" = "but"), addressees confused ("سيدنا" = Siyyid Káẓim), index lines as prose. The
+real decision is always a choice among a few people — Jev's shape. The LLM keeps what only it can do: find the names,
+write the note.
+
+**Measured — Jev as an occurrence LINKER** (77 hand-judged occurrences, mostly where the pipeline was wrong; candidates =
+the name's lookup hits + the bound record + the truth; 7 s total):
+
+| subset | Jev picks the right person | Jev confident (≥0.75) |
+|---|---|---|
+| pipeline WRONG (61) | 34 (56%) — and repeats the wrong binding only **4 of 61** | 14/16 |
+| pipeline right (16) | 12 (75%) | 8/8 |
+| named surfaces (65) | 45 (69%) | — |
+| honorific / pronoun surfaces (12: "آنجناب", "جناب باب", "the leader") | 3 (25%) | — |
+
+Reading: Jev **disagrees with 93% of wrong bindings** and is right 92% of the time when confident. Weak where the
+passage does not name the person (honorifics, pronouns) — the referent is in earlier paragraphs.
+
+**Design (in build order, each measured before the next):**
+1. **Profile cards** for every person: name, titles and original-script forms, era, place, role, key relations — what
+   Jev chooses between. Many candidates today have no summary; the audit showed names in the profile cut false flags by
+   half. One-time cost, reused by linking, audit and pair judge.
+2. **Occurrence linking beside the LLM label** (shadow mode first): per name occurrence, Jev chooses among lookup hits +
+   people active in the book + "a person not listed" + "not a person". Agreement → accept. Jev confident and
+   different → review queue (this session). Measure the agreement rate and the review volume per book before letting
+   Jev decide anything alone.
+3. **Local coreference** for honorifics and pronouns: candidates = the people named in the previous 3 paragraphs (a
+   tiny set). Re-measure the 12 deictic cases.
+4. **Paragraph router** before any LLM call: names people? index / table / bibliography? doctrinal? language? → skip
+   entity extraction on index lines (a source of false people), send doctrine to the concept track.
+5. **Scene continuity** per adjacent pair ("same time and place as the previous paragraph?") → dates inherited only
+   within a scene (plan step 7, the Karbilá failure).
+6. **Typed mention features** (gender, role class, era bucket, named relative) → deterministic namesake separation and
+   pair-judge evidence. Gender alone catches the man at Cornell filed under May Maxwell.
+
+Benchmark script: planning/merge-review/jev_link_bench.py (gitignored with its gold data; the gold set grows with every
+reviewed decision — each review is a test case).

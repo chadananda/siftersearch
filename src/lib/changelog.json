@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T16:44:36.068Z",
+  "generated": "2026-09-28T17:21:53.408Z",
   "entries": [
+    {
+      "hash": "c6182e27",
+      "date": "2026-09-28",
+      "type": "Chore",
+      "description": "Read a book's grounding log over the internal API (failures were diagnosable only over SSH)",
+      "scope": "grounding"
+    },
     {
       "hash": "0eb4054a",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "\"The Illuminated Ocean\" — flagship redesign of SifterChat",
       "scope": null
-    },
-    {
-      "hash": "45c95f61",
-      "date": "2026-08-08",
-      "type": "Fixed",
-      "description": "Add missing /apple-touch-icon.png (was the one broken link site-wide)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "c6182e27",
+        "date": "2026-09-28",
+        "type": "Chore",
+        "description": "Read a book's grounding log over the internal API (failures were diagnosable only over SSH)",
+        "scope": "grounding"
+      },
       {
         "hash": "0eb4054a",
         "date": "2026-09-28",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-08",
         "type": "Other",
         "description": "\"The Illuminated Ocean\" — flagship redesign of SifterChat",
-        "scope": null
-      },
-      {
-        "hash": "45c95f61",
-        "date": "2026-08-08",
-        "type": "Fixed",
-        "description": "Add missing /apple-touch-icon.png (was the one broken link site-wide)",
         "scope": null
       }
     ]
