@@ -104,6 +104,12 @@ describe('split: repoint one book’s cluster', () => {
     expect(w.log.created).toEqual(['‘Alí Nakhjavání']);
     expect(r.results[0].split).toEqual({ moved: 3, claims: 2, held: 1 });
   });
+  it('several clusters moving to one NEW person create that record once', async () => {
+    const w = store();
+    await run(ctx(w.s), { write: true, items: [11169, 7132, 2609].map((docId) => ({ verdict: 'repoint', from: 1269643, toName: '‘Alí Nakhjavání', docId, handle: 'h', reason: 'x' })) });
+    expect(w.log.created).toEqual(['‘Alí Nakhjavání']);
+    expect(w.log.repoints.map((r) => r.to)).toEqual([900, 900, 900]);
+  });
   it('a repoint without its book and label is refused', () => {
     expect(() => decisionsFor([{ verdict: 'repoint', from: 1, to: 2, reason: 'x' }])).toThrow(/docId, handle/);
   });

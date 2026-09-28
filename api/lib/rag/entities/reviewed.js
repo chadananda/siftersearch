@@ -66,6 +66,7 @@ export async function run(ctx, { items, write = false } = {}) {
   const dead = (d) => d.targetIds.filter((id) => !dossiers.get(id)?.live);
   const { plans, survivor } = planMerges(decisions.filter((d) => d.kind !== 'merge' || !dead(d).length), dossiers);
   const results = [];
+  const minted = new Map();   // toName → id: several clusters moving to one NEW person create it once, not once each
   for (const p of plans) {
     const names = [p.keep, ...p.fold].map((id) => dossiers.get(id)?.name ?? null);
     results.push({ kind: 'merge', ids: [p.keep, ...p.fold], names, ...(p.conflict ? { skipped: `contradiction: ${p.conflict}` } : {}), decision: p.decisions[0], rationale: p.decisions.map((d) => d.rationale) });
@@ -88,7 +89,8 @@ export async function run(ctx, { items, write = false } = {}) {
         if (d.kind === 'rename') await ctx.store.renameEntity(targetIds[0], d.payload.name, r);
         else if (d.kind === 'retire') await ctx.store.retireEntity(targetIds[0], d.payload.reason, r);
         else if (d.kind === 'repoint') {
-          const to = d.payload.to ?? await ctx.store.createEntity(d.payload.toName, d.payload.toType);
+          const mint = async (name) => { if (!minted.has(name)) minted.set(name, await ctx.store.createEntity(name, d.payload.toType)); return minted.get(name); };
+          const to = d.payload.to ?? await mint(d.payload.toName);
           res.split = await ctx.store.repointCluster(d.payload.from, to, d.payload.docId, d.payload.resolvedAs, { ...r, payload: { ...d.payload, to } });
           res.to = to;
         }

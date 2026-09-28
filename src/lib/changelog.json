@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T13:16:49.086Z",
+  "generated": "2026-09-28T13:22:59.168Z",
   "entries": [
+    {
+      "hash": "bc4a19ed",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Split a mixed record by cluster — repoint verdict (claims follow only from paragraphs the record no longer holds) + read-only cluster-passages",
+      "scope": "entities"
+    },
     {
       "hash": "f1274d4b",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Fix --multi endpoint path (/api/search/multi — routes/search.js mounts at /api/search, not /api/v1)",
       "scope": null
-    },
-    {
-      "hash": "72b0a065",
-      "date": "2026-08-07",
-      "type": "Other",
-      "description": "HyPE measurement loop — win-share telemetry + multi-index eval endpoint + lay-paraphrase fixtures",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "bc4a19ed",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Split a mixed record by cluster — repoint verdict (claims follow only from paragraphs the record no longer holds) + read-only cluster-passages",
+        "scope": "entities"
+      },
       {
         "hash": "f1274d4b",
         "date": "2026-09-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-08-07",
         "type": "Other",
         "description": "Fix --multi endpoint path (/api/search/multi — routes/search.js mounts at /api/search, not /api/v1)",
-        "scope": null
-      },
-      {
-        "hash": "72b0a065",
-        "date": "2026-08-07",
-        "type": "Other",
-        "description": "HyPE measurement loop — win-share telemetry + multi-index eval endpoint + lay-paraphrase fixtures",
         "scope": null
       }
     ]
