@@ -9,6 +9,7 @@ import { skeletonKeys } from './translit-key.js';
 
 const TTL = 60 * 60 * 1000;
 const namesCache = new Map();
+export const clearTargetCache = () => namesCache.clear();
 const QWORDS = new Set(['who', 'what', 'where', 'when', 'was', 'is', 'the', 'about', 'tell', 'me', 'in', 'at', 'of', 'history', 'city', 'place', 'person']);
 export const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[ʼʻ'‘’`´]/g, '').toLowerCase().trim();
 
@@ -33,14 +34,18 @@ export function pickTarget(name, cands) {
   // (alias "governor of Adrianople") when it was live-tested on 2026-09-27.
   const scored = cands.map((c) => {
     const names = [c.name, ...(c.names || [])];
-    return { ...c, exact: names.some((n) => fold(n) === q), sound: qk && names.some((n) => [...skeletonKeys(n)].sort().join('|') === qk) };
+    const via = names.find((n) => [...skeletonKeys(n)].sort().join('|') === qk);
+    return { ...c, exact: names.some((n) => fold(n) === q), sound: !!(qk && via), via: via ? fold(via) : null };
   }).filter((c) => c.exact || (c.sound && (c.mentions || 0) > 0));
   if (!scored.length) return null;
   const canon = (c) => fold(c.name.replace(/\s*\([^)]*\)/g, '')) === q;
   scored.sort((a, b) => Number(b.exact) - Number(a.exact) || (b.mentions || 0) - (a.mentions || 0) || Number(canon(b)) - Number(canon(a)));
-  const [top, next] = scored;
+  const [top] = scored;
   if (top.exact) return top;
-  if (!next || (top.mentions || 0) >= 3 * (next.mentions || 0)) return top;
+  // Rivals are candidates reached through a DIFFERENT name; records reached through the same name ("Edirne" as a
+  // place record and as Adrianople's alias) are one thing recorded twice, not an ambiguity.
+  const rival = scored.find((c) => c.via !== top.via);
+  if (!rival || (top.mentions || 0) >= 3 * (rival.mentions || 0)) return { ...top, twinsVia: scored.filter((c) => c !== top && c.via === top.via).map((c) => c.id) };
   return null;
 }
 
@@ -91,7 +96,8 @@ export async function resolveTarget(query, { lookup, db, countText } = {}) {
   // Several records carrying the same exact name are one thing under one spelling (duplicate place records): search and
   // highlight all their names together.
   const q = fold(name);
-  const twins = t.exact ? enriched.filter((c) => c.id !== t.id && [c.name, ...c.names].some((n) => fold(n) === q)) : [];
+  const twins = t.exact ? enriched.filter((c) => c.id !== t.id && [c.name, ...c.names].some((n) => fold(n) === q))
+    : enriched.filter((c) => (t.twinsVia || []).includes(c.id));
   const all = [t, ...twins].flatMap((c) => [c.name.replace(/\s*\([^)]*\)/g, '').trim(), ...c.names]);
   return { id: t.id, name: t.name, type: t.type, names: [...new Set(all)], matched: name, ...(twins.length ? { twins: twins.map((c) => c.id) } : {}) };
 }

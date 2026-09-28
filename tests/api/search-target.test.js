@@ -1,7 +1,9 @@
 // Search TARGET (Chad 2026-09-27): "iderne" must find Adrianople and highlight Adrianople — the entity searched for,
 // under whatever name each passage uses — never a string match of the typed query.
-import { describe, it, expect } from 'vitest';
-import { nameOf, pickTarget, resolveTarget, markTarget } from '../../api/lib/search-target.js';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { nameOf, pickTarget, resolveTarget, markTarget, clearTargetCache } from '../../api/lib/search-target.js';
+
+beforeEach(() => clearTargetCache());
 
 describe('nameOf — only a short, name-like query is a target lookup', () => {
   it('keeps the name, drops question words', () => {
@@ -56,6 +58,12 @@ describe('resolveTarget — places weighed by the text, twins unioned', () => {
     const lookup = async () => [{ id: 9, name: 'Ṭáhirih', type: 'person' }, { id: 1, name: 'Adrianople', type: 'place' }];
     const t = await resolveTarget('iderne', { lookup, db, countText: async (n) => (n === 'Adrianople' ? 900 : 0) });
     expect(t?.name).toBe('Adrianople');
+  });
+  it('"iderne": two records reached through the SAME name are one place, not a rivalry', async () => {
+    const lookup = async () => [{ id: 7, name: 'Edirne', type: 'place' }, { id: 1, name: 'Adrianople', type: 'place' }];
+    const t = await resolveTarget('iderne', { lookup, db, countText: async (n) => (n === 'Adrianople' ? 900 : 600) });
+    expect(t?.name).toBe('Adrianople');
+    expect(t.names).toEqual(expect.arrayContaining(['Edirne', 'Adrianople']));
   });
   it('"edirne": a duplicate record with the same exact name is searched together with Adrianople', async () => {
     const lookup = async () => [{ id: 7, name: 'Edirne', type: 'place' }, { id: 1, name: 'Adrianople', type: 'place' }];
