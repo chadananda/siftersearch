@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T12:17:12.924Z",
+  "generated": "2026-09-28T12:24:57.650Z",
   "entries": [
+    {
+      "hash": "53073c07",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Disambiguation stamp v2 for the every-named-person prompt (notes of v1 and v2 both read); 'retired' state for records no text supports",
+      "scope": "entities"
+    },
     {
       "hash": "35037f95",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Fix API event-loop hang (migration 97 completion-check indexes) + pin GROUNDING_MODE=override",
       "scope": null
-    },
-    {
-      "hash": "aa545835",
-      "date": "2026-07-28",
-      "type": "Other",
-      "description": "Timeout-guard periodic maintenance tasks — a single hung async task can no longer wedge the single-writer",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "53073c07",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Disambiguation stamp v2 for the every-named-person prompt (notes of v1 and v2 both read); 'retired' state for records no text supports",
+        "scope": "entities"
+      },
       {
         "hash": "35037f95",
         "date": "2026-09-28",
@@ -7061,15 +7068,6 @@
         "date": "2026-08-06",
         "type": "Other",
         "description": "Fix API event-loop hang (migration 97 completion-check indexes) + pin GROUNDING_MODE=override",
-        "scope": null
-      }
-    ],
-    "2026-07-28": [
-      {
-        "hash": "aa545835",
-        "date": "2026-07-28",
-        "type": "Other",
-        "description": "Timeout-guard periodic maintenance tasks — a single hung async task can no longer wedge the single-writer",
         "scope": null
       }
     ]

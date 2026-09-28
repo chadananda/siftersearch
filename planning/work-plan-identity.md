@@ -135,3 +135,22 @@ disambiguate (frame-aware: frame stack, resolves EVERY person named, reason per 
   (frame-aware dates: scenes + claims carry the innermost frame's stated date) + original-script place names.
 - NEXT: Chad reviews held pairs on the page → apply his decisions; materialize with include for pairs judged distinct;
   then increment 3 (claims bind to mention anchors), 6 (mention recall — disambiguate fix is live for new runs), 7.
+
+### 2026-09-28 — merge review settled, passage-less records explained
+
+- **Chad's calls recorded (human tier 3):** Bábu'l-Báb→Mullá Ḥusayn, Dhikru'lláh→the Báb, Ghuṣn-i-A'ẓam→'Abdu'l-Bahá
+  (merged); the two Sám Khán records distinct. "Mírzá Yaḥyá Núrí" 1288528 was a guessed label: all 4 mentions are the
+  unnamed Nayríz Bábí who fled to Ṭihrán → renamed + distinct from Azal (model tier).
+- **Reader batch (model tier 2):** 84 same / 158 different → 59 merges (chains grouped: one survivor per person, e.g.
+  six Yaḥyá/Azal records → 1301670, 2,162 mentions) + 155 distinct. Stage: `rag/entities/reviewed.js`,
+  `POST /server/identity-reviewed` (dry by default), items in planning/merge-review/*.json.
+- **No-basis explained** (`GET /server/entity-provenance`): the retired graph-pipeline dropped unmatched mentions and
+  the promoter minted records from strings. 356 with no passage anywhere → **retired** (`retired:no-passage`, new
+  non-live state in entity-live.js; refused if anything anchors the record). 182 have passages (162 in graph.db,
+  20 via scenes) → rescue.
+- **Disambiguation stamp → v2** (processed.js DISAMBIG_WRITE; v1+v2 both accepted as notes). The 09-27 prompt change
+  had no bump, so old and new notes were indistinguishable.
+- **Rescue in progress:** 999 unread paragraphs in 46 books (`GET /server/record-passages`). Pilot 13437 (Cyprus
+  Exiles, 92 paras) queued `to:'link'`, held for off-peak. NEXT: read pilot spend → estimate the 46 → queue →
+  then each rescued record: all its passages bound to one entity ⇒ merge into it; mixed ⇒ retire (the passages
+  are already held by the right people).
