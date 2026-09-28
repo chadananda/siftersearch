@@ -1035,6 +1035,27 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * GET /integrity/replacement-chars?fromId=&toId= — paragraphs whose text or original holds U+FFFD, by
+   * primary-key RANGE (a whole-table text scan would stall the API). The single writer decoded request bodies
+   * chunk by chunk until 2026-09-28, splitting multi-byte letters into «��»; this measures what it damaged.
+   * A U+FFFD can also come from a bad source file — `pairs` (two in a row) is the writer's signature.
+   */
+  fastify.get('/integrity/replacement-chars', admin, async (req) => {
+    const fromId = Number(req.query?.fromId) || 0;
+    const toId = Number(req.query?.toId) || fromId + 200000;
+    const rows = await queryAll(
+      `SELECT doc_id,
+              SUM(instr(text, char(65533)) > 0) AS text_hits,
+              SUM(instr(text, char(65533) || char(65533)) > 0) AS text_pairs,
+              SUM(instr(COALESCE(original_text, ''), char(65533)) > 0) AS original_hits
+         FROM content WHERE id BETWEEN ? AND ? AND deleted_at IS NULL
+        GROUP BY doc_id
+       HAVING text_hits > 0 OR original_hits > 0`, [fromId, toId], 'integrity:fffd');
+    const [{ maxId }] = await queryAll('SELECT MAX(id) AS maxId FROM content', [], 'integrity:maxid');
+    return { fromId, toId, maxId, docs: rows };
+  });
+
+  /**
    * GET /concepts/originals-gap — for EVERY canonical translation: has it got its original, and if not, is
    * one reachable? Chad, 2026-08-26: "I want to be sure we have found the original for all the documents
    * that are translations (and where original exists)." This counts it rather than asserting it.

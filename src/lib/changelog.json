@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T22:24:23.070Z",
+  "generated": "2026-09-28T22:25:09.495Z",
   "entries": [
+    {
+      "hash": "02666dea",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Decode request bodies as whole UTF-8 — per-chunk decoding corrupted multi-byte letters into U+FFFD",
+      "scope": "writer"
+    },
     {
       "hash": "bfaa1830",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Combined menu pill (hamburger + avatar, one menu) · widget: One Tap discoverability",
       "scope": null
-    },
-    {
-      "hash": "be22e730",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Retry HTTP probes before going critical (one flaky sample must never page)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "02666dea",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Decode request bodies as whole UTF-8 — per-chunk decoding corrupted multi-byte letters into U+FFFD",
+        "scope": "writer"
+      },
       {
         "hash": "bfaa1830",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Combined menu pill (hamburger + avatar, one menu) · widget: One Tap discoverability",
-        "scope": null
-      },
-      {
-        "hash": "be22e730",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Retry HTTP probes before going critical (one flaky sample must never page)",
         "scope": null
       }
     ]
