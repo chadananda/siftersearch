@@ -13,7 +13,7 @@ function client(provider) {
   }));
 }
 
-export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, entities = null, peopleAnswer = null, direction = {}, llm, onChunk, signal }) {
+export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, entities = null, peopleAnswer = null, target = null, direction = {}, llm, onChunk, signal }) {
   // System = soul + house style (constant → cached prefix); everything about THIS reply goes in the user message.
   const dir = anisDirection({ channelFrame: direction.channel?.frame ?? null, stance: direction.stance ?? null, guarded: !!direction.guarded,
     conversational, mission, companionAppend: companion_append, formatHow: direction.format?.how ?? null });
@@ -21,7 +21,7 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
     model: llm.model,
     messages: [
       { role: 'system', content: anisSystem({ persona: persona_name || 'Anís' }) },
-      { role: 'user', content: anisUserPayload({ question: user_question, conversation: conversation_summary, passages: retrieved_quotes, conversational, entities, peopleAnswer, direction: dir }) },
+      { role: 'user', content: anisUserPayload({ question: user_question, conversation: conversation_summary, passages: retrieved_quotes, conversational, entities, peopleAnswer, target, direction: dir }) },
     ],
     temperature: 0.3,
     // Reasoning models spend completion tokens thinking; leave room so the reply is never truncated.

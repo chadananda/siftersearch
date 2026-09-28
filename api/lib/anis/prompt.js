@@ -60,7 +60,7 @@ export function anisDirection({ channelFrame = null, stance = null, conversation
 }
 
 /** Compact user payload: direction, the conversation, then numbered passages with their only allowed URL. */
-export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null, peopleAnswer = null, direction = '' }) {
+export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null, peopleAnswer = null, target = null, direction = '' }) {
   const lines = passages.map((p, i) => {
     const who = [p.source_author, p.religion].filter(Boolean).join(', ');
     return `[${i + 1}] ${p.source_title || 'Untitled'}${who ? ` — ${who}` : ''}${p.authority ? ` · ${p.authority}` : ''}\nURL: ${p.citation_url || '(none)'}\n${String(p.text || '').slice(0, 700)}`;
@@ -79,6 +79,9 @@ export function anisUserPayload({ question, conversation = '', passages = [], co
   } else if (people.length) {
     peopleBlock = `\n\nPEOPLE (the library's cited record for this question):\n${people.join('\n')}`;
   }
-  const tail = conversational ? '' : `${peopleBlock}\n\nPASSAGES:\n${lines.join('\n\n') || '(none found)'}`;
+  // The question named someone or somewhere under a spelling the texts may not use ("iderne"): say who it was
+  // resolved to, so the reply answers about Adrianople and can name the spelling bridge once.
+  const targetLine = target && !conversational ? `\n\nNAMED IN THE QUESTION: ${target.name} (${target.type}) — the texts also call it ${target.names.filter((n) => n !== target.name).slice(0, 4).join(', ') || 'by no other name'}.` : '';
+  const tail = conversational ? '' : `${targetLine}${peopleBlock}\n\nPASSAGES:\n${lines.join('\n\n') || '(none found)'}`;
   return `${direction ? `${direction}\n\n` : ''}${conversation ? `CONVERSATION SO FAR:\n${conversation}\n\n` : ''}QUESTION: ${question}${tail}`;
 }

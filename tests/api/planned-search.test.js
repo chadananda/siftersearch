@@ -1,6 +1,6 @@
 // plannedSearch: plan (one Jev call) → cache → narrow-then-relax over the multi-index engine with the plan's layers.
 import { describe, it, expect, beforeEach } from 'vitest';
-import { plannedSearch, clearPlannedCache } from '../../api/lib/planned-search.js';
+import { plannedSearch, clearPlannedCache, leadWithTarget } from '../../api/lib/planned-search.js';
 import { buildPlan } from '../../api/lib/search-plan.js';
 
 const planOf = (o) => async (_input, { given } = {}) => ({ ...buildPlan({
@@ -180,5 +180,42 @@ describe('plannedSearch', () => {
     const e = engine(() => many(5));
     await plannedSearch('x', { given: { religion: 'Hindu' }, planner: planOf({ tradition: 'Buddhist' }), engine: e.fn });
     expect(e.calls[0].filters.religion).toBe('Hindu');
+  });
+});
+
+// SEARCH TARGET (Chad, 2026-09-27): "searching for iderne should return results for adrianople highlighted. The
+// highlighting should be the search target, not a string match." Quick search had it; chat and Anís did not.
+describe('plannedSearch — search target', () => {
+  beforeEach(() => clearPlannedCache());
+  const adrianople = { id: 1247884, name: 'Adrianople', type: 'place', names: ['Adrianople', 'Edirne', 'Adirnih'] };
+  const texts = {
+    iderne: [{ id: 1, text: 'Iderne is not a word in any passage.' }],
+    Adrianople: [{ id: 2, text: 'Bahá’u’lláh was exiled to Adrianople.' }, { id: 3, text: 'Nothing about the city here.' }],
+    Edirne: [{ id: 4, text: 'Edirne, the old Ottoman capital.' }],
+    Adirnih: [{ id: 2, text: 'Bahá’u’lláh was exiled to Adrianople.' }],
+  };
+  const eng = async (q) => ({ hits: texts[q] || [] });
+
+  it('a misspelled name is searched under the target’s own names; passages naming it lead, marked', async () => {
+    const r = await plannedSearch('iderne', { planner: planOf({}), engine: eng, targeter: async () => adrianople });
+    expect(r.target.name).toBe('Adrianople');
+    expect(r.hits.map((h) => h.id).slice(0, 2)).toEqual([2, 4]);
+    expect(r.hits[0].targetHighlight).toContain('<mark>Adrianople</mark>');
+    expect(r.hits.find((h) => h.id === 1).targetHighlight).toBeUndefined();   // kept, but never promoted
+  });
+  it('no target → the search is exactly as before', async () => {
+    const r = await plannedSearch('iderne', { planner: planOf({}), engine: eng, targeter: async () => null });
+    expect(r.target).toBeNull();
+    expect(r.hits.map((h) => h.id)).toEqual([1]);
+  });
+  it('a slow resolver costs no time beyond its budget and yields no target', async () => {
+    const t0 = Date.now();
+    const r = await plannedSearch('iderne', { planner: planOf({}), engine: eng, budgetMs: 50, targeter: () => new Promise((ok) => setTimeout(() => ok(adrianople), 2000)) });
+    expect(r.target).toBeNull();
+    expect(Date.now() - t0).toBeLessThan(1000);
+  });
+  it('leadWithTarget interleaves lists and de-duplicates', () => {
+    const out = leadWithTarget([[{ id: 1 }, { id: 2 }], [{ id: 2 }, { id: 3 }]], (h) => (h.id !== 1 ? `m${h.id}` : null), 10);
+    expect(out.map((h) => h.id)).toEqual([2, 3, 1]);
   });
 });

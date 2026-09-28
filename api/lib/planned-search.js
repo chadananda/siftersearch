@@ -1,6 +1,8 @@
 // Planned search: ONE Jev plan (search-plan.js) → result cache → narrow-then-relax (search-scope.js) over the
 // multi-index engine with the plan's layers (keyword for quotes, HyPE, diversity only when unscoped).
-// Deps: search-plan, search-scope; search.js + answer-cache.js loaded lazily so this stays unit-testable.
+// SEARCH TARGET (search-target.js): a query that NAMES a person or place is searched under every name the texts use
+// for it ("iderne" → Adrianople / Edirne / Adirnih); passages naming the target lead and carry `targetHighlight`.
+// Deps: search-plan, search-scope; search.js + answer-cache.js + search-target.js loaded lazily so this stays unit-testable.
 import { planSearch, layersFor } from './search-plan.js';
 import { relaxScope } from './search-scope.js';
 
@@ -57,6 +59,23 @@ export function preferAuthor(authorHits, broadHits, aliases, limit, terms = []) 
   return [...mine, ...others].slice(0, limit);
 }
 
+/**
+ * Interleave result lists (the typed query's first, then one per target name); passages that NAME the target lead,
+ * each carrying its target-highlighted text; the rest follow in order. Pure — `mark` returns HTML or null.
+ */
+export function leadWithTarget(lists, mark, limit) {
+  const seen = new Set(), named = [], rest = [];
+  const depth = Math.max(0, ...lists.map((l) => l.length));
+  for (let i = 0; i < depth; i++) for (const l of lists) {
+    const h = l[i];
+    if (!h || seen.has(h.id)) continue;
+    seen.add(h.id);
+    const html = mark(h);
+    (html ? named : rest).push(html ? { ...h, targetHighlight: html } : h);
+  }
+  return [...named, ...rest].slice(0, limit);
+}
+
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 /**
@@ -68,11 +87,14 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
  */
 // resolver: source resolution (source-resolve.js) — default ON for the real engine, off when a test injects one.
 // people/paragraphs: the claims layer (people-search.js + docs-repo) — default ON for the real engine; injectable.
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, minResults = 3, budgetMs = 1000 } = {}) {
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, minResults = 3, budgetMs = 1000, targeter } = {}) {
   const t0 = Date.now();
   const deadline = t0 + budgetMs;   // the whole strategy (Chad: 1s); late stages get what is left, then degrade
   // The query embedding needs no plan: start it now so it is ready when the engine asks (shared, one call).
   if (!engine) import('./query-embedding.js').then((m) => m.queryEmbedding(query)).catch(() => {});
+  // Resolved BESIDE the plan, inside the same budget; a slow or failed resolve means no target, never a slower search.
+  const target = targeter ?? (engine ? null : async (q) => (await import('./search-target.js')).resolveTarget(q));
+  const targetP = target ? Promise.race([target(query).catch(() => null), new Promise((ok) => setTimeout(() => ok(null), Math.min(1200, budgetMs)))]) : Promise.resolve(null);
   const plan = await planner(messages?.length ? messages : query, { given });
   // Site default (an embedding site's home tradition): fills in only when the question named none and is not a
   // comparison. It is a scope like any other, so the relax ladder still widens it when the site's texts are thin.
@@ -121,6 +143,14 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   ]);
   stages.passages_ms = Date.now() - t1;
   let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, subjectTerms(query, plan.prefer)) : r.results;
+  const tgt = await targetP;
+  if (tgt) {
+    const { markTarget } = await import('./search-target.js');
+    const names = tgt.names.filter((n) => !/[\u0600-\u06FF]/.test(n) && fold(n) !== fold(query)).slice(0, 3);
+    const per = await Promise.all(names.map((n) => search(r.scope || plan.filters, n).catch(() => [])));
+    hits = leadWithTarget([hits, ...per], (h) => markTarget(h.text, tgt), limit);
+    stages.target_ms = Date.now() - t1;
+  }
 
   // Correct sources BEFORE anything formats them: quoted words served from their original work, every checked
   // passage labelled (original / quotation / recollection / commentary) with whose words it carries.
@@ -186,6 +216,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
 
   const value = {
     hits, plan, layers, resolution, entities, peopleAnswer,
+    target: tgt ? { id: tgt.id, name: tgt.name, type: tgt.type, names: tgt.names } : null,
     widened: r.widened, relaxed: r.relaxed, narrowCount: r.narrowResults.length, scopeUsed: r.scope,
   };
   if (cache.size >= MAX) cache.delete(cache.keys().next().value);

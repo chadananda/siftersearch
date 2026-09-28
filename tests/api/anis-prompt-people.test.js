@@ -21,3 +21,14 @@ describe('anisUserPayload people answer', () => {
     expect(out).not.toMatch(/CONTESTED/);
   });
 });
+
+describe('anisUserPayload — search target', () => {
+  it('says who a misspelled name resolved to, so the reply answers about the place the texts name', () => {
+    const u = anisUserPayload({ question: 'iderne', passages: [{ source_title: 'SAQ', text: 'exiled to Adrianople' }],
+      target: { id: 1, name: 'Adrianople', type: 'place', names: ['Adrianople', 'Edirne', 'Adirnih'] } });
+    expect(u).toMatch(/NAMED IN THE QUESTION: Adrianople \(place\) — the texts also call it Edirne, Adirnih/);
+  });
+  it('adds nothing when there is no target', () => {
+    expect(anisUserPayload({ question: 'justice', passages: [] })).not.toMatch(/NAMED IN THE QUESTION/);
+  });
+});

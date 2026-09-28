@@ -190,7 +190,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const raw = await d.craft({
     user_question: question, retrieved_quotes: retrieved, conversation_summary: conversationSummary(messages, persona),
     persona_name: persona, mission: profile.mission || null, companion_append: comp?.append || '',
-    comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, direction: { ...direction, format }, llm: llm || parseLlm(process.env.ANIS_LLM),
+    comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, target: res?._plan?.target || null, direction: { ...direction, format }, llm: llm || parseLlm(process.env.ANIS_LLM),
     onChunk: (t) => gate.push(t),
   });
   gate.flush();
