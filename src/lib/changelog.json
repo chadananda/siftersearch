@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T20:04:36.237Z",
+  "generated": "2026-09-28T20:11:33.417Z",
   "entries": [
+    {
+      "hash": "d8dabe10",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Recover paragraphs the editions split differently (extend/gap-run/gap-merge)",
+      "scope": "bilingual"
+    },
     {
       "hash": "5aeecea1",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Align coverage numerators with prose denominator (fixes verify churn) + missing-books file links",
       "scope": null
-    },
-    {
-      "hash": "dffdae96",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Missing Books tab — metadata-stub + empty-husk triage",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "d8dabe10",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Recover paragraphs the editions split differently (extend/gap-run/gap-merge)",
+        "scope": "bilingual"
+      },
       {
         "hash": "5aeecea1",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Align coverage numerators with prose denominator (fixes verify churn) + missing-books file links",
-        "scope": null
-      },
-      {
-        "hash": "dffdae96",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Missing Books tab — metadata-stub + empty-husk triage",
         "scope": null
       }
     ]

@@ -849,6 +849,81 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * POST /concepts/align-crosslingual {docId, path, lang='fa', dryRun=true, force=false}
+   *
+   * Pair OUR English with the original from bahai.org's whole-work xhtml by multilingual embedding
+   * similarity (align.js alignCrossLingual) — for editions that paragraph differently, where the length
+   * fingerprint refuses. Chad, 2026-09-28: "For everything that is a translation and has an original, let's
+   * pair them up before extraction."
+   *
+   * Fills only paragraphs WITHOUT an original unless force: a CTAI pairing carries word alignment and must
+   * not be replaced by a coarser one. Footnotes are not text of the work and are never offered. A span
+   * scoring below baseline + minMargin is reported, not written.
+   */
+  fastify.post('/concepts/align-crosslingual', admin, async (req) => {
+    const { docId, path, lang = 'fa', dryRun = true, force = false, minMargin = 0.08, samples = 8 } = req.body || {};
+    if (!docId || !path) throw ApiError.badRequest('docId and path required (e.g. "bahaullah/gems-divine-mysteries")');
+    const { fetchWorkXhtml } = await import('../lib/rag/concepts/bahai-org.js');
+    const { alignCrossLingual, detectSourceLang } = await import('../lib/rag/concepts/align.js');
+    const { translationAuthorityFor } = await import('../lib/rag/concepts/backfill-original.js');
+    const { aiService } = await import('../lib/ai-services.js');
+    const store = makeStore();
+
+    const resolved = await store.resolveCanonicalDoc(Number(docId));
+    const { paragraphs: theirs, status } = await fetchWorkXhtml(path, { lang });
+    if (!theirs.length) throw ApiError.badRequest(`bahai.org served no text for '${path}' (${lang}, HTTP ${status})`);
+    const ours = (await store.getParagraphs(resolved)).filter((p) => !/^\s*(>\s*)?\[\^/.test(p.text));
+
+    const embedder = aiService('embedding');
+    const embed = async (texts) => {
+      const out = [];
+      for (let i = 0; i < texts.length; i += 100) {
+        out.push(...await embedder.embed(texts.slice(i, i + 100).map((t) => t.slice(0, 7000)),
+          { caller: 'concepts:align-crosslingual', documentId: resolved }));
+      }
+      return out.map((v) => { const nrm = Math.hypot(...v); return v.map((x) => x / nrm); });
+    };
+    const [ov, tv] = await Promise.all([embed(ours.map((p) => p.text)), embed(theirs)]);
+    const { spans, baseline } = alignCrossLingual(ov, tv);
+
+    const authority = translationAuthorityFor(resolved) ?? 'committee';
+    const weak = [], rows = [];
+    let kept = 0;
+    for (const s of spans) {
+      const original = theirs.slice(s.theirs[0], s.theirs[1]).join('\n');
+      const group = ours.slice(s.ours[0], s.ours[1]);
+      if (s.sim < baseline + minMargin) { weak.push(s); continue; }
+      kept += group.length;
+      for (const p of group) {
+        if (p.original && !force) continue;
+        const srcLang = detectSourceLang(original);
+        if (!srcLang) continue;
+        rows.push({ paraId: p.id, originalText: original, originalLang: srcLang, translationAuthority: authority,
+          wordAlignment: null,
+          alignRef: JSON.stringify({ source: 'bahai.org', path, lang, basis: 'crosslingual-dp', sim: s.sim,
+            baseline, shape: `${s.ours[1] - s.ours[0]}:${s.theirs[1] - s.theirs[0]}`,
+            sourceParagraphs: [s.theirs[0] + 1, s.theirs[1]], group: group.map((g) => g.id),
+            alignedAt: new Date().toISOString() }) });
+      }
+    }
+    const shapes = {};
+    for (const s of spans) { const k = `${s.ours[1] - s.ours[0]}:${s.theirs[1] - s.theirs[0]}`; shapes[k] = (shapes[k] || 0) + 1; }
+    const show = (s) => ({ sim: s.sim, ours: s.ours, theirs: s.theirs,
+      en: ours.slice(s.ours[0], s.ours[1]).map((p) => p.text.slice(0, 160)),
+      original: theirs.slice(s.theirs[0], s.theirs[1]).map((t) => t.slice(0, 160)) });
+    const out = { docId: resolved, path, lang, dryRun, baseline, ourParagraphs: ours.length,
+      sourceParagraphs: theirs.length, spans: spans.length, shapes, covered: kept,
+      coverage: ours.length ? Number((kept / ours.length).toFixed(3)) : 0,
+      alreadyAligned: ours.filter((p) => p.original).length, candidates: rows.length, written: 0,
+      belowBar: weak.map(show),
+      weakest: [...spans].filter((s) => s.sim >= baseline + minMargin).sort((a, b) => a.sim - b.sim)
+        .slice(0, Number(samples)).map(show) };
+    if (dryRun || !rows.length) return out;
+    out.written = await store.saveParagraphOriginals(rows);
+    return out;
+  });
+
+  /**
    * POST /concepts/segment-bahai-org {docId, path, lang='fa', dryRun=true}
    *
    * The same segmentation, against bahai.org's library. Chad, 2026-08-26, supplying the source: "Here is Some

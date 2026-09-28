@@ -376,3 +376,71 @@ export function bestOrdinalOffset(ourLens, theirLens, { maxOffset = 60, minR = 0
         : null,
   };
 }
+
+/**
+ * Align a translation with its ORIGINAL across languages, by multilingual embedding similarity.
+ *
+ * The length fingerprint (bestOrdinalOffset) needs editions that are paragraph-for-paragraph; bahai.org's
+ * originals are not (measured 2026-09-28: r 0.25–0.55 on Gems, Tablets, Aqdas, Divine Plan, Days of
+ * Remembrance, Valleys). text-embedding-3-large places an English paragraph near its Arabic/Persian source
+ * (Gems: aligned pairs 0.48–0.77, unrelated median 0.33), so a monotonic dynamic programme over similarity
+ * with 1:1, 1:2, 2:1, 1:3, 3:1, 2:2 steps and skips recovers the pairing: Gems 117/120, Aqdas 298/304,
+ * Tablets 630/664 — the weakest pairs read and confirmed by hand.
+ *
+ * `ours` / `theirs` are arrays of unit vectors. A step scores cos(sum of our run, sum of their run) minus
+ * (baseline + margin), where baseline is the median similarity of the whole matrix — what UNRELATED text
+ * scores for this pair of languages — so a skip (score −skip) beats binding unrelated text. A diagonal band
+ * keeps big works tractable. Returns spans { ours:[i,a), theirs:[j,b), sim } and the baseline.
+ */
+export function alignCrossLingual(ours, theirs, { margin = 0.12, skip = 0.02, stepCost = 0.02, band } = {}) {
+  const n = ours.length, m = theirs.length;
+  if (!n || !m) return { spans: [], baseline: null };
+  const d = ours[0].length;
+  const prefix = (V) => {
+    const P = new Float64Array((V.length + 1) * d);
+    for (let i = 0; i < V.length; i++) for (let k = 0; k < d; k++) P[(i + 1) * d + k] = P[i * d + k] + V[i][k];
+    return P;
+  };
+  const PO = prefix(ours), PT = prefix(theirs);
+  const cos = (i, a, j, b) => {
+    let dot = 0, na = 0, nb = 0;
+    for (let k = 0; k < d; k++) {
+      const x = PO[a * d + k] - PO[i * d + k], y = PT[b * d + k] - PT[j * d + k];
+      dot += x * y; na += x * x; nb += y * y;
+    }
+    return dot / Math.sqrt(na * nb);
+  };
+  const sample = [];
+  const stride = Math.max(1, Math.floor((n * m) / 20000));
+  for (let q = 0; q < n * m; q += stride) sample.push(cos(Math.floor(q / m), Math.floor(q / m) + 1, q % m, (q % m) + 1));
+  sample.sort((x, y) => x - y);
+  const baseline = sample[Math.floor(sample.length / 2)];
+  const bar = baseline + margin;
+
+  const w = band ?? Math.max(60, Math.ceil(0.2 * Math.max(n, m)));
+  const inBand = (i, j) => Math.abs(j - (i * m) / n) <= w;
+  const moves = [[1, 1], [1, 2], [2, 1], [1, 3], [3, 1], [2, 2], [1, 0], [0, 1]];
+  const D = new Float64Array((n + 1) * (m + 1)).fill(-Infinity);
+  const from = new Int32Array((n + 1) * (m + 1)).fill(-1);
+  D[0] = 0;
+  for (let i = 0; i <= n; i++) {
+    for (let j = 0; j <= m; j++) {
+      const here = D[i * (m + 1) + j];
+      if (here === -Infinity) continue;
+      for (const [di, dj] of moves) {
+        const a = i + di, b = j + dj;
+        if (a > n || b > m || (di && dj && !inBand(a, b))) continue;
+        const s = di && dj ? cos(i, a, j, b) - bar - stepCost * (di + dj - 2) : -skip;
+        const k = a * (m + 1) + b;
+        if (here + s > D[k]) { D[k] = here + s; from[k] = i * (m + 1) + j; }
+      }
+    }
+  }
+  const spans = [];
+  for (let k = n * (m + 1) + m; k > 0 && from[k] >= 0; k = from[k]) {
+    const a = Math.floor(k / (m + 1)), b = k % (m + 1), p = from[k];
+    const i = Math.floor(p / (m + 1)), j = p % (m + 1);
+    if (a > i && b > j) spans.push({ ours: [i, a], theirs: [j, b], sim: Number(cos(i, a, j, b).toFixed(3)) });
+  }
+  return { spans: spans.reverse(), baseline: Number(baseline.toFixed(3)) };
+}

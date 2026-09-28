@@ -14,7 +14,7 @@
 //
 // Measured result with both properties in place: 290/292 matched, 0 non-monotonic, 0 pairs claimed twice.
 import { describe, it, expect } from 'vitest';
-import { alignSequences, recoverSpans, dice, contentWords, normalizeEn, detectSourceLang, largestCluster, matchedRegion, heaviestIncreasingRun, bestOrdinalOffset, lengthCorrelation } from '../../api/lib/rag/concepts/align.js';
+import { alignSequences, recoverSpans, alignCrossLingual, dice, contentWords, normalizeEn, detectSourceLang, largestCluster, matchedRegion, heaviestIncreasingRun, bestOrdinalOffset, lengthCorrelation } from '../../api/lib/rag/concepts/align.js';
 
 const seq = (texts, prefix = 'a') => texts.map((text, i) => ({ key: `${prefix}${i}`, text }));
 
@@ -357,5 +357,38 @@ describe('recoverSpans', () => {
     const spans = recoverSpans(ours, theirs, matches);
     // E (between anchors A and C) has no counterpart there; D1 lies after C, so it may not be used for E.
     expect(spans.find((s) => s.ourKey === 'a1')).toBeUndefined();
+  });
+});
+
+describe('alignCrossLingual', () => {
+  // Deterministic pseudo-random unit vectors: each "passage" is a direction; a translation = same direction + noise.
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647) - 0.5;
+  const unit = (v) => { const n = Math.hypot(...v); return v.map((x) => x / n); };
+  const topic = () => unit(Array.from({ length: 64 }, rnd));
+  const near = (v, k = 0.35) => unit(v.map((x) => x + k * rnd() / 4));
+  const mix = (...vs) => unit(vs[0].map((_, i) => vs.reduce((s, v) => s + v[i], 0)));
+
+  it('pairs a translation 1:1 in order', () => {
+    const src = Array.from({ length: 30 }, topic);
+    const { spans } = alignCrossLingual(src.map((v) => near(v)), src.map((v) => near(v)));
+    expect(spans).toHaveLength(30);
+    expect(spans.every((s) => s.ours[0] === s.theirs[0] && s.ours[1] - s.ours[0] === 1)).toBe(true);
+  });
+
+  it('binds one of ours to the two source paragraphs it translates (1:2)', () => {
+    const src = Array.from({ length: 20 }, topic);
+    const theirs = src.map((v) => near(v));
+    const ours = [...src.slice(0, 10).map((v) => near(v)), near(mix(src[10], src[11])), ...src.slice(12).map((v) => near(v))];
+    const { spans } = alignCrossLingual(ours, theirs);
+    expect(spans.find((s) => s.ours[0] === 10)).toMatchObject({ ours: [10, 11], theirs: [10, 12] });
+  });
+
+  it('skips text that exists on one side only instead of binding it', () => {
+    const src = Array.from({ length: 20 }, topic);
+    const ours = [...src.slice(0, 10), topic(), ...src.slice(10)].map((v) => near(v));   // a translator's note
+    const { spans } = alignCrossLingual(ours, src.map((v) => near(v)));
+    expect(spans.some((s) => s.ours[0] <= 10 && s.ours[1] > 10)).toBe(false);
+    expect(spans).toHaveLength(20);
   });
 });

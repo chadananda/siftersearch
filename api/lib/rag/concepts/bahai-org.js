@@ -74,3 +74,29 @@ export async function fetchWorkParagraphs(path, { lang = 'fa', sections = 12, lo
     perSection: results.map(({ paras, ...rest }) => ({ ...rest, paragraphs: paras.length })),
   };
 }
+
+/**
+ * Every body paragraph of a work from its whole-book .xhtml download (one request per work).
+ *
+ * The Arabic works (Gems, the Aqdas, much of the Tablets) are NOT numbered on bahai.org, so the numbered-
+ * paragraph filter above finds nothing; the xhtml download holds only the text, no page chrome. An answer
+ * (جواب) in Questions and Answers is folded into its question: our English keeps each Q&A as ONE paragraph,
+ * and aligning them unfolded let a question pair with the previous answer.
+ */
+export async function fetchWorkXhtml(path, { lang = 'fa' } = {}) {
+  const slug = String(path).split('/').filter(Boolean).pop();
+  const res = await fetch(`${HOST}/${lang}/library/authoritative-texts/${path}/${slug}.xhtml`, {
+    headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!res.ok) return { paragraphs: [], status: res.status };
+  const html = await res.text();
+  const body = html.slice(Math.max(0, html.indexOf('<body')));
+  const out = [];
+  for (const m of body.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)) {
+    const text = clean(m[1]);
+    if (text.length <= 20) continue;
+    if (/^جواب\s*:/.test(text) && out.length) out[out.length - 1] += ` ${text}`;
+    else out.push(text);
+  }
+  return { paragraphs: out, status: res.status };
+}
