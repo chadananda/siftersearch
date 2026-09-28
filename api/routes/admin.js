@@ -2821,6 +2821,23 @@ Collection: ${paragraph.collection || 'Unknown'}
       examples: withMentions.sort((a, b) => b.mentions - a.mentions).slice(0, 15).map((e) => ({ id: e.id, name: e.cn, type: e.et, mentions: e.mentions })) };
   });
 
+  // POST /server/identity-cluster-audit { ids:[…] } — Jev flags clusters whose passage may not be the person
+  // (api/lib/identity-audit.js). READ-ONLY: flags go to a reader. Background task; GET …/report → latest.
+  fastify.post('/server/identity-cluster-audit', { preHandler: requireInternal }, async (request) => {
+    const ids = (request.body?.ids || []).map(Number).filter(Boolean).slice(0, 100);
+    if (!ids.length) throw ApiError.badRequest('ids[] required');
+    const existing = backgroundTasks.get('identity-cluster-audit');
+    if (existing && existing.status === 'running') throw ApiError.conflict('An identity-cluster-audit run is already in progress');
+    const task = runBackgroundTask('identity-cluster-audit', 'scripts/identity-cluster-audit.mjs', [`--ids=${ids.join(',')}`]);
+    return { success: true, taskId: 'identity-cluster-audit', ids: ids.length, status: task.status };
+  });
+  fastify.get('/server/identity-cluster-audit/report', { preHandler: requireInternal }, async () => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const files = readdirSync('logs').filter((f) => f.startsWith('identity-cluster-audit-')).sort();
+    if (!files.length) throw ApiError.notFound('no audit report yet');
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   // GET /server/entity-mention-breakdown?id= — read-only: where an entity's mentions come from — per book, how the book
   // named it (resolved handles), and the place/era of those passages (from the disambiguation note). Shows a famous
   // record that absorbed other people's mentions ("Mullá Ḥusayn" in a Nayríz history bound to Bushrú'í).
