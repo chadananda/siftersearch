@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T16:14:28.639Z",
+  "generated": "2026-09-28T16:21:30.997Z",
   "entries": [
+    {
+      "hash": "6829db6a",
+      "date": "2026-09-28",
+      "type": "Chore",
+      "description": "Keep provider names out of the library (comment)",
+      "scope": "rag"
+    },
     {
       "hash": "c586505e",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Native /admin/widgets page + test users excluded from all views/analytics",
       "scope": null
-    },
-    {
-      "hash": "b50cde5d",
-      "date": "2026-08-08",
-      "type": "Other",
-      "description": "Pin unique dev ports (UI 5173→7842) — no cross-project conflicts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "6829db6a",
+        "date": "2026-09-28",
+        "type": "Chore",
+        "description": "Keep provider names out of the library (comment)",
+        "scope": "rag"
+      },
       {
         "hash": "c586505e",
         "date": "2026-09-28",
@@ -7057,13 +7064,6 @@
         "date": "2026-08-08",
         "type": "Other",
         "description": "Native /admin/widgets page + test users excluded from all views/analytics",
-        "scope": null
-      },
-      {
-        "hash": "b50cde5d",
-        "date": "2026-08-08",
-        "type": "Other",
-        "description": "Pin unique dev ports (UI 5173→7842) — no cross-project conflicts",
         "scope": null
       }
     ]

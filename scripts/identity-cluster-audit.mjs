@@ -35,13 +35,30 @@ for (const id of ids) {
   const t0 = Date.now();
   const judged = await auditClusters(profile, clusters);
   const flagged = judged.filter((c) => c.flagged);
+  // STAGE 2 — each flag again with up to four of the cluster's paragraphs, wide windows; a reader sees only its
+  // confident "different". Stage-1 flags were ~2/3 false (titles, references), so this is what makes a wide audit affordable.
+  const wide = [];
+  for (const c of flagged) {
+    const ps = await queryAll(`SELECT DISTINCT para_id FROM entity_mentions_v2 WHERE entity_id = ? AND doc_id = ? AND resolved_as = ? LIMIT 4`, [id, c.doc, c.handle]);
+    const texts = [];
+    for (const { para_id: pid } of ps) {
+      const t = await queryOne(`SELECT text FROM content WHERE doc_id = ? AND (external_para_id = ? OR ('p' || id) = ?) AND deleted_at IS NULL`, [c.doc, pid, pid]);
+      if (t?.text) texts.push(windowAround(t.text, c.surface, 900));
+    }
+    wide.push({ ...c, window: texts.join('\n  …  ') || c.window });
+  }
+  const t1 = Date.now();
+  const second = await auditClusters(profile, wide, { stage: 2 });
+  const review = second.filter((c) => c.flagged);
   report.people.push({ id, name: ge.cn, clusters: judged.length, mentions: judged.reduce((n, c) => n + c.mentions, 0),
     flagged: flagged.length, flaggedMentions: flagged.reduce((n, c) => n + c.mentions, 0), ms: Date.now() - t0,
     verdicts: judged.reduce((o, c) => ((o[c.verdict] = (o[c.verdict] || 0) + 1), o), {}),
-    flags: flagged.sort((a, b) => b.mentions - a.mentions),
+    stage2: second.reduce((o, c) => ((o[c.verdict] = (o[c.verdict] || 0) + 1), o), {}), stage2Ms: Date.now() - t1,
+    review: review.sort((a, b) => b.confidence - a.confidence),
+    flags: flagged.sort((a, b) => b.mentions - a.mentions).map(({ window, ...c }) => ({ ...c, window: window.slice(0, 600) })),
     // A random sample of what Jev PASSED, so a reader can measure what it misses (recall), not only its flags.
     passedSample: judged.filter((c) => !c.flagged).map((c) => [Math.random(), c]).sort((a, b) => a[0] - b[0]).slice(0, 30).map(([, c]) => c) });
-  console.log(`${ge.cn}: ${judged.length} clusters, ${flagged.length} flagged (${Date.now() - t0}ms)`);
+  console.log(`${ge.cn}: ${judged.length} clusters, ${flagged.length} flagged, ${review.length} to review (${Date.now() - t0}ms)`);
 }
 writeFileSync(`logs/identity-cluster-audit-${stamp}.json`, JSON.stringify(report, null, 1));
 console.log(`REPORT logs/identity-cluster-audit-${stamp}.json`);

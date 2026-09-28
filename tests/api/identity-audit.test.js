@@ -20,6 +20,12 @@ describe('identity-audit', () => {
     expect(readAnswer({ choice: 'different', confidence: 0.99 }).flagged).toBe(true);
     expect(readAnswer(undefined).flagged).toBe(true);
   });
+  it('stage 2 sends a reader only a confident "different", and tells Jev a title is the person', () => {
+    expect(readAnswer({ choice: 'different', confidence: 0.8 }, { stage: 2 }).flagged).toBe(true);
+    expect(readAnswer({ choice: 'different', confidence: 0.5 }, { stage: 2 }).flagged).toBe(false);
+    expect(readAnswer({ choice: 'unclear', confidence: 0.9 }, { stage: 2 }).flagged).toBe(false);
+    expect(buildRequest('P', [{ title: 't', handle: 'h', surface: 's', window: 'w' }], { stage: 2 }).questions.c1.instructions).toMatch(/A title, an epithet/);
+  });
   it('the profile carries the names the texts use — titles and original script — as this person', async () => {
     const { profileOf } = await import('../../api/lib/identity-audit.js');
     const p = profileOf({ name: 'Mullá Ḥusayn', summary: 's', aliases: ['Bábu\'l-Báb'], names: ['باب الباب', 'Mullá Ḥusayn'] });
