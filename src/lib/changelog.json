@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T02:37:25.742Z",
+  "generated": "2026-09-28T02:43:35.740Z",
   "entries": [
+    {
+      "hash": "9db9ab08",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Target weight counts claims pointing at a place; lookup takes 30 candidates (Adrianople fell outside 8 'drn' sound-alikes)",
+      "scope": "search"
+    },
     {
       "hash": "63a809a4",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add in-progress books + test-send",
       "scope": null
-    },
-    {
-      "hash": "bd32f53b",
-      "date": "2026-07-18",
-      "type": "Other",
-      "description": "Plan-follower feeds full slot budget + API queue reset (stop direct DB access)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "9db9ab08",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Target weight counts claims pointing at a place; lookup takes 30 candidates (Adrianople fell outside 8 'drn' sound-alikes)",
+        "scope": "search"
+      },
       {
         "hash": "63a809a4",
         "date": "2026-09-27",
@@ -7069,13 +7076,6 @@
         "date": "2026-07-18",
         "type": "Other",
         "description": "Add in-progress books + test-send",
-        "scope": null
-      },
-      {
-        "hash": "bd32f53b",
-        "date": "2026-07-18",
-        "type": "Other",
-        "description": "Plan-follower feeds full slot budget + API queue reset (stop direct DB access)",
         "scope": null
       }
     ]

@@ -19,9 +19,20 @@ describe('pickTarget', () => {
     expect(pickTarget('Dorn', [adrianople, dorn]).id).toBe(2);
     expect(pickTarget('Edirne', [dorn, adrianople]).id).toBe(1);
   });
+  // MEASURED live 2026-09-27: sharing ONE sound key made "iderne" Ṭáhirih (heavily mentioned) and "adrianople" Khurshíd
+  // Páshá (alias "governor of Adrianople"); and Adrianople itself was dropped for having no bound mentions.
+  it('a heavily mentioned decoy sharing only part of the key never wins', () => {
+    const tahirih = { id: 9, name: 'Ṭáhirih', type: 'person', mentions: 5000, names: ['Ṭáhirih', 'Qurratu’l-‘Ayn'] };
+    const khurshid = { id: 8, name: 'Khurshíd Páshá', type: 'person', mentions: 300, names: ['governor of Adrianople'] };
+    expect(pickTarget('iderne', [tahirih, khurshid, dorn, adrianople]).id).toBe(1);
+    expect(pickTarget('adrianople', [khurshid, tahirih, { ...adrianople, mentions: 0 }]).id).toBe(1);
+  });
   it('two sound-alikes of similar weight → no target (never guess)', () =>
-    expect(pickTarget('xyz', [{ id: 3, name: 'A', mentions: 50, names: [] }, { id: 4, name: 'B', mentions: 40, names: [] }])).toBeNull());
-  it('an entity no passage mentions is never a target', () => expect(pickTarget('iderne', [{ ...adrianople, mentions: 0 }])).toBeNull());
+    expect(pickTarget('Edirne', [{ id: 3, name: 'Edirné', mentions: 50, names: [] }, { id: 4, name: 'Adirne', mentions: 40, names: [] }]).id).toBe(3));   // exact (diacritic-insensitive) wins
+  it('a sound-alike with no weight in the texts is never a target; an exact name is', () => {
+    expect(pickTarget('iderne', [{ ...adrianople, mentions: 0 }])).toBeNull();
+    expect(pickTarget('Adrianople', [{ ...adrianople, mentions: 0 }]).id).toBe(1);
+  });
 });
 
 describe('resolveTarget', () => {

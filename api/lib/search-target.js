@@ -5,6 +5,7 @@
 // is the transliteration-invariant lookup (so a misspelling still lands); a candidate becomes the target only when it
 // is clearly ahead — otherwise search carries on unchanged, never guessing. Deps: entity-api (lookup), db.
 import { queryAll } from './db.js';
+import { skeletonKeys } from './translit-key.js';
 
 const TTL = 60 * 60 * 1000;
 const namesCache = new Map();
@@ -26,7 +27,14 @@ export function nameOf(query) {
  */
 export function pickTarget(name, cands) {
   const q = fold(name);
-  const scored = cands.filter((c) => (c.mentions || 0) > 0).map((c) => ({ ...c, exact: [c.name, ...(c.names || [])].some((n) => fold(n) === q) }));
+  const qk = [...skeletonKeys(name)].sort().join('|');
+  // Eligible only by one of the candidate's OWN names: spelled exactly like the query, or the same WHOLE sound-key set
+  // ("iderne" ≡ "Edirne"). Sharing one key is not enough — that made "iderne" Ṭáhirih, and "adrianople" Khurshíd Páshá
+  // (alias "governor of Adrianople") when it was live-tested on 2026-09-27.
+  const scored = cands.map((c) => {
+    const names = [c.name, ...(c.names || [])];
+    return { ...c, exact: names.some((n) => fold(n) === q), sound: qk && names.some((n) => [...skeletonKeys(n)].sort().join('|') === qk) };
+  }).filter((c) => c.exact || (c.sound && (c.mentions || 0) > 0));
   if (!scored.length) return null;
   scored.sort((a, b) => Number(b.exact) - Number(a.exact) || (b.mentions || 0) - (a.mentions || 0));
   const [top, next] = scored;
