@@ -55,7 +55,8 @@ for (const id of ids) {
     verdicts: judged.reduce((o, c) => ((o[c.verdict] = (o[c.verdict] || 0) + 1), o), {}),
     stage2: second.reduce((o, c) => ((o[c.verdict] = (o[c.verdict] || 0) + 1), o), {}), stage2Ms: Date.now() - t1,
     review: review.sort((a, b) => b.confidence - a.confidence),
-    flags: flagged.sort((a, b) => b.mentions - a.mentions).map(({ window, ...c }) => ({ ...c, window: window.slice(0, 600) })),
+    // Every stage-1 flag with its stage-2 answer, so what stage 2 LETS THROUGH can be measured, not only what it sends.
+    flags: second.sort((a, b) => b.mentions - a.mentions).map(({ window, ...c }) => ({ ...c, window: window.slice(0, 900) })),
     // A random sample of what Jev PASSED, so a reader can measure what it misses (recall), not only its flags.
     passedSample: judged.filter((c) => !c.flagged).map((c) => [Math.random(), c]).sort((a, b) => a[0] - b[0]).slice(0, 30).map(([, c]) => c) });
   console.log(`${ge.cn}: ${judged.length} clusters, ${flagged.length} flagged, ${review.length} to review (${Date.now() - t0}ms)`);
