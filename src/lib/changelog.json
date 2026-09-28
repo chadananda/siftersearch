@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T11:22:12.386Z",
+  "generated": "2026-09-28T11:27:48.447Z",
   "entries": [
+    {
+      "hash": "3af4d58e",
+      "date": "2026-09-28",
+      "type": "Chore",
+      "description": "Entity-provenance reports unreadable tables and the legacy mention table's size",
+      "scope": "entities"
+    },
     {
       "hash": "01581f75",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Link each book title to its SifterSearch library page",
       "scope": null
-    },
-    {
-      "hash": "91b5fef8",
-      "date": "2026-07-20",
-      "type": "Other",
-      "description": "Drop 11344 from histories list (soft-deleted Nayriz dup the old genre-classifier still showed; new render already filters it)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "3af4d58e",
+        "date": "2026-09-28",
+        "type": "Chore",
+        "description": "Entity-provenance reports unreadable tables and the legacy mention table's size",
+        "scope": "entities"
+      },
       {
         "hash": "01581f75",
         "date": "2026-09-28",
@@ -7067,13 +7074,6 @@
         "date": "2026-07-20",
         "type": "Other",
         "description": "Link each book title to its SifterSearch library page",
-        "scope": null
-      },
-      {
-        "hash": "91b5fef8",
-        "date": "2026-07-20",
-        "type": "Other",
-        "description": "Drop 11344 from histories list (soft-deleted Nayriz dup the old genre-classifier still showed; new render already filters it)",
         "scope": null
       }
     ]

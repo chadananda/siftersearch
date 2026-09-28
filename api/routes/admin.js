@@ -2709,7 +2709,16 @@ Collection: ${paragraph.collection || 'Unknown'}
         (decOf[id] ||= []).push({ id: d.id, kind: d.kind, target: d.target_kind, actor: d.actor, method: d.method_version, status: d.status, doc: p.docId ?? null, as: p.resolvedAs ?? null, why: String(d.rationale || '').slice(0, 120) });
     }
     const legacy = await queryOne(`SELECT COUNT(*) n, MAX(rowid) max_rowid FROM entity_mentions`).catch((e) => ({ error: String(e.message).slice(0, 80) }));
-    return { missing, legacy_entity_mentions: legacy, entities: ents.map((e) => ({ ...e, changes: changes.filter((c) => c.id === e.id).map(({ id, ...c }) => c), refs: refs[e.id] || {}, decisions: decOf[e.id] || [] })) };
+    // The OLD extractor's mentions live in graph.db (the sifter.db table was only its mirror) — the passages these
+    // records were read from, if they survive anywhere.
+    const { graphQueryAll, graphQueryOne } = await import('../lib/db.js');
+    const graph = { total: await graphQueryOne(`SELECT COUNT(*) n FROM entity_mentions`).catch((e) => ({ error: String(e.message).slice(0, 80) })) };
+    try {
+      for (const r of await graphQueryAll(`SELECT entity_id id, COUNT(*) n, GROUP_CONCAT(content_id) cids FROM entity_mentions WHERE entity_id IN (${ph}) GROUP BY 1`, ids))
+        (refs[r.id] ||= {})['graph.entity_mentions'] = { n: r.n, content_ids: String(r.cids || '').split(',').slice(0, 5) };
+      for (const r of await graphQueryAll(`SELECT entity_id id, COUNT(*) n FROM entity_aliases WHERE entity_id IN (${ph}) GROUP BY 1`, ids)) (refs[r.id] ||= {})['graph.entity_aliases'] = r.n;
+    } catch (e) { missing.push(`graph.db: ${String(e.message).slice(0, 80)}`); }
+    return { missing, legacy_entity_mentions: legacy, graph_db: graph, entities: ents.map((e) => ({ ...e, changes: changes.filter((c) => c.id === e.id).map(({ id, ...c }) => c), refs: refs[e.id] || {}, decisions: decOf[e.id] || [] })) };
   });
 
   // GET /server/entity-mention-breakdown?id= — read-only: where an entity's mentions come from — per book, how the book
