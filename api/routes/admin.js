@@ -2716,7 +2716,7 @@ Collection: ${paragraph.collection || 'Unknown'}
     try {
       for (const r of await graphQueryAll(`SELECT entity_id id, COUNT(*) n, GROUP_CONCAT(content_id) cids FROM entity_mentions WHERE entity_id IN (${ph}) GROUP BY 1`, ids))
         (refs[r.id] ||= {})['graph.entity_mentions'] = { n: r.n, content_ids: String(r.cids || '').split(',').slice(0, 5) };
-      for (const r of await graphQueryAll(`SELECT entity_id id, COUNT(*) n FROM entity_aliases WHERE entity_id IN (${ph}) GROUP BY 1`, ids)) (refs[r.id] ||= {})['graph.entity_aliases'] = r.n;
+      for (const r of await graphQueryAll(`SELECT entity_id id, source, COUNT(*) n FROM entity_aliases WHERE entity_id IN (${ph}) GROUP BY 1, 2`, ids)) ((refs[r.id] ||= {})['graph.entity_aliases'] ||= {})[r.source ?? 'null'] = r.n;
     } catch (e) { missing.push(`graph.db: ${String(e.message).slice(0, 80)}`); }
     return { missing, legacy_entity_mentions: legacy, graph_db: graph, entities: ents.map((e) => ({ ...e, changes: changes.filter((c) => c.id === e.id).map(({ id, ...c }) => c), refs: refs[e.id] || {}, decisions: decOf[e.id] || [] })) };
   });
