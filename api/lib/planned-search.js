@@ -7,6 +7,7 @@ import { planSearch, layersFor } from './search-plan.js';
 import { relaxScope } from './search-scope.js';
 
 const TTL_MS = 10 * 60 * 1000;
+const TARGET_MS = 1200;
 const KEYWORD_ONLY = { keywordLayer: true, semantic: false, hype: false, diversify: false };
 const MAX = 500;
 const cache = new Map();
@@ -95,7 +96,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   if (!engine) import('./query-embedding.js').then((m) => m.queryEmbedding(query)).catch(() => {});
   // Resolved BESIDE the plan, inside the same budget; a slow or failed resolve means no target, never a slower search.
   const target = targeter ?? (engine ? null : async (q) => (await import('./search-target.js')).resolveTarget(q));
-  const targetP = target ? Promise.race([target(query).catch(() => null), new Promise((ok) => setTimeout(() => ok(null), Math.min(1200, budgetMs)))]) : Promise.resolve(null);
+  const targetP = target ? target(query).catch(() => null) : Promise.resolve(null);
   const plan = await planner(messages?.length ? messages : query, { given });
   // Site default (an embedding site's home tradition): fills in only when the question named none and is not a
   // comparison. It is a scope like any other, so the relax ladder still widens it when the site's texts are thin.
@@ -145,7 +146,10 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   ]);
   stages.passages_ms = Date.now() - t1;
   let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, subjectTerms(query, plan.prefer)) : r.results;
-  const tgt = await targetP;
+  // The resolve had the whole passage search to finish in; it waits only until TARGET_MS from the start, so it never
+  // adds latency beyond that — and never loses a race it did not need to (a 1s timer from t0 dropped "iderne" on a
+  // busy box whose passage search alone took 1.5s, 2026-09-28).
+  const tgt = await Promise.race([targetP, new Promise((ok) => setTimeout(() => ok(null), Math.max(0, t0 + Math.min(TARGET_MS, budgetMs * 1.2) - Date.now())))]);
   if (tgt) {
     const { markTarget } = await import('./search-target.js');
     const names = tgt.names.filter((n) => !/[\u0600-\u06FF]/.test(n) && fold(n) !== fold(query)).slice(0, 3);

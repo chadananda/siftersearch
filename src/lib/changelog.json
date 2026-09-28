@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T12:57:22.550Z",
+  "generated": "2026-09-28T13:03:41.566Z",
   "entries": [
+    {
+      "hash": "aaf98816",
+      "date": "2026-09-28",
+      "type": "Performance",
+      "description": "A target's names are searched by keyword only (was a full embedding+HyPE search per name, 1.8–3.7s)",
+      "scope": "search"
+    },
     {
       "hash": "0bf6ebb2",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Reap on actual pid-liveness, not heartbeat staleness — fixes duplicate-proc runaway (steady-state source)",
       "scope": null
-    },
-    {
-      "hash": "81086b04",
-      "date": "2026-08-07",
-      "type": "Other",
-      "description": "Kill stray detached procs on boot — prevent duplicate-spawn runaway",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "aaf98816",
+        "date": "2026-09-28",
+        "type": "Performance",
+        "description": "A target's names are searched by keyword only (was a full embedding+HyPE search per name, 1.8–3.7s)",
+        "scope": "search"
+      },
       {
         "hash": "0bf6ebb2",
         "date": "2026-09-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-08-07",
         "type": "Other",
         "description": "Reap on actual pid-liveness, not heartbeat staleness — fixes duplicate-proc runaway (steady-state source)",
-        "scope": null
-      },
-      {
-        "hash": "81086b04",
-        "date": "2026-08-07",
-        "type": "Other",
-        "description": "Kill stray detached procs on boot — prevent duplicate-spawn runaway",
         "scope": null
       }
     ]

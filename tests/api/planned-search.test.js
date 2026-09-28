@@ -211,6 +211,11 @@ describe('plannedSearch — search target', () => {
     expect(named.length).toBeGreaterThan(0);
     expect(named.every((c) => c.opts.semantic === false && c.opts.hype === false && c.opts.keywordLayer === true)).toBe(true);
   });
+  it('a resolver slower than its window still counts when the passage search took longer', async () => {
+    const slowEng = async (q) => { await new Promise((ok) => setTimeout(ok, 150)); return eng(q); };
+    const r = await plannedSearch('iderne', { planner: planOf({}), engine: slowEng, budgetMs: 50, targeter: () => new Promise((ok) => setTimeout(() => ok(adrianople), 80)) });
+    expect(r.target?.name).toBe('Adrianople');
+  });
   it('no target → the search is exactly as before', async () => {
     const r = await plannedSearch('iderne', { planner: planOf({}), engine: eng, targeter: async () => null });
     expect(r.target).toBeNull();
