@@ -2657,6 +2657,25 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // GET /server/entity-mention-breakdown?id= — read-only: where an entity's mentions come from — per book, how the book
+  // named it (resolved handles), and the place/era of those passages (from the disambiguation note). Shows a famous
+  // record that absorbed other people's mentions ("Mullá Ḥusayn" in a Nayríz history bound to Bushrú'í).
+  fastify.get('/server/entity-mention-breakdown', { preHandler: requireInternal }, async (request) => {
+    const id = Number(request.query.id);
+    const rows = await queryAll(`SELECT m.doc_id, d.title, d.year, m.resolved_as, COUNT(*) n, MIN(c.context) note
+        FROM entity_mentions_v2 m JOIN docs d ON d.id = m.doc_id
+        LEFT JOIN content c ON c.doc_id = m.doc_id AND (c.external_para_id = m.para_id OR ('p' || c.id) = m.para_id)
+       WHERE m.entity_id = ? GROUP BY m.doc_id, m.resolved_as ORDER BY n DESC`, [id]);
+    const byDoc = new Map();
+    for (const r of rows) {
+      const d = byDoc.get(r.doc_id) || { doc_id: r.doc_id, title: r.title, year: r.year, mentions: 0, handles: [], note: null };
+      d.mentions += r.n; d.handles.push(`${r.resolved_as} ×${r.n}`); d.note = d.note || String(r.note || '').split('—')[0].trim().slice(0, 80);
+      byDoc.set(r.doc_id, d);
+    }
+    const docs = [...byDoc.values()].sort((a, b) => b.mentions - a.mentions);
+    return { id, total: docs.reduce((a, d) => a + d.mentions, 0), books: docs.length, docs };
+  });
+
   // GET /server/docs-by-title?q=a|b|c — read-only: every copy of each titled work with paragraph / claim / mention
   // counts, so a pass targets the copy the entity pipeline actually used.
   fastify.get('/server/docs-by-title', { preHandler: requireInternal }, async (request) => {
