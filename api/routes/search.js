@@ -331,7 +331,9 @@ export default async function searchRoutes(fastify) {
     // "iderne" → Adrianople / Adirnih / ادرنه — and the highlight marks the target, not the typed string. A query that
     // resolves to nothing searches as before.
     const { resolveTarget, markTarget } = await import('../lib/search-target.js');
+    const tResolve = Date.now();
     const target = await Promise.race([resolveTarget(q).catch(() => null), new Promise((r) => setTimeout(() => r(null), 1200))]);   // a misspelling costs a text count or two
+    const resolveMs = Date.now() - tResolve;
     let results;
     if (target) {
       const names = target.names.filter((n) => !/[\u0600-\u06FF]/.test(n)).slice(0, 4);
@@ -403,6 +405,7 @@ export default async function searchRoutes(fastify) {
       }),
       query: q,
       target: target ? { id: target.id, name: target.name, type: target.type, names: target.names } : null,
+      _timing: { resolve_ms: resolveMs, total_ms: Date.now() - quickStart },
       offset,
       limit,
       estimatedTotalHits: results.estimatedTotalHits,

@@ -71,6 +71,7 @@ async function namesFor(ids, db = { queryAll }) {
 
 /** Resolve a query to its target entity, or null. → { id, name, type, names, matched } */
 export async function resolveTarget(query, { lookup, db, countText } = {}) {
+  const t0 = Date.now();
   const name = nameOf(query);
   if (!name) return null;
   const find = lookup || (await import('./entity-api.js')).entityLookup;
@@ -85,6 +86,7 @@ export async function resolveTarget(query, { lookup, db, countText } = {}) {
   enriched = await Promise.all(enriched.map(async (c) => (!c.mentions && [c.name, ...c.names].some((n) => [...skeletonKeys(n)].sort().join('|') === qk)
     ? { ...c, mentions: await count(c.name.replace(/\s*\([^)]*\)/g, '').trim()) } : c)));
   const t = pickTarget(name, enriched);
+  if (process.env.SEARCH_TARGET_DEBUG) console.log('[search-target]', name, Date.now() - t0, 'ms', enriched.filter((c) => c.mentions).map((c) => `${c.name}:${c.mentions}`).slice(0, 8).join(' '));
   if (!t) return null;
   // Several records carrying the same exact name are one thing under one spelling (duplicate place records): search and
   // highlight all their names together.
