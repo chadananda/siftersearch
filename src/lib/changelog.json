@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T20:41:42.870Z",
+  "generated": "2026-09-28T21:28:35.251Z",
   "entries": [
+    {
+      "hash": "51135cd7",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Subset-mode cross-lingual spans are candidates, never written without review",
+      "scope": "bilingual"
+    },
     {
       "hash": "da45eb5b",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Edge-cache public s-maxage API responses (CF skips /api/* by default)",
       "scope": null
-    },
-    {
-      "hash": "5020e20b",
-      "date": "2026-08-09",
-      "type": "Performance",
-      "description": "Edge caching for hot public reads — routes' Cache-Control wins over alpha no-store",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "51135cd7",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Subset-mode cross-lingual spans are candidates, never written without review",
+        "scope": "bilingual"
+      },
       {
         "hash": "da45eb5b",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Edge-cache public s-maxage API responses (CF skips /api/* by default)",
-        "scope": null
-      },
-      {
-        "hash": "5020e20b",
-        "date": "2026-08-09",
-        "type": "Performance",
-        "description": "Edge caching for hot public reads — routes' Cache-Control wins over alpha no-store",
         "scope": null
       }
     ]

@@ -450,3 +450,26 @@ describe('Arabic/Farsi Specific Cases', () => {
     });
   });
 });
+
+describe('detectLanguageFeatures — Arabic written with Persian ی', () => {
+  it('keeps Arabic that uses ی (U+06CC) as Arabic', () => {
+    // Gems of Divine Mysteries as published: Arabic, but spelled with ی throughout
+    const t = 'یا ایّها السّالک فی سبل العدل و النّاظر الی طلعة الفضل قد بلغ کتابک و عرفت سؤالک و سمعت لحنات قلبک فی سرادق فؤادک';
+    expect(detectLanguageFeatures(t).language).toBe('ar');
+  });
+  it('reads Persian by the letters Arabic never uses (پ چ ژ گ)', () => {
+    const t = 'ایّام نوروز است همیشه بیاد آن یاران مهربان هستم و از درگاه احدیّت طلب تأیید و توفیق مینمایم تا آن جمع مانند شمع در اقالیم امریک برافروزند و نور محبّت اللّه در قلوب روشن نمایند چه که گلشن';
+    expect(detectLanguageFeatures(t).language).toBe('fa');
+  });
+});
+
+describe('detectLanguageFeatures — Persian by grammar', () => {
+  it('reads Persian written without پ چ ژ گ (Arabic ي/ك forms)', () => {
+    const t = 'الها معبودا مسجودا شهادت ميدهم بوحدانيت تو و فردانيت تو و بخششهاى قديم و جديد تو، توئى آن كريمى كه امطار سحاب سماء رحمتت بر شريف و وضيع باريده است و از تو سؤال مينمائيم كه ما را از فضل قديمت محروم ننمائى';
+    expect(detectLanguageFeatures(t).language).toBe('fa');
+  });
+  it('reads an Arabic tablet in a Persian-labelled volume as Arabic', () => {
+    const t = 'هذا کتاب من لدنا الی عبد من العباد لیجذبه الی مقر القرب و القدس و اللقاء و یسقیه الرحیق المختوم الذی فک ختامه باسم الله المهیمن العزیز القیوم لعل یدع ما عنده و یقبل الی الله الذی کان علی کل شیء قدیرا';
+    expect(detectLanguageFeatures(t).language).toBe('ar');
+  });
+});

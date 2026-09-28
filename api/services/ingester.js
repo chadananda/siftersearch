@@ -1470,6 +1470,11 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     }
   }
 
+  // The source declares its paragraphing sound (oceanoflights: `needs_segmentation: false`). The punctuation
+  // heuristic would otherwise send 4,566 of those tablets (16M chars) to paid AI segmentation and REPLACE the
+  // published paragraphing — measured 2026-09-28 dry run of Core Tablets.
+  if (String(extractedMeta.needs_segmentation).toLowerCase() === 'false') skipAISegmentation = true;
+
   // Parse into chunks/paragraphs with blocktype awareness
   // Uses AI segmentation for RTL languages without punctuation (unless skipAISegmentation)
   let { chunks, autoSegmented } = await parseDocumentWithBlocks(contentToProcess, {
