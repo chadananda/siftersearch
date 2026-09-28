@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T03:27:03.648Z",
+  "generated": "2026-09-28T11:06:55.105Z",
   "entries": [
+    {
+      "hash": "01278fb8",
+      "date": "2026-09-27",
+      "type": "Fixed",
+      "description": "Twin records weigh as one place; every sound-alike weighed by its text count ('iderne' vs 'Adrienne D.')",
+      "scope": "search"
+    },
     {
       "hash": "3473e704",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Report each book only ONCE (on first completion) — fixes the same books repeating every hourly email",
       "scope": null
-    },
-    {
-      "hash": "c84fc003",
-      "date": "2026-07-19",
-      "type": "Other",
-      "description": "Remove duplicate doc 11344 (Nayriz) from the plan — same book as the finished 16552",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "01278fb8",
+        "date": "2026-09-27",
+        "type": "Fixed",
+        "description": "Twin records weigh as one place; every sound-alike weighed by its text count ('iderne' vs 'Adrienne D.')",
+        "scope": "search"
+      },
       {
         "hash": "3473e704",
         "date": "2026-09-27",
@@ -7065,15 +7072,6 @@
         "date": "2026-07-20",
         "type": "Other",
         "description": "Report each book only ONCE (on first completion) — fixes the same books repeating every hourly email",
-        "scope": null
-      }
-    ],
-    "2026-07-19": [
-      {
-        "hash": "c84fc003",
-        "date": "2026-07-19",
-        "type": "Other",
-        "description": "Remove duplicate doc 11344 (Nayriz) from the plan — same book as the finished 16552",
         "scope": null
       }
     ]

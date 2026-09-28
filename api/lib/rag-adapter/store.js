@@ -857,6 +857,24 @@ export function makeStore() {
     // which no API-layer filter looked at, so 6,668 merged rows were served as live people until 2026-08-24.
     // It also concatenated onto the previous value, so re-merging stacked markers up to nine deep. Assigning
     // a constant makes the write idempotent: merging the same id twice leaves the identical tombstone.
+    // A record whose own passages never carry its name (a guessed label) takes the name the text gives. Its lookup keys
+    // follow, so the old name stops finding it; the decision keeps the old name so the rename can be undone.
+    async renameEntity(id, name, d) {
+      const ge = await db.queryOne(`SELECT canonical_name cn, entity_type et, importance FROM graph_entities WHERE id = ?`, [id]);
+      if (!ge) return 0;
+      const norm = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      await db.transaction([
+        { sql: `UPDATE graph_entities SET canonical_name = ? WHERE id = ?`, args: [name, id] },
+        { sql: `UPDATE entity_research SET canonical_name = ? WHERE canonical_name = ? AND entity_type = ?`, args: [name, ge.cn, ge.et] },
+        { sql: `DELETE FROM entity_lookup_keys WHERE entity_id = ? AND surface = ?`, args: [id, ge.cn] },
+        ...[...skeletonKeys(name)].map((k) => ({ sql: `INSERT INTO entity_lookup_keys (skeleton_key, entity_id, surface, surface_norm, is_canonical, entity_type, importance) VALUES (?, ?, ?, ?, 1, ?, ?)`,
+          args: [k, id, name, norm, ge.et, ge.importance ?? null] })),
+        { sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, status, method_version) VALUES ('rename','entity',?,?,?,?,?,?, 'applied', ?)`,
+          args: [JSON.stringify([id]), JSON.stringify({ from: ge.cn, name }), JSON.stringify(d?.evidence ?? null), d?.rationale ?? null, d?.actor ?? 'model', d?.actorTier ?? 2, d?.methodVersion ?? null] },
+      ]);
+      return 1;
+    },
+
     async applyMerge(canonicalId, mergeIds, reason, meta = {}) {
       if (!mergeIds.length) return 0;
       const ph = mergeIds.map(() => '?').join(',');

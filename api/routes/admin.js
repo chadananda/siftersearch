@@ -2657,6 +2657,31 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
   });
 
+  // POST /server/identity-reviewed { items: [{verdict:'same'|'different'|'rename', a, b?, into?, name?, reason, reviewer}], write=false }
+  // — record verdicts a reader made from the review passages (rag/entities/reviewed.js). reviewer 'human:…' = tier 3.
+  // Background task 'identity-reviewed'; DRY by default. GET …/report?mode=dry|write.
+  fastify.post('/server/identity-reviewed', { preHandler: requireInternal }, async (request) => {
+    const { items, write = false } = request.body || {};
+    if (!Array.isArray(items) || !items.length) throw ApiError.badRequest('items[] required');
+    const { decisionsFor } = await import('../lib/rag/entities/reviewed.js');
+    try { decisionsFor(items); } catch (e) { throw ApiError.badRequest(e.message); }
+    const existing = backgroundTasks.get('identity-reviewed');
+    if (existing && existing.status === 'running') throw ApiError.conflict('An identity-reviewed run is already in progress');
+    const { writeFileSync, mkdirSync } = await import('fs');
+    mkdirSync('logs', { recursive: true });
+    const file = `logs/identity-reviewed-items-${Date.now()}.json`;
+    writeFileSync(file, JSON.stringify(items));
+    const task = runBackgroundTask('identity-reviewed', 'scripts/identity-reviewed.mjs', [`--items=${file}`, ...(write ? ['--write'] : [])]);
+    return { success: true, taskId: 'identity-reviewed', write: !!write, items: items.length, status: task.status };
+  });
+  fastify.get('/server/identity-reviewed/report', { preHandler: requireInternal }, async (request) => {
+    const { readdirSync, readFileSync } = await import('fs');
+    const mode = request.query.mode === 'write' ? 'write' : 'dry';
+    const files = readdirSync('logs').filter((f) => f.startsWith(`identity-reviewed-${mode}-`)).sort();
+    if (!files.length) throw ApiError.notFound(`no ${mode} report yet`);
+    return { file: files.at(-1), ...JSON.parse(readFileSync(`logs/${files.at(-1)}`, 'utf8')) };
+  });
+
   // GET /server/entity-mention-breakdown?id= — read-only: where an entity's mentions come from — per book, how the book
   // named it (resolved handles), and the place/era of those passages (from the disambiguation note). Shows a famous
   // record that absorbed other people's mentions ("Mullá Ḥusayn" in a Nayríz history bound to Bushrú'í).
