@@ -203,6 +203,14 @@ describe('plannedSearch — search target', () => {
     expect(r.hits[0].targetHighlight).toContain('<mark>Adrianople</mark>');
     expect(r.hits.find((h) => h.id === 1).targetHighlight).toBeUndefined();   // kept, but never promoted
   });
+  it('the target’s names are searched by keyword only (no embedding, no HyPE per name)', async () => {
+    const calls = [];
+    const e2 = async (q, opts) => { calls.push({ q, opts }); return eng(q); };
+    await plannedSearch('iderne', { planner: planOf({}), engine: e2, targeter: async () => adrianople });
+    const named = calls.filter((c) => c.q !== 'iderne');
+    expect(named.length).toBeGreaterThan(0);
+    expect(named.every((c) => c.opts.semantic === false && c.opts.hype === false && c.opts.keywordLayer === true)).toBe(true);
+  });
   it('no target → the search is exactly as before', async () => {
     const r = await plannedSearch('iderne', { planner: planOf({}), engine: eng, targeter: async () => null });
     expect(r.target).toBeNull();

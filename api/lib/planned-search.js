@@ -7,6 +7,7 @@ import { planSearch, layersFor } from './search-plan.js';
 import { relaxScope } from './search-scope.js';
 
 const TTL_MS = 10 * 60 * 1000;
+const KEYWORD_ONLY = { keywordLayer: true, semantic: false, hype: false, diversify: false };
 const MAX = 500;
 const cache = new Map();
 export const clearPlannedCache = () => cache.clear();
@@ -119,11 +120,12 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   const run = engine || (await import('./search.js')).multiIndexSearch;
   const t1 = Date.now();
   const stages = {};   // per-stage ms, so the 1s budget can be held stage by stage
-  const search = async (filters, q = query) => {
+  const search = async (filters, q = query, only = null) => {
     const res = await run(q, {
       limit, filters, scope_config,
       ...(entityIds?.length ? { entityIds } : {}),
       keywordLayer: layers.keyword, hype: layers.hype, semantic: layers.semantic, diversify: layers.diversify, includeMatchedHype: true,
+      ...(only || {}),
     });
     (stages.engine ||= []).push({ filters: Object.keys(filters || {}).filter((k) => filters[k]), ...(res?._timings || {}) });
     return res?.hits || [];
@@ -147,7 +149,8 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   if (tgt) {
     const { markTarget } = await import('./search-target.js');
     const names = tgt.names.filter((n) => !/[\u0600-\u06FF]/.test(n) && fold(n) !== fold(query)).slice(0, 3);
-    const per = await Promise.all(names.map((n) => search(r.scope || plan.filters, n).catch(() => [])));
+    // A NAME needs only the keyword layer: the full engine embedded each name and ran HyPE (1.8–3.7s measured live).
+    const per = await Promise.all(names.map((n) => search(r.scope || plan.filters, n, KEYWORD_ONLY).catch(() => [])));
     hits = leadWithTarget([hits, ...per], (h) => markTarget(h.text, tgt), limit);
     stages.target_ms = Date.now() - t1;
   }
