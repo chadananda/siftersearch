@@ -16,6 +16,22 @@ select hype questions that match a paragraph … some kind of indexed fetch for 
 | 5. Questions per paragraph | Jev picks from the matched ideas' questions | same call or one more | Jev only |
 | 6. Follow-up over months | review of flags, novelty queue, catalogue growth | continuous | small |
 
+## 0. Kernel roster (Chad + review, 2026-09-28) — interpretive works; doc ids = the copies to use
+
+Bahá'u'lláh: Kitáb-i-Íqán #20810 · Gems of Divine Mysteries #20782 · Seven & Four Valleys #20811 · Gleanings #8312 ·
+Tablets Revealed after the Aqdas #8270 · Kitáb-i-Aqdas + Notes + Q&A (copy to locate) · Epistle to the Son of the Wolf
+#8273 · Summons of the Lord of Hosts #20806 · Hidden Words (authorized text; #15171 is a parallel early/authorized copy)
+The Báb: Selections #20898
+‘Abdu'l-Bahá: Some Answered Questions #20911 · Secret of Divine Civilization #20919 · Selections #20910 · Will and
+Testament #20920 · Tablets of the Divine Plan #20914 · Promulgation of Universal Peace #20917 · Paris Talks #20908
+(talks: full coverage, lower weight when meanings conflict)
+Shoghi Effendi: God Passes By #21310 · World Order of Bahá'u'lláh #20894 · The Promised Day is Come #20893 · Advent of
+Divine Justice #20890 · Citadel of Faith #20882 · Bahá'í Administration #20880
+Universal House of Justice: One Common Faith #343 · Century of Light #296 · The Promise of World Peace #91
+
+Not kernel (first sweep targets and recall tests): Taherzadeh, Saiedi, the Íqán companions (Dunbar, Buck, Poirier).
+~13k paragraphs in all.
+
 ## 1. The kernel catalogue — ideas, not terms
 
 Kernels, each authoritative in its own register: the Kitáb-i-Íqán (Bahá'u'lláh — interpretation of scripture,

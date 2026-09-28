@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T19:05:11.505Z",
+  "generated": "2026-09-28T19:15:10.798Z",
   "entries": [
+    {
+      "hash": "20f6ab86",
+      "date": "2026-09-28",
+      "type": "Chore",
+      "description": "Claims export returns a whole book (≤6000) with statement + semantic key; design: index on ingest",
+      "scope": "concepts"
+    },
     {
       "hash": "faa316e0",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Enable zone routes for siftersearch.com + www",
       "scope": null
-    },
-    {
-      "hash": "3f64a7d3",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Coverage-deadlock fix (terminal disposition + shared floor) + ops sentinel/daily digest",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "20f6ab86",
+        "date": "2026-09-28",
+        "type": "Chore",
+        "description": "Claims export returns a whole book (≤6000) with statement + semantic key; design: index on ingest",
+        "scope": "concepts"
+      },
       {
         "hash": "faa316e0",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Enable zone routes for siftersearch.com + www",
-        "scope": null
-      },
-      {
-        "hash": "3f64a7d3",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Coverage-deadlock fix (terminal disposition + shared floor) + ops sentinel/daily digest",
         "scope": null
       }
     ]
