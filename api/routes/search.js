@@ -327,7 +327,26 @@ export default async function searchRoutes(fastify) {
     const { q, limit = 10, offset = 0 } = request.query;
     const quickStart = Date.now();
 
-    const results = await keywordSearch(q, { limit, offset });
+    // SEARCH TARGET (search-target.js): a query naming a person or place searches every name the texts use for it —
+    // "iderne" → Adrianople / Adirnih / ادرنه — and the highlight marks the target, not the typed string. A query that
+    // resolves to nothing searches as before.
+    const { resolveTarget, markTarget } = await import('../lib/search-target.js');
+    const target = await Promise.race([resolveTarget(q).catch(() => null), new Promise((r) => setTimeout(() => r(null), 400))]);
+    let results;
+    if (target) {
+      const names = target.names.filter((n) => !/[\u0600-\u06FF]/.test(n)).slice(0, 4);
+      const per = await Promise.all(names.map((n) => keywordSearch(n, { limit: limit + offset }).catch(() => ({ hits: [] }))));
+      const seen = new Set(), merged = [];
+      for (let i = 0; merged.length < limit + offset && i < limit + offset; i++) for (const r of per) {
+        const h = r.hits?.[i]; if (h && !seen.has(h.id) && markTarget(h.text, target)) { seen.add(h.id); merged.push(h); }
+      }
+      const total = per.reduce((a, r) => a + (r.estimatedTotalHits || 0), 0);
+      results = { hits: merged.slice(offset, offset + limit), estimatedTotalHits: total, hasMore: merged.length > offset + limit || total > offset + limit,
+        cached: false, processingTimeMs: Date.now() - quickStart };
+      if (!results.hits.length) results = await keywordSearch(q, { limit, offset });
+    } else {
+      results = await keywordSearch(q, { limit, offset });
+    }
 
     // Log search (only first page to avoid spamming on pagination)
     if (offset === 0) {
@@ -352,8 +371,16 @@ export default async function searchRoutes(fastify) {
 
     return {
       hits: results.hits.map(hit => {
-        // Extract best sentence with smart highlighting (stop words filtered)
-        const { excerpt, highlightedExcerpt } = highlightBestSentence(hit, q);
+        // Extract best sentence with smart highlighting (stop words filtered) — or, when the query named a TARGET,
+        // the sentence that names it, with every name of the target marked.
+        let { excerpt, highlightedExcerpt } = highlightBestSentence(hit, q);
+        const marked = target ? markTarget(hit.text, target) : null;
+        if (marked) {
+          const sentences = marked.split(/(?<=[.!?؟])\s+/);
+          const best = sentences.find((x) => x.includes('<mark>')) || marked;
+          highlightedExcerpt = best.length > 600 ? `${best.slice(0, 600)}…` : best;
+          excerpt = highlightedExcerpt.replace(/<\/?mark>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+        }
         return {
           id: hit.id,
           document_id: hit.doc_id,
@@ -375,6 +402,7 @@ export default async function searchRoutes(fastify) {
         };
       }),
       query: q,
+      target: target ? { id: target.id, name: target.name, type: target.type, names: target.names } : null,
       offset,
       limit,
       estimatedTotalHits: results.estimatedTotalHits,

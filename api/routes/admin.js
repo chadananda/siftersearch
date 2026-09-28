@@ -2702,6 +2702,31 @@ Collection: ${paragraph.collection || 'Unknown'}
     return { people: rows, mentions: rows.reduce((a, r) => a + r.mentions, 0), clusters: rows.reduce((a, r) => a + r.clusters, 0) };
   });
 
+  // POST /server/entity-alias { id, alias, source } — record another NAME for an entity (e.g. Edirne for Adrianople): the
+  // alias joins entity_research.aliases (search targets and recall read it), its transliteration keys join the lookup
+  // index (so a misspelling still lands), and an append-only decision records who added it and on what source.
+  fastify.post('/server/entity-alias', { preHandler: requireInternal }, async (request) => {
+    const { id, alias, source } = request.body || {};
+    const name = String(alias || '').trim();
+    if (!Number(id) || !name || !String(source || '').trim()) throw ApiError.badRequest('id, alias and source are required');
+    const ge = await queryOne(`SELECT id, canonical_name cn, entity_type et, importance FROM graph_entities WHERE id = ?`, [Number(id)]);
+    if (!ge) throw ApiError.notFound('entity not found');
+    const row = await queryOne(`SELECT aliases FROM entity_research WHERE canonical_name = ? AND entity_type = ?`, [ge.cn, ge.et]);
+    let aliases = []; try { const a = JSON.parse(row?.aliases || '[]'); if (Array.isArray(a)) aliases = a; } catch { /* none */ }
+    if (!aliases.includes(name)) aliases.push(name);
+    if (row) await query(`UPDATE entity_research SET aliases = ? WHERE canonical_name = ? AND entity_type = ?`, [JSON.stringify(aliases), ge.cn, ge.et]);
+    else await query(`INSERT INTO entity_research (canonical_name, entity_type, aliases) VALUES (?, ?, ?)`, [ge.cn, ge.et, JSON.stringify(aliases)]);
+    const { skeletonKeys } = await import('../lib/translit-key.js');
+    const norm = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    for (const k of skeletonKeys(name)) {
+      await query(`INSERT INTO entity_lookup_keys (skeleton_key, entity_id, surface, surface_norm, is_canonical, entity_type, importance) VALUES (?, ?, ?, ?, 0, ?, ?)`,
+        [k, ge.id, name, norm, ge.et, ge.importance ?? null]);
+    }
+    await query(`INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, status) VALUES ('set','entity',?,?,?,?,?,?, 'applied')`,
+      [JSON.stringify([ge.id]), JSON.stringify({ alias: name }), JSON.stringify({ source }), `alias "${name}" for ${ge.cn}`, 'internal-api', 3]);
+    return { id: ge.id, name: ge.cn, aliases };
+  });
+
   // GET /server/docs-by-title?q=a|b|c — read-only: every copy of each titled work with paragraph / claim / mention
   // counts, so a pass targets the copy the entity pipeline actually used.
   fastify.get('/server/docs-by-title', { preHandler: requireInternal }, async (request) => {

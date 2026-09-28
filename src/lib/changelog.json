@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T02:04:57.220Z",
+  "generated": "2026-09-28T02:31:50.034Z",
   "entries": [
+    {
+      "hash": "f6ba7c08",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Entity-top — most-mentioned people with mentions, books, handles (review sizing)",
+      "scope": "research"
+    },
     {
       "hash": "83b64424",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Serialise supervisor ticks (tick mutex) — concurrent 20s-timer + POST /queue/tick both read busy=0 and over-launched 2x the slot budget (9 procs vs 5). One tick at a time.",
       "scope": null
-    },
-    {
-      "hash": "419ba748",
-      "date": "2026-07-18",
-      "type": "Other",
-      "description": "Hourly progress-digest email (nice HTML) for unattended runs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "f6ba7c08",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Entity-top — most-mentioned people with mentions, books, handles (review sizing)",
+        "scope": "research"
+      },
       {
         "hash": "83b64424",
         "date": "2026-09-27",
@@ -7069,13 +7076,6 @@
         "date": "2026-07-18",
         "type": "Other",
         "description": "Serialise supervisor ticks (tick mutex) — concurrent 20s-timer + POST /queue/tick both read busy=0 and over-launched 2x the slot budget (9 procs vs 5). One tick at a time.",
-        "scope": null
-      },
-      {
-        "hash": "419ba748",
-        "date": "2026-07-18",
-        "type": "Other",
-        "description": "Hourly progress-digest email (nice HTML) for unattended runs",
         "scope": null
       }
     ]
