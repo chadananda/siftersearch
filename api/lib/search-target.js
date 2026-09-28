@@ -20,7 +20,8 @@ export function nameOf(query) {
 
 /**
  * Pick the target from lookup candidates. Pure. Each candidate: { id, name, type, mentions, names:[…] }.
- * Exact spelling (any of its names) beats a sound-alike; among equals the entity the texts mention most. A sound-alike
+ * `mentions` = the entity's weight in the texts (mentions + claims pointing at it). Exact spelling (any of its names)
+ * beats a sound-alike; among equals the entity the texts use most. A sound-alike
  * wins only when it is clearly ahead (3× the mentions of the next) — "iderne" → Adrianople over Boris Dorn.
  */
 export function pickTarget(name, cands) {
@@ -42,6 +43,9 @@ async function namesFor(ids, db = { queryAll }) {
     const ph = need.map(() => '?').join(',');
     const surf = await db.queryAll(`SELECT entity_id id, surface, COUNT(*) n FROM entity_mentions_v2 WHERE entity_id IN (${ph}) GROUP BY 1, 2 ORDER BY n DESC`, need);
     const ali = await db.queryAll(`SELECT ge.id, er.aliases FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name AND er.entity_type = ge.entity_type WHERE ge.id IN (${ph})`, need);
+    // Places, works and events are rarely bound as mentions (reconcile types them and never applies the decision), so
+    // their weight in the texts also counts the claims that point AT them ("exiled to Adrianople").
+    const tgt = await db.queryAll(`SELECT target_entity_id id, COUNT(*) n FROM entity_claims WHERE target_entity_id IN (${ph}) GROUP BY 1`, need);
     for (const id of need) {
       const s = surf.filter((r) => r.id === id);
       let aliases = [];
@@ -49,7 +53,7 @@ async function namesFor(ids, db = { queryAll }) {
       // Surfaces used at least twice (a one-off surface is often a pronoun or a slip), plus every recorded alias.
       const names = [...new Set([...s.filter((r) => r.n >= 2 || s.length <= 3).map((r) => String(r.surface).trim()), ...aliases])]
         .filter((n) => n.length >= 3 && !/^(he|she|him|his|her|they|it|this|that|there)$/i.test(n)).slice(0, 12);
-      const v = { names, mentions: s.reduce((a, r) => a + r.n, 0) };
+      const v = { names, mentions: s.reduce((a, r) => a + r.n, 0) + (tgt.find((r) => r.id === id)?.n || 0) };
       namesCache.set(id, { at: Date.now(), v }); out.set(id, v);
     }
   }
@@ -61,7 +65,7 @@ export async function resolveTarget(query, { lookup, db } = {}) {
   const name = nameOf(query);
   if (!name) return null;
   const find = lookup || (await import('./entity-api.js')).entityLookup;
-  const cands = (await find(name, { limit: 8 }).catch(() => [])).filter((c) => ['person', 'place', 'event', 'work', 'group'].includes(c.type));
+  const cands = (await find(name, { limit: 30 }).catch(() => [])).filter((c) => ['person', 'place', 'event', 'work', 'group'].includes(c.type));
   if (!cands.length) return null;
   const names = await namesFor(cands.map((c) => c.id), db);
   const t = pickTarget(name, cands.map((c) => ({ ...c, ...(names.get(c.id) || { names: [], mentions: 0 }) })));

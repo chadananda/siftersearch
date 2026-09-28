@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T02:31:50.034Z",
+  "generated": "2026-09-28T02:37:25.742Z",
   "entries": [
+    {
+      "hash": "63a809a4",
+      "date": "2026-09-27",
+      "type": "New",
+      "description": "Quick search follows the TARGET — every name of the person/place searched, the target highlighted; entity-alias endpoint",
+      "scope": "search"
+    },
     {
       "hash": "f6ba7c08",
       "date": "2026-09-27",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Plan-follower feeds full slot budget + API queue reset (stop direct DB access)",
       "scope": null
-    },
-    {
-      "hash": "751e5c03",
-      "date": "2026-07-18",
-      "type": "Other",
-      "description": "Serialise supervisor ticks (tick mutex) — concurrent 20s-timer + POST /queue/tick both read busy=0 and over-launched 2x the slot budget (9 procs vs 5). One tick at a time.",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-27": [
+      {
+        "hash": "63a809a4",
+        "date": "2026-09-27",
+        "type": "New",
+        "description": "Quick search follows the TARGET — every name of the person/place searched, the target highlighted; entity-alias endpoint",
+        "scope": "search"
+      },
       {
         "hash": "f6ba7c08",
         "date": "2026-09-27",
@@ -7069,13 +7076,6 @@
         "date": "2026-07-18",
         "type": "Other",
         "description": "Plan-follower feeds full slot budget + API queue reset (stop direct DB access)",
-        "scope": null
-      },
-      {
-        "hash": "751e5c03",
-        "date": "2026-07-18",
-        "type": "Other",
-        "description": "Serialise supervisor ticks (tick mutex) — concurrent 20s-timer + POST /queue/tick both read busy=0 and over-launched 2x the slot budget (9 procs vs 5). One tick at a time.",
         "scope": null
       }
     ]

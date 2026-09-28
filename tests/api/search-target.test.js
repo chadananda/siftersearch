@@ -26,9 +26,11 @@ describe('pickTarget', () => {
 
 describe('resolveTarget', () => {
   it('resolves through the lookup and the names the texts use', async () => {
+    // A PLACE: few bound mentions, but many claims point at it ("exiled to Adrianople") — that weight counts too.
     const db = { queryAll: async (sql) => (sql.includes('entity_mentions_v2')
-      ? [{ id: 1, surface: 'Adrianople', n: 800 }, { id: 1, surface: 'ادرنه', n: 60 }, { id: 1, surface: 'Adirnih', n: 40 }, { id: 2, surface: 'Dorn', n: 12 }]
-      : [{ id: 1, aliases: '["Edirne"]' }, { id: 2, aliases: null }]) };
+      ? [{ id: 1, surface: 'Adrianople', n: 8 }, { id: 1, surface: 'ادرنه', n: 3 }, { id: 1, surface: 'Adirnih', n: 2 }, { id: 2, surface: 'Dorn', n: 12 }]
+      : sql.includes('entity_claims') ? [{ id: 1, n: 400 }]
+        : [{ id: 1, aliases: '["Edirne"]' }, { id: 2, aliases: null }]) };
     const lookup = async () => [{ id: 2, name: 'Boris Dorn', type: 'person' }, { id: 1, name: 'Adrianople', type: 'place' }];
     const t = await resolveTarget('iderne', { lookup, db });
     expect(t).toMatchObject({ id: 1, name: 'Adrianople' });
