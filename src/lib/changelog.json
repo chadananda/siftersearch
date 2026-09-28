@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T18:24:02.668Z",
+  "generated": "2026-09-28T18:28:35.421Z",
   "entries": [
+    {
+      "hash": "212098bd",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Shadow linking — Jev links every name occurrence in a book beside the pipeline's binding (read-only)",
+      "scope": "entities"
+    },
     {
       "hash": "b64bf50e",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Format-for-comprehension — answer-first, adaptive shape, books always linked",
       "scope": null
-    },
-    {
-      "hash": "1a434670",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Needle engine — fuzzy quote-hunt ladder (imperfect memory is the norm)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "212098bd",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Shadow linking — Jev links every name occurrence in a book beside the pipeline's binding (read-only)",
+        "scope": "entities"
+      },
       {
         "hash": "b64bf50e",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Format-for-comprehension — answer-first, adaptive shape, books always linked",
-        "scope": null
-      },
-      {
-        "hash": "1a434670",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Needle engine — fuzzy quote-hunt ladder (imperfect memory is the norm)",
         "scope": null
       }
     ]

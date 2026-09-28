@@ -4,7 +4,7 @@ import { decisionsFor, planMerges, run } from '../../api/lib/rag/entities/review
 import { LIVE_SQL, isLiveRow, isMergedRow, retiredStamp } from '../../api/lib/entity-live.js';
 
 const store = (live = {}, imp = {}, men = {}, anchored = []) => {
-  const log = { merges: [], saved: [], renames: [], retired: [], created: [], repoints: [], mentionSplits: [] };
+  const log = { merges: [], saved: [], renames: [], retired: [], created: [], repoints: [], mentionSplits: [], binds: [] };
   return { log, s: {
     getIdentityDossiers: async (ids) => ({ dossiers: new Map(ids.map((id) => [id, { id, name: `#${id}`, live: live[id] ?? true, importance: imp[id] ?? null, mentions: men[id] ?? 1 }])) }),
     applyMerge: async (canonical, merged, reason, meta) => log.merges.push({ canonical, merged, meta }),
@@ -13,6 +13,7 @@ const store = (live = {}, imp = {}, men = {}, anchored = []) => {
     createEntity: async (name) => { log.created.push(name); return 900; },
     repointCluster: async (from, to, docId, handle) => { log.repoints.push({ from, to, docId, handle }); return { moved: 3, claims: 2, held: 1 }; },
     repointMentions: async (anchors, from, to) => { log.mentionSplits.push({ anchors, from, to }); return { moved: anchors.length, claims: 0, held: 1 }; },
+    bindMentionAnchors: async (anchors, to) => { log.binds.push({ anchors, to }); return { moved: anchors.length, claims: 0, held: 0 }; },
     retireEntity: async (id) => { if (anchored.includes(id)) throw new Error(`entity ${id} is anchored`); log.retired.push(id); },
   } };
 };
@@ -40,7 +41,7 @@ describe('reviewed decisions', () => {
       { verdict: 'rename', a: 9, name: 'the Bábí of Nayríz who fled to Ṭihrán', reason: 'its passages never name Yaḥyá' },
     ];
     const dry = store(); await run(ctx(dry.s), { items });
-    expect(dry.log).toEqual({ merges: [], saved: [], renames: [], retired: [], created: [], repoints: [], mentionSplits: [] });
+    expect(dry.log).toEqual({ merges: [], saved: [], renames: [], retired: [], created: [], repoints: [], mentionSplits: [], binds: [] });
     const w = store(); const r = await run(ctx(w.s), { items, write: true });
     expect(r.counts).toEqual({ merge: 1, distinct: 1, rename: 1 });
     expect(w.log.merges[0]).toMatchObject({ canonical: 6, merged: [5], meta: { actorTier: 3 } });
@@ -126,6 +127,12 @@ describe('split: repoint one book’s cluster', () => {
     await run(ctx(w.s), { write: true, items: [{ verdict: 'detach', from: 1262681, anchors: ['7bf8'], reason: 'not Rúḥíyyih by date' }] });
     expect(w.log.mentionSplits).toEqual([{ anchors: ['7bf8'], from: 1262681, to: null }]);
     expect(w.log.created).toEqual([]);
+  });
+  // 2026-09-28 shadow linking: unbound "Mirza Yahya" mentions a reader identified from the passage.
+  it('bind attaches unbound mentions to the identified person', async () => {
+    const w = store();
+    await run(ctx(w.s), { write: true, items: [{ verdict: 'bind', to: 1301670, anchors: ['a1', 'a2'], reason: 'Mirza Yahya in Cyprus' }] });
+    expect(w.log.binds).toEqual([{ anchors: ['a1', 'a2'], to: 1301670 }]);
   });
   it('a repoint without its book and label is refused', () => {
     expect(() => decisionsFor([{ verdict: 'repoint', from: 1, to: 2, reason: 'x' }])).toThrow(/docId, handle/);

@@ -944,6 +944,16 @@ export function makeStore() {
       return { moved: ms.length, claims, held };
     },
 
+    // Bind UNBOUND mentions (by anchor) to the person a reviewer identified — the held "uncertain" occurrences shadow
+    // linking resolves. Only mentions still unbound are touched; the decision is mention-level, so replay reproduces it.
+    async bindMentionAnchors(anchors, to, d) {
+      const ph = anchors.map(() => '?').join(',');
+      const r = await db.query(`UPDATE entity_mentions_v2 SET entity_id = ?, resolution_basis = 'review' WHERE entity_id IS NULL AND anchor IN (${ph})`, [to, ...anchors]);
+      await db.transaction([{ sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, confidence, status, method_version) VALUES ('link','mention',?,?,?,?,?,?,NULL,'applied',?)`,
+        args: [JSON.stringify(anchors), JSON.stringify({ entityId: to }), JSON.stringify(d?.evidence ?? null), d?.rationale ?? null, d?.actor ?? 'model', d?.actorTier ?? 2, d?.methodVersion ?? null] }]);
+      return { moved: r.rows?.[0]?.changes ?? r.changes ?? 0, claims: 0, held: 0 };
+    },
+
     // Retire a record no text supports. REFUSES a record anything still anchors — a mention, a claim on either side,
     // a scene participant: those came from a passage, so the record is evidence, not a husk.
     async retireEntity(id, reason, d) {
