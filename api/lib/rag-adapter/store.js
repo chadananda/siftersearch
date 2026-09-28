@@ -912,6 +912,31 @@ export function makeStore() {
       return { moved: ms.length, claims, held };
     },
 
+    // Move individual MENTIONS (by anchor) off a record — for a cluster that holds two people, where the book's one
+    // label covered both. Same claim rule as repointCluster: a claim follows only from a paragraph the record no
+    // longer appears in. The decision is a mention-level SPLIT, which the identity replay lets govern the cluster's.
+    async repointMentions(anchors, from, to, d) {
+      const ph = (a) => a.map(() => '?').join(',');
+      const ms = await db.queryAll(`SELECT id, doc_id, para_id FROM entity_mentions_v2 WHERE entity_id = ? AND anchor IN (${ph(anchors)})`, [from, ...anchors]);
+      if (!ms.length) return { moved: 0, claims: 0, held: 0 };
+      await db.transaction([{ sql: `UPDATE entity_mentions_v2 SET entity_id = ?, resolution_basis = 'review' WHERE id IN (${ph(ms)})`, args: [to, ...ms.map((m) => m.id)] }]);
+      let claims = 0, held = 0;
+      const stmts = [];
+      for (const key of new Set(ms.map((m) => `${m.doc_id}\u0001${m.para_id}`))) {
+        const [doc, para] = key.split('\u0001');
+        const stays = (await db.queryOne(`SELECT COUNT(*) n FROM entity_mentions_v2 WHERE entity_id = ? AND doc_id = ? AND para_id = ?`, [from, Number(doc), para]))?.n ?? 0;
+        const n = (await db.queryOne(`SELECT COUNT(*) n FROM entity_claims WHERE (entity_id = ? OR target_entity_id = ?) AND doc_id = ? AND para_id = ?`, [from, from, Number(doc), para]))?.n ?? 0;
+        if (stays) { held += n; continue; }
+        claims += n;
+        stmts.push({ sql: `UPDATE entity_claims SET entity_id = ? WHERE entity_id = ? AND doc_id = ? AND para_id = ?`, args: [to, from, Number(doc), para] },
+          { sql: `UPDATE entity_claims SET target_entity_id = ? WHERE target_entity_id = ? AND doc_id = ? AND para_id = ?`, args: [to, from, Number(doc), para] });
+      }
+      stmts.push({ sql: `INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, confidence, status, method_version) VALUES ('split','mention',?,?,?,?,?,?,NULL,'applied',?)`,
+        args: [JSON.stringify(anchors), JSON.stringify({ from, to }), JSON.stringify(d?.evidence ?? null), d?.rationale ?? null, d?.actor ?? 'model', d?.actorTier ?? 2, d?.methodVersion ?? null] });
+      await db.transaction(stmts);
+      return { moved: ms.length, claims, held };
+    },
+
     // Retire a record no text supports. REFUSES a record anything still anchors — a mention, a claim on either side,
     // a scene participant: those came from a passage, so the record is evidence, not a husk.
     async retireEntity(id, reason, d) {

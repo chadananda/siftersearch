@@ -4,7 +4,7 @@ import { decisionsFor, planMerges, run } from '../../api/lib/rag/entities/review
 import { LIVE_SQL, isLiveRow, isMergedRow, retiredStamp } from '../../api/lib/entity-live.js';
 
 const store = (live = {}, imp = {}, men = {}, anchored = []) => {
-  const log = { merges: [], saved: [], renames: [], retired: [], created: [], repoints: [] };
+  const log = { merges: [], saved: [], renames: [], retired: [], created: [], repoints: [], mentionSplits: [] };
   return { log, s: {
     getIdentityDossiers: async (ids) => ({ dossiers: new Map(ids.map((id) => [id, { id, name: `#${id}`, live: live[id] ?? true, importance: imp[id] ?? null, mentions: men[id] ?? 1 }])) }),
     applyMerge: async (canonical, merged, reason, meta) => log.merges.push({ canonical, merged, meta }),
@@ -12,6 +12,7 @@ const store = (live = {}, imp = {}, men = {}, anchored = []) => {
     renameEntity: async (id, name) => log.renames.push({ id, name }),
     createEntity: async (name) => { log.created.push(name); return 900; },
     repointCluster: async (from, to, docId, handle) => { log.repoints.push({ from, to, docId, handle }); return { moved: 3, claims: 2, held: 1 }; },
+    repointMentions: async (anchors, from, to) => { log.mentionSplits.push({ anchors, from, to }); return { moved: anchors.length, claims: 0, held: 1 }; },
     retireEntity: async (id) => { if (anchored.includes(id)) throw new Error(`entity ${id} is anchored`); log.retired.push(id); },
   } };
 };
@@ -39,7 +40,7 @@ describe('reviewed decisions', () => {
       { verdict: 'rename', a: 9, name: 'the Bábí of Nayríz who fled to Ṭihrán', reason: 'its passages never name Yaḥyá' },
     ];
     const dry = store(); await run(ctx(dry.s), { items });
-    expect(dry.log).toEqual({ merges: [], saved: [], renames: [], retired: [], created: [], repoints: [] });
+    expect(dry.log).toEqual({ merges: [], saved: [], renames: [], retired: [], created: [], repoints: [], mentionSplits: [] });
     const w = store(); const r = await run(ctx(w.s), { items, write: true });
     expect(r.counts).toEqual({ merge: 1, distinct: 1, rename: 1 });
     expect(w.log.merges[0]).toMatchObject({ canonical: 6, merged: [5], meta: { actorTier: 3 } });
@@ -109,6 +110,14 @@ describe('split: repoint one book’s cluster', () => {
     await run(ctx(w.s), { write: true, items: [11169, 7132, 2609].map((docId) => ({ verdict: 'repoint', from: 1269643, toName: '‘Alí Nakhjavání', docId, handle: 'h', reason: 'x' })) });
     expect(w.log.created).toEqual(['‘Alí Nakhjavání']);
     expect(w.log.repoints.map((r) => r.to)).toEqual([900, 900, 900]);
+  });
+  // 2026-09-28: one Iṣfahán cluster held both the Báb's host and his brother Raqshá under one label.
+  it('split-mention moves named mentions only, and records a mention-level split', async () => {
+    const w = store();
+    const r = await run(ctx(w.s), { write: true, items: [{ verdict: 'split-mention', from: 1247582, to: 1247848, anchors: ['a1', 'a2'], reason: 'the 1879 persecutor is Raqshá' }] });
+    expect(w.log.mentionSplits).toEqual([{ anchors: ['a1', 'a2'], from: 1247582, to: 1247848 }]);
+    expect(r.results[0].split).toEqual({ moved: 2, claims: 0, held: 1 });
+    expect(() => decisionsFor([{ verdict: 'split-mention', from: 1, to: 2, anchors: [], reason: 'x' }])).toThrow(/anchors/);
   });
   it('a repoint without its book and label is refused', () => {
     expect(() => decisionsFor([{ verdict: 'repoint', from: 1, to: 2, reason: 'x' }])).toThrow(/docId, handle/);

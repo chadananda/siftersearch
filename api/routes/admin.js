@@ -2758,14 +2758,15 @@ Collection: ${paragraph.collection || 'Unknown'}
     const entity = Number(request.query.entity), doc = Number(request.query.doc), handle = String(request.query.handle || '');
     if (!entity || !doc || !handle) throw ApiError.badRequest('entity, doc and handle required');
     const lim = Math.min(Number(request.query.limit) || 4, 20);
-    const ms = await queryAll(`SELECT para_id, surface FROM entity_mentions_v2 WHERE entity_id = ? AND doc_id = ? AND resolved_as = ? ORDER BY id`, [entity, doc, handle]);
+    const ms = await queryAll(`SELECT id, anchor, para_id, surface, occurrence FROM entity_mentions_v2 WHERE entity_id = ? AND doc_id = ? AND resolved_as = ? ORDER BY id`, [entity, doc, handle]);
     const paras = [...new Set(ms.map((m) => m.para_id))];
     const out = [];
     for (const pid of paras.slice(0, lim)) {
-      const c = await queryOne(`SELECT substr(text, 1, 1400) text, context FROM content WHERE doc_id = ? AND (external_para_id = ? OR ('p' || id) = ?) AND deleted_at IS NULL`, [doc, pid, pid]);
+      const c = await queryOne(`SELECT substr(text, 1, 4000) text, context FROM content WHERE doc_id = ? AND (external_para_id = ? OR ('p' || id) = ?) AND deleted_at IS NULL`, [doc, pid, pid]);
       const claims = await queryAll(`SELECT relation, statement FROM entity_claims WHERE entity_id = ? AND doc_id = ? AND para_id = ? LIMIT 5`, [entity, doc, pid]);
       const others = await queryAll(`SELECT DISTINCT m.resolved_as, m.entity_id FROM entity_mentions_v2 m WHERE m.doc_id = ? AND m.para_id = ? AND (m.entity_id IS NULL OR m.entity_id <> ?) LIMIT 12`, [doc, pid, entity]);
-      out.push({ para_id: pid, surfaces: ms.filter((m) => m.para_id === pid).map((m) => m.surface), text: c?.text ?? null, note: String(c?.context || '').slice(0, 400), claims, others });
+      out.push({ para_id: pid, surfaces: ms.filter((m) => m.para_id === pid).map((m) => m.surface),
+        mentions: ms.filter((m) => m.para_id === pid).map(({ anchor, surface, occurrence }) => ({ anchor, surface, occurrence })), text: c?.text ?? null, note: String(c?.context || '').slice(0, 400), claims, others });
     }
     const claimTotal = paras.length ? (await queryOne(`SELECT COUNT(*) n FROM entity_claims WHERE entity_id = ? AND doc_id = ? AND para_id IN (${paras.map(() => '?').join(',')})`, [entity, doc, ...paras]))?.n : 0;
     return { entity, doc, handle, mentions: ms.length, paragraphs: paras.length, claimsInThoseParagraphs: claimTotal, passages: out };

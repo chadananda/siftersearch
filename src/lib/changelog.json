@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T13:40:38.452Z",
+  "generated": "2026-09-28T14:13:50.664Z",
   "entries": [
+    {
+      "hash": "9e46bb4c",
+      "date": "2026-09-28",
+      "type": "Docs",
+      "description": "09-28 afternoon status — target everywhere, 113 splits, lookup holes",
+      "scope": "identity"
+    },
     {
       "hash": "f8acbd2c",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "SifterChat widget execution plan — PRD goals mapped to the real architecture",
       "scope": null
-    },
-    {
-      "hash": "211bd9bc",
-      "date": "2026-08-07",
-      "type": "Other",
-      "description": "ZFS-snapshot copy strategy — immune to the .backup-vs-writes livelock",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "9e46bb4c",
+        "date": "2026-09-28",
+        "type": "Docs",
+        "description": "09-28 afternoon status — target everywhere, 113 splits, lookup holes",
+        "scope": "identity"
+      },
       {
         "hash": "f8acbd2c",
         "date": "2026-09-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-08-07",
         "type": "Other",
         "description": "SifterChat widget execution plan — PRD goals mapped to the real architecture",
-        "scope": null
-      },
-      {
-        "hash": "211bd9bc",
-        "date": "2026-08-07",
-        "type": "Other",
-        "description": "ZFS-snapshot copy strategy — immune to the .backup-vs-writes livelock",
         "scope": null
       }
     ]

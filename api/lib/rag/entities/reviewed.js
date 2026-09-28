@@ -6,7 +6,7 @@ export const METHOD = 'merge-review-v1';
 
 const tierOf = (reviewer) => (/^human:/.test(reviewer) ? 3 : 2);
 
-/** items: [{ verdict: 'same'|'different'|'rename'|'retire'|'repoint', a, b?, into?, name?, reason, reviewer, source? }] → decisions. Pure. */
+/** items: [{ verdict: 'same'|'different'|'rename'|'retire'|'repoint'|'split-mention', a, b?, into?, name?, reason, reviewer, source? }] → decisions. Pure. */
 export function decisionsFor(items) {
   return items.map((it) => {
     const actor = it.reviewer || 'model:reader', actorTier = tierOf(actor);
@@ -29,6 +29,12 @@ export function decisionsFor(items) {
       if (!it.docId || !it.handle || !(it.to || String(it.toName || '').trim())) throw new Error(`reviewed ${it.from}: repoint needs docId, handle and to (or toName)`);
       return { kind: 'repoint', targetKind: 'mention-cluster', targetIds: [Number(it.from), ...(it.to ? [Number(it.to)] : [])],
         payload: { docId: Number(it.docId), resolvedAs: it.handle, from: Number(it.from), to: it.to ? Number(it.to) : null, toName: it.toName ?? null, toType: it.toType ?? 'person' },
+        evidence, rationale: `split: ${it.reason}`.slice(0, 300), actor, actorTier, confidence: null, status: 'applied', methodVersion: METHOD };
+    }
+    if (it.verdict === 'split-mention') {
+      if (!Array.isArray(it.anchors) || !it.anchors.length || !(it.to || String(it.toName || '').trim())) throw new Error(`reviewed ${it.from}: split-mention needs anchors and to (or toName)`);
+      return { kind: 'split-mention', targetKind: 'mention', targetIds: [Number(it.from), ...(it.to ? [Number(it.to)] : [])],
+        payload: { anchors: it.anchors.map(String), from: Number(it.from), to: it.to ? Number(it.to) : null, toName: it.toName ?? null, toType: it.toType ?? 'person' },
         evidence, rationale: `split: ${it.reason}`.slice(0, 300), actor, actorTier, confidence: null, status: 'applied', methodVersion: METHOD };
     }
     if (it.verdict === 'retire') return { kind: 'retire', targetKind: 'entity', targetIds: [Number(it.a)], payload: { reason: 'no-passage' }, evidence,
@@ -88,7 +94,11 @@ export async function run(ctx, { items, write = false } = {}) {
       try {   // a store refusal (e.g. a record still anchored by a passage) is that item's outcome, not the batch's end
         if (d.kind === 'rename') await ctx.store.renameEntity(targetIds[0], d.payload.name, r);
         else if (d.kind === 'retire') await ctx.store.retireEntity(targetIds[0], d.payload.reason, r);
-        else if (d.kind === 'repoint') {
+        else if (d.kind === 'split-mention') {
+          const to = d.payload.to ?? await (async () => { if (!minted.has(d.payload.toName)) minted.set(d.payload.toName, await ctx.store.createEntity(d.payload.toName, d.payload.toType)); return minted.get(d.payload.toName); })();
+          res.split = await ctx.store.repointMentions(d.payload.anchors, d.payload.from, to, { ...r, payload: { ...d.payload, to } });
+          res.to = to;
+        } else if (d.kind === 'repoint') {
           const mint = async (name) => { if (!minted.has(name)) minted.set(name, await ctx.store.createEntity(name, d.payload.toType)); return minted.get(name); };
           const to = d.payload.to ?? await mint(d.payload.toName);
           res.split = await ctx.store.repointCluster(d.payload.from, to, d.payload.docId, d.payload.resolvedAs, { ...r, payload: { ...d.payload, to } });
