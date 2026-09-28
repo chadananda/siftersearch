@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T12:45:11.169Z",
+  "generated": "2026-09-28T12:50:48.708Z",
   "entries": [
+    {
+      "hash": "902532ef",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Chat + Anís + public API search the TARGET a name resolves to ('iderne' → Adrianople), passages naming it lead with the target highlighted",
+      "scope": "search"
+    },
     {
       "hash": "493e6197",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Harden stall-guard (no-completion backstop) + resume (GROUNDING_MODE -> plan)",
       "scope": null
-    },
-    {
-      "hash": "ca2d84b4",
-      "date": "2026-08-07",
-      "type": "Other",
-      "description": "Bulk roadmap done-check (getIntegrationProgress 898 calls -> ~6 GROUP BY) — cut ~5s sweep to <1s",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "902532ef",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Chat + Anís + public API search the TARGET a name resolves to ('iderne' → Adrianople), passages naming it lead with the target highlighted",
+        "scope": "search"
+      },
       {
         "hash": "493e6197",
         "date": "2026-09-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-08-07",
         "type": "Other",
         "description": "Harden stall-guard (no-completion backstop) + resume (GROUNDING_MODE -> plan)",
-        "scope": null
-      },
-      {
-        "hash": "ca2d84b4",
-        "date": "2026-08-07",
-        "type": "Other",
-        "description": "Bulk roadmap done-check (getIntegrationProgress 898 calls -> ~6 GROUP BY) — cut ~5s sweep to <1s",
         "scope": null
       }
     ]
