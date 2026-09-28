@@ -1375,7 +1375,12 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   const frontmatterLang = extractedMeta.language || metadata.language;
   let resolvedLanguage;
 
-  if (frontmatterLang && frontmatterLang !== 'en') {
+  if (['ar', 'fa'].includes(String(frontmatterLang).toLowerCase()) && ['ar', 'fa'].includes(detectedLang.language)) {
+    // Arabic vs Persian: the TEXT decides. Source labels are per volume, not per tablet (an Arabic tablet in a
+    // Persian volume; Persian letters in an "_ar" file) — the grammar-word detector agreed with 2,958/2,990
+    // oceanoflights labels, and the disagreements read by hand were mostly the label's error.
+    resolvedLanguage = detectedLang.language;
+  } else if (frontmatterLang && frontmatterLang !== 'en') {
     // Frontmatter specifies a non-English language - trust it
     resolvedLanguage = frontmatterLang;
   } else if (detectedLang.language !== 'en') {
@@ -1420,7 +1425,11 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
 
   // Skip Arabic documents - ingestion is paused until cost is addressed
   // But still ensure library nodes exist so the collection shows up in the library tree
-  if (finalMeta.language === 'ar') {
+  // The pause was for COST — paid AI segmentation of unpunctuated Arabic. A source that declares its own
+  // paragraphing (needs_segmentation: false) costs only embedding, so it is not paused (Chad, 2026-09-28: ingest
+  // the oceanoflights originals).
+  const declaresParagraphs = String(extractedMeta.needs_segmentation).toLowerCase() === 'false';
+  if (finalMeta.language === 'ar' && !declaresParagraphs) {
     await ensureLibraryNodes(finalMeta.religion, finalMeta.collection);
     logger.info({ relativePath, title: finalMeta.title }, 'Skipping Arabic document (ingestion paused)');
     return {
@@ -2026,6 +2035,10 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     reusedParagraphs: reusedCount,
     newParagraphs: newCount,
     deletedParagraphs: deletedCount,
+    // 0 for a non-English document = sentence marking did not run (e.g. local model down under localOnly):
+    // the caller lists it for a later marking pass rather than treating it as done.
+    sentenceCount: totalSentences,
+    language: finalMeta.language,
     status: existingDoc ? 'updated' : 'ingested'
   };
 }

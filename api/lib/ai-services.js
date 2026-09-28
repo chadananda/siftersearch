@@ -973,6 +973,9 @@ export function segmentationService() {
       } catch (err) {
         // If LM Studio fails, fall back to cloud API
         const primaryProvider = primary.config.provider;
+        // A caller that must not spend (bulk ingest of thousands of originals) opens a `localOnly` AI scope:
+        // the local model's failure then surfaces instead of silently becoming a cloud bill.
+        if (currentAIContext().localOnly) throw err;
         if (primaryProvider === 'lmstudio') {
           logger.warn({ err: err.message }, 'LM Studio unreachable, falling back to cloud API for segmentation');
           const fallback = aiService('segmentation', { forceRemote: true });

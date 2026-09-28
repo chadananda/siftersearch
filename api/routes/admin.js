@@ -1086,12 +1086,13 @@ export default async function adminRoutes(fastify) {
         required: ['filePath'],
         properties: {
           filePath: { type: 'string', description: 'Absolute path to the markdown file' },
-          forceReindex: { type: 'boolean', default: false, description: 'Force re-ingestion even if unchanged' }
+          forceReindex: { type: 'boolean', default: false, description: 'Force re-ingestion even if unchanged' },
+          localOnly: { type: 'boolean', default: false, description: 'Local models only: never fall back to a paid cloud model' }
         }
       }
     }
   }, async (request) => {
-    const { filePath, forceReindex = false } = request.body;
+    const { filePath, forceReindex = false, localOnly = false } = request.body;
     const { readFile, stat } = await import('fs/promises');
     const { ingestDocument, getDocumentByPath } = await import('../services/ingester.js');
 
@@ -1130,13 +1131,18 @@ export default async function adminRoutes(fastify) {
     // Ingest the document (ingester handles ID generation/lookup internally)
     logger.info({ filePath, existing: !!existing }, 'Ingesting document from file');
 
-    const result = await ingestDocument(fileText, {}, filePath);
+    const { withAIContext } = await import('../lib/ai-context.js');
+    const result = await withAIContext({ caller: 'ingest-file', localOnly },
+      () => ingestDocument(fileText, {}, filePath));
 
     return {
       success: true,
       documentId: result.documentId,
       status: result.status,
       paragraphCount: result.paragraphCount,
+      sentences: result.sentenceCount ?? null,
+      language: result.language ?? null,
+      error: result.error ?? null,
       isNew: !existing
     };
   });

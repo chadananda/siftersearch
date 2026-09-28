@@ -1191,3 +1191,43 @@ describe('Document Update Flow (Unit)', () => {
     });
   });
 });
+
+describe('ingestDocument — oceanoflights originals (Arabic/Persian)', () => {
+  let ingestDocument, queryOne, queryAll, query, transaction;
+  beforeEach(async () => {
+    const db = await import('../../api/lib/db.js');
+    ({ queryOne, queryAll, query, transaction } = db);
+    [queryOne, queryAll, query, transaction].forEach((f) => f.mockClear());
+    queryOne.mockResolvedValue(null);
+    queryAll.mockResolvedValue([]);
+    query.mockResolvedValue({ changes: 1, lastInsertRowid: BigInt(7) });
+    transaction.mockResolvedValue(undefined);
+    vi.resetModules();
+    // Sentence marking calls a model (boss vLLM, cloud fallback) — not this unit's concern.
+    vi.doMock('../../api/services/segmenter.js', async (orig) => ({ ...(await orig()),
+      batchAddSentenceMarkers: async (paras) => paras.map((p) => ({ id: p.id, text: p.text, sentenceCount: 1 })) }));
+    ({ ingestDocument } = await import('../../api/services/ingester.js'));
+  });
+  afterEach(() => { vi.doUnmock('../../api/services/segmenter.js'); vi.restoreAllMocks(); });
+
+  const ARABIC = 'هذا کتاب من لدنا الی عبد من العباد لیجذبه الی مقر القرب و القدس و اللقاء و یسقیه الرحیق المختوم الذی فک ختامه باسم الله المهیمن العزیز القیوم لعل یدع ما عنده و یقبل الی الله الذی کان علی کل شیء قدیرا';
+  const PERSIAN = 'نامه شما رسید و از اینکه در فکر انتخاب عمومی بودید روح و ریحان حاصل گردید و ترتیب انتخاب عمومی این است که عدد اعضاء را معین کرد که باید از نه کمتر نباشد و بحسب اقتضای زمان و مکان بر آن افزوده شود';
+  const doc = (lang, body, seg) => `---\ntitle: Tablet\nauthor: Bahá'u'lláh\nlanguage: ${lang}\n${seg ? 'needs_segmentation: false\n' : ''}---\n\n${body}\n`;
+  // language is the 10th column of the docs INSERT
+  const insertedLanguage = () => query.mock.calls.filter((c) => /INSERT INTO docs/i.test(c[0])).at(-1)?.[1]?.[9];
+
+  it('ingests an Arabic original that declares its own paragraphing (no paid segmentation)', async () => {
+    const r = await ingestDocument(doc('ar', ARABIC, true), {}, "Baha'i/Core Tablets/Bahá'u'lláh/t1.md");
+    expect(r.status).toBe('ingested');
+  });
+
+  it('still pauses Arabic that would need AI segmentation', async () => {
+    const r = await ingestDocument(doc('ar', ARABIC, false), {}, "Baha'i/Core Tablets/Bahá'u'lláh/t2.md");
+    expect(r.status).toBe('skipped');
+  });
+
+  it('lets the text decide Arabic vs Persian over a volume-level label', async () => {
+    await ingestDocument(doc('ar', PERSIAN, true), {}, "Baha'i/Core Tablets/'Abdu'l-Bahá/t3.md");
+    expect(insertedLanguage()).toBe('fa');
+  });
+});
