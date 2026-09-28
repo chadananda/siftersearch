@@ -61,3 +61,17 @@ describe('isWriteSql', () => {
     }
   });
 });
+
+describe('applyWriteBatch — a failure names its statement', () => {
+  it('reports which statement of the batch failed, and rolls back the whole batch', async () => {
+    const Database = (await import('better-sqlite3')).default;
+    const { applyWriteBatch } = await import('../../api/lib/write-server.js');
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    db.exec('CREATE TABLE p (id INTEGER PRIMARY KEY); CREATE TABLE c (id INTEGER PRIMARY KEY, p INTEGER REFERENCES p(id));');
+    db.exec('INSERT INTO p VALUES (1); INSERT INTO c VALUES (1, 1);');
+    expect(() => applyWriteBatch(db, [{ sql: 'INSERT INTO p VALUES (2)' }, { sql: 'DELETE FROM p WHERE id = 1' }]))
+      .toThrow(/statement 2\/2: DELETE FROM p WHERE id = 1/);
+    expect(db.prepare('SELECT COUNT(*) n FROM p').get().n).toBe(1);
+  });
+});

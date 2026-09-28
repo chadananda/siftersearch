@@ -29,9 +29,16 @@ function reviveArg(a) {
 // {lastInsertRowid, changes}. Throws (and rolls back) on any statement error.
 export function applyWriteBatch(db, statements) {
   if (!statements || statements.length === 0) return [];
-  const txn = db.transaction((stmts) => stmts.map(({ sql, args = [] }) => {
-    const info = db.prepare(sql).run(...args.map(reviveArg));
-    return { lastInsertRowid: info.lastInsertRowid, changes: info.changes };
+  const txn = db.transaction((stmts) => stmts.map(({ sql, args = [] }, i) => {
+    try {
+      const info = db.prepare(sql).run(...args.map(reviveArg));
+      return { lastInsertRowid: info.lastInsertRowid, changes: info.changes };
+    } catch (err) {
+      // Name the statement: "FOREIGN KEY constraint failed" alone could not say which of a batch's writes, or
+      // which table, refused (Core Tablets re-ingest, 2026-09-28). The transaction still rolls back whole.
+      err.message = `${err.message} [statement ${i + 1}/${stmts.length}: ${String(sql).replace(/\s+/g, ' ').slice(0, 120)}]`;
+      throw err;
+    }
   }));
   return txn(statements);
 }
