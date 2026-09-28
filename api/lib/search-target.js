@@ -77,7 +77,7 @@ async function namesFor(ids, db = { queryAll }) {
 }
 
 /** Resolve a query to its target entity, or null. → { id, name, type, names, matched } */
-export async function resolveTarget(query, { lookup, db, countText } = {}) {
+export async function resolveTarget(query, { lookup, db, countText, explain } = {}) {
   const t0 = Date.now();
   const name = nameOf(query);
   if (!name) return null;
@@ -93,6 +93,8 @@ export async function resolveTarget(query, { lookup, db, countText } = {}) {
   enriched = await Promise.all(enriched.map(async (c) => (!c.mentions && [c.name, ...c.names].some((n) => [...skeletonKeys(n)].sort().join('|') === qk)
     ? { ...c, mentions: await count(c.name.replace(/\s*\([^)]*\)/g, '').trim()) } : c)));
   const t = pickTarget(name, enriched);
+  // Internal diagnosis only: the candidates as scored, so a miss is read from the data, not guessed at.
+  if (explain) explain.cands = enriched.map((c) => ({ id: c.id, name: c.name, type: c.type, mentions: c.mentions, names: c.names, via: c.names && [c.name, ...c.names].filter((n) => [...skeletonKeys(n)].sort().join('|') === qk) })), explain.key = qk;
   if (process.env.SEARCH_TARGET_DEBUG) console.log('[search-target]', name, Date.now() - t0, 'ms', enriched.filter((c) => c.mentions).map((c) => `${c.name}:${c.mentions}`).slice(0, 8).join(' '));
   if (!t) return null;
   // Several records carrying the same exact name are one thing under one spelling (duplicate place records): search and

@@ -319,7 +319,8 @@ export default async function searchRoutes(fastify) {
         properties: {
           q: { type: 'string', minLength: 1, maxLength: 200 },
           limit: { type: 'integer', minimum: 1, maximum: 50, default: 10 },
-          offset: { type: 'integer', minimum: 0, maximum: 140, default: 0 }
+          offset: { type: 'integer', minimum: 0, maximum: 140, default: 0 },
+          explain: { type: 'string' }   // internal-key only: the target candidates as scored
         }
       }
     }
@@ -332,7 +333,8 @@ export default async function searchRoutes(fastify) {
     // resolves to nothing searches as before.
     const { resolveTarget, markTarget } = await import('../lib/search-target.js');
     const tResolve = Date.now();
-    const target = await Promise.race([resolveTarget(q).catch(() => null), new Promise((r) => setTimeout(() => r(null), 1200))]);   // a misspelling costs a text count or two
+    const explain = request.query.explain && process.env.DEPLOY_SECRET && request.headers['x-internal-key'] === process.env.DEPLOY_SECRET ? {} : null;
+    const target = await Promise.race([resolveTarget(q, { explain }).catch(() => null), new Promise((r) => setTimeout(() => r(null), 1200))]);   // a misspelling costs a text count or two
     const resolveMs = Date.now() - tResolve;
     let results;
     if (target) {
@@ -406,6 +408,7 @@ export default async function searchRoutes(fastify) {
       query: q,
       target: target ? { id: target.id, name: target.name, type: target.type, names: target.names } : null,
       _timing: { resolve_ms: resolveMs, total_ms: Date.now() - quickStart },
+      ...(explain ? { _target_explain: explain } : {}),
       offset,
       limit,
       estimatedTotalHits: results.estimatedTotalHits,
