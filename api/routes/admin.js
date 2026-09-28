@@ -2692,11 +2692,11 @@ Collection: ${paragraph.collection || 'Unknown'}
     const ents = await queryAll(`SELECT id, name, canonical_name, entity_type, created_at, last_assessed_version lav, mention_count, doc_count,
         importance, summary IS NOT NULL has_summary, description IS NOT NULL has_desc, research_notes IS NOT NULL has_notes FROM graph_entities WHERE id IN (${ph})`, ids);
     const changes = await queryAll(`SELECT entity_id id, op, canonical_name, merged_into, rowid r FROM graph_entity_changes WHERE entity_id IN (${ph}) ORDER BY rowid`, ids);
-    const refs = {};
+    const refs = {}, missing = [];
     for (const [t, col] of [['entity_mentions', 'entity_id'], ['entity_mentions_v2', 'entity_id'], ['entity_claims', 'entity_id'], ['entity_claims', 'target_entity_id'],
       ['graph_relations', 'source_entity_id'], ['graph_relations', 'target_entity_id'], ['entity_aliases', 'entity_id'], ['entity_aliases_v2', 'entity_id'],
       ['entity_lookup_keys', 'entity_id'], ['scene_participants', 'entity_id'], ['entity_catalog_review', 'entity_id'], ['set_members', 'entity_id'], ['alias_priors', 'entity_id']]) {
-      try { for (const r of await queryAll(`SELECT ${col} id, COUNT(*) n FROM ${t} WHERE ${col} IN (${ph}) GROUP BY 1`, ids)) (refs[r.id] ||= {})[`${t}.${col}`] = r.n; } catch { /* table absent */ }
+      try { for (const r of await queryAll(`SELECT ${col} id, COUNT(*) n FROM ${t} WHERE ${col} IN (${ph}) GROUP BY 1`, ids)) (refs[r.id] ||= {})[`${t}.${col}`] = r.n; } catch (e) { missing.push(`${t}: ${String(e.message).slice(0, 80)}`); }
     }
     const decs = await queryAll(`SELECT id, kind, target_kind, actor, method_version, status, rationale, payload, target_ids FROM entity_decisions
        WHERE json_extract(payload,'$.applied_entity_id') IN (${ph}) OR json_extract(payload,'$.entityId') IN (${ph}) OR json_extract(payload,'$.canonical') IN (${ph})
@@ -2708,7 +2708,8 @@ Collection: ${paragraph.collection || 'Unknown'}
       for (const id of new Set([p.applied_entity_id, p.entityId, p.canonical, ...(Array.isArray(t) ? t : [])].map(Number).filter((x) => ids.includes(x))))
         (decOf[id] ||= []).push({ id: d.id, kind: d.kind, target: d.target_kind, actor: d.actor, method: d.method_version, status: d.status, doc: p.docId ?? null, as: p.resolvedAs ?? null, why: String(d.rationale || '').slice(0, 120) });
     }
-    return { entities: ents.map((e) => ({ ...e, changes: changes.filter((c) => c.id === e.id).map(({ id, ...c }) => c), refs: refs[e.id] || {}, decisions: decOf[e.id] || [] })) };
+    const legacy = await queryOne(`SELECT COUNT(*) n, MAX(rowid) max_rowid FROM entity_mentions`).catch((e) => ({ error: String(e.message).slice(0, 80) }));
+    return { missing, legacy_entity_mentions: legacy, entities: ents.map((e) => ({ ...e, changes: changes.filter((c) => c.id === e.id).map(({ id, ...c }) => c), refs: refs[e.id] || {}, decisions: decOf[e.id] || [] })) };
   });
 
   // GET /server/entity-mention-breakdown?id= — read-only: where an entity's mentions come from — per book, how the book
