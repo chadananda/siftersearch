@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T18:28:35.421Z",
+  "generated": "2026-09-28T18:35:52.353Z",
   "entries": [
+    {
+      "hash": "02894c22",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Bind verdict — attach unbound mentions a reviewer identified (shadow-link follow-up)",
+      "scope": "entities"
+    },
     {
       "hash": "212098bd",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Entity-first routing for historical questions + book-level work links",
       "scope": null
-    },
-    {
-      "hash": "e6b73a8c",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Format-for-comprehension — answer-first, adaptive shape, books always linked",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "02894c22",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Bind verdict — attach unbound mentions a reviewer identified (shadow-link follow-up)",
+        "scope": "entities"
+      },
       {
         "hash": "212098bd",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Entity-first routing for historical questions + book-level work links",
-        "scope": null
-      },
-      {
-        "hash": "e6b73a8c",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Format-for-comprehension — answer-first, adaptive shape, books always linked",
         "scope": null
       }
     ]
