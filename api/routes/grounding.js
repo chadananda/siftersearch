@@ -898,7 +898,10 @@ export default async function groundingRoutes(fastify) {
       return done.flat().map((v) => { const nrm = Math.hypot(...v); return v.map((x) => x / nrm); });
     };
     const [ov, tv] = await Promise.all([embed(ours.map((p) => p.text)), embed(theirs)]);
-    const { spans, baseline } = alignCrossLingual(ov, tv);
+    const { spans, baseline, mode } = alignCrossLingual(ov, tv);
+    // Subset mode locates candidates but cannot prove them (see alignSubset) — never written unless a
+    // reviewer has read them and says so.
+    const refuseWrite = mode === 'subset' && !req.body?.allowSubset;
 
     const authority = translationAuthorityFor(resolved) ?? 'committee';
     const weak = [], rows = [];
@@ -927,14 +930,15 @@ export default async function groundingRoutes(fastify) {
       filled: ours.slice(s.ours[0], s.ours[1]).every((p) => p.original),
       en: ours.slice(s.ours[0], s.ours[1]).map((p) => p.text.slice(0, 160)),
       original: theirs.slice(s.theirs[0], s.theirs[1]).map((t) => t.slice(0, 160)) });
-    const out = { docId: resolved, path, lang, dryRun, baseline, ourParagraphs: ours.length,
+    const out = { docId: resolved, path, lang, dryRun, mode, baseline, ourParagraphs: ours.length,
       sourceParagraphs: theirs.length, spans: spans.length, shapes, covered: kept,
       coverage: ours.length ? Number((kept / ours.length).toFixed(3)) : 0,
       alreadyAligned: ours.filter((p) => p.original).length, candidates: rows.length, written: 0,
       belowBar: weak.map(show),
       weakest: [...spans].filter((s) => s.sim >= baseline + minMargin).sort((a, b) => a.sim - b.sim)
         .slice(0, Number(samples)).map(show) };
-    if (dryRun || !rows.length) return out;
+    if (refuseWrite) out.refused = 'subset mode: candidates only — review them and pass allowSubset to write';
+    if (dryRun || refuseWrite || !rows.length) return out;
     out.written = await store.saveParagraphOriginals(rows);
     return out;
   });

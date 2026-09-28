@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T20:29:28.502Z",
+  "generated": "2026-09-28T20:41:42.870Z",
   "entries": [
+    {
+      "hash": "da45eb5b",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Subset mode for cross-lingual alignment (our book inside a much larger source compilation); concurrent embedding",
+      "scope": "bilingual"
+    },
     {
       "hash": "41657e40",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Edge caching for hot public reads — routes' Cache-Control wins over alpha no-store",
       "scope": null
-    },
-    {
-      "hash": "d0a273de",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Recent-docs smoke test passes on valid empty list (30-day window bricked deploys)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "da45eb5b",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Subset mode for cross-lingual alignment (our book inside a much larger source compilation); concurrent embedding",
+        "scope": "bilingual"
+      },
       {
         "hash": "41657e40",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Performance",
         "description": "Edge caching for hot public reads — routes' Cache-Control wins over alpha no-store",
-        "scope": null
-      },
-      {
-        "hash": "d0a273de",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Recent-docs smoke test passes on valid empty list (30-day window bricked deploys)",
         "scope": null
       }
     ]
