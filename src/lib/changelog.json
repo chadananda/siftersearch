@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T19:17:10.623Z",
+  "generated": "2026-09-28T19:21:32.035Z",
   "entries": [
+    {
+      "hash": "a4ba4a4a",
+      "date": "2026-09-28",
+      "type": "Docs",
+      "description": "Concept kernel excludes the House of Justice's letters and the Aqdas Notes (not doctrinal)",
+      "scope": "planning"
+    },
     {
       "hash": "0e9dbbfd",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "ONE done-definition for group books + version chips",
       "scope": null
-    },
-    {
-      "hash": "251c665c",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "PATH-robust pre-commit hook + npm scripts for deploy and checks",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "a4ba4a4a",
+        "date": "2026-09-28",
+        "type": "Docs",
+        "description": "Concept kernel excludes the House of Justice's letters and the Aqdas Notes (not doctrinal)",
+        "scope": "planning"
+      },
       {
         "hash": "0e9dbbfd",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "ONE done-definition for group books + version chips",
-        "scope": null
-      },
-      {
-        "hash": "251c665c",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "PATH-robust pre-commit hook + npm scripts for deploy and checks",
         "scope": null
       }
     ]

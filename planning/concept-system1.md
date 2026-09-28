@@ -141,6 +141,13 @@ paragraph from the matched ideas' questions (~$0.04 per million input tokens).
 4. **Question library** for the Íqán ideas; A/B against generated HyPE on the search type battery.
 5. **Library sweep** with dedup and budget checks; novelty queue on.
 
+## Languages — English extraction, originals via Jev + the bilingual links (Chad, 2026-09-28)
+
+Kernel extraction runs on the ENGLISH texts only (~$0.01/paragraph on DeepSeek, no Anthropic spend). Persian and Arabic
+originals get their idea links from the Jev sweep (multilingual embeddings shortlist, Jev grades) — imperfect but cheap —
+and the bilingual layer (migration 120: original ↔ translation paragraph alignment) joins the two, so a hit on either
+side finds the other. Cost of the English kernel: ~$85 extraction + ~$20 sweep.
+
 ## On ingest — indexed the day a text arrives
 
 Every new paragraph already gets its embedding at ingest. Run it through the shortlist and one Jev call immediately:

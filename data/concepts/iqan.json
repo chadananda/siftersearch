@@ -1,0 +1,68 @@
+{
+  "kernel": "Kitáb-i-Íqán",
+  "author": "Bahá'u'lláh",
+  "doc_id": 20810,
+  "version": "iqan-v1",
+  "note": "Curated catalogue of IDEAS (not terms). `groups` = the claim-meaning groups (planning/merge-review/iqan-groups.json, built from the 3,523 proof-gated concept claims) that attest each idea; terms, original-script roots and exemplar paragraphs are derived from them. Sibling ideas marked `senseOf` are distinct authorized meanings of one symbol — never collapsed.",
+  "themes": [
+    { "id": "rejection", "title": "Why every age rejects its Messenger", "ideas": [
+      { "id": "rejection.recurrent", "title": "Denial recurs in every age", "statement": "In every Dispensation the people deny, mock and persecute the new Messenger, as their forebears did the one before.", "groups": [22, 59, 101, 127, 166] },
+      { "id": "rejection.divines", "title": "The divines as the foremost opponents", "statement": "The religious leaders of each age, attached to leadership and learning, are the first to reject the Manifestation and lead the people astray.", "groups": [25, 48, 129] },
+      { "id": "rejection.lowly-recognize", "title": "The lowly recognize, the exalted are abased", "statement": "Obscure and unlearned souls often recognize the new Revelation while the learned and exalted reject it; the Day of God inverts rank.", "groups": [62, 64, 167] },
+      { "id": "rejection.literalism", "title": "Literal reading of scripture as a veil", "statement": "Clinging to the outward, literal sense of prophecy and tradition prevents recognition; the Word of God has inner meanings.", "groups": [87, 158] },
+      { "id": "rejection.corruption-of-text", "title": "Corruption of scripture means perversion of meaning", "statement": "The corruption (taḥríf) of the Holy Books refers to the perversion of their meaning by the divines, not the alteration of the text.", "groups": [163, 289] },
+      { "id": "rejection.vain-imaginings", "title": "Vain imaginings and idle fancy", "statement": "People measure the Revelation by their own fancies and imaginings, which confine them as in a cage and blind them to truth.", "groups": [82, 104] },
+      { "id": "rejection.heedlessness", "title": "Heedlessness, the sleep of the soul", "statement": "Heedlessness is a spiritual sleep and remoteness in which the soul, though outwardly alive, is as one dead in the grave of self.", "groups": [7, 117, 125] },
+      { "id": "rejection.accusations", "title": "The accusations: sorcery, madness, infidelity", "statement": "The Manifestations are accused of sorcery, falsehood and infidelity and are met with proud disdain, as every Prophet was.", "groups": [123, 40] },
+      { "id": "rejection.suffering-of-manifestations", "title": "The sufferings of the Manifestations", "statement": "The Manifestations endure imprisonment, exile and cruelty at the hands of those they came to save; their patience is itself a sign.", "groups": [279, 130, 147] }
+    ]},
+    { "id": "symbols", "title": "The symbolic language of scripture", "ideas": [
+      { "id": "symbols.language", "title": "Scripture speaks in symbols with inner meaning", "statement": "The words of the Prophets carry inner meanings veiled in symbolic language, understood only by pure hearts and not by outward learning.", "groups": [34, 107, 6, 39, 52] },
+      { "id": "symbols.sun-moon-stars", "title": "Sun, moon and stars", "statement": "The sun, moon and stars signify the Manifestations and the divines and ordinances of a former Dispensation, whose light is darkened when a new Revelation appears.", "groups": [0, 37, 41, 75] },
+      { "id": "symbols.clouds.veil", "title": "Clouds as the veils that test the people", "senseOf": "symbols.clouds", "statement": "The 'clouds' in which the Son of Man comes are the things contrary to people's desires — the Manifestation's human condition and the change of laws — which veil Him from the heedless.", "groups": [4, 58, 77] },
+      { "id": "symbols.clouds.mercy", "title": "Clouds of mercy and showers of grace", "senseOf": "symbols.clouds", "statement": "The clouds are also the source of the rain of divine mercy and knowledge that revives the hearts.", "groups": [12, 42] },
+      { "id": "symbols.heaven", "title": "Heaven as the realm of Revelation", "statement": "'Heaven' signifies the heaven of divine Will and Revelation — the loftiness of the Manifestation's Cause — not the visible sky.", "groups": [14, 3, 80] },
+      { "id": "symbols.earth", "title": "Earth as the hearts, changed into another earth", "statement": "'Earth' signifies the earth of knowledge and of the hearts; its changing into another earth is the transformation of understanding by the new Revelation.", "groups": [202, 256] },
+      { "id": "symbols.resurrection", "title": "Resurrection and Judgement are spiritual", "statement": "The Day of Resurrection is the advent of the Manifestation; the dead are the heedless, and their raising is the quickening of faith.", "groups": [28, 97, 320, 73] },
+      { "id": "symbols.return", "title": "The return of the Prophets", "statement": "The 'return' of past Prophets is the return of their reality and attributes in a new Manifestation, not the reappearance of the same person.", "groups": [65] },
+      { "id": "symbols.trumpet", "title": "The trumpet-blast", "statement": "The trumpet is the call of the new Revelation, which awakens those dead in heedlessness.", "groups": [226] },
+      { "id": "symbols.signs-of-advent", "title": "The signs foretold of the Advent", "statement": "The signs foretold for the coming of a Manifestation — the star, the heralds, the tribulations — are fulfilled in their inner meaning and recur with every Revelation.", "groups": [50, 13, 56] },
+      { "id": "symbols.food-and-drink", "title": "Bread, wine, waters and the Kawthar of knowledge", "statement": "Bread from heaven, the cup, the wine and the waters of Kawthar signify the spiritual sustenance of divine knowledge and nearness.", "groups": [78, 113, 79, 21] },
+      { "id": "symbols.fire", "title": "Fire: the burning Bush and the fire of self", "statement": "Fire signifies both the fire of divine love and wisdom in the sacred Tree, and the hellish fire of self, misbelief and passion.", "groups": [44, 100] },
+      { "id": "symbols.birds-and-melody", "title": "The Bird of Heaven and its melody", "statement": "The mystic Bird and its melodies signify the Revelation's utterance and the soul's flight toward God.", "groups": [74, 110, 266] },
+      { "id": "symbols.transmutation", "title": "Transmutation: copper into gold", "statement": "As the elixir turns copper into gold, the Word of God transforms souls in an instant — unbelief into faith, iniquity into righteousness.", "groups": [290, 118, 232, 138] },
+      { "id": "symbols.fatherless-birth", "title": "The fatherless birth of Jesus", "statement": "The fatherless birth of Jesus was a test that the people of His day could not bear.", "groups": [358] }
+    ]},
+    { "id": "manifestation", "title": "The station of the Manifestations", "ideas": [
+      { "id": "manifestation.god-unknowable", "title": "The Essence of God is unknowable", "statement": "The divine Essence is exalted beyond all knowing; no one can reach It, and all praise of It returns to the praiser.", "groups": [103, 91] },
+      { "id": "manifestation.mirrors", "title": "The Manifestations as mirrors of God", "statement": "God has made His Manifestations the primal mirrors of His names and attributes; to know them is to know God.", "groups": [5, 9, 17, 23] },
+      { "id": "manifestation.presence-of-god", "title": "Attaining the Presence of God", "statement": "The 'Presence of God' promised in scripture is attainment unto the presence of His Manifestation.", "groups": [18, 10, 247] },
+      { "id": "manifestation.unity", "title": "The unity of the Manifestations", "statement": "All the Manifestations are one in essence — one Name, one Cause, one Self — so each may truly claim to be the return of all.", "groups": [2, 81, 32] },
+      { "id": "manifestation.distinction", "title": "The distinction of the Manifestations", "statement": "In their human condition and mission the Manifestations differ in degree, law and intensity of Revelation, while one in essence.", "groups": [270, 60, 15] },
+      { "id": "manifestation.seal", "title": "The Seal of the Prophets, the Beginning and the End", "statement": "Every Manifestation may truly be called the Seal of the Prophets and the First; the Beginning and the End are one reality.", "groups": [148, 114] },
+      { "id": "manifestation.sovereignty", "title": "The Manifestation's sovereignty is spiritual", "statement": "The sovereignty of the promised One is spiritual and inward — His ascendancy over hearts — not worldly dominion.", "groups": [19, 38, 47, 84] },
+      { "id": "manifestation.verses-as-proof", "title": "The revealed verses are the supreme testimony", "statement": "The Word of God — the revealed verses — is the greatest proof of a Manifestation, above all other signs and miracles.", "groups": [11, 8, 35, 54, 43] },
+      { "id": "manifestation.qaim", "title": "The station of the Qá'im (the Báb)", "statement": "The promised Qá'im has appeared in the Báb, the Primal Point, whose Revelation fulfils and abrogates the former laws.", "groups": [27, 94, 190] },
+      { "id": "manifestation.book-and-family", "title": "The twin testimonies: the Book and the Family", "statement": "The Book of God and the recognized expounders are the twin testimonies left by the Prophet for His people.", "groups": [119, 165] },
+      { "id": "manifestation.abrogation", "title": "Each Revelation renews the law", "statement": "A new Manifestation annuls or changes the laws of the former Dispensation — prayer, fasting and ordinances — as a test for the people.", "groups": [63, 318, 213, 352] },
+      { "id": "manifestation.primal-will", "title": "The Primal Will and the new creation", "statement": "Through the Primal Will the Manifestation brings a new creation; in every thing God's wisdom and signs are hidden.", "groups": [189, 33, 142] },
+      { "id": "manifestation.grace", "title": "The outpouring of divine grace through Revelation", "statement": "Divine grace and bounty flow to all creation through the Manifestations and never cease.", "groups": [29, 98] }
+    ]},
+    { "id": "seeker", "title": "The true seeker and the attainment of certitude", "ideas": [
+      { "id": "seeker.true-seeker", "title": "The conditions of the true seeker", "statement": "The true seeker must cleanse the heart of acquired learning and prejudice, rely on God alone, and search with the lamp of love and longing.", "groups": [245, 312] },
+      { "id": "seeker.pure-heart", "title": "The purified heart as the mirror of truth", "statement": "Only a heart cleansed of worldly attachment and idle fancy can reflect the light of divine knowledge and recognize the truth.", "groups": [30, 69, 53] },
+      { "id": "seeker.detachment", "title": "Detachment from all save God", "statement": "Detachment from the world and from self is the condition for attaining the Presence of God and the mysteries of His Word.", "groups": [26, 90, 66] },
+      { "id": "seeker.certitude", "title": "Certitude (íqán)", "statement": "Certitude is the station in which the seeker, freed from doubt, sees with the eye of God; it is the aim of the book.", "groups": [51, 383] },
+      { "id": "seeker.divine-knowledge", "title": "Divine knowledge versus human learning", "statement": "True knowledge is from God and bestowed on pure hearts; knowledge acquired by men, and 'satanic knowledge' born of self, veil from the truth.", "groups": [1, 16, 105, 106, 171, 86, 330] },
+      { "id": "seeker.divine-test", "title": "The divine test and touchstone", "statement": "God tests the people with every Revelation, and the Manifestation is the touchstone that separates truth from falsehood.", "groups": [24, 55, 95, 146] },
+      { "id": "seeker.steadfastness", "title": "Steadfastness, patience and resignation", "statement": "The believer must remain steadfast, patient and resigned to God's will amid trials, even unto sacrifice.", "groups": [111, 108, 68, 191] },
+      { "id": "seeker.sacrifice", "title": "Sacrifice and martyrdom in the path of God", "statement": "Self-sacrifice and martyrdom in the path of God, as the companions of every Prophet showed, testify to the truth of the Cause.", "groups": [49, 36, 20] },
+      { "id": "seeker.good-pleasure", "title": "The good-pleasure of God and the Riḍván", "statement": "The seeker's goal is the good-pleasure of God, the Riḍván of His nearness and reunion.", "groups": [149, 31] },
+      { "id": "seeker.new-life-of-faith", "title": "Faith as true life", "statement": "Faith is the true life; the one who believes is quickened by the Spirit, while the heedless are dead though living.", "groups": [96] },
+      { "id": "seeker.equity", "title": "Equity in judgement", "statement": "The seeker must judge with equity and fairness, weighing the Revelation by its own proofs.", "groups": [121] },
+      { "id": "seeker.silence", "title": "Guarding the tongue", "statement": "The seeker should shun idle talk and backbiting, for the fire of the tongue consumes the soul.", "groups": [304] },
+      { "id": "seeker.forgiveness", "title": "Forgiveness of sins", "statement": "The power to forgive sins belongs to God and is exercised through His chosen Ones.", "groups": [415] },
+      { "id": "seeker.poverty-and-wealth", "title": "True poverty and wealth", "statement": "True wealth is love of God and His chosen Ones; poverty is want of it, not want of possessions.", "groups": [384] }
+    ]}
+  ]
+}
