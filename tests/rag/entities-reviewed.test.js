@@ -1,11 +1,11 @@
 // entities/reviewed — a reader's verdicts become ordinary, reversible decisions; Chad's outrank any model's.
 import { describe, it, expect } from 'vitest';
-import { decisionsFor, run } from '../../api/lib/rag/entities/reviewed.js';
+import { decisionsFor, planMerges, run } from '../../api/lib/rag/entities/reviewed.js';
 
-const store = (live = {}) => {
+const store = (live = {}, imp = {}, men = {}) => {
   const log = { merges: [], saved: [], renames: [] };
   return { log, s: {
-    getIdentityDossiers: async (ids) => ({ dossiers: new Map(ids.map((id) => [id, { id, name: `#${id}`, live: live[id] ?? true }])) }),
+    getIdentityDossiers: async (ids) => ({ dossiers: new Map(ids.map((id) => [id, { id, name: `#${id}`, live: live[id] ?? true, importance: imp[id] ?? null, mentions: men[id] ?? 1 }])) }),
     applyMerge: async (canonical, merged, reason, meta) => log.merges.push({ canonical, merged, meta }),
     saveDecisions: async (rows) => log.saved.push(...rows),
     renameEntity: async (id, name) => log.renames.push({ id, name }),
@@ -47,5 +47,27 @@ describe('reviewed decisions', () => {
     const r = await run(ctx(w.s), { items: [{ verdict: 'same', a: 5, b: 6, into: 6, reason: 'x' }], write: true });
     expect(r.counts).toEqual({ skipped: 1 });
     expect(w.log.merges).toEqual([]);
+  });
+  // MEASURED 2026-09-28: the reader batch judged Subh-i-Azal ≡ Mírzá Yaḥyá AND each of them ≡ a third record. Pair by
+  // pair, the second merge would move passages onto a record the first had just retired.
+  it('chained verdicts fold into ONE survivor (the curated record) in one merge', async () => {
+    const w = store({}, { 2: 52 }, { 1: 1517, 2: 637, 3: 4 });
+    const r = await run(ctx(w.s), { write: true, items: [
+      { verdict: 'same', a: 1, b: 2, into: 2, reason: 'Subh-i-Azal is Mírzá Yaḥyá' },
+      { verdict: 'same', a: 2, b: 3, into: 2, reason: 'x' },
+      { verdict: 'same', a: 1, b: 3, into: 1, reason: 'y' },
+      { verdict: 'different', a: 3, b: 9, reason: 'z' },
+    ] });
+    expect(w.log.merges).toHaveLength(1);
+    expect(w.log.merges[0].canonical).toBe(2);
+    expect(w.log.merges[0].merged.sort()).toEqual([1, 3]);
+    expect(w.log.saved[0].targetIds).toEqual([2, 9]);   // the verdict about a folded record now concerns its survivor
+    expect(r.counts).toEqual({ merge: 1, distinct: 1 });
+  });
+  it('a group that also carries a "different" verdict is refused, not guessed', () => {
+    const ds = decisionsFor([{ verdict: 'same', a: 1, b: 2, reason: 'a' }, { verdict: 'same', a: 2, b: 3, reason: 'b' }, { verdict: 'different', a: 1, b: 3, reason: 'c' }]);
+    const { plans, survivor } = planMerges(ds, new Map());
+    expect(plans[0].conflict).toMatch(/different/);
+    expect(survivor.size).toBe(0);
   });
 });

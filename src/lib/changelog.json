@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T11:34:29.597Z",
+  "generated": "2026-09-28T11:41:36.223Z",
   "entries": [
+    {
+      "hash": "41d5a0cc",
+      "date": "2026-09-28",
+      "type": "Chore",
+      "description": "Entity-provenance shows which writer made each alias",
+      "scope": "entities"
+    },
     {
       "hash": "3e2e48ff",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Claims proof-trim 200→130 + persist ai_usage cache-token columns (migr 96)",
       "scope": null
-    },
-    {
-      "hash": "85a00d94",
-      "date": "2026-07-20",
-      "type": "Other",
-      "description": "Add project-purpose explanation + link back to the biography page",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "41d5a0cc",
+        "date": "2026-09-28",
+        "type": "Chore",
+        "description": "Entity-provenance shows which writer made each alias",
+        "scope": "entities"
+      },
       {
         "hash": "3e2e48ff",
         "date": "2026-09-28",
@@ -7065,15 +7072,6 @@
         "date": "2026-07-21",
         "type": "Other",
         "description": "Claims proof-trim 200→130 + persist ai_usage cache-token columns (migr 96)",
-        "scope": null
-      }
-    ],
-    "2026-07-20": [
-      {
-        "hash": "85a00d94",
-        "date": "2026-07-20",
-        "type": "Other",
-        "description": "Add project-purpose explanation + link back to the biography page",
         "scope": null
       }
     ]

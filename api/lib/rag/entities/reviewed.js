@@ -29,23 +29,57 @@ export function decisionsFor(items) {
   });
 }
 
+// Chained verdicts (A≡B, B≡C, or one record judged the same as two others) are ONE person recorded several times:
+// applied pair by pair, a later merge could move passages onto a record an earlier one retired. So merges are grouped
+// and each group folds into one survivor — the curated record (importance, then mentions). A "different" verdict
+// inside a group is a contradiction: that group is refused, never guessed. Pure.
+export function planMerges(decisions, dossiers) {
+  const par = new Map(), find = (x) => { while (par.has(x) && par.get(x) !== x) x = par.get(x); return x; };
+  const merges = decisions.filter((d) => d.kind === 'merge');
+  for (const d of merges) { const [a, b] = d.targetIds.map(find); if (a !== b) par.set(a, b); }
+  const groups = new Map();
+  for (const d of merges) for (const id of d.targetIds) { const r = find(id); groups.set(r, (groups.get(r) || new Set()).add(id)); }
+  const rank = (id) => [dossiers.get(id)?.importance ?? -1, dossiers.get(id)?.mentions ?? 0];
+  const plans = [...groups.values()].map((g) => {
+    const ids = [...g], keep = ids.reduce((a, b) => { const [ia, ma] = rank(a), [ib, mb] = rank(b); return ib > ia || (ib === ia && mb > ma) ? b : a; });
+    const own = merges.filter((d) => d.targetIds.some((id) => g.has(id)));
+    const conflict = decisions.find((d) => d.kind === 'distinct' && d.targetIds.every((id) => g.has(id)));
+    return { keep, fold: ids.filter((id) => id !== keep), decisions: own, ...(conflict ? { conflict: conflict.rationale } : {}) };
+  });
+  const survivor = new Map(plans.filter((p) => !p.conflict).flatMap((p) => p.fold.map((id) => [id, p.keep])));
+  return { plans, survivor };
+}
+
 /** Apply reviewed verdicts. DRY unless write. Every record named must be live (a tombstone is never merged or renamed). */
 export async function run(ctx, { items, write = false } = {}) {
   const decisions = decisionsFor(items);
   const ids = [...new Set(decisions.flatMap((d) => d.targetIds))];
   const { dossiers } = await ctx.store.getIdentityDossiers(ids);
-  const results = decisions.map((d) => {
-    const dead = d.targetIds.filter((id) => !dossiers.get(id)?.live);
-    return { kind: d.kind, ids: d.targetIds, names: d.targetIds.map((id) => dossiers.get(id)?.name ?? null), ...(dead.length ? { skipped: `not live: ${dead.join(',')}` } : {}), decision: d };
-  });
-  if (write) {
-    for (const r of results.filter((x) => !x.skipped)) {
-      const d = r.decision;
-      if (d.kind === 'merge') await ctx.store.applyMerge(d.payload.canonical, d.payload.merged, d.rationale, { evidence: d.evidence, actor: d.actor, actorTier: d.actorTier, methodVersion: METHOD });
-      else if (d.kind === 'rename') await ctx.store.renameEntity(d.targetIds[0], d.payload.name, d);
-      else await ctx.store.saveDecisions([d]);
+  const dead = (d) => d.targetIds.filter((id) => !dossiers.get(id)?.live);
+  const { plans, survivor } = planMerges(decisions.filter((d) => d.kind !== 'merge' || !dead(d).length), dossiers);
+  const results = [];
+  for (const p of plans) {
+    const names = [p.keep, ...p.fold].map((id) => dossiers.get(id)?.name ?? null);
+    results.push({ kind: 'merge', ids: [p.keep, ...p.fold], names, ...(p.conflict ? { skipped: `contradiction: ${p.conflict}` } : {}), decision: p.decisions[0], rationale: p.decisions.map((d) => d.rationale) });
+    if (write && !p.conflict) {
+      const d = p.decisions[0];
+      await ctx.store.applyMerge(p.keep, p.fold, p.decisions.map((x) => x.rationale).join(' | ').slice(0, 1000),
+        { evidence: { ...d.evidence, verdicts: p.decisions.map((x) => ({ ids: x.targetIds, rationale: x.rationale })) }, actor: d.actor, actorTier: Math.max(...p.decisions.map((x) => x.actorTier)), methodVersion: METHOD });
     }
   }
+  for (const d of decisions.filter((x) => x.kind !== 'merge')) {
+    const targetIds = d.targetIds.map((id) => survivor.get(id) ?? id);   // a verdict about a folded record now concerns its survivor
+    const r = { ...d, targetIds, ...(d.kind === 'distinct' ? { payload: { pair: targetIds } } : {}) };
+    const gone = targetIds.filter((id) => !dossiers.get(id)?.live);
+    const same = d.kind === 'distinct' && targetIds[0] === targetIds[1];
+    results.push({ kind: d.kind, ids: targetIds, names: targetIds.map((id) => dossiers.get(id)?.name ?? null), decision: r,
+      ...(gone.length ? { skipped: `not live: ${gone.join(',')}` } : same ? { skipped: 'contradiction: judged different, but merged' } : {}) });
+    if (write && !gone.length && !same) {
+      if (d.kind === 'rename') await ctx.store.renameEntity(targetIds[0], d.payload.name, r);
+      else await ctx.store.saveDecisions([r]);
+    }
+  }
+  for (const d of decisions.filter((x) => x.kind === 'merge' && dead(x).length)) results.push({ kind: 'merge', ids: d.targetIds, names: d.targetIds.map((id) => dossiers.get(id)?.name ?? null), skipped: `not live: ${dead(d).join(',')}`, decision: d });
   const counts = results.reduce((o, r) => ((o[r.skipped ? 'skipped' : r.kind] = (o[r.skipped ? 'skipped' : r.kind] || 0) + 1), o), {});
   ctx.log.info?.({ items: items.length, counts, write }, 'entities/reviewed');
   return { counts, results };
