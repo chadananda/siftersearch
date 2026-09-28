@@ -66,7 +66,7 @@ Cost control:
 - **shortlist floor** — skip ideas below a similarity floor measured on gold;
 - **skip non-prose** — index lines, tables and bibliographies (the paragraph router, jev-system1.md §4).
 
-## 5. The question library — canonical HyPE
+## 5. The question library — canonical HyPE (this is also how HyPE becomes cheap)
 
 For each idea, the slow path writes a handful of canonical questions people actually ask ("What does the Íqán mean by
 the clouds that hide the Son of Man?", "Why do the people of every age reject the new Messenger?"). A paragraph matched
@@ -77,6 +77,25 @@ generation. Gains over today's generated HyPE:
 - **cost** — generation runs over ~30k questions once, not over 280k paragraphs (today's HyPE is output-heavy; the
   reasoning tax once emptied 69% of a book's questions);
 - generated HyPE stays for the long tail the library does not cover.
+
+## 5b. The inverted index — questions and ideas point at MANY paragraphs
+
+Today's HyPE is paragraph-keyed: each generated question is a row pointing at the ONE paragraph it came from, so "what
+does the Íqán mean by the clouds?" exists as dozens of near-duplicates, each attached to one paragraph, and concept-aware
+only in the ~10 books with concept claims. The inverse is the model to build — three node types, two edge tables:
+
+- **idea** (catalogue) ──< **idea_paragraph** (idea, paragraph, relation explains|applies|mentions, confidence,
+  matcher version) >── **paragraph**
+- **question** (canonical, per idea, embedded) ──< **question_paragraph** (question, paragraph, confidence) >── paragraph
+- question → idea: each canonical question belongs to one idea (a question can be shared by sibling senses).
+
+Query time: user question → nearest canonical questions (a ~30k-row index: exact search in milliseconds) → their
+answer lists, ranked by relation, authority and confidence; the idea gives the wider "explains" list when the question
+is broad. Generated per-paragraph HyPE stays as the fallback for questions the library does not cover — and its hits are
+a source of NEW canonical questions (the novelty queue for questions).
+
+Cheap HyPE: generation happens once per idea (~30k questions), not once per paragraph (280k × several); Jev selects per
+paragraph from the matched ideas' questions (~$0.04 per million input tokens).
 
 ## 6. The slow follow-up (months)
 

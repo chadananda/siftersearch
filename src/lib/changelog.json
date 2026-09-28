@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T18:59:56.099Z",
+  "generated": "2026-09-28T19:01:00.958Z",
   "entries": [
+    {
+      "hash": "f0d93144",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Grounding replays the book's own decisions onto every mention after project (re-read mentions stayed unbound: 9,326)",
+      "scope": "pipeline"
+    },
     {
       "hash": "e8a4d025",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Quote hunts never reach the interfaith sweep (e4 Zohar regression) + name-over-office rule",
       "scope": null
-    },
-    {
-      "hash": "9c06f235",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Rank dossier claims by question relevance + hard evidence-grounding rule for bolded facts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "f0d93144",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Grounding replays the book's own decisions onto every mention after project (re-read mentions stayed unbound: 9,326)",
+        "scope": "pipeline"
+      },
       {
         "hash": "e8a4d025",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Quote hunts never reach the interfaith sweep (e4 Zohar regression) + name-over-office rule",
-        "scope": null
-      },
-      {
-        "hash": "9c06f235",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Rank dossier claims by question relevance + hard evidence-grounding rule for bolded facts",
         "scope": null
       }
     ]
