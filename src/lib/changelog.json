@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T15:46:35.674Z",
+  "generated": "2026-09-28T15:52:55.318Z",
   "entries": [
+    {
+      "hash": "fd2862a2",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Jev cluster audit — flags bindings a reader should check (read-only)",
+      "scope": "entities"
+    },
     {
       "hash": "c17fdc18",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Correct chat endpoint path (/api/chat/stream — chat routes mount at /api/chat, not /api/v1)",
       "scope": null
-    },
-    {
-      "hash": "aa9d2823",
-      "date": "2026-08-07",
-      "type": "Other",
-      "description": "Allow the API's own origin in CORS — same-origin POSTs (the /widget/demo page) still send an Origin header",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "fd2862a2",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Jev cluster audit — flags bindings a reader should check (read-only)",
+        "scope": "entities"
+      },
       {
         "hash": "c17fdc18",
         "date": "2026-09-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-08-07",
         "type": "Other",
         "description": "Correct chat endpoint path (/api/chat/stream — chat routes mount at /api/chat, not /api/v1)",
-        "scope": null
-      },
-      {
-        "hash": "aa9d2823",
-        "date": "2026-08-07",
-        "type": "Other",
-        "description": "Allow the API's own origin in CORS — same-origin POSTs (the /widget/demo page) still send an Origin header",
         "scope": null
       }
     ]

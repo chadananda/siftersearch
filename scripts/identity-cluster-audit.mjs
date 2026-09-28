@@ -35,7 +35,9 @@ for (const id of ids) {
   report.people.push({ id, name: ge.cn, clusters: judged.length, mentions: judged.reduce((n, c) => n + c.mentions, 0),
     flagged: flagged.length, flaggedMentions: flagged.reduce((n, c) => n + c.mentions, 0), ms: Date.now() - t0,
     verdicts: judged.reduce((o, c) => ((o[c.verdict] = (o[c.verdict] || 0) + 1), o), {}),
-    flags: flagged.sort((a, b) => b.mentions - a.mentions) });
+    flags: flagged.sort((a, b) => b.mentions - a.mentions),
+    // A random sample of what Jev PASSED, so a reader can measure what it misses (recall), not only its flags.
+    passedSample: judged.filter((c) => !c.flagged).map((c) => [Math.random(), c]).sort((a, b) => a[0] - b[0]).slice(0, 30).map(([, c]) => c) });
   console.log(`${ge.cn}: ${judged.length} clusters, ${flagged.length} flagged (${Date.now() - t0}ms)`);
 }
 writeFileSync(`logs/identity-cluster-audit-${stamp}.json`, JSON.stringify(report, null, 1));
