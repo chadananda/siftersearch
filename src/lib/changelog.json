@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-28T22:37:47.147Z",
+  "generated": "2026-09-28T22:46:20.926Z",
   "entries": [
+    {
+      "hash": "818ab185",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Background library job takes a directory, dryRun and localOnly (--path was never read: the job scanned the whole library)",
+      "scope": "reindex"
+    },
     {
       "hash": "7a08a3ce",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Site Google sign-in (One Tap + button) · profile pictures · admin email whitelist",
       "scope": null
-    },
-    {
-      "hash": "3b69c4b1",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Header profile button markup + popover (completes One Tap visibility)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "818ab185",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Background library job takes a directory, dryRun and localOnly (--path was never read: the job scanned the whole library)",
+        "scope": "reindex"
+      },
       {
         "hash": "7a08a3ce",
         "date": "2026-09-28",
@@ -7055,13 +7062,6 @@
         "date": "2026-08-09",
         "type": "Other",
         "description": "Site Google sign-in (One Tap + button) · profile pictures · admin email whitelist",
-        "scope": null
-      },
-      {
-        "hash": "3b69c4b1",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Header profile button markup + popover (completes One Tap visibility)",
         "scope": null
       }
     ]

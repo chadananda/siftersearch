@@ -461,10 +461,23 @@ async function indexLibrary() {
   // Find all markdown files from all paths
   console.log('🔍 Scanning for markdown files...');
   let files = [];
+  // A directory INSIDE the library (e.g. "Baha'i/Core Tablets"): metadata must be relative to the library root
+  // (religion = first segment), and the religion root may be an ancestor — starting below it found 0 files.
+  const libBase = path.resolve(config.library.basePath);
+  const religionAncestor = async (dir) => {
+    for (let d = dir; !path.relative(libBase, d).startsWith('..') && d !== path.dirname(d); d = path.dirname(d)) {
+      try { await fs.access(path.join(d, '.religion', 'meta.yaml')); return true; } catch { /* keep climbing */ }
+      if (d === libBase) break;
+    }
+    return false;
+  };
   for (const resolvedPath of resolvedPaths) {
-    const pathFiles = await findMarkdownFiles(resolvedPath);
+    const inLib = !path.relative(libBase, resolvedPath).startsWith('..');
+    const pathFiles = inLib && resolvedPath !== libBase
+      ? await findMarkdownFiles(resolvedPath, libBase, await religionAncestor(resolvedPath))
+      : await findMarkdownFiles(resolvedPath);
     // Tag each file with its base path for metadata extraction
-    pathFiles.forEach(f => f.basePath = resolvedPath);
+    pathFiles.forEach(f => f.basePath = inLib ? libBase : resolvedPath);
     files = files.concat(pathFiles);
   }
   console.log(`Found ${files.length} markdown files`);
