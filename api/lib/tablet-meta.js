@@ -35,7 +35,8 @@ export function parsePiDate(raw) {
 export function expandCodes(raw, bib = {}) {
   return list(raw).map((ref) => {
     const code = (ref.match(/^[A-Za-z][A-Za-z0-9_]*/) || [ref])[0];
-    const hit = bib[code] || bib[code.replace(/\d+$/, '')] || null;
+    // compound codes (BRL_DAK, SW_v08) and numbered volumes (MMK6) resolve by their stem
+    const hit = bib[code] || bib[code.replace(/\d+$/, '')] || bib[code.split('_')[0]] || bib[code.split('_')[0].replace(/\d+$/, '')] || null;
     return { code, locator: ref.slice(code.length).replace(/^[#.\s]+/, '').trim() || null, citation: hit?.citation ?? null, url: hit?.url ?? null };
   });
 }

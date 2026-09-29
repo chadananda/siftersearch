@@ -27,6 +27,10 @@ describe('expandCodes', () => {
     expect(out[0]).toEqual({ code: 'SWB', locator: '09 (p.077-113x)', citation: 'Selections from the Writings of the Báb', url: 'https://bahai.org/swb' });
     expect(out[1]).toMatchObject({ code: 'BPRY', locator: '226-227x', citation: null });
   });
+  it('resolves compound and numbered codes by their stem', () => {
+    const b = { SW: { citation: 'Star of the West', url: null }, MMK: { citation: 'Makatib', url: null } };
+    expect(expandCodes('SW_v08.123, MMK6.045', b).map((x) => x.citation)).toEqual(['Star of the West', 'Makatib']);
+  });
 });
 
 describe('mergeTabletMeta', () => {
