@@ -956,12 +956,13 @@ export default async function adminRoutes(fastify) {
           documentId: { type: 'string', description: 'Re-index a single document by ID' },
           dir: { type: 'string', description: "Library-relative directory to index (e.g. \"Baha'i/Core Tablets\")" },
           dryRun: { type: 'boolean', default: false },
-          localOnly: { type: 'boolean', default: false, description: 'Local models only: never fall back to paid cloud' }
+          localOnly: { type: 'boolean', default: false, description: 'Local models only: never fall back to paid cloud' },
+          concurrency: { type: 'integer', minimum: 1, maximum: 16, description: 'Files ingested in parallel' }
         }
       }
     }
   }, async (request) => {
-    const { force = false, limit, religion, collection, author, path, documentId, dir, dryRun = false, localOnly = false } = request.body || {};
+    const { force = false, limit, religion, collection, author, path, documentId, dir, dryRun = false, localOnly = false, concurrency } = request.body || {};
 
     // Check if already running
     const existing = backgroundTasks.get('reindex');
@@ -980,6 +981,7 @@ export default async function adminRoutes(fastify) {
     }
     if (dryRun) args.push('--dry-run');
     if (localOnly) args.push('--local-only');
+    if (concurrency) args.push(`--concurrency=${concurrency}`);
     if (force) args.push('--force');
     if (limit) args.push(`--limit=${limit}`);
     if (religion) args.push(`--religion=${religion}`);

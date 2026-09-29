@@ -490,7 +490,11 @@ async function indexLibrary() {
     startImportBatch(filesToProcess.length, 'index-library');
   }
 
-  for (let i = 0; i < filesToProcess.length; i++) {
+  // --concurrency=N: files in parallel. Each new non-English file waits on the local LLM for sentence marking, and
+  // one at a time that was ~8 files/min — 18,686 Partial Inventory tablets would have taken ~40 hours.
+  const concArg = args.find((a) => a.startsWith('--concurrency='));
+  const CONCURRENCY = Math.max(1, Number(concArg ? concArg.split('=')[1] : 1) || 1);
+  async function processOne(i) {
     const file = filesToProcess[i];
     const progress = `[${i + 1}/${filesToProcess.length}]`;
 
@@ -521,7 +525,7 @@ async function indexLibrary() {
             // Tier 1: stored mtime is old enough — file cannot have changed recently
             stats.skipped++;
             updateImportProgress('skipped');
-            continue;
+            return;
           }
 
           // Tier 2: stored mtime is fresh — stat to check if it actually changed
@@ -533,7 +537,7 @@ async function indexLibrary() {
               // mtime unchanged — skip without reading file
               stats.skipped++;
               updateImportProgress('skipped');
-              continue;
+              return;
             }
           } catch { /* stat failed — fall through to hash check */ }
 
@@ -550,7 +554,7 @@ async function indexLibrary() {
             }
             stats.skipped++;
             updateImportProgress('skipped');
-            continue;
+            return;
           }
 
           if (storedHash && currentHash) {
@@ -562,23 +566,23 @@ async function indexLibrary() {
             if (result.skipped || result.status === 'unchanged') {
               stats.skipped++;
               updateImportProgress('skipped');
-              continue;
+              return;
             } else if (result.status === 'moved') {
               console.log(`${progress} 📦 MOVED: ${file.metadata.title}`);
               stats.indexed++;
               updateImportProgress('indexed');
-              continue;
+              return;
             } else {
               console.log(`${progress} 🔄 UPDATED: ${file.metadata.title} (${result.paragraphCount || 0} chunks)`);
               stats.indexed++;
               updateImportProgress('indexed');
-              continue;
+              return;
             }
           }
 
           stats.skipped++;
           updateImportProgress('skipped');
-          continue;
+          return;
         }
       }
 
@@ -588,7 +592,7 @@ async function indexLibrary() {
         console.log(`         Religion: ${file.metadata.religion}`);
         console.log(`         Collection: ${file.metadata.collection}`);
         stats.indexed++;
-        continue;
+        return;
       }
 
       // Index document
@@ -621,7 +625,12 @@ async function indexLibrary() {
         updateImportProgress('failed');
       }
     }
+  
   }
+  let nextFile = 0;
+  await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
+    while (nextFile < filesToProcess.length) { const i = nextFile++; await processOne(i); }
+  }));
 
   // Clear import batch tracking
   if (!dryRun) {

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T05:29:09.264Z",
+  "generated": "2026-09-29T06:49:08.094Z",
   "entries": [
+    {
+      "hash": "2d2cfd47",
+      "date": "2026-09-28",
+      "type": "Chore",
+      "description": "Anchor-v4 / inherit-v3 method versions for the alif/hamza-free key",
+      "scope": "pairing"
+    },
     {
       "hash": "98bf3d06",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Scope dashboard avg-latency to searches (exclude chat turns)",
       "scope": null
-    },
-    {
-      "hash": "03ba88f6",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Single \"Admin\" nav link + dashboard health/analytics summary + deep Analytics page",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "2d2cfd47",
+        "date": "2026-09-28",
+        "type": "Chore",
+        "description": "Anchor-v4 / inherit-v3 method versions for the alif/hamza-free key",
+        "scope": "pairing"
+      },
       {
         "hash": "98bf3d06",
         "date": "2026-09-28",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Scope dashboard avg-latency to searches (exclude chat turns)",
-        "scope": null
-      },
-      {
-        "hash": "03ba88f6",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Single \"Admin\" nav link + dashboard health/analytics summary + deep Analytics page",
         "scope": null
       }
     ]
