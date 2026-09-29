@@ -1322,6 +1322,25 @@ export const migrations = {
       entity_id INTEGER PRIMARY KEY, card TEXT NOT NULL, facts TEXT, version TEXT, built_at INTEGER DEFAULT (unixepoch()))`);
     logger.info('Migration 127 complete');
   },
+  128: async () => {
+    // CONTENT ALIGNMENT — translation paragraph ↔ original paragraph, both by content.id, so finding either finds the
+    // other (Chad, 2026-09-28: "we also link the two"; "why would we not be linking claims to the actual table key").
+    // basis: how it was bound (anchor-exact: CTAI/bahai.org original located verbatim in the ingested originals ·
+    // inherit-english: same English as an anchored paragraph · name-align · judge). retired_at instead of DELETE,
+    // and NO foreign keys: re-ingest replaces content rows, and an FK here would refuse it (as enrichment_pending did).
+    logger.info('Starting migration 128: content_alignment');
+    await query(`CREATE TABLE IF NOT EXISTS content_alignment (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      trans_id INTEGER NOT NULL, orig_id INTEGER NOT NULL,
+      trans_doc INTEGER, orig_doc INTEGER,
+      basis TEXT NOT NULL, score REAL, via_id INTEGER, method TEXT,
+      created_at INTEGER DEFAULT (unixepoch()), retired_at INTEGER,
+      UNIQUE (trans_id, orig_id))`);
+    await query('CREATE INDEX IF NOT EXISTS idx_align_orig ON content_alignment(orig_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_align_trans_doc ON content_alignment(trans_doc)');
+    await query('CREATE INDEX IF NOT EXISTS idx_align_orig_doc ON content_alignment(orig_doc)');
+    logger.info('Migration 128 complete');
+  },
 };
 
 export const graphMigrations = {

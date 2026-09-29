@@ -1088,6 +1088,20 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * POST /server/pair-originals {stage='anchor', dryRun=true} — pair translation ↔ original paragraphs by content.id
+   * (content_alignment). Background task; read it at GET /server/tasks/pair-originals. See scripts/pipeline/pair-originals.mjs.
+   */
+  fastify.post('/server/pair-originals', { preHandler: requireInternal }, async (request) => {
+    const { stage = 'anchor', dryRun = true } = request.body || {};
+    if (!['anchor'].includes(stage)) throw ApiError.badRequest(`unknown stage '${stage}'`);
+    const running = backgroundTasks.get('pair-originals');
+    if (running && running.status === 'running') throw ApiError.conflict('pair-originals is already running');
+    const task = runBackgroundTask('pair-originals', 'scripts/pipeline/pair-originals.mjs',
+      ['--stage', stage, ...(dryRun ? ['--dry'] : [])]);
+    return { success: true, taskId: 'pair-originals', stage, dryRun, status: task.status };
+  });
+
+  /**
    * Ingest a document from a file path (creates new or updates existing)
    * POST /api/admin/server/ingest-file
    */

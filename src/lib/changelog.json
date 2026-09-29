@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T01:55:11.360Z",
+  "generated": "2026-09-29T03:17:14.593Z",
   "entries": [
+    {
+      "hash": "439f8e2d",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Arabic pause does not apply under localOnly (no paid model reachable); forceReindex reports a document it left empty",
+      "scope": "ingest"
+    },
     {
       "hash": "1d94b8eb",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Fire web fallback on any non-decisive quote hunt + enter ladder on LLM quoted_span",
       "scope": null
-    },
-    {
-      "hash": "28f6e358",
-      "date": "2026-08-10",
-      "type": "Other",
-      "description": "Retry+backoff through writer congestion, smaller batches",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "439f8e2d",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Arabic pause does not apply under localOnly (no paid model reachable); forceReindex reports a document it left empty",
+        "scope": "ingest"
+      },
       {
         "hash": "1d94b8eb",
         "date": "2026-09-28",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-10",
         "type": "Other",
         "description": "Fire web fallback on any non-decisive quote hunt + enter ladder on LLM quoted_span",
-        "scope": null
-      },
-      {
-        "hash": "28f6e358",
-        "date": "2026-08-10",
-        "type": "Other",
-        "description": "Retry+backoff through writer congestion, smaller batches",
         "scope": null
       }
     ]
