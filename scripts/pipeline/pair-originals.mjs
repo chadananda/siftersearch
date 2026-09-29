@@ -15,7 +15,7 @@ const args = process.argv.slice(2);
 const val = (f) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null; };
 const stage = val('--stage') || 'anchor';
 const dry = args.includes('--dry');
-const METHOD = 'anchor-v3';   // v3: short passages located only among the original docs their neighbours anchored to   // v2: a paragraph belongs only if half of it lies inside the passage (or it holds half)
+const METHOD = 'anchor-v4';   // v4: alif/hamza-free letter key (editions spell hamza differently)
 
 const t0 = Date.now();
 const originals = await queryAll(
@@ -145,7 +145,7 @@ if (stage === 'inherit') {
     for (let i = 0; i < rows.length; i += 500) {
       await transaction(rows.slice(i, i + 500).map((r) => ({
         sql: `INSERT INTO content_alignment (trans_id, orig_id, trans_doc, orig_doc, basis, score, via_id, method)
-              VALUES (?, ?, ?, ?, 'inherit-english', ?, ?, 'inherit-v2')
+              VALUES (?, ?, ?, ?, 'inherit-english', ?, ?, 'inherit-v3')
               ON CONFLICT (trans_id, orig_id) DO UPDATE SET basis = excluded.basis, score = excluded.score,
                 via_id = excluded.via_id, method = excluded.method, retired_at = NULL`,
         args: [r.trans, r.orig, r.transDoc, r.origDoc, r.score, r.via] })), 'pair:inherit');

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T05:24:29.087Z",
+  "generated": "2026-09-29T05:29:09.264Z",
   "entries": [
+    {
+      "hash": "98bf3d06",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Drop every alif/hamza form from the letter key — editions spell hamza differently (PM 138: 0.21 -> 1.0)",
+      "scope": "anchor"
+    },
     {
       "hash": "acfe70d1",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Single \"Admin\" nav link + dashboard health/analytics summary + deep Analytics page",
       "scope": null
-    },
-    {
-      "hash": "3ad52c83",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Warn on a non-draining grounding queue (the gap that hid the 2-day idle stall)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "98bf3d06",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Drop every alif/hamza form from the letter key — editions spell hamza differently (PM 138: 0.21 -> 1.0)",
+        "scope": "anchor"
+      },
       {
         "hash": "acfe70d1",
         "date": "2026-09-28",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Single \"Admin\" nav link + dashboard health/analytics summary + deep Analytics page",
-        "scope": null
-      },
-      {
-        "hash": "3ad52c83",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Warn on a non-draining grounding queue (the gap that hid the 2-day idle stall)",
         "scope": null
       }
     ]
