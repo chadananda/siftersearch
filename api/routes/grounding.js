@@ -1035,6 +1035,32 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * GET /concepts/english-coverage — does every Arabic/Persian paragraph have English (Chad, 2026-09-28: "Every arabic
+   * or farsi content par should have english somewhere, either together or linked in another document")? Per author
+   * × language: linked (content_alignment → one of our English paragraphs), beside (content.translation_text), both,
+   * neither — and the characters still untranslated, for the translation plan.
+   */
+  fastify.get('/concepts/english-coverage', admin, async () => {
+    const rows = await queryAll(
+      `SELECT d.author, d.language,
+              COUNT(*) AS paras,
+              SUM(EXISTS (SELECT 1 FROM content_alignment a WHERE a.orig_id = c.id AND a.retired_at IS NULL)) AS linked,
+              SUM(c.translation_text IS NOT NULL) AS beside,
+              SUM(EXISTS (SELECT 1 FROM content_alignment a WHERE a.orig_id = c.id AND a.retired_at IS NULL)
+                  AND c.translation_text IS NOT NULL) AS both,
+              SUM(CASE WHEN c.translation_text IS NULL AND NOT EXISTS (SELECT 1 FROM content_alignment a
+                  WHERE a.orig_id = c.id AND a.retired_at IS NULL) THEN LENGTH(c.text) ELSE 0 END) AS untranslated_chars,
+              SUM(CASE WHEN c.translation_text IS NULL AND NOT EXISTS (SELECT 1 FROM content_alignment a
+                  WHERE a.orig_id = c.id AND a.retired_at IS NULL) THEN 1 ELSE 0 END) AS neither
+         FROM content c JOIN docs d ON d.id = c.doc_id
+        WHERE d.file_path LIKE 'Baha''i/Core Tablets/%' AND d.language IN ('ar','fa')
+          AND c.deleted_at IS NULL AND d.deleted_at IS NULL
+        GROUP BY d.author, d.language ORDER BY paras DESC`, [], 'coverage:english');
+    const t = rows.reduce((a, r) => { for (const k of ['paras', 'linked', 'beside', 'both', 'neither', 'untranslated_chars']) a[k] = (a[k] || 0) + (r[k] || 0); return a; }, {});
+    return { total: t, byAuthorLanguage: rows };
+  });
+
+  /**
    * POST /concepts/alignment/bulk {rows:[{transId, origId, transDoc, origDoc, basis, score, pin, oolId, method, viaId}]}
    * Upsert translation ↔ original pairs computed off-server (the Partial Inventory matching runs as numpy matrices).
    */
