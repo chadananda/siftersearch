@@ -97,13 +97,22 @@ if (stage === 'inherit') {
       seen++;
       const votes = new Map();
       for (const g of S) for (const id of idx.get(g) || []) votes.set(id, (votes.get(id) || 0) + 1);
-      const covering = [...votes].filter(([, v]) => v >= 3).map(([id]) => id);
-      if (!covering.length) continue;
-      const cov = new Set(); for (const id of covering) for (const g of shingles(textOf.get(id))) if (S.has(g)) cov.add(g);
+      // Greedy cover, best first: the same English exists in several paired books (and their originals in several
+      // volumes) — inheriting from every copy multiplied pairs ~9x. An anchored paragraph counts only if half of it
+      // lies inside the target or it covers half of the target (the anchor stage's own membership rule).
+      const cands = [...votes].filter(([, v]) => v >= 3).sort((a, b) => b[1] - a[1]).map(([id]) => id);
+      const cov = new Set(); const covering = [];
+      for (const id of cands) {
+        const A = shingles(textOf.get(id)); let inT = 0; const add = [];
+        for (const g of A) if (S.has(g)) { inT++; if (!cov.has(g)) add.push(g); }
+        if (!(inT >= 0.5 * A.size || inT >= 0.5 * S.size) || add.length < 3) continue;
+        covering.push(id); add.forEach((g) => cov.add(g));
+        if (cov.size >= 0.95 * S.size) break;
+      }
       const share = cov.size / S.size;
-      if (share < 0.6) continue;
+      if (!covering.length || share < 0.6) continue;
       hit++;
-      const via = covering.sort((a, b) => votes.get(b) - votes.get(a))[0];
+      const via = covering[0];
       const origs = new Map(); for (const id of covering) for (const [o, od] of origOf.get(id)) origs.set(o, od);
       for (const [o, od] of origs) rows.push({ trans: p.id, orig: o, transDoc: d.id, origDoc: od, score: Number(share.toFixed(3)), via });
     }
