@@ -1,6 +1,20 @@
 {
-  "generated": "2026-09-29T06:49:08.094Z",
+  "generated": "2026-09-29T07:25:22.412Z",
   "entries": [
+    {
+      "hash": "f9855b63",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "Bulk mode 'ignore' — never overwrite a stricter pairing, only fill its pin/ool_id",
+      "scope": "alignment"
+    },
+    {
+      "hash": "dbd30a92",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "--concurrency=N (reindex {concurrency}) — per-file sentence marking on the local LLM made serial ingest ~8 files/min",
+      "scope": "index-library"
+    },
     {
       "hash": "2d2cfd47",
       "date": "2026-09-28",
@@ -3486,24 +3500,26 @@
       "type": "Other",
       "description": "Storm guard — quarantine books stuck failing \"did not reach verify\"",
       "scope": null
-    },
-    {
-      "hash": "ba2b96fd",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Chat card falls back to all-time users when 7d exposure log is new",
-      "scope": null
-    },
-    {
-      "hash": "0485f72c",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Scope dashboard avg-latency to searches (exclude chat turns)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-09-29": [
+      {
+        "hash": "f9855b63",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "Bulk mode 'ignore' — never overwrite a stricter pairing, only fill its pin/ool_id",
+        "scope": "alignment"
+      }
+    ],
     "2026-09-28": [
+      {
+        "hash": "dbd30a92",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "--concurrency=N (reindex {concurrency}) — per-file sentence marking on the local LLM made serial ingest ~8 files/min",
+        "scope": "index-library"
+      },
       {
         "hash": "2d2cfd47",
         "date": "2026-09-28",
@@ -7044,20 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Storm guard — quarantine books stuck failing \"did not reach verify\"",
-        "scope": null
-      },
-      {
-        "hash": "ba2b96fd",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Chat card falls back to all-time users when 7d exposure log is new",
-        "scope": null
-      },
-      {
-        "hash": "0485f72c",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Scope dashboard avg-latency to searches (exclude chat turns)",
         "scope": null
       }
     ]

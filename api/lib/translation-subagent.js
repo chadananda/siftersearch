@@ -63,7 +63,7 @@ async function fetchJafar(text) {
 
 // Format JAFAR output as translation hints. SE renderings privileged; corpus
 // spectrum shown for context. Stop words and unrooted terms dropped.
-function formatJafarHints(jafar) {
+export function formatJafarHints(jafar) {
   if (!jafar?.enriched_terms) return '';
   const lines = [];
   for (const t of jafar.enriched_terms) {
@@ -74,7 +74,8 @@ function formatJafarHints(jafar) {
     const se = t.se_rendering ? ` — Shoghi Effendi: "${t.se_rendering}"` : '';
     const spec = (t.rendering_spectrum || [])
       .slice(0, 4)
-      .map(s => `"${s.rendering}"${s.count ? `×${s.count}` : ''}`)
+      // CTAI returns {en, count}; reading only `rendering` left every spectrum as "undefined" (found 2026-09-29).
+      .map(s => `"${s.en ?? s.rendering}"${s.count ? `×${s.count}` : ''}`)
       .join(', ');
     const specStr = spec ? ` — corpus uses: ${spec}` : '';
     lines.push(`${t.term} ${root}${lit}${se}${specStr}`);

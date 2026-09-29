@@ -1040,23 +1040,25 @@ export default async function groundingRoutes(fastify) {
    * × language: linked (content_alignment → one of our English paragraphs), beside (content.translation_text), both,
    * neither — and the characters still untranslated, for the translation plan.
    */
-  fastify.get('/concepts/english-coverage', admin, async () => {
+  fastify.get('/concepts/english-coverage', admin, async (req) => {
+    // scope=core (default): the Core Tablets collection · scope=all: every Arabic/Persian document in the library.
+    const all = req.query?.scope === 'all';
+    const LINKED = 'EXISTS (SELECT 1 FROM content_alignment a WHERE a.orig_id = c.id AND a.retired_at IS NULL)';
     const rows = await queryAll(
-      `SELECT d.author, d.language,
+      `SELECT ${all ? "substr(d.file_path, 1, instr(substr(d.file_path, instr(d.file_path, '/') + 1), '/') + instr(d.file_path, '/') - 1) AS collection," : ''}
+              d.author, d.language,
               COUNT(*) AS paras,
-              SUM(EXISTS (SELECT 1 FROM content_alignment a WHERE a.orig_id = c.id AND a.retired_at IS NULL)) AS linked,
+              SUM(${LINKED}) AS linked,
               SUM(c.translation_text IS NOT NULL) AS beside,
-              SUM(EXISTS (SELECT 1 FROM content_alignment a WHERE a.orig_id = c.id AND a.retired_at IS NULL)
-                  AND c.translation_text IS NOT NULL) AS both,
-              SUM(CASE WHEN c.translation_text IS NULL AND NOT EXISTS (SELECT 1 FROM content_alignment a
-                  WHERE a.orig_id = c.id AND a.retired_at IS NULL) THEN LENGTH(c.text) ELSE 0 END) AS untranslated_chars,
-              SUM(CASE WHEN c.translation_text IS NULL AND NOT EXISTS (SELECT 1 FROM content_alignment a
-                  WHERE a.orig_id = c.id AND a.retired_at IS NULL) THEN 1 ELSE 0 END) AS neither
+              SUM(c.translation_text IS NOT NULL AND c.translation_authority = 'provisional-phelps') AS beside_provisional,
+              SUM(${LINKED} AND c.translation_text IS NOT NULL) AS both,
+              SUM(CASE WHEN c.translation_text IS NULL AND NOT ${LINKED} THEN LENGTH(c.text) ELSE 0 END) AS untranslated_chars,
+              SUM(CASE WHEN c.translation_text IS NULL AND NOT ${LINKED} THEN 1 ELSE 0 END) AS neither
          FROM content c JOIN docs d ON d.id = c.doc_id
-        WHERE d.file_path LIKE 'Baha''i/Core Tablets/%' AND d.language IN ('ar','fa')
+        WHERE ${all ? '1' : "d.file_path LIKE 'Baha''i/Core Tablets/%'"} AND d.language IN ('ar','fa')
           AND c.deleted_at IS NULL AND d.deleted_at IS NULL
-        GROUP BY d.author, d.language ORDER BY paras DESC`, [], 'coverage:english');
-    const t = rows.reduce((a, r) => { for (const k of ['paras', 'linked', 'beside', 'both', 'neither', 'untranslated_chars']) a[k] = (a[k] || 0) + (r[k] || 0); return a; }, {});
+        GROUP BY ${all ? 'collection, ' : ''}d.author, d.language ORDER BY paras DESC`, [], 'coverage:english');
+    const t = rows.reduce((a, r) => { for (const k of ['paras', 'linked', 'beside', 'beside_provisional', 'both', 'neither', 'untranslated_chars']) a[k] = (a[k] || 0) + (r[k] || 0); return a; }, {});
     return { total: t, byAuthorLanguage: rows };
   });
 
