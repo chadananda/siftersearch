@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T23:09:53.902Z",
+  "generated": "2026-09-29T23:17:22.580Z",
   "entries": [
+    {
+      "hash": "00f9ad15",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "Oceanoflights notes are scholarship — linked to their tablet (tablet_notes), doc_role 'notes', out of the translation queue (migr 133)",
+      "scope": "tablets"
+    },
     {
       "hash": "bdd7015a",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Build the RSS feed the sitemap has been advertising into a 302",
       "scope": null
-    },
-    {
-      "hash": "85b452aa",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Let newly-declared cron apps register themselves — no ssh, no manual pm2 start",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "00f9ad15",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "Oceanoflights notes are scholarship — linked to their tablet (tablet_notes), doc_role 'notes', out of the translation queue (migr 133)",
+        "scope": "tablets"
+      },
       {
         "hash": "bdd7015a",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Build the RSS feed the sitemap has been advertising into a 302",
-        "scope": null
-      },
-      {
-        "hash": "85b452aa",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Let newly-declared cron apps register themselves — no ssh, no manual pm2 start",
         "scope": null
       }
     ]
