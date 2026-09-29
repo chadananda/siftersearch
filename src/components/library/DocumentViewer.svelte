@@ -68,7 +68,8 @@
 
   function renderMarkdown(text) {
     if (!text) return '';
-    let clean = text;
+    // sentence markers ⁅s1⁆…⁅/s1⁆ are for alignment and search, never for the reader
+    let clean = text.replace(/⁅\/?s\d+⁆/g, '');
     clean = clean.replace(/_([stkdzcSCDTZG]h)/g, '$1');
     clean = clean.replace(/_([STKDZGC])(?=[aeiouáíú])/g, '$1');
     clean = toCurlyQuotes(clean);
@@ -251,7 +252,7 @@
         {#each paragraphs as para, i}
           <div class="paragraph" data-index={para.paragraph_index}>
             {#if para.blocktype === 'heading'}
-              <h2 class="paragraph-heading">{para.text}</h2>
+              <h2 class="paragraph-heading">{para.text.replace(/⁅\/?s\d+⁆/g, '')}</h2>
             {/if}
             <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
           </div>

@@ -19,13 +19,15 @@
     const g = d.gregorian || (d.from ? (d.to && d.to !== d.from ? `${d.from}–${d.to}` : `${d.from}`) : null);
     return [g, d.hijri ? `${d.hijri} AH` : null].filter(Boolean).join(' · ') + (d.approx ? ' (approx.)' : '') || d.text;
   };
-  const cite = (c) => [c.citation || c.code, c.locator].filter(Boolean).join(', ');
+  // Phelps' bibliography entries run to a paragraph: show author + title (up to the first full stop after the title)
+  const short = (c) => (c.citation ? c.citation.split(/(?<=\.)\s+/).slice(0, 2).join(' ').replace(/\.$/, '') : c.code);
+  const cite = (c) => [short(c), c.locator].filter(Boolean).join(', ');
   const hasAny = $derived(meta && (meta.recipient || meta.addressee?.length || meta.date || meta.place || meta.manuscripts?.length
     || meta.publications?.length || meta.translations?.length || meta.subjects?.length || meta.audio?.length || meta.notes?.length));
 </script>
 
 {#if hasAny}
-  <details class="tablet-about mt-4 rounded-lg border border-border bg-surface-1">
+  <details dir="ltr" class="tablet-about mt-4 rounded-lg border border-border bg-surface-1 text-left">
     <summary class="cursor-pointer select-none px-4 py-2 text-sm font-medium text-secondary">About this tablet</summary>
     <div class="grid gap-3 px-4 pb-4 pt-1 text-sm text-primary">
       {#if meta.title || meta.title_generated}
@@ -57,7 +59,7 @@
           <div>
             <p class="text-muted">{label}</p>
             <ul class="ml-4 list-disc">
-              {#each refs as c}<li>{#if c.url}<a class="text-accent hover:text-accent-hover" href={c.url} target="_blank" rel="noopener">{cite(c)}</a>{:else}{cite(c)}{/if}</li>{/each}
+              {#each refs as c}<li title={c.citation || ''}>{#if c.url}<a class="text-accent hover:text-accent-hover" href={c.url} target="_blank" rel="noopener">{cite(c)}</a>{:else}{cite(c)}{/if}</li>{/each}
             </ul>
           </div>
         {/if}

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T23:20:18.779Z",
+  "generated": "2026-09-29T23:22:01.490Z",
   "entries": [
+    {
+      "hash": "f1403ef4",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "'About this tablet' in the view?doc reader too",
+      "scope": "reader"
+    },
     {
       "hash": "0a622dbd",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Detect the book's language from its TEXT, not from the stub's metadata page",
       "scope": null
-    },
-    {
-      "hash": "679abc43",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Drop the duplicate /library route, declare AbortController",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "f1403ef4",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "'About this tablet' in the view?doc reader too",
+        "scope": "reader"
+      },
       {
         "hash": "0a622dbd",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Detect the book's language from its TEXT, not from the stub's metadata page",
-        "scope": null
-      },
-      {
-        "hash": "679abc43",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Drop the duplicate /library route, declare AbortController",
         "scope": null
       }
     ]
