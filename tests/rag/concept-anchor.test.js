@@ -49,3 +49,10 @@ describe('locate — allowDocs', () => {
     expect(locate('انّک انت الغفور الرّحیم و انّک انت المقتدر القدیر', index, { allowDocs: new Set([9]) })).toBeNull();
   });
 });
+
+describe('letterKey — hamza spelling', () => {
+  it('reduces «اسئلک» and «أسألك» to the same letters', () => {
+    expect(letterKey('قل اللهم یا اله الاسماء اسئلک')).toBe(letterKey('قُلِ اللّهُمَّ يا إِلهَ الأَسْمآءِ أَسْأَلُكَ'));
+    expect(letterKey('مسئله')).toBe(letterKey('مسأله'));
+  });
+});

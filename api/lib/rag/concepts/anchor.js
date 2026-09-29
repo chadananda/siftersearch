@@ -8,7 +8,11 @@ const FOLD = [['ي', 'ی'], ['ى', 'ی'], ['ك', 'ک'], ['ة', 'ه'], ['ۀ', 'ه
 
 /** Letters only, spelling variants folded — the two sources differ in ی/ي, ک/ك, hamza seats, diacritics, spacing. */
 export function letterKey(text) {
-  let t = String(text || '').normalize('NFKC').replace(/⁅\/?s\d+⁆/g, '').replace(DIACRITICS, '');
+  let t = String(text || '').normalize('NFKC').replace(/⁅\/?s\d+⁆/g, '').replace(DIACRITICS, '').replace(/ٴ/g, '');
+  // ALIF / HAMZA SPELLING differs between editions: Phelps «اسئلک» «الاسماء», oceanoflights «أسألك» «الأسماء» —
+  // folding seats to ی / ا left them different letters and hid thousands of shared tablets (PM 138 scored 0.21).
+  // Every alif and hamza form is dropped: both spellings reduce to the consonant skeleton «سلک», «لسم».
+  t = t.replace(/[\u0627\u0623\u0625\u0622\u0671\u0621\u0626\u0624]/g, '');
   for (const [a, b] of FOLD) t = t.split(a).join(b);
   return t.replace(/[^ء-ۓ]/g, '');
 }

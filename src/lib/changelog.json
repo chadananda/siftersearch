@@ -1,6 +1,27 @@
 {
-  "generated": "2026-09-29T04:40:16.979Z",
+  "generated": "2026-09-29T05:24:29.087Z",
   "entries": [
+    {
+      "hash": "acfe70d1",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "GET /concepts/english-coverage — every original paragraph: linked / beside / neither, per author and language",
+      "scope": "coverage"
+    },
+    {
+      "hash": "b08a6279",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Both ids on every pairing (pin, ool_id; migr 130), tablet paragraph span on inventory links, bulk alignment/translation write endpoints",
+      "scope": "pairing"
+    },
+    {
+      "hash": "1a190fc0",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Partial Inventory (Phelps) import + verbatim linking to our documents with both PIN and oceanoflights id (migr 129)",
+      "scope": "inventory"
+    },
     {
       "hash": "60e16064",
       "date": "2026-09-28",
@@ -3479,31 +3500,31 @@
       "type": "Other",
       "description": "Warn on a non-draining grounding queue (the gap that hid the 2-day idle stall)",
       "scope": null
-    },
-    {
-      "hash": "c9614f05",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Align disambiguation gate to 0.98 (was 0.99) — fixes the 98-99% forever-fail loop",
-      "scope": null
-    },
-    {
-      "hash": "47ef7c95",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "User self-service transparency + consent (§7.4) — /api/v1/companion",
-      "scope": null
-    },
-    {
-      "hash": "d4cc80b5",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Seeker Companion — relationship-centered chat personality (PRD adapted, tested, admin controls)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "acfe70d1",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "GET /concepts/english-coverage — every original paragraph: linked / beside / neither, per author and language",
+        "scope": "coverage"
+      },
+      {
+        "hash": "b08a6279",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Both ids on every pairing (pin, ool_id; migr 130), tablet paragraph span on inventory links, bulk alignment/translation write endpoints",
+        "scope": "pairing"
+      },
+      {
+        "hash": "1a190fc0",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Partial Inventory (Phelps) import + verbatim linking to our documents with both PIN and oceanoflights id (migr 129)",
+        "scope": "inventory"
+      },
       {
         "hash": "60e16064",
         "date": "2026-09-28",
@@ -7037,27 +7058,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Warn on a non-draining grounding queue (the gap that hid the 2-day idle stall)",
-        "scope": null
-      },
-      {
-        "hash": "c9614f05",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Align disambiguation gate to 0.98 (was 0.99) — fixes the 98-99% forever-fail loop",
-        "scope": null
-      },
-      {
-        "hash": "47ef7c95",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "User self-service transparency + consent (§7.4) — /api/v1/companion",
-        "scope": null
-      },
-      {
-        "hash": "d4cc80b5",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Seeker Companion — relationship-centered chat personality (PRD adapted, tested, admin controls)",
         "scope": null
       }
     ]
