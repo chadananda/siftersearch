@@ -1053,12 +1053,17 @@ export default async function groundingRoutes(fastify) {
               SUM(c.translation_text IS NOT NULL AND c.translation_authority = 'provisional-phelps') AS beside_provisional,
               SUM(${LINKED} AND c.translation_text IS NOT NULL) AS both,
               SUM(CASE WHEN c.translation_text IS NULL AND NOT ${LINKED} THEN LENGTH(c.text) ELSE 0 END) AS untranslated_chars,
-              SUM(CASE WHEN c.translation_text IS NULL AND NOT ${LINKED} THEN 1 ELSE 0 END) AS neither
+              SUM(CASE WHEN c.translation_text IS NULL AND NOT ${LINKED} THEN 1 ELSE 0 END) AS neither,
+              -- without Stephen Phelps' own renderings (not surfaced until he agrees): what would still need English
+              SUM(CASE WHEN (c.translation_text IS NULL OR c.translation_authority = 'provisional-phelps') AND NOT ${LINKED}
+                  THEN 1 ELSE 0 END) AS neither_without_phelps,
+              SUM(CASE WHEN (c.translation_text IS NULL OR c.translation_authority = 'provisional-phelps') AND NOT ${LINKED}
+                  THEN LENGTH(c.text) ELSE 0 END) AS untranslated_chars_without_phelps
          FROM content c JOIN docs d ON d.id = c.doc_id
         WHERE ${all ? '1' : "d.file_path LIKE 'Baha''i/Core Tablets/%'"} AND d.language IN ('ar','fa')
           AND c.deleted_at IS NULL AND d.deleted_at IS NULL
         GROUP BY ${all ? 'collection, ' : ''}d.author, d.language ORDER BY paras DESC`, [], 'coverage:english');
-    const t = rows.reduce((a, r) => { for (const k of ['paras', 'linked', 'beside', 'beside_provisional', 'both', 'neither', 'untranslated_chars']) a[k] = (a[k] || 0) + (r[k] || 0); return a; }, {});
+    const t = rows.reduce((a, r) => { for (const k of ['paras', 'linked', 'beside', 'beside_provisional', 'both', 'neither', 'untranslated_chars', 'neither_without_phelps', 'untranslated_chars_without_phelps']) a[k] = (a[k] || 0) + (r[k] || 0); return a; }, {});
     return { total: t, byAuthorLanguage: rows };
   });
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T07:51:00.136Z",
+  "generated": "2026-09-29T09:40:13.417Z",
   "entries": [
+    {
+      "hash": "160a23ef",
+      "date": "2026-09-29",
+      "type": "Fixed",
+      "description": "CTAI /jafar returns zero terms past ~50 words — ask in 35-word chunks and merge",
+      "scope": "translation"
+    },
     {
       "hash": "e282af13",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Behavioral test harness + fix diacritic-blind detectors",
       "scope": null
-    },
-    {
-      "hash": "fc15a602",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Fix \"done\" measure + language-capability gate (stop token churn)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "160a23ef",
+        "date": "2026-09-29",
+        "type": "Fixed",
+        "description": "CTAI /jafar returns zero terms past ~50 words — ask in 35-word chunks and merge",
+        "scope": "translation"
+      },
       {
         "hash": "e282af13",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Behavioral test harness + fix diacritic-blind detectors",
-        "scope": null
-      },
-      {
-        "hash": "fc15a602",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Fix \"done\" measure + language-capability gate (stop token churn)",
         "scope": null
       }
     ]
