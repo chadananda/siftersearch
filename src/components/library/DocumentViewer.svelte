@@ -3,6 +3,7 @@
   import { marked } from 'marked';
   import { authenticatedFetch } from '../../lib/api.js';
   import { toCurlyQuotes } from '../../lib/text-utils.js';
+  import TabletAbout from './TabletAbout.svelte';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
 
@@ -239,6 +240,7 @@
         {#if document.description}
           <p class="abstract i">{document.description}</p>
         {/if}
+        {#if document.id}<TabletAbout documentId={document.id} />{/if}
       </header>
 
       {#if paragraphs.length === 0}
