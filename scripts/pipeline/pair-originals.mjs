@@ -58,5 +58,62 @@ if (stage === 'anchor') {
     console.log(`written ${written}`);
   }
 }
+if (stage === 'inherit') {
+  // Same English as an anchored paragraph → the same originals. Compilations, duplicate copies and translation
+  // collections repeat published renderings (measured: Sacred Writings 83%, Prayers 65%, duplicate copies 96-100%).
+  const norm = (t) => String(t).replace(/⁅\/?s\d+⁆|\[[\d.]+\]/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[’‘'`]/g, '').replace(/[^a-z ]+/g, ' ').split(/\s+/).filter(Boolean);
+  const shingles = (t) => { const w = norm(t); const out = new Set(); for (let i = 0; i + 6 <= w.length; i++) out.add(w.slice(i, i + 6).join(' ')); return out; };
+  const anchored = await queryAll(
+    `SELECT a.trans_id AS id, a.orig_id AS origId, a.orig_doc AS origDoc, c.text FROM content_alignment a
+       JOIN content c ON c.id = a.trans_id WHERE a.basis = 'anchor-exact' AND a.retired_at IS NULL`, [], 'pair:anchored');
+  const origOf = new Map(); const textOf = new Map();
+  for (const a of anchored) { if (!origOf.has(a.id)) origOf.set(a.id, []); origOf.get(a.id).push([a.origId, a.origDoc]); textOf.set(a.id, a.text); }
+  const idx = new Map();
+  for (const [id, text] of textOf) for (const g of shingles(text)) { if (!idx.has(g)) idx.set(g, []); idx.get(g).push(id); }
+  const anchoredDocs = new Set((await queryAll(`SELECT DISTINCT trans_doc AS d FROM content_alignment WHERE basis='anchor-exact'`, [], 'pair:adocs')).map((r) => r.d));
+  // Translations of the Central Figures' words: their English docs, compilations and translation collections.
+  const docs = (await queryAll(
+    `SELECT id, title FROM docs WHERE deleted_at IS NULL AND COALESCE(language,'en') = 'en' AND religion LIKE 'Bah%' AND (
+       author LIKE '%ll_h%' OR author LIKE '%Abdu%' OR author LIKE '%B_b%' OR file_path LIKE '%Compilation%'
+       OR file_path LIKE '%Research Depar%' OR file_path LIKE '%Tablet Translations%' OR title LIKE '%Prayers%')`, [], 'pair:inherit-docs'))
+    .filter((d) => !anchoredDocs.has(d.id));
+  let pairs = 0, parasHit = 0, parasSeen = 0; const perDoc = [];
+  const rows = [];
+  for (const d of docs) {
+    const P = await queryAll(`SELECT id, text FROM content WHERE doc_id = ? AND deleted_at IS NULL`, [d.id], 'pair:inherit-paras');
+    let hit = 0, seen = 0;
+    for (const p of P) {
+      const S = shingles(p.text);
+      if (S.size < 3) continue;
+      seen++;
+      const votes = new Map();
+      for (const g of S) for (const id of idx.get(g) || []) votes.set(id, (votes.get(id) || 0) + 1);
+      const covering = [...votes].filter(([, v]) => v >= 3).map(([id]) => id);
+      if (!covering.length) continue;
+      const cov = new Set(); for (const id of covering) for (const g of shingles(textOf.get(id))) if (S.has(g)) cov.add(g);
+      const share = cov.size / S.size;
+      if (share < 0.6) continue;
+      hit++;
+      const via = covering.sort((a, b) => votes.get(b) - votes.get(a))[0];
+      const origs = new Map(); for (const id of covering) for (const [o, od] of origOf.get(id)) origs.set(o, od);
+      for (const [o, od] of origs) rows.push({ trans: p.id, orig: o, transDoc: d.id, origDoc: od, score: Number(share.toFixed(3)), via });
+    }
+    parasHit += hit; parasSeen += seen;
+    if (hit) perDoc.push([d.id, d.title, hit, seen]);
+  }
+  pairs = rows.length;
+  console.log(`inherit: ${docs.length} candidate docs | ${perDoc.length} with matches | paragraphs ${parasHit}/${parasSeen} | pairs ${pairs}`);
+  for (const [id, title, hit, seen] of perDoc.sort((a, b) => b[2] - a[2]).slice(0, 45)) console.log(`  doc ${id}: ${hit}/${seen} (${Math.round(100 * hit / seen)}%) ${String(title).slice(0, 60)}`);
+  if (!dry) {
+    for (let i = 0; i < rows.length; i += 500) {
+      await transaction(rows.slice(i, i + 500).map((r) => ({
+        sql: `INSERT OR IGNORE INTO content_alignment (trans_id, orig_id, trans_doc, orig_doc, basis, score, via_id, method)
+              VALUES (?, ?, ?, ?, 'inherit-english', ?, ?, 'inherit-v1')`,
+        args: [r.trans, r.orig, r.transDoc, r.origDoc, r.score, r.via] })), 'pair:inherit');
+    }
+    console.log(`written ${rows.length}`);
+  }
+}
 console.log(`done in ${Math.round((Date.now() - t0) / 1000)}s`);
 process.exit(0);

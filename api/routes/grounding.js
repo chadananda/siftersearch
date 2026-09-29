@@ -1035,6 +1035,25 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * GET /concepts/alignment?transDoc=|origDoc=|transId=&limit= — translation ↔ original pairs (content_alignment)
+   * with both texts, to inspect a pairing by reading it.
+   */
+  fastify.get('/concepts/alignment', admin, async (req) => {
+    const q = req.query || {};
+    const col = q.transId ? 'a.trans_id' : q.origDoc ? 'a.orig_doc' : 'a.trans_doc';
+    const val = Number(q.transId || q.origDoc || q.transDoc);
+    if (!val) throw ApiError.badRequest('transDoc, origDoc or transId required');
+    const rows = await queryAll(
+      `SELECT a.trans_id, a.orig_id, a.trans_doc, a.orig_doc, a.basis, a.score, a.via_id,
+              substr(t.text, 1, 400) AS trans_text, substr(o.text, 1, 400) AS orig_text
+         FROM content_alignment a JOIN content t ON t.id = a.trans_id JOIN content o ON o.id = a.orig_id
+        WHERE ${col} = ? AND a.retired_at IS NULL ORDER BY t.paragraph_index, o.paragraph_index LIMIT ?`,
+      [val, Math.min(2000, Number(q.limit) || 200)], 'alignment:read');
+    const [{ n }] = await queryAll(`SELECT COUNT(*) n FROM content_alignment a WHERE ${col} = ? AND a.retired_at IS NULL`, [val], 'alignment:count');
+    return { total: n, rows };
+  });
+
+  /**
    * GET /integrity/replacement-chars?fromId=&toId= — paragraphs whose text or original holds U+FFFD, by
    * primary-key RANGE (a whole-table text scan would stall the API). The single writer decoded request bodies
    * chunk by chunk until 2026-09-28, splitting multi-byte letters into «��»; this measures what it damaged.

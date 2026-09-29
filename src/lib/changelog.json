@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T03:31:31.440Z",
+  "generated": "2026-09-29T03:38:46.035Z",
   "entries": [
+    {
+      "hash": "d44becf7",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Keep paragraphs that lie mostly inside the passage (editions with one printed line per paragraph: Madaniyyih 12 -> 202/210)",
+      "scope": "anchor"
+    },
     {
       "hash": "ad871432",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Data-accent / data-name / data-mission per-page overrides",
       "scope": null
-    },
-    {
-      "hash": "244a7081",
-      "date": "2026-08-10",
-      "type": "Other",
-      "description": "Quote-source miss = span not verbatim-contained (score-independent) → web fires",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "d44becf7",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Keep paragraphs that lie mostly inside the passage (editions with one printed line per paragraph: Madaniyyih 12 -> 202/210)",
+        "scope": "anchor"
+      },
       {
         "hash": "ad871432",
         "date": "2026-09-28",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-10",
         "type": "Other",
         "description": "Data-accent / data-name / data-mission per-page overrides",
-        "scope": null
-      },
-      {
-        "hash": "244a7081",
-        "date": "2026-08-10",
-        "type": "Other",
-        "description": "Quote-source miss = span not verbatim-contained (score-independent) → web fires",
         "scope": null
       }
     ]

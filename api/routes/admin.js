@@ -1093,7 +1093,7 @@ export default async function adminRoutes(fastify) {
    */
   fastify.post('/server/pair-originals', { preHandler: requireInternal }, async (request) => {
     const { stage = 'anchor', dryRun = true } = request.body || {};
-    if (!['anchor'].includes(stage)) throw ApiError.badRequest(`unknown stage '${stage}'`);
+    if (!['anchor', 'inherit'].includes(stage)) throw ApiError.badRequest(`unknown stage '${stage}'`);
     const running = backgroundTasks.get('pair-originals');
     if (running && running.status === 'running') throw ApiError.conflict('pair-originals is already running');
     const task = runBackgroundTask('pair-originals', 'scripts/pipeline/pair-originals.mjs',
