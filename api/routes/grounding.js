@@ -1067,12 +1067,16 @@ export default async function groundingRoutes(fastify) {
   fastify.post('/concepts/alignment/bulk', admin, async (req) => {
     const rows = req.body?.rows || [];
     if (!rows.length || rows.length > 5000) throw ApiError.badRequest('1..5000 rows');
+    // mode 'ignore': never overwrite an existing pair (a stricter anchor/inherit pairing wins) — only fill in its ids.
+    const ignore = req.body?.mode === 'ignore';
     await transaction(rows.map((r) => ({
       sql: `INSERT INTO content_alignment (trans_id, orig_id, trans_doc, orig_doc, basis, score, via_id, method, pin, ool_id)
             VALUES (?,?,?,?,?,?,?,?,?,?)
-            ON CONFLICT (trans_id, orig_id) DO UPDATE SET basis=excluded.basis, score=excluded.score, method=excluded.method,
+            ON CONFLICT (trans_id, orig_id) DO UPDATE SET ${ignore
+              ? 'pin=COALESCE(content_alignment.pin, excluded.pin), ool_id=COALESCE(content_alignment.ool_id, excluded.ool_id)'
+              : `basis=excluded.basis, score=excluded.score, method=excluded.method,
               pin=COALESCE(excluded.pin, content_alignment.pin), ool_id=COALESCE(excluded.ool_id, content_alignment.ool_id),
-              retired_at=NULL`,
+              retired_at=NULL`}`,
       args: [r.transId, r.origId, r.transDoc ?? null, r.origDoc ?? null, r.basis, r.score ?? null, r.viaId ?? null,
         r.method ?? null, r.pin ?? null, r.oolId ?? null] })), 'alignment:bulk');
     return { written: rows.length };
