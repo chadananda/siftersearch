@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T17:21:25.577Z",
+  "generated": "2026-09-29T17:30:05.109Z",
   "entries": [
+    {
+      "hash": "9b0e3cb3",
+      "date": "2026-09-29",
+      "type": "Fixed",
+      "description": "Phelps' compound codes (BRL_DAK, SW_v08) resolve by stem — 99.4% of references cited",
+      "scope": "tablets"
+    },
     {
       "hash": "598cdcaa",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "A conversation belongs to a PARTICIPANT — ownership, list, load-back, merge on connect",
       "scope": null
-    },
-    {
-      "hash": "fe09ad9a",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Read-only PM2 process roster — answer \"is it actually running?\" without ssh",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "9b0e3cb3",
+        "date": "2026-09-29",
+        "type": "Fixed",
+        "description": "Phelps' compound codes (BRL_DAK, SW_v08) resolve by stem — 99.4% of references cited",
+        "scope": "tablets"
+      },
       {
         "hash": "598cdcaa",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "A conversation belongs to a PARTICIPANT — ownership, list, load-back, merge on connect",
-        "scope": null
-      },
-      {
-        "hash": "fe09ad9a",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Read-only PM2 process roster — answer \"is it actually running?\" without ssh",
         "scope": null
       }
     ]

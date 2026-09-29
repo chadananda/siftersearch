@@ -14,6 +14,9 @@ describe('parsePiDate', () => {
     expect(d.approx).toBe(true);
     expect(d.from).toBe(1844);
   });
+  it("reads a bare Gregorian date ('Abdu'l-Bahá's Western talks) as Gregorian, not Hijri", () => {
+    expect(parsePiDate('1913-Apr-23')).toMatchObject({ gregorian: '1913-04-23', from: 1913, to: 1913, hijri: null });
+  });
   it('returns years null for an unknown date, and null for none', () => {
     expect(parsePiDate('unknown (Chihriq?)')).toMatchObject({ from: null, approx: true });
     expect(parsePiDate('')).toBeNull();

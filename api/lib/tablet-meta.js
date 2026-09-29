@@ -16,14 +16,16 @@ const hijriToYear = (h) => Math.floor(622 + h * 0.970224);
 export function parsePiDate(raw) {
   const text = strip(raw);
   if (!text) return null;
-  const greg = text.match(/\[(\d{4})(?:-(\d{4}|[A-Za-z]{3})(?:-(\d{1,2}))?)?\]/);
-  const hijri = text.match(/^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?(?:\s*-\s*(\d{4}))?/);
+  // 'Abdu'l-Bahá's Western talks are dated in Gregorian with no brackets ("1913-Apr-23"): a year ≥ 1800 is Gregorian
+  const bare = text.match(/^(1[89]\d\d|20\d\d)(?:-(\d{4}|[A-Za-z]{3}|\d{2})(?:-(\d{1,2}))?)?/);
+  const greg = text.match(/\[(\d{4})(?:-(\d{4}|[A-Za-z]{3})(?:-(\d{1,2}))?)?\]/) || (bare && [`[${bare[0]}]`, bare[1], bare[2], bare[3]]);
+  const hijri = bare ? null : text.match(/^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?(?:\s*-\s*(\d{4}))?/);
   const approx = /\bca\.|\?|late|early|unknown/i.test(text) || !greg;
   let from = null, to = null, gregorian = null;
   if (greg) {
     from = Number(greg[1]);
     to = /^\d{4}$/.test(greg[2] || '') ? Number(greg[2]) : from;
-    const mon = MONTHS[(greg[2] || '').toLowerCase()];
+    const mon = MONTHS[(greg[2] || '').toLowerCase()] || (/^\d{2}$/.test(greg[2] || '') ? Number(greg[2]) : null);
     gregorian = mon ? `${greg[1]}-${String(mon).padStart(2, '0')}${greg[3] ? '-' + greg[3].padStart(2, '0') : ''}` : greg[0].slice(1, -1);
   } else if (hijri) {
     from = hijriToYear(Number(hijri[1])); to = hijri[4] ? hijriToYear(Number(hijri[4])) + 1 : from + 1;
