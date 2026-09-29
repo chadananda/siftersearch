@@ -15,7 +15,7 @@ const args = process.argv.slice(2);
 const val = (f) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null; };
 const stage = val('--stage') || 'anchor';
 const dry = args.includes('--dry');
-const METHOD = 'anchor-v1';
+const METHOD = 'anchor-v2';   // v2: a paragraph belongs only if half of it lies inside the passage (or it holds half)
 
 const t0 = Date.now();
 const originals = await queryAll(
@@ -27,11 +27,13 @@ console.log(`originals ${originals.length} paragraphs indexed in ${Math.round((D
 
 if (stage === 'anchor') {
   const targets = await queryAll(
-    `SELECT c.id, c.doc_id AS docId, c.original_text AS original FROM content c
+    `SELECT c.id, c.doc_id AS docId, c.text, c.original_text AS original FROM content c
       WHERE c.original_text IS NOT NULL AND c.deleted_at IS NULL`, [], 'pair:anchor-targets');
   const perDoc = new Map();
   const rows = [];
-  for (const t of targets) {
+  // A citation note ("See Rúmí, The Mathnaví, II, 185") is not text of the work; two carried an original upstream.
+  const NOTE = /^\s*(>?\s*\[\^|See [^.]{0,80}(,\s*[IVXL]+,\s*\d|_))/;
+  for (const t of targets.filter((x) => !NOTE.test(x.text || ''))) {
     const d = perDoc.get(t.docId) || { total: 0, located: 0, rejected: 0, none: 0, coverage: [] };
     perDoc.set(t.docId, d);
     d.total++;
@@ -47,11 +49,17 @@ if (stage === 'anchor') {
     console.log(`  doc ${docId}: ${d.located}/${d.total} located (${(100 * d.located / d.total).toFixed(0)}%) · rejected ${d.rejected} · none ${d.none} · median coverage ${med}`);
   }
   if (!dry) {
+    // Replace, never delete: retire every earlier anchor pair, then upsert this run's — a pair this run confirms is
+    // revived with its new score/method; one it no longer makes stays retired (and visible as such).
+    await transaction([{ sql: `UPDATE content_alignment SET retired_at = unixepoch()
+                                WHERE basis = 'anchor-exact' AND method <> ? AND retired_at IS NULL`, args: [METHOD] }], 'pair:anchor-retire');
     let written = 0;
     for (let i = 0; i < rows.length; i += 500) {
       await transaction(rows.slice(i, i + 500).map((r) => ({
-        sql: `INSERT OR IGNORE INTO content_alignment (trans_id, orig_id, trans_doc, orig_doc, basis, score, method)
-              VALUES (?, ?, ?, ?, 'anchor-exact', ?, ?)`,
+        sql: `INSERT INTO content_alignment (trans_id, orig_id, trans_doc, orig_doc, basis, score, method)
+              VALUES (?, ?, ?, ?, 'anchor-exact', ?, ?)
+              ON CONFLICT (trans_id, orig_id) DO UPDATE SET basis = excluded.basis, score = excluded.score,
+                method = excluded.method, retired_at = NULL`,
         args: [r.trans, r.orig, r.transDoc, r.origDoc, r.score, METHOD] })), 'pair:anchor');
       written += Math.min(500, rows.length - i);
     }

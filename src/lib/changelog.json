@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T03:38:46.035Z",
+  "generated": "2026-09-29T03:43:03.707Z",
   "entries": [
+    {
+      "hash": "852bc0e8",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Inherit stage (same English as an anchored paragraph -> same originals) + GET /concepts/alignment",
+      "scope": "pairing"
+    },
     {
       "hash": "d44becf7",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Missing-books converter (fetchable stubs → real Markdown books)",
       "scope": null
-    },
-    {
-      "hash": "9310444c",
-      "date": "2026-08-10",
-      "type": "Other",
-      "description": "Data-accent / data-name / data-mission per-page overrides",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "852bc0e8",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Inherit stage (same English as an anchored paragraph -> same originals) + GET /concepts/alignment",
+        "scope": "pairing"
+      },
       {
         "hash": "d44becf7",
         "date": "2026-09-28",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-10",
         "type": "Other",
         "description": "Missing-books converter (fetchable stubs → real Markdown books)",
-        "scope": null
-      },
-      {
-        "hash": "9310444c",
-        "date": "2026-08-10",
-        "type": "Other",
-        "description": "Data-accent / data-name / data-mission per-page overrides",
         "scope": null
       }
     ]

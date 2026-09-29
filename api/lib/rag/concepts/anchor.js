@@ -55,16 +55,17 @@ export function locate(text, index, { minCoverage = 0.8, candidates = 3 } = {}) 
     }
   }
   if (!docPos.size) return null;
-  const positions = k.length - GRAM + 1;
   const ranked = [...docPos].sort((a, b) => b[1].size - a[1].size).slice(0, candidates);
   let best = null;
   for (const [docId] of ranked) {
-    // Keep paragraphs that carry a real part of the passage — OR lie mostly inside it: some editions keep each
-    // printed LINE as a paragraph (Madaniyyih, BKW19), and a line never covers 8% of a long passage.
-    const indexed = (i) => Math.max(1, Math.ceil((index.keys[i].length - GRAM + 1) / STEP));
-    const chosen = [...paraPos].filter(([i, pos]) => index.paras[i].docId === docId
-      && pos.size >= 3 && (pos.size >= 0.08 * positions || pos.size >= 0.5 * indexed(i)))
-      .map(([i]) => i).sort((a, b) => a - b);
+    // A paragraph belongs to the passage when at least half of IT lies inside the passage (a line of a
+    // line-per-paragraph edition, a piece of a split answer) or it holds at least half of the passage (a long
+    // paragraph around a short one). A neighbour sharing only a sliver at the boundary fails both.
+    const passageGrams = new Set(); for (let j = 0; j + GRAM <= k.length; j++) passageGrams.add(k.slice(j, j + GRAM));
+    const inside = (i) => { const pk = index.keys[i]; let a = 0, n = 0; for (let j = 0; j + GRAM <= pk.length; j += 2) { n++; if (passageGrams.has(pk.slice(j, j + GRAM))) a++; } return n ? a / n : 0; };
+    const holds = (i) => { const pk = index.keys[i]; let a = 0, n = 0; for (let j = 0; j + GRAM <= k.length; j += 2) { n++; if (pk.includes(k.slice(j, j + GRAM))) a++; } return n ? a / n : 0; };
+    const chosen = [...paraPos].filter(([i, pos]) => index.paras[i].docId === docId && pos.size >= 2
+      && (inside(i) >= 0.5 || holds(i) >= 0.5)).map(([i]) => i).sort((a, b) => a - b);
     const hay = chosen.map((i) => index.keys[i]).join('');
     let seen = 0, total = 0;
     for (let j = 0; j + GRAM <= k.length; j += 2) { total++; if (hay.includes(k.slice(j, j + GRAM))) seen++; }
