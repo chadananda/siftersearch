@@ -50,21 +50,42 @@ export default async function tabletAdminRoutes(fastify) {
   });
 
   /**
-   * POST /tablets/rebuild {dir} — merge frontmatter + Phelps row (by the doc's own pin, else its inventory link) + notes
-   * into tablet_meta. Notes: docs whose frontmatter names this doc's bookid in `notes_for` (set by the notes linker).
+   * POST /tablets/notes {rows:[{notesDocId, tabletDocId, basis}]} — link oceanoflights notes to their tablet, mark them
+   * doc_role 'notes' and attribute them to oceanoflights' editors (they are scholarship, not the Writings), and send
+   * their paragraphs back to search with the new author.
+   */
+  fastify.post('/tablets/notes', admin, async (req) => {
+    const rows = req.body?.rows || [];
+    if (!rows.length || rows.length > 2000) throw ApiError.badRequest('1..2000 rows');
+    const notes = [...new Set(rows.map((r) => r.notesDocId))];
+    await transaction([
+      ...rows.map((r) => ({ sql: `INSERT INTO tablet_notes (tablet_doc_id, notes_doc_id, basis) VALUES (?,?,?)
+        ON CONFLICT DO NOTHING`, args: [r.tabletDocId, r.notesDocId, r.basis ?? null] })),
+      ...notes.flatMap((id) => [
+        { sql: `UPDATE docs SET doc_role = 'notes', author = 'oceanoflights (notes)' WHERE id = ?`, args: [id] },
+        { sql: 'UPDATE content SET synced = 0 WHERE doc_id = ? AND deleted_at IS NULL', args: [id] }]),
+    ], 'tablets:notes');
+    return { links: rows.length, notesDocs: notes.length };
+  });
+
+  /**
+   * POST /tablets/rebuild {dir} — merge frontmatter + Phelps row (by the doc's own pin, else its inventory link) + linked
+   * notes (tablet_notes) into tablet_meta. A notes document is not itself a tablet and gets no record.
    */
   fastify.post('/tablets/rebuild', admin, async (req) => {
     const { dir } = req.body || {};
     if (!dir) throw ApiError.badRequest('dir required');
     const bib = Object.fromEntries((await queryAll('SELECT code, citation, url FROM bib_codes', [], 'tablets:bib-read')).map((b) => [b.code, b]));
-    const docs = await queryAll(`SELECT d.id, d.frontmatter, d.title, d.language,
+    const docs = await queryAll(`SELECT d.id, d.frontmatter, d.title, d.language, d.doc_role,
         (SELECT l.pin FROM inventory_links l WHERE l.doc_id = d.id ORDER BY l.coverage DESC LIMIT 1) AS linked_pin
         FROM docs d WHERE d.deleted_at IS NULL AND d.file_path LIKE ? || '%'`, [dir], 'tablets:rebuild-docs');
     const fms = new Map(docs.map((d) => [d.id, parse(d.frontmatter) || {}]));
     const notesFor = new Map();
-    for (const d of docs) {
-      const target = fms.get(d.id).notes_for;
-      if (target) notesFor.set(target, [...(notesFor.get(target) || []), { docId: d.id, title: d.title, language: d.language }]);
+    for (const part of inChunks(docs.map((d) => d.id), 500)) {
+      for (const n of await queryAll(`SELECT t.tablet_doc_id, n.id, n.title, n.language FROM tablet_notes t JOIN docs n ON n.id = t.notes_doc_id
+          WHERE n.deleted_at IS NULL AND t.tablet_doc_id IN (${part.map(() => '?').join(',')})`, part, 'tablets:notes-read')) {
+        notesFor.set(n.tablet_doc_id, [...(notesFor.get(n.tablet_doc_id) || []), { docId: n.id, title: n.title, language: n.language }]);
+      }
     }
     const pins = [...new Set(docs.map((d) => fms.get(d.id).pin || fms.get(d.id).catalog_ref || d.linked_pin).filter(Boolean))];
     const raws = new Map();
@@ -74,9 +95,9 @@ export default async function tabletAdminRoutes(fastify) {
     const out = [];
     for (const d of docs) {
       const fm = fms.get(d.id);
-      if (fm.notes_for) continue;                                   // a notes document describes a tablet; it isn't one
+      if (d.doc_role === 'notes') continue;                         // a notes document describes a tablet; it isn't one
       const pin = fm.pin || fm.catalog_ref || d.linked_pin || null;
-      const meta = mergeTabletMeta({ fm, pi: pin ? raws.get(pin) || { PIN: pin } : {}, bib, notes: notesFor.get(fm.bookid) || [] });
+      const meta = mergeTabletMeta({ fm, pi: pin ? raws.get(pin) || { PIN: pin } : {}, bib, notes: notesFor.get(d.id) || [] });
       out.push([d.id, meta.pin, meta.ool_id, JSON.stringify(meta)]);
     }
     for (const part of inChunks(out, 400)) await transaction(part.map(([id, pin, ool, meta]) => ({ sql: `INSERT INTO tablet_meta (doc_id, pin, ool_id, meta, built_at)

@@ -1104,6 +1104,7 @@ export default async function groundingRoutes(fastify) {
          FROM content c JOIN docs d ON d.id = c.doc_id
         WHERE c.id > ? AND d.file_path LIKE 'Baha''i/Core Tablets/%' AND d.language IN ('ar','fa')
           AND c.deleted_at IS NULL AND d.deleted_at IS NULL AND c.translation_text IS NULL
+          AND COALESCE(d.doc_role, '') <> 'notes'                 -- scholarship about a tablet, not the Writings
           AND NOT EXISTS (SELECT 1 FROM content_alignment a WHERE a.orig_id = c.id AND a.retired_at IS NULL)
         ORDER BY c.id LIMIT ?`, [afterId, limit], 'concepts:untranslated');
     return { rows, next: rows.length === limit ? rows[rows.length - 1].id : null };

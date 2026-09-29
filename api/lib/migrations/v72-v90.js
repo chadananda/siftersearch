@@ -1393,6 +1393,17 @@ export const migrations = {
     await query(`CREATE TABLE IF NOT EXISTS bib_codes (code TEXT PRIMARY KEY, citation TEXT NOT NULL, url TEXT)`);
     logger.info('Migration 132 complete');
   },
+  133: async () => {
+    // Oceanoflights "notes" (Chad, 2026-09-29): prose scholarship ABOUT a tablet, often Farsi — filed beside the tablet
+    // under the Central Figure's folder, so it was being treated as Writings (queued for translation, author = the
+    // Central Figure). doc_role marks it; tablet_notes links it to the tablet(s) it describes.
+    logger.info('Starting migration 133: tablet_notes, docs.doc_role');
+    try { await query('ALTER TABLE docs ADD COLUMN doc_role TEXT'); } catch { /* exists */ }
+    await query(`CREATE TABLE IF NOT EXISTS tablet_notes (
+      tablet_doc_id INTEGER NOT NULL, notes_doc_id INTEGER NOT NULL, basis TEXT, PRIMARY KEY (tablet_doc_id, notes_doc_id))`);
+    await query('CREATE INDEX IF NOT EXISTS idx_tablet_notes_notes ON tablet_notes(notes_doc_id)');
+    logger.info('Migration 133 complete');
+  },
 };
 
 export const graphMigrations = {
