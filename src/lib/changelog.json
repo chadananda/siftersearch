@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T13:03:43.022Z",
+  "generated": "2026-09-29T14:08:44.639Z",
   "entries": [
+    {
+      "hash": "41c1bec2",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "GET /concepts/untranslated — the Core Tablets paragraphs with no English anywhere (the translation queue)",
+      "scope": "translation"
+    },
     {
       "hash": "65c8a6c8",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Fix the disambiguation stamp/note deadlock behind \"did not reach verify\"",
       "scope": null
-    },
-    {
-      "hash": "df789880",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Actually run migration 7, and never lose a consent to a schema lag",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "41c1bec2",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "GET /concepts/untranslated — the Core Tablets paragraphs with no English anywhere (the translation queue)",
+        "scope": "translation"
+      },
       {
         "hash": "65c8a6c8",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Fix the disambiguation stamp/note deadlock behind \"did not reach verify\"",
-        "scope": null
-      },
-      {
-        "hash": "df789880",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Actually run migration 7, and never lose a consent to a schema lag",
         "scope": null
       }
     ]

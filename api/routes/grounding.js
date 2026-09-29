@@ -1068,6 +1068,31 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * POST /concepts/alignment/twin {rows:[{origId, twinId, score}]} — an original paragraph whose text is (letter for letter)
+   * another original that already HAS English inherits it: the twin's live links (basis 'twin', via_id = twin) and, if it
+   * has none of its own, the twin's English beside it. "Never retranslate what has already been translated" (Chad,
+   * 2026-09-29): the same tablet sits in a compilation AND an INBA volume, and linking reached only one copy.
+   */
+  fastify.post('/concepts/alignment/twin', admin, async (req) => {
+    const rows = req.body?.rows || [];
+    if (!rows.length || rows.length > 5000) throw ApiError.badRequest('1..5000 rows');
+    await transaction(rows.flatMap((r) => [
+      { sql: `INSERT INTO content_alignment (trans_id, orig_id, trans_doc, orig_doc, basis, score, via_id, method, pin, ool_id)
+              SELECT a.trans_id, ?, a.trans_doc, (SELECT doc_id FROM content WHERE id = ?), 'twin', ?, ?, 'twin-v1', a.pin, a.ool_id
+                FROM content_alignment a WHERE a.orig_id = ? AND a.retired_at IS NULL
+              ON CONFLICT (trans_id, orig_id) DO NOTHING`,
+        args: [r.origId, r.origId, r.score ?? null, r.twinId, r.twinId] },
+      { sql: `UPDATE content SET translation_text = (SELECT translation_text FROM content WHERE id = ?),
+                     translation_authority = (SELECT translation_authority FROM content WHERE id = ?),
+                     align_ref = json_object('twin', ?, 'score', ?)
+               WHERE id = ? AND translation_text IS NULL
+                 AND (SELECT translation_text FROM content WHERE id = ?) IS NOT NULL`,
+        args: [r.twinId, r.twinId, r.twinId, r.score ?? null, r.origId, r.twinId] },
+    ]), 'alignment:twin');
+    return { written: rows.length };
+  });
+
+  /**
    * GET /concepts/untranslated?afterId=&limit= — Core Tablets Arabic/Persian paragraphs with NO English anywhere (none
    * beside, none linked): the translation queue. Keyset-paged by content id.
    */
