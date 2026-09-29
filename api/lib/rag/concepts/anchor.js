@@ -32,26 +32,36 @@ export function buildIndex(paras) {
 
 /**
  * Where is this original passage in the index? Returns { docId, paraIds, coverage } or null.
- * The best document is the one sharing the most grams; its paragraphs that carry the passage are chosen, and the
- * result is accepted only if `minCoverage` of the passage's grams occur verbatim in those paragraphs.
+ * Documents are ranked by how much OF THE PASSAGE they cover; the paragraphs carrying a real part of it are chosen,
+ * and the result is accepted only if `minCoverage` of the passage's grams occur verbatim in those paragraphs.
  */
-export function locate(text, index, { minCoverage = 0.8 } = {}) {
+export function locate(text, index, { minCoverage = 0.8, candidates = 3 } = {}) {
   const k = letterKey(text);
   if (k.length < GRAM * 2) return null;
-  const votes = new Map();
+  // Positions of the passage each document covers. Ranking documents by TOTAL votes let the huge manuscript
+  // volumes win on size (thousands of paragraphs sharing common phrases) — measured: Gleanings anchored 64%.
+  // Covered positions do not grow with document size.
+  const docPos = new Map();
+  const paraPos = new Map();
   for (let j = 0; j + GRAM <= k.length; j++) {
     const hit = index.grams.get(k.slice(j, j + GRAM));
     if (hit === undefined) continue;
-    for (const i of (typeof hit === 'number' ? [hit] : hit)) votes.set(i, (votes.get(i) || 0) + 1);
+    for (const i of (typeof hit === 'number' ? [hit] : hit)) {
+      const d = index.paras[i].docId;
+      if (!docPos.has(d)) docPos.set(d, new Set());
+      docPos.get(d).add(j);
+      if (!paraPos.has(i)) paraPos.set(i, new Set());
+      paraPos.get(i).add(j);
+    }
   }
-  if (!votes.size) return null;
-  const byDoc = new Map();
-  for (const [i, v] of votes) { const d = index.paras[i].docId; byDoc.set(d, (byDoc.get(d) || 0) + v); }
-  const ranked = [...byDoc].sort((a, b) => b[1] - a[1]);
+  if (!docPos.size) return null;
+  const positions = k.length - GRAM + 1;
+  const ranked = [...docPos].sort((a, b) => b[1].size - a[1].size).slice(0, candidates);
   let best = null;
-  for (const [docId] of ranked.slice(0, 3)) {                 // copies of one text live in several volumes
-    const chosen = [...votes].filter(([i, v]) => index.paras[i].docId === docId && v >= 2).map(([i]) => i)
-      .sort((a, b) => a - b);
+  for (const [docId] of ranked) {
+    // Keep only paragraphs that carry a real part of the passage, not ones sharing an invocation.
+    const chosen = [...paraPos].filter(([i, pos]) => index.paras[i].docId === docId && pos.size >= Math.max(3, 0.08 * positions))
+      .map(([i]) => i).sort((a, b) => a - b);
     const hay = chosen.map((i) => index.keys[i]).join('');
     let seen = 0, total = 0;
     for (let j = 0; j + GRAM <= k.length; j += 2) { total++; if (hay.includes(k.slice(j, j + GRAM))) seen++; }

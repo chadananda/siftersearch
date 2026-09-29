@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T03:17:14.593Z",
+  "generated": "2026-09-29T03:25:36.499Z",
   "entries": [
+    {
+      "hash": "33231ba2",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "Content_alignment (migr 128) + anchor stage — locate CTAI/bahai.org originals verbatim in the ingested originals",
+      "scope": "pairing"
+    },
     {
       "hash": "439f8e2d",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Bump SEARCH_VERSION → 2026-08-10.1 (invalidate stale quote-hunt answers after routing/fallback fixes)",
       "scope": null
-    },
-    {
-      "hash": "7e8e2bfa",
-      "date": "2026-08-10",
-      "type": "Other",
-      "description": "Fire web fallback on any non-decisive quote hunt + enter ladder on LLM quoted_span",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "33231ba2",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "Content_alignment (migr 128) + anchor stage — locate CTAI/bahai.org originals verbatim in the ingested originals",
+        "scope": "pairing"
+      },
       {
         "hash": "439f8e2d",
         "date": "2026-09-28",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-10",
         "type": "Other",
         "description": "Bump SEARCH_VERSION → 2026-08-10.1 (invalidate stale quote-hunt answers after routing/fallback fixes)",
-        "scope": null
-      },
-      {
-        "hash": "7e8e2bfa",
-        "date": "2026-08-10",
-        "type": "Other",
-        "description": "Fire web fallback on any non-decisive quote hunt + enter ladder on LLM quoted_span",
         "scope": null
       }
     ]
