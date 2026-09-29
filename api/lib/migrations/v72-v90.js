@@ -1341,6 +1341,24 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_align_orig_doc ON content_alignment(orig_doc)');
     logger.info('Migration 128 complete');
   },
+  129: async () => {
+    // PARTIAL INVENTORY (Stephen Phelps, github.com/portlandiator/PI_browser): one row per tablet id (PIN, e.g.
+    // AB05357) and its links to our documents / oceanoflights ids (Chad, 2026-09-28: "store both phelps id and ool id
+    // with each … so we can link to either"). Many-to-many: an oceanoflights INBA volume holds many tablets, and one
+    // tablet can sit in several files. Phelps' English rendering is kept for pairing; exposure is gated.
+    logger.info('Starting migration 129: inventory_items, inventory_links');
+    await query(`CREATE TABLE IF NOT EXISTS inventory_items (
+      pin TEXT PRIMARY KEY, author TEXT, language TEXT, title TEXT, first_line_orig TEXT, first_line_en TEXT,
+      citations TEXT, volume TEXT, date TEXT, period TEXT, recipient TEXT, place TEXT, word_count INTEGER,
+      has_original INTEGER, has_rendering INTEGER, ool_status TEXT, ool_coverage REAL,
+      imported_at INTEGER DEFAULT (unixepoch()))`);
+    await query(`CREATE TABLE IF NOT EXISTS inventory_links (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, pin TEXT NOT NULL, doc_id INTEGER, ool_id TEXT,
+      coverage REAL, basis TEXT, created_at INTEGER DEFAULT (unixepoch()), UNIQUE (pin, doc_id))`);
+    await query('CREATE INDEX IF NOT EXISTS idx_invlink_doc ON inventory_links(doc_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_invlink_ool ON inventory_links(ool_id)');
+    logger.info('Migration 129 complete');
+  },
 };
 
 export const graphMigrations = {

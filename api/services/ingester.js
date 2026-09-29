@@ -1426,6 +1426,8 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   if (extractedMeta.subtitle) extraMeta.subtitle = extractedMeta.subtitle;
   if (extractedMeta.publisher) extraMeta.publisher = extractedMeta.publisher;
   if (extractedMeta.sourceUrl) extraMeta.sourceUrl = extractedMeta.sourceUrl;
+  // Source identities, so a document links back to oceanoflights (bookid) and the Partial Inventory (pin).
+  for (const k of ['bookid', 'pin', 'catalog_ref']) if (extractedMeta[k]) extraMeta[k] = extractedMeta[k];
   if (extractedMeta.publicationName) extraMeta.publicationName = extractedMeta.publicationName;
   if (extractedMeta.documentType) extraMeta.documentType = extractedMeta.documentType;
   const metadataJson = Object.keys(extraMeta).length > 0 ? JSON.stringify(extraMeta) : null;

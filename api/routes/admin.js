@@ -1088,6 +1088,19 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * POST /server/inventory {stage='import'|'link', dryRun=true} — Partial Inventory (Phelps) → inventory_items/links.
+   * Background task; read at GET /server/tasks/inventory. See scripts/pipeline/inventory.mjs.
+   */
+  fastify.post('/server/inventory', { preHandler: requireInternal }, async (request) => {
+    const { stage = 'import', dryRun = true } = request.body || {};
+    if (!['import', 'link'].includes(stage)) throw ApiError.badRequest(`unknown stage '${stage}'`);
+    const running = backgroundTasks.get('inventory');
+    if (running && running.status === 'running') throw ApiError.conflict('inventory is already running');
+    const task = runBackgroundTask('inventory', 'scripts/pipeline/inventory.mjs', ['--stage', stage, ...(dryRun ? ['--dry'] : [])]);
+    return { success: true, taskId: 'inventory', stage, dryRun, status: task.status };
+  });
+
+  /**
    * POST /server/pair-originals {stage='anchor', dryRun=true} — pair translation ↔ original paragraphs by content.id
    * (content_alignment). Background task; read it at GET /server/tasks/pair-originals. See scripts/pipeline/pair-originals.mjs.
    */
