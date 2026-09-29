@@ -1404,6 +1404,17 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_tablet_notes_notes ON tablet_notes(notes_doc_id)');
     logger.info('Migration 133 complete');
   },
+  134: async () => {
+    // Flexible DOCUMENT metadata (Chad, 2026-09-29): one sourced record per document of any kind (tablet, book…), used by
+    // disambiguation, HyPE, the chat's "about this book" answers and the reader; indexed in its OWN Meili index (doc_meta)
+    // — never the paragraphs index. Supersedes tablet_meta (rows copied; table kept until nothing reads it).
+    logger.info('Starting migration 134: doc_meta');
+    await query(`CREATE TABLE IF NOT EXISTS doc_meta (
+      doc_id INTEGER PRIMARY KEY, kind TEXT, meta TEXT NOT NULL, context TEXT, built_at INTEGER DEFAULT (unixepoch()))`);
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_meta_kind ON doc_meta(kind)');
+    await query(`INSERT OR IGNORE INTO doc_meta (doc_id, kind, meta, built_at) SELECT doc_id, 'tablet', meta, built_at FROM tablet_meta`);
+    logger.info('Migration 134 complete');
+  },
 };
 
 export const graphMigrations = {

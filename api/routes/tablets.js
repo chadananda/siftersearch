@@ -1,5 +1,5 @@
-// Tablet metadata endpoints. Admin (/api/admin): capture oceanoflights frontmatter from the files, load Phelps' raw rows
-// and bibliography, rebuild the merged per-tablet record. Public (/api/documents): GET /:id/about for the reader's box.
+// Document metadata endpoints. Admin (/api/admin): capture frontmatter from the files, load Phelps' raw rows and
+// bibliography, link notes, rebuild doc_meta + its own Meili index. Public (/api/documents): GET /:id/about.
 // :deps: lib/tablet-meta.js (pure merge) · db.js (reads; writes go through the single writer via transaction)
 // :edge: the ingester flattens frontmatter arrays to strings, so frontmatter is re-read from the file with gray-matter.
 import { readFile } from 'node:fs/promises';
@@ -9,7 +9,8 @@ import { queryAll, queryOne, transaction } from '../lib/db.js';
 import { config } from '../lib/config.js';
 import { requireInternal } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
-import { mergeTabletMeta } from '../lib/tablet-meta.js';
+import { buildDocMeta, contextLine, indexDoc, DOC_META_INDEX, DOC_META_SETTINGS } from '../lib/doc-meta.js';
+import { getMeili } from '../lib/search.js';
 
 const admin = { preHandler: requireInternal };
 const inChunks = (arr, n) => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n));
@@ -69,49 +70,63 @@ export default async function tabletAdminRoutes(fastify) {
   });
 
   /**
-   * POST /tablets/rebuild {dir} — merge frontmatter + Phelps row (by the doc's own pin, else its inventory link) + linked
-   * notes (tablet_notes) into tablet_meta. A notes document is not itself a tablet and gets no record.
+   * POST /docmeta/rebuild {dir, index=true} — one sourced record per document under dir (doc_meta): tablets merge
+   * frontmatter + Phelps' row (the doc's own pin, else its inventory link) + linked notes; books use their library row +
+   * frontmatter. Then (re)fills the SEPARATE Meili index doc_meta — never the paragraphs index. Notes docs get no record.
+   * /tablets/rebuild is the same call (kept for the scripts that use it).
    */
-  fastify.post('/tablets/rebuild', admin, async (req) => {
-    const { dir } = req.body || {};
-    if (!dir) throw ApiError.badRequest('dir required');
-    const bib = Object.fromEntries((await queryAll('SELECT code, citation, url FROM bib_codes', [], 'tablets:bib-read')).map((b) => [b.code, b]));
-    const docs = await queryAll(`SELECT d.id, d.frontmatter, d.title, d.language, d.doc_role,
+  const rebuild = async (req) => {
+    const { dir, index = true } = req.body || {};
+    if (dir == null) throw ApiError.badRequest('dir required ("" = the whole library)');
+    const bib = Object.fromEntries((await queryAll('SELECT code, citation, url FROM bib_codes', [], 'docmeta:bib-read')).map((b) => [b.code, b]));
+    const docs = await queryAll(`SELECT d.id, d.frontmatter, d.title, d.author, d.religion, d.collection, d.language, d.year,
+        d.description, d.metadata, d.doc_role,
         (SELECT l.pin FROM inventory_links l WHERE l.doc_id = d.id ORDER BY l.coverage DESC LIMIT 1) AS linked_pin
-        FROM docs d WHERE d.deleted_at IS NULL AND d.file_path LIKE ? || '%'`, [dir], 'tablets:rebuild-docs');
+        FROM docs d WHERE d.deleted_at IS NULL AND d.file_path LIKE ? || '%'`, [dir], 'docmeta:rebuild-docs');
     const fms = new Map(docs.map((d) => [d.id, parse(d.frontmatter) || {}]));
     const notesFor = new Map();
     for (const part of inChunks(docs.map((d) => d.id), 500)) {
       for (const n of await queryAll(`SELECT t.tablet_doc_id, n.id, n.title, n.language FROM tablet_notes t JOIN docs n ON n.id = t.notes_doc_id
-          WHERE n.deleted_at IS NULL AND t.tablet_doc_id IN (${part.map(() => '?').join(',')})`, part, 'tablets:notes-read')) {
+          WHERE n.deleted_at IS NULL AND t.tablet_doc_id IN (${part.map(() => '?').join(',')})`, part, 'docmeta:notes-read')) {
         notesFor.set(n.tablet_doc_id, [...(notesFor.get(n.tablet_doc_id) || []), { docId: n.id, title: n.title, language: n.language }]);
       }
     }
     const pins = [...new Set(docs.map((d) => fms.get(d.id).pin || fms.get(d.id).catalog_ref || d.linked_pin).filter(Boolean))];
     const raws = new Map();
     for (const part of inChunks(pins, 500)) {
-      for (const r of await queryAll(`SELECT pin, raw FROM inventory_items WHERE pin IN (${part.map(() => '?').join(',')})`, part, 'tablets:inv-read')) raws.set(r.pin, parse(r.raw) || {});
+      for (const r of await queryAll(`SELECT pin, raw FROM inventory_items WHERE pin IN (${part.map(() => '?').join(',')})`, part, 'docmeta:inv-read')) raws.set(r.pin, parse(r.raw) || {});
     }
     const out = [];
     for (const d of docs) {
-      const fm = fms.get(d.id);
       if (d.doc_role === 'notes') continue;                         // a notes document describes a tablet; it isn't one
+      const fm = fms.get(d.id);
       const pin = fm.pin || fm.catalog_ref || d.linked_pin || null;
-      const meta = mergeTabletMeta({ fm, pi: pin ? raws.get(pin) || { PIN: pin } : {}, bib, notes: notesFor.get(d.id) || [] });
-      out.push([d.id, meta.pin, meta.ool_id, JSON.stringify(meta)]);
+      const meta = buildDocMeta({ doc: d, fm, pi: pin ? raws.get(pin) || { PIN: pin } : null, bib, notes: notesFor.get(d.id) || [] });
+      out.push({ meta, row: [d.id, meta.kind, JSON.stringify(meta), contextLine(meta)] });
     }
-    for (const part of inChunks(out, 400)) await transaction(part.map(([id, pin, ool, meta]) => ({ sql: `INSERT INTO tablet_meta (doc_id, pin, ool_id, meta, built_at)
-      VALUES (?,?,?,?, unixepoch()) ON CONFLICT (doc_id) DO UPDATE SET pin = excluded.pin, ool_id = excluded.ool_id,
-      meta = excluded.meta, built_at = excluded.built_at`, args: [id, pin, ool, meta] })), 'tablets:rebuild-write');
-    return { docs: docs.length, built: out.length, withPin: out.filter((o) => o[1]).length };
-  });
+    for (const part of inChunks(out, 400)) await transaction(part.map(({ row }) => ({ sql: `INSERT INTO doc_meta (doc_id, kind, meta, context, built_at)
+      VALUES (?,?,?,?, unixepoch()) ON CONFLICT (doc_id) DO UPDATE SET kind = excluded.kind, meta = excluded.meta,
+      context = excluded.context, built_at = excluded.built_at`, args: row })), 'docmeta:rebuild-write');
+    let indexed = 0;
+    if (index && out.length) {
+      const meili = getMeili();
+      try { await meili.createIndex(DOC_META_INDEX, { primaryKey: 'id' }); } catch { /* exists */ }
+      await meili.index(DOC_META_INDEX).updateSettings(DOC_META_SETTINGS);   // this small index only
+      for (const part of inChunks(out, 5000)) { await meili.index(DOC_META_INDEX).addDocuments(part.map(({ meta }) => indexDoc(meta))); indexed += part.length; }
+    }
+    return { docs: docs.length, built: out.length, tablets: out.filter((o) => o.meta.kind === 'tablet').length, indexed };
+  };
+  fastify.post('/docmeta/rebuild', admin, rebuild);
+  fastify.post('/tablets/rebuild', admin, rebuild);
 }
 
-/** Public: GET /api/documents/:id/about — the merged record for the reader's collapsible intro box. */
+/** Public: GET /api/documents/:id/about — the document's metadata record (reader box, chat "about this book"). */
 export async function tabletPublicRoutes(fastify) {
   fastify.get('/:id/about', async (req, reply) => {
-    const row = await queryOne('SELECT meta FROM tablet_meta WHERE doc_id = ?', [Number(req.params.id)], 'tablets:about');
-    if (!row) return reply.code(404).send({ error: 'NotFound', message: 'No tablet metadata for this document' });
+    const id = Number(req.params.id);
+    const row = await queryOne('SELECT meta FROM doc_meta WHERE doc_id = ?', [id], 'docmeta:about')
+      || await queryOne('SELECT meta FROM tablet_meta WHERE doc_id = ?', [id], 'docmeta:about-legacy');
+    if (!row) return reply.code(404).send({ error: 'NotFound', message: 'No metadata for this document' });
     reply.header('Cache-Control', 'public, max-age=300');
     return parse(row.meta);
   });

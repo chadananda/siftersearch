@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T23:22:01.490Z",
+  "generated": "2026-09-29T23:58:22.716Z",
   "entries": [
+    {
+      "hash": "1cb062c4",
+      "date": "2026-09-29",
+      "type": "Fixed",
+      "description": "Tablet box reads left-to-right on RTL pages, short citations; strip sentence markers in the view?doc reader",
+      "scope": "reader"
+    },
     {
       "hash": "f1403ef4",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Write the thread ↔ published-dialog link that both columns were waiting for",
       "scope": null
-    },
-    {
-      "hash": "bafb7215",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Detect the book's language from its TEXT, not from the stub's metadata page",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "1cb062c4",
+        "date": "2026-09-29",
+        "type": "Fixed",
+        "description": "Tablet box reads left-to-right on RTL pages, short citations; strip sentence markers in the view?doc reader",
+        "scope": "reader"
+      },
       {
         "hash": "f1403ef4",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Write the thread ↔ published-dialog link that both columns were waiting for",
-        "scope": null
-      },
-      {
-        "hash": "bafb7215",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Detect the book's language from its TEXT, not from the stub's metadata page",
         "scope": null
       }
     ]
