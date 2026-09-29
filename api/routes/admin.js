@@ -1165,6 +1165,10 @@ export default async function adminRoutes(fastify) {
       sentences: result.sentenceCount ?? null,
       language: result.language ?? null,
       error: result.error ?? null,
+      // forceReindex deletes the paragraphs BEFORE ingesting; if the ingest then skips or fails, the document is
+      // left empty (two tablets were, 2026-09-28). Say so — never let that read as success.
+      ...(forceReindex && existing && !['updated', 'ingested'].includes(result.status)
+        ? { warning: `paragraphs deleted but re-ingest ended '${result.status}' — document ${existing.id} is EMPTY` } : {}),
       isNew: !existing
     };
   });

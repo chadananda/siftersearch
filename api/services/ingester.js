@@ -26,6 +26,7 @@ import {
 import { stripMarkers, hasMarkers, validateMarkers } from '../lib/markers.js';
 import config from '../lib/config.js';
 import { content } from '../lib/content.js';
+import { currentAIContext } from '../lib/ai-context.js';
 // ingestDocument declares a LOCAL `content` (the parsed body); its update paths ran above that declaration and
 // hit the temporal dead zone — every re-ingest of an existing document threw. They use this alias.
 const contentStore = content;
@@ -1442,7 +1443,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // paragraphing (needs_segmentation: false) costs only embedding, so it is not paused (Chad, 2026-09-28: ingest
   // the oceanoflights originals).
   const declaresParagraphs = String(extractedMeta.needs_segmentation).toLowerCase() === 'false';
-  if (finalMeta.language === 'ar' && !declaresParagraphs) {
+  // A localOnly scope cannot reach a paid model (segmentation runs on the local LLM; its cloud fallback is
+  // blocked), so the cost the pause guards against cannot occur there.
+  if (finalMeta.language === 'ar' && !declaresParagraphs && !currentAIContext().localOnly) {
     await ensureLibraryNodes(finalMeta.religion, finalMeta.collection);
     logger.info({ relativePath, title: finalMeta.title }, 'Skipping Arabic document (ingestion paused)');
     return {

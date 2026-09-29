@@ -1271,3 +1271,24 @@ describe('ingestDocument — updating an existing document', () => {
     expect(upd[1]).not.toContain('ar');
   });
 });
+
+describe('ingestDocument — Arabic pause under a localOnly scope', () => {
+  it('ingests unsegmented Arabic when no paid model can be reached', async () => {
+    const db = await import('../../api/lib/db.js');
+    [db.queryOne, db.queryAll, db.query, db.transaction].forEach((f) => f.mockClear());
+    db.queryOne.mockResolvedValue(null); db.queryAll.mockResolvedValue([]);
+    db.query.mockResolvedValue({ changes: 1, lastInsertRowid: BigInt(8) }); db.transaction.mockResolvedValue(undefined);
+    vi.resetModules();
+    vi.doMock('../../api/services/segmenter.js', async (orig) => ({ ...(await orig()),
+      batchAddSentenceMarkers: async (paras) => paras.map((p) => ({ id: p.id, text: p.text, sentenceCount: 1 })),
+      segmentUnpunctuatedDocument: async () => ({ paragraphs: [] }) }));
+    const { ingestDocument } = await import('../../api/services/ingester.js');
+    const { withAIContext } = await import('../../api/lib/ai-context.js');
+    const text = '---\ntitle: T\nlanguage: ar\nneeds_segmentation: true\n---\n\nهذا کتاب من لدنا الی عبد من العباد لیجذبه الی مقر القرب و القدس و اللقاء و یسقیه الرحیق المختوم الذی فک ختامه باسم الله المهیمن العزیز القیوم\n';
+    const paused = await ingestDocument(text, {}, "Baha'i/Core Tablets/a.md");
+    expect(paused.status).toBe('skipped');
+    const local = await withAIContext({ localOnly: true }, () => ingestDocument(text, {}, "Baha'i/Core Tablets/b.md"));
+    expect(local.status).not.toBe('skipped');
+    vi.doUnmock('../../api/services/segmenter.js');
+  });
+});
