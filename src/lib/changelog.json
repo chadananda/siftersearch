@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T14:08:44.639Z",
+  "generated": "2026-09-29T16:20:17.109Z",
   "entries": [
+    {
+      "hash": "53fde026",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "POST /concepts/alignment/twin — a duplicate original inherits its twin's English (never retranslate)",
+      "scope": "alignment"
+    },
     {
       "hash": "41c1bec2",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Use the peak window to drain the missing-books backlog + phase-aware hourly digest",
       "scope": null
-    },
-    {
-      "hash": "ffbd9165",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Fix the disambiguation stamp/note deadlock behind \"did not reach verify\"",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "53fde026",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "POST /concepts/alignment/twin — a duplicate original inherits its twin's English (never retranslate)",
+        "scope": "alignment"
+      },
       {
         "hash": "41c1bec2",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Use the peak window to drain the missing-books backlog + phase-aware hourly digest",
-        "scope": null
-      },
-      {
-        "hash": "ffbd9165",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Fix the disambiguation stamp/note deadlock behind \"did not reach verify\"",
         "scope": null
       }
     ]

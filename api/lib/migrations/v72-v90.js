@@ -1369,6 +1369,16 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_align_pin ON content_alignment(pin)');
     logger.info('Migration 130 complete');
   },
+  131: async () => {
+    // WHO translated the English beside an original, and WHICH VERSION (Chad, 2026-09-29): "store translator, including
+    // CTAI with API version number so we can update along the way" — e.g. translation_by 'CTAI', translation_version
+    // 'api 1.4 / se-style-v2 / claude-opus-5-5'. Lets a later, better pipeline find and redo everything older.
+    logger.info('Starting migration 131: translation_by / translation_version on content');
+    try { await query('ALTER TABLE content ADD COLUMN translation_by TEXT'); } catch { /* exists */ }
+    try { await query('ALTER TABLE content ADD COLUMN translation_version TEXT'); } catch { /* exists */ }
+    await query('CREATE INDEX IF NOT EXISTS idx_content_translation_by ON content(translation_by, translation_version)');
+    logger.info('Migration 131 complete');
+  },
 };
 
 export const graphMigrations = {

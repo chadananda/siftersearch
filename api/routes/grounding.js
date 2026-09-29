@@ -1139,10 +1139,27 @@ export default async function groundingRoutes(fastify) {
   fastify.post('/concepts/translations/bulk', admin, async (req) => {
     const rows = req.body?.rows || [];
     if (!rows.length || rows.length > 5000) throw ApiError.badRequest('1..5000 rows');
+    // translator / translatorVersion (migr 131): who produced the English and with which version — 'CTAI' + 'api 1.4 /
+    // se-style-v2 / claude-opus-5-5', 'Stephen Phelps' + 'PI v6.01' — so a later pipeline can find and redo older work.
     await transaction(rows.map((r) => ({
-      sql: 'UPDATE content SET translation_text = ?, translation_authority = ?, align_ref = ? WHERE id = ? AND deleted_at IS NULL',
-      args: [r.text, r.authority, JSON.stringify(r.ref || {}), r.contentId] })), 'translations:bulk');
+      sql: `UPDATE content SET translation_text = ?, translation_authority = ?, align_ref = ?,
+                               translation_by = ?, translation_version = ? WHERE id = ? AND deleted_at IS NULL`,
+      args: [r.text, r.authority, JSON.stringify(r.ref || {}), r.text == null ? null : (r.translator ?? null),
+        r.text == null ? null : (r.translatorVersion ?? null), r.contentId] })), 'translations:bulk');
     return { written: rows.length };
+  });
+
+  /**
+   * POST /concepts/translations/provenance {ids, translator, translatorVersion} — record who produced English that is
+   * ALREADY beside these paragraphs (backfill for rows written before migration 131). Only rows that hold English.
+   */
+  fastify.post('/concepts/translations/provenance', admin, async (req) => {
+    const { ids = [], translator, translatorVersion = null } = req.body || {};
+    if (!ids.length || ids.length > 5000 || !translator) throw ApiError.badRequest('1..5000 ids and a translator');
+    await transaction([{ sql: `UPDATE content SET translation_by = ?, translation_version = ?
+                                WHERE id IN (${ids.map(() => '?').join(',')}) AND translation_text IS NOT NULL`,
+      args: [translator, translatorVersion, ...ids] }], 'translations:provenance');
+    return { written: ids.length };
   });
 
   /**
