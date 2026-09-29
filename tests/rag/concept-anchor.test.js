@@ -29,3 +29,12 @@ describe('locate', () => {
     expect(r === null || r.rejected === true).toBe(true);
   });
 });
+
+describe('locate — an edition that keeps each printed line as a paragraph', () => {
+  it('assembles the passage from many short line-paragraphs', () => {
+    const lines = ['سبقت و پیشی داشته و حدیث اول ما خلق الله', 'العقل شاهد این مطلب و در صدر ایجاد', 'در هیکل انسانی من حیث الظهور مشخص گردید'];
+    const index = buildIndex(lines.map((text, i) => ({ id: 100 + i, docId: 7, text })));
+    const r = locate('سبقت و پیشی داشته و حدیث اول ما خلق الله العقل شاهد این مطلب و در صدر ایجاد در هیکل انسانی من حیث الظهور مشخص گردید', index);
+    expect(r).toMatchObject({ docId: 7, paraIds: [100, 101, 102] });
+  });
+});

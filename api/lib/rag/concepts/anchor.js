@@ -59,8 +59,11 @@ export function locate(text, index, { minCoverage = 0.8, candidates = 3 } = {}) 
   const ranked = [...docPos].sort((a, b) => b[1].size - a[1].size).slice(0, candidates);
   let best = null;
   for (const [docId] of ranked) {
-    // Keep only paragraphs that carry a real part of the passage, not ones sharing an invocation.
-    const chosen = [...paraPos].filter(([i, pos]) => index.paras[i].docId === docId && pos.size >= Math.max(3, 0.08 * positions))
+    // Keep paragraphs that carry a real part of the passage — OR lie mostly inside it: some editions keep each
+    // printed LINE as a paragraph (Madaniyyih, BKW19), and a line never covers 8% of a long passage.
+    const indexed = (i) => Math.max(1, Math.ceil((index.keys[i].length - GRAM + 1) / STEP));
+    const chosen = [...paraPos].filter(([i, pos]) => index.paras[i].docId === docId
+      && pos.size >= 3 && (pos.size >= 0.08 * positions || pos.size >= 0.5 * indexed(i)))
       .map(([i]) => i).sort((a, b) => a - b);
     const hay = chosen.map((i) => index.keys[i]).join('');
     let seen = 0, total = 0;

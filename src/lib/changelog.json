@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T03:25:36.499Z",
+  "generated": "2026-09-29T03:31:31.440Z",
   "entries": [
+    {
+      "hash": "ad871432",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Rank candidate documents by passage coverage, not total votes (large volumes won on size); keep only paragraphs carrying the passage",
+      "scope": "anchor"
+    },
     {
       "hash": "33231ba2",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Quote-source miss = span not verbatim-contained (score-independent) → web fires",
       "scope": null
-    },
-    {
-      "hash": "1c25feb9",
-      "date": "2026-08-10",
-      "type": "Other",
-      "description": "Bump SEARCH_VERSION → 2026-08-10.1 (invalidate stale quote-hunt answers after routing/fallback fixes)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "ad871432",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Rank candidate documents by passage coverage, not total votes (large volumes won on size); keep only paragraphs carrying the passage",
+        "scope": "anchor"
+      },
       {
         "hash": "33231ba2",
         "date": "2026-09-28",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-10",
         "type": "Other",
         "description": "Quote-source miss = span not verbatim-contained (score-independent) → web fires",
-        "scope": null
-      },
-      {
-        "hash": "1c25feb9",
-        "date": "2026-08-10",
-        "type": "Other",
-        "description": "Bump SEARCH_VERSION → 2026-08-10.1 (invalidate stale quote-hunt answers after routing/fallback fixes)",
         "scope": null
       }
     ]
