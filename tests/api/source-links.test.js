@@ -9,8 +9,8 @@ const base = { id: 7, religion: "Baha'i", collection: 'Biographies', slug: 'fift
 describe('tierOf', () => {
   it('ranks the sites in Chad’s order', () => {
     expect(tierOf('https://oceanlibrary.com/x').tier).toBe(1);
-    expect(tierOf('https://bahai-library.com/x').tier).toBe(2);
-    expect(tierOf('https://www.oceanoflights.org/x').tier).toBe(3);
+    expect(tierOf('https://www.oceanoflights.org/x').tier).toBe(2);   // raised above BahaiLibrary 2026-09-29
+    expect(tierOf('https://bahai-library.com/x').tier).toBe(3);
     expect(tierOf('https://adibmasumian.com/x').tier).toBe(4);   // another publisher: after the three, before SifterSearch
     expect(tierOf('https://siftersearch.com/library/x').tier).toBe(5);
   });
@@ -37,7 +37,7 @@ describe('linkFor', () => {
 
   it('uses the BahaiLibrary sourceUrl from metadata instead of a SifterSearch page', () => {
     const l = linkFor({ ...base, source_url: null, metadata: '{"sourceUrl":"https://bahai-library.com/50th-anniversary_greatest_holy_leaf"}' }, 12);
-    expect(l).toMatchObject({ site: 'bahai-library.com', tier: 2, url: 'https://bahai-library.com/50th-anniversary_greatest_holy_leaf' });
+    expect(l).toMatchObject({ site: 'bahai-library.com', tier: 3, url: 'https://bahai-library.com/50th-anniversary_greatest_holy_leaf' });
   });
 
   it('ignores a SifterSearch address stored as the source (it is our own page, not a source)', () => {
@@ -57,5 +57,20 @@ describe('linkFor', () => {
 
   it('survives malformed metadata', () => {
     expect(linkFor({ ...base, source_url: null, metadata: '{not json' }, 1).site).toBe('siftersearch.com');
+  });
+
+  it('links an oceanoflights original by its bookid (the frontmatter url was never stored)', () => {
+    const l = linkFor({ ...base, source_url: null, metadata: '{"bookid":"Abdul-Baha-KH01-041_ar","pin":"ABU0984"}' }, 2);
+    expect(l).toMatchObject({ site: 'oceanoflights.org', tier: 2, url: 'https://oceanoflights.org/abdul-baha-kh01-041-ar/' });
+  });
+
+  it('links a Partial-Inventory-only tablet to Stephen Phelps\' browser', () => {
+    const l = linkFor({ ...base, source_url: null, metadata: '{"pin":"BH00566"}' }, 0);
+    expect(l).toMatchObject({ site: 'portlandiator.github.io', tier: 4, url: 'https://portlandiator.github.io/PI_browser/?id=BH00566' });
+  });
+
+  it('prefers OceanofLights to BahaiLibrary', () => {
+    const l = linkFor({ ...base, source_url: 'https://bahai-library.com/x', metadata: '{"bookid":"BH_1"}' }, 0);
+    expect(l.site).toBe('oceanoflights.org');
   });
 });

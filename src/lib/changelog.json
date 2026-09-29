@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T09:40:13.417Z",
+  "generated": "2026-09-29T12:46:21.641Z",
   "entries": [
+    {
+      "hash": "9b3e1c7a",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "Neither/untranslated WITHOUT Phelps' provisional renderings — the translation plan's other scenario",
+      "scope": "coverage"
+    },
     {
       "hash": "160a23ef",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "The offer to remember — server-decided, declinable, and actually reachable",
       "scope": null
-    },
-    {
-      "hash": "cbfefc89",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Behavioral test harness + fix diacritic-blind detectors",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "9b3e1c7a",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "Neither/untranslated WITHOUT Phelps' provisional renderings — the translation plan's other scenario",
+        "scope": "coverage"
+      },
       {
         "hash": "160a23ef",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "The offer to remember — server-decided, declinable, and actually reachable",
-        "scope": null
-      },
-      {
-        "hash": "cbfefc89",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Behavioral test harness + fix diacritic-blind detectors",
         "scope": null
       }
     ]

@@ -1,14 +1,14 @@
-// Link policy for search results (Chad, 2026-09-25): OceanLibrary.com → BahaiLibrary.com → OceanofLights.org →
-// (another publisher) → SifterSearch.com. The document's own origin is docs.source_url OR docs.metadata.sourceUrl
+// Link policy for search results (Chad, 2026-09-25; OceanofLights raised to second 2026-09-29): OceanLibrary.com →
+// OceanofLights.org → BahaiLibrary.com → (another publisher) → SifterSearch.com. The document's own origin is docs.source_url OR docs.metadata.sourceUrl
 // (the importer stores frontmatter `sourceUrl` in the JSON) — reading only the column produced 0 BahaiLibrary links
 // in 435. Every result also carries a paragraph-exact SifterSearch reader link. Pure; deps: slug.js.
 import { generateDocSlug, slugifyPath } from './slug.js';
 
 const SITE = 'https://siftersearch.com';
-const TIERS = [['oceanlibrary.com', 1], ['bahai-library.com', 2], ['oceanoflights.org', 3]];
+const TIERS = [['oceanlibrary.com', 1], ['oceanoflights.org', 2], ['bahai-library.com', 3]];
 const OURS = 'siftersearch.com';
 
-/** Site tier of a URL: 1 OceanLibrary, 2 BahaiLibrary, 3 OceanofLights, 4 another publisher, 5 SifterSearch. */
+/** Site tier of a URL: 1 OceanLibrary, 2 OceanofLights, 3 BahaiLibrary, 4 another publisher, 5 SifterSearch. */
 export function tierOf(url) {
   let host;
   try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { return { site: null, tier: 9 }; }
@@ -19,9 +19,20 @@ export function tierOf(url) {
 
 const paragraphLevel = (url) => /paraId=|#p\d+|[?&]p=\d+/.test(url || '');
 
-function metaSourceUrl(metadata) {
+function parseMeta(metadata) {
   if (!metadata) return null;
-  try { return (typeof metadata === 'string' ? JSON.parse(metadata) : metadata)?.sourceUrl || null; } catch { return null; }
+  try { return typeof metadata === 'string' ? JSON.parse(metadata) : metadata; } catch { return null; }
+}
+
+// Origin URLs the metadata implies. Core Tablets files carry `bookid` (their oceanoflights.org page is the bookid
+// lowercased with _ → -, verified on all 5,533 files) and Partial Inventory tablets carry `pin` (Stephen Phelps'
+// browser). Their frontmatter `url:`/`source_url:` keys were never stored, so these ids are the durable handle.
+export const oceanoflightsUrl = (bookid) => `https://oceanoflights.org/${String(bookid).toLowerCase().replace(/_/g, '-')}/`;
+export const inventoryUrl = (pin) => `https://portlandiator.github.io/PI_browser/?id=${encodeURIComponent(pin)}`;
+function metaSourceUrls(metadata) {
+  const m = parseMeta(metadata);
+  if (!m) return [];
+  return [m.sourceUrl, m.bookid && oceanoflightsUrl(m.bookid), m.pin && inventoryUrl(m.pin)];
 }
 
 /** Paragraph-exact page on SifterSearch (always available). */
@@ -44,7 +55,7 @@ export function linkFor(doc, paragraphIndex) {
   // Attach it here, once, so no search path can hand out a book-level OceanLibrary link when the paragraph is known.
   const withPara = (u) => (doc.external_para_id && tierOf(u).tier === 1 && !/paraId=/.test(u)
     ? `${u}${u.includes('?') ? '&' : '?'}paraId=${encodeURIComponent(doc.external_para_id)}` : u);
-  const candidates = [doc.source_url, metaSourceUrl(doc.metadata)]
+  const candidates = [doc.source_url, ...metaSourceUrls(doc.metadata)]
     .filter((u) => typeof u === 'string' && /^https?:\/\//.test(u))
     .map((u) => withPara(u))
     .map((u) => ({ url: u, ...tierOf(u) }))
