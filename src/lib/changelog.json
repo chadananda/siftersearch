@@ -1,6 +1,20 @@
 {
-  "generated": "2026-09-28T22:46:20.926Z",
+  "generated": "2026-09-29T00:24:26.115Z",
   "entries": [
+    {
+      "hash": "e4c39535",
+      "date": "2026-09-28",
+      "type": "New",
+      "description": "A failed batch names the statement that failed (index + SQL prefix)",
+      "scope": "writer"
+    },
+    {
+      "hash": "87445c5e",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "A directory inside the library resolves metadata against the library root and finds its religion root among ancestors (found 0 files)",
+      "scope": "index-library"
+    },
     {
       "hash": "818ab185",
       "date": "2026-09-28",
@@ -3486,24 +3500,24 @@
       "type": "Other",
       "description": "Fix content-namespace import, straggler sweep, find-fallback file moves",
       "scope": null
-    },
-    {
-      "hash": "c1524686",
-      "date": "2026-08-10",
-      "type": "Other",
-      "description": "OL-canonical dedupe — exact-title dupes deactivated, folder files moved to library-duplicates/",
-      "scope": null
-    },
-    {
-      "hash": "dd07a0d0",
-      "date": "2026-08-09",
-      "type": "Other",
-      "description": "Site Google sign-in (One Tap + button) · profile pictures · admin email whitelist",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "e4c39535",
+        "date": "2026-09-28",
+        "type": "New",
+        "description": "A failed batch names the statement that failed (index + SQL prefix)",
+        "scope": "writer"
+      },
+      {
+        "hash": "87445c5e",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "A directory inside the library resolves metadata against the library root and finds its religion root among ancestors (found 0 files)",
+        "scope": "index-library"
+      },
       {
         "hash": "818ab185",
         "date": "2026-09-28",
@@ -7046,22 +7060,6 @@
         "date": "2026-08-10",
         "type": "Other",
         "description": "Fix content-namespace import, straggler sweep, find-fallback file moves",
-        "scope": null
-      },
-      {
-        "hash": "c1524686",
-        "date": "2026-08-10",
-        "type": "Other",
-        "description": "OL-canonical dedupe — exact-title dupes deactivated, folder files moved to library-duplicates/",
-        "scope": null
-      }
-    ],
-    "2026-08-09": [
-      {
-        "hash": "dd07a0d0",
-        "date": "2026-08-09",
-        "type": "Other",
-        "description": "Site Google sign-in (One Tap + button) · profile pictures · admin email whitelist",
         "scope": null
       }
     ]

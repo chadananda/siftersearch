@@ -32,7 +32,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 
 // Import services (config.js will now see env vars)
-import { indexDocumentFromText, getIndexingStatus, removeDocument } from '../api/services/indexer.js';
+import { getIndexingStatus } from '../api/services/indexer.js';
 import { ingestDocument } from '../api/services/ingester.js';
 import { getMeili, initializeIndexes, INDEXES } from '../api/lib/search.js';
 import { logger } from '../api/lib/logger.js';
@@ -301,19 +301,6 @@ async function findMarkdownFiles(dir, basePath = dir, isInsideReligion = false) 
   return files;
 }
 
-// Check if document exists in index (excludes soft-deleted documents)
-async function documentExists(filePath) {
-  // Check SQLite docs table by file_path (not Meilisearch)
-  // SQLite stores relative paths, so convert absolute to relative
-  const canonicalBase = config.library.basePath;
-  const relativePath = path.relative(canonicalBase, filePath);
-  try {
-    const doc = await queryOne("SELECT id FROM docs WHERE file_path = ? AND deleted_at IS NULL", [relativePath]);
-    return !!doc;
-  } catch {
-    return false;
-  }
-}
 
 // Index a single file
 async function indexFile(filePath, basePath, force = false) {
@@ -353,15 +340,14 @@ async function indexFile(filePath, basePath, force = false) {
       }
     }
 
-    // If document exists, remove it first (re-indexing)
-    const exists = await documentExists(filePath);
-    if (exists) {
-      await removeDocument(metadata.id);
-    }
-
-    // Index document
-    const result = await indexDocumentFromText(content, metadata);
+    // ONE ingest path. This used indexer.js indexDocumentFromText — an older pipeline that drops short lines
+    // (every tablet's invocation) and adds no sentence markers — and, for an existing document, DELETED the
+    // doc row first (only a foreign key stopped it wiping 259 existing docs, 2026-09-28). ingestDocument
+    // updates in place and is what the update path above and /server/ingest-file already use.
+    const relativePath = metadata.relativePath || path.relative(config.library.basePath, filePath);
+    const result = await ingestDocument(content, { file_mtime: new Date().toISOString() }, relativePath);
     fileHashes.set(filePath, currentHash);
+    if (result.status === 'error') return { success: false, error: result.error };
 
     return { success: true, ...result };
   } catch (err) {
