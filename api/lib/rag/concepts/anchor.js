@@ -35,7 +35,7 @@ export function buildIndex(paras) {
  * Documents are ranked by how much OF THE PASSAGE they cover; the paragraphs carrying a real part of it are chosen,
  * and the result is accepted only if `minCoverage` of the passage's grams occur verbatim in those paragraphs.
  */
-export function locate(text, index, { minCoverage = 0.8, candidates = 3 } = {}) {
+export function locate(text, index, { minCoverage = 0.8, candidates = 3, allowDocs = null } = {}) {
   const k = letterKey(text);
   if (k.length < GRAM * 2) return null;
   // Positions of the passage each document covers. Ranking documents by TOTAL votes let the huge manuscript
@@ -55,7 +55,9 @@ export function locate(text, index, { minCoverage = 0.8, candidates = 3 } = {}) 
     }
   }
   if (!docPos.size) return null;
-  const ranked = [...docPos].sort((a, b) => b[1].size - a[1].size).slice(0, candidates);
+  // allowDocs: a SHORT passage (a closing formula) occurs in many volumes; its neighbours say which one it is in.
+  const ranked = [...docPos].filter(([d]) => !allowDocs || allowDocs.has(d)).sort((a, b) => b[1].size - a[1].size).slice(0, candidates);
+  if (!ranked.length) return null;
   let best = null;
   for (const [docId] of ranked) {
     // A paragraph belongs to the passage when at least half of IT lies inside the passage (a line of a

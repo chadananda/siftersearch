@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T03:51:33.173Z",
+  "generated": "2026-09-29T03:58:16.021Z",
   "entries": [
+    {
+      "hash": "da7330c1",
+      "date": "2026-09-28",
+      "type": "Fixed",
+      "description": "Greedy cover from the best anchored paragraph; membership rule mirrors the anchor stage (pairs were ~9 per paragraph)",
+      "scope": "inherit"
+    },
     {
       "hash": "98d74351",
       "date": "2026-09-28",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Write-only mode + manifest (defer ingest+stub-retire until history books done)",
       "scope": null
-    },
-    {
-      "hash": "860cbf41",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Accept refresh_token cookie for API calls (fixes direct-load admin pages)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-28": [
+      {
+        "hash": "da7330c1",
+        "date": "2026-09-28",
+        "type": "Fixed",
+        "description": "Greedy cover from the best anchored paragraph; membership rule mirrors the anchor stage (pairs were ~9 per paragraph)",
+        "scope": "inherit"
+      },
       {
         "hash": "98d74351",
         "date": "2026-09-28",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Write-only mode + manifest (defer ingest+stub-retire until history books done)",
-        "scope": null
-      },
-      {
-        "hash": "860cbf41",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Accept refresh_token cookie for API calls (fixes direct-load admin pages)",
         "scope": null
       }
     ]

@@ -15,7 +15,7 @@ const args = process.argv.slice(2);
 const val = (f) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null; };
 const stage = val('--stage') || 'anchor';
 const dry = args.includes('--dry');
-const METHOD = 'anchor-v2';   // v2: a paragraph belongs only if half of it lies inside the passage (or it holds half)
+const METHOD = 'anchor-v3';   // v3: short passages located only among the original docs their neighbours anchored to   // v2: a paragraph belongs only if half of it lies inside the passage (or it holds half)
 
 const t0 = Date.now();
 const originals = await queryAll(
@@ -27,17 +27,32 @@ console.log(`originals ${originals.length} paragraphs indexed in ${Math.round((D
 
 if (stage === 'anchor') {
   const targets = await queryAll(
-    `SELECT c.id, c.doc_id AS docId, c.text, c.original_text AS original FROM content c
+    `SELECT c.id, c.doc_id AS docId, c.paragraph_index AS pidx, c.text, c.original_text AS original FROM content c
       WHERE c.original_text IS NOT NULL AND c.deleted_at IS NULL`, [], 'pair:anchor-targets');
   const perDoc = new Map();
   const rows = [];
   // A citation note ("See Rúmí, The Mathnaví, II, 185") is not text of the work; two carried an original upstream.
   const NOTE = /^\s*(>?\s*\[\^|See [^.]{0,80}(,\s*[IVXL]+,\s*\d|_))/;
-  for (const t of targets.filter((x) => !NOTE.test(x.text || ''))) {
+  // Two passes. A short original (under 60 letters — "Thou art, verily, the Ever-Forgiving") occurs in many volumes
+  // and was anchored into an unrelated one; it is located only among the documents its neighbours (±5) landed in.
+  const { letterKey } = await import('../../api/lib/rag/concepts/anchor.js');
+  const usable = targets.filter((x) => !NOTE.test(x.text || ''));
+  const isShort = (t) => letterKey(t.original).length < 60;
+  const landed = new Map();                     // transDoc → [[pidx, origDoc]]
+  const results = new Map();
+  for (const t of usable.filter((x) => !isShort(x))) {
+    const r = locate(t.original, index); results.set(t.id, r);
+    if (r && !r.rejected) { if (!landed.has(t.docId)) landed.set(t.docId, []); landed.get(t.docId).push([Number(t.pidx), r.docId]); }
+  }
+  for (const t of usable.filter(isShort)) {
+    const near = new Set((landed.get(t.docId) || []).filter(([i]) => Math.abs(i - Number(t.pidx)) <= 5).map(([, d]) => d));
+    results.set(t.id, near.size ? locate(t.original, index, { allowDocs: near }) : null);
+  }
+  for (const t of usable) {
     const d = perDoc.get(t.docId) || { total: 0, located: 0, rejected: 0, none: 0, coverage: [] };
     perDoc.set(t.docId, d);
     d.total++;
-    const r = locate(t.original, index);
+    const r = results.get(t.id);
     if (!r) { d.none++; continue; }
     if (r.rejected) { d.rejected++; continue; }
     d.located++; d.coverage.push(r.coverage);
@@ -123,10 +138,16 @@ if (stage === 'inherit') {
   console.log(`inherit: ${docs.length} candidate docs | ${perDoc.length} with matches | paragraphs ${parasHit}/${parasSeen} | pairs ${pairs}`);
   for (const [id, title, hit, seen] of perDoc.sort((a, b) => b[2] - a[2]).slice(0, 45)) console.log(`  doc ${id}: ${hit}/${seen} (${Math.round(100 * hit / seen)}%) ${String(title).slice(0, 60)}`);
   if (!dry) {
+    // Replace, never delete (as the anchor stage): inherited pairs follow their anchors, so a re-anchored paragraph's
+    // old inheritance is retired and this run's is upserted.
+    await transaction([{ sql: `UPDATE content_alignment SET retired_at = unixepoch()
+                                WHERE basis = 'inherit-english' AND retired_at IS NULL`, args: [] }], 'pair:inherit-retire');
     for (let i = 0; i < rows.length; i += 500) {
       await transaction(rows.slice(i, i + 500).map((r) => ({
-        sql: `INSERT OR IGNORE INTO content_alignment (trans_id, orig_id, trans_doc, orig_doc, basis, score, via_id, method)
-              VALUES (?, ?, ?, ?, 'inherit-english', ?, ?, 'inherit-v1')`,
+        sql: `INSERT INTO content_alignment (trans_id, orig_id, trans_doc, orig_doc, basis, score, via_id, method)
+              VALUES (?, ?, ?, ?, 'inherit-english', ?, ?, 'inherit-v2')
+              ON CONFLICT (trans_id, orig_id) DO UPDATE SET basis = excluded.basis, score = excluded.score,
+                via_id = excluded.via_id, method = excluded.method, retired_at = NULL`,
         args: [r.trans, r.orig, r.transDoc, r.origDoc, r.score, r.via] })), 'pair:inherit');
     }
     console.log(`written ${rows.length}`);

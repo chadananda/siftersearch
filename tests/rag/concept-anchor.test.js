@@ -38,3 +38,14 @@ describe('locate — an edition that keeps each printed line as a paragraph', ()
     expect(r).toMatchObject({ docId: 7, paraIds: [100, 101, 102] });
   });
 });
+
+describe('locate — allowDocs', () => {
+  it('confines a short formula to the documents its neighbours are in', () => {
+    const index = buildIndex([
+      { id: 1, docId: 1, text: 'انّک انت الغفور الرّحیم و انّک انت المقتدر القدیر' },
+      { id: 2, docId: 2, text: 'انّک انت الغفور الرّحیم و انّک انت المقتدر القدیر' },
+    ]);
+    expect(locate('انّک انت الغفور الرّحیم و انّک انت المقتدر القدیر', index, { allowDocs: new Set([2]) })).toMatchObject({ docId: 2, paraIds: [2] });
+    expect(locate('انّک انت الغفور الرّحیم و انّک انت المقتدر القدیر', index, { allowDocs: new Set([9]) })).toBeNull();
+  });
+});
