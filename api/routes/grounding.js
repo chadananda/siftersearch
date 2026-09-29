@@ -1144,6 +1144,39 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * POST /integrity/repair-fffd {docIds, dryRun=true} — put back the letters the writer split into «��», IN PLACE (same
+   * row id, so claims/alignments/bilingual text survive; a re-ingest would re-create the rows). Each run is located in
+   * the document's source file by its neighbours; a paragraph is written only if every run in it resolves uniquely.
+   */
+  fastify.post('/integrity/repair-fffd', admin, async (req) => {
+    const { docIds = [], dryRun = true } = req.body || {};
+    if (!docIds.length || docIds.length > 500) throw ApiError.badRequest('1..500 docIds');
+    const [{ readFile }, { resolve }, { config }, { repairParagraph }, { content }] = await Promise.all([
+      import('node:fs/promises'), import('node:path'), import('../lib/config.js'), import('../lib/fffd-repair.js'), import('../lib/content.js')]);
+    const out = [];
+    for (const docId of docIds) {
+      const doc = await queryOne('SELECT id, file_path FROM docs WHERE id = ?', [docId], 'integrity:fffd-doc');
+      if (!doc?.file_path) { out.push({ docId, error: 'no file_path' }); continue; }
+      let source;
+      try { source = await readFile(resolve(config.library.basePath, doc.file_path), 'utf8'); }
+      catch { out.push({ docId, error: 'source file not readable' }); continue; }
+      if (source.includes('�')) { out.push({ docId, error: 'source file itself holds U+FFFD' }); continue; }
+      const paras = await queryAll(`SELECT id, text FROM content WHERE doc_id = ? AND deleted_at IS NULL
+                                     AND instr(text, char(65533)) > 0`, [docId], 'integrity:fffd-paras');
+      let repaired = 0, unresolved = 0; const samples = [];
+      for (const p of paras) {
+        const r = repairParagraph(p.text, source);
+        if (!r.text) { unresolved++; continue; }
+        repaired++;
+        if (samples.length < 2) samples.push({ id: p.id, before: p.text.slice(0, 120), after: r.text.slice(0, 120) });
+        if (!dryRun) await content.updateText(p.id, r.text);
+      }
+      out.push({ docId, paragraphs: paras.length, repaired, unresolved, samples });
+    }
+    return { dryRun, docs: out, totals: out.reduce((a, d) => ({ repaired: a.repaired + (d.repaired || 0), unresolved: a.unresolved + (d.unresolved || 0) }), { repaired: 0, unresolved: 0 }) };
+  });
+
+  /**
    * GET /concepts/originals-gap — for EVERY canonical translation: has it got its original, and if not, is
    * one reachable? Chad, 2026-08-26: "I want to be sure we have found the original for all the documents
    * that are translations (and where original exists)." This counts it rather than asserting it.

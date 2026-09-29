@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T12:46:21.641Z",
+  "generated": "2026-09-29T12:55:15.585Z",
   "entries": [
+    {
+      "hash": "a0fbb9e1",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "OceanofLights ranks second after OceanLibrary; originals link by bookid (oceanoflights) and pin (Phelps' browser)",
+      "scope": "links"
+    },
     {
       "hash": "9b3e1c7a",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Connect IS the consent — session cookie, One Tap, and merge on connect",
       "scope": null
-    },
-    {
-      "hash": "f58139cb",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "The offer to remember — server-decided, declinable, and actually reachable",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "a0fbb9e1",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "OceanofLights ranks second after OceanLibrary; originals link by bookid (oceanoflights) and pin (Phelps' browser)",
+        "scope": "links"
+      },
       {
         "hash": "9b3e1c7a",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Connect IS the consent — session cookie, One Tap, and merge on connect",
-        "scope": null
-      },
-      {
-        "hash": "f58139cb",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "The offer to remember — server-decided, declinable, and actually reachable",
         "scope": null
       }
     ]
