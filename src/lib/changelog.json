@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T12:55:15.585Z",
+  "generated": "2026-09-29T13:03:43.022Z",
   "entries": [
+    {
+      "hash": "65c8a6c8",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "Repair «��» in place from the source file — same row id, so claims and alignments survive",
+      "scope": "integrity"
+    },
     {
       "hash": "a0fbb9e1",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Actually run migration 7, and never lose a consent to a schema lag",
       "scope": null
-    },
-    {
-      "hash": "2857304d",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Connect IS the consent — session cookie, One Tap, and merge on connect",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "65c8a6c8",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "Repair «��» in place from the source file — same row id, so claims and alignments survive",
+        "scope": "integrity"
+      },
       {
         "hash": "a0fbb9e1",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Actually run migration 7, and never lose a consent to a schema lag",
-        "scope": null
-      },
-      {
-        "hash": "2857304d",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Connect IS the consent — session cookie, One Tap, and merge on connect",
         "scope": null
       }
     ]

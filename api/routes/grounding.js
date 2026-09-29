@@ -1068,6 +1068,23 @@ export default async function groundingRoutes(fastify) {
   });
 
   /**
+   * GET /concepts/untranslated?afterId=&limit= — Core Tablets Arabic/Persian paragraphs with NO English anywhere (none
+   * beside, none linked): the translation queue. Keyset-paged by content id.
+   */
+  fastify.get('/concepts/untranslated', admin, async (req) => {
+    const afterId = Number(req.query?.afterId) || 0;
+    const limit = Math.min(5000, Number(req.query?.limit) || 2000);
+    const rows = await queryAll(
+      `SELECT c.id, c.doc_id, c.paragraph_index, c.text, d.author, d.language, d.title, d.file_path
+         FROM content c JOIN docs d ON d.id = c.doc_id
+        WHERE c.id > ? AND d.file_path LIKE 'Baha''i/Core Tablets/%' AND d.language IN ('ar','fa')
+          AND c.deleted_at IS NULL AND d.deleted_at IS NULL AND c.translation_text IS NULL
+          AND NOT EXISTS (SELECT 1 FROM content_alignment a WHERE a.orig_id = c.id AND a.retired_at IS NULL)
+        ORDER BY c.id LIMIT ?`, [afterId, limit], 'concepts:untranslated');
+    return { rows, next: rows.length === limit ? rows[rows.length - 1].id : null };
+  });
+
+  /**
    * POST /concepts/alignment/bulk {rows:[{transId, origId, transDoc, origDoc, basis, score, pin, oolId, method, viaId}]}
    * Upsert translation ↔ original pairs computed off-server (the Partial Inventory matching runs as numpy matrices).
    */
