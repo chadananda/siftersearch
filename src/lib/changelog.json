@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T07:25:22.412Z",
+  "generated": "2026-09-29T07:51:00.136Z",
   "entries": [
+    {
+      "hash": "e282af13",
+      "date": "2026-09-29",
+      "type": "Fixed",
+      "description": "Jafar spectrum reached the prompt as \"undefined\" (CTAI returns {en,count}); coverage scope=all + provisional count",
+      "scope": "translation"
+    },
     {
       "hash": "f9855b63",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Fix \"done\" measure + language-capability gate (stop token churn)",
       "scope": null
-    },
-    {
-      "hash": "02d82e32",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Storm guard — quarantine books stuck failing \"did not reach verify\"",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "e282af13",
+        "date": "2026-09-29",
+        "type": "Fixed",
+        "description": "Jafar spectrum reached the prompt as \"undefined\" (CTAI returns {en,count}); coverage scope=all + provisional count",
+        "scope": "translation"
+      },
       {
         "hash": "f9855b63",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Fix \"done\" measure + language-capability gate (stop token churn)",
-        "scope": null
-      },
-      {
-        "hash": "02d82e32",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Storm guard — quarantine books stuck failing \"did not reach verify\"",
         "scope": null
       }
     ]

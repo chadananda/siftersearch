@@ -1,6 +1,6 @@
 // Jafar hint formatting — CTAI returns rendering_spectrum as [{en, count}].
 import { describe, it, expect } from 'vitest';
-import { formatJafarHints } from '../../api/lib/translation-subagent.js';
+import { formatJafarHints, jafarChunks } from '../../api/lib/translation-subagent.js';
 
 describe('formatJafarHints', () => {
   it('shows the corpus renderings CTAI returns as {en, count}', () => {
@@ -15,5 +15,15 @@ describe('formatJafarHints', () => {
       { term: 'و', is_stop: true, rendering_spectrum: [{ en: 'and', count: 900 }] }] });
     expect(out).toContain('Shoghi Effendi: "Manifestation"');
     expect(out).not.toContain('and');
+  });
+});
+
+describe('jafarChunks', () => {
+  it('keeps each request under the ~50-word limit past which CTAI returns no terms', () => {
+    const text = Array.from({ length: 80 }, (_, i) => `w${i}`).join(' ');
+    const chunks = jafarChunks(text);
+    expect(chunks).toHaveLength(3);
+    expect(chunks.every((c) => c.split(' ').length <= 35)).toBe(true);
+    expect(chunks.join(' ')).toBe(text);
   });
 });

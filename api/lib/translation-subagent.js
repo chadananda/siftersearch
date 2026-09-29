@@ -38,23 +38,47 @@ const TRANSLATION_MODEL = process.env.TRANSLATION_MODEL || 'gpt-4o-mini';
 
 // ─── CTAI JAFAR ───────────────────────────────────────────────────────────
 
+// CTAI /jafar returns ZERO terms — not an error — once a passage passes ~50 words (measured 2026-09-29: 47 words → 16
+// terms, 58 → 0). Whole paragraphs therefore reached the translator with no concordance at all. Send ≤35-word chunks
+// and merge their terms (first occurrence wins).
+export const JAFAR_CHUNK_WORDS = 35;
+export function jafarChunks(text, size = JAFAR_CHUNK_WORDS) {
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  const out = [];
+  for (let i = 0; i < words.length; i += size) out.push(words.slice(i, i + size).join(' '));
+  return out;
+}
+
+async function fetchJafarChunk(text, url, key) {
+  const res = await fetch(`${url}/jafar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+    body: JSON.stringify({ text, filter: false }),
+    signal: AbortSignal.timeout(20000)
+  });
+  if (!res.ok) {
+    logger.warn({ status: res.status }, 'CTAI JAFAR request failed');
+    return null;
+  }
+  return res.json();
+}
+
 async function fetchJafar(text) {
   if (!config.ctai?.enabled) return null;
   const url = config.ctai.apiUrl || 'https://ctai.info/api/v1';
   const key = config.ctai.apiKey || process.env.CTAI_KEY;
   if (!key) return null;
   try {
-    const res = await fetch(`${url}/jafar`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ text, filter: false }),
-      signal: AbortSignal.timeout(20000)
-    });
-    if (!res.ok) {
-      logger.warn({ status: res.status }, 'CTAI JAFAR request failed');
-      return null;
+    const parts = await Promise.all(jafarChunks(text).map((c) => fetchJafarChunk(c, url, key)));
+    const seen = new Set();
+    const enriched_terms = [];
+    for (const t of parts.flatMap((p) => p?.enriched_terms || [])) {
+      if (seen.has(t.term)) continue;
+      seen.add(t.term);
+      enriched_terms.push(t);
     }
-    return await res.json();
+    if (!enriched_terms.length) logger.warn({ chars: text.length }, 'CTAI JAFAR returned no terms');
+    return { enriched_terms, gloss: parts.flatMap((p) => p?.gloss || []) };
   } catch (err) {
     logger.warn({ err: err.message }, 'CTAI JAFAR request error');
     return null;
