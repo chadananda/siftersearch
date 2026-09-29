@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T16:20:17.109Z",
+  "generated": "2026-09-29T17:20:12.637Z",
   "entries": [
+    {
+      "hash": "eff9ce44",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "Record translator + version beside every English (migr 131) — CTAI api/pipeline/model, Phelps PI v6.01",
+      "scope": "translation"
+    },
     {
       "hash": "53fde026",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Peak-only (stop duplicating the crontab's email) + fix the hour window",
       "scope": null
-    },
-    {
-      "hash": "114b6d1e",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Use the peak window to drain the missing-books backlog + phase-aware hourly digest",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "eff9ce44",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "Record translator + version beside every English (migr 131) — CTAI api/pipeline/model, Phelps PI v6.01",
+        "scope": "translation"
+      },
       {
         "hash": "53fde026",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Peak-only (stop duplicating the crontab's email) + fix the hour window",
-        "scope": null
-      },
-      {
-        "hash": "114b6d1e",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Use the peak window to drain the missing-books backlog + phase-aware hourly digest",
         "scope": null
       }
     ]

@@ -42,6 +42,7 @@ import graphRoutes from './routes/graph.js';
 import peopleRoutes from './routes/people.js';
 import deepResearchRoutes from './routes/deep-research.js';
 import groundingRoutes from './routes/grounding.js';
+import tabletAdminRoutes, { tabletPublicRoutes } from './routes/tablets.js';
 import widgetRoutes from './routes/widget.js';
 import anisRoutes from './routes/anis.js';
 import ingestRoutes from './routes/ingest.js';
@@ -326,12 +327,14 @@ export async function createServer(opts = {}) {
   await server.register(docsRepoRoutes, { prefix: '/api/admin' });   // the ONE document surface (docs-repo)
   await server.register(entityReviewRoutes, { prefix: '/api/admin' });
   await server.register(groundingRoutes, { prefix: '/api/admin' });
+await server.register(tabletAdminRoutes, { prefix: '/api/admin' });   // tablet metadata (Phelps + oceanoflights)
   await server.register(ingestRoutes, { prefix: '/api/admin' });
   await server.register(bookNotesRoutes, { prefix: '/api/admin' });
   await server.register(companionRoutes, { prefix: '/api/admin' });
   await server.register(companionMeRoutes, { prefix: '/api/v1/companion' });
   await server.register(anisRoutes, { prefix: '/api/v1/anis' });   // Anís letters: footer pause link
   await server.register(documentsRoutes, { prefix: '/api/documents' });
+await server.register(tabletPublicRoutes, { prefix: '/api/documents' });   // GET /:id/about
   await server.register(servicesRoutes, { prefix: '/api/services' });
   await server.register(anonymousRoutes, { prefix: '/api/anonymous' });
   await server.register(librarianRoutes, { prefix: '/api/librarian' });

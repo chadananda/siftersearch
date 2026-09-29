@@ -1379,6 +1379,20 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_content_translation_by ON content(translation_by, translation_version)');
     logger.info('Migration 131 complete');
   },
+  132: async () => {
+    // Tablet metadata (Chad, 2026-09-29): Phelps' inventory and oceanoflights' frontmatter are the scholarship around
+    // a tablet — recipient, date, place, manuscripts, publications, translations, subjects, audio, notes. Keep the raw
+    // sources (inventory_items.raw, docs.frontmatter) and one merged, per-field-sourced record per tablet (tablet_meta)
+    // read by the reader's intro box, search, HyPE and disambiguation. bib_codes expands Phelps' source codes.
+    logger.info('Starting migration 132: tablet metadata');
+    try { await query('ALTER TABLE inventory_items ADD COLUMN raw TEXT'); } catch { /* exists */ }
+    try { await query('ALTER TABLE docs ADD COLUMN frontmatter TEXT'); } catch { /* exists */ }
+    await query(`CREATE TABLE IF NOT EXISTS tablet_meta (
+      doc_id INTEGER PRIMARY KEY, pin TEXT, ool_id TEXT, meta TEXT NOT NULL, built_at INTEGER DEFAULT (unixepoch()))`);
+    await query('CREATE INDEX IF NOT EXISTS idx_tablet_meta_pin ON tablet_meta(pin)');
+    await query(`CREATE TABLE IF NOT EXISTS bib_codes (code TEXT PRIMARY KEY, citation TEXT NOT NULL, url TEXT)`);
+    logger.info('Migration 132 complete');
+  },
 };
 
 export const graphMigrations = {
