@@ -18,7 +18,7 @@ import { repairMergeTombstones, mergeTombstoneDivergence, naturalKeyCollisions, 
 import { guttedCanonicals, liveDuplicateCanonicals } from '../lib/canonical-integrity.js';
 import { emptiedHype, emptiedDisambig, emptiedExtract } from '../lib/generator-integrity.js';
 import { getIntegrationProgress, gradedPlanDocIds } from '../lib/bio.js';
-import { query, queryOne, queryAll } from '../lib/db.js';
+import { query, queryOne, queryAll, transaction } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 
 const parseRun = (rj) => { try { return rj ? JSON.parse(rj) : null; } catch { return null; } };
@@ -1032,6 +1032,38 @@ export default async function groundingRoutes(fastify) {
     if (dryRun || !rows.length) return out;
     out.written = await store.saveParagraphOriginals(rows);
     return out;
+  });
+
+  /**
+   * POST /concepts/alignment/bulk {rows:[{transId, origId, transDoc, origDoc, basis, score, pin, oolId, method, viaId}]}
+   * Upsert translation ↔ original pairs computed off-server (the Partial Inventory matching runs as numpy matrices).
+   */
+  fastify.post('/concepts/alignment/bulk', admin, async (req) => {
+    const rows = req.body?.rows || [];
+    if (!rows.length || rows.length > 5000) throw ApiError.badRequest('1..5000 rows');
+    await transaction(rows.map((r) => ({
+      sql: `INSERT INTO content_alignment (trans_id, orig_id, trans_doc, orig_doc, basis, score, via_id, method, pin, ool_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?)
+            ON CONFLICT (trans_id, orig_id) DO UPDATE SET basis=excluded.basis, score=excluded.score, method=excluded.method,
+              pin=COALESCE(excluded.pin, content_alignment.pin), ool_id=COALESCE(excluded.ool_id, content_alignment.ool_id),
+              retired_at=NULL`,
+      args: [r.transId, r.origId, r.transDoc ?? null, r.origDoc ?? null, r.basis, r.score ?? null, r.viaId ?? null,
+        r.method ?? null, r.pin ?? null, r.oolId ?? null] })), 'alignment:bulk');
+    return { written: rows.length };
+  });
+
+  /**
+   * POST /concepts/translations/bulk {rows:[{contentId, text, authority, ref}]} — English BESIDE an original paragraph
+   * (content.translation_text, migr 120). authority: 'published' (a published translation's wording) or
+   * 'provisional-phelps' (Stephen Phelps' rendering — stored, not surfaced until he agrees). ref = provenance JSON.
+   */
+  fastify.post('/concepts/translations/bulk', admin, async (req) => {
+    const rows = req.body?.rows || [];
+    if (!rows.length || rows.length > 5000) throw ApiError.badRequest('1..5000 rows');
+    await transaction(rows.map((r) => ({
+      sql: 'UPDATE content SET translation_text = ?, translation_authority = ?, align_ref = ? WHERE id = ? AND deleted_at IS NULL',
+      args: [r.text, r.authority, JSON.stringify(r.ref || {}), r.contentId] })), 'translations:bulk');
+    return { written: rows.length };
   });
 
   /**

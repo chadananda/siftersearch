@@ -94,7 +94,7 @@ if (stage === 'link') {
     const cov = r ? r.coverage : 0;
     const s = cov >= 0.6 ? 'present' : cov < 0.3 ? 'absent' : 'unclear';
     tally[s]++; status.push([pin, s, cov]);
-    if (r && cov >= 0.3) links.push([pin, r.docId, basename(pathOf.get(r.docId) || '').replace(/\.md$/, ''), cov, s === 'present' ? 'anchor' : 'anchor-weak']);
+    if (r && cov >= 0.3) links.push([pin, r.docId, basename(pathOf.get(r.docId) || '').replace(/\.md$/, ''), cov, s === 'present' ? 'anchor' : 'anchor-weak', JSON.stringify(r.paraIds)]);
   }
   console.log('link:', tally, '| links', links.length);
   if (!dry) {
@@ -104,8 +104,9 @@ if (stage === 'link') {
     }
     for (let i = 0; i < links.length; i += 500) {
       await transaction(links.slice(i, i + 500).map((a) => ({
-        sql: `INSERT INTO inventory_links (pin, doc_id, ool_id, coverage, basis) VALUES (?,?,?,?,?)
-              ON CONFLICT (pin, doc_id) DO UPDATE SET ool_id=excluded.ool_id, coverage=excluded.coverage, basis=excluded.basis`,
+        sql: `INSERT INTO inventory_links (pin, doc_id, ool_id, coverage, basis, para_ids) VALUES (?,?,?,?,?,?)
+              ON CONFLICT (pin, doc_id) DO UPDATE SET ool_id=excluded.ool_id, coverage=excluded.coverage, basis=excluded.basis,
+                para_ids=excluded.para_ids`,
         args: a })), 'inventory:links');
     }
     console.log('written', links.length, 'links,', status.length, 'statuses');

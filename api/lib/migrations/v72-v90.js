@@ -1359,6 +1359,16 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_invlink_ool ON inventory_links(ool_id)');
     logger.info('Migration 129 complete');
   },
+  130: async () => {
+    // BOTH ids on every pairing (Chad, 2026-09-28): the Partial Inventory id (pin) and the oceanoflights id (ool_id,
+    // the file stem) — so a pairing links out to either. inventory_links.para_ids: where the tablet sits in the doc.
+    logger.info('Starting migration 130: pin/ool_id on content_alignment, para_ids on inventory_links');
+    try { await query('ALTER TABLE content_alignment ADD COLUMN pin TEXT'); } catch { /* exists */ }
+    try { await query('ALTER TABLE content_alignment ADD COLUMN ool_id TEXT'); } catch { /* exists */ }
+    try { await query('ALTER TABLE inventory_links ADD COLUMN para_ids TEXT'); } catch { /* exists */ }
+    await query('CREATE INDEX IF NOT EXISTS idx_align_pin ON content_alignment(pin)');
+    logger.info('Migration 130 complete');
+  },
 };
 
 export const graphMigrations = {
