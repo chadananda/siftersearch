@@ -115,6 +115,13 @@ async function reingestDocument(docId) {
   // - Skip entirely if file_hash unchanged
   // - Update metadata only if body_hash unchanged (frontmatter-only change)
   // - Re-process content only if body actually changed
+  // --force: forget the stored hashes so the file is fully re-processed. Needed when a previous run recorded the new
+  // file's hash and was then stopped before its paragraphs were written (2026-09-30: a cancelled run left the doc
+  // claiming 'unchanged' with the OLD paragraphs).
+  if (process.argv.includes('--force')) {
+    await query('UPDATE docs SET file_hash = NULL, body_hash = NULL WHERE id = ?', [docId]);
+    console.log('Forced: stored hashes cleared');
+  }
   console.log('\n=== Re-ingesting (incremental - unchanged content will be preserved)... ===');
   const existingParagraphs = await queryOne(
     'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',

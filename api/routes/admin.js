@@ -1053,12 +1053,13 @@ export default async function adminRoutes(fastify) {
         type: 'object',
         required: ['documentId'],
         properties: {
-          documentId: { type: 'string', description: 'Document ID to re-ingest from source file' }
+          documentId: { type: 'string', description: 'Document ID to re-ingest from source file' },
+          force: { type: 'boolean', description: 'Clear stored hashes first (fully re-process)' }
         }
       }
     }
   }, async (request) => {
-    const { documentId } = request.body;
+    const { documentId, force = false } = request.body;
 
     // Check document has a file_path
     const doc = await queryOne('SELECT id, file_path FROM docs WHERE id = ?', [documentId]);
@@ -1076,7 +1077,7 @@ export default async function adminRoutes(fastify) {
     }
 
     // Use reingest-document.js which reads from source file
-    const task = runBackgroundTask('resegment', 'scripts/reingest-document.js', [documentId]);
+    const task = runBackgroundTask('resegment', 'scripts/reingest-document.js', [documentId, ...(force ? ['--force'] : [])]);
 
     logger.info({ documentId }, 'Document re-ingestion from source started via API');
 
