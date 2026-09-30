@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T02:28:26.499Z",
+  "generated": "2026-09-30T02:37:17.225Z",
   "entries": [
+    {
+      "hash": "50bb9dc4",
+      "date": "2026-09-29",
+      "type": "Performance",
+      "description": "Batch across documents — deletions queued and sent in bulk, doc metadata 500 per job, ingest never talks to Meili per document",
+      "scope": "meili"
+    },
     {
       "hash": "21a5ff45",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "An endpoint to READ the proposals a propose-then-approve flow produces",
       "scope": null
-    },
-    {
-      "hash": "c64030b9",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "Scan the books we just ingested, not only the ones already queued",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "50bb9dc4",
+        "date": "2026-09-29",
+        "type": "Performance",
+        "description": "Batch across documents — deletions queued and sent in bulk, doc metadata 500 per job, ingest never talks to Meili per document",
+        "scope": "meili"
+      },
       {
         "hash": "21a5ff45",
         "date": "2026-09-29",
@@ -7051,13 +7058,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "An endpoint to READ the proposals a propose-then-approve flow produces",
-        "scope": null
-      },
-      {
-        "hash": "c64030b9",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "Scan the books we just ingested, not only the ones already queued",
         "scope": null
       }
     ]

@@ -2266,6 +2266,59 @@ Collection: ${paragraph.collection || 'Unknown'}
   });
 
   /**
+   * POST /server/backup — run the daily backup now (SQLite snapshot + verify, Meili rsync, embedding cache, vault copy)
+   * as a background task, e.g. before a risky operation. Read it at GET /server/tasks/backup. See scripts/backup-daily.mjs.
+   */
+  fastify.post('/server/backup', { preHandler: requireInternal }, async () => {
+    const running = backgroundTasks.get('backup');
+    if (running && running.status === 'running') throw ApiError.conflict('backup is already running');
+    const task = runBackgroundTask('backup', 'scripts/backup-daily.mjs');
+    return { success: true, taskId: 'backup', status: task.status };
+  });
+
+  /**
+   * POST /server/meili-switchover {docIds, dryRun=true} — replace the per-document jobs the old indexer queued (a
+   * delete-by-doc + a 1-paragraph add per tablet, ~95 s each: 5½ days for 5,229 tablets, 2026-09-29) with bulk work:
+   *   1. cancel, BY TASK UID, only the queued paragraph jobs that belong to those docs (deletion filters naming them)
+   *      and the queued 1-document additions (the worker's own tracked batches are re-queued by its reconciler anyway);
+   *   2. one filtered deletion per 500 docs (queued first, so it runs before the re-sent paragraphs);
+   *   3. mark the docs' paragraphs synced=0 — the worker re-sends them in 500-paragraph jobs.
+   */
+  fastify.post('/server/meili-switchover', { preHandler: requireInternal }, async (request) => {
+    const { docIds = [], dryRun = true } = request.body || {};
+    if (!docIds.length) throw ApiError.badRequest('docIds required');
+    const meili = getMeili();
+    const docSet = new Set(docIds.map(Number));
+    const cancelUids = []; let seen = 0; let from;
+    for (;;) {
+      const page = await meili.tasks.getTasks({ indexUids: ['paragraphs'], statuses: ['enqueued'], limit: 1000, ...(from ? { from } : {}) });
+      if (!page.results.length) break;
+      for (const t of page.results) {
+        seen++;
+        const f = String(t.details?.originalFilter || '').replace(/^"|"$/g, '');
+        const m = f.match(/^doc_id = (\d+)$/);
+        if (t.type === 'documentDeletion' && m && docSet.has(Number(m[1]))) cancelUids.push(t.uid);
+        else if (t.type === 'documentAdditionOrUpdate' && (t.details?.receivedDocuments ?? 0) <= 1) cancelUids.push(t.uid);
+      }
+      if (page.next == null) break;
+      from = page.next;
+    }
+    const ids = [...docSet];
+    const paras = await queryOne(`SELECT COUNT(*) AS n FROM content WHERE deleted_at IS NULL AND doc_id IN (${ids.map(() => '?').join(',')})`, ids);
+    const plan = { enqueuedParagraphJobs: seen, toCancel: cancelUids.length, docs: ids.length, paragraphsToResend: paras?.n ?? 0,
+      bulkDeletionJobs: Math.ceil(ids.length / 500) };
+    if (dryRun) return { dryRun: true, ...plan };
+    for (let i = 0; i < cancelUids.length; i += 500) await meili.tasks.cancelTasks({ uids: cancelUids.slice(i, i + 500) });
+    for (let i = 0; i < ids.length; i += 500) await meili.index('paragraphs').deleteDocuments({ filter: `doc_id IN [${ids.slice(i, i + 500).join(',')}]` });
+    for (let i = 0; i < ids.length; i += 500) {
+      const part = ids.slice(i, i + 500);
+      await query(`UPDATE content SET synced = 0 WHERE deleted_at IS NULL AND doc_id IN (${part.map(() => '?').join(',')})`, part);
+    }
+    logger.info(plan, 'Meili switch-over: per-document jobs replaced by bulk work');
+    return { dryRun: false, ...plan };
+  });
+
+  /**
    * Cancel pending Meilisearch tasks
    * POST /server/meili-cancel?beforeDate=2025-12-29T00:00:00Z
    */
