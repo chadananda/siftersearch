@@ -2281,7 +2281,7 @@ Collection: ${paragraph.collection || 'Unknown'}
    * delete-by-doc + a 1-paragraph add per tablet, ~95 s each: 5½ days for 5,229 tablets, 2026-09-29) with bulk work:
    *   1. cancel, BY TASK UID, only the queued paragraph jobs that belong to those docs (deletion filters naming them)
    *      and the queued 1-document additions (the worker's own tracked batches are re-queued by its reconciler anyway);
-   *   2. one filtered deletion per 500 docs (queued first, so it runs before the re-sent paragraphs);
+   *   2. remove only index entries whose paragraph no longer exists (by id, bulk); live ones are overwritten in place;
    *   3. mark the docs' paragraphs synced=0 — the worker re-sends them in 500-paragraph jobs.
    */
   fastify.post('/server/meili-switchover', { preHandler: requireInternal }, async (request) => {
@@ -2304,12 +2304,27 @@ Collection: ${paragraph.collection || 'Unknown'}
       from = page.next;
     }
     const ids = [...docSet];
-    const paras = await queryOne(`SELECT COUNT(*) AS n FROM content WHERE deleted_at IS NULL AND doc_id IN (${ids.map(() => '?').join(',')})`, ids);
-    const plan = { enqueuedParagraphJobs: seen, toCancel: cancelUids.length, docs: ids.length, paragraphsToResend: paras?.n ?? 0,
-      bulkDeletionJobs: Math.ceil(ids.length / 500) };
+    // Measure what is actually in the index for these docs: an entry whose id is still a live paragraph gets
+    // overwritten in place by the re-send (no search gap); only ids that no longer exist are removed.
+    const idx = meili.index('paragraphs');
+    let inIndex = 0, docsInIndex = 0, live = 0; const stale = [];
+    for (let i = 0; i < ids.length; i += 500) {
+      const part = ids.slice(i, i + 500);
+      const rows = await queryAll(`SELECT id FROM content WHERE deleted_at IS NULL AND doc_id IN (${part.map(() => '?').join(',')})`, part);
+      const liveIds = new Set(rows.map((r) => r.id)); live += liveIds.size;
+      const docsHere = new Set();
+      for (let offset = 0; ; offset += 1000) {
+        const r = await idx.getDocuments({ filter: `doc_id IN [${part.join(',')}]`, fields: ['id', 'doc_id'], limit: 1000, offset });
+        for (const d of r.results) { inIndex++; docsHere.add(d.doc_id); if (!liveIds.has(d.id)) stale.push(d.id); }
+        if (r.results.length < 1000) break;
+      }
+      docsInIndex += docsHere.size;
+    }
+    const plan = { enqueuedParagraphJobs: seen, toCancel: cancelUids.length, docs: ids.length, docsInIndex,
+      entriesInIndex: inIndex, staleEntriesToRemove: stale.length, paragraphsToResend: live };
     if (dryRun) return { dryRun: true, ...plan };
     for (let i = 0; i < cancelUids.length; i += 500) await meili.tasks.cancelTasks({ uids: cancelUids.slice(i, i + 500) });
-    for (let i = 0; i < ids.length; i += 500) await meili.index('paragraphs').deleteDocuments({ filter: `doc_id IN [${ids.slice(i, i + 500).join(',')}]` });
+    for (let i = 0; i < stale.length; i += 10000) await idx.deleteDocuments(stale.slice(i, i + 10000));
     for (let i = 0; i < ids.length; i += 500) {
       const part = ids.slice(i, i + 500);
       await query(`UPDATE content SET synced = 0 WHERE deleted_at IS NULL AND doc_id IN (${part.map(() => '?').join(',')})`, part);
