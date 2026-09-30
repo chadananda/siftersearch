@@ -1439,6 +1439,12 @@ export const migrations = {
     try { await query('ALTER TABLE doc_meta ADD COLUMN authority INTEGER'); } catch { /* exists */ }
     logger.info('Migration 136 complete');
   },
+  137: async () => {
+    // Exact-title lookup is the first tier of metadata search — index it so it is not a scan of every record.
+    logger.info('Starting migration 137: doc_meta lower(title) index');
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_meta_title_lc ON doc_meta(lower(title))');
+    logger.info('Migration 137 complete');
+  },
 };
 
 export const graphMigrations = {
