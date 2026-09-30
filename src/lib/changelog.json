@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-30T15:32:40.863Z",
+  "generated": "2026-09-30T15:56:55.813Z",
   "entries": [
+    {
+      "hash": "4e0b8e69",
+      "date": "2026-09-30",
+      "type": "New",
+      "description": "Extraction + HyPE read the LINKED passage — one generation per pair",
+      "scope": "enrich"
+    },
     {
       "hash": "ff7beffc",
       "date": "2026-09-30",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Stage 1 question map — built against the real CuriosityGraph contract, with its gate",
       "scope": null
-    },
-    {
-      "hash": "3eb6004e",
-      "date": "2026-08-13",
-      "type": "Other",
-      "description": "Auto-chunk oversized paragraphs for ANY language whose text can be split",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-30": [
+      {
+        "hash": "4e0b8e69",
+        "date": "2026-09-30",
+        "type": "New",
+        "description": "Extraction + HyPE read the LINKED passage — one generation per pair",
+        "scope": "enrich"
+      },
       {
         "hash": "ff7beffc",
         "date": "2026-09-30",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-13",
         "type": "Other",
         "description": "Stage 1 question map — built against the real CuriosityGraph contract, with its gate",
-        "scope": null
-      },
-      {
-        "hash": "3eb6004e",
-        "date": "2026-08-13",
-        "type": "Other",
-        "description": "Auto-chunk oversized paragraphs for ANY language whose text can be split",
         "scope": null
       }
     ]

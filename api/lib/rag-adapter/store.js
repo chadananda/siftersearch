@@ -132,15 +132,44 @@ export function makeStore() {
       return new Set(rows.map((r) => r.id));
     },
 
-    // The same questions for a LINKED paragraph (the other language of one passage) — only where it has no HyPE at all,
-    // so a pair written from one side never overwrites what the other side generated. Returns how many were written.
-    async saveHypeWhereMissing(paragraphIds, questions, thesis, version) {
-      if (!paragraphIds?.length) return 0;
-      const bare = await db.queryAll(
-        `SELECT id FROM content WHERE id IN (${paragraphIds.map(() => '?').join(',')}) AND deleted_at IS NULL
-            AND hyp_model IS NULL AND (hyp_questions IS NULL OR hyp_questions IN ('', '[]'))`, paragraphIds);
-      for (const { id } of bare) await content.updateHype(id, questions, thesis, version);
-      return bare.length;
+    // MERGE questions into LINKED paragraphs (Chad, 2026-09-30: "when we do this, we update the hype for all linked
+    // paragraphs"). A paragraph's existing questions are kept and the new ones appended (case/punctuation-insensitive
+    // dedupe, ceiling 40); its own thesis and version stamp are kept. A paragraph never hyped: `samePassage` (a translation
+    // partner — the same passage) takes them as its own and is stamped done; otherwise (a quote/duplicate, which may hold
+    // more than the passage) it is stamped 'linked:<version>' — NOT done, so its own generation still runs and keeps them.
+    // Returns how many paragraphs changed.
+    async mergeHype(paragraphIds, questions, thesis, version, { samePassage = true } = {}) {
+      if (!paragraphIds?.length || !questions?.length) return 0;
+      const rows = await db.queryAll(
+        `SELECT id, hyp_questions AS hyp, hyp_thesis AS thesis, hyp_model AS model FROM content
+          WHERE id IN (${paragraphIds.map(() => '?').join(',')}) AND deleted_at IS NULL`, paragraphIds);
+      const key = (q) => String(q).toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
+      let changed = 0;
+      for (const r of rows) {
+        let have = [];
+        try { have = JSON.parse(r.hyp || '[]'); } catch { have = String(r.hyp || '').split('\n').filter(Boolean); }
+        if (!Array.isArray(have)) have = [];
+        const seen = new Set(have.map(key));
+        const add = questions.filter((q) => { const k = key(q); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+        if (!add.length) continue;
+        const stamp = r.model || (samePassage ? version : `linked:${version}`);
+        await content.updateHype(r.id, [...have, ...add].slice(0, 40), r.thesis || thesis || '', stamp);
+        changed++;
+      }
+      return changed;
+    },
+
+    // Paragraphs joined to these by a SOURCE link (content_source_links): the ones quoting them and the ones they quote —
+    // a duplicate copy is the whole-paragraph case of the same link. [{ id, text }], the given ids excluded.
+    async getSourceLinked(paragraphIds) {
+      if (!paragraphIds?.length) return [];
+      const ph = paragraphIds.map(() => '?').join(',');
+      const rows = await db.queryAll(
+        `SELECT c.id, c.text FROM content_source_links l JOIN content c ON c.id = l.quote_id AND c.deleted_at IS NULL WHERE l.source_id IN (${ph})
+         UNION SELECT c.id, c.text FROM content_source_links l JOIN content c ON c.id = l.source_id AND c.deleted_at IS NULL WHERE l.quote_id IN (${ph})`,
+        [...paragraphIds, ...paragraphIds]);
+      const skip = new Set(paragraphIds);
+      return rows.filter((r) => !skip.has(r.id));
     },
 
     // Cited claims per paragraph — the knowledge feed for fact-informed HyPE (retrieval stage's optional

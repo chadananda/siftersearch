@@ -136,14 +136,29 @@ export async function run(ctx, docId, opts = {}) {
           if (present === null) stats.unverified = (stats.unverified || 0) + 1;
           kept.push(it);
         }
-        parsed = kept.length ? { questions: dedupeByAnswer(kept).slice(0, QUESTION_CEILING), thesis: parsed.thesis } : null;
+        parsed = kept.length ? { questions: dedupeByAnswer(kept).slice(0, QUESTION_CEILING), thesis: parsed.thesis, items: kept } : null;
       }
       if (!parsed) { await markHypeExhausted(ctx, p, opts, stats); report(); return; }
       if (!opts.dryRun) {
         await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
-        // Both passages at once: the partner gets the same questions — only where it has none (never overwrites).
-        if (p.partner?.ids?.length && ctx.store.saveHypeWhereMissing) {
-          stats.partnerWritten = (stats.partnerWritten || 0) + await ctx.store.saveHypeWhereMissing(p.partner.ids, parsed.questions, parsed.thesis, HYPE_VERSION);
+        // Questions this paragraph received from a linked source before its own turn ('linked:' stamp) are KEPT.
+        if (String(p.hypModel || '').startsWith('linked:') && ctx.store.mergeHype) {
+          let prior = []; try { prior = JSON.parse(p.hyp || '[]'); } catch { /* legacy text */ }
+          if (Array.isArray(prior) && prior.length) await ctx.store.mergeHype([p.id], prior, null, HYPE_VERSION);
+        }
+        // EVERY LINKED PARAGRAPH gets these questions (Chad, 2026-09-30) — merged into what it already has, never replacing:
+        //  · the translation partner (the other language of this very passage): all of them;
+        //  · paragraphs joined by a SOURCE link — quotes of this passage or of its translation, duplicate copies — only the
+        //    questions whose answer span is in THEIR text, because a quote often carries only part of the source.
+        const partnerIds = p.partner?.ids || [];
+        if (partnerIds.length && ctx.store.mergeHype) {
+          stats.partnerMerged = (stats.partnerMerged || 0) + await ctx.store.mergeHype(partnerIds, parsed.questions, parsed.thesis, HYPE_VERSION);
+        }
+        if (ctx.store.getSourceLinked && ctx.store.mergeHype) {
+          for (const n of await ctx.store.getSourceLinked([p.id, ...partnerIds])) {
+            const qs = parsed.items.filter((it) => spanIsPresent(it.a, [n.text]) === true).map((it) => it.q);
+            if (qs.length) stats.quoteMerged = (stats.quoteMerged || 0) + await ctx.store.mergeHype([n.id], qs, null, HYPE_VERSION, { samePassage: false });
+          }
         }
       }
       stats.done++; if (escalated) stats.escalated++; report();

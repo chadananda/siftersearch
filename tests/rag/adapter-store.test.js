@@ -17,7 +17,8 @@ vi.mock('../../api/lib/db.js', () => ({
   transaction: async (stmts) => stmts.map(({ sql, args = [] }) => run(sql, args)),
 }));
 const updateContextOnly = vi.fn(async () => {});
-vi.mock('../../api/lib/content.js', () => ({ default: { updateContextOnly } }));
+const updateHype = vi.fn(async () => {});
+vi.mock('../../api/lib/content.js', () => ({ default: { updateContextOnly, updateHype } }));
 
 // Point the store's gazetteer at the committed sample BEFORE importing it (the path is read at module load).
 import { fileURLToPath } from 'node:url';
@@ -39,6 +40,9 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
       INSERT INTO content VALUES (101, 7, NULL,      2, 'Chapter I', 'short', NULL, NULL, 'paragraph', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
       INSERT INTO content VALUES (102, 7, 'para_3', 3, 'Chapter I', 'a deleted line', NULL, NULL, 'paragraph', '2026-01-01', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
+      CREATE TABLE content_source_links (quote_id INT, source_id INT, quote_doc INT, source_doc INT, coverage REAL, share REAL, basis TEXT, method TEXT);
+      INSERT INTO content_source_links VALUES (201, 300, 8, 9, 0.5, 0.5, 'text-arfa', 't');
+      UPDATE content SET hyp_questions = '["What is justice?"]', hyp_thesis = 'kept', hyp_model = 'hype-v12' WHERE id = 100;
       CREATE TABLE content_alignment (trans_id INT, orig_id INT, trans_doc INT, orig_doc INT, basis TEXT, score REAL, retired_at INT);
       ALTER TABLE docs ADD COLUMN language TEXT;
       INSERT INTO docs (id, title, author, language) VALUES (8, 'Súriy-i-Mulúk', 'Bahá''u''lláh', 'ar'), (9, 'Lawḥ', 'Bahá''u''lláh', 'fa');
@@ -338,5 +342,23 @@ describe('merge survivor', () => {
     expect(ar.find((p) => p.id === 200).partner).toMatchObject({ kind: 'translation', ids: [100], lang: 'en', authority: 'published' });
     const fa = await store.getParagraphs(9);                            // Phelps' English BESIDE the original = fallback partner
     expect(fa[0].partner).toMatchObject({ kind: 'translation', ids: [], text: 'O friends!', authority: 'partial-inventory' });
+  });
+
+  it('mergeHype keeps what a linked paragraph has, appends the new, and stamps by kind of link', async () => {
+    updateHype.mockClear();
+    const n = await store.mergeHype([100, 200], ['What is justice ?', 'Who are the kings of the earth?'], 'new thesis', 'hype-v13', { samePassage: true });
+    expect(n).toBe(2);
+    const byId = Object.fromEntries(updateHype.mock.calls.map((c) => [c[0], c]));
+    expect(byId[100][1]).toEqual(['What is justice?', 'Who are the kings of the earth?']);   // dup (case/punct) dropped
+    expect(byId[100][2]).toBe('kept');                     // its own thesis survives
+    expect(byId[100][3]).toBe('hype-v12');                 // and its own stamp
+    expect(byId[200][3]).toBe('hype-v13');                 // same passage, never hyped → done at this version
+    updateHype.mockClear();
+    await store.mergeHype([201], ['Q?'], null, 'hype-v13', { samePassage: false });
+    expect(updateHype.mock.calls[0][3]).toBe('linked:hype-v13');   // a quote: NOT done, its own run still happens
+  });
+  it('getSourceLinked finds quotes and sources both ways, excluding the given ids', async () => {
+    expect((await store.getSourceLinked([300])).map((r) => r.id)).toEqual([201]);
+    expect((await store.getSourceLinked([201])).map((r) => r.id)).toEqual([300]);
   });
 });
