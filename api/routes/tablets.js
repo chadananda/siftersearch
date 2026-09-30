@@ -122,6 +122,26 @@ export default async function tabletAdminRoutes(fastify) {
 
 /** Public: GET /api/documents/:id/about — the document's metadata record (reader box, chat "about this book"). */
 export async function tabletPublicRoutes(fastify) {
+  /**
+   * GET /api/documents/meta/search?q=&kind=&author=&place=&year_from=&year_to=&genre=&limit= — find DOCUMENTS by their
+   * metadata (recipient, place, date, subjects, names) in the separate doc_meta index. Returns doc ids + the fields
+   * that matched, so a caller can narrow a passage search with a doc_id filter.
+   */
+  fastify.get('/meta/search', async (req) => {
+    const q = req.query || {};
+    const esc = (v) => String(v).replace(/"/g, '\\"');
+    const filter = [
+      q.kind && `kind = "${esc(q.kind)}"`, q.author && `author = "${esc(q.author)}"`, q.place && `place = "${esc(q.place)}"`,
+      q.genre && `genre = "${esc(q.genre)}"`, q.religion && `religion = "${esc(q.religion)}"`,
+      Number(q.year_from) && `year_to >= ${Number(q.year_from)}`, Number(q.year_to) && `year_from <= ${Number(q.year_to)}`,
+    ].filter(Boolean);
+    const res = await getMeili().index(DOC_META_INDEX).search(String(q.q || ''), {
+      filter, limit: Math.min(200, Number(q.limit) || 20),
+      attributesToRetrieve: ['doc_id', 'kind', 'title', 'author', 'recipient', 'place', 'year_from', 'year_to', 'genre', 'subjects', 'pin'],
+    });
+    return { total: res.estimatedTotalHits, hits: res.hits };
+  });
+
   fastify.get('/:id/about', async (req, reply) => {
     const id = Number(req.params.id);
     const row = await queryOne('SELECT meta FROM doc_meta WHERE doc_id = ?', [id], 'docmeta:about')

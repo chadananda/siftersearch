@@ -1,6 +1,13 @@
 {
-  "generated": "2026-09-29T23:58:22.716Z",
+  "generated": "2026-09-30T00:08:27.009Z",
   "entries": [
+    {
+      "hash": "30efe965",
+      "date": "2026-09-29",
+      "type": "New",
+      "description": "Flexible metadata for ANY document (doc_meta, migr 134) in its own small Meili index — never the paragraphs index",
+      "scope": "docmeta"
+    },
     {
       "hash": "1cb062c4",
       "date": "2026-09-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Record what the pm2 cron-app check DECIDED each tick",
       "scope": null
-    },
-    {
-      "hash": "a265b80b",
-      "date": "2026-08-12",
-      "type": "Other",
-      "description": "Write the thread ↔ published-dialog link that both columns were waiting for",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-09-29": [
+      {
+        "hash": "30efe965",
+        "date": "2026-09-29",
+        "type": "New",
+        "description": "Flexible metadata for ANY document (doc_meta, migr 134) in its own small Meili index — never the paragraphs index",
+        "scope": "docmeta"
+      },
       {
         "hash": "1cb062c4",
         "date": "2026-09-29",
@@ -7053,13 +7060,6 @@
         "date": "2026-08-12",
         "type": "Other",
         "description": "Record what the pm2 cron-app check DECIDED each tick",
-        "scope": null
-      },
-      {
-        "hash": "a265b80b",
-        "date": "2026-08-12",
-        "type": "Other",
-        "description": "Write the thread ↔ published-dialog link that both columns were waiting for",
         "scope": null
       }
     ]
